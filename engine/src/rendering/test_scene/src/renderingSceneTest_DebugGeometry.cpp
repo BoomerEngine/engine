@@ -39,13 +39,13 @@ namespace rendering
             virtual void setupFrame(scene::FrameParams& frame) override
             {
                 base::Vector3 pos(2, 0, 0);
-                drawSpites(frame.debug.solid, pos);
-                drawLines(frame.debug.solid, pos);
-                drawWireShapes(frame.debug.solid, pos);
-                drawSolidShapes(frame.debug.solid, pos);
+                drawSpites(frame.geometry.solid, pos);
+                drawLines(frame.geometry.solid, pos);
+                drawWireShapes(frame.geometry.solid, pos);
+                drawSolidShapes(frame.geometry.solid, pos);
 
                 base::Vector2 screenPos(10, 10);
-                drawSceenShapes(frame.debug.screen, screenPos);
+                drawSceenShapes(frame.geometry.screen, screenPos);
             }
 
             const float SEPARATION = 2.5f;

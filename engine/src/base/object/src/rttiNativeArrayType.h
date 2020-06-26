@@ -44,7 +44,7 @@ namespace base
                 static Type ParseType(StringParser& typeNameString, TypeSystem& typeSystem);
 
             private:
-                uint32_t m_size;
+                uint32_t m_elementCount;
             };
 
         } // prv

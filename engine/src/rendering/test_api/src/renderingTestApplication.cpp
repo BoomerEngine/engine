@@ -15,9 +15,6 @@
 #include "rendering/driver/include/renderingDeviceService.h"
 
 #include "base/app/include/launcherPlatform.h"
-#include "base/app/include/localCoordinatorService.h"
-#include "base/app/include/requestArguments.h"
-#include "base/app/include/requestService.h"
 #include "base/app/include/commandline.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/io/include/absolutePath.h"

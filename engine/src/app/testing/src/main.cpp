@@ -41,28 +41,30 @@ void* GCurrentModuleHandle = nullptr;
 class TestLogSink : public base::logging::ILogSink
 {
 public:
-    virtual void writeLine(base::logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override
+    virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override
     {
         if (level == base::logging::OutputLevel::Spam)
         {
-            fprintf(stdout, RESET "%s" RESET, text);
+            fprintf(stdout, RESET "%s" RESET "\n", text);
         }
         else if (level == base::logging::OutputLevel::Info)
         {
-            fprintf(stdout, KWHT "%s" RESET, text);
+            fprintf(stdout, KWHT "%s" RESET "\n", text);
         }
         else if (level == base::logging::OutputLevel::Warning)
         {
-            fprintf(stdout, KYEL "%s" RESET, text);
+            fprintf(stdout, KYEL "%s" RESET "\n", text);
         }
         else if (level == base::logging::OutputLevel::Error)
         {
-            fprintf(stderr, KRED "%s" RESET, text);
+            fprintf(stderr, KRED "%s" RESET "\n", text);
         }
         else if (level == base::logging::OutputLevel::Fatal)
         {
-            fprintf(stderr, KRED "%s" RESET, text);
+            fprintf(stderr, KRED "%s" RESET "\n", text);
         }
+
+        return false;
     }
 };
 

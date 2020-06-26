@@ -26,9 +26,10 @@ namespace rendering
         protected:
             virtual bool initialize(const base::app::CommandLine& commandline) override;
             virtual void update() override;
+            virtual void cleanup() override;
 
             base::UniquePtr<ui::Renderer> m_renderer;
-            base::UniquePtr<ui::DataStash> m_dataStash;
+            base::RefPtr<ui::DataStash> m_dataStash;
             base::UniquePtr<NativeWindowRenderer> m_nativeRenderer;
             base::NativeTimePoint m_lastUpdateTime;
         };      

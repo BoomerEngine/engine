@@ -37,9 +37,6 @@ namespace rendering
 
         UIApp::~UIApp()
         {
-            m_renderer.reset();
-            m_nativeRenderer.reset();
-            m_dataStash.reset();
         }
 
         bool UIApp::initialize(const base::app::CommandLine& commandline)
@@ -49,7 +46,7 @@ namespace rendering
                 return false;
 
             m_nativeRenderer.create();
-            m_dataStash.create(styles);
+            m_dataStash = base::CreateSharedPtr<ui::DataStash>(styles);
             m_dataStash->addIconSearchPath("engine/icons/");
             m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
             m_lastUpdateTime.resetToNow();
@@ -58,6 +55,13 @@ namespace rendering
             m_renderer->attachWindow(window.get());
 
             return true;
+        }
+
+        void UIApp::cleanup()
+        {
+            m_renderer.reset();
+            m_nativeRenderer.reset();
+            m_dataStash.reset();
         }
 
         void UIApp::update()

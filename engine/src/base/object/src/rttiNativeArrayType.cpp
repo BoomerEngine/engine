@@ -25,14 +25,14 @@ namespace base
 
             NativeArrayType::NativeArrayType(Type innerType, uint32_t size)
                 : IArrayType(FormatNativeArrayTypeName(innerType->name(), size), innerType)
-                , m_size(size)
+                , m_elementCount(size)
             {
                 m_traits.alignment = innerType->alignment();
 
                 auto innerSize = innerType->size();
                 auto innerAlignment = innerType->alignment();
                 auto innerSeparation = std::max<uint32_t>(innerSize, innerAlignment);
-                m_traits.size = innerSeparation * m_size;
+                m_traits.size = innerSeparation * m_elementCount;
 
                 m_traits.simpleCopyCompare = innerType->traits().simpleCopyCompare;
                 m_traits.requiresDestructor = innerType->traits().requiresDestructor;
@@ -45,8 +45,7 @@ namespace base
 
             void NativeArrayType::construct(void *object) const
             {
-                auto size = this->size();
-                for (uint32_t i = 0; i < size; ++i)
+                for (uint32_t i = 0; i < m_elementCount; ++i)
                 {
                     auto ptr  = arrayElementData(object, i);
                     innerType()->construct(ptr);
@@ -55,8 +54,7 @@ namespace base
 
             void NativeArrayType::destruct(void *object) const
             {
-                auto size = this->size();
-                for (uint32_t i = 0; i < size; ++i)
+                for (uint32_t i = 0; i < m_elementCount; ++i)
                 {
                     auto ptr  = arrayElementData(object, i);
                     innerType()->destruct(ptr);
@@ -69,22 +67,22 @@ namespace base
                 {
                     // HACK: remove last zero since it's most likely a string
                     // TODO: analyze the data, if it looks like normal string that do it, otherwise don't
-                    auto length = m_size;
+                    auto length = m_elementCount;
                     auto str  = (const char*)data;
-                    if (str[m_size - 1] == 0)
+                    if (str[m_elementCount - 1] == 0)
                         length -= 1;
 
                     f.appendCEscaped(str, length, flags | PrintToFlag_TextSerializaitonArrayElement);
                 }
                 else if (innerType()->name() == "uint8_t"_id || innerType()->name() == "uint8_t"_id)
                 {
-                    f.appendBase64(data, m_size);
+                    f.appendBase64(data, m_elementCount);
                 }
                 else
                 {
                     auto stride = innerType()->size();
                     auto readPtr  = (const uint8_t*)data;
-                    for (uint32_t i = 0; i < m_size; ++i, readPtr += stride)
+                    for (uint32_t i = 0; i < m_elementCount; ++i, readPtr += stride)
                     {
                         f << "[";
                         innerType()->printToText(f, readPtr, true);
@@ -104,9 +102,9 @@ namespace base
                     if (!decodedData)
                         return false;
 
-                    auto maxCopySize = std::min<uint32_t>(m_size - 1, decodedSize);
+                    auto maxCopySize = std::min<uint32_t>(m_elementCount - 1, decodedSize);
                     memcpy(data, decodedData, maxCopySize);
-                    memset((uint8_t*)data + maxCopySize, 0, m_size - maxCopySize);
+                    memset((uint8_t*)data + maxCopySize, 0, m_elementCount - maxCopySize);
                 }
                 else if (innerType()->name() == "uint8_t"_id || innerType()->name() == "uint8_t"_id)
                 {
@@ -115,9 +113,9 @@ namespace base
                     if (!decodedData)
                         return false;
 
-                    auto maxCopySize = std::min<uint32_t>(m_size, decodedSize);
+                    auto maxCopySize = std::min<uint32_t>(m_elementCount, decodedSize);
                     memcpy(data, decodedData, maxCopySize);
-                    memset((uint8_t*)data + maxCopySize, 0, m_size - maxCopySize);
+                    memset((uint8_t*)data + maxCopySize, 0, m_elementCount - maxCopySize);
                 }
                 else
                 {
@@ -145,7 +143,7 @@ namespace base
                     // reinitialize array elements
                     auto stride = innerType()->size();
                     auto writePtr  = (uint8_t*)data;
-                    auto writeEndPtr  = (uint8_t*)data + (stride * m_size);
+                    auto writeEndPtr  = (uint8_t*)data + (stride * m_elementCount);
 
                     // load items
                     auto readPtr  = txt.data();
@@ -202,17 +200,17 @@ namespace base
 
             uint32_t NativeArrayType::arraySize(const void* data) const
             {
-                return m_size;
+                return m_elementCount;
             }
 
             uint32_t NativeArrayType::arrayCapacity(const void* data) const
             {
-                return m_size;
+                return m_elementCount;
             }
 
 			uint32_t NativeArrayType::maxArrayCapacity(const void* data) const
 			{
-				return m_size;
+				return m_elementCount;
 			}
 
             bool NativeArrayType::canArrayBeResized() const
@@ -237,7 +235,7 @@ namespace base
 
             const void* NativeArrayType::arrayElementData(const void* data, uint32_t index) const
             {
-                if (index >= m_size)
+                if (index >= m_elementCount)
                     return nullptr;
 
                 auto elemSize = innerType()->size();
@@ -249,7 +247,7 @@ namespace base
 
             void* NativeArrayType::arrayElementData(void* data, uint32_t index) const
             {
-                if (index >= m_size)
+                if (index >= m_elementCount)
                     return nullptr;
 
                 auto elemSize = innerType()->size();
