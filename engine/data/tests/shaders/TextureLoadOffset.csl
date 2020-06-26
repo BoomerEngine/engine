@@ -1,0 +1,46 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D TestImage;
+}
+
+export shader SimpleTrianglePS
+{
+	in vec2 UV;
+
+	void main()
+	{
+		ivec2 size = textureSizeLod(TestImage, 0);
+		ivec2 texelCoords = frac(UV.xy) * size;
+
+		vec4 c = textureLoadLod(TestImage, texelCoords, 0) * 8;
+		c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(-1,-1));
+		c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(0,-1));
+		c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(1,-1));
+		c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(-1,0));
+		c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(1,0));
+        c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(-1,1));
+        c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(0,1));
+        c -= textureLoadLodOffset(TestImage, texelCoords, 0, vec2(1,1));
+        gl_Target0 = c;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}

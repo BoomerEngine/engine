@@ -1,0 +1,12 @@
+<module>
+
+  <!-- Module informations, used mostly for display in the project building tools -->
+  <name>BoomerEngine OpenGL support</name>
+  <description>Support for OpenGL rendering API</description>
+  <author>Tomasz "Rex Dex" Jonarski</author>
+  <license>MIT</license>
+
+  <!--thirdparty>http://www.mediafire.com/file/65nlhdtyvqerw18/thirdparty_opengl_20_06.zip/file</thirdparty-->
+  <thirdparty name="lib_opengl_20_06" path="https://drive.google.com/uc?export=download&amp;id=1scea74FLOJHNuPf__2e2URz3UI27hxwN" />
+
+</module>

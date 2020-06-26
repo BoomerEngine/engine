@@ -1,0 +1,9 @@
+<module>
+
+  <!-- Module informations, used mostly for display in the project building tools -->
+  <name>BoomerEngine HalfLife 2 asset import</name>
+  <description>Support for importing HalfLife 2 assets into BoomerEngine</description>
+  <author>Tomasz "Rex Dex" Jonarski</author>
+  <license>MIT</license>
+
+</module>

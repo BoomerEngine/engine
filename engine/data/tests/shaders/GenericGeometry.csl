@@ -1,0 +1,29 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+export shader GeometryPS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader GeometryVS
+{
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		Color = v.color;
+	}
+}

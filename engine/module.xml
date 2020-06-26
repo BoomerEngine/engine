@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<module>
+
+  <!-- Module informations, used mostly for display in the project building tools -->
+  <name>BoomerEngine</name>
+  <description>Main BoomerEngine sources</description>
+  <author>Tomasz "Rex Dex" Jonarski</author>
+  <license>LGPL v3</license>
+
+   <!-- Third party packages we need to download to compile this module -->
+   <thirdparty name="lib_engine_20_06" path="https://drive.google.com/uc?export=download&amp;id=1e_Y1YEgaSpjK6lYbAdtuhyZTEul2CXVi" />
+
+</module>

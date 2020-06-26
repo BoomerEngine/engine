@@ -1,0 +1,41 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D Texture;
+}
+
+export shader GeneratePS
+{
+	in vec2 UV;
+	in vec4 Color;
+
+	void main()
+	{
+		vec2 dir = (UV.xy - vec2(0.5f, 0.5f)) * 2.0f;
+		float len = 1.0f - saturate(length(dir));
+
+        gl_Target0 = vec4(Color.xyz,len);
+	}
+}
+
+export shader SimpleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		Color = v.color;
+		UV = v.uv;
+	}
+}
+

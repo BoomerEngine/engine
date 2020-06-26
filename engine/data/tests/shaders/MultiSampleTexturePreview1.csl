@@ -1,0 +1,49 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+#ifndef NUM_SAMPLES
+	#define NUM_SAMPLES 1
+#endif
+
+//--
+
+descriptor TestParams
+{
+    Texture2D Texture;
+	attribute(multisample) Texture2D TextureMS;
+}
+
+//--
+
+export shader CommonVS
+{
+	void main()
+	{
+		gl_Position.x  = (gl_VertexID & 1) ? 1.0f : -1.0f;
+		gl_Position.y  = (gl_VertexID & 2) ? 1.0f : -1.0f;
+		gl_Position.z = 1.0f;
+		gl_Position.w = 1.0f;
+	}
+}
+
+export shader PreviewSamplesPS
+{
+	void main()
+	{
+		ivec2 pixelCoord = gl_FragCoord.xy / ivec2(NUM_SAMPLES, 1);
+
+		// 0 - 0
+		// 1 - 1024 - 512 = 512/2 = 256 / 2 = 128
+		// 2 - 2048 - 512 =  etc
+		pixelCoord.x += ((((1024 * NUM_SAMPLES) - 512) - 512) / NUM_SAMPLES) / 2;
+		gl_Target0 = textureLoadSample(TextureMS, pixelCoord.xy, (int)gl_FragCoord.x % NUM_SAMPLES);
+	}
+}
+
+//--

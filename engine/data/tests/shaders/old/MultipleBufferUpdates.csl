@@ -1,0 +1,58 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+attribute(packing=vertex) struct VertexStream0
+{
+    vec2 pos;
+}
+
+attribute(packing=vertex) struct VertexStream1
+{
+    attribute(format=rgba8) vec4 color;
+}
+
+shader SimpleTrianglePS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+shader SimpleTriangleVS
+{
+	vertex VertexStream0 v1;
+	vertex VertexStream1 v2;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v1.pos.xy01;
+		Color = v2.color;
+	}
+}
+
+pipeline Test
+{	
+	void setup()
+	{
+		state.pass.color0.format = 'RGBA8_UNORM';
+		state.pass.color0.loadOp = 'Clear';
+		state.pass.color0.storeOp = 'Store';
+	}
+
+	void draw()
+	{
+		state.vertex.topology = 'LineList';
+		state.vertex.program = program<SimpleTriangleVS> {};
+		state.pixel.program = program<SimpleTrianglePS> {};
+	}
+}
+
+export graphics Test;
+

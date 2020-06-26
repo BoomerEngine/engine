@@ -1,0 +1,51 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [#filter: platform\process #]
+***/
+
+#include "build.h"
+#include "process.h"
+
+#ifdef PLATFORM_WINDOWS
+    #include "processWindows.h"
+#elif defined(PLATFORM_POSIX)
+    #include "processPOSIX.h"
+#endif
+
+namespace base
+{
+    namespace process
+    {
+
+        //---
+
+        ProcessSetup::ProcessSetup()
+            : m_messageEndpointName(nullptr)
+            , m_stdOutCallback(nullptr)
+            , m_showWindow(true)
+        {}
+
+        //---
+
+        IProcess::~IProcess()
+        {
+        }
+
+        IProcess* IProcess::Create(const ProcessSetup& setup)
+        {
+#if defined(PLATFORM_WINDOWS)
+            return prv::WinProcess::Create(setup);
+#elif defined(PLATFORM_POSIX)
+            return prv::POSIXProcess::Create(setup);
+#else
+            return nullptr; // no thread needed apparently :P
+#endif
+        }
+
+        //---
+
+    } // process
+} // base

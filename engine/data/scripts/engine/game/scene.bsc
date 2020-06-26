@@ -1,0 +1,14 @@
+using Core;
+
+// simulation scene
+import class Scene
+    alias 'game::Scene'
+    extends Core.ScriptedObject
+{
+
+    //--
+
+    //--
+
+}
+

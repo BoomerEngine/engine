@@ -1,0 +1,4 @@
+document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
+  class=base::cooker::SeedFile
+    files
+      relativePath=sponza/sponza.obj resourceClass=rendering::Mesh

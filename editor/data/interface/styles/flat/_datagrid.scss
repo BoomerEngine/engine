@@ -1,0 +1,119 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+$data-inspector-background: color.mix($client-background, $window-background, 30%);
+$data-inspector-active-color: color.mix($data-inspector-background, $active-color, 50%);
+
+DataInspector {
+	background: $data-inspector-background;
+}
+
+DataInspectorNavigationItem {
+}
+
+DataInspectorGroup {
+	min-height: 26em;
+	horizontal-align: expand;
+	background: image("images/diagonals_bleak.png", wrap, #383838);
+
+	> TextLabel {
+		margin-left: 5em;
+		vertical-align: middle;
+		horizontal-align: center;
+		color: $text-color;
+		font-weight: bold;
+	}
+}
+
+DataInspectorExpandButton {
+	vertical-align: middle;
+	background: #0000;
+	border-width: 0em;
+	margin-left: 10em;
+	width: 18em;
+	height: 18em;
+
+	> TextLabel {
+		vertical-align: middle;
+		horizontal-align: center;
+		color: $text-color;
+		font-family: $icon-font;
+		font-size: $icon-font-size;
+		content: "&#f067;";
+	}
+
+	&.expanded > TextLabel {
+		content: "&#f068;";
+	}
+
+	&.nochildren > TextLabel {
+		content: "";
+	}
+}
+
+DataPropertyLine {
+	min-height: 26em;
+
+	DataPropertyName {
+		horizontal-align: expand;
+		vertical-align: middle;
+	}
+
+	DataPropertyCaption {
+		horizontal-align: expand;
+		force-clip: 1;
+		color: #DADADA;
+
+		&.resetable {
+			font-weight: bold;
+			color: #FFFFFF;
+		}
+	}
+
+	DataPropertyValue {
+		horizontal-align: expand;
+		vertical-align: middle;
+		margin-right: 10em;
+		margin-left: 5em;
+		margin-top: 2em;
+		margin-bottom: 2em;
+	}
+
+	DataPropertyStaticValue {
+		font-style: italic;
+		color: color.mix($text-color, $data-inspector-background, 50%);
+	}
+}
+
+DataInspectorNavigationItem.selected > DataInspectorGroup {
+	background: image("images/diagonals_bleak.png", wrap, $data-inspector-active-color);
+}
+
+DataInspectorNavigationItem.selected > DataPropertyLine {
+	background: $data-inspector-active-color;
+}
+
+DataPropertyButton {
+	margin-left: 2em;
+	margin-right: 2em;
+	padding: 5em 2em 5em 2em;
+	background: #0004;
+	border-width: 1em;
+	border-color: #FFFFFF20;
+	border-radius: 3em;
+
+	> TextLabel {
+		color: #AAA;
+	}
+
+	&:hover {
+		background: color.mix(color.scale($data-inspector-background, 80%), $active-color, 50%);
+
+		> TextLabel {
+			color: #FFF;
+		}
+	}
+}
+

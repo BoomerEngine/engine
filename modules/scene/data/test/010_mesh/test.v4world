@@ -1,0 +1,3 @@
+document tech="Boomer Engine" version=1 writer=rexdex@beast
+  class=scene::world::World
+

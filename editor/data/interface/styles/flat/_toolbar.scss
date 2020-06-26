@@ -1,0 +1,57 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+$toolbar-background-pattern: linear(90, color.transparent($toolbar-background, 0%), color.transparent($toolbar-background, 40%));
+
+Toolbar {
+    horizontal-align: left;
+    vertical-align: top;
+    min-height: 30em;
+    padding: 0em 2em 0em 2em;
+    background: $toolbar-background-pattern;
+
+    * {
+        vertical-align: middle;
+        margin: 2em 1em 2em 1em;
+    }
+
+    ToolbarButton {
+        padding: 1em 3em 1em 1em;
+        min-height: 22em;
+
+        &:hover {
+            background: color.transparent($active-color, 80%);
+        }
+
+        &.toggled {
+            background: color.transparent($active-color, 50%);
+        }
+
+        &.toggled:hover {
+            background: color.transparent($active-color, 85%);
+        }
+
+        &:pressed {
+            background: color.transparent($active-color, 100%);
+        }
+
+        &.disabled:hover {
+            background: #0000;
+        }
+    }
+
+    ToolbarSeparator {
+        width: 1em;
+        vertical-align: expand;
+        margin: 2em 4em 2em 4em;
+        background: color.grayscale($toolbar-background);
+    }
+
+    ToolbarComboBox {
+        margin: 2em 4em 2em 4em;
+        background: color.scale(color.grayscale($toolbar-background), 40%);
+        vertical-align: middle;
+    }
+}

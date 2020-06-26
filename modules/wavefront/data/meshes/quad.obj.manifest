@@ -1,0 +1,10 @@
+document tech="Boomer Engine" version=1 writer=rexdex@beast
+  class=engine::mesh::WavefrontManifest
+    materialSettings class=engine::MaterialMappingSettings
+      entries
+        class=engine::MaterialMappingMaterial name=default
+          parameters
+            name=TwoSidedRendering
+              value type=Bool value=true
+            name=TwoSidedLighting
+              value type=Bool value=true

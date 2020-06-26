@@ -1,0 +1,219 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: elements\controls\data #]
+***/
+
+#include "build.h"
+#include "uiDataBox.h"
+#include "uiButton.h"
+#include "uiTextLabel.h"
+#include "uiClassPickerBox.h"
+#include "base/object/include/rttiDataView.h"
+
+namespace ui
+{
+
+    //--
+
+    /// general class picker
+    class DataBoxClassPicker : public IDataBox
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(DataBoxClassPicker, IDataBox);
+
+    public:
+        DataBoxClassPicker()
+        {
+            layoutHorizontal();
+
+            m_caption = createChild<TextLabel>();
+            m_caption->customHorizontalAligment(ElementHorizontalLayout::Expand);
+            m_caption->customVerticalAligment(ElementVerticalLayout::Middle);
+
+            m_button = createChildWithType<Button>("DataPropertyButton"_id);
+            m_button->customVerticalAligment(ElementVerticalLayout::Middle);
+            m_button->createChild<TextLabel>("[img:class]");
+            m_button->tooltip("Select from class list");
+            m_button->bind("OnClick"_id) = [this]() { showClassPicker(); };
+        }
+
+        virtual void handleValueChange() override
+        {
+            base::ClassType data;
+            if (readValue(data))
+            {
+                base::StringBuilder txt;
+                txt << data;
+                m_caption->text(txt.toString());
+            }
+
+            m_button->visibility(!readOnly());
+        }
+
+        void showClassPicker()
+        {
+            if (!m_picker)
+            {
+                base::ClassType data;
+                readValue(data);
+
+                bool allowNullType = false;
+                bool allowAbstractType = true;
+
+                m_picker = base::CreateSharedPtr<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
+                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+
+                m_picker->bind("OnClosed"_id, this) = [](DataBoxClassPicker* box)
+                {
+                    box->m_picker.reset();
+                };
+
+                m_picker->bind("OnClassSelected"_id, this) = [](DataBoxClassPicker* box, base::ClassType data)
+                {
+                    box->writeValue(data);
+                };                
+            }
+        }
+
+        virtual void enterEdit() override
+        {
+            m_button->focus();
+        }
+
+        virtual void cancelEdit() override
+        {
+            if (m_picker)
+                m_picker->requestClose();
+            m_picker.reset();
+        }
+
+    protected:
+        TextLabelPtr m_caption;
+        ButtonPtr m_button;
+
+        base::RefPtr<ClassPickerBox> m_picker;
+    };
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(DataBoxClassPicker);
+        RTTI_METADATA(ui::ElementClassNameMetadata).name("DataBoxClassPicker");
+    RTTI_END_TYPE();
+
+    //--
+
+    /// specific class picker
+    class DataBoxSpecificClassPicker : public IDataBox
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(DataBoxSpecificClassPicker, IDataBox);
+
+    public:
+        DataBoxSpecificClassPicker(base::ClassType rootClass, base::Type classMetaType)
+            : m_rootClass(rootClass)
+            , m_metaType(classMetaType)
+        {
+            layoutHorizontal();
+
+            m_caption = createChild<TextLabel>();
+            m_caption->customHorizontalAligment(ElementHorizontalLayout::Expand);
+            m_caption->customVerticalAligment(ElementVerticalLayout::Middle);
+
+            m_button = createChildWithType<Button>("DataPropertyButton"_id);
+            m_button->customVerticalAligment(ElementVerticalLayout::Middle);
+            m_button->createChild<TextLabel>("[img:class]");
+            m_button->tooltip("Select from class list");
+            m_button->bind("OnClick"_id) = [this]() { showClassPicker(); };
+        }
+
+        virtual void handleValueChange() override
+        {
+            base::ClassType data;
+            if (readValue(&data, m_metaType))
+            {
+                base::StringBuilder txt;
+                txt << data;
+                m_caption->text(txt.toString());
+            }
+
+            m_button->visibility(!readOnly());
+        }
+
+        void showClassPicker()
+        {
+            if (!m_picker)
+            {
+                base::ClassType data;
+                readValue(&data, m_metaType);
+
+                bool allowNullType = false;
+                bool allowAbstractType = true;
+
+                m_picker = base::CreateSharedPtr<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
+                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+
+                m_picker->bind("OnClosed"_id, this) = [](DataBoxSpecificClassPicker* box)
+                {
+                    box->m_picker.reset();
+                };
+
+                m_picker->bind("OnClassSelected"_id, this) = [](DataBoxSpecificClassPicker* box, base::ClassType data)
+                {
+                    box->writeValue(&data, box->m_metaType);
+                };
+            }
+        }
+
+        virtual void enterEdit() override
+        {
+            m_button->focus();
+        }
+
+        virtual void cancelEdit() override
+        {
+            if (m_picker)
+                m_picker->requestClose();
+            m_picker.reset();
+        }
+
+    protected:
+        TextLabelPtr m_caption;
+        ButtonPtr m_button;
+
+        base::RefPtr<ClassPickerBox> m_picker;
+        base::ClassType m_rootClass;
+        base::Type m_metaType;
+    };
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(DataBoxSpecificClassPicker);
+        RTTI_METADATA(ui::ElementClassNameMetadata).name("DataBoxSpecificClassPicker");
+    RTTI_END_TYPE();
+
+    //--
+
+    class DataBoxClassFactory : public IDataBoxFactory
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(DataBoxClassFactory, IDataBoxFactory);
+
+    public:
+        virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
+        {
+            if (info.dataType == base::reflection::GetTypeObject<base::ClassType>())
+            {
+                return base::CreateSharedPtr<DataBoxClassPicker>();
+            }
+            else if (info.dataType.metaType() == base::rtti::MetaType::ClassRef)
+            {
+                const auto rootClass = info.dataType.innerType().toClass();
+                return base::CreateSharedPtr<DataBoxSpecificClassPicker>(rootClass, info.dataType);
+            }
+
+            return nullptr;
+        }
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(DataBoxClassFactory);
+    RTTI_END_TYPE();
+
+    //--
+
+} // ui

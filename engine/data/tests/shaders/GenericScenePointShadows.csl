@@ -1,0 +1,36 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+#include "scene.h"
+
+//--
+
+descriptor SceneShadowMapParams
+{
+	ConstantBuffer
+	{
+		attribute(offset=0) mat4 WorldToShadowMap;
+	}
+
+	attribute(depth) Texture2D ShadowMap;
+};
+
+//--
+
+shader ShadowSampler
+{
+	float CalcShadow(vec3 pos)
+	{
+		vec4 uv = mul(WorldToShadowMap, pos.xyz1);
+		float mask = 1.0f - (float)(all(uv.xy >= 0.0f) && all(uv.xy <= 1.0f));
+		return max(textureDepthCompare(ShadowMap, uv.xy, uv.z), mask);
+ 	}
+};
+
+//--
+

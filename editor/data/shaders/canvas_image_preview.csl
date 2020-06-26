@@ -1,0 +1,43 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+*
+* Canvas Rendering Pipeline
+*
+***/
+
+#include <math.h>
+#include <canvas/canvas.h>
+
+//--
+
+descriptor CanvasImagePreviewParams
+{
+	ConstantBuffer
+	{
+		vec4 ColorFilter;
+	}
+
+	Texture2D PreviewTexture;
+}
+
+export shader CanvasVS; // use standard shader
+
+export shader CustomCanvasPS : CanvasPS
+{
+	void main()
+	{
+		vec4 color = textureLod(PreviewTexture, CanvasUV, 0);
+
+		color *= ColorFilter;
+		if (ColorFilter.a == 0) color.a = 1;
+
+		if (abs(dot(ColorFilter, vec4(1,1,1,1)) - 1.0) < 0.001) {
+			color = dot(color, vec4(1,1,1,1)).xxx1;
+		}
+
+		gl_Target0 = color * CalcScissorMask(CanvasPosition);
+	}
+}
+
+//--

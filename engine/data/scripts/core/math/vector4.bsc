@@ -1,0 +1,144 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+// 4D vector
+import struct Vector4 alias 'base::Vector4'
+{
+    import var float x;
+    import var float y;
+    import var float z;
+    import var float w;
+    
+    // get length of the vector
+    import function float Length();
+    
+    // get square length of the vector (faster, no square root)
+    import function float SquareLength();
+
+    // get 1/length of the vector, returns 0 if the vector has zero length
+    import function float InvLength();
+
+    // get vector with absolute values of components
+    import function Vector4 Abs();
+
+    // get vector with components rounded to nearest integer
+    import function Vector4 Round();
+
+    // get vector with components rounded down to integer
+    import function Vector4 Floor();
+
+    // get vector with components rounded up to integer
+    import function Vector4 Ceil();
+
+    // get vector with components values without fractional parts
+    import function Vector4 Trunc();
+
+    // get vector with components with fractional parts
+    import function Vector4 Frac();
+
+    // get minimum value of components
+    import function float MinValue();
+    
+    // get maximum value of components
+    import function float MaxValue();
+    
+    // get sum of components
+    import function float Sum();
+    
+    // get trace (product of all components)
+    import function float Trace();
+    
+    // get length of vector between two 4D points
+    import function float Distance(ref Vector4 v);
+    
+    // get length of vector between two points
+    import function float SquareDistance(ref Vector4 v);
+
+    // normalize vector, returns length of the vector before normalization
+    import function float Normalize();
+
+    // get normalized vector
+    import function Vector4 Normalized();
+
+    //--
+
+    // get 2D sub vector
+    import function Vector2 xx();
+    import function Vector2 xy();
+    import function Vector2 xz();
+    import function Vector2 xw();
+    import function Vector2 yx();
+    import function Vector2 yy();
+    import function Vector2 yz();
+    import function Vector2 yw();
+    import function Vector2 zx();
+    import function Vector2 zy();
+    import function Vector2 zz();
+    import function Vector2 zw();
+    import function Vector2 wx();
+    import function Vector2 wy();
+    import function Vector2 wz();
+    import function Vector2 ww();
+
+    // get 3D sub vector
+    import function Vector3 xxx();
+    import function Vector3 yyy();
+    import function Vector3 zzz();
+    import function Vector3 www();
+    import function Vector3 xyz();
+    import function Vector3 zyx();
+
+    // get 4D sub vector
+    import function Vector4 xxxx();
+    import function Vector4 yyyy();
+    import function Vector4 zzzz();
+    import function Vector4 wwww();
+    import function Vector4 xyzw();
+    import function Vector4 wzyx();
+    
+    //--
+    
+    // generate random vector
+    import static function Vector4 Random(float min = 0.0f, float max = 1.0f);
+}
+
+// math operators
+import operator- Vector4 (ref Vector4 b);
+import operator+ Vector4 (ref Vector4 a, ref Vector4 b);
+import operator- Vector4 (ref Vector4 a, ref Vector4 b);
+import operator* Vector4 (ref Vector4 a, ref Vector4 b);
+import operator/ Vector4 (ref Vector4 a, ref Vector4 b);
+import operator| float (ref Vector4 a, ref Vector4 b); // dot product
+
+import operator+= Vector4 (out Vector4 a, ref Vector4 b);
+import operator-= Vector4 (out Vector4 a, ref Vector4 b);
+import operator*= Vector4 (out Vector4 a, ref Vector4 b);
+import operator/= Vector4 (out Vector4 a, ref Vector4 b);
+
+import operator+ Vector4 (ref Vector4 a, float b);
+import operator- Vector4 (ref Vector4 a, float b);
+import operator* Vector4 (ref Vector4 a, float b);
+import operator/ Vector4 (ref Vector4 a, float b);
+import operator* Vector4 (float a, ref Vector4 b);
+
+import operator+= Vector4 (out Vector4 a, float b);
+import operator-= Vector4 (out Vector4 a, float b);
+import operator*= Vector4 (out Vector4 a, float b);
+import operator/= Vector4 (out Vector4 a, float b);
+
+import function alias(Abs) Vector4 AbsV4(ref Vector4 a);
+import function alias(Snap) Vector4 SnapV4(ref Vector4 a, float grid);
+import function alias(Dot) float DotV4(ref Vector4 a, ref Vector4 b);
+import function alias(Min) Vector4 MinV4(ref Vector4 a, ref Vector4 b);
+import function alias(Max) Vector4 MaxV4(ref Vector4 a, ref Vector4 b);
+import function alias(Clamp) Vector4 ClampV4(ref Vector4 a, ref Vector4 minV, ref Vector4 maxV);
+import function alias(Clamp) Vector4 ClampV4F(ref Vector4 a, float minF, float maxV);
+import function alias(Lerp) Vector4 LerpV4(ref Vector4 a, ref Vector4 b, float f);
+import function alias(Normal) Vector4 NormalV4(ref Vector4 a, ref Vector4 n);
+import function alias(Tangent) Vector4 TangentV4(ref Vector4 a, ref Vector4 n);
+import function alias(SetLength) Vector4 SetLengthV4(ref Vector4 a, float length);
+import function alias(ClampLength) Vector4 ClampLengthV4(ref Vector4 a, float length);
+

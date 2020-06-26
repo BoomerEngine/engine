@@ -1,0 +1,49 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+#include "common.h"
+
+//--
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        float TimeOffset;
+        float DrawOffset;
+        float DrawScale;
+    }
+
+    attribute(uav, format=rgba32f) Buffer VertexData;
+}
+
+//--
+
+export shader PS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader VS
+{
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = VertexData[2*gl_VertexID + 0].xyz1;
+		gl_Position.y = DrawOffset + gl_Position.y * DrawScale;
+
+		Color = VertexData[2*gl_VertexID+1].xyz1;
+	}
+}
+
+//--

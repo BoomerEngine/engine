@@ -1,0 +1,4 @@
+document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
+  class=wavefront::MeshManifest space=LeftHandYUp
+    globalTranslation z=-0.400000
+    globalScale 10.000000

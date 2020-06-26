@@ -1,0 +1,65 @@
+/*
+ * Boomer Engine (C) 2017-2020 by Tomasz "Rex Dex" Jonarski
+ * Engine Interface Files
+*/
+
+using Core;
+
+// wrapper for system command line
+import struct CommandLine alias 'base::app::CommandLine'
+{
+    //--
+    
+    // parameter key-value pair
+    import struct Param alias 'base::app::CommandLineParam'
+    {
+        import var string name;
+        import var string value;
+    }
+    
+    //--
+    
+    // empty commandline ? (no params, no commands)
+    import function bool Empty();
+    
+    // returns true if we have given parameter/flag defined
+    import function bool HasParam(ref string name);
+    
+    // define parameter value
+    import function SetParam(ref string name, ref string value);
+    
+    // remove parameter
+    import function RemoveParam(ref string name);
+    
+    //--
+    
+    // get value for given parameter
+    import function string GetSingleValue(ref string name);
+    
+    // get value for given parameter as integer
+    import function int GetSingleValueInt(ref string name, int defaultValue = 0);
+    
+    // get value for given parameter as boolean
+    import function bool GetSingleValueBool(ref string name, bool defaultValue = false);
+    
+    // get value for given parameter as float
+    import function float GetSingleValueFloat(ref string name, float defaultValue = 0.0);
+    
+    // get all values for given parameter
+    import function array<string> GetAllValues(ref string name);
+    
+    //--
+    
+    // convert to string
+    import function string ToString();
+    
+    // parse from string
+    import static function CommandLine Parse(ref string commandLineText);
+
+    //--
+    
+    private import var array<string> commands;
+    private import var array<Param> params;
+}
+
+

@@ -1,0 +1,250 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math constants, functions and types
+// NOTE: internal file, do not modify
+
+//--
+// script type -> engine type aliases
+
+typename int = engineType 'Int32';
+typename int8 = engineType 'Int8';
+typename int16 = engineType 'Int16';
+typename int64 = engineType 'Int64';
+typename uint = engineType 'Uint32';
+typename uint8 = engineType 'Uint8';
+typename uint16 = engineType 'Uint16';
+typename uint64 = engineType 'Uint64';
+typename bool = engineType 'Bool';
+typename float = engineType 'Float';
+typename double = engineType 'Double';
+typename string = engineType 'StringBuf';
+typename strid = engineType 'StringID';
+
+//--
+
+// math constants
+const float PI = 3.1415926535f;
+const float HALFPI = 1.57079632679f;
+const float TWOPI = 6.28318530718f;
+const float E = 2.718281828459045f;
+
+const float DEG2RAD = 0.01745329251f;
+const float RAD2DEG = 57.2957795131f;
+
+const float INVPI = 0.31830988618f;
+const float INVTWOPI = 0.15915494309;
+
+const float SQRT2 = 1.41421356237f;
+const float SQRT3 = 1.73205080757f;
+const float INVSQRT2 = 0.70710678118f;
+const float INVSQRT3 = 0.57735026919f;
+
+// limits
+const int8 INT8_MAX = 127;
+const int8 INT8_MIN = -128;
+const int16 INT16_MAX = 32767;
+const int16 INT16_MIN = -32768;
+const int INT32_MAX = 2147483647;
+const int INT32_MIN = -2147483648;
+const int64 INT64_MAX = 9223372036854775807;
+const int64 INT64_MIN = -9223372036854775808;
+const int INT_MAX = 2147483647;
+const int INT_MIN = -2147483648;
+
+const uint8 UINT8_MAX = 255;
+const uint16 UINT16_MAX = 65535;
+const uint UINT32_MAX = 4294967295;
+const uint64 UINT64_MAX = 18446744073709551615;
+const uint UINT_MAX = 4294967295;
+
+//--
+
+// numerical limits
+
+//--
+
+// max of two values
+import function alias(Max) int8 MaxI8(int8 a, int8 b) opcode(MaxSigned8);
+import function alias(Max) int16 MaxI16(int16 a, int16 b) opcode(MaxSigned16);
+import function alias(Max) int MaxI32(int a, int b) opcode(MaxSigned32);
+import function alias(Max) int64 MaxI64(int64 a, int64 b) opcode(MaxSigned64);
+import function alias(Max) uint8 MaxU8(uint8 a, uint8 b) opcode(MaxUnsigned8);
+import function alias(Max) uint16 MaxU16(uint16 a, uint16 b) opcode(MaxUnsigned16);
+import function alias(Max) uint MaxU32(uint a, uint b) opcode(MaxUnsigned32);
+import function alias(Max) uint64 MaxU64(uint64 a, uint64 b) opcode(MaxUnsigned64);
+import function alias(Max) float MaxF(float a, float b) opcode(MaxFloat);
+import function alias(Max) double MaxD(double a, double b) opcode(MaxDouble);
+
+// min of two values
+import function alias(Min) int8 MinI8(int8 a, int8 b) opcode(MinSigned8);
+import function alias(Min) int16 MinI16(int16 a, int16 b) opcode(MinSigned16);
+import function alias(Min) int MinI32(int a, int b) opcode(MinSigned32);
+import function alias(Min) int64 MinI64(int64 a, int64 b) opcode(MinSigned64);
+import function alias(Min) uint8 MinU8(uint8 a, uint8 b) opcode(MinUnsigned8);
+import function alias(Min) uint16 MinU16(uint16 a, uint16 b) opcode(MinUnsigned16);
+import function alias(Min) uint MinU32(uint a, uint b) opcode(MinUnsigned32);
+import function alias(Min) uint64 MinU64(uint64 a, uint64 b) opcode(MinUnsigned64);
+import function alias(Min) float MinF(float a, float b) opcode(MinFloat);
+import function alias(Min) double MinD(double a, double b) opcode(MinDouble);
+
+// clamp value
+import function alias(Clamp) int8 ClampI8(int8 v, int8 a, int8 b) opcode(ClampSigned8);
+import function alias(Clamp) uint8 ClampU8(uint8 v, uint8 a, uint8 b) opcode(ClampUnsigned8);
+import function alias(Clamp) int16 ClampI16(int16 v, int16 a, int16 b) opcode(ClampSigned16);
+import function alias(Clamp) uint16 ClampU16(uint16 v, uint16 a, uint16 b) opcode(ClampUnsigned16);
+import function alias(Clamp) int ClampI32(int v, int a, int b) opcode(ClampSigned32);
+import function alias(Clamp) uint ClampU32(uint v, uint a, uint b) opcode(ClampUnsigned32);
+import function alias(Clamp) int64 ClampI64(int64 v, int64 a, int64 b) opcode(ClampSigned64);
+import function alias(Clamp) uint64 ClampU64(uint64 v, uint64 a, uint64 b) opcode(ClampUnsigned64);
+import function alias(Clamp) float ClampF(float v, float a, float b) opcode(ClampFloat);
+import function alias(Clamp) float ClampD(float v, float a, float b) opcode(ClampDouble);
+
+// absolute value
+// NOTE: the maximum negative value is not representable as positive one :(, ie. abs(-128) will return -128
+import function alias(Abs) int8 AbsI8(int8 a) opcode(Abs8);
+import function alias(Abs) int16 AbsI16(int16 a) opcode(Abs16);
+import function alias(Abs) int AbsI32(int a) opcode(Abs32);
+import function alias(Abs) int64 AbsI64(int64 a) opcode(Abs64);
+import function alias(Abs) float AbsF(float a) opcode(AbsFloat);
+import function alias(Abs) double AbsD(double a) opcode(AbsDouble);
+
+// sign of value, -1 when negative, 0 when zero, 1 when positive
+import function alias(Sign) int8 SignI8(int8 a) opcode(Sign8);
+import function alias(Sign) int8 SignI16(int16 a) opcode(Sign16);
+import function alias(Sign) int8 SignI32(int a) opcode(Sign32);
+import function alias(Sign) int8 SignI64(int64 a) opcode(Sign64);
+import function alias(Sign) int8 SignF(float a) opcode(SignFloat);
+import function alias(Sign) int8 SignD(double a) opcode(SignDouble);
+
+//--
+
+// lerp
+import function alias(Lerp) float LerpF(float a, float b, float f);
+import function alias(Lerp) double LerpD(double a, double b, double f);
+
+//--
+
+// get random value between zero and one
+import function float RandOne();
+
+// get random value in the given range
+import function alias(RandRange) float RandRangeF(float min, float max);
+
+// get random value in the given range [min, max-1]
+import function alias(RandRange) int RandRangeI(int min, int max);
+
+// get random value in the given range [min, max-1] trying not to select the previous
+import function int RandRangeUnique(int min, int max, int prev);
+
+//--
+
+// sin, angle in radians
+import function float Sin(float a);
+
+// arc sin, returns value in radians
+// NOTE: only values -1 <= a <= 1 are valid
+import function float Asin(float a);
+
+// cosine, angle in radians
+import function float Cos(float a);
+
+// arc cos, returns value in radians
+// NOTE: only values -1 <= a <= 1 are valid
+import function float Acos(float a);
+
+// tangent, angle in radians
+import function float Tan(float a);
+
+// arc targen of y/x, returns value in radians, handles the inf case when x = 0
+import function float Atan(float y, float x);
+
+//--
+
+// calcualte exponential of value
+import function float Exp(float a);
+
+// rise a to power x
+import function float Pow(float a, float x);
+
+// natural log
+// NOTE: negative values will script throw exception
+import function float Ln(float a);
+
+// log2 of value
+// NOTE: negative values will script throw exception
+import function alias(Log2) float Log2F(float a);
+import function alias(Log2) uint Log2U32(uint a);
+import function alias(Log2) uint Log2U64(uint64 a);
+
+// get next power of 2 value
+import function alias(NextPow2) uint NextPow2U32(uint a);
+import function alias(NextPow2) uint64 NextPow2U64(uint64 a);
+
+// log10 of value
+// NOTE: negative values will script throw exception
+import function float Log10(float a);
+
+// hyperbolic sin
+import function float Sinh(float a);
+
+// hyperbolic cos
+import function float Cosh(float a);
+
+// hyperbolic tan
+import function float Tanh(float a);
+
+//--
+ 
+// square root
+import function float Sqrt(float a);
+
+// round to nearest larger whole number
+import function alias(Ceil) float CeilF(float a);
+import function alias(Ceil) double CeilD(double a);
+
+// round to nearest smaller whole number
+import function alias(Floor) float FloorF(float a);
+import function alias(Floor) double FloorD(double a);
+
+// round to nearest whole number
+import function alias(Round) float RoundF(float a);
+import function alias(Round) double RoundD(double a);
+
+// truncate fractional part
+import function alias(Trunc) float TruncF(float a);
+import function alias(Trunc) double TruncD(double a);
+
+
+//---
+// String conversions
+
+cast(10) string (ref Vector2 a)
+{
+    return Format("[x={}, y={}]", a.x, a.y);
+}
+
+cast(10) string (ref Vector3 a)
+{
+    return Format("[x={}, y={}, z={}]", a.x, a.y, a.z);
+}
+
+cast(10) string (ref Vector4 a)
+{
+    return Format("[x={}, y={}, z={}, w={}]", a.x, a.y, a.z, a.w);
+}
+
+cast(10) string (ref Matrix a)
+{
+    return Format("[row0={}, row1={}, row2={}, row3={}]", a.x, a.y, a.z, a.w);
+}
+
+cast(10) string (ref Quat a)
+{
+    return Format("[x={}, y={}, z={}, w={}]", a.x, a.y, a.z, a.w);
+}
+
+cast(10) string (ref Angles a)
+{
+    return Format("[roll={}, pitch={}, yaw={}]", a.roll, a.pitch, a.yaw);
+}

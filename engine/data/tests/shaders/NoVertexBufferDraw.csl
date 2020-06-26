@@ -1,0 +1,45 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+struct VertexPosition
+{
+	vec4 position;
+};
+
+struct VertexColor
+{
+	vec4 color;
+};
+
+descriptor TestParams
+{
+    attribute(layout=VertexPosition) Buffer VertexPositions;
+    attribute(layout=VertexColor) Buffer VertexColors;
+}
+
+//--
+
+export shader SimpleTrianglePS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = VertexPositions[gl_VertexID].position.xyz1;
+		Color = VertexColors[gl_VertexID/3].color.xyz1;
+	}
+}

@@ -1,0 +1,43 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D TextureA;
+    Texture2D TextureB;
+    Texture2D TextureC;
+    Texture2D TextureD;
+}
+
+export shader SimpleTrianglePS
+{
+	in vec2 UV;
+
+	void main()
+	{
+	    float factorB = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.2));
+        float factorC = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.5));
+	    float factorD = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.8));
+
+		vec4 a = lerp(texture(TextureA, UV), texture(TextureD, UV), factorB);
+		vec4 b = lerp(texture(TextureC, UV), texture(TextureB, UV), factorD);
+		gl_Target0 = lerp(a, b, factorC);
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}

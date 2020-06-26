@@ -1,0 +1,32 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+export shader TestVS
+{
+	out vec4 Color;
+	
+	void main()
+	{
+		gl_Position.x = (gl_VertexID & 1) ? -0.5f : 0.5f;
+		gl_Position.y = (gl_VertexID & 2) ? -0.5f : 0.5f;
+		gl_Position.z = 0.5f;
+		gl_Position.w = 1.0f;
+
+		Color.x = (gl_VertexID & 1) ? 0.0f : 1.0f;
+		Color.y = (gl_VertexID & 2) ? 0.0f : 1.0f;
+		Color.z = 0.0f;
+		Color.w = 1.0f;
+	}
+}
+
+export shader TestPS 
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}

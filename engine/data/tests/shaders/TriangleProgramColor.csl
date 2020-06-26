@@ -1,0 +1,38 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+shader TestVS
+{
+	vertex Vertex2D v;
+
+	void main()
+	{
+		gl_Position = v.pos.xy01;
+	}
+}
+
+shader TestPS 
+{
+	const vec3 Color = vec3(0.5f, 0.5f, 0.5f);
+	
+	void main()
+	{
+		gl_Target0 = Color.xyz1;
+	}
+}
+
+program Test
+{
+	vec3 Color = vec3(1,1,1);
+	
+	shader VertexShader = shader<TestVS> {};
+	shader PixelShader = shader<TestPS> { Color = Color };
+}
+
+export Red = program<Test> { Color = vec3(1,0,0) };
+export Green = program<Test> { Color = vec3(0,1,0) };
+export Blue = program<Test> { Color = vec3(0,0,1) };

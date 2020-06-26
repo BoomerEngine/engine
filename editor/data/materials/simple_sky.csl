@@ -1,0 +1,85 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+*
+* Simple material interface
+*
+***/
+
+#include <shaders/common/math.csl>
+#include <shaders/common/camera.csl>
+//#include <shaders/common/lighting.csl>
+#include <shaders/material_common.csl>
+
+/// material data
+material descriptor SimpleSkyMaterialParams
+{
+    ConstantBuffer
+    {
+        float4 SkyColor;
+        float4 SkyHorizonColor;
+        float SkyHorizonVerticalAttenuation;
+        float SkyBrightness;
+        
+        float4 SunColor;
+        float4 SunColorHorizon;
+        float4 SunColorBackHorizon;
+        float SunBrightness;
+        float SunArea;
+        float SunAreaFade;
+    }        
+}        
+
+/// a simple unlit material that returns single color
+shader SimpleSkyMaterial
+{
+    implements Material;
+
+    uniform float4 SkyColor;
+    uniform float4 SkyHorizonColor;
+    uniform float SkyHorizonVerticalAttenuation;
+    uniform float SkyBrightness;
+        
+    uniform float4 SunColor;
+    uniform float4 SunColorHorizon;
+    uniform float4 SunColorBackHorizon;
+    uniform float SunBrightness;
+    uniform float SunArea;
+    uniform float SunAreaFade;
+    
+    override float4 computeNormalColor(const program<VertexAttributesBase> v)
+    {
+        float3 cameraPos = GCamera.getCameraPosition(); 
+        float3 sunDir = normalize(float3(1,1,1));//GLighting.getGlobalLightDirection();
+    
+        float3 worldVec = normalize(v.GetWorldPosition() - cameraPos); // TODO: this normalization probably is not needed
+		float3 worldPos = cameraPos + 1000.0f * worldVec;
+
+		float sunDot_xy = dot(normalize(sunDir.xy),normalize(worldVec.xy));
+		float sunDot_xyz = dot(sunDir.xyz,worldVec.xyz);
+		//return sunDot_xyz.xxx1;
+
+		float3 sunHorizonEffect = lerp(SunColorBackHorizon.xyz, SunColorHorizon.xyz, sunDot_xy * 0.5f + 0.5f);
+        float3 horizonColor = lerp(SkyHorizonColor.xyz, sunHorizonEffect, (1 - worldVec.z * worldVec.z));
+
+		float hor_factor = saturate(1.0 / max( 0.0001, 0.1 + ((worldPos.z + 710.0) / 1000.0) * SkyHorizonVerticalAttenuation ));
+		hor_factor = pow(hor_factor, 2.8);
+		hor_factor = 1 - hor_factor;
+		//return hor_factor;
+
+		float3 colorWithHorizon = lerp(horizonColor, SkyColor.xyz, hor_factor);
+
+		float sunAreaFrac = 1.0f / pow(SunArea, SunAreaFade);
+		float sunEffect = pow(saturate( sunDot_xyz - (1.0f - SunArea)), SunAreaFade) * sunAreaFrac;	
+		return lerp(colorWithHorizon, SunColor.xyz, sunEffect).xyz1;
+	}
+
+    override void configure()
+    {
+        Material.configure();
+        state.params.type = 'SimpleSkyMaterialParams';
+    }
+}
+
+/// implement the material interface
+override const program<Material> GMaterial = program<SimpleSkyMaterial> {};

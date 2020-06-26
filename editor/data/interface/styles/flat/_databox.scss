@@ -1,0 +1,145 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+DataBox
+{
+    min-width: 50em;
+    horizontal-align: expand;
+    //proportion: 100%;
+
+    > EditBox
+    {        
+    	//proportion: 100%;
+    	margin: 2em 2em 2em 2em;
+        horizontal-align: expand;
+        vertical-align: middle;		
+    	background: box(100%,100%,0em,12em,#30303080,#20202000);
+    }
+
+	&.readonly
+	{
+		opacity: 70%;
+	}
+}
+
+DataBoxEnum
+{
+    > ComboBox
+    {
+        //proportion: 100%;
+        margin: 2em 1em 2em 1em;
+		horizontal-align: expand;
+        vertical-align: middle;
+        background: box(100%,100%,0em,12em,#30303080,#20202000);
+        border-width: 0em;
+    }
+}
+
+DataBoxVector
+{
+	min-height: 22em;
+	background: $data-inspector-background;
+
+	DataBoxNumber
+	{
+		vertical-align: expand;
+		margin-left: 5em;
+		margin-right: 5em;
+	}
+
+	TextLabel#X
+	{
+		background: #C82800;
+		horizontal-align: center;
+		vertical-align: expand;
+		width: 20em;
+	}
+
+	TextLabel#Y
+	{
+		background: #68A800;
+		horizontal-align: center;
+		vertical-align: expand;
+		width: 20em;
+	}
+
+	TextLabel#Z
+	{
+		background: #287FEF;
+		horizontal-align: center;
+		vertical-align: expand;
+		width: 20em;
+	}
+
+	TextLabel#W
+	{
+		background: #7E7E7E;
+		horizontal-align: center;
+		vertical-align: expand;
+		width: 20em;
+	}
+}
+
+DataBoxResource
+{
+    VSizer
+    {
+        vertical-align: middle;
+        
+        TextLabel#FileName
+        {
+            font-size: 18em;
+            margin-right: 10em;
+            margin-left: 10em;
+
+            &.missing
+            {
+                color: #FF8080;
+            }
+        }
+
+        HSizer#ActionButtons
+        {
+            margin-left: 10em;
+            margin-top: 10em;
+        }
+    }
+}
+
+TextLabel#FileName
+{
+	margin: 0em 2em 0em 2em;
+	padding: 2em 2em 2em 2em;
+	background: #333333;
+	horizontal-align: expand;
+	font-family: $code-font;
+	font-size: $code-font-size;
+	color: #FFFFAA;
+	
+	&.missing
+	{
+		color: #FF8888;
+	}
+}
+
+DataBoxColorPreview {
+	background: #888F;
+	horizontal-align: expand;
+	vertical-align: middle;
+	border-width: 1em;
+	border-color: color.mix($text-color, $window-background, 50%);
+	border-radius: 3em;
+	height: 18em;
+}
+
+ColorPickerLSBox {
+	border-width: 1em;
+	border-color: color.mix($text-color, $window-background, 50%);
+}
+
+ColorPickerHueBar {
+	border-width: 1em;
+	border-color: color.mix($text-color, $window-background, 50%);
+}

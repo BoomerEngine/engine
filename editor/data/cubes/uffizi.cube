@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="yes"?>
+<document>
+    <face side="-x" file="uffizi-PX.exr"/>
+    <face side="+x" file="uffizi-NX.exr"/>
+    <face side="+y" file="uffizi-PY.exr"/>
+    <face side="-y" file="uffizi-NY.exr"/>
+    <face side="+z" file="uffizi-PZ.exr"/>
+    <face side="-z" file="uffizi-NZ.exr"/>
+</document>

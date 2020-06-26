@@ -1,0 +1,49 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+struct TestElement
+{
+	float size;
+	vec4 color;
+};
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+    	float SizeScale;
+    	TestElement[] Elements;
+    }
+}
+
+//--
+
+export shader SimpleTrianglePS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		gl_PointSize = Elements[gl_VertexID].size * SizeScale;
+		Color = Elements[gl_VertexID].color;
+	}
+}

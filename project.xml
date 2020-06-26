@@ -1,0 +1,30 @@
+<project>
+
+  <!-- project informations -->
+  <name>BoomerEngine</name>
+  <description>Main BoomerEngine project</description>
+  <author>Tomasz "Rex Dex" Jonarski</author>
+  <license>LGPL v3</license>
+
+  <!-- main engine module -->
+  <module>engine</module>
+
+  <!-- editor module -->
+  <module>editor</module>
+  
+  <!-- additional modules this projects uses -->
+  <module>modules/opengl4</module>
+  <module>modules/fbx</module>
+  <module>modules/wavefront</module>
+  <module>modules/ui</module>
+  <module>modules/physx</module>
+  <module>modules/game</module>
+  
+  <!-- example projects -->
+  <module>modules/examples</module>
+
+  <!-- TEMPSHIT! -->
+  <module>modules/hl2</module>
+  <!-- module>modules/scene</module-->
+
+</project>

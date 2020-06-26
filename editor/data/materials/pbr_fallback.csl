@@ -1,0 +1,110 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+*
+* Template for HL2 interop
+*
+***/
+
+#include <shaders/materials/material_lit.csl>
+#include <shaders/common/pbr.csl>
+#include <shaders/common/lighting_pbr.csl>
+
+/// material data
+material descriptor PhongMaterialParams
+{
+    ConstantBuffer Data
+    {
+        float MaskThreshold;
+        name MaskMode;
+        float SpecularPower;
+        float4 DiffuseColor;
+        float4 EmissiveColor;
+    }
+    
+    Texture2D DiffuseMap;
+    Texture2D NormalMap;
+    Texture2D SpecularMap;
+    Texture2D EmissiveMap;    
+    Texture2D AmbientOcclusionMap;
+    Texture2D MaskMap;
+}        
+
+/// a simple unlit material that returns single color
+shader Material
+{
+	float3 UnpackWorldNormalFromTangentSpaceTexture(program<VertexAttributesBase> v, float3 tangentNormalTexture)
+    {
+        // unpack to -1,1 range
+        float3 unpackedNormal = 2.0f * tangentNormalTexture - 1.0f;
+
+        // get tangent space at vertex
+        float3 n, t, b;
+        v.GetWorldTangentSpace(n, t, b);
+
+        // apply tangent space
+        float3 worldNormal = t * unpackedNormal.x;// * NormalScale;
+        worldNormal += b * unpackedNormal.y;// * NormalScale;
+        worldNormal += n * unpackedNormal.z;
+		return normalize(worldNormal);
+	}
+	
+	permutation bool FLAG_MASKED;
+
+    float computeMaskAlpha(float2 uv)
+    {
+        if (FLAG_MASKED)
+        {
+            float maskDefault = texture(PhongMaterialParams.DiffuseMap, uv).a;
+            float maskMask = texture(PhongMaterialParams.MaskMap, uv).r;
+
+            if (PhongMaterialParams.Data.MaskMode == 'AlphaFromDefaultMap')
+                return maskDefault;
+            else if (PhongMaterialParams.Data.MaskMode == 'AlphaFromMaskMap')
+                return maskMask; 
+            else if (PhongMaterialParams.Data.MaskMode == 'MultiplyDefaultAndMask')
+                return maskDefault * maskMask;
+        }
+        else
+        {
+            return 1.0f;
+        }
+    }
+
+    void writeDepth(program<VertexAttributesBase> v)
+    {
+        if (FLAG_MASKED)
+        {
+            float alpha = computeMaskAlpha(v.GetUV());
+            if (alpha < PhongMaterialParams.Data.MaskThreshold)
+                discard;
+        }
+    }
+	
+	void computePixelFragment(program<VertexAttributesBase> v, out PixelFragment p)
+	{
+        // compute normal
+        float2 uv = v.GetUV();
+        float3 tangentSpaceNormal = texture(PhongMaterialParams.NormalMap, uv).xyz;
+        p.WorldNormal = UnpackWorldNormalFromTangentSpaceTexture(v, tangentSpaceNormal);
+        
+        // use the specularity
+        p.Specularity = texture(PhongMaterialParams.SpecularMap, uv).xyz;
+        p.UseSpeculairtyAsF0 = 1;
+        p.Roughness = 0.7f;
+        
+        // calculate params
+        p.Metalic = max(p.Specularity.x, max(p.Specularity.y, p.Specularity.z));
+    
+		// setup material attributes 
+        p.BaseColor = pow(texture(PhongMaterialParams.DiffuseMap, uv).xyz, 2.2f);// * DiffuseColor.xyz;
+        p.EmissiveColor = texture(PhongMaterialParams.EmissiveMap, uv).xyz * PhongMaterialParams.Data.EmissiveColor.xyz;
+        p.AmbientOcclusion = texture(PhongMaterialParams.AmbientOcclusionMap, uv).x;
+	}	
+    
+    float3 getMaterialTypeColor()
+    {
+        return float3(0.0f, 1.0f, 0.5f);
+    }
+}
+

@@ -1,0 +1,417 @@
+using Core;
+
+//----
+
+/// type of the input event
+import enum InputEventType alias 'base::input::EventType'
+{
+    None,
+    Key,
+    Char,
+    Axis,
+    MouseClick,
+    MouseMove,
+    MouseCaptureLost,
+    DragDrop,
+};
+
+/// input key code value
+import enum InputKey alias 'base::input::KeyCode'
+{
+    KEY_INVALID,
+
+    /// general keys
+    KEY_BACK,
+    KEY_TAB,
+    KEY_CLEAR,
+    KEY_RETURN,
+    KEY_PAUSE,
+    KEY_CAPITAL,
+    KEY_ESCAPE,
+    KEY_CONVERT,
+    KEY_NONCONVERT,
+    KEY_ACCEPT,
+    KEY_MODECHANGE,
+    KEY_SPACE,
+    KEY_PRIOR,
+    KEY_NEXT,
+    KEY_END,
+    KEY_HOME,
+    KEY_LEFT,
+    KEY_UP,
+    KEY_RIGHT,
+    KEY_DOWN,
+    KEY_SELECT,
+    KEY_PRINT,
+    KEY_SNAPSHOT,
+    KEY_INSERT,
+    KEY_DELETE,
+    KEY_HELP,
+
+    // numbers
+    KEY_0,
+    KEY_1,
+    KEY_2,
+    KEY_3,
+    KEY_4,
+    KEY_5,
+    KEY_6,
+    KEY_7,
+    KEY_8,
+    KEY_9,
+
+    // letters
+    KEY_A,
+    KEY_B,
+    KEY_C,
+    KEY_D,
+    KEY_E,
+    KEY_F,
+    KEY_G,
+    KEY_H,
+    KEY_I,
+    KEY_J,
+    KEY_K,
+    KEY_L,
+    KEY_M,
+    KEY_N,
+    KEY_O,
+    KEY_P,
+    KEY_Q,
+    KEY_R,
+    KEY_S,
+    KEY_T,
+    KEY_U,
+    KEY_V,
+    KEY_W,
+    KEY_X,
+    KEY_Y,
+    KEY_Z,
+    KEY_LWIN,
+    KEY_RWIN,
+    KEY_APPS,
+    KEY_SLEEP,
+
+    KEY_NUMPAD0,
+    KEY_NUMPAD1,
+    KEY_NUMPAD2,
+    KEY_NUMPAD3,
+    KEY_NUMPAD4,
+    KEY_NUMPAD5,
+    KEY_NUMPAD6,
+    KEY_NUMPAD7,
+    KEY_NUMPAD8,
+    KEY_NUMPAD9,
+    KEY_NUMPAD_MULTIPLY,
+    KEY_NUMPAD_ADD,
+    KEY_NUMPAD_SEPARATOR,
+    KEY_NUMPAD_SUBTRACT,
+    KEY_NUMPAD_DECIMAL,
+    KEY_NUMPAD_DIVIDE,
+
+    KEY_F1,
+    KEY_F2,
+    KEY_F3,
+    KEY_F4,
+    KEY_F5,
+    KEY_F6,
+    KEY_F7,
+    KEY_F8,
+    KEY_F9,
+    KEY_F10,
+    KEY_F11,
+    KEY_F12,
+    KEY_F13,
+    KEY_F14,
+    KEY_F15,
+    KEY_F16,
+    KEY_F17,
+    KEY_F18,
+    KEY_F19,
+    KEY_F20,
+    KEY_F21,
+    KEY_F22,
+    KEY_F23,
+    KEY_F24,
+
+    KEY_NAVIGATION_VIEW,
+    KEY_NAVIGATION_MENU,
+    KEY_NAVIGATION_UP,
+    KEY_NAVIGATION_DOWN,
+    KEY_NAVIGATION_LEFT,
+    KEY_NAVIGATION_RIGHT,
+    KEY_NAVIGATION_ACCEPT,
+    KEY_NAVIGATION_CANCEL,
+    KEY_NUMLOCK,
+    KEY_SCROLL,
+
+    /// function keys
+    KEY_LEFT_SHIFT,
+    KEY_RIGHT_SHIFT,
+    KEY_LEFT_CTRL,
+    KEY_RIGHT_CTRL,
+    KEY_LEFT_ALT,
+    KEY_RIGHT_ALT,
+
+    /// additional mouse keys
+    KEY_MOUSE0,
+    KEY_MOUSE1,
+    KEY_MOUSE2,
+    KEY_MOUSE3,
+    KEY_MOUSE4,
+    KEY_MOUSE5,
+    KEY_MOUSE6,
+    KEY_MOUSE7,
+    KEY_MOUSE8,
+    KEY_MOUSE9,
+    KEY_MOUSE10,
+    KEY_MOUSE11,
+    KEY_MOUSE12,
+    KEY_MOUSE13,
+    KEY_MOUSE14,
+    KEY_MOUSE15,
+
+    // additional keys
+    KEY_MINUS,
+    KEY_EQUAL,
+    KEY_LBRACKET,
+    KEY_RBRACKET,
+    KEY_SEMICOLON,
+    KEY_APOSTROPHE,
+    KEY_COMMA,
+    KEY_PERIOD,
+    KEY_SLASH,
+    KEY_BACKSLASH,
+    KEY_GRAVE,
+
+   // KEY_MAX,
+};
+
+// numerical axis 
+import enum InputAxisCode alias 'base::input::AxisCode'
+{
+    AXIS_MOUSEX,
+    AXIS_MOUSEY,
+    AXIS_MOUSEZ,
+};
+
+// type of mouse event
+import enum InputMouseEventType alias 'base::input::MouseEventType'
+{
+	Click,
+	DoubleClick,
+	Release,
+}
+
+// type of input device producing event
+import enum InputDeviceType alias 'base::input::DeviceType'
+{
+	Invalid,
+	Unknown,
+	Keyboard,
+	Mouse,
+	XboxPad,
+	PS4Pad,
+	GenericPad,
+}
+
+//----
+
+// common data for all input events
+import struct InputBaseEvent alias 'base::input::BaseEvent'
+{
+	// type of the event
+	import var InputEventType eventType;
+
+	// type of device that produced this event
+	import var InputDeviceType deviceType;
+
+	// ID of the device that produced this event, usually low value (0-3 etc)
+	// NOTE: this is used as a primary source or PlayerID in case multiple players want to play the same game
+	import var uint8 deviceId;
+
+	// ID of the system window this event originated from
+	// NOTE: hope this is never needed :)
+	import var uint16 windowId;
+
+	// System timestamp when the event was generated
+	// NOTE: can be a sub-frame time, we try to keep this as exact as possible
+	// NOTE: for some games you can for example look at the system time of Release vs Press events to get the EXACT time the key was pressed, regardless of the frame time
+	//import var SystemTime timeStamp;
+}
+
+// flags for global button states
+import struct InputKeyFlags alias 'base::input::BaseKeyFlags'
+{
+	/// is the left button pressed right now ?
+    import function bool IsLeftDown();
+
+    /// is the middle button pressed NOW ?
+    import function bool IsMidDown();
+
+    /// is the right button pressed NOW ?
+    import function bool IsRightDown();
+
+	/// is the alt key pressed during this mouse event ?
+    import function bool IsAltDown();
+
+    /// is the shift key pressed during this mouse event ?
+    import function bool IsShiftDown();
+
+    /// is the control key pressed during this mouse event ?
+    import function bool IsCtrlDown();
+
+	/// is the left shift down
+	import function bool IsLeftShiftDown();
+
+	/// is the left alt down
+	import function bool IsLeftAltDown();
+
+	/// is the left control down
+	import function bool IsLeftControlDown();
+
+	/// is the right shift down
+	import function bool IsRightShiftDown();
+
+	/// is the right alt down
+	import function bool IsRightAltDown();
+
+	/// is the right control down
+	import function bool IsRightControlDown();
+}
+
+// mouse click input event
+import struct InputMouseClickEvent alias 'base::input::MouseClickEvent'
+{
+	// base event settings
+	import var InputBaseEvent base;
+
+	// mouse key id
+	import var InputKey key;
+
+	// flags of pressed keys
+	import var InputKeyFlags keyMask;
+
+	// type of event (release, click, etc)
+	import var InputMouseEventType clickType;
+
+	// where in the window did the event happen
+	import var Point windowPos;
+
+	// where on the user's desktop the event happen
+	import var Point absolutePos;
+
+	//--
+
+    /// is the left button just clicked ?
+    import function bool LeftClicked();
+
+    /// is the left button just double clicked ?
+    import function bool LeftDoubleClicked();
+
+    /// is the left button just released ?
+    import function bool LeftReleased();
+
+    /// is the middle button just clicked ?
+    import function bool MidClicked();
+
+    /// is the middle button just released ?
+    import function bool MidReleased();
+
+    /// is the right button just clicked ?
+    import function bool RightClicked();
+
+    /// is the right button just released ?
+    import function bool RightReleased();
+}
+
+// mouse movement
+import struct InputMouseMoveEvent alias 'base::input::MouseMovementEvent'
+{
+	// base event settings
+	import var InputBaseEvent base;
+
+	// flags of pressed keys
+	import var InputKeyFlags keyMask;
+
+	// where in the window did the event happen
+	import var Point windowPos;
+
+	// where on the user's desktop the event happen
+	import var Point absolutePos;
+
+	// is the mouse captured during movement
+	import var bool captured;
+
+	// delta movement as a difference from previous state
+	import var Vector3 delta;
+}
+
+// typing event
+import struct InputCharEvent alias 'base::input::CharEvent'
+{
+	// base event settings
+	import var InputBaseEvent base;
+
+	// flags of pressed keys
+	import var InputKeyFlags keyMask;
+
+	// raw scan code of pressed key
+	import var uint16 scanCode;
+
+	// is this a repeated key press (auto repeat function)
+	import var bool repeated;
+
+	//--
+
+	// get the printable text presentation of this char
+	import function string GetPrintableText();
+}
+
+// key event
+import struct InputKeyEvent alias 'base::input::KeyEvent'
+{
+	// base event settings
+	import var InputBaseEvent base;
+
+	// flags of pressed keys
+	import var InputKeyFlags keyMask;
+
+	// code of presed key
+	import var InputKey key;
+
+	// was the key pressed
+	import var bool pressed;
+
+	// was the key auto repeated
+	import var bool repeated;
+
+	//--
+
+	/// was the key just pressed ? NOTE: returns false if it's a repeat
+    import function bool Pressed();
+
+    /// was the key pressed (or repeated)
+    import function bool PressedOrRepeated();
+
+    /// was the key just released ? NOTE: returns false if it's a repeat
+    import function bool Released();
+
+    /// is the key down ?
+    import function bool IsDown();
+}
+
+// axis event
+import struct InputAxisEvent alias 'base::input::AxisEvent'
+{
+	// base event settings
+	import var InputBaseEvent base;
+
+	// changed axis
+	import var InputAxisCode axis;
+
+	// displaement of axis from neutral position, usually in -1 to 1 range
+    import var float displacement;
+}
+
+//---

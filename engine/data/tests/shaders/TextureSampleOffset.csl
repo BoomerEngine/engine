@@ -1,0 +1,46 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D TestTexture;
+}
+
+export shader SimpleTrianglePS
+{
+	in vec2 UV;
+
+    float Lum(vec4 c)
+    {
+        return dot(c.xyz, vec3(0.2, 0.7, 0.1));
+    }
+
+	void main()
+	{
+		float c = Lum(texture(TestTexture, UV));
+		c += Lum(textureOffset(TestTexture, UV, vec2(-1,-1))) * -2.0f;
+		c += Lum(textureOffset(TestTexture, UV, vec2(-1,0))) * -1.0f;
+		c += Lum(textureOffset(TestTexture, UV, vec2(0,-1))) * -1.0f;
+		c += Lum(textureOffset(TestTexture, UV, vec2(1,1))) * 2.0f;
+		c += Lum(textureOffset(TestTexture, UV, vec2(1,0))) * 1.0f;
+		c += Lum(textureOffset(TestTexture, UV, vec2(0,1))) * 1.0f;
+		gl_Target0 = vec4(c,c,c,1);
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}

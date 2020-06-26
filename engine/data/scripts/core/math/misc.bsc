@@ -1,0 +1,27 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Misc functions
+
+//-------
+
+// general log function, get's compiled out in the release code
+import function Log(ref string txt, ref string a="", ref string b="", ref string c="", ref string d="", ref string e="");
+
+// format string
+import function string Format(ref string txt, ref string a="", ref string b="", ref string c="", ref string d="", ref string e="");
+
+// get left part of the string
+import function string StrLeft(ref string txt, int numChars=-1);
+
+// get right part of the string
+import function string StrRight(ref string txt, int numChars=-1);
+
+// get sub string
+import function string StrSub(ref string txt, int from, int numChars=-1);
+
+// get string length
+import function int StrLen(ref string txt);
+
+//-----
+

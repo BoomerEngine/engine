@@ -1,0 +1,25 @@
+<?xml version="1.0" standalone="yes"?><document >
+<object class="scene::Prefab" >
+<property name="nodes" >
+<element >
+<ref id="[0][1]" />
+</element>
+</property>
+<object class="scene::PointLightNodeTemplate" id="[0][1]" >
+<property name="name" >PointLight</property>
+<property name="relativePosition" />
+<property name="relativeRotation" />
+<property name="relativeScale" >
+<property name="x" >1.0000</property>
+<property name="y" >1.0000</property>
+<property name="z" >1.0000</property>
+</property>
+<property name="customColor" >
+<property name="r" >255</property>
+<property name="g" >255</property>
+<property name="b" >255</property>
+<property name="a" >255</property>
+</property>
+</object>
+</object>
+</document>

@@ -1,0 +1,30 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+
+#include "AtomicTextureIncrement.csl"
+
+//--
+
+shader PreviewPS
+{
+	float DrawScale()
+	{
+		return 3000.0f
+	}
+}
+
+shader GeneratePS
+{
+	void runtAtomicOp()
+	{
+		atomicAdd(TextureData[gl_FragCoord.xy/2], TriangleID);
+	}
+}
+
+
+//--

@@ -1,0 +1,217 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+descriptor ComputeHistogramParams
+{
+    ConstantBuffer
+    {
+        uint ImageWidth;
+        uint ImageHeight;
+		uint ComponentType;
+		uint NumBuckets;
+		float VerticalScale;
+    }
+
+    attribute(uav, format=rgba8) Texture2D InputImage;
+	attribute(uav, format=r32i) Buffer MinMaxBuffer;
+	attribute(coherent, uav, format=r32i) Buffer HistogramBuffer;
+}
+
+shader HistogramCommon
+{
+	float GetHistogramValue()
+	{
+	    vec3 color = InputImage[gl_GlobalInvocationID.xy].xyz;
+
+		if (ComponentType == 0)
+			return color.x;
+		else if (ComponentType == 1)
+			return color.y;
+		else if (ComponentType == 2)
+			return color.z;
+		else
+			return dot(color.xyz, vec3(0.2, 0.7, 0.1));    
+	}
+
+	uint BucketIndex(float val, uint count)
+	{
+		float minValue = 0.0f;//intBitsToFloat(MinMaxBuffer[0]);
+		float maxValue = 1.0f;//intBitsToFloat(MinMaxBuffer[1]); 
+
+		if (maxValue <= minValue)
+			return 0;
+
+		float b = ((val - minValue) / (maxValue - minValue)) * (float)(count-1);
+		int bi = round(b);
+		if (bi < 0)
+			bi = 0;
+		else if (bi > (count-1))
+			bi = count - 1;
+		return bi;
+	}
+}
+
+shader ComputeMinMaxCS : HistogramCommon
+{	
+	const uint BlockSideSize = 8;
+    const uint BlockSize = 64;
+    const uint BlockSizeLog2 = 6;
+
+	shared float[64] MaxValues;
+    shared float[64] MinValues;
+
+    attribute(local_size_x=8, local_size_y=8)
+	void main()
+	{
+		float colorVal = GetHistogramValue();
+	    MaxValues[gl_LocalInvocationIndex % BlockSize] = colorVal;
+        MinValues[gl_LocalInvocationIndex % BlockSize] = colorVal;
+
+		// clear buffer
+		if (gl_GlobalInvocationID.x == 0 && gl_GlobalInvocationID.y == 0)
+		{
+			MinMaxBuffer[0] = floatBitsToInt(100000.0f);
+			MinMaxBuffer[1] = floatBitsToInt(-100000.0f);
+			MinMaxBuffer[2] = 0;
+		}
+		groupMemoryBarrier();
+
+		// reduction
+        for (uint level=1; level<BlockSizeLog2; level += 1)
+        {
+            uint dist = 1 << level; // 2, 4, etc
+            groupMemoryBarrier();
+
+            if (gl_LocalInvocationIndex < (BlockSize / dist))
+            {
+                MaxValues[gl_LocalInvocationIndex] = max(MaxValues[gl_LocalInvocationIndex], MaxValues[gl_LocalInvocationIndex + dist]);
+                MinValues[gl_LocalInvocationIndex] = min(MinValues[gl_LocalInvocationIndex], MinValues[gl_LocalInvocationIndex + dist]);
+            }
+        }
+
+        // write the results
+	    if ((gl_GlobalInvocationID.x & 7) == 0 && (gl_GlobalInvocationID.y & 7) == 0)
+        {
+			atomicMin(MinMaxBuffer[0], floatBitsToInt(MinValues[0]));
+			atomicMax(MinMaxBuffer[1], floatBitsToInt(MaxValues[1]));
+        }
+
+		// clear
+		{
+			uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * ImageWidth);
+			if (index < NumBuckets)
+				HistogramBuffer[index] = 0;
+		}
+	}
+}
+
+//---
+
+shader ComputeHistogramCS : HistogramCommon
+{	
+    attribute(local_size_x=8, local_size_y=8)
+	void main()
+	{
+		if (gl_GlobalInvocationID.x < ImageWidth && gl_GlobalInvocationID.y < ImageHeight)
+		{
+			float colorVal = GetHistogramValue();
+			uint bucket = BucketIndex(colorVal, NumBuckets);
+			atomicIncrement(HistogramBuffer[bucket]);
+		}
+	}
+}
+
+//---
+
+shader ComputeHistogramMaxCS
+{	
+	shared int MaxValue;
+
+    attribute(local_size_x=64, local_size_y=1)
+	void main()
+	{
+		uint index = gl_GlobalInvocationID.x;
+
+		// clear
+		if (gl_LocalInvocationID.x == 0)
+			MaxValue = 0;
+		memoryBarrierShared();
+
+		// max
+		if (index < NumBuckets)
+			atomicMax(MaxValue, HistogramBuffer[index]);
+		memoryBarrierShared();
+
+		// write
+		if (gl_LocalInvocationID.x == 0)
+			atomicMax(MinMaxBuffer[2], MaxValue);
+	}
+}
+
+//---
+
+shader DrawVS
+{
+	void main()
+	{
+		gl_Position.x = -0.8f + 1.6 * (gl_VertexID / (float)NumBuckets);
+		
+		uint val = HistogramBuffer[gl_VertexID];
+		uint maxVal = max(1, MinMaxBuffer[2]);
+
+		gl_Position.y = 0.8f - ((val / (float)maxVal) * VerticalScale);
+		gl_Position.z = 0.5f;
+		gl_Position.w = 1.0f;
+	}
+}
+
+shader DrawPS
+{
+	void main()
+	{
+		if (ComponentType == 0)
+			gl_Target0 = vec4(1,0,0,1);
+		else if (ComponentType == 1)
+			gl_Target0 = vec4(0,1,0,1);
+		else if (ComponentType == 2)
+			gl_Target0 = vec4(0,0,1,1);
+		else
+			gl_Target0 = vec4(1,1,1,1);
+	}
+}
+
+//---
+
+program ComputeMinMax
+{	
+	shader ComputeShader = shader<ComputeMinMaxCS> {};
+}
+
+program ComputeHistogram
+{	
+	shader ComputeShader = shader<ComputeHistogramCS> {};
+}
+
+program ComputeHistogramMax
+{	
+	shader ComputeShader = shader<ComputeHistogramMaxCS> {};
+}
+
+program DrawHistogram
+{	
+	shader VertexShader = shader<DrawVS> {};
+	shader PixelShader = shader<DrawPS> {};
+}
+
+export ComputeMinMax = program<ComputeMinMax>{};
+export ComputeHistogram = program<ComputeHistogram>{};
+export ComputeHistogramMax = program<ComputeHistogramMax>{};
+export DrawHistogram = program<DrawHistogram>{};
+
+//---

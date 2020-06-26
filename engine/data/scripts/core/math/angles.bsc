@@ -1,0 +1,67 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+// simple Euler angles (pitch, yaw, roll)
+import struct Angles alias 'base::Angles'
+{
+	// Order or rotations:
+	//   Roll around X axis (side to side)
+	//   Pitch around Y axis (up/down)
+	//   Yaw around Z axis (around)
+	import var float yaw;
+	import var float pitch;
+    import var float roll;
+	
+	// get X (forward) axis for this rotation
+	import function Vector3 ForwardVector();
+
+	// get Y (side) axis for this rotation
+    import function Vector3 SideVector();
+
+    // get Z (up) axis for this rotation
+    import function Vector3 UpVector();
+
+	// convert to matrix
+	import function Matrix ToMatrix();
+
+	// convert to quaternion
+    import function Quat ToQuat();
+
+    // get the XYZ axes
+    import function ToAxes(out Vector3 forward, out Vector3 side, out Vector3 up);
+
+	// calculate shortest rotation to other rotation
+	import function Angles Distance(ref Angles other);
+
+	// normalize rotation - limit angles to -360 to 360 range
+	import function Normalize();
+
+	// get normalized rotation - limit angles to -360 to 360 range
+    import function Angles Normalized();
+
+	//--
+
+	// calculate random rotation
+	import static function Angles Random(float angleMin, float angleMax, bool withRoll = false);
+
+    // "interpolate" towards given rotation
+    import static function Angles Approach(ref Angles a, ref Angles b, float degress);
+}
+
+// math
+import operator- Angles (ref Angles b);
+import operator+ Angles (ref Angles a, ref Angles b);
+import operator- Angles (ref Angles a, ref Angles b);
+import operator* Angles (ref Angles a, float b);
+import operator/ Angles (ref Angles a, float b);
+
+import operator+= Angles (out Angles a, ref Angles b);
+import operator-= Angles (out Angles a, ref Angles b);
+import operator*= Angles (out Angles a, float b);
+import operator/= Angles (out Angles a, float b);
+
+import operator| float (ref Angles a, ref Angles b); // dot product
+

@@ -1,0 +1,70 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+ColumnHeaderBar
+{
+   background: image("images/diagonals_bleak.png", wrap, #454545);
+//   background: linear(90, #313335, #3C3F41);
+   border-color: #303030;
+   border-bottom: 2em;
+   height: 24em;   
+}
+
+ColumnHeader
+{
+	margin: 0em 0em 0em 0em;
+	vertical-align: expand;
+	border-color: #303030;
+	border-right: 1em;
+	min-width: 30em;
+
+	> Button
+	{
+	    //proportion: 100%;
+        vertical-align: expand;
+		horizontal-align: expand;
+		
+		> #Content
+		{
+	        vertical-align: middle;	
+ 			horizontal-align: center;		
+            //proportion: 100%;
+
+		    > TextLabel
+            {
+	            vertical-align: middle;	
+			    image-valign: middle;
+			    image-halign: center;
+			    color: #FFFFFF;
+
+			    &#SortingIcon
+			    {
+				    horizontal-align: right;
+				    margin-left: 5em;
+
+				    &.ascending
+				    {
+					    font-family: $icon-font;
+				        	font-size: 12em;
+					    content: "&#f0de;";
+				    }
+
+				    &.descending
+				    {
+					    font-family: $icon-font;
+				        	font-size: 12em;
+					    content: "&#f0dd;";
+				    }
+			    }
+		    }
+        }
+
+	  	&:hover
+		{
+			background: #2D61C2;
+		}
+	}
+}
+

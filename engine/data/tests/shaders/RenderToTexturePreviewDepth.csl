@@ -1,0 +1,38 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D PreviewTexture;
+}
+
+//---
+
+export shader PreviewPS
+{
+	in vec2 UV;
+	
+	void main()
+	{
+  	    gl_Target0 = frac(texture(PreviewTexture, UV).xxx * 100.2f).xxx1;
+	}
+}
+
+export shader PreviewVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}

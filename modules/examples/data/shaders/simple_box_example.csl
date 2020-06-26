@@ -1,0 +1,69 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+// vertex layout for our vertex
+attribute(packing=vertex) struct BoxVertex
+{
+    attribute(offset=0) vec3 pos;
+    attribute(offset=12, format=rgba8) vec4 color;
+}
+
+//---
+
+descriptor SceneParams
+{
+    ConstantBuffer
+    {
+        mat4 WorldToScreen;
+    }
+}
+
+descriptor ObjectParams
+{
+    ConstantBuffer
+    {
+        mat4 LocalToWorld;
+    }
+}
+
+//---
+
+// vertex shader for simple mesh rendering
+export shader DrawVS
+{
+	// declare input vertex stream
+	vertex BoxVertex v;
+
+	// outputs we want to pass to pixel shader
+	out vec3 WorldPosition;
+	out vec3 Color;
+
+	void main()
+	{
+		WorldPosition = (LocalToWorld * v.pos.xyz1).xyz;
+		gl_Position = WorldToScreen * WorldPosition.xyz1;
+
+		#if FLIP_Y
+			gl_Position.y = -gl_Position.y;
+		#endif
+
+		Color = v.color.xyz;
+	}
+}
+
+// pixel shader for simple box rendering
+export shader DrawPS
+{
+	in vec3 Color;
+
+	void main()
+	{
+	    gl_Target0 = Color.xyz1;
+	}
+}
+
+//---

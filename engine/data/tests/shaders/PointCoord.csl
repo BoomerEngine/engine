@@ -1,0 +1,25 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+export shader SimpleTrianglePS
+{
+	void main()
+	{
+		gl_Target0 = gl_PointCoord.xy01;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		gl_PointSize = v.uv.x;
+	}
+}

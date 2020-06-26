@@ -1,0 +1,9 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+#define NUM_SAMPLES 16
+#include "SampleMaskGenerate0.csl"

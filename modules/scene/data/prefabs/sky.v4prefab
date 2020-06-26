@@ -1,0 +1,83 @@
+document tech="Boomer Engine" version=1 writer=rexdex@beast
+  class=scene::Prefab
+    nodes
+      class=scene::EntityNodeTemplate name=Sky
+        localTemplate class=scene::entity::EntityTemplate
+          componentTemplates
+            class=scene::entity::ComponentTemplate name="Sky dome"
+              componentClass game::sky::SkyDomeComponent
+            class=scene::entity::ComponentTemplate name="Time of Day"
+              parameters
+                name=realMinutesPerGameDay
+                  value type=Float value=4.000000
+                name=timeOfDay
+                  value type=Float value=6.000000
+              componentClass game::TimeOfDayComponent
+            class=scene::entity::ComponentTemplate name=Mesh
+              parameters
+                name=mesh
+                  value type=async<engine::mesh::Mesh>
+                    value path=meshes/teapot.obj class=engine::mesh::Mesh async=true
+                name=castShadows
+                  value type=Bool value=true
+                name=receiveShadows
+                  value type=Bool value=true
+                name=relativePosition
+                  value type=base::Vector3
+                    value z=1.000000
+              componentClass scene::entity::MeshComponent
+      class=scene::EntityNodeTemplate name=Sun
+        localTemplate class=scene::entity::EntityTemplate
+          componentTemplates
+            class=scene::entity::ComponentTemplate name=Sun
+              parameters
+                name=raiseTime
+                  value type=Float value=6.000000
+                name=setTime
+                  value type=Float value=22.000000
+                name=raiseDirection
+                  value type=Float value=35.000000
+                name=setDirection
+                  value type=Float value=207.000000
+                name=noonHeight
+                  value type=Float value=45.000000
+                name=horizonHeight
+                  value type=Float value=0.000000
+                name=lightBrightness
+                  value type=Float value=3.000000
+                name=diskSize
+                  value type=Float value=0.530000
+              componentClass game::sky::SkyBodyComponent
+            class=scene::entity::ComponentTemplate name=Mesh
+              parameters
+                name=mesh
+                  value type=async<engine::mesh::Mesh>
+                    value path=meshes/box.obj class=engine::mesh::Mesh async=true
+                name=relativePosition
+                  value type=base::Vector3
+                    value
+                name=receiveShadows
+                  value type=Bool value=true
+              componentClass scene::entity::MeshComponent
+      class=scene::EntityNodeTemplate name=Moon
+        localTemplate class=scene::entity::EntityTemplate
+          componentTemplates
+            class=scene::entity::ComponentTemplate name=Moon
+              parameters
+                name=raiseTime
+                  value type=Float value=23.000000
+                name=setTime
+                  value type=Float value=5.500000
+                name=raiseDirection
+                  value type=Float value=190.000000
+                name=setDirection
+                  value type=Float value=410.000000
+                name=noonHeight
+                  value type=Float value=25.000000
+                name=horizonHeight
+                  value type=Float value=0.000000
+                name=lightBrightness
+                  value type=Float value=1.000000
+                name=diskSize
+                  value type=Float value=0.530000
+              componentClass game::sky::SkyBodyComponent

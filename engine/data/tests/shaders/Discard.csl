@@ -1,0 +1,44 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        vec2 Resolution;
+    }
+}
+
+//--
+
+export shader TestVS
+{
+	vertex Simple3DVertex v;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+	}
+}
+
+export shader TestPS
+{
+	void main()
+	{
+		vec2 uv = gl_FragCoord.xy / Resolution;
+
+		float d = length(uv - vec2(0.5f, 0.5f));
+		if (d > 0.4f || d < 0.1f)
+		    discard;
+
+		gl_Target0 = uv.xy01;
+	}
+}
+
+//--

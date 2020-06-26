@@ -1,0 +1,43 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    attribute(dimCube) Texture TestTexture;
+}
+
+export shader ErrorTrianglePS
+{
+	in vec2 UV;
+
+	void main()
+	{
+	    float phi = 2.0f * PI * UV.x;
+	    float theta = PI * (0.5f + UV.y);
+
+	    vec3 dir = vec3(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta));
+    	vec3 ref = 0.5f + 0.5f*dir.xyz;
+
+        float err = length(ref - texture(TestTexture, dir).xyz) * 50.0f;
+		gl_Target0 = vec4(err,err,err,1.0f);
+    }
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}
+
+//--

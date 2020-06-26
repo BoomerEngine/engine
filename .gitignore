@@ -1,0 +1,6 @@
+.temp/
+.bin/
+.cache/
+.old/
+.build/
+disabled_modules/

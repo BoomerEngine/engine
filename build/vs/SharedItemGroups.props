@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Generalize the x64 and Win32 platforms to just "Win" in some cases -->
+  <PropertyGroup Label="Local">
+    <MasterPlatform Condition="'$(Platform)'=='x64'">Win</MasterPlatform>
+    <MasterPlatform Condition="'$(Platform)'=='Win32'">Win</MasterPlatform>
+  </PropertyGroup>
+
+  <!-- Common crap from MS -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <!-- Shared config-->
+  <PropertyGroup Label="Configuration">
+
+    <!-- For non final configs the modules are compiled into DLLs and the apps into EXE files. For final config, the modules are compiled into static libs and the apps into EXE files -->
+    <ConfigurationType Condition="'$(ModuleType)'=='App'">Application</ConfigurationType>
+    <ConfigurationType Condition="'$(ModuleType)'=='ConsoleApp'">Application</ConfigurationType>
+    <ConfigurationType Condition="'$(SolutionType)'=='Dev' and '$(ModuleType)'=='Lib'">DynamicLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(SolutionType)'=='Player' and '$(ModuleType)'=='Lib'">StaticLibrary</ConfigurationType>
+
+    <!-- The whole program optimization (LTCG) is enabled only for the final configuration -->
+    <WholeProgramOptimization Condition="'$(SolutionType)'=='Dev'">false</WholeProgramOptimization>
+	<WholeProgramOptimization Condition="'$(SolutionType)'=='Player'">true</WholeProgramOptimization>
+
+    <!-- Debug CRT libraries are used only in the Debug configuration -->
+    <UseDebugLibraries Condition="'$(Configuration)' == 'Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)' != 'Debug'">false</UseDebugLibraries>
+
+    <!-- We do want to generate debug information by default -->
+    <DebugInformationFormat Condition="'$(Configuration)' == 'Debug'">ProgramDatabase</DebugInformationFormat>
+    <DebugInformationFormat Condition="'$(Configuration)' == 'Checked'">ProgramDatabase</DebugInformationFormat>
+    <DebugInformationFormat Condition="'$(Configuration)' == 'Release'">ProgramDatabase</DebugInformationFormat>
+
+    <!-- Link time code generation is enabled only for the Final build -->
+    <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+
+    <!-- Incremental linking is used in the debug configurations -->
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Checked'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
+    <!-- LinkIncremental Condition="'$(SolutionType)'=='Player'">false</LinkIncremental-->
+	<LinkIncremental Condition="'$(SolutionType)'=='Player'">true</LinkIncremental>
+
+    <!-- Unicode is used in all configurations -->
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <!-- Shared properties and their default values - NOTE: may be overriden in actual projects -->
+  <PropertyGroup>
+
+    <!-- Use minimal rebuild by default -->
+    <!-- Note - may be overriden in actual project -->
+    <UseMinimalRebuild>true</UseMinimalRebuild>
+    <MPBuild>true</MPBuild>
+
+    <!-- We want to generate the PDB files -->
+    <GeneratePDB Condition="'$(GeneratePDB)' == ''">true</GeneratePDB>
+
+    <!-- Output directory for published projects -->
+    <PublishDir>$(ProjectPublishPath)</PublishDir>
+    <PublishBinDir>$(PublishDir)$(Configuration)\</PublishBinDir>
+    <OutDir>$(PublishDir)$(Configuration)\</OutDir>    
+    <IntDir>$(ProjectOutputPath)$(Platform).$(Configuration)\obj\</IntDir>
+    <GeneratedDir>$(ProjectOutputPath)$(Platform).$(Configuration)\gen\</GeneratedDir>
+
+    <!-- Output directory for EXEs and DLLS -->
+    <LocalDebuggerCommand Condition="'$(ConfigurationType)' == 'Application'">$(PublishDir)$(Configuration)\$(ProjectName).exe</LocalDebuggerCommand>
+  </PropertyGroup>
+
+  <!-- Macros encoding the compilation/platform settings for the C++ -->
+  <PropertyGroup>
+    <SharedPreprocessorDefines>NOMINMAX;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_UNICODE;UNICODE;PROJECT_CONFIGURATION=$(Configuration);PROJECT_PLATFORM=$(Platform);</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Configuration)'=='Final'">$(SharedPreprocessorDefines);BUILD_FINAL;NDEBUG;RELEASE;</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Configuration)'=='Release'">$(SharedPreprocessorDefines);BUILD_RELEASE;NDEBUG;RELEASE;</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Configuration)'=='Checked'">$(SharedPreprocessorDefines);BUILD_CHECKED;NDEBUG;RELEASE</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Configuration)'=='Debug'">$(SharedPreprocessorDefines);BUILD_DEBUG;_DEBUG</SharedPreprocessorDefines>
+
+    <!-- Distingush between platforms -->
+    <SharedPreprocessorDefines Condition="'$(MasterPlatform)'=='Win'">$(SharedPreprocessorDefines);_WINDOWS;WIN32_LEAN_AND_MEAN</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Platform)'=='x64'">$(SharedPreprocessorDefines);_WIN64</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(Platform)'=='Win32'">$(SharedPreprocessorDefines);_WIN32</SharedPreprocessorDefines>
+
+    <!-- Distingush between DLLs and LIBs -->
+    <SharedPreprocessorDefines Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_DLL</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(ConfigurationType)'!='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_LIB</SharedPreprocessorDefines>
+
+    <!-- Monolith builds are for final platform only-->
+    <SharedPreprocessorDefines Condition="'$(SolutionType)'=='Player'">$(SharedPreprocessorDefines);BUILD_AS_LIBS;BUILD_FINAL</SharedPreprocessorDefines>
+
+    <!-- Expose the name of the module (on disk) this project was included from to the code and application -->
+    <SharedPreprocessorDefines Condition="'$(ProjectModuleName)'!=''">$(SharedPreprocessorDefines);MODULE_NAME=$(ProjectModuleName)</SharedPreprocessorDefines>
+  </PropertyGroup>
+
+  <!-- Postfixes for the DLLS and EXE files depending on the configuration -->
+  <PropertyGroup>
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateManifest>false</GenerateManifest>
+    <EmbedManifest>false</EmbedManifest>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup Label="Configuration">
+    <ProjectLiDirs Condition="'$(MasterPlatform)'=='Win'">$(ProjectLiDirs)</ProjectLiDirs>
+    <ProjectLiDeps Condition="'$(MasterPlatform)'=='Win'">User32.lib;Gdi32.lib;Ole32.lib;Advapi32.lib;Shell32.lib;$(ProjectLiDeps)</ProjectLiDeps>
+  </PropertyGroup>
+
+  <!-- SHARED SETTINGS -->
+  <!-- SHARED SETTINGS -->
+  <!-- SHARED SETTINGS -->
+  <!-- SHARED SETTINGS -->
+
+  <ItemDefinitionGroup>
+
+    <!-- Compiler settings -->
+    <ClCompile>
+
+      <!-- Always default to build.h as the precompiled header -->
+      <PrecompiledHeader Condition="'$(UsePrecompiledHeaders)' != 'false'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>$(ProjectPrecompiledHeaderFile)</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(UsePrecompiledHeaders)' != 'false' and '$(ProjectPrecompiledHeaderFile)' == ''">build.h</PrecompiledHeaderFile>
+
+      <!-- No extra defines yet -->
+      <PreprocessorDefinitions>$(ProjectPreprocessorDefines)$(SharedPreprocessorDefines)</PreprocessorDefinitions>
+
+      <!-- We treat all warnings seriously -->
+      <WarningLevel Condition="'$(ProjectWarningLevel)' != ''">$(ProjectWarningLevel)</WarningLevel>
+      <WarningLevel Condition="'$(ProjectWarningLevel)' == ''">Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <WarningVersion>14</WarningVersion>
+	  
+	  <!-- Language version -->
+	  <LanguageStandard>stdcpp17</LanguageStandard>
+
+      <!-- Global additional includes (not related to platform, configuration nor project -->
+      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(GeneratedDir);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
+
+      <!-- We do want to generate debug information by default -->
+      <DebugInformationFormat Condition="'$(Configuration)' == 'Debug'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Configuration)' == 'Checked'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Configuration)' == 'Release'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Configuration)' == 'Final'">ProgramDatabase</DebugInformationFormat>
+
+      <!-- Runtime CRT library selection -->
+      <RuntimeLibrary Condition="'$(Configuration)' == 'Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)' != 'Debug'">MultiThreadedDLL</RuntimeLibrary>
+
+      <!-- We do want to use minimal rebuilds by default -->
+      <MinimalRebuild Condition="'$(UseMinimalRebuild)' == ''">true</MinimalRebuild>
+
+      <!-- We don't use exception handling by default -->
+      <!-- ExceptionHandling Condition="'$(ProjectExceptionHandling)'==''">false</ExceptionHandling-->
+
+      <!-- PDB settings -->
+      <!--ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName-->
+
+    </ClCompile>
+
+    <!-- Shared resouurce compiler settings-->
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>$(ProjectPreprocessorDefines);$(SharedPreprocessorDefines)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(GeneratedDir);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
+    </ResourceCompile>
+
+    <!-- Linking setting for the EXE application -->
+    <Link Condition="'$(ConfigurationType)' == 'Application'">
+
+      <!-- We do want to generate debug information by default -->
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+
+      <!-- By default compile as Windows app (no console) -->
+      <SubSystem Condition="'$(ModuleType)' == 'App'">Windows</SubSystem>
+      <SubSystem Condition="'$(ModuleType)' == 'ConsoleApp'">Console</SubSystem>
+
+      <!-- Keep additonal dependencies -->
+      <AdditionalLibraryDirectories>$(ProjectLiDirs);$(ProjectLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectLiDeps);$(ProjectLibraries)</AdditionalDependencies>
+
+      <!-- The .lib for the dll import is written in temp -->
+      <ImportLibrary>$(IntDir)$(ProjectName).lib</ImportLibrary>
+
+    </Link>
+
+    <!-- Linking setting for the DLL module -->
+    <Link Condition="'$(ConfigurationType)' == 'DynamicLibrary'">
+
+      <!-- We do want to generate debug information by default -->
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+
+      <!-- Keep additonal dependencies -->
+      <AdditionalLibraryDirectories>$(ProjectLiDirs);$(ProjectLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectLiDeps)</AdditionalDependencies>
+
+      <!-- The .lib for the dll import is written in temp -->
+      <ImportLibrary>$(IntDir)$(ProjectName).lib</ImportLibrary>
+
+    </Link>
+
+    <!-- Linking setting for the static library -->
+    <Lib Condition="'$(ConfigurationType)' == 'StaticLibrary'">
+
+      <!-- We do want to generate debug information by default -->
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+    </Lib>
+
+  </ItemDefinitionGroup>
+
+  <!-- Debug, x64 Win32 SETTINGS -->
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(MasterPlatform)'=='Debug|Win'" >
+
+    <!-- Specific compiler settings-->
+    <ClCompile>
+      <AdditionalOptions>-Zm256 %(AdditionalOptions) $(ProjectClOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <FloatingPointModel>Fast</FloatingPointModel>
+    </ClCompile>
+
+    <!-- Specific linker settings-->
+    <Link Condition="'$(ConfigurationType)' != 'StaticLibrary'">
+      <IgnoreSpecificDefaultLibraries>$(ProjectLiIgnore);libcmt</IgnoreSpecificDefaultLibraries>
+      <StackReserveSize>16777216</StackReserveSize>
+    </Link>
+
+  </ItemDefinitionGroup>
+
+  <!-- Release, Checked, x64 SETTINGS -->
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(MasterPlatform)'=='Release|Win' or '$(Configuration)|$(MasterPlatform)'=='Checked|Win'">
+
+    <!-- Specific compiler settings-->
+    <ClCompile>
+      <AdditionalOptions>-Zm256 /d2Zi+ /MP6 /openmp $(ProjectClOptions) %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Full</Optimization>
+      <Optimization Condition="'$(Configuration)'=='Checked'">Disabled</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <OpenMPSupport>true</OpenMPSupport>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
+
+    <!-- Specific linker settings-->
+    <Link Condition="'$(ConfigurationType)' != 'StaticLibrary'">
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <IgnoreSpecificDefaultLibraries>$(ProjectLiIgnore);libcmt</IgnoreSpecificDefaultLibraries>
+      <StackReserveSize>8324096</StackReserveSize>
+    </Link>
+
+  </ItemDefinitionGroup>
+  
+</Project>

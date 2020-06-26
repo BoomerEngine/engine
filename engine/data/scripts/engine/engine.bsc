@@ -1,0 +1,6 @@
+using Core;
+
+typename ScenePtr = ptr<Scene>;
+typename EnvPtr = ptr<Env>;
+
+

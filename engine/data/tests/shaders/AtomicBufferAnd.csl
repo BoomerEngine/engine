@@ -1,0 +1,40 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+
+#include "AtomicBufferIncrement.csl"
+
+//--
+
+shader DrawVS
+{
+	float DrawScale()
+	{
+		return 256.0f
+	}
+}
+
+shader GeneratePS
+{
+	void runtAtomicOp()
+	{
+		atomicAnd(BufferData[gl_FragCoord.x], TriangleID);
+	}
+}
+
+
+shader ClearCS
+{
+	attribute(local_size_x=8, local_size_y=1)
+	void main()
+	{
+	    BufferData[gl_GlobalInvocationID.x] = 256;
+	} 
+}
+
+
+//--

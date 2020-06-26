@@ -1,0 +1,16 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+
+// 4x4 matrix
+import struct Matrix alias 'base::Matrix'
+{
+    import var Vector4 x;
+    import var Vector4 y;
+    import var Vector4 z;
+    import var Vector4 w;
+}
+

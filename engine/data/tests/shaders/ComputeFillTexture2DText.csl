@@ -1,0 +1,34 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParamsRead
+{
+    attribute(format=rgba8) Texture2D ReadColors;
+}
+
+export shader DrawVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}
+
+export shader DrawPS
+{
+	in vec2 UV;
+
+	void main()
+	{
+		gl_Target0 = texture(ReadColors, UV.xy);
+	}
+}

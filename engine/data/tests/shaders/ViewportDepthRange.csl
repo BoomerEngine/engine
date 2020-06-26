@@ -1,0 +1,37 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        vec4 Color;
+        vec4 Scale;
+    	vec4 Offset;
+    }
+}
+
+//--
+
+export shader SimpleTrianglePS
+{
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+	void main()
+	{
+		gl_Position = v.pos.xyz1 * Scale.xyz1 + Offset.xyz0;
+	}
+}
+
+//--

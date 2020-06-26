@@ -1,0 +1,7 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#define TRIANGLE_COLOR vec3(0,1,0)
+#include "TriangleDefineColor.h"

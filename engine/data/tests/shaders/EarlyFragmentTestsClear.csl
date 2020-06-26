@@ -1,0 +1,27 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+
+#include "common.h"
+
+descriptor TestParams
+{
+    attribute(format=r32i, uav) Buffer BufferData;
+}
+
+//--
+
+export shader ClearCS
+{
+	attribute(local_size_x=8, local_size_y=1)
+	void main()
+	{
+	    BufferData[gl_GlobalInvocationID.x] = 0;
+	} 
+}
+
+//--

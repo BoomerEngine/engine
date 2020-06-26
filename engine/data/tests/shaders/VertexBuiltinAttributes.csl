@@ -1,0 +1,49 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        int NumInstances;
+        int NumVertices;
+        float InstanceStepY;
+    }
+}
+
+//--
+
+export shader SimpleTrianglePS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		gl_Position.y = gl_Position.y +  (float)gl_InstanceID * InstanceStepY;
+
+		Color.x = (float)gl_InstanceID / (float)NumInstances;
+		Color.y = (float)gl_VertexID / (float)(4*NumVertices);
+		Color.zw = 0;
+	}
+}
+
+//--

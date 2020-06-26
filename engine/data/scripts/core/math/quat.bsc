@@ -1,0 +1,15 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+// quaternion
+import struct Quat alias 'base::Quat'
+{
+    import var float x;
+    import var float y;
+    import var float z;
+    import var float w;
+}
+

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<depot>
+   <PathMapping path="engine" source="engine/data" readonly="0" />
+   <PathMapping path="editor" source="editor/data" readonly="0" />
+   <PathMapping path="examples" source="modules/examples/data" readonly="0" />
+</depot>

@@ -1,0 +1,164 @@
+// BoomerEngine script interface
+// Core definitions and imports
+
+class TreeNode
+{
+    struct Payload
+    {
+        var int value;
+        
+        function Dump()
+        {
+            Log("{}", value);
+        }
+    }
+
+    var Payload payload;
+    var ptr<TreeNode> prev;
+    var ptr<TreeNode> next;
+
+    private static function ptr<TreeNode> CreateNode(int data)
+    {
+        ptr<TreeNode> node = new class 'TreeNode';
+        node.payload.value = data;
+        return node;     
+    }
+
+    static function InsertAt(out ptr<TreeNode> node, int data)
+    {
+        if (node)
+            node.Insert(data);
+        else
+            node = CreateNode(data);
+    }
+    
+    function Insert(int data)
+    {               
+        if (data < payload.value)
+            InsertAt(prev, data);
+        else if (data > payload.value)
+            InsertAt(next, data);
+    }
+    
+    function Dump()
+    {
+        if (prev) prev.Dump();
+        payload.Dump();
+        if (next) next.Dump();
+    }
+}
+
+struct Tree 
+{
+    private var ptr<TreeNode> head;
+    
+    function Insert(int data)
+    {
+        TreeNode.InsertAt(head, data);
+    }
+    
+    function Dump()
+    {
+        if (head)
+            head.Dump();
+    }    
+}//*/
+
+struct ScriptStruct
+{
+    var float x;
+    var Vector4 vv;
+    var float y;
+    var string msg;
+    
+    static function DumpRest(ref ScriptStruct v)
+    {
+        Log("Y = {}", v.y);
+        Log("MSG = '{}'", v.msg);
+    }
+    
+    function Dump()
+    {
+        Log("X = {}", x);
+        Log("VV = {}", vv);
+        DumpRest(this);
+    }
+}
+
+function ScriptStruct GetStruct()
+{
+    return ScriptStruct(1, Vector4.Random(-1,1), 2, "Dupa");
+}
+
+function Vector3 RandomVector(float range)
+{
+    return Vector3(RandRange(-range, range),RandRange(-range, range),RandRange(-range, range));
+}
+
+function bool True()
+{
+    Log("True"); 
+    return true;
+}
+
+function bool False()
+{
+    Log("False");
+    return false;
+}
+
+function float TestDot(ref Vector3 a, ref Vector3 b)
+{
+    return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+function string GetMessage()
+{
+    return "Message!";
+}
+
+function string EngineScriptsSelfTest(int xx)
+{
+    {
+        Tree tree;
+        
+        for (int i=0; i<100; ++i)
+        {
+            tree.Insert(RandRange(0, 1000));
+        }
+        
+        TreeNode.Payload p;
+
+        tree.Dump();        
+    }
+    
+/*    float sum = 0;
+    for (int i=0; i<=1000000; ++i)
+    {
+        //sum += i;
+        
+        Vector3 a = Vector3.Rand(-1.0f, 1.0f);
+        Vector3 b = Vector3.Rand(-1.0f, 1.0f);
+        sum += a | b;
+        
+        //Vector3 a = RandomVector(1.0f);
+        //Vector3 b = RandomVector(1.0f);
+        //sum += TestDot(a,b);
+    }
+    Log("Sum = {}", sum);*/
+
+/*    Log("OR 0,0 = {}", False() || False());
+    Log("OR 0,1 = {}", False() || True());
+    Log("OR 1,0 = {}", True() || False());
+    Log("OR 1,1 = {}", True() || True());
+    
+    Log("AND 0,0 = {}", False() && False());
+    Log("AND 0,1 = {}", False() && True());
+    Log("AND 1,0 = {}", True() && False());
+    Log("AND 1,1 = {}", True() && True());*/
+    
+//    ScriptStruct aa = GetStruct();
+//    aa.Dump();
+    
+    return "Dupa";
+}

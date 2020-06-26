@@ -1,0 +1,23 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+export shader TestPS 
+{
+	void main()
+	{
+		uint x = (uint)gl_FragCoord.x;
+		uint y = (uint)gl_FragCoord.y;
+		uint pattern = (x ^ y) & 255;
+		gl_Target0 = (pattern / 255.0f).xxx1;
+	}
+}
+
+export shader QuadVS;
+
+//--

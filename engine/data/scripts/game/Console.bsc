@@ -1,0 +1,281 @@
+using Core;
+using Engine;
+
+// console sub system
+class Console extends Engine.InputHandler
+{
+
+	const float FONT_SIZE = 20;
+	const float MARGIN = 10;
+	const float BLINK_SPEED = 0.5f;
+
+	private var string text;
+	private var int startPos;
+	private var int endPos;
+	private var float blinkTimer;
+	private var bool blinkState;
+	private var bool visible;
+	
+	private function __init()
+	{
+		blinkTimer = 0.0;
+		blinkState = true;
+		startPos = 0;
+		endPos = 0;
+	}
+	
+	private function DeleteSelection()
+	{
+		if (endPos > startPos)
+		{
+			text = StrSub(text, 0, startPos) + StrSub(text, endPos);
+			endPos = startPos;
+		}
+		else if (endPos < startPos)
+		{
+			text = StrSub(text, 0, endPos) + StrSub(text, startPos);
+			startPos = endPos;
+		}
+	}
+	
+	private function InsertText(string addedText)
+	{
+		DeleteSelection();
+		text = StrSub(text, 0, startPos) + addedText + StrSub(text, startPos);
+		startPos += StrLen(addedText);
+		endPos = startPos;
+		ResetBlink();
+	}
+	
+	private override signal bool OnCharEvent(ref Engine.InputCharEvent evt)
+	{
+		if (visible && evt.scanCode >= 32)
+		{
+			string text = evt.GetPrintableText();
+			//Log("Test: '{}' '`', {}, {}, {}", text, "a" != "a", "a" != "b", text != "`");
+			if (text != "`" && text != "~")
+			{
+				InsertText(text);
+				return true;
+			}
+		}		
+		
+		return false;
+	}
+	
+	private function int FindNextPos(int pos)
+	{
+		if (pos < StrLen(text))
+			return pos + 1;
+		return pos;
+	}
+	
+	private function int FindPrevPos(int pos)
+	{
+		if (pos > 0)
+			return pos - 1;
+		return pos;
+	}
+	
+	private function int FindHomePos(int pos)
+	{
+		return 0;
+	}
+	
+	private function int FindEndPos(int pos)
+	{
+		return StrLen(text);
+	}		
+	
+	private static function Swap(out int a, out int b)
+	{
+		int temp = a;
+		a = b;
+		b = temp;
+	}
+	
+	private function MoveCursor(bool blockSelect, int pos)
+	{
+		if (blockSelect)
+		{
+			endPos = pos;
+		}
+		else
+		{
+			startPos = pos;
+			endPos = pos;
+		}	
+
+		ResetBlink();
+	}
+	
+	private override signal bool OnKeyEvent(ref Engine.InputKeyEvent evt)
+	{
+		if (evt.PressedOrRepeated())
+		{
+			if (evt.key == InputKey.KEY_GRAVE)
+			{
+				visible = !visible;
+				return true;
+			}
+			
+			if (!visible)
+				return false;			
+
+			bool blockSelect = evt.keyMask.IsShiftDown();
+			if (evt.key == InputKey.KEY_LEFT)
+			{
+				MoveCursor(blockSelect, FindPrevPos(endPos));
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_RIGHT)
+			{
+				MoveCursor(blockSelect, FindNextPos(endPos));
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_HOME)
+			{
+				MoveCursor(blockSelect, FindHomePos(endPos));
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_END)
+			{
+				MoveCursor(blockSelect, FindEndPos(endPos));
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_BACK)
+			{
+				if (endPos != startPos)
+				{
+					DeleteSelection();
+				}
+				else if (startPos > 0)
+				{
+					text = StrSub(text, 0, startPos-1) + StrSub(text, startPos);				
+					startPos -= 1;
+					endPos = startPos;
+				}
+				
+				ResetBlink();
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_DELETE)
+			{
+				if (endPos != startPos)
+				{
+					DeleteSelection();
+				}
+				else if (startPos < StrLen(text))
+				{
+					text = StrSub(text, 0, startPos) + StrSub(text, startPos+1);				
+					endPos = startPos;
+				}
+				
+				ResetBlink();
+				return true;
+			}
+			else if (evt.key == InputKey.KEY_RETURN)
+			{
+				text = "";
+				startPos = 0;
+				endPos = 0;
+				ResetBlink();
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private function ResetBlink()
+	{
+		blinkState = true;
+		blinkTimer = BLINK_SPEED;
+	}
+	
+	private function RenderBackgroud(ref CanvasDrawer drawer, float left, float top, float width, float height)
+	{
+		drawer.SetBackgroundColorV(40,40,40,180);
+		drawer.SetOffsetF(left, top);
+		drawer.FillRect(width, height);
+	}
+	
+	private function RenderCommandline(ref CanvasDrawer drawer, float left, float top, float width, float height)
+	{
+		string printText = ">" + text;
+		float lineHeight = drawer.MeasureLineHeight(CanvasFont.Console, FONT_SIZE);
+		float textLeft = left + MARGIN;
+		float textCenter = top + height*0.5f;
+	
+		// commandline background
+		drawer.SetBackgroundColorV(80,80,80,255);
+		drawer.SetOffsetF(left, top);
+		drawer.FillRect(width, height);
+		
+		// selection background
+		if (startPos != endPos)
+		{
+			float startOffset = drawer.MeasureText(StrLeft(printText, startPos+1)).x;
+			float endOffset = drawer.MeasureText(StrLeft(printText, endPos+1)).x;
+			drawer.SetBackgroundColorV(80,80,200,255);
+			drawer.SetOffsetF(textLeft + Min(startOffset, endOffset), textCenter - lineHeight * 0.5);
+			drawer.FillRect(Abs(startOffset - endOffset), lineHeight);		
+		}
+	
+		// commandline text
+		drawer.SetOffsetF(textLeft, textCenter);
+		drawer.SetTextColorV(255,255,100,255);
+		drawer.Print(printText, -1, 0);
+		
+		// get the cursor position
+		if (blinkState)
+		{
+			string cursorText = StrLeft(printText, endPos+1);
+			float offset = drawer.MeasureText(cursorText).x;
+			drawer.SetOffsetF(textLeft + offset, textCenter);
+			drawer.Print("|", 0, 0);
+		}
+	}
+	
+	private override signal OnTick(float dt)
+	{
+		blinkTimer -= dt;
+		if (blinkTimer < 0)
+		{
+			blinkState = !blinkState;
+			blinkTimer = BLINK_SPEED;
+		}		
+	}
+	
+	private override signal OnRenderCanvas(ref ptr<Canvas> canvas)
+	{
+		if (!visible)
+			return;
+	
+		CanvasDrawer drawer;
+		drawer.SetAnchorName('Console');
+		drawer.SetFontType(CanvasFont.Console);
+		drawer.SetFontSize(FONT_SIZE);
+		
+		// calculate dimensions
+		float width = canvas.GetScreenWidth();	
+		float height = canvas.GetScreenHeight() * 0.5f;
+		float left = 0;
+		float top = 0;
+	
+		// measure text height
+		float lineHeight = drawer.MeasureLineHeight(CanvasFont.Console, FONT_SIZE);
+	
+		// background of the whole console	
+		RenderBackgroud(drawer, left, top, width, height);
+		
+		// bottom command bar
+		float cmdLeft = left + MARGIN * 0.5f;
+		float cmdTop = top + height - lineHeight - MARGIN * 1.5f;
+		RenderCommandline(drawer, cmdLeft, cmdTop, width - MARGIN, lineHeight + MARGIN);
+		
+		drawer.Submit(canvas);
+	}
+    
+}
+

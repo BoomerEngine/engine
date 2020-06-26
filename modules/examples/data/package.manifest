@@ -1,0 +1,7 @@
+document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
+  class=base::depot::PackageManifest
+    dependencies 
+      prefixPath=hl2
+        provider class=hl2::FileSystemProviderVPK
+
+

@@ -1,0 +1,40 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+
+#include "common.h"
+
+descriptor TestParams
+{
+    attribute(format=r32i, uav) Buffer BufferData;
+}
+
+export shader GenerateEarlyTestsPS
+{
+	in vec4 Color;
+
+	attribute(early_fragment_tests)
+	void main()
+	{	
+		gl_Target0 = Color;
+		atomicIncrement(BufferData[gl_FragCoord.x]);
+	}
+}
+
+export shader GenerateVS
+{
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		Color = v.color;
+	}
+}
+

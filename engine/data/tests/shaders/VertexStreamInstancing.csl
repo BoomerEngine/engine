@@ -1,0 +1,44 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+attribute(packing=vertex) struct InstanceDataTest
+{
+    vec2 offset;
+    attribute(format=rgba8) vec4 color;
+    float scale;
+}
+
+//--
+
+export shader SimpleTrianglePS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+    attribute(instanced) vertex InstanceDataTest inst;
+
+	out vec4 Color;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		gl_Position.xy = v.pos.xy * inst.scale + inst.offset.xy;
+		Color = inst.color;
+	}
+}
+
+//--

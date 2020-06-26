@@ -1,0 +1,132 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+SearchBar
+{
+	background: $window-background;
+	//border-width: 1em;
+	//border-color: $client-border;
+	//border-radius: 4em;
+	//margin: 2em 2em 2em 2em;
+	padding: 3em 1em 3em 1em;
+
+	> TextEditor {
+		margin: 0em 4em 0em 4em;
+		//font-style: italic;
+	}
+
+	> Button {
+		margin-left: 2em;
+		margin-right: 2em;
+		padding: 5em 2em 5em 2em;
+		background: #0004;
+		border-width: 1em;
+		border-color: #FFFFFF20;
+		border-radius: 3em;
+
+		> TextLabel {
+			color: #AAA;
+		}
+
+		&:hover {
+			background: color.mix(color.scale($data-inspector-background, 80%), $active-color, 50%);
+
+			> TextLabel {
+				color: #FFF;
+			}
+		}
+	}
+}
+
+
+TextLabel.bigblack
+{
+		font-weight: bold;
+        color: #202020;
+        font-size: 40em;
+}
+
+TextLabel.mediumblack
+{
+		font-weight: bold;
+        color: #202020;
+        font-size: 20em;
+}
+
+Button.overlay
+{
+        background: box(100%,100%,6em,8em,#88888800,#88888880);
+	border-width: 0em;
+	padding: 5em 5em 5em 5em;
+	min-width: 20em;
+	min-height: 20em;
+
+	&:hover
+	{
+	        background: box(100%,100%,6em,12em,#007ACC40,#007ACC00);
+	}
+}
+
+VSizer#PreviewFiltersBackground
+{
+    background: #30303080;
+    opacity: 80%;
+//    shadow: box(100%, 100%, 20em, 0em, #50505000, #50505080);
+//    shadow-radius: 8em;
+}
+
+Container#FakePreviewPanel
+{
+    background: linear(90, #202020, #303030);
+}
+
+FileThumbnailBorder
+{
+	max-height: 68em;
+	max-width: 68em;
+	min-height: 68em;
+	min-width: 68em;
+    margin: 5em 5em 5em 5em;
+	padding: 5em 5em 5em 5em;
+    shadow: box(100%, 100%, 4em, 5em, #50505000, #50505080);
+	border-color: #808080;
+	border-width: 1em;
+	border-radius: 4em;
+    //background: #30303080;
+	background: image("icons/gridbw.png", wrap, #FFFA);
+}
+
+AssetBrowserFileDragDropPreview, AssetBrowserDirectoryDragDropPreview
+{
+	padding: 10em 10em 10em 10em;
+
+	TextLabel#ThumbnailIcon
+	{
+        zoom: 50%;
+		vertical-align: expand;
+		horizontal-align: expand;
+	}
+
+	TextLabel#ThumbnailCaption
+	{
+		margin: 5em 5em 5em 5em;
+		horizontal-align: center;		
+	}
+}
+
+/*Toolbar
+{
+    ComboBox
+    {
+        //proportion: 100%;
+        margin: 2em 2em 2em 2em;
+		horizontal-align: expand;
+        vertical-align: middle;
+        background: box(100%,100%,0em,12em,#30303080,#20202000);
+        //background: solid(#FF0F);
+        border-width: 0em;
+    }
+}
+*/

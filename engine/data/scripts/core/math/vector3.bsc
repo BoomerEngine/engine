@@ -1,0 +1,140 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+// 3D vector
+import struct Vector3 alias 'base::Vector3'
+{
+    import var float x;
+    import var float y;
+    import var float z;
+
+    // get length of the vector
+    import function float Length();
+    
+    // get square length of the vector (faster)        
+    import function float SquareLength();
+    
+    // get vector with absolute values of components
+    import function Vector3 Abs();
+
+    // get vector with components rounded to nearest integer
+    import function Vector3 Round();
+
+    // get vector with components rounded down to integer
+    import function Vector3 Floor();
+
+    // get vector with components rounded up to integer
+    import function Vector3 Ceil();
+
+    // get vector with components values without fractional parts
+    import function Vector3 Trunc();
+
+    // get vector with components with fractional parts
+    import function Vector3 Frac();
+    
+    // get minimum value of components
+    import function float MinValue();
+    
+    // get maximum value of components
+    import function float MaxValue();
+    
+    // get sum of components
+    import function float Sum();
+    
+    // get trace (product of all components)
+    import function float Trace();
+    
+    // get length of vector between two points
+    import function float Distance(ref Vector3 v);
+    
+    // get length of vector between two points
+    import function float SquareDistance(ref Vector3 v);
+    
+    // get index of largest axis (0, 1 or 2)
+    import function int LargestAxis();
+    
+    // get index of smallest axis (0, 1 or 2)
+    import function int SmallestAxis();
+
+    // normalize vector, returns length of the vector before normalization
+    import function float Normalize();
+
+    // return normalized vector
+    import function Vector3 Normalized();
+
+    //--
+
+    // get 2D sub vector
+    import function Vector2 xx();
+    import function Vector2 xy();
+    import function Vector2 xz();
+    import function Vector2 yx();
+    import function Vector2 yy();
+    import function Vector2 yz();
+    import function Vector2 zx();
+    import function Vector2 zy();
+    import function Vector2 zz();
+
+    // get 3D sub vector
+    import function Vector3 xxx();
+    import function Vector3 yyy();
+    import function Vector3 zzz();
+    import function Vector3 xyz();
+    import function Vector3 zyx();
+
+    // make into a 4D vector
+    import function Vector4 xyzw(float w = 1.0f);
+    
+    //--
+    
+    // generate random vector
+    import static function Vector3 Random(float min = 0.0f, float max = 1.0f);
+}
+
+// math operators
+import operator- Vector3 (ref Vector3 b);
+import operator+ Vector3 (ref Vector3 a, ref Vector3 b);
+import operator- Vector3 (ref Vector3 a, ref Vector3 b);
+import operator* Vector3 (ref Vector3 a, ref Vector3 b);
+import operator/ Vector3 (ref Vector3 a, ref Vector3 b);
+import operator| float (ref Vector3 a, ref Vector3 b); // dot product
+import operator^ Vector3 (ref Vector3 a, ref Vector3 b); // cross product
+
+import operator+= Vector3 (out Vector3 a, ref Vector3 b);
+import operator-= Vector3 (out Vector3 a, ref Vector3 b);
+import operator*= Vector3 (out Vector3 a, ref Vector3 b);
+import operator/= Vector3 (out Vector3 a, ref Vector3 b);
+
+import operator+ Vector3 (ref Vector3 a, float b);
+import operator- Vector3 (ref Vector3 a, float b);
+import operator* Vector3 (ref Vector3 a, float b);
+import operator/ Vector3 (ref Vector3 a, float b);
+import operator* Vector3 (float a, ref Vector3 b);
+
+import operator+= Vector3 (out Vector3 a, float b);
+import operator-= Vector3 (out Vector3 a, float b);
+import operator*= Vector3 (out Vector3 a, float b);
+import operator/= Vector3 (out Vector3 a, float b);
+
+import function alias(Abs) Vector3 AbsV3(ref Vector3 a);
+import function alias(Dot) float DotV3(ref Vector3 a, ref Vector3 b);
+import function alias(Min) Vector3 MinV3(ref Vector3 a, ref Vector3 b);
+import function alias(Max) Vector3 MaxV3(ref Vector3 a, ref Vector3 b);
+import function alias(Lerp) Vector3 LerpV3(ref Vector3 a, ref Vector3 b, float f);
+import function alias(Normal) Vector3 NormalV3(ref Vector3 a, ref Vector3 n);
+import function alias(Tangent) Vector3 TangentV3(ref Vector3 a, ref Vector3 n);
+import function alias(SetLength) Vector3 SetLengthV3(ref Vector3 a, float length);
+import function alias(ClampLength) Vector3 ClampLengthV3(ref Vector3 a, float length);
+import function alias(Clamp) Vector3 ClampV3(ref Vector3 a, ref Vector3 minV, ref Vector3 maxV);
+import function alias(Clamp) Vector3 ClampV3F(ref Vector3 a, float minF, float maxV);
+
+// calculate normal of triangle snapped by given points
+import static function Vector3 TriangleNormal(ref Vector3 a, ref Vector3 b, ref Vector3 c);
+
+// calculate normal of triangle snapped by given points, returns false if failed
+import static function bool SafeTriangleNormal(ref Vector3 a, ref Vector3 b, ref Vector3 c, out Vector3 n);
+
+

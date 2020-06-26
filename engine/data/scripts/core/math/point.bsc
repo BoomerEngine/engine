@@ -1,0 +1,13 @@
+// BoomerEngine Script interface
+// (C) 2017-2020 by Tomasz "RexDex" Jonarski
+//
+// Math types
+// NOTE: internal file, do not modify
+
+// point
+import struct Point alias 'base::Point'
+{
+    import var int x;
+    import var int y;
+}
+

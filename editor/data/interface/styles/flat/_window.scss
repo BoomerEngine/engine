@@ -1,0 +1,161 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+Window {
+    background: $window-background;
+    border-width: 1em;
+    border-color: $window-border;
+    // special smaller margin for docking Window
+    &.dock > WindowFrame {
+        padding: 0em 0em 0em 0em;
+
+        > Container > *#content {
+            padding: 0em 0em 0em 0em;
+            margin-top: 0em;
+        }
+    }
+}
+
+PopupWindow {
+    background: $popup-background;
+    opacity: 100%;
+    border-color: $popup-border;
+    border-width: 1em;
+    padding: 5em 5em 5em 5em;
+    min-width: 50em;
+    min-height: 50em;
+    shadow: $popup-shadow;
+}
+
+DragDropPopupWindow {
+    background: $popup-background;
+    min-width: 10em;
+    min-height: 10em;
+    padding: 5em 5em 5em 5em;
+    border-width: 3em;
+    border-color: $popup-border;
+    opacity: 60%;
+    shadow: #0000;
+
+    &.valid {
+        background: color.scale($action-green-color, 50%);
+        border-color: $action-green-color;
+        border-width: 3em;
+    }
+
+    &.invalid {
+        background: color.scale($action-red-color, 50%);
+        border-color: $action-red-color;
+        border-width: 3em;
+    }
+}
+
+//--
+
+$window-frame-button-color: color.scale($window-background, 105%);
+$window-title-bar-color: color.scale($window-background, 110%);
+
+WindowTitleBar {
+    min-width: 450em;
+    min-height: 32em;
+    background: $window-title-bar-color;
+    horizontal-align: expand;
+
+    > Image#AppIcon {
+        horizontal-align: center;
+        vertical-align: middle;
+        image: url("images/engine_logo_small.png");
+		margin: 8em 6em 8em 6em;
+		background: #0000;
+    }
+
+    > TextLabel#Caption {
+		proportion: 100.0f;
+        horizontal-align: left;
+        vertical-align: middle;
+        font-size: 24em;
+        text-shadow: 2em 2em 5em #888888;
+		font-weight: bold;
+        content: "Boomer Engine";
+    }
+	
+	> #ButtonContainer {
+        horizontal-align: center;
+        vertical-align: middle;     
+		margin-right: 10em;
+
+		> Button {
+			border-width: 0em;
+			background: $window-frame-button-color;
+			padding: 5em 5em 5em 5em;
+			margin-left: 4em;
+
+			TextLabel {
+				color: #FFFFFF;
+				font-family: $icon-font;
+				font-size: 12em;
+			}
+
+			&:hover {
+				background: color.mix($window-frame-button-color, $active-color, $hover-scale);
+			}
+
+			&:pressed {
+				background: $active-color;
+
+				> * {
+					relative-x: 0em;
+					relative-y: 0em;
+				}
+			}
+
+			&#Close:pressed {
+				background: solid(#cc0000);
+			}
+
+			&#Minimize > TextLabel {
+				content: "&#f2d1;";
+			}
+
+			&#Maximize > TextLabel {
+				content: "&#f2d2;";
+			}
+
+			&#Close > TextLabel {
+				content: "&#f2d3;";
+			}
+		}
+    }
+}
+
+Window.inactive WindowTitleBar > TextLabel#AppIcon {
+    opacity: 50%;
+}
+
+WindowTitleBar.mini {
+  min-width: 250em;
+  min-height: 20em;
+  margin: 0em 0em 0em 0em;
+
+  > Image#AppIcon {
+    margin: 8em 1em 8em 1em;
+    image: url("images/engine_logo_very_small.png");
+  }
+
+  > TextLabel#Caption {
+    vertical-align: middle;
+    font-size: 16em;
+  }
+
+  > #ButtonContainer {
+    > Button {
+      padding: 2em 2em 2em 2em;
+    }
+  }
+}
+
+//--

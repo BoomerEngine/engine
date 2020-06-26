@@ -1,0 +1,38 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D Texture;
+}
+
+export shader SimpleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}
+
+export shader PreviewPS
+{
+	in vec2 UV;
+
+	void main()
+	{
+		gl_Target0 = textureLod(Texture, UV.xy, 0);
+
+		vec2 d = vec2(1,1) - abs((UV.xy - vec2(0.5f, 0.5f)) * 20.2f);
+		if (any(d < 0.0f))
+			gl_Target0 = vec4(1,1,1,1);
+	}
+}

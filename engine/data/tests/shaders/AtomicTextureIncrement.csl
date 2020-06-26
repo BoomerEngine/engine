@@ -1,0 +1,105 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+
+#include "common.h"
+
+descriptor TestParams
+{
+    attribute(format=r32i, uav) Texture2D TextureData;
+}
+
+shader GeneratePS
+{
+	attribute(flat) in uint TriangleID;
+
+	void runtAtomicOp()
+	{
+		atomicIncrement(TextureData[gl_FragCoord.xy/2]);
+	}
+	
+	void main()
+	{	
+		runtAtomicOp();
+		gl_Target0 = vec4(0,0,0,0);
+		discard;
+	}
+}
+
+shader GenerateVS
+{
+	vertex Simple3DVertex v;
+
+	out uint TriangleID;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		TriangleID = gl_VertexID / 3;
+	}
+}
+
+//--
+
+shader PreviewVS
+{
+	void main()
+	{
+		gl_Position.x  = (gl_VertexID & 1) ? 1.0f : -1.0f;
+		gl_Position.y  = (gl_VertexID & 2) ? 1.0f : -1.0f;
+		gl_Position.z = 1.0f;
+		gl_Position.w = 1.0f;
+	}
+}
+
+shader PreviewPS
+{
+	float DrawScale()
+	{
+		return 30.0f;
+	}
+	
+	void main()
+	{
+		// load resolved value
+		gl_Target0 = TextureData[gl_FragCoord.xy/2] / DrawScale();
+	}
+}
+
+//--
+
+shader ClearCS
+{
+	attribute(local_size_x=8, local_size_y=8)
+	void main()
+	{
+	    TextureData[gl_GlobalInvocationID.xy] = 0;
+	} 
+}
+
+//--
+
+program Draw
+{	
+	shader VertexShader = shader<PreviewVS> {};
+	shader PixelShader = shader<PreviewPS> {};
+}
+
+program Generate
+{	
+	shader VertexShader = shader<GenerateVS> {};
+	shader PixelShader = shader<GeneratePS> {};
+}
+
+program Clear
+{	
+	shader ComputeShader = shader<ClearCS> {};
+}
+
+export Draw = program<Draw>{};
+export Generate = program<Generate>{};
+export Clear = program<Clear>{};

@@ -1,0 +1,52 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//--
+
+#include "common.h"
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+		uint2 Resolution;
+    }
+}
+
+//--
+
+export shader TestPS 
+{
+	void main()
+	{
+		gl_Target0 = (gl_FragCoord.xy / Resolution).xy01;
+		
+		uint x = (uint)gl_FragCoord.x;
+		uint y = (uint)gl_FragCoord.y;
+
+		// black inner border
+		if (x == 1 || y == 1 
+			|| x == (Resolution.x-2)
+			|| y == (Resolution.y-2))
+		{
+			gl_Target0 = vec4(0,0,0,1);
+		}		
+		
+		// white outer border
+		if (x == 0 || y == 0 
+			|| x == (Resolution.x-1)
+			|| y == (Resolution.y-1))
+		{
+			gl_Target0 = vec4(1,1,1,1);
+		}
+	}
+}
+
+export shader QuadVS
+{
+}
+
+//--
+
