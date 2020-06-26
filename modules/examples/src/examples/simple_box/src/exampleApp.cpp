@@ -236,7 +236,7 @@ namespace example
         camera.calculate(from, to, fov, aspect); 
 
         CameraParams params;
-        params.WorldToScreen = camera.WorldToScreen;
+        params.WorldToScreen = camera.WorldToScreen.transposed();
 
         // prepare descriptor
         CameraDescriptor desc;
@@ -261,7 +261,7 @@ namespace example
         };
 
         ObjectParams params;
-        params.localToWorld = localToWorld;
+        params.localToWorld = localToWorld.transposed();
 
         ObjectDescriptor desc;
         desc.data = cmd.opUploadConstants(params); // copy the content of constant buffer onto the command buffer
