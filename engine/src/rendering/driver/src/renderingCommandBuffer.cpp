@@ -120,10 +120,12 @@ namespace rendering
             const auto* cur = m_firstChildBuffer;
             while (cur)
             {
+                auto* next = cur->nextChildBuffer;
                 cur->childBuffer->release();
-                cur = cur->nextChildBuffer;
+                cur = next;
             }
 
+            m_firstChildBuffer = nullptr;
             this->~CommandBuffer();
             MemFree(this);
         }

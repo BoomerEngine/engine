@@ -363,28 +363,6 @@ namespace rendering
                 // submit new work
                 base::GetService<DeviceService>()->device()->submitWork(cmd.release());
             }
-
-            // echo service test (TEMPSHIT)
-            static base::NativeTimePoint nextCheck = base::NativeTimePoint::Now();
-            if (nextCheck.reached())
-            {
-                nextCheck = base::NativeTimePoint::Now() + 1.0;
-                if (auto service = base::GetService<base::app::CoordinatorService>()->queryRemoveServiceConnection("echo"))
-                {
-                    TRACE_INFO("Got echo service! sending echo request!");
-
-                    auto startTime = base::NativeTimePoint::Now();
-
-                    base::http::RequestArgs args;
-                    args["text"_id] = "HelloWorld!";
-
-                    service->send("", args, [startTime](RESPONSE_FUNC) {
-                        base::StringView<char> txt((const char*)result.data.data(), result.data.size());
-                        TRACE_WARNING("Echo response: {} in {}: '{}'", result.code, startTime, txt);
-                    });
-                }
-            }
-
         }
 
         //---

@@ -63,7 +63,7 @@ namespace rendering
         {
             // setup global params
             SceneGlobalParams::ConstData constsData;
-            constsData.WorldToScreen = cameraParams.m_WorldToScreen;
+            constsData.WorldToScreen = cameraParams.m_WorldToScreen.transposed();
             constsData.AmbientColor = m_ambientColor;
             constsData.LightColor = m_lightColor;
             constsData.LightDirection = m_lightPosition.normalized();
@@ -81,7 +81,7 @@ namespace rendering
                     SceneObjectParams::ConstsData objectConstData;
                     objectConstData.UVScale = obj.m_params.UVScale;
                     objectConstData.DiffuseColor = obj.m_params.DiffuseColor;
-                    objectConstData.LocalToWorld = obj.m_params.LocalToWorld;
+                    objectConstData.LocalToWorld = obj.m_params.LocalToWorld.transposed();
                     objectConstData.SpecularColor = obj.m_params.SpecularColor;
 
                     SceneObjectParams objectParams;
