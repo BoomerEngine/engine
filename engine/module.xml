@@ -8,6 +8,7 @@
   <license>LGPL v3</license>
 
    <!-- Third party packages we need to download to compile this module -->
-   <thirdparty name="lib_engine_20_06" path="https://drive.google.com/uc?export=download&amp;id=1e_Y1YEgaSpjK6lYbAdtuhyZTEul2CXVi" />
+   <!-- thirdparty name="lib_engine_20_06" path="https://drive.google.com/uc?export=download&amp;id=1e_Y1YEgaSpjK6lYbAdtuhyZTEul2CXVi" /-->
+   <thirdparty name="lib_engine_20_06" path="https://www.mediafire.com/file/lgig9vyuguzxwno/lib_engine_20_06.zip/file" />
 
 </module>

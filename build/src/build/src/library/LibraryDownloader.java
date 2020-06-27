@@ -136,7 +136,7 @@ public class LibraryDownloader {
 
           String fullPath = head + "&confirm=" + conf + "&id=" + id;
           ret = DownloadFile(fullPath, saveFilePath, newCookies);
-        } else if (contentType.equals("application/x-zip-compressed")) {
+        } else if (contentType.equals("application/x-zip-compressed") || contentType.equals("application/zip")) {
           // create target folder
           {
             File f = new File(saveFilePath.toString());

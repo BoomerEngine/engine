@@ -1,0 +1,10 @@
+version: 1.0.{build}
+image: Visual Studio 2019 Preview
+configuration: Release
+platform: x64
+install:
+- cmd: >-
+    call generate_solution_windows_vs2019.bat
+build:
+  project: .temp\solution\windows.full.vs2019\full.sln
+  verbosity: minimal

@@ -153,7 +153,7 @@ public class VsProjectSourcesSetup extends ProjectSourcesSetup {
       f.writeln(" 	<ModuleType>ConsoleApp</ModuleType>");
     } else {
       f.writeln(" 	<ModuleType>Lib</ModuleType>");
-    }t
+    }
 
     if (solutionSetup.solutionType == SolutionType.FINAL)
       f.writeln(" 	<SolutionType>Player</SolutionType>");
