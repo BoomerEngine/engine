@@ -19,5 +19,3 @@ if %ERRORLEVEL% neq 0 (
 SET DIR=%cd%
 
 java -jar %DIR%\build.jar -generator=cmake
-
-PAUSE
