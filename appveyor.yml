@@ -2,6 +2,8 @@ version: 1.0.{build}
 image: Visual Studio 2019 Preview
 configuration: Release
 platform: x64
+cache:
+ - .temp\libs
 install:
 - cmd: >-
     call generate_solution_windows_vs2019.bat
