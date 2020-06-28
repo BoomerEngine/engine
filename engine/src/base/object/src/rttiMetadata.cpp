@@ -83,7 +83,7 @@ namespace base
 
         void MetadataContainer::removeAllMetadata()
         {
-            m_metadata.clearPtr();
+           // m_metadata.clearPtr(); // crashes :(
         }
 
         IMetadata& MetadataContainer::addMetadata(ClassType metadataType)

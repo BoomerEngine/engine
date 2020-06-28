@@ -103,6 +103,44 @@ namespace base
         }
     }
 
+    void ObjectTemplate::CopyProperties(const Array<ObjectTemplateParam>& sourceList, Array<ObjectTemplateParam>& outProperties, const base::ObjectPtr& owner)
+    {
+        DEBUG_CHECK_EX(outProperties.empty(), "Output list should be empty");
+        outProperties.reserve(sourceList.size());
+         
+        for (const auto& prop : sourceList)
+        {
+            if (prop.m_value.empty() || !prop.m_name)
+                continue;
+
+            auto& outProp = outProperties.emplaceBack();
+            outProp.m_name = prop.m_name;
+            outProp.m_value = prop.m_value;
+
+            TakeOwnershipOfPropertyValue(outProp.m_value, owner);
+        }
+    }
+
+    void ObjectTemplate::TakeOwnershipOfPropertyValue(Variant& value, const base::ObjectPtr& owner)
+    {
+        auto dataType = value.type();
+
+        // clone and re-parent all objects
+        if (dataType->metaType() == rtti::MetaType::StrongHandle)
+        {
+            ObjectPtr data;
+
+            auto handleType = static_cast<const rtti::IHandleType*>(dataType.ptr());
+            handleType->readPointedObject(value.data(), data);
+
+            data = base::CloneObjectUntyped(data, owner);
+
+            handleType->writePointedObject(value.data(), data);
+        }
+
+        // TODO: any thing else?
+    }
+
     void ObjectTemplate::MergeProperties(const Array<ObjectTemplateParam>** parameterLists, uint32_t numParameterLists, Array<ObjectTemplateParam>& outProperties, const base::ObjectPtr& owner)
     {
         HashMap<StringID, const ObjectTemplateParam*> names;
@@ -126,19 +164,7 @@ namespace base
             ret.m_name = name;
             ret.m_value = source->m_value;
 
-            // clone and reparent the inlined object
-            auto dataType  = ret.m_value.type();
-            if (dataType->metaType() == rtti::MetaType::StrongHandle)
-            {
-                ObjectPtr data;
-
-                auto handleType  = static_cast<const rtti::IHandleType*>(dataType.ptr());
-                handleType->readPointedObject(ret.m_value.data(), data);
-
-                data = base::CloneObjectUntyped(data, owner);
-
-                handleType->writePointedObject(ret.m_value.data(), data);
-            }
+            TakeOwnershipOfPropertyValue(ret.m_value, owner);           
         }
     }
 

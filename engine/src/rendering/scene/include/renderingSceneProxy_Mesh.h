@@ -34,6 +34,7 @@ namespace rendering
             };
 
             base::Array<Chunk> chunks;
+            base::Box localBounds;
         };
 
         ///--
@@ -64,6 +65,8 @@ namespace rendering
             MaterialCache* m_materialCache = nullptr;
 
             //--
+
+            virtual void runMoveProxy(Scene* scene, IProxy* proxy, const CommandMoveProxy& cmd) override final;
 
             virtual void handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies) override final;
         };

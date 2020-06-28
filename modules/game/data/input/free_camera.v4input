@@ -1,0 +1,12 @@
+document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
+  class=game::InputDefinitions
+    root class=game::InputActionTable name=Root
+      actions
+        type=Button name=FreeCameraFB defaultKey=KEY_W
+        type=Button name=FreeCameraFB defaultKey=KEY_S invert=true
+        type=Button name=FreeCameraLR defaultKey=KEY_A invert=true
+        type=Button name=FreeCameraLR defaultKey=KEY_D 
+        type=Button name=FreeCameraUD defaultKey=KEY_Q
+        type=Button name=FreeCameraUD defaultKey=KEY_D invert=true
+        type=Axis name=FreeCameraX defaultAxis=AXIS_MOUSEX
+        type=Axis name=FreeCameraY defaultAxis=AXIS_MOUSEY

@@ -13,10 +13,12 @@
 #include "static_init.inl"
 
 #include "resourceReferenceType.h"
+#include "resourceAsyncReferenceType.h"
 
 DECLARE_MODULE(PROJECT_NAME)
 {
     RTTI::GetInstance().registerDynamicTypeCreator(base::res::ResourceRefType::TypePrefix, &base::res::ResourceRefType::ParseType);
+    RTTI::GetInstance().registerDynamicTypeCreator(base::res::ResourceAsyncRefType::TypePrefix, &base::res::ResourceAsyncRefType::ParseType);
     base::IObject::RegisterCloneFunction(&base::CloneObjectUntyped);
     base::IObject::RegisterSerializeFunction(&base::SaveObjectToBuffer);
     base::IObject::RegisterDeserializeFunction(&base::LoadObjectFromBuffer);

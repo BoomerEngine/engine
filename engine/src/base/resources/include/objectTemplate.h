@@ -100,7 +100,10 @@ namespace base
 
         ClassType objectClassForEdit() const;
 
+        static void CopyProperties(const Array<ObjectTemplateParam>& sourceList, Array<ObjectTemplateParam>& outProperties, const base::ObjectPtr& owner);
         static void MergeProperties(const Array<ObjectTemplateParam>** parameterLists, uint32_t numParameterLists, Array<ObjectTemplateParam>& outProperties, const base::ObjectPtr& owner);
+
+        static void TakeOwnershipOfPropertyValue(Variant& inOutValue, const base::ObjectPtr& owner);
 
         void applyProperties(const base::ObjectPtr& target) const;
 

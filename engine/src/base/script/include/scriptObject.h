@@ -32,7 +32,7 @@ namespace base
             virtual ~ScriptedObject();
 
             // get object class, dynamic, returns true scripted class
-            virtual ClassType cls() const override final { return m_scriptedClass; }
+            virtual ClassType cls() const override final { return m_scriptedClass ? m_scriptedClass : TBaseClass::cls(); }
 
             // get internal data buffer
             INLINE const void* scriptedData() const { return m_scriptPropertiesData; }

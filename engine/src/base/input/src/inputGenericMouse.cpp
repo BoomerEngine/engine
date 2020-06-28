@@ -154,7 +154,7 @@ namespace base
             if (0.0f != delta.y)
             {
 				SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEY);
-                m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEX, delta.x));
+                m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEY, delta.y));
             }
             if (0.0f != delta.z)
             {

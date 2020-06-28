@@ -22,7 +22,7 @@ namespace base
 
         ScriptedObject::ScriptedObject()
         {
-            m_scriptedClass = ScriptedObject::GetStaticClass();
+            //m_scriptedClass = ScriptedObject::GetStaticClass();
             m_scriptPropertiesData = nullptr;
         }
 

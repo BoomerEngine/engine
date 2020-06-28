@@ -1,0 +1,88 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: input #]
+***/
+
+#pragma once
+
+namespace game
+{
+    //---
+
+    /// type of the input action
+    enum class InputActionType : uint8_t
+    {
+        Button, // we receive +1 when pressed -1 when released, can be bound to keyboard, mouse buttons, mouse wheel and pad buttons, multiple keys can address the same action (button state is accumuated)
+        Axis, // mouse axis/pad axis, we receive a delta every frame -inf to +inf, scaled by mouse sensitivity/acceleration, for pad values we output the absolute value instead
+    };
+
+    /// input action
+    struct GAME_HOST_API InputAction
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(InputAction);
+
+    public:
+        base::StringID name;
+        InputActionType type;
+        bool invert = false;
+
+        base::input::KeyCode defaultKey; // default binding for key 
+        base::input::AxisCode defaultAxis; // default binding for axis
+
+        base::StringBuf mappingName; // name of this action in user mapping, only if mappable
+        base::StringBuf mappingGroup; // group for user mapping (ie. Driving, Movement, etc)
+
+        InputAction();
+    };
+
+    /// table of input actions that are to be used together
+    class GAME_HOST_API InputActionTable : public base::IObject
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(InputActionTable, base::IObject);
+
+    public:
+        InputActionTable();
+
+        // name of the context
+        INLINE const base::StringID& name() const { return m_name; }
+
+        // actions
+        INLINE const base::Array<InputAction>& actions() const { return m_actions; }
+
+        // child contexts
+        INLINE const base::Array<InputActionTablePtr>& children() const { return m_children; }
+
+    private:
+        base::StringID m_name;
+        base::Array<InputAction> m_actions;
+        base::Array<InputActionTablePtr> m_children;
+    };
+
+    //---
+
+    /// file with input mapping definitions
+    class GAME_HOST_API InputDefinitions : public base::res::ITextResource
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::ITextResource);
+
+    public:
+        InputDefinitions();
+
+        // get root context
+        INLINE const InputActionTablePtr& root() const { return m_root; }
+
+        //--
+
+        // find input table by name
+        InputActionTablePtr findTable(base::StringView<char> name) const;
+
+    public:
+        InputActionTablePtr m_root; // root context
+    };
+
+    //---
+
+} // game

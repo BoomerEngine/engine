@@ -69,16 +69,31 @@ namespace rendering
             m_gpuObjectInfos->writeAtIndex(index, gpuInfo);
         }
 
+        void SceneObjectRegistry::repackObject(ObjectRenderID index)
+        {
+            const auto& data = m_objectInfos.typedData()[index];
+
+            GPUSceneObjectInfo gpuInfo;
+            memset(&gpuInfo, 0, sizeof(gpuInfo));
+            packObjectData(data, gpuInfo);
+
+            m_gpuObjectInfos->writeAtIndex(index, gpuInfo);
+        }
+
         void SceneObjectRegistry::updateObject(ObjectRenderID index, const base::Matrix& localToScene, const base::Box& sceneBounds)
         {
-            // TODO
+            auto& data = m_objectInfos.typedData()[index];
+            data.localToScene = localToScene;
+            data.sceneBounds = sceneBounds;
+
+            repackObject(index);            
         }
 
         void SceneObjectRegistry::packObjectData(const SceneObjectInfo& info, GPUSceneObjectInfo& outObject) const
         {
             memset(&outObject, 0, sizeof(outObject));
             outObject.autoHideDistance = std::clamp<float>(info.autoHideDistance, 0.1f, 10000.0f);
-            outObject.localToScene = info.localToScene;
+            outObject.localToScene = info.localToScene.transposed();
             outObject.sceneBoundsMin = info.sceneBounds.min;
             outObject.sceneBoundsMax = info.sceneBounds.max;
             outObject.flags = info.flags;

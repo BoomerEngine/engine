@@ -84,7 +84,7 @@ export shader PS
 #else
 		vec3 linearColor = SourceColor[pixelCoord].xyz;
 #endif		
-		float lum = max(0.001, Luminance(linearColor));
+		return max(0.001, Luminance(linearColor));
 	}
 
 	void main()

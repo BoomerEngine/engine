@@ -131,6 +131,7 @@ namespace rendering
             // TODO: create LOD ranges
 
             // create chunk fragments
+            proxy->localBounds = meshDesc.mesh->bounds().box;
             proxy->chunks.reserve(meshDesc.mesh->chunks().size());
             for (const auto& meshChunk : meshDesc.mesh->chunks())
             {
@@ -189,6 +190,17 @@ namespace rendering
 
                     outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
                 }
+            }
+        }
+
+        void ProxyMeshHandler::runMoveProxy(Scene* scene, IProxy* proxy, const CommandMoveProxy& cmd)
+        {
+            auto* localProxy = static_cast<ProxyMesh*>(proxy);
+
+            if (localProxy->objectId)
+            {
+                const auto newBounds = cmd.localToScene.transformBox(localProxy->localBounds);
+                scene->objects().updateObject(localProxy->objectId, cmd.localToScene, newBounds);
             }
         }
 

@@ -114,18 +114,21 @@ namespace rendering
         {
             DEBUG_CHECK_EX(m_finished.load() != 0, "Cannot release non finished buffer");
 
+            if (m_firstChildBuffer)
+            {
+                const auto* cur = m_firstChildBuffer;
+                while (cur)
+                {
+                    auto* next = cur->nextChildBuffer;
+                    cur->childBuffer->release();
+                    cur = next;
+                }
+                m_firstChildBuffer = nullptr;
+            }
+
             DEBUG_CHECK_EX(m_writingThread == 0, "There is still a thread with CommandWriter that opened this command buffer for writing");
             m_pages->reset(); // this releases memory for this command buffer as well
 
-            const auto* cur = m_firstChildBuffer;
-            while (cur)
-            {
-                auto* next = cur->nextChildBuffer;
-                cur->childBuffer->release();
-                cur = next;
-            }
-
-            m_firstChildBuffer = nullptr;
             this->~CommandBuffer();
             MemFree(this);
         }

@@ -114,6 +114,7 @@ namespace rendering
 
             //--
             
+            void repackObject(ObjectRenderID id);
             void packObjectData(const SceneObjectInfo& info, GPUSceneObjectInfo& outObject) const;
 
             //--
