@@ -3,9 +3,15 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# dependency: base_* #]
-* [# dependency: rendering_* #]
-* [# dependency: assets_* #]
+* [# dependency: base_canvas #]
+* [# dependency: base_resources #]
+* [# dependency: base_app #]
+* [# dependency: base_cooking #]
+* [# dependency: base_imgui #]
+* [# dependency: rendering_canvas #]
+* [# dependency: rendering_compiler #]
+* [# dependency: rendering_api_* #]
+* [# dependency: assets_image_loader #]
 * [# app #]
 * [# editor #]
 * [# generate_main #]

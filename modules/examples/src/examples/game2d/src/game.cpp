@@ -67,6 +67,12 @@ namespace example
         m_scene->render(cmd, width, height, outputWidth, outputHeight);
     }
 
+    void Game::debug()
+    {
+        static bool open = false;
+        ImGui::ShowDemoWindow(&open);
+    }
+
     void Game::createLevel()
     {
         const auto TERRAIN_WIDTH = 100;
@@ -122,7 +128,8 @@ namespace example
                             if (big && (code.l || code.r || !code.bl || !code.br))
                                 continue;
 
-                            const auto pos = terrain->tileSnap(x, y) - (asset->size() * 0.5f);
+                            auto pos = terrain->tileSnap(x, y);
+                            pos.y -= (asset->size().y * 0.5f);
                             auto sprite = CreateSharedPtr<GameSprite>(pos, asset);
                             m_scene->m_layer[0].addObject(sprite);
                         }

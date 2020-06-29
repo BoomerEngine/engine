@@ -99,7 +99,7 @@ namespace example
         if (m_buttonDown)
             delta.y += 1.0f;
 
-        const auto speed = m_buttonRun ? 1000.0f : 500.0f;
+        const auto speed = m_running ? 1000.0f : 500.0f;
         const auto requestedVelX = speed * delta.x;
         m_velocity.x = ReachWithAcc(m_velocity.x, requestedVelX, 3000.0f, dt);
         m_velocity.y += 1000.0f * dt;
@@ -124,10 +124,14 @@ namespace example
             pos.y = groundHeight;
             m_velocity.y = 0.0f;
             m_onGround = true;
+            m_running = m_buttonRun;
         }
         else
         {
             m_onGround = false;
+
+            if (!m_buttonRun)
+                m_running = false;
         }
 
         if (m_onGround && m_buttonJump)

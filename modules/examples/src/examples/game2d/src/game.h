@@ -23,6 +23,7 @@ namespace example
         Game();
 
         void tick(float dt);
+        void debug();
         void render(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget);
         bool handleInput(const BaseEvent& evt);
         

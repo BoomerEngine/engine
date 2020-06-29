@@ -28,6 +28,8 @@ namespace example
         void updateWindow();
 
         void renderFrame();
+        void renderNonGameOverlay(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget);
+
         bool processInput(const BaseEvent& evt);
 
         //--
@@ -41,7 +43,10 @@ namespace example
 
         //--
 
+        bool shouldCaptureInput();
+
         bool m_showDebugPanels = false;
+        ImGuiContext* m_imgui = nullptr;
 
         bool m_paused = false;
         float m_timeScale = 1.0f;

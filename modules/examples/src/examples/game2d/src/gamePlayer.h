@@ -57,6 +57,7 @@ namespace example
         bool m_buttonJump = false;
 
         bool m_flip = false;
+        bool m_running = false;
         bool m_onGround = false;
 
         float m_timeInState = 0.0f;

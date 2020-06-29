@@ -196,7 +196,7 @@ namespace ImGui
     {
         ImGui::PrepareCanvasImages(ImGui::GetIO());
 
-        ImGui::SetCurrentFont(ImGui::GetFont(ImGui::Font::Default));
+        //ImGui::SetCurrentFont(ImGui::GetFont(ImGui::Font::Default));
 
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -225,7 +225,7 @@ namespace ImGui
         ImGui::GetIO().KeyMap[ImGuiKey_Z] = (int)base::input::KeyCode::KEY_Z;
 
         ImVec4* colors = ImGui::GetStyle().Colors;
-        colors[ImGuiCol_WindowBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
+        /*colors[ImGuiCol_WindowBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
         colors[ImGuiCol_PopupBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.0f);
         colors[ImGuiCol_Border] = ImVec4(0.39f, 0.39f, 0.39f, 1.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.27f, 0.29f, 0.29f, 1.0f);
@@ -247,7 +247,7 @@ namespace ImGui
         colors[ImGuiCol_TabUnfocused] = ImVec4(0.26f, 0.27f, 0.27f, 1.0f);
         colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.31f, 0.32f, 0.33f, 1.00f);
 
-        colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
+        colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);*/
 
         ImGui::GetStyle().FrameBorderSize = 1;
 

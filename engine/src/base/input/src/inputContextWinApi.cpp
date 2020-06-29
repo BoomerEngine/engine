@@ -441,7 +441,7 @@ namespace base
                 if (m_activeCaptureMode == 2)
                 {
                     ::SetCursorPos(m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
-                    ::ShowCursor(TRUE);
+                    while (::ShowCursor(TRUE) < 0) {};
                     ::ReleaseCapture();
                 }
                 else if (m_activeCaptureMode == 1)
@@ -481,7 +481,7 @@ namespace base
                         ::SetCapture(m_hWnd);
 
                         if (m_activeCaptureMode == 2)
-                            ::ShowCursor(FALSE);
+                            while (::ShowCursor(FALSE) >= 0) {};
 
                         TRACE_INFO("Mouse capture enabled: {} at {}x{}", m_activeCaptureMode, m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
                     }

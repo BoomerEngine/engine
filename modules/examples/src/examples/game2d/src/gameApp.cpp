@@ -23,6 +23,9 @@ namespace example
         if (!createWindow())
             return false;
 
+        m_imgui = ImGui::CreateContext();
+        ImGui::SetCurrentContext(m_imgui);
+
         m_game = CreateSharedPtr<Game>();
         return true;
     }
@@ -30,6 +33,13 @@ namespace example
     void GameApp::cleanup()
     {
         m_game.reset();
+
+        if (m_imgui)
+        {
+            ImGui::SetCurrentContext(nullptr);
+            ImGui::DestroyContext(m_imgui);
+            m_imgui = nullptr;
+        }
 
         if (m_renderingOutput)
         {
@@ -56,6 +66,8 @@ namespace example
         setup.m_windowMaximized = false;
         setup.m_windowTitle = "BoomerEngine - Game2D";
         setup.m_class = rendering::DriverOutputClass::NativeWindow; // render to native window on given OS
+        setup.m_windowCreateInputContext = true;
+        setup.m_windowInputContextGameMode = true; // RawInput
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
@@ -76,6 +88,11 @@ namespace example
         return true;
     }
 
+    bool GameApp::shouldCaptureInput()
+    {
+        return !m_showDebugPanels;
+    }
+
     void GameApp::update()
     {
         // measure and accumulate the dt from last frame
@@ -90,6 +107,10 @@ namespace example
 
         // record frame content and send it for rendering
         renderFrame();
+
+        // capture input to the window if required
+        if (m_renderingWindow && m_renderingWindow->windowGetInputContext())
+            m_renderingWindow->windowGetInputContext()->requestCapture(shouldCaptureInput() ? 2 : 0);
     }
 
     void GameApp::updateWindow()
@@ -134,10 +155,39 @@ namespace example
             }
         }
 
-        // pass to game
-        return m_game->handleInput(evt);
+        // pass to game or debug panels
+        if (m_showDebugPanels)
+            return ImGui::ProcessInputEvent(m_imgui, evt);
+        else
+            return m_game->handleInput(evt);
     }
        
+    void GameApp::renderNonGameOverlay(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget)
+    {
+        FrameBuffer fb;
+        fb.color[0].view(colorTarget); // no clear
+        fb.depth.view(depthTarget).clearDepth().clearStencil();
+        cmd.opBeingPass(fb);
+
+        if (m_showDebugPanels)
+        {
+            base::canvas::Canvas canvas(width, height);
+
+            {
+                ImGui::BeginCanvasFrame(canvas);
+                m_game->debug();
+                ImGui::EndCanvasFrame(canvas);
+            }
+
+            CanvasRenderingParams renderingParams;
+            renderingParams.frameBufferWidth = width;
+            renderingParams.frameBufferHeight = height;
+            base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
+        }
+
+        cmd.opEndPass();
+    }
+
     void GameApp::renderFrame()
     {
         // create a command buffer writer and tell the "scene" to render to it
@@ -148,6 +198,9 @@ namespace example
         if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
         {
             m_game->render(cmd, viewport.width(), viewport.height(), colorBackBuffer, depthBackBuffer);
+
+            renderNonGameOverlay(cmd, viewport.width(), viewport.height(), colorBackBuffer, depthBackBuffer);
+
             cmd.opSwapOutput(m_renderingOutput);
         }
 
