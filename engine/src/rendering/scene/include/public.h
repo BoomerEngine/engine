@@ -106,23 +106,9 @@ namespace rendering
         
         class FrameRenderer;
         class FrameView;
-        class FrameViewCamera;
         class FrameSurfaces;
 
         struct FilterFlags;
-
-        //--
-
-        enum class FrameResource : uint8_t
-        {
-            HDRLinearMainColorRT, // main render target - HDR linear, MSAA if needed
-            HDRLinearMainDepthRT, // depth buffer matching the size and format of FullColr
-
-            HDRResolvedColor, // non-MSAA resolved color
-            HDRResolvedDepth, // non-MSAA resolved depth
-
-            CameraPrevLum, // previous scene luminance (1x1 texture)
-        };
 
         //--
 
@@ -149,6 +135,11 @@ namespace rendering
             OpaqueMasked,
 
             DebugSolid,
+
+            ShadowDepth0,
+            ShadowDepth1,
+            ShadowDepth2,
+            ShadowDepth3,
 
             Transparent,
             SelectionOutline,

@@ -76,7 +76,7 @@ namespace game
 
             void reportError(base::StringView<char> msg);
 
-            rendering::MeshPtr loadMesh(base::StringView<char> meshName);
+            rendering::MeshPtr loadMesh(base::StringView<char> meshName, bool fullPath=false);
 
         protected:
             WorldPtr m_world;

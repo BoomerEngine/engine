@@ -59,7 +59,7 @@ namespace rendering
                     layoutElement.streamIndex = streamIndex;
                     layoutElement.layoutIndex = outShaderVertexInputSetup.lastValidIndex();
 
-                    TRACE_INFO("Vertex element '{}' in binding '{}' bound to stream {}, location {}", layoutElement.memberName, layoutElement.bindingName, layoutElement.streamIndex, layoutElement.layoutIndex);
+                    TRACE_SPAM("Vertex element '{}' in binding '{}' bound to stream {}, location {}", layoutElement.memberName, layoutElement.bindingName, layoutElement.streamIndex, layoutElement.layoutIndex);
                 }
             }
         }

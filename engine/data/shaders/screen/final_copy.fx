@@ -8,7 +8,7 @@
 
 //----
 
-#include "postfx.h"
+#include <math.h>
 
 //--
 
@@ -16,9 +16,9 @@ descriptor BlitParams
 {
     ConstantBuffer
 	{
-        ivec4 TargetOffsetSize;
-        vec2 TargetToSourceScale;
-        vec2 SourceInvRTSize;
+		ivec4 TargetOffsetSize;
+		vec2 TargetToSourceScale;
+		vec2 SourceInvRTSize;
 		float Gamma;
 	}
 	
@@ -30,11 +30,11 @@ export shader BlitPS
 	void main()
     {
 		vec2 sourcePixel = (gl_FragCoord.xy - TargetOffsetSize.xy) * TargetToSourceScale.xy; // in pixels
-		vec2 sourceUV = (sourcePixel + 0.5f) * SourceInvRTSize;
+		vec2 sourceUV = (sourcePixel + 0.0f) * SourceInvRTSize;
 
-	    vec4 val = textureLod(Source, sourceUV, 0);
+		vec4 val = textureLod(Source, sourceUV, 0);
 
-        gl_Target0 = pow(val.xyz1, Gamma);
+		gl_Target0 = pow(val.xyz1, Gamma);
 		//gl_Target0 = sourceUV.xy01;
 	}
 }

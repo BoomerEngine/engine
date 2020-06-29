@@ -62,7 +62,10 @@ namespace rendering
             const auto uploadSize = m_dirtyRegionEnd - m_dirtyRegionStart;
             cmd.opUpdateDynamicBuffer(m_bufferView, m_dirtyRegionStart, uploadSize, m_backingStorage + m_dirtyRegionStart);
 
-            TRACE_INFO("Uploaded {}", MemSize(uploadSize));
+            if (uploadSize > 4096)
+            {
+                TRACE_SPAM("Uploaded {}", MemSize(uploadSize));
+            }
 
             m_dirtyRegionStart = 0;
             m_dirtyRegionEnd = 0;

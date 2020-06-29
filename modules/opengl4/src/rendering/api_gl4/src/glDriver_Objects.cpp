@@ -82,6 +82,15 @@ namespace rendering
             if (sourceData)
                 flags |= ImageViewFlag::Preinitialized;
 
+            // if it's a writable render target make sure it's created right away
+            /*if (info.allowRenderTarget || info.allowUAV)
+            {
+                m_thread->run([image]()
+                    {
+                        image->ensureInitialized();
+                    });
+            }*/
+
             // return read only view for the created object
             ImageViewKey key(info.format, info.view, 0, info.numSlices, 0, info.numMips);
             return ImageView(image->handle(), key, info.numSamples, info.width, info.height, info.depth, flags, info.sampler);
@@ -127,6 +136,33 @@ namespace rendering
             // get the created object and put it in the map
             auto image  = ResolveStaticObject<Image>(view.id());
             ASSERT(image != nullptr);            
+            ASSERT(m_predefinedImages[id] == nullptr);
+            m_predefinedImages[id] = image;
+
+            // make sure default object is initialized
+            image->ensureInitialized();
+        }
+
+        void Driver::createPredefinedRenderTarget(uint32_t id, const ImageFormat format, uint32_t numSlices, const char* debugName)
+        {
+            ImageCreationInfo setup;
+            setup.width = 16;
+            setup.height = 16;
+            setup.depth = 1;
+            setup.view = (numSlices == 0) ? ImageViewType::View2D : ImageViewType::View2DArray;
+            setup.format = format;
+            setup.numSlices = std::max<uint32_t>(1, numSlices);
+            setup.numMips = 1;
+            setup.label = debugName;
+            setup.allowUAV = true;
+            setup.allowShaderReads = true;
+            setup.allowCopies = true;
+            setup.allowRenderTarget = true;
+
+            // get the created object and put it in the map
+            auto view = createImage(setup);
+            auto image = ResolveStaticObject<Image>(view.id());
+            ASSERT(image != nullptr);
             ASSERT(m_predefinedImages[id] == nullptr);
             m_predefinedImages[id] = image;
 

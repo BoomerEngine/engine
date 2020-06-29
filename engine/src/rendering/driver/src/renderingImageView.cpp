@@ -250,6 +250,24 @@ namespace rendering
         return theView;
     }
 
+    ImageView ImageView::DefaultColorRT()
+    {
+        static auto theView = MakeDefaultTexture(ID_DefaultColorRT);
+        return theView;
+    }
+
+    ImageView ImageView::DefaultDepthRT()
+    {
+        static auto theView = MakeDefaultTexture(ID_DefaultDepthRT);
+        return theView;
+    }
+
+    ImageView ImageView::DefaultDepthArrayRT()
+    {
+        static auto theView = MakeDefaultTexture(ID_DefaultDepthArrayRT);
+        return theView;
+    }
+
     //--
 
 } // rendering

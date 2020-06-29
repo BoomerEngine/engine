@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: frame\view #]
+* [# filter: frame\fragments #]
 ***/
 
 #include "build.h"
@@ -13,7 +13,6 @@
 #include "renderingFrameSurfaceCache.h"
 #include "renderingFrameParams.h"
 #include "renderingFrameView.h"
-#include "renderingFrameViewCamera.h"
 
 #include "renderingSelectable.h"
 #include "renderingSceneFragmentList.h"
@@ -28,15 +27,6 @@ namespace rendering
 {
     namespace scene
     {
-        //---
-
-        RTTI_BEGIN_TYPE_ENUM(FragmentDrawBucket);
-        RTTI_ENUM_OPTION(OpaqueNotMoving);
-        RTTI_ENUM_OPTION(Opaque);
-        RTTI_ENUM_OPTION(OpaqueMasked);
-        RTTI_ENUM_OPTION(Transparent);
-        RTTI_ENUM_OPTION(SelectionOutline);
-        RTTI_END_TYPE();
 
         //---
 
@@ -63,7 +53,7 @@ namespace rendering
             //ImageView TextureArray;
         };
 
-        void RenderDebugFragments(command::CommandWriter& cmd, const FrameView& view, const FrameViewCamera& camera, const DebugGeometry& geom)
+        void RenderDebugFragments(command::CommandWriter& cmd, const FrameView& view, const DebugGeometry& geom)
         {
             PC_SCOPE_LVL0(RenderDebugFragments);
 
@@ -96,7 +86,7 @@ namespace rendering
                 // global params
                 {
                     DebugFragmentParams::Constants consts;
-                    consts.WorldToScreen = camera.renderCameras()[0].data.WorldToScreen; // TODO: jitter or not ?
+                    consts.WorldToScreen = view.frame().camera.camera.worldToScreen().transposed(); // TODO: jitter or not ?
                     view.frame().camera.camera.worldToScreen();
 
                     DebugFragmentParams params;
@@ -147,58 +137,6 @@ namespace rendering
                 // reset state
                 cmd.opSetDepthBias(0.0f, 0.0f, 0.0f);
                 cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-            }
-        }
-
-        //---
-
-        static bool FilterFragmentType(const FrameView& view, FragmentDrawBucket bucket)
-        {
-            switch (bucket)
-            {
-                case FragmentDrawBucket::OpaqueNotMoving: return view.frame().filters & FilterBit::FragOpaqueNonMovable;
-                case FragmentDrawBucket::OpaqueMasked: return view.frame().filters & FilterBit::FragOpaqueMasked;
-                case FragmentDrawBucket::Opaque: return view.frame().filters & FilterBit::FragOpaqueSolid;
-            }
-
-            return true;
-        }
-
-        void RenderViewFragments(command::CommandWriter& cmd, const FrameView& view, const FrameViewCamera& camera, const FragmentRenderContext& context, const std::initializer_list<FragmentDrawBucket>& buckets)
-        {
-            PC_SCOPE_LVL1(RenderViewFragments);
-
-            for (const auto bucket : buckets)
-            {
-                command::CommandWriterBlock block(cmd, base::TempString("{}", bucket));
-
-                if (bucket == FragmentDrawBucket::DebugSolid)
-                {
-                    if (view.frame().filters & FilterBit::DebugGeometrySolid)
-                        RenderDebugFragments(cmd, view, camera, view.frame().geometry.solid);
-                }
-                else
-                {
-                    for (auto* scene : view.scenes())
-                    {
-                        scene->drawList->iterateFragmentRanges(bucket, [&scene, &cmd, &context, &view](const Fragment* const* fragments, uint32_t count)
-                            {
-                                uint32_t index = 0;
-                                while (index < count)
-                                {
-                                    auto firstHandlerType = fragments[index]->type;
-                                    auto firstFragmentIndex = index;
-                                    while (++index < count)
-                                        if (fragments[index]->type != firstHandlerType)
-                                            break;
-
-
-                                    if (const auto* handler = scene->scene->fragmentHandlers()[(uint8_t)firstHandlerType])
-                                        handler->handleRender(cmd, view, context, fragments + firstFragmentIndex, index - firstFragmentIndex);
-                                }
-                            });
-                    }
-                }
             }
         }
 

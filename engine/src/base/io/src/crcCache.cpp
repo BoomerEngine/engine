@@ -103,13 +103,14 @@ namespace base
                 {
                     io::TimeStamp currentFileTimeStamp;
                     uint64_t currentFileSize = 0;
-                    if (!IO::GetInstance().fileTimeStamp(absolutePath, fileTimeStamp, &fileSize))
+                    if (!IO::GetInstance().fileTimeStamp(absolutePath, currentFileTimeStamp, &currentFileSize))
                     {
                         TRACE_ERROR("File '{}' got deleted while we were calculating CRC", absolutePath);
                     }
                     else if (currentFileTimeStamp.value() != validCacheJob->timestamp || currentFileSize != validCacheJob->size)
                     {
-                        TRACE_WARNING("File '{}' got modified while having it's CRC calculated, restarting");
+                        TRACE_WARNING("File '{}' got modified while having it's CRC calculated, restarting ({}->{}) ({}->{})",
+                            absolutePath, validCacheJob->timestamp, currentFileTimeStamp.value(), validCacheJob->size, currentFileSize);
                         validCacheJob->timestamp = currentFileTimeStamp.value();
                         validCacheJob->size = currentFileSize;
                         continue;

@@ -22,16 +22,6 @@ namespace rendering
 		CameraContext::~CameraContext()
 		{}
 
-		const BufferView* CameraContext::fetchBuffer(FrameResource resourceType) const
-		{
-			return nullptr;
-		}
-
-		const ImageView* CameraContext::fetchImage(FrameResource resourceType) const
-		{
-			return nullptr;
-		}
-
 		base::StringBuf CameraContext::describe() const
 		{
 			return "CameraContext";

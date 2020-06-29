@@ -389,7 +389,7 @@ namespace base
             // deserialize
             TRACE_INFO("Loading uncached resource '{}' as '{}'", fileSystemPath, expectedClassType->name());;
             stream::MemoryReader reader(fileContent.data(), fileContent.size());
-            return res::LoadUncached(fileSystemPath, expectedClassType, reader);
+            return res::LoadUncached(fileSystemPath, expectedClassType, reader, m_loader, nullptr, m_referenceMountingPoint);
         }
 
         res::ResourceHandle CookerInterface::loadManifestFile(StringView<char> outputPartName, ClassType expectedManifestClass)

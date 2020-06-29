@@ -111,6 +111,7 @@ namespace rendering
 
             void createPredefinedImageFromColor(uint32_t id, const base::Color fillColor, const ImageFormat format, const char* debugName);
             void createPredefinedSampler(uint32_t id, const SamplerState& info, const char* debugName);
+            void createPredefinedRenderTarget(uint32_t id, const ImageFormat format, uint32_t numSlices, const char* debugName);
 
             //-----
         };

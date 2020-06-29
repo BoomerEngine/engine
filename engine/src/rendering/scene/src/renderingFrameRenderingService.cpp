@@ -15,8 +15,7 @@
 #include "rendering/driver/include/renderingDeviceService.h"
 #include "rendering/driver/include/renderingCommandBuffer.h"
 #include "renderingFrameView.h"
-#include "renderingFrameViewCamera.h"
-#include "renderingFrameViewPostFX.h"
+#include "renderingFrameView_Main.h"
 
 namespace rendering
 {
@@ -25,16 +24,19 @@ namespace rendering
         //--
 
         RTTI_BEGIN_TYPE_CLASS(FrameRenderingService);
+            RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<DeviceService>();
         RTTI_END_TYPE();
 
         FrameRenderingService::FrameRenderingService()
-        {}
+        {
+        }
 
         FrameRenderingService::~FrameRenderingService()
         {}
 
         base::app::ServiceInitializationResult FrameRenderingService::onInitializeService(const base::app::CommandLine& cmdLine)
         {
+            m_surfaceCache = MemNew(FrameSurfaceCache);
             return base::app::ServiceInitializationResult::Finished;
         }
 
@@ -53,62 +55,29 @@ namespace rendering
         {
             PC_SCOPE_LVL0(RenderFrame);
 
-            auto* device = base::GetService<DeviceService>()->device();
+            // no rendering possible without surfaces
+            if (!m_surfaceCache)
+                return nullptr;
 
-            if (!m_surfaceCache || !m_surfaceCache->supports(frame.resolution))
-            {
-                MemDelete(m_surfaceCache);
-                m_surfaceCache = MemNew(FrameSurfaceCache, frame.resolution);
-            }
+            // adjust surfaces to support the requires resolution
+            const auto requiredWidth = frame.resolution.width;
+            const auto requiredHeight = frame.resolution.height;
+            const auto targetWidth = frame.resolution.finalCompositionWidth;
+            const auto targetHeight = frame.resolution.finalCompositionHeight;
+            if (!m_surfaceCache->adjust(requiredWidth, requiredHeight))
+                return nullptr;
 
             {
                 command::CommandWriter cmd("RenderFrame");
 
                 {
-                    FrameRenderer renderer(device, frame, *m_surfaceCache);
+                    FrameRenderer renderer(frame, *m_surfaceCache);
                     renderer.prepareFrame(cmd);
 
-                    FrameViewCamera mainCamera(frame);
-                    mainCamera.calcMainCamera();
+                    FrameView_Main view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullColorRT, m_surfaceCache->m_sceneFullDepthRT, frame.mode);
+                    view.render(cmd);
 
-                    if (frame.mode == scene::FrameRenderMode::Default)
-                    {
-                        const auto& resolvedColor = renderer.fetchImage(FrameResource::HDRResolvedColor);
-                        const auto& resolvedDepth = renderer.fetchImage(FrameResource::HDRResolvedDepth);
-
-                        RenderLitView(cmd, renderer, mainCamera, resolvedColor, resolvedDepth);
-
-                        /*if (frame.filters & FilterBit::PostProcessing)
-                        {
-
-                        }*/
-
-                        PostFxTargetBlit(cmd, renderer, resolvedColor, targetView);
-                    }
-                    else if (frame.mode == scene::FrameRenderMode::WireframeSolid)
-                    {
-                        const auto& resolvedColor = renderer.fetchImage(FrameResource::HDRResolvedColor);
-
-                        RenderWireframeView(cmd, renderer, mainCamera, resolvedColor, true);
-
-                        PostFxTargetBlit(cmd, renderer, resolvedColor, targetView, false);
-                    }
-                    else if (frame.mode == scene::FrameRenderMode::WireframePassThrough)
-                    {
-                        const auto& resolvedColor = renderer.fetchImage(FrameResource::HDRResolvedColor);
-
-                        RenderWireframeView(cmd, renderer, mainCamera, resolvedColor, false);
-
-                        PostFxTargetBlit(cmd, renderer, resolvedColor, targetView, false);
-                    }
-                    else if (frame.mode == scene::FrameRenderMode::DebugDepth)
-                    {
-                        RenderDepthDebug(cmd, renderer, mainCamera, targetView);
-                    }
-                    else if (frame.mode == scene::FrameRenderMode::DebugLuminance)
-                    {
-                        RenderLuminanceDebug(cmd, renderer, mainCamera, targetView);
-                    }
+                    FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
                 }
 
                 return cmd.release();

@@ -77,7 +77,22 @@ namespace rendering
             {
 
             }
+        }
 
+        //---
+
+        void BindSingleCamera(command::CommandWriter& cmd, const Camera& camera, const Camera* prevFrameCamera /*= nullptr*/)
+        {
+            struct
+            {
+                ConstantsView params;
+            }  desc;
+
+            GPUCameraInfo data;
+            CalcGPUCameraInfo(data, camera, prevFrameCamera);
+
+            desc.params = cmd.opUploadConstants(data);
+            cmd.opBindParametersInline("CameraParams"_id, desc);
         }
 
         //---

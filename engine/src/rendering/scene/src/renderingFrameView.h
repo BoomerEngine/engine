@@ -3,11 +3,13 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: frame\view  #]
+* [# filter: frame  #]
 ***/
 
 #include "build.h"
 #include "renderingFrameRenderer.h"
+
+#pragma once
 
 namespace rendering
 {
@@ -15,21 +17,24 @@ namespace rendering
     {
         //---
 
+        class FrameRenderer;
+        struct CascadeData;
+
+        //---
+
+        /// type of the view
+        enum class FrameViewType : uint8_t
+        {
+            MainColor, // main color view (or derivatives)
+            GlobalCascades, // view for global cascades - only shadow casting fragments should be collected
+        };
+
         /// view rendering helper
         class RENDERING_SCENE_API FrameView : public base::NoCopy
         {
         public:
-            FrameView(const FrameRenderer& frame, const FrameViewCamera& camera, base::StringView<char> name);
+            FrameView(const FrameRenderer& frame, FrameViewType type, uint32_t width, uint32_t height);
             ~FrameView();
-
-            //--
-
-            // prepare view for rendering - collect all heavy duty objects, thread safe - should modify only the data inside the view
-            void collect(); 
-
-            // generate rendering fragments from collected visuble stuff (for actual rendering)
-            // NOTE: this may generate some additional rendering commands based on the collected content
-            void generateFragments(command::CommandWriter& cmd);
 
             //--
 
@@ -41,39 +46,128 @@ namespace rendering
                 FragmentDrawList* drawList = nullptr;
             };
 
+            // get view type
+            INLINE FrameViewType type() const { return m_type; }
+
+            // rendering width
+            INLINE uint32_t width() const { return m_width; }
+
+            // rendering height
+            INLINE uint32_t height() const { return m_height; }
+
             // get per-scene data, we are mostly interested in draw list and list of collected proxies
             INLINE const base::Array<PerSceneData*>& scenes() const { return m_scenes; }
 
             // parent frame
             INLINE const FrameParams& frame() const { return m_frame; }
 
+            // renderer
+            INLINE const FrameRenderer& renderer() const { return m_renderer; }
+
+        protected:
+            void collectSingleCamera(const Camera& camera);
+            void generateFragments(command::CommandWriter& cmd);
+
         private:
+            FrameViewType m_type;
             const FrameRenderer& m_renderer;
             const FrameParams& m_frame;
-            const FrameViewCamera& m_camera;
             base::mem::LinearAllocator m_allocator;
             base::InplaceArray<PerSceneData*, 10> m_scenes;
-
-            base::StringBuf m_name;
+            uint32_t m_width = 0;
+            uint32_t m_height = 0;
         };
 
-        //--
+        //---
 
-        // render a LIT scene into a linear color buffer, does MSAA resolve if MSAA mode was used but NO post processing - the result is a set of TWO Linear HDR buffers with scene content
-        extern RENDERING_SCENE_API void RenderLitView(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor, const ImageView& resolvedDepth);
+        // a "bracket" (collection of states) for active pass (PASS = bound render targets)
+        struct PassBracket
+        {
+        public:
+            PassBracket(command::CommandWriter& cmd, const FrameView& view, base::StringView<char> name);
+            ~PassBracket();
 
-        // render a solid wireframe view
-        extern RENDERING_SCENE_API void RenderWireframeView(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor, bool solid);
+            // bind a depth buffer and clear it
+            void depthClear(const ImageView& rt);
 
-        //--
+            // bind a color buffer and clear it
+            void colorClear(uint8_t index, const ImageView& rt, const base::Vector4& clearValues);
 
-        // render a depth buffer debug
-        extern RENDERING_SCENE_API void RenderDepthDebug(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor);
+            // bind a color buffer and clear it with default color
+            void colorClear(uint8_t index, const ImageView& rt);
 
-        // render a luminance debug
-        extern RENDERING_SCENE_API void RenderLuminanceDebug(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor);
+            // being pass
+            void begin();
 
-        //--
+        private:
+            command::CommandWriter& m_cmd;
+            const FrameView& m_view;
+
+            FrameBuffer m_fb;
+            FrameBufferViewportState m_viewport;
+
+            bool m_hasStartedPass = false;
+        };
+
+        //---
+
+
+        //---------------------------------
+        // fragment drawing utilities
+
+        // render debug fragments
+        extern RENDERING_SCENE_API void RenderDebugFragments(command::CommandWriter& cmd, const FrameView& view, const DebugGeometry& geom);
+
+        // render scene fragments
+        extern RENDERING_SCENE_API void RenderViewFragments(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const std::initializer_list<FragmentDrawBucket>& buckets);
+
+        //---------------------------------
+        // pass drawing utilities
+
+        // render depth pre pass
+        extern RENDERING_SCENE_API void RenderDepthPrepass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT);
+
+        // render forward pass
+        extern RENDERING_SCENE_API void RenderForwardPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, const ImageView& colorRT);
+
+        // render wireframe pass
+        extern RENDERING_SCENE_API void RenderWireframePass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, const ImageView& colorRT, bool solid);
+
+        // render a shadow depth pass
+        extern RENDERING_SCENE_API void RenderShadowDepthPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, uint32_t index = 0);
+
+        //---------------------------------
+        // final composition with outside world
+
+        // final copy - simple upscale source rect to target (does not do any color processing)
+        extern RENDERING_SCENE_API void FinalCopy(command::CommandWriter& cmd, uint32_t sourceWidth, uint32_t sourceHeight, const ImageView& source, uint32_t targetWidth, uint32_t targetHeight, const ImageView& target, float gamma=1.0f);
+
+        // final composition - tone map, sharpen, color grade, upscale
+        extern RENDERING_SCENE_API void FinalComposition(command::CommandWriter& cmd, uint32_t sourceWidth, uint32_t sourceHeight, const ImageView& sourceColor, uint32_t targetWidth, uint32_t targetHeight, const ImageView& target, const FrameParams_ToneMapping& toneMapping, const FrameParams_ColorGrading& colorGrading);
+
+        //---------------------------------
+        // in-frame effects/computations
+
+        // compute global shadow mask (R channel)
+        extern RENDERING_SCENE_API void GlobalShadowMask(command::CommandWriter& cmd, uint32_t sourceWidth, uint32_t sourceHeight, const ImageView& sourceDepth, const ImageView& targetSSAOMAsk);
+
+        //---------------------------------
+        // debug visualizations
+
+        // visualize depth buffer
+        extern RENDERING_SCENE_API void VisualizeDepthBuffer(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& depthSource, const ImageView& targetColor);
+
+        // visualize raw luminance (no exposure)
+        extern RENDERING_SCENE_API void VisualizeLuminance(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& colorSource, const ImageView& targetColor);
+
+        // visualize a channel in the texture
+        extern RENDERING_SCENE_API void VisualizeTexture(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& colorSource, const ImageView& targetColor, const base::Vector4& dot);
+
+        //---------------------------------
+        // light & shadows
+
+        // bind the lighting data (cascades + lighting grid)
+        extern RENDERING_SCENE_API void BindLightingData(command::CommandWriter& cmd, const CascadeData& cascades);
 
     } // scene
 } // rendering

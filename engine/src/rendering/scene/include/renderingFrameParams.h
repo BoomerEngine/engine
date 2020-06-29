@@ -94,6 +94,79 @@ namespace rendering
 
         //---
 
+        /// global shadow cascades
+        struct RENDERING_SCENE_API FrameParams_ShadowCascades
+        {
+            uint8_t numCascades = 0; // number of cascades, 0 to disable
+            float baseRange = 2.0f; // base cascade range - this is the range of the 1st cascade
+            float baseEdgeFade = 0.05f; // size of fade between cascades
+            float baseFilterSize = 16.0f; // in texels of the image
+            float rangeMul1 = 5.0f; // scale factor between cascade 0 and 1
+            float rangeMul2 = 5.0f; // scale factor between cascade 1 and 2
+            float rangeMul3 = 5.0f; // scale factor between cascade 2 and 3
+
+            FrameParams_ShadowCascades();
+        };
+
+        //---
+
+        /// tone mapping type
+        enum class FrameToneMappingType : uint8_t
+        {
+            None, // no tone mapping, data is output directly
+            Linear, // simple 1/2.2 gamma
+            SimpleReinhard,
+            LumabasedReinhard,
+            WhitePreservingLumabasedReinhard,
+            RomBinDaHouse,
+            Filmic,
+            Uncharted2,
+        };
+
+        /// tone mapping parameters
+        struct RENDERING_SCENE_API FrameParams_ToneMapping
+        {
+            FrameToneMappingType type = FrameToneMappingType::Uncharted2; // best game ever
+            float lumMultiplier = 1.0f;
+
+            FrameParams_ToneMapping();
+        };
+
+        //---
+
+        /// color grading parameters
+        struct RENDERING_SCENE_API FrameParams_ColorGrading
+        {
+            float temperatureShift = 0.0f; // no shift (-1 to 1)
+            float temeratureTint = 0.0f; // no tint (-1 to 1)
+
+            float contrast = 1.0f;
+            float vibrance = 1.0f;
+            float saturation = 1.0f;
+
+            base::Vector3 mixerRed = base::Vector3(1, 0, 0);
+            base::Vector3 mixerGreen = base::Vector3(0, 1, 0);
+            base::Vector3 mixerBlue = base::Vector3(0, 0, 1);
+
+            base::Vector3 toneShadows = base::Vector3(1, 1, 1);
+            base::Vector3 toneMidtones = base::Vector3(1, 1, 1);
+            base::Vector3 toneHighlights = base::Vector3(1, 1, 1);
+            base::Vector2 toneShadowsRange = base::Vector2(0.0f, 0.333f);
+            base::Vector2 toneHighlightRange = base::Vector2(0.55f, 1.0f);
+
+            base::Vector3 colorSlope = base::Vector3(1, 1, 1);
+            base::Vector3 colorOffset = base::Vector3(0, 0, 0);
+            base::Vector3 colorPower = base::Vector3(1, 1, 1);
+
+            base::Vector3 curveShadowGamma = base::Vector3(1, 1, 1);
+            base::Vector3 curveMidPoint = base::Vector3(1, 1, 1);
+            base::Vector3 curveHighlightScale = base::Vector3(1, 1, 1);
+
+            FrameParams_ColorGrading();
+        };
+
+        //---
+
         /// collected scenes to render
         struct RENDERING_SCENE_API FrameParams_Scenes
         {
@@ -143,6 +216,7 @@ namespace rendering
 
             DebugDepth, // visualize frame depth
             DebugLuminance, // visualize frame luminance
+            DebugShadowMask, // visualize shadow mask buffer
             DebugMaterial, // debug material channel - outputs specific material output instead of calculating whole material
         };
 
@@ -164,6 +238,9 @@ namespace rendering
             FrameParams_Scenes scenes;
             FrameParams_DebugGeometry geometry;
             FrameParams_DebugData debug;
+            FrameParams_ToneMapping toneMapping;
+            FrameParams_ColorGrading colorGrading;
+            FrameParams_ShadowCascades cascades;
 
             //--
 

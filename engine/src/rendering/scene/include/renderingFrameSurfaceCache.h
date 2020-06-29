@@ -21,17 +21,23 @@ namespace rendering
         class RENDERING_SCENE_API FrameSurfaceCache : public IDeviceObject
         {
         public:
-            FrameSurfaceCache(const FrameParams_Resolution& res);
+            FrameSurfaceCache(); // initialized to the max resolution of the device
             virtual ~FrameSurfaceCache();
 
-            // check if this cache can be used with scene with given parameters
-            bool supports(const FrameParams_Resolution& res) const;
+            //--
 
-            // get buffer resource
-            const BufferView* fetchBuffer(FrameResource resourceType) const;
+            // adjust to support given resolution, may fail
+            bool adjust(uint32_t requiredWidth, uint32_t requiredHeight);
 
-            // get image resource
-            const ImageView* fetchImage(FrameResource resourceType) const;
+            //--
+
+            ImageView m_sceneFullColorRT; // main scene render target
+            ImageView m_sceneFullDepthRT; // main scene depth buffer
+            ImageView m_sceneResolvedColor; // resolved copy of scene color buffer
+            ImageView m_sceneResolvedDepth; // resolved copy of scene depth buffer
+
+            ImageView m_cascadesShadowDepthRT; // array of shadow maps for global cascade shadows
+            ImageView m_globalAOShadowMaskRT; // screen size AO/shadow mask buffer
 
             //--
 
@@ -42,12 +48,13 @@ namespace rendering
 
             uint32_t m_maxSupportedWidth = 0;
             uint32_t m_maxSupportedHeight = 0;
-            uint8_t m_supportedMSAALevel = 0;
 
-            ImageView m_sceneFullColorRT; // MSAA scene color render target, full size
-            ImageView m_sceneFullDepthRT; // MSAA scene depth render target, full size 
-            ImageView m_sceneResolvedColor; // non-MSAA resolved color
-            ImageView m_sceneResolvedDepth; // non-MSAA resolved color
+            static const auto HdrFormat = ImageFormat::RGBA16F;
+            static const auto DepthFormat = ImageFormat::D24S8;
+            static const auto ShadowDepthFormat = ImageFormat::D32;
+
+            bool createViewportSurfaces(uint32_t width, uint32_t height);
+            void destroyViewportSurfaces();
         };
 
         ///---

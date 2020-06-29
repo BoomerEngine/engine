@@ -50,6 +50,12 @@ namespace base
         return (T*)(void*)Align<size_t>((size_t)ptr, alignment);
     }
 
+    // compute number of groups of given size
+    INLINE uint32_t GroupCount(uint32_t count, uint32_t groupSize)
+    {
+        return (count + (groupSize-1)) / groupSize;
+    }
+
     // get difference (in bytes) between pointers
     template<typename T>
     INLINE ptrdiff_t PtrDirr(T* a, T* b)

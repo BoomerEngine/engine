@@ -466,11 +466,10 @@ namespace wavefront
     }
 
     template< typename T >
-    static void FlipFaces(T* writePtr, uint32_t numFaces, const base::mesh::MeshTopologyType top)
+    static void FlipFaces(T* writePtr, const T* writeEndPtr, const base::mesh::MeshTopologyType top)
     {
         if (top == base::mesh::MeshTopologyType::Triangles)
         {
-            auto writeEndPtr = writePtr + (3 * numFaces);
             while (writePtr < writeEndPtr)
             {
                 std::swap(writePtr[0], writePtr[2]);
@@ -479,7 +478,6 @@ namespace wavefront
         }
         else if (top == base::mesh::MeshTopologyType::Quads)
         {
-            auto writeEndPtr = writePtr + (4 * numFaces);
             while (writePtr < writeEndPtr)
             {
                 std::swap(writePtr[0], writePtr[3]);
@@ -695,7 +693,7 @@ namespace wavefront
                     ExtractStreamData(0, positions, writePos, *jobInfo.sourceChunk, top, data);
 
                     if (flipFaces)
-                        FlipFaces(jobInfo.positionWritePtr, jobInfo.sourceChunk->numFaces, top);
+                        FlipFaces(jobInfo.positionWritePtr, writePos, top);
 
                     while (startPos < writePos)
                     {
@@ -714,7 +712,7 @@ namespace wavefront
                     ExtractStreamData(jobInfo.uvAttributeIndex, uvs, writeUV, *jobInfo.sourceChunk, top, data);
 
                     if (flipFaces)
-                        FlipFaces(jobInfo.uvWritePtr, jobInfo.sourceChunk->numFaces, top);
+                        FlipFaces(jobInfo.uvWritePtr, writeUV, top);
 
                     if (flipUV)
                     {
@@ -746,7 +744,7 @@ namespace wavefront
                     }
 
                     if (flipFaces)
-                        FlipFaces(jobInfo.normalWritePtr, jobInfo.sourceChunk->numFaces, top);
+                        FlipFaces(jobInfo.normalWritePtr, writeNormals, top);
                 }
                 else
                     FillDefaultDataZero(top, data, *jobInfo.sourceChunk, writeNormals);
@@ -760,7 +758,7 @@ namespace wavefront
                     ExtractStreamData(jobInfo.colorAttributeIndex, colors, writeColors, *jobInfo.sourceChunk, top, data);
 
                     if (flipFaces)
-                        FlipFaces(jobInfo.colorWritePtr, jobInfo.sourceChunk->numFaces, top);
+                        FlipFaces(jobInfo.colorWritePtr, writeColors, top);
                 }
                 else
                 {
@@ -1008,8 +1006,13 @@ namespace wavefront
             lod.hideDistance = 100.0f; // TODO: compute based on real distance needed
         }
 
+        // collision shapes
+        // TODO: extract the collision shapes
+        base::Array<base::mesh::MeshCollisionShape> shapes;
+
         // export
-        return base::CreateSharedPtr<base::mesh::Mesh>(std::move(buildMaterials), std::move(buildModels), std::move(buildRanges));
+        base::Array<base::mesh::MeshBone> bones;
+        return base::CreateSharedPtr<base::mesh::Mesh>(std::move(buildMaterials), std::move(buildModels), std::move(buildRanges), std::move(bones), std::move(shapes));
     }
 
 #if 0

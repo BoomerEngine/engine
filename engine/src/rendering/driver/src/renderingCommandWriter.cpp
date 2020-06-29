@@ -34,9 +34,12 @@ namespace rendering
 
         //--
 
-        CommandWriter::CommandWriter(CommandBuffer* buffer)
+        CommandWriter::CommandWriter(CommandBuffer* buffer, base::StringView<char> scopeName /*= base::StringView<char>()*/)
         {
             attachBuffer(buffer);
+            
+            if (!scopeName.empty())
+                opBeginBlock(scopeName);
         }
 
         CommandWriter::CommandWriter(base::StringView<char> scopeName /*= base::StringView<char>()*/)

@@ -14,7 +14,13 @@ namespace physics
     namespace runtime
     {
 
-        PhysicsScene::PhysicsScene()
+        //---
+
+        RTTI_BEGIN_TYPE_NATIVE_CLASS(PhysicsScene);
+        RTTI_END_TYPE();
+
+        PhysicsScene::PhysicsScene(physx::PxScene* scene)
+            : m_scene(scene)
         {
         }
 
@@ -22,6 +28,12 @@ namespace physics
         {
 
         }
+
+        void PhysicsScene::simulate(float dt)
+        {
+        }
+
+        //---
 
     } // runtime
 } // physics

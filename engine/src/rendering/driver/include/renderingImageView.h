@@ -137,6 +137,11 @@ namespace rendering
         static ImageView DefaultWhite();
         static ImageView DefaultFlatNormals();
 
+        /// default not-used render targets
+        static ImageView DefaultColorRT();
+        static ImageView DefaultDepthRT();
+        static ImageView DefaultDepthArrayRT();
+
     private:
         ImageViewKey m_key;
 

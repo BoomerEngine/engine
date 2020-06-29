@@ -32,20 +32,21 @@ namespace rendering
 
         void Driver::createPredefinedImages()
         {
-            // black color, 0,0,0
+            //--
+
             createPredefinedImageFromColor(ID_BlackTexture, base::Color(0, 0, 0, 0), ImageFormat::RGBA8_UNORM, "DefaultBlack");
-
-            // white color, 255, 255, 255
             createPredefinedImageFromColor(ID_WhiteTexture, base::Color(255,255,255,255), ImageFormat::RGBA8_UNORM, "DefaultWhite");
-
-            // linear gray color
             createPredefinedImageFromColor(ID_GrayLinearTexture, base::Color(127, 127, 127, 255), ImageFormat::RGBA8_UNORM, "DefaultLinearGray");
-
-            // sRGB gray
             createPredefinedImageFromColor(ID_GraySRGBTexture, base::Color(170, 170, 170, 255), ImageFormat::RGBA8_UNORM, "DefaultGammaGray");
-
-            // flat normal
             createPredefinedImageFromColor(ID_NormZTexture, base::Color(127, 127, 255, 255), ImageFormat::RGBA8_UNORM, "DefaultNormal");
+
+            //--
+
+            createPredefinedRenderTarget(ID_DefaultDepthRT, ImageFormat::D24S8, 1, "DefaultDepthRT");
+            createPredefinedRenderTarget(ID_DefaultColorRT, ImageFormat::RGBA16F, 1, "DefaultColorRT");
+            createPredefinedRenderTarget(ID_DefaultDepthArrayRT, ImageFormat::D24S8, 4, "DefaultDepthArrayRT");
+
+            //--
         }
 
         void Driver::createPredefinedSamplers()

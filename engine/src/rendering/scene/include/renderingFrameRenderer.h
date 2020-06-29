@@ -36,14 +36,12 @@ namespace rendering
         class RENDERING_SCENE_API FrameRenderer : public base::NoCopy
         {
         public:
-            FrameRenderer(IDriver* device, const FrameParams& frame, const FrameSurfaceCache& surfaces);
+            FrameRenderer(const FrameParams& frame, const FrameSurfaceCache& surfaces);
             ~FrameRenderer();
 
             //--
 
             INLINE base::mem::LinearAllocator& allocator() { return m_allocator; }
-
-            INLINE bool verticalFlip() const { return m_verticalFlip; }
 
             INLINE const FrameParams& frame() const { return m_frame; }
 
@@ -61,20 +59,12 @@ namespace rendering
 
             //--
 
-            const ImageView& fetchImage(FrameResource resourceType) const;
-            const BufferView& fetchBuffer(FrameResource resourceType) const;
-
-            //--
-
             void prepareFrame(command::CommandWriter& cmd);
 
             //--
 
         private:
-            IDriver* m_device;
-
             bool m_msaa = false;
-            bool m_verticalFlip = false;
 
             base::mem::LinearAllocator m_allocator;
 

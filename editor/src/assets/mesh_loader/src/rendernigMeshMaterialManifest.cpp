@@ -30,7 +30,8 @@ namespace rendering
     void MeshMaterialBindingSingleMaterialData::applyOn(rendering::MaterialInstance& material) const
     {
         //material.removeAllParameters();
-        material.baseMaterial(baseMaterial);
+        if (baseMaterial)
+            material.baseMaterial(baseMaterial);
 
         for (const auto& param : properties)
             material.writeParameterRaw(param.name, param.data.data(), param.data.type());

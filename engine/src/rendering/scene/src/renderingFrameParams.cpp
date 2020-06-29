@@ -34,8 +34,6 @@ namespace rendering
                 msaaLevel = 1;
             if (msaaLevel > 16)
                 msaaLevel = 16;
-
-            msaaLevel = 4;
         }
 
         //--
@@ -77,6 +75,16 @@ namespace rendering
 
         //--
 
+        FrameParams_ToneMapping::FrameParams_ToneMapping()
+        {}
+
+        //--
+
+        FrameParams_ColorGrading::FrameParams_ColorGrading()
+        {}
+
+        //--
+
         FrameParams_Scenes::FrameParams_Scenes()
         {}
 
@@ -88,6 +96,25 @@ namespace rendering
             , overlay(DebugGeometryLayer::Overlay)
             , screen(DebugGeometryLayer::Screen)
         {}
+
+        //--
+
+        base::ConfigProperty<float> cvCascadesBaseEdgeFade("Rendering.Cascades", "BaseEdgeFade", 0.05f);
+        base::ConfigProperty<float> cvCascadesBaseFilterSize("Rendering.Cascades", "BaseFilterSize", 16.0f);
+        base::ConfigProperty<float> cvCascadesBaseRange("Rendering.Cascades", "BaseRange", 2.0f);
+        base::ConfigProperty<float> cvCascadesRangeMul1("Rendering.Cascades", "RangeMul1", 5.0f);
+        base::ConfigProperty<float> cvCascadesRangeMul2("Rendering.Cascades", "RangeMul2", 5.0f);
+        base::ConfigProperty<float> cvCascadesRangeMul3("Rendering.Cascades", "RangeMul3", 5.0f);
+
+        FrameParams_ShadowCascades::FrameParams_ShadowCascades()
+        {
+            baseRange = cvCascadesBaseRange.get();
+            baseEdgeFade = cvCascadesBaseEdgeFade.get();
+            baseFilterSize = cvCascadesBaseFilterSize.get();
+            rangeMul1 = cvCascadesRangeMul1.get();
+            rangeMul2 = cvCascadesRangeMul2.get();
+            rangeMul3 = cvCascadesRangeMul3.get();
+        }
 
         //--
 

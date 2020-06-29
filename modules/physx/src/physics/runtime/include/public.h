@@ -12,6 +12,7 @@ namespace physx
 {
     class PxFoundation;
     class PxPhysics;
+    class PxScene;
     class PxPvd;
 }
 

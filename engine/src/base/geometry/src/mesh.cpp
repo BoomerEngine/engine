@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "mesh.h"
+#include "shape.h"
 #include "base/containers/include/pagedBuffer.h"
 #include "base/io/include/utils.h"
 
@@ -216,6 +217,30 @@ namespace base
 
         //---
 
+        RTTI_BEGIN_TYPE_STRUCT(MeshBone);
+            RTTI_PROPERTY(name);
+            RTTI_PROPERTY(parentIndex);
+            RTTI_PROPERTY(posePlacement);
+            RTTI_PROPERTY(poseRotation);
+            RTTI_PROPERTY(poseToLocal);
+            RTTI_PROPERTY(localToPose);
+        RTTI_END_TYPE();
+
+        MeshBone::MeshBone()
+        {}
+
+        //---
+
+        RTTI_BEGIN_TYPE_STRUCT(MeshCollisionShape);
+            RTTI_PROPERTY(boneIndex);
+            RTTI_PROPERTY(shape);
+        RTTI_END_TYPE();
+
+        MeshCollisionShape::MeshCollisionShape()
+        {}
+
+        //---
+
         RTTI_BEGIN_TYPE_CLASS(Mesh);
             RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4geometry");
             RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Mesh geometry");
@@ -223,6 +248,8 @@ namespace base
             RTTI_PROPERTY(m_materials);
             RTTI_PROPERTY(m_models);
             RTTI_PROPERTY(m_detailRanges);
+            RTTI_PROPERTY(m_bones);
+            RTTI_PROPERTY(m_collision);
             RTTI_PROPERTY(m_bounds);
         RTTI_END_TYPE();
 
@@ -231,11 +258,13 @@ namespace base
             recomputeBounds();
         }
 
-        Mesh::Mesh(Array<MeshMaterial>&& materials, Array<MeshModel>&& models, Array<MeshDetailRange>&& details)
+        Mesh::Mesh(Array<MeshMaterial>&& materials, Array<MeshModel>&& models, Array<MeshDetailRange>&& details, Array<MeshBone>&& bones, Array<MeshCollisionShape>&& collision)
         {
             m_materials = std::move(materials);
             m_models = std::move(models);
             m_detailRanges = std::move(details);
+            m_bones = std::move(bones);
+            m_collision = std::move(collision);
 
             recomputeBounds();
             rebuildMaps();

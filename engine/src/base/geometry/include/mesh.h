@@ -102,6 +102,39 @@ namespace base
 
         //--
 
+        /// bone in the mesh
+        struct BASE_GEOMETRY_API MeshBone
+        {
+            RTTI_DECLARE_NONVIRTUAL_CLASS(MeshBone);
+
+        public:
+            MeshBone();
+
+            base::StringID name;
+            short parentIndex = -1; // parent bone (note: may be NOT known)
+
+            base::Vector3 posePlacement;
+            base::Quat poseRotation;
+            base::Matrix poseToLocal;
+            base::Matrix localToPose;
+        };
+
+        //--
+
+        /// collision shape
+        struct BASE_GEOMETRY_API MeshCollisionShape
+        {
+            RTTI_DECLARE_NONVIRTUAL_CLASS(MeshCollisionShape);
+
+        public:
+            MeshCollisionShape();
+
+            short boneIndex = -1; // only if shape is attached to particular bone (rare case but think of wall of bricks with bricks done using skinning)
+            shape::ShapePtr shape; // collision shape, NOTE: only predefined collision shapes are exported (ie. triangle mesh copy of the whole mesh is NOT exported)
+        };
+
+        //--
+
         /// mesh is a grouping of chunks that should be rendered with the same relative position
         /// chunk is a geometry that should be rendered with a predefined material
         /// geometry is collection of data streams and shader to interpret them
@@ -111,7 +144,7 @@ namespace base
 
         public:
             Mesh();
-            Mesh(Array<MeshMaterial>&& materials, Array<MeshModel>&& models, Array<MeshDetailRange>&& details);
+            Mesh(Array<MeshMaterial>&& materials, Array<MeshModel>&& models, Array<MeshDetailRange>&& details, Array<MeshBone>&& bones, Array<MeshCollisionShape>&& collision);
 
             //---
 
@@ -123,6 +156,12 @@ namespace base
 
             /// get all detail levels
             INLINE const Array<MeshDetailRange>& detailRanges() const { return m_detailRanges; }
+
+            /// get all mesh bones
+            INLINE const Array<MeshBone>& bones() const { return m_bones; }
+            
+            /// get all collision shapes
+            INLINE const Array<MeshCollisionShape>& collision() const { return m_collision; }
 
             /// get mesh bounds that cover all the mesh vertices
             INLINE const base::Box& bounds() const { return m_bounds; }
@@ -146,6 +185,8 @@ namespace base
             Array<MeshMaterial> m_materials;
             Array<MeshModel> m_models;
             Array<MeshDetailRange> m_detailRanges;
+            Array<MeshBone> m_bones;
+            Array<MeshCollisionShape> m_collision; 
             Box m_bounds;
 
             //---

@@ -20,9 +20,11 @@ namespace rendering
         enum class FilterBit : uint16_t
         {
             Meshes,
+            CascadeShadows, // render cascade shadows
 
             PassClear, // render the clear pass (clear RTs)
             PassDepthPrepass, // render the depth prepass
+            PassShadowDepth, // render the depth prepass
             PassForward, // render the forward pass
 
             FragOpaqueNonMovable, // render the static non movable fragments

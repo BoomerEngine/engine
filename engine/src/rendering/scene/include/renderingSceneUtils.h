@@ -111,8 +111,12 @@ namespace rendering
         ///--
 
         // compute camera setup
-        extern RENDERING_SCENE_API void CalcGPUCameraInfo(GPUCameraInfo& outInfo, const Camera& camera, const Camera* prevCamera = nullptr);
+        extern RENDERING_SCENE_API void CalcGPUSingleCamera(GPUCameraInfo& outInfo, const Camera& camera, const Camera* prevCamera = nullptr);
 
+        ///---
+
+        // bind single camera data
+        extern RENDERING_SCENE_API void BindSingleCamera(command::CommandWriter& cmd, const Camera& camera, const Camera* prevFrameCamera = nullptr);
 
         ///--
 

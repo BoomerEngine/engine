@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "base/app/include/localService.h"
+#include "base/script/include/scriptObject.h"
 
 namespace physics
 {
@@ -14,11 +14,19 @@ namespace physics
     {
 
         /// simulation scene for the physics
-        class PHYSICS_RUNTIME_API PhysicsScene : public base::NoCopy
+        class PHYSICS_RUNTIME_API PhysicsScene : public base::script::ScriptedObject
         {
+            RTTI_DECLARE_VIRTUAL_CLASS(PhysicsScene, base::script::ScriptedObject);
+
         public:
-            PhysicsScene();
+            PhysicsScene(physx::PxScene* scene);
             ~PhysicsScene();
+
+            // simulate with given time delta
+            void simulate(float dt);
+
+        private:
+            physx::PxScene* m_scene = nullptr;
         };
 
     } // runtime

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: frame\view  #]
+* [# filter: frame  #]
 ***/
 
 #include "build.h"
@@ -18,9 +18,7 @@
 #include "renderingSceneCulling.h"
 #include "renderingSceneProxy.h"
 #include "renderingSceneFragmentList.h"
-#include "renderingFrameViewCamera.h"
-#include "renderingFrameViewPass.h"
-#include "renderingFrameViewPostFX.h"
+#include "renderingFrameView_Cascades.h"
 
 namespace rendering
 {
@@ -28,28 +26,24 @@ namespace rendering
     {
         //---
 
-        FrameView::FrameView(const FrameRenderer& frame, const FrameViewCamera& camera, base::StringView<char> name)
+        RTTI_BEGIN_TYPE_ENUM(FragmentDrawBucket);
+        RTTI_ENUM_OPTION(OpaqueNotMoving);
+        RTTI_ENUM_OPTION(Opaque);
+        RTTI_ENUM_OPTION(OpaqueMasked);
+        RTTI_ENUM_OPTION(Transparent);
+        RTTI_ENUM_OPTION(SelectionOutline);
+        RTTI_END_TYPE();
+
+        //---
+
+        FrameView::FrameView(const FrameRenderer& frame, FrameViewType type, uint32_t width, uint32_t height)
             : m_renderer(frame)
-            , m_camera(camera)
             , m_frame(frame.m_frame)
             , m_allocator(frame.m_allocator.pageAllocator())
-            , m_name(name)
-        {           
-        }
-
-        FrameView::~FrameView()
+            , m_width(width)
+            , m_height(height)
+            , m_type(type)
         {
-            for (auto* scene : m_scenes)
-            {
-                scene->drawList->~FragmentDrawList();
-                scene->~PerSceneData();
-            }
-        }
-
-        void FrameView::collect()
-        {
-            PC_SCOPE_LVL0(CollectView);
-
             const auto numScenes = m_renderer.m_scenes.size();
             m_scenes.reserve(numScenes);
 
@@ -62,18 +56,27 @@ namespace rendering
                 data->drawList = m_allocator.createNoCleanup<FragmentDrawList>(m_allocator);
                 m_scenes.pushBack(data);
             }
+        }
 
-            // collect
+        FrameView::~FrameView()
+        {
+            for (auto* scene : m_scenes)
             {
-                PC_SCOPE_LVL1(CollectSingleCamera);
-                for (auto* scene : m_scenes)
-                {
-                    // TODO: transform to scene space
-                    SceneObjectCullingSetup sceneLocalCullingContext;
-                    sceneLocalCullingContext.cameraPosition = m_camera.mainCamera().position();
-                    //sceneLocalCullingContext.cameraFrustumMatrix = 
-                    scene->scene->objects().cullObjects(sceneLocalCullingContext, scene->collectedObjects);
-                }
+                scene->drawList->~FragmentDrawList();
+                scene->~PerSceneData();
+            }
+        }
+
+        void FrameView::collectSingleCamera(const Camera& camera)
+        {
+            PC_SCOPE_LVL1(CollectSingleCamera);
+            for (auto* scene : m_scenes)
+            {
+                // TODO: transform to scene space
+                SceneObjectCullingSetup sceneLocalCullingContext;
+                sceneLocalCullingContext.cameraPosition = camera.position();
+                //sceneLocalCullingContext.cameraFrustumMatrix = 
+                scene->scene->objects().cullObjects(sceneLocalCullingContext, scene->collectedObjects);
             }
         }
 
@@ -95,101 +98,30 @@ namespace rendering
             }
         }
 
-        //---
-
-        void RenderLitView(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor, const ImageView& resolvedDepth)
-        {
-            PC_SCOPE_LVL1(RenderLitView);
-
-            FrameView view(frame, camera, "LitView");
-            command::CommandWriterBlock block(cmd, "LitView");
-
-            // collect visible objects in the view
-            view.collect();
-
-            // TODO: start fiber with cascades
-            // TODO: start fiber with point light shadows
-
-            // prepare renderable fragments for the visible objects
-            view.generateFragments(cmd);
-
-            // bind the camera setup
-            camera.bind(cmd);
-
-            // get MSAA target surfaces
-            const auto& tempColor = frame.fetchImage(FrameResource::HDRLinearMainColorRT);
-            const auto& tempDepth = frame.fetchImage(FrameResource::HDRLinearMainDepthRT);
-
-            // render passes
-            RenderDepthPrepass(cmd, view, camera, tempDepth);
-            RenderForwardPass(cmd, view, camera, tempDepth, tempColor);
-
-            // capture depth as it's not going to change from now on (at least not legally...)
-            ResolveMSAADepth(cmd, view, tempDepth, resolvedDepth);
-
-            // render transparencies
-
-            // resolve to targets
-            ResolveMSAAColor(cmd, view, tempColor, resolvedColor);
-        }
-
-        //---
-
-        void RenderWireframeView(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& resolvedColor, bool solid)
-        {
-            FrameView view(frame, camera, "WireframeView");
-            command::CommandWriterBlock block(cmd, "WireframeView");
-
-            // collect and prepare
-            view.collect();
-            view.generateFragments(cmd);
-
-            // bind the camera setup
-            camera.bind(cmd);
-
-            // get MSAA target surfaces
-            const auto& tempColor = frame.fetchImage(FrameResource::HDRLinearMainColorRT);
-            const auto& tempDepth = frame.fetchImage(FrameResource::HDRLinearMainDepthRT);
-
-            // render only the wire frame
-            RenderWireframePass(cmd, view, camera, tempDepth, tempColor, solid);
-
-            // resolve to targets
-            ResolveMSAAColor(cmd, view, tempColor, resolvedColor);
-        }
-
-        //---
-
-        void RenderDepthDebug(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& targetColor)
-        {
-            FrameView view(frame, camera, "DebugDepth");
-            command::CommandWriterBlock block(cmd, "DebugDepth");
-
-            // collect and prepare
-            view.collect();
-            view.generateFragments(cmd);
-
-            // bind the camera setup
-            camera.bind(cmd);
-
-            // render depth pass only
-            const auto& tempDepth = frame.fetchImage(FrameResource::HDRLinearMainDepthRT);
-            RenderDepthPrepass(cmd, view, camera, tempDepth);
-
-            // render the depth visualization
-            VisualizeDepthBuffer(cmd, frame, tempDepth, targetColor);
-        }
-
         //--
 
-        void RenderLuminanceDebug(command::CommandWriter& cmd, const FrameRenderer& frame, const FrameViewCamera& camera, const ImageView& targetColor)
+        struct GPULightingInfo
         {
-            const auto& resolvedColor = frame.fetchImage(FrameResource::HDRResolvedColor);
-            const auto& resolvedDepth = frame.fetchImage(FrameResource::HDRResolvedDepth);
+            GPUCascadeInfo cascades;
+        };
 
-            RenderLitView(cmd, frame, camera, resolvedColor, resolvedDepth);
+        struct LightingParams
+        {
+            ConstantsView Constants;
+            ImageView CascadeShadowMap;
+        };
 
-            VisualizeLuminance(cmd, frame, resolvedColor, targetColor);
+
+        void BindLightingData(command::CommandWriter& cmd, const CascadeData& cascades)
+        {
+            GPULightingInfo packedData;
+            PackCascadeData(cascades, packedData.cascades);
+
+            LightingParams params;
+            params.Constants = cmd.opUploadConstants(packedData);
+            params.CascadeShadowMap = cascades.cascadeShadowMap;
+
+            cmd.opBindParametersInline("LightingParams"_id, params);
         }
 
         //--

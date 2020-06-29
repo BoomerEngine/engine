@@ -81,9 +81,11 @@ namespace game
             m_failed = true;
         }
 
-        rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile)
+        rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile, bool fullPathFlag)
         {
-            auto fullPath = base::res::ResourcePath(base::TempString("engine/tests/meshes/{}", assetFile));
+            auto fullPath = fullPathFlag
+                ? base::res::ResourcePath(base::TempString("engine/{}", assetFile))
+                : base::res::ResourcePath(base::TempString("engine/tests/meshes/{}", assetFile));
             auto meshPtr = base::LoadResource<rendering::Mesh>(fullPath);
             if (!meshPtr)
             {
@@ -103,7 +105,7 @@ namespace game
         ISceneTestEmptyWorld::ISceneTestEmptyWorld()
         {
             m_initialCameraPosition = base::Vector3(-2, 0, 1);
-            m_initialCameraRotation = base::Angles(-20.0f, 0.0f, 0.0f);;
+            m_initialCameraRotation = base::Angles(20.0f, 0.0f, 0.0f);;
         }
 
         void ISceneTestEmptyWorld::recreateWorld()

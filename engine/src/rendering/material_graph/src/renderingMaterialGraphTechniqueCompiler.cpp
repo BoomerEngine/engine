@@ -168,7 +168,7 @@ namespace rendering
             TRACE_WARNING("Unable to determine information about file '{}'", depotPath);
         }
 
-        TRACE_INFO("Source shader file '{}': {} {}", depotPath, fileCRC, fileTimeStamp.value());
+        TRACE_SPAM("Source shader file '{}': {} {}", depotPath, fileCRC, fileTimeStamp.value());
 
         // store
         auto& entry = m_usedFiles.emplaceBack();

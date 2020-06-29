@@ -172,7 +172,17 @@ namespace base
                         if (!m_loadedResources.find(key, outLoadedResource))
                         {
                             if (m_context.m_resourceLoader != nullptr)
+                            {
                                 outLoadedResource = m_context.m_resourceLoader->loadResource(key);
+                                if (!outLoadedResource)
+                                {
+                                    TRACE_WARNING("Required resource '{}' could not be loaded", key);
+                                }
+                            }
+                            else
+                            {
+                                TRACE_WARNING("Required resource '{}' could not be loaded because there's no loader", key);
+                            }
                             m_loadedResources[key] = outLoadedResource;
                         }
                     }

@@ -8,7 +8,7 @@
 
 //----
 
-#include "postfx.h"
+#include <math.h>
 #include <text_print.h>
 #include <frame.h>
 #include <camera.h>

@@ -18,120 +18,146 @@ namespace rendering
     {
         ///--
 
-        FrameSurfaceCache::FrameSurfaceCache(const FrameParams_Resolution& res)
-            : m_supportedMSAALevel(res.msaaLevel)
+        base::ConfigProperty<uint32_t> cvCascadeShadowmapBufferSize("Rendering.Cascades", "Resolution", 2048);
+        base::ConfigProperty<uint32_t> cvCascadeShadowmapMaxCount("Rendering.Cascades", "MaxCount", 4);
+
+        ///--
+
+        // BIG TODO: MSAA
+
+        FrameSurfaceCache::FrameSurfaceCache()
         {
-            // determine resolution
-            m_maxSupportedWidth = std::max<uint32_t>(device()->maxRenderTargetSize().x, base::Align<uint32_t>(res.width, 16));
-            m_maxSupportedHeight = std::max<uint32_t>(device()->maxRenderTargetSize().y, base::Align<uint32_t>(res.height, 16));
-
-            // use the max supported res for render target sizing
-            auto mainWidth = m_maxSupportedWidth;
-            auto mainHeight = m_maxSupportedHeight;
-
-            // select format
-            const auto vr = false;
-            const auto hdrFormat = ImageFormat::RGBA16F;
-            const auto depthFormat = ImageFormat::D24S8;
-
-            // TODO: automate ?
-
-            // create scene color
+            // cascade shadowmap buffer
             {
+                const auto count = std::clamp<uint32_t>(cvCascadeShadowmapMaxCount.get(), 1, 4);
+                const auto resolution = std::clamp<uint32_t>(cvCascadeShadowmapBufferSize.get(), 256, 8192);
+
                 ImageCreationInfo colorInfo;
-                colorInfo.label = "MainViewColor";
-                colorInfo.view = ImageViewType::View2D; // TODO: array for VR ?
-                colorInfo.width = mainWidth;
-                colorInfo.height = mainHeight;
+                colorInfo.label = "CascadeShadowDepthMap";
+                colorInfo.view = ImageViewType::View2DArray;
+                colorInfo.width = resolution;
+                colorInfo.height = resolution;
+                colorInfo.numSlices = count;
                 colorInfo.allowRenderTarget = true;
                 colorInfo.allowShaderReads = true;
                 colorInfo.allowUAV = true;
-                colorInfo.format = hdrFormat;
-                colorInfo.numSamples = m_supportedMSAALevel;
-                m_sceneFullColorRT = device()->createImage(colorInfo);
+                colorInfo.format = ShadowDepthFormat;
+                m_cascadesShadowDepthRT = device()->createImage(colorInfo);
             }
 
-            // create depth color
-            {
-                ImageCreationInfo colorInfo;
-                colorInfo.label = "MainViewDepth";
-                colorInfo.view = ImageViewType::View2D; // TODO: array for VR ?
-                colorInfo.width = mainWidth;
-                colorInfo.height = mainHeight;
-                colorInfo.allowRenderTarget = true;
-                colorInfo.allowShaderReads = true;
-                colorInfo.allowUAV = false;
-                colorInfo.format = depthFormat;
-                colorInfo.numSamples = m_supportedMSAALevel;
-                m_sceneFullDepthRT = device()->createImage(colorInfo);
-            }
-
-            // create resolved color
-            {
-                ImageCreationInfo colorInfo;
-                colorInfo.label = "MainViewResolvedColor";
-                colorInfo.view = ImageViewType::View2D; // TODO: array for VR ?
-                colorInfo.width = mainWidth; // same resolution just non MSAA
-                colorInfo.height = mainHeight;
-                colorInfo.allowRenderTarget = true;
-                colorInfo.allowShaderReads = true;
-                colorInfo.allowUAV = true;
-                colorInfo.format = hdrFormat;
-                colorInfo.numSamples = 1;
-                m_sceneResolvedColor = device()->createImage(colorInfo);
-            }
-
-            // create resolved color
-            {
-                ImageCreationInfo colorInfo;
-                colorInfo.label = "MainViewResolvedDepth";
-                colorInfo.view = ImageViewType::View2D; // TODO: array for VR ?
-                colorInfo.width = mainWidth; // same resolution just non MSAA
-                colorInfo.height = mainHeight;
-                colorInfo.allowRenderTarget = true;
-                colorInfo.allowShaderReads = true;
-                colorInfo.allowUAV = true;
-                colorInfo.format = depthFormat;
-                colorInfo.numSamples = 1;
-                m_sceneResolvedDepth = device()->createImage(colorInfo);
-            }
+            // create size dependent crap
+            const auto maxWidth = device()->maxRenderTargetSize().x;
+            const auto maxHeight = device()->maxRenderTargetSize().y;
+            createViewportSurfaces(maxWidth, maxHeight);
         }
 
         FrameSurfaceCache::~FrameSurfaceCache()
         {
-            m_sceneFullColorRT.destroy();
-            m_sceneFullDepthRT.destroy();
-            m_sceneResolvedColor.destroy();
-            m_sceneResolvedDepth.destroy();
+            m_cascadesShadowDepthRT.destroy();
+            destroyViewportSurfaces();
         }
 
-        bool FrameSurfaceCache::supports(const FrameParams_Resolution& res) const
+        void FrameSurfaceCache::destroyViewportSurfaces()
         {
-            if (res.msaaLevel != m_supportedMSAALevel)
-                return false;
+            m_globalAOShadowMaskRT.destroy();
+            m_sceneResolvedColor.destroy();
+            m_sceneResolvedDepth.destroy();
+            m_sceneFullColorRT.destroy();
+            m_sceneFullDepthRT.destroy();
+        }
 
-            if (res.width > m_maxSupportedWidth || res.height > m_maxSupportedHeight)
-                return false;
+        bool FrameSurfaceCache::createViewportSurfaces(uint32_t width, uint32_t height)
+        {
+            ImageCreationInfo info;
+            info.view = ImageViewType::View2D; // TODO: array for VR ?
+            info.width = width;
+            info.height = height;
+            info.allowRenderTarget = true;
+            info.allowShaderReads = true;
+            info.allowUAV = true;
 
+            // create scene color
+            {
+                info.label = "MainViewColor";
+                info.format = HdrFormat;
+                m_sceneFullColorRT = device()->createImage(info);
+                if (!m_sceneFullColorRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // create depth color
+            {
+                info.label = "MainViewDepth";
+                info.format = DepthFormat;
+                m_sceneFullDepthRT = device()->createImage(info);
+                if (!m_sceneFullDepthRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // create resolved color
+            {
+                info.label = "MainViewResolvedColor";
+                info.format = HdrFormat;
+                m_sceneResolvedColor = device()->createImage(info);
+                if (!m_sceneResolvedColor)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // create resolved depth
+            {
+                info.label = "MainViewResolvedDepth";
+                info.format = DepthFormat;
+                m_sceneResolvedDepth = device()->createImage(info);
+                if (!m_sceneResolvedDepth)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // shadow mask/AO buffer
+            {
+                info.label = "ShadowMaskAO";
+                info.format = ImageFormat::RGBA8_UNORM;
+                m_globalAOShadowMaskRT = device()->createImage(info);
+                if (!m_globalAOShadowMaskRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // yay, now we can support such resolution
+            m_maxSupportedWidth = width;
+            m_maxSupportedHeight = height;
             return true;
         }
 
-        const BufferView* FrameSurfaceCache::fetchBuffer(FrameResource resourceType) const
+        bool FrameSurfaceCache::adjust(uint32_t requiredWidth, uint32_t requiredHeight)
         {
-            return nullptr;
-        }
+            auto newWidth = std::max<uint32_t>(requiredWidth, m_maxSupportedWidth);
+            auto newHeight = std::max<uint32_t>(requiredHeight, m_maxSupportedHeight);
 
-        const ImageView* FrameSurfaceCache::fetchImage(FrameResource resourceType) const
-        {
-            switch (resourceType)
+            // TODO: validate memory usage
+
+            if (!m_sceneFullColorRT || newWidth > m_maxSupportedWidth || newHeight > m_maxSupportedHeight)
             {
-                case FrameResource::HDRLinearMainColorRT: return &m_sceneFullColorRT;
-                case FrameResource::HDRLinearMainDepthRT: return &m_sceneFullDepthRT;
-                case FrameResource::HDRResolvedColor: return &m_sceneResolvedColor;
-                case FrameResource::HDRResolvedDepth: return &m_sceneResolvedDepth;
+                destroyViewportSurfaces();
+
+                if (!createViewportSurfaces(newWidth, newHeight))
+                    return false;
             }
 
-            return nullptr;
+            return true;
         }
 
         //--
@@ -145,7 +171,7 @@ namespace rendering
         {
             m_maxSupportedWidth = 0;
             m_maxSupportedHeight = 0;
-            m_supportedMSAALevel = 0;
+            //m_supportedMSAALevel = 0;
         }
 
         void FrameSurfaceCache::handleDeviceRelease()

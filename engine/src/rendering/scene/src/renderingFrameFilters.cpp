@@ -33,9 +33,11 @@ namespace rendering
             FilterFlags ret;
 
             ret |= FilterBit::Meshes;
+            ret |= FilterBit::CascadeShadows;
 
             ret |= FilterBit::PassClear;
             ret |= FilterBit::PassDepthPrepass;
+            ret |= FilterBit::PassShadowDepth;
             ret |= FilterBit::PassForward;
 
             ret |= FilterBit::FragOpaqueNonMovable;
@@ -94,9 +96,16 @@ namespace rendering
                 m_root = create(nullptr, "Filters");
 
                 {
+                    auto* parent = create(m_root, "Main");
+                    create(parent, "Meshes", FilterBit::Meshes);
+                    create(parent, "CascadeShadows", FilterBit::CascadeShadows);
+                }
+
+                {
                     auto* parent = create(m_root, "Pass");
                     create(parent, "Clear", FilterBit::PassClear);
                     create(parent, "DepthPrepass", FilterBit::PassDepthPrepass);
+                    create(parent, "ShadowDepth", FilterBit::PassShadowDepth);
                     create(parent, "Forward", FilterBit::PassForward);
                 }
 

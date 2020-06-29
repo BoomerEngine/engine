@@ -124,7 +124,7 @@ namespace rendering
                     totalUploadedSize += entry->size;
                 }
 
-                TRACE_INFO("Uploaded {} ({} block(s))", MemSize(totalUploadedSize), finalUploads.size());
+                TRACE_SPAM("Uploaded {} ({} block(s))", MemSize(totalUploadedSize), finalUploads.size());
             }
         }
     }

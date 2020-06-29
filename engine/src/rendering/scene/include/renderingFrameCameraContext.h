@@ -29,12 +29,6 @@ namespace rendering
 
 			//--
 
-            // get buffer resource
-            const BufferView* fetchBuffer(FrameResource resourceType) const;
-
-            // get image resource
-            const ImageView* fetchImage(FrameResource resourceType) const;
-
 		private:
 			base::StringBuf m_name;
 

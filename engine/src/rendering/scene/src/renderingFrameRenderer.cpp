@@ -34,16 +34,12 @@ namespace rendering
 
         //--
 
-        FrameRenderer::FrameRenderer(IDriver* device, const FrameParams& frame, const FrameSurfaceCache& surfaces)
-            : m_device(device)
-            , m_frame(frame)
+        FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameSurfaceCache& surfaces)
+            : m_frame(frame)
             , m_surfaces(surfaces)
             , m_allocator(POOL_RENDERING_FRAME)
         {
-            m_verticalFlip = true; // FU OpenGl
-
-            const auto* mainColor = m_surfaces.fetchImage(FrameResource::HDRLinearMainColorRT); // RT = surface only
-            m_msaa = mainColor->numSamples() > 1;
+            m_msaa = false;
 
             // load all rendered scenes
             for (auto& scene : m_frame.scenes.scenesToDraw)
@@ -60,33 +56,7 @@ namespace rendering
         bool FrameRenderer::usesMultisamping() const
         {
             return m_msaa;
-        }
-
-        const ImageView& FrameRenderer::fetchImage(FrameResource resourceType) const
-        {
-            if (const auto* ret = m_surfaces.fetchImage(resourceType))
-                return *ret;
-
-            if (m_frame.camera.cameraContext)
-                if (const auto* ret = m_frame.camera.cameraContext->fetchImage(resourceType))
-                    return *ret;
-
-            static const ImageView theEmptyImage;
-            return theEmptyImage;
-        }
-
-        const BufferView& FrameRenderer::fetchBuffer(FrameResource resourceType) const
-        {
-            if (const auto* ret = m_surfaces.fetchBuffer(resourceType))
-                return *ret;
-
-            if (m_frame.camera.cameraContext)
-                if (const auto* ret = m_frame.camera.cameraContext->fetchBuffer(resourceType))
-                    return *ret;
-
-            static const BufferView theEmptyBuffer;
-            return theEmptyBuffer;
-        }
+        }        
 
         static base::Point CovertMouseCoords(base::Point coords, const FrameRenderer& frame)
         {
@@ -113,22 +83,22 @@ namespace rendering
         static void BindFrameParameters(command::CommandWriter& cmd, const FrameRenderer& frame)
         {
             const auto& data = frame.frame();
-            const auto* view = frame.surfaces().fetchImage(FrameResource::HDRLinearMainColorRT);
+            const auto& view = frame.surfaces().m_sceneFullColorRT;
 
             GPUFrameParameters params;
             memset(&params, 0, sizeof(params));
 
             params.ViewportSize.x = data.resolution.width;
             params.ViewportSize.y = data.resolution.height;
-            params.ViewportRTSize.x = view->width();
-            params.ViewportRTSize.y = view->height();
+            params.ViewportRTSize.x = view.width();
+            params.ViewportRTSize.y = view.height();
             params.InvViewportSize.x = params.ViewportSize.x ? (1.0f / params.ViewportSize.x) : 0.0f;
             params.InvViewportSize.y = params.ViewportSize.y ? (1.0f / params.ViewportSize.y) : 0.0f;
             params.InvViewportRTSize.x = params.ViewportRTSize.x ? (1.0f / params.ViewportRTSize.x) : 0.0f;
             params.InvViewportRTSize.y = params.ViewportRTSize.y ? (1.0f / params.ViewportRTSize.y) : 0.0f;
 
             params.FrameIndex = data.index;
-            params.MSAASamples = view->multisampled() ? view->numSamples() : 0;
+            params.MSAASamples = view.multisampled() ? view.numSamples() : 0;
 
             params.PseudoRandom[0] = base::RandUint32();
             params.PseudoRandom[1] = base::RandUint32();
@@ -156,7 +126,7 @@ namespace rendering
 
             /*if (frame.verticalFlip())
             {
-                params.ScreenTopY = view->height()
+                params.ScreenTopY = view.height()
             }*/
             
             params.DebugMousePos = CovertMouseCoords(data.debug.mouseHoverPixel, frame);

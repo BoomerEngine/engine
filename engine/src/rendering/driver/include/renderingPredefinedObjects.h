@@ -21,6 +21,10 @@ namespace rendering
     static const uint8_t ID_GraySRGBTexture = 0x13; // sRGB gray RGBA8 16x16 texture
     static const uint8_t ID_NormZTexture = 0x14; // [0.5,0.5,1] RGBA8 16x16 texture (Z-up normal map)
 
+    static const uint8_t ID_DefaultDepthRT = 0x16; // empty render target with depth format
+    static const uint8_t ID_DefaultColorRT = 0x17; // empty render target with HDR color format
+    static const uint8_t ID_DefaultDepthArrayRT = 0x18; // empty render target array with depth format
+
     static const uint8_t ID_SamplerClampPoint = 0x20; // true point sampler
     static const uint8_t ID_SamplerClampBiLinear = 0x21; // bi-linear sampler with no mipmap filtering
     static const uint8_t ID_SamplerClampTriLinear = 0x22; // tri-linear sampler with linear mipmap filtering

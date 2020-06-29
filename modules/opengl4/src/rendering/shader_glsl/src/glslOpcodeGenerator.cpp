@@ -1572,7 +1572,7 @@ namespace rendering
             {
                 for (const auto& elem : *m_context.vertexInput)
                 {
-                    TRACE_INFO("'{}' '{}'", elem.bindingName, elem.memberName);
+                    //TRACE_INFO("'{}' '{}'", elem.bindingName, elem.memberName);
                     if (elem.bindingName == bindingName && elem.memberName == memberName)
                     {
                         bindingPlacement = &elem;

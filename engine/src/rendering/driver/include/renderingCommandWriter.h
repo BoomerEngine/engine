@@ -31,7 +31,7 @@ namespace rendering
         class RENDERING_DRIVER_API CommandWriter : public base::NoCopy
         {
         public:
-            CommandWriter(CommandBuffer* buffer); // NOTE: buffer is reset, that's the only legal way we can write to it
+            CommandWriter(CommandBuffer* buffer, base::StringView<char> scopeName = base::StringView<char>()); // NOTE: buffer is reset, that's the only legal way we can write to it
             CommandWriter(base::StringView<char> scopeName = base::StringView<char>()); // NOTE: buffer is reset, that's the only legal way we can write to it
             ~CommandWriter();
 

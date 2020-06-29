@@ -186,7 +186,7 @@ namespace physics
 
         PhysicsScenePtr PhysicsService::createScene(const PhysicsSceneDesc& desc)
         {
-            return base::CreateUniquePtr<PhysicsScene>();
+            return base::CreateUniquePtr<PhysicsScene>(nullptr);
         }
 
     } // runtime
