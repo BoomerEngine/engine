@@ -11,6 +11,7 @@
 
 #include "imageUtils.h"
 #include "imageView.h"
+#include "image.h"
 
 namespace base
 {
@@ -993,6 +994,21 @@ namespace base
 
             // pack into destination data
             PackFromFloats(tempDataView, dest, space);
+        }
+
+        ImagePtr Downsampled(const ImageView& src, DownsampleMode mode, ColorSpace space)
+        {
+            if (src.empty())
+                return nullptr;
+
+            const auto width = std::max<uint32_t>(1, src.width() / 2);
+            const auto height = std::max<uint32_t>(1, src.height() / 2);
+            const auto depth = std::max<uint32_t>(1, src.depth() / 2);
+
+            auto ret = base::CreateSharedPtr<Image>(src.format(), src.channels(), width, height, depth);
+            Downsample(src, ret->view(), mode, space);
+
+            return ret;
         }
 
         ///----------------------------

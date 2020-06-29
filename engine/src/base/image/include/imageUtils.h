@@ -100,6 +100,9 @@ namespace base
         /// NOTE: optional pixel mask may be used
         extern BASE_IMAGE_API void Downsample(const ImageView& src, const ImageView& dest, DownsampleMode mode, ColorSpace space);
 
+        /// Create downsample image
+        extern BASE_IMAGE_API ImagePtr Downsampled(const ImageView& src, DownsampleMode mode, ColorSpace space);
+
         ///----------------------------
 
         /// Premultiply image color by it's alpha
