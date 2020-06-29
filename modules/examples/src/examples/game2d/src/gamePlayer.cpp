@@ -162,7 +162,10 @@ namespace example
         }
         else
         {
-            m_timeInState += dt;
+            if (state != 0)
+                m_timeInState += dt * (m_onGround ? 1.0f : 0.33f);
+            else
+                m_timeInState += dt;
         }
     }
 
