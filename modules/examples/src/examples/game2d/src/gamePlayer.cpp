@@ -100,8 +100,9 @@ namespace example
             delta.y += 1.0f;
 
         const auto speed = m_running ? 1000.0f : 500.0f;
+        const auto acc = m_onGround ? 3000.0f : 1200.0f;
         const auto requestedVelX = speed * delta.x;
-        m_velocity.x = ReachWithAcc(m_velocity.x, requestedVelX, 3000.0f, dt);
+        m_velocity.x = ReachWithAcc(m_velocity.x, requestedVelX, acc, dt);
         m_velocity.y += 1000.0f * dt;
 
         float groundHeight = m_collisionTerrain->groundHeight(pos.x, pos.y - 2.0f);
