@@ -112,9 +112,17 @@ namespace rendering
 
         //--
 
+        enum class FrameViewType : uint8_t
+        {
+            MainColor, // main color view (or derivatives)
+            GlobalCascades, // view for global cascades - only shadow casting fragments should be collected
+
+            MAX,
+        };
+
         enum class ProxyType : uint8_t
         {
-            None = 0,
+            None = 0, // just here to make 0 indicate invalid proxy type
             Mesh = 1,
 
             MAX,
@@ -122,7 +130,7 @@ namespace rendering
 
         enum class FragmentHandlerType : uint8_t
         {
-            None = 0,
+            None = 0, // just here to make 0 indicate invalid fragment type
             Mesh = 1,
 
             MAX,

@@ -60,6 +60,7 @@ namespace ui
                 {
                     auto buttons = rightContainer->createChild<ui::IElement>();
                     buttons->layoutHorizontal();
+                    m_buttonBar = buttons;
 
                     {
                         auto button = buttons->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:goto_prev][size:-]Use");
@@ -86,6 +87,8 @@ namespace ui
                         {
                             cmdShowInAssetBrowser();
                         };
+
+                        m_buttonShowInBrowser = button;
                     }
                 }
             }
@@ -119,7 +122,8 @@ namespace ui
             bool fileFound = false;
 
             base::res::Ref<base::res::IResource> data;
-            if (readValue(data))
+            const auto ret = readValue(data);
+            if (ret.code == base::DataViewResultCode::OK)
             {
                 const auto path = data.key().path().path();
 
@@ -144,11 +148,35 @@ namespace ui
                     fileName = "None";
                     fileFound = true;
                 }
-            }
 
-            // update file name
-            m_name->text(fileName);
-            m_name->tooltip(filePath);
+                // update file name
+                m_name->text(fileName);
+                m_name->tooltip(filePath);
+
+                // show ui elements
+                m_buttonShowInBrowser->visibility(true);
+                m_buttonBar->visibility(true);
+                m_thumbnail->visibility(true);
+            }
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_thumbnail->image(nullptr);
+                m_thumbnail->visibility(true);
+
+                m_name->text("<multiple values>");
+                m_name->tooltip("");
+
+                m_buttonShowInBrowser->visibility(false);
+                m_buttonBar->visibility(true);                
+            }
+            else
+            {
+                m_name->text(base::TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                m_name->tooltip("");
+
+                m_buttonBar->visibility(false);
+                m_thumbnail->visibility(false);
+            }
 
             /*if (fileFound)
                 m_name->removeStyleClass("missing");
@@ -197,7 +225,7 @@ namespace ui
 
         void DataBoxResource::changeFile(ed::ManagedFile* newFile)
         {
-            //if (m_currentFile != newFile)
+            if (m_currentFile != newFile)
             {
                 // get depot path to the file
                 if (newFile)
@@ -209,7 +237,8 @@ namespace ui
                         if (auto loadedResource = base::LoadResource(base::res::ResourceKey(resPath, m_resourceClass)))
                         {
                             const auto dataType = base::reflection::GetTypeObject<base::res::Ref<base::res::IResource>>();
-                            writeValue(&loadedResource, dataType);
+                            if (const auto ret = HasError(writeValue(&loadedResource, dataType)))
+                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, base::TempString("Error writing value: '{}'", ret));
                         }
                         else
                         {
@@ -221,7 +250,9 @@ namespace ui
                 {
                     base::res::Ref<base::res::IResource> emptyRef;
                     const auto dataType = base::reflection::GetTypeObject<base::res::Ref<base::res::IResource>>();
-                    writeValue(&emptyRef, dataType);
+
+                    if (const auto ret = HasError(writeValue(&emptyRef, dataType)))
+                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, base::TempString("Error writing value: '{}'", ret));
                 }
             }
         }
@@ -246,6 +277,8 @@ namespace ui
     protected:
         ui::ImagePtr m_thumbnail;
         ui::TextLabelPtr m_name;
+        ui::ElementPtr m_buttonBar;
+        ui::ElementPtr m_buttonShowInBrowser;
 
         base::SpecificClassType<base::res::IResource> m_resourceClass;
 

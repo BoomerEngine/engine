@@ -26,14 +26,6 @@ namespace game
 
     //--
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IEventSupplier);
-    RTTI_END_TYPE();
-
-    IEventSupplier::~IEventSupplier()
-    {}
-
-    //--
-
 } // game
 
 

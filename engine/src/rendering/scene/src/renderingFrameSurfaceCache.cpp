@@ -64,6 +64,9 @@ namespace rendering
             m_sceneResolvedDepth.destroy();
             m_sceneFullColorRT.destroy();
             m_sceneFullDepthRT.destroy();
+            m_linarizedDepthRT.destroy();
+            m_velocityBufferRT.destroy();
+            m_viewNormalRT.destroy();
         }
 
         bool FrameSurfaceCache::createViewportSurfaces(uint32_t width, uint32_t height)
@@ -130,6 +133,42 @@ namespace rendering
                 info.format = ImageFormat::RGBA8_UNORM;
                 m_globalAOShadowMaskRT = device()->createImage(info);
                 if (!m_globalAOShadowMaskRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // linearized depth buffer
+            {
+                info.label = "LinearizedDepth";
+                info.format = ImageFormat::R32F;
+                m_linarizedDepthRT = device()->createImage(info);
+                if (!m_linarizedDepthRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }                
+            }
+
+            // velocity buffer
+            {
+                info.label = "VelocityBuffer";
+                info.format = ImageFormat::RG16F;
+                m_velocityBufferRT = device()->createImage(info);
+                if (!m_velocityBufferRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // view space reconstructed normal
+            {
+                info.label = "ReconstructedViewNormal";
+                info.format = ImageFormat::RGBA8_UNORM;
+                m_viewNormalRT = device()->createImage(info);
+                if (!m_viewNormalRT)
                 {
                     destroyViewportSurfaces();
                     return false;

@@ -9,211 +9,138 @@
 #pragma once
 
 #include "base/containers/include/array.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/memory/include/structurePool.h"
-
-#include "object.h"
-#include "objectObserver.h"
+#include "base/containers/include/hashMap.h"
 
 namespace base
 {
 
     //---
 
-    /// source of data for the data view
+    /// observer of data view
+    class BASE_OBJECT_API IDataViewObserver : public NoCopy
+    {
+    public:
+        virtual ~IDataViewObserver();
+
+        /// full object change
+        virtual void handleFullObjectChange() {};
+
+        /// observed value (or parent or child) changed, passes full path to changed
+        virtual void handlePropertyChanged(StringView<char> fullPath, bool parentNotification) {};
+    };
+
+    //---
+
+    // result from data view action
+    struct BASE_OBJECT_API DataViewActionResult
+    {
+        ActionPtr action;
+        DataViewResult result;
+
+        INLINE DataViewActionResult() {};
+        INLINE DataViewActionResult(const DataViewActionResult& other) = default;
+        INLINE DataViewActionResult& operator=(const DataViewActionResult& other) = default;
+
+        INLINE DataViewActionResult(const ActionPtr& action_) : action(action_) {};
+        INLINE DataViewActionResult(const DataViewResult& result_) : result(result_) {};
+        INLINE DataViewActionResult(const DataViewErrorResult& result_) : result(result_.result) {};
+        INLINE DataViewActionResult(DataViewResult&& result_) : result(std::move(result_)) {};
+        INLINE DataViewActionResult(DataViewErrorResult&& result_) : result(std::move(result_.result)) {};
+
+        INLINE operator bool() const { return action != nullptr; }
+
+        void print(IFormatStream& f) const;
+    };
+
+    //---
+
+    /// abstract wrapper for a view of object's data
     class BASE_OBJECT_API IDataView : public IReferencable
     {
     public:
+        IDataView();
         virtual ~IDataView();
 
+        //---
+
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-        virtual bool describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const = 0;
+        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const = 0;
 
         /// Read data from memory
-        virtual bool readDataView(StringView<char> viewPath, void* targetData, Type targetType) const = 0;
+        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const = 0;
 
         /// Write data to memory
-        virtual bool writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const = 0;
-
-        /// Attach custom object observer
-        virtual void attachObjectObserver(IObjectObserver* observer);
-
-        /// Attach custom object observer
-        virtual void detachObjectObserver(IObjectObserver* observer);
-
-        /// Get parent object
-        virtual IObject* parentObject() const;
-
-        /// Get base view
-        virtual IDataView* base() const;
+        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const = 0;
 
         //--
 
-        // create data proxy with just this view
-        DataProxyPtr makeProxy() const;
+        /// Read data from memory - easier version using DataHolder (NOTE: it must be initialized :P)
+        INLINE DataViewResult readDataViewSimple(StringView<char> viewPath, rtti::DataHolder& outData) const { return readDataView(viewPath, outData.data(), outData.type()); }
+
+        /// Write data to memory
+        INLINE DataViewResult writeDataViewSimple(StringView<char> viewPath, const rtti::DataHolder& newData) const { return writeDataView(viewPath, newData.data(), newData.type()); }
 
         //--
 
-        // compare data views
-        static bool Compare(const IDataView& a, const IDataView& b, StringView<char> viewPath);
+        /// Attach observer of particular place (property) in this view
+        virtual void attachObserver(StringView<char> path, IDataViewObserver* observer);
 
-        // copy data from one view to other view
-        static bool Copy(const IDataView& src, const IDataView& dest, StringView<char> viewPath);
-    };
+        /// Detach observer previously attached with attachObserver()
+        virtual void detachObserver(StringView<char> path, IDataViewObserver* observer);
 
-    //---
+        //---
 
-    /// observer of data properties changes
-    class BASE_OBJECT_API IDataProxyObserver : public NoCopy
-    {
-    public:
-        virtual ~IDataProxyObserver();
+        // create action that writes new value to this view
+        virtual DataViewActionResult actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const = 0;
 
-        /// full object change
-        virtual void dataProxyFullObjectChange() {};
+        // create action that resets current value to base value
+        virtual DataViewActionResult actionValueReset(StringView<char> viewPath) const = 0;
 
-        /// observed value (or parent or child) changed, passes full path to changed
-        virtual void dataProxyValueChanged(StringView<char> fullPath, bool parentNotification) {};
-    };
+        // create action that clear array
+        virtual DataViewActionResult actionArrayClear(StringView<char> viewPath) const = 0;
 
-    //---
+        // create action that adds one element to array
+        virtual DataViewActionResult actionArrayInsertElement(StringView<char> viewPath, uint32_t index) const = 0;
 
-    /// context of operation for the data views
-    class BASE_OBJECT_API DataProxy : public IReferencable, public IObjectObserver
-    {
-    public:
-        DataProxy(IDataView* initialView = nullptr);
-        ~DataProxy();
+        // create action that removes one element from array
+        virtual DataViewActionResult actionArrayRemoveElement(StringView<char> viewPath, uint32_t index) const = 0;
 
-        //--
+        // create action that adds one new element to the array at the end of the array
+        virtual DataViewActionResult actionArrayNewElement(StringView<char> viewPath) const = 0;
 
-        // number of objects in the root view
-        INLINE uint32_t size() const { return m_sources.size(); }
+        // create action that clears inlined object
+        virtual DataViewActionResult actionObjectClear(StringView<char> viewPath) const = 0;
 
-        // get n-th view
-        INLINE const DataViewPtr& view(const uint32_t index) const { return m_sources[index]; }
-
-        // empty ? no sources ?
-        INLINE bool empty() const { return m_sources.empty(); }
-
-        // remove all sources
-        void clear();
-
-        // add a data view to sources list
-        void add(IDataView* view);
-
-        // remove view from sources list
-        void remove(IDataView* view);
+        // create action that creates/replaces inlined object with an object of different class
+        virtual DataViewActionResult actionObjectNew(StringView<char> viewPath, ClassType objectClass) const = 0;
 
         //--
 
-        // read value for a single object
-        bool read(int objectIndex, StringView<char> path, void* targetData, Type targetType) const;
-
-        // write value for a single object
-        bool write(int objectIndex, StringView<char> path, const void* sourceData, Type sourceType) const;
-
-        // describe view of a single element
-        bool describe(int objectIndex, StringView<char> path, rtti::DataViewInfo& outInfo) const;
-
-        //--
-
-        // register observer for given path
-        void* registerObserver(StringView<char> path, IDataProxyObserver* observer); 
-
-        // unregister previously registered observer
-        void unregisterObserver(void* token);
-
-        //--
-
-    private:
-        InplaceArray<DataViewPtr, 1> m_sources;
-        DataViewPtr m_base = nullptr;
-
+    protected:
         struct Observer;
 
         struct Path
         {
             Path* parent = nullptr;
-            Observer* observers = nullptr;
-            StringBuf path;
+            Array<IDataViewObserver*> observers;
         };
 
-        struct Observer
-        {      
-            Path* path = nullptr;
-            Observer* next = nullptr;
-            Observer* prev = nullptr;
-            IDataProxyObserver* observer = nullptr;
-        };
-
-        HashMap<StringBuf, Path*> m_paths;
+        HashMap<uint64_t, Path*> m_paths; // NOTE: owns the Path entry
         Path* m_rootPath = nullptr;
 
-        mem::StructurePool<Path> m_pathPool;
-        mem::StructurePool<Observer> m_observerPool;
+        uint32_t m_callbackDepth = 0;
 
-        Array<Observer*> m_observerersReleasedDuringCallback;
-        uint32_t m_callbackDepth;
+        //--
+
+        void dispatchPropertyChanged(StringView<char> eventPath);
+        void dispatchFullStructureChanged();
+
+        Path* findPathEntry(StringView<char> path);
 
         Path* createPathEntry(StringView<char> path);
-        Path* createPathEntryMemberInternal(Path* parent, StringView<char> propertyName);
-        Path* createPathEntryIndexInternal(Path* parent, uint32_t arrayIndex);
-
-        void unlinkAndReleaseObserver(Observer* ob);
-        void dispatchEvent(StringView<char> eventPath);
-        void dispatchFullStructureChange();
-
-        virtual void onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData) override;
+        Path* createPathEntryInternal(Path* parent, StringView<char> fullPath);
     };
-
+    
     ///---
-
-    /// native data source 
-    class BASE_OBJECT_API DataViewNative : public IDataView
-    {
-    public:
-        DataViewNative(void* data, Type type, IReferencable* owner = nullptr);
-        DataViewNative(IObject* obj);
-        virtual ~DataViewNative();
-
-        virtual bool describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const override;
-        virtual bool readDataView(StringView<char> viewPath, void* targetData, Type targetType) const override;
-        virtual bool writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const override;
-        virtual void attachObjectObserver(IObjectObserver* observer) override;
-        virtual void detachObjectObserver(IObjectObserver* observer) override;
-        virtual IObject* parentObject() const override;
-        virtual IDataView* base() const override;
-
-    private:
-        void* m_data = nullptr;
-        Type m_type = nullptr;
-        IReferencable* m_owner = nullptr;
-        IObject* m_object = nullptr;
-
-        HashMap<IObjectObserver*, uint32_t> m_observers;
-        DataViewPtr m_base;
-    };
-
-    ///---
-
-    /// base class data source 
-    class BASE_OBJECT_API DataViewBaseClass : public IDataView
-    {
-    public:
-        DataViewBaseClass(ClassType type);
-
-        virtual bool describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const override;
-        virtual bool readDataView(StringView<char> viewPath, void* targetData, Type targetType) const override;
-        virtual bool writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const override;
-        virtual void attachObjectObserver(IObjectObserver* observer) override;
-        virtual void detachObjectObserver(IObjectObserver* observer) override;
-
-    private:
-        ClassType m_baseClass = nullptr;
-        const void* m_baseObjectData = nullptr;
-    };
-
-    //---
 
 } // base

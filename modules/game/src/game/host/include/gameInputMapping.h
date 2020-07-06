@@ -7,6 +7,7 @@
 ***/
 
 #pragma once
+#include "base/input/include/inputStructures.h"
 
 namespace game
 {
@@ -26,11 +27,11 @@ namespace game
 
     public:
         base::StringID name;
-        InputActionType type;
+        InputActionType type = InputActionType::Button;
         bool invert = false;
 
-        base::input::KeyCode defaultKey; // default binding for key 
-        base::input::AxisCode defaultAxis; // default binding for axis
+        base::input::KeyCode defaultKey = base::input::KeyCode::KEY_MAX; // default binding for key 
+        base::input::AxisCode defaultAxis = base::input::AxisCode::AXIS_MAX; // default binding for axis
 
         base::StringBuf mappingName; // name of this action in user mapping, only if mappable
         base::StringBuf mappingGroup; // group for user mapping (ie. Driving, Movement, etc)

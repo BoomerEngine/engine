@@ -19,195 +19,101 @@ namespace game
 
     //---
 
-    RTTI_BEGIN_TYPE_ENUM(ScreenChangeType);
-        RTTI_ENUM_OPTION(Keep);
-        RTTI_ENUM_OPTION(Push);
-        RTTI_ENUM_OPTION(Replace);
-        RTTI_ENUM_OPTION(ReplaceAll);
-        RTTI_ENUM_OPTION(Exit);
-    RTTI_END_TYPE();
-
-    //---
-
-    RTTI_BEGIN_TYPE_CLASS(ScreenTransitionRequest);
-        RTTI_PROPERTY(type);
-        RTTI_PROPERTY(screen);
-    RTTI_END_TYPE();
-
-    ScreenTransitionRequest::ScreenTransitionRequest()
-        : type(ScreenChangeType::Keep)
-    {}
-
-    ScreenTransitionRequest::ScreenTransitionRequest(ScreenChangeType type_, const ScreenPtr & screen_)
-        : type(type_)
-        , screen(screen_)
-    {}
-
-    ScreenTransitionRequest ScreenTransitionRequest::ReplaceAll(const ScreenPtr& screen)
-    {
-        return ScreenTransitionRequest(ScreenChangeType::ReplaceAll, screen);
-    }
-
-    ScreenTransitionRequest ScreenTransitionRequest::Replace(const ScreenPtr& screen)
-    {
-        return ScreenTransitionRequest(ScreenChangeType::Replace, screen);
-    }
-
-    ScreenTransitionRequest ScreenTransitionRequest::Push(const ScreenPtr& screen)
-    {
-        return ScreenTransitionRequest(ScreenChangeType::Push, screen);
-    }
-
-    //---
-
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IScreen);
     RTTI_END_TYPE();
 
     IScreen::IScreen()
     {
-        m_fadeInTime = cvGameScreenDefaultFadeInTime.get();
-        m_fadeOutTime = cvGameScreenDefaultFadeOutTime.get();
     }
 
     IScreen::~IScreen()
     {}
 
+    bool IScreen::supportsNativeFadeInFadeOut() const
+    {
+        return false;
+    }
 
-    bool IScreen::handleReadyCheck()
+    bool IScreen::readyToHide(IGame* game)
+    {
+        return true; // no additional requirements
+    }
+
+    bool IScreen::readyToShow(IGame* game)
+    {
+        return true; // no additional requirements
+    }
+
+    void IScreen::handleUpdate(IGame* game, double dt)
+    {
+        // nothing in default implementation
+    }
+
+    void IScreen::handleEvent(IGame* game, const EventPtr& evt)
+    {   
+        // nothing in default implementation
+    }
+
+    void IScreen::handleRender(IGame* game, rendering::command::CommandWriter& cmd, const HostViewport& viewport)
+    {
+        // nothing in default implementation
+    }
+
+    bool IScreen::handleInput(IGame* game, const base::input::BaseEvent& evt)
+    {
+        return false;
+    }
+
+    void IScreen::handleStartHide(IGame* game)
+    {
+        
+    }
+
+    void IScreen::handleStartShow(IGame* game)
+    {
+
+    }
+
+    void IScreen::handleDebug()
+    {
+
+    }
+
+    //--
+
+    ScreenTransitionEffectPtr IScreen::createDefaultShowTransition(IGame* game, IScreen* fromScreen) const
+    {
+        return nullptr; // no transition (instant swap)
+    }
+
+    ScreenTransitionEffectPtr IScreen::createDefaultHideTransition(IGame* game, IScreen* fromScreen) const
+    {
+        return nullptr; // no transition (instant swap)
+    }
+
+    //---
+
+    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IScreenTransitionEffect);
+    RTTI_END_TYPE();
+
+    IScreenTransitionEffect::IScreenTransitionEffect()
+    {}
+
+    IScreenTransitionEffect::~IScreenTransitionEffect()
+    {}
+
+    bool IScreenTransitionEffect::finished() const
     {
         return true;
     }
 
-    ScreenTransitionRequest IScreen::handleUpdate(double dt)
-    {
-        if (m_pendingTransition && m_pendingTransition.screen->handleReadyCheck())
-        {
-            m_currentTransition = std::move(m_pendingTransition);
-            m_pendingTransition = ScreenTransitionRequest();
-            m_fade.startFadeOut(m_fadeOutTime);
-        }
-
-        bool fadeOut = m_fade.m_speed < 0.0f;
-        if (m_fade.update(dt))
-        {
-            if (fadeOut && m_currentTransition)
-            {
-                auto transition = std::move(m_currentTransition);
-                m_currentTransition = ScreenTransitionRequest();
-                return transition;
-            }
-        }
-
-        return ScreenTransitionRequest(); // keep existing screen
-    }
-
-    ScreenTransitionRequest IScreen::handleEvent(const EventPtr& evt)
-    {
-        return ScreenTransitionRequest(); // keep existing screen
-    }
-
-    void IScreen::handleRender(rendering::command::CommandWriter& cmd, const HostViewport& viewport)
+    void IScreenTransitionEffect::handleUpdate(double dt)
     {}
 
-    bool IScreen::handleInput(const base::input::BaseEvent& evt)
+    void IScreenTransitionEffect::handleRender(IGame* game, IScreen* screen, rendering::command::CommandWriter& cmd, const HostViewport& viewport)
     {
-        return false;
-    }
-
-    void IScreen::handleAttach()
-    {
-        m_fade.m_fraction = 0.0f;
-        m_fade.startFadeIn(m_fadeInTime);
-    }
-
-    void IScreen::handleDetach()
-    {}
-
-    //---
-
-    void IScreen::cancelTransition()
-    {
-        if (m_pendingTransition)
-        {
-            TRACE_INFO("Pending transition canceled");
-            m_currentTransition = ScreenTransitionRequest();
-            m_pendingTransition = ScreenTransitionRequest();
-            m_fade.startFadeIn(m_fadeInTime);
-        }
-    }
-
-    void IScreen::startTransition(const ScreenTransitionRequest& request)
-    {
-        DEBUG_CHECK_EX(request, "No valid request specified");
-        DEBUG_CHECK_EX(!m_pendingTransition, "Already have pending transition, that's bad for flow");
-
-        if (request)
-        {
-            if (request.screen->handleReadyCheck())
-            {
-                m_currentTransition = request;
-                m_fade.startFadeOut(m_fadeInTime);
-            }
-            else
-            {
-                m_pendingTransition = request;
-            }
-        }
-    }
-    
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(ScreenFadeHelper);
-    RTTI_PROPERTY(m_fraction);
-    RTTI_PROPERTY(m_speed);
-    RTTI_END_TYPE();
-
-    static float CalcSpeed(float time)
-    {
-        return (time > 0.0001) ? (1.0 / time) : 10000.0f; // limit
-    }
-
-    void ScreenFadeHelper::startFadeIn(float time)
-    {
-        if (m_fraction < 1.0f)
-            m_speed = CalcSpeed(time);
-    }
-
-    void ScreenFadeHelper::startFadeOut(float time)
-    {
-        if (m_fraction > 0.0f)
-            m_speed = -CalcSpeed(time);
-    }
-
-    bool ScreenFadeHelper::fading()
-    {
-        return m_speed != 0.0f;
-    }
-
-    bool ScreenFadeHelper::update(float dt)
-    {
-        if (m_speed > 0.0f)
-        {
-            m_fraction += m_speed * dt;
-            if (m_fraction >= 1.0f)
-            {
-                m_fraction = 1.0f;
-                m_speed = 0.0f;
-                return true;
-            }
-        }
-        else if (m_speed < 0.0f)
-        {
-            m_fraction += m_speed * dt;
-            if (m_fraction <= 0.0f)
-            {
-                m_fraction = 0.0f;
-                m_speed = 0.0f;
-                return true;
-            }
-        }
-
-        return false;
+        if (screen)
+            screen->handleRender(game, cmd, viewport);
     }
 
     //--

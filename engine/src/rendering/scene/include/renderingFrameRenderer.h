@@ -19,6 +19,7 @@
 #include "base/memory/include/linearAllocator.h"
 #include "base/reflection/include/variantTable.h"
 #include "base/memory/include/pageCollection.h"
+#include "renderingSceneStats.h"
 
 namespace rendering
 {
@@ -47,6 +48,9 @@ namespace rendering
 
             INLINE const FrameSurfaceCache& surfaces() const { return m_surfaces; }
 
+            INLINE const FrameStats& frameStats() const { return m_frameStats; } // frame only stats
+            INLINE const SceneStats& scenesStats() const { return m_mergedSceneStats; } // merged from all scenes
+
             INLINE uint32_t targetWidth() const { return m_frame.resolution.finalCompositionWidth; }
             INLINE uint32_t targetHeight() const { return m_frame.resolution.finalCompositionHeight; }
 
@@ -60,6 +64,7 @@ namespace rendering
             //--
 
             void prepareFrame(command::CommandWriter& cmd);
+            void finishFrame();
 
             //--
 
@@ -74,10 +79,14 @@ namespace rendering
             struct SceneData
             {
                 ParametersView params;
-                const Scene* scene = nullptr;
+                SceneStats stats;
+                Scene* scene = nullptr; // TODO: should be const
             };
 
             base::InplaceArray<SceneData, 10> m_scenes;
+
+            FrameStats m_frameStats;
+            SceneStats m_mergedSceneStats;
             
             //--
 

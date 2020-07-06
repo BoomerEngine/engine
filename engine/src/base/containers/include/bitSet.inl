@@ -303,16 +303,56 @@ namespace base
 		return !operator==(other);
 	}
 
-	template< typename Container >
-	INLINE uint32_t BitSet<Container>::findNextBitSet(uint32_t startSearch) const
+	//--
+
+    template< typename Container >
+	INLINE bool BitSet<Container>::iterateSetBits(const std::function<bool(uint32_t index)>& enumFunc) const
 	{
-		return FindNextBitSet(m_words.data(), m_bitSize, startSearch);
+		auto* ptr = m_words.typedData();
+		auto* ptrEnd = m_words.typedData() + m_words.size();
+		uint32_t index = 0;
+        while (ptr < ptrEnd)
+        {
+            auto mask = *ptr;
+            while (mask)
+            {
+                uint32_t localIndex = __builtin_ctzll(mask) + index;
+                if (enumFunc(localIndex))
+                    return true;
+
+                mask ^= mask & -mask;
+            }
+
+            index += 64;
+            ptr += 1;
+        }
+
+		return false;
 	}
 
-	template< typename Container >
-	INLINE uint32_t BitSet<Container>::findNextBitCleared(uint32_t startSearch) const
+    template< typename Container >
+	INLINE bool BitSet<Container>::iterateClearBits(const std::function<bool(uint32_t index)>& enumFunc) const
 	{
-		return FindNextBitCleared(m_words.data(), m_bitSize, startSearch);
+        auto* ptr = m_words.typedData();
+        auto* ptrEnd = m_words.typedData() + m_words.size();
+        uint32_t index = 0;
+        while (ptr < ptrEnd)
+        {
+            auto mask = ~*ptr;
+            while (mask)
+            {
+                uint32_t localIndex = __builtin_ctzll(mask) + index;
+                if (enumFunc(localIndex))
+                    return true;
+
+                mask ^= mask & -mask;
+            }
+
+            index += 64;
+            ptr += 1;
+        }
+
+        return false;
 	}
 
 	//--

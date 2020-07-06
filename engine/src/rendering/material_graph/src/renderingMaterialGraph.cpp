@@ -159,7 +159,7 @@ namespace rendering
 
     //---
 
-    bool MaterialGraph::readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    /*bool MaterialGraph::readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const
     {
         if (TBaseClass::readDataView(rootView, rootViewPath, viewPath, targetData, targetType))
             return true;
@@ -232,7 +232,7 @@ namespace rendering
         }
 
         return false;
-    }
+    }*/
 
     //---
 

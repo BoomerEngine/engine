@@ -32,7 +32,7 @@ namespace rendering
         void RenderForwardPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, const ImageView& colorRT)
         {
             PassBracket pass(cmd, view, "Forward");
-            pass.depthClear(depthRT);
+            pass.depthNoClear(depthRT);
             pass.colorClear(0, colorRT);
             pass.begin();
 
@@ -40,8 +40,10 @@ namespace rendering
             context.msaaCount = depthRT.numSamples();
             context.filterFlags = &view.frame().filters;
             context.pass = MaterialPass::Forward;
+            context.depthCompare = CompareOp::Equal;
 
-            cmd.opSetDepthState(true, true, CompareOp::LessEqual);
+            //cmd.opSetDepthState(true, true, CompareOp::LessEqual);
+            cmd.opSetDepthState(true, true, context.depthCompare);
 
             // render fragments only if we are allowed to
             if (view.frame().filters & FilterBit::PassForward)

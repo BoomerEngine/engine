@@ -41,14 +41,24 @@ namespace ui
         virtual void handleValueChange() override
         {
             base::Color data;
+            const auto ret = readValue(data);
 
-            if (readValue(data))
+            if (ret.code == base::DataViewResultCode::OK)
             {
                 data.a = 255;
                 m_colorBox->customBackgroundColor(data);
+                m_button->visibility(!readOnly());
             }
-
-            m_button->visibility(!readOnly());
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                // TODO: "many values"
+                m_button->visibility(!readOnly());
+            }
+            else
+            {
+                // TODO: error
+                m_button->visibility(false);
+            }
         }
 
         virtual bool canExpandChildren() const override
@@ -61,20 +71,23 @@ namespace ui
             if (!m_picker)
             {
                 base::Color data;
-                readValue(data);
+                const auto ret = readValue(data);
 
-                m_picker = base::CreateSharedPtr<ColorPickerBox>(data, m_allowAlpha);
-                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
-
-                m_picker->bind("OnClosed"_id, this) = [](DataBoxColorPicker* box)
+                if (ret.code == base::DataViewResultCode::OK && ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
-                    box->m_picker.reset();
-                };
+                    m_picker = base::CreateSharedPtr<ColorPickerBox>(data, m_allowAlpha);
+                    m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
-                m_picker->bind("OnColorChanged"_id, this) = [](DataBoxColorPicker* box, base::Color data)
-                {
-                    box->writeValue(data);
-                };
+                    m_picker->bind("OnClosed"_id, this) = [](DataBoxColorPicker* box)
+                    {
+                        box->m_picker.reset();
+                    };
+
+                    m_picker->bind("OnColorChanged"_id, this) = [](DataBoxColorPicker* box, base::Color data)
+                    {
+                        box->writeValue(data);
+                    };
+                }
             }
         }
 

@@ -22,6 +22,8 @@ namespace ed
     public:
         virtual bool bindToBlock(base::graph::Block* block) override;
         virtual void bindToActionHistory(base::ActionHistory* history) override;
+
+        ui::DataBoxPtr m_box;
     };
 
     //--
@@ -34,6 +36,8 @@ namespace ed
     public:
         virtual bool bindToBlock(base::graph::Block* block) override;
         virtual void bindToActionHistory(base::ActionHistory* history) override;
+
+        ui::DataBoxPtr m_box;
     };
 
     //--

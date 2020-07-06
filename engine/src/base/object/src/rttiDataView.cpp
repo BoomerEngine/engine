@@ -126,34 +126,6 @@ namespace base
 
         //--
 
-        SpecificClassType<DataViewCommand> DataViewCommand::GetStaticClass()
-        {
-            static ClassType objectType = RTTI::GetInstance().findClass("base::rtti::DataViewCommand"_id);
-            return SpecificClassType<DataViewCommand>(*objectType.ptr());
-        }
-
-        void DataViewCommand::RegisterType(rtti::TypeSystem& typeSystem)
-        {
-            Type classType = MemNew(rtti::NativeClass, "base::rtti::DataViewCommand", sizeof(DataViewCommand), alignof(DataViewCommand), typeid(DataViewCommand).hash_code());
-            typeSystem.registerType(classType);
-        }
-
-        //--
-
-        SpecificClassType<DataViewBaseValue> DataViewBaseValue::GetStaticClass()
-        {
-            static ClassType objectType = RTTI::GetInstance().findClass("base::rtti::DataViewBaseValue"_id);
-            return SpecificClassType<DataViewBaseValue>(*objectType.ptr());
-        }
-
-        void DataViewBaseValue::RegisterType(rtti::TypeSystem& typeSystem)
-        {
-            Type classType = MemNew(rtti::NativeClass, "base::rtti::DataViewBaseValue", sizeof(DataViewBaseValue), alignof(DataViewBaseValue), typeid(DataViewBaseValue).hash_code());
-            typeSystem.registerType(classType);
-        }
-
-        //--
-
     } // rtti
 } // base
 

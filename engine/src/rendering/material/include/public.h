@@ -45,6 +45,9 @@ namespace rendering
     class MaterialDataProxy;
     typedef base::RefPtr<MaterialDataProxy> MaterialDataProxyPtr;
 
+    class MaterialDataView;
+    typedef base::RefPtr<MaterialDataView> MaterialDataViewPtr;
+
     typedef uint16_t MaterialDataLayoutID;
     typedef uint16_t MaterialDataProxyID;
 

@@ -90,7 +90,7 @@ namespace example
 
     bool GameApp::shouldCaptureInput()
     {
-        return !m_showDebugPanels;
+        return !DebugPagesVisible();
     }
 
     void GameApp::update()
@@ -149,14 +149,14 @@ namespace example
 
                     // Toggle debug panels
                 case KeyCode::KEY_F1:
-                    m_showDebugPanels = !m_showDebugPanels;
+                    DebugPagesVisibility(!DebugPagesVisible());
                     return true;
                 }
             }
         }
 
         // pass to game or debug panels
-        if (m_showDebugPanels)
+        if (DebugPagesVisible())
             return ImGui::ProcessInputEvent(m_imgui, evt);
         else
             return m_game->handleInput(evt);
@@ -169,12 +169,13 @@ namespace example
         fb.depth.view(depthTarget).clearDepth().clearStencil();
         cmd.opBeingPass(fb);
 
-        if (m_showDebugPanels)
+        if (DebugPagesVisible())
         {
             base::canvas::Canvas canvas(width, height);
 
             {
                 ImGui::BeginCanvasFrame(canvas);
+                DebugPagesRender();
                 m_game->debug();
                 ImGui::EndCanvasFrame(canvas);
             }

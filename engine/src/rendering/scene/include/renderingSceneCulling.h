@@ -18,9 +18,14 @@ namespace rendering
 
         ///--
 
+        struct SceneCullingStats;
+
+        ///--
+
         struct SceneObjectInfo
         {
             base::Matrix localToScene;
+            VisibilityBox visibilityBox;
             base::Box sceneBounds;
             uint16_t flags = 0;
             base::Color color = base::Color::WHITE;
@@ -48,13 +53,15 @@ namespace rendering
         struct SceneObjectCullingSetup : public base::NoCopy
         {
             base::Vector3 cameraPosition;
-            base::Matrix cameraFrustumMatrix;
+            uint32_t cameraFrustumCount = 0;
+            VisibilityFrustum* cameraFrustums = nullptr; // can be more than 1
+            SceneCullingStats* stats = nullptr;
         };
 
         struct SceneObjectCullingEntry
         {
             const IProxy* proxy = nullptr;
-            uint8_t cameraMask = 0;
+            uint8_t frustumMask = 0;
             uint16_t distance = 0;
         };
 

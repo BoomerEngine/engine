@@ -26,6 +26,7 @@ namespace base
             BaseAsyncReference();
             BaseAsyncReference(const BaseAsyncReference& other);
             BaseAsyncReference(BaseAsyncReference&& other);
+            BaseAsyncReference(const ResourceKey& key);
             ~BaseAsyncReference();
 
             BaseAsyncReference& operator=(const BaseAsyncReference& other);
@@ -102,6 +103,16 @@ namespace base
             INLINE AsyncRef(AsyncRef<T>&& other) = default;
             INLINE AsyncRef& operator=(const AsyncRef<T>& other) = default;
             INLINE AsyncRef& operator=(AsyncRef<T> && other) = default;
+
+            INLINE AsyncRef(const ResourceKey& key)
+            {
+                if (key.cls() && key.cls()->is<T>())
+                    set(key);
+            }
+
+            INLINE AsyncRef(const ResourcePath& path)
+                : BaseAsyncReference(ResourceKey(path, T::GetStaticClass()))
+            {}
 
             INLINE bool operator==(const AsyncRef<T>& other) const { return BaseReference::operator==(other); }
             INLINE bool operator!=(const AsyncRef<T>& other) const { return BaseReference::operator!=(other); }

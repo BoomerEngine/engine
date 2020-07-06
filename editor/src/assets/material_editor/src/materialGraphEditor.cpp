@@ -94,6 +94,7 @@ namespace ed
             tab->layoutVertical();
 
             m_properties = tab->createChild<ui::DataInspector>();
+            m_properties->bindActionHistory(actionHistory());
             m_properties->expand();
 
             dockLayout().left().bottom(0.5f).attachPanel(tab);
@@ -167,16 +168,17 @@ namespace ed
 
     void MaterialGraphEditor::handleChangedSelection()
     {
-        auto dataProxy = base::CreateSharedPtr<base::DataProxy>();
-
-        for (const auto& selectedBlock : m_graphEditor->selectedBlocks())
-            dataProxy->add(selectedBlock->createDataView());
-
-        // if nothing is selected edit the graph itself
-        if (dataProxy->size() == 0)
-            dataProxy->add(m_graph->createDataView());
-
-        m_properties->bindData(dataProxy);
+        // TODO: multiple block selection
+        const auto& selectedBlocks = m_graphEditor->selectedBlocks();
+        if (!selectedBlocks.empty())
+        {
+            m_properties->bindData(selectedBlocks.back()->createDataView());
+        }
+        else
+        {
+            // if nothing is selected edit the graph itself
+            m_properties->bindData(m_previewInstance->createDataView());
+        }
     }
 
     //---

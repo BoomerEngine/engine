@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/containers/include/bitPool.h"
-
 namespace base
 {
     namespace containers
@@ -120,10 +118,10 @@ namespace base
             INLINE uint32_t numLevels() const { return m_numLevels; }
 
             //! get the maximum number of buckets in the grid
-            INLINE uint32_t maxBuckets() const { return m_bucketIDs.capacity(); }
+            INLINE uint32_t maxBuckets() const { return 0; }// m_bucketIDs.capacity();
 
             //! get number of allocated buckets in the grid (occupancy)
-            INLINE uint32_t numBuckets() const { return m_bucketIDs.size(); }
+            INLINE uint32_t numBuckets() const { return 0; } // m_bucketIDs.size();
 
 
             //! get debug information about streaming grid at given level
@@ -204,7 +202,7 @@ namespace base
 
             // grid buckets
             GridBucket* m_buckets;
-            BitPool<> m_bucketIDs;
+            //BitPool<> m_bucketIDs;
             uint32_t m_numBuckets;
 
             // initialize data structure

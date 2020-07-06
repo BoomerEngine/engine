@@ -323,7 +323,7 @@ namespace base
 
         //--
 
-        bool EnumType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult EnumType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -342,23 +342,21 @@ namespace base
                         optionInfo.name = name;
                     }
                 }
-
-                return true;
             }
 
             return IType::describeDataView(viewPath, viewData, outInfo);
         }
 
-        bool EnumType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult EnumType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             // NOTE: type conversion enum -> string are supported natively, no more work needed
-            return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
+            return IType::readDataView(viewPath, viewData, targetData, targetType);
         }
 
-        bool EnumType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult EnumType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             // NOTE: type conversion string -> enum are supported natively, no more work needed
-            return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
+            return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
         }
 
         //--

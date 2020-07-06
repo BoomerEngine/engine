@@ -30,6 +30,8 @@ namespace base
             ConfigService();
             virtual ~ConfigService();
 
+            ///--
+
             // request to save the user configuration
             // NOTE: configuration is NOT saved right away in case we made a change that will cause a crash
             void requestSave();
@@ -38,8 +40,10 @@ namespace base
             // NOTE: configuration is NOT reloaded right away in case we made a change that will cause a crash
             void requestReload();
 
+            ///--
+
         protected:
-            virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
+            virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
             virtual void onShutdownService() override final;
             virtual void onSyncUpdate() override final;
 

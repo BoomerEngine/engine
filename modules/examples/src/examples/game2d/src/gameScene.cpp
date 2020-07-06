@@ -22,8 +22,12 @@ namespace example
         , m_size(1,1)
         , m_scale(scale)
         , m_circle(circle)
+        , m_name("Sprite")
     {
         buildGeometry();
+
+        if (auto image = ptr.acquire())
+            m_name = StringBuf(image->key().path().fileStem());
     }
 
     void GameSpriteAsset::setupSnapBottom()
@@ -63,15 +67,18 @@ namespace example
 
     void GameSpriteAsset::buildGeometry(GeometryBuilder& builder, bool flip) const
     {
-        auto fillSettings = base::canvas::ImagePatternSettings().scale(m_scale).wrapU(1);
+        auto fillSettings = base::canvas::ImagePatternSettings().scale(m_scale);
 
         if (snapBottom)
             fillSettings.offset(-m_size.x / 2.0f, -m_size.y);
-        else 
+        else
             fillSettings.offset(-m_size.x / 2.0f, -m_size.y / 2.0f);
 
         if (flip)
+        {
             fillSettings.m_scaleX = -fillSettings.m_scaleX;
+            fillSettings.m_wrapU = true;
+        }
 
         auto fillStyle = ImagePattern(m_image.acquire(), fillSettings);
         builder.fillPaint(fillStyle);
@@ -191,6 +198,35 @@ namespace example
             const auto placement = XForm2D::BuildRotation(rot).translation(pos);
             canvas.placement(placement);
             canvas.place(m_asset->geometry());
+        }
+
+        if (m_renderBBox)
+        {
+            GeometryBuilder builder;
+            builder.strokeColor(Color::YELLOW);
+
+            Vector2 tl, br;
+            bounds(tl, br);
+            builder.beginPath();
+            builder.rect(tl, br);
+            builder.stroke();
+
+            canvas.placement(0,0);
+            canvas.place(builder);
+        }
+    }
+
+    void GameSprite::debug()
+    {
+        if (!m_asset)
+            return;
+
+        if (ImGui::TreeNode(this, TempString("Sprite ({})", m_asset->name())))
+        {
+            ImGui::Text(TempString("Position: {},{}", pos.x, pos.y));
+            ImGui::Text(TempString("Size: {},{}", m_asset->size().x, m_asset->size().y));
+            ImGui::Checkbox("Draw bounds", &m_renderBBox);
+            ImGui::TreePop();
         }
     }
 
@@ -397,6 +433,33 @@ namespace example
         builder.extract(*m_geometry);
     }
 
+    void GameTerrain::debug()
+    {
+        if (ImGui::TreeNode(this, TempString("Terrain ({}x{})", m_width, m_height)))
+        {
+            for (uint32_t y = 0; y < m_height; ++y)
+            {
+                for (uint32_t x = 0; x < m_width; ++x)
+                {
+                    ImGui::PushID(1 + (x + y * m_width));
+
+                    if (x > 0)
+                        ImGui::SameLine();
+
+                    char code = tile(x, y);
+                    if (ImGui::SmallButton(TempString("{}", code)))
+                    {
+                        tile(x, y, 1 - code);
+                    }
+
+                    ImGui::PopID();
+                }
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
     //---
 
     GameSceneLayer::GameSceneLayer()
@@ -433,6 +496,16 @@ namespace example
         params.frameBufferWidth = outputWidth;
         params.frameBufferHeight = outputHeight;
         GetService<CanvasRenderingService>()->render(cmd, canvas, params);
+    }
+
+    void GameSceneLayer::debug(int index)
+    {
+        if (ImGui::TreeNode(this, TempString("Layer{} ({} objects)", index, m_objects.size())))
+        {
+            for (const auto& obj : m_objects)
+                obj->debug();
+            ImGui::TreePop();
+        }
     }
 
     void GameSceneLayer::addObject(GameObject* object)

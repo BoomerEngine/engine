@@ -27,19 +27,34 @@ namespace ui
             m_box = createChild<CheckBox>();
             m_box->bind("OnClick"_id) = [this]()
             {
-                write();
+                if (m_box->isEnabled())
+                    write();
             };
-        }
+        } 
 
         virtual void handleValueChange() override
         {
             bool value = false;
-            auto state = CheckBoxState::Undecided;
-            if (readValue(value))
-                state = value ? CheckBoxState::Checked : CheckBoxState::Unchecked;
 
-            m_box->state(state);
-            m_box->enable(!readOnly());
+            const auto ret = readValue(value);
+            if (ret.code == base::DataViewResultCode::OK)
+            {
+                m_box->state(value ? CheckBoxState::Checked : CheckBoxState::Unchecked);
+                m_box->enable(!readOnly());
+                m_box->visibility(true);
+            }
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_box->state(CheckBoxState::Undecided);
+                m_box->enable(!readOnly());
+                m_box->visibility(true);
+            }
+            else
+            {
+                // TODO: error!
+                m_box->state(CheckBoxState::Undecided);
+                m_box->enable(false);
+            }
         }
 
         virtual ui::IElement* handleFocusForwarding() override

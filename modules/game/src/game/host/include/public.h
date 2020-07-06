@@ -18,13 +18,28 @@ namespace game
     class IScreen;
     typedef base::RefPtr<IScreen> ScreenPtr;
 
+    class IScreenTransitionEffect;
+    typedef base::RefPtr<IScreenTransitionEffect> ScreenTransitionEffectPtr;
+
     class IEvent;
     typedef base::RefPtr<IEvent> EventPtr;
 
     class IEventSupplier;
     typedef base::RefPtr<IEventSupplier> EventSupplierPtr;
 
-    struct ScreenTransitionRequest;
+    class IGame;
+    typedef base::RefPtr<IGame> GamePtr;
+
+    class IGameSystem;
+    typedef base::RefPtr<IGameSystem> GameSystemPtr;
+
+    enum class GameScreenType : uint8_t
+    {
+        Background, // almost 99% this is the game world + loading screen
+        Foreground, // almost 99^ those are UI based screens
+
+        MAX,
+    };
 
     //--
 

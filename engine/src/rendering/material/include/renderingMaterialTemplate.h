@@ -99,14 +99,16 @@ namespace rendering
         virtual bool readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly = false) const override final;
 
         // IObject - extension of object property model that allows to see the template parameters
-        virtual bool readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
-        virtual bool writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
-        virtual bool describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
+        virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
+        virtual base::DataViewResult describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
 
         ///---
 
         // find info about material parameters
         const MaterialTemplateParamInfo* findParameterInfo(base::StringID name) const;
+
+        // list material parameters (for data view)
+        void listParameters(base::rtti::DataViewInfo & outInfo) const;
 
         ///---
 

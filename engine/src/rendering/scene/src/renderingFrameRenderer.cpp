@@ -41,16 +41,26 @@ namespace rendering
         {
             m_msaa = false;
 
-            // load all rendered scenes
+            const auto sceneCount = m_frame.scenes.scenesToDraw.size();
+            m_scenes.reserve(sceneCount);
+
+            // lock scenes for rendering
             for (auto& scene : m_frame.scenes.scenesToDraw)
-                scene.scenePtr->lockForRendering();
+            {
+                if (scene.scenePtr->lockForRendering())
+                {
+                    auto& entry = m_scenes.emplaceBack();
+                    entry.stats.numScenes = 1;
+                    entry.scene = scene.scenePtr;
+                }
+            }
         }
 
         FrameRenderer::~FrameRenderer()
         {
             // release lock on all rendered scenes
-            for (auto& scene : m_frame.scenes.scenesToDraw)
-                scene.scenePtr->unlockAfterRendering();
+            for (auto& scene : m_scenes)
+                scene.scene->unlockAfterRendering(std::move(scene.stats));
         }
 
         bool FrameRenderer::usesMultisamping() const
@@ -156,31 +166,11 @@ namespace rendering
 
             // bind global frame params
             BindFrameParameters(cmd, *this);
-
-            // lighting
-            // TODO: move...
-            {
-                GPUightingParams params;
-                params.GlobalLighting.LightColor = m_frame.globalLighting.globalLightColor.xyzw();
-                params.GlobalLighting.LightDirection = m_frame.globalLighting.globalLightDirection.xyzw();
-                params.GlobalLighting.AmbientColorHorizon = m_frame.globalLighting.globalAmbientColorHorizon.xyzw();
-                params.GlobalLighting.AmbientColorZenith = m_frame.globalLighting.globalAmbientColorZenith.xyzw();
-
-                struct
-                {
-                    ConstantsView params;
-                } desc;
-
-                desc.params = cmd.opUploadConstants(params);
-                cmd.opBindParametersInline("LightingParams"_id, desc);
-            }
-
+       
             // prepare frame for rendering
-            const auto sceneCount = m_frame.scenes.scenesToDraw.size();
-            m_scenes.reserve(sceneCount);
-            for (auto& scene : m_frame.scenes.scenesToDraw)
+            for (auto& entry : m_scenes)
             {
-                scene.scenePtr->prepareForRendering(cmd);
+                entry.scene->prepareForRendering(cmd);
 
                 // TODO: a function to prepare scene info ?
 
@@ -194,11 +184,14 @@ namespace rendering
                 } desc;
 
                 desc.params = cmd.opUploadConstants(info);
-
-                auto& entry = m_scenes.emplaceBack();
                 entry.params = cmd.opUploadParameters(desc);
-                entry.scene = scene.scenePtr;
             }
+        }
+
+        void FrameRenderer::finishFrame()
+        {
+            for (auto& scene : m_scenes)
+                m_mergedSceneStats.merge(scene.stats);
         }
 
         //--

@@ -10,6 +10,7 @@
 
 #include "base/containers/include/refcounted.h"
 #include "base/containers/include/staticStructurePool.h"
+#include "renderingSceneStats.h"
 
 namespace rendering
 {
@@ -56,14 +57,17 @@ namespace rendering
             // get global object/culling table
             INLINE const SceneObjectRegistry& objects() const { return *m_objects; }
             INLINE SceneObjectRegistry& objects() { return *m_objects; }
+
+            /// get last rendering stats
+            INLINE const SceneStats& stats() const { return m_stats; }
                        
             //--
 
             /// lock scene for rendering, no modifications to scene are possible when scene is locked
-            void lockForRendering();
+            bool lockForRendering();
 
             /// unlock scene after rendering is done
-            void unlockAfterRendering();
+            void unlockAfterRendering(SceneStats&& updatedStats);
 
             /// is the scene locked for rendering ? (DEBUG ONLY)
             INLINE bool lockedForRendering() const { return m_lockCount.load() > 0; }
@@ -112,7 +116,11 @@ namespace rendering
             uint32_t m_proxyGenerationIndex = 1;
             base::StaticStructurePool<ProxyEntry> m_proxyTable;
 
-            // --
+            //--
+
+            SceneStats m_stats; // last scene rendering stats
+
+            //--
 
             void destroyAllProxies();
 

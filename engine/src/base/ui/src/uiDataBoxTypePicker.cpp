@@ -42,14 +42,25 @@ namespace ui
         virtual void handleValueChange() override
         {
             base::Type data;
-            if (readValue(data))
+
+            const auto ret = readValue(data);
+            if (ret.code == base::DataViewResultCode::OK)
             {
                 base::StringBuilder txt;
                 txt << data;
                 m_caption->text(txt.toString());
+                m_button->visibility(!readOnly());
             }
-
-            m_button->visibility(!readOnly());
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_caption->text("<many values>");
+                m_button->visibility(!readOnly());
+            }
+            else
+            {
+                m_caption->text(base::TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                m_button->visibility(false);
+            }
         }
 
         void showTypePicker()
@@ -57,22 +68,24 @@ namespace ui
             if (!m_picker)
             {
                 base::Type data;
-                readValue(data);
-
-                bool allowNullType = false;
-
-                m_picker = base::CreateSharedPtr<TypePickerBox>(data, allowNullType);
-                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
-
-                m_picker->bind("OnClosed"_id, this) = [](DataBoxTypePicker* box)
+                const auto ret = readValue(data);
+                if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
-                    box->m_picker.reset();
-                };
+                    bool allowNullType = false;
 
-                m_picker->bind("OnTypeSelected"_id, this) = [](DataBoxTypePicker* box, base::Type data)
-                {
-                    box->writeValue(data);
-                };                
+                    m_picker = base::CreateSharedPtr<TypePickerBox>(data, allowNullType);
+                    m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+
+                    m_picker->bind("OnClosed"_id, this) = [](DataBoxTypePicker* box)
+                    {
+                        box->m_picker.reset();
+                    };
+
+                    m_picker->bind("OnTypeSelected"_id, this) = [](DataBoxTypePicker* box, base::Type data)
+                    {
+                        box->writeValue(data);
+                    };
+                }
             }
         }
 

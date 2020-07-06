@@ -1,0 +1,5 @@
+document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
+  class=rendering::MeshMaterialBindingManifest
+    materials
+      name=default
+        baseMaterial class=rendering::IMaterial loaded=true path=materials/std_pbr.v4mg

@@ -24,11 +24,9 @@ namespace game
         virtual ~Screen_Splash();
 
     protected:
-        virtual ScreenTransitionRequest handleUpdate(double dt) override;
-        virtual void handleRender(rendering::command::CommandWriter& cmd, const HostViewport& viewport) override;
-        virtual bool handleInput(const base::input::BaseEvent& evt) override;
-        virtual void handleAttach() override;
-        virtual void handleDetach() override;
+        virtual bool supportsNativeFadeInFadeOut() const override;
+        virtual void handleUpdate(IGame* game, double dt) override;
+        virtual void handleRender(IGame* game, rendering::command::CommandWriter& cmd, const HostViewport& viewport) override;
 
     private:
         rendering::TexturePtr m_texture;

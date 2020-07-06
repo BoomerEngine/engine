@@ -76,7 +76,12 @@ namespace base
         static void SaveToEntry(base::Type dataType, const void* data, const void* defaultData, config::Entry& outEntry);
 
         /// load value from storage entry
-        static bool LoadFromEntry(base::Type dataType, void* data, const void* defaultData, const config::Entry& outEntry);
+        static bool LoadFromEntry(base::Type dataType, void* data, const void* defaultData, const config::Entry& entry);
+
+        ///--
+
+        /// refresh property value from entry
+        static void RefreshPropertyValue(StringID group, StringID name);
 
     protected:
         StringID m_group;
@@ -106,6 +111,12 @@ namespace base
 
         /// get value of the property
         INLINE const T& get() const
+        {
+            return m_value;
+        }
+
+        /// get value of the property
+        INLINE T& get()
         {
             return m_value;
         }

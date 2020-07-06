@@ -13,6 +13,11 @@ namespace base
 {
     //--
 
+    /// maximum number of template properties in any given class
+    static const uint32_t MAX_TEMPLATE_PROPERTIES = 128;
+
+    //--
+
     /// object pointer types
     class IObject;
     typedef RefPtr<IObject> ObjectPtr;
@@ -21,17 +26,24 @@ namespace base
     /// observer of object's state
     class IObjectObserver;
 
-    /// data view of object
+    /// abstract data view
     class IDataView;
     typedef RefPtr<IDataView> DataViewPtr;
-    class DataProxy;
-    typedef RefPtr<DataProxy> DataProxyPtr;
+
+    /// data view of an object
+    class DataViewNative;
+    typedef RefPtr<DataViewNative> DataViewNativePtr;
 
     // actions
     class IAction;
     typedef RefPtr<IAction> ActionPtr;
     class ActionHistory;
     typedef RefPtr<ActionHistory> ActionHistoryPtr;
+
+    /// object template
+    class IObjectTemplate;
+    typedef RefPtr<IObjectTemplate> ObjectTemplatePtr;
+    typedef RefWeakPtr<IObjectTemplate> ObjectTemplateWeakPtr;
 
     //--
 
@@ -148,7 +160,42 @@ namespace base
 
     } // rtti
 
-    //--
+    //---
+
+    enum class DataViewResultCode : uint8_t
+    {
+        OK,
+        ErrorUnknownProperty, // property (or part of path) is unknown (ie. property does not exist)
+        ErrorIllegalAccess, // you can't access that property like that (ie. hidden property)
+        ErrorIllegalOperation, // operation is not permitted - ie. resizing static array
+        ErrorTypeConversion, // property exists and is accessible but was not readable as the type that was requested
+        ErrorManyValues, // property has many different values and a single value cannot be established
+        ErrorReadOnly, // property is marked as read only, no writes are possible
+        ErrorNullObject, // trying to access null object
+        ErrorIndexOutOfRange, // trying to access array's index that is out of range
+        ErrorInvalidValid, // value to write is invalid
+    };
+
+    struct BASE_OBJECT_API DataViewResult
+    {
+        DataViewResultCode code = DataViewResultCode::ErrorIllegalOperation;
+        StringBuf additionalInfo;
+
+        INLINE DataViewResult();
+        INLINE DataViewResult(const DataViewResult& other);
+        INLINE DataViewResult(DataViewResult&& other);
+        INLINE DataViewResult& operator=(const DataViewResult& other);
+        INLINE DataViewResult& operator=(DataViewResult&& other);
+        INLINE ~DataViewResult();
+
+        INLINE DataViewResult(DataViewResultCode code_) : code(code_) {};
+
+        INLINE bool valid() const { return code == DataViewResultCode::OK; }
+
+        void print(IFormatStream& f) const;
+    };
+
+    //---
 
 } // base
 
@@ -160,5 +207,54 @@ namespace base
 
 #include "object.h"
 #include "objectObserver.h"
+
+//---
+
+namespace base
+{
+    INLINE DataViewResult::DataViewResult() = default;
+    INLINE DataViewResult::DataViewResult(const DataViewResult& other) = default;
+    INLINE DataViewResult::DataViewResult(DataViewResult&& other) = default;
+    INLINE DataViewResult::~DataViewResult() = default;
+    INLINE DataViewResult& DataViewResult::operator=(const DataViewResult& other) = default;
+    INLINE DataViewResult& DataViewResult::operator=(DataViewResult && other) = default;
+
+    struct BASE_OBJECT_API DataViewErrorResult
+    {
+        DataViewResult result;
+
+        INLINE DataViewErrorResult() {};
+        INLINE DataViewErrorResult(const DataViewErrorResult& other) = default;
+        INLINE DataViewErrorResult(DataViewErrorResult&& other) = default;
+        INLINE DataViewErrorResult& operator=(const DataViewErrorResult& other) = default;
+        INLINE DataViewErrorResult& operator=(DataViewErrorResult&& other) = default;
+
+        INLINE DataViewErrorResult(DataViewResult&& other) : result(std::move(other)) {};
+        INLINE DataViewErrorResult(const DataViewResult& other) : result(other) {};
+
+        INLINE DataViewErrorResult& operator=(DataViewResult&& other) { result = std::move(other); return *this; }
+        INLINE DataViewErrorResult& operator=(const DataViewResult& other) { result = other; return *this; }
+
+        // NOTE: true only if we have error
+        INLINE operator bool() const { return result.code != DataViewResultCode::OK; }
+
+        INLINE operator DataViewResult() const { return result; }
+
+        void print(IFormatStream& f) const;
+    };
+
+} // base
+
+//---
+
+static INLINE base::DataViewErrorResult HasError(base::DataViewResult&& result)
+{
+    return base::DataViewErrorResult(std::move(result));
+}
+
+static INLINE base::DataViewErrorResult HasError(const base::DataViewResult& result)
+{
+    return base::DataViewErrorResult(std::move(result));
+}
 
 //---

@@ -159,13 +159,13 @@ namespace base
             // Data view
 
             /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-            virtual bool describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const;
+            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const;
 
             /// Read data from memory
-            virtual bool readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const;
+            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const;
 
             /// Write data to memory
-            virtual bool writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const;
+            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const;
 
             //----
             // Runtime hashing

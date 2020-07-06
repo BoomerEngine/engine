@@ -42,6 +42,7 @@ namespace rendering
                 list.tail = page;
             }
 
+            list.stats.types[(int)frag->type].numFragments += 1;
             list.tail->fragments[list.tail->count++] = frag;
         }
 

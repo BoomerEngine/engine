@@ -21,6 +21,7 @@
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
 #include "rendering/material/include/renderingMaterialRuntimeProxy.h"
+#include "renderingFrameView.h"
 
 namespace rendering
 {
@@ -131,6 +132,7 @@ namespace rendering
             // TODO: create LOD ranges
 
             // create chunk fragments
+            proxy->castsShadows = meshDesc.castsShadows;
             proxy->localBounds = meshDesc.mesh->bounds().box;
             proxy->chunks.reserve(meshDesc.mesh->chunks().size());
             for (const auto& meshChunk : meshDesc.mesh->chunks())
@@ -180,6 +182,10 @@ namespace rendering
         {
             for (ProxyIterator<ProxyMesh> it(proxies, numProxies); it; ++it)
             {
+                if (view.type() == FrameViewType::GlobalCascades)
+                    if (!it->castsShadows)
+                        continue;
+
                 for (const auto& chunk : it->chunks)
                 {
                     auto* frag = outFragmentList.allocFragment<Fragment_Mesh>();
@@ -188,7 +194,21 @@ namespace rendering
                     frag->meshChunkdId = chunk.meshChunkId;
                     frag->materialData = chunk.materialData;
 
-                    outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
+                    if (view.type() == FrameViewType::GlobalCascades)
+                    {
+                        if (it.frustomMask() & 1)
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth0);
+                        if (it.frustomMask() & 2)
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth1);
+                        if (it.frustomMask() & 4)
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth2);
+                        if (it.frustomMask() & 8)
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth3);
+                    }
+                    else
+                    {
+                        outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
+                    }
                 }
             }
         }

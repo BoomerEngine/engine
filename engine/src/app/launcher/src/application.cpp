@@ -16,7 +16,7 @@
 #include "base/input/include/inputContext.h"
 #include "game/host/include/gameScreen.h"
 #include "game/host/include/gameHost.h"
-#include "game/host/include/gameScreen_MeshViewer.h"
+#include "game/host/include/gameFactory.h"
 #include "rendering/driver/include/renderingCommandWriter.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
@@ -24,7 +24,7 @@ namespace launcher
 {
     //--
 
-    base::ConfigProperty<base::StringBuf> cvInitialGameScreen("Game.Startup", "StartupGameScreen", "game::Screen_Splash");
+    base::ConfigProperty<base::StringBuf> cvGameFactoryClass("Game", "FactoryClass", "");
 
     //--
 
@@ -95,7 +95,25 @@ namespace launcher
         setup.m_windowShowOnTaskBar = true;
         setup.m_windowCreateInputContext = true;
         setup.m_class = rendering::DriverOutputClass::NativeWindow; // render to native window on given OS
-        setup.m_class = rendering::DriverOutputClass::Fullscreen;
+        
+
+        // switch fullscreen/windowed
+        if (commandline.hasParam("fullscreen"))
+            setup.m_class = rendering::DriverOutputClass::Fullscreen;
+        else if (commandline.hasParam("window") || commandline.hasParam("windowed"))
+            setup.m_class = rendering::DriverOutputClass::NativeWindow;
+
+        // resolution
+        if (commandline.hasParam("width") && commandline.hasParam("height"))
+        {
+            int newWidth = commandline.singleValueInt("width", -1);
+            int newHeight = commandline.singleValueInt("height", -1);
+            if (newWidth != -1 && newHeight != -1)
+            {
+                setup.m_width = newWidth;
+                setup.m_height = newHeight;
+            }
+        }
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
@@ -120,48 +138,88 @@ namespace launcher
         return true;
     }
 
+
+    base::SpecificClassType<game::IGameFactory> GetGameFactoryClass(const base::app::CommandLine& commandline)
+    {
+        // use game from commandline
+        if (commandline.hasParam("game"))
+        {
+            const auto gameClassName = commandline.singleValue("game");
+            TRACE_INFO("Using game factory class '{}' from commandline", gameClassName);
+
+            const auto gameClass = RTTI::GetInstance().findClass(base::StringID(gameClassName)).cast<game::IGameFactory>();
+            if (!gameClass)
+            {
+                TRACE_ERROR("Game factory class '{}' not found", gameClassName);
+                return nullptr;
+            }
+
+            return gameClass;
+        }
+
+        // use game class from config
+        if (const auto gameClassName = cvGameFactoryClass.get())
+        {
+            TRACE_INFO("Using game factory class '{}' from config", gameClassName);
+
+            const auto gameClass = RTTI::GetInstance().findClass(base::StringID(gameClassName)).cast<game::IGameFactory>();
+            if (!gameClass)
+            {
+                TRACE_ERROR("Game factory class '{}' not found", gameClassName);
+                return nullptr;
+            }
+
+            return gameClass;
+        }
+
+        // enumerate game classes
+        base::InplaceArray<base::SpecificClassType<game::IGameFactory>, 5> gameFactoryClasses;
+        RTTI::GetInstance().enumClasses(gameFactoryClasses);
+        TRACE_INFO("Found {} game factory classes", gameFactoryClasses.size());
+        if (gameFactoryClasses.empty())
+        {
+            TRACE_ERROR("No game factories linked with executable, unable to start any game");
+            return nullptr;
+        }
+
+        // TODO: choice using debug menu ?
+
+        // use just first game class
+        TRACE_INFO("Using game factory '{}'", gameFactoryClasses[0]->name());
+        return gameFactoryClasses[0];
+    }
+
+    bool ParseGameInitData(const base::app::CommandLine& commandline, game::GameInitData& outData)
+    {
+        // TODO: initial spawn position,rotation + initial world
+        return true;
+    }
+
     bool LauncherApp::createGame(const base::app::CommandLine& commandline)
     {
-        // TODO: allow game screen class override from commandline
-        //gameClassName
-
-        // find the root state
-        const auto gameClassName = base::StringID(cvInitialGameScreen.get());
-        const auto gameStateClass = RTTI::GetInstance().findClass(gameClassName);
-        if (!gameStateClass)
-        {
-            TRACE_ERROR("Missing initial game state '{}', nothing to run", gameClassName);
+        // get game factory
+        const auto gameFactoryClass = GetGameFactoryClass(commandline);
+        if (!gameFactoryClass)
             return false;
-        }
 
-        // create initial game state
-        const auto gameState = gameStateClass.create<game::IScreen>();
+        // fill in the game init info
+        game::GameInitData initData;
+        if (!ParseGameInitData(commandline, initData))
+            return false;
 
-        // create second screens
-        if (commandline.hasParam("meshPath"))
-        {
-            const auto meshPath = base::res::ResourcePath(commandline.singleValue("meshPath"));
-            const auto meshState = base::CreateSharedPtr<game::Screen_MeshViewer>(meshPath);
-            gameState->startTransition(game::ScreenTransitionRequest::Replace(meshState));
-        }
+        // create the game factory
+        const auto gameFactory = gameFactoryClass.create();
+        const auto game = gameFactory->createGame(initData);
+        if (!game)
+            return false;
 
-               
-        // create the game host with the initial state
-        m_gameHost = base::CreateSharedPtr<game::Host>(game::HostType::Standalone, gameState);
+        // create the game host with the created game
+        m_gameHost = base::CreateSharedPtr<game::Host>(game::HostType::Standalone, game);
         return true;
     }
 
     bool LauncherApp::processInput(const base::input::BaseEvent& evt)
     {
-        if (auto key = evt.toKeyEvent())
-        {
-            if (key->pressed() && key->keyCode() == base::input::KeyCode::KEY_F10)
-            {
-                base::platform::GetLaunchPlatform().requestExit("User fast exit");
-                return true;
-            }
-        }
-
         if (m_gameHost->input(evt))
             return true;
 
@@ -180,6 +238,10 @@ namespace launcher
             while (auto inputEvent = inputContext->pull())
                 processInput(*inputEvent);
         }
+
+        // capture input to the window if required
+        if (m_renderingWindow && m_renderingWindow->windowGetInputContext())
+            m_renderingWindow->windowGetInputContext()->requestCapture(m_gameHost->shouldCaptureInput() ? 2 : 0);
     }
 
     void LauncherApp::updateGame(double dt)

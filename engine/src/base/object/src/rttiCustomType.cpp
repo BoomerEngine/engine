@@ -129,7 +129,7 @@ namespace base
             return false;
         }
 
-        bool CustomType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult CustomType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (funcDescribeView)
                 return funcDescribeView(viewPath, viewData, outInfo);
@@ -137,20 +137,20 @@ namespace base
             return IType::describeDataView(viewPath, viewData, outInfo);
         }
 
-        bool CustomType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult CustomType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (funcReadDataView)
                 return funcReadDataView(viewPath, viewData, targetData, targetType);
 
-            return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
+            return IType::readDataView(viewPath, viewData, targetData, targetType);
         }
 
-        bool CustomType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult CustomType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (funcWriteDataView)
                 return funcWriteDataView(viewPath, viewData, sourceData, sourceType);
 
-            return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
+            return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
         }
 
         //--

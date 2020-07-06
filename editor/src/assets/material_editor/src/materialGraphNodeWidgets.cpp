@@ -32,21 +32,23 @@ namespace ed
     {
         if (block)
         {
-            if (auto proxy = block->createDataProxy())
+            if (auto proxy = block->createDataView())
             {
                 base::rtti::DataViewInfo info;
-                if (proxy->describe(0, "value", info))
+                if (proxy->describeDataView("value", info).valid())
                 {
                     info.flags |= base::rtti::DataViewInfoFlagBit::VerticalEditor;
                     if (auto box = ui::IDataBox::CreateForType(info))
                     {
-                        box->bind(proxy, "value"); // TODO: bind undo redo
+                        box->bindData(proxy, "value"); // TODO: bind undo redo
                         box->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                         box->customVerticalAligment(ui::ElementVerticalLayout::Middle);
                         if (block->cls()->name().view().endsWith("ConstFloat"))
                             box->customMinSize(50, 20);
                         else
                             box->customMinSize(80, 20);
+
+                        m_box = box;
                         attachChild(box);
                         return true;
                     }
@@ -59,7 +61,8 @@ namespace ed
 
     void MaterialGraphConstantScalarWidget::bindToActionHistory(base::ActionHistory* history)
     {
-        // TODO
+        if (m_box)
+            m_box->bindActionHistory(history);
     }
 
     //--
@@ -72,19 +75,21 @@ namespace ed
     {
         if (block)
         {
-            if (auto proxy = block->createDataProxy())
+            if (auto proxy = block->createDataView())
             {
                 base::rtti::DataViewInfo info;
-                if (proxy->describe(0, "color", info))
+                if (proxy->describeDataView("color", info).valid())
                 {
                     info.flags |= base::rtti::DataViewInfoFlagBit::VerticalEditor;
                     if (auto box = ui::IDataBox::CreateForType(info))
                     {
-                        box->bind(proxy, "color"); // TODO: bind undo redo
+                        box->bindData(proxy, "color");
                         box->customMinSize(100, 20);
                         box->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                         box->customVerticalAligment(ui::ElementVerticalLayout::Middle);
                         attachChild(box);
+
+                        m_box = box;
                         return true;
                     }
                 }
@@ -96,7 +101,8 @@ namespace ed
 
     void MaterialGraphConstantColorWidget::bindToActionHistory(base::ActionHistory* history)
     {
-        // TODO
+        if (m_box)
+            m_box->bindActionHistory(history);
     }
 
     //--

@@ -73,7 +73,7 @@ namespace rendering
             if (!outRenderStates.alphaToCoverage)
             {
                 if (compiler.debugCode())
-                    compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) {\n");
+                    compiler.appendf("if (!Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) {\n");
                 
                 compiler.appendf("if ({} < {}) discard;\n", mask, m_maskThreshold);
 
@@ -115,7 +115,7 @@ namespace rendering
             case MaterialPass::Forward:
             {
                 // TODO: this seems fishy
-                if (!outRenderStates.alphaToCoverage|| !outRenderStates.depthWrite)
+                if (!outRenderStates.alphaToCoverage || !outRenderStates.depthWrite)
                     outRenderStates.earlyPixelTests = true;
 
                 // compile the color output of the material

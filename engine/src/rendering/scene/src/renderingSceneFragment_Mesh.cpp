@@ -65,13 +65,30 @@ namespace rendering
         void FragmentHandler_Mesh::handlePrepare(command::CommandWriter& cmd)
         {}
 
-        void FragmentHandler_Mesh::handleRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments) const
+        void FragmentHandler_Mesh::handleRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const
         {
             TransientBufferView bufferChunkData(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadOnly, sizeof(GPUChunkInfo) * numFragments, sizeof(GPUChunkInfo));
+
+            // count calls to handler
+            outStats.numBursts += 1;
 
             // skip meshes if disabled
             if (!(view.frame().filters & FilterBit::Meshes))
                 return;
+
+            // sort mesh fragments
+            std::sort((const Fragment**)fragments, (const Fragment**)fragments + numFragments, [](const Fragment* a, const Fragment* b)
+                {
+                    const auto* am = static_cast<const Fragment_Mesh*>(a);
+                    const auto* bm = static_cast<const Fragment_Mesh*>(b);
+                    if (am->materialTemplate != bm->materialTemplate)
+                        return am->materialTemplate < bm->materialTemplate;
+                    if (am->meshChunkdId != bm->meshChunkdId)
+                        return am->meshChunkdId < bm->meshChunkdId;
+                    if (am->materialData != bm->materialData)
+                        return am->materialData < bm->materialData;
+                    return am->objectId < bm->objectId;
+                });
 
             // prepare data buffer
             {
@@ -103,9 +120,15 @@ namespace rendering
                     if (next->meshChunkdId != renderMeshChunkId || next->materialTemplate != renderMaterialTemplate || next->materialData != renderData)
                         break;
 
+                if (renderMeshChunkId == 0)
+                    continue;
+
                 const auto drawCount = it.pos() - drawFirstIndex;
                 const auto renderChunkIndexCount = m_meshCache->chunkInfo(renderMeshChunkId).indexCount;
                 const auto renderChunkVertexCount = m_meshCache->chunkInfo(renderMeshChunkId).vertexCount;
+
+                outStats.numFragments += drawCount;
+                outStats.numDrawBaches += 1;
 
                 //cmd.opSetFillState(PolygonMode::Line);
 
@@ -115,7 +138,7 @@ namespace rendering
                     if (context.allowsCustomRenderStates)
                     {
                         cmd.opSetCullState(state.renderStates.twoSided ? CullMode::Disabled : CullMode::Back);
-                        cmd.opSetDepthState(state.renderStates.depthTest, state.renderStates.depthWrite);
+                        cmd.opSetDepthState(state.renderStates.depthTest, state.renderStates.depthWrite, context.depthCompare);
 
                         if (context.msaaCount > 1)
                         {
@@ -132,6 +155,7 @@ namespace rendering
                     {
                         cmd.opBindParameters(state.dataLayout->descriptorName(), renderData->upload(cmd));
                         cmd.opDrawInstanced(state.shader, 0, renderChunkIndexCount, drawFirstIndex, drawCount);
+                        outStats.numDrawTriangles += (renderChunkIndexCount / 3) * drawCount;
                     }
                 }
 

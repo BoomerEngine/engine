@@ -247,9 +247,9 @@ namespace base
 
         //--
 
-        bool BitfieldType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult BitfieldType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
-            StringView<char> propertyName;
+            const auto orgViewPath = viewPath;
 
             if (viewPath.empty())
             {
@@ -271,83 +271,94 @@ namespace base
 
                 return IType::describeDataView(viewPath, viewData, outInfo);
             }
-            else if (ParsePropertyName(viewPath, propertyName))
+
+            StringView<char> propertyName;
+            if (ParsePropertyName(viewPath, propertyName))
             {
-                uint32_t bitIndex = 0;
-                if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
+                if (viewPath.empty())
                 {
-                    if (viewPath.empty())
+                    uint32_t bitIndex = 0;
+                    if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
                     {
                         static Type boolType = RTTI::GetInstance().findType("bool"_id);
 
                         outInfo.flags = DataViewInfoFlagBit::LikeValue;
                         outInfo.dataPtr = nullptr;
                         outInfo.dataType = boolType;
-                        return true;
+                        return DataViewResultCode::OK;
+                    }
+                    else if (propertyName == "__rawSize")
+                    {
+                        // TODO: report bitfield data size (uint8, 16, 32, 64, etc)
+                    }
+                    else if (propertyName == "__rawValue")
+                    {
+                        // TODO: report bitfield raw value
                     }
                 }
             }
 
-            return false;
+            return IType::describeDataView(orgViewPath, viewData, outInfo);
         }
 
-        bool BitfieldType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult BitfieldType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
-            StringView<char> propertyName;
+            const auto orgViewPath = viewPath;
 
-            if (viewPath.empty())
+            if (!viewPath.empty())
             {
-                // allow to read/write whole value
-                return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
-            }
-            else if (ParsePropertyName(viewPath, propertyName))
-            {
-                uint32_t bitIndex = 0;
-                if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
+                StringView<char> propertyName;
+                if (ParsePropertyName(viewPath, propertyName))
                 {
-                    if (viewPath.empty())
+                    uint32_t bitIndex = 0;
+                    if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
                     {
-                        if (targetType == DataViewBaseValue::GetStaticClass())
-                            return IType::readDataView(context, rootView, TempString("{}.{}", rootViewPath, propertyName), viewPath, viewData, targetData, targetType);
-
-                        static Type boolType = RTTI::GetInstance().findType("bool"_id);
-
                         uint64_t bitMask = 0;
                         readUint64(viewData, bitMask);
 
                         const bool bitValue = 0 != (GetBitMask(bitIndex) & bitMask);
-                        return ConvertData(&bitValue, boolType, targetData, targetType);
+
+                        static Type boolType = RTTI::GetInstance().findType("bool"_id);
+                        return boolType->readDataView(viewPath, &bitValue, targetData, targetType);
+                    }
+                    else if (propertyName == "__rawSize")
+                    {
+                        uint32_t value = size();
+
+                        static Type uint32Type = RTTI::GetInstance().findType("uint32_t"_id);
+                        return uint32Type->readDataView(viewPath, &value, targetData, targetType);
+                    }
+                    else if (propertyName == "__rawValue")
+                    {
+                        uint64_t bitMask = 0;
+                        readUint64(viewData, bitMask);
+
+                        static Type uint64Type = RTTI::GetInstance().findType("uint64_t"_id);
+                        return uint64Type->readDataView(viewPath, &bitMask, targetData, targetType);
                     }
                 }
             }
 
-            return false;
+            return IType::readDataView(orgViewPath, viewData, targetData, targetType);
         }
 
-        bool BitfieldType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult BitfieldType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
-            StringView<char> propertyName;
+            const auto orgViewPath = viewPath;
 
-            if (viewPath.empty())
+            if (!viewPath.empty())
             {
-                // allow to read/write whole value
-                return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
-            }
-            else if (ParsePropertyName(viewPath, propertyName))
-            {
-                uint32_t bitIndex = 0;
-                if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
+                StringView<char> propertyName;
+                if (ParsePropertyName(viewPath, propertyName))
                 {
-                    if (viewPath.empty())
+                    uint32_t bitIndex = 0;
+                    if (m_flagBitIndices.find(StringID::Find(propertyName), bitIndex))
                     {
-                        if (sourceType == DataViewCommand::GetStaticClass())
-                            return IType::writeDataView(context, rootView, TempString("{}.{}", rootViewPath, propertyName), viewPath, viewData, sourceData, sourceType);
-
                         static Type boolType = RTTI::GetInstance().findType("bool"_id);
 
                         bool bitFlag = false;
-                        if (!ConvertData(sourceData, sourceType, &bitFlag, boolType))
-                            return false;
+                        if (auto ret = HasError(boolType->writeDataView(viewPath, &bitFlag, sourceData, sourceType)))
+                            return ret;
 
                         uint64_t bitMask = 0;
                         readUint64(viewData, bitMask);
@@ -358,12 +369,27 @@ namespace base
                             bitMask &= ~GetBitMask(bitIndex);
 
                         writeUint64(viewData, bitMask);
-                        return true;
+                        return DataViewResultCode::OK;
+                    }
+                    else if (propertyName == "__rawSize")
+                    {
+                        return DataViewResultCode::ErrorReadOnly;
+                    }
+                    else if (propertyName == "__rawValue")
+                    {
+                        uint64_t rawValue = 0;
+
+                        static Type uint64Type = RTTI::GetInstance().findType("uint64_t"_id);
+                        if (auto err = HasError(uint64Type->writeDataView(viewPath, &rawValue, sourceData, sourceType)))
+                            return err;
+
+                        writeUint64(viewData, rawValue);
+                        return DataViewResultCode::OK;
                     }
                 }
             }
 
-            return false;
+            return IType::writeDataView(orgViewPath, viewData, sourceData, sourceType);
         }
 
         //--

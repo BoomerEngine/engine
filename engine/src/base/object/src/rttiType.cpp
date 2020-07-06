@@ -80,7 +80,7 @@ namespace base
 
         //--
 
-        bool IType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -91,64 +91,55 @@ namespace base
                     collectMetadataList(outInfo.metadata);
 
                 outInfo.flags |= DataViewInfoFlagBit::LikeValue;
-                return true;
+                return DataViewResultCode::OK;
             }
 
-            return false;
+            StringView<char> propertyName;
+            if (ParsePropertyName(viewPath, propertyName))
+                return DataViewResultCode::ErrorUnknownProperty;
+
+            return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        bool IType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (viewPath.empty())
             {
-                // general comparison vs base property
-                if (targetType == DataViewBaseValue::GetStaticClass())
-                {
-                    auto& ret = *(DataViewBaseValue*)targetData;
-
-                    if (rootView)
-                    {
-                        if (auto baseView = rootView->base())
-                        {
-                            ret.differentThanBase = !IDataView::Compare(*rootView, *baseView, rootViewPath);
-                        }
-                    }
-
-                    return true;
-                }
-
-                return rtti::ConvertData(viewData, this, targetData, targetType);
+                if (!rtti::ConvertData(viewData, this, targetData, targetType))
+                    return DataViewResultCode::ErrorTypeConversion;
+                return DataViewResultCode::OK;
             }
 
-            return false;
+            StringView<char> propertyName;
+            if (ParsePropertyName(viewPath, propertyName))
+            {
+                if (propertyName == "__type")
+                {
+                     // TODO
+                }
+
+                return DataViewResultCode::ErrorUnknownProperty;
+            }
+
+            return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        bool IType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (viewPath.empty())
             {
-                // reset command
-                if (sourceType == DataViewCommand::GetStaticClass())
-                {
-                    const auto& cmd = *(const DataViewCommand*)sourceData;
-
-                    if (cmd.command == "reset"_id)
-                    {
-                        if (rootView)
-                        {
-                            if (auto baseView = rootView->base())
-                            {
-                                return IDataView::Copy(*baseView, *rootView, rootViewPath);
-                            }
-                        }
-                    }
-
-                    return false;
-                }
-
-                return rtti::ConvertData(sourceData, sourceType, viewData, this);
+                if (!rtti::ConvertData(sourceData, sourceType, viewData, this))
+                    return DataViewResultCode::ErrorTypeConversion;
+                return DataViewResultCode::OK;
             }
-            return false;
+
+            StringView<char> propertyName;
+            if (ParsePropertyName(viewPath, propertyName))
+            {
+                return DataViewResultCode::ErrorUnknownProperty;
+            }
+
+            return DataViewResultCode::ErrorIllegalAccess;
         }
 
         ///---

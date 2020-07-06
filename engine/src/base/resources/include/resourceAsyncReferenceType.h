@@ -58,6 +58,7 @@ namespace base
         //---
 
         extern BASE_RESOURCES_API StringID FormatAsyncRefTypeName(StringID className);
+        extern BASE_RESOURCES_API const ResourceAsyncRefType* CreateAsyncRefType(SpecificClassType<IResource> resourceClass);
 
         //---
 

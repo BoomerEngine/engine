@@ -34,7 +34,7 @@ namespace rendering
 
             m_viewport.minDepthRange = 0.0f;
             m_viewport.maxDepthRange = 1.0f;
-            m_viewport.viewportRect = base::Rect(0, 0, view.frame().resolution.width, view.frame().resolution.height);
+            m_viewport.viewportRect = base::Rect(0, 0, view.width(), view.height());
         }
 
         void PassBracket::depthClear(const ImageView& rt)
@@ -46,6 +46,15 @@ namespace rendering
             m_fb.depth.loadOp = LoadOp::Clear;
             m_fb.depth.clearDepth(1.0f);
             m_fb.depth.clearStencil(0);
+        }
+
+        void PassBracket::depthNoClear(const ImageView& rt)
+        {
+            DEBUG_CHECK(!rt.empty());
+            DEBUG_CHECK(rt.renderTargetDepth());
+
+            m_fb.depth.rt = rt;
+            m_fb.depth.loadOp = LoadOp::Keep;
         }
 
         void PassBracket::colorClear(uint8_t index, const ImageView& rt, const base::Vector4& clearValues)

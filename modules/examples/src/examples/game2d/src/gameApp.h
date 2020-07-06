@@ -45,7 +45,6 @@ namespace example
 
         bool shouldCaptureInput();
 
-        bool m_showDebugPanels = false;
         ImGuiContext* m_imgui = nullptr;
 
         bool m_paused = false;

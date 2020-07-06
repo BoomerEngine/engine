@@ -46,7 +46,7 @@ namespace rendering
             bool visible = true;
 
             // initial selection state
-            bool selected = false;  
+            bool selected = false;
 
         private:
             ProxyType m_proxyType;
@@ -75,6 +75,12 @@ namespace rendering
 
             // should we receive shadows when rendered in lit modes
             bool receiveShadows = true; 
+
+            // object color
+            base::Color color = base::Color::WHITE;
+
+            // extra object color
+            base::Color colorEx = base::Color::BLACK;
 
             //--
 

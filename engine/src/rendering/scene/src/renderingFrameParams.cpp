@@ -38,6 +38,21 @@ namespace rendering
 
         //--
 
+        RTTI_BEGIN_TYPE_ENUM(FrameRenderMode);
+            RTTI_ENUM_OPTION(Default);
+            RTTI_ENUM_OPTION(WireframeSolid);
+            RTTI_ENUM_OPTION(WireframePassThrough);
+            RTTI_ENUM_OPTION(DebugDepth);
+            RTTI_ENUM_OPTION(DebugLuminance);
+            RTTI_ENUM_OPTION(DebugShadowMask);
+            RTTI_ENUM_OPTION(DebugAmbientOcclusion);
+            RTTI_ENUM_OPTION(DebugLinearizedDepth);
+            RTTI_ENUM_OPTION(DebugReconstructedViewNormals);
+            RTTI_ENUM_OPTION(DebugMaterial);
+        RTTI_END_TYPE();
+
+        //--
+
         FrameParams_Camera::FrameParams_Camera(const Camera& camera_)
             : camera(camera_)
         {
@@ -58,9 +73,10 @@ namespace rendering
 
         base::ConfigProperty<float> cvFrameDefaultGlobalLightPitch("Rendering.GlobalLighting", "DefaultLightPitch", 30.0f);
         base::ConfigProperty<float> cvFrameDefaultGlobalLightYaw("Rendering.GlobalLighting", "DefaultLightYaw", 60.0f);
-        base::ConfigProperty<base::Color> cvFrameDefaultGlobalLightColor("Rendering.GlobalLighting", "DefaultLightColor", base::Color(255,255,230));
-        base::ConfigProperty<base::Color> cvFrameDefaultAmbientHorizonColor("Rendering.GlobalLighting", "DefaultAmbientHorizonColor", base::Color(110, 110, 130));
-        base::ConfigProperty<base::Color> cvFrameDefaultAmbientZenithColor("Rendering.GlobalLighting", "DefaultAmbientZenithColor", base::Color(50, 50, 70));
+        base::ConfigProperty<float> cvFrameDefaultGlobalLightBrightness("Rendering.GlobalLighting", "DefaultLightBrightness", 10.0f);
+        base::ConfigProperty<base::Color> cvFrameDefaultGlobalLightColor("Rendering.GlobalLighting", "DefaultLightColor", base::Color(255,255,231));
+        base::ConfigProperty<base::Color> cvFrameDefaultAmbientHorizonColor("Rendering.GlobalLighting", "DefaultAmbientHorizonColor", base::Color(10, 10, 10));
+        base::ConfigProperty<base::Color> cvFrameDefaultAmbientZenithColor("Rendering.GlobalLighting", "DefaultAmbientZenithColor", base::Color(12, 12, 14));
 
         FrameParams_GlobalLighting::FrameParams_GlobalLighting()
         {
@@ -68,14 +84,30 @@ namespace rendering
             if (globalLightDirection.z)
                 globalLightDirection.z = -globalLightDirection.z;
 
-            globalLightColor = cvFrameDefaultGlobalLightColor.get().toVectorSRGB().xyz();
-            globalAmbientColorZenith = cvFrameDefaultAmbientZenithColor.get().toVectorSRGB().xyz();
-            globalAmbientColorHorizon = cvFrameDefaultAmbientHorizonColor.get().toVectorSRGB().xyz();
+            globalLightColor = cvFrameDefaultGlobalLightColor.get().toVectorLinear().xyz() * cvFrameDefaultGlobalLightBrightness.get();
+            globalAmbientColorZenith = cvFrameDefaultAmbientZenithColor.get().toVectorLinear().xyz();
+            globalAmbientColorHorizon = cvFrameDefaultAmbientHorizonColor.get().toVectorLinear().xyz();
         }
 
         //--
 
+        RTTI_BEGIN_TYPE_ENUM(FrameToneMappingType);
+            RTTI_ENUM_OPTION(None);
+            RTTI_ENUM_OPTION(Linear);
+            RTTI_ENUM_OPTION(SimpleReinhard);
+            RTTI_ENUM_OPTION(LumabasedReinhard);
+            RTTI_ENUM_OPTION(WhitePreservingLumabasedReinhard);
+            RTTI_ENUM_OPTION(RomBinDaHouse);
+            RTTI_ENUM_OPTION(Filmic);
+            RTTI_ENUM_OPTION(Uncharted2);
+        RTTI_END_TYPE();
+
         FrameParams_ToneMapping::FrameParams_ToneMapping()
+        {}
+
+        //--
+
+        FrameParams_ExposureAdaptation::FrameParams_ExposureAdaptation()
         {}
 
         //--
@@ -90,6 +122,25 @@ namespace rendering
 
         //--
 
+        base::ConfigProperty<bool> cvAmbientOcclusionEnabled("Rendering.AmbientOcclusion", "Enabled", true);
+        base::ConfigProperty<bool> cvAmbientOcclusionBlurEnabled("Rendering.AmbientOcclusion", "BlurEnabled", true);
+        base::ConfigProperty<float> cvAmbientOcclusionIntensity("Rendering.AmbientOcclusion", "Intensity", 1.5f);
+        base::ConfigProperty<float> cvAmbientOcclusionBias("Rendering.AmbientOcclusion", "Bias", 0.1f);
+        base::ConfigProperty<float> cvAmbientOcclusionRadius("Rendering.AmbientOcclusion", "Radius", 2.0f);
+        base::ConfigProperty<float> cvAmbientOcclusionBlurSharpness("Rendering.AmbientOcclusion", "BlurSharpness", 40.0f);
+
+        FrameParams_AmbientOcclusion::FrameParams_AmbientOcclusion()
+        {
+            enabled = cvAmbientOcclusionEnabled.get();
+            blur = cvAmbientOcclusionBlurEnabled.get();
+            intensity = cvAmbientOcclusionIntensity.get();
+            bias = cvAmbientOcclusionBias.get();
+            radius = cvAmbientOcclusionRadius.get();
+            blurSharpness = cvAmbientOcclusionBlurSharpness.get();
+        }
+
+        //--
+
         FrameParams_DebugGeometry::FrameParams_DebugGeometry()
             : solid(DebugGeometryLayer::SceneSolid)
             , transparent(DebugGeometryLayer::SceneTransparent)
@@ -99,18 +150,28 @@ namespace rendering
 
         //--
 
-        base::ConfigProperty<float> cvCascadesBaseEdgeFade("Rendering.Cascades", "BaseEdgeFade", 0.05f);
-        base::ConfigProperty<float> cvCascadesBaseFilterSize("Rendering.Cascades", "BaseFilterSize", 16.0f);
-        base::ConfigProperty<float> cvCascadesBaseRange("Rendering.Cascades", "BaseRange", 2.0f);
-        base::ConfigProperty<float> cvCascadesRangeMul1("Rendering.Cascades", "RangeMul1", 5.0f);
-        base::ConfigProperty<float> cvCascadesRangeMul2("Rendering.Cascades", "RangeMul2", 5.0f);
-        base::ConfigProperty<float> cvCascadesRangeMul3("Rendering.Cascades", "RangeMul3", 5.0f);
+        static base::ConfigProperty<float> cvCascadesBaseEdgeFade("Rendering.Cascades", "BaseEdgeFade", 0.05f);
+        static base::ConfigProperty<float> cvCascadesBaseFilterSize("Rendering.Cascades", "BaseFilterSize", 8.0f);
+        static base::ConfigProperty<float> cvCascadesBaseRange("Rendering.Cascades", "BaseRange", 4.0f);
+        static base::ConfigProperty<float> cvCascadesRangeMul1("Rendering.Cascades", "RangeMul1", 3.0f); // 12
+        static base::ConfigProperty<float> cvCascadesRangeMul2("Rendering.Cascades", "RangeMul2", 3.0f); // 36
+        static base::ConfigProperty<float> cvCascadesRangeMul3("Rendering.Cascades", "RangeMul3", 3.0f); // 100m
+        static base::ConfigProperty<float> cvCascadesDepthBiasConstant("Rendering.Cascades", "DepthConstant", 400.0f);
+        static base::ConfigProperty<float> cvCascadesDepthBiasSlope("Rendering.Cascades", "DepthSlope", 2.0f);
+        static base::ConfigProperty<float> cvCascadesDepthBiasTexelSizeMul("Rendering.Cascades", "DepthSlopeTexelSizeMul", 0.2f);
+        static base::ConfigProperty<float> cvCascadesFilterSizeTexelSizeMul("Rendering.Cascades", "FilterSizeTexelSizeMul", -1.0f);
 
         FrameParams_ShadowCascades::FrameParams_ShadowCascades()
         {
             baseRange = cvCascadesBaseRange.get();
             baseEdgeFade = cvCascadesBaseEdgeFade.get();
             baseFilterSize = cvCascadesBaseFilterSize.get();
+            baseDepthBiasConstant = cvCascadesDepthBiasConstant.get();
+            baseDepthBiasSlope = cvCascadesDepthBiasSlope.get();
+
+            depthBiasSlopeTexelSizeMul = cvCascadesDepthBiasTexelSizeMul.get();
+            filterSizeTexelSizeMul = cvCascadesFilterSizeTexelSizeMul.get();
+
             rangeMul1 = cvCascadesRangeMul1.get();
             rangeMul2 = cvCascadesRangeMul2.get();
             rangeMul3 = cvCascadesRangeMul3.get();

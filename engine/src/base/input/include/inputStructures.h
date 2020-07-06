@@ -213,6 +213,7 @@ namespace base
             AXIS_MOUSEX = 0x00,
             AXIS_MOUSEY = 0x01,
             AXIS_MOUSEZ = 0x02,
+            AXIS_MAX,
         };
 
         enum class KeyMaskBit : uint16_t

@@ -10,6 +10,7 @@
 
 #include "renderingSceneFragment.h"
 #include "base/memory/include/linearAllocator.h"
+#include "renderingSceneStats.h"
 
 namespace rendering
 {
@@ -41,6 +42,12 @@ namespace rendering
                 return ret;
             }
 
+            /// get number of fragments of given type
+            INLINE const SceneFragmentBucketStats& stats(FragmentDrawBucket bucket) const
+            {
+                return m_lists[(int)bucket].stats;
+            }
+
             ///--
 
             /// add fragment to draw list for given pass bit
@@ -64,6 +71,7 @@ namespace rendering
 
             struct FragmentList
             {
+                SceneFragmentBucketStats stats;
                 FragmentPage* head = nullptr;
                 FragmentPage* tail = nullptr;
             };

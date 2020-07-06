@@ -178,8 +178,10 @@ namespace base
             return true;
         }
 
-        bool IArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
+            const auto orgViewPath = viewPath;
+
             if (viewPath.empty())
             {
                 outInfo.dataPtr = viewData;
@@ -194,51 +196,101 @@ namespace base
             if (ParseArrayIndex(viewPath, index))
             {
                 if (index >= arraySize(viewData))
-                    return false;
+                    return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
                 return m_innertType->describeDataView(viewPath, elementViewData, outInfo);
             }
 
-            return false;
+            StringView<char> propName;
+            if (ParsePropertyName(viewPath, propName))
+            {
+                static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);
+
+                if (propName == "__size" || propName == "__capacity")
+                    return uintType->describeDataView(viewPath, viewData, outInfo);
+            }
+
+            return IType::describeDataView(orgViewPath, viewData, outInfo);
         }
 
-        bool IArrayType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IArrayType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
+            const auto orgViewPath = viewPath;
+
             uint32_t index = 0;
             if (ParseArrayIndex(viewPath, index))
             {
                 if (index >= arraySize(viewData))
-                    return false;
-
-                StringBuilder newRootViewPath;
-                newRootViewPath << rootViewPath;
-                newRootViewPath.appendf("[{}]", index);
+                    return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
-                return m_innertType->readDataView(context, rootView, newRootViewPath.view(), viewPath, elementViewData, targetData, targetType);
+                return m_innertType->readDataView(viewPath, elementViewData, targetData, targetType);
             }
 
-            return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
+            StringView<char> propName;
+            if (ParsePropertyName(viewPath, propName))
+            {
+                static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);
+
+                if (propName == "__size")
+                { 
+                    const auto value = arraySize(viewData);
+                    if (!rtti::ConvertData(&value, uintType, targetData, targetType))
+                        return DataViewResultCode::ErrorTypeConversion;
+                    return DataViewResultCode::OK;
+                }
+
+                else if (propName == "__capacity")
+                {
+                    const auto value = arrayCapacity(viewData);
+                    if (!rtti::ConvertData(&value, uintType, targetData, targetType))
+                        return DataViewResultCode::ErrorTypeConversion;
+                    return DataViewResultCode::OK;
+                }
+            }
+
+            return IType::readDataView(orgViewPath, viewData, targetData, targetType);
         }
 
-        bool IArrayType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IArrayType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
+            const auto orgViewPath = viewPath;
+
             uint32_t index = 0;
             if (ParseArrayIndex(viewPath, index))
             {
                 if (index >= arraySize(viewData))
-                    return false;
-
-                StringBuilder newRootViewPath;
-                newRootViewPath << rootViewPath;
-                newRootViewPath.appendf("[{}]", index);
+                    return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
-                return m_innertType->writeDataView(context, rootView, newRootViewPath.view(), viewPath, elementViewData, sourceData, sourceType);
+                return m_innertType->writeDataView(viewPath, elementViewData, sourceData, sourceType);
             }
 
-            return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
+            StringView<char> propName;
+            if (ParsePropertyName(viewPath, propName))
+            {
+                static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);
+
+                if (propName == "__size")
+                {
+                    uint32_t newSize = 0;
+                    if (!rtti::ConvertData(sourceData, sourceType, &newSize, uintType))
+                        return DataViewResultCode::ErrorTypeConversion;
+                    return DataViewResultCode::ErrorIllegalAccess; // TODO!
+                }
+
+                else if (propName == "__capacity")
+                {
+                    uint32_t newCapacity = 0;
+                    if (!rtti::ConvertData(sourceData, sourceType, &newCapacity, uintType))
+                        return DataViewResultCode::ErrorTypeConversion;
+
+                    return DataViewResultCode::ErrorIllegalAccess; // TODO!
+                }
+            }
+
+            return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
         }
 
     } // rtti

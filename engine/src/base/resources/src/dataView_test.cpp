@@ -175,19 +175,19 @@ RTTI_END_TYPE();
 template< typename T >
 INLINE bool DescribeView(StringView<char> viewPath, const T& data, rtti::DataViewInfo& outInfo)
 {
-    return reflection::GetTypeObject<T>()->describeDataView(viewPath, &data, outInfo);
+    return reflection::GetTypeObject<T>()->describeDataView(viewPath, &data, outInfo).valid();
 }
 
 template< typename T, typename U >
 INLINE bool ReadView(StringView<char> viewPath, const T& data, U& outData)
 {
-    return reflection::GetTypeObject<T>()->readDataView(nullptr, nullptr, "", viewPath, &data, &outData, reflection::GetTypeObject<U>());
+    return reflection::GetTypeObject<T>()->readDataView(viewPath, &data, &outData, reflection::GetTypeObject<U>()).valid();
 }
 
 template< typename T, typename U >
 INLINE bool WriteView(StringView<char> viewPath, T& data, const U& inputData)
 {
-    return reflection::GetTypeObject<T>()->writeDataView(nullptr, nullptr, "", viewPath, &data, &inputData, reflection::GetTypeObject<U>());
+    return reflection::GetTypeObject<T>()->writeDataView(viewPath, &data, &inputData, reflection::GetTypeObject<U>()).valid();
 }
 
 

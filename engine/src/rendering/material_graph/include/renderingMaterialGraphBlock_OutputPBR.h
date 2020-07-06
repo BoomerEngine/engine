@@ -30,6 +30,7 @@ namespace rendering
         
         bool m_applyGlobalAmbient = true;
         bool m_applyGlobalDirectionalLighting = true;
+        bool m_applyAmbientOcclusion = true;
         bool m_applyReflectionProbes = true;
         bool m_applyLocalLighting = true;
 

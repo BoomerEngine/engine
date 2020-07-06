@@ -49,6 +49,8 @@ namespace rendering
             {
                 command::CommandWriterBlock block(cmd, base::TempString("{}", bucket));
 
+                FrameFragmentBucketStats localBucketStat;
+
                 if (bucket == FragmentDrawBucket::DebugSolid)
                 {
                     if (view.frame().filters & FilterBit::DebugGeometrySolid)
@@ -58,7 +60,7 @@ namespace rendering
                 {
                     for (auto* scene : view.scenes())
                     {
-                        scene->drawList->iterateFragmentRanges(bucket, [&scene, &cmd, &context, &view](const Fragment* const* fragments, uint32_t count)
+                        scene->drawList->iterateFragmentRanges(bucket, [&scene, &localBucketStat, &cmd, &context, &view](const Fragment* const* fragments, uint32_t count)
                             {
                                 uint32_t index = 0;
                                 while (index < count)
@@ -71,11 +73,14 @@ namespace rendering
 
 
                                     if (const auto* handler = scene->scene->fragmentHandlers()[(uint8_t)firstHandlerType])
-                                        handler->handleRender(cmd, view, context, fragments + firstFragmentIndex, index - firstFragmentIndex);
+                                        handler->handleRender(cmd, view, context, fragments + firstFragmentIndex, index - firstFragmentIndex, localBucketStat.types[(uint8_t)firstHandlerType]);
                                 }
                             });
                     }
                 }
+
+                // merge stats
+                view.stats().buckets[(int)bucket].merge(localBucketStat);
             }
         }
 

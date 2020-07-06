@@ -6,11 +6,12 @@
 #include <math.h>
 #include <frame.h>
 #include <camera.h>
+#include <shadows.h>
 
 descriptor ShadowMaskParams
 {
 	ConstantBuffer
-	{
+	{ 
 		uvec2 ScreenSize;
 	}
 
@@ -28,12 +29,7 @@ export shader GenerateCS
 		{
 			float depth = DepthTexture[pos].x;
 			vec3 worldPos = Viewport.CalcWorldPosition(pos, depth);
-			vec2 screenPos = Viewport.CalcScreenPosition(pos);
-		
-			//ShadowMask[pos] = screenPos.xy01;
-			//ShadowMask[pos] = frac(depth*1000).xxx1;
-			
-			ShadowMask[pos] = worldPos.xyz1;
+			ShadowMask[pos] = Cascades.ComputeShadowsAtPoint(worldPos, pos).x000;
 		}
 	}
 }

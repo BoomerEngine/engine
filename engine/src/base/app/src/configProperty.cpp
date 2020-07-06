@@ -308,6 +308,14 @@ namespace base
         helper::ConfigPropertyRegistry::GetInstance().all(outProperties);
     }
 
+    void ConfigPropertyBase::RefreshPropertyValue(StringID group, StringID name)
+    {
+        helper::ConfigPropertyRegistry::GetInstance().run([group, name](ConfigPropertyBase* prop) {
+            if (prop->group() == group && prop->name() == name)
+                prop->pullValueFromConfig();
+            });
+    }
+
     void ConfigPropertyBase::PullAll()
     {
         helper::ConfigPropertyRegistry::GetInstance().run([](ConfigPropertyBase* prop){

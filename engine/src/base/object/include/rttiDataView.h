@@ -22,10 +22,11 @@ namespace base
         enum class DataViewRequestFlagBit : uint8_t
         {
             MemberList = FLAG(0), // return list of members for structures
-            OptionsList = FLAG(1), // return list of options for enums
+            OptionsList = FLAG(1), // return list of options for enumerators
             ObjectInfo = FLAG(2), // information about pointed object
             PropertyMetadata = FLAG(3), // return metadata assigned to the property (only works for views that are properties)
             TypeMetadata = FLAG(4), // return metadata assigned to the view type
+            CheckIfResetable = FLAG(5), // check if the current value of the property is resettable to some base value (done via DataView in the end)
         };
 
         enum class DataViewInfoFlagBit : uint16_t
@@ -42,6 +43,7 @@ namespace base
             HasSetup = FLAG(9), // we have some more setup how to edit this item
             DynamicArray = FLAG(10), // array element count can be changed
             VerticalEditor = FLAG(11), // prefer vertical editor data
+            ResetableToBaseValue = FLAG(12), // property has some "overridden" value that can be reset to base value 
         };
 
         typedef DirectFlags<DataViewRequestFlagBit> DataViewRequestFlags;
@@ -53,6 +55,7 @@ namespace base
         {
             StringID name;
             StringID category;
+            Type type; // used ONLY to merge different member lists
         };
 
         struct DataViewOptionInfo
@@ -82,37 +85,6 @@ namespace base
             Array<DataViewMemberInfo> members;
             Array<DataViewOptionInfo> options;
             Array<const IMetadata*> metadata;
-        };
-
-        struct BASE_OBJECT_API DataViewCommand
-        {
-            StringID command;
-            int arg0 = -1;
-            int arg1 = -1;
-            Type argT;
-
-            //--
-
-            static SpecificClassType<DataViewCommand> GetStaticClass();
-            inline base::ClassType nativeClass() const { return GetStaticClass(); }
-            inline base::ClassType cls() const { return GetStaticClass(); }
-
-            // initialize class (since we have no automatic reflection in this project)
-            static void RegisterType(rtti::TypeSystem& typeSystem);
-        };
-
-        struct BASE_OBJECT_API DataViewBaseValue
-        {
-            bool differentThanBase = false;
-
-            // TODO: base value history ?
-
-            static SpecificClassType<DataViewBaseValue> GetStaticClass();
-            inline base::ClassType nativeClass() const { return GetStaticClass(); }
-            inline base::ClassType cls() const { return GetStaticClass(); }
-
-            // initialize class (since we have no automatic reflection in this project)
-            static void RegisterType(rtti::TypeSystem& typeSystem);
         };
 
         //--

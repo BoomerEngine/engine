@@ -26,12 +26,34 @@ namespace rendering
     {
         //---
 
+        RTTI_BEGIN_TYPE_ENUM(FrameViewType);
+            RTTI_ENUM_OPTION(MainColor);
+            RTTI_ENUM_OPTION(GlobalCascades);
+        RTTI_END_TYPE();
+
+        RTTI_BEGIN_TYPE_ENUM(ProxyType);
+            RTTI_ENUM_OPTION(None);
+            RTTI_ENUM_OPTION(Mesh);
+        RTTI_END_TYPE();
+
+        RTTI_BEGIN_TYPE_ENUM(FragmentHandlerType);
+            RTTI_ENUM_OPTION(None);
+            RTTI_ENUM_OPTION(Mesh);
+        RTTI_END_TYPE();
+        
+        //---
+
         RTTI_BEGIN_TYPE_ENUM(FragmentDrawBucket);
-        RTTI_ENUM_OPTION(OpaqueNotMoving);
-        RTTI_ENUM_OPTION(Opaque);
-        RTTI_ENUM_OPTION(OpaqueMasked);
-        RTTI_ENUM_OPTION(Transparent);
-        RTTI_ENUM_OPTION(SelectionOutline);
+            RTTI_ENUM_OPTION(OpaqueNotMoving);
+            RTTI_ENUM_OPTION(Opaque);
+            RTTI_ENUM_OPTION(OpaqueMasked);
+            RTTI_ENUM_OPTION(Transparent);
+            RTTI_ENUM_OPTION(DebugSolid);
+            RTTI_ENUM_OPTION(ShadowDepth0);
+            RTTI_ENUM_OPTION(ShadowDepth1);
+            RTTI_ENUM_OPTION(ShadowDepth2);
+            RTTI_ENUM_OPTION(ShadowDepth3);
+            RTTI_ENUM_OPTION(SelectionOutline);
         RTTI_END_TYPE();
 
         //---
@@ -47,10 +69,14 @@ namespace rendering
             const auto numScenes = m_renderer.m_scenes.size();
             m_scenes.reserve(numScenes);
 
+            m_stats.numViews += 1;
+
             // create per scene data
             for (uint32_t i = 0; i < numScenes; ++i)
             {
                 auto* data = m_allocator.createNoCleanup<PerSceneData>();
+                data->frameStats = const_cast<SceneViewStats*>(&m_renderer.m_scenes[i].stats.views[(int)m_type]);
+                data->stats.numViews = 1;
                 data->scene = m_renderer.m_scenes[i].scene;
                 data->params = m_renderer.m_scenes[i].params;
                 data->drawList = m_allocator.createNoCleanup<FragmentDrawList>(m_allocator);
@@ -62,9 +88,15 @@ namespace rendering
         {
             for (auto* scene : m_scenes)
             {
+                if (scene->frameStats)
+                    scene->frameStats->merge(scene->stats);
+
                 scene->drawList->~FragmentDrawList();
                 scene->~PerSceneData();
             }
+
+            auto& viewStats = m_renderer.frameStats().views[(int)m_type];
+            const_cast<FrameViewStats&>(viewStats).merge(m_stats);
         }
 
         void FrameView::collectSingleCamera(const Camera& camera)
@@ -72,11 +104,53 @@ namespace rendering
             PC_SCOPE_LVL1(CollectSingleCamera);
             for (auto* scene : m_scenes)
             {
-                // TODO: transform to scene space
+                base::ScopeTimer timer;
+
+                // TODO: transform camera to scene space
+
                 SceneObjectCullingSetup sceneLocalCullingContext;
                 sceneLocalCullingContext.cameraPosition = camera.position();
-                //sceneLocalCullingContext.cameraFrustumMatrix = 
+                sceneLocalCullingContext.stats = &scene->stats.culling;
+
+                // single frustum
+                VisibilityFrustum frustum;
+                frustum.setup(camera);
+                sceneLocalCullingContext.cameraFrustumCount = 1;
+                sceneLocalCullingContext.cameraFrustums = &frustum;
+
                 scene->scene->objects().cullObjects(sceneLocalCullingContext, scene->collectedObjects);
+
+                scene->stats.cullingTime += timer.timeElapsed();
+            }
+        }
+
+        void FrameView::collectCascadeCameras(const Camera& viewCamera, const CascadeData& cascades)
+        {
+            PC_SCOPE_LVL1(collectCascadeCameras);
+
+            if (cascades.numCascades)
+            {
+                for (auto* scene : m_scenes)
+                {
+                    base::ScopeTimer timer;
+
+                    // TODO: transform camera to scene space
+
+                    SceneObjectCullingSetup sceneLocalCullingContext;
+                    sceneLocalCullingContext.cameraPosition = viewCamera.position();
+                    sceneLocalCullingContext.stats = &scene->stats.culling;
+
+                    // single frustum
+                    VisibilityFrustum frustums[MAX_CASCADES];
+                    for (uint32_t i=0; i<cascades.numCascades; ++i)
+                        frustums[i].setup(cascades.cascades[i].camera);
+
+                    sceneLocalCullingContext.cameraFrustumCount = cascades.numCascades;
+                    sceneLocalCullingContext.cameraFrustums = frustums;
+                    scene->scene->objects().cullObjects(sceneLocalCullingContext, scene->collectedObjects);
+
+                    scene->stats.cullingTime += timer.timeElapsed();
+                }
             }
         }
 
@@ -86,6 +160,8 @@ namespace rendering
 
             for (auto* scene : m_scenes)
             {
+                base::ScopeTimer timer;
+
                 for (uint32_t j = 1; j < (uint32_t)ProxyType::MAX; ++j)
                 {
                     const auto& visibleObjectOfType = scene->collectedObjects.visibleObjects[j];
@@ -95,33 +171,79 @@ namespace rendering
                         handler->handleProxyFragments(cmd, *this, visibleObjectOfType.typedData(), visibleObjectOfType.size(), *scene->drawList);
                     }
                 }
+
+                for (uint32_t j = 1; j < ARRAY_COUNT(scene->stats.buckets); ++j)
+                    scene->stats.buckets[j].merge(scene->drawList->stats((FragmentDrawBucket)j));
+
+                scene->stats.fragmentsTime += timer.timeElapsed();
             }
         }
 
         //--
 
-        struct GPULightingInfo
+        struct GPUShadowsInfo
         {
             GPUCascadeInfo cascades;
         };
 
-        struct LightingParams
+        struct ShadowParams
         {
             ConstantsView Constants;
             ImageView CascadeShadowMap;
         };
 
 
-        void BindLightingData(command::CommandWriter& cmd, const CascadeData& cascades)
+        void BindShadowsData(command::CommandWriter& cmd, const CascadeData& cascades)
         {
-            GPULightingInfo packedData;
+            GPUShadowsInfo packedData;
             PackCascadeData(cascades, packedData.cascades);
 
-            LightingParams params;
+            ShadowParams params;
             params.Constants = cmd.opUploadConstants(packedData);
-            params.CascadeShadowMap = cascades.cascadeShadowMap;
+            params.CascadeShadowMap = cascades.cascadeShadowMap.createSampledView(ObjectID::DefaultDepthBilinearSampler());
 
-            cmd.opBindParametersInline("LightingParams"_id, params);
+            cmd.opBindParametersInline("ShadowParams"_id, params);
+        }
+
+        //--
+
+        /// lighting
+#pragma pack(push)
+#pragma pack(4)
+        struct GPUGlobalLightingParams
+        {
+            base::Vector4 LightDirection; // normal vector towards the global light
+            base::Vector4 LightColor; // color of the global light, LINEAR
+            base::Vector4 AmbientColorZenith; // color of the global ambient light, LINEAR
+            base::Vector4 AmbientColorHorizon; // color of the global light, LINEAR
+        };
+
+        struct GPUightingParams
+        {
+            GPUGlobalLightingParams GlobalLighting;
+        };
+#pragma pack(pop)
+
+        struct LightingParams
+        {
+            ConstantsView Constants;
+            ImageView GlobalShadowMaskAO;
+        };
+
+
+        void BindLightingData(command::CommandWriter& cmd, const LightingData& lighting)
+        {
+            GPUightingParams params;
+            params.GlobalLighting.LightColor = lighting.globalLighting.globalLightColor.xyzw();
+            params.GlobalLighting.LightDirection = lighting.globalLighting.globalLightDirection.xyzw();
+            params.GlobalLighting.AmbientColorHorizon = lighting.globalLighting.globalAmbientColorHorizon.xyzw();
+            params.GlobalLighting.AmbientColorZenith = lighting.globalLighting.globalAmbientColorZenith.xyzw();
+
+            LightingParams desc;
+            desc.Constants = cmd.opUploadConstants(params);
+            desc.GlobalShadowMaskAO = lighting.globalShadowMaskAO;
+
+            cmd.opBindParametersInline("LightingParams"_id, desc);
         }
 
         //--

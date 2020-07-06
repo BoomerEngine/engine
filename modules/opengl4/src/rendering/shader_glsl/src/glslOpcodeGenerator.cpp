@@ -3101,9 +3101,12 @@ namespace rendering
         {
             DEBUG_CHECK(node->children().size() == 3);
 
+            const auto uvCompCount = node->children()[1]->dataType().computeScalarComponentCount();
+            DEBUG_CHECK(uvCompCount >= 1 && uvCompCount <= 3);
+
             f << "textureLod(  ";
             gen.printFunctionCode(function, node->children()[0], f);
-            f << ", vec3(";
+            f.appendf(", vec{}(", uvCompCount+1);
             gen.printFunctionCode(function, node->children()[1], f);
             f << ",";
             gen.printFunctionCode(function, node->children()[2], f);
@@ -3114,9 +3117,12 @@ namespace rendering
         {
             DEBUG_CHECK(node->children().size() == 4);
 
+            const auto uvCompCount = node->children()[1]->dataType().computeScalarComponentCount();
+            DEBUG_CHECK(uvCompCount >= 1 && uvCompCount <= 3);
+
             f << "textureLodOffset(  ";
             gen.printFunctionCode(function, node->children()[0], f);
-            f << ", vec3(";
+            f.appendf(", vec{}(", uvCompCount + 1);
             gen.printFunctionCode(function, node->children()[1], f);
             f << ",";
             gen.printFunctionCode(function, node->children()[2], f);

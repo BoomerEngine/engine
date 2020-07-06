@@ -20,6 +20,8 @@ descriptor ChannelVisParams
 	ConstantBuffer
 	{
 		vec4 ColorDot;
+		vec4 ColorMul;
+		int VisFlag;
 	}
 
 #ifdef VIS_MSAA
@@ -39,13 +41,17 @@ export shader PS
 #endif		
 	}
 
+	vec3 CalcDisplayValue(vec4 data)
+	{
+		data *= ColorMul;
+
+		return VisFlag ? data.xyz : dot(data, ColorDot).xxx;
+	}
+
 	void main()
 	{
 		ivec2 pixelCoord = gl_FragCoord.xy;
-		vec4 value = ReadValue(pixelCoord);
-
-		float dot = dot(value, ColorDot);
-		gl_Target0 = dot.xxx1;
+		gl_Target0 = CalcDisplayValue(ReadValue(pixelCoord)).xyz1;
 	}
 }
 

@@ -14,6 +14,7 @@ namespace rendering
     {
         ///--
 
+        struct FrameFragmentRenderStats;
         class FrameRenderer;
 
         ///--
@@ -89,6 +90,7 @@ namespace rendering
             MaterialPass pass = MaterialPass::Forward;
             const FilterFlags* filterFlags = nullptr;
             uint32_t msaaCount = 1;
+            CompareOp depthCompare = CompareOp::LessEqual;
             bool allowsCustomRenderStates = true;
         };
 
@@ -125,7 +127,7 @@ namespace rendering
             //--
 
             // render fragments from render list
-            virtual void handleRender(command::CommandWriter& cmd,  const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments) const = 0;
+            virtual void handleRender(command::CommandWriter& cmd,  const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const = 0;
 
             //--
 

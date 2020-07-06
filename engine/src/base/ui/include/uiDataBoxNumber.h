@@ -52,7 +52,7 @@ namespace ui
         void dragCancel();
         void dragUpdate(int64_t numSteps);
 
-        base::Array<base::rtti::DataHolder> m_preDragValues;
+        base::rtti::DataHolder m_preDragValue;
         int64_t m_dragStepCounter;
     };
 

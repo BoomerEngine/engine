@@ -65,6 +65,11 @@ namespace base
 
             //--
 
+            /// write boolean
+            void wrtiteBool(StringID groupName, StringID entryName, bool value);
+
+            //--
+
         private:
             Storage* m_storage;
 

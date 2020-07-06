@@ -42,14 +42,25 @@ namespace ui
         virtual void handleValueChange() override
         {
             base::ClassType data;
-            if (readValue(data))
+
+            const auto ret = readValue(data);
+            if (ret.code == base::DataViewResultCode::OK)
             {
                 base::StringBuilder txt;
                 txt << data;
                 m_caption->text(txt.toString());
+                m_button->visibility(!readOnly());
             }
-
-            m_button->visibility(!readOnly());
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_caption->text("<multiple values>");
+                m_button->visibility(!readOnly());
+            }
+            else
+            {
+                m_caption->text(base::TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                m_button->visibility(false);
+            }            
         }
 
         void showClassPicker()
@@ -57,23 +68,25 @@ namespace ui
             if (!m_picker)
             {
                 base::ClassType data;
-                readValue(data);
-
-                bool allowNullType = false;
-                bool allowAbstractType = true;
-
-                m_picker = base::CreateSharedPtr<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
-                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
-
-                m_picker->bind("OnClosed"_id, this) = [](DataBoxClassPicker* box)
+                const auto ret = readValue(data);
+                if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
-                    box->m_picker.reset();
-                };
+                    bool allowNullType = false;
+                    bool allowAbstractType = true;
 
-                m_picker->bind("OnClassSelected"_id, this) = [](DataBoxClassPicker* box, base::ClassType data)
-                {
-                    box->writeValue(data);
-                };                
+                    m_picker = base::CreateSharedPtr<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
+                    m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+
+                    m_picker->bind("OnClosed"_id, this) = [](DataBoxClassPicker* box)
+                    {
+                        box->m_picker.reset();
+                    };
+
+                    m_picker->bind("OnClassSelected"_id, this) = [](DataBoxClassPicker* box, base::ClassType data)
+                    {
+                        box->writeValue(data);
+                    };
+                }
             }
         }
 
@@ -128,11 +141,21 @@ namespace ui
         virtual void handleValueChange() override
         {
             base::ClassType data;
-            if (readValue(&data, m_metaType))
+
+            auto ret = readValue(&data, m_metaType);
+            if (ret.valid())
             {
                 base::StringBuilder txt;
                 txt << data;
                 m_caption->text(txt.toString());
+            }
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_caption->text("<many values>");
+            }
+            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            {
+                m_caption->text(base::TempString("[tag:#F00][img:error] {}[/tag]", ret));
             }
 
             m_button->visibility(!readOnly());
@@ -143,23 +166,25 @@ namespace ui
             if (!m_picker)
             {
                 base::ClassType data;
-                readValue(&data, m_metaType);
-
-                bool allowNullType = false;
-                bool allowAbstractType = true;
-
-                m_picker = base::CreateSharedPtr<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
-                m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
-
-                m_picker->bind("OnClosed"_id, this) = [](DataBoxSpecificClassPicker* box)
+                auto ret = readValue(&data, m_metaType);
+                if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
-                    box->m_picker.reset();
-                };
+                    bool allowNullType = false;
+                    bool allowAbstractType = true;
 
-                m_picker->bind("OnClassSelected"_id, this) = [](DataBoxSpecificClassPicker* box, base::ClassType data)
-                {
-                    box->writeValue(&data, box->m_metaType);
-                };
+                    m_picker = base::CreateSharedPtr<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
+                    m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+
+                    m_picker->bind("OnClosed"_id, this) = [](DataBoxSpecificClassPicker* box)
+                    {
+                        box->m_picker.reset();
+                    };
+
+                    m_picker->bind("OnClassSelected"_id, this) = [](DataBoxSpecificClassPicker* box, base::ClassType data)
+                    {
+                        box->writeValue(&data, box->m_metaType);
+                    };
+                }
             }
         }
 

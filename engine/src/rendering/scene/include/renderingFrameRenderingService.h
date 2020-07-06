@@ -17,6 +17,10 @@ namespace rendering
 {
     namespace scene
     {
+        ///---
+
+        struct SceneStats;
+        struct FrameStats;
 
         ///---
 
@@ -32,7 +36,7 @@ namespace rendering
             //--
 
             /// render command buffers for rendering given frame
-            command::CommandBuffer* renderFrame(const FrameParams& frame, const ImageView& targetView);
+            command::CommandBuffer* renderFrame(const FrameParams& frame, const ImageView& targetView, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
 
             //--
 

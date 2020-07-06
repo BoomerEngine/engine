@@ -19,6 +19,8 @@ namespace game
         uint32_t height = 0;
         rendering::ImageView backBufferColor;
         rendering::ImageView backBufferDepth;
+
+        float fadeLevel = 1.0f;
     };
 
     //--
@@ -42,13 +44,16 @@ namespace game
         RTTI_DECLARE_VIRTUAL_CLASS(Host, base::IObject);
 
     public:
-        Host(HostType type, const ScreenPtr& initialScreen);
+        Host(HostType type, const GamePtr& game);
         virtual ~Host();
 
         //-- 
 
         // get type of the game host
         INLINE HostType type() const { return m_type; }
+
+        // get the game that we are running
+        INLINE const GamePtr& game() const { return m_game; }
 
         //--
 
@@ -61,31 +66,20 @@ namespace game
         // service input message
         bool input(const base::input::BaseEvent& evt);
 
-        //--
+        // should the host have exclusive access to user input?
+        bool shouldCaptureInput() const;
 
-        // post external even to the game, can happen from anywhere (threadsafe)
-        void postExternalEvent(const EventPtr& evt);
+        //--
 
     private:
-        base::Array<ScreenPtr> m_stack;
         HostType m_type;
+        GamePtr m_game;
 
-        base::Array<EventSupplierPtr> m_eventSuppliers;
+        ImGuiContext* m_imgui = nullptr;
+        bool m_paused = false;
 
-        base::SpinLock m_externalEventLock;
-        base::Array<EventPtr> m_externalEvents;
-
-        base::UniquePtr<base::debug::DebugPageContainer> m_debugPages;
-
-        //--
-
-        void resolveTransition(base::Array<ScreenPtr>& stack, uint32_t level, const ScreenTransitionRequest& transition) const;
-        void applyNewStack(const base::Array<ScreenPtr>& newStack);
-
-        //--
-
-        void createEventSuppliers();
-        void createDebugPages();
+        bool processDebugInput(const base::input::BaseEvent& evt);
+        void renderOverlay(rendering::command::CommandWriter& cmd, const HostViewport& viewport);
     };
 
     //--

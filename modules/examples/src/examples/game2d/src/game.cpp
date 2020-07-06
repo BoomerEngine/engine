@@ -67,12 +67,6 @@ namespace example
         m_scene->render(cmd, width, height, outputWidth, outputHeight);
     }
 
-    void Game::debug()
-    {
-        static bool open = false;
-        ImGui::ShowDemoWindow(&open);
-    }
-
     void Game::createLevel()
     {
         const auto TERRAIN_WIDTH = 100;
@@ -203,6 +197,24 @@ namespace example
     }
     
     //---
+
+    ConfigProperty<bool> cvDebugPageGameEntities("DebugPage.Game.Entities", "IsVisible", false);
+
+    void Game::debug()
+    {
+        if (!cvDebugPageGameEntities.get())
+            return;
+
+        if (!ImGui::Begin("Entities", &cvDebugPageGameEntities.get()))
+            return;
+
+        for (uint32_t i = 0; i < GameScene::MAX_LAYERS; ++i)
+            m_scene->m_layer[i].debug(i);
+
+        ImGui::End();
+    }
+
+    //--
 
 } // example
 

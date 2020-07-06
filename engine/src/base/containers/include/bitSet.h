@@ -145,11 +145,13 @@ namespace base
 
         //----
 
-        // find index of the next set bit
-        uint32_t findNextBitSet(uint32_t startSearch) const;
+        // iterate over all bits that are set
+		bool iterateSetBits(const std::function<bool(uint32_t index)>& enumFunc) const;
 
-        // find index of the next cleared bit
-        uint32_t findNextBitCleared(uint32_t startSearch) const;
+        // iterate over all bits that are clear
+        bool iterateClearBits(const std::function<bool(uint32_t index)>& enumFunc) const;
+
+		// 
 
 	private:
 		uint32_t m_bitSize = 0;

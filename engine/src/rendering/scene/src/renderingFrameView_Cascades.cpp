@@ -26,8 +26,6 @@ namespace rendering
     {
         //---
 
-        const base::ConfigProperty<float> cvCascadesDepthBiasConstant("Rendering.Cascades", "BaseDepthConstant", 0.0f);
-        const base::ConfigProperty<float> cvCascadesDepthBiasSlope("Rendering.Cascades", "BaseDepthSlope", 0.0f);
         const base::ConfigProperty<float> cvCascadesMinAngla("Rendering.Cascades", "MinAngle", 10.0f);
 
         //---
@@ -37,8 +35,30 @@ namespace rendering
             , m_cascadeData(data)
         {}
 
-        void FrameView_CascadeShadows::render(command::CommandWriter& cmd)
+        void FrameView_CascadeShadows::render(command::CommandWriter& parentCmd)
         {
+            // collect from multiple frustums
+            collectCascadeCameras(frame().camera.camera, m_cascadeData);
+
+            // prepare fragments for the visible objects
+            {
+                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "CascadeFragments");
+                generateFragments(cmd);
+            }
+
+            // render into separate buckets
+            for (uint32_t i = 0; i < m_cascadeData.numCascades; ++i)
+            {
+                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), base::TempString("CascadeSlice{}", i));
+
+                // bind global settings
+                BindSingleCamera(cmd, m_cascadeData.cascades[i].camera);
+
+                // render the shadow depth 
+                const auto cascadeDepthMapSliceRT = m_cascadeData.cascadeShadowMap.createSingleSliceView(i);
+                const auto& depthBiasSettings = m_cascadeData.cascades[i];
+                RenderShadowDepthPass(cmd, *this, cascadeDepthMapSliceRT, depthBiasSettings.depthBiasConstant, depthBiasSettings.depthBiasSlope, 0.0f, i);
+            }
         }
 
         //--
@@ -134,21 +154,21 @@ namespace rendering
             // filter size
             const auto depthMapResolution = outData.cascadeShadowMap.width();
             const auto singleTexelSize = 1.0f / (float)depthMapResolution;
-            paramFilterSize[0] = singleTexelSize * std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
-            paramFilterSize[1] = singleTexelSize * std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
-            paramFilterSize[2] = singleTexelSize * std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
-            paramFilterSize[3] = singleTexelSize * std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
+            paramFilterSize[0] = std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
+            paramFilterSize[1] = std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
+            paramFilterSize[2] = std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
+            paramFilterSize[3] = std::clamp<float>(setup.baseFilterSize, 0.5f, depthMapResolution / 2.0f);
 
             // depth bias 
-            // TODO: more analitic calculation that uses the world-space texel size
-            paramBiasConstant[0] = cvCascadesDepthBiasConstant.get();
-            paramBiasConstant[1] = cvCascadesDepthBiasConstant.get();
-            paramBiasConstant[2] = cvCascadesDepthBiasConstant.get();
-            paramBiasConstant[3] = cvCascadesDepthBiasConstant.get();
-            paramBiasSlope[0] = cvCascadesDepthBiasSlope.get();
-            paramBiasSlope[1] = cvCascadesDepthBiasSlope.get();
-            paramBiasSlope[2] = cvCascadesDepthBiasSlope.get();
-            paramBiasSlope[3] = cvCascadesDepthBiasSlope.get();
+            // TODO: more analytic calculation that uses the world-space texel size
+            paramBiasConstant[0] = setup.baseDepthBiasConstant;
+            paramBiasConstant[1] = setup.baseDepthBiasConstant;
+            paramBiasConstant[2] = setup.baseDepthBiasConstant;
+            paramBiasConstant[3] = setup.baseDepthBiasConstant;
+            paramBiasSlope[0] = setup.baseDepthBiasSlope;
+            paramBiasSlope[1] = setup.baseDepthBiasSlope;
+            paramBiasSlope[2] = setup.baseDepthBiasSlope;
+            paramBiasSlope[3] = setup.baseDepthBiasSlope;
 
             // generate cascades
             auto numCascades = (uint32_t)std::clamp<int>(setup.numCascades, 0, MAX_CASCADES);
@@ -190,9 +210,10 @@ namespace rendering
             }
 
             // calculate cameras and assign rendering slices
+            outData.numCascades = numCascades;
             for (uint32_t i = 0; i < numCascades; ++i)
             {
-                auto& setup = outData.cascades.emplaceBack();
+                auto& cascadeSetup = outData.cascades[i];
 
                 // TODO: compute proper range for the projection
                 // TODO: minimize the projection range
@@ -206,24 +227,36 @@ namespace rendering
                 cameraSetup.fov = 0.0f;
                 cameraSetup.aspect = 1.0f;
                 cameraSetup.zoom = 4.0f * cascadeSphereRadius[i];
-                setup.camera.setup(cameraSetup);
+                cascadeSetup.camera.setup(cameraSetup);
 
                 // calculate pixel projection size
                 auto viewportSize = 2.0f / viewCamera.viewToScreen().m[0][0];
-                setup.pixelSize = viewportSize / std::max<float>(1, depthMapResolution);
-                setup.invPixelSize = 1.0f / setup.pixelSize;
-                setup.cascadeIndex = (uint8_t)i;
-                setup.edgeFade = paramEdgeFade[i];
-                setup.filterTexelSize = paramFilterSize[i];
-                setup.filterScale = setup.filterTexelSize / (float)depthMapResolution;
+                cascadeSetup.pixelSize = viewportSize / std::max<float>(1, depthMapResolution);
+                cascadeSetup.invPixelSize = 1.0f / cascadeSetup.pixelSize;
+                cascadeSetup.cascadeIndex = (uint8_t)i;
+                cascadeSetup.edgeFade = paramEdgeFade[i];
+                cascadeSetup.worldSpaceTexelSize = cameraSetup.zoom / (float)depthMapResolution;
+                cascadeSetup.filterTexelSize = paramFilterSize[i];
+                cascadeSetup.filterScale = cascadeSetup.filterTexelSize / (float)depthMapResolution;
 
                 // TODO: jitter
-                setup.jitterCamera = setup.camera;
+                cascadeSetup.jitterCamera = cascadeSetup.camera;
 
                 // calculate depth bias
-                auto filterSizeInTexels = ceilf(1.4142f * setup.filterTexelSize);
-                setup.depthBiasConstant = paramBiasConstant[i];
-                setup.depthBiasSlope = paramBiasSlope[i] * filterSizeInTexels;
+                cascadeSetup.depthBiasConstant = paramBiasConstant[i];
+                cascadeSetup.depthBiasSlope = paramBiasSlope[i];
+
+                // adjust for >1 cascades
+                if (i > 0)
+                {
+                    auto sizeAdj = std::max<float>(1.0f, (cameraSetup.zoom / outData.cascades[0].camera.zoom()));
+                    cascadeSetup.depthBiasSlope *= (sizeAdj - 1.0f) * setup.depthBiasSlopeTexelSizeMul;
+
+                    if (setup.filterSizeTexelSizeMul >= 0.0f)
+                        cascadeSetup.filterScale *= (1.0f + (sizeAdj - 1.0f) * setup.filterSizeTexelSizeMul);
+                    else
+                        cascadeSetup.filterScale /= (1.0f + (sizeAdj - 1.0f) * -setup.filterSizeTexelSizeMul);
+                }
             }
         }
 
@@ -233,8 +266,7 @@ namespace rendering
         {
             memset(&outData, 0, sizeof(outData)); // just in case we don't set some fields
 
-            const auto numCascades = src.cascades.size();
-            if (numCascades)
+            if (src.numCascades)
             {
                 // everything is calculated with respect to cascade 0
                 // instead of storing 4 matrices we store one and 2D offset/scale factors for easier cascade selection
@@ -253,7 +285,7 @@ namespace rendering
                 float paramOffsetsUp[MAX_CASCADES] = { 0.f, 0.f, 0.f, 0.f };
                 float paramHalfSizes[MAX_CASCADES] = { 999, 999, 999, 999 };
                 float paramDepthRanges[MAX_CASCADES] = { 1.f, 1.f, 1.f, 1.f };
-                for (uint32_t i = 0; i < numCascades; ++i)
+                for (uint32_t i = 0; i < src.numCascades; ++i)
                 {
                     auto& camera = src.cascades[i].camera;
 
@@ -266,7 +298,7 @@ namespace rendering
 
                 // normalize parameters
                 auto paramsScale = 1.0f / paramHalfSizes[0];
-                for (uint32_t i = 0; i < numCascades; ++i)
+                for (uint32_t i = 0; i < src.numCascades; ++i)
                 {
                     paramOffsetsRight[i] *= paramsScale;
                     paramOffsetsUp[i] *= paramsScale;
@@ -275,12 +307,12 @@ namespace rendering
 
                 // setup final fade
                 const auto resolution = src.cascadeShadowMap.width();
-                auto fadeCascadeIndex = std::max<int>(0, (int)numCascades - 1);
+                auto fadeCascadeIndex = std::max<int>(0, (int)src.numCascades - 1);
                 auto fadeRangeInner = paramHalfSizes[fadeCascadeIndex] * (100.f / resolution);
                 auto fadeRangeOuter = 0.05f;
 
                 // pack constants
-                outData.ShadowTransform = baseTransform;
+                outData.ShadowTransform = baseTransform.transposed();
                 outData.ShadowTextureSize = base::Vector4(resolution, 1.0f / resolution, 0.0f, 0.0f);
                 outData.ShadowOffsetsX = base::Vector4(paramOffsetsRight[0], paramOffsetsRight[1], paramOffsetsRight[2], paramOffsetsRight[3]);
                 outData.ShadowOffsetsY = base::Vector4(paramOffsetsUp[0], paramOffsetsUp[1], paramOffsetsUp[2], paramOffsetsUp[3]);
@@ -288,7 +320,7 @@ namespace rendering
                 outData.ShadowFadeScales = base::Vector4(src.cascades[0].edgeFade, src.cascades[1].edgeFade, src.cascades[2].edgeFade, src.cascades[3].edgeFade);
                 outData.ShadowDepthRanges = base::Vector4(paramDepthRanges[0], paramDepthRanges[1], paramDepthRanges[2], paramDepthRanges[3]);
                 outData.ShadowPoissonOffsetAndBias = base::Vector4();
-                outData.ShadowPoissonOffsetAndBias.z = (float)numCascades;
+                outData.ShadowPoissonOffsetAndBias.z = (float)src.numCascades;
                 outData.ShadowQuality = 0;
 
                 for (uint32_t i = 0; i < 4; ++i)
@@ -309,6 +341,13 @@ namespace rendering
             {
 
             }
+        }
+
+        //--
+
+        LightingData::LightingData()
+        {
+            globalShadowMaskAO = ImageView::DefaultWhite();
         }
 
         //--

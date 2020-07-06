@@ -25,21 +25,4 @@ namespace game
 
     //--
 
-    /// background event "supplier" class, gathers events from "outside world" for the use in the game
-    class GAME_HOST_API IEventSupplier : public base::IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IEventSupplier, base::IObject);
-
-    public:
-        virtual ~IEventSupplier();
-
-        /// initialize for given game host, we may choose not to, especially standalone server and in-editor game does not need all game events
-        virtual bool initialize(Host* host) = 0;
-
-        /// pull game event, called untill it returns null
-        virtual EventPtr pull() = 0;
-    };
-
-    //--
-
 } // game

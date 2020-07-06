@@ -19,6 +19,7 @@
 #include "base/resources/include/resourceSerializationMetadata.h"
 #include "base/resources/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
+#include "base/object/include/dataViewNative.h"
 
 namespace base
 {
@@ -66,7 +67,8 @@ namespace rendering
         //RTTI_METADATA(base::SerializationLoaderMetadata).bind<base::res::text::TextLoader>();
         //RTTI_METADATA(base::SerializationSaverMetadata).bind<base::res::text::TextSaver>();
         RTTI_PROPERTY(m_parameters);
-        RTTI_PROPERTY(m_baseMaterial);
+        RTTI_CATEGORY("Material hierarchy");
+        RTTI_PROPERTY(m_baseMaterial).editable("Base material");
     RTTI_END_TYPE();
 
     MaterialInstance::MaterialInstance()
@@ -83,8 +85,6 @@ namespace rendering
     MaterialInstance::~MaterialInstance()
     {
     }
-
-    static const base::StringView<char> BASE_MATERIAL = "BaseMaterial";
 
     static base::res::StaticResource<MaterialTemplate> resFallbackMaterial("engine/materials/fallback.v4mg");
 
@@ -198,7 +198,7 @@ namespace rendering
         if (m_baseMaterial != baseMaterial)
         {
             m_baseMaterial = baseMaterial;
-            onPropertyChanged(BASE_MATERIAL);
+            onPropertyChanged("baseMaterial");
         }
     }
 
@@ -239,7 +239,7 @@ namespace rendering
     {
         auto orgPropName = path;
 
-        if (path == BASE_MATERIAL)
+        if (path == "baseMaterial"_id)
         {
             const auto baseMaterial = m_baseMaterial.acquire();
             changeTrackedMaterial(baseMaterial);
@@ -308,7 +308,7 @@ namespace rendering
 
     bool MaterialInstance::resetBase()
     {
-        return false; // not resetable
+        return false;
     }
 
     bool MaterialInstance::hasParameterOverride(const base::StringID name) const
@@ -320,76 +320,54 @@ namespace rendering
         return false;
     }
 
-    bool MaterialInstance::readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    bool MaterialInstance::resetParameterOverride(const base::StringID name)
     {
-        if (viewPath.empty())
-            return false;
-
-        base::StringView<char> originalViewPath = viewPath;
-        base::StringView<char> propertyName;
-        if (base::rtti::ParsePropertyName(viewPath, propertyName))
+        for (uint32_t i = 0; i < m_parameters.size(); ++i)
         {
-            // general comparison vs base property
-            if (targetType == base::rtti::DataViewBaseValue::GetStaticClass())
+            if (m_parameters[i].name == name)
             {
-                if (!viewPath.empty())
-                    return false; // we do not track sub-values
-
-                auto& ret = *(base::rtti::DataViewBaseValue*)targetData;
-                ret.differentThanBase = hasParameterOverride(propertyName);
+                m_parameters.erase(i);
+                onPropertyChanged(name.view());
                 return true;
             }
-
-            // base material pointer
-            if (propertyName == BASE_MATERIAL)
-                return base::reflection::GetTypeObject<MaterialRef>()->readDataView((base::IObject*)this, rootView, rootViewPath, viewPath, &m_baseMaterial, targetData, targetType);
-
-            // read value
-            for (const auto& paramInfo : m_parameters)
-                if (paramInfo.name == propertyName && !paramInfo.value.empty())
-                    return paramInfo.value.type()->readDataView(nullptr, nullptr, "", viewPath, paramInfo.value.data(), targetData, targetType);
-
-            // read default value from base material
-            if (const auto baseMaterial = m_baseMaterial.acquire())
-                return baseMaterial->readDataView(rootView, rootViewPath, originalViewPath, targetData, targetType);
         }
 
         return false;
     }
 
-    bool MaterialInstance::writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
+    base::DataViewResult MaterialInstance::readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
     {
-        if (viewPath.empty())
-            return false;
+        base::StringView<char> originalViewPath = viewPath;
 
         base::StringView<char> propertyName;
-        if (base::rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
+        if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
-            // reset command
-            if (sourceType == base::rtti::DataViewCommand::GetStaticClass())
+            if (const auto* materialTemplate = resolveTemplate())
             {
-                const auto& cmd = *(const base::rtti::DataViewCommand*)sourceData;
-
-                if (cmd.command == "reset"_id)
+                if (const auto* paramInfo = materialTemplate->findParameterInfo(base::StringID::Find(propertyName)))
                 {
-                    if (propertyName == BASE_MATERIAL)
-                        return resetBase();
-                    else
-                        return resetParameterRaw(base::StringID(propertyName));
+                    // read value from our overrides
+                    for (const auto& paramInfo : m_parameters)
+                        if (paramInfo.name == propertyName && !paramInfo.value.empty())
+                            return paramInfo.value.type()->readDataView(viewPath, paramInfo.value.data(), targetData, targetType);
+
+                    // read default value from base material
+                    if (const auto baseMaterial = m_baseMaterial.acquire())
+                        return baseMaterial->readDataView(originalViewPath, targetData, targetType); // NOTE orignal path used
                 }
+            }            
+        }
 
-                return false;
-            }
+        return TBaseClass::readDataView(viewPath, targetData, targetType);
+    }
 
-            // base material
-            if (propertyName == BASE_MATERIAL)
-            {
-                if (!base::reflection::GetTypeObject<MaterialRef>()->writeDataView((base::IObject*)this, rootView, rootViewPath, viewPath, &m_baseMaterial, sourceData, sourceType))
-                    return false;
-                onPropertyChanged(BASE_MATERIAL);
-                return true;
-            }
+    base::DataViewResult MaterialInstance::writeDataView(base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
+    {
+        const auto originalPath = viewPath;
 
+        base::StringView<char> propertyName;
+        if (base::rtti::ParsePropertyName(viewPath, propertyName))
+        {
             // find base type info
             if (const auto* materialTemplate = resolveTemplate())
             {
@@ -397,71 +375,132 @@ namespace rendering
                 {
                     // ALWAYS write to compatible type
                     auto value = paramInfo->defaultValue;
-                    if (value.type()->writeDataView(nullptr, nullptr, "", viewPath, value.data(), sourceData, sourceType))
+                    if (const auto ret = HasError(value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType)))
+                        return ret; // writing data to type container failed - something is wrong with the data
+
+                    // update if we already have it
+                    bool createNew = true;
+                    for (auto& paramInfo : m_parameters)
                     {
-                        // update if we already have it
-                        bool createNew = true;
-                        for (auto& paramInfo : m_parameters)
+                        if (paramInfo.name == propertyName)
                         {
-                            if (paramInfo.name == propertyName)
-                            {
-                                paramInfo.value = value;
-                                createNew = false;
-                                break;
-                            }
+                            paramInfo.value = value;
+                            createNew = false;
+                            break;
                         }
-
-                        // or write a new one
-                        if (createNew)
-                        {
-                            auto& entry = m_parameters.emplaceBack();
-                            entry.name = base::StringID(propertyName);
-                            entry.value = value;
-                        }
-
-                        onPropertyChanged(propertyName);
-                        return true;
                     }
+
+                    // or write a new one
+                    if (createNew)
+                    {
+                        auto& entry = m_parameters.emplaceBack();
+                        entry.name = base::StringID(propertyName);
+                        entry.value = value;
+                    }
+
+                    onPropertyChanged(propertyName);
+                    return base::DataViewResultCode::OK;
                 }
             }
         }
 
-        return false;
+        return TBaseClass::writeDataView(originalPath, sourceData, sourceType);
     }
 
-    bool MaterialInstance::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    base::DataViewResult MaterialInstance::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
     {
+        base::StringView<char> originalViewPath = viewPath;
+
         if (viewPath.empty())
         {
-            if (!TBaseClass::describeDataView(viewPath, outInfo))
-                return false;
-
             if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::MemberList))
             {
-                auto& propInfo = outInfo.members.emplaceBack();
-                propInfo.name = BASE_MATERIAL;
-                propInfo.category = "Material Hierarchy"_id;
-
                 if (const auto* materialTemplate = resolveTemplate())
-                    return materialTemplate->describeDataView(viewPath, outInfo);
+                    materialTemplate->listParameters(outInfo);
             }
-
-            return true;
         }
         else
         {
-            if (const auto* materialTemplate = resolveTemplate())
-                return materialTemplate->describeDataView(viewPath, outInfo);
-
             base::StringView<char> propertyName;
-            if (base::rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
+            if (base::rtti::ParsePropertyName(viewPath, propertyName))
             {
-                if (propertyName == BASE_MATERIAL)
-                    return base::reflection::GetTypeObject<MaterialRef>()->describeDataView(viewPath, &m_baseMaterial, outInfo);
+                if (const auto* materialTemplate = resolveTemplate())
+                {
+                    if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::CheckIfResetable))
+                    {
+                        for (const auto& param : m_parameters)
+                            if (param.name == propertyName)
+                                outInfo.flags |= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                    }
+
+                    return materialTemplate->describeDataView(viewPath, outInfo);
+                }
             }
         }
 
-        return false;
+        return TBaseClass::describeDataView(viewPath, outInfo);
+    }
+
+    //---
+
+    class MaterialInstanceDataView : public base::DataViewNative
+    {
+    public:
+        MaterialInstanceDataView(MaterialInstance* mi)
+            : DataViewNative(mi)
+            , m_material(mi)
+        {}
+
+        virtual base::DataViewResult readDefaultDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        {
+            if (!m_material)
+                return base::DataViewResultCode::ErrorNullObject;
+
+            if (auto base = m_material->baseMaterial().acquire())
+                return base->readDataView(viewPath, targetData, targetType);
+
+            return base::DataViewResultCode::ErrorUnknownProperty;
+        }
+
+        virtual base::DataViewResult resetToDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        {
+            if (!m_material)
+                return base::DataViewResultCode::ErrorNullObject;
+
+            base::StringView<char> propertyName;
+            if (base::rtti::ParsePropertyName(viewPath, propertyName))
+            {
+                if (viewPath.empty())
+                {
+                    if (m_material->resetParameterOverride(base::StringID::Find(viewPath)))
+                        return base::DataViewResultCode::OK;
+                    return base::DataViewResultCode::ErrorIllegalOperation;
+                }
+            }
+
+            return base::DataViewNative::resetToDefaultValue(viewPath, targetData, targetType);
+        }
+
+        virtual bool checkIfCurrentlyADefaultValue(base::StringView<char> viewPath) const
+        {
+            if (!m_material)
+                return false;
+
+            base::StringView<char> propertyName;
+            if (base::rtti::ParsePropertyName(viewPath, propertyName))
+                if (viewPath.empty())
+                    return !m_material->hasParameterOverride(base::StringID::Find(viewPath));
+
+            return base::DataViewNative::checkIfCurrentlyADefaultValue(viewPath);
+        }
+
+    private:
+        MaterialInstance* m_material;
+    };
+
+    base::DataViewPtr MaterialInstance::createDataView() const
+    {
+        return base::CreateSharedPtr<MaterialInstanceDataView>(const_cast<MaterialInstance*>(this));
     }
 
     //---

@@ -32,10 +32,18 @@ namespace rendering
 
                 if (m_params.paramBindings[bindingIndex] != op.view)
                 {
+                    //TRACE_INFO("Bound params to '{}' at index {}", op.binding, bindingIndex);
                     m_params.paramBindings[bindingIndex] = op.view;
                     m_params.parameterBindingsChanged = true;
                 }
             }
+        }
+
+        void ExecutorStateTracker::printParamState()
+        {
+            TRACE_INFO("Currently known {} parameter bindings points", m_params.paramBindings.size());
+            for (uint32_t i = 0; i < m_params.paramBindings.size(); ++i)
+                TRACE_INFO("  [{}]: {} {}", i, m_params.paramBindings[i].layout(), m_params.paramBindings[i].dataPtr());
         }
 
         bool ExecutorStateTracker::applyParameters(const ShaderLibraryAdapter& shaders, PipelineIndex parameterBindingStateIndex)
@@ -47,6 +55,8 @@ namespace rendering
                     // do we have parameter ?
                     {
                         const auto hasValidParam = elem.bindPointIndex < m_params.paramBindings.size() && m_params.paramBindings[elem.bindPointIndex];
+                        if (!hasValidParam)
+                            printParamState();
                         DEBUG_CHECK_EX(hasValidParam, base::TempString("Missing parameters for '{}', bind point {}, expected layout: {}", elem.bindPointName, elem.bindPointIndex, elem.bindPointLayout));
                         if (!hasValidParam)
                             return false;

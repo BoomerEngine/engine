@@ -35,16 +35,24 @@ namespace rendering
             struct Data
             {
                 base::Vector4 colorDot;
+                base::Vector4 colorMul;
+
+                uint32_t flag = 0;
+                uint32_t _pad0;
+                uint32_t _pad1;
+                uint32_t _pad2;
             };
 
             ConstantsView consts;
             ImageView source;
         };
 
-        void VisualizeTexture(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& colorSource, const ImageView& targetColor, const base::Vector4& dot)
+        void VisualizeTexture(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& colorSource, const ImageView& targetColor, const base::Vector4& dot, const base::Vector4& mul)
         {
+            command::CommandWriterBlock block(cmd, "VisualizeTexture");
+
             bool msaa = colorSource.numSamples() > 1;
-            auto shader = msaa ? resChannelVis.loadAndGet() : resChannelVisMSAA.loadAndGet();
+            auto shader = msaa ? resChannelVisMSAA.loadAndGet() : resChannelVis.loadAndGet();
 
             if (shader)
             {
@@ -62,6 +70,8 @@ namespace rendering
 
                 ChannelVisParams::Data data;
                 data.colorDot = dot;
+                data.colorMul = mul;
+                data.flag = (dot == base::Vector4::ZERO());
 
                 ChannelVisParams params;
                 params.consts = cmd.opUploadConstants(data);

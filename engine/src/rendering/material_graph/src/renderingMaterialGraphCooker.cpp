@@ -80,6 +80,8 @@ namespace rendering
                 auto& setup = outSetupList.emplaceBack();
                 setup.vertexFormat = (int)vertexFormat;
                 setup.pass = pass;
+                setup.vertexFetchMode = 0;
+                setup.msaa = false;
             }
         }
     }

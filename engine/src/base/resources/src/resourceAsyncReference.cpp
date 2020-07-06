@@ -36,6 +36,10 @@ namespace base
         {
         }
 
+        BaseAsyncReference::BaseAsyncReference(const ResourceKey& path)
+            : m_key(path)
+        {}
+
         BaseAsyncReference::BaseAsyncReference(BaseAsyncReference&& other)
             : m_key(std::move(other.m_key))
         {}

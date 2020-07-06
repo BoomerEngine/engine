@@ -117,7 +117,7 @@ namespace rendering
 
         void ExecutorStateTracker::runHello(const command::OpHello& op)
         {
-            resetCommandBufferRenderState();
+            
         }
 
         void ExecutorStateTracker::runNewBuffer(const command::OpNewBuffer& op)
@@ -135,17 +135,17 @@ namespace rendering
 
         //---
 
-        void ExecutorStateTracker::pushParamState(bool clear)
+        void ExecutorStateTracker::pushParamState(bool inheritCurrentParameters)
         {
-            if (clear)
+            if (inheritCurrentParameters)
+            {
+                m_paramStateStack.emplaceBack(m_params);
+            }
+            else
             {
                 m_paramStateStack.emplaceBack(std::move(m_params));
                 m_params.paramBindings.reset();
                 m_params.parameterBindingsChanged = true;
-            }
-            else
-            {
-                m_paramStateStack.emplaceBack(m_params);
             }
         }
 

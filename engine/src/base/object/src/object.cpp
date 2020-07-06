@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "object.h"
+#include "objectTemplate.h"
 #include "objectGlobalRegistry.h"
 #include "objectObserverEventDispatcher.h"
 
@@ -25,6 +26,7 @@
 #include "base/object/include/rttiProperty.h"
 
 #include "dataView.h"
+#include "dataViewNative.h"
 
 namespace base
 {
@@ -210,7 +212,7 @@ namespace base
 
     //--
 
-    bool IObject::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
+    DataViewResult IObject::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (viewPath.empty())
         {
@@ -227,21 +229,26 @@ namespace base
         return cls()->describeDataView(viewPath, this, outInfo);
     }
 
-    bool IObject::readDataView(const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult IObject::readDataView(StringView<char> viewPath, void* targetData, Type targetType) const
     {
-        return cls()->readDataView((IObject*)this, rootView, rootViewPath, viewPath, this, targetData, targetType.ptr());
+        if (viewPath == "__cls")
+        {
+            // TODO
+        }
+
+        return cls()->readDataView(viewPath, this, targetData, targetType.ptr());
     }
 
-    bool IObject::writeDataView(const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* sourceData, Type sourceType)
+    DataViewResult IObject::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType)
     {
         if (!onPropertyChanging(viewPath, sourceData, sourceType))
-            return false;
+            return DataViewResultCode::ErrorIllegalOperation;
 
-        if (!cls()->writeDataView(this, rootView, rootViewPath, viewPath, this, sourceData, sourceType.ptr()))
-            return false;
+        if (auto ret = HasError(cls()->writeDataView(viewPath, this, sourceData, sourceType.ptr())))
+            return ret;
 
         onPropertyChanged(viewPath);
-        return true;
+        return DataViewResultCode::OK;
     }
 
     //--
@@ -249,13 +256,6 @@ namespace base
     DataViewPtr IObject::createDataView() const
     {
         return CreateSharedPtr<DataViewNative>(const_cast<IObject*>(this));
-    }
-
-    DataProxyPtr IObject::createDataProxy() const
-    {
-        if (auto view = createDataView())
-            return view->makeProxy();
-        return nullptr;
     }
 
     //--
@@ -319,10 +319,9 @@ namespace base
         void RegisterObjectTypes(rtti::TypeSystem &typeSystem)
         {
             IObject::RegisterType(typeSystem);
+            IObjectTemplate::RegisterType(typeSystem);
             rtti::IMetadata::RegisterType(typeSystem);
             rtti::ShortTypeNameMetadata::RegisterType(typeSystem);
-            rtti::DataViewCommand::RegisterType(typeSystem);
-            rtti::DataViewBaseValue::RegisterType(typeSystem);
         }
 
     } // rtti

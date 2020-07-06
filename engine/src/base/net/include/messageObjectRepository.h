@@ -11,7 +11,6 @@
 #include "base/object/include/object.h"
 #include "base/system/include/thread.h"
 #include "base/system/include/spinLock.h"
-#include "base/containers/include/bitPool.h"
 #include "base/containers/include/hashMap.h"
 #include "base/containers/include/hashSet.h"
 
@@ -38,7 +37,7 @@ namespace base
             void attachObject(const replication::DataMappedID id, const ObjectPtr& object);
 
             // remove previously registered object to handle messages
-            // NOTE: this will auto matically  free the object ID back to pool if it was allocate from it
+            // NOTE: this will automatically  free the object ID back to pool if it was allocate from it
             void detachObject(const replication::DataMappedID id, bool freeId = true);
 
             //--
@@ -70,8 +69,8 @@ namespace base
             HashMap<void*, replication::DataMappedID> m_objectReverseMap;
 
             HashSet<replication::DataMappedID> m_allocatedIds;
-
-            BitPool<> m_idAllocator;
+            Array<replication::DataMappedID> m_freeObjectIds;
+            replication::DataMappedID m_nextObjectId = 1;
 
             //--
 

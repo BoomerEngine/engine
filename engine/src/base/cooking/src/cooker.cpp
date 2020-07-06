@@ -307,6 +307,13 @@ namespace base
             return true;
         }
 
+        static bool SelfCookingResource(res::ResourceKey key)
+        {
+            const auto loadExtension = base::res::IResource::GetResourceExtensionForClass(key.cls());
+            const auto fileExtension = key.path().extension();
+            return loadExtension == fileExtension;
+        }
+
         res::ResourcePtr Cooker::cook(res::ResourceKey key) const
         {
             PC_SCOPE_LVL0(CookResource);
@@ -321,6 +328,10 @@ namespace base
                 if (findBestCooker(key, info) && info.cookerClass)
                 {
                     return cookUsingCooker(key, mountPoint, info);
+                }
+                else  if (SelfCookingResource(key))
+                {
+                    return m_loader->loadResource(key);
                 }
                 else
                 {

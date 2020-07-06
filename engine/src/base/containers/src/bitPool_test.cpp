@@ -9,7 +9,6 @@
 #include "build.h"
 
 #include "base/test/include/gtest/gtest.h"
-#include "bitPool.h"
 
 DECLARE_TEST_FILE(BitPool);
 

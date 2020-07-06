@@ -247,7 +247,7 @@ namespace rendering
                     {
                         auto* op = static_cast<const command::OpChildBuffer*>(cmd);
 
-                        stateTracker.pushParamState(!op->inheritsParameters);
+                        stateTracker.pushParamState(op->inheritsParameters);
                         ExecuteCommandsFromBuffer(drv, thread, seq, stateTracker, op->childBuffer);
                         stateTracker.popParamState();
                     }

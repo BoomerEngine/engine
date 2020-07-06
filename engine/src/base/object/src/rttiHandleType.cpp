@@ -155,7 +155,7 @@ namespace base
             return false;
         }
 
-        bool IHandleType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IHandleType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -174,14 +174,13 @@ namespace base
                 ObjectPtr object;
                 readPointedObject(viewData, object);
 
-                if (object && !object->describeDataView(viewPath, outInfo))
-                    return false;
-
+                if (object)
+                    if (auto ret = HasError(object->describeDataView(viewPath, outInfo)))
+                        return ret;
+                    
                 outInfo.dataPtr = viewData;
                 outInfo.dataType = this; // we can only get ourselves as handle
                 outInfo.flags |= DataViewInfoFlagBit::LikeValue;
-
-                return true;
             }
             else
             {
@@ -190,110 +189,37 @@ namespace base
 
                 if (object)
                     return object->describeDataView(viewPath, outInfo);
-                else
-                    return true;
             }
+
+            return DataViewResultCode::OK;
         }
 
-        bool IHandleType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IHandleType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (viewPath.empty())
-                return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
+                return IType::readDataView(viewPath, viewData, targetData, targetType);
 
             ObjectPtr object;
             readPointedObject(viewData, object);
 
             if (!object)
-                return false;
+                return DataViewResultCode::ErrorNullObject;
 
-            return object->readDataView(rootView, rootViewPath, viewPath, targetData, targetType);
+            return object->readDataView(viewPath, targetData, targetType);
         }
 
-        bool IHandleType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IHandleType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (viewPath.empty())
-            {
-                if (sourceType == DataViewCommand::GetStaticClass())
-                {
-                    if (m_pointedType->is<IObject>())
-                    {
-                        const auto& cmd = *(const DataViewCommand*)sourceData;
-                        if (cmd.command == "clear"_id)
-                        {
-                            ObjectPtr ptr;
-                            writePointedObject(viewData, ptr);
-                            return true;
-                        }
-                        else if (cmd.command == "new"_id)
-                        {
-                            if (cmd.argT && cmd.argT.isClass() && cmd.argT.toClass().is(m_pointedType))
-                            {
-                                ObjectPtr ptr;
-                                readPointedObject(viewData, ptr);
-
-                                // use existing data, just change the class
-                                if (ptr)
-                                    ptr = ptr->clone(context, nullptr, cmd.argT.toClass().cast<IObject>());
-
-                                // there was no data
-                                if (!ptr && rootView && rootView->base())
-                                {
-                                    // read the default
-                                    if (rootView->base()->readDataView(rootViewPath, &ptr, this) && ptr)
-                                    {
-                                        // clone the default object
-                                        ptr = ptr->clone(context, nullptr, cmd.argT.toClass().cast<IObject>());
-                                    }
-                                }
-
-                                // final fall back - create empty object
-                                if (!ptr)
-                                {
-                                    ptr = cmd.argT.toClass()->create<IObject>();
-                                    ptr->parent(context);
-                                }
-
-                                // write the new object
-                                writePointedObject(viewData, ptr);
-                                return true;
-                            }
-
-                            return false;
-                        }
-                        else if (cmd.command == "reset"_id)
-                        {
-                            if (rootView && rootView->base())
-                            {
-                                ObjectPtr ptr;
-                                if (rootView->base()->readDataView(rootViewPath, &ptr, this) && ptr)
-                                {
-                                    // clone the default object
-                                    ptr = ptr->clone(context);
-
-                                    // write the cloned base object
-                                    if (ptr)
-                                    {
-                                        writePointedObject(viewData, ptr);
-                                        return true;
-                                    }
-                                }
-                            }
-
-                            return false;
-                        }
-                    }
-                }
-
-                return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
-            }
+                return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
 
             ObjectPtr object;
             readPointedObject(viewData, object);
 
             if (!object)
-                return false;
+                return DataViewResultCode::ErrorNullObject;
 
-            return object->writeDataView(rootView, rootViewPath, viewPath, sourceData, sourceType);
+            return object->writeDataView(viewPath, sourceData, sourceType);
         }
 
         //--

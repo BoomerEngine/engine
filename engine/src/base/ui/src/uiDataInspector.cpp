@@ -100,11 +100,48 @@ namespace ui
         detachData();
     }
 
+    void DataInspector::settings(const DataInspectorSettings& settings)
+    {
+        m_settings = settings;
+    }
+
     void DataInspector::destroyItems()
     {
         for (const auto& group : m_items)
             detachChild(group);
         m_items.clear();
+    }
+
+    static base::Array<base::StringID> GatherCategoryNames(bool sortNames, const base::rtti::DataViewInfo& info)
+    {
+        base::HashSet<base::StringID> categoryNames;
+        for (const auto& propInfo : info.members)
+            categoryNames.insert(propInfo.category ? propInfo.category : "Default"_id);
+
+        auto names = categoryNames.keys();
+
+        if (sortNames)
+            std::sort(names.begin(), names.end(), [](base::StringID a, base::StringID b) { return a.view() < b.view(); });
+
+        return names;
+    }
+
+    base::Array<base::StringID> GatherPropertyNames(bool sortNames, const base::rtti::DataViewInfo& info, base::StringID category)
+    {
+        base::HashSet<base::StringID> propertyNames;
+        for (const auto& propInfo : info.members)
+        {
+            const auto propCategory = propInfo.category ? propInfo.category : "Default"_id;
+            if (!category || propCategory == category)
+                propertyNames.insert(propInfo.name);
+        }
+
+        auto names = propertyNames.keys();
+
+        if (sortNames)
+            std::sort(names.begin(), names.end(), [](base::StringID a, base::StringID b) { return a.view() < b.view(); });
+
+        return names;
     }
 
     void DataInspector::createItems()
@@ -115,33 +152,47 @@ namespace ui
         {
             // describe the root element
             base::rtti::DataViewInfo info;
-            m_data->describe(0, m_rootPath, info);
-
-            if (info.flags.test(base::rtti::DataViewInfoFlagBit::LikeStruct))
+            if (m_data->describeDataView(m_rootPath, info).valid())
             {
-                // enumerate properties
-                info.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
-                m_data->describe(0, m_rootPath, info);
-
-                // TODO: conform property list to ones that are common in all objects
-
-                // create property groups
-                if (info.flags.test(base::rtti::DataViewInfoFlagBit::Object))
+                if (info.flags.test(base::rtti::DataViewInfoFlagBit::LikeStruct))
                 {
-                    base::HashSet<base::StringID> categoryNames;
-                    for (const auto& propInfo : info.members)
-                        categoryNames.insert(propInfo.category ? propInfo.category : "Default"_id);
-
-                    auto names = categoryNames.keys();
-                    std::sort(names.begin(), names.end(), [](base::StringID a, base::StringID b) { return a.view() < b.view(); });
-
-                    for (auto name : names)
+                    // enumerate properties
+                    info.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
+                    if (m_data->describeDataView(m_rootPath, info).valid())
                     {
-                        auto group = base::CreateSharedPtr<DataInspectorObjectCategoryGroup>(this, nullptr, m_rootPath, name);
-                        attachChild(group);
-                        m_items.pushBack(group);
+                        if (m_settings.showCategories)
+                        {
+                            const auto names = GatherCategoryNames(m_settings.sortAlphabetically, info);
+                            for (auto name : names)
+                            {
+                                auto group = base::CreateSharedPtr<DataInspectorObjectCategoryGroup>(this, nullptr, m_rootPath, name);
+                                attachChild(group);
+                                m_items.pushBack(group);
 
-                        group->expand();
+                                group->expand();
+                            }
+                        }
+                        else
+                        {
+                            const auto names = GatherPropertyNames(m_settings.sortAlphabetically, info, base::StringID::EMPTY());
+                            for (auto name : names)
+                            {
+                                auto childPath = base::StringBuf(name.c_str());
+
+                                base::rtti::DataViewInfo childInfo;
+                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyMetadata;
+                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::TypeMetadata;
+                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
+                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::CheckIfResetable;
+
+                                if (data()->describeDataView(childPath, childInfo).valid())
+                                {
+                                    auto prop = base::CreateSharedPtr<DataProperty>(this, nullptr, 0, childPath, childPath, childInfo, false);
+                                    attachChild(prop);
+                                    m_items.pushBack(prop);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -152,12 +203,7 @@ namespace ui
     {
         if (m_data)
         {
-            if (m_rootObserverToken != nullptr)
-            {
-                m_data->unregisterObserver(m_rootObserverToken);
-                m_rootObserverToken = nullptr;
-            }
-
+            m_data->detachObserver("", this);
             m_data.reset();
         }
     }
@@ -165,32 +211,28 @@ namespace ui
     void DataInspector::attachData()
     {
         if (m_data)
-        {
-            DEBUG_CHECK(m_rootObserverToken == nullptr);
-            m_rootObserverToken = m_data->registerObserver("", this);
-        }
+            m_data->attachObserver("", this);
     }
 
-    void DataInspector::bindData(base::DataProxy* data)
+    void DataInspector::bindActionHistory(base::ActionHistory* ah)
+    {
+        m_actionHistory = AddRef(ah);
+    }
+
+    void DataInspector::bindData(base::IDataView* data, bool readOnly)
     {
         destroyItems();
         detachData();
+        m_readOnly = readOnly;
         m_data = AddRef(data);
         attachData();
         createItems();
     }
 
-    void DataInspector::bindObject(base::IObject* obj)
+    void DataInspector::bindObject(base::IObject* obj, bool readOnly)
     {
-        base::DataProxyPtr data;
-
-        if (obj)
-        {
-            data = base::CreateSharedPtr<base::DataProxy>();
-            data->add(base::CreateSharedPtr<base::DataViewNative>(obj));
-        }
-
-        bindData(data);
+        auto view = obj ? obj->createDataView() : nullptr;
+        bindData(view, readOnly);
     }
 
     void DataInspector::select(DataInspectorNavigationItem* item, bool focus)
@@ -301,107 +343,16 @@ namespace ui
         return TBaseClass::handleOverlayMouseClick(area, evt);
     }
 
-    void DataInspector::dataProxyFullObjectChange()
+    void DataInspector::handleFullObjectChange()
     {
         destroyItems();
         createItems();
     }
 
-/*
-    void DataInspector::bind(const base::view::DataBinding& bindings, base::edit::ActionHistory* history)
+    void DataInspector::handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification)
     {
-        if (bindings.empty())
-        {
-            m_tree->removeAllRootNodes();
-        }
-        else
-        {
-            auto rootId = base::edit::DocumentObjectID::CreateFromPath("DataInspector", "DataInspector"_id);
-            auto rootNode = base::CreateSharedPtr<model::DataObjectNode>(nullptr, bindings, history, true, rootId);
-            m_tree->rootNode(rootNode);
-        }
     }
 
-    void DataInspector::bind(const base::edit::DocumentHandler* doc, const base::edit::DocumentObjectIDSet& ids, base::edit::ActionHistory* history)
-    {
-        // create data views from the selected objects
-        base::InplaceArray<base::view::ViewPtr, 4> views;
-        views.reserve(ids.size());
-        if (nullptr != doc)
-        {
-            for (const auto& id : ids.ids())
-            {
-                auto view = doc->objectView(id);
-                if (view)
-                    views.pushBack(view);
-            }
-        }
-
-        // bind the data grid to the data bindings
-        if (views.empty())
-        {
-            base::view::DataBinding bindings;
-            bind(bindings, history);
-        }
-        else
-        {
-            base::view::DataBinding bindings(views);
-            bind(bindings, history);
-        }
-    }*/
-
-    ///----
-
-    /*DataInspectorSelectionHandler::DataInspectorSelectionHandler(const base::RefPtr<DataInspector>& DataInspector)
-        : m_grid(DataInspector)
-        , m_actionHistory(nullptr)
-    {}
-
-    DataInspectorSelectionHandler::~DataInspectorSelectionHandler()
-    {}
-
-    void DataInspectorSelectionHandler::bindActionHistory(base::edit::ActionHistory* actionHistory)
-    {
-        m_actionHistory = actionHistory;
-    }
-
-    void DataInspectorSelectionHandler::bindDefaultObjectView(const base::view::ViewPtr& defaultView)
-    {
-        m_defaultView = defaultView;
-
-        if (m_defaultView)
-        {
-            base::view::DataBinding bindings(m_defaultView);
-            m_grid->bind(bindings, m_actionHistory);
-        }
-    }
-
-    void DataInspectorSelectionHandler::onSelectionChanged(const base::edit::SelectionPtr& newSelection)
-    {
-        // create data views from the selected objects
-        base::Array<base::view::ViewPtr> views;
-        if (newSelection)
-        {
-            views.reserve(newSelection->size());
-            for (const auto& obj : newSelection->objects())
-            {
-                auto view = obj->createView();
-                if (view)
-                    views.pushBack(view);
-            }
-        }
-
-        // bind the data grid to the data bindings
-        if (views.empty())
-        {
-            base::view::DataBinding bindings(m_defaultView);
-            m_grid->bind(bindings, m_actionHistory);
-        }
-        else
-        {
-            base::view::DataBinding bindings(views);
-            m_grid->bind(bindings, m_actionHistory);
-        }
-    }*/
+    //---
 
 } // ui

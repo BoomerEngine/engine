@@ -191,7 +191,7 @@ namespace base
             }
 
             // no free space, create new bucket
-            bucketIndex = m_bucketIDs.allocate();
+            bucketIndex = 0;// m_bucketIDs.allocate();
             if (bucketIndex == m_numBuckets)
             {
                 TRACE_ERROR("Initial bucket array was to small, resizing the bucket table");
@@ -588,9 +588,9 @@ namespace base
             memzero(m_buckets, dataSize);
 
             // initialize the ID allocator for buckets
-            m_bucketIDs.reseve(numBuckets);
-            m_bucketIDs.allocate(); // allocate the bucket index 0 because index 0 is used to indicate empty bucket
-            TRACE_INFO("Created {} buckets for streaming objects ({})", numBuckets, TimeInterval(dataSize));
+            //m_bucketIDs.reseve(numBuckets);
+            //m_bucketIDs.allocate(); // allocate the bucket index 0 because index 0 is used to indicate empty bucket
+            //TRACE_INFO("Created {} buckets for streaming objects ({})", numBuckets, TimeInterval(dataSize));
         }
 
         void StreamingGrid::createGrid(uint32_t numLevels)

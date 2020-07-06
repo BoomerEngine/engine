@@ -36,7 +36,7 @@ namespace rendering
             , m_mode(mode)
         {}
 
-        void FrameView_Main::render(command::CommandWriter& cmd)
+        void FrameView_Main::render(command::CommandWriter& parentCmd)
         {
             PC_SCOPE_LVL1(MainView);
 
@@ -45,10 +45,13 @@ namespace rendering
 
             // TODO: emit the light probe rendering requests
             // TODO: emit the light shadow map rendering requests
+            LightingData lightingData;
+            lightingData.globalLighting = frame().globalLighting;
+            lightingData.globalShadowMaskAO = renderer().surfaces().m_globalAOShadowMaskRT;
 
             // prepare fragments for the visible objects
             {
-                //command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "MainFragments");
+                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "MainFragments");
                 generateFragments(cmd);
             }
 
@@ -64,19 +67,23 @@ namespace rendering
 
                 // render cascades
                 // TODO: fiber
-                FrameView_CascadeShadows cascadeView(renderer(), cascades);
-                cascadeView.render(cmd);
+                if (cascades.numCascades)
+                {
+                    FrameView_CascadeShadows cascadeView(renderer(), cascades);
+                    cascadeView.render(parentCmd);
+                }
             }
 
             //--
 
             // render passes
             {
-                //command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "MainView");
+                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "MainView");
+                base::ScopeTimer timer;
 
                 // bind global settings
                 BindSingleCamera(cmd, m_camera);
-                BindLightingData(cmd, cascades);
+                BindShadowsData(cmd, cascades);
 
                 // render passes
                 if (m_mode == FrameRenderMode::WireframeSolid)
@@ -90,31 +97,50 @@ namespace rendering
                 else
                 {
                     // depth pre pass for the scene
-                    RenderDepthPrepass(cmd, *this, m_depthTarget);
+                    const auto& veloicityBuffer = renderer().surfaces().m_velocityBufferRT;
+                    RenderDepthPrepass(cmd, *this, m_depthTarget, veloicityBuffer);
 
                     // TODO: generate "horizon mask" texture for shadow cascade rendering
 
-                    // compute global shadow mask
-                    const auto& shadowMask = renderer().surfaces().m_globalAOShadowMaskRT;
-                    GlobalShadowMask(cmd, width(), height(), m_depthTarget, shadowMask);
+                    // linearize depth
+                    const auto& linearizedDepth = renderer().surfaces().m_linarizedDepthRT;
+                    LinearizeDepth(cmd, width(), height(), m_camera, m_depthTarget, linearizedDepth);
 
-                    // render forward pass
+                    // reconstruct view space normals from the linearized depth
+                    const auto& reconstructedNormals = renderer().surfaces().m_viewNormalRT;
+                    ReconstructViewNormals(cmd, width(), height(), m_camera, linearizedDepth, reconstructedNormals);
+
+                    // compute global shadow mask and finally bind lighting parameters so the forward pass (and following passes) may use it
+                    GlobalShadowMask(cmd, width(), height(), m_depthTarget, lightingData.globalShadowMaskAO);
+
+                    // compute ambient occlusion
+                    HBAOIntoShadowMask(cmd, width(), height(), linearizedDepth, lightingData.globalShadowMaskAO, m_camera, frame().ao);
+
+                    // render forward SOLID pass
+                    BindLightingData(cmd, lightingData); // make lighting data available for forward rendering
                     RenderForwardPass(cmd, *this, m_depthTarget, m_colorTarget);
 
-                    // visualize special content
+                    // capture screen color for any transparencies
+
+                    // render forward TRANSPARENT pass
+
+                    // visualize content
                     if (m_mode == FrameRenderMode::DebugDepth)
-                    {
                         VisualizeDepthBuffer(cmd, width(), height(), m_depthTarget, m_colorTarget);
-                    }
                     else if (m_mode == FrameRenderMode::DebugLuminance)
-                    {
-                        //VisualizeLuminance(cmd, width(), height(), m_colorTarget, m_colorTarget);
-                    }
+                        VisualizeLuminance(cmd, width(), height(), m_colorTarget, m_colorTarget);
                     else if (m_mode == FrameRenderMode::DebugShadowMask)
-                    {
-                        VisualizeTexture(cmd, width(), height(), shadowMask, m_colorTarget, base::Vector4(1, 0, 0, 0));
-                    }
+                        VisualizeTexture(cmd, width(), height(), lightingData.globalShadowMaskAO, m_colorTarget, base::Vector4(1, 0, 0, 0));
+                    else if (m_mode == FrameRenderMode::DebugAmbientOcclusion)
+                        VisualizeTexture(cmd, width(), height(), lightingData.globalShadowMaskAO, m_colorTarget, base::Vector4(0, 1, 0, 0));
+                    else if (m_mode == FrameRenderMode::DebugLinearizedDepth)
+                        VisualizeLinearDepthBuffer(cmd, width(), height(), linearizedDepth, m_colorTarget);
+                    else if (m_mode == FrameRenderMode::DebugReconstructedViewNormals)
+                        VisualizeTexture(cmd, width(), height(), reconstructedNormals, m_colorTarget, base::Vector4(0, 0, 0, 0), base::Vector4(1,1,1,0));
                 }
+
+                // stats
+                m_stats.recordTime += timer.timeElapsed();
             }
         }
 

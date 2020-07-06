@@ -90,24 +90,6 @@ namespace rendering
         };
 #pragma pack(pop)
 
-        /// lighting
-#pragma pack(push)
-#pragma pack(4)
-        struct GPUGlobalLightingParams
-        {
-            base::Vector4 LightDirection; // normal vector towards the global light
-            base::Vector4 LightColor; // color of the global light, LINEAR
-            base::Vector4 AmbientColorZenith; // color of the global ambient light, LINEAR
-            base::Vector4 AmbientColorHorizon; // color of the global light, LINEAR
-        };
-
-        struct GPUightingParams
-        {
-            GPUGlobalLightingParams GlobalLighting;
-        };
-#pragma pack(pop)
-
-
         ///--
 
         // compute camera setup

@@ -83,8 +83,9 @@ namespace rendering
 
             INLINE DriverPerformanceStats& stats() { return *m_stats; }
 
-            void pushParamState(bool clear);
+            void pushParamState(bool inheritCurrentParameters);
             void popParamState();
+            void printParamState();
 
 #define RENDER_COMMAND_OPCODE(x) void run##x(const command::Op##x& op);
 #include "rendering/driver/include/renderingCommandOpcodes.inl"

@@ -66,6 +66,11 @@ namespace base
                 it->onResourceMissingBakedResource(path); 
         }
 
+        void IResourceLoader::feedListenerWithData(IResourceLoaderEventListener* listener)
+        {
+
+        }
+
         void IResourceLoader::notifyResourceUnloaded(const ResourceKey& path)
         {
             auto lock = CreateLock(m_listenersLock);
@@ -77,8 +82,12 @@ namespace base
         
         void IResourceLoader::attachListener(IResourceLoaderEventListener* listener)
         {
-            auto lock = CreateLock(m_listenersLock);
-            m_listeners.pushBack(listener);
+            {
+                auto lock = CreateLock(m_listenersLock);
+                m_listeners.pushBack(listener);
+            }
+
+            feedListenerWithData(listener);
         }
 
         void IResourceLoader::dettachListener(IResourceLoaderEventListener* listener)

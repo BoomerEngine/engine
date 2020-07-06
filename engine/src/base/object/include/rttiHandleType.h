@@ -47,9 +47,9 @@ namespace base
             virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final;
             virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final;
 
-            virtual bool describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
-            virtual bool readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
-            virtual bool writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
+            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
+            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
+            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
             
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override;
             

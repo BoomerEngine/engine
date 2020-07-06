@@ -10,7 +10,7 @@
 #include "uiDataBoxText.h"
 #include "uiEditBox.h"
 #include "base/object/include/rttiDataView.h"
-
+#
 namespace ui
 {
 
@@ -28,22 +28,32 @@ namespace ui
 
         m_editBox->bind("OnTextAccepted"_id) = [this]()
         {
-            write();
+            if (m_editBox->isEnabled())
+                write();
         };
     }
 
     void IDataBoxText::handleValueChange()
     {
         base::StringBuf txt;
-        if (readText(txt))
+
+        const auto ret = readText(txt);
+        if (ret.code == base::DataViewResultCode::OK)
+        {
             m_editBox->text(txt);
-
-        m_editBox->enable(!readOnly());
-
-        if (readValid())
-            m_editBox->prefixText("");
+            m_editBox->enable(!readOnly());
+        }
+        else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+        {
+            //m_editBox->text(txt);
+            m_editBox->enable(!readOnly());
+        }
         else
-            m_editBox->prefixText("Multiple values");
+        {
+            // TODO: error display
+            m_editBox->prefixText("");
+            m_editBox->enable(false);
+        }
     }
 
     void IDataBoxText::cancelEdit()
@@ -75,14 +85,14 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxStringID, IDataBoxText);
 
     public:
-        virtual bool readText(base::StringBuf& outText) override
+        virtual base::DataViewResult readText(base::StringBuf& outText) override
         {
             base::StringID data;
-            if (!readValue(data))
-                return false;
+            if (const auto ret = HasError(readValue(data)))
+                return ret.result;
 
             outText = data.c_str();
-            return true;
+            return base::DataViewResultCode::OK;
         }
 
         static bool IsValidNameChar(char ch)
@@ -94,12 +104,12 @@ namespace ui
             return false;
         }
 
-        virtual bool writeText(const base::StringBuf& text) override
+        virtual base::DataViewResult writeText(const base::StringBuf& text) override
         {
             for (const auto ch : text.view())
             {
                 if (!IsValidNameChar(ch))
-                    return false;
+                    return base::DataViewResultCode::ErrorInvalidValid;
             }
 
             base::StringID id(text.c_str());
@@ -118,12 +128,12 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxStringBuf, IDataBoxText);
 
     public:
-        virtual bool readText(base::StringBuf& outText) override
+        virtual base::DataViewResult readText(base::StringBuf& outText) override
         {
             return readValue(outText);
         }
 
-        virtual bool writeText(const base::StringBuf& text) override
+        virtual base::DataViewResult writeText(const base::StringBuf& text) override
         {
             return writeValue(text);
         }

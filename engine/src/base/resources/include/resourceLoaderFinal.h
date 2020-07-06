@@ -50,6 +50,8 @@ namespace base
 
             bool buildLoadingExtensionMap();
             bool assembleCookedFilePath(const ResourceKey& key, io::AbsolutePath& outPath) const;
+
+            StringView<char> findCookedExtension(const ResourceKey& key) const;
         };
 
         //-----

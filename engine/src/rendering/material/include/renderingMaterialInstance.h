@@ -64,16 +64,18 @@ namespace rendering
         virtual bool writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh = true) override final;
         virtual bool readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly = false) const override final;
 
+        virtual bool resetBase();
+        virtual bool hasParameterOverride(const base::StringID name) const;
+        virtual bool resetParameterOverride(const base::StringID name);
+
         // IObject
-        virtual bool readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
-        virtual bool writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
-        virtual bool describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
+        virtual base::DataViewPtr createDataView() const;
+        virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
+        virtual base::DataViewResult writeDataView(base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
+        virtual base::DataViewResult describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
 
         virtual bool onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource) override;
         virtual void onResourceReloadFinished(base::res::IResource* currentResource, base::res::IResource* newResource) override;
-
-        virtual bool resetBase();
-        virtual bool hasParameterOverride(const base::StringID data) const;
 
         //--
 

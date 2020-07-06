@@ -259,36 +259,30 @@ namespace ui
 
     void DataBoxNumberText::dragStart()
     {
+        m_preDragValue.reset();
+
         if (!readOnly())
         {
-            const auto count = data()->size();
-            m_preDragValues.reserve(count);
-
-            for (uint32_t i = 0; i < count; ++i)
-            {
-                auto& holder = m_preDragValues.emplaceBack(m_type);
-                data()->read(i, path(), holder.data(), holder.type());
-            }
-
+            base::rtti::DataHolder data(m_type);
+            const auto ret = readValue(data.data(), data.type());
+            if (ret.code == base::DataViewResultCode::OK)
+                m_preDragValue = std::move(data);
             m_dragStepCounter = 0;
         }
     }
 
     void DataBoxNumberText::dragFinish()
     {
-        m_preDragValues.clear();
+        m_preDragValue.reset();
         handleValueChange();
     }
 
     void DataBoxNumberText::dragCancel()
     {
-        if (!m_preDragValues.empty())
+        if (!m_preDragValue.empty())
         {
-            const auto count = data()->size();
-            for (uint32_t i = 0; i < count; ++i)
-                data()->write(i, path(), m_preDragValues[i].data(), m_preDragValues[i].type());
-
-            m_preDragValues.clear();
+            writeValue(m_preDragValue.data(), m_preDragValue.type());
+            m_preDragValue.reset();
         }
 
         handleValueChange();
@@ -296,17 +290,14 @@ namespace ui
 
     void DataBoxNumberText::dragUpdate(int64_t numSteps)
     {
-        if (!m_preDragValues.empty())
+        if (!m_preDragValue.empty())
         {
             m_dragStepCounter += numSteps;
 
-            const auto count = data()->size();
-            for (uint32_t i = 0; i < count; ++i)
-            {
-                base::rtti::DataHolder value(m_type);
-                CalcDragValue(m_preDragValues[i], m_dragStepCounter, m_numFractionalDigits, m_rangeEnabled, m_rangeMin, m_rangeMax, m_dragWrap, value);
-                data()->write(i, path(), value.data(), m_type);
-            }
+            base::rtti::DataHolder value(m_type);
+            CalcDragValue(m_preDragValue, m_dragStepCounter, m_numFractionalDigits, m_rangeEnabled, m_rangeMin, m_rangeMax, m_dragWrap, value);
+
+            writeValue(value.data(), value.type());
         }
 
         handleValueChange();
@@ -320,17 +311,25 @@ namespace ui
             m_dragBox->visibility(!readOnly());
 
         base::rtti::DataHolder holder(m_type);
-        if (readValue(holder.data(), m_type))
+
+        const auto ret = readValue(holder.data(), m_type);
+        if (ret.code == base::DataViewResultCode::OK)
         {
             const auto txt = ValueToString(holder, m_numFractionalDigits);
             m_valueReadInRange = !m_rangeEnabled || ValueToInRange(holder, m_rangeMin, m_rangeMax);
             m_editBox->text(txt);
+            m_editBox->enable(true);
+        }
+        else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+        {
+            m_valueReadInRange = true;
+            m_editBox->text("<many values>");
+            m_editBox->enable(true);
         }
         else
         {
-            m_valueReadInRange = true;
-            m_editBox->text("");
-            m_editBox->prefixText("???");
+            m_editBox->text("<error>");
+            m_editBox->enable(false);
         }
     }
 
@@ -416,13 +415,18 @@ namespace ui
     void DataBoxNumberTrackBar::handleValueChange()
     {
         base::rtti::DataHolder holder(m_type);
-        if (readValue(holder.data(), m_type))
+        const auto ret = readValue(holder.data(), m_type);
+        if (ret.code == base::DataViewResultCode::OK)
         {
             double val = 0.0;
             if (base::rtti::ConvertData(holder.data(), holder.type(), &val, base::reflection::GetTypeObject<double>()))
             {
                 m_bar->value(val, false);
             }
+        }
+        else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+        {
+
         }
         else
         {

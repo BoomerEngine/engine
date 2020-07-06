@@ -296,7 +296,7 @@ namespace rendering
             {
                 auto lock = base::CreateLock(m_sequenceLock);
                 m_sequencePendingList.pushBack(m_currentFrame);
-                m_currentFrame = nullptr;
+                m_currentFrame = MemNew(DriverFrame, this);
             }
 
             // all frames should be finished 
@@ -323,10 +323,10 @@ namespace rendering
 
             // make sure they indeed area
             DEBUG_CHECK_EX(m_sequencePendingList.empty(), "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
-            DEBUG_CHECK_EX(nullptr == m_currentFrame, "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
+            //DEBUG_CHECK_EX(nullptr == m_currentFrame, "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
 
             // start new, fresh frame
-            m_currentFrame = MemNew(DriverFrame, this);
+            //m_currentFrame = MemNew(DriverFrame, this);
 
             // notify if elapsed time is outstandingly long
             auto elapsedTime = timer.milisecondsElapsed();

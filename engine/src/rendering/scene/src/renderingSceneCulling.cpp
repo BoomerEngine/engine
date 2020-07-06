@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "renderingSceneCulling.h"
+#include "renderingSceneStats.h"
 
 namespace rendering
 {
@@ -20,6 +21,11 @@ namespace rendering
             , m_maxObjects(std::min<uint32_t>(maxObjects, MAX_OBJECTS_ABSOLUTE_LIMIT))
         {
             m_objectInfos.resize(m_maxObjects);
+
+            {
+                auto index = m_objectInfos.emplace();
+                DEBUG_CHECK(index == 0);
+            }
 
             {
                 BufferCreationInfo info;
@@ -49,6 +55,9 @@ namespace rendering
 
             auto index = m_objectInfos.emplace(info);
             outIndex = index;
+
+            auto& data = m_objectInfos.typedData()[index];
+            data.visibilityBox.setup(data.sceneBounds);
 
             GPUSceneObjectInfo gpuInfo;
             packObjectData(info, gpuInfo);
@@ -85,6 +94,7 @@ namespace rendering
             auto& data = m_objectInfos.typedData()[index];
             data.localToScene = localToScene;
             data.sceneBounds = sceneBounds;
+            data.visibilityBox.setup(sceneBounds);
 
             repackObject(index);            
         }
@@ -123,16 +133,33 @@ namespace rendering
         {
             PC_SCOPE_LVL1(CullObjects);
 
-            m_objectInfos.enumerate([&outResult, &setup](const SceneObjectInfo& info, uint32_t index)
-                {
-                    // TODO: test bounding box
+            SceneCullingStats stats;
 
-                    auto& entry = outResult.visibleObjects[(int)info.proxyType].emplaceBack();
-                    entry.cameraMask = 1;
-                    entry.distance = 0;
-                    entry.proxy = info.proxyPtr;
-                    return false;
+            m_objectInfos.enumerate([&outResult, &stats, &setup](const SceneObjectInfo& info, uint32_t index)
+                {
+                    stats.proxies[(int)info.proxyType].numTestedProxies += 1;
+
+                    uint8_t furstumMask = 0;
+                    for (uint32_t i = 0; i < setup.cameraFrustumCount; ++i)
+                        if (info.visibilityBox.isInFrustum(setup.cameraFrustums[i]))
+                            furstumMask |= (1 << i);
+
+                    if (furstumMask)
+                    {
+                        stats.proxies[(int)info.proxyType].numCollectedProxies += 1;
+
+                        auto& entry = outResult.visibleObjects[(int)info.proxyType].emplaceBack();
+                        entry.frustumMask = furstumMask;
+                        entry.distance = 0;
+                        entry.proxy = info.proxyPtr;
+                    }
+
+                    return false; // continue iterating
                 });
+
+
+            if (setup.stats)
+                setup.stats->merge(stats);
         }
 
         //--

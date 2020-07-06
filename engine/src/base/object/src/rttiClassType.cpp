@@ -584,7 +584,7 @@ namespace base
             return true;
         }
 
-        bool IClassType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IClassType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             StringView<char> propertyName;
 
@@ -602,6 +602,7 @@ namespace base
                             auto& memberInfo = outInfo.members.emplaceBack();
                             memberInfo.name = prop->name();
                             memberInfo.category = prop->category();
+                            memberInfo.type = prop->type();
                         }
                     }
                 }
@@ -644,62 +645,53 @@ namespace base
 
                     return prop->type()->describeDataView(viewPath, propViewData, outInfo);
                 }
-            }
-
-            return false;
-        }
-
-        bool IClassType::readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
-        {
-            StringView<char> propertyName;
-
-            if (viewPath.empty())
-            {
-                return IType::readDataView(context, rootView, rootViewPath, viewPath, viewData, targetData, targetType);
-            }
-            else if (ParsePropertyName(viewPath, propertyName))
-            {
-                if (auto prop  = findProperty(StringID::Find(propertyName)))
+                else
                 {
-                    StringBuilder newRootViewPath;
-                    newRootViewPath << rootViewPath;
-                    if (newRootViewPath.empty())
-                        newRootViewPath << ".";
-                    newRootViewPath << propertyName;
-
-                    auto propViewData  = prop->offsetPtr(viewData);
-
-                    return prop->type()->readDataView(context, rootView, newRootViewPath.view(), viewPath, propViewData, targetData, targetType);
+                    return DataViewResultCode::ErrorUnknownProperty;
                 }
             }
 
-            return false;
+            return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        bool IClassType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IClassType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
         {
-            StringView<char> propertyName;
+            const auto orgDataView = viewPath;
 
             if (viewPath.empty())
-            {
-                return IType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
-            }
-            else if (ParsePropertyName(viewPath, propertyName))
+                return IType::readDataView(viewPath, viewData, targetData, targetType);
+
+            StringView<char> propertyName; 
+            if (ParsePropertyName(viewPath, propertyName))
             {
                 if (auto prop  = findProperty(StringID::Find(propertyName)))
                 {
-                    StringBuilder newRootViewPath;
-                    newRootViewPath << rootViewPath;
-                    if (newRootViewPath.empty())
-                        newRootViewPath << ".";
-                    newRootViewPath << propertyName;
-
                     auto propViewData  = prop->offsetPtr(viewData);
-                    return prop->type()->writeDataView(context, rootView, newRootViewPath.view(), viewPath, propViewData, sourceData, sourceType);
+                    return prop->type()->readDataView(viewPath, propViewData, targetData, targetType);
                 }
             }
 
-            return false;
+            return IType::readDataView(orgDataView, viewData, targetData, targetType);
+        }
+
+        DataViewResult IClassType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        {
+            const auto orgDataView = viewPath;
+
+            if (viewPath.empty())
+                return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
+
+            StringView<char> propertyName;
+            if (ParsePropertyName(viewPath, propertyName))
+            {
+                if (auto prop  = findProperty(StringID::Find(propertyName)))
+                {
+                    auto propViewData  = prop->offsetPtr(viewData);
+                    return prop->type()->writeDataView(viewPath, propViewData, sourceData, sourceType);
+                }
+            }
+
+            return IType::writeDataView(orgDataView, viewData, sourceData, sourceType);
         }
 
         bool IClassType::is(ClassType otherClass) const
@@ -910,8 +902,13 @@ namespace base
 
             switch (type.metaType())
             {
-                case MetaType::ResourceRef:
                 case MetaType::AsyncResourceRef:
+                {
+                    // anything to do here ?
+                    break;
+                }
+
+                case MetaType::ResourceRef:
                 {
                     const auto* specificType = static_cast<const IResourceReferenceType*>(type.ptr());
                     patched = specificType->referencePatchResource(data, currentResource, newResource);

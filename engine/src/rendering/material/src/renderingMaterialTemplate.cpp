@@ -178,22 +178,34 @@ namespace rendering
             ret = MemNew(MaterialTechnique, setup);
 
             // lookup in precompiled list
+            bool valid = false;
             for (const auto& techniqe : m_precompiledTechniques)
             {
-                if (key == techniqe.setup.key())
+                const auto techniqueKey = techniqe.setup.key();
+                if (key == techniqueKey)
                 {
                     auto compiledTechnique = MemNew(MaterialCompiledTechnique).ptr;
                     compiledTechnique->shader = techniqe.shader;
                     compiledTechnique->dataLayout = m_dataLayout;
                     compiledTechnique->renderStates = techniqe.renderStates;
                     ret->pushData(compiledTechnique);
+                    valid = true;
                     break;
                 }
             }
 
             // try to compile dynamically
-            if (m_compiler)
-                m_compiler->requestTechniqueComplation(path().view(), ret);
+            if (!valid)
+            {
+                if (m_compiler)
+                {
+                    m_compiler->requestTechniqueComplation(path().view(), ret);
+                }
+                else
+                {
+                    TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", path(), setup, key);
+                }
+            }
         }
 
         return ret;
@@ -263,71 +275,47 @@ namespace rendering
 
     ///---
 
-    bool MaterialTemplate::readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    void MaterialTemplate::listParameters(base::rtti::DataViewInfo& outInfo) const
     {
-        if (TBaseClass::readDataView(rootView, rootViewPath, viewPath, targetData, targetType))
-            return true;
-
-        if (!viewPath.empty())
+        for (const auto& parameterBlock : m_parameters)
         {
-            base::StringView<char> propertyName;
-            if (base::rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
-            {
-                // we don't have the notion of "reset to default value" for material template
-                if (targetType == base::rtti::DataViewBaseValue::GetStaticClass())
-                    return false;
-
-                if (const auto* paramBlock = findParameterInfo(propertyName))
-                {
-                    return paramBlock->type->readDataView(nullptr, nullptr, "", viewPath, paramBlock->defaultValue.data(), targetData, targetType);
-                }
-            }
+            auto& memberInfo = outInfo.members.emplaceBack();
+            memberInfo.name = parameterBlock.name;
+            memberInfo.category = parameterBlock.category;
+            memberInfo.type = parameterBlock.type;
         }
-
-        return false;
     }
 
-    bool MaterialTemplate::writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
+    base::DataViewResult MaterialTemplate::readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
     {
-        if (TBaseClass::writeDataView(rootView, rootViewPath, viewPath, sourceData, sourceType))
-            return true;
+        const auto originalPath = viewPath;
 
-        return false;
-    }
-
-    bool MaterialTemplate::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
-    {
         base::StringView<char> propertyName;
+        if (base::rtti::ParsePropertyName(viewPath, propertyName))
+            if (const auto* paramBlock = findParameterInfo(propertyName))
+                return paramBlock->type->readDataView(viewPath, paramBlock->defaultValue.data(), targetData, targetType);
+
+        return TBaseClass::readDataView(originalPath, targetData, targetType);
+    }
+
+    base::DataViewResult MaterialTemplate::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    {
+        const auto orgViewPath = viewPath;
+
         if (viewPath.empty())
         {
-            if (!TBaseClass::describeDataView(viewPath, outInfo))
-                return false;
-
             if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::MemberList))
-            {
-                for (const auto& parameterBlock : m_parameters)
-                {
-                    auto& memberInfo = outInfo.members.emplaceBack();
-                    memberInfo.name = parameterBlock.name;
-                    memberInfo.category = parameterBlock.category;
-                }
-            }
-
-            return true;
+                listParameters(outInfo);
         }
         else
         {
-            if (TBaseClass::describeDataView(viewPath, outInfo))
-                return true;
-
+            base::StringView<char> propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
-            {
                 if (auto* paramBlock = findParameterInfo(propertyName))
                     return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);
-            }
         }
 
-        return false;
+        return TBaseClass::describeDataView(orgViewPath, outInfo);
     }
 
     ///---

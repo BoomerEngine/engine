@@ -252,5 +252,20 @@ namespace base
 
         //---
 
-    } // rtti
+        const ResourceAsyncRefType* CreateAsyncRefType(SpecificClassType<IResource> resourceClass)
+        {
+            DEBUG_CHECK(resourceClass && resourceClass->is<IResource>());
+            if (!resourceClass || !resourceClass->is<IResource>())
+                return nullptr;
+
+            const auto typeName = FormatAsyncRefTypeName(resourceClass->name());
+            const auto type = RTTI::GetInstance().findType(typeName);
+            ASSERT(type && type->metaType() == rtti::MetaType::AsyncResourceRef);
+
+            return static_cast<const ResourceAsyncRefType*>(type.ptr());
+        }
+
+        //--
+
+    } // res
 } // base

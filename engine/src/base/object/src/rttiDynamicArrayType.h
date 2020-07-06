@@ -40,8 +40,8 @@ namespace base
                 virtual const void* arrayElementData(const void* data, uint32_t index) const override final;
                 virtual void* arrayElementData(void* data, uint32_t index) const override final;
 
-                virtual bool describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
-                virtual bool writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
+                virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
+                virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
 
                 //---
 

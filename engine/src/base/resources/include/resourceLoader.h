@@ -112,6 +112,8 @@ namespace base
             void notifyResourceUnloaded(const ResourceKey& path);
             void notifyMissingBakedResource(const ResourceKey& path);
 
+            virtual void feedListenerWithData(IResourceLoaderEventListener* listener);
+
             //--
 
             friend IResource; // for notifyResourceUnloaded

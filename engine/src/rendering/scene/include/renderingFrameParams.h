@@ -97,15 +97,37 @@ namespace rendering
         /// global shadow cascades
         struct RENDERING_SCENE_API FrameParams_ShadowCascades
         {
-            uint8_t numCascades = 0; // number of cascades, 0 to disable
+            int numCascades = 0; // number of cascades, 0 to disable
             float baseRange = 2.0f; // base cascade range - this is the range of the 1st cascade
             float baseEdgeFade = 0.05f; // size of fade between cascades
             float baseFilterSize = 16.0f; // in texels of the image
+
+            float baseDepthBiasConstant = 0.0f;
+            float baseDepthBiasSlope = 0.0f;
+
+            float filterSizeTexelSizeMul = 0.0f;
+            float depthBiasSlopeTexelSizeMul = 0.0f;
+
             float rangeMul1 = 5.0f; // scale factor between cascade 0 and 1
             float rangeMul2 = 5.0f; // scale factor between cascade 1 and 2
             float rangeMul3 = 5.0f; // scale factor between cascade 2 and 3
 
             FrameParams_ShadowCascades();
+        };
+
+        //---
+
+        /// ambient occlusion params
+        struct RENDERING_SCENE_API FrameParams_AmbientOcclusion
+        {
+            bool enabled = true;
+            bool blur = true;
+            float intensity = 1.5f;
+            float bias = 0.1f;
+            float radius = 2.0f;
+            float blurSharpness = 40.0f;
+
+            FrameParams_AmbientOcclusion();
         };
 
         //---
@@ -127,9 +149,22 @@ namespace rendering
         struct RENDERING_SCENE_API FrameParams_ToneMapping
         {
             FrameToneMappingType type = FrameToneMappingType::Uncharted2; // best game ever
-            float lumMultiplier = 1.0f;
 
             FrameParams_ToneMapping();
+        };
+
+        //---
+
+        // auto exposure adaptation mode
+        struct RENDERING_SCENE_API FrameParams_ExposureAdaptation
+        {
+            float keyValue = 0.18f;
+            float exposureCompensationEV = 0.0f;
+            float minLuminanceEV = -2.0f;
+            float maxLuminanceEV = 5.0f;
+            float adaptationSpeed = 0.1f; // 0-instant adaptation
+
+            FrameParams_ExposureAdaptation();
         };
 
         //---
@@ -217,6 +252,9 @@ namespace rendering
             DebugDepth, // visualize frame depth
             DebugLuminance, // visualize frame luminance
             DebugShadowMask, // visualize shadow mask buffer
+            DebugLinearizedDepth, // visualize linearized depth
+            DebugReconstructedViewNormals, // visualize the reconstructed view-space normals
+            DebugAmbientOcclusion, // visualize AO buffer
             DebugMaterial, // debug material channel - outputs specific material output instead of calculating whole material
         };
 
@@ -239,8 +277,10 @@ namespace rendering
             FrameParams_DebugGeometry geometry;
             FrameParams_DebugData debug;
             FrameParams_ToneMapping toneMapping;
+            FrameParams_ExposureAdaptation exposureAdaptation;
             FrameParams_ColorGrading colorGrading;
             FrameParams_ShadowCascades cascades;
+            FrameParams_AmbientOcclusion ao;
 
             //--
 

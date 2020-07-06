@@ -25,6 +25,7 @@ enum PredefinedPoolID
     POOL_NET,
     POOL_IMAGE,
     POOL_STRINGS,
+    POOL_XML,
     POOL_STRINGIDS,
     POOL_PTR,
     POOL_OBJECTS,

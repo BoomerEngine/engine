@@ -18,23 +18,18 @@ namespace base
     namespace xml
     {
         DynamicDocument::DynamicDocument(StringView<char> rootNodeName)
-            : m_pool(POOL_STRINGS)
+            : m_pool(POOL_XML)
+            , m_nodes(POOL_XML)
+            , m_attributes(POOL_XML)
         {
-            m_nodeIDs.reseve(INITIAL_NODE_RESERVE);
-            m_nodeIDs.allocate();
-            m_nodeIDs.allocate();
+            m_nodes.resize(INITIAL_NODE_RESERVE);
+            m_nodes.emplace(); // empty 
 
-            m_attributesIDs.allocate();
-            m_nodes.reserve(INITIAL_NODE_RESERVE);
-            m_attributes.reserve(INITIAL_NODE_RESERVE);
+            m_attributes.resize(INITIAL_NODE_RESERVE);
+            m_attributes.emplace(); // empty
 
-            Node node;
-            m_nodes.pushBack(node);
-            m_nodes.pushBack(node); // 1 is the root node
-            m_nodes[1].name = mapString(rootNodeName);
-
-            Attr attr;
-            m_attributes.pushBack(attr);
+            m_nodes.emplace(); // root
+            m_nodes.typedData()[1].name = mapString(rootNodeName);
         }
 
         bool DynamicDocument::isReadOnly() const
@@ -71,15 +66,15 @@ namespace base
 
         NodeID DynamicDocument::nodeFirstChild(NodeID id, StringView<char> childName /*= nullptr*/) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             auto childId  = node.firstChildID;
             while (childId)
             { 
-                auto& childNode = m_nodes[childId];
+                auto& childNode = m_nodes.typedData()[childId];
 
                 if (childName.empty() || childNode.name == childName)
                     return childId;
@@ -92,15 +87,15 @@ namespace base
 
         NodeID DynamicDocument::nodeSibling(NodeID id, StringView<char> siblingName /*= nullptr*/) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             auto siblingId  = node.nextSiblingID;
             while (siblingId)
             {
-                auto& siblingNode = m_nodes[siblingId];
+                auto& siblingNode = m_nodes.typedData()[siblingId];
 
                 if (siblingName.empty() || siblingNode.name == siblingName)
                     return siblingId;
@@ -113,9 +108,9 @@ namespace base
 
         NodeID DynamicDocument::nodeParent(NodeID id) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             return node.parentID;
@@ -135,9 +130,9 @@ namespace base
 
         StringView<char> DynamicDocument::nodeValue(NodeID id) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             return node.value;
@@ -145,9 +140,9 @@ namespace base
 
         StringView<char> DynamicDocument::nodeName(NodeID id) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             return node.name;
@@ -155,15 +150,15 @@ namespace base
 
         StringView<char> DynamicDocument::nodeAttributeOfDefault(NodeID id, StringView<char> name, StringView<char> defaultVal /*= StringBuf::EMPTY()*/) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             auto attributeId  = node.firstAttrID;
             while (attributeId != 0)
             {
-                auto& attr = m_attributes[attributeId];
+                auto& attr = m_attributes.typedData()[attributeId];
                 if (attr.name == name)
                     return attr.value;
 
@@ -175,15 +170,15 @@ namespace base
 
         AttributeID DynamicDocument::nodeFirstAttribute(NodeID id, StringView<char> name /*= nullptr*/) const
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             auto attributeId  = node.firstAttrID;
             while (attributeId != 0)
             {
-                auto& attr = m_attributes[attributeId];
+                auto& attr = m_attributes.typedData()[attributeId];
                 if (name.empty() || attr.name == name)
                     return attributeId;
 
@@ -197,9 +192,9 @@ namespace base
 
         StringView<char> DynamicDocument::attributeName(AttributeID id) const
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
 
             return attr.name;
@@ -207,9 +202,9 @@ namespace base
 
         StringView<char> DynamicDocument::attributeValue(AttributeID id) const
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
 
             return attr.value;
@@ -217,15 +212,15 @@ namespace base
 
         AttributeID DynamicDocument::nextAttribute(AttributeID id, StringView<char> name /*= nullptr*/) const
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
 
             auto nextAttributeID  = attr.nextAttrID;
             while (nextAttributeID)
             {
-                auto& nextAttribute = m_attributes[nextAttributeID];
+                auto& nextAttribute = m_attributes.typedData()[nextAttributeID];
 
                 if (name.empty() || nextAttribute.name == name)
                     return nextAttributeID;
@@ -238,9 +233,9 @@ namespace base
 
         void DynamicDocument::attributeName(AttributeID id, StringView<char> name)
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
             ASSERT_EX(attr.parentNodeID != 0, "Invalid attribute");
 
@@ -250,9 +245,9 @@ namespace base
 
         void DynamicDocument::attributeValue(AttributeID id, StringView<char> value)
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
             ASSERT_EX(attr.parentNodeID != 0, "Invalid attribute");
 
@@ -261,13 +256,13 @@ namespace base
 
         void DynamicDocument::deleteAttibute(AttributeID id)
         {
-            ASSERT_EX(id < m_attributes.size(), "Attribute ID is out of range");
+            ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
-            auto& attr = m_attributes[id];
+            auto& attr = m_attributes.typedData()[id];
             ASSERT_EX(attr.valid(), "Invalid attribute ID");
             ASSERT_EX(attr.parentNodeID != 0, "Invalid attribute");
 
-            auto& node = m_nodes[attr.parentNodeID];
+            auto& node = m_nodes.typedData()[attr.parentNodeID];
             ASSERT_EX(node.valid(), "Invalid attribute node");
 
             bool found = false;
@@ -279,14 +274,14 @@ namespace base
                 if (prevID == id)
                 {
                     prevID = attr.nextAttrID;
-                    m_attributes[id] = Attr();
-                    m_attributesIDs.release((ID)id);
+                    m_attributes.typedData()[id] = Attr();
+                    m_attributes.free(id);
 
                     found = true;
                     break;
                 }
 
-                prevID = m_attributes[prevID].nextAttrID;
+                prevID = m_attributes.typedData()[prevID].nextAttrID;
             }
 
             // recompute the last ID of attribute if it was removed
@@ -298,7 +293,7 @@ namespace base
                 while (attrID != 0)
                 {
                     node.lastAttrID = attrID;
-                    attrID = m_attributes[attrID].nextAttrID;
+                    attrID = m_attributes.typedData()[attrID].nextAttrID;
                 }
             }
 
@@ -309,33 +304,25 @@ namespace base
 
         NodeID DynamicDocument::createNode(NodeID parentNodeID, StringView<char> name)
         {
-            ASSERT_EX(parentNodeID < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(parentNodeID < m_nodes.capacity(), "Node ID is out of range");
 
-            auto id  = m_nodeIDs.allocate();
+            if (m_nodes.full())
+                m_nodes.resize(m_nodes.capacity() * 2);
 
-            Node* outNode = nullptr;
-            if (id < m_nodes.size())
-            {
-                outNode = &m_nodes[id];
-            }
-            else
-            {
-                ASSERT_EX(id == m_nodes.size(), "Out of order node ID generated");
-                m_nodes.pushBack(Node());
-                outNode = &m_nodes.back();
-            }
+            auto id = m_nodes.emplace();
+            auto outNode = m_nodes.typedData() + id;
 
             ASSERT_EX(!name.empty(), "Cannot allocate nodes without name");
             ASSERT_EX(outNode->empty(), "Allocated node is already in use");
             outNode->name = mapString(name);
             outNode->parentID = (ID)parentNodeID;
 
-            auto& parentNode = m_nodes[parentNodeID];
+            auto& parentNode = m_nodes.typedData()[parentNodeID];
             ASSERT_EX(parentNode.valid(), "Invalid parent node ID");
 
             if (parentNode.lastChildID != 0)
             {
-                m_nodes[parentNode.lastChildID].nextSiblingID = id;
+                m_nodes.typedData()[parentNode.lastChildID].nextSiblingID = id;
                 parentNode.lastChildID = id;
             }
             else
@@ -354,11 +341,11 @@ namespace base
                 return;
 
             // get node
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid attribute node");
 
             // get parent and scan it
-            auto& parentNode = m_nodes[node.parentID];
+            auto& parentNode = m_nodes.typedData()[node.parentID];
             ASSERT_EX(parentNode.valid(), "Invalid parent node ID");
 
             bool found = false;
@@ -370,16 +357,16 @@ namespace base
                 auto curId = (ID)*prevID;
                 if (curId == id)
                 {
-                    *prevID = m_nodes[curId].nextSiblingID;
+                    *prevID = m_nodes.typedData()[curId].nextSiblingID;
 
-                    m_nodes[curId] = Node();
-                    m_nodeIDs.release(curId);
+                    m_nodes.typedData()[curId] = Node();
+                    m_nodes.free(curId);
 
                     found = true;
                     break;
                 }
 
-                prevID = &m_nodes[curId].nextSiblingID;
+                prevID = &m_nodes.typedData()[curId].nextSiblingID;
             }
 
             // recompute the last ID of attribute if it was removed
@@ -391,7 +378,7 @@ namespace base
                 while (childID != 0)
                 {
                     parentNode.lastChildID = childID;
-                    childID = m_nodes[childID].nextSiblingID;
+                    childID = m_nodes.typedData()[childID].nextSiblingID;
                 }
             }
 
@@ -400,10 +387,10 @@ namespace base
 
         void DynamicDocument::nodeValue(NodeID id, StringView<char> value)
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
             ASSERT_EX(id > 1, "Cannot set name of the root node");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             node.value = mapString(value);
@@ -411,10 +398,10 @@ namespace base
 
         void DynamicDocument::nodeName(NodeID id, StringView<char> name)
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
             ASSERT_EX(id > 1, "Cannot set name of the root node");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             ASSERT_EX(!name.empty(), "Unable to set empty name for the node");
@@ -423,10 +410,10 @@ namespace base
 
         void DynamicDocument::nodeAttribute(NodeID nodeID, StringView<char> name, StringView<char> value)
         {
-            ASSERT_EX(nodeID < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(nodeID < m_nodes.capacity(), "Node ID is out of range");
             //ASSERT_EX(nodeID > 1, "Cannot set name of the root node");
 
-            auto& node = m_nodes[nodeID];
+            auto& node = m_nodes.typedData()[nodeID];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             ASSERT_EX(!name.empty(), "Unable to set add attribute with no name to node");
@@ -436,7 +423,7 @@ namespace base
             auto attrId = node.firstAttrID;
             while (attrId)
             {
-                auto& attr = m_attributes[attrId];
+                auto& attr = m_attributes.typedData()[attrId];
                 if (attr.name == name)
                 {
                     attr.value = mapString(value);
@@ -450,19 +437,11 @@ namespace base
             // create new attribute
             if (!found)
             {
-                attrId = m_attributesIDs.allocate();
+                if (m_attributes.full())
+                    m_attributes.resize(m_attributes.capacity() * 2);
 
-                Attr* outAttribute = nullptr;
-                if (attrId < m_attributes.size())
-                {
-                    outAttribute = &m_attributes[attrId];
-                }
-                else
-                {
-                    ASSERT_EX(attrId == m_attributes.size(), "Out of order attribute ID generated");
-                    m_attributes.pushBack(Attr());
-                    outAttribute = &m_attributes.back();
-                }
+                attrId = m_attributes.emplace();
+                auto* outAttribute = m_attributes.typedData() + attrId;
 
                 ASSERT_EX(outAttribute->empty(), "Allocated attribute is already in use");
                 outAttribute->name = mapString(name);
@@ -471,10 +450,10 @@ namespace base
 
                 ASSERT_EX(!name.empty(), "Cannot allocate nodes without name");
 
-                auto& parentNode = m_nodes[nodeID];
+                auto& parentNode = m_nodes.typedData()[nodeID];
                 if (parentNode.lastAttrID != 0)
                 {
-                    m_attributes[parentNode.lastAttrID].nextAttrID = attrId;
+                    m_attributes.typedData()[parentNode.lastAttrID].nextAttrID = attrId;
                     parentNode.lastAttrID = attrId;
                 }
                 else
@@ -487,16 +466,16 @@ namespace base
 
         void DynamicDocument::deleteNodeAttribute(NodeID id, StringView<char> name)
         {
-            ASSERT_EX(id < m_nodes.size(), "Node ID is out of range");
+            ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
-            auto& node = m_nodes[id];
+            auto& node = m_nodes.typedData()[id];
             ASSERT_EX(node.valid(), "Invalid node ID");
 
             // modify existing attribute
             auto attrId = node.firstAttrID;
             while (attrId)
             {
-                auto& attr = m_attributes[attrId];
+                auto& attr = m_attributes.typedData()[attrId];
                 if (attr.name == name)
                 {
                     deleteAttibute(attrId);
@@ -506,6 +485,8 @@ namespace base
                 attrId = attr.nextAttrID;
             }
         }
+
+        //--
 
     } // xml
 } // base

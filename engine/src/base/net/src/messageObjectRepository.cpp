@@ -21,10 +21,7 @@ namespace base
             m_objectReverseMap.reserve(1024);
             m_objectMap[0] = nullptr;
             m_objectReverseMap[nullptr] = 0; // just for consistency
-
-            m_idAllocator.reseve(65536);
-            m_idAllocator.allocate(); // zero - null object
-            m_idAllocator.allocate(); // one - host object
+            m_freeObjectIds.reserve(256);
         }
 
         MessageObjectRepository::~MessageObjectRepository()
@@ -38,15 +35,18 @@ namespace base
 
         replication::DataMappedID MessageObjectRepository::allocateObjectId_NoLock()
         {
-            auto id = m_idAllocator.allocate();
-            if (id > std::numeric_limits<replication::DataMappedID>::max())
+            replication::DataMappedID id = 0;
+            if (m_freeObjectIds.empty())
             {
-                TRACE_ERROR("Unable to allocate ID for an object, to many registered IDs ({}), do you have an ID leak?");
-                return 0;
+                id = m_nextObjectId++;
+            }
+            else
+            {
+                id = m_freeObjectIds.back();
+                m_freeObjectIds.popBack();
             }
 
             m_allocatedIds.insert(id);
-
             return (replication::DataMappedID)id;
         }
 
@@ -92,7 +92,7 @@ namespace base
             if (freeId)
             {
                 if (m_allocatedIds.remove(id))
-                    m_idAllocator.release(id);
+                    m_freeObjectIds.pushBack(id);
             }
         }
 

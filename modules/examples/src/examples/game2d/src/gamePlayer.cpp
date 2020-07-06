@@ -152,7 +152,7 @@ namespace example
             m_velocity = Vector2(0, 0);
         }
     }
-    
+     
     void GamePlayer::changeState(int state, float dt)
     {
         if (state != m_state)
@@ -180,6 +180,17 @@ namespace example
             canvas.place(m_assets->walk->geometry(m_timeInState, m_flip));
         else if (m_state == 2)
             canvas.place(m_assets->run->geometry(m_timeInState, m_flip));
+    }
+
+    void GamePlayer::debug()
+    {
+        if (ImGui::TreeNode(this, "Player"))
+        {
+            ImGui::Text(TempString("State: {}", m_state));
+            ImGui::Text(TempString("Time in state: {}", m_timeInState));
+            ImGui::Text(TempString("Position: {},{}", pos.x, pos.y));
+            ImGui::TreePop();
+        }
     }
 
     //--

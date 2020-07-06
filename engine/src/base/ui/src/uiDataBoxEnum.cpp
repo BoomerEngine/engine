@@ -30,7 +30,8 @@ namespace ui
 
             m_box->bind("OnChanged"_id) = [this]()
             {
-                write();
+                if (m_box->isEnabled())
+                    write();
             };
         }
 
@@ -48,50 +49,59 @@ namespace ui
         {
             base::HashSet<base::StringID> options;
 
-            const auto count = data()->size();
-            for (uint32_t i = 0; i < count; ++i)
+            base::StringID currentValue;
+
+            const auto ret = readValue(currentValue);
+            if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
             {
                 base::rtti::DataViewInfo info;
                 info.requestFlags |= base::rtti::DataViewRequestFlagBit::OptionsList;
+                const auto ret = data()->describeDataView(path(), info);
 
-                if (data()->describe(i, path(), info))
+                if (ret.code == base::DataViewResultCode::OK)
                 {
-                    for (const auto& option : info.options)
-                        options.insert(option.name);
+                    if (m_options != options.keys())
+                    {
+                        m_box->closePopupList();
+                        m_box->clearOptions();
+                        m_box->selectOption(-1);
+
+                        for (uint32_t i = 0; i < options.keys().size(); ++i)
+                        {
+                            const auto name = options.keys()[i];
+                            m_box->addOption(name.c_str());
+
+                            if (name == currentValue)
+                                m_box->selectOption(i);
+                        }
+
+                        m_options = options.keys();
+                    }
+                    else
+                    {
+                        const auto index = m_options.find(currentValue);
+                        m_box->selectOption(index);
+                    }
+
+                    m_box->visibility(true);
+                    m_box->enable(!readOnly());
                 }
-            }
-
-            base::StringID currentValue;
-            readValue(currentValue);
-
-            if (m_options != options.keys())
-            {
-                m_box->closePopupList();
-                m_box->clearOptions();
-                m_box->selectOption(-1);
-
-                for (uint32_t i = 0; i < options.keys().size(); ++i)
+                else
                 {
-                    const auto name = options.keys()[i];
-                    m_box->addOption(name.c_str());
-
-                    if (name == currentValue)
-                        m_box->selectOption(i);
+                    // TODO: error message
+                    m_box->visibility(false);
                 }
-
-                m_options = options.keys();
             }
             else
             {
-                const auto index = m_options.find(currentValue);
-                m_box->selectOption(index);
+                // TODO: error message
+                m_box->visibility(false);
             }
-
-            m_box->enable(!readOnly());
         }
 
     protected:
         base::RefPtr<ComboBox> m_box;
+        base::RefPtr<TextLabel> m_message;
         base::Array<base::StringID> m_options;
       
         void write()

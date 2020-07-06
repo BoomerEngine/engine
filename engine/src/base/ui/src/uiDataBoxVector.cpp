@@ -104,18 +104,32 @@ namespace ui
             }
         }
 
-        virtual void bind(const base::DataProxyPtr& data, const base::StringBuf& path, bool readOnly /*= false*/) override
+        virtual void bindData(const base::DataViewPtr& data, const base::StringBuf& path, bool readOnly /*= false*/) override
         {
             if (m_componentX)
-                m_componentX->bind(data, base::TempString("{}.{}", path, m_comps[0].path), readOnly);
+                m_componentX->bindData(data, base::TempString("{}.{}", path, m_comps[0].path), readOnly);
             if (m_componentY)
-                m_componentY->bind(data, base::TempString("{}.{}", path, m_comps[1].path), readOnly);
+                m_componentY->bindData(data, base::TempString("{}.{}", path, m_comps[1].path), readOnly);
             if (m_componentZ)
-                m_componentZ->bind(data, base::TempString("{}.{}", path, m_comps[2].path), readOnly);
+                m_componentZ->bindData(data, base::TempString("{}.{}", path, m_comps[2].path), readOnly);
             if (m_componentW)
-                m_componentW->bind(data, base::TempString("{}.{}", path, m_comps[3].path), readOnly);
+                m_componentW->bindData(data, base::TempString("{}.{}", path, m_comps[3].path), readOnly);
 
-            TBaseClass::bind(data, path, readOnly);
+            TBaseClass::bindData(data, path, readOnly);
+        }
+
+        virtual void bindActionHistory(base::ActionHistory* ah)
+        {
+            if (m_componentX)
+                m_componentX->bindActionHistory(ah);
+            if (m_componentY)
+                m_componentY->bindActionHistory(ah);
+            if (m_componentZ)
+                m_componentZ->bindActionHistory(ah);
+            if (m_componentW)
+                m_componentW->bindActionHistory(ah);
+
+            TBaseClass::bindActionHistory(ah);
         }
 
         virtual void enterEdit() override

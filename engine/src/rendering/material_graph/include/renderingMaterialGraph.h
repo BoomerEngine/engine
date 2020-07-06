@@ -72,9 +72,9 @@ namespace rendering
         MaterialGraphContainerPtr m_graph;
 
         // IObject - extension of object property model to allow direct writing to graph parameters via the graph object itself
-        virtual bool readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
-        virtual bool writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
-        virtual bool describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
+        //virtual bool readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
+        //virtual bool writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
+        //virtual bool describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
     };
 
     ///---

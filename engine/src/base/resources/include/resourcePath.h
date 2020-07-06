@@ -92,16 +92,16 @@ namespace base
             INLINE StringView<char> path() const { return m_data ? m_data->path : StringView<char>(); }
 
             /// get extension part of the resource path (png)
-            INLINE StringView<char> extension() const { return m_data->extensionPart; }
+            INLINE StringView<char> extension() const { return m_data ? m_data->extensionPart : StringView<char>(); }
 
             /// get the file name (lena.png)
-            INLINE StringView<char> fileName() const { return m_data->fileNamePart; }
+            INLINE StringView<char> fileName() const { return m_data ? m_data->fileNamePart : StringView<char>(); }
 
             /// get the file stem part (lena)
-            INLINE StringView<char> fileStem() const { return m_data->fileStemPart; }
+            INLINE StringView<char> fileStem() const { return m_data ? m_data->fileStemPart : StringView<char>(); }
 
             /// get the directory (engine/textures/)
-            INLINE StringView<char> directory() const { return m_data->dirPart; }
+            INLINE StringView<char> directory() const { return m_data ? m_data->dirPart : StringView<char>(); }
 
             //--
 

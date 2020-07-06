@@ -124,6 +124,8 @@ namespace base
                 DEBUG_CHECK_EX(!helper::CheckMaskWord(block->freeMask, elementIndex), "Bit still set");
 
                 auto* ptr = (uint8_t*)block + m_blockHeaderSize + (elementIndex * m_elementSize);
+                ASSERT_EX(AlignPtr(ptr, m_elementAlignment) == ptr, "Wrong pool element alignment");
+
                 block->freeCount -= 1;
                 m_numElements += 1;
                 m_numFreeElements -= 1;
@@ -145,7 +147,10 @@ namespace base
             newBlock->prev = nullptr;
             newBlock->freeCount = m_elementsPerPage;
             m_numFreeElements += m_elementsPerPage;
-            memset(newBlock->freeMask, 0xFF, ((m_elementsPerPage + 63) / 64) * sizeof(uint64_t));
+
+            // mark all entries as free
+            auto numMaskWords = (m_elementsPerPage + 63) / 64;
+            memset(newBlock->freeMask, 0xFF, numMaskWords * sizeof(uint64_t));
 
             linkToFreeList(newBlock);
             return alloc();

@@ -45,6 +45,7 @@ namespace example
 
         virtual void tick(float dt) override;
         virtual void render(Canvas& canvas) override;
+        virtual void debug() override;
 
         GameTerrain* m_collisionTerrain = nullptr; // hack
 

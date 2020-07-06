@@ -90,9 +90,9 @@ namespace base
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
             virtual void calcCRC64(CRC64& crc, const void* data) const override;
 
-            virtual bool describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
-            virtual bool readDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
-            virtual bool writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
+            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
+            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
+            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
 
         private:
             TNames m_options;

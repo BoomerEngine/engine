@@ -23,6 +23,7 @@ namespace example
 
         INLINE const Vector2& size() const { return m_size; }
         INLINE const Geometry& geometry(bool flip=false) const { return *m_geometry[flip ? 1 : 0]; }
+        INLINE const StringBuf& name() const { return m_name; }
 
         void bounds(Vector2& outMin, Vector2& outMax) const;
         void setupSnapBottom();
@@ -35,6 +36,7 @@ namespace example
         float m_scale;
         bool m_circle;
         GeometryPtr m_geometry[2];
+        StringBuf m_name;
 
         virtual void onPropertyChanged(StringView<char> path) override;
 
@@ -85,6 +87,7 @@ namespace example
         virtual void removed(GameSceneLayer* layer);
         virtual void render(Canvas& canvas) = 0;
         virtual void tick(float dt);
+        virtual void debug() = 0;
     };
 
     typedef RefPtr<GameObject> GameObjectPtr;
@@ -100,11 +103,13 @@ namespace example
         GameSprite(Vector2 pos, GameSpriteAsset* asset);
 
         virtual void render(Canvas& canvas) override;
+        virtual void debug() override;
 
         void bounds(Vector2& outMin, Vector2& outMax) const;
 
     private:
         GameSpriteAssetPtr m_asset;
+        bool m_renderBBox = false;
     };
 
     //--
@@ -165,6 +170,7 @@ namespace example
         virtual void render(Canvas& canvas) override;
         virtual void added(GameSceneLayer* layer) override;
         virtual void removed(GameSceneLayer* layer) override;
+        virtual void debug() override;
 
     private:
         GeometryPtr m_geometry;
@@ -198,6 +204,8 @@ namespace example
 
         void render(Canvas& canvas) const;
         void render(CommandWriter& cmd, Vector2 center, uint32_t width, uint32_t height, uint32_t outputWidth, uint32_t outputHeight) const;
+
+        void debug(int index);
 
         //--
 

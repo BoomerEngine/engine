@@ -45,7 +45,7 @@ namespace rendering
             virtual void handleSceneLock() override final;
             virtual void handleSceneUnlock() override final;
             virtual void handlePrepare(command::CommandWriter& cmd) override final;
-            virtual void handleRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments) const override final;
+            virtual void handleRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const override final;
 
             //--
 

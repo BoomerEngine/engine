@@ -21,6 +21,7 @@ namespace rendering
     class Mesh;
     typedef base::RefPtr<Mesh> MeshPtr;
     typedef base::res::Ref<Mesh> MeshRef;
+    typedef base::res::AsyncRef<Mesh> MeshAsyncRef;
 
     class MeshService;
 

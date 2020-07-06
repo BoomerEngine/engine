@@ -37,6 +37,7 @@ namespace base
                     m_numRegisteredNames += poolName(POOL_NET, "Engine.Network");
                     m_numRegisteredNames += poolName(POOL_IMAGE, "Engine.Images");
                     m_numRegisteredNames += poolName(POOL_STRINGS, "Engine.Strings");
+                    m_numRegisteredNames += poolName(POOL_XML, "Engine.XML");
                     m_numRegisteredNames += poolName(POOL_PTR, "Engine.Pointers");
                     m_numRegisteredNames += poolName(POOL_OBJECTS, "Engine.Objects");
                     m_numRegisteredNames += poolName(POOL_RESOURCES, "Engine.Resources");

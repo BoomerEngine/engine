@@ -17,15 +17,18 @@ namespace ui
     ///---
 
     /// data boxes allows values to be edited
-    class BASE_UI_API IDataBox : public IElement, public base::IDataProxyObserver
+    class BASE_UI_API IDataBox : public IElement, public base::IDataViewObserver
     {
         RTTI_DECLARE_VIRTUAL_CLASS(IDataBox, IElement);
 
     public:
         ///---
 
-        /// get parent data inspector
-        INLINE const base::DataProxyPtr& data() const { return m_data; }
+        /// get data we are bound to 
+        INLINE const base::DataViewPtr& data() const { return m_data; }
+
+        /// get the action history we will use to post changes to the data
+        INLINE const base::ActionHistoryPtr& actionHistory() const { return m_actionHistory; }
 
         /// get path to data
         INLINE const base::StringBuf& path() const { return m_path; }
@@ -33,16 +36,16 @@ namespace ui
         /// is data read only ?
         INLINE bool readOnly() const { return m_readOnly; }
 
-        /// do we have a valid read (all values defined and same)
-        INLINE bool readValid() const { return m_readValid; }
-
         ///---
 
         IDataBox();
         virtual ~IDataBox();
 
         // bind to data
-        virtual void bind(const base::DataProxyPtr& data, const base::StringBuf& path, bool readOnly=false);
+        virtual void bindData(const base::DataViewPtr& data, const base::StringBuf& path, bool readOnly=false);
+
+        // bind action history for optional undo of operations we are doing
+        virtual void bindActionHistory(base::ActionHistory* ah);
 
         // enter edit mode
         virtual void enterEdit();
@@ -59,20 +62,20 @@ namespace ui
         ///----
 
         // read value
-        bool readValue(void* data, const base::Type dataType);
+        base::DataViewResult readValue(void* data, const base::Type dataType);
 
         // write new value, will create undo action if action history is provided
-        bool writeValue(const void* data, const base::Type dataType);
+        base::DataViewResult writeValue(const void* data, const base::Type dataType);
 
         ///----
 
         // read value
         template< typename T >
-        INLINE bool readValue(T& data) { return readValue(&data, base::reflection::GetTypeObject<T>()); }
+        INLINE base::DataViewResult readValue(T& data) { return readValue(&data, base::reflection::GetTypeObject<T>()); }
 
         // write new value, will create undo action if action history is provided
         template< typename T >
-        INLINE bool writeValue(const T& data) { return writeValue(&data, base::reflection::GetTypeObject<T>()); }
+        INLINE base::DataViewResult writeValue(const T& data) { return writeValue(&data, base::reflection::GetTypeObject<T>()); }
 
         ///----
 
@@ -80,15 +83,18 @@ namespace ui
         static DataBoxPtr CreateForType(const base::rtti::DataViewInfo& info);
 
     private:
-        base::DataProxyPtr m_data;
+        base::DataViewPtr m_data;
         base::StringBuf m_path;
         bool m_readOnly;
-        bool m_readValid; // a valid value was read
         void* m_observerToken = nullptr;
 
+        base::ActionHistoryPtr m_actionHistory;
+
     protected:
-        /// observed value (or parent or child) changed, passes full path to changed
-        virtual void dataProxyValueChanged(base::StringView<char> fullPath, bool parentNotification) override;
+        virtual void handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification) override;
+
+        base::DataViewResult executeAction(const base::ActionPtr& action);
+        base::DataViewResult executeAction(const base::DataViewActionResult& action);
     };
 
     ///---

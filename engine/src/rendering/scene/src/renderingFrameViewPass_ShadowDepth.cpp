@@ -29,7 +29,7 @@ namespace rendering
 
         //---
 
-        void RenderShadowDepthPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, uint32_t index)
+        void RenderShadowDepthPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, float depthBiasConstant, float depthBiasSlope, float depthBiasClamp, uint32_t index)
         {
             PassBracket pass(cmd, view, "ShadowDepthPass");
             pass.depthClear(depthRT);
@@ -42,12 +42,21 @@ namespace rendering
 
             cmd.opSetDepthState(true, true, CompareOp::LessEqual);
 
+            DepthBiasState state;
+            state.enabled = true;
+            state.constant = depthBiasConstant;
+            state.slope = depthBiasSlope;
+            state.clamp = depthBiasClamp;
+            cmd.opSetDepthBias(state);
+
             // render fragments only if we are allowed to
             if (view.frame().filters & FilterBit::PassShadowDepth)
             {
                 const FragmentDrawBucket buckets[4] = { FragmentDrawBucket::ShadowDepth0, FragmentDrawBucket::ShadowDepth1, FragmentDrawBucket::ShadowDepth2, FragmentDrawBucket::ShadowDepth3 };
                 RenderViewFragments(cmd, view, context, { buckets[index] });
             }
+
+            cmd.opSetDepthBias(DepthBiasState());
         }
 
         //---

@@ -51,7 +51,7 @@ namespace rendering
 
         }
 
-        command::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const ImageView& targetView)
+        command::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const ImageView& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
         {
             PC_SCOPE_LVL0(RenderFrame);
 
@@ -72,12 +72,24 @@ namespace rendering
 
                 {
                     FrameRenderer renderer(frame, *m_surfaceCache);
-                    renderer.prepareFrame(cmd);
+                    {
+                        renderer.prepareFrame(cmd);
 
-                    FrameView_Main view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullColorRT, m_surfaceCache->m_sceneFullDepthRT, frame.mode);
-                    view.render(cmd);
+                        {
+                            FrameView_Main view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullColorRT, m_surfaceCache->m_sceneFullDepthRT, frame.mode);
+                            view.render(cmd);
 
-                    FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
+                            FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
+                        }
+
+                        renderer.finishFrame();
+                    }
+
+                    if (outFrameStats)
+                        outFrameStats->merge(renderer.frameStats());
+
+                    if (outMergedStateStats)
+                        outMergedStateStats->merge(renderer.scenesStats());
                 }
 
                 return cmd.release();

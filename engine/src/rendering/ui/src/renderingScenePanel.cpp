@@ -1044,6 +1044,7 @@ namespace ui
         // setup params
         frame.index = m_frameIndex++;
         frame.filters = m_filterFlags;
+        frame.cascades.numCascades = 3;
         frame.time.engineRealTime = (float)m_engineTimeCounter;
         frame.time.gameTime = (float)m_gameTimeCounter;
 

@@ -71,7 +71,7 @@ namespace rendering
             m_objects.reset();
         }
 
-        void Scene::lockForRendering()
+        bool Scene::lockForRendering()
         {
             const auto doLock = 0 == (m_lockCount++);
             if (doLock)
@@ -80,9 +80,11 @@ namespace rendering
                     if (handler)
                         handler->handleSceneLock();
             }
+
+            return true;
         }
 
-        void Scene::unlockAfterRendering()
+        void Scene::unlockAfterRendering(SceneStats&& updatedStats)
         {
             DEBUG_CHECK_EX(m_lockCount.load() > 0, "Invalid lock count");
             const auto doUnlock = 0 == (--m_lockCount);
@@ -91,6 +93,9 @@ namespace rendering
                 for (auto* handler : m_proxyHandlers)
                     if (handler)
                         handler->handleSceneUnlock();
+
+
+                m_stats.merge(updatedStats);
             }        
         }
 

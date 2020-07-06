@@ -51,6 +51,7 @@ namespace ed
             tab->layoutVertical();
 
             m_properties = tab->createChild<ui::DataInspector>();
+            m_properties->bindActionHistory(actionHistory());
             m_properties->expand();
 
             dockLayout().right(0.2f).attachPanel(tab);
@@ -73,7 +74,7 @@ namespace ed
 
         m_instance->resetModifiedFlag();
         m_previewPanel->bindMaterial(m_instance);
-        m_properties->bindData(m_instance->createDataProxy());
+        m_properties->bindData(m_instance->createDataView());
         return true;
     }
 

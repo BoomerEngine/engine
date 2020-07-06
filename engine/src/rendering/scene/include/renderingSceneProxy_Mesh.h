@@ -35,6 +35,7 @@ namespace rendering
 
             base::Array<Chunk> chunks;
             base::Box localBounds;
+            bool castsShadows = true;
         };
 
         ///--

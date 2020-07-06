@@ -108,13 +108,13 @@ namespace base
         //---
 
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-        virtual bool describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const;
+        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const;
 
         /// Read data from memory
-        virtual bool readDataView(const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* targetData, Type targetType) const;
+        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const;
 
         /// Write data to memory
-        virtual bool writeDataView(const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, const void* sourceData, Type sourceType);
+        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType);
 
         //---
 
@@ -204,11 +204,8 @@ namespace base
 
         //--
 
-        // create data view for this object
+        // create data view for editing this object, especially in data inspector + data view is usually needed for undo/redo
         virtual DataViewPtr createDataView() const;
-
-        // create a data proxy for this object (usually just wraps the view)
-        virtual DataProxyPtr createDataProxy() const;
 
         //--
 

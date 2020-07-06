@@ -214,22 +214,32 @@ namespace ui
         changeExpandable(true);
     }
 
+    extern base::Array<base::StringID> GatherPropertyNames(bool sortNames, const base::rtti::DataViewInfo& info, base::StringID category);
+    extern base::StringBuf MakeStructureElementPath(base::StringView<char> path, base::StringView<char> name);
+
     void DataInspectorObjectCategoryGroup::createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren)
     {
         base::rtti::DataViewInfo info;
         info.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
         info.categoryFilter = m_category;
 
-        if (inspector()->data()->describe(0, path(), info))
+        if (inspector()->data()->describeDataView(path(), info).valid())
         {
-            for (const auto& propInfo : info.members)
+            const auto names = GatherPropertyNames(inspector()->settings().sortAlphabetically, info, m_category);
+            for (const auto& name : names)
             {
-                if (propInfo.category == m_category)
-                {
-                    base::StringBuf fullPath = base::TempString("{}{}{}", path(), path().empty() ? "" : ".", propInfo.name);
+                const auto childPath = MakeStructureElementPath(path(), name.view());
 
-                    if (auto item = base::CreateSharedPtr<DataProperty>(inspector(), this, 0, fullPath, propInfo.name.c_str(), false))
-                        outCreatedChildren.pushBack(item);
+                base::rtti::DataViewInfo childInfo;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyMetadata;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::TypeMetadata;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::CheckIfResetable;
+
+                if (inspector()->data()->describeDataView(childPath, childInfo).valid())
+                {
+                    auto prop = base::CreateSharedPtr<DataProperty>(inspector(), this, 0, childPath, childPath, childInfo, false);
+                    outCreatedChildren.pushBack(prop);
                 }
             }
         }

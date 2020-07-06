@@ -31,6 +31,7 @@ namespace rendering
             float edgeFade = 0.0f;
             float filterScale = 0.0f;
             float filterTexelSize = 0.0f;
+            float worldSpaceTexelSize = 0.0f;
 
             float depthBiasConstant = 0.0f;
             float depthBiasSlope = 0.0f;
@@ -63,10 +64,22 @@ namespace rendering
 
         struct RENDERING_SCENE_API CascadeData
         {
+            uint8_t numCascades = 0;
             ImageView cascadeShadowMap;
-            base::InplaceArray<CascadeInfo, 4> cascades;
+            CascadeInfo cascades[MAX_CASCADES];
 
             CascadeData();
+        };
+
+        //--
+
+        struct RENDERING_SCENE_API LightingData
+        {
+            FrameParams_GlobalLighting globalLighting;
+
+            ImageView globalShadowMaskAO;
+
+            LightingData();
         };
 
         //--

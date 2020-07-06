@@ -71,10 +71,12 @@ namespace rendering
 
             INLINE const T* operator->() const
             {
-                if (m_index < m_size)
-                    return (const T*)(m_proxies[m_index].proxy);
-                else
-                    return nullptr;
+                return (const T*)(m_proxies[m_index].proxy);
+            }
+
+            INLINE uint8_t frustomMask() const
+            {
+                return m_proxies[m_index].frustumMask;
             }
 
             INLINE void operator++()

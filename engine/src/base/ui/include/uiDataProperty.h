@@ -20,12 +20,12 @@ namespace ui
     ///---
 
     /// wrapper for single data property
-    class BASE_UI_API DataProperty : public DataInspectorNavigationItem, public base::IDataProxyObserver
+    class BASE_UI_API DataProperty : public DataInspectorNavigationItem, public base::IDataViewObserver
     {
         RTTI_DECLARE_VIRTUAL_CLASS(DataProperty, DataInspectorNavigationItem);
 
     public:
-        DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const base::StringBuf& path, const base::StringBuf& caption, bool parentReadOnly, int arrayIndex=-1);
+        DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const base::StringBuf& path, const base::StringBuf& caption, const base::rtti::DataViewInfo& info, bool parentReadOnly, int arrayIndex=-1);
         virtual ~DataProperty();
 
         inline DataProperty* parentProperty() const { return base::rtti_cast<DataProperty>(parentItem()); }
@@ -35,14 +35,11 @@ namespace ui
         bool isDynamicArray() const;
 
     protected:
-        void* m_observerToken = nullptr;
-
         uint8_t m_indent = 0;
         int32_t m_arrayIndex = -1;
 
         base::rtti::DataViewInfo m_viewInfo;
-        bool m_viewInfoConformed = false; // all views agree on the type of the view
-        bool m_viewDataResetable = false;
+        bool m_viewDataResetableStyle = false;
         bool m_parentReadOnly = false;
 
         ElementPtr m_nameLine;
@@ -59,17 +56,16 @@ namespace ui
         void updateExpandable();
 
         void compareWithBase();
-        void toggleResetButton(bool state);
+        void toggleResetButton();
 
         virtual void handleSelectionLost() override;
         virtual void handleSelectionGain(bool focus) override;
         virtual void createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren) override;
 
-        virtual void dataProxyValueChanged(base::StringView<char> fullPath, bool parentNotification) override;
+        virtual void handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification) override;
 
         void notifyDataChanged(bool recurseToChildren);
 
-        void initViewInfo();
         void initInterface(const base::StringBuf& caption);
 
         void arrayClear();
@@ -83,7 +79,7 @@ namespace ui
 
         void resetToBaseValue();
 
-        void sendViewCommand(const base::rtti::DataViewCommand& cmd);
+        void dispatchAction(const base::DataViewActionResult& action);
     };
 
     ///---

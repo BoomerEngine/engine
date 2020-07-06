@@ -39,6 +39,10 @@ namespace rendering
             ImageView m_cascadesShadowDepthRT; // array of shadow maps for global cascade shadows
             ImageView m_globalAOShadowMaskRT; // screen size AO/shadow mask buffer
 
+            ImageView m_velocityBufferRT; // full scale screen space XY velocity buffer
+            ImageView m_linarizedDepthRT; // full scale linearized depth (AO)
+            ImageView m_viewNormalRT; // full scale linearized reconstructed normal (AO)
+
             //--
 
         private:

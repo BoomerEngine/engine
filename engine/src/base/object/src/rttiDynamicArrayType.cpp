@@ -136,91 +136,17 @@ namespace base
                 return false;
             }
 
-            bool DynamicArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+            DataViewResult DynamicArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
             {
-                if (!IArrayType::describeDataView(viewPath, viewData, outInfo))
-                    return false;
-
                 if (viewPath.empty())
                     outInfo.flags |= DataViewInfoFlagBit::DynamicArray;
 
-                return true;
+                return IArrayType::describeDataView(viewPath, viewData, outInfo);
             }
 
-            bool DynamicArrayType::writeDataView(IObject* context, const IDataView* rootView, StringView<char> rootViewPath, StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+            DataViewResult DynamicArrayType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
             {
-                if (viewPath.empty() && sourceType == DataViewCommand::GetStaticClass())
-                {
-                    const auto& cmd = *(const DataViewCommand*)sourceData;
-                    if (cmd.command == "clear"_id)
-                    {
-                        return clearArrayElements(viewData);
-                    }
-                    else if (cmd.command == "resize"_id)
-                    {
-                        auto size = arraySize(viewData);
-                        if (cmd.arg0 > size)
-                        {
-                            while (cmd.arg0 > size)
-                            {
-                                if (!createArrayElement(viewData, size))
-                                    return false;
-
-                                if (!innerType()->traits().requiresConstructor)
-                                {
-                                    void* data = arrayElementData(viewData, size);
-                                    memzero(data, innerType()->size());
-                                }
-
-                                size = arraySize(viewData);
-                            }
-                        }
-                        else if (cmd.arg0 < size)
-                        {
-                            while (cmd.arg0 < size)
-                            {
-                                if (!removeArrayElement(viewData, size - 1))
-                                    return false;
-                                size = arraySize(viewData);
-                            }
-                        }
-
-                        return true;
-                    }
-                    else if (cmd.command == "new"_id)
-                    {
-                        const auto size = arraySize(viewData);
-                        if (!createArrayElement(viewData, size))
-                            return false;
-
-                        if (!innerType()->traits().requiresConstructor)
-                        {
-                            void* data = arrayElementData(viewData, size);
-                            memzero(data, innerType()->size());
-                        }
-
-                        return true;
-                    }
-                    else if (cmd.command == "insert"_id)
-                    {
-                        if (!createArrayElement(viewData, cmd.arg0))
-                            return false;
-
-                        if (!innerType()->traits().requiresConstructor)
-                        {
-                            void* data = arrayElementData(viewData, cmd.arg0);
-                            memzero(data, innerType()->size());
-                        }
-
-                        return true;
-                    }
-                    else if (cmd.command == "delete"_id)
-                    {
-                        return removeArrayElement(viewData, cmd.arg0);
-                    }
-                }
-
-                return IArrayType::writeDataView(context, rootView, rootViewPath, viewPath, viewData, sourceData, sourceType);
+                return IArrayType::writeDataView(viewPath, viewData, sourceData, sourceType);
             }
 
             bool DynamicArrayType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const

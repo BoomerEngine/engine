@@ -83,14 +83,34 @@ namespace base
             return true;
         }
 
-        bool ResourceLoaderFinal::assembleCookedFilePath(const ResourceKey& key, io::AbsolutePath& outPath) const
+        StringView<char> ResourceLoaderFinal::findCookedExtension(const ResourceKey& key) const
         {
             const auto* entryTable = m_loadingExtensionsMap.find(key.cls());
             if (!entryTable || entryTable->empty())
                 return false;
 
-            const auto& ext = (*entryTable)[0].extension;
-            
+            const auto loadingExt = key.path().extension();
+            for (const auto& entry : *entryTable)
+                if (entry.extension == loadingExt)
+                    return loadingExt;
+
+            if (entryTable->size() == 1)
+                return (*entryTable)[0].extension;
+
+            // HACK!
+            if (loadingExt == "v4mg" && key.cls()->name() == "rendering::IMaterial"_id)
+                return "v4mt";
+
+            TRACE_ERROR("Unable to determine loading extension for '{}'", key);
+            return "";
+        }
+
+        bool ResourceLoaderFinal::assembleCookedFilePath(const ResourceKey& key, io::AbsolutePath& outPath) const
+        {
+            const auto ext = findCookedExtension(key);
+            if (!ext)
+                return false;
+
             outPath = m_looseFileDir.addFile(key.path().path()).addExtension(ext);
             return true;
         }
@@ -101,12 +121,13 @@ namespace base
             if (!m_looseFileDir.empty())
             {
                 io::AbsolutePath filePath;
-                assembleCookedFilePath(key, filePath);
-
-                if (auto ret = res::LoadUncached(filePath, key.cls(), this, nullptr))
+                if (assembleCookedFilePath(key, filePath))
                 {
-                    ret->bindToLoader(this, key, ResourceMountPoint(), false);
-                    return ret;
+                    if (auto ret = res::LoadUncached(filePath, key.cls(), this, nullptr))
+                    {
+                        ret->bindToLoader(this, key, ResourceMountPoint(), false);
+                        return ret;
+                    }
                 }
             }
 

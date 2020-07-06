@@ -1,4 +1,5 @@
 // [DEAR IMGUI]
+// [# filter:imgui #]
 // This is a slightly modified version of stb_textedit.h 1.13. 
 // Those changes would need to be pushed into nothings/stb:
 // - Fix in stb_textedit_discard_redo (see https://github.com/nothings/stb/issues/321)

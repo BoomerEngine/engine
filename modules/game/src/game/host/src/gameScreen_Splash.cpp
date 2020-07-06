@@ -30,22 +30,21 @@ namespace game
 
     Screen_Splash::Screen_Splash()
     {
-        m_fadeInTime = 2.0f;
+        m_effectTime = 0.0f;
         m_shader = resShaderSplash.loadAndGetAsRef();
     }
 
     Screen_Splash::~Screen_Splash()
     {}
 
-    ScreenTransitionRequest Screen_Splash::handleUpdate(double dt)
+    bool Screen_Splash::supportsNativeFadeInFadeOut() const
     {
-        m_effectTime += dt;
+        return true;
+    }
 
-        {
-
-        }
-        
-        return TBaseClass::handleUpdate(dt);
+    void Screen_Splash::handleUpdate(IGame* game, double dt)
+    {
+        return TBaseClass::handleUpdate(game, dt);
     }
 
     struct SpashScreenParams
@@ -64,7 +63,7 @@ namespace game
         //ImageView source;
     };
 
-    void Screen_Splash::handleRender(rendering::command::CommandWriter& cmd, const HostViewport& hostViewport)
+    void Screen_Splash::handleRender(IGame* game, rendering::command::CommandWriter& cmd, const HostViewport& hostViewport)
     {
         rendering::command::CommandWriterBlock block(cmd, "EffectSplash");
 
@@ -89,7 +88,7 @@ namespace game
             data.screenSizeY = hostViewport.height;
             data.screenInvSizeX = 1.0f / hostViewport.width;
             data.screenInvSizeY = 1.0f / hostViewport.height;
-            data.fade = m_fade.m_fraction;
+            data.fade = hostViewport.fadeLevel;
             data.time = m_effectTime;
 
             SpashScreenParams params;
@@ -102,26 +101,8 @@ namespace game
 
             cmd.opEndPass();
         }
-
     }
 
-    bool Screen_Splash::handleInput(const base::input::BaseEvent& evt)
-    {
-        //if (m_effectTime > 3.0f)
-
-        return false;
-    }
-
-    void Screen_Splash::handleAttach()
-    {
-        m_effectTime = 0.0f;
-        TBaseClass::handleAttach(); // starts a fade in
-    }
-
-    void Screen_Splash::handleDetach()
-    {
-
-    }
     
     //--
 

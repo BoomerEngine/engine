@@ -10,9 +10,9 @@
 
 #include "xmlDocument.h"
 #include "base/containers/include/array.h"
-#include "base/containers/include/bitPool.h"
 #include "base/containers/include/hashMap.h"
 #include "base/memory/include/linearAllocator.h"
+#include "base/containers/include/staticStructurePool.h"
 
 namespace base
 {
@@ -112,17 +112,11 @@ namespace base
                 }
             };
 
-            typedef Array<Node> TNodes;
-            typedef Array<Attr> TAtttributes;
-
             mem::LinearAllocator m_pool;
             HashMap<uint64_t, StringView<char>> m_stringMap;
 
-            TNodes m_nodes;
-            BitPool<> m_nodeIDs;
-
-            TAtttributes m_attributes;
-			BitPool<> m_attributesIDs;
+            StaticStructurePool<Node> m_nodes;
+            StaticStructurePool<Attr> m_attributes;
 
             //--
 

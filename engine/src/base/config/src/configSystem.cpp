@@ -90,10 +90,22 @@ namespace base
             return defaultValue;
         }
 
+        void System::wrtiteBool(StringID groupName, StringID entryName, bool value)
+        {
+            if (groupName && entryName)
+            {
+                auto& data = entry(groupName, entryName);
+                if (data.value(value ? "true" : "false"))
+                {
+
+                }
+            }
+        }
+
         bool System::valueBool(StringID groupName, StringID entryName, bool defaultValue/*= 0*/) const
         {
             if (auto entry  = findEntry(groupName, entryName))
-                return entry->valueInt(defaultValue);
+                return entry->valueBool(defaultValue);
 
             return defaultValue;
         }

@@ -91,7 +91,12 @@ namespace base
         ResourceHandle LoadUncached(StringView<char> contextName, ClassType resourceClass, stream::IBinaryReader& fileStream, IResourceLoader* dependencyLoader, const ObjectPtr parent, const ResourceMountPoint& mountPoint)
         {
             // create resource loader
+#ifdef BUILD_FINAL
+            auto loader = IResource::GetStaticClass()->findMetadataRef<SerializationLoaderMetadata>().createLoader();
+#else
             auto loader = resourceClass->findMetadataRef<SerializationLoaderMetadata>().createLoader();
+#endif
+
             if (!loader)
             {
                 TRACE_ERROR("Unable to create resource loader for class '{}'", resourceClass->name());

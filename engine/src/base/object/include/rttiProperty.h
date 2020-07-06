@@ -30,6 +30,7 @@ namespace base
             ReadOnly = FLAG(1), // property cannot be modified
             Inlined = FLAG(2), // property allows inlined objects to be created
             Transient = FLAG(3), // property is never saved but can be edited
+            Overridable = FLAG(4), // property can be overridden (when used in a class derived from IObjectTemplate)
             ScriptHidden = FLAG(10), // property is explicitly hidden from being exposed to scripts
             ScriptReadOnly = FLAG(11), // property is explicitly marked as not being writable by scripts
             Scripted = FLAG(12), // property was created from scripts
@@ -91,6 +92,14 @@ namespace base
             /// is this property data hold in external object buffer (object scripted property)
             INLINE bool externalBuffer() const { return m_flags.test(PropertyFlagBit::ExternalBuffer); }
 
+            ///---
+
+            /// is this an overridable template property ?
+            INLINE bool overridable() const { return m_flags.test(PropertyFlagBit::Overridable); }
+
+            /// index of this property in the class list of overridable properties
+            INLINE short overrideIndex() const { return m_overrideIndex; }
+
             //--
 
             /// get property data given the pointer to the object
@@ -107,6 +116,8 @@ namespace base
             StringID m_category;
             Type m_type;
             Type m_parent;
+
+            short m_overrideIndex = -1;
 
             uint64_t m_hash;
         };

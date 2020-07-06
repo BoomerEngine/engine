@@ -1,5 +1,6 @@
 // dear imgui, v1.71 WIP
 // (main code and documentation)
+// [# filter:imgui #]
 
 #include "build.h"
 #include "imgui.h"

@@ -25,10 +25,10 @@ namespace ui
         IDataBoxText();
 
         // read value as text
-        virtual bool readText(base::StringBuf& outText) = 0;
+        virtual base::DataViewResult readText(base::StringBuf& outText) = 0;
 
         // write new value, will create undo action if action history is provided
-        virtual bool writeText(const base::StringBuf& text) = 0;
+        virtual base::DataViewResult writeText(const base::StringBuf& text) = 0;
  
     protected:
         virtual void handleValueChange() override;

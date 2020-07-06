@@ -9,6 +9,9 @@
 #include "build.h"
 #include "uiDataBox.h"
 
+#include "base/object/include/action.h"
+#include "base/object/include/actionHistory.h"
+
 namespace ui
 {
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDataBox);
@@ -16,45 +19,38 @@ namespace ui
     RTTI_END_TYPE();
 
     IDataBox::IDataBox()
-        : m_readValid(false)
-        , m_readOnly(false)
+        : m_readOnly(false)
     {
         hitTest(HitTestState::Enabled);
-
-        // whenever the value changes in the binding refresh the ui representation of it
-        /*m_bindingObserver.OnDataChanged = [this](base::StringID)
-        {
-            handleValueChange(true);
-        };*/
     }
 
-    void IDataBox::bind(const base::DataProxyPtr& data, const base::StringBuf& path, bool readOnly)
+    void IDataBox::bindData(const base::DataViewPtr& data, const base::StringBuf& path, bool readOnly)
     {
-        if (m_observerToken)
-        {
-            m_data->unregisterObserver(m_observerToken);
-            m_observerToken = nullptr;
-        }
+        if (m_data)
+            m_data->detachObserver(m_path, this);
 
         m_data = data;
         m_path = path;
         m_readOnly = readOnly;
-        handleValueChange();
 
-        if (data)
-            m_observerToken = m_data->registerObserver(m_path, this);
+        if (m_data)
+            m_data->attachObserver(m_path, this);
+
+        handleValueChange();
+    }
+
+    void IDataBox::bindActionHistory(base::ActionHistory* ah)
+    {
+        m_actionHistory = AddRef(ah);
     }
 
     IDataBox::~IDataBox()
     {
-        if (m_observerToken)
-        {
-            m_data->unregisterObserver(m_observerToken);
-            m_observerToken = nullptr;
-        }
+        if (m_data)
+            m_data->detachObserver(m_path, this);
     }
 
-    void IDataBox::dataProxyValueChanged(base::StringView<char> fullPath, bool parentNotification)
+    void IDataBox::handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification)
     {
         if (m_path == fullPath)
             handleValueChange();
@@ -80,27 +76,55 @@ namespace ui
         return false;
     }
 
-    //---
+    //--
 
-    bool IDataBox::readValue(void* data, const base::Type dataType)
+    base::DataViewResult IDataBox::executeAction(const base::ActionPtr& action)
     {
-        m_readValid = m_data->read(0, m_path, data, dataType);
+        if (!action)
+            return base::DataViewResultCode::ErrorIllegalOperation;
 
-        // TODO: more
+        if (m_actionHistory)
+        {
+            if (!m_actionHistory->execute(action))
+                return base::DataViewResultCode::ErrorIllegalOperation;
+        }
+        else
+        {
+            if (!action->execute())
+                return base::DataViewResultCode::ErrorIllegalOperation;
+        }
 
-        return m_readValid;
+        return base::DataViewResultCode::OK;
     }
 
-    bool IDataBox::writeValue(const void* data, const base::Type dataType)
+    base::DataViewResult IDataBox::executeAction(const base::DataViewActionResult& action)
     {
-        bool written = true;
+        if (!action)
+            return action.result;
 
-        for (uint32_t i = 0; i < m_data->size(); ++i)
-            written &= m_data->write(i, m_path, data, dataType);
+        return executeAction(action.action);
+    }
 
-        // TODO: undo/redo ?
+    //---
 
-        return written;
+    base::DataViewResult IDataBox::readValue(void* data, const base::Type dataType)
+    {
+        if (!m_data)
+            return base::DataViewResultCode::ErrorIllegalOperation;
+
+        if (auto err = HasError(m_data->readDataView(m_path, data, dataType)))
+            return err;
+
+        return base::DataViewResultCode::OK;
+    }
+
+    base::DataViewResult IDataBox::writeValue(const void* data, const base::Type dataType)
+    {
+        if (!m_data)
+            return base::DataViewResultCode::ErrorIllegalOperation;
+
+        auto actionResult = m_data->actionValueWrite(m_path, data, dataType);
+        return executeAction(actionResult);
     }
 
     //---

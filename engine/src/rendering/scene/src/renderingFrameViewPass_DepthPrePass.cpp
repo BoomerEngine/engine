@@ -29,18 +29,21 @@ namespace rendering
         
         //---
 
-        void RenderDepthPrepass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT)
+        void RenderDepthPrepass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, const ImageView& velocityRT)
         {
             PassBracket pass(cmd, view, "DepthPrepass");
             pass.depthClear(depthRT);
+            pass.colorClear(0, velocityRT, base::Vector4(0, 0, 0, 0));
             pass.begin();
 
             FragmentRenderContext context;
             context.msaaCount = depthRT.numSamples();
             context.filterFlags = &view.frame().filters;
+            context.allowsCustomRenderStates = false;
+            context.depthCompare = CompareOp::LessEqual;
             context.pass = MaterialPass::DepthPrepass;
 
-            cmd.opSetDepthState(true, true, CompareOp::LessEqual);
+            cmd.opSetDepthState(true, true, context.depthCompare);
 
             // render fragments only if we are allowed to
             if (view.frame().filters & FilterBit::PassDepthPrepass)
