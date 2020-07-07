@@ -28,7 +28,10 @@ namespace fbx
     public:
         MeshManifest();
 
-        bool m_alignToPivot;
+        bool m_alignToPivot = false;
+        bool m_flipUV = true;
+        bool m_forceNodeSkin = false;
+        bool m_createNodeMaterials = false;
     };
 
     //--
@@ -41,20 +44,8 @@ namespace fbx
     public:
         MeshCooker();
 
-        //--
-
-        /// bake a final (cooked) resource using this manifest and provided extra stuff
         virtual base::res::ResourcePtr cook(base::res::IResourceCookerInterface& cooker) const override final;
-
-        //--
-
-        /// build geometry blob from parsed data
-        //bool buildChunkGroups(base::res::IResourceCookerInterface& cooker, const LoadedFile& sourceGeometry, base::Array<rendering::content::GeometryChunkGroupPtr>& outGroups, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const;
-
-        /// build material data
-        //bool buildMaterialData(base::res::IResourceCookerInterface& cooker, const LoadedFile& sourceGeometry, const MaterialMapper& materials, base::Array<rendering::content::MeshMaterial>& outMaterials) const;
-
-        //--
+        virtual void reportManifestClasses(base::Array<base::SpecificClassType<base::res::IResourceManifest>>& outManifestClasses) const override final;
     };
 
     //--

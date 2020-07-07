@@ -720,13 +720,10 @@ namespace ed
             m_name = createChild<ui::EditBox>();
             m_name->customMargins(0, 3, 0, 3);
             m_name->customStyle<float>("width"_id, 350.0f);
-            m_name->bind("OnTextModified"_id) = [this]() { m_failedToCreate = false; updateButton(); };
-            m_name->bind("OnTextAccepted"_id) = [this]() { createFile(); };
 
             m_classList = createChild<ui::ListView>();
             m_classListModel = base::CreateSharedPtr< ManagedFormatListModel >();
             m_classList->model(m_classListModel);
-            m_classList->bind("OnSelectionChanged"_id) = [this]() { updateButton(); };
             m_classList->select(m_classListModel->index(GDefaultFileFormat));
 
             {
@@ -735,10 +732,14 @@ namespace ed
                 buttons->customMargins(0, 4, 0, 4);
 
                 m_button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:add] Create");
-                m_button->bind("OnClick"_id) = [this]() { createFile(); };
 
                 m_status = buttons->createChild<ui::TextLabel>();
             }
+
+            m_name->bind("OnTextModified"_id) = [this]() { m_failedToCreate = false; updateButton(); };
+            m_name->bind("OnTextAccepted"_id) = [this]() { createFile(); };
+            m_classList->bind("OnSelectionChanged"_id) = [this]() { updateButton(); };
+            m_button->bind("OnClick"_id) = [this]() { createFile(); };
 
             updateButton();
         }

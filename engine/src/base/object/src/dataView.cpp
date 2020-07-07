@@ -58,10 +58,18 @@ namespace base
     //----
 
     IDataView::IDataView()
-    {}
+    {
+        const auto rootPathHash = StringView<char>("").calcCRC64();
+        m_rootPath = MemNew(Path).ptr;
+        m_rootPath->parent = nullptr;
+        m_paths[rootPathHash] = m_rootPath;
+    }
 
     IDataView::~IDataView()
-    {}
+    {
+        m_paths.clearPtr();
+        m_rootPath = nullptr;
+    }
 
     void IDataView::attachObserver(StringView<char> path, IDataViewObserver* observer)
     {

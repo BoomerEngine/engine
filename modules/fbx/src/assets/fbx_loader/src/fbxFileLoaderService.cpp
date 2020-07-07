@@ -212,6 +212,26 @@ namespace fbx
 
     } // helper
 
+    //static FbxAxisSystem EngineAxisSystem(FbxAxisSystem::eZAxis, (FbxAxisSystem::EFrontVector)-FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
+    static FbxAxisSystem EngineAxisSystem(FbxAxisSystem::eZAxis, (FbxAxisSystem::EFrontVector)FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
+
+    static void ResetPivot(FbxNode* node)
+    {
+        EFbxRotationOrder order;
+        node->GetRotationOrder(FbxNode::eSourcePivot, order);
+
+        if (order == eSphericXYZ)
+            order = eEulerXYZ;
+
+        node->SetRotationOrder(FbxNode::eDestinationPivot, order);
+        node->SetPivotState(FbxNode::eDestinationPivot, FbxNode::ePivotActive);
+        node->SetPivotState(FbxNode::eSourcePivot, FbxNode::ePivotActive);
+
+        const auto count = node->GetChildCount();
+        for (uint32_t i = 0; i < count; ++i)
+            ResetPivot(node->GetChild(i));
+    }
+
     LoadedFilePtr FileLoadingService::loadScene(const base::Buffer& data) const
     {
         FbxImporter* lImporter = nullptr;
@@ -261,26 +281,57 @@ namespace fbx
                 return nullptr;
             }
 
-            //FbxAxisSystem exportAxes(FbxAxisSystem::EPreDefinedAxisSystem::eMax);
-            //exportAxes.ConvertScene(lScene);
-
-            // Scene units are meteres
-            FbxSystemUnit::m.ConvertScene(lScene);
+            // fixup scale
+            float sceneScaleFactor = (float)lScene->GetGlobalSettings().GetSystemUnit().GetScaleFactor();
+            if (sceneScaleFactor != 1.0)
+            {
+                TRACE_INFO("FBX file scale: {}", sceneScaleFactor);
+                FbxSystemUnit::cm.ConvertScene(lScene);
+                FbxSystemUnit::ConversionOptions options;
+                options.mConvertRrsNodes = false;
+                FbxSystemUnit(sceneScaleFactor).ConvertScene(lScene, options);
+            }
 
             // destroy importer
             lImporter->Destroy();
         }
 
+        // Convert axis system to engine 
+        //FbxAxisSystem sceneAxisSystem = lScene->GetGlobalSettings().GetAxisSystem();
+        //if (sceneAxisSystem != EngineAxisSystem)
+            //EngineAxisSystem.ConvertScene(lScene);
+
         // Convert axes to engine
-        FbxAxisSystem exportAxes(FbxAxisSystem::eZAxis, (FbxAxisSystem::EFrontVector) -FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
-        FbxAMatrix a, b;
-        lScene->GetGlobalSettings().GetAxisSystem().GetMatrix(a);
-        exportAxes.GetMatrix(b);
-        auto conversionMatrix = a.Inverse() * b;
+        auto conversionMatrix = base::Matrix::IDENTITY();
+        {
+            // get conversion matrix between our current space and the intended space
+            FbxAMatrix a;
+            lScene->GetGlobalSettings().GetAxisSystem().GetMatrix(a);
+
+            static FbxAMatrix b;
+            b.SetRow(0, FbxVector4(0, 1, 0, 0));
+            b.SetRow(1, FbxVector4(0, 0, 1, 0));
+            b.SetRow(2, FbxVector4(-1, 0, 0, 0));
+            b.SetRow(3, FbxVector4(0, 0, 0, 1));
+            //EngineAxisSystem.GetMatrix(b);
+
+            // TODO: would be best to use internal FBX stuff for this but it seams to be broken ;(
+            // in ideal world this will be an Identity matrix
+            conversionMatrix = ToMatrix(b * a.Inverse());
+
+            // FBX uses cm for it's scale, we use meters, make sure this gets converted
+            const auto nativeScaleFactor = base::Vector3(0.01f, 0.01f, 0.01f);
+            conversionMatrix.scaleColumns(nativeScaleFactor);
+        }
+
+        // reset pivot
+        lScene->GetRootNode()->ResetPivotSet(FbxNode::eDestinationPivot);
+        ResetPivot(lScene->GetRootNode());
+        lScene->GetRootNode()->ConvertPivotAnimationRecursive(NULL, FbxNode::eDestinationPivot, 1.0f, false);
 
         // create blob
         auto ret = base::CreateSharedPtr<LoadedFile>(lScene);
-        if (!ret->captureNodes(ToMatrix(conversionMatrix)))
+        if (!ret->captureNodes(conversionMatrix))
         {
             TRACE_ERROR("FBX file contains broken content");
             return nullptr;

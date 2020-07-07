@@ -410,9 +410,8 @@ namespace base
             }*/
 
             // direct load 
-            const auto fileExtension = key.path().extension();
-            const auto loadExtension = res::IResource::GetResourceExtensionForClass(key.cls());
-            if (fileExtension == loadExtension)
+            const auto fileLoadClass = res::IResource::FindResourceClassByExtension(key.path().extension());
+            if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
                 auto depotPath = key.path().path();
                 if (const auto loadedRes = loadInternalDirectly(key.cls(), depotPath))

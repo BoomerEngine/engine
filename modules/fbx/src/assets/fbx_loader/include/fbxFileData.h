@@ -46,15 +46,26 @@ namespace fbx
         uint32_t addBone(const LoadedFile& owner, const fbxsdk::FbxNode* node);
     };
 
-    //  material mapper
+    struct MeshVertexInfluence;
+
+    // mateiral info
+    struct ASSETS_FBX_LOADER_API MaterialEntry
+    {
+        base::StringBuf name;
+        const fbxsdk::FbxSurfaceMaterial* sourceData = nullptr;
+
+        MaterialEntry();
+    };
+
+    // material mapper
     struct ASSETS_FBX_LOADER_API MaterialMapper
     {
-        base::Array<const fbxsdk::FbxSurfaceMaterial*> m_materials;
-        base::HashMap<const fbxsdk::FbxSurfaceMaterial*, uint32_t> m_materialsMapping;
+        base::Array<MaterialEntry> materials;
+        base::HashMap<base::StringBuf, uint32_t> materialsMapping;
 
         MaterialMapper();
 
-        uint32_t addMaterial(const fbxsdk::FbxSurfaceMaterial* material);
+        uint32_t addMaterial(const char* materialName, const fbxsdk::FbxSurfaceMaterial* material);
     };
 
     //  extractable node
@@ -64,8 +75,10 @@ namespace fbx
         base::StringID m_name;
         uint8_t m_lodIndex = 0; // for Visual Mesh
 
-        base::Matrix m_localToParent;
-        base::Matrix m_localToWorld;
+        base::Matrix m_localToWorld; // placement of the node in world space
+        base::Matrix m_meshToWorld; // used for mesh vertices import, may contain additional
+
+        base::Matrix m_localToParent; // cached m_localToWorld * m_parent->m_localToWorld.inverted()
 
         DataNode* m_parent = nullptr;
         base::Array<DataNode*> m_children;
@@ -75,8 +88,34 @@ namespace fbx
 
         //--
 
-        // write content to mesh builder
-        //void exportToMeshBuilder(const LoadedFile& owner, const base::Matrix& fileToWorld, rendering::content::MeshGeometryBuilder& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode) const;
+
+        struct ChunkInfo
+        {
+            uint32_t materialIndex = 0; // global
+            uint32_t numTriangles = 0; // only if we export triangles
+            uint32_t numQuads = 0; // only if we export quads
+            base::Array<uint32_t> polygonIndices;
+            base::Array<uint32_t> firstVertexIndices;
+
+            INLINE base::mesh::MeshTopologyType topology() const
+            {
+                DEBUG_CHECK(numTriangles == 0 || numQuads == 0);
+                return numQuads ? base::mesh::MeshTopologyType::Quads : base::mesh::MeshTopologyType::Triangles;
+            }
+
+            INLINE uint32_t faceCount() const
+            {
+                DEBUG_CHECK(numTriangles == 0 || numQuads == 0);
+                return numQuads ? numQuads : numTriangles;
+            }
+        };
+
+
+        void extractSkinInfluences(const LoadedFile& owner, base::Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode) const;
+
+        void extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const;
+
+        bool exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, base::mesh::MeshModel& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const;
     };
 
     //  data blob (loaded scene)
@@ -112,7 +151,7 @@ namespace fbx
         base::Array<DataNode*> m_nodes;
         base::HashMap<const fbxsdk::FbxNode*, const DataNode*> m_nodeMap;
 
-        bool walkStructure(const base::Matrix& worldToParent, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
+        bool walkStructure(const fbxsdk::FbxAMatrix& fbxWorldToParent, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
     };
 
     //---

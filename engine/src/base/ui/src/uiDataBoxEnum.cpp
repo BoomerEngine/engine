@@ -60,6 +60,9 @@ namespace ui
 
                 if (ret.code == base::DataViewResultCode::OK)
                 {
+                    for (const auto option : info.options)
+                        options.insert(option.name);
+
                     if (m_options != options.keys())
                     {
                         m_box->closePopupList();

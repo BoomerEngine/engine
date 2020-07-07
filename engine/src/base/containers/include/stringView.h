@@ -178,11 +178,13 @@ namespace base
 
         //-----------------------------------------------------------------------------
 
-        // match string
+        // match string to pattern
         INLINE bool matchString(const StringView<T>& pattern) const;
+        INLINE bool matchStringNoCase(const StringView<T>& pattern) const;
 
         // match a pattern or sub string
-        INLINE bool matchStringOrPatter(const StringView<T>& pattern, int* outFirstMatchedChar = nullptr, int* outLastMatchedChar = nullptr) const;
+        INLINE bool matchPattern(const StringView<T>& pattern) const;
+        INLINE bool matchPatternNoCase(const StringView<T>& pattern) const;
 
         //-----------------------------------------------------------------------------
 

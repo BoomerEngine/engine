@@ -299,6 +299,7 @@ namespace ui
         bool regex = false;
         bool wholeWordsOnly = false;
         bool caseSenitive = false;
+        bool hasWildcards = false; // should be set based on content
 
         INLINE bool empty() const { return pattern.empty(); }
 

@@ -297,110 +297,132 @@ namespace base
             return calc.crc();
         }
 
-        bool IsWildcardPattern(StringView<char> pattern)
-        {
-            for (auto ch : pattern)
-                if (ch == '?' || ch == '*')
-                    return true;
-
-            return false;
-        }
-
-        bool IsWildcardPattern(const StringView<wchar_t>& pattern)
-        {
-            for (auto ch : pattern)
-                if (ch == '?' || ch == '*')
-                    return true;
-
-            return false;
-        }
+        //--
 
         // http://www.geeksforgeeks.org/wildcard-character-matching/
         // TODO: non recursive version
+        // TODO: UTF8 FFS....
 
         template<typename Ch>
-        bool AMatchString(const Ch* str, const Ch* strEnd, const Ch* pattern, const Ch* patternEnd)
+        struct MatchCase
         {
-            // If we reach at the end of both strings, we are done
-            if (pattern >= patternEnd && str >= strEnd)
-                return true;
+            static ALWAYS_INLINE bool Match(Ch a, Ch b)
+            {
+                return a == b;
+            }
+        };
 
-            // Make sure that the characters after '*' are present
-            // in str string. This function assumes that the pattern
-            // string will not contain two consecutive '*'
-            if (*pattern == '*' && (pattern + 1) < patternEnd && str >= strEnd)
-                return false;
+        template<typename Ch>
+        struct MatchNoCase
+        {
+            static ALWAYS_INLINE bool Match(Ch a, Ch b)
+            {
+                if (a >= 'A' && a <= 'Z') a = (a - 'A') + 'a';
+                if (b >= 'A' && b <= 'Z') b = (b - 'A') + 'a';
+                return a == b;
+            }
+        };
 
-            // If the pattern string contains '?', or current characters
-            // of both strings match
-            if (*pattern == '?' || *pattern == *str)
-                return AMatchString<Ch>(str + 1, strEnd, pattern + 1, patternEnd);
+        template<typename Ch, typename Matcher = MatchCase<Ch>>
+        bool MatchWildcardPattern(const Ch* str, const Ch* strEnd, const Ch* pattern, const Ch* patternEnd)
+        {
+            const Ch* w = NULL; // last `*`
+            const Ch* s = NULL; // last checked char
 
-            // If there is *, then there are two possibilities
-            // a) We consider current character of str string
-            // b) We ignore current character of str string.
-            if (*pattern == '*')
-                return AMatchString<Ch>(str, strEnd, pattern + 1, patternEnd)
-                    || AMatchString<Ch>(str + 1, strEnd, pattern, patternEnd);
+            // loop 1 char at a time
+            while (1)
+            {
+                // end of string ?
+                if (str >= strEnd)
+                {
+                    // pattern also ended, YAY
+                    if (pattern == patternEnd)
+                        break;
 
-            return false;
+                    if (s < strEnd)
+                        return false;
+
+                    str = s++;
+                    pattern = w;
+                    continue;
+                }
+                else if (Matcher::Match(*pattern, *str))
+                {
+                    if ('*' == *pattern)
+                    {
+                        w = ++pattern;
+                        s = str;
+                        // "*" -> "foobar"
+                        if (pattern < patternEnd)
+                            continue;
+                        break;
+                    }
+                    else if (w)
+                    {
+                        ++str;
+                        // "*ooba*" -> "foobar"
+                        continue;
+                    }
+
+                    return false;
+                }
+
+                ++str;
+                ++pattern;
+            }
+
+            // matched
+            return true;
         }
+
+        template< typename Ch >
+        bool MatchWildcardPatternNoCase(const Ch* str, const Ch* strEnd, const Ch* pattern, const Ch* patternEnd)
+        {
+            return MatchWildcardPattern<Ch, MatchNoCase<Ch>>(str, strEnd, pattern, patternEnd);
+        }
+
+        ///--
 
         bool BaseHelper::MatchPattern(StringView<char> str, StringView<char> pattern)
         {
-            return AMatchString(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
+            return MatchWildcardPattern(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
         bool BaseHelper::MatchPattern(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
         {
-            return AMatchString(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
+            return MatchWildcardPattern(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
+        }
+
+        bool BaseHelper::MatchPatternNoCase(StringView<char> str, StringView<char> pattern)
+        {
+            return MatchWildcardPatternNoCase(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
+        }
+
+        bool BaseHelper::MatchPatternNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        {
+            return MatchWildcardPatternNoCase(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
         //--
 
-        template< typename T >
-        static bool MatchPatternOrStringT(const StringView<T>& str, const StringView<T>& pattern, int* outFirstMatchedChar, int* outLastMatchedChar)
+        bool BaseHelper::MatchString(StringView<char> str, StringView<char> pattern)
         {
-            if (IsWildcardPattern(pattern))
-            {
-                if (AMatchString(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length()))
-                {
-                    if (outFirstMatchedChar)
-                        *outFirstMatchedChar = 0;
-
-                    if (outLastMatchedChar)
-                        *outLastMatchedChar = range_cast<int>(str.length());
-
-                    return true;
-                }
-            }
-            else
-            {
-                auto index = str.findStr(pattern);
-                if (INDEX_NONE != index)
-                {
-                    if (outFirstMatchedChar)
-                        *outFirstMatchedChar = (int)index;
-
-                    if (outLastMatchedChar)
-                        *outLastMatchedChar = (int)(index + pattern.length());
-
-                    return true;
-                }
-            }
-
-            return false;
+            return str.findStr(pattern) != INDEX_NONE;
         }
 
-
-        bool BaseHelper::MatchPatternOrString(StringView<char> str, StringView<char> pattern, int* outFirstMatchedChar, int* outLastMatchedChar)
+        bool BaseHelper::MatchString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
         {
-            return MatchPatternOrStringT(str, pattern, outFirstMatchedChar, outLastMatchedChar);
+            return str.findStr(pattern) != INDEX_NONE;
         }
 
-        bool BaseHelper::MatchPatternOrString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern, int* outFirstMatchedChar, int* outLastMatchedChar)
+        bool BaseHelper::MatchStringNoCase(StringView<char> str, StringView<char> pattern)
         {
-			return MatchPatternOrStringT(str, pattern, outFirstMatchedChar, outLastMatchedChar);
+            return str.findStrNoCase(pattern) != INDEX_NONE;
+        }
+
+        bool BaseHelper::MatchStringNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        {
+            return str.findStrNoCase(pattern) != INDEX_NONE;
         }
 
         //--

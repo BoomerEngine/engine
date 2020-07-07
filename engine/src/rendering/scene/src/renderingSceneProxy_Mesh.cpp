@@ -137,10 +137,21 @@ namespace rendering
             proxy->chunks.reserve(meshDesc.mesh->chunks().size());
             for (const auto& meshChunk : meshDesc.mesh->chunks())
             {
-                const auto& chunkMaterial = meshDesc.mesh->materials()[meshChunk.materialIndex];
-                const auto materialData = ResolveMaterial(chunkMaterial.name, chunkMaterial.material, meshDesc);
+                MaterialDataProxyPtr materialData;
+                if (meshChunk.materialIndex < meshDesc.mesh->materials().size())
+                {
+                    const auto& chunkMaterial = meshDesc.mesh->materials()[meshChunk.materialIndex];
+                    materialData = ResolveMaterial(chunkMaterial.name, chunkMaterial.material, meshDesc);
+                }
+                else
+                {
+                    if (auto defaultMaterial = resFallbackMaterial.loadAndGet())
+                        materialData = defaultMaterial->dataProxy();
+                }
+
+                // skip over chunks that do not have any valid material
                 if (!materialData)
-                    continue; // skip over chunks that do not have any valid material
+                    continue; 
 
                 const auto& materialTemplate = materialData->materialTemplate();
                 const auto materialCachedTemplate = m_materialCache->mapTemplate(materialTemplate.lock(), meshChunk.vertexFormat);
@@ -152,6 +163,7 @@ namespace rendering
                 chunk.meshChunkId = meshChunk.renderId;
                 chunk.materialTemplate = materialCachedTemplate;
                 chunk.materialData = materialData;
+                chunk.detailMask = meshChunk.detailMask;
             }
 
             // add to list of all proxies
@@ -186,28 +198,33 @@ namespace rendering
                     if (!it->castsShadows)
                         continue;
 
+                uint8_t proxyDetailMask = 1; // TODO: select LOD
+
                 for (const auto& chunk : it->chunks)
                 {
-                    auto* frag = outFragmentList.allocFragment<Fragment_Mesh>();
-                    frag->objectId = it->objectId;
-                    frag->materialTemplate = chunk.materialTemplate;
-                    frag->meshChunkdId = chunk.meshChunkId;
-                    frag->materialData = chunk.materialData;
+                    if (chunk.detailMask & proxyDetailMask)
+                    {
+                        auto* frag = outFragmentList.allocFragment<Fragment_Mesh>();
+                        frag->objectId = it->objectId;
+                        frag->materialTemplate = chunk.materialTemplate;
+                        frag->meshChunkdId = chunk.meshChunkId;
+                        frag->materialData = chunk.materialData;
 
-                    if (view.type() == FrameViewType::GlobalCascades)
-                    {
-                        if (it.frustomMask() & 1)
-                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth0);
-                        if (it.frustomMask() & 2)
-                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth1);
-                        if (it.frustomMask() & 4)
-                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth2);
-                        if (it.frustomMask() & 8)
-                            outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth3);
-                    }
-                    else
-                    {
-                        outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
+                        if (view.type() == FrameViewType::GlobalCascades)
+                        {
+                            if (it.frustomMask() & 1)
+                                outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth0);
+                            if (it.frustomMask() & 2)
+                                outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth1);
+                            if (it.frustomMask() & 4)
+                                outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth2);
+                            if (it.frustomMask() & 8)
+                                outFragmentList.collectFragment(frag, FragmentDrawBucket::ShadowDepth3);
+                        }
+                        else
+                        {
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
+                        }
                     }
                 }
             }

@@ -19,6 +19,7 @@ namespace ed
     //--
 
     class MeshPreviewPanelWithToolbar;
+    class MeshEditorMaterialInstance;
 
     //--
 
@@ -36,7 +37,7 @@ namespace ed
 
         INLINE const rendering::MaterialInstancePtr& baseParams() const { return m_baseParams; }
 
-        INLINE const rendering::MaterialInstancePtr& previewParams() const { return m_previewParams; }
+        INLINE const base::RefPtr<MeshEditorMaterialInstance>& previewParams() const { return m_previewParams; }
 
         bool updateDisplayString();
 
@@ -49,7 +50,7 @@ namespace ed
         base::StringBuf m_displayString;
 
         rendering::MaterialInstancePtr m_baseParams;
-        rendering::MaterialInstancePtr m_previewParams;
+        base::RefPtr<MeshEditorMaterialInstance> m_previewParams;
     };
 
     //--

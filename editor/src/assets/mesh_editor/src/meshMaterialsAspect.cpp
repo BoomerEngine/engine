@@ -30,6 +30,8 @@
 
 #include "base/resources/include/resourcePath.h"
 #include "base/resources/include/resourceLoadingService.h"
+#include "base/object/include/dataViewNative.h"
+#include "base/object/include/rttiDataView.h"
 
 namespace ed
 {
@@ -43,33 +45,56 @@ namespace ed
         MeshEditorMaterialInstance(rendering::MeshMaterialBindingManifest* manifest, base::StringID name, const rendering::MaterialInstancePtr& meshBaseParams)
             : m_manifest(manifest)
             , m_name(name)
-            , m_originalBase(meshBaseParams)
+            , m_originalMeshMaterialData(meshBaseParams)
         {            
             m_baseMaterial = meshBaseParams->baseMaterial();
             m_parameters = meshBaseParams->parameters();
+            m_originalBaseMaterial = m_baseMaterial;
 
             m_manifest->applyMaterial(name, *this);
 
             createMaterialProxy();
         }
 
-        virtual bool resetBase() override
+        virtual bool readParameterDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override
         {
-            baseMaterial(m_originalBase);
-            return true;
+            return m_originalMeshMaterialData->readDataView(viewPath, targetData, targetType).valid();
+        }
+
+        virtual bool resetParameterOverride(const base::StringID name) override
+        {
+            if (name == "baseMaterial"_id)
+            {
+                baseMaterial(m_originalBaseMaterial);
+                return true;
+            }
+
+            if (const auto materialTemplate = m_originalMeshMaterialData->resolveTemplate())
+            {
+                if (const auto* paramInfo = materialTemplate->findParameterInfo(name))
+                {
+                    base::rtti::DataHolder data(paramInfo->type);
+                    if (m_originalMeshMaterialData->readParameterRaw(name, data.data(), data.type()))
+                    {
+                        return writeParameterRaw(name, data.data(), data.type());
+                    }
+                }
+            }
+
+            return TBaseClass::resetParameterOverride(name);
         }
 
         virtual bool hasParameterOverride(const base::StringID name) const override
         {
-            if (name == "BaseMaterial"_id)
-                return baseMaterial() != m_originalBase;
+            if (name == "baseMaterial"_id)
+                return baseMaterial() != m_originalBaseMaterial;
 
             for (const auto& param : parameters())
             {
                 if (param.name == name && param.value)
                 {
                     base::rtti::DataHolder holder(param.value.type());
-                    if (!m_originalBase->readParameterRaw(name, holder.data(), holder.type()))
+                    if (!m_originalMeshMaterialData->readParameterRaw(name, holder.data(), holder.type()))
                         return true;
                     
                     return !holder.type()->compare(param.value.data(), holder.data());
@@ -82,14 +107,15 @@ namespace ed
         virtual void onPropertyChanged(base::StringView<char> path) override
         {
             TBaseClass::onPropertyChanged(path);
-            m_manifest->captureMaterial(m_name, *this, m_originalBase);
+            m_manifest->captureMaterial(m_name, *this, m_originalMeshMaterialData);
         }
 
     private:
         rendering::MeshMaterialBindingManifest* m_manifest;
         base::StringID m_name;
 
-        rendering::MaterialInstancePtr m_originalBase;
+        rendering::MaterialInstancePtr m_originalMeshMaterialData;
+        rendering::MaterialRef m_originalBaseMaterial;
     };
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditorMaterialInstance);
@@ -131,6 +157,29 @@ namespace ed
                 {
                     txt.appendf(" [tag:#888]{}[/tag]", fileName);
                 }
+
+                bool hasTextureOverrides = false;
+                bool hasParamOverrides = false;
+                for (const auto& param : m_previewParams->parameters())
+                {
+                    if (m_previewParams->hasParameterOverride(param.name))
+                    {
+                        const auto metaType = param.value.type()->metaType();
+                        if (metaType == base::rtti::MetaType::ResourceRef || metaType == base::rtti::MetaType::AsyncResourceRef)
+                            hasTextureOverrides = true;
+                        else
+                            hasParamOverrides = true;
+
+                        if (hasParamOverrides && hasTextureOverrides)
+                            break;
+                    }
+                }
+
+                if (hasTextureOverrides)
+                    txt.append("  [tag:#A55]Changed Textures[/tag]");
+
+                if (hasParamOverrides)
+                    txt.append("  [tag:#5A5]Changed Parameters[/tag]");
             }
         }
 
@@ -257,6 +306,7 @@ namespace ed
 
             {
                 m_properties = splitter->createChild<ui::DataInspector>();
+                m_properties->bindActionHistory(editor->actionHistory());
                 m_properties->expand();
             }
 

@@ -61,7 +61,20 @@ namespace ui
         if (pattern.empty())
             return true;
 
-        return txt.matchStringOrPatter(pattern);
+        if (caseSenitive)
+        {
+            if (hasWildcards)
+                return txt.matchPattern(pattern);
+            else
+                return txt.matchString(pattern);
+        }
+        else
+        {
+            if (hasWildcards)
+                return txt.matchPatternNoCase(pattern);
+            else
+                return txt.matchStringNoCase(pattern);
+        }
     }
 
     //--
@@ -166,9 +179,20 @@ namespace ui
         //updateSearchPattern();
     }
 
+    static bool IsWidcardPattern(base::StringView<char> txt)
+    {
+        for (const auto ch : txt)
+            if (ch == '*' || ch == '?')
+                return true;
+
+        return false;
+    }
+
     void SearchBar::updateSearchPattern()
     {
         m_currentSearchPattern.pattern = m_text->text();
+        m_currentSearchPattern.hasWildcards = IsWidcardPattern(m_currentSearchPattern.pattern);
+
         m_currentSearchPattern.caseSenitive = m_flagCaseSensitive->toggled();
         m_currentSearchPattern.regex = m_flagRegEx ? m_flagRegEx->toggled() : false;
         m_currentSearchPattern.wholeWordsOnly = m_flagWholeWords ? m_flagWholeWords->toggled() : false;

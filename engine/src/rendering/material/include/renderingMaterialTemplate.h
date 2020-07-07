@@ -110,6 +110,9 @@ namespace rendering
         // list material parameters (for data view)
         void listParameters(base::rtti::DataViewInfo & outInfo) const;
 
+        // describe parameter data
+        base::DataViewResult describeParameterView(base::StringView<char> paramName, base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const;
+
         ///---
 
         /// find/compile a rendering technique for given rendering settings

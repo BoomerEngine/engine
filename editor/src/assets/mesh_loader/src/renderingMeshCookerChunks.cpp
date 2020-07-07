@@ -336,6 +336,10 @@ namespace rendering
 
     void ImportChunk::computeTangentSpace(float angleThreshold)
     {
+        const auto texCoordMax = base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::TexCoord0_2F);
+        if (0 == (vertexDataStreamMask & texCoordMax))
+            return;
+
         createVertexStream(base::mesh::MeshStreamType::Tangent_3F);
         createVertexStream(base::mesh::MeshStreamType::Binormal_3F);
 

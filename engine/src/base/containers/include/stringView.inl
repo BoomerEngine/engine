@@ -44,14 +44,15 @@ namespace base
             static void Append(Array<char>& table, const StringView<wchar_t>& view);
             static void Append(Array<wchar_t>& table, const StringView<wchar_t>& view);
 
-            static bool IsWildcardPattern(StringView<char> pattern);
-            static bool IsWildcardPattern(const StringView<wchar_t>& pattern);
-
             static bool MatchPattern(StringView<char> str, StringView<char> pattern);
             static bool MatchPattern(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
+            static bool MatchPatternNoCase(StringView<char> str, StringView<char> pattern);
+            static bool MatchPatternNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
 
-            static bool MatchPatternOrString(StringView<char> str, StringView<char> pattern, int* outFirstMatchedChar, int* outLastMatchedChar);
-            static bool MatchPatternOrString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern, int* outFirstMatchedChar, int* outLastMatchedChar);
+            static bool MatchString(StringView<char> str, StringView<char> pattern);
+            static bool MatchString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
+            static bool MatchStringNoCase(StringView<char> str, StringView<char> pattern);
+            static bool MatchStringNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
 
             static MatchResult MatchInteger(const char* str, uint8_t& outValue, size_t strLength = MAX_SIZE_T, uint32_t base = 10);
             static MatchResult MatchInteger(const char* str, uint16_t& outValue, size_t strLength = MAX_SIZE_T, uint32_t base = 10);
@@ -646,13 +647,25 @@ namespace base
     template< typename T >
     INLINE bool StringView<T>::matchString(const StringView<T>& pattern) const
     {
+        return prv::Helper<T>::MatchString(*this, pattern);
+    }
+
+    template< typename T >
+    INLINE bool StringView<T>::matchStringNoCase(const StringView<T>& pattern) const
+    {
+        return prv::Helper<T>::MatchStringNoCase(*this, pattern);
+    }
+
+    template< typename T >
+    INLINE bool StringView<T>::matchPattern(const StringView<T>& pattern) const
+    {
         return prv::Helper<T>::MatchPattern(*this, pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::matchStringOrPatter(const StringView<T>& pattern, int* outFirstMatchedChar, int* outLastMatchedChar) const
+    INLINE bool StringView<T>::matchPatternNoCase(const StringView<T>& pattern) const
     {
-        return prv::Helper<T>::MatchPatternOrString(*this, pattern, outFirstMatchedChar, outLastMatchedChar);
+        return prv::Helper<T>::MatchPatternNoCase(*this, pattern);
     }
 
     template< typename T >

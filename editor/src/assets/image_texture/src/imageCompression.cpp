@@ -47,6 +47,7 @@ namespace rendering
         RTTI_ENUM_OPTION(Roughness);
         RTTI_ENUM_OPTION(Mask);
         RTTI_ENUM_OPTION(Bumpmap);
+        RTTI_ENUM_OPTION(CombinedMetallicSmoothness);
         RTTI_ENUM_OPTION(CombinedRoughnessSpecularity);
         RTTI_ENUM_OPTION(TangentNormalMap);
         RTTI_ENUM_OPTION(WorldNormalMap);
@@ -300,10 +301,11 @@ namespace rendering
         }
 
         if (type == ImageContentType::Roughness || type == ImageContentType::Specularity)
-            if (channels > 2)
+            if (channels == 4)
                 return ImageCompressionFormat::BC3;
 
-        if (type == ImageContentType::AmbientOcclusion || type == ImageContentType::Metalness || type == ImageContentType::Mask || type == ImageContentType::Metalness || type == ImageContentType::Bumpmap)
+        if (type == ImageContentType::AmbientOcclusion || type == ImageContentType::Metalness || type == ImageContentType::Mask 
+            || type == ImageContentType::Roughness || type == ImageContentType::Specularity || type == ImageContentType::Bumpmap)
             return ImageCompressionFormat::BC4;
 
         if (channels == 1)
@@ -376,11 +378,13 @@ namespace rendering
                 return ImageContentType::Bumpmap;
             if (txt == "s" || txt == "spec")
                 return ImageContentType::Specularity;
+            if (txt == "MetallicSmoothness")
+                return ImageContentType::CombinedMetallicSmoothness;
             if (txt == "rs")
-                return ImageContentType::CombinedRoughnessSpecularity;            
+                return ImageContentType::CombinedRoughnessSpecularity;
             if (txt == "r" || txt == "rough" || txt == "roughness" || txt == "rf")
                 return ImageContentType::Roughness;
-            if (txt == "m" || txt == "metallic")
+            if (txt == "m" || txt == "metallic" || txt == "metalness")
                 return ImageContentType::Metalness;
             if (txt == "mask")
                 return ImageContentType::Mask;
@@ -615,6 +619,8 @@ namespace rendering
         }
     }
 
+    static base::Mutex GCompressionTableLock;
+
     class BlockCompressor
     {
     public:
@@ -645,6 +651,13 @@ namespace rendering
 
             if (cvMaxTextureCompressionThreads.get() <= 0)
                 maxJobs = std::max<int>(1, Fibers::GetInstance().workerThreadCount() + cvMaxTextureCompressionThreads.get());
+
+            if (targetFormat == ImageFormat::BC7_SRGB || targetFormat == ImageFormat::BC7_UNORM)
+            {
+                auto lock = CreateLock(GCompressionTableLock);
+                Quant_Init();
+                init_ramps();
+            }
 
             m_finishCounter = Fibers::GetInstance().createCounter("ImageCompression", maxJobs);
             for (uint32_t i = 0; i < maxJobs; ++i)
@@ -765,9 +778,6 @@ namespace rendering
             }
             else if (m_targetFormat == ImageFormat::BC7_SRGB || m_targetFormat == ImageFormat::BC7_UNORM)
             {
-                Quant_Init();
-                init_ramps();
-
                 double sourceRgba[16][4];
                 memset(sourceRgba, 0, sizeof(sourceRgba));
 

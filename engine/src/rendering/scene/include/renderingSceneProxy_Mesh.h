@@ -29,6 +29,7 @@ namespace rendering
             struct Chunk
             {
                 MeshChunkRenderID meshChunkId = 0;
+                uint8_t detailMask = 1;
                 MaterialCachedTemplatePtr materialTemplate = nullptr;
                 MaterialDataProxyPtr materialData = nullptr;
             };

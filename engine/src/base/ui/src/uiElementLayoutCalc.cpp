@@ -15,6 +15,7 @@
 #include "uiStyleParameters.h"
 #include "uiScrollBar.h"
 #include "uiElementHitCache.h"
+#include "uiListView.h"
 
 namespace ui
 {
@@ -469,27 +470,23 @@ namespace ui
 
     void IElement::computeSizeVertical(Size& outSize) const
     {
-        for (auto element = childrenList(); element; ++element)
+        ElementDrawListToken it;
+        while (iterateDrawChildren(it))
         {
-            if (ConsiderElem(*element))
-            {
-                auto elementLayoutSize = element->cachedLayoutParams().calcTotalSize();
-                outSize.x = std::max(outSize.x, elementLayoutSize.x);
-                outSize.y += elementLayoutSize.y;
-            }
+            auto elementLayoutSize = it->cachedLayoutParams().calcTotalSize();
+            outSize.x = std::max(outSize.x, elementLayoutSize.x);
+            outSize.y += elementLayoutSize.y;
         }
     }
 
     void IElement::computeSizeHorizontal(Size& outSize) const
     {
-        for (auto element = childrenList(); element; ++element)
+        ElementDrawListToken it;
+        while (iterateDrawChildren(it))
         {
-            if (ConsiderElem(*element))
-            {
-                auto elementLayoutSize = element->cachedLayoutParams().calcTotalSize();
-                outSize.x += elementLayoutSize.x;
-                outSize.y = std::max(outSize.y, elementLayoutSize.y);
-            }
+            auto elementLayoutSize = it->cachedLayoutParams().calcTotalSize();
+            outSize.x += elementLayoutSize.x;
+            outSize.y = std::max(outSize.y, elementLayoutSize.y);
         }
     }
 

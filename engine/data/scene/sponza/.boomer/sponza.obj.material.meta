@@ -19,3 +19,8 @@ document tech="Boomer Engine" version=1 writer=RexDex@DESKTOP-9LAL5LP
           name=MaskMap
             data type=ref<rendering::ITexture>
               value class=rendering::ITexture loaded=true path=scene/sponza/textures_pbr/chaintexture_mask.png
+      name=bricks
+        baseMaterial class=rendering::IMaterial loaded=true path=materials/std_pbr.v4mg
+        properties
+          name=UVScale
+            data type=float value=2.000000

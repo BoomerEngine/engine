@@ -519,6 +519,7 @@ namespace ed
             {
                 m_files.pushBack(fileWrapper);
                 m_fileRefs.pushBack(fileWrapper);
+                m_fileMap[fileWrapper->name()] = fileWrapper;
                 m_fileCount += 1;
                 added = true;
             }
@@ -572,6 +573,7 @@ namespace ed
             {
                 m_directories.pushBack(dirWrapper);
                 m_dirRefs.pushBack(dirWrapper);
+                m_dirMap[dirWrapper->name()] = dirWrapper;
                 added = true;
             }
         }
@@ -600,7 +602,7 @@ namespace ed
     {
         for (auto& file : m_files)
             if (!file->isDeleted())
-                if (fileNamePattern.empty() || file->name().view().matchStringOrPatter(fileNamePattern))
+                if (fileNamePattern.empty() || file->name().view().matchPattern(fileNamePattern))
                     if (enumFunc(file))
                         return true;
 

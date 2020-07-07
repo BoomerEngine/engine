@@ -27,9 +27,13 @@ namespace fbx
     //--
 
     RTTI_BEGIN_TYPE_CLASS(MeshManifest);
-        RTTI_METADATA(base::res::ResourceManifestExtensionMetadata).extension("mesh.meta");
-        RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
-     RTTI_PROPERTY(m_alignToPivot).editable("Align imported geometry to the pivot of the root exported node");
+        //RTTI_METADATA(base::res::ResourceManifestExtensionMetadata).extension("mesh.meta");
+        //RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
+        RTTI_CATEGORY("FBX Tuning");
+        RTTI_PROPERTY(m_alignToPivot).editable("Align imported geometry to the pivot of the root exported node");
+        RTTI_PROPERTY(m_forceNodeSkin).editable("Skin all meshes to parent nodes");
+        RTTI_PROPERTY(m_flipUV).editable("Flip V channel of the UVs");
+        RTTI_PROPERTY(m_createNodeMaterials).editable("Create a new material for each node");
     RTTI_END_TYPE();
 
     MeshManifest::MeshManifest()
@@ -47,12 +51,190 @@ namespace fbx
 
     //--
 
+    base::ConfigProperty<base::StringBuf> cvLitMaterialTemplate("Assets.FBX", "DefaultLitMaterialTemplate", "modules/fbx/materials/default_lit.v4mi");
+    base::ConfigProperty<base::StringBuf> cvUnlitMaterialTemplate("Assets.FBX", "DefaultUnlitMaterialTemplate", "modules/fbx/materials/default_unlit.v4mi");
+
+    //--
+
+    // Property 'ShadingModel', type KString
+    // Property 'MultiLayer', type bool
+    // Property 'EmissiveColor', type Color
+    // Property 'EmissiveFactor', type Number
+    // Property 'AmbientColor', type Color
+    // Property 'AmbientFactor', type Number
+    // Property 'DiffuseColor', type Color
+    // Property 'DiffuseFactor', type Number
+    // Property 'Bump', type Vector
+    // Property 'NormalMap', type Vector
+    // Property 'BumpFactor', type Number
+    // Property 'TransparentColor', type Color
+    // Property 'TransparencyFactor', type Number
+    // Property 'DisplacementColor', type Color
+    // Property 'DisplacementFactor', type Number
+    // Property 'VectorDisplacementColor', type Color
+    // Property 'VectorDisplacementFactor', type Number
+    // Property 'SpecularColor', type Color
+    // Property 'SpecularFactor', type Number
+    // Property 'ShininessExponent', type Number
+    // Property 'ReflectionColor', type Color
+    // Property 'ReflectionFactor', type Number
+    // Property 'Emissive', type Vector
+    // Property 'Ambient', type Vector
+    // Property 'Diffuse', type Vector
+    // Property 'Specular', type Vector
+    // Property 'Shininess', type Number
+    // Property 'Opacity', type Number
+    // Property 'Reflectivity', type Number
+
+    static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* propertyName, base::StringBuf& outPath)
+    {
+        auto prop = material.FindProperty(propertyName, false);
+        if (!prop.IsValid())
+            return false;
+
+        auto numTextures = prop.GetSrcObjectCount<FbxTexture>();
+        if (0 == numTextures)
+            return false;
+
+        auto lTex = prop.GetSrcObject<FbxFileTexture>(0);
+        if (!lTex)
+            return false;
+
+        auto uOffset = lTex->GetTranslationU();
+        auto vOffset = lTex->GetTranslationV();
+        auto uScale = lTex->GetScaleU();
+        auto vScale = lTex->GetScaleV();
+        TRACE_INFO("UV setup for '{}': Offset: [{},{}], Scale: [{},{}]", lTex->GetFileName(), uOffset, vOffset, uScale, vScale);
+
+        outPath = lTex->GetFileName();
+        return true;
+    }
+
+    static bool IsValidMaterialNameChar(char ch)
+    {
+        if (ch >= 'A' && ch <= 'Z') return true;
+        if (ch >= 'a' && ch <= 'z') return true;
+        if (ch >= '0' && ch <= '9') return true;
+        if (ch == '.' || ch == '_' || ch == '(' || ch == ')') return true;
+        return false;
+    }
+    
+    static base::StringID ConformMaterialName(base::StringView<char> name)
+    {
+        base::StringBuilder txt;
+
+        for (auto ch : name)
+        {
+            if (!IsValidMaterialNameChar(ch))
+                ch = '_';
+            txt.appendch(ch);
+        }
+
+        return base::StringID(txt.c_str());
+
+    }
+
+    static void ExportMaterial(base::StringView<char> name, const FbxSurfaceMaterial* material, base::mesh::MeshMaterial& outMaterial)
+    {
+        // we are always FBX material
+        outMaterial.name = ConformMaterialName(name);
+        outMaterial.materialClass = "FBXMaterial"_id;
+
+        // suck source data
+        if (material)
+        {
+            // get shading model
+            auto shadingModel = material->ShadingModel.Get();
+            TRACE_INFO("Material '{}' uses shading model '{}'", outMaterial.name, shadingModel.Buffer());
+            if (shadingModel != "Unlit" || shadingModel != "unlit" || shadingModel != "flat")
+                outMaterial.flags |= base::mesh::MeshMaterialFlagBit::Unlit;
+            else
+                outMaterial.flags -= base::mesh::MeshMaterialFlagBit::Unlit;
+
+            // todo: detect transparencies
+
+            // load diffuse map
+            base::StringBuf diffusePath;
+            //if (!TryBindTexture(cooker, *materialToImport, "DiffuseColor", "BaseColorMap;DiffuseMap", *materialParams, &diffusePath))
+                //  TryBindTexture(cooker, *materialToImport, "Diffuse", "BaseColorMap;DiffuseMap", *materialParams, &diffusePath);
+
+            // load normal map
+            //if (!TryBindTexture(cooker, *materialToImport, "NormalMap", "NormalMap", *materialParams))
+                //  TryBindTexture(cooker, *materialToImport, "Bump", "NormalMap", *materialParams);
+
+            // process all properties
+            for (auto prop = material->GetFirstProperty(); prop.IsValid(); prop = material->GetNextProperty(prop))
+            {
+                base::StringBuf path;
+                if (TryReadTexturePath(*material, prop.GetName(), path))
+                {
+                    TRACE_INFO("Property '{}', type {} = '{}'", prop.GetNameAsCStr(), prop.GetPropertyDataType().GetName(), path);
+                }
+                else
+                {
+                    TRACE_INFO("Property '{}', type {}", prop.GetNameAsCStr(), prop.GetPropertyDataType().GetName());
+                }
+
+                if (!path.empty())
+                {
+                    const auto propName = base::StringID(prop.GetNameAsCStr());
+                    outMaterial.parameters.setValue(propName, path);
+                }
+            }
+        }
+    }
+
+    static void BuildMaterialData(const LoadedFile& sourceGeometry, const MaterialMapper& materials, base::Array<base::mesh::MeshMaterial>& outMaterials)
+    {
+        for (auto material : materials.materials)
+        {
+            auto& outMaterial = outMaterials.emplaceBack();
+            ExportMaterial(material.name, material.sourceData, outMaterial);
+        }
+    }
+
+    //--
+
+    static bool BuildModels(base::IProgressTracker& progress, const LoadedFile& sourceGeometry, base::Array<base::mesh::MeshModel>& outModels, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, const base::Matrix& assetToWorld, bool forceSkinToNode, bool flipFaces, bool flipUV)
+    {
+        const auto& nodes = sourceGeometry.nodes();
+
+        for (uint32_t i=0; i<nodes.size(); ++i)
+        {
+            const auto& node = nodes[i];
+
+            if (node->m_type == DataNodeType::VisualMesh)
+            {
+                // update status, also support cancellation
+                progress.reportProgress(i, nodes.size(), base::TempString("Processing node '{}'", node->m_name));
+                if (progress.checkCancelation())
+                    return false;
+
+                // export node
+                auto& outModel = outModels.emplaceBack();
+                // TODO: parse tags
+                outModel.name = node->m_name;
+                node->exportToMeshModel(progress, sourceGeometry, assetToWorld, outModel, outSkeleton, outMaterials, forceSkinToNode, flipUV, flipFaces);
+            }
+        }
+
+        return true;
+    }
+
+    //--
+
     MeshCooker::MeshCooker()
     {
     }
 
+    void MeshCooker::reportManifestClasses(base::Array<base::SpecificClassType<base::res::IResourceManifest>>& outManifestClasses) const
+    {
+        outManifestClasses.pushBackUnique(MeshManifest::GetStaticClass());
+    }
+
     base::res::ResourcePtr MeshCooker::cook(base::res::IResourceCookerInterface& cooker) const
     {
+        // load the FBX data
         auto importedScene = base::GetService<FileLoadingService>()->loadScene(cooker);
         if (!importedScene)
         {
@@ -62,102 +244,50 @@ namespace fbx
 
         //---
 
-        // build the geometry
-        SkeletonBuilder skeleton;
-        MaterialMapper materials;
-        /*base::Array<rendering::content::GeometryChunkGroupPtr> chunks;
-        if (!buildChunkGroups(cooker, *importedScene, chunks, skeleton, materials))
-            return false;
-
-        // build the material
-        base::Array<rendering::content::MeshMaterial> meshMaterials;
-        if (!buildMaterialData(cooker, *importedScene, materials, meshMaterials))
-            return false;*/
+        // build the scaling matrix
+        auto manifest = cooker.loadManifestFile<MeshManifest>();
+        auto fileToWorld = manifest->calcAssetToEngineConversionMatrix(base::mesh::MeshImportUnits::Meters, base::mesh::MeshImportSpace::RightHandZUp);
 
         //---
 
-        // TODO
-        return base::RefPtr<base::mesh::Mesh>();
-    }
+        // build the geometry
+        SkeletonBuilder skeleton;
+        MaterialMapper materials;
+        base::Array<base::mesh::MeshModel> meshModels;
+        BuildModels(cooker, *importedScene, meshModels, skeleton, materials, fileToWorld, manifest->m_forceNodeSkin, manifest->flipFaces, manifest->m_flipUV);
 
-#if 0
-    bool MeshCooker::buildChunkGroups(base::res::IResourceCookerInterface& cooker, const LoadedFile& sourceGeometry, base::Array<rendering::content::GeometryChunkGroupPtr>& outGroups, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
-    {
-        base::Task task(2, "");
+        // build the material
+        base::Array<base::mesh::MeshMaterial> meshMaterials;
+        BuildMaterialData(*importedScene, materials, meshMaterials);
 
-        // build the scaling matrix
-        auto manifest = cooker.loadManifestFile<MeshManifest>();
-        auto fileToWorld = manifest->calcAssetToEngineConversionMatrix(GeometryImportUnits::Meters, GeometryImportSpace::RightHandZUp);
+        // export skeleton
+        base::Array<base::mesh::MeshBone> meshBones;
 
-        // start building the mesh
-        rendering::content::MeshGeometryBuilder geometry;
+        //--
 
-        // extract meshes from all nodes
+        // create default LODs
+        // TODO: import FbxLODGroup
+        base::Array<base::mesh::MeshDetailRange> meshRanges;
         {
-            base::Task task(sourceGeometry.nodes().size(), "Extracting geometry...");
-            for (auto node  : sourceGeometry.nodes())
-            {
-                base::Task localTask(1,  "");
-
-                if (node->type == DataNodeType::VisualMesh && node->lodIndex == 0)
-                {
-                    node->exportToMeshBuilder(sourceGeometry, fileToWorld, geometry, outSkeleton, outMaterials, false);
-                }
-            }
+            auto& defaultRange = meshRanges.emplaceBack();
+            defaultRange.hideDistance = 100.0f;
+            defaultRange.showDistance = 0.0f;
         }
 
-        // extract data
-        {
-            base::Task task(1, "Packing data into streams");
-            auto chunk = geometry.extractData();
-            if (!chunk)
-                return false;
+        //--
 
-            outGroups.pushBack(chunk);
-        }
+        // extract custom collision shapes
+        base::Array<base::mesh::MeshCollisionShape> meshCollision;
 
-        return true;
+        //--
+
+        // calculate bounds
+
+        //---
+
+        // create output mesh
+        return base::CreateSharedPtr<base::mesh::Mesh>(std::move(meshMaterials), std::move(meshModels), std::move(meshRanges), std::move(meshBones), std::move(meshCollision));
     }
-
-    bool MeshCooker::buildMaterialData(base::res::IResourceCookerInterface& cooker, const LoadedFile& sourceGeometry, const MaterialMapper& materials, base::Array<rendering::content::MeshMaterial>& outMaterials) const
-    {
-        base::StringBuf selfImportPath = cooker.queryResourcePath().path();
-
-        // process the materials
-        {
-            base::Task task(materials.m_materials.size(), "Processing materials");
-            for (auto material  : materials.m_materials)
-            {
-                auto materialName = base::StringBuf(material->GetName());
-
-                base::Task task(1, base::TempString("{}", materialName));
-
-                // build a material path
-                base::res::ResourcePathBuilder pathBuilder;
-                pathBuilder.path(selfImportPath);
-                pathBuilder.param("Material", materialName.c_str());
-
-                // load material
-                rendering::MaterialInstanceRef baseMaterialRef;
-                {
-                    if (auto material = base::LoadResource<rendering::content::MaterialInstance>(pathBuilder.buildPath()))
-                        baseMaterialRef.reset(material);
-                }
-
-                // build a reference to material
-                if (baseMaterialRef.empty())
-                    baseMaterialRef.resetToPathOnlyNoLoading(pathBuilder.buildPath(), rendering::content::MaterialInstance::GetStaticClass());
-
-                // set base material only
-                auto& entry = outMaterials.emplaceBack();
-                entry.name = base::StringID(materialName.c_str());
-                entry.m_material = baseMaterialRef;
-            }
-        }
-
-        return true;
-    }
-#endif
 
 } // fbx
 

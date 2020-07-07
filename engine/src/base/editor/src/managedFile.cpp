@@ -43,8 +43,8 @@ namespace ed
         , m_fileFormat(nullptr)
     {
         // lookup the file class
-        if (auto fileExt = fileName.afterFirst("."))
-            m_fileFormat = ManagedFileFormatRegistry::GetInstance().format(fileExt);
+        auto fileExt = fileName.afterFirst(".");
+        m_fileFormat = ManagedFileFormatRegistry::GetInstance().format(fileExt);
 
         // use class thumbnail as the thumbnail for now
         m_thumbnailState.image = nullptr;

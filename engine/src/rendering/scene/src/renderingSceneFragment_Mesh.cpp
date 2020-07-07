@@ -135,9 +135,10 @@ namespace rendering
                 const auto& state = renderMaterialTemplate->fetchTechnique(context.pass)->state();
                 if (state.shader)
                 {
+                    cmd.opSetCullState(state.renderStates.twoSided ? CullMode::Disabled : CullMode::Back);
+
                     if (context.allowsCustomRenderStates)
                     {
-                        cmd.opSetCullState(state.renderStates.twoSided ? CullMode::Disabled : CullMode::Back);
                         cmd.opSetDepthState(state.renderStates.depthTest, state.renderStates.depthWrite, context.depthCompare);
 
                         if (context.msaaCount > 1)
@@ -165,10 +166,12 @@ namespace rendering
             // restore states
             if (context.allowsCustomRenderStates)
             {
-                cmd.opSetCullState(CullMode::Back);
                 cmd.opSetDepthState(true, true);
                 cmd.opSetMultisampleState(MultisampleState());
             }
+
+            // reset cull
+            cmd.opSetCullState(CullMode::Back);
         }
 
         //--

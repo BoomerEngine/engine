@@ -15,6 +15,10 @@ namespace rendering
 {
     ///----
 
+    class MaterialInstanceDataView;
+
+    ///----
+
     /// instanced parameter
     struct RENDERING_MATERIAL_API MaterialInstanceParam
     {
@@ -64,10 +68,6 @@ namespace rendering
         virtual bool writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh = true) override final;
         virtual bool readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly = false) const override final;
 
-        virtual bool resetBase();
-        virtual bool hasParameterOverride(const base::StringID name) const;
-        virtual bool resetParameterOverride(const base::StringID name);
-
         // IObject
         virtual base::DataViewPtr createDataView() const;
         virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
@@ -86,11 +86,17 @@ namespace rendering
         virtual void notifyDataChanged() override;
         virtual void notifyBaseMaterialChanged() override;
 
+        virtual bool hasParameterOverride(const base::StringID name) const;
+        virtual bool resetParameterOverride(const base::StringID name);
+        virtual bool readParameterDefaultValue(base::StringView<char> path, void* targetData, base::Type targetType) const;
+
         MaterialRef m_baseMaterial;
         base::Array<MaterialInstanceParam> m_parameters;
 
     private:
         MaterialDataProxyPtr m_dataProxy;
+
+        friend class MaterialInstanceDataView;
     };
 
     ///----

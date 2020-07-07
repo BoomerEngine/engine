@@ -140,7 +140,7 @@ namespace rendering
             {
                 if (param.value.set(data, type))
                 {
-                    markModified();
+                    onPropertyChanged(name.view());
                     return true;
                 }
             }
@@ -306,11 +306,6 @@ namespace rendering
         createMaterialProxy();
     }
 
-    bool MaterialInstance::resetBase()
-    {
-        return false;
-    }
-
     bool MaterialInstance::hasParameterOverride(const base::StringID name) const
     {
         for (const auto& paramInfo : m_parameters)
@@ -358,7 +353,7 @@ namespace rendering
             }            
         }
 
-        return TBaseClass::readDataView(viewPath, targetData, targetType);
+        return TBaseClass::readDataView(originalViewPath, targetData, targetType);
     }
 
     base::DataViewResult MaterialInstance::writeDataView(base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
@@ -427,18 +422,31 @@ namespace rendering
                 if (const auto* materialTemplate = resolveTemplate())
                 {
                     if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::CheckIfResetable))
-                    {
-                        for (const auto& param : m_parameters)
-                            if (param.name == propertyName)
+                        if (hasParameterOverride(base::StringID(propertyName)))
                                 outInfo.flags |= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
-                    }
 
-                    return materialTemplate->describeDataView(viewPath, outInfo);
+                    const auto ret = materialTemplate->describeParameterView(propertyName, viewPath, outInfo);
+                    if (ret.code != base::DataViewResultCode::ErrorUnknownProperty)
+                        return ret;
                 }
             }
         }
 
-        return TBaseClass::describeDataView(viewPath, outInfo);
+        return TBaseClass::describeDataView(originalViewPath, outInfo);
+    }
+
+    bool MaterialInstance::readParameterDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    {
+        auto originalPath = viewPath;
+
+        base::StringView<char> propertyName;
+        if (base::rtti::ParsePropertyName(viewPath, propertyName))
+            if (auto temp = resolveTemplate())
+                if (nullptr != temp->findParameterInfo(base::StringID::Find(propertyName)))
+                    if (auto base = baseMaterial().acquire())
+                        return base->readDataView(originalPath, targetData, targetType).valid();
+
+        return false;
     }
 
     //---
@@ -453,13 +461,25 @@ namespace rendering
 
         virtual base::DataViewResult readDefaultDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
         {
+            const auto originalPath = viewPath;
+
             if (!m_material)
                 return base::DataViewResultCode::ErrorNullObject;
 
-            if (auto base = m_material->baseMaterial().acquire())
-                return base->readDataView(viewPath, targetData, targetType);
+            base::StringView<char> propertyName;
+            if (base::rtti::ParsePropertyName(viewPath, propertyName))
+            {
+                if (auto temp = m_material->resolveTemplate())
+                {
+                    if (nullptr != temp->findParameterInfo(base::StringID::Find(propertyName)))
+                    {
+                        if (m_material->readParameterDefaultValue(originalPath, targetData, targetType))
+                            return base::DataViewResultCode::OK;
+                    }
+                }
+            }
 
-            return base::DataViewResultCode::ErrorUnknownProperty;
+            return DataViewNative::readDataView(originalPath, targetData, targetType);
         }
 
         virtual base::DataViewResult resetToDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
@@ -472,7 +492,7 @@ namespace rendering
             {
                 if (viewPath.empty())
                 {
-                    if (m_material->resetParameterOverride(base::StringID::Find(viewPath)))
+                    if (m_material->resetParameterOverride(base::StringID::Find(propertyName)))
                         return base::DataViewResultCode::OK;
                     return base::DataViewResultCode::ErrorIllegalOperation;
                 }
@@ -489,7 +509,7 @@ namespace rendering
             base::StringView<char> propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
                 if (viewPath.empty())
-                    return !m_material->hasParameterOverride(base::StringID::Find(viewPath));
+                    return !m_material->hasParameterOverride(base::StringID::Find(propertyName));
 
             return base::DataViewNative::checkIfCurrentlyADefaultValue(viewPath);
         }

@@ -134,7 +134,7 @@ namespace base
 
         virtual bool tryMerge(const IAction& lastUndoAction)
         {
-            if (lastUndoAction.id() == id())
+            /*if (lastUndoAction.id() == id())
             {
                 const auto& lastWriteValue = static_cast<const ActionWriteProperty&>(lastUndoAction);
                 if (lastWriteValue.m_path == m_path && lastWriteValue.m_view == m_view)
@@ -145,7 +145,7 @@ namespace base
                         return true;
                     }
                 }
-            }
+            }*/
 
             return false;
         }

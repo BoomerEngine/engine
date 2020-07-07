@@ -25,6 +25,7 @@ namespace rendering
         Mask,
         Roughness,
         Bumpmap,
+        CombinedMetallicSmoothness, // R-metallic, A-smoothness (1-roughness)
         CombinedRoughnessSpecularity,
         TangentNormalMap,
         WorldNormalMap,

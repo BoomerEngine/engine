@@ -318,6 +318,14 @@ namespace rendering
         return TBaseClass::describeDataView(orgViewPath, outInfo);
     }
 
+    base::DataViewResult MaterialTemplate::describeParameterView(base::StringView<char> paramName, base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    {
+        if (auto* paramBlock = findParameterInfo(paramName))
+            return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);
+
+        return base::DataViewResultCode::ErrorUnknownProperty;
+    }
+
     ///---
 
     void MaterialTemplate::createDataProxy()
