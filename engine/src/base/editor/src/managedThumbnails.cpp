@@ -14,11 +14,11 @@
 #include "base/io/include/absolutePathBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/process/include/process.h"
-#include "base/resources/include/resourceUncached.h"
+#include "base/resource/include/resourceUncached.h"
 #include "base/io/include/absolutePath.h"
-#include "base/depot/include/depotStructure.h"
+#include "base/resource_compiler/include/depotStructure.h"
 #include "base/object/include/nativeFileReader.h"
-#include "base/resources/include/resourceThumbnail.h"
+#include "base/resource/include/resourceThumbnail.h"
 
 #include "editorService.h"
 

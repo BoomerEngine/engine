@@ -18,7 +18,7 @@
 #include "managedFile.h"
 #include "managedFileFormat.h"
 
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resourceFactory.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/absolutePath.h"
 #include "base/app/include/localServiceContainer.h"

@@ -13,7 +13,7 @@
 
 #include "build.h"
 #include "base/test/include/gtest/gtest.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 
 DECLARE_TEST_FILE(DataModelTest);
 

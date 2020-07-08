@@ -16,7 +16,7 @@
 #include "base/ui/include/uiWindow.h"
 #include "base/ui/include/uiMenuBar.h"
 #include "base/editor/include/managedFileFormat.h"
-#include "base/cooking/include/backgroundBakeService.h"
+#include "base/resource_compiler/include/backgroundBakeService.h"
 #include "base/object/include/actionHistory.h"
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiDockContainer.h"
@@ -357,7 +357,7 @@ namespace ed
                 contentSaved &= aspect->saveFile(file());
             
             if (contentSaved)
-                m_currentBakingJob = base::GetService<base::cooker::BackgroundBaker>()->bake(key(), true, true);
+                m_currentBakingJob = base::GetService<base::res::BackgroundBaker>()->bake(key(), true, true);
         }
     }
 

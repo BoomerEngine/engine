@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_system, base_memory, base_containers, base_io #]
-* [# dependency: base_resources, base_image #]
+* [# dependency: base_resource, base_image #]
 * [# privatelib: freetype2 #]
 ***/
 

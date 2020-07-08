@@ -12,7 +12,7 @@
 #include "renderingCanvasImageCache.h"
 
 #include "base/app/include/localServiceContainer.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourceLoadingService.h"
 #include "rendering/driver/include/renderingDeviceService.h"
 
 namespace rendering

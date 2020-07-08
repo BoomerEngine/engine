@@ -24,8 +24,10 @@ namespace base
 
 #if defined(PLATFORM_WINDOWS)
             static const wchar_t SYSTEM_PATH_SEPARATOR = WINDOWS_PATH_SEPARATOR;
+            static const wchar_t WRONG_SYSTEM_PATH_SEPARATOR = UNIX_PATH_SEPARATOR;
 #else
             static const wchar_t SYSTEM_PATH_SEPARATOR = UNIX_PATH_SEPARATOR;
+            static const wchar_t WRONG_SYSTEM_PATH_SEPARATOR = WINDOWS_PATH_SEPARATOR;
 #endif
 
             AbsolutePath();

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "base/depot/include/depotFileSystem.h"
+#include "base/resource_compiler/include/depotFileSystem.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/ioFileHandle.h"
 

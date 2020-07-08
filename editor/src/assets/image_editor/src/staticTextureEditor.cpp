@@ -23,7 +23,7 @@
 #include "base/ui/include/uiSplitter.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageView.h"
-#include "base/resources/include/resourceReference.h"
+#include "base/resource/include/resourceReference.h"
 #include "base/ui/include/uiNotebook.h"
 
 #include "rendering/texture/include/renderingStaticTexture.h"

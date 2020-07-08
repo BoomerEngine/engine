@@ -11,7 +11,7 @@
 #include "materialPreviewPanel.h"
 #include "materialGraphEditorPanel.h"
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
 #include "base/editor/include/assetBrowser.h"

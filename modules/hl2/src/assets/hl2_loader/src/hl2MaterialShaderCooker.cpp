@@ -9,8 +9,8 @@
 #include "hl2MaterialFile.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "rendering/driver/include/renderingShaderLibrary.h"
 
 namespace hl2

@@ -52,6 +52,8 @@ namespace base
 
         //--------------------------
 
+        INLINE StringVector<T>& reserve(uint32_t size);
+
         INLINE StringVector<T>& clear();
 
         INLINE StringVector<T>& append(const StringVector<T>& str);

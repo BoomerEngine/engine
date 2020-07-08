@@ -8,7 +8,7 @@
 
 #include "base_geometry_glue.inl"
 
-#include "base/resources/include/resourceReference.h"
+#include "base/resource/include/resourceReference.h"
 
 namespace base
 {

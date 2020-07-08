@@ -13,7 +13,7 @@
 
 #include "rendering/driver/include/renderingDeviceService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourceLoadingService.h"
 #include "base/system/include/thread.h"
 
 namespace rendering

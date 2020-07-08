@@ -19,9 +19,6 @@ namespace base
 {
     namespace io
     {
-        class AbsolutePath;
-        typedef StringView<wchar_t> AbsolutePathView;
-
         namespace prv
         {
             class ISystemHandler;

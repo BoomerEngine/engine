@@ -15,7 +15,7 @@
 
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/localService.h"
-#include "base/resources/include/resourceUncached.h"
+#include "base/resource/include/resourceUncached.h"
 #include "base/system/include/thread.h"
 
 namespace ed

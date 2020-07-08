@@ -14,7 +14,7 @@
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
 #include "base/math/include/randomMersenne.h"
-#include "base/resources/include/public.h"
+#include "base/resource/include/public.h"
 #include "base/system/include/timing.h"
 
 namespace rendering

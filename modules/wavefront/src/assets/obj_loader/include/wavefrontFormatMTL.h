@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/containers/include/hashMap.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 
 namespace wavefront
 {

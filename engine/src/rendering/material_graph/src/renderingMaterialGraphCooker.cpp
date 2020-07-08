@@ -15,7 +15,7 @@
 #include "rendering/material/include/renderingMaterialTemplate.h"
 #include "rendering/mesh/include/renderingMeshFormat.h"
 #include "rendering/compiler/include/renderingShaderLibraryCompiler.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCookingInterface.h"
 
 namespace rendering
 {

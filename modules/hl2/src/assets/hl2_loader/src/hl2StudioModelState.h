@@ -15,8 +15,8 @@
 #include "base/image/include/imageUtils.h"
 #include "base/parser/include/textParser.h"
 #include "base/app/include/localServiceContainer.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "base/geometry/include/mesh.h"
 
 namespace hl2

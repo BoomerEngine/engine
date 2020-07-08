@@ -12,7 +12,7 @@
 
 #include "base/io/include/absolutePath.h"
 #include "base/object/include/objectObserver.h"
-#include "base/resources/include/resourceMountPoint.h"
+#include "base/resource/include/resourceMountPoint.h"
 
 namespace ed
 {

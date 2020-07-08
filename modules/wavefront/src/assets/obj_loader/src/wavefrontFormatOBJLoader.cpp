@@ -15,8 +15,8 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/containers/include/hashSet.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "base/containers/include/pagedBuffer.h"
 
 namespace wavefront

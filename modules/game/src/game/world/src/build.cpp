@@ -6,7 +6,7 @@
 * [# dependency: base_math #]
 * [# dependency: base_io #]
 * [# dependency: base_containers #]
-* [# dependency: base_resources #]
+* [# dependency: base_resource #]
 * [# dependency: base_app #]
 * [# dependency: base_graph #]
 * [# dependency: base_script #]

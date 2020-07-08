@@ -123,7 +123,7 @@ public abstract class ProjectSetup implements Comparable {
               .collect(Collectors.toList());
 
       //for (ProjectSetup p : collectedDependencies) {
-        //System.out.printf("Dependency '%s' on '%s'\n", mergedName, p.mergedName);
+      //  System.out.printf("Dependency '%s' on '%s'\n", mergedName, p.mergedName);
       //}
     }
 

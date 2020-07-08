@@ -14,17 +14,17 @@
 #include "managedDepot.h"
 #include "editorService.h"
 
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceUncached.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceUncached.h"
+#include "base/resource/include/resource.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/object/include/objectObserver.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/resources/include/resourceThumbnail.h"
+#include "base/resource/include/resourceThumbnail.h"
 #include "base/image/include/imageView.h"
 #include "base/image/include/image.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourceLoadingService.h"
 #include "base/object/include/memoryReader.h"
 
 namespace ed

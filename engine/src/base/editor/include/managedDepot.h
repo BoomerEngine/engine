@@ -12,8 +12,8 @@
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
-#include "base/resources/include/resourceLoader.h"
-#include "base/depot/include/depotStructure.h"
+#include "base/resource/include/resourceLoader.h"
+#include "base/resource_compiler/include/depotStructure.h"
 #include "editorConfig.h"
 
 namespace ed

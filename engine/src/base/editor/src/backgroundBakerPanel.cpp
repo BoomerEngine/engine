@@ -263,27 +263,27 @@ namespace ed
         m_listModel = base::CreateSharedPtr<BackgroundBakedListModel>();
         m_listForwarder = base::CreateSharedPtr<BackgroundBakedListModelNotificataionForwarder>(m_listModel);
 
-        base::GetService<base::cooker::BackgroundBaker>()->attachListener(m_listForwarder);
-        base::GetService<base::cooker::BackgroundBaker>()->attachListener(this);
+        base::GetService<base::res::BackgroundBaker>()->attachListener(m_listForwarder);
+        base::GetService<base::res::BackgroundBaker>()->attachListener(this);
 
         m_fileList->model(m_listModel);
     }
 
     BackgroundBakerPanel::~BackgroundBakerPanel()
     {
-        base::GetService<base::cooker::BackgroundBaker>()->dettachListener(this);
-        base::GetService<base::cooker::BackgroundBaker>()->dettachListener(m_listForwarder);
+        base::GetService<base::res::BackgroundBaker>()->dettachListener(this);
+        base::GetService<base::res::BackgroundBaker>()->dettachListener(m_listForwarder);
     }
 
     void BackgroundBakerPanel::cmdToggleBackgroundBake()
     {
-        auto flag = base::GetService<base::cooker::BackgroundBaker>()->enabled();
-        base::GetService<base::cooker::BackgroundBaker>()->enabled(!flag);
+        auto flag = base::GetService<base::res::BackgroundBaker>()->enabled();
+        base::GetService<base::res::BackgroundBaker>()->enabled(!flag);
     }
 
     bool BackgroundBakerPanel::checkBackgroundBake() const
     {
-        return base::GetService<base::cooker::BackgroundBaker>()->enabled();
+        return base::GetService<base::res::BackgroundBaker>()->enabled();
     }
 
     void BackgroundBakerPanel::loadConfig(const ConfigGroup& config)

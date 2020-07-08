@@ -1,5 +1,6 @@
 package project;
 
+import com.google.common.primitives.Booleans;
 import generators.PlatformType;
 import generators.SolutionType;
 import library.LibraryManager;
@@ -26,17 +27,20 @@ public class Solution {
   public Path buildOutputPath;
   public Path buildPublishPath;
 
+  public boolean engineSolution;
+
   public Path generatedSolutionFile = null;
 
   //---
 
-  public Solution(SolutionType solutionType, PlatformType platform, LibraryManager libs, Path mainProjectPath, Path outputPath, Path publishPath) {
+  public Solution(SolutionType solutionType, PlatformType platform, LibraryManager libs, Path mainProjectPath, Path outputPath, Path publishPath, boolean engineSolution) {
     this.solutionType = solutionType;
     this.platformType = platform;
     this.libs = libs;
     this.buildOutputPath = outputPath.normalize();
     this.buildPublishPath = publishPath.normalize();
     this.mainProjectPath = mainProjectPath;
+    this.engineSolution = engineSolution;
 
     System.out.printf("Project build files will be written to: '%s'\n", this.buildOutputPath.toString());
     System.out.printf("Project binary files will be written to: '%s'\n", this.buildPublishPath.toString());
@@ -126,7 +130,7 @@ public class Solution {
     // TODO: exclude projects based on platform
 
     // some engine-only projects are not generated when we have a project specified (ie. rendering tests, general tests, some internal wireing etc)
-    if (!solutionType.allowEngineProjects) {
+    if (!solutionType.allowEngineProjects || !engineSolution) {
       System.out.println("Disabling engine only projects...");
       for (Project p : projects) {
         if (p instanceof ProjectSources) {

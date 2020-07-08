@@ -68,6 +68,9 @@ namespace base
         // parse matching keyword, if the exact text is found in the stream it's advanced, if not a false is returned
         bool parseKeyword(StringView<char> keyword);
 
+        // parse single character (supports UTF-8)
+        bool parseChar(uint32_t& outChar);
+
         // parse a floating point number in the standard format
         bool parseFloat(float& outValue);
 

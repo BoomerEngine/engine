@@ -28,8 +28,8 @@
 #include "base/ui/include/uiSearchBar.h"
 #include "base/ui/include/uiDragDrop.h"
 
-#include "base/resources/include/resourcePath.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceLoadingService.h"
 #include "base/object/include/dataViewNative.h"
 #include "base/object/include/rttiDataView.h"
 

@@ -6,7 +6,7 @@
 * [# privatelib: physx4 #]
 * [#dependency: base_system #]
 * [#dependency: base_containers #]
-* [#dependency: base_resources #]
+* [#dependency: base_resource #]
 * [#dependency: base_reflection #]
 * [#dependency: base_math #]
 * [#dependency: base_app #]

@@ -110,6 +110,13 @@ namespace base
         return StringBuf(view());
     }
 
+    template< typename T >
+    INLINE StringVector<T>& StringVector<T>::reserve(uint32_t size)
+    {
+        m_buf.reserve(size);
+        return *this;
+    }
+
     ///---
 
     template< typename T >

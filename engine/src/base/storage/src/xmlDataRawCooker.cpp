@@ -14,8 +14,8 @@
 #include "base/io/include/utils.h"
 #include "base/object/include/streamBinaryReader.h"
 #include "base/memory/include/buffer.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
 

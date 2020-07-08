@@ -13,8 +13,8 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "base/geometry/include/mesh.h"
 #include "base/geometry/include/meshStreamBuilder.h"
 

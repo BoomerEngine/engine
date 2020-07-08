@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/xml/include/xmlDocument.h"
 
 namespace base

@@ -29,6 +29,18 @@ public class KeyValueTable {
       name = nameToSet;
       value = valueToSet;
     }
+
+    @Override
+    public String toString() {
+      String ret = "";
+      ret += name;
+      if (!value.isEmpty()) {
+        ret += "=";
+        ret += value;
+      }
+
+      return ret;
+    }
   }
 
 
@@ -237,6 +249,21 @@ public class KeyValueTable {
         break;
       }
     }
+  }
+
+  //---
+
+  @Override
+  public String toString() {
+    String ret = "";
+
+    for (Attribute a : parameters) {
+      if (!ret.isEmpty())
+        ret += ",";
+      ret += a.toString();
+    }
+
+    return ret;
   }
 
   //---

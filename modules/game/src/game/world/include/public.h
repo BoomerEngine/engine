@@ -7,7 +7,7 @@
 #pragma once
 
 #include "game_world_glue.inl"
-#include "base/resources/include/resourceAsyncReference.h"
+#include "base/resource/include/resourceAsyncReference.h"
 
 namespace game
 {

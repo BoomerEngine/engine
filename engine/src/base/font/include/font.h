@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/system/include/mutex.h"
 
 namespace base

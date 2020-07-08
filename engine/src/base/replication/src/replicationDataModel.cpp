@@ -16,9 +16,9 @@
 #include "base/object/include/rttiArrayType.h"
 #include "base/object/include/rttiHandleType.h"
 #include "base/object/include/rttiProperty.h"
-#include "base/resources/include/resourcePath.h"
-#include "base/resources/include/resourceReference.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceReference.h"
+#include "base/resource/include/resource.h"
 
 namespace base
 {

@@ -12,8 +12,8 @@
 #include "worldNodeTemplate.h"
 #include "worldNodeContainer.h"
 
-#include "base/resources/include/resourceFactory.h"
-#include "base/resources/include/resourceSerializationMetadata.h"
+#include "base/resource/include/resourceFactory.h"
+#include "base/resource/include/resourceSerializationMetadata.h"
 
 namespace game
 {

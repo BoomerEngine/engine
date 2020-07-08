@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "base/app/include/localService.h"
 
 namespace fbx

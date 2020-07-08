@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <project>
 
   <!-- project informations -->
@@ -6,11 +7,14 @@
   <author>Tomasz "Rex Dex" Jonarski</author>
   <license>LGPL v3</license>
 
+  <!-- tag to indicate this is an engine project (not a product project) -->
+  <engine/>
+
   <!-- main engine module -->
-  <module>engine</module>
+  <module depot="engine">engine</module>
 
   <!-- editor module -->
-  <module>editor</module>
+  <module depot="editor">editor</module>
   
   <!-- additional modules this projects uses -->
   <module>modules/opengl4</module>
@@ -18,10 +22,10 @@
   <module>modules/wavefront</module>
   <module>modules/ui</module>
   <module>modules/physx</module>
-  <module>modules/game</module>
+  <module depot="game">modules/game</module>
   <module>modules/hl2</module>
   
   <!-- examples -->
-  <module>modules/examples</module>
+  <module depot="examples">modules/examples</module>
 
 </project>

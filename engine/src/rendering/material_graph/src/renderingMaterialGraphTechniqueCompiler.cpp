@@ -17,7 +17,7 @@
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
 #include "rendering/compiler/include/renderingShaderLibraryCompiler.h"
-#include "base/depot/include/depotStructure.h"
+#include "base/resource_compiler/include/depotStructure.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/parser/include/textToken.h"
 

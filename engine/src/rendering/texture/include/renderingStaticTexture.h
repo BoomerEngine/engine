@@ -9,8 +9,8 @@
 #pragma once
 
 #include "renderingTexture.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/bufferAsync.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/bufferAsync.h"
 #include "rendering/driver/include/renderingImageView.h"
 #include "rendering/driver/include/renderingDeviceObject.h"
 

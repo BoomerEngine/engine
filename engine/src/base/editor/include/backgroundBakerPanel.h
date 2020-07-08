@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/cooking/include/backgroundBakeService.h"
+#include "base/resource_compiler/include/backgroundBakeService.h"
 #include "base/ui/include/uiAbstractItemModel.h"
 
 namespace ed
@@ -74,7 +74,7 @@ namespace ed
 
     ///---
 
-    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public base::IReferencable, public base::cooker::IBackgroundBakerNotification
+    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public base::IReferencable, public base::res::IBackgroundBakerNotification
     {
     public:
         BackgroundBakedListModelNotificataionForwarder(const base::RefPtr<BackgroundBakedListModel>& model);
@@ -91,7 +91,7 @@ namespace ed
     ///---
 
     /// panel displaying the background baking list
-    class BASE_EDITOR_API BackgroundBakerPanel : public ui::DockPanel, public base::cooker::IBackgroundBakerNotification
+    class BASE_EDITOR_API BackgroundBakerPanel : public ui::DockPanel, public base::res::IBackgroundBakerNotification
     {
         RTTI_DECLARE_VIRTUAL_CLASS(BackgroundBakerPanel, ui::DockPanel);
 

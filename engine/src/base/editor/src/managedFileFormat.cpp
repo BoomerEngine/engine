@@ -13,9 +13,9 @@
 #include "base/config/include/configEntry.h"
 #include "base/config/include/configSystem.h"
 #include "base/image/include/image.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceFactory.h"
 
 namespace ed
 {

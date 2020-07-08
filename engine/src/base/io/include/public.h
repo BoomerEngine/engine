@@ -58,5 +58,8 @@ namespace base
 
         class CRCCache;
 
+        class AbsolutePath;
+        typedef StringView<wchar_t> AbsolutePathView;
+
     } // io
 } // base

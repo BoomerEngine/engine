@@ -14,11 +14,11 @@
 #include "rendernigMeshPackingManifest.h"
 
 #include "base/geometry/include/mesh.h"
-#include "base/resources/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCookingInterface.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
 #include "rendering/texture/include/renderingTexture.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourceLoadingService.h"
 
 namespace rendering
 {

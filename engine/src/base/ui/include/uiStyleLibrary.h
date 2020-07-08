@@ -11,7 +11,7 @@
 #include "uiStyleParameters.h"
 #include "uiStyleSelector.h"
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/system/include/spinLock.h"
 #include "base/reflection/include/variant.h"
 

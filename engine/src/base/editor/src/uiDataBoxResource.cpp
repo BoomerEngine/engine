@@ -14,7 +14,7 @@
 #include "base/ui/include/uiImage.h"
 
 #include "base/object/include/rttiDataView.h"
-#include "base/resources/include/resourceReferenceType.h"
+#include "base/resource/include/resourceReferenceType.h"
 #include "editorService.h"
 #include "managedFile.h"
 #include "managedFileFormat.h"

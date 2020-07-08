@@ -36,12 +36,12 @@ public class ProjectSources extends Project {
     Collections.sort(files, (a,b) -> (a.absolutePath.toString().compareTo(b.absolutePath.toString()))); // make the generator deterministic
 
     // get the build file
-    this.buildFile = files.stream().filter(x -> x.shortName.equals("build.cpp")).findAny().get(); // must exist since we checked for it's existance
+    this.buildFile = files.stream().filter(x -> x.shortName.equals("build.cpp")).findAny().get(); // must exist since we checked for it's existence
     this.buildFile.attributes.addValue("pch", "generate");
     this.attributes = this.buildFile.attributes;
 
     // get the build header
-    this.buildHeader = files.stream().filter(x -> x.shortName.equals("build.h")).findAny().get(); // must exist since we checked for it's existance
+    this.buildHeader = files.stream().filter(x -> x.shortName.equals("build.h")).findAny().get(); // must exist since we checked for it's existence
 
     // disable the precompiled header generation on all C files
     this.files.stream()

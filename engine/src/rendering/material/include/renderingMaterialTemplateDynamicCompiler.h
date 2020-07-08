@@ -11,7 +11,7 @@
 #include "renderingMaterial.h"
 #include "renderingMaterialRuntimeLayout.h"
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/system/include/spinLock.h"
 
 namespace rendering

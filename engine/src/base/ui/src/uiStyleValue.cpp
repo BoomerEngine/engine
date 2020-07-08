@@ -11,7 +11,7 @@
 #include "uiElementLayout.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/utf8StringFunctions.h"
-#include "base/resources/include/resourceReferenceType.h"
+#include "base/resource/include/resourceReferenceType.h"
 #include "base/canvas/include/canvasStyle.h"
 #include "base/containers/include/stringParser.h"
 #include "base/font/include/font.h"

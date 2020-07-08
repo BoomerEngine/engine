@@ -51,7 +51,7 @@ public class SolutionGeneratorCommand {
     Path buildSolutionPublishPath = DetermineOutputFolder(project.publishDirectoryPath, platformType, solutionType, generatorName);
 
     // create solution
-    Solution sol = new Solution(solutionType, platformType, libs, project.manifestPath, buildSolutionOutputPath, buildSolutionPublishPath);
+    Solution sol = new Solution(solutionType, platformType, libs, project.manifestPath, buildSolutionOutputPath, buildSolutionPublishPath, project.engineProject);
 
     // fill solution with content
     for (Module m : modules.modules)

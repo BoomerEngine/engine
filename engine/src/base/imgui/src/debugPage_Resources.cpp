@@ -11,9 +11,9 @@
 #include "debugPage.h"
 #include "base/memory/include/poolStats.h"
 #include "base/app/include/localServiceContainer.h"
-#include "base/resources/include/resourceLoader.h"
+#include "base/resource/include/resourceLoader.h"
 #include "base/imgui/include/imgui.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource/include/resourceLoadingService.h"
 
 namespace base
 {

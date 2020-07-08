@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/depot/include/depotStructure.h"
+#include "base/resource_compiler/include/depotStructure.h"
 #include "base/app/include/localService.h"
 
 namespace rendering

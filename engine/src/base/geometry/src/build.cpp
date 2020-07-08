@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_system, base_memory, base_containers, base_io #]
-* [# dependency: base_object, base_reflection, base_depot, base_resources #]
+* [# dependency: base_object, base_reflection, base_resource #]
 ***/
 
 #include "build.h"

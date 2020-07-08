@@ -9,7 +9,7 @@
 #include "build.h"
 #include "renderingShaderLibrary.h"
 #include "renderingShaderCache.h"
-#include "base/resources/include/resourceUncached.h"
+#include "base/resource/include/resourceUncached.h"
 
 namespace rendering
 {

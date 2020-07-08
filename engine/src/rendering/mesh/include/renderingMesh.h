@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "rendering/driver/include/renderingParametersView.h"
 
 #include "renderingMeshFormat.h"

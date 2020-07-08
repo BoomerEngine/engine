@@ -13,7 +13,7 @@
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
 #include "base/containers/include/mutableArray.h"
-#include "base/resources/include/resourceLoader.h"
+#include "base/resource/include/resourceLoader.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
 

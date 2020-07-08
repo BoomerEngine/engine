@@ -12,7 +12,7 @@
 #include "worldDefinition.h"
 #include "worldStreamingData.h"
 
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resourceFactory.h"
 
 namespace game
 {

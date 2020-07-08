@@ -11,8 +11,8 @@
 
 #include "base/image/include/image.h"
 #include "base/image/include/imageVIew.h"
-#include "base/resources/include/resourceCookingInterface.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
 #include "base/io/include/ioFileHandle.h"
 
 #include <freeimage/FreeImage.h>

@@ -15,9 +15,9 @@
 #include "base/io/include/utils.h"
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/localServiceContainer.h"
-#include "base/resources/include/resourceCookingInterface.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceLoader.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceLoader.h"
 #include "base/object/include/streamBinaryReader.h"
 #include "base/containers/include/inplaceArray.h"
 

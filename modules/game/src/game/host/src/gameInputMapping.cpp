@@ -10,7 +10,7 @@
 #include "build.h"
 #include "gameInputMapping.h"
 
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resourceFactory.h"
 
 namespace game
 {

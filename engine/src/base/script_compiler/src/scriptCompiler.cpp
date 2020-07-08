@@ -13,13 +13,13 @@
 #include "scriptFunctionCodeParser.h"
 #include "scriptFunctionCode.h"
 
-#include "base/resources/include/resourceCookingInterface.h"
-#include "base/resources/include/resource.h"
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceFactory.h"
 #include "base/script/include/scriptCompiledProject.h"
 #include "base/script/include/scriptPortableData.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/depot/include/depotPackageManifest.h"
+#include "base/resource_compiler/include/depotPackageManifest.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/memory/include/linearAllocator.h"
 

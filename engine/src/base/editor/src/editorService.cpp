@@ -19,9 +19,9 @@
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/commandline.h"
-#include "base/depot/include/depotStructure.h"
-#include "base/resources/include/resourceSerializationMetadata.h"
-#include "base/resources/include/resourceLoadingService.h"
+#include "base/resource_compiler/include/depotStructure.h"
+#include "base/resource/include/resourceSerializationMetadata.h"
+#include "base/resource/include/resourceLoadingService.h"
 #include "base/ui/include/uiRenderer.h"
 
 namespace ed

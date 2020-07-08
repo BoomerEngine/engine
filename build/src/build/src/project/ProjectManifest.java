@@ -53,7 +53,7 @@ public class ProjectManifest {
                         ret.author = p.getTextContent();
                     } else if (p.getNodeName().equals("license")) {
                         ret.license = p.getTextContent();
-                    } else if (p.getNodeName().equals("solultionType")) {
+                    } else if (p.getNodeName().equals("solutionType")) {
                         ret.defaultSolutionType = p.getTextContent();
                     } else if (p.getNodeName().equals("publishDir")) {
                         defaultPublishDirectory = p.getTextContent();

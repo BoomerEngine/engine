@@ -51,6 +51,8 @@ public class VsProjectSourcesSetup extends ProjectSourcesSetup {
     if (baseProject.group != null) {
       if (baseProject.mergedName.startsWith("examples_")) {
         solutionPath = "Examples";
+      } else if (baseProject.mergedName.startsWith("project_")) {
+        solutionPath = "Project." + solutionPath;
       } else {
         solutionPath = "BoomerEngine." + solutionPath;
       }

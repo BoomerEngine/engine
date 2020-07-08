@@ -15,7 +15,7 @@
 #include "renderingMaterialRuntimeTechnique.h"
 
 #include "rendering/driver/include/renderingShaderLibrary.h"
-#include "base/resources/include/resourceFactory.h"
+#include "base/resource/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
 
 namespace rendering

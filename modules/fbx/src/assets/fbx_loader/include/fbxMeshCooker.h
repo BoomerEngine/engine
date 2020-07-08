@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resource.h"
 #include "base/geometry/include/meshManifest.h"
 
 namespace fbx

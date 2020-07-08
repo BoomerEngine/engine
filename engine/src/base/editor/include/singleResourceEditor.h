@@ -114,7 +114,7 @@ namespace ed
         base::res::Ref<base::res::IResource> m_previewResource;
         bool m_bakable = false;
 
-        base::cooker::BakingJobPtr m_currentBakingJob;
+        base::res::BakingJobPtr m_currentBakingJob;
 
         virtual void fillToolMenu(ui::MenuButtonContainer* menu) override;
         virtual void onPropertyChanged(StringView<char> path) override;

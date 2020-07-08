@@ -17,7 +17,7 @@
 #include "base/io/include/ioSystem.h"
 #include "base/system/include/thread.h"
 #include "base/image/include/image.h"
-#include "base/resources/include/resourceUncached.h"
+#include "base/resource/include/resourceUncached.h"
 #include "managedFileFormat.h"
 
 namespace ed

@@ -10,6 +10,7 @@
 #include "stringParser.h"
 #include "stringBuilder.h"
 #include "stringID.h"
+#include "utf8StringFunctions.h"
 
 namespace base
 {
@@ -169,6 +170,20 @@ namespace base
         }
 
         return m_cur < m_end;
+    }
+
+    bool StringParser::parseChar(uint32_t& outChar)
+    {
+        auto* cur = m_cur;
+        const auto ch = utf8::NextChar(cur, m_end);
+        if (ch != 0)
+        {
+            outChar = ch;
+            m_cur = cur;
+            return true;
+        }
+
+        return false;
     }
 
     bool StringParser::parseTillTheEndOfTheLine(StringView<char>* outIdent /*= nullptr*/)

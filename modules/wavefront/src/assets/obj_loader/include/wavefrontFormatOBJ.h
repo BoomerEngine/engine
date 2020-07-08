@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "base/resources/include/resourceCookingInterface.h"
-#include "base/resources/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resource.h"
 #include "base/math/include/vector3.h"
 
 namespace wavefront

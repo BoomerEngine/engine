@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_system, base_memory, base_containers #]
-* [# dependency: base_reflection, base_math, base_resources #]
+* [# dependency: base_reflection, base_math, base_resource #]
 * [# warn3 #]
 ***/
 

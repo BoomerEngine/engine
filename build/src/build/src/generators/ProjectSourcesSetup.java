@@ -181,6 +181,10 @@ public abstract class ProjectSourcesSetup extends ProjectSetup {
     if (attributes.hasKey("noinit"))
       return false;
 
+    // app does not require static init
+    if (attributes.hasKey("app") || attributes.hasKey("console") )
+      return false;
+
     // get all projects that are dependencies
     for (ProjectSetup dep : collectSortedDependencies())
       if (dep.mergedName.equals("base_system"))
@@ -270,8 +274,7 @@ public abstract class ProjectSourcesSetup extends ProjectSetup {
 
     // determine if project requires static initialization (the apps and console apps require that)
     // then pull in the library linkage, for apps we pull much more crap
-    boolean hasStaticInitialization = attributes.hasKey("app")
-            || attributes.hasKey("console");
+    boolean hasStaticInitialization = attributes.hasKey("app") || attributes.hasKey("console");
     generateProjectLibrariesLinkage(hasStaticInitialization, f);
 
     // static initialization part is only generated for apps
@@ -297,7 +300,9 @@ public abstract class ProjectSourcesSetup extends ProjectSetup {
         // make sure that they are loaded on time
         // THIS IS TEMPORARY UNTIL WE DO A PROPER CLASS LOADER
         for (ProjectSourcesSetup dep : dependencies) {
-          f.writelnf( "    base::modules::LoadDynamicModule(\"%s\");", dep.mergedName);
+          //System.out.printf("Adding DLL load '%s' on '%s' (%s)\n", mergedName, dep.mergedName, dep.attributes.toString());
+          if (!dep.attributes.hasKey("app") && !dep.attributes.hasKey("console") )
+            f.writelnf( "    base::modules::LoadDynamicModule(\"%s\");", dep.mergedName);
         };
 
         f.writeln( "#endif");
