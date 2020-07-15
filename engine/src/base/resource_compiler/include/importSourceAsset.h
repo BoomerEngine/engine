@@ -7,7 +7,6 @@
 ***/
 
 #pragma once
-#include "base/containers/include/hashMap.h"
 
 namespace base
 {
@@ -36,9 +35,27 @@ namespace base
             /// calculate estimated memory size of the asset
             virtual uint64_t calcMemoryUsage() const = 0;
 
-            /// load the asset from given memory buffer 
-            /// NOTE: it's legal for the asset to take ownership of the buffer
-            virtual bool loadFromMemory(Buffer data) const = 0;
+            ///---
+        };
+
+        //--
+
+        /// loader for source assets
+        class BASE_RESOURCE_COMPILER_API ISourceAssetLoader : public base::IReferencable
+        {
+            RTTI_DECLARE_VIRTUAL_ROOT_CLASS(ISourceAssetLoader);
+
+        public:
+            ISourceAssetLoader();
+            virtual ~ISourceAssetLoader();
+
+            /// load source asset from memory buffer
+            virtual SourceAssetPtr loadFromMemory(StringView<char> importPath, StringView<char> contextPath, Buffer data) const = 0;
+
+            ///---
+
+            /// load source asset from buffer
+            static SourceAssetPtr LoadFromMemory(StringView<char> importPath, StringView<char> contextPath, Buffer data);
 
             ///---
         };

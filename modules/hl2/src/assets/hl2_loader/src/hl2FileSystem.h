@@ -28,13 +28,13 @@ namespace hl2
         virtual bool isWritable() const override final;
         virtual bool ownsFile(StringView<char> rawFilePath) const override final;
         virtual bool contextName(StringView<char> rawFilePath, base::StringBuf& outContextName) const override final;
-        virtual bool info(StringView<char> rawFilePath, uint64_t* outCRC, uint64_t* outFileSize, base::io::TimeStamp* outTimestamp) const override final;
+        virtual bool timestamp(StringView<char> rawFilePath, base::io::TimeStamp& outTimestamp) const override final;
         virtual bool absolutePath(StringView<char> rawFilePath, base::io::AbsolutePath& outAbsolutePath) const override final;
         virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
         virtual bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
-        virtual base::io::FileHandlePtr createReader(StringView<char> rawFilePath) const override final;
-        virtual bool writeFile(StringView<char> awFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp=nullptr, uint64_t overrideCRC=0) override final;
-        virtual bool enableWriteOperations() override final;
+        //virtual base::io::FileHandlePtr createReader(StringView<char> rawFilePath) const override final;
+        //virtual bool writeFile(StringView<char> awFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp=nullptr, uint64_t overrideCRC=0) override final;
+        //virtual bool enableWriteOperations() override final;
         virtual void enableFileSystemObservers() override final;
 
     private:
@@ -44,7 +44,7 @@ namespace hl2
         struct OpenPackage
         {
             base::io::AbsolutePath m_fullPath;
-            base::io::FileHandlePtr m_fileHandle;
+            base::io::ReadFileHandlePtr m_fileHandle;
             mutable base::Mutex m_lock;
         };
 

@@ -698,6 +698,15 @@ namespace ui
         return false;
     }
 
+    uint64_t Renderer::queryWindowNativeHandle(Window* window) const
+    {
+        for (auto& info : m_windows)
+            if (info.window == window)
+                return !info.popup && m_native->windowNativeHandle(info.nativeId);
+
+        return 0;
+    }
+
     extern void PrintElementStats();
 
     void Renderer::updateAndRender(float dt)

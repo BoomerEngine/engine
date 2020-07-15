@@ -49,6 +49,9 @@ namespace base
             /// clear array (remove all elements)
             virtual bool clearArrayElements(void* data) const = 0;
 
+            /// resize array element to specific size
+            virtual bool resizeArrayElements(void* data, uint32_t count) const = 0;
+
             /// remove element from array at given index, returns false if failed
             virtual bool removeArrayElement(const void* data, uint32_t index) const = 0;
 
@@ -65,13 +68,9 @@ namespace base
 
             virtual bool compare(const void* data1, const void* data2) const override final;
             virtual void copy(void* dest, const void* src) const override final;
-            virtual void calcCRC64(CRC64& crc, const void* data) const override final;
 
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override final;
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override final;
-
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final;
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final;
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
             virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override;
             virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;

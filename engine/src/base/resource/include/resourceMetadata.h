@@ -10,6 +10,7 @@
 
 #include "base/resource/include/resource.h"
 #include "base/reflection/include/variantTable.h"
+#include "base/object/include/objectTemplate.h"
 
 namespace base
 {
@@ -20,14 +21,31 @@ namespace base
         ///---
 
         /// persistent resource "configuration" - carried over from one reimport to other reimport (all other data is lost)
-        class BASE_RESOURCE_API IResourceConfiguration : public IObject
+        class BASE_RESOURCE_API ResourceConfiguration : public IObjectTemplate
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(IResourceConfiguration, IObject);
+            RTTI_DECLARE_VIRTUAL_CLASS(ResourceConfiguration, IObjectTemplate);
 
         public:
-            virtual ~IResourceConfiguration();
+            virtual ~ResourceConfiguration();
 
-            /// TODO: configuration "hash" ?
+            //--
+
+            INLINE const StringBuf& sourceAuthor() const { return m_sourceAuthor; };
+            INLINE const StringBuf& sourceImportedBy() const { return m_sourceImportedBy; }
+            INLINE const StringBuf& sourceLicense() const { return m_sourceLicense; };
+
+            //--
+
+            // compute the hash from configuration parameters that when changed should be consider grounds to indicate that resource has to be reimported
+            // NOTE: this is used mostly in two situations
+            //  a) another importer requested a follow-up import of this resource but with different parameters
+            //  b) the import configuration of the folder(s) changed
+            //virtual void computeConfigurationKey(CRC64& crc) const;
+
+        protected:
+            StringBuf m_sourceAuthor;
+            StringBuf m_sourceImportedBy;
+            StringBuf m_sourceLicense;
         };
 
         ///---
@@ -40,9 +58,7 @@ namespace base
 
         public:
             StringBuf sourcePath; // depot file used during resource cooking
-            uint64_t size = 0; // size of the file, larger files may skip CRC check and just assume that are not equal
             uint64_t timestamp = 0; // timestamp of the file at the time of cooking, if still valid files are assumed to be ok
-            uint64_t crc = 0; // CRC of the data - set if known
         };
 
         ///---
@@ -54,6 +70,7 @@ namespace base
 
         public:
             StringBuf importPath; // full absolute path (saved as UTF-8) to source import path
+            uint64_t timestamp = 0; // timestamp of the file at the time of last import, used to filter out crc checks
             uint64_t crc = 0; // CRC of the source import file
         };
 
@@ -68,7 +85,7 @@ namespace base
 
             StringBuf depotPath; // where to import, extension encodes type
             StringBuf sourceImportPath; // from where to import
-            Array<ResourceConfigurationPtr> configuration; // explicit configuration entries, not used if resource already exists
+            ResourceConfigurationPtr configuration; // explicit configuration entries, not used if resource already exists
         };
 
         ///---
@@ -102,12 +119,13 @@ namespace base
             // other assets that were imported due to import of this file
             Array<ImportFollowup> importFollowups;
 
-            // import configurations
-            Array<ResourceConfigurationPtr> importConfigurations;
+            // Merged non-user import configuration that was used to import this asset, this is the config given by the follow-up import or automatic import
+            // NOTE: this configuration can change without user input - ie. the folder configuration was changed, etc
+            ResourceConfigurationPtr importBaseConfiguration;
 
-            // additional values that can be read/written by the cooker
-            // this is a good place to store CRC that can detect 
-            //VariantTable blackboard;
+            // user specific configuration for this resource, user has taken active part in setting import values for the resource
+            // NOTE: rebase the user on base to get full set of values to use
+            ResourceConfigurationPtr importUserConfiguration;
         };
 
         ///---

@@ -178,8 +178,6 @@ namespace base
 
         //--
 
-        //--
-
     } // rtti
 } // base
 

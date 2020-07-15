@@ -641,11 +641,18 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("WindowTitleBar");
     RTTI_END_TYPE();
 
-    WindowTitleBar::WindowTitleBar(base::StringView<char> title)
+    WindowTitleBar::WindowTitleBar(base::StringView<char> title, base::StringView<char> customIcon)
     {
         hitTest(HitTestState::Enabled);
         layoutMode(LayoutMode::Horizontal);
 
+        if (customIcon)
+        {
+            auto appIcon = createNamedChild<TextLabel>("AppIcon"_id, customIcon);
+            appIcon->hitTest(true);
+            appIcon->customStyle("windowAreaType"_id, base::input::AreaType::SysMenu);
+        }
+        else
         {
             auto appIcon = createNamedChild<Image>("AppIcon"_id);
             appIcon->hitTest(true);

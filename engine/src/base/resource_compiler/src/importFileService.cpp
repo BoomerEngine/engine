@@ -9,6 +9,7 @@
 #include "build.h"
 #include "importFileSystem.h"
 #include "importFileService.h"
+#include "base/resource/include/resourceMetadata.h"
 
 #include "base/io/include/ioSystem.h"
 #include "importFileSystemNative.h"
@@ -35,11 +36,11 @@ namespace base
         ImportFileService::~ImportFileService()
         {}
 
-        bool ImportFileService::fileExists(StringView<char> assetImportPath, uint64_t* outCRC /*= nullptr*/) const
+        bool ImportFileService::fileExists(StringView<char> assetImportPath) const
         {
             StringView<char> fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
-                return fs->fileExists(fileSystemPath, outCRC);
+                return fs->fileExists(fileSystemPath);
 
             return false;
         }
@@ -69,11 +70,20 @@ namespace base
             return true;
         }
 
-        Buffer ImportFileService::loadFileContent(StringView<char> assetImportPath, uint64_t& outCRC) const
+        bool ImportFileService::resolveContextPath(StringView<char> assetImportPath, StringBuf& outContextPath) const
         {
             StringView<char> fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
-                return fs->loadFileContent(fileSystemPath, outCRC);
+                return fs->resolveContextPath(fileSystemPath, outContextPath);
+
+            return Buffer();
+        }
+
+        Buffer ImportFileService::loadFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint) const
+        {
+            StringView<char> fileSystemPath;
+            if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
+                return fs->loadFileContent(fileSystemPath, outFingerprint);
 
             return Buffer();
         }
@@ -102,6 +112,29 @@ namespace base
                 if (enumFunc(fs.prefix))
                     return true;
             return false;
+        }
+
+        //--
+
+        SourceAssetStatus ImportFileService::checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
+        {
+            StringView<char> fileSystemPath;
+            if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
+                return fs->checkFileStatus(fileSystemPath, lastKnownTimestamp, lastKnownCRC, progress);
+
+            return SourceAssetStatus::Missing;
+        }
+
+        //--
+
+        ResourceConfigurationPtr ImportFileService::compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configClass) const
+        {
+            if (!configClass || configClass->isAbstract())
+                return nullptr;
+                
+            // TODO: look for files on disk with custom configuration 
+
+            return configClass.create();
         }
 
         //--

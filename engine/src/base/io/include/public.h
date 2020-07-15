@@ -39,8 +39,14 @@ namespace base
 
         class AbsolutePath;
 
-        class IFileHandle;
-        typedef RefPtr<IFileHandle> FileHandlePtr;
+        class IReadFileHandle;
+        typedef RefPtr<IReadFileHandle> ReadFileHandlePtr;
+
+        class IWriteFileHandle;
+        typedef RefPtr<IWriteFileHandle> WriteFileHandlePtr;
+
+        class IAsyncFileHandle;
+        typedef RefPtr<IAsyncFileHandle> AsyncFileHandlePtr;
 
         class IDirectoryWatcher;
         class IDirectoryWatcherListener;

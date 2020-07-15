@@ -9,7 +9,6 @@
 #include "build.h"
 #include "renderingShaderLibrary.h"
 #include "renderingShaderCache.h"
-#include "base/resource/include/resourceUncached.h"
 
 namespace rendering
 {
@@ -44,12 +43,12 @@ namespace rendering
         {
             if (!entry->unpackedData)
             {
-                entry->unpackedData = base::rtti_cast<ShaderLibrary>(base::res::LoadUncached("", ShaderLibrary::GetStaticClass(), entry->packedData.data(), entry->packedData.size()));
+                /*entry->unpackedData = base::rtti_cast<ShaderLibrary>(base::res::LoadUncached("", ShaderLibrary::GetStaticClass(), entry->packedData.data(), entry->packedData.size()));
                 if (!entry->unpackedData)
                 {
                     TRACE_ERROR("Unable to unpack cached shader entry '{}' key {}", path, Hex(key));
                     return false;
-                }
+                }*/
             }
 
             outEntry = entry->unpackedData;

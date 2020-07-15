@@ -11,10 +11,8 @@
 #include "rttiClassRef.h"
 #include "rttiClassRefType.h"
 
-#include "streamTextWriter.h"
-#include "streamTextReader.h"
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 namespace base
 {
@@ -119,51 +117,20 @@ namespace base
                 classRef = ClassType();
         }
 
-        bool ClassRefType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        void ClassRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             auto& classRef = *static_cast<const ClassType*>(data);
             file.writeType(classRef.ptr());
-            return true;
         }
 
-        bool ClassRefType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void ClassRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            auto typeRef = file.readType();
+            StringID typeName;
+            auto typeRef = file.readType(typeName);
             writeReferencedClass(data, typeRef.toClass().ptr());
-            return true;
         }
 
-        bool ClassRefType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            auto& classRef = *static_cast<const ClassType*>(data);
-            if (classRef)
-            {
-                if (classRef->shortName())
-                    stream.writeValue(classRef->shortName().view());
-                else
-                    stream.writeValue(classRef->name().view());
-            } 
-            else
-            {
-                stream.writeValue("null");
-            }
-
-            return true;
-        }
-
-        bool ClassRefType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            StringView<char> className;
-            stream.readValue(className);
-
-            ClassType foundType = nullptr;
-            if (className && className != "null")
-                foundType = RTTI::GetInstance().findClass(StringID::Find(className));
-
-            writeReferencedClass(data, foundType);
-            return true;
-        }
-        
+       
         Type ClassRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSystem)
         {
             StringID innerTypeName;

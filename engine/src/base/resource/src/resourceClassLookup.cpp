@@ -9,6 +9,7 @@
 #include "build.h"
 #include "resourceClassLookup.h"
 #include "resource.h"
+#include "resourceTags.h"
 
 namespace base
 {
@@ -77,16 +78,7 @@ namespace base
                         auto metadata  = static_cast<const ResourceExtensionMetadata*>(classPtr->MetadataContainer::metadata(ResourceExtensionMetadata::GetStaticClass()));
                         const StringView<char> ext = metadata ? metadata->extension() : "";
                         if (ext.empty())
-                        {
-                            if (classPtr->is(ITextResource::GetStaticClass()))
-                            {
-                                if (!classPtr->findMetadata<res::ResourceManifestExtensionMetadata>())
-                                {
-                                    TRACE_WARNING("Text Resource '{}' is savable but no file extension was specified. Forgot ResourceExtensionMetadata?", classPtr->name());
-                                }
-                            }
                             continue;
-                        }
 
                         auto hash = ext.calcCRC64();
 

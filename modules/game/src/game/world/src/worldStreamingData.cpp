@@ -9,6 +9,7 @@
 
 #include "build.h"
 #include "worldStreamingData.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace game
 {
@@ -89,7 +90,6 @@ namespace game
     RTTI_BEGIN_TYPE_CLASS(WorldSectors);
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4sec");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("World Streaming");
-        RTTI_METADATA(base::res::ResourceBakedOnlyMetadata);
         RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0x99, 0x22, 0x44);
         RTTI_PROPERTY(m_worldSize);
         RTTI_PROPERTY(m_levels);

@@ -69,7 +69,7 @@ namespace ed
             {
                 rendering::scene::DebugLineDrawer lines(frame.geometry.solid);
                 lines.color(base::Color::YELLOW);
-                lines.box(m_mesh->bounds().box);
+                lines.box(m_mesh->bounds());
             }
         }
     }

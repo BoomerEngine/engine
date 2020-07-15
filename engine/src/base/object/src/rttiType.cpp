@@ -9,8 +9,9 @@
 #include "build.h"
 #include "rttiType.h"
 #include "rttiDataView.h"
-#include "streamBinaryWriter.h"
+#include "streamOpcodeWriter.h"
 #include "rttiDataHolder.h"
+#include "rttiClassType.h"
 #include "dataView.h"
 
 #include "base/containers/include/stringBuilder.h"
@@ -44,38 +45,6 @@ namespace base
         {
             // unparsable
             return false;
-        }
-
-        class CRC64Writer : public stream::IBinaryWriter
-        {
-        public:
-            CRC64Writer(CRC64& crc)
-                : IBinaryWriter((uint64_t)stream::BinaryStreamFlags::MemoryBased)
-                , m_crc(crc)
-            {}
-
-            virtual void write(const void* data, uint32_t size) override final
-            {
-                m_crc.append(data, size);
-                m_pos += size;
-                m_size = std::max<uint32_t>(m_pos, m_size);
-            }
-
-            virtual uint64_t pos() const override final { return m_pos; }
-            virtual uint64_t size() const override final { return m_size; }
-            virtual void seek(uint64_t pos) override final { m_pos = pos; }
-
-        private:
-            CRC64& m_crc;
-
-            uint64_t m_size = 0;
-            uint64_t m_pos = 0;
-        };
-
-        void IType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            CRC64Writer writer(crc);
-            writeBinary(TypeSerializationContext(), writer, data, nullptr);
         }
 
         //--
@@ -140,6 +109,32 @@ namespace base
             }
 
             return DataViewResultCode::ErrorIllegalAccess;
+        }
+
+        ///---
+
+        void TypeSerializationContext::print(IFormatStream& f) const
+        {
+            bool written = false;
+
+            if (objectContext)
+            {
+                f.appendf("object {}", *objectContext);
+                written = true;
+            }
+
+            if (classContext)
+            {
+                if (written) f.append(", ");
+                f.appendf("class '{}'", classContext->name());
+                written = true;
+            }
+
+            if (propertyContext)
+            {
+                if (written) f.append(", ");
+                f.appendf("property '{}'", propertyContext->name());
+            }
         }
 
         ///---

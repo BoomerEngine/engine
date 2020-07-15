@@ -15,7 +15,6 @@
 
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/localService.h"
-#include "base/resource/include/resourceUncached.h"
 #include "base/system/include/thread.h"
 
 namespace ed
@@ -322,9 +321,9 @@ namespace ed
     void ManagedDepot::toogleFileModified(ManagedFile* file, bool state)
     {
         if (state && m_modifiedFiles.insert(file))
-            dispatchEvent(file, ManagedDepotEvent::DirBookmarkChanged);
+            dispatchEvent(file, ManagedDepotEvent::FileModifiedChanged);
         else if (!state && m_modifiedFiles.remove(file))
-            dispatchEvent(file, ManagedDepotEvent::DirBookmarkChanged);
+            dispatchEvent(file, ManagedDepotEvent::FileModifiedChanged);
     }
 
     void ManagedDepot::registerListener(IManagedDepotListener* listener)

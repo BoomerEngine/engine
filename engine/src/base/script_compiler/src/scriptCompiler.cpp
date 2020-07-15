@@ -19,9 +19,10 @@
 #include "base/script/include/scriptCompiledProject.h"
 #include "base/script/include/scriptPortableData.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/resource_compiler/include/depotPackageManifest.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/memory/include/linearAllocator.h"
+#include "base/resource/include/resourceTags.h"
+#include "base/resource/include/resourceCooker.h"
 
 namespace base
 {

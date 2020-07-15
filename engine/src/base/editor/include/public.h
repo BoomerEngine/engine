@@ -46,6 +46,10 @@ namespace ed
     typedef RefPtr<ManagedThumbnailEntry> ManagedThumbnailEntryPtr;
     typedef RefWeakPtr<ManagedThumbnailEntry> ManagedThumbnailEntryWeakPtr;
 
+    class ManagedFileImportStatusCheck;
+    typedef RefPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckPtr;
+    typedef RefWeakPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckWeakPtr;
+
     class ManagedFileFormat;
 
     class IDataBox;

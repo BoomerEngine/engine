@@ -142,43 +142,6 @@ namespace base
 
     }
 
-    /*void VariantTable::rebuildMap()
-    {
-        m_parametersMap.reset();
-        m_parametersMap.reserve(m_parameters.size());
-
-        uint16_t index = 0;
-        for (auto& entry : m_parameters)
-            m_parametersMap[entry.name] = index++;
-    }
-
-    void VariantTable::onPostLoad()
-    {
-        TBaseClass::onPostLoad();
-        rebuildMap();
-    }*/
-
-    void VariantTable::calcCRC64(CRC64& crc) const
-    {
-        base::InplaceArray<const VariantTableEntry*, 256> entries;
-        entries.reserve(m_parameters.size());
-
-        for (const auto& entry : m_parameters)
-            entries.pushBack(&entry);
-
-        std::sort(entries.begin(), entries.end(), [](const VariantTableEntry* a, const VariantTableEntry* b)
-            {
-                return a->name.view() < b->name.view();
-            });
-
-        crc << entries.size();
-        for (const auto* entry : entries)
-        {
-            crc << entry->name;
-            entry->data.calcCRC64(crc);
-        }
-    }
-
     //---
 
 } // base

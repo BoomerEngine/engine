@@ -22,7 +22,6 @@ namespace ui
         RTTI_BIND_NATIVE_COMPARE(ModelIndex);
         RTTI_BIND_NATIVE_COPY(ModelIndex);
         RTTI_BIND_NATIVE_PRINT(ModelIndex);
-        RTTI_BIND_NATIVE_HASHER(ModelIndex);
     RTTI_END_TYPE();
 
     //---

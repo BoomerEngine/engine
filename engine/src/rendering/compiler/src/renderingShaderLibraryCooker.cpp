@@ -15,6 +15,8 @@
 #include "base/parser/include/textFilePreprocessor.h"
 
 #include "rendering/driver/include/renderingShaderLibrary.h"
+#include "base/resource/include/resourceTags.h"
+#include "base/resource/include/resourceCooker.h"
 
 namespace rendering
 {
@@ -87,10 +89,7 @@ namespace rendering
 
         bool ShaderLibraryCookerIncludeHandler::checkFileExists(const base::StringBuf& path) const
         {
-            uint64_t fileSize = 0;
-            if (!m_cooker.queryFileInfo(path, nullptr, &fileSize, nullptr))
-                return false;
-            return 0 != fileSize;
+            return m_cooker.queryFileExists(path);
         }
 
         bool ShaderLibraryCookerIncludeHandler::resolveIncludeFile(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::StringBuf& outPath) const

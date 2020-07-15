@@ -16,7 +16,7 @@
 #include "base/ui/include/uiWindow.h"
 #include "base/ui/include/uiMenuBar.h"
 #include "base/editor/include/managedFileFormat.h"
-#include "base/resource_compiler/include/backgroundBakeService.h"
+#include "base/resource/include/resourceMetadata.h"
 #include "base/object/include/actionHistory.h"
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiDockContainer.h"
@@ -94,10 +94,10 @@ namespace ed
         // toolbar
         {
             m_toolbar = createChild<ui::ToolBar>();
-            m_toolbar->createButton("Editor.Save"_id, "[img:save]", "Save changed to all modified files");
+            m_toolbar->createButton("Editor.Save"_id, ui::ToolbarButtonSetup().icon("save").caption("Save").tooltip("Save changed to all modified files"));
             m_toolbar->createSeparator();
-            m_toolbar->createButton("Editor.Undo"_id, "[img:undo]", "Undo last action");
-            m_toolbar->createButton("Editor.Redo"_id, "[img:redo]", "Redo last action");
+            m_toolbar->createButton("Editor.Undo"_id, ui::ToolbarButtonSetup().icon("undo").caption("Undo").tooltip("Undo last action"));
+            m_toolbar->createButton("Editor.Redo"_id, ui::ToolbarButtonSetup().icon("redo").caption("Redo").tooltip("Redo last action"));
         }
 
         m_dock = createChild<ui::DockContainer>();
@@ -138,9 +138,9 @@ namespace ed
         // TODO
     }
 
-    bool SingleResourceEditor::containsFile(ManagedFile* file) const
+    bool SingleResourceEditor::containsFile(const TFileSet& files) const
     {
-        return file == m_file;
+        return files.contains(m_file);
     }
 
     void SingleResourceEditor::collectOpenedFiles(AssetItemList& outList) const
@@ -148,31 +148,22 @@ namespace ed
         outList.collectFile(m_file);
     }
 
-    bool SingleResourceEditor::showFile(ManagedFile* file)
-    {
-        if (m_file == file)
-            return true;
-
-        return false;
-    }
-
-    bool SingleResourceEditor::saveFile(ManagedFile* file)
-    {
-        if (m_file == file)
-        {
-            bool status = true;
-            for (const auto& aspect : m_aspects)
-                status &= aspect->saveFile(file);
-            return status;
-        }
-
-        return false;
-    }
-
     void SingleResourceEditor::collectModifiedFiles(AssetItemList& outList) const
     {
-        for (const auto& aspect : m_aspects)
-            aspect->collectModifiedFiles(outList);
+        if (modifiedInternal())
+            outList.collectFile(m_file);
+    }
+
+    bool SingleResourceEditor::showFile(const TFileSet& files)
+    {
+        return files.contains(m_file);
+    }
+
+    bool SingleResourceEditor::saveFile(const TFileSet& files)
+    {
+        if (files.contains(m_file))
+            return saveInternal();
+        return false;
     }
 
     ui::DockLayoutNode& SingleResourceEditor::dockLayout()
@@ -244,29 +235,18 @@ namespace ed
     void SingleResourceEditor::cmdUndo()
     {
         if (!m_actionHistory->undo())
-        {
-
-        }
+            ui::PostWindowMessage(this, ui::MessageType::Warning, "UndoRedo"_id, "Undo of last operation has failed");
     }
 
     void SingleResourceEditor::cmdRedo()
     {
         if (!m_actionHistory->redo())
-        {
-
-        }
+            ui::PostWindowMessage(this, ui::MessageType::Warning, "UndoRedo"_id, "Redo of last operation has failed");
     }
 
     void SingleResourceEditor::cmdSave()
     {
-        if (saveFile(file()))
-        {
-
-        }
-        else
-        {
-
-        }
+        saveInternal();
     }
 
     bool SingleResourceEditor::canUndo() const
@@ -288,77 +268,71 @@ namespace ed
 
     //---
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(SingleCookedResourceEditor);
-    RTTI_PROPERTY(m_previewResource);
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(SingleLoadedResourceEditor);
+        RTTI_PROPERTY(m_resource);
     RTTI_END_TYPE();
 
-    SingleCookedResourceEditor::SingleCookedResourceEditor(ConfigGroup config, ManagedFile* file, base::SpecificClassType<base::res::IResource> mainResourceClass)
+    SingleLoadedResourceEditor::SingleLoadedResourceEditor(ConfigGroup config, ManagedFile* file)
         : SingleResourceEditor(config, file)
-        , m_mainResourceClass(mainResourceClass)
-        , m_key(base::res::ResourcePath(file->depotPath()), mainResourceClass)
+    {        
+    }
+
+    SingleLoadedResourceEditor::~SingleLoadedResourceEditor()
     {
-        m_bakable = mainResourceClass->findMetadata<base::res::ResourceBakedOnlyMetadata>();
+        detachObserver();
+    }
 
-        if (m_bakable)
+    void SingleLoadedResourceEditor::detachObserver()
+    {
+        if (m_observerToken && m_resource)
         {
-            actions().bindCommand("Editor.Bake"_id) = [this]() { bakeResource(); };
-            actions().bindShortcut("Editor.Bake"_id, "F5");
-
-            toolbar()->createSeparator();
-            toolbar()->createButton("Editor.Bake"_id, "[img:cog]", "Bake this resource");
+            base::IObjectObserver::UnregisterObserver(m_observerToken, this);
+            m_observerToken = 0;
         }
+    }
 
-        auto selfRef = base::RefWeakPtr<SingleCookedResourceEditor>(this);
-        base::LoadResourceAsync(m_key, [selfRef](const base::res::BaseReference& loadedRef)
+    void SingleLoadedResourceEditor::attachObserver()
+    {
+        DEBUG_CHECK(!m_observerToken);
+
+        if (m_resource)
+            m_observerToken = base::IObjectObserver::RegisterObserver(m_resource, this);
+    }
+
+    void SingleLoadedResourceEditor::bindResource(const base::res::ResourcePtr& newResource)
+    {
+        if (m_resource != newResource)
         {
-            RunSync("RefreshLoadedResource") << [selfRef, loadedRef](FIBER_FUNC)
-            {
-                if (auto editor = selfRef.lock())
-                {
-                    editor->m_previewResource = loadedRef.cast<base::res::IResource>();
-                    editor->onPropertyChanged("previewResource");
-                }
-            };
-        });
-    }
+            detachObserver();
+            m_resource = newResource;
+            attachObserver();
 
-    SingleCookedResourceEditor::~SingleCookedResourceEditor()
-    {
-    }
+            resourceChanged();
 
-    void SingleCookedResourceEditor::previewResourceChanged()
-    {
-        for (auto& aspect : m_aspects)
-            aspect->previewResourceChanged();
-    }
-
-    void SingleCookedResourceEditor::onPropertyChanged(StringView<char> path)
-    {
-        TBaseClass::onPropertyChanged(path);
-
-        if (path == "previewResource")
-            previewResourceChanged();
-    }
-
-    void SingleCookedResourceEditor::fillToolMenu(ui::MenuButtonContainer* menu)
-    {
-        menu->createAction("Editor.Bake"_id, "Bake", "[img:cog]");
-    }
-
-    void SingleCookedResourceEditor::bakeResource()
-    {
-        if (m_bakable)
-        {
-            if (m_currentBakingJob)
-                m_currentBakingJob->cancel();
-
-            bool contentSaved = true;
             for (const auto& aspect : m_aspects)
-                contentSaved &= aspect->saveFile(file());
-            
-            if (contentSaved)
-                m_currentBakingJob = base::GetService<base::res::BackgroundBaker>()->bake(key(), true, true);
+                aspect->resourceChanged();
         }
+    }
+
+    void SingleLoadedResourceEditor::resourceChanged()
+    {
+        // to be implemented in the derived editors
+    }
+
+    bool SingleLoadedResourceEditor::saveInternal()
+    {
+        return file()->storeContent(m_resource);
+    }
+
+    bool SingleLoadedResourceEditor::modifiedInternal() const
+    {
+        return m_resource->modified();
+    }
+
+    void SingleLoadedResourceEditor::onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData)
+    {
+        if (eventID == "ResourceModified"_id && eventObject == m_resource)
+            file()->markAsModifed();
     }
 
     //---
@@ -375,78 +349,11 @@ namespace ed
         return true;
     }
 
-    void SingleResourceEditorAspect::previewResourceChanged()
+    void SingleResourceEditorAspect::resourceChanged()
     {}
 
     void SingleResourceEditorAspect::shutdown()
     {}
-
-    //--
-
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(SingleResourceEditorManifestAspect);
-    RTTI_END_TYPE();
-
-    SingleResourceEditorManifestAspect::SingleResourceEditorManifestAspect(base::SpecificClassType<base::res::IResourceManifest> manifestClass)
-        : m_manifestClass(manifestClass)
-    {}
-
-    void SingleResourceEditorManifestAspect::collectModifiedFiles(AssetItemList& outList) const
-    {
-        if (m_loadedManifest && m_loadedManifest->modified())
-            outList.collectFile(editor()->file());
-    }
-
-    bool SingleResourceEditorManifestAspect::saveFile(ManagedFile* file)
-    {
-        if (file == editor()->file())
-        {
-            if (!file->storeManifest(m_loadedManifest))
-                return false;
-
-            m_loadedManifest->resetModifiedFlag();
-        }
-
-        return true;
-    }
-
-    bool SingleResourceEditorManifestAspect::modifiedFile(ManagedFile* file) const
-    {
-        if (file == editor()->file())
-            return m_loadedManifest->modified();
-        return false;
-    }
-
-    bool SingleResourceEditorManifestAspect::initialize(SingleResourceEditor* editor)
-    {
-        if (!TBaseClass::initialize(editor))
-            return false;
-
-        if (auto cookedEditor = base::rtti_cast<SingleCookedResourceEditor>(editor))
-        {
-            const auto& fileFormat = cookedEditor->file()->fileFormat();
-
-            for (const auto& outputClass : fileFormat.cookableOutputs())
-            {
-                if (outputClass.resoureClass == cookedEditor->mainResourceClass())
-                {
-                    if (outputClass.manifestClasses.contains(m_manifestClass))
-                    {
-                        if (m_loadedManifest = editor->file()->loadManifest(m_manifestClass, true))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    void SingleResourceEditorManifestAspect::shutdown()
-    {
-        // nothing
-    }
 
     //--
 

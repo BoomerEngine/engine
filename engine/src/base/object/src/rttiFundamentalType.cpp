@@ -10,10 +10,8 @@
 #include "rttiType.h"
 #include "rttiTypeSystem.h"
 
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
-#include "streamTextReader.h"
-#include "streamTextWriter.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 namespace base
 {
@@ -58,45 +56,14 @@ namespace base
                 *(T*)dest = *(const T*)src;
             }
 
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override final
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override
             {
-                file.writeValue(*(const T*)data);
-                return true;
+                file.writeTypedData(*(const T*)data);
             }
 
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override final
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override
             {
-                file.readValue(*(T*)data);
-                return true;
-            }
-
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final
-            {
-                stream.writeValue(TempString("{}", *(const T*)data).c_str());
-                return true;
-            }
-
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final
-            {
-                StringView<char> val;
-                if (!stream.readValue(val))
-                {
-                    TRACE_ERROR("Expected string value");
-                    return false;
-                }
-
-                if (MatchResult::OK != val.match(*(T*)data))
-                {
-                    TRACE_ERROR("Data conversion from string has failed");
-                    return false;
-                }
-
-                return true;
-            }
-
-            virtual void calcCRC64(CRC64& crc, const void* data) const override
-            {
-                crc << *(const T*)data;
+                file.readTypedData(*(T*)data);
             }
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags) const override
@@ -153,12 +120,6 @@ namespace base
                 m_traits.simpleCopyCompare = false;
             }
 
-            virtual void calcCRC64(CRC64& crc, const void* data) const override
-            {
-                auto& str = *(const StringBuf*)data;
-                crc << str;
-            }
-
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags) const override
             {
                 auto& str = *(const StringBuf*)data;
@@ -188,6 +149,35 @@ namespace base
 
                 return  true;
             }
+
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final
+            {
+                const auto& str = *(const StringBuf*)data;
+
+                const uint32_t length = str.length();
+                file.writeTypedData(length);
+
+                if (length)
+                    file.writeData(str.c_str(), length);
+            }
+
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final
+            {
+                auto& str = *(StringBuf*)data;
+
+                uint32_t length = 0;
+                file.readTypedData(length);
+
+                if (length)
+                {
+                    const auto* chr = (const char*)file.pointer(length);
+                    str = StringBuf(StringView<char>(chr, chr + length));
+                }
+                else
+                {
+                    str = "";
+                }
+            }
         };
 
         class SimpleTypeStringID : public SimpleValueType<StringID>
@@ -200,12 +190,6 @@ namespace base
                 m_traits.initializedFromZeroMem = true;
                 m_traits.requiresDestructor = false;
                 m_traits.simpleCopyCompare = true;
-            }
-
-            virtual void calcCRC64(CRC64& crc, const void* data) const override
-            {
-                auto& str = *(const StringID*)data;
-                crc << str.view();
             }
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags) const override
@@ -234,6 +218,18 @@ namespace base
                 MemFree(textData);
 
                 return true;
+            }
+
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final
+            {
+                const auto& str = *(const StringID*)data;
+                file.writeStringID(str);;
+            }
+
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final
+            {
+                const auto str = file.readStringID();
+                *(StringID*)data = str;
             }
         };
 

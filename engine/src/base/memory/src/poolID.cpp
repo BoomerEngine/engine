@@ -32,6 +32,7 @@ namespace base
                     m_numRegisteredNames += poolName(POOL_PERSISTENT, "Engine.Persistent");
                     m_numRegisteredNames += poolName(POOL_CONTAINERS, "Engine.Containers");
                     m_numRegisteredNames += poolName(POOL_IO, "Engine.IO");
+                    m_numRegisteredNames += poolName(POOL_SERIALIZATION, "Engine.Serialization");
                     m_numRegisteredNames += poolName(POOL_RTTI, "Engine.RTTI");
                     m_numRegisteredNames += poolName(POOL_SCRIPTS, "Engine.Scripts");
                     m_numRegisteredNames += poolName(POOL_NET, "Engine.Network");

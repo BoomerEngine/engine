@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "wavefrontFormatOBJ.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace wavefront
 {
@@ -38,7 +39,6 @@ namespace wavefront
     RTTI_END_TYPE();
 
     RTTI_BEGIN_TYPE_CLASS(FormatOBJ);
-        RTTI_METADATA(base::res::ResourceExtensionMetadata); // disable saving
         RTTI_PROPERTY(m_positions);
         RTTI_PROPERTY(m_uvs);
         RTTI_PROPERTY(m_normals);
@@ -95,7 +95,7 @@ namespace wavefront
         m_objects = other.m_objects;
     }
 
-    uint64_t FormatOBJ::calcTotalDataSize() const
+    uint64_t FormatOBJ::calcMemoryUsage() const
     {
         uint64_t totalSize = 0;
         totalSize += m_positions.size();
@@ -176,6 +176,24 @@ namespace wavefront
             ++f;
         }
     }
+
+    ///--
+
+    /// source asset loader for OBJ data
+    class FormatOBJAssetLoader : public base::res::ISourceAssetLoader
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(FormatOBJAssetLoader, base::res::ISourceAssetLoader);
+
+    public:
+        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView<char> importPath, base::StringView<char> contextPath, base::Buffer data) const override
+        {
+            return LoadObjectFile(contextPath, data.data(), data.size(), true);
+        }
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(FormatOBJAssetLoader);
+        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtensions("obj");
+    RTTI_END_TYPE();
 
     ///--
 

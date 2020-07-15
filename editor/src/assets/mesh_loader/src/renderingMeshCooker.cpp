@@ -10,10 +10,8 @@
 
 #include "renderingMeshCooker.h"
 #include "renderingMeshCookerChunks.h"
-#include "rendernigMeshMaterialManifest.h"
-#include "rendernigMeshPackingManifest.h"
+#include "renderingMeshImportConfig.h"
 
-#include "base/geometry/include/mesh.h"
 #include "base/resource/include/resourceCookingInterface.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
@@ -22,41 +20,24 @@
 
 namespace rendering
 {
-    //---
-
-    base::res::StaticResource<rendering::IMaterial> resDefaultMaterialTemplate("engine/materials/std_unlit.v4mg");
-    base::res::StaticResource<rendering::IMaterial> resLitCombinedRSMaterialTemplate("engine/materials/std_pbr_combined_rs.v4mg");
-    base::res::StaticResource<rendering::IMaterial> resLitMaterialTemplate("engine/materials/std_pbr.v4mg");
-
-    MeshCookingSettings::MeshCookingSettings()
-    {
-        defaultMaterialTemplate = resDefaultMaterialTemplate.loadAndGetAsRef();
-    }
-
-    MeshCookingSettings::~MeshCookingSettings()
-    {}
-
     //--
 
-    MeshVertexFormat SelectBestVertexFormat(const ImportChunk& chunk, const MeshCookingSettings& settings)
+    MeshVertexFormat SelectBestVertexFormat(const ImportChunk& chunk, const MeshImportConfig& settings)
     {
         return MeshVertexFormat::Static;
     }
 
     //--
 
-    static void ExtractImportChunks(const base::mesh::Mesh& sourceMesh, ImportChunkRegistry& outImportChunks)
+    static void ExtractImportChunks(const Array<MeshRawChunk>& sourceMesh, ImportChunkRegistry& outImportChunks)
     {
-        outImportChunks.bounds.box = base::Box();
+        outImportChunks.bounds = base::Box();
 
-        for (const auto& sourceModel : sourceMesh.models())
+        for (const auto& sourceChunk : sourceMesh)
         {
-            for (const auto& sourceChunk : sourceModel.chunks)
-            {
-                auto importChunk = base::CreateSharedPtr<ImportChunk>(sourceChunk);
-                outImportChunks.importChunks.pushBack(importChunk);
-                outImportChunks.bounds.box.merge(sourceChunk.bounds);
-            }
+            auto importChunk = base::CreateSharedPtr<ImportChunk>(sourceChunk);
+            outImportChunks.importChunks.pushBack(importChunk);
+            outImportChunks.bounds.merge(sourceChunk.bounds);
         }
 
         TRACE_INFO("Found {} import chunk(s)", outImportChunks.importChunks.size());
@@ -98,11 +79,11 @@ namespace rendering
         }
     }
 
-    static bool CalculateNormals(const ImportChunkRegistry& importChunks, const MeshCookingSettings& settings, base::IProgressTracker& progress)
+    static bool CalculateNormals(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, base::IProgressTracker& progress)
     {        
         base::Array<ImportChunk*> importChunksToRecalculate;
 
-        const auto recalculationMode = settings.packingManifest->m_normalRecalculation;
+        const auto recalculationMode = settings.m_normalRecalculation;
         for (auto& chunk : importChunks.importChunks)
         {
             if (const auto op = GenerateOrRemove(chunk->hasNormals(), recalculationMode))
@@ -124,13 +105,13 @@ namespace rendering
                     chunk->computeFlatNormals();
             });
         
-        if (settings.packingManifest->m_flipNormals)
+        if (settings.m_flipNormals)
         {
             RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipNormals", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
                 {
                     if (!progress.checkCancelation())
                     {
-                        auto normalData = (base::Vector3*) chunk->vertexStreamData(base::mesh::MeshStreamType::Normal_3F);
+                        auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Normal_3F);
                         FlipVectors(normalData, chunk->numVertices);
                     }
                 });
@@ -141,10 +122,10 @@ namespace rendering
 
     //--
 
-    static bool CalculateTangents(const ImportChunkRegistry& importChunks, const MeshCookingSettings& settings, base::IProgressTracker& progress)
+    static bool CalculateTangents(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, base::IProgressTracker& progress)
     {
         base::Array<ImportChunk*> importChunkToRecompute;
-        const auto recalculationMode = settings.packingManifest->m_normalRecalculation;
+        const auto recalculationMode = settings.m_tangentsRecalculation;
         for (auto& chunk : importChunks.importChunks)
         {
             if (const auto op = GenerateOrRemove(chunk->hasTangents(), recalculationMode))
@@ -163,28 +144,28 @@ namespace rendering
         RunFiberForFeach<ImportChunk*>("CalculateTangentSpace", importChunkToRecompute, 0, [&settings, &progress](ImportChunk* chunk)
             {
                 if (!progress.checkCancelation())
-                    chunk->computeTangentSpace(settings.packingManifest->m_tangentsAngularThreshold);
+                    chunk->computeTangentSpace(settings.m_tangentsAngularThreshold);
             });
 
-        if (settings.packingManifest->m_flipTangent)
+        if (settings.m_flipTangent)
         {
             RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
                 {
                     if (!progress.checkCancelation())
                     {
-                        auto normalData = (base::Vector3*) chunk->vertexStreamData(base::mesh::MeshStreamType::Tangent_3F);
+                        auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Tangent_3F);
                         FlipVectors(normalData, chunk->numVertices);
                     }
                 });
         }
 
-        if (settings.packingManifest->m_flipBitangent)
+        if (settings.m_flipBitangent)
         {
             RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
                 {
                     if (!progress.checkCancelation())
                     {
-                        auto normalData = (base::Vector3*) chunk->vertexStreamData(base::mesh::MeshStreamType::Binormal_3F);
+                        auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Binormal_3F);
                         FlipVectors(normalData, chunk->numVertices);
                     }
                 });
@@ -195,14 +176,15 @@ namespace rendering
 
     //--
 
-    static bool CalculateUVS(const ImportChunkRegistry& importChunks, const MeshCookingSettings& settings)
+    static bool CalculateUVS(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings)
     {
+        // TODO!
         return true;
     }
 
     //--
 
-    static void GenerateBuildChunks(const ImportChunkRegistry& importChunks, BuildChunkRegistry& outBuildChunks, const MeshCookingSettings& settings)
+    static void GenerateBuildChunks(const ImportChunkRegistry& importChunks, BuildChunkRegistry& outBuildChunks, const MeshImportConfig& settings)
     {
         uint32_t numSkippedChunks = 0;
         for (const auto& sourceChunk : importChunks.importChunks)
@@ -224,7 +206,7 @@ namespace rendering
 
     //--
 
-    static bool PackData(const BuildChunkRegistry& builder, const MeshCookingSettings& settings, base::IProgressTracker& progress)
+    static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& settings, base::IProgressTracker& progress)
     {
         // collect chunks with quantization bounds
         base::Box quantizationBounds;
@@ -274,7 +256,7 @@ namespace rendering
 
     //--
 
-    void ExportMaterials(const base::mesh::Mesh& sourceMesh, const MeshCookingSettings& settings, base::Array<MeshMaterial>& outExportMaterials)
+    /*void ExportMaterials(const Mesh& sourceMesh, const MeshImportConfig& settings, base::Array<MeshMaterial>& outExportMaterials)
     {
         outExportMaterials.reserve(sourceMesh.materials().size());
         for (const auto& sourceMaterial : sourceMesh.materials())
@@ -284,7 +266,7 @@ namespace rendering
 
             exportInfo.baseMaterial = base::CreateSharedPtr<MaterialInstance>();
 
-            if (sourceMaterial.flags.test(base::mesh::MeshMaterialFlagBit::Unlit))
+            if (sourceMaterial.flags.test(MeshMaterialFlagBit::Unlit))
             {
                 exportInfo.baseMaterial->baseMaterial(resDefaultMaterialTemplate.loadAndGetAsRef());
             }
@@ -321,7 +303,7 @@ namespace rendering
             if (const auto materialInfo = settings.materialManifest->findMaterial(exportInfo.name))
                 materialInfo->applyOn(*exportInfo.material);
         }
-    }
+    }*/
 
     //--
 
@@ -349,21 +331,21 @@ namespace rendering
 
     //--
 
-    MeshPtr CookMesh(const base::mesh::Mesh& sourceMesh, const MeshCookingSettings& settings, IProgressTracker& progressTracker)
+    bool BuildChunks(const Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks)
     {
-        PC_SCOPE_LVL0(CookMesh);
+        PC_SCOPE_LVL0(BuildChunks);
 
         // generate import chunks
         ImportChunkRegistry importChunks;
-        ExtractImportChunks(sourceMesh, importChunks);
+        ExtractImportChunks(sourceChunks, importChunks);
 
         // generate/replace attributes
         if (!CalculateNormals(importChunks, settings, progressTracker))
-            return nullptr;
+            return false;
         if (!CalculateTangents(importChunks, settings, progressTracker))
-            return nullptr;
+            return false;
         if (!CalculateUVS(importChunks, settings))
-            return nullptr;
+            return false;
 
         // prepare the build list
         BuildChunkRegistry buildChunks;
@@ -373,16 +355,13 @@ namespace rendering
         if (!PackData(buildChunks, settings, progressTracker))
             return nullptr;
 
-        // build materials
+        /*// build materials
         base::Array<MeshMaterial> exportMaterials;
-        ExportMaterials(sourceMesh, settings, exportMaterials);
+        ExportMaterials(sourceMesh, settings, exportMaterials);*/
 
         // export final chunks
-        base::Array<MeshChunk> exportChunks;
-        ExportChunks(buildChunks, exportChunks);
-
-        // create mesh object from all the data
-        return base::CreateSharedPtr<rendering::Mesh>(std::move(importChunks.bounds), std::move(exportMaterials), std::move(exportChunks));
+        ExportChunks(buildChunks, outRenderChunks);
+        return true;
     }
      
     //---

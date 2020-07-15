@@ -33,6 +33,9 @@
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiSearchBar.h"
+#include "base/resource_compiler/include/importInterface.h"
+#include "base/resource_compiler/include/importFileService.h"
+#include "base/io/include/fileFormat.h"
 
 namespace ed
 {
@@ -51,12 +54,14 @@ namespace ed
         // toolbar
         {
             auto toolbar = createChild<ui::ToolBar>();
-            toolbar->createButton("AssetBrowserTab.Refresh"_id, "[img:arrow_refresh]", "Refresh folder structure (rescan physical directory)");
+            toolbar->createButton("AssetBrowserTab.Refresh"_id, ui::ToolbarButtonSetup().icon("arrow_refresh").caption("Force refresh").tooltip("Refresh folder structure (rescan physical directory)"));
             toolbar->createSeparator();
-            toolbar->createButton("AssetBrowserTab.Lock"_id, "[img:lock]", "Prevent current tab from being closed");
-            toolbar->createButton("AssetBrowserTab.Bookmark"_id, "[img:star]", "Bookmark current directory");
+            toolbar->createButton("AssetBrowserTab.Lock"_id, ui::ToolbarButtonSetup().icon("lock").caption("Lock tab").tooltip("Prevent current tab from being closed"));
+            toolbar->createButton("AssetBrowserTab.Bookmark"_id, ui::ToolbarButtonSetup().icon("star").caption("Favourite").tooltip("Bookmark current directory"));
             toolbar->createSeparator();
-            toolbar->createButton("AssetBrowserTab.Icons"_id, "[img:list]", "");
+            toolbar->createButton("AssetBrowserTab.Icons"_id, ui::ToolbarButtonSetup().icon("list").caption("List view").tooltip("Toggle simple list view "));
+            toolbar->createSeparator();
+            toolbar->createButton("AssetBrowserTab.Import"_id, ui::ToolbarButtonSetup().icon("import").caption("[tag:#AFA]Import[/tag]").tooltip("Import assets here"));
             toolbar->createSeparator();
 
             if (auto bar = toolbar->createChild<ui::TrackBar>())
@@ -91,6 +96,7 @@ namespace ed
         actions().bindShortcut("AssetBrowserTab.Back"_id, "Backspace");
         actions().bindShortcut("AssetBrowserTab.Navigate"_id, "Enter");
         actions().bindShortcut("AssetBrowserTab.Delete"_id, "Delete");
+        actions().bindShortcut("AssetBrowserTab.Import"_id, "Insert");
 
         actions().bindCommand("AssetBrowserTab.Duplicate"_id) = [this]()
         {
@@ -152,6 +158,9 @@ namespace ed
         actions().bindCommand("AssetBrowserTab.Icons"_id) = [this]() { list(!list()); };
         actions().bindToggle("AssetBrowserTab.Icons"_id) = [this]() { return !list(); };
 
+        //--
+
+        actions().bindCommand("AssetBrowserTab.Import"_id) = [this]() { importNewFile(nullptr); };
         //--
 
         m_files->bind("OnItemActivated"_id, this) = [this](AssetBrowserTabFiles* tabs, ui::ModelIndex index)
@@ -564,287 +573,34 @@ namespace ed
 
     //--
 
-    class NewDirPopup : public ui::PopupWindow
+    void AssetBrowserTabFiles::buildNewAssetMenu(ui::MenuButtonContainer* menu)
     {
-    public:
-        NewDirPopup(ManagedDirectory* dir, AssetBrowserTabFiles* tab)
-            : m_dir(dir)
-            , m_tab(tab)
+        menu->createCallback("New directory", "[img:folder_new]", "Ctrl+Shift+D") = [this]()
         {
-            layoutVertical();
-            customPadding(4.0f);
+            createNewDirectory();
+        };
 
-            createChild<ui::TextLabel>("Enter name of new directory:");
+        menu->createSeparator();
 
-            m_name = createChild<ui::EditBox>();
-            m_name->customMargins(0, 3, 0, 3);
-            m_name->customStyle<float>("width"_id, 350.0f);
-            //m_name->hint("Directory name");
-            m_name->text("directory");
-            m_name->bind("OnTextModified"_id) = [this]() { m_failedToCreate = false; updateDirButton(); };
-            m_name->bind("OnTextAccepted"_id) = [this]() { createDirectory(); };
-
+        for (const auto* format : ManagedFileFormatRegistry::GetInstance().creatableFormats())
+        {
+            menu->createCallback(TempString("New {}", format->description()), "[img:file_add]", "") = [this, format]()
             {
-                auto buttons = createChild<ui::IElement>();
-                buttons->layoutHorizontal();
-                buttons->customMargins(0, 4, 0, 4);
-
-                m_button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:add] Create");
-                m_button->bind("OnClick"_id) = [this]() { createDirectory(); };
-
-                m_status = buttons->createChild<ui::TextLabel>();
-            }
-
-            updateDirButton();
+                createNewFile(format);
+            };
         }
+    }
 
-        void updateDirButton()
-        {
-            bool canCreate = true;
-            base::StringView<char> status = "";
-
-            if (m_name)
-            {
-                if (auto name = m_name->text())
-                {
-                    if (ManagedItem::ValidateName(name))
-                    {
-                        auto existing = m_dir->directory(name);
-                        if (existing && !existing->isDeleted())
-                        {
-                            status = "  [img:error] Exists";
-                            canCreate = false;
-                        }
-                    }
-                    else
-                    {
-                        status = "  [img:error] Invalid Name";
-                        canCreate = false;
-                    }
-                }
-                else
-                {
-                    status = "  [img:error] Empty Name";
-                    canCreate = false;
-                }
-            }
-
-            if (m_failedToCreate)
-                status = "  [img:cancel] Error";
-
-            if (m_status)
-                m_status->text(status);
-
-            if (m_button)
-                m_button->enable(canCreate);
-        }
-
-        void createDirectory()
-        {
-            if (m_button && m_button->isEnabled())
-            {
-                auto name = m_name->text();
-                if (auto newDir = m_dir->createDirectory(name))
-                {
-                    if (m_tab)
-                    {
-                        m_tab->selectItem(newDir);
-                        m_tab->focus();
-                    }
-                    requestClose();
-                }
-                else
-                {
-                    m_failedToCreate = true;
-                    updateDirButton();
-                }
-            }
-        }
-
-        virtual ui::IElement* handleFocusForwarding() override
-        {
-            return m_name;
-        }
-
-    private:
-        ManagedDirectory* m_dir = nullptr;
-        AssetBrowserTabFiles* m_tab = nullptr;
-        bool m_failedToCreate = false;
-
-        ui::EditBox* m_name;
-        ui::Button* m_button;
-        ui::TextLabel* m_status;
-    };
-
-    //--
-
-    class ManagedFormatListModel : public ui::SimpleTypedListModel<const ManagedFileFormat*, const ManagedFileFormat*>
+    void AssetBrowserTabFiles::buildImportAssetMenu(ui::MenuButtonContainer* menu)
     {
-    public:
-        ManagedFormatListModel()
+        for (const auto* format : ManagedFileFormatRegistry::GetInstance().importableFormats())
         {
-            for (const auto* format : ManagedFileFormatRegistry::GetInstance().creatableFormats())
-                add(format);
-        }
-
-        virtual base::StringBuf content(const ManagedFileFormat* data, int colIndex) const override
-        {
-            return base::TempString("  [img:page] {} [i][color:#888]({})", data->description(), data->nativeResourceClass()->name());
-        }
-
-        virtual bool compare(const ManagedFileFormat* a, const ManagedFileFormat* b, int colIndex) const override
-        {
-            return a->description() < b->description();
-        }
-
-        virtual bool filter(const ManagedFileFormat* data, const ui::SearchPattern& filter, int colIndex) const override
-        {
-            return filter.testString(data->description());
-        }
-    };
-
-    static const ManagedFileFormat* GDefaultFileFormat = nullptr;
-
-    class NewFilePopup : public ui::PopupWindow
-    {
-    public:
-        NewFilePopup(ManagedDirectory* dir, AssetBrowserTabFiles* tab)
-            : m_dir(dir)
-            , m_tab(tab)
-        {
-            layoutVertical();
-            customPadding(4.0f);
-
-            createChild<ui::TextLabel>("Enter name of new file:");
-
-            m_name = createChild<ui::EditBox>();
-            m_name->customMargins(0, 3, 0, 3);
-            m_name->customStyle<float>("width"_id, 350.0f);
-
-            m_classList = createChild<ui::ListView>();
-            m_classListModel = base::CreateSharedPtr< ManagedFormatListModel >();
-            m_classList->model(m_classListModel);
-            m_classList->select(m_classListModel->index(GDefaultFileFormat));
-
+            menu->createCallback(TempString("Import {}", format->description()), "[img:file_go]", "") = [this, format]()
             {
-                auto buttons = createChild<ui::IElement>();
-                buttons->layoutHorizontal();
-                buttons->customMargins(0, 4, 0, 4);
-
-                m_button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:add] Create");
-
-                m_status = buttons->createChild<ui::TextLabel>();
-            }
-
-            m_name->bind("OnTextModified"_id) = [this]() { m_failedToCreate = false; updateButton(); };
-            m_name->bind("OnTextAccepted"_id) = [this]() { createFile(); };
-            m_classList->bind("OnSelectionChanged"_id) = [this]() { updateButton(); };
-            m_button->bind("OnClick"_id) = [this]() { createFile(); };
-
-            updateButton();
+                createNewFile(format);
+            };
         }
-        
-        base::StringBuf formatExtension() const
-        {
-            if (m_classList)
-            {
-                GDefaultFileFormat = m_classListModel->data(m_classList->selectionRoot());
-                if (GDefaultFileFormat)
-                    return GDefaultFileFormat->extension();
-            }
-
-            return "";
-        }
-
-        void updateButton()
-        {
-            bool canCreate = true;
-            base::StringView<char> status = "";
-
-            auto ext = formatExtension();
-            if (ext && m_name)
-            {
-                if (auto name = m_name->text())
-                {
-                    if (ManagedItem::ValidateName(name))
-                    {
-                        auto existing = m_dir->file(base::TempString("{}.{}", name, ext));
-                        if (existing && !existing->isDeleted())
-                        {
-                            status = "  [img:error] Exists";
-                            canCreate = false;
-                        }
-                    }
-                    else
-                    {
-                        status = "  [img:error] Invalid Name";
-                        canCreate = false;
-                    }
-                }
-                else
-                {
-                    status = "  [img:error] Empty Name";
-                    canCreate = false;
-                }
-            }
-            else
-            {
-                status = "  [img:error] Inalid resource type";
-                canCreate = false;
-            }
-
-            if (m_failedToCreate)
-                status = "  [img:cancel] Error";
-
-            if (m_status)
-                m_status->text(status);
-
-            if (m_button)
-                m_button->enable(canCreate);
-        }
-
-        void createFile()
-        {
-            if (m_button && m_button->isEnabled())
-            {
-                auto name = m_name->text();
-                const auto* format = m_classListModel->data(m_classList->selectionRoot());
-                if (auto newFile = m_dir->createFile(name, *format))
-                {
-                    if (m_tab)
-                    {
-                        m_tab->selectItem(newFile);
-                        m_tab->focus();
-                    }
-                    requestClose();
-                }
-                else
-                {
-                    m_failedToCreate = true;
-                    updateButton();
-                }
-            }
-        }
-
-        virtual ui::IElement* handleFocusForwarding() override
-        {
-            return m_name;
-        }
-
-    private:
-        ManagedDirectory* m_dir = nullptr;
-        AssetBrowserTabFiles* m_tab = nullptr;
-        bool m_failedToCreate = false;
-
-        base::RefPtr<ManagedFormatListModel> m_classListModel;
-
-        ui::EditBox* m_name;
-        ui::Button* m_button;
-        ui::ListView* m_classList;
-        ui::TextLabel* m_status;
-    };
-
-    //--
+    }
 
     bool AssetBrowserTabFiles::showGenericContextMenu()
     {
@@ -853,11 +609,21 @@ namespace ed
         // new directory
         if (m_dir)
         {
-            auto newDirMenu = base::CreateSharedPtr<NewDirPopup>(m_dir, this);
-            menu->createSubMenu(newDirMenu, "New directory", "[img:folder_new]");
+            // new asset sub menu
+            {
+                auto newAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
+                buildNewAssetMenu(newAssetSubMenu);
+                menu->createSubMenu(newAssetSubMenu->convertToPopup(), "New", "[img:new]");
+            }
 
-            auto newFileMenu = base::CreateSharedPtr<NewFilePopup>(m_dir, this);
-            menu->createSubMenu(newFileMenu, "New file", "[img:file_add]");
+            // create asset sub menu
+            {
+                auto createAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
+                buildImportAssetMenu(createAssetSubMenu);
+                menu->createSubMenu(createAssetSubMenu->convertToPopup(), "Import", "[img:import]");
+            }
+
+            menu->createSeparator();
         }
 
         menu->show(m_files);
@@ -876,6 +642,82 @@ namespace ed
                     item->resizeIcon(size);
                 });
         }
+    }
+
+    void AssetBrowserTabFiles::createNewDirectory()
+    {
+
+    }
+
+    void AssetBrowserTabFiles::createNewFile(const ManagedFileFormat* format)
+    {
+
+    }
+
+    static base::io::OpenSavePersistentData GImportFiles;
+
+    bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
+    {
+        // get the native class to use for importing
+        auto nativeClass = format ? format->nativeResourceClass() : base::res::IResource::GetStaticClass();
+
+        // get all extensions we support
+        base::InplaceArray<base::StringView<char>, 20> extensions;
+        base::res::IResourceImporter::ListImportableExtensionsForClass(nullptr, extensions);
+
+        // nothing to import
+        if (extensions.empty())
+            return false;
+
+        // get list of files to import
+        base::Array<base::StringBuf> assetPaths;
+
+        {
+            // export to file formats
+            base::InplaceArray<io::FileFormat, 20> importFormats;
+            for (const auto& ext : extensions)
+            {
+                io::FileFormat format(base::StringBuf(ext), base::TempString("Format {}", ext));
+                importFormats.emplaceBack(format);
+            }
+
+            // ask for files
+            auto nativeHandle = base::GetService<Editor>()->windowNativeHandle(this);
+            base::Array<io::AbsolutePath> importPaths;
+            if (!IO::GetInstance().showFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
+                return false;
+
+            // convert the absolute paths to the source paths
+            base::StringBuilder failedPathsMessage;
+            assetPaths.reserve(importPaths.size());
+            for (const auto& absolutePath : importPaths)
+            {
+                const auto* fileService = base::GetService<base::res::ImportFileService>();
+
+                base::StringBuf sourceAssetPath;
+                if (fileService->translateAbsolutePath(absolutePath, sourceAssetPath))
+                {
+                    assetPaths.emplaceBack(std::move(sourceAssetPath));
+                }
+                else
+                {
+                    if (failedPathsMessage.empty())
+                        failedPathsMessage << "Following paths are not under the source asset repository:\n";
+                    failedPathsMessage << absolutePath;
+                    failedPathsMessage << "\n";
+                }
+            }
+
+            if (!failedPathsMessage.empty())
+                ui::PostWindowMessage(this, ui::MessageType::Error, "ImportAsset"_id, failedPathsMessage.view());
+        }
+
+        // nothing to import ?
+        if (assetPaths.empty())
+            return false;
+
+        // add to import window
+        return base::GetService<Editor>()->addImportFiles(assetPaths, directory());
     }
 
     //--

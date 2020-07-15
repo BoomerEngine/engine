@@ -115,7 +115,7 @@ namespace rendering
             if (cvExportGeneratedShaders.get())
             {
                 auto filePath = m_dumpDirectory.addFile(base::TempString("{}.dump.txt", context.shaderName).c_str());
-                base::io::SaveFileFromBuffer(filePath, outData.data(), outData.size(), false);
+                //base::io::SaveFileFromBuffer(filePath, outData.data(), outData.size(), false);
             }
 
             return true;

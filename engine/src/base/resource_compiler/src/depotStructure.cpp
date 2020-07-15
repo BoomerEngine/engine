@@ -10,17 +10,12 @@
 #include "depotFileSystem.h"
 #include "depotFileSystemNative.h"
 #include "depotStructure.h"
-#include "depotPackageManifest.h"
 
-#include "base/resource/include/resourceUncached.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resource.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resourceSerializationMetadata.h"
-#include "base/object/include/serializationLoader.h"
-#include "base/object/include/nativeFileReader.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/app/include/localServiceContainer.h"
@@ -39,25 +34,6 @@ namespace base
 
         namespace helper
         {
-
-            static RefPtr<PackageManifest> LoadManifest(const IFileSystem& fs, StringView<char> mountPath)
-            {
-                // load the manifest from the just mounted file system
-                auto manifestReader = fs.createReader("package.manifest");
-                if (!manifestReader)
-                    return nullptr;
-
-                // load the manifest from the file
-                stream::NativeFileReader fileReader(*manifestReader);
-                auto manifest = rtti_cast<PackageManifest>(res::LoadUncached(manifestReader->originInfo(), PackageManifest::GetStaticClass(), fileReader));
-                if (manifest)
-                {
-                    auto depotMountPoint = base::res::ResourceMountPoint(mountPath);
-                    manifest->translatePaths(depotMountPoint);
-                }
-
-                return manifest;
-            }
 
             static StringBuf CombineMountPaths(StringView<char> basePath, StringView<char> relativeMountPath)
             {
@@ -96,7 +72,6 @@ namespace base
 
         DepotStructure::DepotStructure()
         {
-            m_crcCache.create();
         }
 
         bool DepotStructure::populateFromManifest(const io::AbsolutePath& depotManifestPath)
@@ -173,25 +148,8 @@ namespace base
 
         DepotStructure::~DepotStructure()
         {
-            m_crcCache.reset();
             m_fileSystems.clear();
             m_fileSystemsPtrs.clear();
-        }
-
-        bool DepotStructure::enableWriteOperations()
-        {
-            bool valid = true;
-
-            for (const auto& fs : m_fileSystems)
-            {
-                if (!fs->fileSystem().enableWriteOperations())
-                {
-                    TRACE_ERROR("File system mounted at '{}' does not permit write operations", fs->mountPoint());
-                    valid = false;
-                }
-            }
-
-            return valid;
         }
 
         void DepotStructure::enableDepotObservers()
@@ -282,12 +240,12 @@ namespace base
             m_observers.remove(observer);
         }
 
-        io::FileHandlePtr DepotStructure::createFileReader(StringView<char> fileSystemPath) const
+        io::ReadFileHandlePtr DepotStructure::createFileReader(StringView<char> filePath) const
         {
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath))
+            if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath))
                 return nullptr;
 
             // get the timestamp
@@ -297,7 +255,7 @@ namespace base
             // try the physical system
             if (!localFileSystem->isPhysical())
             {
-                if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath, true))
+                if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath, true))
                     return nullptr;
 
                 // try with the target file system
@@ -308,28 +266,54 @@ namespace base
             return nullptr;
         }
 
-        bool DepotStructure::storeFileContent(StringView<char> fileSystemPath, const Buffer& newContent) const
+        io::AsyncFileHandlePtr DepotStructure::createFileAsyncReader(StringView<char> filePath) const
         {
+            // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath))
-                return false;
+            if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath))
+                return nullptr;
 
-            // try with the target file system
-            if (localFileSystem->isWritable())
-                if (const_cast<IFileSystem*>(localFileSystem)->writeFile(localFileSystemPath, newContent))
-                    return true;
+            // get the timestamp
+            if (auto ret = localFileSystem->createAsyncReader(localFileSystemPath))
+                return ret;
 
             // try the physical system
             if (!localFileSystem->isPhysical())
             {
-                if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath, true))
+                if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath, true))
+                    return nullptr;
+
+                // try with the target file system
+                if (auto ret = localFileSystem->createAsyncReader(localFileSystemPath))
+                    return ret;
+            }
+
+            return nullptr;
+        }
+
+        io::WriteFileHandlePtr DepotStructure::createFileWriter(StringView<char> filePath) const
+        {
+            StringBuf localFileSystemPath;
+            const IFileSystem* localFileSystem = nullptr;
+            if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath))
+                return false;
+
+            // try with the target file system
+            if (localFileSystem->isWritable())
+                if (auto ret = localFileSystem->createWriter(localFileSystemPath))
+                    return ret;
+
+            // try the physical system
+            if (!localFileSystem->isPhysical())
+            {
+                if (!queryFilePlacement(filePath, localFileSystem, localFileSystemPath, true))
                     return false;
 
                 // try with the target file system
                 if (localFileSystem->isWritable())
-                    if (const_cast<IFileSystem*>(localFileSystem)->writeFile(localFileSystemPath, newContent))
-                        return true;
+                    if (auto ret = localFileSystem->createWriter(localFileSystemPath))
+                        return ret;
             }
 
             // not written
@@ -452,7 +436,7 @@ namespace base
             if (!fs)
                 return false;
 
-            // load the manifest from the file system
+            /*// load the manifest from the file system
             auto manifest = helper::LoadManifest(*fs, mountPath);
             if (manifest)
             {
@@ -501,7 +485,7 @@ namespace base
             else
             {
                 TRACE_INFO("No manifest at '{}'", mountPath);
-            }
+            }*/
 
             // finally, attach file system to the loader
             // NOTE: we are attached after our dependencies to make sure the path filtering can be done in a simple way

@@ -23,12 +23,13 @@ namespace ed
         TextFileResourceEditor(ConfigGroup config, ManagedFile* file);
 
         virtual bool initialize() override;
-        virtual void collectModifiedFiles(AssetItemList& outList) const override;
-        virtual bool saveFile(ManagedFile* file) override;
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
 
     private:
         ui::ScintillaTextEditor* m_editor;
+
+        virtual bool saveInternal() override;
+        virtual bool modifiedInternal() const override;
 
         void cmdShowFindWindow();
         void cmdNextFind();

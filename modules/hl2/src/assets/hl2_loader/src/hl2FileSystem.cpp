@@ -70,7 +70,7 @@ namespace hl2
         return true;
     }
 
-    bool PackedFileSystem::info(StringView<char> rawFilePath, uint64_t* outCRC, uint64_t* outFileSize, base::io::TimeStamp* outTimestamp) const
+    bool PackedFileSystem::timestamp(StringView<char> rawFilePath, base::io::TimeStamp& outTimestamp) const
     {
         auto fileIndex = m_indexData->findFileEntry(rawFilePath);
         if (fileIndex == -1)
@@ -78,12 +78,7 @@ namespace hl2
 
         const auto& entry = m_indexData->files() + fileIndex;
         const auto& packageEntry = m_indexData->packages() + entry->m_packageIndex;
-        if (outTimestamp)
-            *outTimestamp = base::io::TimeStamp(packageEntry->m_timeStamp);
-        if (outCRC)
-            *outCRC = entry->m_dataCRC;
-        if (outFileSize)
-            *outFileSize = entry->m_dataSize;
+        outTimestamp = base::io::TimeStamp(packageEntry->m_timeStamp);
         return true;
     }
     
@@ -137,7 +132,7 @@ namespace hl2
         return false;
     }
 
-    base::io::FileHandlePtr PackedFileSystem::createReader(base::StringView<char> rawFilePath) const
+    /*base::io::FileHandlePtr PackedFileSystem::createReader(base::StringView<char> rawFilePath) const
     {
         // find file
         auto fileIndex = m_indexData->findFileEntry(rawFilePath);
@@ -182,7 +177,7 @@ namespace hl2
     bool PackedFileSystem::enableWriteOperations()
     {
         return true; // writes are done to parent FS any way...
-    }
+    }*/
 
     void PackedFileSystem::enableFileSystemObservers()
     {

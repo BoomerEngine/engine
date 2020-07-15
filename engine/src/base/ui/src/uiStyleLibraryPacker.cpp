@@ -10,10 +10,8 @@
 #include "uiStyleLibraryPacker.h"
 #include "uiStyleLibraryTree.h"
 
-#include "uiStyleParameters.h"
 #include "base/font/include/font.h"
 #include "uiStyleValue.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 
 namespace ui

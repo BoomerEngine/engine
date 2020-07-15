@@ -7,3 +7,11 @@
 #pragma once
 
 #include "assets_mesh_loader_glue.inl"
+
+namespace rendering
+{
+
+    class MeshImportConfig;
+    class MeshMaterialConfig;
+
+} // renering

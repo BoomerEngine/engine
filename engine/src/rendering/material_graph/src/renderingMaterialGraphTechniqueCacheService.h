@@ -67,7 +67,6 @@ namespace rendering
 
         struct FileInfo
         {
-            uint64_t crc = 0;
             uint64_t timestamp = 0;
             base::StringBuf depotPath;
 

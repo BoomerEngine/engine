@@ -184,7 +184,7 @@ namespace ed
         : m_model(model)
     {}
 
-    void BackgroundBakedListModelNotificataionForwarder::handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced)
+    /*void BackgroundBakedListModelNotificataionForwarder::handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced)
     {
         auto selfRef = m_model.weak();
         RunSync("ModelListUpdate") << [selfRef, key, forced](FIBER_FUNC)
@@ -217,7 +217,7 @@ namespace ed
     void BackgroundBakedListModelNotificataionForwarder::handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key)
     {
 
-    }
+    }*/
 
     //--
 
@@ -235,8 +235,8 @@ namespace ed
         // toolbar
         {
             auto toolbar = createChild<ui::ToolBar>();
-            toolbar->createButton("Baker.ToggleBackgroundBake"_id, "[img:cog] Enable Bake", "Enable background bake of assets");
-            toolbar->createSeparator();
+            //toolbar->createButton("Baker.ToggleBackgroundBake"_id, "[img:cog] Enable Bake", "Enable background bake of assets");
+            //toolbar->createSeparator();
 
             auto trackbar = toolbar->createChild<ui::TrackBar>();
             trackbar->range(1, 8);
@@ -263,27 +263,28 @@ namespace ed
         m_listModel = base::CreateSharedPtr<BackgroundBakedListModel>();
         m_listForwarder = base::CreateSharedPtr<BackgroundBakedListModelNotificataionForwarder>(m_listModel);
 
-        base::GetService<base::res::BackgroundBaker>()->attachListener(m_listForwarder);
-        base::GetService<base::res::BackgroundBaker>()->attachListener(this);
+        //base::GetService<base::res::BackgroundBaker>()->attachListener(m_listForwarder);
+        //base::GetService<base::res::BackgroundBaker>()->attachListener(this);
 
         m_fileList->model(m_listModel);
     }
 
     BackgroundBakerPanel::~BackgroundBakerPanel()
     {
-        base::GetService<base::res::BackgroundBaker>()->dettachListener(this);
-        base::GetService<base::res::BackgroundBaker>()->dettachListener(m_listForwarder);
+        //base::GetService<base::res::BackgroundBaker>()->dettachListener(this);
+        //base::GetService<base::res::BackgroundBaker>()->dettachListener(m_listForwarder);
     }
 
     void BackgroundBakerPanel::cmdToggleBackgroundBake()
     {
-        auto flag = base::GetService<base::res::BackgroundBaker>()->enabled();
-        base::GetService<base::res::BackgroundBaker>()->enabled(!flag);
+        //auto flag = base::GetService<base::res::BackgroundBaker>()->enabled();
+        //base::GetService<base::res::BackgroundBaker>()->enabled(!flag);
     }
 
     bool BackgroundBakerPanel::checkBackgroundBake() const
     {
-        return base::GetService<base::res::BackgroundBaker>()->enabled();
+        //return base::GetService<base::res::BackgroundBaker>()->enabled();
+        return false;
     }
 
     void BackgroundBakerPanel::loadConfig(const ConfigGroup& config)
@@ -296,7 +297,7 @@ namespace ed
         
     }
 
-    void BackgroundBakerPanel::handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced)
+/*    void BackgroundBakerPanel::handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced)
     {
     }
 
@@ -315,7 +316,7 @@ namespace ed
 
     void BackgroundBakerPanel::handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key)
     {
-    }
+    }*/
 
     //--
 

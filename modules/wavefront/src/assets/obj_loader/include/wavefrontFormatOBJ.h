@@ -10,6 +10,7 @@
 
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resource.h"
+#include "base/resource_compiler/include/importSourceAsset.h"
 #include "base/math/include/vector3.h"
 
 namespace wavefront
@@ -101,14 +102,14 @@ namespace wavefront
     };
 
     /// unpacked format data for OBJ file
-    class ASSETS_OBJ_LOADER_API FormatOBJ : public base::res::IResource
+    class ASSETS_OBJ_LOADER_API FormatOBJ : public base::res::ISourceAsset
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(FormatOBJ, base::res::IResource);
+        RTTI_DECLARE_VIRTUAL_CLASS(FormatOBJ, base::res::ISourceAsset);
 
     public:
         FormatOBJ();
-        FormatOBJ(const FormatOBJ& other); // make a copy of data
-
+        FormatOBJ(const FormatOBJ& other);
+        
         //-- vertex streams
 
         INLINE const Position* positions() const { return (const Position*)m_positions.data(); }
@@ -142,8 +143,8 @@ namespace wavefront
 
         //--
 
-        // calculate total data size 
-        uint64_t calcTotalDataSize() const;
+         /// calculate estimated memory size of the asset
+        virtual uint64_t calcMemoryUsage() const override;
 
         //--
 

@@ -9,11 +9,7 @@
 #include "build.h"
 
 #include "base/test/include/gtest/gtest.h"
-#include "base/object/include/serializationLoader.h"
 #include "base/containers/include/public.h"
-#include "base/object/include/memoryWriter.h"
-#include "base/object/include/serializationSaver.h"
-#include "base/object/include/memoryReader.h"
 #include "base/containers/include/hashMap.h"
 #include "base/system/include/scopeLock.h"
 #include "base/io/include/ioFileHandleMemory.h"
@@ -21,7 +17,8 @@
 #include "resource.h"
 #include "resourceLoader.h"
 #include "resourcePath.h"
-#include "resourceSerializationMetadata.h"
+#include "resourceTags.h"
+#include "resourceFileSaver.h"
 
 DECLARE_TEST_FILE(Resource);
 
@@ -76,19 +73,18 @@ namespace tests
 
         void addObjectResource(const res::ResourcePath& path, const res::ResourceHandle& resource)
         {
-            // save to memory
-            stream::MemoryWriter writer;
-            stream::SavingContext saveContext(resource);
+            base::io::MemoryWriterFileHandle writer;
 
-            auto& saverMetaData = resource->cls()->findMetadataRef<SerializationSaverMetadata>();
-            auto saver = saverMetaData.createSaver();
+            base::res::FileSavingContext context;
+            context.rootObject.pushBack(resource);
 
-            ASSERT_TRUE(saver->saveObjects(writer, saveContext)) << "Serialization failed";
+            ASSERT_TRUE(base::res::SaveFile(&writer, context));
 
-            // we should have something
-            ASSERT_TRUE(writer.size() > 0) << "No data in buffer";
+            const auto data = writer.extract();
 
-            addBufferResource(path, writer.extractData(), resource->cls());
+            ASSERT_FALSE(data.empty());
+
+            addBufferResource(path, data, resource->cls());
         }
 
         virtual res::ResourceHandle acquireLoadedResource(const res::ResourceKey& key) override final
@@ -98,7 +94,7 @@ namespace tests
 
         virtual CAN_YIELD res::ResourceHandle loadResource(const res::ResourceKey& key) override final
         {
-            FakeResource* entry = nullptr;
+/*            FakeResource* entry = nullptr;
 
             {
                 ScopeLock<> lock(m_lock);
@@ -127,7 +123,8 @@ namespace tests
             }
 
             // get the root object
-            return rtti_cast<res::IResource>(loadingResults.m_loadedRootObjects[0]);
+            return rtti_cast<res::IResource>(loadingResults.m_loadedRootObjects[0]);*/
+            return nullptr;
         }
 
     private:

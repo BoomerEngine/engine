@@ -10,7 +10,6 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/parser/include/textParser.h"

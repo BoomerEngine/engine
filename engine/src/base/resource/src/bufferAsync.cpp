@@ -9,10 +9,8 @@
 #include "build.h"
 #include "bufferAsync.h"
 
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/serializationUnampper.h"
-#include "base/object/include/serializationMapper.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
 
 namespace base
 {
@@ -57,18 +55,30 @@ namespace base
             return m_access != other.m_access;
         }
 
+        void AsyncBuffer::reset()
+        {
+            m_access.reset();
+        }
+
         void AsyncBuffer::bind(const stream::DataBufferLatentLoaderPtr& source)
         {
             m_access = source;
         }
 
-        void AsyncBuffer::reset(const void* data, uint32_t dataSize)
+        void AsyncBuffer::bind(const void* data, uint32_t dataSize, bool compress /*= true*/)
         {
-            CRC64 crc;
-            crc.append(data, dataSize);
+            if (data && dataSize)
+            {
+                CRC64 crc;
+                crc.append(data, dataSize);
 
-            auto buffer = Buffer::Create(POOL_ASYNC_BUFFER, dataSize, 16, data);
-            m_access = CreateSharedPtr<stream::PreloadedBufferLatentLoader>(buffer, crc.crc());
+                //auto buffer = Buffer::Create(POOL_ASYNC_BUFFER, dataSize, 16, data);
+                //m_access = CreateSharedPtr<stream::PreloadedBufferLatentLoader>(buffer, crc.crc());
+            }
+            else
+            {
+                reset();
+            }
         }
 
         Buffer AsyncBuffer::load(const mem::PoolID poolID /*= POOL_ASYNC_BUFFER*/) const
@@ -84,11 +94,11 @@ namespace base
         namespace prv
         {
 
-            bool WriteAsyncBuffer(const rtti::TypeSerializationContext& typeContext, stream::IBinaryWriter& stream, const void* data, const void* defaultData)
+            void WriteAsyncBuffer(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
             {
                 auto& asyncBuffer = *(AsyncBuffer*)data;
 
-                // load the content of the buffer
+                /*// load the content of the buffer
                 auto content = asyncBuffer.load();
 
                 // buffer that are big cannot be saved
@@ -125,13 +135,13 @@ namespace base
                         stream.write(content.data(), size);
                 }
 
-                return true;
+                return true;*/
             }
 
-            bool ReadAsyncBuffer(const rtti::TypeSerializationContext& typeContext, stream::IBinaryReader& stream, void* data)
+            void ReadAsyncBuffer(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
             {
                 auto& asyncBuffer = *(AsyncBuffer*)data;
-
+                /*
                 // get the flag determining how was the data stored
                 uint8_t mapped = 0;
                 stream.readValue(mapped);
@@ -187,7 +197,7 @@ namespace base
                 }
 
                 // loaded
-                return true;
+                return true;*/
             }
 
         } // prv
@@ -198,6 +208,7 @@ namespace base
             RTTI_BIND_NATIVE_CTOR_DTOR(AsyncBuffer);
             RTTI_BIND_NATIVE_COMPARE(AsyncBuffer);
             RTTI_BIND_NATIVE_COPY(AsyncBuffer);
+            RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteAsyncBuffer, &prv::ReadAsyncBuffer);
         RTTI_END_TYPE();
 
 

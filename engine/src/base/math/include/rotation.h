@@ -96,9 +96,6 @@ namespace base
         //! get new rotation angles that moved from "a" to "b" by maximum "degrees"
         static Angles Approach(const Angles &a, const Angles &b, float degrees);
 
-        //! get random angles within given bounds
-        static Angles Rand(float minAngle, float maxAngle, bool withRoll);
-
         //--
 
         //! get rotation basis vectors
@@ -137,14 +134,5 @@ namespace base
         static const Angles& Z90_CW();
         static const Angles& Z90_CCW();
     };
-
-    extern BASE_MATH_API float Dot(const Angles &a, const Angles &b);
-    extern BASE_MATH_API Angles Lerp(const Angles &a, const Angles &b, float frac);
-    extern BASE_MATH_API Angles LerpNormalized(const Angles &a, const Angles &b, float frac);
-    extern BASE_MATH_API Angles Snap(const Angles &a, float grid);
-    extern BASE_MATH_API Angles Min(const Angles &a, const Angles &b);
-    extern BASE_MATH_API Angles Max(const Angles &a, const Angles &b);
-    extern BASE_MATH_API Angles Clamp(const Angles &a, const Angles &minV, const Angles &maxV);
-    extern BASE_MATH_API Angles Clamp(const Angles &a, float minF, float maxF);
 
 } // base

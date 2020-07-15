@@ -97,8 +97,8 @@ namespace hl2
 
         //--
 
-        bool load(base::io::IFileHandle& file);
-        bool save(base::io::IFileHandle& file) const;
+        bool load(base::io::IReadFileHandle& file);
+        bool save(base::io::IWriteFileHandle& file) const;
 
         void dumpTables(base::StringBuilder& str) const;
         void dumpDir(base::StringBuilder& str, uint32_t depth, uint32_t index) const;

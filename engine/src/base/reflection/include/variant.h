@@ -140,11 +140,6 @@ namespace base
 
         //--
 
-        // calculate 64-bit hash value for the variant and it's data
-        void calcCRC64(CRC64& crc) const;
-
-        //--
-
         // get empty variant
         static const Variant& EMPTY();
 

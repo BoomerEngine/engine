@@ -49,18 +49,17 @@ namespace base
             // returns true if buffer is empty (does not contain any data)
             INLINE bool empty() const { return !m_access; }
 
-            // set new data for the data buffer
-            // the interface is a little shitty as it requires to pass all the data at once
-            // NOTE: data size is limited to 4GB (large buffers are very very rare but small buffers are very often, 64-bit size is overkill)
-            // TODO: paged buffer interface
-            void reset(const void* data, uint32_t dataSize);
+            // clear data in the buffer
+            void reset();
+
+            // set new data for the data buffer, if data is not indicated as compressed it will be compressed
+            void bind(const void* data, uint32_t dataSize, bool compress=true);
 
             // bind to async data source
             void bind(const stream::DataBufferLatentLoaderPtr& source);
 
-            // load content of the async buffer from whatever is the source of the data into a in-memory buffer
+            // load content of the async buffer from whatever is the source of the data into a in-memory buffer, buffer may be decompressed internally if it's compressed
             // each call will open a new access request so you need to limit them at the higher level
-            // NOTE: all pending saves are flushed before the load beings, also, while there's an active async loading no save can begin
             // NOTE: deleting the file OR modifying the file content while the async request is in flight has UNDEFINED behavior
             // NOTE: if the buffer is already loaded the existing content will be returned ASAP
             CAN_YIELD Buffer load(mem::PoolID poolID = POOL_ASYNC_BUFFER) const;

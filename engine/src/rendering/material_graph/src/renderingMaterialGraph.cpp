@@ -12,13 +12,11 @@
 #include "renderingMaterialGraphBlock_Parameter.h"
 #include "renderingMaterialGraphBlock_Output.h"
 
-#include "base/resource/src/resourceGeneralTextLoader.h"
-#include "base/resource/src/resourceGeneralTextSaver.h"
-#include "base/resource/include/resourceSerializationMetadata.h"
 #include "base/resource/include/resourceFactory.h" 
 #include "base/graph/include/graphSocket.h" 
 #include "renderingMaterialGraphBlock_OutputUnlit.h"
 #include "base/object/include/rttiDataView.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {
@@ -139,8 +137,6 @@ namespace rendering
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4mg");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Material Graph");
         RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0xFF, 0xA6, 0x30);
-        //RTTI_METADATA(base::SerializationLoaderMetadata).bind<base::res::text::TextLoader>();
-        //RTTI_METADATA(base::SerializationSaverMetadata).bind<base::res::text::TextSaver>();
         RTTI_PROPERTY(m_graph);
     RTTI_END_TYPE();
 

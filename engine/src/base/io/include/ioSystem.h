@@ -32,6 +32,14 @@ namespace base
             StringBuf filterExtension;
         };
 
+        /// mode for opening file for writing
+        enum class FileWriteMode : uint8_t
+        {
+            DirectWrite, // directly open target file for writing, any writes will be permanent, potentially damaging the file
+            DirectAppend, // directly open target file for appending stuff at the end
+            StagedWrite, // write to a temporary file first, and if everything went well move it into target position, writing call be canceled by calling discardContent()
+        };
+
         /// abstract IO system
         class BASE_IO_API System : public ISingleton
         {
@@ -47,17 +55,17 @@ namespace base
             //----
 
             // open physical file for reading
-            FileHandlePtr openForReading(AbsolutePathView absoluteFilePath);
+            ReadFileHandlePtr openForReading(AbsolutePathView absoluteFilePath);
 
             // open physical file for writing
-            FileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, bool append = false);
+            WriteFileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite);
 
-            // open physical file for reading and writing at the same time (cache file, package, etc)
-            FileHandlePtr openForReadingAndWriting(AbsolutePathView absoluteFilePath, bool resetContent = false);
+            // open physical file for async reading
+            AsyncFileHandlePtr openForAsyncReading(AbsolutePathView absoluteFilePath);
 
             //--
 
-            // create a READ ONLY memory mapped buffer view of a file
+            // create a READ ONLY memory mapped buffer view of a file, used by some asset loaders
             Buffer openMemoryMappedForReading(AbsolutePathView absoluteFilePath);
 
             // load file content into a buffer

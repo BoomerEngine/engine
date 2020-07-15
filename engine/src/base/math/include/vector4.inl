@@ -56,7 +56,7 @@ namespace base
 
     INLINE Vector4 Vector4::frac() const
     {
-        return Vector4(Frac(x), Frac(y), Frac(z), Frac(w));
+        return Vector4(x - std::trunc(x), y - std::trunc(y), z - std::trunc(z), w - std::trunc(w));
     }
 
     INLINE Vector4 Vector4::trunc() const

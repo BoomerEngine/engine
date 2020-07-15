@@ -9,6 +9,7 @@
 #include "build.h"
 #include "renderingStaticTexture.h"
 #include "rendering/driver/include/renderingDriver.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {
@@ -32,7 +33,6 @@ namespace rendering
     RTTI_BEGIN_TYPE_CLASS(StaticTexture);
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4stex");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Static Texture");
-        RTTI_METADATA(base::res::ResourceBakedOnlyMetadata);
         RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0xa8, 0xd6, 0xe2);
         RTTI_PROPERTY(m_persistentPayload);
         RTTI_PROPERTY(m_streamingPayload);

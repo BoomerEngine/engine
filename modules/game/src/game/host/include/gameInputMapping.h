@@ -65,9 +65,9 @@ namespace game
     //---
 
     /// file with input mapping definitions
-    class GAME_HOST_API InputDefinitions : public base::res::ITextResource
+    class GAME_HOST_API InputDefinitions : public base::res::IResource
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::ITextResource);
+        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::IResource);
 
     public:
         InputDefinitions();

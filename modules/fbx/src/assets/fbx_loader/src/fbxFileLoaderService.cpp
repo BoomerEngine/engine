@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "fbxFileData.h"
 #include "fbxFileLoaderService.h"
 
 #include "base/io/include/utils.h"
@@ -83,18 +82,6 @@ namespace fbx
     void FileLoadingService::onSyncUpdate()
     {
 
-    }
-
-    LoadedFilePtr FileLoadingService::loadScene(const base::io::AbsolutePath& absPath) const
-    {
-        auto data = base::io::LoadFileToBuffer(absPath);
-        if (!data)
-        {
-            TRACE_ERROR("Failed to load data from {}", absPath);
-            return nullptr;
-        }
-
-        return loadScene(data);
     }
 
     namespace helper
@@ -232,7 +219,7 @@ namespace fbx
             ResetPivot(node->GetChild(i));
     }
 
-    LoadedFilePtr FileLoadingService::loadScene(const base::Buffer& data) const
+    fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const
     {
         FbxImporter* lImporter = nullptr;
         FbxScene* lScene = nullptr;
@@ -324,36 +311,16 @@ namespace fbx
             conversionMatrix.scaleColumns(nativeScaleFactor);
         }
 
+        // remember conversion matrix
+        outAssetToEngineConversionMatrix = conversionMatrix;
+
         // reset pivot
         lScene->GetRootNode()->ResetPivotSet(FbxNode::eDestinationPivot);
         ResetPivot(lScene->GetRootNode());
         lScene->GetRootNode()->ConvertPivotAnimationRecursive(NULL, FbxNode::eDestinationPivot, 1.0f, false);
 
-        // create blob
-        auto ret = base::CreateSharedPtr<LoadedFile>(lScene);
-        if (!ret->captureNodes(conversionMatrix))
-        {
-            TRACE_ERROR("FBX file contains broken content");
-            return nullptr;
-        }
-
-        TRACE_INFO("Found {} node(s) in the FBX", ret->nodes().size());
-        return ret;
-    }
-
-    LoadedFilePtr FileLoadingService::loadScene(base::res::IResourceCookerInterface& cooker) const
-    {
-        // load raw data
-        auto sourceFilePath = cooker.queryResourcePath().path();
-        auto data = cooker.loadToBuffer(sourceFilePath);
-        if (!data)
-        {
-            TRACE_ERROR("Failed to load content of '{}'", sourceFilePath);
-            return nullptr;
-        }
-
-        // deserialize FBX file
-        return loadScene(data);
+        // scene is ready
+        return lScene;
     }
 
     //---

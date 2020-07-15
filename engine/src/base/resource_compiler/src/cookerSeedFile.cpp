@@ -8,19 +8,17 @@
 
 #include "build.h"
 #include "cookerSeedFile.h"
+#include "base/resource/include/resourceTags.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/xml/include/xmlWrappers.h"
+#include "base/resource/include/resourcePath.h"
 
 namespace base
 {
     namespace res
     {
         
-        ///--
-
-        RTTI_BEGIN_TYPE_CLASS(SeedFileEntry);
-            RTTI_PROPERTY(relativePath);
-            RTTI_PROPERTY(resourceClass);
-        RTTI_END_TYPE();
-
         ///--
 
         RTTI_BEGIN_TYPE_CLASS(SeedFile);
@@ -33,11 +31,67 @@ namespace base
         SeedFile::SeedFile()
         {}
 
-        void SeedFile::files(const Array<SeedFileEntry>& files)
+        SeedFile::SeedFile(TSeedFileList&& files)
+            : m_files(std::move(files))
+        {}
+
+        ///--
+
+        /// cooker for loading seed files from XML files
+        class SeedFileXMLCooker : public IResourceCooker
         {
-            m_files = files;
-            markModified();
-        }
+            RTTI_DECLARE_VIRTUAL_CLASS(SeedFileXMLCooker, IResourceCooker);
+
+        public:
+            virtual ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
+            {
+                // load the XML with the file data
+                auto xml = LoadXML(cooker);
+                if (!xml)
+                    return nullptr;
+
+                // parse entries
+                TSeedFileList files;
+                for (xml::NodeIterator it(xml, "file"); it; ++it)
+                {
+                    // get relative resource path
+                    const auto relativePath = it->attribute("path");
+                    if (!relativePath)
+                        continue;
+
+                    // get class
+                    SpecificClassType<IResource> resourceClass;
+                    if (const auto className = it->attribute("class"))
+                    {
+                        resourceClass = RTTI::GetInstance().findClass(StringID::Find(className)).cast<IResource>();
+                        if (!resourceClass)
+                        {
+                            TRACE_ERROR("Unrecognized class name '{}' for resource '{}'", className, relativePath);
+                        }
+                    }
+                    else
+                    {
+                        const auto pathExtension = relativePath.afterLast(".");
+                        resourceClass = IResource::FindResourceClassByExtension(pathExtension);
+                        if (!resourceClass)
+                        {
+                            TRACE_ERROR("Unable to identify resource class for '{}'", relativePath);
+                        }
+                    }
+
+                    // resolve to absolute path based on current resource location
+                    base::StringBuf depotPath;
+                    if (cooker.queryResolvedPath(relativePath, cooker.queryResourcePath().path(), true, depotPath))
+                    {
+                        files.emplaceBack(ResourceKey(ResourcePath(depotPath), resourceClass));
+                    }
+                    else
+                    {
+                        TRACE_ERROR("Unable to resolve relative path '{}'", relativePath);
+                    }
+                }
+            }
+        };
 
         ///--
 

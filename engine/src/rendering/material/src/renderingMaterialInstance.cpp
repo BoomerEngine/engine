@@ -14,12 +14,10 @@
 
 #include "rendering/texture/include/renderingTexture.h"
 
-#include "base/resource/src/resourceGeneralTextLoader.h"
-#include "base/resource/src/resourceGeneralTextSaver.h"
-#include "base/resource/include/resourceSerializationMetadata.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
 #include "base/object/include/dataViewNative.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

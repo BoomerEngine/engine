@@ -3,11 +3,12 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: resource\cooking #]
+* [#filter: resource\metadata #]
 ***/
 
 #include "build.h"
 #include "resourceThumbnail.h"
+#include "resourceTags.h"
 
 namespace base
 {
@@ -16,8 +17,6 @@ namespace base
         //--
 
         RTTI_BEGIN_TYPE_CLASS(ResourceThumbnail);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("thumb");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Thumbnail");
             RTTI_PROPERTY(imagePixels);
             RTTI_PROPERTY(imageWidth);
             RTTI_PROPERTY(imageHeight);

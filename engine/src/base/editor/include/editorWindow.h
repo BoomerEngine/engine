@@ -19,8 +19,11 @@ namespace ed
     ///---
 
     class AssetBrowser;
+    class AssetImportWindow;
     class ResourceEditor;
     class IResourceEditorOpener;
+
+    typedef base::HashSet<const ManagedFile*> TFileSet;
 
     /// main editor window 
     class BASE_EDITOR_API MainWindow : public ui::Window
@@ -35,11 +38,14 @@ namespace ed
         void saveConfig(ConfigGroup& config) const;
 
         ManagedFile* selectedFile() const;
+        ManagedDirectory* selectedDirectory() const;
 
         bool canOpenFile(const ManagedFileFormat& format) const;
         bool selectFile(ManagedFile* file);
         bool openFile(ManagedFile* file);
         bool saveFile(ManagedFile* file);
+
+        bool saveFiles(const TFileSet& files);
 
         void collectOpenedFiles(base::Array<ManagedFile*>& outFiles) const;
         void requestEditorClose(const base::Array<ResourceEditor*>& editors);
@@ -47,6 +53,10 @@ namespace ed
     protected:
         virtual void handleExternalCloseRequest() override;
         virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
+
+        //--
+
+        //--
 
         ui::DockContainerPtr m_dockArea;
 

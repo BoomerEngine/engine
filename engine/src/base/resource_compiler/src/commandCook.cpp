@@ -12,13 +12,12 @@
 #include "base/app/include/commandline.h"
 #include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceLoadingService.h"
-#include "base/resource/include/resourceUncached.h"
-#include "base/resource/include/resourceBinaryLoader.h"
 #include "base/resource/include/resourceMetadata.h"
-#include "base/object/include/nativeFileReader.h"
 #include "base/io/include/absolutePathBuilder.h"
 #include "base/io/include/ioSystem.h"
+#include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/stringBuilder.h"
+#include "base/resource/include/resourceTags.h"
 #include "base/resource_compiler/include/depotStructure.h"
 
 #include "cooker.h"
@@ -26,6 +25,7 @@
 #include "cookerSeedFile.h"
 
 #include "commandCook.h"
+#include "base/resource/include/resourceFileLoader.h"
 
 namespace base
 {
@@ -152,29 +152,12 @@ namespace base
                     if (const auto seedFile = LoadResource<SeedFile>(key.path()).acquire())
                     {
                         uint32_t numAdded = 0;
-                        for (const auto& fileInfo : seedFile->files())
+                        for (const auto& file : seedFile->files())
                         {
-                            // resolve the relative path to something more useful
-                            StringBuf depotPath;
-                            if (ApplyRelativePath(key.path().path(), fileInfo.relativePath, depotPath))
+                            if (m_seedFiles.insert(file.key()))
                             {
-                                if (fileInfo.resourceClass)
-                                {
-                                    const auto fileKey = ResourceKey(ResourcePath(depotPath), fileInfo.resourceClass);
-                                    if (m_seedFiles.insert(fileKey))
-                                    {
-                                        m_allCollectedFiles.insert(fileKey);
-                                        numAdded += 1;
-                                    }
-                                }
-                                else
-                                {
-                                    TRACE_WARNING("Missing/lost resource class for seed file '{}', found in '{}'", depotPath, key.path());
-                                }
-                            }
-                            else
-                            {
-                                TRACE_WARNING("Unable to resolve relative path '{}' in context of file '{}'", fileInfo.relativePath, key.path());
+                                m_allCollectedFiles.insert(file.key());
+                                numAdded += 1;
                             }
                         }
 
@@ -320,19 +303,10 @@ namespace base
             for (const auto& dep : deps.sourceDependencies)
             {
                 io::TimeStamp timestamp;
-                m_cooker->depot().queryFileInfo(dep.sourcePath, nullptr, nullptr, &timestamp);
+                m_cooker->depot().queryFileTimestamp(dep.sourcePath, timestamp);
 
                 if (dep.timestamp == timestamp.value())
                     continue;
-
-                if (dep.crc != 0)
-                {
-                    uint64_t crc = 0;
-                    m_cooker->depot().queryFileInfo(dep.sourcePath, nullptr, &crc, nullptr);
-
-                    if (crc == dep.crc)
-                        continue;
-                }
 
                 TRACE_INFO("Dependency file '{}' has changed", dep.sourcePath);
                 return false;
@@ -341,33 +315,15 @@ namespace base
             return true;
         }
 
-        MetadataPtr CommandCook::loadFileMetadata(stream::IBinaryReader& reader) const
-        {
-            auto loader = CreateSharedPtr<binary::BinaryLoader>();
-
-            stream::LoadingContext context;
-            context.m_loadImports = false;
-            context.m_resourceLoader = nullptr;
-            context.m_selectiveLoadingClass = Metadata::GetStaticClass();
-        
-            stream::LoadingResult result;
-            if (!loader->loadObjects(reader, context, result))
-                return nullptr;
-
-            if (result.m_loadedRootObjects.size() != 1)
-                return nullptr;
-
-            return rtti_cast<Metadata>(result.m_loadedRootObjects[0]);
-        }
-
         MetadataPtr CommandCook::loadFileMetadata(const io::AbsolutePath& cookedOutputPath) const
         {
-            auto fileReader = IO::GetInstance().openForReading(cookedOutputPath);
-            if (!fileReader)
-                return nullptr;
+            if (auto fileReader = IO::GetInstance().openForAsyncReading(cookedOutputPath))
+            {
+                base::res::FileLoadingContext context;
+                return base::res::LoadFileMetadata(fileReader, context);
+            }
 
-            stream::NativeFileReader streaReader(*fileReader);
-            return loadFileMetadata(streaReader);
+            return nullptr;
         }
 
         bool CommandCook::assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath) const
@@ -399,7 +355,7 @@ namespace base
             {
                 InplaceArray<const IObject*, 1> objects;
                 objects.pushBack(&object);
-                ExtractReferencedResources(objects, true, referencedResources);
+                //ExtractReferencedResources(objects, true, referencedResources);
             }
 
             if (!referencedResources.empty())
@@ -420,22 +376,18 @@ namespace base
 
         void CommandCook::queueDependencies(const io::AbsolutePath& cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
         {
-            auto fileReader = IO::GetInstance().openForReading(cookedFilePath);
-            if (fileReader)
+            if (auto fileReader = IO::GetInstance().openForAsyncReading(cookedFilePath))
             {
-                auto loader = CreateSharedPtr<binary::BinaryLoader>();
-
-                InplaceArray<stream::LoadingDependency, 100> dependencies;
-
-                stream::NativeFileReader reader(*fileReader);
-                if (loader->extractLoadingDependencies(reader, true, dependencies))
+                InplaceArray<FileLoadingDependency, 100> dependencies;
+                FileLoadingContext loadingContext;
+                if (LoadFileDependencies(fileReader, loadingContext, dependencies))
                 {
                     TRACE_INFO("Loaded {} existing dependencies from '{}'", dependencies.size(), cookedFilePath);
 
                     for (const auto& entry : dependencies)
                     {
                         auto& outEntry = outCookingQueue.emplaceBack();
-                        outEntry.key = ResourceKey(ResourcePath(entry.resourceDepotPath), entry.resourceClass.cast<IResource>());
+                        outEntry.key = entry.key;
                     }
                 }
             }
@@ -487,7 +439,7 @@ namespace base
             }
 
         private:
-            io::FileHandlePtr m_logOutput;
+            io::WriteFileHandlePtr m_logOutput;
             io::AbsolutePath m_logFilePath;
             bool m_fullyCaptured;
         };

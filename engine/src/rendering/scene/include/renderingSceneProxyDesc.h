@@ -61,11 +61,17 @@ namespace rendering
 
             //--
 
-            // mesh to render
+            // local visibility bounds
+            base::Box meshBounds;
+
+            // source mesh
             const Mesh* mesh = nullptr;
 
             // force single material to be used for whole mesh
             MaterialDataProxyPtr forceMaterial = nullptr;
+
+            // render only given materials
+            const uint64_t* selectiveMaterialMask = nullptr;
 
             // force single LOD distance on the whole mesh
             char forcedLodLevel = 0;

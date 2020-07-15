@@ -19,9 +19,9 @@ namespace ed
     class MaterialPreviewPanelWithToolbar;
 
     /// editor for meshes
-    class ASSETS_MATERIAL_EDITOR_API MaterialGraphEditor : public SingleResourceEditor
+    class ASSETS_MATERIAL_EDITOR_API MaterialGraphEditor : public SingleLoadedResourceEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, SingleResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, SingleLoadedResourceEditor);
 
     public:
         MaterialGraphEditor(ConfigGroup config, ManagedFile* file);
@@ -52,8 +52,6 @@ namespace ed
 
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
         virtual bool initialize() override;
-        virtual bool saveFile(ManagedFile* file) override;
-        virtual void collectModifiedFiles(AssetItemList& outList) const override;
     };
 
 } // ed

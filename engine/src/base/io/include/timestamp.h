@@ -89,6 +89,11 @@ namespace base
             //! Get date/time from seconds/nano seconds
             static TimeStamp GetFromFileTime(uint64_t seconds, uint64_t nanoSeconds);
 
+            //---
+
+            // print as string
+            void print(IFormatStream& f) const;
+
         private:
             uint64_t  m_timecode;
         };

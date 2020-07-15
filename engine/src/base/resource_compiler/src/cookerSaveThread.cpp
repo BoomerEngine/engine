@@ -8,10 +8,9 @@
 
 #include "build.h"
 #include "cookerSaveThread.h"
-#include "base/resource/include/resourceUncached.h"
-#include "base/resource/include/resourceBinarySaver.h"
-#include "base/object/include/nativeFileWriter.h"
 #include "base/io/include/ioSystem.h"
+#include "base/resource/include/resourceFileSaver.h"
+#include "base/io/include/ioFileHandle.h"
 
 namespace base
 {
@@ -110,41 +109,19 @@ namespace base
 
         bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, const io::AbsolutePath& path)
         {
-            // delete temp file, we keep them after failed save for inspection
-            auto tempFilePath = path.addExtension(".out");
-            IO::GetInstance().deleteFile(tempFilePath);
-
-            // save to temp file - make sure the handle is closed before move (hence the scope)
+            // create staged writer for the file
+            if (auto file = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::StagedWrite))
             {
-                auto tempWriter = IO::GetInstance().openForWriting(tempFilePath, false);
-                if (!tempWriter)
-                {
-                    TRACE_ERROR("Failed to open '{}' for saving", tempFilePath);
-                    return false;
-                }
+                FileSavingContext context;
+                context.rootObject.pushBack(data);
+                if (SaveFile(file, context))
+                    return true;
 
-                // serialize
-                auto binarySaver = CreateSharedPtr<binary::BinarySaver>();
-                stream::NativeFileWriter tempFileWriter(tempWriter);
-                stream::SavingContext savingContext(data);
-                savingContext.m_contextName = TempString("{}", path);
-                if (!binarySaver->saveObjects(tempFileWriter, savingContext))
-                {
-                    TRACE_ERROR("Failed to save '{}'", tempFilePath);
-                    return false;
-                }
+                file->discardContent();
             }
 
-            // delete output file and swap it with temp file
-            IO::GetInstance().deleteFile(path);
-            if (!IO::GetInstance().moveFile(tempFilePath, path))
-            {
-                TRACE_ERROR("Failed to move '{}' into place after saving", tempFilePath);
-                return false;
-            }
-
-            // saved
-            return true;
+            TRACE_ERROR("Failed to save '{}'", path);
+            return false;
         }
 
         void CookerSaveThread::processSavingThread()

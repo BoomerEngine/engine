@@ -89,11 +89,6 @@ namespace base
         static const Quat& IDENTITY();
     };
 
-    extern BASE_MATH_API float Dot(const Quat &a, const Quat &b);
-    extern BASE_MATH_API Quat LinearLerp(const Quat &a, const Quat &b, float fraction);
-    extern BASE_MATH_API Quat Lerp(const Quat &a, const Quat &b, float fraction);
-    extern BASE_MATH_API Quat Concat(const Quat &a, const Quat &b);
-
     //--
 
 } // base

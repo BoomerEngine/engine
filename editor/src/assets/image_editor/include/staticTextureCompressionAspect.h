@@ -12,12 +12,12 @@
 
 namespace ed
 {
-    //--
+    /*//--
 
     /// editor aspect for displaying the texture compression manifest
-    class StaticTextureCompressionAspect : public SingleResourceEditorManifestAspect
+    class StaticTextureCompressionAspect : public SingleResourceEditorAspect
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionAspect, SingleResourceEditorManifestAspect);
+        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionAspect, SingleResourceEditorAspect);
 
     public:
         StaticTextureCompressionAspect();
@@ -27,7 +27,7 @@ namespace ed
     private:
         ui::DataInspectorPtr m_properties;
     };
-
+*/
     //--
 
 } // ed

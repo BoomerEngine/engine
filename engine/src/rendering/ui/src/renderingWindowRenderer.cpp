@@ -148,6 +148,15 @@ namespace rendering
                 window->window->windowHide();
     }
 
+    uint64_t NativeWindowRenderer::windowNativeHandle(ui::NativeWindowID id)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            if (window->window)
+                return window->window->windowGetNativeHandle();
+
+        return 0;
+    }
+
     void NativeWindowRenderer::windowSetPos(ui::NativeWindowID id, const ui::Position& pos)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))

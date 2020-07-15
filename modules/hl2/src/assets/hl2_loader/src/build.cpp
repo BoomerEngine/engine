@@ -6,6 +6,7 @@
 * [# dependency: base_* #]
 * [# dependency: rendering_texture #]
 * [# dependency: rendering_material #]
+* [# dependency: rendering_mesh #]
 * [# devonly #]
 ***/
 

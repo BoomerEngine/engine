@@ -11,7 +11,6 @@
 #include "instanceBuffer.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "base/object/include/streamTextWriter.h"
 
 namespace base
 {

@@ -12,7 +12,7 @@ namespace base
 {
     //--
 
-    // value range
+    // value range, special class is moslty used so we can have a nice UI
     class BASE_MATH_API Range
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(Range);
@@ -41,16 +41,13 @@ namespace base
         //! get range length (max - min)
         INLINE float length() const;
 
-        //! get random value from range
-        INLINE float rand() const;
-
-        //! interpolate between min and max
+        //! given a fraction of the range (0-1) map that back to the value
         INLINE float lerp(float frac) const;
 
-        //! given a value get the interpolant for the range
+        //! given a value map that value to the range, returns 0-1 if value was in range
         INLINE float frac(float value) const;
 
-        //! given a value get the interpolant for the range clamped to 0-1
+        //! given a value map that value to the range, always clamps the result to 0-1 range
         INLINE float fracClamped(float value) const;
 
         //! clamp value to this range
@@ -73,12 +70,5 @@ namespace base
         static const Range& PLUS_MINUS_HALF();
         static const Range& EMPTY();
     };
-
-    extern BASE_MATH_API Range Snap(const Range &a, float grid);
-    extern BASE_MATH_API Range Lerp(const Range &a, const Range &b, float frac);
-    extern BASE_MATH_API Range Min(const Range &a, const Range &b);
-    extern BASE_MATH_API Range Max(const Range &a, const Range &b);
-    extern BASE_MATH_API Range Clamp(const Range &a, const Range &minV, const Range &maxV);
-    extern BASE_MATH_API Range Clamp(const Range &a, float minF, float maxF);
 
 } // base

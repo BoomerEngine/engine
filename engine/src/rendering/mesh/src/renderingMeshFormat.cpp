@@ -27,12 +27,12 @@ namespace rendering
     struct MiniStreamInfo
     {
         const char* name = "";
-        base::mesh::MeshStreamType stream;
+        MeshStreamType stream;
         const char* unpack = "";
         ImageFormat format;
         ImageFormat readFormat;
 
-        INLINE MiniStreamInfo(const char* name_, base::mesh::MeshStreamType stream_, ImageFormat type_, ImageFormat readFormat_, const char* unpack_ = "")
+        INLINE MiniStreamInfo(const char* name_, MeshStreamType stream_, ImageFormat type_, ImageFormat readFormat_, const char* unpack_ = "")
             : name(name_)
             , stream(stream_)
             , format(type_)
@@ -51,50 +51,50 @@ namespace rendering
 
     static MiniFormatInfo GMiniFormats[(uint8_t)MeshVertexFormat::MAX] = {
         { "PositionOnly", {
-            MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F)
+            MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F)
         }},
 
         { "Static", {
-            //MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
-            //MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::R11FG11FB10F, ImageFormat::RG32_UINT, "UnpackPosition_11_11_10"),
-            MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RG32_UINT, ImageFormat::RG32_UINT, "UnpackPosition_22_22_20"),
-            MiniStreamInfo("VertexNormal", base::mesh::MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexTangent", base::mesh::MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexBitangent", base::mesh::MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            //MiniStreamInfo("VertexUV", base::mesh::MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
-            MiniStreamInfo("VertexUV0", base::mesh::MeshStreamType::TexCoord0_2F, ImageFormat::RG16F, ImageFormat::RG16F, "UnpackHalf2"),
+            //MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
+            //MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::R11FG11FB10F, ImageFormat::RG32_UINT, "UnpackPosition_11_11_10"),
+            MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RG32_UINT, ImageFormat::RG32_UINT, "UnpackPosition_22_22_20"),
+            MiniStreamInfo("VertexNormal", MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexTangent", MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexBitangent", MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            //MiniStreamInfo("VertexUV", MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
+            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG16F, ImageFormat::RG16F, "UnpackHalf2"),
         }},
 
         { "StaticEx", {
-            MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
-            MiniStreamInfo("VertexNormal", base::mesh::MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexTangent", base::mesh::MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexBitangent", base::mesh::MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexUV0", base::mesh::MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
-            MiniStreamInfo("VertexUV1", base::mesh::MeshStreamType::TexCoord1_2F, ImageFormat::RG16F, ImageFormat::R32_UINT, "UnpackHalf2"),
-            MiniStreamInfo("VertexColor0", base::mesh::MeshStreamType::Color0_4U8, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackUByte4Norm"),
+            MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
+            MiniStreamInfo("VertexNormal", MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexTangent", MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexBitangent", MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
+            MiniStreamInfo("VertexUV1", MeshStreamType::TexCoord1_2F, ImageFormat::RG16F, ImageFormat::R32_UINT, "UnpackHalf2"),
+            MiniStreamInfo("VertexColor0", MeshStreamType::Color0_4U8, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackUByte4Norm"),
         }},
 
         { "Skinned4", {
-            MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
-            MiniStreamInfo("VertexNormal", base::mesh::MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexTangent", base::mesh::MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexBitangent", base::mesh::MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexUV0", base::mesh::MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
-            MiniStreamInfo("SkinninIndices", base::mesh::MeshStreamType::SkinningIndices_4U8, ImageFormat::RGBA8_UINT, ImageFormat::R32_UINT, "UnpackSkinIndices"),
-            MiniStreamInfo("SkinninWeights", base::mesh::MeshStreamType::SkinningWeights_4F, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackSkinWeights"),
+            MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
+            MiniStreamInfo("VertexNormal", MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexTangent", MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexBitangent", MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
+            MiniStreamInfo("SkinninIndices", MeshStreamType::SkinningIndices_4U8, ImageFormat::RGBA8_UINT, ImageFormat::R32_UINT, "UnpackSkinIndices"),
+            MiniStreamInfo("SkinninWeights", MeshStreamType::SkinningWeights_4F, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackSkinWeights"),
         }},
 
         { "Skinned4Ex", {
-            MiniStreamInfo("VertexPosition", base::mesh::MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
-            MiniStreamInfo("VertexNormal", base::mesh::MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexTangent", base::mesh::MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexBitangent", base::mesh::MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
-            MiniStreamInfo("VertexUV0", base::mesh::MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
-            MiniStreamInfo("VertexUV1", base::mesh::MeshStreamType::TexCoord1_2F, ImageFormat::RG16F, ImageFormat::R32_UINT, "UnpackHalf2"),
-            MiniStreamInfo("VertexColor0", base::mesh::MeshStreamType::Color0_4U8, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackUByte4Norm"),
-            MiniStreamInfo("SkinninIndices", base::mesh::MeshStreamType::SkinningIndices_4U8, ImageFormat::RGBA8_UINT, ImageFormat::R32_UINT, "UnpackSkinIndices"),
-            MiniStreamInfo("SkinninWeights", base::mesh::MeshStreamType::SkinningWeights_4F, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackSkinWeights"),
+            MiniStreamInfo("VertexPosition", MeshStreamType::Position_3F, ImageFormat::RGB32F, ImageFormat::RGB32F),
+            MiniStreamInfo("VertexNormal", MeshStreamType::Normal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexTangent", MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexBitangent", MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
+            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
+            MiniStreamInfo("VertexUV1", MeshStreamType::TexCoord1_2F, ImageFormat::RG16F, ImageFormat::R32_UINT, "UnpackHalf2"),
+            MiniStreamInfo("VertexColor0", MeshStreamType::Color0_4U8, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackUByte4Norm"),
+            MiniStreamInfo("SkinninIndices", MeshStreamType::SkinningIndices_4U8, ImageFormat::RGBA8_UINT, ImageFormat::R32_UINT, "UnpackSkinIndices"),
+            MiniStreamInfo("SkinninWeights", MeshStreamType::SkinningWeights_4F, ImageFormat::RGBA8_UNORM, ImageFormat::R32_UINT, "UnpackSkinWeights"),
         }},
     };
 
@@ -159,7 +159,7 @@ namespace rendering
 
                 for (uint32_t i = 0; i < format.numStreams; ++i)
                 {
-                    if (format.streams[i].sourceStream == base::mesh::MeshStreamType::Position_3F)
+                    if (format.streams[i].sourceStream == MeshStreamType::Position_3F)
                     {
                         if (format.streams[i].dataFormat != ImageFormat::RGB32F)
                             format.quantizedPosition = true;
@@ -536,54 +536,54 @@ namespace rendering
     static const uint8_t FILL_ZEROS[32] = { 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };
     static const uint8_t FILL_ONES[32] = { 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1 };
 
-    void FillStreamData(void* destData, uint32_t destStride, base::mesh::MeshStreamType type, ImageFormat destFormat, uint32_t count)
+    void FillStreamData(void* destData, uint32_t destStride, MeshStreamType type, ImageFormat destFormat, uint32_t count)
     {
         switch (type)
         {
-        case base::mesh::MeshStreamType::TexCoord0_2F:
-        case base::mesh::MeshStreamType::TexCoord1_2F:
-        case base::mesh::MeshStreamType::TexCoord2_2F:
-        case base::mesh::MeshStreamType::TexCoord3_2F:
-        case base::mesh::MeshStreamType::Normal_3F:
-        case base::mesh::MeshStreamType::Tangent_3F:
-        case base::mesh::MeshStreamType::Binormal_3F:
-        case base::mesh::MeshStreamType::Position_3F:
+        case MeshStreamType::TexCoord0_2F:
+        case MeshStreamType::TexCoord1_2F:
+        case MeshStreamType::TexCoord2_2F:
+        case MeshStreamType::TexCoord3_2F:
+        case MeshStreamType::Normal_3F:
+        case MeshStreamType::Tangent_3F:
+        case MeshStreamType::Binormal_3F:
+        case MeshStreamType::Position_3F:
             FillStreamData(destData, destStride, FILL_ZEROS, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::Color0_4U8:
-        case base::mesh::MeshStreamType::Color1_4U8:
-        case base::mesh::MeshStreamType::Color2_4U8:
-        case base::mesh::MeshStreamType::Color3_4U8:
+        case MeshStreamType::Color0_4U8:
+        case MeshStreamType::Color1_4U8:
+        case MeshStreamType::Color2_4U8:
+        case MeshStreamType::Color3_4U8:
             FillStreamData(destData, destStride, FILL_ONES, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::SkinningIndices_4U8:
-        case base::mesh::MeshStreamType::SkinningIndicesEx_4U8:
-        case base::mesh::MeshStreamType::SkinningWeights_4F:
-        case base::mesh::MeshStreamType::SkinningWeightsEx_4F:
+        case MeshStreamType::SkinningIndices_4U8:
+        case MeshStreamType::SkinningIndicesEx_4U8:
+        case MeshStreamType::SkinningWeights_4F:
+        case MeshStreamType::SkinningWeightsEx_4F:
             FillStreamData(destData, destStride, FILL_ZEROS, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TreeLeafCardCorner_3F:
-        case base::mesh::MeshStreamType::TreeLeafAnchors_3F:
-        case base::mesh::MeshStreamType::TreeLodPosition_3F:
-        case base::mesh::MeshStreamType::TreeLeafWindData_4F:
-        case base::mesh::MeshStreamType::TreeFrondData_4F:
-        case base::mesh::MeshStreamType::TreeWindBranchData_4F:
-        case base::mesh::MeshStreamType::TreeBranchData_7F:
-        case base::mesh::MeshStreamType::TreeLeafLod_1F:
+        case MeshStreamType::TreeLeafCardCorner_3F:
+        case MeshStreamType::TreeLeafAnchors_3F:
+        case MeshStreamType::TreeLodPosition_3F:
+        case MeshStreamType::TreeLeafWindData_4F:
+        case MeshStreamType::TreeFrondData_4F:
+        case MeshStreamType::TreeWindBranchData_4F:
+        case MeshStreamType::TreeBranchData_7F:
+        case MeshStreamType::TreeLeafLod_1F:
             FillStreamData(destData, destStride, FILL_ZEROS, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::General0_F4:
-        case base::mesh::MeshStreamType::General1_F4:
-        case base::mesh::MeshStreamType::General2_F4:
-        case base::mesh::MeshStreamType::General3_F4:
-        case base::mesh::MeshStreamType::General4_F4:
-        case base::mesh::MeshStreamType::General5_F4:
-        case base::mesh::MeshStreamType::General6_F4:
-        case base::mesh::MeshStreamType::General7_F4:
+        case MeshStreamType::General0_F4:
+        case MeshStreamType::General1_F4:
+        case MeshStreamType::General2_F4:
+        case MeshStreamType::General3_F4:
+        case MeshStreamType::General4_F4:
+        case MeshStreamType::General5_F4:
+        case MeshStreamType::General6_F4:
+        case MeshStreamType::General7_F4:
             FillStreamData(destData, destStride, FILL_ZEROS, destFormat, count);
             break;
 
@@ -592,72 +592,72 @@ namespace rendering
         }
     }
 
-    void PackStreamData(const MeshVertexQuantizationHelper& quantization, const void* srcData, uint32_t srcStride, base::mesh::MeshStreamType type, void* destData, uint32_t destStride, ImageFormat destFormat, uint32_t count)
+    void PackStreamData(const MeshVertexQuantizationHelper& quantization, const void* srcData, uint32_t srcStride, MeshStreamType type, void* destData, uint32_t destStride, ImageFormat destFormat, uint32_t count)
     {
         switch (type)
         {
-        case base::mesh::MeshStreamType::Position_3F:
+        case MeshStreamType::Position_3F:
             PackDataT<base::Vector3>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::Normal_3F:
-        case base::mesh::MeshStreamType::Tangent_3F:
-        case base::mesh::MeshStreamType::Binormal_3F:
+        case MeshStreamType::Normal_3F:
+        case MeshStreamType::Tangent_3F:
+        case MeshStreamType::Binormal_3F:
             PackDataT<NormalVector>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TexCoord0_2F:
-        case base::mesh::MeshStreamType::TexCoord1_2F:
-        case base::mesh::MeshStreamType::TexCoord2_2F:
-        case base::mesh::MeshStreamType::TexCoord3_2F:
+        case MeshStreamType::TexCoord0_2F:
+        case MeshStreamType::TexCoord1_2F:
+        case MeshStreamType::TexCoord2_2F:
+        case MeshStreamType::TexCoord3_2F:
             PackDataT<base::Vector2>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::Color0_4U8:
-        case base::mesh::MeshStreamType::Color1_4U8:
-        case base::mesh::MeshStreamType::Color2_4U8:
-        case base::mesh::MeshStreamType::Color3_4U8:
+        case MeshStreamType::Color0_4U8:
+        case MeshStreamType::Color1_4U8:
+        case MeshStreamType::Color2_4U8:
+        case MeshStreamType::Color3_4U8:
             PackDataT<base::Color>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::SkinningIndices_4U8:
-        case base::mesh::MeshStreamType::SkinningIndicesEx_4U8:
+        case MeshStreamType::SkinningIndices_4U8:
+        case MeshStreamType::SkinningIndicesEx_4U8:
             PackDataT<SkinningIndicesUbyte4>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::SkinningWeights_4F:
-        case base::mesh::MeshStreamType::SkinningWeightsEx_4F:
+        case MeshStreamType::SkinningWeights_4F:
+        case MeshStreamType::SkinningWeightsEx_4F:
             PackDataT<SkinningWeightsUbyte4>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TreeLeafCardCorner_3F:
-        case base::mesh::MeshStreamType::TreeLeafAnchors_3F:
-        case base::mesh::MeshStreamType::TreeLodPosition_3F:
+        case MeshStreamType::TreeLeafCardCorner_3F:
+        case MeshStreamType::TreeLeafAnchors_3F:
+        case MeshStreamType::TreeLodPosition_3F:
             PackDataT<base::Vector3>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TreeLeafWindData_4F:
-        case base::mesh::MeshStreamType::TreeFrondData_4F:
-        case base::mesh::MeshStreamType::TreeWindBranchData_4F:
+        case MeshStreamType::TreeLeafWindData_4F:
+        case MeshStreamType::TreeFrondData_4F:
+        case MeshStreamType::TreeWindBranchData_4F:
             PackDataT<base::Vector4>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TreeBranchData_7F:
+        case MeshStreamType::TreeBranchData_7F:
             //PackDataT<base::Vector4>(srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::TreeLeafLod_1F:
+        case MeshStreamType::TreeLeafLod_1F:
             PackDataT<float>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 
-        case base::mesh::MeshStreamType::General0_F4:
-        case base::mesh::MeshStreamType::General1_F4:
-        case base::mesh::MeshStreamType::General2_F4:
-        case base::mesh::MeshStreamType::General3_F4:
-        case base::mesh::MeshStreamType::General4_F4:
-        case base::mesh::MeshStreamType::General5_F4:
-        case base::mesh::MeshStreamType::General6_F4:
-        case base::mesh::MeshStreamType::General7_F4:
+        case MeshStreamType::General0_F4:
+        case MeshStreamType::General1_F4:
+        case MeshStreamType::General2_F4:
+        case MeshStreamType::General3_F4:
+        case MeshStreamType::General4_F4:
+        case MeshStreamType::General5_F4:
+        case MeshStreamType::General6_F4:
+        case MeshStreamType::General7_F4:
             PackDataT<base::Vector4>(quantization, srcData, srcStride, destData, destStride, destFormat, count);
             break;
 

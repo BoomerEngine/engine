@@ -73,11 +73,4 @@ namespace base
         void normalize();
     };
 
-    extern BASE_MATH_API AbsolutePosition Snap(const AbsolutePosition& a, float grid);
-    extern BASE_MATH_API AbsolutePosition Lerp(const AbsolutePosition& a, const AbsolutePosition& b, float frac);
-    extern BASE_MATH_API AbsolutePosition Min(const AbsolutePosition &a, const AbsolutePosition &b);
-    extern BASE_MATH_API AbsolutePosition Max(const AbsolutePosition &a, const AbsolutePosition &b);
-    extern BASE_MATH_API AbsolutePosition Clamp(const AbsolutePosition &a, const AbsolutePosition &minV, const AbsolutePosition &maxV);
-    extern BASE_MATH_API AbsolutePosition Clamp(const AbsolutePosition &a, double minF, double maxF);
-
 } // base

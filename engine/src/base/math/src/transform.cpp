@@ -8,16 +8,15 @@
 
 #include "build.h"
 #include "base/containers/include/stringParser.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/streamTextReader.h"
 #include "base/containers/include/stringBuilder.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
 
 namespace base
 {
     RTTI_BEGIN_CUSTOM_TYPE(Transform);
         RTTI_TYPE_TRAIT().noDestructor().fastCopyCompare();
+        RTTI_BIND_NATIVE_BINARY_SERIALIZATION(Transform);
     RTTI_END_TYPE();
 
     Transform Transform::invertedWithNoScale() const
@@ -70,77 +69,48 @@ namespace base
 
     ///----
 
-    bool Transform::writeBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream) const
+    void Transform::writeBinary(base::stream::OpcodeWriter& stream) const
     {
-        stream.write(&m_trans, sizeof(m_trans));
-        stream.write(&m_rot, sizeof(m_rot));
-        stream.write(&m_scale, sizeof(m_scale));
-        return true;
+        uint8_t flags = 0;
+
+        if (m_trans != Vector3::ZERO())
+            flags |= 1;
+        if (m_rot != Quat::IDENTITY())
+            flags |= 2;
+        if (m_scale != Vector3::ONE())
+            flags |= 4;
+
+        stream.writeTypedData(flags);
+
+        if (flags & 1)
+            stream.writeTypedData(m_trans);
+
+        if (flags & 2)
+            stream.writeTypedData(m_rot);
+
+        if (flags & 4)
+            stream.writeTypedData(m_scale);
     }
 
-    bool Transform::writeText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream) const
+    void Transform::readBinary(base::stream::OpcodeReader& stream)
     {
-        // TODO: remove string allocation
-        stream.writeValue(TempString("{},{},{},{},{},{},{},{},{},{}", m_trans.x, m_trans.y, m_trans.z, m_rot.x, m_rot.y, m_rot.z, m_rot.w, m_scale.x, m_scale.y, m_scale.z));
-        return true;
-    }
+        uint8_t flags = 0;
+        stream.readTypedData(flags);
 
-    bool Transform::readBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream)
-    {
-        stream.read(&m_trans, sizeof(m_trans));
-        stream.read(&m_rot, sizeof(m_rot));
-        return true;
-    }
+        if (flags & 1)
+            stream.readTypedData(m_trans);
+        else
+            m_trans = Vector3::ZERO();
 
-    bool Transform::readText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextReader& stream)
-    {
-        base::Vector3 pos;
-        base::Quat rot;
-        base::Vector3 scale(1,1,1);
+        if (flags & 2)
+            stream.readTypedData(m_rot);
+        else
+            m_rot = Quat::IDENTITY();
 
-        base::StringView<char> val;
-        if (!stream.readValue(val))
-            return false;
-
-        base::StringParser parser(val);
-        if (!parser.parseFloat(pos.x)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(pos.y)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(pos.z)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(rot.x)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(rot.y)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(rot.z)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(rot.w)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(scale.x)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(scale.y)) return false;
-        if (!parser.parseKeyword(",")) return false;
-        if (!parser.parseFloat(scale.z)) return false;
-
-        m_trans = pos;
-        m_rot = rot;
-        m_scale = scale;
-        return true;
-    }
-
-    void Transform::calcHash(CRC64& crc) const
-    {
-        crc << m_trans.x;
-        crc << m_trans.y;
-        crc << m_trans.z;
-        crc << m_rot.x;
-        crc << m_rot.y;
-        crc << m_rot.z;
-        crc << m_rot.w;
-        crc << m_scale.x;
-        crc << m_scale.y;
-        crc << m_scale.z;
+        if (flags & 4)
+            stream.readTypedData(m_scale);
+        else
+            m_scale = Vector3::ONE();
     }
 
 } // base

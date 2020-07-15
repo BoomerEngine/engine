@@ -72,8 +72,8 @@ namespace rendering
 
             {
                 auto toolbar = createChild<ui::ToolBar>();
-                toolbar->createButton("Edit.Undo"_id, "[center][img:arrow_undo][br][center][size:-][color:#AAA]Undo", "Undo last operation");
-                toolbar->createButton("Edit.Redo"_id, "[center][img:arrow_redo][br][center][size:-][color:#AAA]Redo", "Redo last operation");
+                //toolbar->createButton("Edit.Undo"_id, "[center][img:arrow_undo][br][center][size:-][color:#AAA]Undo", "Undo last operation");
+                //toolbar->createButton("Edit.Redo"_id, "[center][img:arrow_redo][br][center][size:-][color:#AAA]Redo", "Redo last operation");
             }
 
             actions().bindCommand("Edit.Undo"_id) = [](TestWindow* a)

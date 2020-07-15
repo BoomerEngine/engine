@@ -19,11 +19,10 @@
 #include "base/app/include/commandline.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/resource/include/resourceLoader.h"
+#include "base/resource/include/resourceFileLoader.h"
+#include "base/resource/include/resourceFileSaver.h"
 #include "base/resource_compiler/include/depotStructure.h"
-#include "base/object/include/nativeFileReader.h"
-#include "base/object/include/serializationLoader.h"
 #include "base/object/include/object.h"
-#include "base/resource/include/resourceBinaryLoader.h"
 #include "base/resource/include/resourceMetadata.h"
 
 
@@ -45,17 +44,17 @@ namespace base
         public:
             virtual void queueJobAdded(const ImportJobInfo& info) override
             {
-
+                TRACE_INFO("ImportQueue: added job to cook '{}' from '{}'", info.depotFilePath, info.assetFilePath);
             }
 
             virtual void queueJobStarted(StringView<char> depotPath) override
             {
-
+                TRACE_INFO("ImportQueue: started cooking of '{}'", depotPath);
             }
 
-            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status) override
+            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status, double timeTaken) override
             {
-
+                TRACE_INFO("ImportQueue: finished cooking of '{}' in {}: {}", depotPath, TimeInterval(timeTaken), status);
             }
 
             virtual void queueJobProgressUpdate(StringView<char> depotPath, uint64_t currentCount, uint64_t totalCount, StringView<char> text) override
@@ -76,25 +75,14 @@ namespace base
 
             virtual MetadataPtr loadExistingMetadata(StringView<char> depotPath) const override final
             {
-                if (const auto fileReader = m_depot.createFileReader(depotPath))
+                if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
-                    stream::NativeFileReader streamReader(*fileReader);
-                    
-                    auto loader = CreateSharedPtr<binary::BinaryLoader>();
+                    base::res::ResourceMountPoint mountPoint;
+                    m_depot.queryFileMountPoint(depotPath, mountPoint);
 
-                    stream::LoadingContext context;
-                    context.m_loadImports = false;
-                    context.m_resourceLoader = nullptr;
-                    context.m_selectiveLoadingClass = Metadata::GetStaticClass();
-
-                    stream::LoadingResult result;
-                    if (!loader->loadObjects(streamReader, context, result))
-                        return nullptr;
-
-                    if (result.m_loadedRootObjects.size() != 1)
-                        return nullptr;
-
-                    return rtti_cast<Metadata>(result.m_loadedRootObjects[0]);
+                    FileLoadingContext context;
+                    context.basePath = mountPoint.path();
+                    return base::res::LoadFileMetadata(fileReader, context);
                 }
 
                 return nullptr;
@@ -102,24 +90,18 @@ namespace base
 
             virtual ResourcePtr loadExistingResource(StringView<char> depotPath) const override final
             {
-                if (const auto fileReader = m_depot.createFileReader(depotPath))
+                if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
-                    stream::NativeFileReader streamReader(*fileReader);
+                    base::res::ResourceMountPoint mountPoint;
+                    m_depot.queryFileMountPoint(depotPath, mountPoint);
 
-                    auto loader = CreateSharedPtr<binary::BinaryLoader>();
-
-                    stream::LoadingContext context;
-                    context.m_loadImports = false;
-                    context.m_resourceLoader = nullptr;
-
-                    stream::LoadingResult result;
-                    if (!loader->loadObjects(streamReader, context, result))
-                        return nullptr;
-
-                    if (result.m_loadedRootObjects.size() != 1)
-                        return nullptr;
-
-                    return rtti_cast<IResource>(result.m_loadedRootObjects[0]);
+                    FileLoadingContext context;
+                    context.basePath = mountPoint.path();
+                    if (base::res::LoadFile(fileReader, context))
+                    {
+                        if (const auto ret = context.root<IResource>())
+                            return ret;
+                    }
                 }
 
                 return nullptr;

@@ -20,6 +20,8 @@ namespace ed
 
     struct AssetItemList;
 
+    typedef base::HashSet<const ManagedFile*> TFileSet;
+
     /// generate resource editor window
     class BASE_EDITOR_API ResourceEditor : public ui::DockPanel
     {
@@ -34,9 +36,9 @@ namespace ed
 
         virtual bool initialize() = 0;
         virtual void saveConfig() const = 0;
-        virtual bool containsFile(ManagedFile* file) const = 0;
-        virtual bool showFile(ManagedFile* file) = 0;
-        virtual bool saveFile(ManagedFile* file) = 0;
+        virtual bool containsFile(const TFileSet& files) const = 0;
+        virtual bool showFile(const TFileSet& files) = 0;
+        virtual bool saveFile(const TFileSet& files) = 0;
 
         virtual void collectOpenedFiles(AssetItemList& outList) const = 0;
         virtual void collectModifiedFiles(AssetItemList& outList) const = 0;

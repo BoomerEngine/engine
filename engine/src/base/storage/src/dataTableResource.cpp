@@ -10,10 +10,7 @@
 #include "dataTable.h"
 #include "dataTableBuilder.h"
 #include "dataTableResource.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/streamTextReader.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {
@@ -35,48 +32,6 @@ namespace base
             else
                 data = base::CreateSharedPtr<Table>(std::move(tableToConsume));
         }*/
-
-        bool TableResource::onReadBinary(stream::IBinaryReader& reader)
-        {
-            if (!TBaseClass::onReadBinary(reader))
-                return false;
-
-/*            data = base::CreateSharedPtr<Table>();
-
-            uint8_t hasTable = 0;
-            reader >> hasTable;
-
-            if (hasTable)
-            {
-                base::rtti::TypeSerializationContext classContext;
-                classContext.classContext = cls();
-
-                if (!data->readBinary(classContext, reader))
-                    return false;
-            }*/
-
-            return true;
-        }
-
-        bool TableResource::onWriteBinary(stream::IBinaryWriter& writer) const
-        {
-            if (!TBaseClass::onWriteBinary(writer))
-                return false;
-/*
-            uint8_t hasTable = (data != nullptr);
-            writer << hasTable;
-
-            if (hasTable)
-            {
-                base::rtti::TypeSerializationContext classContext;
-                classContext.classContext = cls();
-
-                if (!data->writeBinary(classContext, writer))
-                    return false;
-            }*/
-
-            return true;
-        }
 
     } // table
 } // base

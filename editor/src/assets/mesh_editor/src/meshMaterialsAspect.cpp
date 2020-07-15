@@ -11,8 +11,6 @@
 #include "meshPreviewPanelWithToolbar.h"
 #include "meshMaterialsAspect.h"
 
-#include "assets/mesh_loader/include/rendernigMeshMaterialManifest.h"
-
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
@@ -42,14 +40,14 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(MeshEditorMaterialInstance, rendering::MaterialInstance);
 
     public:
-        MeshEditorMaterialInstance(rendering::MeshMaterialBindingManifest* manifest, base::StringID name, const rendering::MaterialInstancePtr& meshBaseParams)
+        MeshEditorMaterialInstance(rendering::MeshMaterialConfig* manifest, base::StringID name, const rendering::MaterialRef& baseMaterial)
             : m_manifest(manifest)
             , m_name(name)
-            , m_originalMeshMaterialData(meshBaseParams)
-        {            
-            m_baseMaterial = meshBaseParams->baseMaterial();
-            m_parameters = meshBaseParams->parameters();
-            m_originalBaseMaterial = m_baseMaterial;
+            //, m_originalMeshMaterialData(baseMaterial)
+        {
+            //m_baseMaterial = meshBaseParams->baseMaterial();
+            //m_parameters = meshBaseParams->parameters();
+            //m_originalBaseMaterial = m_baseMaterial;
 
             m_manifest->applyMaterial(name, *this);
 
@@ -111,7 +109,7 @@ namespace ed
         }
 
     private:
-        rendering::MeshMaterialBindingManifest* m_manifest;
+        rendering::MeshMaterialConfig* m_manifest;
         base::StringID m_name;
 
         rendering::MaterialInstancePtr m_originalMeshMaterialData;
@@ -126,17 +124,17 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialParameters);
     RTTI_END_TYPE();
 
-    MeshMaterialParameters::MeshMaterialParameters(rendering::MeshMaterialBindingManifest* manifest, base::StringID name, const rendering::MaterialInstancePtr& meshBaseParams)
+    MeshMaterialParameters::MeshMaterialParameters(rendering::MeshMaterialConfig* manifest, base::StringID name, const rendering::MaterialRef& baseMaterial)
         : m_name(name)
         , m_manifest(manifest)
-        , m_baseParams(meshBaseParams)
+        , m_baseMaterial(baseMaterial)
     {
         //m_previewParams = base::CreateSharedPtr<rendering::MaterialInstance>();
         //m_previewParams->baseMaterial(meshBaseParams);
 
         auto loader = base::GetService<base::res::LoadingService>()->loader();
 
-        m_previewParams = base::CreateSharedPtr<MeshEditorMaterialInstance>(manifest, name, meshBaseParams);
+        m_previewParams = base::CreateSharedPtr<MeshEditorMaterialInstance>(manifest, name, m_baseMaterial);
         m_previewParams->parent(this);
 
         updateDisplayString();
@@ -201,7 +199,7 @@ namespace ed
 
     //---
 
-    MeshMaterialListModel::MeshMaterialListModel(rendering::MeshMaterialBindingManifest* manifest)
+    MeshMaterialListModel::MeshMaterialListModel(rendering::MeshMaterialConfig* manifest)
         : m_manifest(manifest)
     {}
 
@@ -260,17 +258,16 @@ namespace ed
     RTTI_END_TYPE();
 
     MeshMaterialBindingAspect::MeshMaterialBindingAspect()
-        : SingleResourceEditorManifestAspect(rendering::MeshMaterialBindingManifest::GetStaticClass())
     {
     }
 
     bool MeshMaterialBindingAspect::initialize(SingleResourceEditor* editor)
     {
-        if (!TBaseClass::initialize(editor))
-            return false;
+        /*if (!TBaseClass::initialize(editor))
+            return false;*/
 
-        m_materialManifest = base::rtti_cast<rendering::MeshMaterialBindingManifest>(manifest());
-        if (!m_materialManifest)
+        m_materialConfig = nullptr;// base::rtti_cast<rendering::MeshMaterialConfig>(editor->prev());
+        if (!m_materialConfig)
             return false;
 
         if (auto* meshEditor = base::rtti_cast<MeshEditor>(editor))
@@ -299,7 +296,7 @@ namespace ed
 
                 searchBar->bindItemView(m_list);
 
-                m_listModel = base::CreateSharedPtr<MeshMaterialListModel>(m_materialManifest);
+                m_listModel = base::CreateSharedPtr<MeshMaterialListModel>(m_materialConfig);
                 m_list->model(m_listModel);
 
             }
@@ -326,7 +323,7 @@ namespace ed
         return false;
     }
 
-    void MeshMaterialBindingAspect::previewResourceChanged()
+    void MeshMaterialBindingAspect::resourceChanged()
     {
         refreshMaterialList();
         refreshMaterialProperties();
@@ -351,11 +348,11 @@ namespace ed
         m_listModel->clear();
 
         base::RefPtr<MeshMaterialParameters> materialToSelect;
-        if (auto mesh = m_meshEditor->previewMesh())
+        if (auto mesh = m_meshEditor->mesh())
         {
             for (const auto& mat : mesh->materials())
             {
-                auto entry = base::CreateSharedPtr<MeshMaterialParameters>(m_materialManifest, mat.name, mat.baseMaterial);
+                auto entry = base::CreateSharedPtr<MeshMaterialParameters>(m_materialConfig, mat.name, mat.baseMaterial);
                 m_listModel->add(entry);
 
                 m_previewPanel->previewMaterial(mat.name, entry->previewParams());

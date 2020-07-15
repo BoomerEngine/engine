@@ -544,45 +544,4 @@ namespace ImGui
 
     //--
 
-    base::res::StaticResource<base::res::RawBinaryData> resDefaultFont("engine/fonts/roboto_regular.ttf");
-
-    ImFont* FontTable[4] = { nullptr, nullptr, nullptr, nullptr };
-
-    static ImFont* SetupFont(ImFontAtlas* atlas, base::res::StaticResource<base::res::RawBinaryData>& data, float pixelSize)
-    {
-        if (auto binaryData = data.loadAndGet())
-        {
-            if (auto buffer = binaryData->data())
-            {
-                ImFontConfig cfg;
-                cfg.OversampleH = 6;
-                cfg.OversampleV = 2;
-
-                if (auto font = atlas->AddFontFromMemoryTTF(buffer.data(), buffer.size(), pixelSize, &cfg))
-                {
-                    return font;
-                }
-            }
-        }
-
-        return atlas->AddFontDefault();
-    }
-
-    ImFontAtlas* GetSharedFontAtlas()
-    {
-        static ImFontAtlas* atlas = nullptr;
-        if (nullptr == atlas)
-        {
-            atlas = MemNew(ImFontAtlas);
-            FontTable[0] = SetupFont(atlas, resDefaultFont, 18.0f);
-        }
-
-        return atlas;
-    }
-
-    ImFont* GetFont(Font font)
-    {
-        return FontTable[0];
-    }
-
 } // ImGui

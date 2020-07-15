@@ -107,7 +107,8 @@ namespace hl2
         }
 
         // create wrapper
-        return base::CreateUniquePtr<PackedFileSystem>(packagePath, std::move(index));
+        //return base::CreateUniquePtr<PackedFileSystem>(packagePath, std::move(index));
+        return nullptr;
     }
 
 } // hl2

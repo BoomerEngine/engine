@@ -359,7 +359,7 @@ namespace hl2
             return cur;
         }
 
-        bool readSafe(const base::io::FileHandlePtr& file, void* data, uint32_t size)
+        bool readSafe(const base::io::ReadFileHandlePtr& file, void* data, uint32_t size)
         {
             memset(data, 0, size);
             if (size != file->readSync(data, size))
@@ -372,7 +372,7 @@ namespace hl2
         }
 
         template< typename T >
-        bool readSafe(const base::io::FileHandlePtr& file, T& data)
+        bool readSafe(const base::io::ReadFileHandlePtr& file, T& data)
         {
             return readSafe(file, &data, sizeof(T));
         }
@@ -682,7 +682,7 @@ namespace hl2
     };
 
     template< typename T >
-    static bool writeTable(base::io::IFileHandle& file, const base::Array<T>& data)
+    static bool writeTable(base::io::IWriteFileHandle& file, const base::Array<T>& data)
     {
         uint32_t dataSize = data.dataSize();
         if (sizeof(uint32_t) != file.writeSync(&dataSize, sizeof(dataSize)))
@@ -693,7 +693,7 @@ namespace hl2
     }
 
     template< typename T >
-    static bool readTable(base::io::IFileHandle& file, base::Array<T>& data)
+    static bool readTable(base::io::IReadFileHandle& file, base::Array<T>& data)
     {
         uint32_t dataSize = 0;
         if (sizeof(uint32_t) != file.readSync(&dataSize, sizeof(dataSize)))
@@ -704,7 +704,7 @@ namespace hl2
         return true;
     }
 
-    bool FileSystemIndex::load(base::io::IFileHandle& file)
+    bool FileSystemIndex::load(base::io::IReadFileHandle& file)
     {
         // write header
         Header header;
@@ -722,7 +722,7 @@ namespace hl2
         return true;
     }
 
-    bool FileSystemIndex::save(base::io::IFileHandle& file) const
+    bool FileSystemIndex::save(base::io::IWriteFileHandle& file) const
     {
         // write header
         Header header;

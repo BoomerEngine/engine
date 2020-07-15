@@ -8,10 +8,11 @@
 
 #include "build.h"
 #include "resourceLoaderFinal.h"
-#include "resourceUncached.h"
 
 #include "base/app/include/commandline.h"
 #include "base/io/include/ioSystem.h"
+#include "resourceTags.h"
+#include "resourceFileLoader.h"
 
 namespace base
 {
@@ -123,10 +124,19 @@ namespace base
                 io::AbsolutePath filePath;
                 if (assembleCookedFilePath(key, filePath))
                 {
-                    if (auto ret = res::LoadUncached(filePath, key.cls(), this, nullptr))
+                    if (auto reader = IO::GetInstance().openForAsyncReading(filePath))
                     {
-                        ret->bindToLoader(this, key, ResourceMountPoint(), false);
-                        return ret;
+                        FileLoadingContext context;
+                        // context.knownMainFileSize = 0;
+
+                        if (LoadFile(reader, context))
+                        {
+                            if (const auto ret = context.root<IResource>())
+                            {
+                                ret->bindToLoader(this, key, ResourceMountPoint(), false);
+                                return ret;
+                            }
+                        }
                     }
                 }
             }

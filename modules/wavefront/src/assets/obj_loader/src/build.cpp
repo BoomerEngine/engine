@@ -4,6 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_* #]
+* [# dependency: assets_mesh_loader #]
 * [# devonly #]
 ***/
 

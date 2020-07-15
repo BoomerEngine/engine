@@ -5,6 +5,7 @@
 *
 * [# dependency: base_* #]
 * [# dependency: rendering_scene #]
+* [# dependency: assets_image_loader #]
 * [# devonly #]
 ***/
 

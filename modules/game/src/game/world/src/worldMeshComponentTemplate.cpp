@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: entity\components #]
+* [# filter: entity\components\mesh #]
 *
 ***/
 
@@ -16,7 +16,7 @@ namespace game
 {
     //--
 
-    base::res::StaticResource<rendering::Mesh> resDefaultMesh("engine/tests/meshes/cube.obj");
+    base::res::StaticResource<rendering::Mesh> resDefaultMesh("engine/meshes/cube.v4mesh");
     //--
 
     RTTI_BEGIN_TYPE_CLASS(MeshComponentTemplate);

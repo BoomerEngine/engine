@@ -15,6 +15,8 @@
 #include "base/resource/include/resourceMetadata.h"
 #include "base/object/include/rttiTypeSystem.h"
 #include "importInterfaceImpl.h"
+#include "base/resource/include/resourceTags.h"
+#include "importFileFingerprint.h"
 
 namespace base
 {
@@ -23,10 +25,22 @@ namespace base
 
         //--
 
+        RTTI_BEGIN_TYPE_ENUM(ImportStatus);
+            RTTI_ENUM_OPTION(UpToDate);
+            RTTI_ENUM_OPTION(NotUpToDate);
+            RTTI_ENUM_OPTION(NotSupported);
+            RTTI_ENUM_OPTION(MissingAssets);
+            RTTI_ENUM_OPTION(InvalidAssets);
+            RTTI_ENUM_OPTION(NewAssetImported);
+        RTTI_END_TYPE();
+
+        //--
+
         RTTI_BEGIN_TYPE_CLASS(ImportJobInfo);
             RTTI_PROPERTY(assetFilePath);
             RTTI_PROPERTY(depotFilePath);
-            RTTI_PROPERTY(config);
+            RTTI_PROPERTY(externalConfig);
+            RTTI_PROPERTY(userConfig);
         RTTI_END_TYPE();
 
         //--
@@ -59,12 +73,16 @@ namespace base
             // check asset dependencies
             for (const auto& dep : metadata.importDependencies)
             {
-                uint64_t currentCRC = 0; // TODO: replace with "PFFF" - probabilistic fingerprint
-                if (!m_assets->fileExists(dep.importPath, &currentCRC))
+                ImportFileFingerprint fingerprint(dep.crc);
+                const auto ret = m_assets->checkFileStatus(dep.importPath, dep.timestamp, fingerprint, nullptr);
+
+                if (ret == SourceAssetStatus::Missing)
                     return ImportStatus::MissingAssets;
 
-                if (currentCRC != dep.crc)
-                    return ImportStatus::NotUpToDate;
+                if (ret == SourceAssetStatus::UpToDate)
+                    continue;
+
+                return ImportStatus::InvalidAssets;
             }
 
             // looks up to date
@@ -74,6 +92,7 @@ namespace base
         ImportStatus Importer::importResource(const ImportJobInfo& info, const IResource* existingData, ResourcePtr& outImportedResource, IProgressTracker* progress /*= nullptr*/) const
         {
             // no import path
+            DEBUG_CHECK_EX(!info.assetFilePath.empty() && !info.depotFilePath.empty(), "Invalid call");
             if (info.assetFilePath.empty() || info.depotFilePath.empty())
                 return ImportStatus::NotSupported;
 
@@ -81,21 +100,61 @@ namespace base
             const auto depotExtension = info.depotFilePath.view().afterLast(".");
             const auto targetResourceClass = IResource::FindResourceClassByExtension(depotExtension);
             if (!targetResourceClass)
+            {
+                TRACE_WARNING("Unrecognized resource extension '{}' in '{}'", depotExtension, info.depotFilePath);
                 return ImportStatus::NotSupported;
+            }
 
             // find importer class
             SpecificClassType<IResourceImporter> importerClass;
-            if (findBestImporter(info.assetFilePath, targetResourceClass, importerClass))
+            if (!findBestImporter(info.assetFilePath, targetResourceClass, importerClass))
+            {
+                TRACE_WARNING("No cooker found capable of cooking '{}' into {}", info.assetFilePath, targetResourceClass->name());
                 return ImportStatus::NotSupported;
+            }
+
+            // get the resource configuration class needed to import this resource
+            auto resourceConfigurationClass = importerClass->findMetadata<ResourceImporterConfigurationClassMetadata>()->configurationClass();
+            DEBUG_CHECK_EX(resourceConfigurationClass, "Invalid resource configuration class");
+            if (!resourceConfigurationClass)
+                resourceConfigurationClass = ResourceConfiguration::GetStaticClass();
+
+            // load the asset depot configuration for the resource
+            auto folderBaseConfig = m_assets->compileBaseResourceConfiguration(info.assetFilePath, resourceConfigurationClass);
+
+            // if we were given extra config how to import this resource then use it
+            ResourceConfigurationPtr baseConfig;
+            if (info.externalConfig)
+            {
+                baseConfig = CloneObject(info.externalConfig); // keep only delta properties
+                baseConfig->rebase(folderBaseConfig); // apply delta properties on top of what we have in the folder
+            }
+            else
+            {
+                baseConfig = resourceConfigurationClass.create(); // create empty one
+                baseConfig->rebase(folderBaseConfig); // apply delta properties on top of what we have in the folder
+            }
+
+            // apply user config
+            ResourceConfigurationPtr importConfig;
+            if (info.userConfig)
+            {
+                importConfig = CloneObject(info.userConfig); // keep only delta properties from user config
+                importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
+            }
+            else
+            {
+                importConfig = resourceConfigurationClass.create(); // create empty one
+                importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
+            }
 
             // create an instance of importer for this job
             auto importer = importerClass.create();
 
             // TODO: add a change for importer to test resource and check if it's up to date without the need for reimporting
 
-
             // create import interface
-            LocalImporterInterface importerInterface(m_assets, existingData, info.assetFilePath, ResourcePath(info.depotFilePath), ResourceMountPoint(), progress, info.config);
+            LocalImporterInterface importerInterface(m_assets, existingData, info.assetFilePath, ResourcePath(info.depotFilePath), ResourceMountPoint(), progress, importConfig);
             const auto importedResource = importer->importResource(importerInterface);
             if (!importedResource)
             {
@@ -119,6 +178,14 @@ namespace base
                 metadata->internalRevision = existingData->metadata()->internalRevision + 1;
             else
                 metadata->internalRevision = 1; // non zero for imported stuff
+
+            // remember the configurations used to bake the resource
+            metadata->importBaseConfiguration = baseConfig;
+            baseConfig->parent(metadata);
+
+            // remember the final configuration as well
+            metadata->importUserConfiguration = importConfig;
+            importConfig->parent(metadata);
 
             // store metadata in the imported object
             importedResource->metadata(metadata);
@@ -145,8 +212,7 @@ namespace base
                 if (extensionMetadata && targetClassMetadata)
                 {
                     // check that class is valid
-                    auto targetResourceClass = targetClassMetadata->nativeClass().cast<IResource>();
-                    if (targetResourceClass && !targetResourceClass->isAbstract())
+                    for (const auto targetResourceClass : targetClassMetadata->classList())
                     {
                         // create entry for each reported extension
                         for (const auto& ext : extensionMetadata->extensions())
@@ -180,14 +246,14 @@ namespace base
                             }
                         }
                     }
-                    else if (targetClassMetadata->nativeClass())
+                    /*else if (targetClassMetadata->nativeClass())
                     {
                         TRACE_WARNING("Importer class '{}' cannot use class '{}' as output", cls->name(), targetClassMetadata->nativeClass()->name());
                     }
                     else
                     {
                         TRACE_WARNING("Importer class '{}' has invalid output class specified", cls->name());
-                    }
+                    }*/
                 }
                 else
                 {

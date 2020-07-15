@@ -13,7 +13,6 @@
 #include "resourceClassLookup.h"
 
 #include "base/system/include/scopeLock.h"
-#include "base/object/include/serializationLoader.h"
 #include "base/object/include/public.h"
 #include "base/fibers/include/fiberSystem.h"
 #include "base/containers/include/inplaceArray.h"

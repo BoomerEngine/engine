@@ -48,9 +48,8 @@ namespace base
 				m_tokenPool.free(token);
 			}
 
-            uint64_t WinAsyncReadDispatcher::readAsync(HANDLE hSyncFile, HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory)
+            uint64_t WinAsyncReadDispatcher::readAsync(HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory)
             {
-                ASSERT_EX(hSyncFile != INVALID_HANDLE_VALUE, "Invalid file handle");
                 ASSERT_EX(hAsyncFile != INVALID_HANDLE_VALUE, "Invalid file handle");
 
                 // nothing to read
@@ -64,7 +63,6 @@ namespace base
                 auto signal  = Fibers::GetInstance().createCounter("IOCompletedSignal");
 
                 // setup 
-                token->m_hSyncHandle = hSyncFile;
                 token->m_hAsyncHandle = hAsyncFile;
                 token->m_memory = outMemory;
                 token->m_signal = signal;
@@ -137,51 +135,18 @@ namespace base
                     {
                         ASSERT(token != nullptr);
 
-                        static bool forceSync = false;
-
-                        // read the data
-                        if (forceSync)
+                        // this function must be called from this thread because only here we are waiting in the alert alertable
+                        if (!ReadFileEx(token->m_hAsyncHandle, token->m_memory, token->m_size, &token->m_overlapped, &ProcessOverlappedResult))
                         {
-                            // read data directly from file
-                            DWORD dwNumberOfBytesTransfered = 0;
-                            ReadFile(token->m_hSyncHandle, token->m_memory, range_cast<uint32_t>(token->m_size), &dwNumberOfBytesTransfered, NULL);
+                            auto errorCode  = GetLastError();
+                            TRACE_ERROR("AsyncRead failed with {}", errorCode);
 
-                            // process result
-                            if (dwNumberOfBytesTransfered != token->m_size)
-                            {
-                                auto errorCode  = GetLastError();
-                                TRACE_ERROR("AsyncRead failed with {}", errorCode);
-
-                                // return error state
-                                *token->m_numBytesRead = 0;
-                            }
-                            else
-                            {
-                                // write number of bytes that we have written
-                                *token->m_numBytesRead = dwNumberOfBytesTransfered;
-                            }
-
-                            // signal that we are done
+                            // return error state
+                            *token->m_numBytesRead = 0;
                             Fibers::GetInstance().signalCounter(token->m_signal);
 
                             // release token here since the callback will not be called
                             m_tokenPool.free(token);
-                        }
-                        else
-                        {
-                            // this function must be called from this thread because only here we are waiting in the alert alertable
-                            if (!ReadFileEx(token->m_hAsyncHandle, token->m_memory, token->m_size, &token->m_overlapped, &ProcessOverlappedResult))
-                            {
-                                auto errorCode  = GetLastError();
-                                TRACE_ERROR("AsyncRead failed with {}", errorCode);
-
-                                // return error state
-                                *token->m_numBytesRead = 0;
-                                Fibers::GetInstance().signalCounter(token->m_signal);
-
-                                // release token here since the callback will not be called
-                                m_tokenPool.free(token);
-                            }
                         }
                     }
                 }

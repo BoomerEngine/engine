@@ -19,15 +19,31 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_ROOT_CLASS(MeshStructureNode);
 
     public:
-        MeshStructureNode(base::StringView<char> txt, base::StringID type);
+        struct Data
+        {
+            uint32_t index = 0;
+            uint32_t subIndex = 0;
+
+            INLINE Data() {};
+            INLINE Data(const Data& other) = default;
+            INLINE Data& operator=(const Data& other) = default;
+
+            INLINE Data(uint32_t index_)
+                : index(index_)
+            {}
+        };
+
+        MeshStructureNode(base::StringView<char> txt, base::StringID type, Data data = Data());
         virtual ~MeshStructureNode();
 
         INLINE const base::StringBuf& caption() const { return m_caption; }
         INLINE base::StringID type() const { return m_type; }
+        INLINE const Data& data() const { return m_data; }
 
     private:
         base::StringBuf m_caption;
         base::StringID m_type;
+        Data m_data;
     };
 
     typedef base::RefPtr<MeshStructureNode> MeshStructureNodePtr;
@@ -57,10 +73,10 @@ namespace ed
         MeshStructurePanel();
         virtual ~MeshStructurePanel();
 
-        void setMesh(const base::mesh::MeshPtr& mesh);
+        void setMesh(const rendering::MeshPtr& mesh);
 
     private:
-        base::mesh::MeshPtr m_mesh;
+        rendering::MeshPtr m_mesh;
 
         ui::TreeViewPtr m_tree;
         base::RefPtr<MeshStructureTreeModel> m_treeModel;

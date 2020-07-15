@@ -16,7 +16,6 @@
 
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceUncached.h"
 #include "base/resource/include/resource.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/object/include/objectObserver.h"
@@ -25,7 +24,9 @@
 #include "base/image/include/imageView.h"
 #include "base/image/include/image.h"
 #include "base/resource/include/resourceLoadingService.h"
-#include "base/object/include/memoryReader.h"
+#include "base/resource/include/resourceFileLoader.h"
+#include "base/resource/include/resourceMetadata.h"
+#include "base/resource/include/resourceFileSaver.h"
 
 namespace ed
 {
@@ -175,27 +176,6 @@ namespace ed
         m_state = state;
     }
 
-    static StringBuf GetDepotFilePathForContentClass(const StringBuf& path, ClassType classType, const StringBuf& manifestKey)
-    {
-        if (!classType->is(res::IResourceManifest::GetStaticClass()))
-            return path;
-
-        if (auto manifestExtension = classType->findMetadata<res::ResourceManifestExtensionMetadata>())
-        {
-            if (manifestKey)
-                return StringBuf(TempString("{}.{}.{}", path, manifestKey, manifestExtension->extension()));
-            else
-                return StringBuf(TempString("{}.{}", path, manifestExtension->extension()));
-        }
-        else
-        {
-            if (manifestKey)
-                return StringBuf(TempString("{}.{}.manifest", path, manifestKey));
-            else
-                return StringBuf(TempString("{}.manifest", path));
-        }
-    }
-
     Buffer ManagedFile::loadRawContent(StringView<char> depotPath) const
     {
         if (auto file = m_depot->loader().createFileReader(depotPath))
@@ -234,38 +214,30 @@ namespace ed
         return nullptr;
     }
 
-    res::ResourceHandle ManagedFile::loadContent(SpecificClassType<res::IResource> dataClass)
+    res::ResourcePtr ManagedFile::loadContent() const
     {
-        if (dataClass)
+        if (m_fileFormat->nativeResourceClass())
         {
-            res::ResourceMountPoint mountPoint;
+            const auto resourceKey = res::ResourceKey(res::ResourcePath(depotPath()), m_fileFormat->nativeResourceClass());
+            return base::LoadResource(resourceKey).acquire();
+        }
 
-            DEBUG_CHECK_EX(!dataClass->is<base::res::IResourceManifest>(), "Use loadManifset to load manifest files - they are NOT content");
+        return nullptr;
+    }
 
-            if (dataClass->is<base::res::IResourceManifest>())
+    res::MetadataPtr ManagedFile::loadMetadata() const
+    {
+        if (auto file = m_depot->loader().createFileAsyncReader(depotPath()))
+        {
+            base::res::FileLoadingContext loadingContext;
+            loadingContext.loadSpecificClass = base::res::Metadata::GetStaticClass();
+
+            if (base::res::LoadFile(file, loadingContext))
             {
-                TRACE_WARNING("Trying to load manifest as content from file '{}'", depotPath());
-            }
-            else if (m_depot->loader().queryFileMountPoint(depotPath(), mountPoint))
-            {
-                if (auto buf = loadRawContent())
+                if (loadingContext.loadedObjects.size() == 1)
                 {
-                    auto dependencyLoader = GetService<res::LoadingService>()->loader().get();
-                    stream::MemoryReader reader(buf);
-
-                    if (auto loaded = res::LoadUncached(depotPath(), dataClass, reader, dependencyLoader, nullptr, mountPoint))
-                    {
-                        m_loadedContent.pushBack(loaded.weak());
-                        IObjectObserver::RegisterObserver(loaded.get(), this);
-                        return loaded;
-                    }
-
-                    TRACE_WARNING("Failed to load '{}' from '{}'", dataClass->name(), depotPath());
+                    return base::rtti_cast<res::Metadata>(loadingContext.loadedObjects[0]);
                 }
-            }
-            else
-            {
-                TRACE_WARNING("File '{}' has no valid mounting point in depot (package removed?)", depotPath());
             }
         }
 
@@ -280,10 +252,20 @@ namespace ed
 
     bool ManagedFile::storeRawContent(StringView<char> depotPath, Buffer data)
     {
-        if (m_depot->loader().storeFileContent(depotPath, data))
+        if (data)
         {
-            // unmarkAsModified(); // up to caller
-            return true;
+            if (auto writer = m_depot->loader().createFileWriter(depotPath))
+            {
+                if (writer->writeSync(data.data(), data.size()) == data.size())
+                {
+                    unmarkAsModified();
+                    return true;
+                }
+                else
+                {
+                    writer->discardContent();
+                }
+            }
         }
 
         TRACE_WARNING("Failed to store content for '{}'", depotPath);
@@ -308,102 +290,29 @@ namespace ed
     {
         if (content)
         {
-            DEBUG_CHECK_EX(!content->is<base::res::IResourceManifest>(), "Use saveManifset to save manifest files - they are NOT content");
-
             res::ResourceMountPoint mountPoint;
-
-            if (content->is<base::res::IResourceManifest>())
+            if (m_depot->loader().queryFileMountPoint(depotPath(), mountPoint))
             {
-                TRACE_WARNING("Trying to save manifest as content from file '{}'", depotPath());
-            }
-            else if (m_depot->loader().queryFileMountPoint(depotPath(), mountPoint))
-            {
-                if (auto data = res::SaveUncachedToBuffer(content, mountPoint))
+                if (auto writer = m_depot->loader().createFileWriter(depotPath()))
                 {
-                    return storeRawContent(data);
-                }
-                else
-                {
-                    TRACE_ERROR("Failed to serialize content of '{}'", depotPath());
-                }
-            }
-            else
-            {
-                TRACE_WARNING("File '{}' has no valid mounting point in depot (package removed?)", depotPath());
-            }
-        }
+                    res::FileSavingContext context;
+                    context.basePath = mountPoint.path();
+                    context.rootObject.pushBack(content);
 
-        return false;
-    }
-
-    //--
-
-    base::StringBuf ManagedFile::formatManifestPath(SpecificClassType<res::IResourceManifest> manifestClass) const
-    {
-        DEBUG_CHECK_EX(manifestClass, "Invalid manifest class");
-        if (manifestClass)
-        {
-            const auto manifestExtensionMetadata = manifestClass->findMetadata<base::res::ResourceManifestExtensionMetadata>();
-            DEBUG_CHECK_EX(manifestExtensionMetadata && manifestExtensionMetadata->extension() && *manifestExtensionMetadata->extension(), "Manifest class has no extension specified");
-
-            if (manifestExtensionMetadata && manifestExtensionMetadata->extension() && *manifestExtensionMetadata->extension())
-            {
-                const auto basePath = parentDirectory()->depotPath();
-                return base::StringBuf(base::TempString("{}.boomer/{}.{}", basePath, name(), manifestExtensionMetadata->extension()));
-            }
-        }
-    
-        return base::StringBuf::EMPTY();
-    }
-
-    res::ResourceCookingManifestPtr ManagedFile::loadManifest(SpecificClassType<res::IResourceManifest> manifestClass, bool createIfMissing)
-    {
-        if (auto fullDepotPath = formatManifestPath(manifestClass))
-        {
-            res::ResourceMountPoint mountPoint;
-            if (m_depot->loader().queryFileMountPoint(fullDepotPath, mountPoint))
-            {
-                // load manifest data
-                if (auto buf = loadRawContent(fullDepotPath))
-                {
-                    stream::MemoryReader reader(buf);
-
-                    auto loader = base::GetService<base::res::LoadingService>()->loader();
-
-                    if (auto loaded = res::LoadUncached(depotPath(), manifestClass, reader, loader, nullptr, mountPoint)) // NOTE: manifest can't have dependencies
+                    if (res::SaveFile(writer, context))
                     {
-                        m_loadedContent.pushBack(loaded.weak());
-                        IObjectObserver::RegisterObserver(loaded.get(), this);
-                        return base::rtti_cast<res::IResourceManifest>(loaded);
+                        unmarkAsModified();
+                        return true;
+                    }
+                    else
+                    {
+                        writer->discardContent();
                     }
                 }
             }
         }
 
-        // create empty manifest
-        if (createIfMissing)
-            return manifestClass.create();
-
-        return nullptr;
-    }
-
-    bool ManagedFile::storeManifest(res::IResourceManifest* manifest)
-    {
-        if (manifest)
-        {
-            if (auto fullDepotPath = formatManifestPath(manifest->cls().cast<base::res::IResourceManifest>()))
-            {
-                res::ResourceMountPoint mountPoint;
-                if (m_depot->loader().queryFileMountPoint(fullDepotPath, mountPoint))
-                {
-                    if (auto data = res::SaveUncachedToBuffer(manifest, mountPoint))
-                    {
-                        return storeRawContent(fullDepotPath, data);
-                    }
-                }
-            }
-        }
-
+        TRACE_WARNING("Unable to save new content for file '{}'", depotPath());
         return false;
     }
 
@@ -411,11 +320,7 @@ namespace ed
 
     void ManagedFile::onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData)
     {
-        if (eventID == "ResourceModified"_id)
-        {
-            if (m_loadedContent.contains(eventObject))
-                markAsModifed();
-        }
+        
     }
 
 #if 0

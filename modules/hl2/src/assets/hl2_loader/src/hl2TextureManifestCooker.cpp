@@ -8,7 +8,6 @@
 #include "build.h"
 
 #include "base/io/include/ioFileHandle.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/app/include/localServiceContainer.h"
@@ -16,6 +15,8 @@
 #include "base/resource/include/resourceCookingInterface.h"
 #include "rendering/texture/include/renderingTexture.h"
 #include "rendering/texture/include/renderingStaticTexture.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace hl2
 {

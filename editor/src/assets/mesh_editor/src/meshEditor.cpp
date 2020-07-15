@@ -20,7 +20,6 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiRuler.h"
 #include "base/ui/include/uiSplitter.h"
-#include "base/geometry/include/mesh.h"
 #include "meshStructurePanel.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
@@ -33,7 +32,7 @@ namespace ed
     RTTI_END_TYPE();
 
     MeshEditor::MeshEditor(ConfigGroup config, ManagedFile* file)
-        : SingleCookedResourceEditor(config, file, rendering::Mesh::GetStaticClass())
+        : SingleLoadedResourceEditor(config, file)
     {
         createInterface();
     }
@@ -64,18 +63,14 @@ namespace ed
 
             dockLayout().right().attachPanel(tab);
         }
-
-        previewResourceChanged();
     }
 
-    void MeshEditor::previewResourceChanged()
+    void MeshEditor::resourceChanged()
     {
-        TBaseClass::previewResourceChanged();
+        TBaseClass::resourceChanged();
 
-        if (auto mesh = base::rtti_cast<rendering::Mesh>(previewResource().acquire()))
-        {
-            m_previewPanel->previewMesh(mesh);
-        }
+        if (m_previewPanel)
+            m_previewPanel->previewMesh(mesh());
     }
 
     //---
@@ -87,17 +82,19 @@ namespace ed
     public:
         virtual bool canOpen(const ManagedFileFormat& format) const override
         {
-            const auto meshClass = rendering::Mesh::GetStaticClass();
-            for (const auto& output : format.cookableOutputs())
-                if (output.resoureClass == meshClass)
-                    return true;
-
-            return false;
+            return format.nativeResourceClass() == rendering::Mesh::GetStaticClass();
         }
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            return base::CreateSharedPtr<MeshEditor>(config, file);
+            if (auto mesh = base::rtti_cast<rendering::Mesh>(file->loadContent()))
+            {
+                auto ret = base::CreateSharedPtr<MeshEditor>(config, file);
+                ret->bindResource(mesh);
+                ret;
+            }
+
+            return nullptr;
         }
     };
 

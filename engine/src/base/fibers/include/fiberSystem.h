@@ -132,7 +132,7 @@ namespace base
             /// NOTE: the wait counter must be valid, it's illegal to wait on a counter that has been deleted
             /// NOTE: the wait counter will be released when job is unblocked
             /// NOTE: it's legal for more than one job to wait for a given counter
-            void waitForCounterAndRelease(const WaitCounter& counter);
+            void waitForCounterAndRelease(WaitCounter& counter);
 
             /// block current job until all counters finish
             void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count);
@@ -190,9 +190,9 @@ namespace base
             }
 
             // set the normal priority for the fiber
-            INLINE FiberBuilder& child()
+            INLINE FiberBuilder& child(bool flag=true)
             {
-                m_child = true;
+                m_child = flag;
                 return *this;
             }
 

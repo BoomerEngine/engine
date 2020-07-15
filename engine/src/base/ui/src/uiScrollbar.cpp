@@ -13,7 +13,6 @@
 #include "uiButton.h"
 #include "uiTextLabel.h"
 #include "uiStyleValue.h"
-#include "uiStyleParameters.h"
 #include "uiTextLabel.h"
 
 #include "base/input/include/inputStructures.h"

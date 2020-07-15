@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: resource\cooking  #]
+* [#filter: resource\metadata  #]
 ***/
 
 #pragma once
@@ -18,9 +18,9 @@ namespace base
         //---
 
         /// resource thumbnail data
-        class BASE_RESOURCE_API ResourceThumbnail : public IResource
+        class BASE_RESOURCE_API ResourceThumbnail : public IObject
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceThumbnail, IResource);
+            RTTI_DECLARE_VIRTUAL_CLASS(ResourceThumbnail, IObject);
 
         public:
             ResourceThumbnail();

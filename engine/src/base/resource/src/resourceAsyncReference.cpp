@@ -13,13 +13,6 @@
 #include "resourceAsyncReference.h"
 #include "resourceLoader.h"
 
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/serializationMapper.h"
-#include "base/object/include/serializationUnampper.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamTextReader.h"
-
 namespace base
 {
     namespace res

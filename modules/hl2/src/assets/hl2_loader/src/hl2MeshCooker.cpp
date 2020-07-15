@@ -9,13 +9,14 @@
 
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/timestamp.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
-#include "base/geometry/include/mesh.h"
+#include "base/resource/include/resourceCooker.h"
+#include "rendering/mesh/include/renderingMesh.h"
+#include "base/resource/include/resourceTags.h"
 
 #include "hl2StudioModelFile.h"
 #include "hl2StudioModelState.h"
@@ -61,7 +62,7 @@ namespace hl2
     };
 
     RTTI_BEGIN_TYPE_CLASS(MeshCookertMDL);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<base::mesh::Mesh>();
+        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<rendering::Mesh>();
         RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("mdl");
         RTTI_METADATA(base::res::ResourceCookerVersionMetadata).version(1);
     RTTI_END_TYPE();

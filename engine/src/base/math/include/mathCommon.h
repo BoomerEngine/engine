@@ -8,39 +8,6 @@
 
 #pragma once
 
-//---
-// Global math constants
-
-#undef PI
-#define PI (3.14159265358979323846)
-
-#undef HALFPI
-#define HALFPI (1.57079632679489661923)
-
-#undef TWOPI
-#define TWOPI (6.28318530717958647692)
-
-#undef DEG2RAD
-#define DEG2RAD (0.01745329251f)
-
-#undef RAD2DEG
-#define RAD2DEG (57.2957795131f)
-
-#undef SMALL_EPSILON
-#define SMALL_EPSILON (1e-6)
-
-#undef NORMALIZATION_EPSILON
-#define NORMALIZATION_EPSILON (1e-8)
-
-#undef PLANE_EPSILON
-#define PLANE_EPSILON (1e-6)
-
-#undef VERY_LARGE_FLOAT
-#define VERY_LARGE_FLOAT (std::numeric_limits<float>::max())
-
-//---
-// Simple math functions that are not in std
-
 namespace base
 {
     //--
@@ -68,14 +35,21 @@ namespace base
     class Angles;
     class XForm2D;
     class Color;
-    class HDRColor;
+    class Point;
+    class Rect;
+    class OBB;
+    class Sphere;
+    class Convex;
+    class TriMesh;
+    class Cylinder;
+    class Capsule;
     class AbsolutePosition;
     class AbsoluteTransform;
 
     //--
 
     // normalize angel to -360 to 360 range
-    extern BASE_MATH_API float AngleNormalize(float angle);
+    INLINE float AngleNormalize(float angle) { return angle - (std::trunc(angle / 360.0f) * 360.0f); }
 
     // get distance between two angles, it's always in range from -180 to 180 deg
     extern BASE_MATH_API float AngleDistance(float srcAngle, float srcTarget);
@@ -142,232 +116,231 @@ namespace base
     //! Set length of the vector
     extern BASE_MATH_API Vector4 SetLength(const Vector4& a, float maxLength);
 
-    //! Calculate distance (wrapper) between two angles
-    extern BASE_MATH_API float AngleDistance(float srcAngle, float srcTarget);
+    //--
 
-    //! Move from current to target angle using given movement step
-    extern BASE_MATH_API float AngleReach(float srcCurrent, float srcTarget, float move);
+    //! snap to grid of given size, slow
+    extern BASE_MATH_API float Snap(float val, float grid);
+
+    //! snap 2D position to grid of given size, slow
+    extern BASE_MATH_API Vector2 Snap(const Vector2& val, float grid);
+
+    //! snap 3D position to grid of given size, slow
+    extern BASE_MATH_API Vector3 Snap(const Vector3& val, float grid);
+
+    //! snap rotation to grid of given size, slow
+    extern BASE_MATH_API Angles Snap(const Angles& val, float grid);
+
+    //! snap point to a grid
+    extern BASE_MATH_API Point Snap(const Point& val, int grid);
+    
+    //! snap absolute position to a grid
+    extern BASE_MATH_API AbsolutePosition Snap(const AbsolutePosition& a, float grid);
 
     //--
 
-    /// step of the stateless generator
-    static INLINE uint64_t StatelessNextUint64(uint64_t& state)
-    {
-#ifdef PLATFORM_MSVC
-        state += UINT64_C(0x60bee2bee120fc15);
-        uint64_t tmp;
-        tmp = (uint64_t)state * UINT64_C(0xa3b195354a39b70d);
-        uint64_t m1 = tmp;
-        tmp = (uint64_t)m1 * UINT64_C(0x1b03738712fad5c9);
-        uint64_t m2 = tmp;
-#else
-        state += UINT64_C(0x60bee2bee120fc15);
-        __uint128_t tmp;
-        tmp = (__uint128_t)state * UINT64_C(0xa3b195354a39b70d);
-        uint64_t m1 = (tmp >> 64) ^ tmp;
-        tmp = (__uint128_t)m1 * UINT64_C(0x1b03738712fad5c9);
-        uint64_t m2 = (tmp >> 64) ^ tmp;
-#endif
-        return m2;
-    }
+    //! component-wise min vector
+    extern BASE_MATH_API Vector2 Min(const Vector2& a, const Vector2& b);
+
+    //! component-wise min vector
+    extern BASE_MATH_API Vector3 Min(const Vector3& a, const Vector3& b);
+
+    //! component-wise min vector
+    extern BASE_MATH_API Vector4 Min(const Vector4& a, const Vector4& b);
+
+    //! component-wise min point
+    extern BASE_MATH_API Point Min(const Point& a, const Point& b);
+
+    //! component-wise min of two rectangles
+    extern BASE_MATH_API Rect Min(const Rect& a, const Rect& b);
+
+    //! component-wise min of two colors
+    extern BASE_MATH_API Color Min(const Color& a, const Color& b);
+
+    //! component-wise min of position components
+    extern BASE_MATH_API AbsolutePosition Min(const AbsolutePosition& a, const AbsolutePosition& b);
+
+    //! component-wise min of two angles
+    extern BASE_MATH_API Angles Min(const Angles& a, const Angles& b);
 
     //--
 
-#ifdef BUILD_AS_LIBS
-    extern BASE_MATH_API TYPE_TLS uint64_t GRandomState;
+    //! component-wise max vector
+    extern BASE_MATH_API Vector2 Max(const Vector2& a, const Vector2& b);
 
-    INLINE static float Rand()
-    {
-        auto val  = (uint32_t)StatelessNextUint64(GRandomState) >> 10; // 22 bits
-        return (float)val / (float)0x3FFFFF;
-    }
+    //! component-wise max vector
+    extern BASE_MATH_API Vector3 Max(const Vector3& a, const Vector3& b);
 
-    INLINE static uint8_t RandByte()
-    {
-        return (uint8_t)StatelessNextUint64(GRandomState);
-    }
+    //! component-wise max vector
+    extern BASE_MATH_API Vector4 Max(const Vector4& a, const Vector4& b);
 
-    INLINE static uint32_t RandUint32()
-    {
-        return (uint32_t)StatelessNextUint64(GRandomState);
-    }
+    //! component-wise max point
+    extern BASE_MATH_API Point Max(const Point& a, const Point& b);
 
-    INLINE static uint64_t RandUint64()
-    {
-        return StatelessNextUint64(GRandomState);
-    }
-#else
-    extern BASE_MATH_API float Rand();
+    //! component-wise max of two rectangles
+    extern BASE_MATH_API Rect Max(const Rect& a, const Rect& b);
 
-    extern BASE_MATH_API uint8_t RandByte();
+    //! component-wise max of two colors
+    extern BASE_MATH_API Color Max(const Color& a, const Color& b);
 
-    extern BASE_MATH_API uint32_t RandUint32();
+    //! component-wise max of position components
+    extern BASE_MATH_API AbsolutePosition Max(const AbsolutePosition& a, const AbsolutePosition& b);
 
-    extern BASE_MATH_API uint64_t RandUint64();
-#endif
+    //! component-wise max of two angles
+    extern BASE_MATH_API Angles Max(const Angles& a, const Angles& b);
 
-    INLINE static uint32_t RandRange(uint32_t max)
-    {
-        return (uint32_t)(Rand() * max);
-    }
+    //--
 
-    INLINE static int RandRange(int min, int max)
-    {
-        return min + (int)std::floor(Rand() * max);
-    }
+    //! clamp components to range
+    extern BASE_MATH_API Vector2 Clamp(const Vector2& a, const Vector2& minV, const Vector2& maxV);
 
-    INLINE static float RandRange(float a, float b)
-    {
-        return a + (b-a) * Rand();
-    }
+    //! clamp components to range
+    extern BASE_MATH_API Vector3 Clamp(const Vector3& a, const Vector3& minV, const Vector3& maxV);
 
-    INLINE float Frac(float x)
-    {
-        return x - std::trunc(x);
-    }
+    //! clamp components to range
+    extern BASE_MATH_API Vector4 Clamp(const Vector4& a, const Vector4& minV, const Vector4& maxV);
 
-    INLINE bool IsNearZero(float x, float limit = SMALL_EPSILON)
-    {
-        return (x > -limit) && (x <= limit);
-    }
+    //! clamp components to range
+    extern BASE_MATH_API Point Clamp(const Point& a, const Point& minV, const Point& maxV);
 
-    INLINE float Snap(float val, float grid)
-    {
-        if (grid <= 0.0f)
-            return val;
+    //! clamp rectangle coordinates to fit inside given one
+    extern BASE_MATH_API Rect Clamp(const Rect& a, const Rect& limit);
 
-        int64_t numGridUnits = (int64_t)std::round(val / grid);
-        return numGridUnits * grid;
-    }
+    //! Clamp color to range
+    extern BASE_MATH_API Color Clamp(const Color& a, const Color& minV, const Color& maxV);
 
-    INLINE uint8_t FloatTo255(float col)
-    {
-        if (col <= 0.003921568627450980392156862745098f)
-            return 0;
-        else if (col >= 0.9960784313725490196078431372549f)
-            return 255;
-        else
-            return (uint8_t)std::lround(col * 255.0f);
-    }
+    //! Limit position component to range
+    extern BASE_MATH_API AbsolutePosition Clamp(const AbsolutePosition& a, const AbsolutePosition& minV, const AbsolutePosition& maxV);
 
-    INLINE uint32_t FloatTo256(float col)
-    {
-        if (col <= 0.00390625f)
-            return 0;
-        else if (col > 0.99609375f)
-            return 256;
-        else
-            return (uint32_t)std::lround(col * 256.0f);
-    }
+    //! Limit angles to range
+    extern BASE_MATH_API Angles Clamp(const Angles& a, const Angles& minV, const Angles& maxV);
 
-    INLINE float FloatFrom255(uint8_t col)
-    {
-        float inv255 = 1.0f / 255.0f;
-        return (float)col * inv255;
-    }
+    //--
 
-    INLINE bool IsPow2(uint64_t x)
-    {
-        return ( x & ( x-1 )) == 0;
-    }
+    //! clamp components to range (all to same range)
+    extern BASE_MATH_API Vector2 Clamp(const Vector2& a, float minF=0.0f, float maxF=1.0f);
 
-    INLINE uint32_t NextPow2(uint32_t v)
-    {
-        auto x  = v;
-        --x;
-        x |= x >> 1;
-        x |= x >> 2;
-        x |= x >> 4;
-        x |= x >> 8;
-        x |= x >> 16;
-        return ++x;
-    }
+    //! clamp components to range (all to same range)
+    extern BASE_MATH_API Vector3 Clamp(const Vector3& a, float minF=0.0f, float maxF=1.0f);
 
-    INLINE uint64_t NextPow2(uint64_t v)
-    {
-        auto x  = v;
-        --x;
-        x |= x >> 1;
-        x |= x >> 2;
-        x |= x >> 4;
-        x |= x >> 8;
-        x |= x >> 16;
-        x |= x >> 32;
-        return ++x;
-    }
+    //! clamp components to range (all to same range)
+    extern BASE_MATH_API Vector4 Clamp(const Vector4& a, float minF = 0.0f, float maxF = 1.0f);
 
-    INLINE uint8_t FloorLog2(uint64_t v)
-    {
-        auto n  = v;
-        auto pos  = 0;
-        if ( n >= 1ULL<<32 ) { n >>= 32; pos += 32; }
-        if ( n >= 1U<<16 ) { n >>= 16; pos += 16; }
-        if ( n >= 1U<< 8 ) { n >>=  8; pos +=  8; }
-        if ( n >= 1U<< 4 ) { n >>=  4; pos +=  4; }
-        if ( n >= 1U<< 2 ) { n >>=  2; pos +=  2; }
-        if ( n >= 1U<< 1 ) {           pos +=  1; }
-        return pos;
-    }
+    //! clamp components to range
+    extern BASE_MATH_API Point Clamp(const Point& a, int minF, int maxF);
 
-    INLINE float Bezier2(float p0, float p1, float p2, float frac)
-    {
-        float ifrac = 1.0f - frac;
-        float a = ifrac * ifrac;
-        float b = 2.0f * ifrac * frac;
-        float c = frac * frac;
-        return ( p0 * a ) + ( p1 * b ) + ( p2 * c );
-    }
+    //! clamp rectangle coordinates to fit inside given range
+    extern BASE_MATH_API Rect Clamp(const Rect& a, int minF, int maxF);
 
-    INLINE float Bezier3(float p0, float p1, float p2, float p3, float frac)
-    {
-        float ifrac = 1.0f - frac;
-        float a = ifrac * ifrac * ifrac;
-        float b = 3.0f * ifrac * ifrac * frac;
-        float c = 3.0f * ifrac * frac * frac;
-        float d = frac * frac * frac;
-        return ( p0 * a ) + ( p1 * b ) + ( p2 * c ) + ( p3 * d );
-    }
+    //! clamp color to range
+    extern BASE_MATH_API Color Clamp(const Color& a, uint8_t minF, uint8_t maxF);
 
-    INLINE float BezierT(float p0, float t0, float p1, float t1, float frac)
-    {
-        float ifrac = 1.0f - frac;
-        float a = ifrac * ifrac * ifrac;
-        float b = 3.0f * ifrac * ifrac * frac;
-        float c = 3.0f * ifrac * frac * frac;
-        float d = frac * frac * frac;
-        return ( p0 * a ) + ( (p0+t0) * b ) + ( (p1+t1) * c ) + ( p1 * d );
-    }
+    //! limit position value to range
+    extern BASE_MATH_API AbsolutePosition Clamp(const AbsolutePosition& a, double minF, double maxF);
 
-    INLINE float Hermite(float p0, float t0, float p1, float t1, float frac)
-    {
-        float frac2 = frac * frac;
-        float frac3 = frac2 * frac;
-        float a = 2.0f*frac3 - 3.0f*frac2 + 1.0f;
-        float b = frac3 - 2.0f*frac2 + frac;
-        float c = frac3 - frac2;
-        float d = -2.0f*frac3 + 3.0f*frac2;
-        return ( p0 * a ) + ( (p0+t0) * b ) + ( (p1+t1) * c ) + ( p1 * d );
-    }
+    //! limit angles to range
+    extern BASE_MATH_API Angles Clamp(const Angles& a, float minF, float maxF);
 
-    INLINE float AngleNormalize(float angle)
-    {
-        return angle - (std::trunc(angle / 360.0f) * 360.0f);
-    }
+    //--
 
-    INLINE float Lerp(float valA, float valB, float fraction)
-    {
-        return valA + fraction * ( valB - valA );
-    }
+    //! 2D dot product
+    extern BASE_MATH_API float Dot(const Vector2& a, const Vector2& b);
 
-    INLINE double Lerp(double valA, double valB, float fraction)
-    {
-        return valA + fraction * ( valB - valA );
-    }
+    //! 3D dot product
+    extern BASE_MATH_API float Dot(const Vector3& a, const Vector3& b);
 
-    INLINE float RadCircle(uint32_t i, uint32_t count)
-    {
-        auto frac  = (count > 0) ? ((float)i / (float)count) : 0.0f;
-        return TWOPI * frac;
-    }
+    //! 4D dot product
+    extern BASE_MATH_API float Dot(const Vector4& a, const Vector4& b);
+
+    //! Quaternion dot product
+    extern BASE_MATH_API float Dot(const Quat& a, const Quat& b);
+
+    //! Rotation dot product - the dot product of their respective "forward" vectors
+    extern BASE_MATH_API float Dot(const Angles& a, const Angles& b);
+
+    //--
+
+    //! 3D vector cross product
+    extern BASE_MATH_API Vector3 Cross(const Vector3& a, const Vector3& b);
+
+    //--
+
+    //! map 0-1 float value to 0-255 ubyte (mostly for LDR colors)
+    extern BASE_MATH_API uint8_t FloatTo255(float col);
+
+    //! map 0-255 ubyte to 0-1 float
+    INLINE float FloatFrom255(uint8_t col) { return (float)col / 255.0f; }
+
+    //! check if value is power of two
+    INLINE bool IsPow2(uint64_t x) { return ( x & ( x-1 )) == 0; }
+
+    //! get next power of two value
+    extern BASE_MATH_API uint32_t NextPow2(uint32_t v);
+
+    //! get next power of two value
+    extern BASE_MATH_API uint64_t NextPow2(uint64_t v);
+
+    //! get the "log2" (rounding down) of the given value
+    extern BASE_MATH_API uint8_t FloorLog2(uint64_t v);
+
+    //--
+
+    //! linear interpolation of scalar value
+    INLINE float Lerp(float valA, float valB, float fraction) { return valA + fraction * ( valB - valA ); }
+
+    //! linear interpolation of scalar value
+    INLINE double Lerp(double valA, double valB, float fraction) { return valA + fraction * ( valB - valA ); }
+
+    //! interpolate 2D vector
+    extern BASE_MATH_API Vector2 Lerp(const Vector2& a, const Vector2& b, float frac);
+
+    //! interpolate 3D vector
+    extern BASE_MATH_API Vector3 Lerp(const Vector3& a, const Vector3& b, float frac);
+
+    //! interpolate 4D vector
+    extern BASE_MATH_API Vector4 Lerp(const Vector4& a, const Vector4& b, float frac);
+
+    //! linear lerp quaternions (like vectors) - must be aligned
+    extern BASE_MATH_API Quat LinearLerp(const Quat& a, const Quat& b, float fraction);
+
+    //! interpolate quaternions (spherical lerp)
+    extern BASE_MATH_API Quat Lerp(const Quat& a, const Quat& b, float fraction);
+
+    //! interpolate two Euler angles
+    extern BASE_MATH_API Angles Lerp(const Angles& a, const Angles& b, float frac);
+
+    //! interpolate two Euler angles choosing the shortest route
+    extern BASE_MATH_API Angles LerpNormalized(const Angles& a, const Angles& b, float frac);
+
+    //! lerp color (in general the fraction should not go outside 0-1 range)
+    extern BASE_MATH_API Color Lerp(const Color& a, const Color& b, float frac);
+
+    //! lerp color with a fraction that goes from 0 to 256 (yes, 256!)
+    //! NOTE: does not interpolate the alpha, sets it to 255
+    extern BASE_MATH_API Color Lerp256(const Color& a, const Color& b, uint32_t frac0to256);
+
+    //! interpolate absolute position
+    extern BASE_MATH_API AbsolutePosition Lerp(const AbsolutePosition& a, const AbsolutePosition& b, float frac);
+
+    //! interpolate absolute transformation
+    extern BASE_MATH_API AbsoluteTransform Lerp(const AbsoluteTransform& a, const AbsoluteTransform& b, float frac);
+
+    //--
+
+    //! concatenate quaterions - L to R multiplication order
+    extern BASE_MATH_API Quat Concat(const Quat& a, const Quat& b);
+
+    //! concatenate transforms - L to R multiplication order
+    extern BASE_MATH_API Transform Concat(const Transform& a, const Transform& b);
+
+    //! concatenate 2D transforms - L to R multiplication order
+    extern BASE_MATH_API XForm2D Concat(const XForm2D& a, const XForm2D& b);
+
+    //! concatenate matrices - L to R multiplication order
+    extern BASE_MATH_API Matrix Concat(const Matrix& a, const Matrix& b);
+
+    //! concatenate 3x3 matrices - L to R multiplication order
+    extern BASE_MATH_API Matrix33 Concat(const Matrix33& a, const Matrix33& b);
+
+    //--
 
 } // base

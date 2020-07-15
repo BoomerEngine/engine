@@ -43,7 +43,6 @@ namespace base
 
             bool assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath) const;
 
-            MetadataPtr loadFileMetadata(stream::IBinaryReader& reader) const;
             MetadataPtr loadFileMetadata(const io::AbsolutePath& cookedOutputPath) const;
 
             bool checkDependenciesUpToDate(const Metadata& deps) const;

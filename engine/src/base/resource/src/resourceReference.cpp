@@ -12,13 +12,6 @@
 #include "resourceReference.h"
 #include "resourceLoader.h"
 
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/serializationMapper.h"
-#include "base/object/include/serializationUnampper.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamTextReader.h"
-
 namespace base
 {
     namespace res
@@ -38,6 +31,10 @@ namespace base
             , m_key(other.m_key)
         {
         }
+
+        BaseReference::BaseReference(const ResourceKey& key)
+            : m_key(key)
+        {}
 
         BaseReference::BaseReference(const ResourcePtr& ptr)
         {

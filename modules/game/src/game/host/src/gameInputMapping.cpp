@@ -11,6 +11,7 @@
 #include "gameInputMapping.h"
 
 #include "base/resource/include/resourceFactory.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace game
 {

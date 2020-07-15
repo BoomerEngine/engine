@@ -23,6 +23,8 @@
 #include "rendering/material/include/renderingMaterialRuntimeProxy.h"
 #include "renderingFrameView.h"
 
+#include "base/containers/include/bitUtils.h"
+
 namespace rendering
 {
     namespace scene
@@ -105,11 +107,7 @@ namespace rendering
             const auto& meshDesc = desc.cast<ProxyMeshDesc>();
 
             // no mesh specified
-            if (!meshDesc.mesh)
-                return nullptr;
-
-            // mesh has no chunks
-            if (meshDesc.mesh->chunks().empty())
+            if (!meshDesc.mesh || meshDesc.mesh->chunks().empty())
                 return nullptr;
 
             // create proxy 
@@ -121,7 +119,7 @@ namespace rendering
             objectInfo.localToScene = meshDesc.localToScene;
             objectInfo.proxyPtr = proxy;
             objectInfo.proxyType = ProxyType::Mesh;
-            objectInfo.sceneBounds = meshDesc.localToScene.transformBox(meshDesc.mesh->bounds().box); // initial bounds
+            objectInfo.sceneBounds = meshDesc.localToScene.transformBox(meshDesc.meshBounds);
             if (!scene()->objects().registerObject(objectInfo, proxy->objectId))
             {
                 proxy->~ProxyMesh();
@@ -133,21 +131,35 @@ namespace rendering
 
             // create chunk fragments
             proxy->castsShadows = meshDesc.castsShadows;
-            proxy->localBounds = meshDesc.mesh->bounds().box;
+            proxy->localBounds = meshDesc.meshBounds;
             proxy->chunks.reserve(meshDesc.mesh->chunks().size());
             for (const auto& meshChunk : meshDesc.mesh->chunks())
             {
                 MaterialDataProxyPtr materialData;
-                if (meshChunk.materialIndex < meshDesc.mesh->materials().size())
+
+                // skip over disabled materials
+                if (meshDesc.selectiveMaterialMask)
+                {
+                    if (!base::TestBit(meshDesc.selectiveMaterialMask, meshChunk.materialIndex))
+                        continue;
+                }
+
+                // use the forced material or the material from payload
+                if (meshDesc.forceMaterial)
+                {
+                    materialData = meshDesc.forceMaterial;
+                }
+                else if (meshChunk.materialIndex < meshDesc.mesh->materials().size())
                 {
                     const auto& chunkMaterial = meshDesc.mesh->materials()[meshChunk.materialIndex];
                     materialData = ResolveMaterial(chunkMaterial.name, chunkMaterial.material, meshDesc);
                 }
-                else
-                {
+
+                // use fallback material if nothing was specified so stuff still get's rendered
+                // TODO: use gray fallback in game instead of the red/blue one
+                if (!materialData)
                     if (auto defaultMaterial = resFallbackMaterial.loadAndGet())
                         materialData = defaultMaterial->dataProxy();
-                }
 
                 // skip over chunks that do not have any valid material
                 if (!materialData)

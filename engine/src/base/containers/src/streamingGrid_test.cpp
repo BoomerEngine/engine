@@ -138,6 +138,7 @@ namespace helper
     }
 }
 
+#if 0
 TEST(Streaming, StreamingGrid_10k_AddRemove)
 {
     // generate elements
@@ -322,4 +323,4 @@ TEST(Streaming, StreamingGrid_10k_TestArea)
         }
     }
 }
-
+#endif

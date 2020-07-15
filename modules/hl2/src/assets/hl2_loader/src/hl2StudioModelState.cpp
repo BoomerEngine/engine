@@ -9,8 +9,6 @@
 #include "hl2StudioModelFile.h"
 #include "hl2StudioModelState.h"
 
-#include "base/geometry/include/mesh.h"
-
 namespace hl2
 {
 
@@ -229,7 +227,7 @@ namespace hl2
         return ret;
     }
 
-    void ModelState::exportMaterialNames(base::res::IResourceCookerInterface& cooker, base::Array<base::mesh::MeshMaterial>& outMeshMaterials)
+    void ModelState::exportMaterialNames(base::res::IResourceCookerInterface& cooker, base::Array<rendering::MeshMaterial>& outMeshMaterials)
     {
         base::Task task(m_modelData->numcdtextures, "Processing materials");
         for (uint32_t i=0; i<m_modelData->numtextures; ++i)

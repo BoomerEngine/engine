@@ -12,7 +12,6 @@
 #include "uiStyleLibrary.h"
 #include "uiElementStyle.h"
 #include "uiStyleValue.h"
-#include "uiStyleParameters.h"
 #include "uiElementHitCache.h"
 #include "uiRenderer.h"
 #include "uiEventTable.h"

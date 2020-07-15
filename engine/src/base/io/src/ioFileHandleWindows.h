@@ -15,6 +15,7 @@
 #include "ioFileHandle.h"
 
 #include <Windows.h>
+#include "ioAsyncFileHandle.h"
 
 namespace base
 {
@@ -22,46 +23,100 @@ namespace base
     {
         namespace prv
         {
-            class WinAsyncReadDispatcher;
+            ///--
 
-            // WinAPI based file handle
-            class WinFileHandle : public IFileHandle
+            // WinAPI based file handle for sync READ operations
+            class WinReadFileHandle : public IReadFileHandle
             {
             public:
-                WinFileHandle(HANDLE hSyncFile, HANDLE hAsyncFile, const StringBuf& origin, bool reader, bool writer, bool locked, WinAsyncReadDispatcher* dispatcher);
-                virtual ~WinFileHandle();
+                WinReadFileHandle(HANDLE hSyncFile, UTF16StringBuf&& origin);
+                virtual ~WinReadFileHandle();
 
-                HANDLE syncFileHandle() const;
-                HANDLE asyncFileHandle() const;
+                INLINE HANDLE handle() const { return m_hHandle; }
 
                 // IFileHandle implementation
-                virtual const StringBuf& originInfo() const override final;
                 virtual uint64_t size() const override final;
                 virtual uint64_t pos() const override final;
                 virtual bool pos(uint64_t newPosition) override final;
-
-                virtual bool isReadingAllowed() const override final;
-                virtual bool isWritingAllowed() const override final;
-
-                virtual uint64_t writeSync(const void* data, uint64_t size) override final;
                 virtual uint64_t readSync(void* data, uint64_t size) override final;
+
+            protected:
+                HANDLE m_hHandle; // always there
+                UTF16StringBuf m_origin;
+            };
+
+            ///--
+
+            // WinAPI based file handle for sync WRITE operations
+            class WinWriteFileHandle : public IWriteFileHandle
+            {
+            public:
+                WinWriteFileHandle(HANDLE hSyncFile, const UTF16StringBuf& origin);
+                virtual ~WinWriteFileHandle();
+
+                INLINE HANDLE handle() const { return m_hHandle; }
+
+                // IFileHandle implementation
+                virtual uint64_t size() const override final;
+                virtual uint64_t pos() const override final;
+                virtual bool pos(uint64_t newPosition) override final;
+                virtual uint64_t writeSync(const void* data, uint64_t size) override final;
+                virtual void discardContent() override final;
+
+            protected:
+                HANDLE m_hHandle; // always there
+                UTF16StringBuf m_origin;
+            };
+
+            ///--
+
+            // WinAPI based file handle for sync WRITE operations
+            class WinWriteTempFileHandle : public IWriteFileHandle
+            {
+            public:
+                WinWriteTempFileHandle(const UTF16StringBuf& targetPath, const UTF16StringBuf& tempFilePath, const WriteFileHandlePtr& tempFileWriter);
+                virtual ~WinWriteTempFileHandle();
+
+                // IFileHandle implementation
+                virtual uint64_t size() const override final;
+                virtual uint64_t pos() const override final;
+                virtual bool pos(uint64_t newPosition) override final;
+                virtual uint64_t writeSync(const void* data, uint64_t size) override final;
+                virtual void discardContent() override final;
+
+            protected:
+                UTF16StringBuf m_tempFilePath;
+                UTF16StringBuf m_targetFilePath;
+                WriteFileHandlePtr m_tempFileWriter;
+            };
+
+            //--
+
+            class WinAsyncReadDispatcher;
+
+            // WinAPI based file handle
+            class WinAsyncFileHandle : public IAsyncFileHandle
+            {
+            public:
+                WinAsyncFileHandle(HANDLE hAsyncFile, const UTF16StringBuf& origin, uint64_t size, WinAsyncReadDispatcher* dispatcher);
+                virtual ~WinAsyncFileHandle();
+
+                INLINE HANDLE handle() const { return m_hHandle; }
+
+                // IFileHandle implementation
+                virtual uint64_t size() const override final;
 
                 virtual CAN_YIELD uint64_t readAsync(uint64_t offset, uint64_t size, void* readBuffer) override final;
 
             protected:
-                HANDLE m_hSyncFile; // always there
-
-                mutable HANDLE m_hAsyncFile; // not created until requested
-                mutable CRITICAL_SECTION m_asyncHandleLock; // prevents race on the m_hAsyncFile
-
-                StringBuf m_origin;
-
-                bool m_isReader : 1;
-                bool m_isWriter : 1;
-                bool m_isLocked : 1;
+                HANDLE m_hHandle; // always there
+                uint64_t m_size; // at the time file was opened
 
                 WinAsyncReadDispatcher* m_dispatcher;
+
+                UTF16StringBuf m_origin;
             };
+
 
         } // prv
     } // io

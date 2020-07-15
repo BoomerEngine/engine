@@ -22,7 +22,6 @@ namespace ed
     struct BASE_EDITOR_API ManagedFileCookableOutput : public NoCopy
     {
         base::SpecificClassType<base::res::IResource> resoureClass; // output resource class
-        base::Array< base::SpecificClassType<base::res::IResourceManifest>> manifestClasses; // manifest files used during cooking
     };
 
     // resource tag for a managed file
@@ -59,6 +58,12 @@ namespace ed
         /// can this format be created by user ?
         INLINE bool canUserCreate() const { return !m_factory.empty(); }
 
+        /// can this format be imported by user ?
+        INLINE bool canUserImport() const { return !m_importExtensions.empty(); }
+
+        /// get list of extensions this format can be imported from
+        INLINE const Array<StringBuf>& importExtensions() const { return m_importExtensions; }
+
         /// what kind of classes can we cook from this file format, lists all cookers
         /// NOTE: even for native files we may be able to cook something out of them that is of difference class
         INLINE const Array<ManagedFileCookableOutput>& cookableOutputs() const { return m_cookableOutputs; }
@@ -91,6 +96,8 @@ namespace ed
 
         base::RefPtr<base::res::IFactory> m_factory;
 
+        base::Array<base::StringBuf> m_importExtensions;
+
         bool m_showInBrowser = false;
         mutable bool m_hasTypeThumbnail = false;
         mutable bool m_thumbnailLoadAttempted = false;
@@ -110,8 +117,11 @@ namespace ed
 
         //--
 
-        /// get list of formats creatable by the user
+        /// get list of formats that can be CREATED by the user
         INLINE const Array<ManagedFileFormat*>& creatableFormats() const { return m_userCreatableFormats; }
+
+        /// get list of formats that can be IMPORTED by the user
+        INLINE const Array<ManagedFileFormat*>& importableFormats() const { return m_userImportableFormats; }
 
         /// get list of all formats
         INLINE const Array<ManagedFileFormat*>& allFormats() const { return m_allFormats; }
@@ -129,7 +139,8 @@ namespace ed
         SpinLock m_lock;
 
         Array<ManagedFileFormat*> m_allFormats;
-        Array<ManagedFileFormat*> m_userCreatableFormats;            
+        Array<ManagedFileFormat*> m_userCreatableFormats;
+        Array<ManagedFileFormat*> m_userImportableFormats;
 
         HashMap<uint64_t, ManagedFileFormat*> m_formatMap;
 

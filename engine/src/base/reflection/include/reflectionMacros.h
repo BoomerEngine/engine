@@ -193,32 +193,17 @@ private:\
 // Bind writeBinary and readBinary methods from given type as native binary serialization for the type
 #define RTTI_BIND_NATIVE_BINARY_SERIALIZATION(_type) builder.type().bindBinarySerialization<_type>()
 
-// Bind writeText and readText methods from given type as text serialization for the type
-#define RTTI_BIND_NATIVE_TEXT_SERIALIZATION(_type) builder.type().bindTextSerialization<_type>()
-
 // Bind print and static Parse method from given type as a ToString/FromString interface for the type
 #define RTTI_BIND_NATIVE_PRINT_PARSE(_type) builder.type().bindToStringFromString<_type>()
 
 // Bind standalone "print" method from given type as a default ToString interface, no parsing
 #define RTTI_BIND_NATIVE_PRINT(_type) builder.type().bindPrint<_type>()
 
-// Bind standalone "calcCRC64" method to be used as hash calculation for the type
-#define RTTI_BIND_NATIVE_HASH(_type) builder.type().bindHash<_type>()
-
-// Bind standalone "std::hash" method to be used as hash calculation for the type
-#define RTTI_BIND_NATIVE_STD_HASH(_type) builder.type().bindStdHash<_type>()
-
-// Bind standalone "std::hash" method to be used as hash calculation for the type
-#define RTTI_BIND_NATIVE_HASHER(_type) builder.type().bindHasher<_type>()
-
 // Bind a native data support for the type (advanced)
 #define RTTI_BIND_NATIVE_DATA_VIEW(_type) builder.type().bindDataView<_type>()
 
 // Bind specific static functions as implementation of binary serialization for the type
 #define RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(_writeFunc, _readFunc) builder.type().funcReadBinary = _readFunc; builder.type().funcWriteBinary = _writeFunc
-
-// Bind specific static functions as implementation of text serialization for the type
-#define RTTI_BIND_CUSTOM_TEXT_SERIALIZATION(_writeFunc, _readFunc) builder.type().funcReadText = _readFunc; builder.type().funcWriteText = _writeFunc
 
 // Bind a custom print function for the type
 #define RTTI_BIND_CUSTOM_PRINT(_printFunc) builder.type().funcPrintToText = _printFunc

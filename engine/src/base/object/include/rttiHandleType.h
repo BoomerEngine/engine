@@ -41,11 +41,8 @@ namespace base
             virtual bool compare(const void* data1, const void* data2) const override final;
             virtual void copy(void* dest, const void* src) const override final;
 
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override final;
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override final;
-
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final;
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final;
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
             virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
             virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
@@ -73,7 +70,6 @@ namespace base
 
             virtual void construct(void* object) const override final;
             virtual void destruct(void* object) const override final;
-            virtual void calcCRC64(CRC64& crc, const void* data) const override;
 
             virtual void readPointedObject(const void* data, ObjectPtr& outObject) const override final;
             virtual void writePointedObject(void* data, const ObjectPtr& object) const override final;
@@ -96,7 +92,6 @@ namespace base
 
             virtual void construct(void* object) const override final;
             virtual void destruct(void* object) const override final;
-            virtual void calcCRC64(CRC64& crc, const void* data) const override;
 
             virtual void readPointedObject(const void* data, ObjectPtr& outObject) const override final;
             virtual void writePointedObject(void* data, const ObjectPtr& object) const override final;

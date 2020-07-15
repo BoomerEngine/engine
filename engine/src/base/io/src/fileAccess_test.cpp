@@ -45,7 +45,7 @@ TEST(FileAccess, CachePathValid)
 TEST(FileAccess, CreateCacheFile)
 {
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(L"cache.txt");
-    auto f = IO::GetInstance().openForWriting(path, false);
+    auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
     f.reset();
     ASSERT_TRUE(IO::GetInstance().fileExists(path));
@@ -58,7 +58,7 @@ TEST(FileAccess, WriteFile)
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(L"cache.txt");
     IO::GetInstance().deleteFile(path);
 
-    auto f = IO::GetInstance().openForWriting(path, false);
+    auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
     ASSERT_TRUE(f->pos() == 0);
 
@@ -83,15 +83,15 @@ TEST(FileAccess, WriteFileExclusiveForWrite)
 {
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
 
-    auto f = IO::GetInstance().openForWriting(path, false);
+    auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = IO::GetInstance().openForWriting(path, false);
+    auto f2 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f2.get() == nullptr);
 
     f.reset();
 
-    auto f3 = IO::GetInstance().openForWriting(path, false);
+    auto f3 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f3.get() != nullptr);
 
     f3.reset();
@@ -103,7 +103,7 @@ TEST(FileAccess, WriteFileExclusiveForRead)
 {
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
 
-    auto f = IO::GetInstance().openForWriting(path, false);
+    auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
     auto f2 = IO::GetInstance().openForReading(path);
@@ -123,7 +123,7 @@ TEST(FileAccess, WriteFileExclusiveForDelete)
 {
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
 
-    auto f = IO::GetInstance().openForWriting(path, false);
+    auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
     ASSERT_FALSE(IO::GetInstance().deleteFile(path));
@@ -138,19 +138,19 @@ TEST(FileAccess, ReadFileExclusiveForWrite)
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
 
     {
-        auto f3 = IO::GetInstance().openForWriting(path, false);
+        auto f3 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
         f3.reset();
     }
 
     auto f = IO::GetInstance().openForReading(path);
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = IO::GetInstance().openForWriting(path, false);
+    auto f2 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f2.get() == nullptr);
 
     f.reset();
 
-    auto f3 = IO::GetInstance().openForWriting(path, false);
+    auto f3 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f3.get() != nullptr);
 
     f3.reset();
@@ -165,7 +165,7 @@ TEST(FileAccess, ReadFileNonExclusiveForRead)
     auto path = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
 
     {
-        auto f3 = IO::GetInstance().openForWriting(path, false);
+        auto f3 = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
         f3.reset();
     }
 
@@ -188,7 +188,7 @@ TEST(FileAccess, ReadFile)
     IO::GetInstance().deleteFile(path);
 
     {
-        auto f = IO::GetInstance().openForWriting(path, false);
+        auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_TRUE(f->pos() == 0);
 
@@ -225,7 +225,7 @@ TEST(FileAccess, AppendFile)
     IO::GetInstance().deleteFile(path);
 
     {
-        auto f = IO::GetInstance().openForWriting(path, false);
+        auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectWrite);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(0, f->pos());
 
@@ -238,7 +238,7 @@ TEST(FileAccess, AppendFile)
     }
 
     {
-        auto f = IO::GetInstance().openForWriting(path, true);
+        auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectAppend);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(4, f->pos());
 
@@ -251,7 +251,7 @@ TEST(FileAccess, AppendFile)
     }
 
     {
-        auto f = IO::GetInstance().openForWriting(path, true);
+        auto f = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::DirectAppend);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(7, f->pos());
 

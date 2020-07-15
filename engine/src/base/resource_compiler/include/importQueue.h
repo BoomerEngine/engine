@@ -36,7 +36,7 @@ namespace base
 
             virtual void queueJobAdded(const ImportJobInfo& info) {};
             virtual void queueJobStarted(StringView<char> depotPath) {};
-            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status) {};
+            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status, double timeTaken) {};
             virtual void queueJobProgressUpdate(StringView<char> depotPath, uint64_t currentCount, uint64_t totalCount, StringView<char> text) {};
         };
 

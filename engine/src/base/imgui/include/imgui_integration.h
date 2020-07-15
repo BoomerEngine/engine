@@ -71,20 +71,6 @@ namespace ImGui
 
     //--
 
-    enum class Font : uint8_t
-    {
-        Default,
-        Italic,
-        Bold,
-        Symbols,
-        MonoType,
-    };
-
-    IMGUI_API ImFontAtlas* GetSharedFontAtlas();
-    IMGUI_API ImFont* GetFont(Font font);
-
-    //--
-
     IMGUI_API bool IsKeyDown(const base::input::KeyCode code);
     IMGUI_API bool IsKeyPressed(const base::input::KeyCode code, bool ctrl = false, bool shift = false, bool alt = false);
     IMGUI_API bool IsKeyReleased(const base::input::KeyCode code);

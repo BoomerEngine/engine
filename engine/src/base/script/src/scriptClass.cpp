@@ -46,7 +46,7 @@ namespace base
         ScriptedClassProperty::~ScriptedClassProperty()
         {}
 
-        const void* ScriptedClassProperty::offsetPtr(const void* data) const
+        /*const void* ScriptedClassProperty::offsetPtr(const void* data) const
         {
             auto obj  = (const ScriptedObject*) data;
             return OffsetPtr(obj->m_scriptPropertiesData, offset());
@@ -56,7 +56,7 @@ namespace base
         {
             auto obj  = (ScriptedObject*) data;
             return OffsetPtr(obj->m_scriptPropertiesData, offset());
-        }
+        }*/
 
         //---
 

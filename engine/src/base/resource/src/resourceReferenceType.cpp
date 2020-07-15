@@ -12,15 +12,11 @@
 #include "resourceReference.h"
 #include "resourceReferenceType.h"
 
-#include "base/object/include/streamBinaryReader.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamTextReader.h"
-#include "base/object/include/streamTextWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
+#include "base/object/include/streamOpcodeWriter.h"
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/stringParser.h"
-#include "base/object/include/serializationMapper.h"
-#include "base/object/include/serializationUnampper.h"
 #include "base/object/include/rttiProperty.h"
 #include "base/object/include/rttiType.h"
 #include "resourceLoader.h"
@@ -136,183 +132,65 @@ namespace base
 
         } // helper
 
-        bool ResourceRefType::writeText(const rtti::TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
+        enum ResourceRefBinaryFlag
         {
-            auto& ptr = *(const res::BaseReference*) data;
-            auto loadedObject = helper::GetLoadedObjectPtrForSaving(ptr, typeContext);
-            stream.writeValue(ptr.key().path().view(), ptr.key().cls(), loadedObject);
-            return true;
-        }
-
-
-        bool ResourceRefType::readText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            auto& ptr = *(res::BaseReference*) data;
-
-            auto policy = stream::ResourceLoadingPolicy::AlwaysLoad;
-
-            StringBuf resourcePathStr;
-            ClassType resourceClass;
-            ObjectPtr resourceObject;
-
-            if (!stream.readValue(policy, resourcePathStr, resourceClass, resourceObject))
-                return false;
-
-            ResourcePath resourcePath(resourcePathStr);
-            if (resourcePathStr && !resourcePath)
-            {
-                TRACE_ERROR("Invalid resource path '{}' loaded", resourcePathStr);
-                return false;
-            }
-            if (resourceObject && !resourceObject->is(m_resourceClass))
-            {
-                TRACE_ERROR("Loaded '{}' of class '{}' but expected '{}' here", resourcePath, resourceClass, m_resourceClass->name());
-                return false;
-            }
-            if (resourceClass && !resourceClass->is(m_resourceClass))
-            {
-                TRACE_ERROR("Loaded resource class '{}' but expected '{}' here", resourcePath, resourceClass, m_resourceClass->name());
-                return false;
-            }
-
-            if (!resourceObject || !resourceObject->is<IResource>())
-            {
-                // TODO: create stub ?
-            }
-
-            ptr.set(base::rtti_cast<IResource>(resourceObject));
-            return true;
-        }
-
-        enum ResourceRefBinaryFlags : uint8_t
-        {
-            Inlined = 1,
-            Mapped = 2,
-            Loaded = 4,
-            Valid = 8,
+            External = 1,
+            Inlined = 2,
         };
 
-        bool ResourceRefType::writeBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        void ResourceRefType::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             auto& ptr = *(res::BaseReference*) data;
 
-            uint8_t flags = 0;
+            uint8_t flag = 0;
             if (!ptr.empty())
             {
-                flags |= ResourceRefBinaryFlags::Valid;
-                flags |= ResourceRefBinaryFlags::Loaded;
-                if (ptr.inlined()) flags |= ResourceRefBinaryFlags::Inlined;
-                if (file.m_mapper != nullptr) flags |= ResourceRefBinaryFlags::Mapped;
-            }
-
-            file.writeValue(flags);
-
-            if (0 != (flags & ResourceRefBinaryFlags::Valid))
-            {
-                if (0 != (flags & ResourceRefBinaryFlags::Inlined))
-                {
-                    stream::MappedObjectIndex index = 0;
-
-                    if (file.m_mapper != nullptr)
-                        file.m_mapper->mapPointer(ptr.acquire(), index);
-
-                    // TODO: consider writing object directly as well
-
-                    file.writeValue(index);
-                }
-                else if (0 != (flags & ResourceRefBinaryFlags::Mapped))
-                {
-                    stream::MappedPathIndex index = 0;
-                    file.m_mapper->mapResourceReference(ptr.key().path().view(), ptr.key().cls(), false, index);
-                    file.writeValue(index);
-                }
+                if (ptr.inlined()) 
+                    flag = ResourceRefBinaryFlag::Inlined;
                 else
-                {
-                    file.writeName(ptr.key().cls()->name());
-                    file.writeText(ptr.key().path().view());
-                }
+                    flag = ResourceRefBinaryFlag::External;
             }
 
-            return true;
+            file.writeTypedData(flag);
+
+            if (flag == ResourceRefBinaryFlag::Inlined)
+                file.writePointer(ptr.acquire());
+            else if (flag == ResourceRefBinaryFlag::External)
+                file.writeResourceReference(ptr.key().path().view(), ptr.key().cls(), false);
         }
 
-        bool ResourceRefType::readBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void ResourceRefType::readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
             res::BaseReference loadedRef;
 
             uint8_t flags = 0;
-            file.readValue(flags);
+            file.readTypedData(flags);
 
-            if (0 != (flags & ResourceRefBinaryFlags::Valid))
+            if (flags == ResourceRefBinaryFlag::Inlined)
             {
-                if (0 != (flags & ResourceRefBinaryFlags::Inlined))
+                auto pointer = rtti_cast<IResource>(file.readPointer());
+                if (pointer && pointer->is(m_resourceClass))
+                    loadedRef = ResourcePtr(AddRef(pointer));
+            }
+            else if (flags == ResourceRefBinaryFlag::External)
+            {
+                const auto* resData = file.readResource();
+                if (resData && resData->path)
                 {
-                    stream::MappedObjectIndex index = 0;
-                    file.readValue(index);
-
-                    if (file.m_unmapper != nullptr)
+                    if (resData->loaded && resData->loaded->is(m_resourceClass))
                     {
-                        ObjectPtr object;
-                        file.m_unmapper->unmapPointer(index, object);
-
-                        ResourcePtr loadedResource = rtti_cast<IResource>(object);
-                        loadedRef.set(loadedResource);
+                        loadedRef = rtti_cast<IResource>(resData->loaded);
                     }
-                }
-                else if (0 != (flags & ResourceRefBinaryFlags::Mapped))
-                {
-                    stream::MappedPathIndex index = 0;
-                    file.readValue(index);
-
-                    if (file.m_unmapper != nullptr)
+                    else
                     {
-                        ObjectPtr object;
-                        StringBuf path;
-                        ClassType cls;
-
-                        file.m_unmapper->unmapResourceReference(index, path, cls, object);
-
-                        ResourcePtr loadedResource = rtti_cast<IResource>(object);
-                        if (!loadedResource)
-                        {
-                            ResourcePath resourcePath(path);
-                            ResourceKey resourceKey(resourcePath, cls.cast<IResource>());
-
-                            // TODO: stub ?
-                        }
-
-                        loadedRef.set(loadedResource);
-                    }
-                }
-                else
-                {
-                    auto className = file.readName();
-                    auto path = file.readText();
-
-                    auto resourceClass  = RTTI::GetInstance().findClass(className);
-                    auto resourcePath = res::ResourcePath(path);
-                    if (resourceClass && resourceClass->is(res::IResource::GetStaticClass()) && resourcePath)
-                    {
-                        ResourcePtr loadedResource;
-
-                        if (file.m_resourceLoader)
-                        {
-                            ResourceKey resourceKey(resourcePath, resourceClass.cast<IResource>());
-                            loadedResource = file.m_resourceLoader->loadResource(resourceKey);
-                        }
-
-                        if (!loadedResource)
-                        {
-                            // TODO: stub ?
-                        }
-
-                        loadedRef.set(loadedResource);
+                        const auto resourceClass = resData->type.cast<res::IResource>();
+                        if (resourceClass && resourceClass->is(m_resourceClass))
+                            loadedRef = res::BaseReference(res::ResourceKey(res::ResourcePath(resData->path), resourceClass));
                     }
                 }
             }
-
+            
             *(res::BaseReference*)data = loadedRef;
-            return true;
         }
        
         Type ResourceRefType::ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem)

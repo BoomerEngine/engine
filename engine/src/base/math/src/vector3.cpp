@@ -60,16 +60,10 @@ namespace base
 
         RTTI_FUNCTION("xyzw", xyzw);
 
-        RTTI_STATIC_FUNCTION("Random", Rand);
+        //RTTI_STATIC_FUNCTION("Random", Rand);
     RTTI_END_TYPE();
 
     //-----------------------------------------------------------------------------
-
-    Vector3 Vector3::Rand(float min, float max)
-    {
-        return Vector3(RandRange(min, max), RandRange(min, max), RandRange(min, max));
-        //return Vector3(1,2,3);
-    }
 
     Angles Vector3::toRotator() const
     {

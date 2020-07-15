@@ -12,12 +12,13 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/utils.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/memory/include/buffer.h"
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
+#include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

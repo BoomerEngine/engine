@@ -107,9 +107,6 @@ namespace base
             setVariant(name, CreateVariant<T>(value));
         }
 
-        // calculate hash of the stored data
-        void calcCRC64(CRC64& crc) const;
-
     private:
         base::Array<VariantTableEntry> m_parameters;
     };

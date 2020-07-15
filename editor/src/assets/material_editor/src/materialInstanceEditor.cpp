@@ -26,7 +26,7 @@ namespace ed
     RTTI_END_TYPE();
 
     MaterialInstanceEditor::MaterialInstanceEditor(ConfigGroup config, ManagedFile* file)
-        : SingleResourceEditor(config, file)
+        : SingleLoadedResourceEditor(config, file)
     {
         createInterface();
     }
@@ -68,34 +68,9 @@ namespace ed
         if (!TBaseClass::initialize())
             return false;
 
-        m_instance = file()->loadContent<rendering::MaterialInstance>();
-        if (!m_instance)
-            return false;
-
-        m_instance->resetModifiedFlag();
-        m_previewPanel->bindMaterial(m_instance);
-        m_properties->bindData(m_instance->createDataView());
+        m_previewPanel->bindMaterial(materialInstance());
+        m_properties->bindData(materialInstance()->createDataView());
         return true;
-    }
-
-    bool MaterialInstanceEditor::saveFile(ManagedFile* fileToSave)
-    {
-        if (fileToSave == file())
-        {
-            if (file()->storeContent(m_instance))
-            {
-                m_instance->resetModifiedFlag();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void MaterialInstanceEditor::collectModifiedFiles(AssetItemList& outList) const
-    {
-        if (m_instance->modified())
-            outList.collectFile(file());
     }
 
     //---
@@ -113,7 +88,14 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            return base::CreateSharedPtr<MaterialInstanceEditor>(config, file);
+            if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(file->loadContent()))
+            {
+                auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(config, file);
+                ret->bindResource(loadedGraph);
+                return ret;
+            }
+
+            return nullptr;
         }
     };
 

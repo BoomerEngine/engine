@@ -21,6 +21,8 @@
 #include "base/font/include/font.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace ui
 {

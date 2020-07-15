@@ -367,6 +367,9 @@ namespace ui
     class Group;
     typedef base::RefPtr<Group> GroupPtr;
 
+    class Notebook;
+    typedef base::RefPtr<Notebook> NotebookPtr;
+
     //--
 
     class AbstractItemView;

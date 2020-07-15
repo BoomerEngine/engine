@@ -323,20 +323,20 @@ namespace ed
         // basic toolbar
         {
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.ToggleRedChannel"_id, "[center][img:channel_red][br][size:-]Red", "Toggle display of the [b][color:#F00]RED[/color][/b] channel");
-            m_previewToolbar->createButton("ImagePreviewPanel.ToggleGreenChannel"_id, "[center][img:channel_green][br][size:-]Green", "Toggle display of the [b][color:#0F0]GREEN[/color][/b] channel");
-            m_previewToolbar->createButton("ImagePreviewPanel.ToggleBlueChannel"_id, "[center][img:channel_blue][br][size:-]Blue", "Toggle display of the [b][color:#00F]BLUE[/color][/b] channel");
-            m_previewToolbar->createButton("ImagePreviewPanel.ToggleAlphaChannel"_id, "[center][img:channel_alpha][br][size:-]Alpha", "Toggle display of the [b][color:#FFF]ALPHA[/color][/b] channel");
+            m_previewToolbar->createButton("ImagePreviewPanel.ToggleRedChannel"_id, ui::ToolbarButtonSetup().icon("channel_red").caption("Red").tooltip("Toggle display of the [b][color:#F00]RED[/color][/b] channel"));
+            m_previewToolbar->createButton("ImagePreviewPanel.ToggleGreenChannel"_id, ui::ToolbarButtonSetup().icon("channel_green").caption("Green").tooltip("Toggle display of the [b][color:#0F0]GREEN[/color][/b] channel"));
+            m_previewToolbar->createButton("ImagePreviewPanel.ToggleBlueChannel"_id, ui::ToolbarButtonSetup().icon("channel_blue").caption("Blue").tooltip("Toggle display of the [b][color:#00F]BLUE[/color][/b] channel"));
+            m_previewToolbar->createButton("ImagePreviewPanel.ToggleAlphaChannel"_id, ui::ToolbarButtonSetup().icon("channel_alpha").caption("Alpha").tooltip("Toggle display of the [b][color:#FFF]ALPHA[/color][/b] channel"));
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.TogglePointFilter"_id, "[center][img:plane][br][size:-]Point filter", "Toggle point filtering of texture");
-            m_previewToolbar->createButton("ImagePreviewPanel.TogglePremultiply"_id, "[center][img:blend][br][size:-]Alpha premultiply", "Toggle premultiplied blending");
-            m_previewToolbar->createButton("ImagePreviewPanel.ToggleCheckers"_id, "[center][img:background][br][size:-]Background", "Toggle checked background");
+            m_previewToolbar->createButton("ImagePreviewPanel.TogglePointFilter"_id, ui::ToolbarButtonSetup().icon("plane").caption("Point filter").tooltip("Toggle point filtering of texture"));
+            m_previewToolbar->createButton("ImagePreviewPanel.TogglePremultiply"_id, ui::ToolbarButtonSetup().icon("blend").caption("Alpha premultiply").tooltip("Toggle premultiplied blending"));
+            m_previewToolbar->createButton("ImagePreviewPanel.ToggleCheckers"_id, ui::ToolbarButtonSetup().icon("background").caption("Background").tooltip("Toggle checked background"));
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.TogglePixelGrid"_id, "[center][img:grid][br][size:-]Pixel grid", "Toggle pixel grid overlay");
+            m_previewToolbar->createButton("ImagePreviewPanel.TogglePixelGrid"_id, ui::ToolbarButtonSetup().icon("grid").caption("Pixel grid").tooltip("Toggle pixel grid overlay"));
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.FitZoom"_id, "[center][img:zoom][br][size:-]Fit", "Show all content");
-            m_previewToolbar->createButton("ImagePreviewPanel.FillZoom"_id, "[center][img:arrow_inout][br][size:-]Fill", "Fill window with content");
-            m_previewToolbar->createButton("ImagePreviewPanel.ResetZoom"_id, "[center][img:1to1][br][size:-]Reset", "Reset zoom to 1:1");
+            m_previewToolbar->createButton("ImagePreviewPanel.FitZoom"_id, ui::ToolbarButtonSetup().icon("zoom").caption("Fit").tooltip("Show all content"));
+            m_previewToolbar->createButton("ImagePreviewPanel.FillZoom"_id, ui::ToolbarButtonSetup().icon("arrow_inout").caption("Fill").tooltip("Fill window with content"));
+            m_previewToolbar->createButton("ImagePreviewPanel.ResetZoom"_id, ui::ToolbarButtonSetup().icon("1to1").caption("Reset").tooltip("Reset zoom to 1:1"));
 
             //--
 
@@ -425,7 +425,7 @@ namespace ed
         // slice selector
         {
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.ShowAllSlices"_id, "All Slices", "Toggle display of all slices side by side");
+            m_previewToolbar->createButton("ImagePreviewPanel.ShowAllSlices"_id, ui::ToolbarButtonSetup().caption("All Slices").tooltip("Toggle display of all slices side by side"));
 
             actions().bindToggle("ImagePreviewPanel.ShowAllSlices"_id) = [this] { return m_previewPanel->previewSettings().allSlices; };
 
@@ -453,7 +453,7 @@ namespace ed
         // HDR exposure/tonemap
         {
             m_previewToolbar->createSeparator();
-            m_previewToolbar->createButton("ImagePreviewPanel.Tonemap"_id, "Tonemap", "Apply HDR tonemapping to image preview");
+            m_previewToolbar->createButton("ImagePreviewPanel.Tonemap"_id, ui::ToolbarButtonSetup().caption("Tonemap").tooltip("Apply HDR tonemapping to image preview"));
 
             m_toneMapMode = m_previewToolbar->createChildWithType<ui::ComboBox>("ToolbarComboBox"_id);
             m_toneMapMode->customMinSize(150, 10);

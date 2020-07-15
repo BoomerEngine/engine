@@ -48,10 +48,8 @@ namespace physics
             //--
 
             // Custom type implementation requirements
-            bool writeBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream) const;
-            bool writeText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream) const;
-            bool readBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream);
-            bool readText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextReader& stream);
+            void writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const;
+            void readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream);
 
             // Calculate hash of the data
             void calcHash(base::CRC64& crc) const;

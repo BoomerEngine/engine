@@ -9,10 +9,8 @@
 #include "build.h"
 #include "rttiCustomType.h"
 
-#include "streamTextReader.h"
-#include "streamTextWriter.h"
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 namespace base
 {
@@ -67,53 +65,20 @@ namespace base
                 memcpy(dest, src, m_traits.size);
         }
 
-        void CustomType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            if (funcHash)
-                funcHash(crc, data);
-            else
-                crc.append(data, size());
-        }
-
-        bool CustomType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        void CustomType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             if (funcWriteBinary)
-                return funcWriteBinary(typeContext, file, data, defaultData);
-            
-            file.write(data, m_traits.size);
-            return true;
+                funcWriteBinary(typeContext, file, data, defaultData);
+            else
+                file.writeData(data, m_traits.size);
         }
 
-        bool CustomType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void CustomType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
             if (funcReadBinary)
-                return funcReadBinary(typeContext, file, data);
-
-            file.read(data, m_traits.size);
-            return true;
-        }
-
-        bool CustomType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            if (funcWriteText)
-                return funcWriteText(typeContext, stream, data, defaultData);
-
-            StringBuilder txt;
-            printToText(txt, data, true);
-            stream.writeValue(txt.view());
-            return true;
-        }
-
-        bool CustomType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            if (funcReadText)
-                return funcReadText(typeContext, stream, data);
-
-            StringView<char> txt;
-            if (!stream.readValue(txt))
-                return false;
-
-            return parseFromString(txt, data, true);
+                funcReadBinary(typeContext, file, data);
+            else
+                file.readData(data, m_traits.size);
         }
 
         void CustomType::printToText(IFormatStream& f, const void* data, uint32_t flags) const

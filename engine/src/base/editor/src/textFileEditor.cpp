@@ -44,10 +44,10 @@ namespace ed
         actions().bindShortcut("TextEditor.NextFind"_id, "F3");
         actions().bindShortcut("TextEditor.PrevFind"_id, "Shift+F3");
 
-        toolbar()->createButton("TextEditor.Copy"_id, "[img:copy]", "Copy selected text");
-        toolbar()->createButton("TextEditor.Cut"_id, "[img:cut]", "Cut selected text");
-        toolbar()->createButton("TextEditor.Paste"_id, "[img:paste]", "Paste text");
-        toolbar()->createButton("TextEditor.Delete"_id, "[img:delete]", "Delete selected text");
+        toolbar()->createButton("TextEditor.Copy"_id, ui::ToolbarButtonSetup().icon("copy").caption("Copy").tooltip("Copy selected text"));
+        toolbar()->createButton("TextEditor.Cut"_id, ui::ToolbarButtonSetup().icon("cut").caption("Cut").tooltip("Cut selected text"));
+        toolbar()->createButton("TextEditor.Paste"_id, ui::ToolbarButtonSetup().icon("paste").caption("Paste").tooltip("Paste text"));
+        toolbar()->createButton("TextEditor.Delete"_id, ui::ToolbarButtonSetup().icon("delete").caption("Delete").tooltip("Delete selected text"));
 
         {
             auto panel = base::CreateSharedPtr<ui::DockPanel>("[img:text] Text", "TextPanel");
@@ -83,23 +83,19 @@ namespace ed
         menu->createAction("TextEditor.Delete"_id, "Delete", "[img:delete]");
     }
 
-    void TextFileResourceEditor::collectModifiedFiles(AssetItemList& outList) const
+    bool TextFileResourceEditor::modifiedInternal() const
     {
-        if (m_editor->isModified())
-            outList.collectFile(file());
+        return m_editor->isModified();
     }
 
-    bool TextFileResourceEditor::saveFile(ManagedFile* fileToSave)
+    bool TextFileResourceEditor::saveInternal()
     {
-        if (fileToSave == file())
-        {
-            auto txt = m_editor->text();
+        auto txt = m_editor->text();
 
-            if (file()->storeRawContent(txt))
-            {
-                m_editor->markAsSaved();
-                return true;
-            }
+        if (file()->storeRawContent(txt))
+        {
+            m_editor->markAsSaved();
+            return true;
         }
 
         return false;

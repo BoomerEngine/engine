@@ -89,28 +89,14 @@ namespace base
             template< typename T >
             struct BinarySerializationHelper
             {
-                static bool WriteBinaryFunc(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData)
+                static void WriteBinaryFunc(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData)
                 {
-                    return ((const T*)data)->writeBinary(file);
+                    ((const T*)data)->writeBinary(file);
                 }
 
-                static bool ReadBinaryFunc(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data)
+                static void ReadBinaryFunc(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data)
                 {
-                    return ((T*)data)->readBinary(file);
-                }
-            };
-
-            template< typename T >
-            struct TextSerializationHelper
-            {
-                static bool WriteTextFunc(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData)
-                {
-                    return ((const T*)data)->writeText(stream);
-                }
-
-                static bool ReadTextFunc(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data)
-                {
-                    return ((T*)data)->readText(stream);
+                    ((T*)data)->readBinary(file);
                 }
             };
 
@@ -186,12 +172,9 @@ namespace base
             typedef void (*TDestructFunc)(void* ptr);
             typedef bool (*TCompareFunc)(const void* a, const void* b); // if empty we assume "compare via memcmp"
             typedef void (*TCopyFunc)(void* dest, const void* src); // if empty we assume "copy via memcpy"
-            typedef void (*TCalcHashFunc)(CRC64& crc, const void* data); // if empty we assume "hash by memory"
 
-            typedef bool (*TWriteBinaryFunc)(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData);
-            typedef bool (*TReadBinaryFunc)(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data);
-            typedef bool (*TWriteTextFunc)(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData);
-            typedef bool (*TReadTextFunc)(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data);
+            typedef void (*TWriteBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData);
+            typedef void (*TReadBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data);
 
             typedef void (*TPrintToTextFunc)(IFormatStream& f, const void* data, uint32_t flags);
             typedef bool (*TParseFromStringFunc)(StringView<char> txt, void* data, uint32_t flags);
@@ -206,12 +189,9 @@ namespace base
             TDestructFunc funcDestruct = nullptr;
             TCompareFunc funcComare = nullptr;
             TCopyFunc funcCopy = nullptr;
-            TCalcHashFunc funcHash = nullptr;
 
             TWriteBinaryFunc funcWriteBinary = nullptr;
             TReadBinaryFunc funcReadBinary = nullptr;
-            TWriteTextFunc funcWriteText = nullptr;
-            TReadTextFunc funcReadText = nullptr;
 
             TPrintToTextFunc funcPrintToText = nullptr;
             TParseFromStringFunc funcParseFromText = nullptr;
@@ -268,35 +248,10 @@ namespace base
             }
 
             template< typename T >
-            void bindHash()
-            {
-                funcHash = &prv::HashHelper<T>::Func;
-            }
-
-            template< typename T >
-            void bindStdHash()
-            {
-                funcHash = &prv::HashHelperStd<T>::Func;
-            }
-
-            template< typename T >
-            void bindHasher()
-            {
-                funcHash = &prv::HashHelperHasher<T>::Func;
-            }
-
-            template< typename T >
             void bindBinarySerialization()
             {
                 funcReadBinary = &prv::BinarySerializationHelper<T>::ReadBinaryFunc;
                 funcWriteBinary = &prv::BinarySerializationHelper<T>::WriteBinaryFunc;
-            }
-
-            template< typename T >
-            void bindTextSerialization()
-            {
-                funcReadText = &prv::TextSerializationHelper<T>::ReadTextFunc;
-                funcWriteText = &prv::TextSerializationHelper<T>::WriteTextFunc;
             }
 
             template< typename T >
@@ -325,12 +280,9 @@ namespace base
             virtual void destruct(void* object) const override;
             virtual bool compare(const void* data1, const void* data2) const override;
             virtual void copy(void* dest, const void* src) const override;
-            virtual void calcCRC64(CRC64& crc, const void* data) const override final;
 
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override;
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override;
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override;
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override;
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override;
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override;
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override;

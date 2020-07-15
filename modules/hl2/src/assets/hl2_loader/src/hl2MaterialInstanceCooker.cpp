@@ -10,13 +10,14 @@
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/parser/include/textParser.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace hl2
 {

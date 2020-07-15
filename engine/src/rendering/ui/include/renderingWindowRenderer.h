@@ -35,6 +35,7 @@ namespace rendering
         virtual ui::NativeWindowID windowAtPos(const ui::Position& absoluteWindowPosition) override;
         virtual ui::ElementArea windowMonitorAtPos(const ui::Position& absoluteWindowPosition) override;
         virtual base::input::EventPtr windowPullInputEvent(ui::NativeWindowID id) override;
+        virtual uint64_t windowNativeHandle(ui::NativeWindowID id) override;
         virtual void windowShow(ui::NativeWindowID id, bool visible) override;
         virtual void windowSetPos(ui::NativeWindowID id, const ui::Position& pos) override;
         virtual void windowSetSize(ui::NativeWindowID id, const ui::Size& size) override;

@@ -17,6 +17,8 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource_compiler/include/importSourceAsset.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace wavefront
 {
@@ -98,6 +100,11 @@ namespace wavefront
         }
     }
     
+    uint64_t FormatMTL::calcMemoryUsage() const
+    {
+        return m_materials.dataSize();
+    }
+
     void FormatMTL::onPostLoad()
     {
         TBaseClass::onPostLoad();
@@ -106,31 +113,20 @@ namespace wavefront
 
     ///--
 
-    /// loader of the MTL file
-    class FormatMTLResourceLoader : public base::res::IResourceCooker
+    /// source asset loader for OBJ data
+    class FormatMTLAssetLoader : public base::res::ISourceAssetLoader
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(FormatMTLResourceLoader, base::res::IResourceCooker);
+        RTTI_DECLARE_VIRTUAL_CLASS(FormatMTLAssetLoader, base::res::ISourceAssetLoader);
 
     public:
-        virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
+        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView<char> importPath, base::StringView<char> contextPath, base::Buffer data) const override
         {
-            // load the file to buffer
-            auto filePath = cooker.queryResourcePath().path();
-            auto fileData = cooker.loadToBuffer(filePath);
-            if (!fileData)
-            {
-                TRACE_ERROR("Failed to load content of '{}'", filePath);
-                return nullptr;
-            }
-
-            // parse data
-            return LoadMaterials(cooker.queryResourceContextName(), fileData.data(), fileData.size());
+            return LoadMaterials(contextPath, data.data(), data.size());
         }
     };
 
-    RTTI_BEGIN_TYPE_CLASS(FormatMTLResourceLoader);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<wavefront::FormatMTL>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("mtl");
+    RTTI_BEGIN_TYPE_CLASS(FormatMTLAssetLoader);
+        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtensions("mtl");
     RTTI_END_TYPE();
 
     ///--

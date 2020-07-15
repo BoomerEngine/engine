@@ -46,7 +46,7 @@ namespace base
         RTTI_FUNCTION("xyz", xyz);
         RTTI_FUNCTION("xyzw", xyzw);
 
-        RTTI_STATIC_FUNCTION("Random", Rand);
+        //RTTI_STATIC_FUNCTION("Random", Rand);
     RTTI_END_TYPE();
 
     //-----
@@ -56,11 +56,6 @@ namespace base
     static Vector2 Vector2_EX(1,0);
     static Vector2 Vector2_EY(0,1);
     static Vector2 Vector2_INF(VERY_LARGE_FLOAT, VERY_LARGE_FLOAT);
-
-    Vector2 Vector2::Rand(float min, float max)
-    {
-        return Vector2(RandRange(min, max), RandRange(min, max));
-    }
 
     const Vector2& Vector2::ZERO()
     {

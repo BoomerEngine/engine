@@ -20,7 +20,7 @@ namespace base
     namespace io
     {
 
-        StringBuf TimeStamp::toDisplayString() const
+        void TimeStamp::print(IFormatStream& f) const
         {
 #ifdef PLATFORM_WINDOWS
 
@@ -32,23 +32,27 @@ namespace base
             SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
 
             // Build a string showing the date and time.
-            return TempString("{}/{}/{} {}:{}:{}", stLocal.wYear, stLocal.wMonth, stLocal.wDay, stLocal.wHour, stLocal.wMinute, stLocal.wSecond);
+            f.appendf("{}/{}/{} {}:{}:{}", stLocal.wYear, stLocal.wMonth, stLocal.wDay, stLocal.wHour, stLocal.wMinute, stLocal.wSecond);
 #elif defined(PLATFORM_POSIX)
             // get the time64_t
             time_t t = m_timecode / 10000000ULL - 11644473600ULL;
 
             // get string representation
             tm timeData;
-            auto timeDataPtr  = gmtime_r(&t, &timeData);
+            auto timeDataPtr = gmtime_r(&t, &timeData);
 
             // build string
-            return TempString("{}/{}/{} {}:{}:{}", timeDataPtr->tm_year + 1900, timeDataPtr->tm_mon + 1, timeDataPtr->tm_mday, timeDataPtr->tm_hour, timeDataPtr->tm_min, timeDataPtr->tm_sec);
+            f.appendf("{}/{}/{} {}:{}:{}", timeDataPtr->tm_year + 1900, timeDataPtr->tm_mon + 1, timeDataPtr->tm_mday, timeDataPtr->tm_hour, timeDataPtr->tm_min, timeDataPtr->tm_sec);
 #else
 
             // Unable to convert on other platforms
-            return "Unknown";
-
+            f.append("Unknown");
 #endif
+        }
+
+        StringBuf TimeStamp::toDisplayString() const
+        {
+            return TempString("{}", *this);
         }
 
         StringBuf TimeStamp::toSafeString() const

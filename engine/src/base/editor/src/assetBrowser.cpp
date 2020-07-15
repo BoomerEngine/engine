@@ -185,6 +185,26 @@ namespace ed
         return ret;
     }
 
+    ManagedDirectory* AssetBrowser::selectedDirectory() const
+    {
+        ManagedDirectory* ret = nullptr;
+
+        m_dockContainer->iterateSpecificPanels<AssetBrowserTabFiles>([&ret](AssetBrowserTabFiles* tab)
+            {
+                if (tab->directory())
+                {
+                    ret = tab->directory();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }, ui::DockPanelIterationMode::ActiveOnly);
+
+        return ret;
+    }
+
     void AssetBrowser::showFile(ManagedFile* filePtr)
     {
         if (filePtr)

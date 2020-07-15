@@ -9,6 +9,7 @@
 #pragma once
 
 #include "rendering/driver/include/renderingImageFormat.h"
+#include "renderingMeshStreamData.h"
 
 namespace rendering
 {
@@ -31,7 +32,7 @@ namespace rendering
     struct MeshVertexStreamInfo
     {
         base::StringView<char> name; // binding name
-        base::mesh::MeshStreamType sourceStream; // source stream 
+        MeshStreamType sourceStream; // source stream 
         ImageFormat dataFormat; // format of the data
         uint16_t dataOffset; // offset in the vertex
         uint16_t dataSize; // size of the data in the vertex
@@ -53,7 +54,7 @@ namespace rendering
 
     struct SourceMeshStream
     {
-        base::mesh::MeshStreamType stream = base::mesh::MeshStreamType::Position_3F;
+        MeshStreamType stream = MeshStreamType::Position_3F;
         const void* srcData = nullptr;
         uint32_t srcDataStride = 0;
     };
@@ -102,7 +103,7 @@ namespace rendering
     //--
 
     // pack data stream
-    extern RENDERING_MESH_API void PackStreamData(const MeshVertexQuantizationHelper& quantization, const void* srcData, uint32_t srcStride, base::mesh::MeshStreamType type, void* destData, uint32_t destStride, ImageFormat destFormat, uint32_t count);
+    extern RENDERING_MESH_API void PackStreamData(const MeshVertexQuantizationHelper& quantization, const void* srcData, uint32_t srcStride, MeshStreamType type, void* destData, uint32_t destStride, ImageFormat destFormat, uint32_t count);
 
     // pack vertex stream for given format, missing data is filled with zeros of 1 (for colors)
     extern RENDERING_MESH_API void PackVertexData(const MeshVertexQuantizationHelper& quantization, const SourceMeshStream* srcStreams, uint32_t srcStreamCount, void* destData, MeshVertexFormat destFormat, uint32_t count);

@@ -9,12 +9,11 @@
 #include "build.h"
 #include "rttiBitfieldType.h"
 
-#include "streamTextWriter.h"
-#include "streamTextReader.h"
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 #include "rttiDataView.h"
 #include "dataView.h"
+#include "base/containers/include/inplaceArray.h"
 
 namespace base
 {
@@ -108,20 +107,14 @@ namespace base
             readUint64(src, val);
             writeUint64(dest, val);
         }
-
-        void BitfieldType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            uint64_t val;
-            readUint64(data, val);
-            crc << val;
-        }
-
-        bool BitfieldType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        
+        void BitfieldType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             uint64_t val = 0;
             readUint64(data, val);
 
-            // write flag name for each set bit
+            // gather flags to write
+            InplaceArray<StringID, 64> flagNames;
             auto maxBits = (uint8_t)(8 * size());
             for (uint8_t i = 0; i < maxBits; ++i)
             {
@@ -129,100 +122,45 @@ namespace base
                 {
                     if (m_flagNames[i].empty())
                     {
-                        TRACE_ERROR("Missing flag name for flag {} in {}, the value would be lost", i, name());
-                        return false;
+                        TRACE_WARNING("Missing flag name for flag {} in {}, the bit value will be lost", i, name());
+                        continue;
                     }
 
-                    file.writeName(m_flagNames[i]);
+                    flagNames.pushBack(m_flagNames[i]);
                 }
             }
 
-            // guard
-            file.writeName(StringID());
-            return true;
+            // write as array of names
+            file.beginArray(flagNames.size());
+            for (const auto& name : flagNames)
+                file.writeStringID(name);
+            file.endArray();
         }
 
-        bool BitfieldType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void BitfieldType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
             uint64_t val = 0;
 
-            for (;;)
+            uint32_t flagCount = 0;
+            file.enterArray(flagCount);
+
+            for (uint32_t i = 0; i < flagCount; ++i)
             {
-                auto flagName = file.readName();
-                if (flagName.empty())
-                    break;
+                auto flagName = file.readStringID();
 
                 uint64_t flagBitMask = 0;
                 if (!findFlag(flagName, flagBitMask))
                 {
-                    TRACE_ERROR("Failed to find flag value for flag '{}' in bitfield '{}'", flagName, name());
-                    return false;
+                    TRACE_WARNING("Failed to find flag value for flag '{}' in bitfield '{}'", flagName, name());
+                    continue;
                 }
 
                 val |= flagBitMask;
             }
 
             writeUint64(data, val);
-            return true;
         }
 
-        bool BitfieldType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            uint64_t val = 0;
-            readUint64(data, val);
-
-            if (val != 0)
-            {
-                auto maxBits = (uint8_t)(8 * size());
-                for (uint8_t i = 0; i < maxBits; ++i)
-                {
-                    if (val & GetBitMask(i))
-                    {
-                        if (m_flagNames[i].empty())
-                        {
-                            TRACE_ERROR("Unable to find flag name for bit {}", i);
-                            return false;
-                        }
-
-                        stream.beginArrayElement();
-                        stream.writeValue(m_flagNames[i].c_str());
-                        stream.endArrayElement();
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        bool BitfieldType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            uint64_t val = 0;
-
-            while (stream.beginArrayElement())
-            {
-                StringView<char> flagName;
-                if (!stream.readValue(flagName))
-                {
-                    TRACE_ERROR("Expected bit filed flag to be a string");
-                    return false;
-                }
-
-                uint64_t localVal = 0;
-                if (!findFlag(StringID(flagName), localVal))
-                {
-                    TRACE_ERROR("Unable to assign value to flag '{}'", flagName);
-                    return false;
-                }
-
-                val |= localVal;
-
-                stream.endArrayElement();
-            }
-
-            writeUint64(data, val);
-            return true;
-        }
-        
         void BitfieldType::readUint64(const void* data, uint64_t& outValue) const
         {
             switch (size())

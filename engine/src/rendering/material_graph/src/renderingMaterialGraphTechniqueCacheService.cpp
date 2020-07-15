@@ -197,16 +197,14 @@ namespace rendering
         if (m_sourceFileMap.find(depotPath, ret))
             return ret;
 
-        uint64_t crc = 0;
         base::io::TimeStamp timestamp;
-        if (!m_depot->queryFileInfo(depotPath, &crc, nullptr, &timestamp))
+        if (!m_depot->queryFileTimestamp(depotPath, timestamp))
         {
             TRACE_WARNING("File '{}' not recognized in depot", depotPath);
         }
 
         ret = MemNew(FileInfo);
         ret->depotPath = base::StringBuf(depotPath);
-        ret->crc = crc;
         ret->timestamp = timestamp.value();
         m_sourceFileMap[ret->depotPath] = ret;
 

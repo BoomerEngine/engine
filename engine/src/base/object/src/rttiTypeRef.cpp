@@ -79,9 +79,14 @@ namespace base
         }
     }
 
-    void Type::calcCRC64(CRC64& crc) const
+    uint32_t Type::CalcHash(const Type& type)
     {
-        crc << m_type->name();
+        return StringID::CalcHash(type ? type->name() : StringID());
+    }
+
+    uint32_t Type::CalcHash(const StringID& type)
+    {
+        return StringID::CalcHash(type);
     }
 
     //--

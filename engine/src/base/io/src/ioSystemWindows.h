@@ -28,9 +28,9 @@ namespace base
                 WinIOSystem();
                 virtual ~WinIOSystem();
 
-                virtual FileHandlePtr openForReading(AbsolutePathView absoluteFilePath) override final;
-                virtual FileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, bool append) override final;
-                virtual FileHandlePtr openForReadingAndWriting(AbsolutePathView absoluteFilePath, bool resetContent = false) override final;
+                virtual ReadFileHandlePtr openForReading(AbsolutePathView absoluteFilePath) override final;
+                virtual WriteFileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) override final;
+                virtual AsyncFileHandlePtr openForAsyncReading(AbsolutePathView absoluteFilePath) override final;
 
                 virtual Buffer loadIntoMemoryForReading(AbsolutePathView absoluteFilePath) override final;
                 virtual Buffer openMemoryMappedForReading(AbsolutePathView absoluteFilePath) override final;
@@ -39,6 +39,7 @@ namespace base
                 virtual bool fileTimeStamp(AbsolutePathView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize) override final;
                 virtual bool createPath(AbsolutePathView absoluteFilePath) override final;
                 virtual bool moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) override final;
+                virtual bool copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) override final;
                 virtual bool deleteFile(AbsolutePathView absoluteFilePath) override final;
 				virtual bool deleteDir(AbsolutePathView absoluteDirPath) override final;
                 virtual bool touchFile(AbsolutePathView absoluteFilePath) override final;

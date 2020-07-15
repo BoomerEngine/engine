@@ -62,56 +62,30 @@ namespace base
             if (!file)
                 return nullptr;
 
-            return LoadContentToBuffer(*file, 0, MAX_SIZE_T);
-        }
-
-        bool LoadFileToBuffer(const AbsolutePath& absoluteFilePath, void* &outBuffer, uint64_t& outBufferSize)
-        {
-            // load buffer
-            auto file  = IO::GetInstance().openForReading(absoluteFilePath);
-            if (!file)
-                return false;
-
             // prepare buffer
-            auto size  = file->size();
-            if (size >= (uint64_t)MAX_IO_SIZE)
+            const auto fileSize = file->size();
+            auto ret = Buffer::Create(POOL_IO, fileSize);
+            if (ret)
             {
-                TRACE_ERROR("File '{}' is bigger than the largest file allowed to be read by application. Consider switching to 64-bit builds.", absoluteFilePath);
-                return false;
+                auto readSize = file->readSync(ret.data(), fileSize);
+                if (readSize != fileSize)
+                {
+                    TRACE_ERROR("Read {} bytes instead of {} from '{}'. Failed to load file to buffer.", readSize, fileSize, absoluteFilePath.c_str());
+                    ret.reset();
+                }
+            }
+            else
+            {
+                TRACE_WARNING("Failed to allocate buffer for reading content of file '{}', required {}", absoluteFilePath, MemSize(fileSize));
             }
 
-            // allocate memory
-            auto loadSize  = range_cast<size_t>(size);
-            auto mem  = MemAlloc(POOL_IO, loadSize, 1);
-            if (!mem)
-            {
-                TRACE_ERROR("Failed to allocate buffer for reading content of file '{}', neede {} llu bytes", absoluteFilePath, size);
-                return false;
-            }
-
-            // load file data
-            auto readSize  = file->readSync(outBuffer, loadSize);
-            if (readSize != loadSize)
-            {
-                TRACE_ERROR("Read {} bytes instead of {} from '{}'. Failed to load file to buffer.",
-                    readSize, loadSize, absoluteFilePath.c_str());
-
-                MemFree(outBuffer);
-                outBuffer = nullptr;
-                outBufferSize = 0;
-                return false;
-            }
-
-            // no errors
-            outBuffer = mem;
-            outBufferSize = size;
-            return true;
+            return ret;
         }
 
-        bool SaveFileFromString(const AbsolutePath& absoluteFilePath, StringView<char> str, bool append /*= false*/)
+        bool SaveFileFromString(const AbsolutePath& absoluteFilePath, StringView<char> str)
         {
             // open file
-            auto file  = IO::GetInstance().openForWriting(absoluteFilePath, append);
+            auto file  = IO::GetInstance().openForWriting(absoluteFilePath);
             if (!file)
                 return false;
 
@@ -129,10 +103,10 @@ namespace base
             return true;
         }
 
-        bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const void* buffer, size_t size, bool append /*=false*/)
+        bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const void* buffer, size_t size)
         {
             // open file
-            auto file  = IO::GetInstance().openForWriting(absoluteFilePath, append);
+            auto file  = IO::GetInstance().openForWriting(absoluteFilePath);
             if (!file)
                 return false;
 
@@ -148,87 +122,9 @@ namespace base
             return true;
         }
 
-        bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const Buffer& buffer, bool append /*= false*/)
+        bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const Buffer& buffer)
         {
-            return SaveFileFromBuffer(absoluteFilePath, buffer.data(), buffer.size(), append);
-        }
-
-        bool CopyContent(IFileHandle& reader, IFileHandle& writer, size_t sizeClamp)
-        {
-            uint8_t buffer[65536];
-
-            uint64_t sizeLeft = std::min<uint64_t>(sizeClamp, reader.size() - reader.pos());
-            while (sizeLeft > 0)
-            {
-                auto sizeToRead  = (uint32_t)std::min<uint64_t>(sizeof(buffer), sizeLeft);
-
-                // load existing content
-                auto read  = reader.readSync(buffer, sizeToRead);
-                if (read != sizeToRead)
-                {
-                    TRACE_ERROR("Read {} bytes instead of {} when copying from file '{}'.", read, sizeToRead, writer.originInfo());
-                    return false;
-                }
-
-                // save to target
-                auto written  = writer.writeSync(buffer, sizeToRead);
-                if (written != sizeToRead)
-                {
-                    TRACE_ERROR("Written {} bytes instead of {} when copying to file '{}'.", written, sizeToRead, writer.originInfo());
-                    return false;
-                }
-
-                sizeLeft -= sizeToRead;
-            }
-
-            return true;
-        }
-
-        Buffer LoadContentToBuffer(IFileHandle& reader, uint64_t initialOffset /*= 0*/, size_t sizeClamp /*= INDEX_MAX64*/)
-        {
-            // reading not allowed
-            if (!reader.isReadingAllowed())
-            {
-                TRACE_ERROR("File '{}' does not allow reading", reader.originInfo());
-                return nullptr;
-            }
-
-            // check if offset is within the file
-            if (initialOffset > reader.size())
-            {
-                TRACE_ERROR("Initial postion {} for file '%hls' is outside the file", initialOffset, reader.originInfo());
-                return Buffer();
-            }
-
-            // go to position in file
-            reader.pos(initialOffset);
-
-            // calculate size to load
-            auto loadSize  = std::min<uint64_t>(sizeClamp, reader.size() - initialOffset);
-            if (loadSize >= MAX_IO_SIZE)
-            {
-                TRACE_ERROR("Trying to read more from the file '{}' than the biggets allowed size, consider switching to 64-bit", reader.originInfo());
-                return nullptr;
-            }
-
-            // allocate buffer
-            auto buffer = Buffer::Create(POOL_MEM_BUFFER, loadSize);
-            if (!buffer)
-            {
-                TRACE_ERROR("Unable to allocate {} bytes of memory for reading content of file '{}'", loadSize, reader.originInfo());
-                return nullptr;
-            }
-
-            // load content
-            auto actuallyLoadedSize  = reader.readSync(buffer.data(), loadSize);
-            if (actuallyLoadedSize != loadSize)
-            {
-                TRACE_ERROR("Unable to read {} bytes at {} from file '{}'", loadSize, initialOffset, reader.originInfo());
-                return nullptr;
-            }
-
-            // yay, data read
-            return buffer;
+            return SaveFileFromBuffer(absoluteFilePath, buffer.data(), buffer.size());
         }
 
     } // io

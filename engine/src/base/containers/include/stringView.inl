@@ -822,6 +822,43 @@ namespace base
 
     //--
 
-//-----------------------------------------------------------------------------
+    /// a special lower-case only key for hash maps
+    struct CaseInsensitiveKey
+    {
+        CaseInsensitiveKey(base::StringView<char> view)
+        {
+            m_data = base::StringBuf(view).toLower();
+        }
+
+        CaseInsensitiveKey(const base::StringBuf& txt)
+        {
+            m_data = txt.toLower();
+        }
+
+        static uint32_t CalcHash(const CaseInsensitiveKey& key)
+        {
+            const auto& txt = key.m_data.view();
+            return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
+        }
+
+        static uint32_t CalcHash(base::StringView<char> txt)
+        {
+            return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
+        }
+
+        INLINE bool operator==(const CaseInsensitiveKey& key) const
+        {
+            return m_data == key.m_data;
+        }
+
+        INLINE bool operator==(base::StringView<char> txt) const
+        {
+            return 0 == m_data.view().caseCmp(txt);
+        }
+
+        base::StringBuf m_data;
+    };
+
+    //--
 
 } // base

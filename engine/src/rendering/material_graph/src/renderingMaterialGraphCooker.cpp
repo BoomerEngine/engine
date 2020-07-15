@@ -16,6 +16,8 @@
 #include "rendering/mesh/include/renderingMeshFormat.h"
 #include "rendering/compiler/include/renderingShaderLibraryCompiler.h"
 #include "base/resource/include/resourceCookingInterface.h"
+#include "base/resource/include/resourceCooker.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {
@@ -192,7 +194,7 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_CLASS(MaterialTemplateGraphCooker);
         RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<MaterialTemplate>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceClass<MaterialGraph>();
+        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("v4mg");
     RTTI_END_TYPE();
 
     //--

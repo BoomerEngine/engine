@@ -37,15 +37,13 @@ namespace ed
     RTTI_END_TYPE();
 
     StaticTextureEditor::StaticTextureEditor(ConfigGroup config, ManagedFile* file)
-        : SingleCookedResourceEditor(config, file, rendering::StaticTexture::GetStaticClass())
+        : SingleLoadedResourceEditor(config, file)
         , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
     {
         createInterface();
 
         m_histogramCheckTimer = [this]() { checkHistograms(); };
         m_histogramCheckTimer.startRepeated(0.1f);
-
-        previewResourceChanged();
     }
 
     StaticTextureEditor::~StaticTextureEditor()
@@ -98,7 +96,7 @@ namespace ed
     {
         m_pendingHistograms.clear();
 
-        if (auto data = base::rtti_cast<rendering::StaticTexture>(previewResource().acquire()))
+        if (auto data = texture())
         {
             if (auto view = data->view())
             {
@@ -158,7 +156,7 @@ namespace ed
     {
         base::StringBuilder txt;
 
-        if (auto data = base::rtti_cast<rendering::StaticTexture>(previewResource().acquire()))
+        if (auto data = texture())
         {
             const auto info = data->info();
 
@@ -195,17 +193,7 @@ namespace ed
             else
                 txt.appendf("Alpha: [b]None[/b]\n");
 
-            txt.appendf(" \n");
-            txt.appendf(" \n");
-
             txt.appendf("Mipmaps: [b]{}[/b]\n", info.mips);
-
-            const auto& mips = data->mips();
-            for (uint32_t i = 0; i < mips.size(); ++i)
-            {
-                const auto& info = mips[i];
-                txt.appendf("Mip[{}]: {}x{}x{} ({})\n", i, info.width, info.height, info.depth, MemSize(info.dataSize));
-            }
 
             txt.appendf(" \n");
             txt.appendf("\nTotal data size: [b]{}[/b]\n", MemSize(data->persistentData().size()));
@@ -248,14 +236,14 @@ namespace ed
         return rendering::ImageContentColorSpace::Linear;
     }
 
-    void StaticTextureEditor::previewResourceChanged()
+    void StaticTextureEditor::resourceChanged()
     {
-        TBaseClass::previewResourceChanged();
+        TBaseClass::resourceChanged();
 
         updateHistogram();
         updateImageInfoText();
 
-        if (auto data = base::rtti_cast<rendering::StaticTexture>(previewResource().acquire()))
+        if (auto data = texture())
             m_previewPanel->bindImageView(data->view(), ConvertColorSpace(data->info().colorSpace));
     }
 
@@ -268,17 +256,18 @@ namespace ed
     public:
         virtual bool canOpen(const ManagedFileFormat& format) const override
         {
-            const auto textureClass = rendering::StaticTexture::GetStaticClass();
-            for (const auto& output : format.cookableOutputs())
-                if (output.resoureClass == textureClass)
-                    return true;
-
-            return false;
+            return format.nativeResourceClass() == rendering::StaticTexture::GetStaticClass();
         }
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            return base::CreateSharedPtr<StaticTextureEditor>(config, file);
+            if (auto loadedTexture = base::rtti_cast<rendering::StaticTexture>(file->loadContent()))
+            {
+                auto ret = base::CreateSharedPtr<StaticTextureEditor>(config, file);
+                ret->bindResource(loadedTexture);
+                return ret;
+            }
+            return nullptr;
         }
     };
 

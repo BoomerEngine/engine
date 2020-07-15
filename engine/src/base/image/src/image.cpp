@@ -10,6 +10,7 @@
 #include "image.h"
 #include "imageView.h"
 #include "imageUtils.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

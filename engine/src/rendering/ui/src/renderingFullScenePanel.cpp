@@ -76,8 +76,8 @@ namespace ui
             menu->show(owner);
         };
 
-        toolbar->createButton("PreviewPanel.ChangeFilters"_id, "[img:eye]");
-        toolbar->createButton("PreviewPanel.ChangeRenderMode"_id, "[img:shader]");
+        toolbar->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().icon("eye").caption("Filters"));
+        toolbar->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().icon("shader").caption("Render mode"));
         toolbar->createSeparator();
     }
 

@@ -17,8 +17,9 @@
 #include "base/io/include/ioSystem.h"
 #include "base/system/include/thread.h"
 #include "base/image/include/image.h"
-#include "base/resource/include/resourceUncached.h"
 #include "managedFileFormat.h"
+#include "base/io/include/ioFileHandle.h"
+#include "base/resource/include/resourceFileSaver.h"
 
 namespace ed
 {
@@ -332,11 +333,13 @@ namespace ed
         {
             fixedName = StringBuf(fileName);
             fileDepotPath = TempString("{}{}", depotPath(), fileName);
+            fileName = fixedName;
         }
         else
         {
             fixedName = TempString("{}.{}", fileName, expectedExtension);
             fileDepotPath = TempString("{}{}.{}", depotPath(), fileName, expectedExtension);
+            fileName = fixedName;
         }
 
         res::ResourceMountPoint mountPoint;
@@ -346,14 +349,71 @@ namespace ed
             return nullptr;
         }
 
-        auto savedData = res::SaveUncachedToBuffer(initialContent, mountPoint);
-        if (!savedData)
+        // file already exists, do not overwrite
+        auto absFilePath = absolutePath().addFile(StringBuf(fileName).c_str());
+        if (IO::GetInstance().fileExists(absFilePath))
         {
-            TRACE_ERROR("Unable to create '{}' in '{}': unable to serialize provided data", fileName, depotPath());
+            TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
+            notifyDepotFileCreated(fileName);
+            return file(fileName, true);
+        }
+
+        // we already have the file
+        if (auto existingFile = file(fileName, true))
+        {
+            if (!existingFile->isDeleted())
+            {
+                TRACE_ERROR("Unable to create '{}' in '{}': file already exists in file system", fileName, depotPath());
+                return existingFile;
+            }
+        }
+
+        // store content for the file
+        StringBuf depotFilePath = TempString("{}{}", depotPath(), fileName);
+        const auto writer = m_depot->loader().createFileWriter(depotFilePath);
+        if (!writer)
+        {
+            TRACE_ERROR("Unable to create '{}' in '{}': filed to open file for writing (out of disk space?)", fileName, depotPath());
             return nullptr;
         }
 
-        return createFile(fixedName, savedData);
+        // setup saving context
+        base::res::FileSavingContext context;
+        context.rootObject.pushBack(initialContent);
+        context.basePath = mountPoint.path();
+
+        // save the file
+        if (!base::res::SaveFile(writer, context))
+        {
+            TRACE_ERROR("Unable to create '{}' in '{}': filed to write file's content (out of disk space?)", fileName, depotPath());
+            writer->discardContent();
+            return nullptr;
+        }
+
+        // update
+        auto managedFile = file(fileName, true);
+        if (managedFile)
+        {
+            if (managedFile->isDeleted())
+                managedFile->m_isDeleted = false;
+        }
+        else
+        {
+            auto newFile = CreateSharedPtr<ManagedFile>(depot(), this, StringBuf(fileName));
+            m_files.pushBack(newFile);
+            m_fileMap[newFile->name()] = newFile;
+            m_fileRefs.pushBack(newFile);
+            m_filesRequireSorting = true;
+            managedFile = newFile;
+        }
+
+        // update file counts
+        updateFileCount();
+
+        // report file event
+        m_depot->dispatchEvent(managedFile, ManagedDepotEvent::FileCreated);
+        return managedFile;
+
     }
 
     ManagedFile* ManagedDirectory::createFile(StringView<char> fileName, const ManagedFileFormat& format)
@@ -417,9 +477,18 @@ namespace ed
 
         // store content for the file
         StringBuf depotFilePath = TempString("{}{}", depotPath(), fileName);
-        if (!m_depot->loader().storeFileContent(depotFilePath, initialContent))
+        const auto writer = m_depot->loader().createFileWriter(depotFilePath);
+        if (!writer)
         {
-            TRACE_ERROR("Unable to create '{}' in '{}': filed to store content for file (out of disk space?)", fileName, depotPath());
+            TRACE_ERROR("Unable to create '{}' in '{}': filed to open file for writing (out of disk space?)", fileName, depotPath());
+            return nullptr;
+        }
+
+        // write content
+        if (writer->writeSync(initialContent.data(), initialContent.size()) != initialContent.size())
+        {
+            TRACE_ERROR("Unable to create '{}' in '{}': filed to write file's content (out of disk space?)", fileName, depotPath());
+            writer->discardContent();
             return nullptr;
         }
 

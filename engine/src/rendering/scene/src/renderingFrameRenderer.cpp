@@ -90,6 +90,8 @@ namespace rendering
 #define MATERIAL_FLAG_DISABLE_VERTEX_MOTION 64
 #define MATERIAL_FLAG_DISABLE_MASKING 128
 
+        static base::FastRandState GRenderingRandState;
+
         static void BindFrameParameters(command::CommandWriter& cmd, const FrameRenderer& frame)
         {
             const auto& data = frame.frame();
@@ -110,10 +112,10 @@ namespace rendering
             params.FrameIndex = data.index;
             params.MSAASamples = view.multisampled() ? view.numSamples() : 0;
 
-            params.PseudoRandom[0] = base::RandUint32();
-            params.PseudoRandom[1] = base::RandUint32();
-            params.PseudoRandom[2] = base::RandUint32();
-            params.PseudoRandom[3] = base::RandUint32();
+            params.PseudoRandom[0] = base::Rand(GRenderingRandState);
+            params.PseudoRandom[1] = base::Rand(GRenderingRandState);
+            params.PseudoRandom[2] = base::Rand(GRenderingRandState);
+            params.PseudoRandom[3] = base::Rand(GRenderingRandState);
 
             params.MaterialFlags = 0;
             if (frame.frame().filters & FilterBit::Material_DisableColorMap)

@@ -40,8 +40,8 @@ namespace base
             virtual ~ScriptedClassProperty();
 
             /// get property data given the pointer to the object
-            virtual const void* offsetPtr(const void* data) const override final;
-            virtual void* offsetPtr(void* data) const override final;
+            //virtual const void* offsetPtr(const void* data) const override final;
+            //virtual void* offsetPtr(void* data) const override final;
         };
 
         //----

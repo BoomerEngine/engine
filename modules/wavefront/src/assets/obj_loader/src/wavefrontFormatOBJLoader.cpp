@@ -758,36 +758,6 @@ namespace wavefront
     }
 
     //--
-
-    // loader of the OBJ format
-    class FormatOBJLoader : public base::res::IResourceCooker
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(FormatOBJLoader, base::res::IResourceCooker);
-
-        virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
-        {
-            // load the raw content from the source file
-            auto rawSourceFilePath = cooker.queryResourcePath().path();
-            auto rawContent = cooker.loadToBuffer(rawSourceFilePath);
-            if (!rawContent)
-                return nullptr;
-
-            // full path
-            base::StringBuf fullContextName;
-            if (!cooker.queryContextName(rawSourceFilePath, fullContextName))
-                fullContextName = base::StringBuf(rawSourceFilePath);
-
-            // pack data into the font
-            return LoadObjectFile(fullContextName, rawContent.data(), rawContent.size(), true);
-        }
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(FormatOBJLoader);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<FormatOBJ>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("obj");
-    RTTI_END_TYPE();
-
-    //--
         
 } // wavefront
 

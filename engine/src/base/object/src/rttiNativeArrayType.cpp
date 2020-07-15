@@ -223,6 +223,11 @@ namespace base
                 return true;
             }
 
+            bool NativeArrayType::resizeArrayElements(void* data, uint32_t count) const
+            {
+                return (count == m_elementCount);
+            }
+
             bool NativeArrayType::removeArrayElement(const void* data, uint32_t index) const
             {
                 return true;

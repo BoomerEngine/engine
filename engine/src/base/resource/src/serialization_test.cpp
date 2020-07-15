@@ -10,17 +10,16 @@
 
 #include "base/test/include/gtest/gtest.h"
 #include "base/object/include/object.h"
-#include "base/object/include/memoryWriter.h"
-#include "base/object/include/memoryReader.h"
-#include "base/object/include/serializationSaver.h"
-#include "base/object/include/serializationLoader.h"
-#include "base/object/include/streamBinaryVersion.h"
 #include "base/reflection/include/reflectionMacros.h"
-#include "resourceBinaryFileTables.h"
-#include "resourceBinarySaver.h"
-#include "resourceBinaryLoader.h"
-#include "resourceGeneralTextLoader.h"
-#include "resourceGeneralTextSaver.h"
+#include "base/io/include/ioFileHandleMemory.h"
+#include "base/object/include/streamOpcodes.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/rttiProperty.h"
+
+#include "resourceFileSaver.h"
+#include "resourceFileTables.h"
+#include "resourceFileLoader.h"
+#include "base/memory/include/public.h"
 
 DECLARE_TEST_FILE(Serialization);
 
@@ -34,84 +33,273 @@ namespace tests
 
     public:
         StringBuf m_text;
-        int m_int;
-        float m_float;
-        bool m_bool;
+        int m_int = 0;
+        float m_float = 0.0f;
+        bool m_bool = false;
+        StringID m_name;
+        Vector3 m_struct;
 
         RefPtr<TestObject> m_child;
-
-        TestObject()
-            : m_int(0)
-            , m_float(0)
-            , m_bool(false)
-        {}
     };
 
     RTTI_BEGIN_TYPE_CLASS(TestObject);
-    RTTI_PROPERTY(m_text);
+    RTTI_PROPERTY(m_bool);
     RTTI_PROPERTY(m_int);
     RTTI_PROPERTY(m_float);
-    RTTI_PROPERTY(m_bool);
+    RTTI_PROPERTY(m_name);
+    RTTI_PROPERTY(m_text);
+    RTTI_PROPERTY(m_struct);
     RTTI_PROPERTY(m_child);
     RTTI_END_TYPE();
+
+    class MassTestObject : public IObject
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(MassTestObject, IObject);
+
+    public:
+        Array<Array<Box>> m_crap;
+        Array<RefPtr<MassTestObject>> m_child;
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(MassTestObject);
+    RTTI_PROPERTY(m_crap);
+    RTTI_PROPERTY(m_child);
+    RTTI_END_TYPE();
+}
+
+void HelperSave(const base::ObjectPtr& obj, Buffer& outData)
+{
+    base::res::FileSavingContext context;
+    context.rootObject.pushBack(obj);
+    context.protectedStream = false;
+
+    auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
+
+    ASSERT_TRUE(base::res::SaveFile(writer, context)) << "Serialization failed";
+
+    outData = writer->extract();
+
+    ASSERT_LT(0, outData.size()) << "No data in buffer";
+}
+
+void HelperSave(const Array<base::ObjectPtr>& roots, Buffer& outData, bool protectedStream)
+{
+    base::res::FileSavingContext context;
+    context.rootObject = roots;
+    context.protectedStream = protectedStream;
+
+    auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
+
+    ASSERT_TRUE(base::res::SaveFile(writer, context)) << "Serialization failed";
+
+    outData = writer->extract();
+
+    ASSERT_LT(0, outData.size()) << "No data in buffer";
+}
+
+void HelperLoad(const Buffer& data, base::ObjectPtr& outRet)
+{
+    base::res::FileLoadingContext context;
+
+    auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(data);
+
+    ASSERT_TRUE(base::res::LoadFile(reader, context)) << "Deserialization failed";
+
+    ASSERT_EQ(1, context.loadedRoots.size()) << "Nothing loaded";
+
+    outRet = context.loadedRoots[0];
+}
+
+void HelperLoad(const Buffer& data, base::Array<ObjectPtr>& outRoots)
+{
+    base::res::FileLoadingContext context;
+
+    auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(data);
+
+    ASSERT_TRUE(base::res::LoadFile(reader, context)) << "Deserialization failed";
+
+    ASSERT_NE(0, context.loadedRoots.size()) << "Nothing loaded";
+
+    outRoots = context.loadedRoots;
+}
+
+const char* HelperGetName(const base::res::FileTables& tables, uint32_t index)
+{
+    const auto numNames = tables.chunkCount(base::res::FileTables::ChunkType::Names);
+    if (index >= numNames)
+        return "";
+
+    const auto* stringTable = tables.stringTable();
+    const auto* nameTable = tables.nameTable();
+    return stringTable + nameTable[index].stringIndex;
+}
+
+const char* HelperGetType(const base::res::FileTables& tables, uint32_t index)
+{
+    const auto numTypes = tables.chunkCount(base::res::FileTables::ChunkType::Types);
+    if (index >= numTypes)
+        return "";
+
+    const auto* typeTable = tables.typeTable();
+    return HelperGetName(tables, typeTable[index].nameIndex);
+}
+
+const char* HelperGetPropertyName(const base::res::FileTables& tables, uint32_t index)
+{
+    const auto numProps = tables.chunkCount(base::res::FileTables::ChunkType::Properties);
+    if (index >= numProps)
+        return "";
+
+    const auto* propTable = tables.propertyTable();
+    return HelperGetName(tables, propTable[index].nameIndex);
+}
+
+const char* HelperGetPropertyClassType(const base::res::FileTables& tables, uint32_t index)
+{
+    const auto numProps = tables.chunkCount(base::res::FileTables::ChunkType::Properties);
+    if (index >= numProps)
+        return "";
+
+    const auto* propTable = tables.propertyTable();
+    return HelperGetType(tables, propTable[index].classTypeIndex);
 }
 
 TEST(Serialization, SaveSimple)
 {
     // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
+    auto object = CreateSharedPtr<tests::TestObject>();
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::binary::BinarySaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    HelperSave(object, data);
 
-    // we should have something
-    ASSERT_TRUE(writer.size() > 0) << "No data in buffer";
+    // get the tables
+    const auto& tables = *(const base::res::FileTables*)data.data();
+    ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
-    // decompile the buffer
-    res::binary::FileTables tables;
-    stream::MemoryReader reader(writer.data(), writer.size());
-    ASSERT_TRUE(tables.load(reader)) << "Failed to load the tables form serialized data";
+    // check names
+    ASSERT_STREQ("", HelperGetName(tables, 0));
+    ASSERT_STREQ("tests::TestObject", HelperGetName(tables, 1));
 
-    // we expect one object
-    ASSERT_EQ(1, tables.m_exports.size()) << "Expected exactly one object";
+    // check types
+    ASSERT_STREQ("", HelperGetType(tables, 0));
+    ASSERT_STREQ("tests::TestObject", HelperGetType(tables, 1));
 
-    auto& ex0 = tables.m_exports[0];
-    auto name  = &tables.m_strings[tables.m_names[ex0.m_className - 1].m_string];
-    ASSERT_TRUE(object->cls()->name() == name) << "Invalid class name: " << name;
+    // check exports
+    const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
+    const auto exportData = tables.exportTable();
+    ASSERT_EQ(1, exportCount);
+    ASSERT_EQ(1, exportData[0].classTypeIndex);
+    ASSERT_NE(0, exportData[0].crc);
+    ASSERT_EQ(0, exportData[0].parentIndex);
+    ASSERT_NE(0, exportData[0].dataOffset);
+    ASSERT_NE(0, exportData[0].dataSize);
 }
 
-TEST(Serialization, SaveTwoParented)
+TEST(Serialization, SaveSimpleWithSimpleData)
 {
     // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    RefPtr<tests::TestObject> objectChild = CreateSharedPtr<tests::TestObject>();
-    objectChild->parent(object);
-    object->m_child = objectChild;
+    auto object = CreateSharedPtr<tests::TestObject>();
+    object->m_bool = true;
+    object->m_float = 42.0f;
+    object->m_name = "TEST"_id;
+    object->m_text = "Ala ma kota";
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::binary::BinarySaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    HelperSave(object, data);
 
-    // we should have something
-    ASSERT_TRUE(writer.size() > 0) << "No data in buffer";
+    // get the tables
+    const auto& tables = *(const base::res::FileTables*)data.data();
+    ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
-    // decompile the buffer
-    res::binary::FileTables tables;
-    stream::MemoryReader reader(writer.data(), writer.size());
-    ASSERT_TRUE(tables.load(reader)) << "Failed to load the tables form serialized data";
+    // check names
+    EXPECT_STREQ("", HelperGetName(tables, 0));
+    EXPECT_STREQ("TEST", HelperGetName(tables, 1));
+    EXPECT_STREQ("bool", HelperGetName(tables, 2));
+    EXPECT_STREQ("float", HelperGetName(tables, 3));
+    EXPECT_STREQ("StringID", HelperGetName(tables, 4));
+    EXPECT_STREQ("StringBuf", HelperGetName(tables, 5));
+    EXPECT_STREQ("tests::TestObject", HelperGetName(tables, 6));
 
-    // we expect one object
-    ASSERT_EQ(2, tables.m_exports.size()) << "Expected exactly two objects";
+    // check types
+    EXPECT_STREQ("", HelperGetType(tables, 0));
+    EXPECT_STREQ("bool", HelperGetType(tables, 1));
+    EXPECT_STREQ("float", HelperGetType(tables, 2));
+    EXPECT_STREQ("StringID", HelperGetType(tables, 3));
+    EXPECT_STREQ("StringBuf", HelperGetType(tables, 4));
+    EXPECT_STREQ("tests::TestObject", HelperGetType(tables, 5));
 
-    auto& ex0 = tables.m_exports[0];
-    auto& ex1 = tables.m_exports[1];
-    ASSERT_EQ(0, ex0.m_parent) << "Object0 should not be parented";
-    ASSERT_EQ(1, ex1.m_parent) << "Object1 should be parented to object 0";
+    // check properties
+    EXPECT_STREQ("bool", HelperGetPropertyName(tables, 0));
+    EXPECT_STREQ("float", HelperGetPropertyName(tables, 1));
+    EXPECT_STREQ("name", HelperGetPropertyName(tables, 2));
+    EXPECT_STREQ("text", HelperGetPropertyName(tables, 3));
+    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 0));
+    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 1));
+    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 2));
+    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 3));
+
+    // check exports
+    const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
+    const auto exportData = tables.exportTable();
+    ASSERT_EQ(1, exportCount);
+    ASSERT_EQ(5, exportData[0].classTypeIndex);
+    ASSERT_NE(0, exportData[0].crc);
+    ASSERT_EQ(0, exportData[0].parentIndex);
+    ASSERT_NE(0, exportData[0].dataOffset);
+    ASSERT_NE(0, exportData[0].dataSize);
+}
+
+TEST(Serialization, ObjectChain)
+{
+    // create objects for testings
+    auto object = CreateSharedPtr<tests::TestObject>();
+    object->m_child = CreateSharedPtr<tests::TestObject>();
+    object->m_child->parent(object);
+    object->m_child->m_child = CreateSharedPtr<tests::TestObject>();
+    object->m_child->m_child->parent(object->m_child);
+
+    // save to memory
+    base::Buffer data;
+    HelperSave(object, data);
+
+    // get the tables
+    const auto& tables = *(const base::res::FileTables*)data.data();
+    ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
+
+    // check exports
+    const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
+    const auto exportData = tables.exportTable();
+    ASSERT_EQ(3, exportCount);
+    ASSERT_EQ(2, exportData[0].classTypeIndex);
+    ASSERT_EQ(0, exportData[0].parentIndex);
+    ASSERT_EQ(2, exportData[1].classTypeIndex);
+    ASSERT_EQ(1, exportData[1].parentIndex);
+    ASSERT_EQ(2, exportData[2].classTypeIndex);
+    ASSERT_EQ(2, exportData[2].parentIndex);
+}
+
+TEST(Serialization, ObjectChainBrokenLink)
+{
+    // create objects for testings
+    auto object = CreateSharedPtr<tests::TestObject>();
+    object->m_child = CreateSharedPtr<tests::TestObject>();
+
+    // save to memory
+    base::Buffer data;
+    HelperSave(object, data);
+
+    // get the tables
+    const auto& tables = *(const base::res::FileTables*)data.data();
+    ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
+
+    // check exports
+    const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
+    const auto exportData = tables.exportTable();
+    ASSERT_EQ(1, exportCount);
+    ASSERT_EQ(2, exportData[0].classTypeIndex);
+    ASSERT_EQ(0, exportData[0].parentIndex);
 }
 
 TEST(Serialization, SaveLoadSimple)
@@ -129,255 +317,173 @@ TEST(Serialization, SaveLoadSimple)
     objectChild->m_int = 456;
     objectChild->m_float = -1.0f;
     objectChild->m_text = "crap";
-
     object->m_child = objectChild;
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::binary::BinarySaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    HelperSave(object, data);
 
-    // we should have something
-    ASSERT_TRUE(writer.size() > 0) << "No data in buffer";
+    // loaded object
+    base::ObjectPtr loaded;
+    HelperLoad(data, loaded);
 
-    // load from memory
-    stream::MemoryReader reader(writer.data(), writer.size());
-    stream::LoadingContext loadContext;
-    stream::LoadingResult loadResult;
-    res::binary::BinaryLoader loader;
-    ASSERT_TRUE(loader.loadObjects(reader, loadContext, loadResult)) << "Loading object back failed";
-
-    // we should have only one root object
-    ASSERT_EQ(1, loadResult.m_loadedRootObjects.size()) << "Expected exactly one root object";
-    auto rootObject = rtti_cast<tests::TestObject>(loadResult.m_loadedRootObjects[0]);
-    ASSERT_TRUE(!!rootObject) << "Root object is not valid";
+    auto loadedEx = base::rtti_cast<tests::TestObject>(loaded);
+    ASSERT_FALSE(loadedEx.empty());
+    auto loadedEx2 = loadedEx->m_child;
+    ASSERT_FALSE(loadedEx2.empty());
 
     // compare data
-    EXPECT_EQ(object->m_bool, rootObject->m_bool);
-    EXPECT_EQ(object->m_int, rootObject->m_int);
-    EXPECT_EQ(object->m_float, rootObject->m_float);
-    EXPECT_EQ(object->m_text, rootObject->m_text);
+    EXPECT_EQ(object->m_bool, loadedEx->m_bool);
+    EXPECT_EQ(object->m_int, loadedEx->m_int);
+    EXPECT_EQ(object->m_float, loadedEx->m_float);
+    EXPECT_EQ(object->m_text, loadedEx->m_text);
+
+    EXPECT_EQ(objectChild->m_bool, loadedEx2->m_bool);
+    EXPECT_EQ(objectChild->m_int, loadedEx2->m_int);
+    EXPECT_EQ(objectChild->m_float, loadedEx2->m_float);
+    EXPECT_EQ(objectChild->m_text, loadedEx2->m_text);
 }
 
-TEST(Serialization, SaveSimpleText)
+static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Array<RefPtr<tests::MassTestObject>>& outTestObjects, Array<ObjectPtr>& outRoots)
 {
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
+    FastRandState rand;
+
+    for (uint32_t i = 0; i < objectCount; ++i)
+    {
+        auto ptr = base::CreateSharedPtr<tests::MassTestObject>();
+
+        auto parentIndex = (int)RandMax(rand, outTestObjects.size()) - 1;
+        if (parentIndex == -1)
+        {
+            outRoots.pushBack(ptr);
+        }
+        else
+        {
+            ptr->parent(outTestObjects[parentIndex]);
+            outTestObjects[parentIndex]->m_child.pushBack(ptr);
+        }
+
+        outTestObjects.pushBack(ptr);
+
+        auto numArrays = 1 + RandMax(rand, contentSize);
+        ptr->m_crap.reserve(numArrays);
+        for (uint32_t j = 0; j < numArrays; ++j)
+        {
+            auto& ar = ptr->m_crap.emplaceBack();
+            auto numArrays2 = 1 + RandMax(rand, contentSize);
+            ar.reserve(numArrays2);
+
+            for (uint32_t k = 0; k < numArrays2; ++k)
+            {
+                auto& entry = ar.emplaceBack();
+                entry.min.x = RandRange(rand, -10.0f, 10.0f);
+                entry.min.y = RandRange(rand, -10.0f, 10.0f);
+                entry.min.z = RandRange(rand, -10.0f, 10.0f);
+                entry.max.x = RandRange(rand, -10.0f, 10.0f);
+                entry.max.y = RandRange(rand, -10.0f, 10.0f);
+                entry.max.z = RandRange(rand, -10.0f, 10.0f);
+            }
+        }
+    }
+}
+
+TEST(Serialization, SaveLoadMassiveProtected)
+{
+    base::Array<ObjectPtr> roots;
+    base::Array<RefPtr<tests::MassTestObject>> objects;
+    GenerateCrapContent(500, 20, objects, roots);
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    {
+        ScopeTimer timer;
+        HelperSave(roots, data, true);
+        TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
+    }
 
-    // get the text
-    auto txt  = (const char*)writer.data();
+    // loaded object
+    {
+        ScopeTimer timer;
+        base::Array<base::ObjectPtr> loaded;
+        HelperLoad(data, loaded);
+        TRACE_WARNING("Load protected took {}", timer);
+    }
 }
 
-TEST(Serialization, SaveSimpleTextWithData)
+TEST(Serialization, SaveLoadMassiveUnprotected)
 {
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
+    base::Array<ObjectPtr> roots;
+    base::Array<RefPtr<tests::MassTestObject>> objects;
+    GenerateCrapContent(500, 20, objects, roots);
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    {
+        ScopeTimer timer;
+        HelperSave(roots, data, false);
+        TRACE_WARNING("Save unprotected took {}, content {}", timer, MemSize(data.size()));
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
+    }
 
-    // get the text
-    auto txt  = (const char*)writer.data();
+    // loaded object
+    {
+        ScopeTimer timer;
+        base::Array<base::ObjectPtr> loaded;
+        HelperLoad(data, loaded);
+        TRACE_WARNING("Load unprotected took {}", timer);
+    }
 }
 
-TEST(Serialization, SaveSimpleTextWithTwoRoots)
+TEST(Serialization, SaveLoadMassiveMostlyObjectsProtected)
 {
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
+    base::Array<ObjectPtr> roots;
+    base::Array<RefPtr<tests::MassTestObject>> objects;
+    GenerateCrapContent(5000, 3, objects, roots);
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    saveContext.m_initialExports.pushBack(object2);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    {
+        ScopeTimer timer;
+        HelperSave(roots, data, true);
+        TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
+    }
 
-    // get the text
-    auto txt  = (const char*)writer.data();
+    // loaded object
+    {
+        ScopeTimer timer;
+        base::Array<base::ObjectPtr> loaded;
+        HelperLoad(data, loaded);
+        TRACE_WARNING("Load protected took {}", timer);
+    }
 }
 
-TEST(Serialization, SaveSimpleTextWithTwoObjectsParented)
+TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
 {
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    //object2->parent(object);
-    object->m_child = object2;
-
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
+    base::Array<ObjectPtr> roots;
+    base::Array<RefPtr<tests::MassTestObject>> objects;
+    GenerateCrapContent(5000, 3, objects, roots);
 
     // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
+    base::Buffer data;
+    for (;;)
+    {
+        ScopeTimer timer;
+        HelperSave(roots, data, false);
+        TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
+        //auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        //TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
+    }
 
-    // get the text
-    auto txt  = (const char*)writer.data();
+    // loaded object
+    /*{
+        ScopeTimer timer;
+        base::Array<base::ObjectPtr> loaded;
+        HelperLoad(data, loaded);
+        TRACE_WARNING("Load protected took {}", timer);
+    }*/
 }
-
-TEST(Serialization, SaveSimpleTextWithTwoCrossRefObjects)
-{
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
-
-    object->m_child = object2;
-    object2->m_child = object;
-
-    // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    saveContext.m_initialExports.pushBack(object2);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
-
-    // get the text
-    auto txt  = (const char*)writer.data();
-}
-
-TEST(Serialization, SaveSimpleTextDeepReference)
-{
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
-
-    RefPtr<tests::TestObject> object3 = CreateSharedPtr<tests::TestObject>();
-    object3->m_float = 2.7172f;
-    object3->m_int = 666;
-    object3->m_text = "Brown fox jumps over lazy dog";
-
-    object->m_child = object3;
-
-    object2->m_child = object3;
-    //object3->parent(object2);
-
-    // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    saveContext.m_initialExports.pushBack(object2);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
-
-    // get the text
-    auto txt  = (const char*)writer.data();
-}
-
-TEST(Serialization, SaveSimpleTextDeepNullified)
-{
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
-
-    RefPtr<tests::TestObject> object3 = CreateSharedPtr<tests::TestObject>();
-    object3->m_float = 2.7172f;
-    object3->m_int = 666;
-    object3->m_text = "Brown fox jumps over lazy dog";
-
-    object->m_child = object3;
-
-    object2->m_child = object3;
-    //object3->parent(object2);
-
-    // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    saveContext.m_initialExports.pushBack(object2);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
-
-    // get the text
-    auto txt  = (const char*)writer.data();
-}
-
-TEST(Serialization, SaveSimpleTextDeepNotReachable)
-{
-    // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
-    object->m_bool = true;
-    object->m_float = 0.12345678f;
-    object->m_int = 666;
-    object->m_text = "Complicated string with problems";
-
-    RefPtr<tests::TestObject> object2 = CreateSharedPtr<tests::TestObject>();
-    object2->m_float = 3.1415926535f;
-    object2->m_int = 42;
-    object2->m_text = "Ala ma kota";
-
-    RefPtr<tests::TestObject> object3 = CreateSharedPtr<tests::TestObject>();
-    object3->m_float = 2.7172f;
-    object3->m_int = 666;
-    object3->m_text = "Brown fox jumps over lazy dog";
-
-    object->m_child = object3;
-
-    //object2->m_child = object3;
-    //object3->parent(object2);
-
-    // save to memory
-    stream::MemoryWriter writer;
-    stream::SavingContext saveContext(object);
-    saveContext.m_initialExports.pushBack(object2);
-    res::text::TextSaver saver;
-    ASSERT_TRUE(saver.saveObjects(writer, saveContext)) << "Serialization failed";
-
-    // get the text
-    auto txt  = (const char*)writer.data();
-}
-
-
-

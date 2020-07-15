@@ -36,14 +36,13 @@ namespace base
                 ~WinAsyncReadDispatcher();
 
                 // process async IO request, returns the number of bytes read
-                CAN_YIELD uint64_t readAsync(HANDLE hSyncFile, HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory);
+                CAN_YIELD uint64_t readAsync(HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory);
 
             private:
                 struct Token
                 {
                     OVERLAPPED m_overlapped; // MUST BE FIRST
                     void* m_memory;
-                    HANDLE m_hSyncHandle;
                     HANDLE m_hAsyncHandle;
                     uint32_t m_size;
                     fibers::WaitCounter m_signal;
@@ -52,7 +51,6 @@ namespace base
 
                     INLINE Token()
                         : m_memory(nullptr)
-                        , m_hSyncHandle(NULL)
                         , m_hAsyncHandle(NULL)
                         , m_numBytesRead(nullptr)
                         , m_size(0)

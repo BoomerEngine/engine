@@ -19,6 +19,7 @@
 
 #include "base/canvas/include/canvas.h"
 #include "base/app/include/launcherPlatform.h"
+#include "base/ui/include/uiRenderer.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiDockContainer.h"
@@ -138,7 +139,7 @@ namespace ed
             // just close the window
             base::platform::GetLaunchPlatform().requestExit("Editor window closed");
         }
-    }
+    }   
 
     void MainWindow::requestEditorClose(const base::Array<ResourceEditor*>& editors)
     {
@@ -183,10 +184,23 @@ namespace ed
 
     bool MainWindow::saveFile(ManagedFile* file)
     {
-        return m_dockArea->iterateSpecificPanels<ResourceEditor>([file](ResourceEditor* editor)
+        TFileSet files;
+        if (file)
+            files.insert(file);
+        return saveFiles(files);
+    }
+
+    bool MainWindow::saveFiles(const TFileSet& files)
+    {
+        bool ret = true;
+
+        m_dockArea->iterateSpecificPanels<ResourceEditor>([&files, &ret](ResourceEditor* editor)
             {
-                return editor->saveFile(file);
-            });        
+                ret &= editor->saveFile(files);
+                return true;
+            });
+
+        return ret;
     }
 
     bool MainWindow::selectFile(ManagedFile* file)
@@ -200,18 +214,26 @@ namespace ed
         return m_assetBrowser->selectedFile();
     }
 
+    ManagedDirectory* MainWindow::selectedDirectory() const
+    {
+        return m_assetBrowser->selectedDirectory();
+    }
+
     bool MainWindow::openFile(ManagedFile* file)
     {
         // no file to open
         if (!file)
             return false;
 
+        TFileSet files;
+        files.insert(file);
+
         // activate existing editor
-        if (m_dockArea->iterateSpecificPanels<ResourceEditor>([this, file](ResourceEditor* editor)
+        if (m_dockArea->iterateSpecificPanels<ResourceEditor>([this, &files](ResourceEditor* editor)
             {
-                if (editor->containsFile(file))
+                if (editor->containsFile(files))
                 {
-                    editor->showFile(file);
+                    editor->showFile(files);
                     m_dockArea->activatePanel(editor);
                     return true;
                 }

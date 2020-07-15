@@ -34,7 +34,6 @@ namespace rendering
         {
             base::StringBuf depotPath;
             uint64_t timestamp = 0;
-            uint64_t crc = 0;
             base::Buffer content;
         };
 

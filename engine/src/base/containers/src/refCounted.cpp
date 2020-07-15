@@ -13,6 +13,8 @@
 
 #include <unordered_set>
 
+//#define TRACK_REF_PTR
+
 namespace base
 {
     ///--
@@ -68,7 +70,8 @@ namespace base
     }
 
     ///--
-
+    
+#ifdef TRACK_REF_PTR
     class PointerTrackingRegistry
     {
     public:
@@ -179,7 +182,7 @@ namespace base
             }
         }
     };
-
+#endif
     ///--
 
     IReferencable::IReferencable(uint32_t initialRefCount /*= 1*/)
@@ -187,9 +190,10 @@ namespace base
         , m_realObject(!IsDefaultObjectCreation())
     {
         m_weakHolder = MemNewPool(POOL_REF_HOLDER, RefWeakContainer, this);
-
+#ifdef TRACK_REF_PTR
         if (m_realObject)
             PointerTrackingRegistry::GetInstance().TrackPointer(this);
+#endif
     }
 
     IReferencable::~IReferencable()
@@ -207,8 +211,10 @@ namespace base
             m_weakHolder = nullptr;
         }
 
+#ifdef TRACK_REF_PTR
         if (m_realObject)
             PointerTrackingRegistry::GetInstance().UntrackPointer(this);
+#endif
     }
 
     void IReferencable::addRef()
@@ -222,6 +228,11 @@ namespace base
         DEBUG_CHECK_EX(refCount >= 0, "Invalid reference count on release");
         if (0 == refCount)
             dispose();
+    }
+
+    void IReferencable::print(IFormatStream& f) const
+    {
+        f.appendf("0x{}", Hex(this));
     }
 
     RefWeakContainer* IReferencable::makeWeakRef() const
@@ -255,6 +266,14 @@ namespace base
             //m_currentTrackingId =
             ((IReferencable*)ptr)->addRef();
         }
+    }
+
+    void BaseRefPtr::printRefInternal(void* ptr, IFormatStream& f) const
+    {
+        if (ptr)
+            ((IReferencable*)ptr)->print(f);
+        else
+            f.append("null");
     }
 
     void BaseRefPtr::swapRefInternal(void** ptr, void* newPtr)
@@ -293,7 +312,9 @@ namespace base
 
     void DumpLiveRefCountedObjects()
     {
+#ifdef TRACK_REF_PTR 
         PointerTrackingRegistry::GetInstance().PrintActivePointer();
+#endif
     }
 
     ///--

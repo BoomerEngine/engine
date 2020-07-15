@@ -102,11 +102,17 @@ namespace base
 
             //--
 
-            /// get property data given the pointer to the object
+            /*/// get property data given the pointer to the object
             virtual const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
 
             /// get property data given the pointer to the object
-            virtual void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }
+            virtual void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }*/
+
+            /// get property data given the pointer to the object
+            ALWAYS_INLINE const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
+
+            /// get property data given the pointer to the object
+            ALWAYS_INLINE void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }
 
         protected:
             uint32_t m_offset;

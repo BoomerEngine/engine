@@ -129,6 +129,12 @@ namespace base
         return m_ptr;
     }
 
+    template< typename T >
+    INLINE void RefPtr<T>::print(IFormatStream& f) const
+    {
+        printRefInternal(m_ptr, f);
+    }
+
     //---
 
     template< typename T >

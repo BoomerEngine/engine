@@ -132,10 +132,15 @@ namespace base
                 m_scheduler->yieldCurrentJob();
         }
 
-        void Scheduler::waitForCounterAndRelease(const WaitCounter& counter)
+        void Scheduler::waitForCounterAndRelease(WaitCounter& counter)
         {
-            ASSERT(m_scheduler != nullptr);
-            m_scheduler->waitForCounterAndRelease(counter);
+            if (!counter.empty())
+            {
+                ASSERT(m_scheduler != nullptr);
+                m_scheduler->waitForCounterAndRelease(counter);
+            }
+
+            counter = WaitCounter();
         }
 
         void Scheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count)
@@ -233,15 +238,22 @@ void RunFiberLoop(const char* name, uint32_t count, int maxConcurency, const std
 {
     if (count > 0)
     {
-        auto jobDone = Fibers::GetInstance().createCounter(name, count);
-
-        RunChildFiber(name).invocations(count) << [jobDone, &func](FIBER_FUNC)
+        if (count == 1)
         {
-            func(index);
-            Fibers::GetInstance().signalCounter(jobDone);
-        };
+            func(0);
+        }
+        else
+        {
+            auto jobDone = Fibers::GetInstance().createCounter(name, count);
 
-        Fibers::GetInstance().waitForCounterAndRelease(jobDone);
+            RunChildFiber(name).invocations(count) << [jobDone, &func](FIBER_FUNC)
+            {
+                func(index);
+                Fibers::GetInstance().signalCounter(jobDone);
+            };
+
+            Fibers::GetInstance().waitForCounterAndRelease(jobDone);
+        }
     }
 }
 

@@ -28,13 +28,13 @@ namespace base
                 //----
 
                 // open physical file for reading
-                virtual FileHandlePtr openForReading(AbsolutePathView absoluteFilePath) = 0;
+                virtual ReadFileHandlePtr openForReading(AbsolutePathView absoluteFilePath) = 0;
 
                 // open physical file for writing
-                virtual FileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, bool append) = 0;
+                virtual WriteFileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) = 0;
 
-                // open physical file for reading and writing at the same time (cache file, package, etc)
-                virtual FileHandlePtr openForReadingAndWriting(AbsolutePathView absoluteFilePath, bool resetContent) = 0;
+                // open physical file for async reading
+                virtual AsyncFileHandlePtr openForAsyncReading(AbsolutePathView absoluteFilePath) = 0;
 
                 // load file content into a buffer
                 virtual Buffer loadIntoMemoryForReading(AbsolutePathView absoluteFilePath) = 0;
@@ -53,6 +53,9 @@ namespace base
 
                 //! Move file
                 virtual bool moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) = 0;
+
+                //! Copy file
+                virtual bool copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) = 0;
 
                 //! Delete file from disk
                 virtual bool deleteFile(AbsolutePathView absoluteFilePath) = 0;

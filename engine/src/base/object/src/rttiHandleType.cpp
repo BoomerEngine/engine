@@ -11,13 +11,8 @@
 #include "rttiClassType.h"
 #include "rttiDataView.h"
 
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
-#include "streamTextWriter.h"
-#include "streamTextReader.h"
-
-#include "serializationMapper.h"
-#include "serializationUnampper.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 #include "base/containers/include/inplaceArray.h"
 #include "dataView.h"
@@ -74,57 +69,18 @@ namespace base
             return IType::printToText(f, data, flags);
         }
         
-        bool IHandleType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
-        {
-            stream::MappedObjectIndex index = 0;
-
-            if (file.m_mapper != nullptr)
-            {
-                ObjectPtr handle;
-                readPointedObject(data, handle);
-
-                file.m_mapper->mapPointer(handle, index);
-            }
-
-            file.writeValue(index);
-            return true;
-        }
-
-        bool IHandleType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
-        {
-            stream::MappedObjectIndex index = 0;
-            file.readValue(index);
-            
-            if (file.m_unmapper != nullptr)
-            {
-                ObjectPtr object;
-                file.m_unmapper->unmapPointer(index, object);
-                writePointedObject(data, object);
-            }
-
-            return true;
-        }
-
-        bool IHandleType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
+        void IHandleType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             ObjectPtr handle;
             readPointedObject(data, handle);
-
-            stream.writeValue(handle);
-            return true;
+            file.writePointer(handle);
         }
 
-        bool IHandleType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
+        void IHandleType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            ObjectPtr handle;
-            if (!stream.readValue(handle))
-            {
-                TRACE_ERROR("Expected object reference");
-                return false;
-            }
-
-            writePointedObject(data, handle);
-            return true;
+            ObjectPtr ptr;
+            ptr = AddRef(file.readPointer());
+            writePointedObject(data, ptr);
         }
 
         bool IHandleType::CastHandle(const void* srcData, const IHandleType* srcHandleType, void* destData, const IHandleType* destHandleType)
@@ -259,12 +215,6 @@ namespace base
             ptr->reset();
         }
 
-        void WeakHandleType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            auto ptr = (ObjectWeakPtr*)data;
-            crc << ptr->holder();
-        }
-
         void WeakHandleType::readPointedObject(const void* data, ObjectPtr& outObject) const
         {
             auto& ptr = *(const ObjectWeakPtr*)data;
@@ -338,12 +288,6 @@ namespace base
         {
             auto ptr  = (ObjectPtr*)object;
             ptr->reset();
-        }
-
-        void StrongHandleType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            auto ptr = (ObjectPtr*)data;
-            crc << ptr->get();
         }
 
         void StrongHandleType::readPointedObject(const void* data, ObjectPtr& outObject) const

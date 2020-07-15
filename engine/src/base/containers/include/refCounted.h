@@ -63,6 +63,11 @@ namespace base
         // lock a weak reference
         RefWeakContainer* makeWeakRef() const;
 
+        //--
+
+        // print some object description
+        virtual void print(IFormatStream& f) const;
+
     protected:
         // dispose of this object - called when reference count reaches zero
         virtual void dispose();

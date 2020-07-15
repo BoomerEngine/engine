@@ -33,8 +33,6 @@ namespace base
             //void content(Table&& tableToConsume);
 
         private:
-            virtual bool onReadBinary(stream::IBinaryReader& reader) override;
-            virtual bool onWriteBinary(stream::IBinaryWriter& writer) const override;
 
             //TablePtr data;
         };

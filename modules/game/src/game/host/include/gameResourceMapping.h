@@ -46,9 +46,9 @@ namespace game
     //---
 
     /// file with resource definitions
-    class GAME_HOST_API ResourceList : public base::res::ITextResource
+    class GAME_HOST_API ResourceList : public base::res::IResource
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(ResourceList, base::res::ITextResource);
+        RTTI_DECLARE_VIRTUAL_CLASS(ResourceList, base::res::IResource);
 
     public:
         ResourceList();

@@ -13,8 +13,6 @@
 #include "base/config/include/configEntry.h"
 #include "base/containers/include/hashSet.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/object/include/streamTextReader.h"
-#include "base/object/include/streamTextWriter.h"
 #include "base/object/include/rttiArrayType.h"
 #include "base/reflection/include/variant.h"
 
@@ -273,16 +271,6 @@ namespace base
             // parse the value
             if (!type->parseFromString(value, newValue.data()))
                 return false;
-
-            /*// print update
-            if (!type->compare(data, newValue.data()))
-            {
-                StringBuilder old, cur;
-
-                helper::ConfigTextWriter oldWriter(old), curWriter(cur);
-                type->writeText(context, oldWriter, data, nullptr);
-                type->writeText(context, curWriter, newValue.data(), nullptr);
-            }*/
         }
 
         // update value

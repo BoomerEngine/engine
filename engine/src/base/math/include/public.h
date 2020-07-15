@@ -14,6 +14,7 @@
 #include "base_math_glue.inl"
 
 // Math is global
+#include "mathConstants.h" // TODO: remove!
 #include "mathCommon.h"
 
 // Math classes
@@ -38,6 +39,7 @@
 #include "simd.h"
 #include "stack2D.h"
 #include "stack3D.h"
+#include "mathRandom.h"
 
 // Inlined part of math classes
 #include "vector2.inl"
@@ -60,3 +62,4 @@
 #include "simd.inl"
 #include "stack2D.inl"
 #include "stack3D.inl"
+#include "mathRandom.inl"

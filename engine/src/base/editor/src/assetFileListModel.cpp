@@ -50,8 +50,6 @@ namespace ed
 
     bool AssetBrowserDirContentModel::canDisplayFile(const ManagedFile* file) const
     {
-        if (file->fileFormat().nativeResourceClass().is<base::res::IResourceManifest>())
-            return false;
         if (!file->fileFormat().cookableOutputs().empty())
             return true;
         return false;

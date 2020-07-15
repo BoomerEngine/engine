@@ -486,7 +486,10 @@ namespace base
 
     INLINE SIMDQuad SIMDQuad::frac() const
     {
-        return SIMDQuad(Frac((*this)[0]), Frac((*this)[1]), Frac((*this)[2]), Frac((*this)[3]));
+        return SIMDQuad((*this)[0] - std::trunc((*this)[0]),
+                        (*this)[1] - std::trunc((*this)[1]),
+                        (*this)[2] - std::trunc((*this)[2]),
+                        (*this)[3] - std::trunc((*this)[3]));
     }
 
     INLINE SIMDQuad SIMDQuad::frac_SSE41() const

@@ -11,18 +11,18 @@
 
 #include "base/xml/include/xmlUtils.h"
 #include "base/xml/include/xmlDocument.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamTextReader.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/containers/include/inplaceArray.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
 
 namespace base
 {
     RTTI_BEGIN_CUSTOM_TYPE(TagList);
         RTTI_TYPE_TRAIT().zeroInitializationValid();
+        RTTI_BIND_NATIVE_BINARY_SERIALIZATION(TagList);
+        //RTTI_BIND_NATIVE_PRINT(TagList);
     RTTI_END_TYPE();
 
     TagList GEmptyTagList;
@@ -136,68 +136,29 @@ namespace base
         return true;
     }
 
-    bool TagList::writeBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryWriter& stream) const
+    void TagList::writeBinary(stream::OpcodeWriter& stream) const
     {
+        stream.beginArray(m_tags.size());
         for (auto& tag : m_tags)
-            stream.writeName(tag);
-        stream.writeName(Tag::EMPTY());
-        return true;
+            stream.writeStringID(tag);
+        stream.endArray();
     }
 
-    bool TagList::writeText(const rtti::TypeSerializationContext& typeContext, stream::ITextWriter& stream) const
+    void TagList::readBinary(stream::OpcodeReader& stream)
     {
-        StringBuilder ret;
+        uint32_t count = 0;
+        stream.enterArray(count);
 
-        for (auto& tag : m_tags)
+        m_tags.reset();
+        m_tags.reserve(count);
+
+        for (uint32_t i=0; i<count; ++i)
         {
-            if (!ret.empty())
-                ret.append(",");
-            ret.append(tag.c_str());
+            if (auto tag = stream.readStringID())
+    			m_tags.insert(tag);
         }
 
-        stream.writeValue(ret.toString());
-        return true;
-    }
-
-    bool TagList::readBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryReader& stream)
-    {
-		InplaceArray<Tag, 10> tags;
-        while (1)
-        {
-            Tag tag = stream.readName();
-            if (tag.empty())
-                break;
-
-			tags.pushBack(tag);
-        }
-
-		m_tags = std::move(TagContainer(tags));
         refreshHash();
-    	
-        return true;
-    }
-
-    bool TagList::readText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream)
-    {
-        clear();
-
-        StringView<char> txt;
-        if (!stream.readValue(txt))
-        {
-            TRACE_WARNING("Unable to load string data when string data was expected");
-            return true; // let's try to continue
-        }
-
-        // split into tags
-        InplaceArray<StringView<char>, 32> tags;
-        txt.slice(";", false, tags);
-
-        // process the data
-        for (auto& tag : tags)
-            add(tag);
-
-        // loaded
-        return true;
     }
 
     void TagList::refreshHash()

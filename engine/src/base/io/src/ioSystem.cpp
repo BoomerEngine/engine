@@ -42,19 +42,19 @@ namespace base
             TRACE_SPAM("File system started");
         }
 
-        FileHandlePtr System::openForReading(AbsolutePathView absoluteFilePath)
+        ReadFileHandlePtr System::openForReading(AbsolutePathView absoluteFilePath)
         {
             return m_handler->openForReading(absoluteFilePath);
         }
 
-        FileHandlePtr System::openForWriting(AbsolutePathView absoluteFilePath, bool append /*= false*/)
+        WriteFileHandlePtr System::openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
         {
-            return m_handler->openForWriting(absoluteFilePath, append);
+            return m_handler->openForWriting(absoluteFilePath, mode);
         }
 
-        FileHandlePtr System::openForReadingAndWriting(AbsolutePathView absoluteFilePath, bool resetContent /*= false*/)
+        AsyncFileHandlePtr System::openForAsyncReading(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->openForReadingAndWriting(absoluteFilePath, resetContent);
+            return m_handler->openForAsyncReading(absoluteFilePath);
         }
 
         Buffer System::loadIntoMemoryForReading(AbsolutePathView absoluteFilePath)
@@ -84,37 +84,12 @@ namespace base
 
         bool System::copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
         {
-            // open source
-            auto src  = openForReading(srcAbsolutePath);
-            if (!src)
-            {
-                TRACE_ERROR("FileCopy unable to open source file \"{}\"", srcAbsolutePath);
-                return false;
-            }
-
-            // open destination
-            auto dest  = openForWriting(destAbsolutePath, false);
-            if (!dest)
-            {
-                TRACE_ERROR("FileCopy unable to open source file \"{}\"", destAbsolutePath);
-                return false;
-            }
-
-            return CopyContent(*src, *dest);
+            return m_handler->copyFile(srcAbsolutePath, destAbsolutePath);
         }
 
         bool System::moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
         {
-            // move file using handler
-            if (m_handler->moveFile(srcAbsolutePath, destAbsolutePath))
-                return true;
-
-            // copy to target
-            if (!copyFile(srcAbsolutePath, destAbsolutePath))
-                return false;
-
-            // delete source
-            return deleteFile(srcAbsolutePath);
+            return m_handler->moveFile(srcAbsolutePath, destAbsolutePath);
         }
 
         bool System::deleteDir(AbsolutePathView absoluteDirPath)

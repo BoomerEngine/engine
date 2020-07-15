@@ -10,6 +10,7 @@
 
 #include "base/containers/include/hashMap.h"
 #include "base/resource/include/resource.h"
+#include "base/resource_compiler/include/importSourceAsset.h"
 
 namespace wavefront
 {
@@ -71,9 +72,9 @@ namespace wavefront
 
     /// unpacked format data for MTL file
     /// can be stored in the import cache to speed up reimports from the same file
-    class ASSETS_OBJ_LOADER_API FormatMTL : public base::res::IResource
+    class ASSETS_OBJ_LOADER_API FormatMTL : public base::res::ISourceAsset
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(FormatMTL, base::res::IResource);
+        RTTI_DECLARE_VIRTUAL_CLASS(FormatMTL, base::res::ISourceAsset);
 
     public:
         FormatMTL();
@@ -97,6 +98,8 @@ namespace wavefront
         static bool ParseMaterialMap(base::StringParser& str, MaterialMap& outMap);
 
         //--
+
+        virtual uint64_t calcMemoryUsage() const override;
 
         virtual void onPostLoad() override;
         void buildMaterialMap();

@@ -48,15 +48,12 @@ namespace base
             virtual void destroyDefaultObject() const = 0;
 
             // IRTTI TYPE INTERFACE IMPLEMENTATION
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override final;
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override final;
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final;
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final;
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
             virtual bool compare(const void* data1, const void* data2) const override;
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
             virtual void copy(void* dest, const void* src) const override;
-            virtual void calcCRC64(CRC64& crc, const void* data) const override final;
             
             // DATA VIEW
             virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
@@ -198,8 +195,8 @@ namespace base
 
             //--
 
-            bool handlePropertyMissing(const TypeSerializationContext& context, StringID name, Type dataType, const void* data) const;
-            bool handlePropertyTypeChange(const TypeSerializationContext& context, StringID name, Type dataType, const void* data, Type currentType, void* currentData) const;
+            bool handlePropertyMissing(TypeSerializationContext& context, StringID name, Type dataType, const void* data) const;
+            bool handlePropertyTypeChange(TypeSerializationContext& context, StringID name, Type dataType, const void* data, Type currentType, void* currentData) const;
 
             virtual void cacheTypeData() override;
             virtual void releaseTypeReferences() override;

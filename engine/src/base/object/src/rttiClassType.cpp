@@ -16,12 +16,8 @@
 #include "rttiDataView.h"
 #include "rttiResourceReferenceType.h"
 
-#include "streamBinaryBase.h"
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
-#include "streamTextWriter.h"
-#include "streamTextReader.h"
-#include "serializationUnampper.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 namespace base
 {
@@ -60,24 +56,6 @@ namespace base
         {
             for (auto prop  : allProperties())
                 prop->type()->copy(prop->offsetPtr(dest), prop->offsetPtr(src));
-        }
-
-        void IClassType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            if (traits().simpleCopyCompare)
-            {
-                crc.append(data, size());
-            }
-            else
-            {
-                const auto& props = allProperties();
-                crc << props.size();
-                for (auto prop : props)
-                {
-                    crc << prop->name();
-                    prop->type()->calcCRC64(crc, prop->offsetPtr(data));
-                }
-            }
         }
 
         void IClassType::printToText(IFormatStream& f, const void* data, uint32_t flags) const
@@ -249,113 +227,62 @@ namespace base
             return true;
         }
         
-        namespace prv
+        void IClassType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
-
-            //--
-
-            class BinaryBlockSkipProtectorWriter : public base::NoCopy
-            {
-            public:
-                INLINE BinaryBlockSkipProtectorWriter(stream::IBinaryWriter& writer)
-                    : m_stream(writer)
-                    , m_archiveOffset(writer.pos())
-                {
-                    uint32_t placeholder = 0;
-                    writer.writeValue(placeholder);
-                }
-
-                INLINE ~BinaryBlockSkipProtectorWriter()
-                {
-                    uint64_t diskPastOffset = m_stream.pos();
-                    uint32_t skipOffset = static_cast<uint32_t>(diskPastOffset - m_archiveOffset);
-
-                    // Serialize skip offset
-                    m_stream.seek(m_archiveOffset);
-                    m_stream.writeValue(skipOffset);
-                    m_stream.seek(diskPastOffset);
-                }
-
-            private:
-                stream::IBinaryWriter& m_stream;
-                uint64_t m_archiveOffset;
-            };
-
-            //--
-
-            class BinaryBlockSkipProtectorReader : public base::NoCopy
-            {
-            public:
-                INLINE BinaryBlockSkipProtectorReader(stream::IBinaryReader& reader)
-                    : m_stream(reader)
-                {
-                    m_postDataOffset = reader.pos();
-
-                    uint32_t skipOffset = 0;
-                    reader.readValue(skipOffset);
-
-                    m_postDataOffset += skipOffset;
-                }
-
-                INLINE ~BinaryBlockSkipProtectorReader()
-                {
-                    m_stream.seek(m_postDataOffset);
-                }
-
-            private:
-                stream::IBinaryReader& m_stream;
-                uint64_t m_postDataOffset;
-            };
-
-            //--
-
-        } // prv
-
-
-        bool IClassType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
-        {
-            TypeSerializationContext localContext;
-            localContext.classContext = this;
+            TypeSerializationContextSetClass classContext(typeContext, this);
 
             // get the default context for saving if not specified
             if (!defaultData)
                 defaultData = defaultObject();
 
+            // enter compound block
+            file.beginCompound(this);
+
             // save properties
             auto& allProps = allProperties();
             for (auto prop  : allProps)
             {
-                // compare the property value with default, do not save if the same
-                auto propData  = prop->offsetPtr(data);
-                auto propDefaultData  = defaultData ? prop->offsetPtr(defaultData) : nullptr;
-                if (propDefaultData)
-                    if (prop->type()->compare(propData, propDefaultData))
-                        continue;
-
                 // skip transient properties
                 if (prop->flags().test(PropertyFlagBit::Transient))
                     continue;
 
-                // properties are identified by the hash and are mapped in the file to save the space
+                // ask object if we want to save this property
+                auto propData = prop->offsetPtr(data);
+                auto propDefaultData = defaultData ? prop->offsetPtr(defaultData) : nullptr;
+                if (typeContext.objectContext)
+                {
+                    // object may request property NOT to be saved for "reasons" or may tell us to save property even if the data is different, also for "reasons"
+                    if (!typeContext.objectContext->onPropertyShouldSave(prop))
+                        continue;
+                }
+                else
+                {
+                    // compare the property value with default, do not save if the same
+                    if (propDefaultData)
+                        if (prop->type()->compare(propData, propDefaultData))
+                            continue;
+                }
+
+                // write the reference to the property (it'll be mapped to an index as it's much faster to load it like that compared to ie. finding it by name every time)
                 file.writeProperty(prop);
+
+                // write the type of the data we are saving
+                file.writeType(prop->type());
 
                 // save property data in a skip able block so we can go over it if we can't read it
                 {
-                    localContext.propertyContext = prop;
+                    TypeSerializationContextSetProperty propertyContext(typeContext, prop);
 
-                    prv::BinaryBlockSkipProtectorWriter block(file);
-                    if (!prop->type()->writeBinary(localContext, file, propData, propDefaultData))
-                    {
-                        TRACE_ERROR("Failed to save value for property '{}' in class '{}', type '{}'",
-                                                  prop->name().c_str(), name().c_str(), prop->type()->name().c_str());
-                        return false;
-                    }
+                    file.beginSkipBlock();
+                    prop->type()->writeBinary(typeContext, file, propData, propDefaultData);
+                    file.endSkipBlock();
                 }
             }
 
-            // end of property list
-            file.writeProperty(nullptr);
-            return true;
+            // leave compound block
+            file.endCompound();
+            auto prevContext = typeContext.classContext;
+            typeContext.classContext = this;
         }
 
         namespace helper
@@ -384,204 +311,86 @@ namespace base
             }
         }
 
-        bool IClassType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void IClassType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            TypeSerializationContext localContext;
-            localContext.classContext = this;
+            TypeSerializationContextSetClass classContext(typeContext, this);
 
-            bool status = true;
+            // enter compound block and read properties
+            uint32_t propertyCount = 0;
+            file.enterCompound(propertyCount);
 
-            // load until we get the "end of the list" marker
-            while (1)
+            for (uint32_t i = 0; i < propertyCount; ++i)
             {
-                // get the actual property
-                const Property* prop = nullptr;
-                Type originalType = nullptr;
-                StringID propName, propClassName, propTypeName;
-                if (file.m_unmapper)
+                // read the property reference
+                StringID propertyName;
+                const auto* prop = file.readProperty(propertyName);
+
+                // ask if we want to read this property
+                if (prop && typeContext.objectContext && !typeContext.objectContext->onPropertyShouldLoad(prop))
                 {
-                    // read property reference
-                    stream::MappedPropertyIndex propIndex = 0;
-                    file.readValue(propIndex);
-
-                    // end of the list
-                    if (!propIndex)
-                        break;
-
-                    // unmap from file
-                    file.m_unmapper->unmapProperty(propIndex, prop, propClassName, propName, propTypeName, originalType);
-                }
-                else
-                {
-                    // read direct property values
-                    propName = file.readName();
-                    if (propName.empty())
-                        break;
-
-                    // read original data type
-                    originalType = file.readType();
-
-                    // find property
-                    prop = findProperty(propName);
-                    propClassName = name();
-                    propTypeName = originalType ? originalType->name() : StringID();
+                    TRACE_WARNING("Discarded property at {}: property '{}' was discarded by object", typeContext, propertyName);
+                    file.discardSkipBlock();
+                    continue;
                 }
 
-                // load property data
+                // read the type of data
+                StringID typeName;
+                if (const auto type = file.readType(typeName))
                 {
-                    prv::BinaryBlockSkipProtectorReader block(file);
+                    // we will attempt to read the data
+                    file.enterSkipBlock();
 
-                    // valid property
-                    if (prop)
+                    // missing property
+                    if (!prop)
                     {
-                        // set property to operation context
-                        localContext.propertyContext = prop;
+                        // load to a temporary data holder
+                        DataHolder tempData(type);
+                        type->readBinary(typeContext, file, tempData.data());
 
-                        // type matches ?
-                        if (originalType == prop->type() || helper::AreTypesBinaryComaptible(originalType.ptr(), prop->type()))
-                        {
-                            void* targetData = prop->offsetPtr(data);
-                            if (!prop->type()->readBinary(localContext, file, targetData))
-                            {
-                                TRACE_ERROR("Failed to load data for property '{}' in class '{}', type '{}'", prop->name(), name(), propTypeName);
-                                status = false;
-                            }
-                        }
-                        // type does not match but we have original type
-                        else if (originalType)
-                        {
-                            DataHolder originalData(originalType);
-                            if (originalType && !originalType->readBinary(localContext, file, originalData.data()))
-                            {
-                                TRACE_WARNING("Failed to load data for property '{}' in class '{}', type '{}' that was saved as '{}'", prop->name(), name(), propTypeName, originalType.name());
-                                // NOTE: we don't fail loading since this property might have been removed
-                                continue;
-                            }
-
-                            // try to convert the data using built in conversions
-                            void* targetData = prop->offsetPtr(data);
-                            if (!ConvertData(originalData.data(), originalType, targetData, prop->type()))
-                            {
-                                // handle type conversion for property, this will try to convert the data in an automatic way
-                                handlePropertyTypeChange(typeContext, propName, originalType, originalData.data(), prop->type(), targetData);
-                            }
-                        }
-                        // original type of property was lost, there's no way to load the data any more
-                        else
-                        {
-                            TRACE_WARNING("Failed to load data for property '{}' in class '{}', original data type was removed", prop->name(), name());
-                        }
+                        // allow some extend of recovery
+                        handlePropertyMissing(typeContext, propertyName, type, tempData.data());
                     }
-                    // we've lost property
+
+                    // try to read directly
+                    else if (type == prop->type() || helper::AreTypesBinaryComaptible(type, prop->type()))
+                    {
+                        TypeSerializationContextSetProperty propertyContext(typeContext, prop);
+
+                        void* targetData = prop->offsetPtr(data);
+                        prop->type()->readBinary(typeContext, file, targetData);
+                    }
+
+                    // we have property by the type is not compatible
                     else
                     {
-                        if (originalType)
-                        {
-                            DataHolder originalData(originalType);
-                            if (originalType && !originalType->readBinary(localContext, file, originalData.data()))
-                            {
-                                TRACE_WARNING("Failed to load data for missing property '{}' in class '{}', type '{}' that was saved as '{}'", propName, name(), propTypeName, originalType.name());
-                                // NOTE: we don't fail loading since this property might have been removed
-                                continue;
-                            }
+                        TypeSerializationContextSetProperty propertyContext(typeContext, prop);
 
-                            // handle missing property, usually gives object a chance to copy data to other fields, etc
-                            void* targetData = prop->offsetPtr(data);
-                            handlePropertyMissing(typeContext, propName, originalType, originalData.data());
-                        }
-                        // original type of property was lost, there's no way to load the data any more
-                        else
+                        // load to a temporary data holder
+                        DataHolder tempData(type);
+                        type->readBinary(typeContext, file, tempData.data());
+
+                        // try automatic conversion
+                        void* targetData = prop->offsetPtr(data);
+                        if (!ConvertData(tempData.data(), tempData.type(), targetData, prop->type()))
                         {
-                            TRACE_WARNING("Failed to load data for property '{}' in class '{}', original data type was removed and property is missing", propName, name());
+                            // we failed to convert the type automatically but still allow for the recovery
+                            handlePropertyTypeChange(typeContext, propertyName, type, tempData.data(), prop->type(), targetData);
                         }
                     }
-                }
-            }
 
-            // return cumulative status
-            return status;
-        }   
-
-        bool IClassType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            TypeSerializationContext localContext;
-            localContext.classContext = this;
-
-            // get the default context for saving if not specified
-            if (!defaultData)
-                defaultData = defaultObject();
-
-            // save properties
-            auto& allProps = allProperties();
-            for (auto prop  : allProps)
-            {
-                // compare the property value with default, do not save if the same
-                auto propData  = prop->offsetPtr(data);
-                auto propDefaultData  = defaultData ? prop->offsetPtr(defaultData) : nullptr;
-                if (propDefaultData)
-                    if (prop->type()->compare(propData, propDefaultData))
-                        continue;
-
-                // skip transient properties
-                if (prop->flags().test(PropertyFlagBit::Transient))
-                    continue;
-
-                // begin name property data
-                ASSERT_EX(!prop->name().empty(), "Property without name is not allowed");
-                stream.beginProperty(prop->name().c_str());
-                
-                // set property to operation context
-                localContext.propertyContext = prop;
-
-                // save property data in a skip able block so we can go over it if we can't read it
-                if (!prop->type()->writeText(localContext, stream, propData, propDefaultData))
-                {
-                    TRACE_ERROR("Failed to save value for property '{}' in class '{}', type '{}'",
-                                prop->name().c_str(), name().c_str(), prop->type()->name().c_str());
-                    return false;
-                }
-
-                // end property data block
-                stream.endProperty();
-            }
-
-            return true;
-        }
-
-        bool IClassType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            TypeSerializationContext localContext;
-            localContext.classContext = this;
-
-            StringView<char> propName;
-            while (stream.beginProperty(propName))
-            {
-                //TRACE_INFO("Loading prop '{}' for '{}'", propName, name());
-
-                auto prop  = findProperty(StringID(propName));
-                if (prop)
-                {
-                    // set property to operation context
-                    localContext.propertyContext = prop;
-
-                    auto propData  = prop->offsetPtr(data);
-                    if (!prop->type()->readText(localContext, stream, propData))
-                    {
-                        stream.endProperty();
-                        TRACE_ERROR("Failed to load value for property '{}' in class '{}', type '{}'",
-                            prop->name(), name(), prop->type()->name());
-                        return false;
-                    }
+                    // exit the skip block
+                    file.leaveSkipBlock();
                 }
                 else
                 {
-                    TRACE_WARNING("Missing propertry '{}' in '{}'", propName, name());
+                    // we don't be able to read data - the type that was used to serialize it is GONE
+                    TRACE_WARNING("Lost property at {}: property '{}' was saved with missing type '{}'", typeContext, propertyName, typeName);
+                    file.discardSkipBlock();
                 }
-                    
-                stream.endProperty();
             }
 
-            return true;
+            // leave class
+            file.leaveCompound();
         }
 
         DataViewResult IClassType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
@@ -855,7 +664,7 @@ namespace base
             m_allFunctionsCached = false;
         }
 
-        bool IClassType::handlePropertyMissing(const TypeSerializationContext& context, StringID name, Type dataType, const void* data) const
+        bool IClassType::handlePropertyMissing(TypeSerializationContext& context, StringID name, Type dataType, const void* data) const
         {
             if (context.objectContext)
                 return context.objectContext->onPropertyMissing(name, dataType, data);
@@ -863,7 +672,7 @@ namespace base
             return false;
         }
 
-        bool IClassType::handlePropertyTypeChange(const TypeSerializationContext& context, StringID name, Type originalDataType, const void* originalData, Type currentType, void* currentData) const
+        bool IClassType::handlePropertyTypeChange(TypeSerializationContext& context, StringID name, Type originalDataType, const void* originalData, Type currentType, void* currentData) const
         {
             if (context.objectContext)
                 return context.objectContext->onPropertyTypeChanged(name, originalDataType, originalData, currentType, currentData);

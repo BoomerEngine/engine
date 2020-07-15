@@ -44,9 +44,9 @@ namespace ed
 
         virtual bool initialize() override;
         virtual bool uniqueWindow() { return false; }
-        virtual bool containsFile(ManagedFile* file) const override;
-        virtual bool showFile(ManagedFile* file) override;
-        virtual bool saveFile(ManagedFile* file) override;
+        virtual bool containsFile(const TFileSet& files) const override;
+        virtual bool showFile(const TFileSet& files) override;
+        virtual bool saveFile(const TFileSet& files) override;
 
         virtual void saveConfig() const override;
         virtual void collectOpenedFiles(AssetItemList& outList) const override;
@@ -70,6 +70,9 @@ namespace ed
         virtual bool createAspects();
         virtual void destroyAspects();
 
+        virtual bool saveInternal() = 0;
+        virtual bool modifiedInternal() const = 0;
+
         void cmdUndo();
         void cmdRedo();
         void cmdSave();
@@ -87,39 +90,36 @@ namespace ed
 
     ///---
 
-    /// editor for class specific resource
-    class BASE_EDITOR_API SingleCookedResourceEditor : public SingleResourceEditor
+    class BASE_EDITOR_API SingleLoadedResourceEditor : public SingleResourceEditor, public base::IObjectObserver 
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(SingleCookedResourceEditor, SingleResourceEditor);
-        
+        RTTI_DECLARE_VIRTUAL_CLASS(SingleLoadedResourceEditor, SingleResourceEditor);
+
     public:
-        SingleCookedResourceEditor(ConfigGroup config, ManagedFile* file, base::SpecificClassType<base::res::IResource> mainResourceClass);
-        virtual ~SingleCookedResourceEditor();
+        SingleLoadedResourceEditor(ConfigGroup config, ManagedFile* file);
+        virtual ~SingleLoadedResourceEditor();
 
-        INLINE base::SpecificClassType<base::res::IResource> mainResourceClass() const { return m_mainResourceClass; }
-        INLINE const base::res::ResourceKey& key() const { return m_key; }
+        // resource we are editing
+        INLINE const base::res::ResourcePtr& resource() const { return m_resource; }
 
-        INLINE const base::res::Ref<base::res::IResource>& previewResource() const { return m_previewResource; }
+        // show content of this resource in the editor
+        void bindResource(const base::res::ResourcePtr& newResource);
 
-        INLINE bool bakable() const { return m_bakable; }
+        // resource we are editing hash been changed (usually due to reload/reimport)
+        virtual void resourceChanged();
 
-        void bakeResource();
+    protected:
+        base::res::ResourcePtr m_resource; // resource being edited
+        uint32_t m_observerToken = 0;
 
-        virtual void previewResourceChanged();
+        virtual bool saveInternal() override;
+        virtual bool modifiedInternal() const override;
 
-    private:
-        base::res::ResourceKey m_key;
-        base::SpecificClassType<base::res::IResource> m_mainResourceClass;
+        void detachObserver();
+        void attachObserver();
 
-        base::res::Ref<base::res::IResource> m_previewResource;
-        bool m_bakable = false;
-
-        base::res::BakingJobPtr m_currentBakingJob;
-
-        virtual void fillToolMenu(ui::MenuButtonContainer* menu) override;
-        virtual void onPropertyChanged(StringView<char> path) override;
+        virtual void onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData) override;
     };
-
+    
     ///---
     
     /// file aspect editor
@@ -132,43 +132,15 @@ namespace ed
 
         INLINE SingleResourceEditor* editor() const { return m_editor; }
 
-        virtual void collectModifiedFiles(AssetItemList& outList) const = 0;
-        virtual bool saveFile(ManagedFile* file) = 0;
-        virtual bool modifiedFile(ManagedFile* file) const = 0;
-
         virtual bool initialize(SingleResourceEditor* editor);
         virtual void shutdown(); // called when editor is closed
-
-        virtual void previewResourceChanged();
+        virtual void resourceChanged();
 
     private:
         SingleResourceEditor* m_editor;
     };   
 
     ///---
-
-    /// manifest file aspect editor
-    class BASE_EDITOR_API SingleResourceEditorManifestAspect : public SingleResourceEditorAspect
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SingleResourceEditorManifestAspect, SingleResourceEditorAspect);
-
-    public:
-        SingleResourceEditorManifestAspect(base::SpecificClassType<base::res::IResourceManifest> manifestClass);
-
-        INLINE const res::ResourceCookingManifestPtr& manifest() const { return m_loadedManifest; }
-
-        virtual void collectModifiedFiles(AssetItemList& outList) const override;
-        virtual bool saveFile(ManagedFile* file) override;
-        virtual bool modifiedFile(ManagedFile* file) const override;
-
-        virtual bool initialize(SingleResourceEditor* editor);
-        virtual void shutdown(); // called when editor is closed
-
-    private:
-        base::SpecificClassType<base::res::IResourceManifest> m_manifestClass;
-        res::ResourceCookingManifestPtr m_loadedManifest;
-        bool m_manifestChanged = false;
-    };
-
+    
 } // editor
 

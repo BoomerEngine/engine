@@ -19,10 +19,6 @@
 #include "rttiMetadata.h"
 #include "rttiDataView.h"
 
-#include "base/object/include/serializationSaver.h"
-#include "base/object/include/serializationLoader.h"
-#include "base/object/include/memoryReader.h"
-#include "base/object/include/memoryWriter.h"
 #include "base/object/include/rttiProperty.h"
 
 #include "dataView.h"
@@ -148,34 +144,49 @@ namespace base
     void IObject::onPostLoad()
     {
     }
-
-    const void* IObject::defaultObject() const
+    
+    void IObject::print(IFormatStream& f) const
     {
-        return cls()->defaultObject();
+        f.appendf("{} ID:{} 0x{}", cls()->name(), id(), Hex(this));
     }
 
-    bool IObject::onReadBinary(stream::IBinaryReader& reader)
+    //--
+
+    void IObject::onReadBinary(stream::OpcodeReader& reader)
     {
         rtti::TypeSerializationContext typeContext;
-        return cls()->readBinary(typeContext, reader, this);
+        typeContext.objectContext = this;
+        cls()->readBinary(typeContext, reader, this);
     }
 
-    bool IObject::onWriteBinary(stream::IBinaryWriter& writer) const
+    void IObject::onWriteBinary(stream::OpcodeWriter& writer) const
     {
         rtti::TypeSerializationContext typeContext;
-        return cls()->writeBinary(typeContext, writer, this, defaultObject());
+        typeContext.objectContext = (IObject*)this;
+        cls()->writeBinary(typeContext, writer, this, cls()->defaultObject());
     }
 
-    bool IObject::onReadText(stream::ITextReader& reader)
+    bool IObject::onPropertyShouldSave(const rtti::Property* prop) const
     {
-        rtti::TypeSerializationContext typeContext;
-        return cls()->readText(typeContext, reader, this);
+        // skip transient properties
+        if (prop->flags().test(rtti::PropertyFlagBit::Transient))
+            return false;
+
+        // compare the property value with default, do not save if the same
+        auto propData = prop->offsetPtr(this);
+        auto propDefaultData = prop->offsetPtr(cls()->defaultObject());
+        if (prop->type()->compare(propData, propDefaultData))
+            return false;
+
+        // TODO: aditional checks ?
+
+        // we can save this property
+        return true;
     }
 
-    bool IObject::onWriteText(stream::ITextWriter& writer) const
+    bool IObject::onPropertyShouldLoad(const rtti::Property* prop)
     {
-        rtti::TypeSerializationContext typeContext;
-        return cls()->writeText(typeContext, writer, this, defaultObject());
+        return true;
     }
 
     bool IObject::onPropertyMissing(StringID propertyName, Type originalType, const void* originalData)
@@ -272,7 +283,7 @@ namespace base
         postEvent("OnPropertyChanged"_id, path);
     }
 
-    bool IObject::onPropertyFilter(StringView<char> propertyName) const
+    bool IObject::onPropertyFilter(StringID propertyName) const
     {
         return true;
     }

@@ -10,6 +10,7 @@
 #include "importSourceAsset.h"
 #include "importSourceAssetRepository.h"
 #include "importFileService.h"
+#include "importFileFingerprint.h"
 
 namespace base
 {
@@ -45,23 +46,28 @@ namespace base
             m_totalMemorySize = 0;
         }
 
-        bool SourceAssetRepository::fileExists(StringView<char> assetImportPath, uint64_t* outCRC) const
+        bool SourceAssetRepository::fileExists(StringView<char> assetImportPath) const
         {
-            return m_fileService->fileExists(assetImportPath, outCRC);
+            return m_fileService->fileExists(assetImportPath);
         }
 
-        Buffer SourceAssetRepository::loadSourceFileContent(StringView<char> assetImportPath, uint64_t& outCRC)
+        Buffer SourceAssetRepository::loadSourceFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint)
         {
-            return m_fileService->loadFileContent(assetImportPath, outCRC);
+            return m_fileService->loadFileContent(assetImportPath, outFingerprint);
         }
 
-        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView<char> assetImportPath, SpecificClassType<ISourceAsset> contentType, uint64_t& outCRC)
+        CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
         {
-            DEBUG_CHECK_EX(contentType && !contentType->isAbstract(), "Invalid content type class");
+            return m_fileService->checkFileStatus(assetImportPath, lastKnownTimestamp, lastKnownFingerprint, progress);
+        }
 
-            if (!contentType || contentType->isAbstract())
-                return nullptr;
+        ResourceConfigurationPtr SourceAssetRepository::compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass)
+        {
+            return m_fileService->compileBaseResourceConfiguration(assetImportPath, configurationClass);
+        }
 
+        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint)
+        {
             auto lock = CreateLock(m_lock);
 
             auto keyPath = StringBuf(assetImportPath).toLower();
@@ -71,31 +77,29 @@ namespace base
             m_cacheEntriesMap.findSafe(keyPath, entry);
             if (entry)
             {
-                DEBUG_CHECK_EX(entry->asset && entry->asset->is(contentType), "Cached asset entry is invalid");
-                if (entry->asset && entry->asset->is(contentType))
+                if (entry->asset)
                 {
-                    outCRC = entry->crc;
+                    outFingerprint = entry->fingerprint;
                     entry->lruTick = m_lruTick++;
                     return entry->asset;
                 }
             }
 
             // load content to buffer
-            uint64_t assetContentCRC = 0;
-            auto contentData = loadSourceFileContent(assetImportPath, assetContentCRC);
+            ImportFileFingerprint assetContentFingerprint;
+            auto contentData = loadSourceFileContent(assetImportPath, assetContentFingerprint);
             if (!contentData)
             {
                 TRACE_ERROR("Failed to load content for asset '{}', no source asset will be loaded", assetImportPath);
                 return nullptr;
             }
 
-            // create the asset
-            auto assetPtr = contentType.create();
-            if (!assetPtr->loadFromMemory(contentData))
-            {
-                TRACE_ERROR("Failed to load source asset '{}' from loaded data", assetImportPath);
-                return nullptr;
-            }
+            /// get physical path on disk
+            StringBuf contextPath(assetImportPath);
+            m_fileService->resolveContextPath(assetImportPath, contextPath);
+
+            // load the content
+            auto assetPtr = ISourceAssetLoader::LoadFromMemory(assetImportPath, contextPath, contentData);
 
             // add to cache
             if (assetPtr->shouldCacheInMemory())
@@ -108,7 +112,7 @@ namespace base
                 auto* entry = MemNew(CacheEntry).ptr;
                 entry->assetImportPath = keyPath;
                 entry->asset = assetPtr;
-                entry->crc = assetContentCRC;
+                entry->fingerprint = assetContentFingerprint;
                 entry->lruTick = m_lruTick++;
                 entry->memorySize = memorySize;
                 m_cacheEntries.pushBack(entry);
@@ -116,7 +120,7 @@ namespace base
             }
 
             // return loaded asset
-            outCRC = assetContentCRC;
+            outFingerprint = assetContentFingerprint;
             return assetPtr;
         }
 

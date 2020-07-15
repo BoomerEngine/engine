@@ -70,7 +70,7 @@ namespace base
         RTTI_FUNCTION("xyzw", _xyzw);
         RTTI_FUNCTION("wzyx", wzyx);
 
-        RTTI_STATIC_FUNCTION("Random", Rand);
+        //RTTI_STATIC_FUNCTION("Random", Rand);
     RTTI_END_TYPE();
 
     //--
@@ -93,10 +93,10 @@ namespace base
     const Vector4& Vector4::EW() { return EW_V4; }
     const Vector4& Vector4::INF() { return INF_V4; }
 
-    Vector4 Vector4::Rand(float min, float max)
+    /*Vector4 Vector4::Rand(float min, float max)
     {
         return Vector4(RandRange(min, max), RandRange(min, max), RandRange(min, max), RandRange(min, max));
-    }
+    }*/
 
     //--
 

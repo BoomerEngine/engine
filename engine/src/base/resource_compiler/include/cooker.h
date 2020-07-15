@@ -11,6 +11,7 @@
 #include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceMountPoint.h"
 #include "base/resource/include/resource.h"
+#include "base/resource/include/resourceCooker.h"
 
 namespace base
 {
@@ -55,7 +56,6 @@ namespace base
             };
 
             HashMap<StringBuf, Array<CookableClass>> m_cookableClassmap;
-            HashMap<StringBuf, SpecificClassType<IResource> > m_selfCookableClasses; // text resources that are cooked by serializing them to binary format
 
             //---
 

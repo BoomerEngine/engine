@@ -8,25 +8,18 @@
 
 #pragma once
 
-#include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/mesh/include/renderingMeshFormat.h"
+#include "rendering/mesh/include/renderingMesh.h"
+#include "rendering/mesh/include/renderingMeshStreamData.h"
 
 namespace rendering
 {
     //---
 
-    // cooker for creating a rendering mesh from a generic geometry mesh
-    class ASSETS_MESH_LOADER_API GenericMeshCooker : public base::res::IResourceCooker
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(GenericMeshCooker, base::res::IResourceCooker);
+    // pack rendering data from source data
+    // NOTE: this is the rendering-only cooking, no additional mesh data is cooked (SDF, physics, sound occlusion, etc)
+    extern ASSETS_MESH_LOADER_API bool BuildChunks(const Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks);
 
-    public:
-        GenericMeshCooker();
-
-        virtual void reportManifestClasses(base::Array<base::SpecificClassType<base::res::IResourceManifest>>& outManifestClasses) const override final;
-        virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override final;
-    };
-     
     //---
 
     // merge duplicated vertex buffer entries, returns new number of vertices and remapping table

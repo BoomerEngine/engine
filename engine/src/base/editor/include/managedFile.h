@@ -65,24 +65,14 @@ namespace ed
 
         //---
 
-        /*/// load a "sub-file" for this file - a "sub file" is created by appending extension at the end, ie. lena.png -> lena.png.manifest
-        /// NOTE: this can fail
-        ManagedFilePtr */
-
         // load content of this file as raw bytes
         Buffer loadRawContent() const;
 
-        // load content for this file for edition, uncached, does not go though resource loader
-        // NOTE: by the dependencies do, they are loaded as normal resources
-        res::ResourceHandle loadContent(SpecificClassType<res::IResource> dataClass);
+        // load content for this file for edition
+        res::ResourcePtr loadContent() const;
 
-        // load content for this file for edition, uncached, does not go though resource loader
-        // NOTE: by the dependencies do, they are loaded as normal resources
-        template< typename T >
-        INLINE RefPtr<T> loadContent()
-        {
-            return rtti_cast<T>(loadContent(T::GetStaticClass()));
-        }
+        // load resource metadata, valid only for serialized resources
+        res::MetadataPtr loadMetadata() const;
 
         //---
 
@@ -94,21 +84,6 @@ namespace ed
 
         // store new content for this file
         bool storeContent(const res::ResourceHandle& content);
-
-        //---
-
-        // load manifest if it exists
-        res::ResourceCookingManifestPtr loadManifest(SpecificClassType<res::IResourceManifest> manifestClass, bool createIfMissing = false);
-
-        // load manifest for this file for edition
-        template< typename T >
-        INLINE RefPtr<T> loadManifest(bool createIfMissing = false)
-        {
-            return rtti_cast<T>(loadManifest(T::GetStaticClass(), createIfMissing));
-        }
-
-        // save manifest, if the manifest is the same as the default manifest the file may be deleted
-        bool storeManifest(res::IResourceManifest* manifest);
 
         //---
 
@@ -143,14 +118,12 @@ namespace ed
 
         vsc::FileState m_state; // last source control state
 
-        Array<res::ResourceWeakHandle> m_loadedContent;
-
-        base::StringBuf formatManifestPath(SpecificClassType<res::IResourceManifest> manifestClass) const;
-
         ///----
 
         Buffer loadRawContent(StringView<char> depotPath) const;
         bool storeRawContent(StringView<char> depotPath, Buffer data);
+
+        res::BaseReference loadContentInternal(SpecificClassType<res::IResource> resoureClass);
 
         ///---
 

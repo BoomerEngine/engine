@@ -10,6 +10,7 @@
 #include "uiElementStyle.h"
 #include "uiElement.h"
 #include "uiDataStash.h"
+#include "uiStyleValue.h"
 
 namespace ui
 {   
@@ -19,6 +20,52 @@ namespace ui
     {
         if (const style::Library* styles = stash.styles().acquire())
             m_styleLibraries.pushBack(styles);
+    }
+
+    static void CalcParamCRC(base::Type type, const void* data, base::CRC64& crc)
+    {
+        static const auto fontFamily = base::reflection::GetTypeObject<ui::style::FontFamily>();
+        static const auto imageReference = base::reflection::GetTypeObject<ui::style::ImageReference>();
+        static const auto renderStyle = base::reflection::GetTypeObject<ui::style::RenderStyle>();
+        static const auto stringBuf = base::reflection::GetTypeObject<base::StringBuf>();
+        static const auto stringId = base::reflection::GetTypeObject<base::StringID>();
+       
+        if (type == fontFamily)
+        {
+            crc << ((const ui::style::FontFamily*)(data))->hash();
+        }
+        else if (type == imageReference)
+        {
+            crc << ((const ui::style::ImageReference*)(data))->hash();
+        }
+        else if (type == renderStyle)
+        {
+            crc << ((const ui::style::RenderStyle *)(data))->hash();
+        }
+        else if (type == stringBuf)
+        {
+            crc << ((const base::StringBuf*)(data))->cRC32();
+        }
+        else if (type == stringId)
+        {
+            crc << ((const base::StringID*)(data))->index();
+        }
+        else
+        {
+            crc.append(data, type->traits().size);
+          //  ASSERT_EX(false, base::TempString("Unsupported UI data type: '{}'", type));
+        }
+    }
+
+    static void CalcParamCRC(const base::VariantTable& table, base::CRC64& crc)
+    {
+        crc << table.parameters().size();
+        for (const auto& entry : table.parameters())
+        {
+            crc << entry.name.index();
+            crc << entry.data.type().ptr();
+            CalcParamCRC(entry.data.type(), entry.data.data(), crc);
+        }
     }
 
     bool StyleStack::buildTable(uint64_t& outTableKey, ParamTablePtr& outTableData) const
@@ -48,7 +95,7 @@ namespace ui
         // TODO: could be better - here we don't take into account that some styles may get overridden
         base::CRC64 tableKey;
         for (const auto& table : collectedTables)
-            table->values.calcCRC64(tableKey);
+            CalcParamCRC(table->values, tableKey);
 
         // easy case - we already have data
         if (outTableKey == tableKey.crc())

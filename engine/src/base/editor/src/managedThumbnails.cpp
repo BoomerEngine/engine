@@ -14,10 +14,8 @@
 #include "base/io/include/absolutePathBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/process/include/process.h"
-#include "base/resource/include/resourceUncached.h"
 #include "base/io/include/absolutePath.h"
 #include "base/resource_compiler/include/depotStructure.h"
-#include "base/object/include/nativeFileReader.h"
 #include "base/resource/include/resourceThumbnail.h"
 
 #include "editorService.h"
@@ -148,7 +146,7 @@ namespace ed
 
     void ManagedThumbnailHelper::loadThumbnailData(ManagedFile* file)
     {
-        PC_SCOPE_LVL1(LoadThumbnailData);
+        /*PC_SCOPE_LVL1(LoadThumbnailData);
         StringBuf filePath = TempString("{}.thumb", file->depotPath());
         if (auto loader = m_depot.createFileReader(filePath))
         {
@@ -165,7 +163,7 @@ namespace ed
         else
         {
             TRACE_INFO("No thumbnail data for '{}'", file->depotPath());
-        }
+        }*/
     }
 
     void ManagedThumbnailHelper::processLoadingJob(ManagedFile* file)

@@ -11,6 +11,7 @@
 #include "renderingDriver.h"
 
 #include "base/containers/include/stringBuilder.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {

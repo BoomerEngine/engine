@@ -80,6 +80,9 @@ namespace ui
         /// pull input event from native window, returns null if queue empty
         virtual base::input::EventPtr windowPullInputEvent(NativeWindowID id) = 0;
 
+        /// get native window handle
+        virtual uint64_t windowNativeHandle(NativeWindowID id) = 0;
+
         /// show/hide window, newly created windows are initially hidden so SetWindowPos/Size/Title can be called on them first
         virtual void windowShow(NativeWindowID id, bool visible) = 0;
 
@@ -198,6 +201,9 @@ namespace ui
 
         /// check current window movable state
         bool queryWindowMovableState(Window* window) const;
+
+        /// get the native window handle of this window, HWND, etc
+        uint64_t queryWindowNativeHandle(Window* window) const;
 
         //---
 

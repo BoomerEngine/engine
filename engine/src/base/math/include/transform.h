@@ -170,13 +170,8 @@ namespace base
         //---
 
         // Custom type implementation requirements
-        bool writeBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream) const;
-        bool writeText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream) const;
-        bool readBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream);
-        bool readText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextReader& stream);
-
-        // Calculate hash of the data
-        void calcHash(CRC64& crc) const;
+        void writeBinary(base::stream::OpcodeWriter& stream) const;
+        void readBinary(base::stream::OpcodeReader& stream);
 
         //---
 

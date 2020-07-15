@@ -9,6 +9,7 @@
 #include "build.h"
 #include "scriptCompiledProject.h"
 #include "scriptPortableData.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

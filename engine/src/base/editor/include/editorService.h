@@ -59,7 +59,24 @@ namespace ed
         // get selected depot file
         ManagedFile* selectedFile() const;
 
+        // get selected directory
+        ManagedDirectory* selectedDirectory() const;
+
         ///---
+
+        // get parent window native handle for given ui element (usefull for OS interop)
+        uint64_t windowNativeHandle(ui::IElement* elem) const;
+
+        ///--
+
+        // show/open the asset importer window
+        bool openAssetImporter();
+
+        // add a file to import list, if no directory is specified file is added to active directory
+        bool addImportFiles(const base::Array<base::StringBuf>& assetPaths, const ManagedDirectory* directoryOverride = nullptr);
+
+        ///---
+
 
     private:
         UniquePtr<ManagedDepot> m_managedDepot;
@@ -74,9 +91,13 @@ namespace ed
         ImGuiID m_mainDockId;
 
         //--
+
+        ui::Renderer* m_renderer = nullptr;
+
+        //--
             
         base::RefPtr<MainWindow> m_mainWindow;
-        ui::Renderer* m_renderer = nullptr;
+        base::RefPtr<AssetImportWindow> m_assetImporter;
 
         //--
 

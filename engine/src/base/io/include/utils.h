@@ -14,7 +14,7 @@ namespace base
 
     namespace io
     {
-        class IFileHandle;
+        class IReadFileHandle;
         class AbsolutePath;
 
         // load content of an absolute file on disk to a string buffer
@@ -39,25 +39,17 @@ namespace base
 
         // save string (ANSI / UTF16) to file on disk
         // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromString(const AbsolutePath& absoluteFilePath, StringView<char>str, bool append = false);
+        extern BASE_IO_API bool SaveFileFromString(const AbsolutePath& absoluteFilePath, StringView<char>str);
 
         // save block of memory to file on disk
         // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const void* buffer, size_t size, bool append = false);
+        extern BASE_IO_API bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const void* buffer, size_t size);
 
         // save block of memory to file on disk
         // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const Buffer& buffer, bool append = false);
+        extern BASE_IO_API bool SaveFileFromBuffer(const AbsolutePath& absoluteFilePath, const Buffer& buffer);
 
         //---
-
-        // copy content of one physical file to other physical file
-        // returns true if content was copied, false if there were errors
-        extern BASE_IO_API bool CopyContent(IFileHandle& reader, IFileHandle& writer, size_t sizeClamp = MAX_SIZE_T);
-
-        // load content of file into buffer allocated via MemAlloc
-        // returns the buffer handle
-        extern BASE_IO_API Buffer LoadContentToBuffer(IFileHandle& reader, uint64_t initialOffset = 0, size_t sizeClamp = MAX_SIZE_T);
 
     } // io
 } // base

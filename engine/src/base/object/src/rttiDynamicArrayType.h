@@ -35,6 +35,7 @@ namespace base
 				virtual uint32_t maxArrayCapacity(const void* data) const override final;
                 virtual bool canArrayBeResized() const override final;
                 virtual bool clearArrayElements(void* data) const override final;
+                virtual bool resizeArrayElements(void* data, uint32_t count) const override final;
                 virtual bool removeArrayElement(const void* data, uint32_t index) const override final;
                 virtual bool createArrayElement(void* data, uint32_t index) const override final;
                 virtual const void* arrayElementData(const void* data, uint32_t index) const override final;

@@ -7,7 +7,8 @@
 ***/
 
 #include "build.h"
-#include "fbxFileDAta.h"
+#include "fbxFileData.h"
+#include "fbxFileLoaderService.h"
 
 #include "base/io/include/utils.h"
 #include "base/io/include/ioFileHandle.h"
@@ -15,8 +16,8 @@
 #include "base/containers/include/inplaceArray.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
-#include "base/geometry/include/mesh.h"
-#include "base/geometry/include/meshStreamBuilder.h"
+#include "base/mesh/include/meshStreamData.h"
+#include "base/mesh/include/meshStreamBuilder.h"
 
 namespace fbx
 {
@@ -752,7 +753,7 @@ namespace fbx
         }
     }
 
-    bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, base::mesh::MeshModel& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const
+    bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const
     {
         // no mesh data
         if (!m_mesh)
@@ -803,8 +804,10 @@ namespace fbx
 
     //---
 
-    LoadedFile::LoadedFile(fbxsdk::FbxScene* fbxScene/* = nullptr*/)
-        : m_fbxScene(fbxScene)
+    RTTI_BEGIN_TYPE_CLASS(LoadedFile);
+    RTTI_END_TYPE();
+
+    LoadedFile::LoadedFile()
     {
         m_nodes.reserve(256);
         m_nodeMap.reserve(256);
@@ -820,21 +823,6 @@ namespace fbx
 				m_fbxScene->Destroy();
             m_fbxScene = nullptr;
         }
-    }
-
-    bool LoadedFile::captureNodes(const base::Matrix& spaceConversionMatrix)
-    {
-        if (!m_nodes.empty())
-            return true;
-
-        if (!m_fbxScene)
-            return false;
-
-        FbxAMatrix rootMatrix;
-        rootMatrix.SetIdentity();
-
-        auto rootNode = m_fbxScene->GetRootNode();
-        return walkStructure(rootMatrix, spaceConversionMatrix, rootNode, nullptr);
     }
 
     const DataNode* LoadedFile::findDataNode(const fbxsdk::FbxNode* fbxNode) const
@@ -858,7 +846,7 @@ namespace fbx
         return const_cast<FbxPropertyT<T>&>(prop).EvaluateValue(t); // TODO: fix once FBX SDK comes to it's senses
     }
 
-    bool LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode)
+    void LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode)
     {
         // get the local pose of the node
         FbxAMatrix fbxLocalToParent;
@@ -986,15 +974,40 @@ namespace fbx
             auto worldToParent = localNode->m_localToWorld.inverted();
             for (uint32_t i = 0; i < numChildren; ++i)
             {
-                if (const FbxNode *childNode = node->GetChild(i))
-                    if (!walkStructure(fbxLocalToWorld, spaceConversionMatrix, childNode, localNode))
-                        return false;
+                if (const FbxNode* childNode = node->GetChild(i))
+                    walkStructure(fbxLocalToWorld, spaceConversionMatrix, childNode, localNode);
             }
         }
-
-        // nothing broken found
-        return true;
     }    
+
+    //---
+
+    uint64_t LoadedFile::calcMemoryUsage() const
+    {
+        return m_fbxDataSize;
+    }
+
+    bool LoadedFile::loadFromMemory(Buffer data)
+    {
+        if (!data)
+            return false;
+
+        base::Matrix spaceConversionMatrix;
+        auto scene = GetService<FileLoadingService>()->loadScene(data, spaceConversionMatrix);
+        if (!scene)
+            return false;
+
+        m_fbxDataSize = data.size();
+        m_fbxScene = scene;
+
+        FbxAMatrix rootMatrix;
+        rootMatrix.SetIdentity();
+
+        auto rootNode = m_fbxScene->GetRootNode();
+        walkStructure(rootMatrix, spaceConversionMatrix, rootNode, nullptr);
+
+        return true;
+    }
 
     //---
 

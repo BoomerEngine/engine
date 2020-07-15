@@ -63,7 +63,7 @@ namespace base
 
     INLINE Vector2 Vector2::frac() const
     {
-        return Vector2(Frac(x), Frac(y));
+        return Vector2(x - std::trunc(x), y - std::trunc(y));
     }
 
     INLINE Vector2 Vector2::trunc() const

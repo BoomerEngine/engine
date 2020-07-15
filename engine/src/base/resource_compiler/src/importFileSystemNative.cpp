@@ -10,6 +10,9 @@
 #include "importFileSystem.h"
 #include "importFileSystemNative.h"
 #include "base/io/include/ioSystem.h"
+#include "base/io/include/timestamp.h"
+#include "importFileFingerprintService.h"
+#include "importFileFingerprint.h"
 
 namespace base
 {
@@ -20,8 +23,6 @@ namespace base
 
         SourceAssetFileSystem_LocalComputer::SourceAssetFileSystem_LocalComputer()
         {
-            m_crcCachePath = IO::GetInstance().systemPath(io::PathCategory::UserConfigDir).addFile("local_crc.cache"); // CRC cache for the local computer
-            m_crcCache.load(m_crcCachePath);
         }
 
         SourceAssetFileSystem_LocalComputer::~SourceAssetFileSystem_LocalComputer()
@@ -32,24 +33,69 @@ namespace base
 
         }
 
-        bool SourceAssetFileSystem_LocalComputer::fileExists(StringView<char> fileSystemPath, uint64_t* outCRC /*= nullptr*/) const
+        bool SourceAssetFileSystem_LocalComputer::resolveContextPath(StringView<char> fileSystemPath, StringBuf& outContextPath) const
         {
             io::AbsolutePath path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            // TODO: check for "disabled" stuff like folder with dots
+            outContextPath = StringBuf(path.c_str());
+            return true;
+        }
+
+        bool SourceAssetFileSystem_LocalComputer::fileExists(StringView<char> fileSystemPath) const
+        {
+            io::AbsolutePath path;
+            if (!convertToAbsolutePath(fileSystemPath, path))
+                return false;
 
             return IO::GetInstance().fileExists(path);
         }
 
-        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, uint64_t& outCRC) const
+        SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
+        {
+            io::AbsolutePath path;
+            if (!convertToAbsolutePath(fileSystemPath, path))
+                return SourceAssetStatus::Missing;
+
+            io::TimeStamp timestamp;
+            if (!IO::GetInstance().fileTimeStamp(path, timestamp))
+                return SourceAssetStatus::Missing;
+
+            // if timestamp is given then check and use it to save CRC check
+            if (lastKnownTimestamp != 0)
+                if (lastKnownTimestamp == timestamp.value())
+                    return SourceAssetStatus::UpToDate;
+
+            // compute the fingerprint using the fingerprint service
+            ImportFileFingerprint currentFingerprint;
+            const auto ret = base::GetService<ImportFileFingerprintService>()->calculateFingerprint(path, true, progress, currentFingerprint);
+            if (ret == FingerpintCalculationStatus::ErrorOutOfMemory || ret == FingerpintCalculationStatus::ErrorInvalidRead)
+                return SourceAssetStatus::ReadFailure;
+            else if (ret == FingerpintCalculationStatus::ErrorNoFile)
+                return SourceAssetStatus::Missing;
+            else if (ret == FingerpintCalculationStatus::Canceled)
+                return SourceAssetStatus::Canceled;
+            else if (ret != FingerpintCalculationStatus::OK)
+                return SourceAssetStatus::ReadFailure;
+
+            // valid 
+            if (lastKnownFingerprint == currentFingerprint)
+                return SourceAssetStatus::UpToDate;
+            else
+                return SourceAssetStatus::ContentChanged;
+        }
+
+        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, ImportFileFingerprint& outFingerprint) const
         {
             io::AbsolutePath path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return Buffer();
 
-            return IO::GetInstance().loadIntoMemoryForReading(path);
+            const auto ret = IO::GetInstance().loadIntoMemoryForReading(path);
+            if (ret)
+                CalculateMemoryFingerprint(ret.data(), ret.size(), nullptr, outFingerprint);
+            return ret;
         }
 
         bool SourceAssetFileSystem_LocalComputer::enumDirectoriesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const
@@ -168,6 +214,7 @@ namespace base
 
             // TODO: any more validation ?
 
+            outAbsolutePath = io::AbsolutePath::Build(pathString);
             return true;
         }
 

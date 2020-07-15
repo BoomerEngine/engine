@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: cooker #]
+* [# filter: import #]
 ***/
 
 #include "build.h"
@@ -11,8 +11,6 @@
 #include "renderingMeshCookerChunks.h"
 #include "meshopt/meshoptimizer.h"
 #include "mikktspace/mikktspace.h"
-
-#include "base/geometry/include/mesh.h"
 
 namespace rendering
 {
@@ -189,11 +187,11 @@ namespace rendering
         {
             numFaces = importChunk.numFaces;
             verticesPerFace = importChunk.faceQuads ? 4 : 3;
-            vertexData = (base::Vector3*) importChunk.vertexStreamData(base::mesh::MeshStreamType::Position_3F);
-            normalData = (base::Vector3*) importChunk.vertexStreamData(base::mesh::MeshStreamType::Normal_3F);
-            tangentData = (base::Vector3*) importChunk.vertexStreamData(base::mesh::MeshStreamType::Tangent_3F);
-            bitangentData = (base::Vector3*) importChunk.vertexStreamData(base::mesh::MeshStreamType::Binormal_3F);
-            uvData = (base::Vector2*) importChunk.vertexStreamData(base::mesh::MeshStreamType::TexCoord0_2F);
+            vertexData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Position_3F);
+            normalData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Normal_3F);
+            tangentData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Tangent_3F);
+            bitangentData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Binormal_3F);
+            uvData = (base::Vector2*) importChunk.vertexStreamData(MeshStreamType::TexCoord0_2F);
         }
 
         static SMikkTSpaceInterface& GetInterface()
@@ -212,7 +210,7 @@ namespace rendering
 
     //---
 
-    ImportChunk::ImportChunk(const base::mesh::MeshModelChunk& sourceChunk)
+    ImportChunk::ImportChunk(const MeshRawChunk& sourceChunk)
     {
         materialIndex = sourceChunk.materialIndex;
         renderMask = sourceChunk.renderMask.rawValue();
@@ -222,7 +220,7 @@ namespace rendering
         vertexDataStreamMask = sourceChunk.streamMask;
         numVertices = sourceChunk.numVertices;
 
-        faceQuads = (sourceChunk.topology == base::mesh::MeshTopologyType::Quads);
+        faceQuads = (sourceChunk.topology == MeshTopologyType::Quads);
         numFaces = sourceChunk.numFaces;
 
         bounds = sourceChunk.bounds;
@@ -238,13 +236,13 @@ namespace rendering
 
     //--
 
-    bool ImportChunk::hasVertexStream(base::mesh::MeshStreamType stream) const
+    bool ImportChunk::hasVertexStream(MeshStreamType stream) const
     {
-        const auto mask = base::mesh::MeshStreamMaskFromType(stream);
+        const auto mask = MeshStreamMaskFromType(stream);
         return 0 != (vertexDataStreamMask & mask);
     }
 
-    bool ImportChunk::removeVertexStream(base::mesh::MeshStreamType stream)
+    bool ImportChunk::removeVertexStream(MeshStreamType stream)
     {
         for (uint32_t i = 0; i < vertexDataStreams.size(); ++i)
         {
@@ -258,7 +256,7 @@ namespace rendering
         return false;
     }
 
-    void* ImportChunk::vertexStreamData(base::mesh::MeshStreamType type)
+    void* ImportChunk::vertexStreamData(MeshStreamType type)
     {
         for (const auto& currentStream : vertexDataStreams)
             if (currentStream.type == type)
@@ -267,7 +265,7 @@ namespace rendering
         return nullptr;
     }
 
-    base::mesh::MeshModelChunkData ImportChunk::createVertexStream(base::mesh::MeshStreamType type)
+    MeshRawChunkData ImportChunk::createVertexStream(MeshStreamType type)
     {
         for (const auto& currentStream : vertexDataStreams)
             if (currentStream.type == type)
@@ -275,7 +273,7 @@ namespace rendering
 
         auto& newStream = vertexDataStreams.emplaceBack();
         newStream.type = type;
-        newStream.data = base::mesh::CreateMeshStreamBuffer(type, numVertices);
+        newStream.data = CreateMeshStreamBuffer(type, numVertices);
         return newStream;
     }
 
@@ -283,15 +281,15 @@ namespace rendering
 
     bool ImportChunk::hasNormals() const
     {
-        return hasVertexStream(base::mesh::MeshStreamType::Normal_3F);
+        return hasVertexStream(MeshStreamType::Normal_3F);
     }
 
     void ImportChunk::computeFlatNormals()
     {
-        auto data = createVertexStream(base::mesh::MeshStreamType::Normal_3F).data;
+        auto data = createVertexStream(MeshStreamType::Normal_3F).data;
 
         auto* normalPtr = (base::Vector3*)data.data();
-        auto* posPtr = (base::Vector3*)vertexStreamData(base::mesh::MeshStreamType::Position_3F);
+        auto* posPtr = (base::Vector3*)vertexStreamData(MeshStreamType::Position_3F);
             
         if (faceQuads)
         {
@@ -318,30 +316,30 @@ namespace rendering
 
     void ImportChunk::removeNormals()
     {
-        removeVertexStream(base::mesh::MeshStreamType::Normal_3F);
+        removeVertexStream(MeshStreamType::Normal_3F);
     }
 
     //--
 
     bool ImportChunk::hasTangents() const
     {
-        return hasVertexStream(base::mesh::MeshStreamType::Binormal_3F) && hasVertexStream(base::mesh::MeshStreamType::Tangent_3F);
+        return hasVertexStream(MeshStreamType::Binormal_3F) && hasVertexStream(MeshStreamType::Tangent_3F);
     }
 
     void ImportChunk::removeTangentSpace()
     {
-        removeVertexStream(base::mesh::MeshStreamType::Tangent_3F);
-        removeVertexStream(base::mesh::MeshStreamType::Binormal_3F);
+        removeVertexStream(MeshStreamType::Tangent_3F);
+        removeVertexStream(MeshStreamType::Binormal_3F);
     }
 
     void ImportChunk::computeTangentSpace(float angleThreshold)
     {
-        const auto texCoordMax = base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::TexCoord0_2F);
+        const auto texCoordMax = MeshStreamMaskFromType(MeshStreamType::TexCoord0_2F);
         if (0 == (vertexDataStreamMask & texCoordMax))
             return;
 
-        createVertexStream(base::mesh::MeshStreamType::Tangent_3F);
-        createVertexStream(base::mesh::MeshStreamType::Binormal_3F);
+        createVertexStream(MeshStreamType::Tangent_3F);
+        createVertexStream(MeshStreamType::Binormal_3F);
 
         MeshChunkMikktInterface data(*this);
 
@@ -430,7 +428,7 @@ namespace rendering
                     auto& entry = sourceStreams.emplaceBack();
                     entry.stream = sourceVertexStream.type;
                     entry.srcData = sourceVertexStream.data.data();
-                    entry.srcDataStride = base::mesh::GetMeshStreamStride(sourceVertexStream.type);
+                    entry.srcDataStride = GetMeshStreamStride(sourceVertexStream.type);
                 }
 
                 if (progress.checkCancelation())

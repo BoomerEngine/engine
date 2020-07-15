@@ -10,10 +10,8 @@
 #include "rttiEnumType.h"
 #include "rttiDataView.h"
 
-#include "streamTextReader.h"
-#include "streamTextWriter.h"
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 
 namespace base
 {
@@ -205,14 +203,7 @@ namespace base
 
         //----
 
-        void EnumType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            int64_t val = 0;
-            readInt64(data, val);
-            crc << val;
-        }
-
-        bool EnumType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        void EnumType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             int64_t val = 0;
             readInt64(data, val);
@@ -220,65 +211,27 @@ namespace base
             StringID optionName;
             if (!findName(val, optionName))
             {
-                TRACE_ERROR("Missing option name for enum %ld in {}, the value would be lost", val, name());
-                return false;
+                TRACE_WARNING("Missing option name for enum %ld in {}, the value would be lost", val, name());
             }
 
-            file.writeName(optionName);
-            return true;
+            file.writeStringID(optionName);
         }
 
-        bool EnumType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void EnumType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            auto optionName = file.readName();
+            auto optionName = file.readStringID();
 
             int64_t val = 0;
-            if (!findValue(optionName, val))
+            if (findValue(optionName, val))
             {
-                TRACE_ERROR("Failed to find numerical value for option '{}' in enum '{}'", optionName, name());
-                return false;
+                writeInt64(data, val);
             }
-
-            writeInt64(data, val);
-            return true;
+            else
+            {
+                TRACE_WARNING("Failed to find numerical value for option '{}' in enum '{}'", optionName, name());
+            }
         }
-
-        bool EnumType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            int64_t val = 0;
-            readInt64(data, val);
-
-            StringID optionName;
-            if (!findName(val, optionName))
-            {
-                TRACE_ERROR("Unable to assign enum option to value %lld", val);
-                return false;
-            }
-
-            stream.writeValue(optionName.c_str());
-            return true;
-        }
-
-        bool EnumType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            StringView<char> optionName;
-            if (!stream.readValue(optionName))
-            {
-                TRACE_ERROR("Enum can only be parsed from single value");
-                return false;
-            }
-
-            int64_t val = 0;
-            if (!findValue(StringID(optionName), val))
-            {
-                TRACE_ERROR("Unable to assign value to enum option '{}'", optionName);
-                return false;
-            }
-
-            writeInt64(data, val);
-            return true;
-        }
-        
+       
         void EnumType::readInt64(const void* data, int64_t& outValue) const
         {
             switch (size())

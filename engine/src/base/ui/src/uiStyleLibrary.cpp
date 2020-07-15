@@ -19,6 +19,7 @@
 #include "base/system/include/scopeLock.h"
 #include "base/canvas/include/canvasGlyphCache.h"
 #include "base/font/include/fontGlyphCache.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace ui
 {

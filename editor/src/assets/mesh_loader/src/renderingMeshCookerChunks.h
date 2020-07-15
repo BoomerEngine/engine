@@ -3,13 +3,14 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: cooker #]
+* [# filter: import #]
 ***/
 
 #pragma once
 
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/mesh/include/renderingMeshFormat.h"
+#include "rendering/mesh/include/renderingMeshStreamData.h"
 
 namespace rendering
 {
@@ -21,8 +22,8 @@ namespace rendering
         uint32_t detailMask = 0;
         uint32_t materialIndex = 0;
 
-        Array<base::mesh::MeshModelChunkData> vertexDataStreams;
-        base::mesh::MeshStreamMask vertexDataStreamMask;
+        Array<MeshRawChunkData> vertexDataStreams;
+        MeshStreamMask vertexDataStreamMask;
         uint32_t numVertices = 0;
 
         uint32_t numFaces = 0;
@@ -30,7 +31,7 @@ namespace rendering
 
         base::Box bounds;
 
-        ImportChunk(const base::mesh::MeshModelChunk& sourceChunk);
+        ImportChunk(const MeshRawChunk& sourceChunk);
 
         //--
 
@@ -38,10 +39,10 @@ namespace rendering
 
         //--
 
-        bool hasVertexStream(base::mesh::MeshStreamType stream) const;
-        bool removeVertexStream(base::mesh::MeshStreamType stream);
-        base::mesh::MeshModelChunkData createVertexStream(base::mesh::MeshStreamType stream);
-        void* vertexStreamData(base::mesh::MeshStreamType stream);
+        bool hasVertexStream(MeshStreamType stream) const;
+        bool removeVertexStream(MeshStreamType stream);
+        MeshRawChunkData createVertexStream(MeshStreamType stream);
+        void* vertexStreamData(MeshStreamType stream);
 
         //--
 
@@ -59,7 +60,7 @@ namespace rendering
     struct ImportChunkRegistry : public base::NoCopy
     {
         base::Array<base::RefPtr<ImportChunk>> importChunks;
-        MeshBounds bounds;
+        base::Box bounds;
 
         ImportChunkRegistry();
         ~ImportChunkRegistry();
@@ -79,8 +80,8 @@ namespace rendering
 
         struct SourceChunkInfo
         {
-            Array<base::mesh::MeshModelChunkData> vertexDataStreams;
-            base::mesh::MeshStreamMask vertexDataStreamMask;
+            Array<MeshRawChunkData> vertexDataStreams;
+            MeshStreamMask vertexDataStreamMask;
             Buffer indexData;
 
             uint32_t numVertices = 0;
@@ -127,7 +128,7 @@ namespace rendering
         BuildChunkRegistry();
         ~BuildChunkRegistry();
 
-        const uint32_t PACKED_RENDER_MASK = (uint32_t)base::mesh::MeshChunkRenderingMaskBit::RENDERABLE;
+        const uint32_t PACKED_RENDER_MASK = (uint32_t)MeshChunkRenderingMaskBit::RENDERABLE;
 
         BuildChunk* findBuildChunk(MeshVertexFormat format, uint32_t material, uint32_t renderMask, uint32_t detailMask);
 

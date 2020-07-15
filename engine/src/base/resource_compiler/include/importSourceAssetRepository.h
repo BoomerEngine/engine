@@ -7,7 +7,9 @@
 ***/
 
 #pragma once
+
 #include "base/containers/include/hashMap.h"
+#include "importFileFingerprint.h"
 
 namespace base
 {
@@ -28,14 +30,20 @@ namespace base
             void clearCache();
 
             /// check if file exists
-            bool fileExists(StringView<char> assetImportPath, uint64_t* outCRC=nullptr) const;
+            bool fileExists(StringView<char> assetImportPath) const;
 
             /// load raw data for an asset, usually not cached
-            Buffer loadSourceFileContent(StringView<char> assetImportPath, uint64_t& outCRC);
+            Buffer loadSourceFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint);
 
             /// load source asset
-            SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, SpecificClassType<ISourceAsset> contentType, uint64_t& outCRC);
+            SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint);
 
+            /// load/create base resource configuration
+            ResourceConfigurationPtr compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass);
+
+            // check status of a file
+            CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
+            
             ///---
 
         private:
@@ -47,7 +55,7 @@ namespace base
             {
                 StringBuf assetImportPath;
                 SourceAssetPtr asset;
-                uint64_t crc = 0;
+                ImportFileFingerprint fingerprint;
                 uint32_t lruTick = 0;
                 uint64_t memorySize = 0;
             };

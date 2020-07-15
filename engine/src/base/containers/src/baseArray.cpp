@@ -27,6 +27,7 @@ namespace base
         other.m_capacityAndFlags = 0;
     }
 
+#ifndef BUILD_RELEASE
     void BaseArray::checkIndex(uint32_t index) const
     {
         ASSERT_EX(index < size(), "Array index out of range");
@@ -36,6 +37,7 @@ namespace base
     {
         ASSERT_EX((index + count) <= size(), "Array range out of range");
     }
+#endif
 
     uint32_t BaseArray::changeSize(uint32_t newSize)
     {

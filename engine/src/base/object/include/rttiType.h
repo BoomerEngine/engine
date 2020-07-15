@@ -54,11 +54,51 @@ namespace base
         ////-----
 
         /// General type serialization context
-        struct TypeSerializationContext : public base::NoCopy
+        struct BASE_OBJECT_API TypeSerializationContext : public base::NoCopy
         {
             const IClassType* classContext = nullptr;
             const Property* propertyContext = nullptr; // property being deserialized/serialized
             IObject* objectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
+
+            void print(IFormatStream& f) const; // print context name
+        };
+
+        struct TypeSerializationContextSetClass
+        {
+            INLINE TypeSerializationContextSetClass(TypeSerializationContext& ctx, const IClassType* cls)
+                : m_context(ctx)
+                , m_prevClass(ctx.classContext)
+            {
+                ctx.classContext = cls;
+            }
+
+            INLINE ~TypeSerializationContextSetClass()
+            {
+                m_context.classContext = m_prevClass;
+            }
+
+        private:
+            TypeSerializationContext& m_context;
+            const IClassType* m_prevClass = nullptr;
+        };
+
+        struct TypeSerializationContextSetProperty
+        {
+            INLINE TypeSerializationContextSetProperty(TypeSerializationContext& ctx, const Property* prop)
+                : m_context(ctx)
+                , m_prevProperty(ctx.propertyContext)
+            {
+                ctx.propertyContext = prop;
+            }
+
+            INLINE ~TypeSerializationContextSetProperty()
+            {
+                m_context.propertyContext = m_prevProperty;
+            }
+
+        private:
+            TypeSerializationContext& m_context;
+            const Property* m_prevProperty = nullptr;
         };
 
         ////-----
@@ -124,21 +164,10 @@ namespace base
             // Binary serialization
 
             /// DataInternface: Write data to file
-            virtual bool writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const = 0;
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const = 0;
 
             /// DataInternface: Read data from file
-            virtual bool readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const = 0;
-
-            //----
-            // Text serialization
-
-            /// Serialize value of this type using the generic text writer
-            /// By default the value is retrieved via ReadValue and saved as text
-            virtual bool writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const = 0;
-
-            /// Deserialize value of this type using the generic text reader
-            /// By default the text value is read and parsed via the WriteValue
-            virtual bool readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const = 0;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const = 0;
 
             //----
             // To/From text
@@ -166,12 +195,6 @@ namespace base
 
             /// Write data to memory
             virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const;
-
-            //----
-            // Runtime hashing
-
-            // append data to CRC calculator
-            virtual void calcCRC64(CRC64& crc, const void* data) const;
 
             //----
             // Type traits

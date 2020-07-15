@@ -75,9 +75,15 @@ namespace base
     protected:
 		BaseArray(void* externalBuffer, uint32_t externalCapacity); // set to predefined buffer
 
+        BASE_CONTAINERS_API void suckFrom(BaseArray& arr);
+
+#ifndef BUILD_RELEASE
 		BASE_CONTAINERS_API void checkIndex(uint32_t index) const;
 		BASE_CONTAINERS_API void checkIndexRange(uint32_t index, uint32_t count) const;
-        BASE_CONTAINERS_API void suckFrom(BaseArray& arr);
+#else
+        ALWAYS_INLINE void checkIndex(uint32_t index) const {};
+        ALWAYS_INLINE void checkIndexRange(uint32_t index, uint32_t count) const {};
+#endif
 
     private:
         static const uint32_t FLAG_EXTERNAL = 0x80000000;

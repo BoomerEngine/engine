@@ -5,7 +5,6 @@
 *
 * [# dependency: base_image #]
 * [# dependency: base_editor #]
-* [# dependency: base_geometry #]
 * [# dependency: rendering_mesh #]
 * [# devonly #]
 ***/

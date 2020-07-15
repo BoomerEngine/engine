@@ -13,7 +13,6 @@
 
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/io/include/crcCache.h"
 #include "base/io/include/absolutePath.h"
 #include "base/containers/include/inplaceArray.h"
 
@@ -97,13 +96,6 @@ namespace base
             , m_writable(allowWrites)
             , m_depot(owner)
         {
-            // load stuff
-            m_crcCache.create();
-
-            // each native file system has a crc cache
-            auto crcCacheName = StringBuf(TempString("fs_{}_crc.cache", rootPath.view().calcCRC64()));
-            auto crcCachePath =  IO::GetInstance().systemPath(io::PathCategory::TempDir).addFile(crcCacheName.c_str());
-            m_crcCache->load(crcCachePath);
         }
 
         FileSystemNative::~FileSystemNative()
@@ -141,20 +133,13 @@ namespace base
             return true;
         }
 
-        bool FileSystemNative::info(StringView<char> rawFilePath, uint64_t* outCRC, uint64_t* outFileSize, io::TimeStamp* outTimestamp) const
+        bool FileSystemNative::timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const
         {
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return false;
 
-            if (nullptr != outCRC)
-                return m_crcCache->fileCRC(path.view(), *outCRC, (uint64_t*)outTimestamp, outFileSize);
-            else if (outTimestamp)
-                return IO::GetInstance().fileTimeStamp(path.view(), *outTimestamp, outFileSize);
-            else if (outFileSize)
-                return IO::GetInstance().fileSize(path.view(), *outFileSize);
-            else
-                return true;
+            return IO::GetInstance().fileTimeStamp(path.view(), outTimestamp);
         }
 
         bool FileSystemNative::absolutePath(StringView<char> rawFilePath, io::AbsolutePath& outAbsolutePath) const
@@ -193,37 +178,43 @@ namespace base
                 });
         }
 
-        io::FileHandlePtr FileSystemNative::createReader(StringView<char> rawFilePath) const
+        io::ReadFileHandlePtr FileSystemNative::createReader(StringView<char> rawFilePath) const
         {
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return nullptr;
 
             // do not open if file does not exist
-            if (rawFilePath.endsWith(".package") || rawFilePath.endsWith(".manifest") || rawFilePath.endsWith(".meta"))
-                if (!IO::GetInstance().fileExists(path.view()))
-                    return nullptr;
+            if (!IO::GetInstance().fileExists(path.view()))
+                return nullptr;
 
             // create a reader
             return IO::GetInstance().openForReading(path.view());
         }
 
-        bool FileSystemNative::enableWriteOperations()
+        io::AsyncFileHandlePtr FileSystemNative::createAsyncReader(StringView<char> rawFilePath) const
         {
-            if (m_writable)
-            {
-                if (!m_writesEnabled)
-                {
-                    TRACE_WARNING("Enabled writes for file system at '{}'", m_rootPath);
-                    m_writesEnabled = true;
-                }
-            }
-            else
-            {
-                TRACE_ERROR("File system at '{}' is read-only", m_rootPath);
-            }
+            LocalAbsolutePathBuilder path(m_rootPath);
+            if (!path.append(rawFilePath))
+                return nullptr;
 
-            return m_writesEnabled;
+            // do not open if file does not exist
+            if (!IO::GetInstance().fileExists(path.view()))
+                return nullptr;
+
+            // create a reader
+            return IO::GetInstance().openForAsyncReading(path.view());
+        }
+
+        io::WriteFileHandlePtr FileSystemNative::createWriter(StringView<char> rawFilePath) const
+        {
+            LocalAbsolutePathBuilder path(m_rootPath);
+            if (!path.append(rawFilePath))
+                return nullptr;
+
+            // create a STAGED writer
+            const auto writeMode = io::FileWriteMode::StagedWrite;
+            return IO::GetInstance().openForWriting(path.view(), writeMode);
         }
 
         void FileSystemNative::enableFileSystemObservers()
@@ -242,118 +233,6 @@ namespace base
                     TRACE_WARNING("Failed to start live tracking of file system at '{}'", m_rootPath);
                 }
             }
-        }
-
-        bool FileSystemNative::writeFile(StringView<char> rawFilePath, const Buffer& data, const io::TimeStamp* overrideTimeStamp/*=nullptr*/, uint64_t overrideCRC/*=0*/)
-        {
-            ScopeTimer timer;
-
-            ASSERT_EX(data, "No data specified");
-
-            // translate path
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-            {
-                TRACE_ERROR("Unable to translate '{}' to a global file path", rawFilePath);
-                return false;
-            }
-
-            // target file is read only, we can't save
-            if (IO::GetInstance().isFileReadOnly(path.view()))
-            {
-                TRACE_ERROR("Unable to save '{}' as file is read only", rawFilePath);
-                return false;
-            }
-
-            // save a .tmp file
-            auto outputFileName = io::AbsolutePath::Build(path.view()).addExtension(".out");
-
-            // delete existing output file
-            if (IO::GetInstance().fileExists(outputFileName))
-            {
-                TRACE_WARNING("Output file '{}' already exists", outputFileName);
-                if (!IO::GetInstance().deleteFile(outputFileName))
-                {
-                    TRACE_WARNING("Unable to save '{}': existing temporary output file exists and can't be deleted", rawFilePath);
-                    return false;
-                }
-            }
-
-			// open file for writing
-            {
-                auto writer = IO::GetInstance().openForWriting(outputFileName, false);
-                if (writer)
-                {
-                    // save stuff to a temp file
-                    auto numWritten = writer->writeSync(data.data(), data.size());
-                    if (numWritten != data.size())
-                    {
-                        TRACE_ERROR("Unable to save '{}': written {} instead of {} bytes, is the disk full?", rawFilePath, numWritten, data.size());
-                        return false;
-                    }
-                }
-                else
-                {
-                    TRACE_ERROR("Unable to save '{}': failed to open target file, is the disk full?", rawFilePath);
-                    return false;
-                }
-            }
-
-            // delete previous backup
-            auto backupFileName = io::AbsolutePath::Build(path.view()).addExtension(".bak");
-            bool useBackFile = IO::GetInstance().fileExists(path.view());
-            if (useBackFile)
-            {
-                if (IO::GetInstance().fileExists(backupFileName))
-                {
-                    if (!IO::GetInstance().deleteFile(backupFileName))
-                    {
-                        TRACE_WARNING("Unable to save '{}': existing backup file cannot be deleted, is the disk full?", rawFilePath);
-                        IO::GetInstance().deleteFile(backupFileName);
-                        IO::GetInstance().deleteFile(outputFileName);
-                        useBackFile = false;
-                    }
-                }
-            }
-
-            // rename target file to backup file
-            if (useBackFile)
-            {
-                if (!IO::GetInstance().moveFile(path.view(), backupFileName))
-                {
-                    TRACE_ERROR("Unable to save '{}': unable to create backup file, is the disk full?", rawFilePath);
-                    return false;
-                }
-            }
-
-            // move the output file to new place
-            bool saved = true;
-            if (!IO::GetInstance().moveFile(outputFileName, path.view()))
-            {
-                IO::GetInstance().deleteFile(outputFileName);
-                TRACE_ERROR("Unable to save '{}': failed to move output file to target location, is the disk full?", rawFilePath);                
-                saved = false;
-            }
-
-            // delete the backup file
-            if (useBackFile)
-            {
-                if (saved)
-                {
-                    if (!IO::GetInstance().deleteFile(backupFileName))
-                    {
-                        TRACE_WARNING("Unable to delete backup file '{}', next save may fail", rawFilePath);
-                    }
-                }
-                else
-                {
-                    IO::GetInstance().moveFile(backupFileName, path.view());
-                }
-            }
-
-            // file saved
-            TRACE_INFO("Saved '{}', {} in {}", path.view(), MemSize(data.size()), TimeInterval(timer.timeElapsed()));
-            return saved;
         }
 
         //--

@@ -17,6 +17,7 @@
 #include "rendering/driver/include/renderingShaderLibrary.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {
@@ -70,7 +71,6 @@ namespace rendering
     RTTI_BEGIN_TYPE_CLASS(MaterialTemplate);
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4mt");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Material Template");
-        //RTTI_METADATA(base::res::ResourceBakedOnlyMetadata);
         RTTI_PROPERTY(m_parameters);
         RTTI_PROPERTY(m_sortGroup);
         RTTI_PROPERTY(m_compiler);

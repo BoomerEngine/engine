@@ -9,10 +9,8 @@
 #include "build.h"
 #include "physicsMaterialRef.h"
 
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamTextReader.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
 
 namespace physics
 {
@@ -47,35 +45,14 @@ namespace physics
             return *(const MaterialDefinition*)nullptr;
         }
 
-        bool MaterialReference::writeBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream) const
+        void MaterialReference::writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const
         {
-            stream.writeName(m_name);
-            return true;
+            stream.writeStringID(m_name);
         }
 
-        bool MaterialReference::writeText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream) const
+        void MaterialReference::readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream)
         {
-            stream.writeValue(m_name.view());
-            return true;
-        }
-
-        bool MaterialReference::readBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream)
-        {
-            m_name = stream.readName();
-            return true;
-        }
-
-        bool MaterialReference::readText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextReader& stream)
-        {
-            base::StringView<char> txt;
-            if (!stream.readValue(txt))
-            {
-                TRACE_WARNING("Unable to load string data when string data was expected");
-                return true; // let's try to continue
-            }
-
-            m_name = base::StringID(txt);
-            return true;
+            m_name = stream.readStringID();
         }
 
         void MaterialReference::calcHash(base::CRC64& crc) const

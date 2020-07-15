@@ -89,14 +89,13 @@ namespace base
             for (auto& dep : entry.dependencies)
             {
                 io::TimeStamp currentFileTimestamp;
-                uint64_t currentFileSize = 0;
-                if (!m_depot.queryFileInfo(dep.file->depotPath, nullptr, &currentFileSize, &currentFileTimestamp))
+                if (!m_depot.queryFileTimestamp(dep.file->depotPath, currentFileTimestamp))
                 {
                     TRACE_WARNING("Missing source file '{}'", dep.file->depotPath);
                     return false;
                 }
 
-                if (currentFileSize != dep.fileSize || currentFileTimestamp.value() != dep.timestamp)
+                if (currentFileTimestamp.value() != dep.timestamp)
                 {
                     TRACE_WARNING("Source file '{}' outdated", dep.file->depotPath);
                     return false;
@@ -229,7 +228,6 @@ namespace base
 
                         auto& rawEntry = rawFileDependencies.emplaceBack();
                         rawEntry.file = depFile;
-                        rawEntry.fileSize = dep.size;
                         rawEntry.timestamp = dep.timestamp;
                     }
                 }

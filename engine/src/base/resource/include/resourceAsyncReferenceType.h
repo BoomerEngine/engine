@@ -40,11 +40,8 @@ namespace base
             virtual bool compare(const void* data1, const void* data2) const override final;
             virtual void copy(void* dest, const void* src) const override final;
 
-            virtual bool writeBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const override final;
-            virtual bool readBinary(const rtti::TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const override final;
-
-            virtual bool writeText(const rtti::TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const override final;
-            virtual bool readText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const override final;
+            virtual void writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+            virtual void readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
             //----
 

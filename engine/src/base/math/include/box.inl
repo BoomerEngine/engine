@@ -163,6 +163,11 @@ namespace base
         return (min + max) / 2.0f;
     }
 
+    INLINE const Box& Box::bounds() const
+    {
+        return *this;
+    }
+
     INLINE bool Box::operator==(const Box& other) const
     {
         return (min == other.min) && (max == other.max);

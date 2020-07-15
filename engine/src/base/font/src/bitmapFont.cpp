@@ -11,6 +11,7 @@
 
 #include "base/containers/include/utf8StringFunctions.h"
 #include "base/image/include/image.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

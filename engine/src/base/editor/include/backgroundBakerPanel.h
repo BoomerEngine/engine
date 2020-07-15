@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/resource_compiler/include/backgroundBakeService.h"
 #include "base/ui/include/uiAbstractItemModel.h"
 
 namespace ed
@@ -74,16 +73,16 @@ namespace ed
 
     ///---
 
-    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public base::IReferencable, public base::res::IBackgroundBakerNotification
+    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public base::IReferencable
     {
     public:
         BackgroundBakedListModelNotificataionForwarder(const base::RefPtr<BackgroundBakedListModel>& model);
 
     protected:
-        virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
-        virtual void handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime) override final;
-        virtual void handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken) override final;
-        virtual void handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key) override final;
+        //virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
+        //virtual void handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime) override final;
+        //virtual void handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken) override final;
+        //virtual void handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key) override final;
 
         base::RefPtr<BackgroundBakedListModel> m_model;
     };
@@ -91,7 +90,7 @@ namespace ed
     ///---
 
     /// panel displaying the background baking list
-    class BASE_EDITOR_API BackgroundBakerPanel : public ui::DockPanel, public base::res::IBackgroundBakerNotification
+    class BASE_EDITOR_API BackgroundBakerPanel : public ui::DockPanel
     {
         RTTI_DECLARE_VIRTUAL_CLASS(BackgroundBakerPanel, ui::DockPanel);
 
@@ -111,10 +110,10 @@ namespace ed
         base::RefPtr<BackgroundBakedListModel> m_listModel;
         base::RefPtr<BackgroundBakedListModelNotificataionForwarder> m_listForwarder;
 
-        virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
-        virtual void handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime) override final;
-        virtual void handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken) override final;
-        virtual void handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key) override final;
+        //virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
+        //virtual void handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime) override final;
+        //virtual void handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken) override final;
+        //virtual void handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key) override final;
     };
 
     ///---

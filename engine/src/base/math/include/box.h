@@ -106,8 +106,8 @@ namespace base
         //! calculate center of the box
         INLINE Vector3 center() const;
 
-        //! get random point inside the box
-        Vector3 rand() const;
+        //! calculate bounds of the box - it's just the box in this case
+        INLINE const Box& bounds() const;
 
         //--
 
@@ -119,6 +119,15 @@ namespace base
 
         //! Unit box (0,0,0)-(1,1,1)
         static const Box& UNIT();
+
+        //--
+
+        // intersect with a ray, returns distance to point of entry
+        bool intersect(const Vector3& origin, const Vector3& direction, float maxLength = VERY_LARGE_FLOAT, float* outEnterDistFromOrigin = nullptr, Vector3 * outEntryPoint = nullptr, Vector3 * outEntryNormal = nullptr) const;
+
+        //--
     };
+
+    //--
 
 } // base

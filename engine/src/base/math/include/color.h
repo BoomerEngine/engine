@@ -329,13 +329,4 @@ namespace base
         void print(IFormatStream& f) const;
     };
 
-    extern BASE_MATH_API Color Blend(const Color &a, const Color &b, uint32_t alpha); // NOTE: alpha goes for 0 to 256
-    extern BASE_MATH_API Color BlendPreMultiplied(const Color &a, const Color &b, uint32_t alpha);  // NOTE: alpha goes for 0 to 256
-    extern BASE_MATH_API Color Lerp(const Color &a, const Color &b, float frac);
-    extern BASE_MATH_API Color LerpPreMultiplied(const Color &a, const Color &b, float frac);
-    extern BASE_MATH_API Color Min(const Color &a, const Color &b);
-    extern BASE_MATH_API Color Max(const Color &a, const Color &b);
-    extern BASE_MATH_API Color Clamp(const Color &a, const Color &minV, const Color &maxV);
-    extern BASE_MATH_API Color Clamp(const Color &a, uint8_t minF, uint8_t maxF);
-
 } // base

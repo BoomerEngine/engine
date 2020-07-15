@@ -108,7 +108,8 @@ namespace rendering
 
         void ExecutorStateTracker::runWaitForCounter(const command::OpWaitForCounter& op)
         {
-            Fibers::GetInstance().waitForCounterAndRelease(op.counter);
+            auto counter = op.counter;
+            Fibers::GetInstance().waitForCounterAndRelease(counter);
         }
 
         void ExecutorStateTracker::runNop(const command::OpNop& op)

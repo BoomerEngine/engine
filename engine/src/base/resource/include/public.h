@@ -39,9 +39,6 @@ namespace base
         template< typename T >
         class Ref;
 
-        class IResourceManifest;
-        typedef RefPtr<IResourceManifest> ResourceCookingManifestPtr;
-
         class IResourceLoader;
 
         typedef fibers::WaitCounter ResourceLoadingFence;
@@ -62,11 +59,10 @@ namespace base
 
         class ICookingErrorReporter;
         class IResourceCookerInterface;
-        class IResourceManifest;
         class ResourceCookerMemoryBlob;
 
-        class IResourceConfiguration;
-        typedef RefPtr<IResourceConfiguration> ResourceConfigurationPtr;
+        class ResourceConfiguration;
+        typedef RefPtr<ResourceConfiguration> ResourceConfigurationPtr;
 
         class IResourceCacheBlob;
         typedef RefPtr<IResourceCacheBlob> ResourceCacheBlobPtr;
@@ -122,16 +118,23 @@ namespace base
 
     // clone object
     template< typename T >
-    INLINE RefPtr<T> CloneObject(const IObject* object, const IObject* newParent = nullptr, res::IResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
+    INLINE RefPtr<T> CloneObject(const T* object, const IObject* newParent = nullptr, res::IResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
     {
-        return rtti_cast<T>(CloneObjectUntyped(object, newParent, loader, mutatedClass));
+        return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
+    }
+
+    // clone object
+    template< typename T >
+    INLINE RefPtr<T> CloneObject(const RefPtr<T>& object, const IObject* newParent = nullptr, res::IResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
+    {
+        return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
     }
 
     // save object to binary buffer
     extern BASE_RESOURCE_API Buffer SaveObjectToBuffer(const IObject* object);
 
     // load object from binary buffer
-    extern BASE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint32_t size, res::IResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+    extern BASE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::IResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
     //--
 

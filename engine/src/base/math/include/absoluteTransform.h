@@ -112,6 +112,4 @@ namespace base
         Vector3 m_scale;
     };
 
-    extern BASE_MATH_API AbsoluteTransform Lerp(const AbsoluteTransform& a, const AbsoluteTransform& b, float frac);
-
 } // scene

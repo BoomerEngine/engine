@@ -12,7 +12,7 @@
 #include "base/ui/include/uiSimpleListModel.h"
 #include "base/ui/include/uiAbstractItemModel.h"
 #include "base/ui/include/uiDragDrop.h"
-#include "assets/mesh_loader/include/rendernigMeshMaterialManifest.h"
+#include "assets/mesh_loader/include/rendernigMeshMaterialConfig.h"
 
 namespace ed
 {
@@ -29,13 +29,13 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialParameters, base::IObject);
 
     public:
-        MeshMaterialParameters(rendering::MeshMaterialBindingManifest* manifest, base::StringID name, const rendering::MaterialInstancePtr& meshBaseParams);
+        MeshMaterialParameters(rendering::MeshMaterialConfig* manifest, base::StringID name, const rendering::MaterialRef& baseMaterial);
 
         INLINE base::StringID name() const { return m_name; }
 
         INLINE const base::StringBuf& displayString() const { return m_displayString; }
 
-        INLINE const rendering::MaterialInstancePtr& baseParams() const { return m_baseParams; }
+        INLINE const rendering::MaterialRef& baseParams() const { return m_baseMaterial; }
 
         INLINE const base::RefPtr<MeshEditorMaterialInstance>& previewParams() const { return m_previewParams; }
 
@@ -44,12 +44,12 @@ namespace ed
         bool baseMaterial(const rendering::MaterialRef& material);
 
     private:
-        rendering::MeshMaterialBindingManifest* m_manifest = nullptr;
+        rendering::MeshMaterialConfig* m_manifest = nullptr;
 
         base::StringID m_name;
         base::StringBuf m_displayString;
 
-        rendering::MaterialInstancePtr m_baseParams;
+        rendering::MaterialRef m_baseMaterial;
         base::RefPtr<MeshEditorMaterialInstance> m_previewParams;
     };
 
@@ -59,7 +59,7 @@ namespace ed
     class MeshMaterialListModel : public ui::SimpleTypedListModel<base::RefPtr<MeshMaterialParameters>>
     {
     public:
-        MeshMaterialListModel(rendering::MeshMaterialBindingManifest* manifest);
+        MeshMaterialListModel(rendering::MeshMaterialConfig* manifest);
 
         virtual bool compare(const base::RefPtr<MeshMaterialParameters>& a, const base::RefPtr<MeshMaterialParameters>& b, int colIndex) const override final;
         virtual bool filter(const base::RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
@@ -69,15 +69,15 @@ namespace ed
         virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
 
     private:
-        rendering::MeshMaterialBindingManifest* m_manifest = nullptr;
+        rendering::MeshMaterialConfig* m_manifest = nullptr;
     };
 
     //--
 
     /// editor aspect for displaying the mesh packing parameters
-    class MeshMaterialBindingAspect : public SingleResourceEditorManifestAspect
+    class MeshMaterialBindingAspect : public SingleResourceEditorAspect
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialBindingAspect, SingleResourceEditorManifestAspect);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialBindingAspect, SingleResourceEditorAspect);
 
     public:
         MeshMaterialBindingAspect();
@@ -88,7 +88,7 @@ namespace ed
         MeshEditor* m_meshEditor = nullptr;
         MeshPreviewPanelWithToolbar* m_previewPanel = nullptr;
 
-        base::RefPtr<rendering::MeshMaterialBindingManifest> m_materialManifest;
+        base::RefPtr<rendering::MeshMaterialConfig> m_materialConfig;
 
         ui::DataInspectorPtr m_properties;
         ui::ListViewPtr m_list;
@@ -100,7 +100,7 @@ namespace ed
         void refreshMaterialProperties();
         void updateCaptions();
 
-        virtual void previewResourceChanged() override;
+        virtual void resourceChanged() override;
     };
 
     //--

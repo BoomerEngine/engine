@@ -49,47 +49,21 @@ namespace base
 
     namespace stream
     {
-        class IStream;
-
-        class IBinaryReader;
-        typedef RefPtr<IBinaryReader> ReaderPtr;
-
-        class IBinaryWriter;
-        typedef RefPtr<IBinaryWriter> WriterPtr;
-
-        class ITextWriter;
-        typedef RefPtr<ITextWriter> TextWritterPtr;
-
-        class ITextReader;
-        typedef RefPtr<ITextReader> TextReaderPtr;
+        class OpcodeStream;
+        class OpcodeIterator;
+        class OpcodeReader;
+        class OpcodeWriter;
 
         class LoadingResult;
         struct LoadingDependency;
 
-        class ILoader;
-        class ISaver;
-
-        // mapping indices
         typedef uint16_t MappedNameIndex;
         typedef uint16_t MappedTypeIndex;
         typedef uint16_t MappedPropertyIndex;
         typedef uint16_t MappedPathIndex;
         typedef uint32_t MappedObjectIndex; // yup, it happened 64K+ objects in one files
         typedef uint16_t MappedBufferIndex;
-
-        // Data mapping runtime -> persistent, interface used by binary serialization
-        class IDataMapper;
-
-        // Data mapping persistent -> runtime, interface used by binary serialization
-        class IDataUnmapper;
-
-        /// loading policy for loading references from the files
-        enum class ResourceLoadingPolicy : uint8_t
-        {
-            AsIs, // load as it was saved
-            NeverLoad,
-            AlwaysLoad,
-        };
+      
 
         class BASE_OBJECT_API IDataBufferLatentLoader : public IReferencable
         {
@@ -194,6 +168,11 @@ namespace base
 
         void print(IFormatStream& f) const;
     };
+
+    //---
+
+    /// copy value from one property to other property, handles type conversions, inlined objects etc
+    extern BASE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty);
 
     //---
 

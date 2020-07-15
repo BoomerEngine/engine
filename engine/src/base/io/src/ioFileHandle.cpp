@@ -14,10 +14,16 @@ namespace base
     namespace io
     {
 
-        IFileHandle::IFileHandle()
+        IReadFileHandle::IReadFileHandle()
         {}
 
-        IFileHandle::~IFileHandle()
+        IReadFileHandle::~IReadFileHandle()
+        {}
+
+        IWriteFileHandle::IWriteFileHandle()
+        {}
+
+        IWriteFileHandle::~IWriteFileHandle()
         {}
 
     } // io

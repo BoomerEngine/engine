@@ -23,6 +23,12 @@ namespace base
 
         //--
 
+        // get base object of this template
+        // NOTE: the base object does not have to be exactly the same class, can be of parent class
+        INLINE const ObjectTemplatePtr& base() const { return m_base; }
+
+        //--
+
         // Get static object class, overloaded in child classes
         static SpecificClassType<IObjectTemplate> GetStaticClass();
 
@@ -31,22 +37,20 @@ namespace base
 
         //--
 
+        // rebase this object template onto new base object, by default all non-overridden property values will also be replaced with the values from the base
+        // NOTE: this will cause full object refresh in editor
+        void rebase(const IObjectTemplate* base, bool copyValuesOfNonOverriddenProperties=true);
+
+        //--
+
+        /// check if property can have the override semantic
+        bool checkPropertyOverrideCaps(StringID name) const;
+
         /// check if property is overridden
         bool hasPropertyOverride(StringID name) const;
 
-        /// mark property was overridden or not
-        void togglePropertyOverride(StringID name, bool flag);
-
-        //--
-
-        /// make this object into an override object, it affects how it edits and saves
-        /// NOTE: this does not change anything in the data until the object is saved - when an override object is save than only the override properties are saved, the rest is not saved
-        void toggleOverrideState(bool flag);
-
-        //--
-
-        // initialize class (since we have no automatic reflection in this project)
-        static void RegisterType(rtti::TypeSystem& typeSystem);
+        /// reset property, returns true if property was reset
+        bool resetPropertyOverride(StringID name);
 
         //--
 
@@ -61,15 +65,25 @@ namespace base
 
         //--
 
+        /// create editable data view
+        virtual DataViewPtr createDataView() const override;
+
+        //--
+
+        // initialize class (since we have no automatic reflection in this project)
+        static void RegisterType(rtti::TypeSystem& typeSystem);
+
+    protected:
+        virtual void onPropertyChanged(StringView<char> path) override;
+
+        virtual bool onPropertyShouldLoad(const rtti::Property* prop) override;
+        virtual bool onPropertyShouldSave(const rtti::Property* prop) const override;
+
     private:
-        //static const auto NUM_WORDS = (MAX_TEMPLATE_PROPERTIES + 63) / 64;
-        //uint64_t m_overridenProperties[NUM_WORDS]; // properties that were explicitly written
+        HashSet<StringID> m_overridenProperties; // properties that were historically changed via onPropertyModified
+        int m_localSuppressOverridenPropertyCapture = 0;
 
-        HashSet<StringID> m_overridenProperties; // TODO: migrate to bit set
-
-        bool m_override = false; // this object is indeed an override - only the properties with the "overridden" flag will be saved
-
-        ObjectTemplatePtr m_editBase; // base object - just for editing
+        ObjectTemplatePtr m_base; // NOT SAVED - must be set manually every time object is loaded
     };
 
     ///--

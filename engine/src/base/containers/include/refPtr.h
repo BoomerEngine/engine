@@ -53,6 +53,7 @@ namespace base
         void addRefInternal(void* ptr);
         void releaseRefInternal(void** ptr);
         void swapRefInternal(void** ptr, void* newPtr);
+        void printRefInternal(void* ptr, IFormatStream& f) const;
 
         uint32_t m_currentTrackingId = 0;
     };
@@ -134,6 +135,11 @@ namespace base
 
         // make a weak reference
         INLINE RefWeakPtr<T> weak() const;
+
+        //--
+        
+        // debug print, prints the NULL or calls the print() on the reference object
+        INLINE void print(IFormatStream& f) const;
 
         //--
 

@@ -19,9 +19,9 @@ namespace ed
     class MeshStructurePanel;
 
     /// editor for meshes
-    class ASSETS_MESH_EDITOR_API MeshEditor : public SingleCookedResourceEditor
+    class ASSETS_MESH_EDITOR_API MeshEditor : public SingleLoadedResourceEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, SingleCookedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, SingleLoadedResourceEditor);
 
     public:
         MeshEditor(ConfigGroup config, ManagedFile* file);
@@ -31,7 +31,7 @@ namespace ed
 
         INLINE MeshPreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
 
-        INLINE rendering::MeshPtr previewMesh() const { return base::rtti_cast<rendering::Mesh>(previewResource().acquire()); }
+        INLINE rendering::MeshPtr mesh() const { return base::rtti_cast<rendering::Mesh>(resource()); }
 
         //--
 
@@ -39,9 +39,10 @@ namespace ed
         base::RefPtr<MeshPreviewPanelWithToolbar> m_previewPanel;
         base::RefPtr<MeshStructurePanel> m_structurePanel;
 
+
         void createInterface();
 
-        virtual void previewResourceChanged();
+        virtual void resourceChanged() override;
     };
 
 } // ed

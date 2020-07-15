@@ -110,6 +110,13 @@ namespace ed
         bool showGenericContextMenu();
         void iconSize(uint32_t size);
 
+        void createNewDirectory();
+        void createNewFile(const ManagedFileFormat* format);
+        bool importNewFile(const ManagedFileFormat* format);
+
+        void buildNewAssetMenu(ui::MenuButtonContainer* menu);
+        void buildImportAssetMenu(ui::MenuButtonContainer* menu);
+
         virtual void handleCloseRequest() override;
         virtual ui::IElement* handleFocusForwarding() override;
     };

@@ -25,7 +25,7 @@ namespace base
         {
             static unsigned DLL_CALLCONV ReadProc(void *buffer, unsigned size, unsigned count, fi_handle handle)
             {
-                auto reader = (base::io::IFileHandle*) handle;
+                auto reader = (base::io::IReadFileHandle*) handle;
 
                 auto totalRead = size * count;
                 auto left = reader->size() - reader->pos();
@@ -42,7 +42,7 @@ namespace base
 
             static int DLL_CALLCONV SeekProc(fi_handle handle, long offset, int origin)
             {
-                auto reader = (base::io::IFileHandle*) handle;
+                auto reader = (base::io::IReadFileHandle*) handle;
                 if (origin == SEEK_END)
                 {
                     reader->pos(range_cast<uint64_t>((int64_t) reader->size() + (int64_t) offset));
@@ -60,7 +60,7 @@ namespace base
 
             static long DLL_CALLCONV TellProc(fi_handle handle)
             {
-                auto reader = (base::io::IFileHandle*) handle;
+                auto reader = (base::io::IReadFileHandle*) handle;
                 return range_cast<uint32_t>(reader->pos());
             }
         } // loader
@@ -146,13 +146,13 @@ namespace base
 
             static unsigned STDCALL WriteProc(void *buffer, unsigned size, unsigned count, fi_handle handle)
             {
-                auto writer = (base::io::IFileHandle*) handle;
+                auto writer = (base::io::IWriteFileHandle*) handle;
                 return (uint32_t)writer->writeSync(buffer, size * count);
             }
 
             static int STDCALL SeekProc(fi_handle handle, long offset, int origin)
             {
-                auto writer = (base::io::IFileHandle*) handle;
+                auto writer = (base::io::IWriteFileHandle*) handle;
                 if (origin == SEEK_END)
                 {
                     writer->pos(range_cast<uint64_t>((int64_t) writer->size() + (int64_t) offset));
@@ -170,7 +170,7 @@ namespace base
 
             static long STDCALL TellProc(fi_handle handle)
             {
-                auto writer = (base::io::IFileHandle*) handle;
+                auto writer = (base::io::IWriteFileHandle*) handle;
                 return range_cast<uint32_t>(writer->pos());
             }
         } // saver
@@ -217,7 +217,7 @@ namespace base
             return FIF_UNKNOWN;
         }
 
-        static FREE_IMAGE_FORMAT GetFormat(base::io::IFileHandle& file, const char* typeHint)
+        static FREE_IMAGE_FORMAT GetFormat(base::io::IReadFileHandle& file, const char* typeHint)
         {
             // try to get format with the type hint
             auto format = GetFormat(typeHint);

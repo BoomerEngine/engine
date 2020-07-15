@@ -10,109 +10,12 @@
 #include "resource.h"
 #include "resourceCookingInterface.h"
 #include "base/parser/include/textToken.h"
-#include "base/object/include/serializationMapper.h"
-#include "base/object/include/nullWriter.h"
+#include "base/xml/include/xmlUtils.h"
 
 namespace base
 {
     namespace res
     {
-        //----
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceDataVersionMetadata);
-        RTTI_END_TYPE();
-
-        ResourceDataVersionMetadata::ResourceDataVersionMetadata()
-            : m_version(0)
-        {}
-
-        //----
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceExtensionMetadata);
-        RTTI_END_TYPE();
-
-        ResourceExtensionMetadata::ResourceExtensionMetadata()
-            : m_ext(nullptr)
-        {}
-
-        //---
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceManifestExtensionMetadata);
-        RTTI_END_TYPE();
-
-        ResourceManifestExtensionMetadata::ResourceManifestExtensionMetadata()
-            : m_ext(nullptr)
-        {}
-
-        //---
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceBakedOnlyMetadata);
-        RTTI_END_TYPE();
-
-        ResourceBakedOnlyMetadata::ResourceBakedOnlyMetadata()
-        {}
-
-        //---
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceDescriptionMetadata);
-        RTTI_END_TYPE();
-
-        ResourceDescriptionMetadata::ResourceDescriptionMetadata()
-            : m_desc("")
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceTagColorMetadata);
-        RTTI_END_TYPE();
-
-        ResourceTagColorMetadata::ResourceTagColorMetadata()
-            : m_color(0,0,0,0)
-        {}        
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(RawTextData);
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Raw Text Data");
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4rawtext");
-            RTTI_PROPERTY(m_data);
-            RTTI_PROPERTY(m_crc);
-        RTTI_END_TYPE();
-
-        RawTextData::RawTextData()
-        {}
-
-        RawTextData::RawTextData(const StringBuf& data)
-            : m_data(data)
-        {
-            m_crc = m_data.view().calcCRC64();
-        }
-
-        RawTextData::~RawTextData()
-        {}
-        
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(RawBinaryData);
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Raw Binary Data");
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4rawdata");
-            RTTI_PROPERTY(m_data);
-            RTTI_PROPERTY(m_crc);
-        RTTI_END_TYPE();
-
-        RawBinaryData::RawBinaryData()
-        {}
-
-        RawBinaryData::RawBinaryData(const Buffer& data)
-            : m_data(data)
-        {
-            CRC64 crc;
-            crc.append(data.data(), data.size());
-            m_crc = crc.crc();
-        }
-
-        RawBinaryData::~RawBinaryData()
-        {}
 
         //--
 
@@ -163,10 +66,7 @@ namespace base
 
         bool CookerIncludeHandler::checkFileExists(StringView<char> path) const
         {
-            uint64_t fileSize = 0;
-            if (!m_cooker.queryFileInfo(path, nullptr, &fileSize, nullptr))
-                return false;
-            return 0 != fileSize;
+            return m_cooker.queryFileExists(path);
         }
 
         bool CookerIncludeHandler::resolveIncludeFile(bool global, StringView<char> path, StringView<char> referencePath, StringBuf& outPath) const
@@ -197,112 +97,52 @@ namespace base
 
         //--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceCookedClassMetadata);
-        RTTI_END_TYPE();
-
-        ResourceCookedClassMetadata::ResourceCookedClassMetadata()
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceSourceFormatMetadata);
-        RTTI_END_TYPE();
-
-        ResourceSourceFormatMetadata::ResourceSourceFormatMetadata()
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceCookerBakingOnlyMetadata);
-        RTTI_END_TYPE();
-        
-        ResourceCookerBakingOnlyMetadata::ResourceCookerBakingOnlyMetadata()
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceCookerVersionMetadata);
-        RTTI_END_TYPE();
-
-        ResourceCookerVersionMetadata::ResourceCookerVersionMetadata()
-            : m_version(0)
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceManifest);
-        RTTI_METADATA(ResourceExtensionMetadata); // disable normal saving as resources
-        RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
-        RTTI_END_TYPE();
-
-        IResourceManifest::IResourceManifest()
-        {}
-
-        IResourceManifest::~IResourceManifest()
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceCooker);
-        RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
-        RTTI_END_TYPE();
-
-        IResourceCooker::IResourceCooker()
-        {}
-
-        IResourceCooker::~IResourceCooker()
-        {}
-
-        void IResourceCooker::reportManifestClasses(base::Array<base::SpecificClassType<IResourceManifest>>& outManifestClasses) const
+        class LocalCookerLoadingReporter : public xml::ILoadingReporter
         {
-            // nothing
+        public:
+            LocalCookerLoadingReporter(IResourceCookerInterface& cooker, const base::StringBuf& filePath)
+                : m_path(filePath)
+            {
+            }
+
+            INLINE bool hasErrors() const
+            {
+                return m_numErrors > 0;
+            }
+
+            virtual void onError(uint32_t line, uint32_t pos, const char* text) override
+            {
+                logging::Log().Print(logging::OutputLevel::Error, m_path.c_str(), line, "", text);
+                m_numErrors += 1;
+            }
+
+        private:
+            base::StringBuf m_path;
+            uint32_t m_numErrors = 0;
+        };
+
+        xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView<char> path /*= ""*/)
+        {
+            // load the xml content
+            auto xmlFilePath = cooker.queryResourcePath().path();
+            auto rawContent = cooker.loadToBuffer(xmlFilePath);
+            if (!rawContent)
+                return nullptr;
+
+            /// get the full context path
+            StringBuf contextName;
+            cooker.queryContextName(xmlFilePath, contextName);
+
+            /// parse the document
+            LocalCookerLoadingReporter errorReporter(cooker, contextName);
+            auto ret = xml::LoadDocument(errorReporter, rawContent);
+
+            // do not use the document if we had errors
+            if (errorReporter.hasErrors())
+                ret.reset();
+
+            return ret;
         }
-
-        //--
-
-        class RawTextDataImporter : public IResourceCooker
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(RawTextDataImporter, IResourceCooker);
-
-        public:
-            virtual res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override final
-            {
-                StringBuf data;
-                if (!cooker.loadToString(cooker.queryResourcePath().path(), data))
-                    return false;
-
-                return base::CreateSharedPtr<RawTextData>(data);
-            }
-        };
-
-        RTTI_BEGIN_TYPE_CLASS(RawTextDataImporter);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<RawTextData>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("*");
-        RTTI_END_TYPE();
-
-        //--
-
-        class RawBinaryDataImporter : public IResourceCooker
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(RawBinaryDataImporter, IResourceCooker);
-
-        public:
-            virtual res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override final
-            {
-                Buffer data = cooker.loadToBuffer(cooker.queryResourcePath().path());
-                if (!data)
-                    return false;
-
-                return base::CreateSharedPtr<RawBinaryData>(data);
-            }
-        };
-
-        RTTI_BEGIN_TYPE_CLASS(RawBinaryDataImporter);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<RawBinaryData>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("*");
-        RTTI_END_TYPE();
-
-        //--
 
     } // res
 } // base

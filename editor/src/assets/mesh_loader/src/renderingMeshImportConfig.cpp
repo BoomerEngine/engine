@@ -1,0 +1,146 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: import\config #]
+***/
+
+#include "build.h"
+#include "renderingMeshImportConfig.h"
+
+namespace rendering
+{
+    //--
+
+    RTTI_BEGIN_TYPE_ENUM(MeshImportUnits);
+        RTTI_ENUM_OPTION(Auto);
+        RTTI_ENUM_OPTION(Meters);
+        RTTI_ENUM_OPTION(Centimeters);
+        RTTI_ENUM_OPTION(Milimeter);
+        RTTI_ENUM_OPTION(Inches);
+        RTTI_END_TYPE();
+
+    //--
+
+    RTTI_BEGIN_TYPE_ENUM(MeshImportSpace);
+        RTTI_ENUM_OPTION(Auto);
+        RTTI_ENUM_OPTION(RightHandZUp);
+        RTTI_ENUM_OPTION(RightHandYUp);
+        RTTI_ENUM_OPTION(LeftHandZUp);
+        RTTI_ENUM_OPTION(LeftHandYUp);
+    RTTI_END_TYPE();
+
+    //--
+
+    RTTI_BEGIN_TYPE_ENUM(MeshDataRecalculationMode);
+    RTTI_ENUM_OPTION(Never);
+    RTTI_ENUM_OPTION(WhenMissing);
+    RTTI_ENUM_OPTION(Always);
+    RTTI_ENUM_OPTION(Remove);
+    RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_ENUM(MeshNormalComputationMode);
+    RTTI_ENUM_OPTION(Flat);
+    RTTI_ENUM_OPTION(FaceUniform);
+    RTTI_ENUM_OPTION(FaceArea);
+    RTTI_END_TYPE();
+
+
+    //--
+
+    RTTI_BEGIN_TYPE_CLASS(MeshImportConfig);
+        RTTI_CATEGORY("Import space");
+        RTTI_PROPERTY(units).editable();
+        RTTI_PROPERTY(space).editable();
+        RTTI_PROPERTY(flipFaces).editable();
+        RTTI_CATEGORY("Transform");
+        RTTI_PROPERTY(globalTranslation).editable();
+        RTTI_PROPERTY(globalRotation).editable();
+        RTTI_PROPERTY(globalScale).editable();
+        RTTI_CATEGORY("Material import");
+        RTTI_PROPERTY(m_autoImportMaterials).editable("Automatically import materials used by this mesh");
+        RTTI_PROPERTY(m_materialSearchPath).editable("ADDITONAL paths to explore when looking for materials (before we import one)");
+        RTTI_PROPERTY(m_materialsImportPath).editable("Where are the new materials imported");
+        RTTI_CATEGORY("Texture import");
+        RTTI_PROPERTY(m_autoImportTextures).editable("Automatically import textures used by this mesh");
+        RTTI_PROPERTY(m_textureSearchPath).editable("ADDITONAL paths to explore when looking for textures (before we import one)");
+        RTTI_PROPERTY(m_textureImportPath).editable("Where to place imported textures");
+        RTTI_CATEGORY("Vertex normals");
+        RTTI_PROPERTY(m_normalRecalculation).editable("Controls when/if vertex normals are calculated");
+        RTTI_PROPERTY(m_normalComputationMode).editable("Controls how vertex normals are calculated, specifically how are the normals of incident faces averaged together");
+        RTTI_PROPERTY(m_normalAngularThreshold).editable("Controls maximum angle between incident faces that still allow for vertex normal weighing");
+        RTTI_PROPERTY(m_useFaceSmoothGroups).editable("Allow use of the per-face smooth group information if it's available");
+        RTTI_PROPERTY(m_flipNormals).editable("Flip normal vector, regardless if calculated or not");
+        RTTI_CATEGORY("Tangent space");
+        RTTI_PROPERTY(m_tangentsRecalculation).editable("Tangent space generation mode, controls if tangent space should be generated");
+        RTTI_PROPERTY(m_tangentsAngularThreshold).editable("Angle threshold for welding tangent space vectors together");
+        RTTI_PROPERTY(m_flipTangent).editable("Flip tangent vector, regardless if calculated or not");
+        RTTI_PROPERTY(m_flipBitangent).editable("Flip bitangent vector, regardless if calculated or not");
+    RTTI_END_TYPE();
+
+    MeshImportConfig::MeshImportConfig()
+    {
+        m_materialsImportPath = StringBuf("../materials");
+        m_textureImportPath = StringBuf("../textures");
+    }
+
+    float GetScaleFactorForUnits(MeshImportUnits units)
+    {
+        switch (units)
+        {
+            case MeshImportUnits::Meters: return 1.0f;
+            case MeshImportUnits::Inches: return 0.0254f;
+            case MeshImportUnits::Centimeters: return 0.01f;
+            case MeshImportUnits::Milimeter: return 0.001f;
+        }
+
+        // default scale factor
+        return 1.0f;
+    }
+
+    Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
+    {
+        switch (space)
+        {
+            case MeshImportSpace::RightHandZUp:
+                return Matrix::IDENTITY();
+
+            case MeshImportSpace::RightHandYUp:
+                return Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
+
+            case MeshImportSpace::LeftHandZUp:
+                return Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
+
+            case MeshImportSpace::LeftHandYUp:
+                return Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
+        }
+
+        // default space
+        return Matrix::IDENTITY();
+    }
+
+    Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
+    {
+        auto orientationMatrix = GetOrientationMatrixForSpace(space);
+        orientationMatrix.scaleInner(GetScaleFactorForUnits(units));
+        return orientationMatrix;
+    }
+
+    Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
+    {
+        // select setup
+        auto importUnits = resolveUnits(defaultAssetUnits);
+        auto importSpace = resolveSpace(defaultAssetSpace);
+
+        // calculate the orientation matrix
+        auto orientationMatrix = CalcContentToEngineMatrix(importSpace, importUnits);
+
+        // calculate the additional setup matrix
+        auto additionalTransformMatrix = Matrix::BuildTRS(globalTranslation, globalRotation, globalScale);
+        return orientationMatrix * additionalTransformMatrix;
+    }        
+
+    //--
+
+} // base

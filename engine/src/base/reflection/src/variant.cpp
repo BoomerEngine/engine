@@ -8,10 +8,8 @@
 
 #include "build.h"
 #include "variant.h"
-#include "base/object/include/streamTextWriter.h"
-#include "base/object/include/streamTextReader.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/object/include/streamOpcodeReader.h"
 #include "base/object/include/rttiType.h"
 
 #include "base/containers/include/stringBuilder.h"
@@ -263,13 +261,6 @@ namespace base
             type()->printToText(f, data(), false);
     }
 
-    void Variant::calcCRC64(CRC64& crc) const
-    {
-        crc << type();
-        if (data())
-            type()->calcCRC64(crc, data());
-    }
-
     void Variant::printDebug(base::IFormatStream& f) const
     {
 #ifdef BUILD_DEBUG
@@ -297,97 +288,56 @@ namespace base
 
     namespace prv
     {
-        static bool VariantWriteBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream, const void* data, const void* defaultData)
+        static void VariantWriteBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream, const void* data, const void* defaultData)
         {
-            auto v  = (const Variant*)data;
-            stream.writeType(v->type());
+            const auto& v = *(const Variant*)data;
 
-            if (v->type())
-                return v->type()->writeBinary(typeContext, stream, v->data(), nullptr);
-            return true;
-        }
-
-        static bool VariantReadBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream, void* data)
-        {
-            auto type = stream.readType();
-
-            auto v  = (Variant*)data;
-            v->reset();
-
-            if (type)
+            if (v.empty())
             {
-                v->init(type, nullptr);
-                if (!v->type()->readBinary(typeContext, stream, v->data()))
-                    return false;
+                stream.writeTypedData<uint8_t>(0);
             }
-
-            return true;
-        }
-
-        static bool VariantWriteText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream, const void* data, const void* defaultData)
-        {
-            auto v  = (const Variant*)data;
-
-            if (!v->empty())
+            else
             {
-                stream.beginProperty("type");
-                stream.writeValue(v->type().name().view());
-                stream.endProperty();
+                stream.writeTypedData<uint8_t>(1);
+                stream.writeType(v.type());
 
-                stream.beginProperty("value");
-
-                if (!v->type()->writeText(typeContext, stream, v->data(), nullptr))
-                {
-                    stream.endProperty();
-                    return false;
-                }
-
-                stream.endProperty();
+                stream.beginSkipBlock();
+                v.type()->writeBinary(typeContext, stream, v.data(), nullptr);
+                stream.endSkipBlock();
             }
-
-            return true;
         }
 
-        static bool VariantReadText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data)
+        static void VariantReadBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream, void* data)
         {
-            auto v  = (Variant*)data;
-            v->reset();
+            auto& v = *(Variant*)data;
 
-            Type variantType;
-            StringView<char> propName;
-            if (stream.beginProperty(propName) && propName == "type")
+            uint8_t code = 0;
+            stream.readTypedData(code);
+
+            if (code == 0)
             {
-                StringView<char> typeName;
-                stream.readValue(typeName);
-                stream.endProperty();
+                v.reset();
+            }
+            else if (code == 1)
+            {
+                StringID typeName;
+                const auto type = stream.readType(typeName);
 
-                // find type
-                variantType = rtti::TypeSystem::GetInstance().findType(StringID(typeName));
-                if (!variantType)
+                if (type)
                 {
-                    TRACE_ERROR("Failed to restore variant because the type '{}' is unknown", typeName);
-                    return false;
+                    stream.enterSkipBlock();
+
+                    v.init(type, nullptr);
+                    type->readBinary(typeContext, stream, v.data());
+                    stream.leaveSkipBlock();
                 }
-
-                // re initialize the variant to the proper type
-                v->init(variantType, nullptr);
-
-                // load the value of the variant
-                if (stream.beginProperty(propName) && propName == "value")
+                else
                 {
-                    if (variantType->readText(typeContext, stream, v->data()))
-                    {
-                        stream.endProperty();
-                        return true;
-                    }
-
-                    stream.endProperty();
+                    TRACE_WARNING("Variant at {}: Missing type '{}' that was used to save variant", typeContext, typeName);
+                    stream.discardSkipBlock();
                 }
             }
-
-            return false;
         }
-
 
     } // prv
 
@@ -396,9 +346,7 @@ namespace base
         RTTI_BIND_NATIVE_COPY(Variant);
         RTTI_BIND_NATIVE_COMPARE(Variant);
         RTTI_BIND_NATIVE_PRINT(Variant);
-        RTTI_BIND_NATIVE_HASH(Variant);
         RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::VariantWriteBinary, &prv::VariantReadBinary);
-        RTTI_BIND_CUSTOM_TEXT_SERIALIZATION(&prv::VariantWriteText, &prv::VariantReadText);
     RTTI_END_TYPE();
 
     //--
@@ -406,32 +354,16 @@ namespace base
     namespace prv
     {
 
-        static bool WriteBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream, const void* data, const void* defaultData)
+        static void WriteBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream, const void* data, const void* defaultData)
         {
             auto v = *(const Type*)data;
             stream.writeType(v);
-            return true;
         }
 
-        static bool ReadBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream, void* data)
+        static void ReadBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream, void* data)
         {
-            *(Type*)data = stream.readType();
-            return true;
-        }
-
-        static bool WriteText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream, const void* data, const void* defaultData)
-        {
-            auto v = *(const Type*)data;
-            stream.writeValue(v->name().view());
-            return true;
-        }
-
-        static bool ReadText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data)
-        {
-            StringView<char> typeName;
-            stream.readValue(typeName);
-            *(Type*)data = RTTI::GetInstance().findType(StringID(typeName));;
-            return false;
+            StringID typeName;
+            *(Type*)data = stream.readType(typeName);
         }
 
     } // prv
@@ -441,9 +373,7 @@ namespace base
         RTTI_BIND_NATIVE_COPY(Type);
         RTTI_BIND_NATIVE_COMPARE(Type);
         RTTI_BIND_NATIVE_PRINT(Type);
-        RTTI_BIND_NATIVE_HASH(Type);
         RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteBinary, &prv::ReadBinary);
-        RTTI_BIND_CUSTOM_TEXT_SERIALIZATION(&prv::WriteText, &prv::ReadText);
     RTTI_END_TYPE();
 
     //--
@@ -451,32 +381,16 @@ namespace base
     namespace prv2
     {
 
-        static bool WriteBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryWriter& stream, const void* data, const void* defaultData)
+        static void WriteBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream, const void* data, const void* defaultData)
         {
             auto v = *(const Type*)data;
             stream.writeType(v);
-            return true;
         }
 
-        static bool ReadBinary(const base::rtti::TypeSerializationContext& typeContext, base::stream::IBinaryReader& stream, void* data)
+        static void ReadBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream, void* data)
         {
-            *(ClassType*)data = stream.readType().toClass();
-            return true;
-        }
-
-        static bool WriteText(const base::rtti::TypeSerializationContext& typeContext, base::stream::ITextWriter& stream, const void* data, const void* defaultData)
-        {
-            auto v = *(const ClassType*)data;
-            stream.writeValue(v->name().view());
-            return true;
-        }
-
-        static bool ReadText(const rtti::TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data)
-        {
-            StringView<char> typeName;
-            stream.readValue(typeName);
-            *(ClassType*)data = RTTI::GetInstance().findClass(StringID(typeName));;
-            return false;
+            StringID typeName;
+            *(ClassType*)data = stream.readType(typeName).toClass();
         }
 
     } // prv2
@@ -486,9 +400,7 @@ namespace base
     RTTI_BIND_NATIVE_COPY(ClassType);
     RTTI_BIND_NATIVE_COMPARE(ClassType);
     RTTI_BIND_NATIVE_PRINT(ClassType);
-    RTTI_BIND_NATIVE_HASHER(ClassType);
     RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv2::WriteBinary, &prv2::ReadBinary);
-    RTTI_BIND_CUSTOM_TEXT_SERIALIZATION(&prv2::WriteText, &prv2::ReadText);
     RTTI_END_TYPE();
 
 } // base

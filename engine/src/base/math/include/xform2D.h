@@ -140,8 +140,6 @@ namespace base
         static const XForm2D& ONEEIGHTY();
     };
 
-    extern BASE_MATH_API XForm2D Concat(const XForm2D& a, const XForm2D& b);
-
     //--
 
 } // base

@@ -7,8 +7,6 @@
 ***/
 
 #include "build.h"
-#include "base/math/include/randomFast.h"
-#include "base/math/include/randomMersenne.h"
 
 namespace base
 {
@@ -36,14 +34,16 @@ namespace base
             return a + (b-a) * f;
         }
 
+        static TYPE_TLS base::FastRandState GRand;
+
         static float RandOne()
         {
-            return Rand();
+            return base::RandOne(GRand);
         }
 
         static float RandRangeF(float a, float b)
         {
-            return a + (b-a) * Rand();
+            return a + (b-a) * base::RandOne(GRand);
         }
 
         static int RandRangeI(int a, int b)
@@ -51,7 +51,7 @@ namespace base
             if (abs(a-b) <= 1)
                 return a;
 
-            return (int)std::floor(a + (b-a) * Rand());
+            return a + base::RandMax(GRand, b - a);
         }
 
         static int RandRangeUnique(int a, int b, int prev)

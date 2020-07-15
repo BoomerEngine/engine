@@ -56,7 +56,7 @@ namespace base
 
     INLINE Vector3 Vector3::frac() const
     {
-        return Vector3(Frac(x), Frac(y), Frac(z));
+        return Vector3(x - std::trunc(x), y - std::trunc(y), z - std::trunc(z));
     }
 
     INLINE Vector3 Vector3::trunc() const

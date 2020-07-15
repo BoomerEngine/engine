@@ -8,35 +8,11 @@
 
 #pragma once
 
-#include "base/resource/include/resource.h"
-#include "rendering/driver/include/renderingParametersView.h"
-
 #include "renderingMeshFormat.h"
+#include "rendering/driver/include/renderingParametersView.h"
 
 namespace rendering
 {
-    //---
-
-    /// mesh bounds
-    struct RENDERING_MESH_API MeshBounds
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(MeshBounds);
-
-        base::Box box;
-    };
-
-    //---
-
-    /// material data
-    struct RENDERING_MESH_API MeshMaterial
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(MeshMaterial);
-
-        base::StringID name;
-        MaterialInstancePtr baseMaterial; // owned by mesh
-        MaterialInstancePtr material; // owned by mesh
-    };
-
     //---
 
     /// renderable mesh chunk
@@ -48,8 +24,6 @@ namespace rendering
 
         MeshVertexFormat vertexFormat;
 
-        base::Box bounds;
-        
         uint16_t materialIndex = 0;
         uint32_t renderMask = 0;
         uint32_t detailMask = 0;
@@ -63,38 +37,126 @@ namespace rendering
         base::Vector3 quantizationScale;
 
         base::Buffer packedVertexData; // packed (compressed) vertex data
-        base::Buffer packedIndexData; // packed (compressed) index data        
+        base::Buffer packedIndexData; // packed (compressed) index data
     };
 
     //---
 
-    /// a rendering mesh data
+    /// rendering detail range (LOD range)
+    struct RENDERING_MESH_API MeshDetailLevel
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(MeshDetailLevel);
+
+        float rangeMin = 0.0f;
+        float rangeMax = FLT_MAX;
+    };
+
+    //---
+
+     /// mesh visibility group, defines what kind of stuff we are dealing with
+    enum class MeshVisibilityGroup : uint8_t
+    {
+        Generic,
+        SmallProps,
+
+        // TODO: more
+
+        MAX,
+    };
+
+    /// visibility group info
+    struct MeshVisibilityGroupInfo
+    {
+        base::StringView<char> name;
+        float referenceVisibilityDistance = 100.0f; // distance at which this kind of mesh should be visible
+        float referenceStreamingDistance = 0.0f; // distance at which this kind of mesh should stream
+    };
+
+    /// get info about mesh visibility group
+    extern RENDERING_MESH_API const MeshVisibilityGroupInfo* GetMeshVisibilityGroupInfo(MeshVisibilityGroup group);
+
+    //---
+
+    /// material information
+    struct RENDERING_MESH_API MeshMaterial
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(MeshMaterial);
+
+        base::StringID name;
+        MaterialRef baseMaterial; // as imported
+        MaterialInstancePtr material; // local override built base on config
+    };
+
+    //---
+
+    /// mesh initialization data
+    struct RENDERING_MESH_API MeshInitData
+    {
+        MeshVisibilityGroup visibilityGroup = MeshVisibilityGroup::Generic;
+        float visibilityDistanceMultiplier = 1.0f;
+        float visibilityDistanceOverride = 0.0f;
+
+        base::Box bounds;
+
+        base::Array<MeshChunk> chunks;
+        base::Array<MeshDetailLevel> detailLevels;
+        base::Array<MeshMaterial> materials;
+
+        //--
+    };
+
+    //---
+
+    /// a rendering mesh
     class RENDERING_MESH_API Mesh : public base::res::IResource
     {
         RTTI_DECLARE_VIRTUAL_CLASS(Mesh, base::res::IResource);
 
     public:
         Mesh();
-        Mesh(MeshBounds&& bounds, base::Array<MeshMaterial>&& materials, base::Array<MeshChunk>&& chunks);
+        Mesh(MeshInitData && data);
         virtual ~Mesh();
 
         //---
 
-        // bounding box
-        INLINE const MeshBounds& bounds() const { return m_bounds; }
+        /// get mesh bounds that cover all the mesh vertices
+        INLINE const base::Box& bounds() const { return m_bounds; }
 
-        // materials
+        // get the content group this mesh belongs to
+        INLINE MeshVisibilityGroup visibilityGroup() const { return m_visibilityGroup; }
+
+        /// get the visibility radius multiplier for this mesh
+        INLINE float visibilityDistanceMultiplier() const { return m_visibilityDistanceMultiplier; }
+
+        /// get the custom forced visibility for this mesh
+        INLINE float visibilityDistanceOverride() const { return m_visibilityDistanceOverride; }
+
+        //---
+
+        // get used materials
         INLINE const base::Array<MeshMaterial>& materials() const { return m_materials; }
+
+        // get used bones
+        //INLINE const base::Array<base::StringID>& boneRefs() const { return m_materialRefs; }
 
         // chunks
         INLINE const base::Array<MeshChunk>& chunks() const { return m_chunks; }
 
+        // detail levels
+        INLINE const base::Array<MeshDetailLevel>& detailLevels() const { return m_details; }
+
         //---
 
     protected:
-        MeshBounds m_bounds;
+        base::Box m_bounds;
+
         base::Array<MeshMaterial> m_materials;
         base::Array<MeshChunk> m_chunks;
+        base::Array<MeshDetailLevel> m_details;
+
+        MeshVisibilityGroup m_visibilityGroup = MeshVisibilityGroup::Generic;
+        float m_visibilityDistanceMultiplier = 1.0f;
+        float m_visibilityDistanceOverride = 0.0f;
 
         void registerChunks();
         void unregisterChunks();

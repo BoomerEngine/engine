@@ -34,19 +34,55 @@ namespace ui
     {
         createChildWithType<IElement>("ToolbarSeparator"_id);
     }
-
-    void ToolBar::createButton(base::StringID action, base::StringView<char> caption, base::StringView<char> tooltip/* = ""*/)
+    
+    static base::StringBuf RenderToolbarCaption(const ToolbarButtonSetup& setup)
     {
-        auto but = createChildWithType<Button>("ToolbarButton"_id);
-        if (caption)
-            but->createChild<ui::TextLabel>(caption);
-        if (tooltip)
-            but->tooltip(tooltip);
+        // 
+        if (setup.m_caption && setup.m_icon)
+        {
+            return base::TempString("[center][img:{}][br][size:-]{}", setup.m_icon, setup.m_caption);
+        }
+        else if (setup.m_caption)
+        {
+            return base::TempString("{}", setup.m_caption);
+        }
+        else if (setup.m_icon)
+        {
+            return base::TempString("[img:{}]", setup.m_icon);
+        }
+        else
+        {
+            return base::TempString("Tool");
+        }
+    }
+        
 
+    void ToolBar::createButton(base::StringID action, const ToolbarButtonSetup& setup)
+    {
         if (action)
         {
+            const auto captionString = RenderToolbarCaption(setup);
+            auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
+
+            if (setup.m_tooltip)
+                but->tooltip(setup.m_tooltip);
+
             but->bind("OnClick"_id, this) = action;
             but->customStyle("action"_id, action);
+        }
+    }
+
+    void ToolBar::createCallback(const ToolbarButtonSetup& setup, const std::function<void()>& simpleCallback)
+    {
+        if (simpleCallback)
+        {
+            const auto captionString = RenderToolbarCaption(setup);
+            auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
+
+            if (setup.m_tooltip)
+                but->tooltip(setup.m_tooltip);
+
+            but->OnClick = simpleCallback;
         }
     }
 
@@ -108,9 +144,11 @@ namespace ui
             auto action = doc.nodeAttributeOfDefault(id, "action");
             if (action)
             {
-                auto caption = doc.nodeAttributeOfDefault(id, "caption", action);
-                auto tooltip = doc.nodeAttributeOfDefault(id, "tooltip");
-                createButton(base::StringID(action), caption, tooltip);
+                ToolbarButtonSetup setup;
+                setup.m_icon = doc.nodeAttributeOfDefault(id, "icon");
+                setup.m_caption = doc.nodeAttributeOfDefault(id, "caption", action);
+                setup.m_tooltip = doc.nodeAttributeOfDefault(id, "tooltip");
+                createButton(base::StringID(action), setup);
                 return true;
             }
         }

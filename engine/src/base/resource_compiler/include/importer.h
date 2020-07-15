@@ -23,7 +23,9 @@ namespace base
             StringBuf assetFilePath;
             StringBuf depotFilePath;
 
-            Array<ResourceConfigurationPtr> config;
+            // NOTE: configs must be free-objects (not parented to existing hierarchy)
+            ResourceConfigurationPtr externalConfig; // follow-up import configuragion 
+            ResourceConfigurationPtr userConfig; // user given configuragion
         };
 
         //--

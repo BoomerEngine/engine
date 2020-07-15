@@ -19,15 +19,17 @@ namespace ed
     class ImageHistogramPendingData;
 
     /// editor for static textures (baked)
-    class StaticTextureEditor : public SingleCookedResourceEditor
+    class StaticTextureEditor : public SingleLoadedResourceEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, SingleCookedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, SingleLoadedResourceEditor);
 
     public:
         StaticTextureEditor(ConfigGroup config, ManagedFile* file);
         virtual ~StaticTextureEditor();
 
         INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
+
+        INLINE rendering::StaticTexturePtr texture() const { return rtti_cast<rendering::StaticTexture>(resource()); }
 
         //--
 
@@ -49,7 +51,7 @@ namespace ed
         void updateHistogram();
         void checkHistograms();
 
-        virtual void previewResourceChanged() override;
+        virtual void resourceChanged() override;
     };
 
     //--

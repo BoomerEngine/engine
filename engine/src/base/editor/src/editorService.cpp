@@ -10,6 +10,7 @@
 #include "editorService.h"
 #include "editorConfig.h"
 #include "editorWindow.h"
+#include "assetFileImportWindow.h"
 
 #include "managedDepot.h"
 #include "managedFile.h"
@@ -20,7 +21,6 @@
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/commandline.h"
 #include "base/resource_compiler/include/depotStructure.h"
-#include "base/resource/include/resourceSerializationMetadata.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/ui/include/uiRenderer.h"
 
@@ -62,7 +62,7 @@ namespace ed
 
         // prepare depot for the editor
         auto depot = loaderService->loader()->queryUncookedDepot();
-        if (!depot || !depot->enableWriteOperations())
+        if (!depot)
         {
             TRACE_ERROR("Unable to convert engine depot into writable state, no editor will start");
             return app::ServiceInitializationResult::FatalError;
@@ -139,6 +139,12 @@ namespace ed
             m_mainWindow->saveConfig(mainWindowConfig);
         }
 
+        if (m_assetImporter)
+        {
+            auto assetWindowConfig = config()["AssetImporter"];
+            m_assetImporter->saveConfig(assetWindowConfig);
+        }
+
         m_config->save(m_configPath); 
         m_nextConfigSave = NativeTimePoint::Now() + cvConfigAutoSaveTime.get();
     }
@@ -181,6 +187,56 @@ namespace ed
     ManagedFile* Editor::selectedFile() const
     {
         return m_mainWindow->selectedFile();
+    }
+
+    ManagedDirectory* Editor::selectedDirectory() const
+    {
+        return m_mainWindow->selectedDirectory();
+    }
+
+    //--
+
+    bool Editor::openAssetImporter()
+    {
+        if (!m_assetImporter)
+        {
+            m_assetImporter = base::CreateSharedPtr<AssetImportWindow>();
+            m_assetImporter->loadConfig(config()["AssetImporter"]);
+            m_renderer->attachWindow(m_assetImporter);
+        }
+
+        m_assetImporter->requestShow(true);
+        return true;
+    }
+
+    bool Editor::addImportFiles(const base::Array<base::StringBuf>& assetPaths, const ManagedDirectory* directoryOverride)
+    {
+        if (!directoryOverride)
+        {
+            directoryOverride = m_mainWindow->selectedDirectory();
+            if (!directoryOverride)
+            {
+                ui::PostNotificationMessage(m_mainWindow, ui::MessageType::Warning, "ImportAsset"_id, "No directory selected to import to");
+                return false;
+            }
+        }
+
+        if (!openAssetImporter())
+            return false;
+
+        m_assetImporter->addFiles(directoryOverride, assetPaths);
+        return true;
+    }
+
+    //--
+
+    uint64_t Editor::windowNativeHandle(ui::IElement* elem) const
+    {
+        if (elem)
+            if (auto window = elem->findParentWindow())
+                return m_renderer->queryWindowNativeHandle(window);
+
+        return 0;
     }
 
     //--

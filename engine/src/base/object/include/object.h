@@ -68,9 +68,8 @@ namespace base
         // Get object class, dynamic
         virtual ClassType nativeClass() const = 0;
 
-        // Get default template for this object, usually this is the default class object
-        // This is used for differential serialization and can be overridden in case the object's defaults are not coming from class
-        virtual const void* defaultObject() const;
+        // Print object description, usually just class name but for named objects or objects with captions we can print their name as well
+        virtual void print(IFormatStream& f) const override;
 
         //---
 
@@ -82,16 +81,10 @@ namespace base
         virtual void onPostLoad();
 
         // Load object from binary stream
-        virtual bool onReadBinary(stream::IBinaryReader& reader);
+        virtual void onReadBinary(stream::OpcodeReader& reader);
 
         // Save object to binary stream
-        virtual bool onWriteBinary(stream::IBinaryWriter& writer) const;
-
-        // Load object from text stream
-        virtual bool onReadText(stream::ITextReader& reader);
-
-        // Save object to binary stream
-        virtual bool onWriteText(stream::ITextWriter& writer) const;
+        virtual void onWriteBinary(stream::OpcodeWriter& writer) const;
 
         // We are reading object from text/binary stream and previously serialized property is no longer in the object
         virtual bool onPropertyMissing(StringID propertyName, Type originalType, const void* originalData);
@@ -129,7 +122,15 @@ namespace base
         // Can be used to conditionally mask/unmask properties based on some part of object configuration
         // NOTE: the property that is used for masking must call postEvent("OnFullObjectRefresh") on the object to be able to refresh the UI properly.
         // NOTE: this function is called only when the property is initially requested (when user expands node in the property grid)
-        virtual bool onPropertyFilter(StringView<char> propertyName) const;
+        virtual bool onPropertyFilter(StringID propertyName) const;
+
+        //---
+
+        // Check if property should be saved during serialization, usually properties that are the same as in base are filtered out
+        virtual bool onPropertyShouldSave(const rtti::Property* prop) const;
+
+        // Notifies that property value was found in file - we can skip loading it for some reason
+        virtual bool onPropertyShouldLoad(const rtti::Property* prop);
 
         //---
 

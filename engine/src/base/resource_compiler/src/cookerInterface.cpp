@@ -12,10 +12,7 @@
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resourceUncached.h"
 #include "base/resource/include/resourceLoader.h"
-#include "base/object/include/memoryReader.h"
-#include "base/io/include/crcCache.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/timestamp.h"
@@ -74,7 +71,7 @@ namespace base
             return m_referenceMountingPoint;
         }       
 
-        void CookerInterface::enumFiles(StringView<char> systemPath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths, uint64_t& outFileNamesHash, io::TimeStamp& outNewestTimeStamp)
+        void CookerInterface::enumFiles(StringView<char> systemPath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp)
         {
             ASSERT(systemPath.endsWith("/"));
 
@@ -134,10 +131,9 @@ namespace base
                     filePathsCRC << file;
 
                     // get the timestamp of the file
-                    uint64_t fileSize = 0;
                     io::TimeStamp fileTimestamp;
                     auto fullPath = StringBuf(TempString("{}{}", dirPath, file));
-                    if (m_depot.queryFileInfo(fullPath, nullptr, &fileSize, &fileTimestamp))
+                    if (m_depot.queryFileTimestamp(fullPath, fileTimestamp))
                     {
                         outFileSystemPaths.pushBack(fullPath);
                         filePathsCRC << file;
@@ -175,7 +171,6 @@ namespace base
             }
 
             // return extra data, especially the hash of all discovered files and the newest of them
-            outFileNamesHash = filePathsCRC.crc();
             outNewestTimeStamp = newestFileTimestamp;
         }
 
@@ -191,13 +186,11 @@ namespace base
                 return false;
 
             // list files
-            uint64_t fileNamesCRC = 0;
             io::TimeStamp newsestFileTimestamp;
-            enumFiles(systemRootPath, recurse, extension, outFileSystemPaths, fileNamesCRC, newsestFileTimestamp);
+            enumFiles(systemRootPath, recurse, extension, outFileSystemPaths, newsestFileTimestamp);
 
             // list a dependency
             auto& dep = m_dependencies.emplaceBack();
-            dep.size = fileNamesCRC;
             dep.timestamp = newsestFileTimestamp.value();
             if (extension)
                 dep.sourcePath = StringBuf(TempString("{}{}*", systemRootPath, extension));
@@ -240,33 +233,27 @@ namespace base
             return m_depot.queryContextName(fileSystemPath, contextName);
         }
 
+        bool CookerInterface::queryFileExists(StringView<char> fileSystemPath) const
+        {
+            io::TimeStamp unused;
+            return m_depot.queryFileTimestamp(fileSystemPath, unused);
+        }
+
         bool CookerInterface::touchFile(StringView<char> fileSystemPath)
         {
             for (auto& dep : m_dependencies)
                 if (dep.sourcePath == fileSystemPath)
-                    return dep.size != 0;
+                    return true;
 
-            uint64_t fileSize = 0;
             io::TimeStamp fileTimestamp;
-            auto ret = m_depot.queryFileInfo(fileSystemPath, nullptr, &fileSize, &fileTimestamp);
+            auto ret = m_depot.queryFileTimestamp(fileSystemPath, fileTimestamp);
 
             auto& entry = m_dependencies.emplaceBack();
-            entry.size = fileSize;
             entry.timestamp = fileTimestamp.value();
             entry.sourcePath = StringBuf(fileSystemPath);
 
             if (ret)
                 TRACE_INFO("Discovered dependency for '{}' on '{}'", m_referencePath, fileSystemPath);
-
-            return ret;
-        }
-
-        bool CookerInterface::queryFileInfo(StringView<char> fileSystemPath, uint64_t* outCRC, uint64_t* outSize, io::TimeStamp* outTimeStamp, bool makeDependency /*= true*/)
-        {
-            auto ret = m_depot.queryFileInfo(fileSystemPath, outCRC, outSize, outTimeStamp);
-
-            if (makeDependency)
-                touchFile(fileSystemPath);
 
             return ret;
         }
@@ -334,7 +321,7 @@ namespace base
             return false;
         }
 
-        io::FileHandlePtr CookerInterface::createReader(StringView<char> fileSystemPath)
+        io::ReadFileHandlePtr CookerInterface::createReader(StringView<char> fileSystemPath)
         {
             touchFile(fileSystemPath);
             return m_depot.createFileReader(fileSystemPath);
@@ -379,42 +366,6 @@ namespace base
             return true;
         }
 
-        ResourceHandle CookerInterface::loadUncachedFile(StringView<char> fileSystemPath, ClassType expectedClassType)
-        {
-            // load content
-            auto fileContent = loadToBuffer(fileSystemPath);
-            if (!fileContent)
-                return nullptr;
-
-            // deserialize
-            TRACE_INFO("Loading uncached resource '{}' as '{}'", fileSystemPath, expectedClassType->name());;
-            stream::MemoryReader reader(fileContent.data(), fileContent.size());
-            return LoadUncached(fileSystemPath, expectedClassType, reader, m_loader, nullptr, m_referenceMountingPoint);
-        }
-
-        ResourceHandle CookerInterface::loadManifestFile(StringView<char> outputPartName, ClassType expectedManifestClass)
-        {
-            ASSERT(expectedManifestClass && expectedManifestClass->is(IResourceManifest::GetStaticClass()));
-
-            // look for the manifest extension in the manifest class
-            auto extensionMetadata  = expectedManifestClass->findMetadata<ResourceManifestExtensionMetadata>();
-            ASSERT(extensionMetadata != nullptr);
-
-            // format a file path
-            auto dirName = queryResourcePath().directory();
-            auto fileName = queryResourcePath().fileName();
-            auto manifestPath = outputPartName
-                ? StringBuf(TempString("{}/.boomer/{}_{}.{}", dirName, fileName, outputPartName, extensionMetadata->extension()))
-                : StringBuf(TempString("{}/.boomer/{}.{}", dirName, fileName, extensionMetadata->extension()));
-
-            // load existing content
-            if (auto ret = loadUncachedFile(manifestPath, expectedManifestClass))
-                return ret;
-
-            // create empty one
-            return expectedManifestClass->create<IResourceManifest>();
-        }
-
         ResourceHandle CookerInterface::loadDependencyResource(const ResourceKey& key)
         {
             ResourceHandle ret;
@@ -424,12 +375,6 @@ namespace base
             if (!key.cls()->is<IResource>())
             {
                 TRACE_ERROR("Dependency on a non-resource object '{}'", key);
-                return nullptr;
-            }
-
-            if (key.cls()->findMetadata<ResourceBakedOnlyMetadata>())
-            {
-                TRACE_ERROR("Dependency on a baked resource '{}' is not allowed", key);
                 return nullptr;
             }
 

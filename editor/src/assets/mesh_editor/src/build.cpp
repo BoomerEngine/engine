@@ -9,6 +9,7 @@
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_ui #]
+* [# dependency: rendering_mesh #]
 * [# dependency: rendering_api_* #]
 * [# dependency: assets_mesh_loader #]
 * [# devonly #]

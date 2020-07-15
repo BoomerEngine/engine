@@ -30,7 +30,7 @@ namespace base
         RTTI_FUNCTION("Distance", distance);
         RTTI_FUNCTION("Normalize", normalize);
         RTTI_FUNCTION("Normalized", normalized);
-        RTTI_STATIC_FUNCTION("Random", Rand);
+//        RTTI_STATIC_FUNCTION("Random", Rand);
         RTTI_STATIC_FUNCTION("Approach", Approach);
     RTTI_END_TYPE();
 
@@ -63,12 +63,12 @@ namespace base
                 AngleReach(a.roll, b.roll, move));
     }
 
-    Angles Angles::Rand(float minAngle, float maxAngle, bool withRoll)
+    /*Angles Angles::Rand(float minAngle, float maxAngle, bool withRoll)
     {
         return Angles(RandRange(minAngle, maxAngle),
                RandRange(minAngle, maxAngle),
          withRoll ? RandRange(minAngle, maxAngle) : 0.0f);
-    }
+    }*/
 
     void Angles::angleVectors(Vector3& forward, Vector3& right, Vector3& up) const
     {

@@ -23,11 +23,11 @@ namespace base
 
             //--
 
-            // check if file exists, can compute the CRC as well
-            virtual bool fileExists(StringView<char> fileSystemPath, uint64_t* outCRC = nullptr) const = 0;
+            // check if file exists
+            virtual bool fileExists(StringView<char> fileSystemPath) const = 0;
 
-            // load content of a file, returns the CRC of the data as well
-            virtual Buffer loadFileContent(StringView<char> fileSystemPath, uint64_t& outCRC) const = 0;
+            // load content of a file, returns the fingerprint of loaded data as well (since it's in the memory any way)
+            virtual Buffer loadFileContent(StringView<char> fileSystemPath, ImportFileFingerprint& outFingerprint) const = 0;
 
             /// get child directories at given path
             virtual bool enumDirectoriesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const = 0;
@@ -37,6 +37,12 @@ namespace base
 
             // does this file system covers given absolute path on disk ? if so translate the path to local path
             virtual bool translateAbsolutePath(io::AbsolutePathView absolutePath, StringBuf& outFileSystemPath) const = 0;
+
+            // get a full context path (usually absolute path) for a given import path
+            virtual bool resolveContextPath(StringView<char> fileSystemPath, StringBuf& outContextPath) const = 0;
+
+            // check status of a file
+            virtual CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> fileSystemPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const = 0;
 
             //--
 

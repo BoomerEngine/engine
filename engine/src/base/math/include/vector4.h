@@ -528,15 +528,6 @@ namespace base
         INLINE Vector4 _xyzw() const;
     };
 
-    extern BASE_MATH_API float Dot(const Vector4 &a, const Vector4 &b);
-    extern BASE_MATH_API Vector3 Cross(const Vector4 &a, const Vector4 &b);
-    extern BASE_MATH_API Vector4 Snap(const Vector4 &a, float grid);
-    extern BASE_MATH_API Vector4 Lerp(const Vector4 &a, const Vector4 &b, float frac);
-    extern BASE_MATH_API Vector4 Min(const Vector4 &a, const Vector4 &b);
-    extern BASE_MATH_API Vector4 Max(const Vector4 &a, const Vector4 &b);
-    extern BASE_MATH_API Vector4 Clamp(const Vector4 &a, const Vector4 &minV, const Vector4 &maxV);
-    extern BASE_MATH_API Vector4 Clamp(const Vector4 &a, float minF, float maxF);
-
     //--
 
 } // base

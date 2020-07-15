@@ -13,14 +13,12 @@
 #include "rendering/driver/include/renderingShaderLibrary.h"
 #include "rendering/driver/include/renderingCommandWriter.h"
 #include "rendering/driver/include/renderingFramebuffer.h"
-#include "rendering/mesh/include/renderingMesh.h"
 
 namespace game
 {
     //---
 
     static base::res::StaticResource<rendering::ShaderLibrary> resShaderSplash("engine/shaders/effects/loading_splash_cube.fx");
-    static base::res::StaticResource<rendering::Mesh> resTestMesh("engine/scene/bistro/exterior.obj");
 
     //---
 

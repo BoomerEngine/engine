@@ -8,8 +8,6 @@
 
 #include "build.h"
 #include "scriptPortableStubs.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
 
 namespace base
 {

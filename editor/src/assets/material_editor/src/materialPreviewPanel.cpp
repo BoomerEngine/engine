@@ -171,7 +171,7 @@ namespace ed
                     desc.forcedLodLevel = 0;
                     desc.forceMaterial = m_material.acquire()->dataProxy();
 
-                    const auto minZ = mesh->bounds().box.min.z;
+                    const auto minZ = mesh->bounds().min.z;
                     const auto offset = base::Vector3(0, 0, -minZ);
                     desc.localToScene.translation(offset);
 
@@ -179,7 +179,7 @@ namespace ed
                     m_previewProxy = renderingScene()->proxyCreate(desc);
 
                     // zoom out
-                    setupCameraAroundBounds(mesh->bounds().box + offset);
+                    setupCameraAroundBounds(mesh->bounds() + offset);
                 }
             }
         }
@@ -207,11 +207,11 @@ namespace ed
         actions().bindToggle("MaterialPreviewPanel.ShapeCustom"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Custom; };
 
         m_toolbar = createChild<ui::ToolBar>();
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeBox"_id, "Cube");
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeCylinder"_id, "Cyl");
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeSphere"_id, "Sph");
-        m_toolbar->createButton("MaterialPreviewPanel.ShapePlane"_id, "Quad");
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeCustom"_id, "Custom");
+        m_toolbar->createButton("MaterialPreviewPanel.ShapeBox"_id, ui::ToolbarButtonSetup().caption("Cube"));
+        m_toolbar->createButton("MaterialPreviewPanel.ShapeCylinder"_id, ui::ToolbarButtonSetup().caption("Cylinder"));
+        m_toolbar->createButton("MaterialPreviewPanel.ShapeSphere"_id, ui::ToolbarButtonSetup().caption("Sphere"));
+        m_toolbar->createButton("MaterialPreviewPanel.ShapePlane"_id, ui::ToolbarButtonSetup().caption("Quad"));
+        m_toolbar->createButton("MaterialPreviewPanel.ShapeCustom"_id, ui::ToolbarButtonSetup().caption("Custom"));
 
         m_panel = createChild<MaterialPreviewPanel>();
         m_panel->expand();

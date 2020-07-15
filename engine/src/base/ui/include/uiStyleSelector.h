@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "uiStyleParameters.h"
-
 namespace ui
 {
     namespace style

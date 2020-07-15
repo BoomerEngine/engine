@@ -8,11 +8,10 @@
 
 #include "build.h"
 #include "importSaveThread.h"
-#include "base/resource/include/resourceUncached.h"
-#include "base/resource/include/resourceBinarySaver.h"
 #include "base/system/include/thread.h"
 #include "base/resource_compiler/include/depotStructure.h"
-#include "base/object/include/memoryWriter.h"
+#include "base/resource/include/resourceFileSaver.h"
+#include "base/io/include/ioFileHandle.h"
 
 namespace base
 {
@@ -112,21 +111,19 @@ namespace base
 
         bool ImportSaverThread::saveSingleFile(const ResourcePtr& data, const StringBuf& path)
         {
-            // setup memory writer
-            stream::MemoryWriter tempFileWriter;
-            stream::SavingContext savingContext(data);
-            savingContext.m_contextName = path;
-
-            // serialize content using binary writer to a memory buffer
-            auto binarySaver = CreateSharedPtr<binary::BinarySaver>();
-            if (!binarySaver->saveObjects(tempFileWriter, savingContext))
+            // create staged writer for the file
+            if (auto file = m_depot.createFileWriter(path))
             {
-                TRACE_ERROR("Failed to serialize '{}'", path);
-                return false;
+                FileSavingContext context;
+                context.rootObject.pushBack(data);
+                if (SaveFile(file, context))
+                    return true;
+
+                file->discardContent();
             }
 
-            // store content in file
-            return m_depot.storeFileContent(path, tempFileWriter.extractData());
+            TRACE_ERROR("Failed to save '{}'", path);
+            return false;
         }
 
         void ImportSaverThread::processSavingThread()

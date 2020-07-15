@@ -63,13 +63,6 @@ namespace base
         static const Point& ZERO();
     };
 
-    extern BASE_MATH_API float Dot(const Point &a, const Point &b);
-    extern BASE_MATH_API Point Lerp(const Point& a, const Point& b, float frac);
-    extern BASE_MATH_API Point Min(const Point& a, const Point& b);
-    extern BASE_MATH_API Point Max(const Point& a, const Point& b);
-    extern BASE_MATH_API Point Clamp(const Point &a, const Point &minV, const Point &maxV);
-    extern BASE_MATH_API Point Clamp(const Point &a, int minF, int maxF);
-
     //--
 
 } // base

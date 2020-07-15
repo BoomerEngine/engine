@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "xmlDataDocument.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {
@@ -31,6 +32,7 @@ namespace base
         XMLData::XMLData(const xml::DocumentPtr& document)
             : m_document(document)
         {
+            // TEMPSHIT
             StringBuilder txt;
             m_document->saveAsText(txt, m_document->root());
             m_binaryData = Buffer::Create(POOL_XML, txt.length(), 1, txt.c_str());

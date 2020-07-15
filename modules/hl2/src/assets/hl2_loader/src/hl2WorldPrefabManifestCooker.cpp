@@ -10,7 +10,6 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/timestamp.h"
 #include "base/io/include/utils.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/app/include/localServiceContainer.h"
@@ -19,9 +18,8 @@
 #include "base/resource/include/resourceStaticResource.h"
 #include "base/parser/include/textParser.h"
 #include "base/containers/include/stringParser.h"
-#include "base/object/include/memoryReader.h"
-#include "base/object/include/streamBinaryReader.h"
 #include "base/reflection/include/variantTable.h"
+#include "base/resource/include/resourceCooker.h"
 
 #include "hl2WorldBSPFile.h"
 

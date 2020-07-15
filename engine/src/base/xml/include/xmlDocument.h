@@ -14,7 +14,10 @@ namespace base
 {
     namespace xml
     {
-        // document reader
+
+        //--
+
+        // document reader for XML data
         class BASE_XML_API IDocument : public IReferencable
         {
         public:
@@ -123,6 +126,8 @@ namespace base
             // save node as text stream
             void saveAsText(IFormatStream& f, NodeID id) const;
         };
+
+        //--
 
     } // xml
 } // base

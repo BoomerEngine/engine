@@ -19,27 +19,16 @@ namespace base
 
         //--
 
-        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IResource* originalData, const StringBuf& importPath, const ResourcePath& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const Array<ResourceConfigurationPtr>& configurations)
+        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IResource* originalData, const StringBuf& importPath, const ResourcePath& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
             : m_originalData(originalData)
             , m_importPath(importPath)
             , m_depotPath(depotPath)
             , m_depotMountPoint(depotMountPoint)
             , m_externalProgressTracker(externalProgressTracker)
             , m_assetRepository(assetRepository)
+            , m_configuration(configuration)
         {
-            // use given configurations
-            m_configurations = configurations;
-
-            // if we have existing resource than use all configurations from it, regardless of our stuff
-            // TODO: merge ? 
-            if (originalData)
-            {
-                if (const auto metadata = originalData->metadata())
-                {
-                    for (const auto& config : metadata->importConfigurations)
-                        insertConfiguration(config); // NOTE: this will replace any configuration we already have
-                }
-            }
+            ASSERT(configuration != nullptr)
         }
 
         LocalImporterInterface::~LocalImporterInterface()
@@ -65,56 +54,36 @@ namespace base
             return m_importPath;
         }
 
-        const IResourceConfiguration* LocalImporterInterface::queryConfigration(SpecificClassType<IResourceConfiguration> configClass) const
+        const ResourceConfiguration* LocalImporterInterface::queryConfigrationTypeless() const
         {
-            DEBUG_CHECK_EX(configClass && !configClass->isAbstract(), "Invalid resource configuration class");
-            if (!configClass || configClass->isAbstract())
-                return nullptr;
-
-            // check given or previous configurations
-            for (const auto& config : m_configurations)
-                if (config->is(configClass))
-                    return config;
-
-            // temp list 
-            {
-                auto lock = CreateLock(m_tempConfigurationsLock);
-
-                for (const auto& config : m_tempConfigurations)
-                    if (config->is(configClass))
-                        return config;
-
-                auto config = configClass.create();
-                m_tempConfigurations.pushBack(config);
-                return config;
-            }
+            return m_configuration;
         }
 
         Buffer LocalImporterInterface::loadSourceFileContent(StringView<char> assetImportPath) const
         {
-            uint64_t crc = 0;
-            if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, crc))
+            ImportFileFingerprint fingerprint;
+            if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, fingerprint))
             {
-                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, crc);
+                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, fingerprint);
                 return ret;
             }
 
             return Buffer();
         }
 
-        SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView<char> assetImportPath, SpecificClassType<ISourceAsset> sourceAssetClass) const
+        SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView<char> assetImportPath) const
         {
-            uint64_t crc = 0;
-            if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, sourceAssetClass, crc))
+            ImportFileFingerprint fingerprint;
+            if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, fingerprint))
             {
-                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, crc);
+                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, fingerprint);
                 return ret;
             }
 
             return nullptr;
         }
 
-        void LocalImporterInterface::reportImportDependency(StringView<char> assetImportPath, uint64_t crc)
+        void LocalImporterInterface::reportImportDependency(StringView<char> assetImportPath, const ImportFileFingerprint& fingerprint)
         {
             auto lock = CreateLock(m_importDependenciesLock);
 
@@ -124,7 +93,7 @@ namespace base
             {
                 auto& entry = m_importDependencies.emplaceBack();
                 entry.assetPath = StringBuf(assetImportPath);
-                entry.crc = crc;
+                entry.fingerprint = fingerprint;
                 TRACE_INFO("Reported '{}' as import dependency", assetImportPath);
             }
         }
@@ -189,7 +158,7 @@ namespace base
             return false;
         }
 
-        void LocalImporterInterface::followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const Array<ResourceConfigurationPtr>& config /*= Array<ResourceConfigurationPtr>()*/)
+        void LocalImporterInterface::followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config)
         {
             if (assetImportPath && depotPath)
             {
@@ -200,29 +169,13 @@ namespace base
                     auto& entry = m_followupImports.emplaceBack();
                     entry.assetPath = StringBuf(assetImportPath);
                     entry.depotPath = StringBuf(depotPath);
-                    entry.config = config;
+                    entry.config = AddRef(config);
                 }
                 else
                 {
                     TRACE_WARNING("Followup import '{}' already specified", depotPath);
                 }
             }
-        }
-
-        //--
-
-        void LocalImporterInterface::insertConfiguration(IResourceConfiguration* ptr)
-        {
-            for (uint32_t i=0; i<m_configurations.size(); ++i)
-            {
-                if (m_configurations[i]->cls() == ptr->cls())
-                {
-                    m_configurations[i] = AddRef(ptr);
-                    return;
-                }
-            }
-
-            m_configurations.emplaceBack(AddRef(ptr));
         }
 
         //--
@@ -236,7 +189,7 @@ namespace base
             {
                 auto& entry = ret->importDependencies.emplaceBack();
                 entry.importPath = dep.assetPath;
-                entry.crc = dep.crc;
+                entry.crc = dep.fingerprint.rawValue();
             }
 
             ret->importFollowups.reserve(m_followupImports.size());
@@ -245,18 +198,7 @@ namespace base
                 auto& entry = ret->importFollowups.emplaceBack();
                 entry.sourceImportPath = info.assetPath;
                 entry.depotPath = info.depotPath;
-
-                for (const auto& cfg : info.config)
-                {
-                    entry.configuration.pushBack(cfg);
-                    cfg->parent(ret);
-                }
-            }
-
-            for (const auto& cfg : m_configurations)
-            {
-                if (auto configCopy = rtti_cast<IResourceConfiguration>(cfg->clone(ret)))
-                    ret->importConfigurations.pushBack(configCopy);
+                entry.configuration = info.config;
             }
 
             return ret;

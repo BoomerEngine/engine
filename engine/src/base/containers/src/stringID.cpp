@@ -95,7 +95,7 @@ namespace base
                 if (!id)
                     return StringView<char>();
 
-                auto lock = CreateLock(m_lock);
+                //auto lock = CreateLock(m_lock);
                 if (id >= m_entries.size())
                     return StringView<char>();
 

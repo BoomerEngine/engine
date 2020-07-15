@@ -12,14 +12,13 @@
 #include "cookerDependencyTracking.h"
 
 #include "base/resource_compiler/include/depotStructure.h"
-#include "base/resource/include/resourceUncached.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceMountPoint.h"
 #include "base/resource/include/resourceStaticResource.h"
-#include "base/object/include/nativeFileReader.h"
 #include "base/object/include/objectGlobalRegistry.h"
 #include "base/io/include/ioSystem.h"
+#include "base/resource/include/resourceFileLoader.h"
 
 
 namespace base
@@ -325,17 +324,14 @@ namespace base
 
         void ResourceLoaderCooker::updateDirectFileDependencies(ResourceKey key, StringView<char> depotPath)
         {
-            uint64_t fileSize = 0;
             io::TimeStamp fileTimeStamp;
-            if (m_depot->queryFileInfo(depotPath, nullptr, &fileSize, &fileTimeStamp))
+            if (m_depot->queryFileTimestamp(depotPath, fileTimeStamp))
             {
                 InplaceArray<SourceDependency, 1> dependencies;
 
                 auto& dep = dependencies.emplaceBack();
                 dep.sourcePath = StringBuf(depotPath);
                 dep.timestamp = fileTimeStamp.value();
-                dep.size = fileSize;
-                dep.crc = 0;
 
                 m_depTracker->notifyDependenciesChanged(key, dependencies);
             }
@@ -344,30 +340,18 @@ namespace base
         ResourcePtr ResourceLoaderCooker::loadInternalDirectly(ClassType resClass, StringView<char> filePath)
         {
             // load file content
-            if (auto content = m_depot->createFileReader(filePath))
+            if (auto file = m_depot->createFileAsyncReader(filePath))
             {
-                stream::NativeFileReader fileReader(*content);
-                if (auto data = LoadUncached(filePath, resClass, fileReader, this))
+                ResourceMountPoint mountPoint;
+                m_depot->queryFileMountPoint(filePath, mountPoint);
+
+                FileLoadingContext context;
+                context.basePath = mountPoint.path();
+
+                if (LoadFile(file, context))
                 {
-                    if (!data->metadata())
-                    {
-                        uint64_t fileSize = 0;
-                        io::TimeStamp fileTimeStamp;
-                        if (m_depot->queryFileInfo(filePath, nullptr, &fileSize, &fileTimeStamp))
-                        {
-                            auto metadata = CreateSharedPtr<Metadata>();
-
-                            auto& dep = metadata->sourceDependencies.emplaceBack();
-                            dep.sourcePath = StringBuf(filePath);
-                            dep.timestamp = fileTimeStamp.value();
-                            dep.size = fileSize;
-                            dep.crc = 0;
-
-                            data->metadata(metadata);
-                        }
-                    }
-
-                    return data;
+                    if (const auto ret = context.root<IResource>())
+                        return ret;
                 }
             }
 
@@ -425,52 +409,6 @@ namespace base
             SpecificClassType<IResource> cookedResourceClass;
             if (m_cooker->canCook(key, cookedResourceClass))
             {
-                // get the extension of the target (cooked) class
-                const auto loadExtension = IResource::GetResourceExtensionForClass(cookedResourceClass);
-
-                // some resource classes are only allowed to "slow bake" as the runtime cost of cooking them is to high
-                if (cookedResourceClass->findMetadata<ResourceBakedOnlyMetadata>())
-                {
-                    DEBUG_CHECK_EX(loadExtension, "Baked resource should have an extension");
-                    if (loadExtension)
-                    {
-                        StringBuilder path;
-                        path << key.path().directory();
-                        path << ".boomer/";
-                        path << key.path().fileName();
-                        path << "." << loadExtension;
-                        auto bakedDepotPath = path.toString();
-
-                        // do we have this file in the depot ? if so, load it
-                        if (auto ret = loadInternalDirectly(key.cls(), bakedDepotPath))
-                        {
-                            ret->bindToLoader(this, key, mountPoint, false);
-                            updateDirectFileDependencies(key, bakedDepotPath);
-                            return ret;
-                        }
-
-                        // we are missing a baked file
-                        if (normalLoading)
-                        {
-                            // notify that we are missing a baked file
-                            const auto bakedResourceKey = ResourceKey(key.path(), cookedResourceClass);
-                            notifyMissingBakedResource(bakedResourceKey);
-
-                            // create a stub
-                            if (auto stub = CreateValidStub(cookedResourceClass))
-                            {
-                                stub->bindToLoader(this, key, mountPoint, true);
-                                updateEmptyFileDependencies(key, bakedDepotPath);
-                                return stub;
-                            }
-                        }
-                    }
-
-                    TRACE_ERROR("Failed to handle baked resource '{}' stuff may break", key);
-                    return nullptr;
-                }
-
-                // load using cooker
                 if (auto cookedFile = m_cooker->cook(key))
                 {
                     cookedFile->bindToLoader(this, key, mountPoint, false);
@@ -500,10 +438,6 @@ namespace base
 
         bool ResourceLoaderCooker::validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const
         {
-            // this resource is valid until it's reloaded by the system
-            if (const auto bakableOnly = res->cls()->findMetadata<ResourceBakedOnlyMetadata>())
-                return true;
-
             // resource did not generate a metadata file
             if (!res->metadata() || res->metadata()->sourceDependencies.empty())
                 return true;
@@ -511,11 +445,10 @@ namespace base
             // check dependencies
             for (const auto& dep : res->metadata()->sourceDependencies)
             {
-                uint64_t fileSize = 0;
                 io::TimeStamp fileTimeStamp;
-                m_depot->queryFileInfo(dep.sourcePath, nullptr, &fileSize, &fileTimeStamp);
+                m_depot->queryFileTimestamp(dep.sourcePath, fileTimeStamp);
 
-                if (fileSize != dep.size || fileTimeStamp.value() != dep.timestamp)
+                if (fileTimeStamp.value() != dep.timestamp)
                 {
                     TRACE_WARNING("Dependency of file '{}' a file ({}) has changed. We will force resource to load a new version.", key, dep.sourcePath);
                     return false;

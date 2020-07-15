@@ -64,22 +64,22 @@ namespace base
     }
 
     // https://stackoverflow.com/questions/1102692/how-to-alpha-blend-rgba-unsigned-byte-color-fast
-    Color Blend(const Color &a, const Color &b, uint32_t alpha) // alpha is from 0 to 256
+    Color Lerp256(const Color &a, const Color &b, uint32_t alpha) // alpha is from 0 to 256
     {
         uint32_t invA = 0x100 - alpha;
         uint32_t rb1 = (invA * (a.toNative() & 0xFF00FF)) >> 8;
         uint32_t rb2 = (alpha * (b.toNative() & 0xFF00FF)) >> 8;
         uint32_t g1 = (invA * (a.toNative() & 0x00FF00)) >> 8;
         uint32_t g2 = (alpha * (b.toNative() & 0x00FF00)) >> 8;
-        return ((rb1 | rb2) & 0xFF00FF) + ((g1 | g2) & 0x00FF00);
+        return ((rb1 | rb2) & 0xFF00FF) + ((g1 | g2) & 0x00FF00) + 0xFF000000;
     }
 
-    Color BlendPreMultiplied(const Color &a, const Color &b, uint32_t alpha)
+    /*Color BlendPreMultiplied(const Color &a, const Color &b, uint32_t alpha)
     {
         uint32_t rb = (a.toNative() & 0xFF00FF) + ((alpha * (b.toNative() & 0xFF00FF)) >> 8);
         uint32_t g = (a.toNative() & 0x00FF00) + ((alpha * (b.toNative() & 0x00FF00)) >> 8);
         return (rb & 0xFF00FF) + (g & 0x00FF00);
-    }
+    }*/
 
     Color Lerp(const Color &a, const Color &b, float frac)
     {
@@ -87,10 +87,10 @@ namespace base
         return Color::FromVectorLinear(Lerp(a.toVectorLinear(), b.toVectorLinear(), frac));
     }
 
-    Color LerpPreMultiplied(const Color &a, const Color &b, float frac)
+    /*Color LerpPreMultiplied(const Color &a, const Color &b, float frac)
     {
         return BlendPreMultiplied(a, b, FloatTo256(frac));
-    }
+    }*/
 
     Color Min(const Color &a, const Color &b)
     {

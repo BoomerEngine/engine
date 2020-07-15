@@ -28,6 +28,9 @@ namespace base
 
             //---
 
+            /// check if given file exists
+            virtual bool queryFileExists(StringView<char> fileSystemPath) const = 0;
+
             /// get the path to the resource being processed, this is a depot path
             virtual const ResourcePath& queryResourcePath() const = 0;
 
@@ -46,14 +49,9 @@ namespace base
 
             /// query a source absolute file path path so it can be nicely printed in case of errors
             virtual bool queryContextName(StringView<char> fileSystemPath, StringBuf& contextName) = 0;
-                        
-            /// query information about file
-            /// NOTE: file will be assumed to be a dependency when you call this
-            /// NOTE: getting file CRC is very costly
-            virtual bool queryFileInfo(StringView<char> fileSystemPath, uint64_t* outCRC, uint64_t* outSize, io::TimeStamp* outTimeStamp, bool makeDependency=true) = 0;
 
             /// create a content reader
-            virtual io::FileHandlePtr createReader(StringView<char> fileSystemPath) = 0;
+            virtual io::ReadFileHandlePtr createReader(StringView<char> fileSystemPath) = 0;
 
             /// load file into a buffer
             virtual Buffer loadToBuffer(StringView<char> fileSystemPath) = 0;
@@ -64,18 +62,6 @@ namespace base
             /// Is this a final cooker ?
             virtual bool finalCooker() const = 0;
        
-            //--
-
-            /// load manifest file matching current file we are cooking, extension is determined from manifest type
-            /// if the manifest can't be loaded a default one is created
-            virtual ResourceHandle loadManifestFile(StringView<char> outputPartName, ClassType expectedManifestClass) = 0;
-
-            template< typename T >
-            CAN_YIELD INLINE RefPtr<T> loadManifestFile(StringView<char> outputPartName = StringBuf::EMPTY())
-            {
-                return rtti_cast<T>(loadManifestFile(outputPartName, T::GetStaticClass()));
-            }
-
             //--
 
             /// helper: find a dependency file in this folder or parent folder but looking at different sub folders
@@ -152,6 +138,12 @@ namespace base
             Array<StringBuf> m_includePaths;
             Array<Buffer> m_retainedBuffers;
         };
+
+        //---
+
+        // load raw XML data from a file in depot
+        // NOTE: in function is intended for use during resource cooking, for general purpose XML loading see xmlUtils.h
+        extern BASE_RESOURCE_API xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView<char> path = "");
 
         //---
 

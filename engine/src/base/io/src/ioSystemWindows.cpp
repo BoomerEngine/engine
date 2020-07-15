@@ -36,6 +36,8 @@ namespace base
         namespace prv
         {
 
+            static bool GTraceIO = true;
+
             //--
 
             class TempPathStringBuffer
@@ -72,7 +74,10 @@ namespace base
 
                 StringView<wchar_t> view() const
                 {
-                    return StringView<wchar_t>(m_buffer, m_writePos);
+                    if (m_ret != m_buffer)
+                        return StringView<wchar_t>(m_ret);
+                    else
+                        return StringView<wchar_t>(m_buffer, m_writePos);
                 }
 
                 wchar_t* pos() const
@@ -97,6 +102,11 @@ namespace base
                     m_writePos = oldWritePos;
                 }
 
+                void print(IFormatStream& f) const
+                {
+                    f.append(m_ret);
+                }
+
             private:
                 wchar_t m_buffer[MAX_PATH];
                 wchar_t* m_writePos;
@@ -104,7 +114,6 @@ namespace base
 
                 const wchar_t* m_ret = L"";
             };
-
 
             //--
 
@@ -119,114 +128,125 @@ namespace base
                 m_asyncDispatcher.reset();
             }
 
-            FileHandlePtr WinIOSystem::openForReading(AbsolutePathView absoluteFilePath)
+            ReadFileHandlePtr WinIOSystem::openForReading(AbsolutePathView absoluteFilePath)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                UTF16StringBuf cstr(absoluteFilePath);
 
                 // Open file
-                HANDLE handle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (handle == INVALID_HANDLE_VALUE)
                 {
-                    TRACE_WARNING("Failed to create reading handle for '{}'", absoluteFilePath);
+                    TRACE_WARNING("WinIO: Failed to create reading handle for '{}', error 0x{}", absoluteFilePath, Hex(GetLastError()));
                     return nullptr;
                 }
-
-                OVERLAPPED ovp;
-                memset(&ovp, 0, sizeof(ovp));
-                //ovp.hEvent = CreateEventA(NULL, TRUE, FALSE, NULL);
-
-                auto flags = 0;// LOCKFILE_EXCLUSIVE_LOCK;
-                if (!LockFileEx(handle, flags, 0, ~0UL, ~0UL, &ovp))
-                {
-                    TRACE_ERROR("Failed to create exclusive reading handle for '{}'", absoluteFilePath);
-                    CloseHandle(handle);
-                    return nullptr;
-                }
-
-				// Open file for async reading
-				HANDLE asyncHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-				if (asyncHandle == INVALID_HANDLE_VALUE)
-				{
-					TRACE_WARNING("Failed to create async reading handle for '{}'", absoluteFilePath);
-				}
 
                 // Return file reader
-                return CreateSharedPtr<WinFileHandle>(handle, asyncHandle, StringBuf(absoluteFilePath), true, false, true, m_asyncDispatcher.get());
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for reading", cstr);
+                return CreateSharedPtr<WinReadFileHandle>(handle, std::move(cstr));
             }
 
-            FileHandlePtr WinIOSystem::openForWriting(AbsolutePathView absoluteFilePath, bool append)
+            static UTF16StringBuf GenerateTempFilePath(AbsolutePathView absoluteFilePath)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                UTF16StringBuf cstr(absoluteFilePath.beforeLast(L"\\"));
 
-                uint32_t winFlags = FILE_SHARE_READ;
-                uint32_t createFlags = append ? OPEN_ALWAYS : CREATE_ALWAYS;
+                static std::atomic<uint32_t> GLocalAppUniqueFile = 1;
+                WCHAR tempFileName[MAX_PATH + 1];
+                if (GetTempFileName(cstr.c_str(), L"__BoomerTemp", GLocalAppUniqueFile++, tempFileName))
+                {
+                    TRACE_INFO("WinIO: Generated temp file name: '{}'", (const wchar_t*)tempFileName);
+                    return UTF16StringBuf(tempFileName);
+                }
+                else
+                {
+                    UTF16StringBuf cstr(absoluteFilePath);
+                    cstr += L".tmp";
+                    return cstr;
+                }
+            }
+
+
+            WriteFileHandlePtr WinIOSystem::openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
+            {
+                UTF16StringBuf cstr(absoluteFilePath);
 
                 // Create path
                 if (!createPath(absoluteFilePath))
                 {
-                    TRACE_ERROR("Failed to create path for '{}'", absoluteFilePath);
+                    TRACE_WARNING("WinIO: Failed to create path for '{}'", absoluteFilePath);
                     return nullptr;
                 }
 
                 // Remove the read only flag
-                readOnlyFlag(absoluteFilePath, false);
-
-                // Open file
-                HANDLE handle = CreateFileW(cstr, GENERIC_WRITE, winFlags, NULL, createFlags, FILE_ATTRIBUTE_NORMAL, NULL);
-                if (handle == INVALID_HANDLE_VALUE)
+                if (!readOnlyFlag(absoluteFilePath, false))
                 {
-                    TRACE_ERROR("Failed to create writing handle for '{}'", absoluteFilePath);
+                    TRACE_WARNING("WinIO: Unable to remove read only flag from file '{}', assuming it's protected", absoluteFilePath);
                     return nullptr;
                 }
 
-                OVERLAPPED ovp;
-                memset(&ovp, 0, sizeof(ovp));
-
-                auto flags = LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY;
-                if (!LockFileEx(handle, flags, 0, ~0UL, ~0UL, &ovp))
+                // Staged write
+                if (mode == FileWriteMode::StagedWrite)
                 {
-                    TRACE_ERROR("Failed to create exclusive writing handle for '{}'", absoluteFilePath);
+                    // generate temp file path and open it
+                    auto tempFilePath = GenerateTempFilePath(absoluteFilePath);
+                    auto tempFileWriter = openForWriting(tempFilePath, FileWriteMode::DirectWrite);
+                    if (!tempFileWriter)
+                    {
+                        TRACE_WARNING("WinIO: Unable to create temp writing file for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
+                        return nullptr;
+                    }
+
+                    // create wrapper
+                    if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for staged writing", cstr);
+                    return CreateSharedPtr<WinWriteTempFileHandle>(std::move(cstr), std::move(tempFilePath), tempFileWriter);
+                }
+
+                // setup flags
+                uint32_t winFlags = 0; // no sharing while writing
+                uint32_t createFlags = (mode == FileWriteMode::DirectAppend) ? OPEN_ALWAYS : CREATE_ALWAYS;
+
+                // Open file
+                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_WRITE, winFlags, NULL, createFlags, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (handle == INVALID_HANDLE_VALUE)
+                {
+                    TRACE_WARNING("WinIO: Failed to create writing handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
+                    return nullptr;
+                }
+
+                // Move file pointer to the end in case of append
+                if (mode == FileWriteMode::DirectAppend)
+                    SetFilePointer(handle, 0, 0, FILE_END);
+
+                // Create the wrapper
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for writing", cstr);
+                return CreateSharedPtr<WinWriteFileHandle>(handle, std::move(cstr));
+            }
+
+            AsyncFileHandlePtr WinIOSystem::openForAsyncReading(AbsolutePathView absoluteFilePath)
+            {
+                UTF16StringBuf cstr(absoluteFilePath);
+
+                // Open file
+                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+                if (handle == INVALID_HANDLE_VALUE)
+                {
+                    TRACE_WARNING("WinIO: Failed to create async reading handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
+                    return nullptr;
+                }
+
+                LARGE_INTEGER size;
+                if (!::GetFileSizeEx(handle, &size))
+                {
+                    TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", cstr, Hex(GetLastError()));
                     CloseHandle(handle);
-                    return nullptr;
+                    return 0;
                 }
 
-                // Move file pointer
-                uint32_t pos = 0;
-                if (append)
-                    pos = SetFilePointer(handle, 0, 0, FILE_END);
-
-                // Create the wrapper
-                return CreateSharedPtr<WinFileHandle>(handle, INVALID_HANDLE_VALUE, StringBuf(absoluteFilePath), false, true, true, m_asyncDispatcher.get());
+                // Return file reader
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for async reading ({})", cstr, MemSize(size.QuadPart));
+                return CreateSharedPtr<WinAsyncFileHandle>(handle, std::move(cstr), size.QuadPart, m_asyncDispatcher.get());
             }
 
-            FileHandlePtr WinIOSystem::openForReadingAndWriting(AbsolutePathView absoluteFilePath, bool resetContent /*= false*/)
-            {
-                TempPathStringBuffer cstr(absoluteFilePath);
-
-                uint32_t winFlags = FILE_SHARE_READ;
-                uint32_t createFlags = OPEN_ALWAYS;
-
-                // Create path
-                if (!createPath(absoluteFilePath))
-                {
-                    TRACE_ERROR("Failed to create path for '{}'", absoluteFilePath);
-                    return nullptr;
-                }
-
-                // Remove the read only flag
-                readOnlyFlag(absoluteFilePath, false);
-
-                // Open file
-                HANDLE handle = CreateFileW(cstr, GENERIC_READ | GENERIC_WRITE, winFlags, NULL, createFlags, FILE_ATTRIBUTE_NORMAL, NULL);
-                if (handle == INVALID_HANDLE_VALUE)
-                {
-                    TRACE_ERROR("Failed to create read/write handle for '{}'", absoluteFilePath);
-                    return nullptr;
-                }
-
-                // Create the wrapper
-                return CreateSharedPtr<WinFileHandle>(handle, INVALID_HANDLE_VALUE, StringBuf(absoluteFilePath), true, true, false, m_asyncDispatcher.get());
-            }
+            //--
 
             Buffer WinIOSystem::openMemoryMappedForReading(AbsolutePathView absoluteFilePath)
             {
@@ -241,36 +261,14 @@ namespace base
                 HANDLE hHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hHandle == INVALID_HANDLE_VALUE)
                 {
-                    TRACE_ERROR("Failed to create reading handle for '{}'", absoluteFilePath);
+                    TRACE_WARNING("WinIO: Failed to create reading handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
                     return nullptr;
                 }
-
-                OVERLAPPED ovp;
-                memset(&ovp, 0, sizeof(ovp));
-                //ovp.hEvent = CreateEventA(NULL, TRUE, FALSE, NULL);
-
-                auto flags = LOCKFILE_EXCLUSIVE_LOCK;
-                if (!LockFileEx(hHandle, flags, 0, ~0UL, ~0UL, &ovp))
-                {
-                    TRACE_ERROR("Failed to create exclusive reading handle for '{}'", absoluteFilePath);
-                    CloseHandle(hHandle);
-                    return nullptr;
-                }
-
-                /*const auto waitRet = WaitForSingleObject(ovp.hEvent, 1000);
-                if (waitRet != WAIT_OBJECT_0)
-                {
-                    TRACE_ERROR("Failed to create exclusive reading handle for '{}'", absoluteFilePath);
-                    UnlockFile()
-                    CloseHandle(hHandle);
-                    return nullptr;
-                }*/
 
                 uint64_t size;
                 if (!GetFileSizeEx(hHandle, (PLARGE_INTEGER) &size))
                 {
-                    TRACE_ERROR("Unable to get size of file '{}'", absoluteFilePath);
-                    UnlockFile(hHandle, 0, 0, ~0UL, ~0UL);
+                    TRACE_WARNING("WinIO: Unable to get size of file '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
                     CloseHandle(hHandle);
                     return nullptr;
                 }
@@ -278,8 +276,7 @@ namespace base
                 auto ret = Buffer::Create(POOL_IO, size, 4096);
                 if (!ret)
                 {
-                    TRACE_ERROR("Unable to allocate {} needed to load file '{}'", MemSize(size), absoluteFilePath);
-                    UnlockFile(hHandle, 0, 0, ~0UL, ~0UL);
+                    TRACE_WARNING("WinIO: Unable to allocate {} needed to load file '{}'", MemSize(size), absoluteFilePath);
                     CloseHandle(hHandle);
                     return nullptr;
                 }
@@ -294,22 +291,13 @@ namespace base
                     DWORD numRead = 0;
                     if (!ReadFile(hHandle, ret.data(), maxRead, &numRead, NULL))
                     {
-                        TRACE_ERROR("IO error reading content of file '{}'", absoluteFilePath);
-                        UnlockFile(hHandle, 0, 0, ~0UL, ~0UL);
-                        CloseHandle(hHandle);
-                        return nullptr;
-                    }
-
-                    if (numRead != maxRead)
-                    {
-                        TRACE_ERROR("IO error reading content of file '{}', expected {}, read {}", absoluteFilePath, maxRead, numRead);
-                        UnlockFile(hHandle, 0, 0, ~0UL, ~0UL);
+                        TRACE_WARNING("WinIO: IO error reading content of file '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
                         CloseHandle(hHandle);
                         return nullptr;
                     }
                 }
 
-                UnlockFile(hHandle, 0, 0, ~0UL, ~0UL);
+                if (GTraceIO) TRACE_INFO("WinIO: Loaded '{}' into memory ({})", cstr, MemSize(size));
                 CloseHandle(hHandle);
                 return ret;
             }
@@ -330,6 +318,8 @@ namespace base
                     CloseHandle(hHandle);
                     return false;
                 }
+
+                if (GTraceIO) TRACE_INFO("WinIO: FileSize '{}': {}", cstr, size.QuadPart);
 
                 // Return size
                 outFileSize = size.QuadPart;
@@ -356,6 +346,7 @@ namespace base
                     ::CloseHandle(hHandle);
                     outTimeStamp = TimeStamp(*(const uint64_t*)&fileTime);
 
+                    if (GTraceIO) TRACE_INFO("WinIO: FileTimeStamp '{}': {}", cstr, outTimeStamp);
                     return true;
                 }
 
@@ -389,22 +380,57 @@ namespace base
                 }
 
                 // Path created
+                //if (GTraceIO) TRACE_INFO("WinIO: FileTimeStamp '{}': {}", cstr, outTimeStamp);
                 return true;
             }
 
-            bool WinIOSystem::moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+            bool WinIOSystem::copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
             {
+                ScopeTimer timer;
+
                 // Delete destination file
                 if (fileExists(destAbsolutePath) && !deleteFile(destAbsolutePath))
                 {
-                    TRACE_ERROR("FileMove unable to delete destination file \"{}\"", destAbsolutePath);
+                    TRACE_WARNING("WinIO: FileCopy unable to delete destination file \"{}\"", destAbsolutePath);
                     return false;
                 }
 
                 // Make sure target path exists
                 if (!createPath(destAbsolutePath))
                 {
-                    TRACE_ERROR("FileMove unable to create target path for file \"{}\"", destAbsolutePath);
+                    TRACE_WARNING("WinIO: FileCopy unable to create target path for file \"{}\"", destAbsolutePath);
+                    return false;
+                }
+
+                // Copy File
+                TempPathStringBuffer srcStr(srcAbsolutePath);
+                TempPathStringBuffer destStr(destAbsolutePath);
+                if (0 == CopyFile(srcStr, destStr, FALSE))
+                {
+                    TRACE_WARNING("WinIO: Unable to copy file \"{}\" to \"{}\": 0x{}", srcAbsolutePath, destAbsolutePath, Hex(GetLastError()));
+                    return false;
+                }
+
+                // file copied
+                if (GTraceIO) TRACE_INFO("WinIO: FileCopy '{}' to '{}', {}", srcStr, destStr, timer);
+                return true;
+            }
+
+            bool WinIOSystem::moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+            {
+                ScopeTimer timer;
+
+                // Delete destination file
+                if (fileExists(destAbsolutePath) && !deleteFile(destAbsolutePath))
+                {
+                    TRACE_WARNING("FileMove unable to delete destination file \"{}\"", destAbsolutePath);
+                    return false;
+                }
+
+                // Make sure target path exists
+                if (!createPath(destAbsolutePath))
+                {
+                    TRACE_WARNING("WinIO: FileMove unable to create target path for file \"{}\"", destAbsolutePath);
                     return false;
                 }
 
@@ -413,18 +439,12 @@ namespace base
                 TempPathStringBuffer destStr(destAbsolutePath);
                 if (0 == ::MoveFileW(srcStr, destStr))
                 {
-					// Delete target file
-					::DeleteFile(destStr);
-					
-					// Try again
-					if (0 == ::MoveFileW(srcStr, destStr))
-					{
-						TRACE_ERROR("FileMove unable to move file \"{}\" to \"{}\": {}", srcAbsolutePath, destAbsolutePath, GetLastError());
-						return false;
-					}
+                    TRACE_WARNING("WinIO: Unable to move file \"{}\" to \"{}\": 0x{}", srcAbsolutePath, destAbsolutePath, Hex(GetLastError()));
+                    return false;
                 }
 
                 // File moved
+                if (GTraceIO) TRACE_INFO("WinIO: FileCopy '{}' to '{}', {}", srcStr, destStr, timer);
                 return true;
             }
 
@@ -434,37 +454,52 @@ namespace base
                     return false;
 
                 TempPathStringBuffer cstr(absoluteFilePath);
-                return 0 != ::DeleteFileW(cstr);
+                if (!::DeleteFileW(cstr))
+                {
+                    TRACE_WARNING("WinIO: Unable to delete file '{}', error: 0x{}", cstr, Hex(GetLastError()));
+                    return false;
+                }
+
+                if (GTraceIO) TRACE_INFO("WinIO: FileDelete '{}'", cstr);
+                return true;
             }
 
 			bool WinIOSystem::deleteDir(AbsolutePathView absoluteDirPath)
 			{
                 TempPathStringBuffer cstr(absoluteDirPath);
-                return ::RemoveDirectoryW(cstr);
+                if (!::RemoveDirectoryW(cstr))
+                {
+                    TRACE_WARNING("WinIO: Unable to delete directory '{}', error: 0x{}", cstr, Hex(GetLastError()));
+                    return false;
+                }
+
+                if (GTraceIO) TRACE_INFO("WinIO: DirectoryDelete '{}'", cstr);
+                return true;
 			}
 
             bool WinIOSystem::fileExists(AbsolutePathView absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
+                DWORD dwAttrib = GetFileAttributes(cstr);
 
-                HANDLE hHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-                if (hHandle == INVALID_HANDLE_VALUE)
-                    return false;
+                const auto exists = (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+                if (GTraceIO) TRACE_INFO("WinIO: FileExists '{}': {}", cstr, exists);
 
-                ::CloseHandle(hHandle);
-                return true;
+                return exists;
             }
 
             bool WinIOSystem::isFileReadOnly(AbsolutePathView absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
 
-                auto attr  = ::GetFileAttributesW(cstr);
+                auto attr = ::GetFileAttributesW(cstr);
                 if (attr == INVALID_FILE_ATTRIBUTES)
                     return false;
 
-                // Check attribute
-                return (attr & FILE_ATTRIBUTE_READONLY) != 0;
+                bool readOnly = (attr & FILE_ATTRIBUTE_READONLY) != 0;
+                if (GTraceIO) TRACE_INFO("WinIO: FileReadOnly '{}': {}", cstr, readOnly);
+
+                return readOnly;
             }
 
             bool WinIOSystem::readOnlyFlag(AbsolutePathView absoluteFilePath, bool flag)
@@ -486,10 +521,11 @@ namespace base
 
                 if (SetFileAttributes(cstr, attr) != 0)
                 {
-                    TRACE_WARNING("unable to set read-only attribute of file \"{}\"", absoluteFilePath);
+                    TRACE_WARNING("WinIO: Unable to set read-only attribute of file \"{}\": 0x{}", absoluteFilePath, Hex(GetLastError()));
                     return false;
                 }
 
+                if (GTraceIO) TRACE_INFO("WinIO: SetFileReadOnly '{}': {}", cstr, flag);
                 return true;
             }
 
@@ -815,7 +851,7 @@ namespace base
                 info.Flags = (allowMultiple ? OFN_ALLOWMULTISELECT : 0) | OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_NONETWORKBUTTON;
                 if (!GetOpenFileNameW(&info))
                 {
-                    TRACE_ERROR("GetOpenFileName returned false");
+                    TRACE_WARNING("GetOpenFileName returned false");
                     return false;
                 }
                 
@@ -877,7 +913,7 @@ namespace base
                 info.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_NONETWORKBUTTON;
                 if (!GetSaveFileNameW(&info))
                 {
-                    TRACE_ERROR("GetOpenFileName returned false");
+                    TRACE_WARNING("GetOpenFileName returned false");
                     return false;
                 }
 

@@ -12,33 +12,6 @@ namespace base
 {
     //--
 
-    TYPE_TLS uint64_t GRandomState = 0;
-
-#ifndef BUILD_AS_LIBS
-    float Rand()
-    {
-        auto val = (uint32_t)StatelessNextUint64(GRandomState) >> 10; // 22 bits
-        return (float)val / (float)0x3FFFFF;
-    }
-
-    uint8_t RandByte()
-    {
-        return (uint8_t)StatelessNextUint64(GRandomState);
-    }
-
-    uint32_t RandUint32()
-    {
-        return (uint32_t)StatelessNextUint64(GRandomState);
-    }
-
-    uint64_t RandUint64()
-    {
-        return StatelessNextUint64(GRandomState);
-    }
-#endif
-
-    //--
-
     bool GetMostPerpendicularPlane(const Vector3 &forward, const Vector3 &axis, const Vector3 &point, Plane &outPlane)
     {
         auto cross = Cross(forward, axis).normalized();
@@ -243,6 +216,71 @@ namespace base
             return AngleNormalize(current - speed);
         else
             return target;
+    }
+
+    //--
+
+    float Snap(float val, float grid)
+    {
+        if (grid > 0.0f)
+        {
+            int64_t numGridUnits = (int64_t)std::round(val / grid);
+            return numGridUnits * grid;
+        }
+        else
+        {
+            return val;
+        }
+    }
+
+    uint8_t FloatTo255(float col)
+    {
+        if (col <= 0.003921568627450980392156862745098f)
+            return 0;
+        else if (col >= 0.9960784313725490196078431372549f)
+            return 255;
+        else
+            return (uint8_t)std::lround(col * 255.0f);
+    }
+
+    //--
+
+    uint32_t NextPow2(uint32_t v)
+    {
+        auto x = v;
+        --x;
+        x |= x >> 1;
+        x |= x >> 2;
+        x |= x >> 4;
+        x |= x >> 8;
+        x |= x >> 16;
+        return ++x;
+    }
+
+    uint64_t NextPow2(uint64_t v)
+    {
+        auto x = v;
+        --x;
+        x |= x >> 1;
+        x |= x >> 2;
+        x |= x >> 4;
+        x |= x >> 8;
+        x |= x >> 16;
+        x |= x >> 32;
+        return ++x;
+    }
+
+    uint8_t FloorLog2(uint64_t v)
+    {
+        auto n = v;
+        auto pos = 0;
+        if (n >= 1ULL << 32) { n >>= 32; pos += 32; }
+        if (n >= 1U << 16) { n >>= 16; pos += 16; }
+        if (n >= 1U << 8) { n >>= 8; pos += 8; }
+        if (n >= 1U << 4) { n >>= 4; pos += 4; }
+        if (n >= 1U << 2) { n >>= 2; pos += 2; }
+        if (n >= 1U << 1) { pos += 1; }
+        return pos;
     }
 
     //--

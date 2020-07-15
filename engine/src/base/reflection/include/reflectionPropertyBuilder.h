@@ -80,6 +80,12 @@ namespace base
                 return *this;
             }
 
+            INLINE PropertyBuilder& overriddable()
+            {
+                m_overriddable = true;
+                return *this;
+            }
+
             template< typename T, typename... Args >
             INLINE PropertyBuilder& metadata(Args && ... args)
             {
@@ -101,6 +107,7 @@ namespace base
             bool m_scriptHidden = false;
             bool m_scriptReadOnly = false;
             bool m_transient = false;
+            bool m_overriddable = false;
 
             Array<rtti::IMetadata*> m_metadata;
         };

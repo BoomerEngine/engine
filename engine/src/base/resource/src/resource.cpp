@@ -10,13 +10,9 @@
 #include "resource.h"
 #include "resourceLoader.h"
 #include "resourceClassLookup.h"
-#include "resourceBinaryLoader.h"
-#include "resourceBinarySaver.h"
-#include "resourceGeneralTextLoader.h"
-#include "resourceGeneralTextSaver.h"
-#include "resourceSerializationMetadata.h"
 #include "resourceCookingInterface.h"
 #include "resourceMetadata.h"
+#include "resourceTags.h"
 
 namespace base
 {
@@ -30,8 +26,6 @@ namespace base
         //---
 
         RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResource);
-            RTTI_METADATA(SerializationLoaderMetadata).bind<binary::BinaryLoader>();
-            RTTI_METADATA(SerializationSaverMetadata).bind<binary::BinarySaver>();
             RTTI_METADATA(ResourceDataVersionMetadata).version(0);
             RTTI_PROPERTY(m_metadata);
         RTTI_END_TYPE();
@@ -145,18 +139,9 @@ namespace base
             if (!resourceClass)
                 return StringBuf::EMPTY();
 
-            if (resourceClass->is<IResourceManifest>())
-            {
-                auto extMetaData = resourceClass->findMetadata<ResourceManifestExtensionMetadata>();
-                if (extMetaData)
-                    return StringBuf(extMetaData->extension());
-            }
-            else
-            {
-                auto extMetaData = resourceClass->findMetadata<ResourceExtensionMetadata>();
-                if (extMetaData)
-                    return StringBuf(extMetaData->extension());
-            }
+            auto extMetaData = resourceClass->findMetadata<ResourceExtensionMetadata>();
+            if (extMetaData)
+                return StringBuf(extMetaData->extension());
 
             return StringBuf::EMPTY();
         }
@@ -185,19 +170,6 @@ namespace base
             m_mountPoint = mountPoint;
             m_key = key;
         }
-
-        //--
-
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ITextResource);
-            RTTI_METADATA(SerializationLoaderMetadata).bind<text::TextLoader>();
-            RTTI_METADATA(SerializationSaverMetadata).bind<text::TextSaver>();
-        RTTI_END_TYPE();
-
-        ITextResource::ITextResource()
-        {}
-
-        ITextResource::~ITextResource()
-        {}
 
         //--
 

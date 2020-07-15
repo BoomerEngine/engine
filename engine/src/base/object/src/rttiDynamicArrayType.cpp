@@ -276,6 +276,13 @@ namespace base
                 return true;
             }
 
+            bool DynamicArrayType::resizeArrayElements(void* data, uint32_t count) const
+            {
+                auto arr = (BaseArray*)data;
+                m_helper->resize(arr, innerType(), count);
+                return true;
+            }
+
             bool DynamicArrayType::removeArrayElement(const void* data, uint32_t index) const
             {
                 auto arr  = (BaseArray*)data;

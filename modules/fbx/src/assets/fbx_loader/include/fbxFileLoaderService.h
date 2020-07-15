@@ -35,14 +35,9 @@ namespace fbx
         /// get the raw FbxManager
         INLINE fbxsdk::FbxManager* manager() const { return m_fbxManager; }
 
-        /// load the  blob from a disk file
-        LoadedFilePtr loadScene(const base::io::AbsolutePath& absPath) const;
-
         /// load the  blob from a data buffer
-        LoadedFilePtr loadScene(const base::Buffer& data) const;
+        fbxsdk::FbxScene* loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const;
 
-        /// load the  blob from for cooking
-        LoadedFilePtr loadScene(base::res::IResourceCookerInterface& cooker) const;
 
     private:
         // ILocalService

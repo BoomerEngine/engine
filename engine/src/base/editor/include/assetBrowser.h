@@ -95,6 +95,9 @@ namespace ed
         // get selected file
         ManagedFile* selectedFile() const;
 
+        // get the active directory
+        ManagedDirectory* selectedDirectory() const;
+
         // show file in the asset browser
         void showFile(ManagedFile* filePtr);
 

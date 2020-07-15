@@ -19,156 +19,285 @@ namespace base
         namespace prv
         {
 
+            //--
 
-            WinFileHandle::WinFileHandle(HANDLE hSyncFile, HANDLE hAsyncFile, const StringBuf& origin, bool reader, bool writer, bool locked, WinAsyncReadDispatcher* dispatcher)
-                : m_hSyncFile(hSyncFile)
-                , m_hAsyncFile(hAsyncFile)
-                , m_origin(origin)
-                , m_isReader(reader)
-                , m_isWriter(writer)
-                , m_isLocked(locked)
-                , m_dispatcher(dispatcher)
+            WinReadFileHandle::WinReadFileHandle(HANDLE hSyncFile, UTF16StringBuf&& origin)
+                : m_hHandle(hSyncFile)
+                , m_origin(std::move(origin))
             {
-                InitializeCriticalSection(&m_asyncHandleLock);
             }
 
-            WinFileHandle::~WinFileHandle()
+            WinReadFileHandle::~WinReadFileHandle()
             {
-                if (m_isLocked)
+                if (m_hHandle != INVALID_HANDLE_VALUE)
                 {
-                    if (!UnlockFile(m_hSyncFile, 0, 0, ~0UL, ~0UL))
-                    {
-                        TRACE_WARNING("IO: Failed to unlock '{}'", m_origin);
-                    }
+                    CloseHandle(m_hHandle);
+                    m_hHandle = INVALID_HANDLE_VALUE;
                 }
-
-                if (m_hSyncFile != INVALID_HANDLE_VALUE)
-                {
-                    CloseHandle(m_hSyncFile);
-                    m_hSyncFile = INVALID_HANDLE_VALUE;
-                }
-
-                if (m_hAsyncFile != INVALID_HANDLE_VALUE)
-                {
-                    CloseHandle(m_hAsyncFile);
-                    m_hAsyncFile = INVALID_HANDLE_VALUE;
-                }
-
-                DeleteCriticalSection(&m_asyncHandleLock);
             }
 
-            HANDLE WinFileHandle::syncFileHandle() const
-            {
-                return m_hSyncFile;
-            }
-
-            HANDLE WinFileHandle::asyncFileHandle() const
-            {
-                return m_hAsyncFile;
-            }
-
-            const StringBuf& WinFileHandle::originInfo() const
-            {
-                return m_origin;
-            }
-
-            uint64_t WinFileHandle::size() const
+            uint64_t WinReadFileHandle::size() const
             {
                 LARGE_INTEGER size;
-                if (!::GetFileSizeEx(m_hSyncFile, &size))
+                if (!::GetFileSizeEx(m_hHandle, &size))
                 {
-                    TRACE_ERROR("Failed to get file size for '{}'", m_origin);
+                    TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
                     return 0;
                 }
 
                 return (uint64_t)size.QuadPart;
             }
 
-            uint64_t WinFileHandle::pos() const
+            uint64_t WinReadFileHandle::pos() const
             {
                 LARGE_INTEGER pos;
                 pos.QuadPart = 0;
 
-                if (!::SetFilePointerEx(m_hSyncFile, pos, &pos, FILE_CURRENT))
+                if (!::SetFilePointerEx(m_hHandle, pos, &pos, FILE_CURRENT))
                 {
-                    TRACE_ERROR("Failed to get file position for '{}'", m_origin);
+                    TRACE_WARNING("WinIO: Failed to get file position for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
                     return 0;
                 }
 
                 return (uint64_t)pos.QuadPart;
             }
 
-            bool WinFileHandle::pos(uint64_t newPosition)
+            bool WinReadFileHandle::pos(uint64_t newPosition)
             {
                 LARGE_INTEGER pos;
                 pos.QuadPart = newPosition;
 
-                if (!::SetFilePointerEx(m_hSyncFile, pos, &pos, FILE_BEGIN))
+                if (!::SetFilePointerEx(m_hHandle, pos, &pos, FILE_BEGIN))
                 {
-                    TRACE_ERROR("Failed to seek file position for '{}'", m_origin);
+                    TRACE_WARNING("WinIO: Failed to seek file position for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
                     return false;
                 }
 
                 return true;
             }
 
-            bool WinFileHandle::isReadingAllowed() const
+            uint64_t WinReadFileHandle::readSync(void* data, uint64_t size)
             {
-                return m_isReader;
-            }
+                const uint64_t ONE_READ_MAX = 1ULL << 30; // 1GB
 
-            bool WinFileHandle::isWritingAllowed() const
-            {
-                return m_isWriter;
-            }
-
-            uint64_t WinFileHandle::writeSync(const void* data, uint64_t size)
-            {
-                // the size of the IO operation is limited
-                if (size > MAX_IO_SIZE)
+                uint64_t totalDataRead = 0;
+                while (size > 0)
                 {
-                    TRACE_ERROR("Trying to write block larger than the maximum allowed on this platform");
+                    // read data
+                    DWORD bytesRead = 0;
+                    const auto readSize = (uint32_t) std::min<uint64_t>(ONE_READ_MAX, size);
+                    if (!ReadFile(m_hHandle, data, readSize, &bytesRead, NULL))
+                    {
+                        TRACE_WARNING("WinIO: Read failed for '{}' at offset {}, read size {}, error: 0x{}", m_origin, pos(), readSize, Hex(GetLastError()));
+                        break;
+                    }
+
+                    // accumulate total read count
+                    totalDataRead += bytesRead;
+                    size -= bytesRead;
+
+                    // not enough data read ?
+                    if (bytesRead != readSize)
+                    {
+                        TRACE_WARNING("WinIO: Read was incomplete for '{}' at offset {}, read size {} but got {}", m_origin, pos(), readSize, bytesRead);
+                        break;
+                    }
+                }
+
+                return totalDataRead;
+            }
+
+            //--
+
+            WinWriteFileHandle::WinWriteFileHandle(HANDLE hSyncFile, const UTF16StringBuf& origin)
+                : m_hHandle(hSyncFile)
+                , m_origin(origin)
+            {
+            }
+
+            WinWriteFileHandle::~WinWriteFileHandle()
+            {
+                if (m_hHandle != INVALID_HANDLE_VALUE)
+                {
+                    CloseHandle(m_hHandle);
+                    m_hHandle = INVALID_HANDLE_VALUE;
+                }
+            }
+
+            uint64_t WinWriteFileHandle::size() const
+            {
+                LARGE_INTEGER size;
+                if (!::GetFileSizeEx(m_hHandle, &size))
+                {
+                    TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
                     return 0;
                 }
 
-                // write data
-                DWORD bytesWritten = 0;
-                if (!WriteFile(m_hSyncFile, data, range_cast<uint32_t>(size), &bytesWritten, NULL))
-                {
-                    TRACE_ERROR("Write failed for '{}'", m_origin);
-                    return 0;
-                }
-
-                return bytesWritten;
+                return (uint64_t)size.QuadPart;
             }
 
-            uint64_t WinFileHandle::readSync(void* data, uint64_t size)
+            uint64_t WinWriteFileHandle::pos() const
             {
-                // the size of the IO operation is limited
-                if (size > MAX_IO_SIZE)
+                LARGE_INTEGER pos;
+                pos.QuadPart = 0;
+
+                if (!::SetFilePointerEx(m_hHandle, pos, &pos, FILE_CURRENT))
                 {
-                    TRACE_ERROR("Trying to read block larger than the maximum allowed on this platform");
+                    TRACE_WARNING("WinIO: Failed to get file position for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
                     return 0;
                 }
 
-                // read data
-                DWORD byteaRead = 0;
-                if (!ReadFile(m_hSyncFile, data, range_cast<uint32_t>(size), &byteaRead, NULL))
-                {
-                    TRACE_ERROR("Read failed for '{}'", m_origin);
-                    return 0;
-                }
-
-                return byteaRead;
+                return (uint64_t)pos.QuadPart;
             }
 
-            uint64_t WinFileHandle::readAsync(uint64_t offset, uint64_t size, void* readBuffer)
+            bool WinWriteFileHandle::pos(uint64_t newPosition)
             {
-				if (m_hAsyncFile == INVALID_HANDLE_VALUE)
-                    return 0;
+                LARGE_INTEGER pos;
+                pos.QuadPart = newPosition;
 
-                return m_dispatcher->readAsync(m_hSyncFile, m_hAsyncFile, offset, size, readBuffer);
+                if (!::SetFilePointerEx(m_hHandle, pos, &pos, FILE_BEGIN))
+                {
+                    TRACE_WARNING("WinIO: Failed to seek file position for '{}', error: 0x{}", m_origin, Hex(GetLastError()));
+                    return false;
+                }
+
+                return true;
             }
+
+            uint64_t WinWriteFileHandle::writeSync(const void* data, uint64_t size)
+            {
+                const uint64_t ONE_WRITE_MAX = 1ULL << 30; // 1GB
+
+                uint64_t totalDataWritten = 0;
+                while (size)
+                {
+                    // write data
+                    DWORD bytesWritten = 0;
+                    const auto writeSize = (uint32_t)std::min<uint64_t>(ONE_WRITE_MAX, size);
+                    if (!WriteFile(m_hHandle, data, writeSize, &bytesWritten, NULL))
+                    {
+                        TRACE_WARNING("WinIO: Write failed for '{}' at offset {}, write size {}, error: 0x{}", m_origin, pos(), writeSize, Hex(GetLastError()));
+                        break;
+                    }
+
+                    // accumulate total read count
+                    totalDataWritten += bytesWritten;
+                    size -= bytesWritten;
+
+                    // not enough data read ?
+                    if (bytesWritten != writeSize)
+                    {
+                        TRACE_WARNING("WinIO: Write was incomplete for '{}' at offset {}, read size {} but got {}", m_origin, pos(), writeSize, bytesWritten);
+                        break;
+                    }
+                }
+
+                return totalDataWritten;
+            }
+
+            void WinWriteFileHandle::discardContent()
+            {
+                TRACE_WARNING("WinIO: Requested to discard content of non-dicardable write '{}'", m_origin);
+            }
+
+            //--
+
+            WinWriteTempFileHandle::WinWriteTempFileHandle(const UTF16StringBuf& targetPath, const UTF16StringBuf& tempFilePath, const WriteFileHandlePtr& tempFileWriter)
+                : m_tempFileWriter(tempFileWriter)
+                , m_tempFilePath(tempFilePath)
+                , m_targetFilePath(targetPath)
+            {}
+
+            WinWriteTempFileHandle::~WinWriteTempFileHandle()
+            {
+                if (m_tempFileWriter)
+                {
+                    // close it
+                    m_tempFileWriter.reset();
+
+                    // delete target file
+                    DeleteFile(m_targetFilePath.c_str());
+
+                    // move temp file to the target place
+                    if (MoveFile(m_tempFilePath.c_str(), m_targetFilePath.c_str()))
+                    {
+                        TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", m_targetFilePath, m_tempFileWriter);
+                    }
+                    else
+                    {
+                        TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.", m_targetFilePath, m_tempFileWriter);
+                    }
+                }
+            }
+
+            uint64_t WinWriteTempFileHandle::size() const
+            {
+                if (m_tempFileWriter)
+                    return m_tempFileWriter->size();
+                return 0;
+            }
+
+            uint64_t WinWriteTempFileHandle::pos() const
+            {
+                if (m_tempFileWriter)
+                    return m_tempFileWriter->pos();
+                return 0;
+            }
+
+            bool WinWriteTempFileHandle::pos(uint64_t newPosition)
+            {
+                if (m_tempFileWriter)
+                    return m_tempFileWriter->pos(newPosition);
+                return false;
+            }
+
+            uint64_t WinWriteTempFileHandle::writeSync(const void* data, uint64_t size)
+            {
+                if (m_tempFileWriter)
+                    return m_tempFileWriter->writeSync(data, size);
+                return 0;
+            }
+
+            void WinWriteTempFileHandle::discardContent()
+            {
+                if (m_tempFileWriter)
+                {
+                    TRACE_WARNING("WinIO: Discarded file writing for target '{}'. Temp file '{}' will be delete.");
+                    m_tempFileWriter.reset();
+                    DeleteFile(m_tempFilePath.c_str());
+                }
+            }
+
+            //--
+
+            WinAsyncFileHandle::WinAsyncFileHandle(HANDLE hAsyncFile, const UTF16StringBuf& origin, uint64_t size, WinAsyncReadDispatcher* dispatcher)
+                : m_hHandle(hAsyncFile)
+                , m_origin(origin)
+                , m_size(size)
+                , m_dispatcher(dispatcher)
+            {
+            }
+
+            WinAsyncFileHandle::~WinAsyncFileHandle()
+            {
+                if (m_hHandle != INVALID_HANDLE_VALUE)
+                {
+                    CloseHandle(m_hHandle);
+                    m_hHandle = INVALID_HANDLE_VALUE;
+                }
+            }
+
+            uint64_t WinAsyncFileHandle::size() const
+            {
+                return m_size;
+            }
+
+            uint64_t WinAsyncFileHandle::readAsync(uint64_t offset, uint64_t size, void* readBuffer)
+            {
+                return m_dispatcher->readAsync(m_hHandle, offset, size, readBuffer);
+            }
+
+            //--
 
         } // prv
     } // io

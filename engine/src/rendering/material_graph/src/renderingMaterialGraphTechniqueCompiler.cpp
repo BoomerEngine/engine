@@ -162,18 +162,14 @@ namespace rendering
 
         // get some basic file info
         base::io::TimeStamp fileTimeStamp;
-        uint64_t fileCRC = 0;
-        if (!m_depot.queryFileInfo(depotPath, &fileCRC, nullptr, &fileTimeStamp))
+        if (!m_depot.queryFileTimestamp(depotPath, fileTimeStamp))
         {
             TRACE_WARNING("Unable to determine information about file '{}'", depotPath);
         }
 
-        TRACE_SPAM("Source shader file '{}': {} {}", depotPath, fileCRC, fileTimeStamp.value());
-
         // store
         auto& entry = m_usedFiles.emplaceBack();
         entry.content = ret;
-        entry.crc = fileCRC;
         entry.timestamp = fileTimeStamp.value();
         entry.depotPath = base::StringBuf(depotPath);
 
@@ -229,10 +225,8 @@ namespace rendering
 
     bool MaterialTechniqueCompiler::checkFileExists(base::StringView<char> path) const
     {
-        uint64_t fileSize = 0;
-        if (!m_depot.queryFileInfo(path, nullptr, &fileSize, nullptr))
-            return false;
-        return 0 != fileSize;
+        base::io::TimeStamp unused;
+        return m_depot.queryFileTimestamp(path, unused);
     }
 
     bool MaterialTechniqueCompiler::queryResolvedPath(base::StringView<char> relativePath, base::StringView<char> contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const

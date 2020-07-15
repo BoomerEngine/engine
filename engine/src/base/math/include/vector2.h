@@ -158,20 +158,9 @@ namespace base
 
         //--
 
-        //! get random vector
-        static Vector2 Rand(float min=0.0f, float max=1.0f);
-
     private:
         INLINE Vector2 _xy() const;
     };
-
-    extern BASE_MATH_API float Dot(const Vector2 &a, const Vector2& b);
-    extern BASE_MATH_API Vector2 Snap(const Vector2 &a, float grid);
-    extern BASE_MATH_API Vector2 Lerp(const Vector2 &a, const Vector2 &b, float frac);
-    extern BASE_MATH_API Vector2 Min(const Vector2 &a, const Vector2 &b);
-    extern BASE_MATH_API Vector2 Max(const Vector2 &a, const Vector2 &b);
-    extern BASE_MATH_API Vector2 Clamp(const Vector2 &a, const Vector2 &minV, const Vector2 &maxV);
-    extern BASE_MATH_API Vector2 Clamp(const Vector2 &a, float minF, float maxF);
 
     //--
 

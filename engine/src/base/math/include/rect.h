@@ -125,9 +125,4 @@ namespace base
         static const Rect& UNIT(); // [0,0] [1,1]
     };
 
-    extern BASE_MATH_API Rect Min(const Rect& a, const Rect& b);
-    extern BASE_MATH_API Rect Max(const Rect& a, const Rect& b);
-    extern BASE_MATH_API Rect Clamp(const Rect& a, const Rect& limit);
-    extern BASE_MATH_API Rect Clamp(const Rect& a, int minF, int maxF);
-
 } // base

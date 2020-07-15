@@ -10,6 +10,7 @@
 #include "build.h"
 #include "worldMeshComponent.h"
 #include "worldRenderingSystem.h"
+
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingScene.h"

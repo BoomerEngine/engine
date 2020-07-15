@@ -1,5 +1,0 @@
-document tech="Boomer Engine" version=1 writer=rexdex@beast
-  class=engine::material::MaterialSimpleTemplate    
-    shader
-      shader path=materials/templates/default.csl class=rendering::runtime::ShaderLibrary
-      

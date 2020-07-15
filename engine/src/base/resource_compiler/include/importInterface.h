@@ -29,6 +29,13 @@ namespace base
             /// NOTE: it's cleaner if importer reads all reimport settings from the resource configuration objects instead of directly hoarding them in resource
             virtual const IResource* existingData() const = 0;
 
+            /// Get the existing resource data of specific class (only valid if resource is already loaded)
+            template< typename T >
+            INLINE const T* existingData() const
+            {
+                return rtti_cast<const T*>(existingData());
+            }
+
             //--
 
             /// get the path to the resource being imported, this is a depot path
@@ -40,16 +47,14 @@ namespace base
             /// get the path to the source data
             virtual const StringBuf& queryImportPath() const = 0;
 
-            /// get the configuration object of given type, creates empty one if missing
-            /// NOTE: the configuration objects CANNOT BE CHANGED by the importer, they are user-editable or can be set by other tools but during import they are read only
-            virtual const IResourceConfiguration* queryConfigration(SpecificClassType<IResourceConfiguration> configClass) const = 0;
+            /// get the configuration object for the importer
+            virtual const ResourceConfiguration* queryConfigrationTypeless() const = 0;
 
-            /// get specific configuration object of given type, creates empty one if missing
-            /// NOTE: the configuration objects CANNOT BE CHANGED by the importer, they are user-editable or can be set by other tools but during import they are read only
+            /// get specific configuration object of given type
             template< typename T >
             INLINE const T* queryConfigration() const
             {
-                return static_cast<const T*>(queryConfigration(T::GetStaticClass()));
+                return rtti_cast<T>(queryConfigrationTypeless());
             }
 
             //--
@@ -60,14 +65,7 @@ namespace base
             virtual Buffer loadSourceFileContent(StringView<char> assetImportPath) const = 0;
 
             /// load source asset of given type
-            virtual SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, SpecificClassType<ISourceAsset> sourceAssetClass) const = 0;
-
-            /// load source asset of given type
-            template< typename T >
-            INLINE RefPtr<T> loadSourceAsset(StringView<char> assetImportPath) const
-            {
-                return rtti_cast<T>(loadSourceAsset(assetImportPath, T::GetStaticClass()));
-            }
+            virtual SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath) const = 0;
 
             //--
 
@@ -90,10 +88,37 @@ namespace base
             //--
 
             /// report a follow up import (other asset that we should import automatically)
-            virtual void followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const Array<ResourceConfigurationPtr>& config = Array<ResourceConfigurationPtr>()) = 0;
+            virtual void followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config = nullptr) = 0;
 
             //--
 
+        };
+
+        //--
+
+        /// list the PRIMARY configuration classes that are for importing asset via given importer class
+        class BASE_RESOURCE_COMPILER_API ResourceImporterConfigurationClassMetadata : public rtti::IMetadata
+        {
+            RTTI_DECLARE_VIRTUAL_CLASS(ResourceImporterConfigurationClassMetadata, rtti::IMetadata);
+
+        public:
+            ResourceImporterConfigurationClassMetadata();
+
+            template< typename T >
+            INLINE ResourceImporterConfigurationClassMetadata& configurationClass()
+            {
+                static_assert(std::is_base_of< res::ResourceConfiguration, T >::value, "Only resource configuration classes can be specified here");
+                m_class = T::GetStaticClass();
+                return *this;
+            }
+
+            INLINE const SpecificClassType<ResourceConfiguration>& configurationClass() const
+            {
+                return m_class;
+            }
+
+        private:
+            SpecificClassType<ResourceConfiguration> m_class;
         };
 
         //--
@@ -109,6 +134,22 @@ namespace base
             /// import asset, progress can be reported directly via the importer interface
             /// NOTE: this function should return imported asset WITHOUT metadata (As this is set by the importer itself
             virtual ResourcePtr importResource(IResourceImporterInterface& importer) const = 0;
+
+            ///--
+
+            /// list all resource classes that are importable (at least one importer exists)
+            static void ListImportableResourceClasses(Array<SpecificClassType<IResource>>& outResourceClasses);
+
+            /// find all resource classes that given file extension can be imported into, returns false if list is empty
+            static bool ListImportableResourceClassesForExtension(StringView<char> fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses);
+
+            /// find all configuration classes for importing a given file extension to given class, returns false is resource is not importable
+            static bool ListImportConfigurationForExtension(StringView<char> fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass);
+
+            /// list all importable file extensions for given resource class
+            static bool ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView<char>>& outExtensions);
+
+            ///--
         };
 
         //--

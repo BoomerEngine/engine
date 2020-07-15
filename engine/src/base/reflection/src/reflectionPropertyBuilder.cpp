@@ -52,6 +52,8 @@ namespace base
                 setup.m_flags |= rtti::PropertyFlagBit::ScriptReadOnly;
             if (m_transient)
                 setup.m_flags |= rtti::PropertyFlagBit::Transient;
+            if (m_overriddable)
+                setup.m_flags |= rtti::PropertyFlagBit::Overridable;
             
 
             auto prop  = MemNew(rtti::Property, targetClass, setup);

@@ -32,12 +32,7 @@ namespace base
     {
         return (max >= min) ? (max - min) : 0.0f;
     }
-
-    INLINE float Range::rand() const
-    {
-        return RandRange(min, max);
-    }
-
+        
     INLINE float Range::lerp(float frac) const
     {
         return min + frac * (max - min);

@@ -10,8 +10,6 @@
 #include "scriptPortableStubs.h"
 #include "scriptPortableData.h"
 #include "scriptPortableSerialization.h"
-#include "base/object/include/streamBinaryWriter.h"
-#include "base/object/include/streamBinaryReader.h"
 
 namespace base
 {

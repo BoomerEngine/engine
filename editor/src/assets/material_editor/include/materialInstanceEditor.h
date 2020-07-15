@@ -17,9 +17,9 @@ namespace ed
     class MaterialPreviewPanelWithToolbar;
 
     /// editor for meshes
-    class ASSETS_MATERIAL_EDITOR_API MaterialInstanceEditor : public SingleResourceEditor
+    class ASSETS_MATERIAL_EDITOR_API MaterialInstanceEditor : public SingleLoadedResourceEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, SingleResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, SingleLoadedResourceEditor);
 
     public:
         MaterialInstanceEditor(ConfigGroup config, ManagedFile* file);
@@ -29,10 +29,11 @@ namespace ed
 
         INLINE MaterialPreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
 
+        INLINE rendering::MaterialInstancePtr materialInstance() const { return base::rtti_cast<rendering::MaterialInstance>(resource()); }
+
         //--
 
     private:
-        base::RefPtr<rendering::MaterialInstance> m_instance;
 
         //---
 
@@ -43,8 +44,6 @@ namespace ed
 
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
         virtual bool initialize() override;
-        virtual bool saveFile(ManagedFile* file) override;
-        virtual void collectModifiedFiles(AssetItemList& outList) const override;
     };
 
 } // ed

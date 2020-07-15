@@ -27,7 +27,7 @@ namespace ed
 
         {
             m_toolbar = createChild<ui::ToolBar>();
-            m_toolbar->createButton("MeshPreview.ShowBounds"_id, "[img:bracket]", "Show mesh bounds");
+            m_toolbar->createButton("MeshPreview.ShowBounds"_id, ui::ToolbarButtonSetup().caption("Bounds").icon("cube").tooltip("Show bounds of the mesh"));
             m_toolbar->createSeparator();
         }
 

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "uiStyleParameters.h"
 #include "uiStyleSelector.h"
 
 #include "base/resource/include/resource.h"

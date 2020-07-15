@@ -128,6 +128,7 @@ namespace base
                 return false;
 
             // notify callbacks
+            ScopeTimer timer;
             m_callbacks->queueJobStarted(job->info.depotFilePath);
 
             // check if resource is up to date
@@ -138,7 +139,7 @@ namespace base
                     const auto status = m_importer->checkStatus(*currentMetadata);
                     if (status == ImportStatus::UpToDate)
                     {
-                        m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::UpToDate);
+                        m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::UpToDate, timer.timeElapsed());
 
                         // follow up with resources that were imported last time
                         for (const auto& followup : currentMetadata->importFollowups)
@@ -146,7 +147,8 @@ namespace base
                             ImportJobInfo jobInfo;
                             jobInfo.depotFilePath = followup.depotPath;
                             jobInfo.assetFilePath = followup.sourceImportPath;
-                            jobInfo.config = followup.configuration;
+                            jobInfo.externalConfig = followup.configuration;
+                            jobInfo.userConfig = nullptr; // no specific user configuration, will use the resource's one
                             scheduleJob(jobInfo);
                         }
 
@@ -165,7 +167,7 @@ namespace base
             {
                 ImportQueueProgressTracker localProgressTracker(m_callbacks, job->info.depotFilePath, &m_asyncCancelationFlag);
                 const auto ret = m_importer->importResource(job->info, existingResource, importedResource, &localProgressTracker);
-                m_callbacks->queueJobFinished(job->info.depotFilePath, ret);
+                m_callbacks->queueJobFinished(job->info.depotFilePath, ret, timer.timeElapsed());
             }
 
             // if resource was imported send it to saving

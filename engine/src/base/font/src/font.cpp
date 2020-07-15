@@ -15,6 +15,7 @@
 #include "fontGlyphCache.h"
 
 #include "base/system/include/scopeLock.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace base
 {

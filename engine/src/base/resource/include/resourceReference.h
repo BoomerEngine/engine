@@ -12,15 +12,6 @@
 
 namespace base
 {
-
-    namespace stream
-    {
-        class ITextReader;
-        class ITextWriter;
-        class IBinaryReader;
-        class IBinaryWriter;
-    }
-
     namespace res
     {
         class IResourceLoader;
@@ -33,6 +24,7 @@ namespace base
         public:
             BaseReference();
             BaseReference(const BaseReference& other);
+            explicit BaseReference(const ResourceKey& key);
             BaseReference(const ResourcePtr& ptr);
             BaseReference(BaseReference&& other);
             BaseReference(std::nullptr_t);
@@ -54,7 +46,7 @@ namespace base
             INLINE bool valid() const { return m_handle; }
 
             // is this an empty reference ? empty reference is one without key and without object
-            INLINE bool empty() const { return !valid(); }
+            INLINE bool empty() const { return !m_handle && !m_key; }
 
             // is this an inlined object ?
             INLINE bool inlined() const { return m_handle && !m_key; } // bound but not loaded from anywhere

@@ -10,8 +10,8 @@
 #include "scriptPortableStubs.h"
 #include "scriptFunctionStackFrame.h"
 #include "scriptFunctionRuntimeCode.h"
-#include "base/object/include/memoryWriter.h"
 #include "base/object/include/rttiProperty.h"
+#include "base/io/include/ioFileHandleMemory.h"
 
 namespace base
 {
@@ -146,7 +146,7 @@ namespace base
         class CodeWriter : public base::NoCopy
         {
         public:
-            CodeWriter(stream::MemoryWriter& writerStream, IFunctionCodeStubResolver& stubResovler)
+            CodeWriter(io::IWriteFileHandle& writerStream, IFunctionCodeStubResolver& stubResovler)
                 : m_stream(writerStream)
                 , m_currentOpcode(nullptr)
                 , m_stubResovler(stubResovler)
@@ -160,7 +160,7 @@ namespace base
             INLINE void writeOpcode(Opcode newOpcode)
             {
                 // move stream to position when opcode for current instruction should be written (this allows us to rewrite the opcode)
-                m_stream.seek(m_opcodeWriteOffset);
+                //m_stream.seek(m_opcodeWriteOffset);
 
                 // write opcode ID
                 uint16_t val = (uint16_t)newOpcode;
@@ -175,7 +175,7 @@ namespace base
                     m_stream.writeValue((uint8_t)(val & 0x7F));
                 }
 #else
-                m_stream.writeValue(val);
+               // m_stream.writeValue(val);
 #endif
             }
 
@@ -183,7 +183,7 @@ namespace base
             {
                 // remember where opcode was written
                 ASSERT(!m_opcodeOffsets.contains(op));
-                m_opcodeWriteOffset = (uint32_t)m_stream.pos();
+                //m_opcodeWriteOffset = (uint32_t)m_stream.pos();
                 m_opcodeOffsets[op] = m_opcodeWriteOffset;
                 m_currentOpcode = op;
 
@@ -195,7 +195,7 @@ namespace base
                 if (op->op == Opcode::Breakpoint)
                 {
                     auto& breakpointInfo = m_breakpoints.emplaceBack();
-                    breakpointInfo.codeOffset = m_stream.pos();
+                    //breakpointInfo.codeOffset = m_stream.pos();
                     breakpointInfo.sourceLine = op->location.line;
                 }
 
@@ -212,9 +212,9 @@ namespace base
 
                 uint8_t emptyData[sizeof(T)];
                 memzero(&emptyData, sizeof(emptyData));
-                m_stream.write(&emptyData, sizeof(emptyData));
+                //m_stream.write(&emptyData, sizeof(emptyData));
 
-                *(T*)base::OffsetPtr(m_stream.data(), offset) = data;
+                //*(T*)base::OffsetPtr(m_stream.data(), offset) = data;
             }
 
             INLINE void writePointer(const void* data)
@@ -230,8 +230,8 @@ namespace base
                 auto& info = m_jumps.emplaceBack();
                 info.source = m_currentOpcode;
                 info.target = target;
-                info.offsetOffset = m_stream.pos();
-                m_stream.writeValue((short)0);
+               // info.offsetOffset = m_stream.pos();
+               // m_stream.writeValue((short)0);
             }
 
             INLINE Array<FunctionCodeBreakpointPlacement>& breakpoints()
@@ -260,8 +260,8 @@ namespace base
                     }
 
                     // write the jump offset
-                    m_stream.seek(jump.offsetOffset);
-                    m_stream.writeValue((short)dist);
+                    //m_stream.seek(jump.offsetOffset);
+                    //m_stream.writeValue((short)dist);
                 }
 
                 // jumps resolved
@@ -269,7 +269,7 @@ namespace base
             }
 
         private:
-            stream::MemoryWriter& m_stream;
+            io::IWriteFileHandle& m_stream;
             HashMap<const StubOpcode*, uint32_t> m_opcodeOffsets;
             const StubOpcode* m_currentOpcode;
             uint32_t m_opcodeWriteOffset = 0;
@@ -1106,7 +1106,7 @@ namespace base
             //     ConstFloat -> float
 
             // translate opcodes
-            stream::MemoryWriter streamWriter(32768, POOL_SCRIPTS);
+            io::MemoryWriterFileHandle streamWriter;// (32768, POOL_SCRIPTS);
             CodeWriter codeWriter(streamWriter, stubResolver);
             LocalVariableMapper varMapper(stubResolver);
             for (auto op  : func->opcodes)
@@ -1126,7 +1126,7 @@ namespace base
             ret->m_localStorageAlignment = varMapper.m_localDataStorageAlignment;
 
             // extract code
-            ret->m_code = streamWriter.extractData();
+            ret->m_code = streamWriter.extract();
             ret->m_breakpoints = std::move(codeWriter.breakpoints());
 
             // we now have a machine dependedt VM code we can execute for this function

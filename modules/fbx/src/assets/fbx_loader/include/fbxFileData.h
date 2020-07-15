@@ -7,6 +7,7 @@
 ***/
 
 #pragma once
+#include "base/resource_compiler/include/importSourceAsset.h"
 
 namespace fbx
 {
@@ -68,6 +69,12 @@ namespace fbx
         uint32_t addMaterial(const char* materialName, const fbxsdk::FbxSurfaceMaterial* material);
     };
 
+    // exported mode
+    struct ASSETS_FBX_LOADER_API DataNodeMesh
+    {
+        base::Array<base::mesh::MeshModelChunk> chunks;
+    };
+
     //  extractable node
     struct ASSETS_FBX_LOADER_API DataNode
     {
@@ -115,14 +122,16 @@ namespace fbx
 
         void extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const;
 
-        bool exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, base::mesh::MeshModel& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const;
+        bool exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const;
     };
 
-    //  data blob (loaded scene)
-    class ASSETS_FBX_LOADER_API LoadedFile : public base::IReferencable
+    //  data blob (loaded asset scene)
+    class ASSETS_FBX_LOADER_API LoadedFile : public base::res::ISourceAsset
     {
+        RTTI_DECLARE_VIRTUAL_CLASS(LoadedFile, base::res::ISourceAsset);
+
     public:
-        LoadedFile(fbxsdk::FbxScene* fbxScene = nullptr);
+        LoadedFile();
         virtual ~LoadedFile();
 
         ///--
@@ -138,20 +147,27 @@ namespace fbx
 
         ///--
 
-        // extract internal node structure (capture our own representation of the scene graph)
-        bool captureNodes(const base::Matrix& spaceConversionMatrix);
-
-        ///--
-
         // find data node for given  node
         const DataNode* findDataNode(const fbxsdk::FbxNode* fbxNode) const;
 
+        //--
+
     private:
-        fbxsdk::FbxScene* m_fbxScene;
+        uint64_t m_fbxDataSize = 0;
+        fbxsdk::FbxScene* m_fbxScene = nullptr;
+
         base::Array<DataNode*> m_nodes;
         base::HashMap<const fbxsdk::FbxNode*, const DataNode*> m_nodeMap;
 
-        bool walkStructure(const fbxsdk::FbxAMatrix& fbxWorldToParent, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
+        void walkStructure(const fbxsdk::FbxAMatrix& fbxWorldToParent, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
+
+        //--
+
+        // ISourceAsset
+        virtual uint64_t calcMemoryUsage() const override;
+        virtual bool loadFromMemory(Buffer data) override;
+
+        //--
     };
 
     //---

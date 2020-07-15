@@ -46,7 +46,6 @@
 #include "rendering/driver/include/renderingCommandBuffer.h"
 #include "rendering/driver/include/renderingDriver.h"
 #include "rendering/driver/include/renderingShaderLibrary.h"
-#include "base/math/include/randomMersenne.h"
 
 namespace rendering
 {
@@ -97,18 +96,18 @@ namespace rendering
 
         static const base::Vector4* HBAO_RANDOM_INIT()
         {
-            base::MTGenerator rng;
+            base::MTRandState rng;
 
             float numDir = 8.0f; // keep in sync to glsl
             for (int i = 0; i < HBAO_RANDOM_ELEMENTS; i++)
             {
-                float Rand1 = rng.nextFloat();
-                float Rand2 = rng.nextFloat();
+                float Rand1 = base::RandOne(rng);
+                float Rand2 = base::RandOne(rng);
 
                 // Use random rotation angles in [0,2PI/NUM_DIRECTIONS)
-                float Angle = 2.f * PI * Rand1 / numDir;
-                HBAO_RANDOM[i].x = cosf(Angle);
-                HBAO_RANDOM[i].y = sinf(Angle);
+                float angle = 2.f * PI * Rand1 / numDir;
+                HBAO_RANDOM[i].x = cosf(angle);
+                HBAO_RANDOM[i].y = sinf(angle);
                 HBAO_RANDOM[i].z = Rand2;
                 HBAO_RANDOM[i].w = 0;
             }

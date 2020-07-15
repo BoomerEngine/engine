@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/io/include/absolutePath.h"
-#include "base/io/include/crcCache.h"
 #include "base/system/include/atomic.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource/include/resource.h"
@@ -90,9 +89,6 @@ namespace base
 
             //---
 
-            /// get the general CRC cache, can be used for other depot related stuff
-            INLINE io::CRCCache& crcCache() const { return *m_crcCache; }
-
             /// get the list of the mounted file systems
             INLINE const Array<const DepotFileSystem*>& mountedFileSystems() const { return m_fileSystemsPtrs; }
 
@@ -102,10 +98,6 @@ namespace base
             bool populateFromManifest(const io::AbsolutePath& depotManifestPath);
 
             //---
-
-            /// enable write operations on the depot, can fail if a file system does not permit that
-            /// NOTE: this is necessary for the editor
-            bool enableWriteOperations();
 
             /// enable live observation of changes in the file system, especially added/modified files
             void enableDepotObservers();
@@ -128,15 +120,15 @@ namespace base
 
             //--
 
+            /// get the context name for the given file
+            bool queryContextName(StringView<char>fileSystemPath, StringBuf& contextName) const;
+
             // given a resource path find a file system and local path for loading stuff
             // NOTE: this may fail if path is not recognized but usually it does not since the "/" is mapped as project root
             bool queryFilePlacement(StringView<char> fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly=false) const;
 
-            /// get the context name for the given file
-            bool queryContextName(StringView<char>fileSystemPath, StringBuf& contextName) const;
-
             /// get the file information
-            bool queryFileInfo(StringView<char> fileSystemPath, uint64_t* outCRC, uint64_t* outFileSize, io::TimeStamp* outTimestamp) const;
+            bool queryFileTimestamp(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp) const;
 
             /// get the mount point path for given file system path
             bool queryFileMountPoint(StringView<char> fileSystemPath, res::ResourceMountPoint& outMountPoint) const;
@@ -151,11 +143,15 @@ namespace base
 
             /// create a reader for the file's content
             /// NOTE: creating a reader may take some time
-            io::FileHandlePtr createFileReader(StringView<char> fileSystemPath) const;
+            io::ReadFileHandlePtr createFileReader(StringView<char> filePath) const;
 
-            /// store new content for a file
+            /// create a writer for the file's content
             /// NOTE: fails if the file system was not writable
-            bool storeFileContent(StringView<char> filePath, const Buffer& newContent) const;
+            io::WriteFileHandlePtr createFileWriter(StringView<char> filePath) const;
+
+            /// create an ASYNC reader for the file's content
+            /// NOTE: creating a reader may take some time
+            io::AsyncFileHandlePtr createFileAsyncReader(StringView<char> filePath) const;
 
             //--
 
@@ -212,15 +208,9 @@ namespace base
             void notifyDirRemoved(IFileSystem* fs, StringView<char> rawFilePath);
 
         private:
-            UniquePtr<io::CRCCache> m_crcCache;
-            io::AbsolutePath m_cacheDirectory;
-
             // file systems
             Array<UniquePtr<DepotFileSystem>> m_fileSystems;
             Array<const DepotFileSystem*> m_fileSystemsPtrs;
-
-            // all loaded manifests
-            Array<PackageManifestPtr> m_manifests;
 
             // depot observers
             Mutex m_observersLock;
@@ -242,8 +232,6 @@ namespace base
             void rebuildFileSystemMap();
             void registerFileSystemBinding(const DepotFileSystem* fs);
 
-
-            void unloadProject();
             bool processFileSystem(StringView<char> mountPath, UniquePtr<IFileSystem> fs, DepotFileSystemType type);
 
             //---

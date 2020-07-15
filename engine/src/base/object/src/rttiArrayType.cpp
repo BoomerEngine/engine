@@ -9,10 +9,8 @@
 #include "build.h"
 #include "rttiArrayType.h"
 
-#include "streamBinaryWriter.h"
-#include "streamBinaryReader.h"
-#include "streamTextWriter.h"
-#include "streamTextReader.h"
+#include "streamOpcodeWriter.h"
+#include "streamOpcodeReader.h"
 #include "rttiDataView.h"
 
 namespace base
@@ -63,119 +61,56 @@ namespace base
             }
         }
 
-        void IArrayType::calcCRC64(CRC64& crc, const void* data) const
-        {
-            auto size = arraySize(data);
-            crc << size;
-
-            for (uint32_t i = 0; i < size; ++i)
-            {
-                auto itemData = arrayElementData(data, i);
-                m_innertType->calcCRC64(crc, itemData);
-            }
-        }
-
-        bool IArrayType::writeBinary(const TypeSerializationContext& typeContext, stream::IBinaryWriter& file, const void* data, const void* defaultData) const
+        void IArrayType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             // save array size
             uint32_t size = arraySize(data);
-            file.writeValue(size);
+            file.beginArray(size);
 
             // save elements
             for (uint32_t i = 0; i < size; ++i)
             {
                 auto elementData  = arrayElementData(data, i);
                 auto defaultElementData  = defaultData ? arrayElementData(defaultData, i) : nullptr;
-                if (!m_innertType->writeBinary(typeContext, file, elementData, defaultElementData))
-                    return false;
+                m_innertType->writeBinary(typeContext, file, elementData, defaultElementData);
             }
 
-            return true;
+            // exit array block
+            file.endArray();
         }
 
-        bool IArrayType::readBinary(const TypeSerializationContext& typeContext, stream::IBinaryReader& file, void* data) const
+        void IArrayType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            // load array count
+            // enter array block
             uint32_t size = 0;
-            file.readValue(size);
+            file.enterArray(size);
 
             // prepare array
             clearArrayElements(data);
+            resizeArrayElements(data, size);
+
+            // get element pointers
+            auto* writePtr = (uint8_t*)arrayElementData(data, 0);
+            auto writeStride = m_innertType->size();
 
             // read elements
 			auto capacity = maxArrayCapacity(data);
-			for (uint32_t i = 0; i < size; ++i)
+			for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
             {
                 if (i < capacity)
                 {
-                    createArrayElement(data, i);
-
-                    auto elementData  = arrayElementData(data, i);
-                    if (!m_innertType->readBinary(typeContext, file, elementData))
-                        return false;
+                    m_innertType->readBinary(typeContext, file, writePtr);
                 }
                 else
                 {
                     // read and discard the elements that won't fit into the array
                     DataHolder holder(m_innertType);
-                    if (!m_innertType->readBinary(typeContext, file, holder.data()))
-                        return false;
+                    m_innertType->readBinary(typeContext, file, holder.data());
                 }
             }
 
-            return true;
-        }
-
-        bool IArrayType::writeText(const TypeSerializationContext& typeContext, stream::ITextWriter& stream, const void* data, const void* defaultData) const
-        {
-            // save elements
-            auto size = arraySize(data);
-            for (uint32_t i = 0; i < size; ++i)
-            {
-                auto elementData  = arrayElementData(data, i);
-                auto defaultElementData  = defaultData ? arrayElementData(defaultData, i) : nullptr;
-
-                stream.beginArrayElement();
-                if (!m_innertType->writeText(typeContext, stream, elementData, defaultElementData))
-                {
-                    stream.endArrayElement();
-                    return false;
-                }
-
-                stream.endArrayElement();
-            }
-
-            return true;
-        }
-
-        bool IArrayType::readText(const TypeSerializationContext& typeContext, stream::ITextReader& stream, void* data) const
-        {
-            // clear elements
-            clearArrayElements(data);
-
-			auto capacity = maxArrayCapacity(data);
-
-            uint32_t index = 0;
-            while (stream.beginArrayElement())
-            {
-                if (index < capacity)
-                {
-                    createArrayElement(data, index);
-
-                    auto elementData  = arrayElementData(data, index);
-                    if (!m_innertType->readText(typeContext, stream, elementData))
-                    {
-                        stream.endArrayElement();
-                        return false;
-                    }
-                }
-
-                stream.endArrayElement();
-                ++index;
-            }           
-
-            // end array
-            return true;
+            // exit array
+            file.leaveArray();
         }
 
         DataViewResult IArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const

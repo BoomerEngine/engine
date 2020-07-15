@@ -37,7 +37,7 @@ namespace ed
     RTTI_END_TYPE();
 
     MaterialGraphEditor::MaterialGraphEditor(ConfigGroup config, ManagedFile* file)
-        : SingleResourceEditor(config, file)
+        : SingleLoadedResourceEditor(config, file)
     {
         actions().bindCommand("MaterialGraphEditor.Copy"_id) = [this]() { m_graphEditor->actionCopySelection(); };
         actions().bindCommand("MaterialGraphEditor.Cut"_id) = [this]() { m_graphEditor->actionCutSelection(); };
@@ -58,10 +58,10 @@ namespace ed
     void MaterialGraphEditor::createInterface()
     {
         {
-            toolbar()->createButton("MaterialGraphEditor.Copy"_id, "[img:copy]", "Copy selected blocks");
-            toolbar()->createButton("MaterialGraphEditor.Cut"_id, "[img:cut]", "Cut selected blocks");
-            toolbar()->createButton("MaterialGraphEditor.Paste"_id, "[img:paste]", "Paste blocks");
-            toolbar()->createButton("MaterialGraphEditor.Delete"_id, "[img:delete]", "Delete blocks");
+            toolbar()->createButton("MaterialGraphEditor.Copy"_id, ui::ToolbarButtonSetup().icon("copy").caption("Copy").tooltip("Copy selected blocks"));
+            toolbar()->createButton("MaterialGraphEditor.Cut"_id, ui::ToolbarButtonSetup().icon("cut").caption("Cut").tooltip("Cut selected blocks"));
+            toolbar()->createButton("MaterialGraphEditor.Paste"_id, ui::ToolbarButtonSetup().icon("paste").caption("Paste").tooltip("Paste blocks"));
+            toolbar()->createButton("MaterialGraphEditor.Delete"_id, ui::ToolbarButtonSetup().icon("delete").caption("Delete").tooltip("Delete blocks"));
         }
 
         {
@@ -129,7 +129,7 @@ namespace ed
         if (!TBaseClass::initialize())
             return false;
 
-        m_graph = file()->loadContent<rendering::MaterialGraph>();
+        m_graph = base::rtti_cast<rendering::MaterialGraph>(resource());
         if (!m_graph)
             return false;
 
@@ -144,26 +144,6 @@ namespace ed
 
         m_previewPanel->bindMaterial(m_previewInstance);
         return true;
-    }
-
-    bool MaterialGraphEditor::saveFile(ManagedFile* fileToSave)
-    {
-        if (fileToSave == file())
-        {
-            if (file()->storeContent(m_graph))
-            {
-                m_graph->resetModifiedFlag();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void MaterialGraphEditor::collectModifiedFiles(AssetItemList& outList) const
-    {
-        if (m_graph->modified())
-            outList.collectFile(file());
     }
 
     void MaterialGraphEditor::handleChangedSelection()
@@ -183,7 +163,7 @@ namespace ed
 
     //---
 
-    class  MaterialGraphResourceEditorOpener : public IResourceEditorOpener
+    class MaterialGraphResourceEditorOpener : public IResourceEditorOpener
     {
         RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphResourceEditorOpener, IResourceEditorOpener);
 
@@ -196,7 +176,14 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            return base::CreateSharedPtr<MaterialGraphEditor>(config, file);
+            if (auto loadedGraph = base::rtti_cast<rendering::MaterialGraph>(file->loadContent()))
+            {
+                auto ret = base::CreateSharedPtr<MaterialGraphEditor>(config, file);
+                ret->bindResource(loadedGraph);
+                return ret;
+            }
+
+            return nullptr;
         }
     };
 

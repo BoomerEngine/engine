@@ -10,15 +10,11 @@
 #include "depotFileSystem.h"
 #include "depotStructure.h"
 
-#include "base/resource/include/resourceUncached.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resource.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resourceSerializationMetadata.h"
-#include "base/object/include/serializationLoader.h"
-#include "base/object/include/nativeFileReader.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/app/include/localServiceContainer.h"
@@ -93,7 +89,7 @@ namespace base
             return localFileSystem->contextName(localFileSystemPath, contextName);
         }
 
-        bool DepotStructure::queryFileInfo(StringView<char> fileSystemPath, uint64_t* outCRC, uint64_t* outFileSize, io::TimeStamp* outTimestamp) const
+        bool DepotStructure::queryFileTimestamp(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp) const
         {
             // resolve location
             StringBuf localFileSystemPath;
@@ -102,7 +98,7 @@ namespace base
                 return false;
 
             // get the timestamp
-            return localFileSystem->info(localFileSystemPath, outCRC, outFileSize, outTimestamp);
+            return localFileSystem->timestamp(localFileSystemPath, outTimestamp);
         }
 
         bool DepotStructure::queryFileAbsolutePath(StringView<char> fileSystemPath, io::AbsolutePath& outAbsolutePath) const

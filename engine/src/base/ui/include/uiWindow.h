@@ -279,7 +279,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(WindowTitleBar, IElement);
 
     public:
-        WindowTitleBar(base::StringView<char> title = "");
+        WindowTitleBar(base::StringView<char> title = "", base::StringView<char> customIcon = "");
         virtual ~WindowTitleBar();
 
         void updateWindowState(ui::Window* window, WindowStateFlags flags);

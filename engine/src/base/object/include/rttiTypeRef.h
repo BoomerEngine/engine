@@ -130,7 +130,10 @@ namespace base
         void print(base::IFormatStream& f) const;
 
         // hash calculation
-        void calcCRC64(CRC64& crc) const;
+        static uint32_t CalcHash(const Type& type);
+
+        // hash calculation
+        static uint32_t CalcHash(const StringID& type);
 
         //--
 
@@ -138,10 +141,7 @@ namespace base
         static const Type& EMPTY();
 
         //--
-
-        // get hash of the type reference
-        INLINE static uint32_t CalcHash(Type key) { return std::hash<const void*>{}(key.m_type); }
-
+        
     private:
         const rtti::IType* m_type = nullptr;
     };
