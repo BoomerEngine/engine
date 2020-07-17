@@ -162,7 +162,7 @@ namespace base
             // open the file and calculate the fingerprint
             if (auto file = IO::GetInstance().openForAsyncReading(absolutePath))
             {
-                validCacheJob->status = CalculateMemoryFingerprint(file, !background, progress, validCacheJob->fingerprint);
+                validCacheJob->status = CalculateFileFingerprint(file, !background, progress, validCacheJob->fingerprint);
             }
             else
             {

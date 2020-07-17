@@ -28,15 +28,15 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_CLASS(StaticTextureCompressionConfiguration);
         RTTI_CATEGORY("Content");
-        RTTI_PROPERTY(m_contentType).editable("Content type of the image, usually guessed by the file name postfix");
-        RTTI_PROPERTY(m_contentColorSpace).editable("Color space of the image's content");
-        RTTI_PROPERTY(m_contentAlphaMode).editable("Alpha mode of the image");
+        RTTI_PROPERTY(m_contentType).editable("Content type of the image, usually guessed by the file name postfix").overriddable();
+        RTTI_PROPERTY(m_contentColorSpace).editable("Color space of the image's content").overriddable();
+        RTTI_PROPERTY(m_contentAlphaMode).editable("Alpha mode of the image").overriddable();
         RTTI_CATEGORY("Mipmapping");
-        RTTI_PROPERTY(m_mipmapMode).editable("Mipmap generation mode");
+        RTTI_PROPERTY(m_mipmapMode).editable("Mipmap generation mode").overriddable();
         RTTI_CATEGORY("Compression");
-        RTTI_PROPERTY(m_compressionMode).editable("Compression mode");
-        RTTI_PROPERTY(m_compressionMasking).editable("Masking mode for determining pixels taking part in compression");
-        RTTI_PROPERTY(m_compressionQuality).editable("Compression quality");
+        RTTI_PROPERTY(m_compressionMode).editable("Compression mode").overriddable();
+        RTTI_PROPERTY(m_compressionMasking).editable("Masking mode for determining pixels taking part in compression").overriddable();
+        RTTI_PROPERTY(m_compressionQuality).editable("Compression quality").overriddable();
         // TODO: streaming settings
         // TODO: per-platform settings (ie. console texture bias)
     RTTI_END_TYPE();

@@ -76,6 +76,9 @@ namespace ui
 
         //--
 
+        // bind null (remove any existing binding)
+        void bindNull();
+
         // set the data view to show/edit in this inspector
         void bindData(base::IDataView* data, bool readOnly = false);
 

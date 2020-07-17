@@ -20,6 +20,10 @@ namespace ui
 {
     //---
 
+    base::ConfigProperty<float> cvHoverDuration("UI", "HoverDurationMS", 200.0f);
+
+    //---
+
     struct ElementChildToParentIterator
     {
         INLINE ElementChildToParentIterator(const ElementWeakPtr& element)
@@ -702,7 +706,7 @@ namespace ui
     {
         for (auto& info : m_windows)
             if (info.window == window)
-                return !info.popup && m_native->windowNativeHandle(info.nativeId);
+                return m_native->windowNativeHandle(info.nativeId);
 
         return 0;
     }
@@ -924,7 +928,7 @@ namespace ui
         }
 
         // try to create a new tooltip
-        if (!m_currentTooltip && m_lastHoverUpdateTime.timeTillNow().toMiliSeconds() > 500.0f)
+        if (!m_currentTooltip && m_lastHoverUpdateTime.timeTillNow().toMiliSeconds() > cvHoverDuration.get())
         {
             for (ElementChildToParentIterator it(m_currentHoverElement); it; ++it)
             {
@@ -1459,10 +1463,11 @@ namespace ui
                     return true;
 
                 // if window frame did not hijack the request pass it to normal members
-                if (const auto element = window.hitCache->traceElement(absolutePosition))
-                    for (ElementChildToParentIterator it(element.get()); it; ++it)
-                        if (element->handleWindowAreaQuery(element->cachedDrawArea(), absolutePosition, outAreaType))
-                            return true;
+                if (window.hitCache)
+                    if (const auto element = window.hitCache->traceElement(absolutePosition))
+                        for (ElementChildToParentIterator it(element.get()); it; ++it)
+                            if (element->handleWindowAreaQuery(element->cachedDrawArea(), absolutePosition, outAreaType))
+                                return true;
 
                 break;
             }

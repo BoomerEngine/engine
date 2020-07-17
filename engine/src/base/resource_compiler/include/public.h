@@ -57,6 +57,9 @@ namespace base
 
         class ImportFileFingerprint;
 
+        class ImportList;
+        typedef RefPtr<ImportList> ImportListPtr;
+
         //--
 
         /// import status of file

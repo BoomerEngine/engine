@@ -24,6 +24,8 @@
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/object/include/object.h"
 #include "base/resource/include/resourceMetadata.h"
+#include "base/xml/include/xmlUtils.h"
+#include "importFileList.h"
 
 
 namespace base
@@ -113,31 +115,54 @@ namespace base
 
         //--
 
-        static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& queue)
+        static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& outQueue)
         {
-            // simple case - import single file
+            bool hasWork = false;
+
             const auto depotPath = commandline.singleValue("depotPath");
             const auto assetPath = commandline.singleValue("assetPath");
-            if (depotPath || assetPath)
+            if (depotPath && assetPath)
             {
-                if (depotPath && assetPath)
+                ImportJobInfo info;
+                info.assetFilePath = assetPath;
+                info.depotFilePath = depotPath;
+                outQueue.scheduleJob(info);
+                hasWork = true;
+            }
+
+            const auto importListPath = commandline.singleValueUTF16("assetListPath");
+            if (!importListPath.empty())
+            {
+                if (const auto assetListDoc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), io::AbsolutePath::Build(importListPath)))
                 {
-                    ImportJobInfo job;
-                    job.depotFilePath = depotPath;
-                    job.assetFilePath = assetPath;
-                    queue.scheduleJob(job);
+                    if (const auto assetList = LoadObjectFromXML<ImportList>(assetListDoc))
+                    {
+                        TRACE_INFO("Found {} files at import list '{}'", assetList->files().size(), importListPath);
+                        for (const auto& file : assetList->files())
+                        {
+                            ImportJobInfo info;
+                            info.assetFilePath = file.assetPath;
+                            info.depotFilePath = file.depotPath;
+                            info.userConfig = CloneObject(file.userConfiguration);
+                            outQueue.scheduleJob(info);
+                            hasWork = true;
+                        }
+                    }
+                    else
+                    {
+                        TRACE_ERROR("Failed to parse import list from XML '{}'", importListPath);
+                    }
                 }
                 else
                 {
-                    TRACE_ERROR("Both -depotPath and -assetPath should be speicifed");
-                    return false;
+                    TRACE_ERROR("Failed to load import list from XML '{}'", importListPath);
                 }
             }
 
-            // TODO: job list
-
-            return true;
+            return hasWork;
         }
+
+        //--
 
         bool CommandImport::run(const app::CommandLine& commandline)
         {

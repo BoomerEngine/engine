@@ -18,7 +18,7 @@ namespace base
 
         //--
 
-        Node::Node(const IDocument* doc)
+        Node::Node(IDocument* doc)
         {
             if (doc)
             {
@@ -27,7 +27,25 @@ namespace base
             }
         }
 
+        Node::Node(const IDocument* doc)
+        {
+            if (doc)
+            {
+                m_document = const_cast<IDocument*>(doc);
+                m_id = doc->root();
+            }
+        }
+
         Node::Node(const IDocument* doc, NodeID node)
+        {
+            if (node && doc)
+            {
+                m_document = const_cast<IDocument*>(doc);
+                m_id = node;
+            }
+        }
+
+        Node::Node(IDocument* doc, NodeID node)
         {
             if (node && doc)
             {
@@ -96,7 +114,34 @@ namespace base
         {
             return StringBuf(value());
         }
+
+        //--
+
+        void Node::writeValue(StringView<char> txt)
+        {
+            if (m_document && m_id)
+                m_document->nodeValue(m_id, txt);
+        }
+
+        void Node::writeAttribute(StringView<char> name, StringView<char> value)
+        {
+            DEBUG_CHECK_EX(name, "Attribute name should be specified");
+
+            if (m_document && name && m_id)
+                m_document->nodeAttribute(m_id, name, value);
+        }
         
+        Node Node::writeChild(StringView<char> childName)
+        {
+            DEBUG_CHECK_EX(childName, "Child name should be specified");
+
+            if (m_document && childName && m_id)
+                if (auto id = m_document->createNode(m_id, childName))
+                    return Node(m_document, id);
+
+            return Node();
+        }
+
         //--
 
         StringView<char> Node::attribute(StringView<char> name, StringView<char> defaultVal) const

@@ -101,6 +101,20 @@ namespace base
             };
 
             template< typename T >
+            struct XMLSerializationHelper
+            {
+                static void WriteXMLFunc(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData)
+                {
+                    ((const T*)data)->writeXML(node);
+                }
+
+                static void ReadXMLFunc(TypeSerializationContext& typeContext, const xml::Node& node, void* data)
+                {
+                    ((T*)data)->readXML(node);
+                }
+            };
+
+            template< typename T >
             struct PrintHelper
             {
                 static void PrintToTextFunc(IFormatStream& f, const void* data, uint32_t flags)
@@ -176,6 +190,9 @@ namespace base
             typedef void (*TWriteBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData);
             typedef void (*TReadBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data);
 
+            typedef void (*TWriteXMLFunc)(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData);
+            typedef void (*TReadXMLFunc)(TypeSerializationContext& typeContext, const xml::Node& node, void* data);
+
             typedef void (*TPrintToTextFunc)(IFormatStream& f, const void* data, uint32_t flags);
             typedef bool (*TParseFromStringFunc)(StringView<char> txt, void* data, uint32_t flags);
 
@@ -192,6 +209,9 @@ namespace base
 
             TWriteBinaryFunc funcWriteBinary = nullptr;
             TReadBinaryFunc funcReadBinary = nullptr;
+
+            TWriteXMLFunc funcWriteXML = nullptr;
+            TReadXMLFunc funcReadXML = nullptr;
 
             TPrintToTextFunc funcPrintToText = nullptr;
             TParseFromStringFunc funcParseFromText = nullptr;
@@ -255,6 +275,13 @@ namespace base
             }
 
             template< typename T >
+            void bindXMLSerialization()
+            {
+                funcReadXML = &prv::XMLSerializationHelper<T>::ReadXMLFunc;
+                funcWriteXML = &prv::XMLSerializationHelper<T>::WriteXMLFunc;
+            }
+
+            template< typename T >
             void bindToStringFromString()
             {
                 funcPrintToText = &prv::ToStringFromStringHelper<T>::PrintToTextFunc;
@@ -283,6 +310,9 @@ namespace base
 
             virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override;
             virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override;
+
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override;
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override;

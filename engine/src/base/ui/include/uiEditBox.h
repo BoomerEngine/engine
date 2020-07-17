@@ -78,6 +78,7 @@ namespace ui
         base::NativeTimePoint m_cursorToggleTime;
         base::NativeTimeInterval m_cursorToggleInterval;
         bool m_multiline = false;
+        bool m_selectWholeTextOnNextClick = false;
 
         // IElement
         virtual void computeLayout(ElementLayout& outLayout) override;

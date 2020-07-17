@@ -243,7 +243,7 @@ namespace base
         {
             for (auto& dep : m_dependencies)
                 if (dep.sourcePath == fileSystemPath)
-                    return true;
+                    return dep.timestamp != 0;
 
             io::TimeStamp fileTimestamp;
             auto ret = m_depot.queryFileTimestamp(fileSystemPath, fileTimestamp);

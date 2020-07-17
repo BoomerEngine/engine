@@ -27,6 +27,7 @@
 #include "base/resource/include/resourceFileLoader.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resourceFileSaver.h"
+#include "base/resource_compiler/include/importFileService.h"
 
 namespace ed
 {
@@ -233,12 +234,7 @@ namespace ed
             loadingContext.loadSpecificClass = base::res::Metadata::GetStaticClass();
 
             if (base::res::LoadFile(file, loadingContext))
-            {
-                if (loadingContext.loadedObjects.size() == 1)
-                {
-                    return base::rtti_cast<res::Metadata>(loadingContext.loadedObjects[0]);
-                }
-            }
+                return loadingContext.root<res::Metadata>();
         }
 
         return nullptr;
@@ -318,74 +314,25 @@ namespace ed
 
     //--
 
-    void ManagedFile::onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData)
+    ManagedFileReimportCode ManagedFile::checkReimportPossibility() const
     {
-        
+        // non-native formats are not imported, they are read directly
+        if (!m_fileFormat->nativeResourceClass())
+            return ManagedFileReimportCode::NotImported;
+
+        // load the metadata for the file, if it's gone/not accessible file can't be reimported
+        const auto metadata = loadMetadata();
+        if (!metadata || metadata->importDependencies.empty())
+            return ManagedFileReimportCode::NotImported;
+
+        // does source exist ?
+        const auto& sourcePath = metadata->importDependencies[0].importPath;
+        if (!base::GetService<base::res::ImportFileService>()->fileExists(sourcePath))
+            return ManagedFileReimportCode::MissingSources;
+
+        // reimporting in principle should be possible
+        return ManagedFileReimportCode::Possible;
     }
-
-#if 0
-    static void CollectCompatibleResourceOpeners(const ManagedFilePtr& filePtr, Array<RefPtr<ManagedResourceOpener>>& outOpeners)
-    {
-        if (!filePtr || filePtr->isDeleted())
-            return;
-
-        // enumerate openers
-        Array<ClassType> openerClasses;
-        RTTI::GetInstance().enumClasses(ManagedResourceOpener::GetStaticClass(), openerClasses);
-
-        struct Entry
-        {
-            RefPtr<ManagedResourceOpener> m_opener;
-            uint32_t priority;
-        };
-
-        Array<Entry> entries;
-
-        for (auto openerClass  : openerClasses)
-        {
-            auto opener = openerClass->createSharedPtr<ManagedResourceOpener>();
-            if (opener)
-            {
-                auto prio = opener->canHandleFileFormat(filePtr->fileFormat());
-                if (prio > 0)
-                {
-                    auto& entry = entries.emplaceBack();
-                    entry.m_opener = opener;
-                    entry.priority = prio;
-                }
-            }
-        }
-
-        std::sort(entries.begin(), entries.end(), [](const Entry& a, const Entry& b) { return a.priority < b.priority; });
-
-        for (auto& entry : entries)
-            outOpeners.pushBack(entry.m_opener);
-    }
-
-    bool ManagedFile::openEditor(const ui::ElementPtr& owner)
-    {
-        // create compatible openers
-        Array<RefPtr<ManagedResourceOpener>> openers;
-        CollectCompatibleResourceOpeners(), openers);
-        if (openers.empty())
-        {
-            ui::ShowMessageBox(owner, ui::MessageBoxSetup().error().message(TempString("No editor found for file '{}'", name())));
-            return false;
-        }
-
-        // open the resource editor
-        bool opened = false;
-        for (auto& opener : openers)
-        {
-            opened |= opener->showResourceEditor(owner, ));
-        }
-
-        // not opened
-        if (!opened)
-            ui::ShowMessageBox(owner, ui::MessageBoxSetup().error().message(TempString("Unable to open editor for file '{}'", name())));
-        return opened;
-    }
-#endif
 
     //--
 

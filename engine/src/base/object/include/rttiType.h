@@ -15,6 +15,11 @@ namespace base
 {
     class Type;
     
+    namespace res
+    {
+        class IResourceLoader;
+    } // res
+
     namespace rtti
     {
         class Property;
@@ -58,7 +63,11 @@ namespace base
         {
             const IClassType* classContext = nullptr;
             const Property* propertyContext = nullptr; // property being deserialized/serialized
-            IObject* objectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
+            IObject* parentObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
+            IObject* directObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
+
+            res::IResourceLoader* resourceLoader = nullptr; // loader for resources
+            base::StringBuf resourceBasePath; // mount point
 
             void print(IFormatStream& f) const; // print context name
         };
@@ -89,16 +98,21 @@ namespace base
                 , m_prevProperty(ctx.propertyContext)
             {
                 ctx.propertyContext = prop;
+
+                m_prevDirectObjectContext = ctx.directObjectContext;
+                ctx.directObjectContext = nullptr;
             }
 
             INLINE ~TypeSerializationContextSetProperty()
             {
                 m_context.propertyContext = m_prevProperty;
+                m_context.directObjectContext = m_prevDirectObjectContext;
             }
 
         private:
             TypeSerializationContext& m_context;
             const Property* m_prevProperty = nullptr;
+            IObject* m_prevDirectObjectContext = nullptr;
         };
 
         ////-----
@@ -183,6 +197,15 @@ namespace base
             /// TRY to parse value from a provided StringView, NOTE that we must parse EVERY character of that string view, ie. "5 cats" will not parse as integer "5".
             /// NOTE: in a similar fassion, if the partOfLargerStream is set we may expect to have for example escaped string, etc
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const;
+
+            //----
+            // XML save/load (simple serialization)
+
+            // Save type data to XML
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const = 0;
+
+            // Load type data from XML
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const = 0;
 
             //----
             // Data view

@@ -45,6 +45,9 @@ namespace base
             virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
             virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
+
             //----
 
             static const char* TypePrefix;

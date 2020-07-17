@@ -111,6 +111,14 @@ namespace base
 
         //---
 
+        /// Write object into XML node (note: node must exist before, the "class" attribute is not written, it's responsibility of the parent)
+        virtual void writeXML(xml::Node& node) const;
+
+        /// Load object from XML node, object must be created beforehand
+        virtual void readXML(const xml::Node& node);
+
+        //---
+
         // Notification about property change in progress, can be denied if the value is not ok
         // Object should return true to accept the change or false to reject it
         virtual bool onPropertyChanging(StringView<char> path, const void* newData, Type newDataType) const;

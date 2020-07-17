@@ -35,6 +35,7 @@ namespace base
             ScriptReadOnly = FLAG(11), // property is explicitly marked as not being writable by scripts
             Scripted = FLAG(12), // property was created from scripts
             ExternalBuffer = FLAG(13), // property data is in the external buffer
+            NoResetToDefault = FLAG(14), // property can't be reset to default
         };
 
         typedef DirectFlags<PropertyFlagBit> PropertyFlags;
@@ -92,13 +93,11 @@ namespace base
             /// is this property data hold in external object buffer (object scripted property)
             INLINE bool externalBuffer() const { return m_flags.test(PropertyFlagBit::ExternalBuffer); }
 
-            ///---
+            // can this property be reset to default/base value in the editor ?
+            INLINE bool resetable() const { return !m_flags.test(PropertyFlagBit::NoResetToDefault); }
 
             /// is this an overridable template property ?
             INLINE bool overridable() const { return m_flags.test(PropertyFlagBit::Overridable); }
-
-            /// index of this property in the class list of overridable properties
-            INLINE short overrideIndex() const { return m_overrideIndex; }
 
             //--
 

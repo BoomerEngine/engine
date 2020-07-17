@@ -11,6 +11,7 @@
 #include "importSourceAssetRepository.h"
 #include "importFileService.h"
 #include "importFileFingerprint.h"
+#include "base/io/include/timestamp.h"
 
 namespace base
 {
@@ -51,12 +52,12 @@ namespace base
             return m_fileService->fileExists(assetImportPath);
         }
 
-        Buffer SourceAssetRepository::loadSourceFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint)
+        Buffer SourceAssetRepository::loadSourceFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
         {
-            return m_fileService->loadFileContent(assetImportPath, outFingerprint);
+            return m_fileService->loadFileContent(assetImportPath, outTimestamp, outFingerprint);
         }
 
-        CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
+        CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
         {
             return m_fileService->checkFileStatus(assetImportPath, lastKnownTimestamp, lastKnownFingerprint, progress);
         }
@@ -66,7 +67,7 @@ namespace base
             return m_fileService->compileBaseResourceConfiguration(assetImportPath, configurationClass);
         }
 
-        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint)
+        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
         {
             auto lock = CreateLock(m_lock);
 
@@ -79,6 +80,7 @@ namespace base
             {
                 if (entry->asset)
                 {
+                    outTimestamp = entry->timestamp;
                     outFingerprint = entry->fingerprint;
                     entry->lruTick = m_lruTick++;
                     return entry->asset;
@@ -86,8 +88,9 @@ namespace base
             }
 
             // load content to buffer
+            io::TimeStamp assetContentTimestamp;
             ImportFileFingerprint assetContentFingerprint;
-            auto contentData = loadSourceFileContent(assetImportPath, assetContentFingerprint);
+            auto contentData = loadSourceFileContent(assetImportPath, assetContentTimestamp, assetContentFingerprint);
             if (!contentData)
             {
                 TRACE_ERROR("Failed to load content for asset '{}', no source asset will be loaded", assetImportPath);
@@ -112,6 +115,7 @@ namespace base
                 auto* entry = MemNew(CacheEntry).ptr;
                 entry->assetImportPath = keyPath;
                 entry->asset = assetPtr;
+                entry->timestamp = assetContentTimestamp;
                 entry->fingerprint = assetContentFingerprint;
                 entry->lruTick = m_lruTick++;
                 entry->memorySize = memorySize;
@@ -121,6 +125,7 @@ namespace base
 
             // return loaded asset
             outFingerprint = assetContentFingerprint;
+            outTimestamp = assetContentTimestamp;
             return assetPtr;
         }
 

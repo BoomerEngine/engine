@@ -62,7 +62,7 @@ namespace ed
 
     //--
 
-    ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, uint64_t lastKnownTimestamp, const base::res::ImportFileFingerprint& lastKnownCRC)
+    ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const base::res::ImportFileFingerprint& lastKnownCRC)
         : m_sourceAssetPath(sourceAssetPath)
         , m_sourceLastKnownTimestamp(lastKnownTimestamp)
         , m_sourceLastKnownCRC(lastKnownCRC)

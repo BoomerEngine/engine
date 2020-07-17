@@ -54,6 +54,8 @@ namespace base
                 setup.m_flags |= rtti::PropertyFlagBit::Transient;
             if (m_overriddable)
                 setup.m_flags |= rtti::PropertyFlagBit::Overridable;
+            if (m_noReset)
+                setup.m_flags |= rtti::PropertyFlagBit::NoResetToDefault;
             
 
             auto prop  = MemNew(rtti::Property, targetClass, setup);

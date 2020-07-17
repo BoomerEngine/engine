@@ -20,7 +20,7 @@ namespace base
         TextWriter::TextWriter(IFormatStream& builder)
             : m_builder(builder)
         {
-            m_builder.append("<?xml version=\"1.0\" standalone=\"yes\"?>");
+            m_builder.append("<?xml version=\"1.0\" standalone=\"yes\"?>\n");
         }
 
         TextWriter::~TextWriter()
@@ -38,7 +38,6 @@ namespace base
             m_builder.appendPadding(' ', depth * 2);
             m_builder.append("<");
             m_builder.append(nodeName.data(), nodeName.length());
-            m_builder.append(" ");
 
             // emit attributes
             {
@@ -49,10 +48,12 @@ namespace base
                     auto attrValue = doc.attributeValue(attrId);
                     if (!attrName.empty())
                     {
+
+                        m_builder.append(" ");
                         m_builder.append(attrName.data(), attrName.length());
                         m_builder.append("=\"");
                         m_builder.append(attrValue.data(), attrValue.length());
-                        m_builder.append("\" ");
+                        m_builder.append("\"");
                     }
 
                     attrId = doc.nextAttribute(attrId);

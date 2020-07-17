@@ -12,6 +12,7 @@
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
 #include "rttiDataView.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -20,7 +21,7 @@ namespace base
 
         IArrayType::IArrayType(StringID name, Type innerType)
             : IType(name)
-            , m_innertType(innerType)
+            , m_innerType(innerType)
         {
             m_traits.metaType = MetaType::Array;
         }
@@ -39,7 +40,7 @@ namespace base
             {
                 auto itemDataA  = arrayElementData(data1, i);
                 auto itemDataB  = arrayElementData(data2, i);
-                if (!m_innertType->compare(itemDataA, itemDataB))
+                if (!m_innerType->compare(itemDataA, itemDataB))
                     return false;
             }
 
@@ -57,7 +58,7 @@ namespace base
 
                 auto itemSrc  = arrayElementData(src, i);
                 auto itemDest  = arrayElementData(dest, i);
-                m_innertType->copy(itemDest, itemSrc);
+                m_innerType->copy(itemDest, itemSrc);
             }
         }
 
@@ -68,11 +69,16 @@ namespace base
             file.beginArray(size);
 
             // save elements
+            const auto defaultSize = defaultData ? arraySize(defaultData) : 0;
             for (uint32_t i = 0; i < size; ++i)
             {
                 auto elementData  = arrayElementData(data, i);
-                auto defaultElementData  = defaultData ? arrayElementData(defaultData, i) : nullptr;
-                m_innertType->writeBinary(typeContext, file, elementData, defaultElementData);
+                
+                const void* defaultElementData = nullptr;
+                if (i < defaultSize)
+                    defaultElementData = arrayElementData(defaultData, i);
+
+                m_innerType->writeBinary(typeContext, file, elementData, defaultElementData);
             }
 
             // exit array block
@@ -91,7 +97,7 @@ namespace base
 
             // get element pointers
             auto* writePtr = (uint8_t*)arrayElementData(data, 0);
-            auto writeStride = m_innertType->size();
+            auto writeStride = m_innerType->size();
 
             // read elements
 			auto capacity = maxArrayCapacity(data);
@@ -99,19 +105,71 @@ namespace base
             {
                 if (i < capacity)
                 {
-                    m_innertType->readBinary(typeContext, file, writePtr);
+                    m_innerType->readBinary(typeContext, file, writePtr);
                 }
                 else
                 {
                     // read and discard the elements that won't fit into the array
-                    DataHolder holder(m_innertType);
-                    m_innertType->readBinary(typeContext, file, holder.data());
+                    DataHolder holder(m_innerType);
+                    m_innerType->readBinary(typeContext, file, holder.data());
                 }
             }
 
             // exit array
             file.leaveArray();
         }
+
+        //--
+
+        void IArrayType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            // save elements
+            const auto defaultSize = defaultData ? arraySize(defaultData) : 0;
+            const auto size = arraySize(data);
+            for (uint32_t i = 0; i < size; ++i)
+            {
+                if (auto childNode = node.writeChild("element"))
+                {
+                    auto elementData = arrayElementData(data, i);
+
+                    const void* defaultElementData = nullptr;
+                    if (i < defaultSize)
+                        defaultElementData = arrayElementData(defaultData, i);
+
+                    m_innerType->writeXML(typeContext, childNode, elementData, defaultElementData);
+                }
+            }
+        }
+
+        void IArrayType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            InplaceArray<xml::Node, 64> childNodes;
+
+            // collect child nodes
+            for (xml::NodeIterator it(node, "element"); it; ++it)
+                childNodes.emplaceBack(*it);
+
+             // prepare array
+            const auto size = childNodes.size();
+            clearArrayElements(data);
+            resizeArrayElements(data, size);
+
+            // get element pointers
+            auto* writePtr = (uint8_t*)arrayElementData(data, 0);
+            auto writeStride = m_innerType->size();
+
+            // read elements
+            auto capacity = maxArrayCapacity(data);
+            for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
+            {
+                if (i >= capacity)
+                    break;
+
+                m_innerType->readXML(typeContext, childNodes[i], writePtr);
+            }
+        }
+
+        //--
 
         DataViewResult IArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
@@ -134,7 +192,7 @@ namespace base
                     return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
-                return m_innertType->describeDataView(viewPath, elementViewData, outInfo);
+                return m_innerType->describeDataView(viewPath, elementViewData, outInfo);
             }
 
             StringView<char> propName;
@@ -160,7 +218,7 @@ namespace base
                     return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
-                return m_innertType->readDataView(viewPath, elementViewData, targetData, targetType);
+                return m_innerType->readDataView(viewPath, elementViewData, targetData, targetType);
             }
 
             StringView<char> propName;
@@ -199,7 +257,7 @@ namespace base
                     return DataViewResultCode::ErrorIndexOutOfRange;
 
                 auto elementViewData  = arrayElementData(viewData, index);
-                return m_innertType->writeDataView(viewPath, elementViewData, sourceData, sourceType);
+                return m_innerType->writeDataView(viewPath, elementViewData, sourceData, sourceType);
             }
 
             StringView<char> propName;

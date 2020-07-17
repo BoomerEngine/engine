@@ -68,17 +68,49 @@ namespace base
         void CustomType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             if (funcWriteBinary)
+            {
                 funcWriteBinary(typeContext, file, data, defaultData);
+            }
             else
-                file.writeData(data, m_traits.size);
+            {
+                TRACE_WARNING("Writing type '{}' at {} that has no binary serialization", name(), typeContext);
+            }
         }
 
         void CustomType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
             if (funcReadBinary)
+            {
                 funcReadBinary(typeContext, file, data);
+            }
             else
-                file.readData(data, m_traits.size);
+            {
+                TRACE_WARNING("Reading type '{}' at {} that has no binary serialization", name(), typeContext);
+            }
+        }
+
+        void CustomType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            if (funcWriteXML)
+            {
+                funcWriteXML(typeContext, node, data, defaultData);
+            }
+            else
+            {
+                TRACE_WARNING("Writing type '{}' at {} that has no XML serialization", name(), typeContext);
+            }
+        }
+
+        void CustomType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            if (funcReadXML)
+            {
+                funcReadXML(typeContext, node, data);
+            }
+            else
+            {
+                TRACE_WARNING("Reading type '{}' at {} that has no XML serialization", name(), typeContext);
+            }
         }
 
         void CustomType::printToText(IFormatStream& f, const void* data, uint32_t flags) const

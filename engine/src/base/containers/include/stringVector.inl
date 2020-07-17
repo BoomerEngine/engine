@@ -93,7 +93,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE T* StringVector<T>::c_str()
+    INLINE T* StringVector<T>::c_str_writable()
     {
         return empty() ? nullptr : m_buf.typedData();
     }

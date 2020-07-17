@@ -20,6 +20,7 @@
 #include "base/object/include/rttiProperty.h"
 #include "base/object/include/rttiType.h"
 #include "resourceLoader.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -140,7 +141,7 @@ namespace base
 
         void ResourceRefType::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
-            auto& ptr = *(res::BaseReference*) data;
+            auto& ptr = *(const res::BaseReference*) data;
 
             uint8_t flag = 0;
             if (!ptr.empty())
@@ -193,6 +194,116 @@ namespace base
             *(res::BaseReference*)data = loadedRef;
         }
        
+        //--
+
+        void ResourceRefType::writeXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            auto& ptr = *(const res::BaseReference*) data;
+
+            if (!ptr.empty())
+            {
+                if (ptr.inlined())
+                {
+                    if (auto object = ptr.acquire())
+                    {
+                        node.writeAttribute("class", object->cls()->name().view());
+                        object->writeXML(node);
+                    }
+                }
+                else if (ptr.key().path())
+                {
+                    const auto fileExt = ptr.key().path().extension();
+                    const auto classByExtension = IResource::FindResourceClassByExtension(fileExt);
+
+                    node.writeAttribute("path", ptr.key().path().view());
+
+                    // save extension only if we can't figure it out from data
+                    if (m_resourceClass != classByExtension || ptr.key().cls() != classByExtension)
+                        node.writeAttribute("class", ptr.key().cls()->name().view());
+                }
+            }
+        }
+
+        void ResourceRefType::readXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            res::BaseReference loadedRef;
+
+            const auto path = res::ResourcePath(node.attribute("path"));
+            const auto className = node.attribute("class");
+            if (className && !path)
+            {
+                auto objectClassType = RTTI::GetInstance().findClass(StringID::Find(className));
+                if (objectClassType)
+                {
+                    if (!objectClassType->isAbstract() && objectClassType->is(m_resourceClass))
+                    {
+                        auto object = objectClassType.create<IResource>();
+                        if (object)
+                        {
+                            object->readXML(node);
+                            loadedRef = object;
+                        }
+                        else
+                        {
+                            TRACE_WARNING("Trying to load inlined resource at {} of class '{}' that could not be created. Object pointer will be NULLified.", typeContext, className);
+                        }
+                    }
+                    else
+                    {
+                        TRACE_WARNING("Trying to load inlined resource  at {} of class '{}' that is not compatible with class '{}'. Object pointer will be NULLified.", typeContext, className, m_resourceClass->name());
+                    }
+                }
+                else
+                {
+                    TRACE_WARNING("Trying to load inlined resource  at {} of unknown class '{}'. Object pointer will be NULLified.", typeContext, className);
+                }
+            }
+            else if (path)
+            {
+                auto resourceClass = m_resourceClass;
+
+                const auto className = node.attribute("class");
+                if (className)
+                {
+                    resourceClass = RTTI::GetInstance().findClass(StringID::Find(className)).cast<IResource>();
+                    if (!resourceClass)
+                    {
+                        TRACE_WARNING("Unknown class '{}' used in async resource reference to '{}' at {}", className, path, typeContext);
+                    }
+                }
+
+                if (!resourceClass)
+                {
+                    const auto fileExt = path.extension();
+                    resourceClass = IResource::FindResourceClassByExtension(fileExt);
+                }
+
+                if (resourceClass)
+                {
+                    const auto key = res::ResourceKey(path, resourceClass);
+                    if (typeContext.resourceLoader)
+                    {
+                        if (auto loadedResource = typeContext.resourceLoader->loadResource(key))
+                        {
+                            loadedRef = loadedResource;
+                        }
+                        else
+                        {
+                            loadedRef = res::BaseReference(key);
+                        }
+                    }
+                }
+                else
+                {
+                    TRACE_WARNING("Unable to determine resource class in async resource reference to '{}' at {}", path, typeContext);
+                }
+            }
+
+            *(res::BaseReference*)data = loadedRef;
+        }
+
+        //--
+
         Type ResourceRefType::ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem)
         {
             StringID innerTypeName;

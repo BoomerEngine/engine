@@ -48,13 +48,17 @@ namespace base
             virtual void destroyDefaultObject() const = 0;
 
             // IRTTI TYPE INTERFACE IMPLEMENTATION
-            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
-            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
             virtual bool compare(const void* data1, const void* data2) const override;
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
             virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
             virtual void copy(void* dest, const void* src) const override;
-            
+
+            // TYPE SERIALIZATON
+            virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+            virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
+
             // DATA VIEW
             virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
             virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;

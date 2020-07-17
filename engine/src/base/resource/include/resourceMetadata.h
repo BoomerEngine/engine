@@ -11,6 +11,7 @@
 #include "base/resource/include/resource.h"
 #include "base/reflection/include/variantTable.h"
 #include "base/object/include/objectTemplate.h"
+#include "base/io/include/timestamp.h"
 
 namespace base
 {
@@ -42,10 +43,21 @@ namespace base
             //  b) the import configuration of the folder(s) changed
             //virtual void computeConfigurationKey(CRC64& crc) const;
 
+            //--
+
+            // change the imported source settings
+            void changeImportMetadata(StringView<char> by, StringView<char> at, io::TimeStamp time);
+
+            // set the default "imported" settings - computer name, host, and time
+            void setupDefaultImportMetadata();
+
         protected:
             StringBuf m_sourceAuthor;
-            StringBuf m_sourceImportedBy;
             StringBuf m_sourceLicense;
+
+            StringBuf m_sourceImportedBy;
+            StringBuf m_sourceImportedAt;
+            io::TimeStamp m_sourceImportedOn;
         };
 
         ///---
@@ -70,7 +82,7 @@ namespace base
 
         public:
             StringBuf importPath; // full absolute path (saved as UTF-8) to source import path
-            uint64_t timestamp = 0; // timestamp of the file at the time of last import, used to filter out crc checks
+            io::TimeStamp timestamp; // timestamp of the file at the time of last import, used to filter out crc checks
             uint64_t crc = 0; // CRC of the source import file
         };
 

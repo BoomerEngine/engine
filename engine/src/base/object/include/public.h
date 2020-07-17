@@ -171,11 +171,6 @@ namespace base
 
     //---
 
-    /// copy value from one property to other property, handles type conversions, inlined objects etc
-    extern BASE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty);
-
-    //---
-
 } // base
 
 //---
@@ -183,6 +178,7 @@ namespace base
 #include "rttiTypeSystem.h"
 #include "rttiTypeRef.h"
 #include "rttiClassRefType.h"
+#include "rttiClassRef.h"
 
 #include "object.h"
 #include "objectObserver.h"
@@ -221,6 +217,32 @@ namespace base
 
         void print(IFormatStream& f) const;
     };
+
+    //---
+
+    /// copy value from one property to other property, handles type conversions, inlined objects etc
+    extern BASE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty);
+
+    //---
+
+    // save object to standalone xml document, the root node will contain the "class" 
+    // NOTE: to save object into existing XML use the object->writeXML()
+    extern BASE_OBJECT_API xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView<char> rootNodeName = "object");
+
+    // load object from standalone XML document
+    extern BASE_OBJECT_API ObjectPtr LoadObjectFromXML(const xml::IDocument* doc, SpecificClassType<IObject> expectedClass = nullptr);
+
+    // load object from a node in XML document
+    extern BASE_OBJECT_API ObjectPtr LoadObjectFromXML(const xml::Node& node, SpecificClassType<IObject> expectedClass = nullptr);
+
+    // load object from standalone XML document
+    template< typename T >
+    INLINE RefPtr<T> LoadObjectFromXML(const xml::IDocument* doc)
+    {
+        return rtti_cast<T>(LoadObjectFromXML(doc, T::GetStaticClass()));
+    }
+
+    //---
 
 } // base
 

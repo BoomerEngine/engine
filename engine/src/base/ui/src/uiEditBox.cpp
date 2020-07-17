@@ -92,6 +92,8 @@ namespace ui
     void TextEditor::text(base::StringView<char> txt)
     {
         m_textBuffer->text(txt);
+        m_selectWholeTextOnNextClick = true;
+
         invalidateLayout();
         invalidateGeometry();
     }
@@ -155,7 +157,9 @@ namespace ui
     void TextEditor::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         m_textBuffer->renderHighlight(drawArea, canvas, mergedOpacity);
-        m_textBuffer->renderSelection(drawArea, canvas, mergedOpacity);
+
+        if (isFocused())
+            m_textBuffer->renderSelection(drawArea, canvas, mergedOpacity);
 
         TBaseClass::renderForeground(drawArea, canvas, mergedOpacity); // text
 
@@ -602,11 +606,19 @@ namespace ui
         }
         else if (evt.leftClicked())
         {
-            auto relativePos = evt.absolutePosition().toVector() - area.absolutePosition();
+            if (m_selectWholeTextOnNextClick)
+            {
+                selectWholeText();
+                m_selectWholeTextOnNextClick = false;
+            }
+            else
+            {
+                auto relativePos = evt.absolutePosition().toVector() - area.absolutePosition();
 
-            bool extendSelection = evt.keyMask().isShiftDown();
-            auto clickPos = m_textBuffer->findCursorPosition(relativePos);
-            m_textBuffer->moveCursor(clickPos, extendSelection);
+                bool extendSelection = evt.keyMask().isShiftDown();
+                auto clickPos = m_textBuffer->findCursorPosition(relativePos);
+                m_textBuffer->moveCursor(clickPos, extendSelection);
+            }
 
             return base::CreateSharedPtr<EditBoxSelectionDragInputAction>(this, m_textBuffer->selectionStartPos());
         }

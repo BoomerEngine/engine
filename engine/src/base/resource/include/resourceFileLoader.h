@@ -34,7 +34,7 @@ namespace base
             //--
 
             // ALL loaded object (may be big)
-            Array<ObjectPtr> loadedObjects;
+            //Array<ObjectPtr> loadedObjects;
 
             // all loaded root objects (without parents)
             Array<ObjectPtr> loadedRoots;

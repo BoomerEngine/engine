@@ -126,12 +126,12 @@ namespace base
             if (!node)
                 return INVALID_NODE_ID;
 
-            auto childNode  = node->first_node(childName.data(), childName.length());
+            auto childNode  = childName.empty() ? node->first_node() : node->first_node(childName.data(), childName.length());
             while (childNode)
             {
                 if (childNode->type() == rapidxml::node_element)
                     break;
-                childNode = childNode->next_sibling(childName.data(), childName.length());
+                childNode = childName.empty() ? childNode->next_sibling() : childNode->next_sibling(childName.data(), childName.length());
             }
 
             return toNodeID(childNode);
@@ -143,12 +143,12 @@ namespace base
             if (!node)
                 return INVALID_NODE_ID;
 
-            auto childNode  = node->next_sibling(siblingName.data(), siblingName.length());
+            auto childNode = siblingName.empty() ? node->next_sibling() : node->next_sibling(siblingName.data(), siblingName.length());
             while (childNode)
             {
                 if (childNode->type() == rapidxml::node_element)
                     break;
-                childNode = childNode->next_sibling(siblingName.data(), siblingName.length());
+                childNode = siblingName.empty() ? childNode->next_sibling() : childNode->next_sibling(siblingName.data(), siblingName.length());
             }
 
             return toNodeID(childNode);
@@ -212,7 +212,7 @@ namespace base
             if (!node)
                 return defaultVal;
 
-            auto attr  = node->first_attribute(name.data(), name.length());
+            auto attr  = name.empty() ? node->first_attribute() : node->first_attribute(name.data(), name.length());
             if (!attr)
                 return defaultVal;
 
@@ -225,7 +225,7 @@ namespace base
             if (!node)
                 return 0;
 
-            return toAttributeID(node->first_attribute(name.data(), name.length()));
+            return toAttributeID(name.empty() ? node->first_attribute() : node->first_attribute(name.data(), name.length()));
         }
 
         //---
@@ -254,7 +254,7 @@ namespace base
             if (!attr)
                 return 0;
 
-            return toAttributeID(attr->next_attribute(name.data(), name.length()));
+            return toAttributeID(name.empty() ? attr->next_attribute() : attr->next_attribute(name.data(), name.length()));
         }
 
         void StaticRapidXMLDocument::attributeName(AttributeID id, StringView<char> name)

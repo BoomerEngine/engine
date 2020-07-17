@@ -18,11 +18,13 @@
 #include "rttiNativeClassType.h"
 #include "rttiMetadata.h"
 #include "rttiDataView.h"
-
-#include "base/object/include/rttiProperty.h"
+#include "rttiProperty.h"
 
 #include "dataView.h"
 #include "dataViewNative.h"
+
+#include "base/xml/include/xmlUtils.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -155,16 +157,38 @@ namespace base
     void IObject::onReadBinary(stream::OpcodeReader& reader)
     {
         rtti::TypeSerializationContext typeContext;
-        typeContext.objectContext = this;
+        typeContext.directObjectContext = this;
+        typeContext.parentObjectContext = this;
         cls()->readBinary(typeContext, reader, this);
     }
 
     void IObject::onWriteBinary(stream::OpcodeWriter& writer) const
     {
         rtti::TypeSerializationContext typeContext;
-        typeContext.objectContext = (IObject*)this;
+        typeContext.directObjectContext = (IObject*)this;
+        typeContext.parentObjectContext = (IObject*)this;
         cls()->writeBinary(typeContext, writer, this, cls()->defaultObject());
     }
+
+    //--
+
+    void IObject::writeXML(xml::Node& node) const
+    {
+        rtti::TypeSerializationContext typeContext;
+        typeContext.directObjectContext = (IObject*)this;
+        typeContext.parentObjectContext = (IObject*)this;
+        cls()->writeXML(typeContext, node, this, cls()->defaultObject());
+    }
+
+    void IObject::readXML(const xml::Node& node)
+    {
+        rtti::TypeSerializationContext typeContext;
+        typeContext.directObjectContext = this;
+        typeContext.parentObjectContext = this;
+        cls()->readXML(typeContext, node, this);
+    }
+
+    //--
 
     bool IObject::onPropertyShouldSave(const rtti::Property* prop) const
     {
@@ -178,7 +202,7 @@ namespace base
         if (prop->type()->compare(propData, propDefaultData))
             return false;
 
-        // TODO: aditional checks ?
+        // TODO: additional checks ?
 
         // we can save this property
         return true;
@@ -336,6 +360,53 @@ namespace base
         }
 
     } // rtti
+
+    //--
+
+    xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView<char> rootNodeName /*= "object"*/)
+    {
+        auto ret = xml::CreateDocument(rootNodeName);
+        if (ret && object)
+        {
+            auto rootNode = xml::Node(ret);
+            rootNode.writeAttribute("class", object->cls().name().view());
+            object->writeXML(rootNode);
+        }
+
+        return ret;
+    }
+
+    ObjectPtr LoadObjectFromXML(const xml::IDocument* doc, SpecificClassType<IObject> expectedClass)
+    {
+        if (doc)
+        {
+            if (auto rootNode = xml::Node(doc))
+                return LoadObjectFromXML(rootNode, expectedClass);
+        }
+
+        return nullptr;
+    }
+
+    ObjectPtr LoadObjectFromXML(const xml::Node& node, SpecificClassType<IObject> expectedClass)
+    {
+        if (const auto className = node.attribute("class"))
+        {
+            const auto classType = RTTI::GetInstance().findClass(StringID::Find(className));
+            if (classType && !classType->isAbstract())
+            {
+                if (!expectedClass || classType->is(expectedClass))
+                {
+                    if (auto obj = classType.create<IObject>())
+                    {
+                        obj->readXML(node);
+                        return obj;
+                    }
+                }
+            }
+        }
+
+        return nullptr;
+    }
 
     //--
 

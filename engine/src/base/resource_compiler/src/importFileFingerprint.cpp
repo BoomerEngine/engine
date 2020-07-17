@@ -239,7 +239,7 @@ namespace base
                     }
 
                     // read file content, this will yield until async op completes
-                    const auto readSize = std::min(state.batchSize, state.pos - state.size);
+                    const auto readSize = std::min(state.batchSize, state.size - state.pos);
                     const auto actualReadSize = file->readAsync(state.pos, readSize, state.readBuffer.data());
                     if (actualReadSize != readSize)
                     {
@@ -250,8 +250,9 @@ namespace base
                     // wait for previous processing to finish
                     Fibers::GetInstance().waitForCounterAndRelease(processingDone);
 
-                    // swap the buffers
+                    // swap the buffers and advance state
                     std::swap(state.calcBuffer, state.readBuffer);
+                    state.pos += actualReadSize;
 
                     // process the data on another fiber
                     processingDone = Fibers::GetInstance().createCounter("FileFingerprintCalc", 1);

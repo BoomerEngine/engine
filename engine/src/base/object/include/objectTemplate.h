@@ -33,7 +33,7 @@ namespace base
         static SpecificClassType<IObjectTemplate> GetStaticClass();
 
         // Get object class, dynamic
-        virtual ClassType cls() const;
+        virtual ClassType nativeClass() const;
 
         //--
 

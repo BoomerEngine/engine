@@ -86,7 +86,7 @@ namespace base
             INLINE void leaveSkipBlock();
 
             /// jump over the skip block
-            INLINE void discardSkipBlock();
+            void discardSkipBlock();
 
             ///--
 
@@ -215,17 +215,7 @@ namespace base
         {
             checkOp(StreamOpcode::SkipLabel);
         }
-
-        INLINE void OpcodeReader::discardSkipBlock()
-        {
-            checkOp(StreamOpcode::SkipHeader);
-            /*const auto skipSize = readCompressedNumber(); // skip size
-            ASSERT_EX(m_cur + skipSize <= m_end, "Skip points to outside of the data region");
-            m_cur += skipSize;*/
-
-            // TODO: find the matching SkipLabel
-        }
-
+        
         INLINE StringID OpcodeReader::readStringID()
         {
             checkOp(StreamOpcode::DataName);

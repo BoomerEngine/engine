@@ -14,6 +14,7 @@
 #include "rttiDataView.h"
 #include "dataView.h"
 #include "base/containers/include/inplaceArray.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -122,7 +123,7 @@ namespace base
                 {
                     if (m_flagNames[i].empty())
                     {
-                        TRACE_WARNING("Missing flag name for flag {} in {}, the bit value will be lost", i, name());
+                        TRACE_WARNING("Missing flag name for flag {} in {} at {}, the bit value will be lost", i, name(), typeContext);
                         continue;
                     }
 
@@ -151,7 +152,7 @@ namespace base
                 uint64_t flagBitMask = 0;
                 if (!findFlag(flagName, flagBitMask))
                 {
-                    TRACE_WARNING("Failed to find flag value for flag '{}' in bitfield '{}'", flagName, name());
+                    TRACE_WARNING("Failed to find flag value for flag '{}' in bitfield '{}' at {}", flagName, name(), typeContext);
                     continue;
                 }
 
@@ -181,6 +182,51 @@ namespace base
                 case 4: *(uint32_t*)data = (uint32_t)value; break;
                 case 8: *(uint64_t*)data = value; break;
             }
+        }
+
+        //--
+
+        void BitfieldType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            uint64_t val = 0;
+            readUint64(data, val);
+
+            // gather flags to write
+            auto maxBits = (uint8_t)(8 * size());
+            for (uint8_t i = 0; i < maxBits; ++i)
+            {
+                if (val & GetBitMask(i))
+                {
+                    if (m_flagNames[i].empty())
+                    {
+                        TRACE_WARNING("Missing flag name for flag {} in {} at {}, the bit value will be lost", i, name(), typeContext);
+                        continue;
+                    }
+
+                    node.writeChild(m_flagNames[i].view());
+                }
+            }
+        }
+
+        void BitfieldType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            uint64_t val = 0;
+
+            for (xml::NodeIterator it(node, ""); it; ++it)
+            {
+                auto flagName = it->name();
+
+                uint64_t flagBitMask = 0;
+                if (!findFlag(StringID::Find(flagName), flagBitMask))
+                {
+                    TRACE_WARNING("Failed to find flag value for flag '{}' in bitfield '{}' at {}", flagName, name(), typeContext);
+                    continue;
+                }
+
+                val |= flagBitMask;
+            }
+
+            writeUint64(data, val);
         }
 
         //--

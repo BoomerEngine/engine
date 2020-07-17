@@ -30,6 +30,7 @@ namespace base
             AbsolutePath directory;
             UTF16StringBuf userPattern;
             StringBuf filterExtension;
+            UTF16StringBuf lastSaveFileName;
         };
 
         /// mode for opening file for writing

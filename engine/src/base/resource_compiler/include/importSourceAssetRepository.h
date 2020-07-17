@@ -10,6 +10,7 @@
 
 #include "base/containers/include/hashMap.h"
 #include "importFileFingerprint.h"
+#include "base/io/include/timestamp.h"
 
 namespace base
 {
@@ -33,16 +34,16 @@ namespace base
             bool fileExists(StringView<char> assetImportPath) const;
 
             /// load raw data for an asset, usually not cached
-            Buffer loadSourceFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint);
+            Buffer loadSourceFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
             /// load source asset
-            SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint);
+            SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
             /// load/create base resource configuration
             ResourceConfigurationPtr compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass);
 
             // check status of a file
-            CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
+            CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
             
             ///---
 
@@ -55,6 +56,7 @@ namespace base
             {
                 StringBuf assetImportPath;
                 SourceAssetPtr asset;
+                io::TimeStamp timestamp;
                 ImportFileFingerprint fingerprint;
                 uint32_t lruTick = 0;
                 uint64_t memorySize = 0;

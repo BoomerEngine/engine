@@ -219,6 +219,14 @@ namespace ui
         m_actionHistory = AddRef(ah);
     }
 
+    void DataInspector::bindNull()
+    {
+        destroyItems();
+        detachData();
+        m_readOnly = false;
+        m_data.reset();
+    }
+
     void DataInspector::bindData(base::IDataView* data, bool readOnly)
     {
         destroyItems();

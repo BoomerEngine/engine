@@ -86,6 +86,12 @@ namespace base
                 return *this;
             }
 
+            INLINE PropertyBuilder& noReset()
+            {
+                m_noReset = true;
+                return *this;
+            }
+
             template< typename T, typename... Args >
             INLINE PropertyBuilder& metadata(Args && ... args)
             {
@@ -108,6 +114,7 @@ namespace base
             bool m_scriptReadOnly = false;
             bool m_transient = false;
             bool m_overriddable = false;
+            bool m_noReset = false;
 
             Array<rtti::IMetadata*> m_metadata;
         };

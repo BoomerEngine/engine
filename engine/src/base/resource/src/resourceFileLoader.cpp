@@ -177,8 +177,16 @@ namespace base
                 ObjectPtr parentObject;
                 if (context.loadSpecificClass)
                 {
-                    if (!classType->is(context.loadSpecificClass))
-                        continue;
+                    if (classType->is(context.loadSpecificClass))
+                    {
+                        parentObject = nullptr;
+                    }
+                    else
+                    {
+                        parentObject = resolvedReferences.objects[ptr->parentIndex];
+                        if (!parentObject)
+                            continue;
+                    }
                 }
                 else if (ptr->parentIndex != 0)
                 {
@@ -190,9 +198,9 @@ namespace base
                 auto obj = classType->create<IObject>();
                 resolvedReferences.objects[i + 1] = obj;
 
-                if (context.loadSpecificClass)
-                    context.loadedObjects.pushBack(obj);
-                else if (ptr->parentIndex == 0)
+                if (parentObject)
+                    obj->parent(parentObject);
+                else
                     context.loadedRoots.pushBack(obj);
             }
         }
@@ -267,7 +275,10 @@ namespace base
             {
                 // do not consider objects that were disabled from loading
                 if (!resolvedReferences.objects[objectIndex + 1])
+                {
+                    objectIndex += 1;
                     continue;
+                }
 
                 // find the load batch size
                 uint32_t firstLoadObject = objectIndex;

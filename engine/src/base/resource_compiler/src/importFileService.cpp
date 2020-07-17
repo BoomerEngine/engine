@@ -79,11 +79,11 @@ namespace base
             return Buffer();
         }
 
-        Buffer ImportFileService::loadFileContent(StringView<char> assetImportPath, ImportFileFingerprint& outFingerprint) const
+        Buffer ImportFileService::loadFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
         {
             StringView<char> fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
-                return fs->loadFileContent(fileSystemPath, outFingerprint);
+                return fs->loadFileContent(fileSystemPath, outTimestamp, outFingerprint);
 
             return Buffer();
         }
@@ -116,7 +116,7 @@ namespace base
 
         //--
 
-        SourceAssetStatus ImportFileService::checkFileStatus(StringView<char> assetImportPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
+        SourceAssetStatus ImportFileService::checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
         {
             StringView<char> fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))

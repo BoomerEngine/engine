@@ -23,6 +23,10 @@
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/ui/include/uiRenderer.h"
+#include "base/xml/include/xmlUtils.h"
+#include "base/xml/include/xmlDocument.h"
+#include "base/xml/include/xmlWrappers.h"
+#include "base/io/include/fileFormat.h"
 
 namespace ed
 {
@@ -77,6 +81,9 @@ namespace ed
         // cache format information
         ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
+        // load open/save settings
+        loadOpenSaveSettings(config()["OpenSaveDialog"]);
+
         // initialize the managed depot
         m_managedDepot = CreateUniquePtr<ManagedDepot>(*depot, config()["Depot"]);
         m_managedDepot->populate();
@@ -119,6 +126,12 @@ namespace ed
     {
         saveConfig();
 
+        if (m_assetImporter)
+        {
+            m_assetImporter->requestClose();
+            m_assetImporter.reset();
+        }
+
         if (m_mainWindow)
         {
             m_mainWindow->requestClose();
@@ -127,6 +140,8 @@ namespace ed
 
         m_renderer = nullptr;
         m_config->save(m_configPath);
+
+        m_openSavePersistentData.clearPtr();
     }
 
     void Editor::saveConfig()
@@ -143,6 +158,12 @@ namespace ed
         {
             auto assetWindowConfig = config()["AssetImporter"];
             m_assetImporter->saveConfig(assetWindowConfig);
+        }
+
+        // save open/save settings
+        {
+            auto openSaveConfig = config()["AssetImporter"];
+            saveOpenSaveSettings(openSaveConfig);
         }
 
         m_config->save(m_configPath); 
@@ -196,6 +217,31 @@ namespace ed
 
     //--
 
+    void Editor::loadOpenSaveSettings(const ConfigGroup& config)
+    {
+
+    }
+
+    void Editor::saveOpenSaveSettings(ConfigGroup& config) const
+    {
+
+    }
+
+    base::io::OpenSavePersistentData& Editor::openSavePersistentData(base::StringView<char> category)
+    {
+        if (!category)
+            category = "Generic";
+
+        if (const auto* data = m_openSavePersistentData.find(category))
+            return **data;
+
+        auto entry = MemNew(base::io::OpenSavePersistentData).ptr;
+        entry->directory = IO::GetInstance().systemPath(base::io::PathCategory::UserDocumentsDir);
+
+        m_openSavePersistentData[base::StringBuf(category)] = entry;
+        return *entry;
+    }
+
     bool Editor::openAssetImporter()
     {
         if (!m_assetImporter)
@@ -209,7 +255,7 @@ namespace ed
         return true;
     }
 
-    bool Editor::addImportFiles(const base::Array<base::StringBuf>& assetPaths, const ManagedDirectory* directoryOverride)
+    bool Editor::addImportFiles(const base::Array<base::StringBuf>& assetPaths, base::SpecificClassType<base::res::IResource> importClass, const ManagedDirectory* directoryOverride)
     {
         if (!directoryOverride)
         {
@@ -224,8 +270,137 @@ namespace ed
         if (!openAssetImporter())
             return false;
 
-        m_assetImporter->addFiles(directoryOverride, assetPaths);
+        m_assetImporter->addNewImportFiles(directoryOverride, importClass, assetPaths);
         return true;
+    }
+
+    //--
+
+
+
+    bool Editor::saveToXML(ui::IElement* owner, base::StringView<char> category, const std::function<base::ObjectPtr()>& makeXMLFunc, base::UTF16StringBuf* currentFileNamePtr)
+    {
+        // use main window when nothing was provided
+        if (!owner)
+            owner = m_mainWindow;
+
+        // get the open/save dialog settings
+        auto& dialogSettings = openSavePersistentData(category);
+
+        // add XML format
+        base::InplaceArray<base::io::FileFormat, 1> formatList;
+        formatList.emplaceBack("xml", "Extensible Markup Language file");
+
+        // current file name
+        base::UTF16StringBuf currentFileName;
+        if (currentFileNamePtr)
+            currentFileName = *currentFileNamePtr;
+        else if (!dialogSettings.lastSaveFileName.empty())
+            currentFileName = dialogSettings.lastSaveFileName;
+
+        // ask for file path
+        base::io::AbsolutePath selectedPath;
+        const auto nativeHandle = windowNativeHandle(owner);
+        if (!IO::GetInstance().showFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
+            return false;
+
+        // extract file name
+        if (currentFileNamePtr)
+            *currentFileNamePtr = selectedPath.fileNameWithExtensions();
+        else
+            dialogSettings.lastSaveFileName = selectedPath.fileNameWithExtensions();
+
+        // get the object to save
+        const auto object = makeXMLFunc();
+        if (!object)
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, "No object to save");
+            return false;
+        }
+
+        // compile into XML document
+        const auto document = base::SaveObjectToXML(object);
+        if (!document)
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, base::TempString("Failed to serialize '{}' into XML", object));
+            return false;
+        }
+
+        // save on disk
+        if (!base::xml::SaveDocument(*document, selectedPath))
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, base::TempString("Failed to save XML to '{}'", selectedPath));
+            return false;
+        }
+
+        // saved
+        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLSave"_id, base::TempString("XML '{}' saved", selectedPath));
+        return true;
+
+    }
+
+    bool Editor::saveToXML(ui::IElement* owner, base::StringView<char> category, const base::ObjectPtr& objectPtr, base::UTF16StringBuf* currentFileNamePtr)
+    {
+        return saveToXML(owner, category, [objectPtr]() { return objectPtr;  });
+    }
+
+    base::ObjectPtr Editor::loadFromXML(ui::IElement* owner, base::StringView<char> category, base::SpecificClassType<IObject> expectedObjectClass)
+    {
+        // use main window when nothing was provided
+        if (!owner)
+            owner = m_mainWindow;
+
+        // get the open/save dialog settings
+        auto& dialogSettings = openSavePersistentData(category);
+
+        // add XML format
+        base::InplaceArray<base::io::FileFormat, 1> formatList;
+        formatList.emplaceBack("xml", "Extensible Markup Language file");
+
+        // ask for file path
+        base::Array<base::io::AbsolutePath> selectedPaths;
+        const auto nativeHandle = windowNativeHandle(owner);
+        if (!IO::GetInstance().showFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
+            return false;
+
+        // load the document from the file
+        const auto& loadPath = selectedPaths.front();
+        auto& reporter = base::xml::ILoadingReporter::GetDefault();
+        const auto document = base::xml::LoadDocument(reporter, loadPath);
+        if (!document)
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Failed to load XML from '{}'", loadPath));
+            return nullptr;
+        }
+
+        // check the class without actual object loading
+        const auto rootNode = base::xml::Node(document);
+        if (const auto className = rootNode.attribute("class"))
+        {
+            const auto classType = RTTI::GetInstance().findClass(StringID::Find(className));
+            if (!classType || classType->isAbstract() || !classType->is(expectedObjectClass))
+            {
+                ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Incompatible object '{}' from in XML '{}'", className, loadPath));
+                return nullptr;
+            }
+        }
+        else
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("No object serialized in XML '{}'", loadPath));
+            return nullptr;
+        }
+
+        // load object
+        const auto obj = base::LoadObjectFromXML(document);
+        if (!obj)
+        {
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Failed to deserialize XML from '{}'", loadPath));
+            return nullptr;
+        }
+
+        // loaded
+        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLLoad"_id, base::TempString("Loaded '{}' from '{}'", obj->cls()->name(), loadPath));
+        return obj;
     }
 
     //--

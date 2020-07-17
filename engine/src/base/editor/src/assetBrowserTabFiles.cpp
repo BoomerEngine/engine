@@ -59,9 +59,10 @@ namespace ed
             toolbar->createButton("AssetBrowserTab.Lock"_id, ui::ToolbarButtonSetup().icon("lock").caption("Lock tab").tooltip("Prevent current tab from being closed"));
             toolbar->createButton("AssetBrowserTab.Bookmark"_id, ui::ToolbarButtonSetup().icon("star").caption("Favourite").tooltip("Bookmark current directory"));
             toolbar->createSeparator();
-            toolbar->createButton("AssetBrowserTab.Icons"_id, ui::ToolbarButtonSetup().icon("list").caption("List view").tooltip("Toggle simple list view "));
+            toolbar->createButton("AssetBrowserTab.Icons"_id, ui::ToolbarButtonSetup().icon("list_bullet").caption("List").tooltip("Toggle simple list view "));
             toolbar->createSeparator();
-            toolbar->createButton("AssetBrowserTab.Import"_id, ui::ToolbarButtonSetup().icon("import").caption("[tag:#AFA]Import[/tag]").tooltip("Import assets here"));
+            toolbar->createButton("AssetBrowserTab.Import"_id, ui::ToolbarButtonSetup().icon("file_go").caption("[tag:#45C]Import[/tag]").tooltip("Import assets here"));
+            toolbar->createButton("AssetBrowserTab.New"_id, ui::ToolbarButtonSetup().icon("file_add").caption("[tag:#5A5]Create[/tag]").tooltip("Create assets here"));
             toolbar->createSeparator();
 
             if (auto bar = toolbar->createChild<ui::TrackBar>())
@@ -161,6 +162,12 @@ namespace ed
         //--
 
         actions().bindCommand("AssetBrowserTab.Import"_id) = [this]() { importNewFile(nullptr); };
+        actions().bindCommand("AssetBrowserTab.New"_id) = [this]() {
+            auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+            buildNewAssetMenu(menu);
+            menu->show(this);
+        };
+
         //--
 
         m_files->bind("OnItemActivated"_id, this) = [this](AssetBrowserTabFiles* tabs, ui::ModelIndex index)
@@ -584,7 +591,7 @@ namespace ed
 
         for (const auto* format : ManagedFileFormatRegistry::GetInstance().creatableFormats())
         {
-            menu->createCallback(TempString("New {}", format->description()), "[img:file_add]", "") = [this, format]()
+            menu->createCallback(TempString("{}", format->description()), "[img:file_add]", "") = [this, format]()
             {
                 createNewFile(format);
             };
@@ -595,9 +602,9 @@ namespace ed
     {
         for (const auto* format : ManagedFileFormatRegistry::GetInstance().importableFormats())
         {
-            menu->createCallback(TempString("Import {}", format->description()), "[img:file_go]", "") = [this, format]()
+            menu->createCallback(TempString("{}", format->description()), "[img:file_go]", "") = [this, format]()
             {
-                createNewFile(format);
+                importNewFile(format);
             };
         }
     }
@@ -613,14 +620,14 @@ namespace ed
             {
                 auto newAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
                 buildNewAssetMenu(newAssetSubMenu);
-                menu->createSubMenu(newAssetSubMenu->convertToPopup(), "New", "[img:new]");
+                menu->createSubMenu(newAssetSubMenu->convertToPopup(), "New", "[img:file_add]");
             }
 
             // create asset sub menu
             {
                 auto createAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
                 buildImportAssetMenu(createAssetSubMenu);
-                menu->createSubMenu(createAssetSubMenu->convertToPopup(), "Import", "[img:import]");
+                menu->createSubMenu(createAssetSubMenu->convertToPopup(), "Import", "[img:file_go]");
             }
 
             menu->createSeparator();
@@ -656,14 +663,14 @@ namespace ed
 
     static base::io::OpenSavePersistentData GImportFiles;
 
-    bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
+    bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir)
     {
         // get the native class to use for importing
         auto nativeClass = format ? format->nativeResourceClass() : base::res::IResource::GetStaticClass();
 
         // get all extensions we support
         base::InplaceArray<base::StringView<char>, 20> extensions;
-        base::res::IResourceImporter::ListImportableExtensionsForClass(nullptr, extensions);
+        base::res::IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
 
         // nothing to import
         if (extensions.empty())
@@ -682,7 +689,7 @@ namespace ed
             }
 
             // ask for files
-            auto nativeHandle = base::GetService<Editor>()->windowNativeHandle(this);
+            auto nativeHandle = base::GetService<Editor>()->windowNativeHandle(owner);
             base::Array<io::AbsolutePath> importPaths;
             if (!IO::GetInstance().showFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
                 return false;
@@ -709,7 +716,7 @@ namespace ed
             }
 
             if (!failedPathsMessage.empty())
-                ui::PostWindowMessage(this, ui::MessageType::Error, "ImportAsset"_id, failedPathsMessage.view());
+                ui::PostWindowMessage(owner, ui::MessageType::Error, "ImportAsset"_id, failedPathsMessage.view());
         }
 
         // nothing to import ?
@@ -717,7 +724,12 @@ namespace ed
             return false;
 
         // add to import window
-        return base::GetService<Editor>()->addImportFiles(assetPaths, directory());
+        return base::GetService<Editor>()->addImportFiles(assetPaths, nativeClass, parentDir);
+    }
+
+    bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
+    {
+        return ImportNewFiles(this, format, m_dir);
     }
 
     //--

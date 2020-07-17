@@ -24,6 +24,8 @@
 #include "haxe/hl.h"
 #include <math.h>
 
+#pragma warning(disable: 4702)
+
 #define TK2(a,b)		((a) | ((b)<<5))
 
 static void invalid_cast( hl_type *from, hl_type *to ) {

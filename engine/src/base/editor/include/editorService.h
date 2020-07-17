@@ -11,6 +11,7 @@
 #include "base/app/include/application.h"
 #include "base/io/include/absolutePath.h"
 #include "base/system/include/task.h"
+#include "base/io/include/ioSystem.h"
 
 namespace ed
 {
@@ -64,19 +65,36 @@ namespace ed
 
         ///---
 
-        // get parent window native handle for given ui element (usefull for OS interop)
+        // get parent window native handle for given ui element (useful for OS interop)
         uint64_t windowNativeHandle(ui::IElement* elem) const;
 
         ///--
+
+        // get the semi persistent data for the open/save file dialog - mainly the active directory, selected file filter, etc
+        base::io::OpenSavePersistentData& openSavePersistentData(base::StringView<char> category);
 
         // show/open the asset importer window
         bool openAssetImporter();
 
         // add a file to import list, if no directory is specified file is added to active directory
-        bool addImportFiles(const base::Array<base::StringBuf>& assetPaths, const ManagedDirectory* directoryOverride = nullptr);
+        bool addImportFiles(const base::Array<base::StringBuf>& assetPaths, base::SpecificClassType<base::res::IResource> importClass, const ManagedDirectory* directoryOverride = nullptr);
 
         ///---
 
+        /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
+        bool saveToXML(ui::IElement* owner, base::StringView<char> category, const std::function<base::ObjectPtr()>& makeXMLFunc, base::UTF16StringBuf* currentFileName = nullptr);
+
+        /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
+        bool saveToXML(ui::IElement* owner, base::StringView<char> category, const base::ObjectPtr& objectPtr, base::UTF16StringBuf* currentFileName=nullptr);
+
+        /// helper function to load object from XML on user's disk 
+        base::ObjectPtr loadFromXML(ui::IElement* owner, base::StringView<char> category, base::SpecificClassType<IObject> expectedObjectClass);
+
+        /// helper function to load object from XML on user's disk 
+        template< typename T >
+        INLINE base::RefPtr<T> loadFromXML(ui::IElement* owner, base::StringView<char> category) { return base::rtti_cast<T>(loadFromXML(owner, category, T::GetStaticClass())); }
+
+        ///---
 
     private:
         UniquePtr<ManagedDepot> m_managedDepot;
@@ -101,12 +119,19 @@ namespace ed
 
         //--
 
+        base::HashMap<base::StringBuf, base::io::OpenSavePersistentData*> m_openSavePersistentData;
+
+        //--
+
         virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
         virtual void onShutdownService() override final;
         virtual void onSyncUpdate() override final;
 
         void saveConfig();
         void saveAssetsSafeCopy();
+
+        void loadOpenSaveSettings(const ConfigGroup& config);
+        void saveOpenSaveSettings(ConfigGroup& config) const;
     };
 
 } // editor

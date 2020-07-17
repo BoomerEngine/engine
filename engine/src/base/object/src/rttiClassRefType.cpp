@@ -13,6 +13,7 @@
 
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -130,6 +131,39 @@ namespace base
             writeReferencedClass(data, typeRef.toClass().ptr());
         }
 
+        void ClassRefType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            auto& classRef = *static_cast<const ClassType*>(data);
+            if (classRef)
+                node.writeValue(classRef.name().view());
+        }
+
+        void ClassRefType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            base::ClassType classType;
+
+            const auto className = node.value();
+            if (className)
+            {
+                if (auto foundClassType = RTTI::GetInstance().findClass(StringID::Find(className)))
+                {
+                    if (foundClassType->is(m_baseClass))
+                    {
+                        classType = foundClassType;
+                    }
+                    else
+                    {
+                        TRACE_WARNING("Incompatible class type '{}' referenced at {}", className, typeContext);
+                    }
+                }
+                else
+                {
+                    TRACE_WARNING("Unknown class type '{}' referenced at {}", className, typeContext);
+                }
+            }
+            
+            writeReferencedClass(data, classType);
+        }
        
         Type ClassRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSystem)
         {

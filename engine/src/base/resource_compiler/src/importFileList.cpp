@@ -21,7 +21,7 @@ namespace base
         RTTI_BEGIN_TYPE_CLASS(ImportFileEntry);
             RTTI_PROPERTY(depotPath);
             RTTI_PROPERTY(assetPath);
-            RTTI_PROPERTY(configurations);
+            RTTI_PROPERTY(userConfiguration);
         RTTI_END_TYPE();
 
         //--
@@ -38,7 +38,16 @@ namespace base
 
         ImportList::ImportList(Array<ImportFileEntry>&& files)
             : m_files(std::move(files))
-        {}
+        {
+            for (auto& entry : m_files)
+            {
+                if (entry.userConfiguration)
+                {
+                    DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
+                    entry.userConfiguration->parent(this);
+                }
+            }
+        }
 
         //--
 

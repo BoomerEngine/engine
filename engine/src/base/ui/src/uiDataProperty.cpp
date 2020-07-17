@@ -279,7 +279,14 @@ namespace ui
             }
             else
             {
-                m_valueText->text(m_viewInfo.dataType->name().c_str());
+                base::StringBuf displayText;
+                static const auto displayTextType = base::reflection::GetTypeObject<base::StringBuf>();
+                const auto ret = inspector()->data()->readDataView(base::TempString("{}.__text", path()), &displayText, displayTextType);
+                
+                if (ret.valid())
+                    m_valueText->text(displayText);
+                else
+                    m_valueText->text(m_viewInfo.dataType->name().c_str());
             }
         }
     }

@@ -8,6 +8,7 @@
 
 #pragma once
 #include "importFileFingerprint.h"
+#include "base/io/include/timestamp.h"
 
 namespace base
 {
@@ -78,6 +79,7 @@ namespace base
             struct ImportDependencies
             {
                 StringBuf assetPath;
+                io::TimeStamp timestamp;
                 ImportFileFingerprint fingerprint;
             };
 
@@ -85,7 +87,7 @@ namespace base
             Array<ImportDependencies> m_importDependencies;
             HashSet<StringBuf> m_importDependenciesSet;
 
-            void reportImportDependency(StringView<char> assetImportPath, const ImportFileFingerprint& fingerprint);
+            void reportImportDependency(StringView<char> assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
         };
 
         //--

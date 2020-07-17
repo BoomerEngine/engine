@@ -18,14 +18,43 @@ namespace base
         //--
 
         RTTI_BEGIN_TYPE_CLASS(ResourceConfiguration);
+            RTTI_CATEGORY("Author");
+            RTTI_PROPERTY(m_sourceAuthor).editable("Name of the asset's author (if known)").overriddable().noReset();
+            RTTI_PROPERTY(m_sourceLicense).editable("Any specific license information for the asset").overriddable().noReset();
             RTTI_CATEGORY("Source");
-            RTTI_PROPERTY(m_sourceAuthor).editable("Name of the asset's author (if known)").overriddable();
-            RTTI_PROPERTY(m_sourceImportedBy).editable("Name of the person/tool/computer this asset was imported on").overriddable();
-            RTTI_PROPERTY(m_sourceLicense).editable("Any specific license information for the asset").overriddable();
+            RTTI_PROPERTY(m_sourceImportedBy).editable("Name of the person this asset was imported on").overriddable().noReset();
+            RTTI_PROPERTY(m_sourceImportedAt).editable("Name of the computer this asset was imported on").overriddable().noReset();
+            RTTI_PROPERTY(m_sourceImportedOn).editable("Time and date this asset was imported on").overriddable().readonly().noReset();
         RTTI_END_TYPE();
 
         ResourceConfiguration::~ResourceConfiguration()
         {}
+
+        void ResourceConfiguration::changeImportMetadata(StringView<char> by, StringView<char> at, io::TimeStamp time)
+        {
+            if (m_sourceImportedBy != by)
+            {
+                m_sourceImportedBy = StringBuf(by);
+                onPropertyChanged("sourceImportedBy");
+            }
+
+            if (m_sourceImportedAt != by)
+            {
+                m_sourceImportedAt = StringBuf(at);
+                onPropertyChanged("sourceImportedAt");
+            }
+
+            if (m_sourceImportedOn != time)
+            {
+                m_sourceImportedOn = time;
+                onPropertyChanged("sourceImportedOn");
+            }
+        }
+
+        void ResourceConfiguration::setupDefaultImportMetadata()
+        {
+            changeImportMetadata(GetUserName(), GetHostName(), io::TimeStamp::GetNow());
+        }
 
         //--
 

@@ -48,6 +48,9 @@ namespace base
             virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
             virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
             
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
+
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override;
             
             //----

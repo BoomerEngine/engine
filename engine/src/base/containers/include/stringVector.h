@@ -46,7 +46,7 @@ namespace base
 
         INLINE StringBuf ansi_str() const;
 
-        INLINE T* c_str();
+        INLINE T* c_str_writable();
 
         INLINE void print(IFormatStream& f) const;
 

@@ -49,7 +49,7 @@ namespace base
     void ClassType::print(base::IFormatStream& f) const
     {
         if (m_classType)
-            f << name();
+            f << name().view().afterLastOrFull("::");
         else
             f << "null";
     }

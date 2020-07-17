@@ -25,9 +25,14 @@ namespace base
             INLINE Node& operator=(const Node& other) = default;
             Node(const IDocument* doc, NodeID node); // node must be valid
             Node(const IDocument* doc); // root node
+            Node(IDocument* doc, NodeID node); // node must be valid
+            Node(IDocument* doc); // root node
 
             // get the document
             INLINE const IDocument* document() const { return m_document; }
+
+            // get the document
+            INLINE IDocument* document() { return m_document; }
 
             // get the id of the node
             INLINE NodeID id() const { return m_id; }
@@ -92,8 +97,19 @@ namespace base
 
             //--
 
+            // write node value
+            void writeValue(StringView<char> txt);
+
+            // add node attribute
+            void writeAttribute(StringView<char> name, StringView<char> value);
+
+            // create child node
+            Node writeChild(StringView<char> childName);
+
+            //--
+
         private:
-            const IDocument* m_document = nullptr;
+            IDocument* m_document = nullptr;
             NodeID m_id = 0;
         };
 

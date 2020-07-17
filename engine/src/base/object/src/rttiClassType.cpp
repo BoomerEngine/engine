@@ -18,6 +18,7 @@
 
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -249,10 +250,10 @@ namespace base
                 // ask object if we want to save this property
                 auto propData = prop->offsetPtr(data);
                 auto propDefaultData = defaultData ? prop->offsetPtr(defaultData) : nullptr;
-                if (typeContext.objectContext)
+                if (typeContext.directObjectContext)
                 {
                     // object may request property NOT to be saved for "reasons" or may tell us to save property even if the data is different, also for "reasons"
-                    if (!typeContext.objectContext->onPropertyShouldSave(prop))
+                    if (!typeContext.directObjectContext->onPropertyShouldSave(prop))
                         continue;
                 }
                 else
@@ -281,8 +282,6 @@ namespace base
 
             // leave compound block
             file.endCompound();
-            auto prevContext = typeContext.classContext;
-            typeContext.classContext = this;
         }
 
         namespace helper
@@ -326,7 +325,7 @@ namespace base
                 const auto* prop = file.readProperty(propertyName);
 
                 // ask if we want to read this property
-                if (prop && typeContext.objectContext && !typeContext.objectContext->onPropertyShouldLoad(prop))
+                if (prop && typeContext.directObjectContext && !typeContext.directObjectContext->onPropertyShouldLoad(prop))
                 {
                     TRACE_WARNING("Discarded property at {}: property '{}' was discarded by object", typeContext, propertyName);
                     file.discardSkipBlock();
@@ -393,6 +392,86 @@ namespace base
             file.leaveCompound();
         }
 
+        //--
+
+        void IClassType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            TypeSerializationContextSetClass classContext(typeContext, this);
+
+            // get the default context for saving if not specified
+            if (!defaultData)
+                defaultData = defaultObject();
+
+            // save properties
+            auto& allProps = allProperties();
+            for (auto prop : allProps)
+            {
+                // skip transient properties
+                if (prop->flags().test(PropertyFlagBit::Transient))
+                    continue;
+
+                // ask object if we want to save this property
+                auto propData = prop->offsetPtr(data);
+                auto propDefaultData = defaultData ? prop->offsetPtr(defaultData) : nullptr;
+                if (typeContext.directObjectContext)
+                {
+                    // object may request property NOT to be saved for "reasons" or may tell us to save property even if the data is different, also for "reasons"
+                    if (!typeContext.directObjectContext->onPropertyShouldSave(prop))
+                        continue;
+                }
+                else
+                {
+                    // compare the property value with default, do not save if the same
+                    if (propDefaultData)
+                        if (prop->type()->compare(propData, propDefaultData))
+                            continue;
+                }
+
+                // properties are saved in child nodes
+                if (auto childNode = node.writeChild(prop->name().view()))
+                {
+                    TypeSerializationContextSetProperty propertyContext(typeContext, prop);
+                    prop->type()->writeXML(typeContext, childNode, propData, propDefaultData);
+                }
+            }
+        }
+
+        void IClassType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            TypeSerializationContextSetClass classContext(typeContext, this);
+
+            for (xml::NodeIterator it(node, ""); it; ++it)
+            {
+                // get property name - it will be the node name
+                auto propertyName = it->name();
+
+                // read the property reference
+                const auto* prop = findProperty(StringID::Find(propertyName));
+                if (!prop)
+                {
+                    TRACE_WARNING("Missing property at {}: property '{}' was discarded by object", typeContext, propertyName);
+                    continue;
+                }
+
+                // ask if we want to read this property
+                if (prop && typeContext.directObjectContext && !typeContext.directObjectContext->onPropertyShouldLoad(prop))
+                {
+                    TRACE_WARNING("Discarded property at {}: property '{}' was discarded by object", typeContext, propertyName);
+                    continue;
+                }
+
+                // read the data
+                {
+                    TypeSerializationContextSetProperty propertyContext(typeContext, prop);
+
+                    void* targetData = prop->offsetPtr(data);
+                    prop->type()->readXML(typeContext, *it, targetData);
+                }
+            }
+        }
+
+        //--
+
         DataViewResult IClassType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             StringView<char> propertyName;
@@ -406,6 +485,9 @@ namespace base
                     outInfo.members.reserve(props.size());
                     for (auto prop : props)
                     {
+                        if (outInfo.categoryFilter && prop->category() != outInfo.categoryFilter)
+                            continue;
+
                         if (prop->editable())
                         {
                             auto& memberInfo = outInfo.members.emplaceBack();
@@ -666,16 +748,16 @@ namespace base
 
         bool IClassType::handlePropertyMissing(TypeSerializationContext& context, StringID name, Type dataType, const void* data) const
         {
-            if (context.objectContext)
-                return context.objectContext->onPropertyMissing(name, dataType, data);
+            if (context.directObjectContext)
+                return context.directObjectContext->onPropertyMissing(name, dataType, data);
 
             return false;
         }
 
         bool IClassType::handlePropertyTypeChange(TypeSerializationContext& context, StringID name, Type originalDataType, const void* originalData, Type currentType, void* currentData) const
         {
-            if (context.objectContext)
-                return context.objectContext->onPropertyTypeChanged(name, originalDataType, originalData, currentType, currentData);
+            if (context.directObjectContext)
+                return context.directObjectContext->onPropertyTypeChanged(name, originalDataType, originalData, currentType, currentData);
 
             return false;
         }

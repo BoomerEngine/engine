@@ -15,6 +15,8 @@ namespace base
         typedef size_t NodeID;
         typedef size_t AttributeID;
 
+        class Node;
+
         class IDocument;
         typedef RefPtr<IDocument> DocumentPtr;
 

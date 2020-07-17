@@ -55,7 +55,7 @@ namespace ed
     class ManagedFileSourceAssetCheck : public base::IReferencable, public base::IProgressTracker
     {
     public:
-        ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, uint64_t lastKnownTimestamp, const base::res::ImportFileFingerprint& lastKnownCRC);
+        ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const base::res::ImportFileFingerprint& lastKnownCRC);
         ~ManagedFileSourceAssetCheck();
 
         /// file being checked
@@ -74,7 +74,7 @@ namespace ed
 
     private:
         base::StringBuf m_sourceAssetPath;
-        uint64_t m_sourceLastKnownTimestamp = 0;
+        io::TimeStamp m_sourceLastKnownTimestamp;
         base::res::ImportFileFingerprint m_sourceLastKnownCRC;
 
         base::SpinLock m_lock;

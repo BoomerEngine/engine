@@ -52,7 +52,7 @@ namespace base
             return IO::GetInstance().fileExists(path);
         }
 
-        SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, uint64_t lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
+        SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
         {
             io::AbsolutePath path;
             if (!convertToAbsolutePath(fileSystemPath, path))
@@ -63,8 +63,8 @@ namespace base
                 return SourceAssetStatus::Missing;
 
             // if timestamp is given then check and use it to save CRC check
-            if (lastKnownTimestamp != 0)
-                if (lastKnownTimestamp == timestamp.value())
+            if (!lastKnownTimestamp.empty())
+                if (lastKnownTimestamp == timestamp)
                     return SourceAssetStatus::UpToDate;
 
             // compute the fingerprint using the fingerprint service
@@ -86,15 +86,23 @@ namespace base
                 return SourceAssetStatus::ContentChanged;
         }
 
-        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, ImportFileFingerprint& outFingerprint) const
+        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
         {
             io::AbsolutePath path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return Buffer();
 
+            io::TimeStamp timestamp;
+            if (!IO::GetInstance().fileTimeStamp(path, timestamp))
+                return Buffer();
+
             const auto ret = IO::GetInstance().loadIntoMemoryForReading(path);
             if (ret)
+            {
                 CalculateMemoryFingerprint(ret.data(), ret.size(), nullptr, outFingerprint);
+                outTimestamp = timestamp;
+            }
+
             return ret;
         }
 
@@ -162,6 +170,7 @@ namespace base
                 return false;
 
             StringBuilder retPath;
+            retPath.append("/");
             retPath.appendch((char)letter);
             retPath.append("/");
             retPath.append(parser.currentView());

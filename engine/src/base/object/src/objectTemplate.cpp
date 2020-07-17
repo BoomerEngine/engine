@@ -32,9 +32,9 @@ namespace base
         return SpecificClassType<IObjectTemplate>(*objectType.ptr());
     }
 
-    ClassType IObjectTemplate::cls() const
+    ClassType IObjectTemplate::nativeClass() const
     {
-        return GetStaticClass();
+        return IObjectTemplate::GetStaticClass();
     }
 
     //--
@@ -52,7 +52,7 @@ namespace base
             InplaceArray<StringID, 20> changedProperties;
             if (base)
             {
-                for (const auto* baseProp : m_base->cls()->allProperties())
+                for (const auto* baseProp : base->cls()->allProperties())
                 {
                     // should we copy it ? we copy ALL properties that are not overridden - that includes also the ones that were NOT overridable
                     if (!baseProp->overridable() || !m_overridenProperties.contains(baseProp->name()))
@@ -62,13 +62,13 @@ namespace base
                         {
                             // same type, copy only if changed
                             const void* propValue = prop->offsetPtr(this);
-                            const void* basePropValue = baseProp->offsetPtr(m_base);
+                            const void* basePropValue = baseProp->offsetPtr(base);
                             if (prop->type() == baseProp->type())
                             {
                                 // copy only if the value is different indeed
                                 if (!prop->type()->compare(propValue, basePropValue))
                                 {
-                                    if (CopyPropertyValue(m_base, baseProp, this, prop))
+                                    if (CopyPropertyValue(base, baseProp, this, prop))
                                     {
                                         // make sure object's are notified only if the value did change
                                         changedProperties.pushBack(prop->name());
@@ -79,7 +79,7 @@ namespace base
                             {
                                 // capture current value
                                 rtti::DataHolder oldValue(prop->type(), propValue);
-                                if (CopyPropertyValue(m_base, baseProp, this, prop))
+                                if (CopyPropertyValue(base, baseProp, this, prop))
                                 {
                                     // make sure object's are notified only if the value did change
                                     if (!prop->type()->compare(propValue, oldValue.data()))
@@ -189,7 +189,12 @@ namespace base
         if (wasReset)
         {
             m_overridenProperties.remove(name);
-            markModified(); // save required
+            
+            {
+                m_localSuppressOverridenPropertyCapture += 1;
+                onPropertyChanged(name.view());
+                m_localSuppressOverridenPropertyCapture -= 1;
+            }
         }
 
         return wasReset;
@@ -249,6 +254,9 @@ namespace base
 
                     for (auto& member : oldMembers)
                     {
+                        if (outInfo.categoryFilter && member.category != outInfo.categoryFilter)
+                            continue;
+
                         bool keep = false;
 
                         if (const auto* prop = cls()->findProperty(member.name))
@@ -279,7 +287,7 @@ namespace base
                 {
                     if (prop->overridable())
                     {
-                        if (m_overridenProperties.contains(prop->name()))
+                        if (m_overridenProperties.contains(prop->name()) && prop->resetable())
                             outInfo.flags |= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
                         else
                             outInfo.flags -= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;

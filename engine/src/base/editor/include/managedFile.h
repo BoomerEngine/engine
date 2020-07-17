@@ -15,9 +15,19 @@ namespace ed
 
     //---
 
+    /// managed file reimport possibility - quick check if we have valid source
+    enum class ManagedFileReimportCode : uint8_t
+    {
+        Possible, // reimport is possible
+        NotImported, // file was not originally imported (missing meta data)
+        MissingSources, // file has missing source asset
+    };
+
+    //---
+
     // file in the depot, represents actual file in a file system
     // NOTE: many resource can be created from a single file thus
-    class BASE_EDITOR_API ManagedFile : public ManagedItem, public IObjectObserver
+    class BASE_EDITOR_API ManagedFile : public ManagedItem
     {
         RTTI_DECLARE_VIRTUAL_CLASS(ManagedFile, ManagedItem);
 
@@ -96,6 +106,13 @@ namespace ed
         /// query thumbnail data for file
         virtual bool fetchThumbnailData(uint32_t& versionToken, image::ImageRef& outThumbnailImage, Array<StringBuf>& outComments) const override;
 
+        //---
+
+        /// check if the file can be reimported
+        ManagedFileReimportCode checkReimportPossibility() const;
+
+        //---
+
     protected:
         const ManagedFileFormat* m_fileFormat; // file format description
 
@@ -126,8 +143,6 @@ namespace ed
         res::BaseReference loadContentInternal(SpecificClassType<res::IResource> resoureClass);
 
         ///---
-
-        virtual void onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData) override final;
 
         void changeFileState(const vsc::FileState& state);
     };

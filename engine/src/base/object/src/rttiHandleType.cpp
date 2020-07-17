@@ -16,6 +16,7 @@
 
 #include "base/containers/include/inplaceArray.h"
 #include "dataView.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -176,6 +177,75 @@ namespace base
                 return DataViewResultCode::ErrorNullObject;
 
             return object->writeDataView(viewPath, sourceData, sourceType);
+        }
+
+        //--
+
+        void IHandleType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            ObjectPtr object;
+            readPointedObject(data, object);
+
+            if (object)
+            {
+                if (!typeContext.parentObjectContext)
+                {
+                    TRACE_WARNING("Trying to save pointer to object '{}' at {} without a parent object context. Object pointer will be NULLified.", object, typeContext);
+                }
+                else if (object->parent() != typeContext.parentObjectContext)
+                {
+                    TRACE_WARNING("Trying to save pointer to object '{}' at {} that is not a direct child. Object pointer will be NULLified.", object, typeContext);
+                }
+                else
+                {
+                    node.writeAttribute("class", object->cls()->name().view());
+                    object->writeXML(node);
+                }
+            }
+        }
+
+        void IHandleType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            ObjectPtr object;
+
+            if (!typeContext.parentObjectContext)
+            {
+                TRACE_WARNING("Trying to load pointer to object at {} without a parent object context. Object pointer will be NULLified.", typeContext);
+            }
+            else
+            {
+                auto objectClassName = node.attribute("class");
+                if (objectClassName)
+                {
+                    auto objectClassType = RTTI::GetInstance().findClass(StringID::Find(objectClassName));
+                    if (objectClassType)
+                    {
+                        if (!objectClassType->isAbstract() && objectClassType->is(m_pointedType))
+                        {
+                            object = objectClassType.create<IObject>();
+                            if (object)
+                            {
+                                object->parent(typeContext.parentObjectContext);
+                                object->readXML(node);
+                            }
+                            else
+                            {
+                                TRACE_WARNING("Trying to load pointer to object at {} of class '{}' that could not be created. Object pointer will be NULLified.", typeContext, objectClassName);
+                            }
+                        }
+                        else
+                        {
+                            TRACE_WARNING("Trying to load pointer to object at {} of class '{}' that is not compatible with class '{}'. Object pointer will be NULLified.", typeContext, objectClassName, m_pointedType->name());
+                        }
+                    }
+                    else
+                    {
+                        TRACE_WARNING("Trying to load pointer to object at {} of unknown class '{}'. Object pointer will be NULLified.", typeContext, objectClassName);
+                    }
+                }
+            }
+
+            writePointedObject(data, object);
         }
 
         //--

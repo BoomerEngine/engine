@@ -32,6 +32,9 @@ namespace base
             // path to the user config directory - a directory where we can store user specific configuration files (like settings)
             UserConfigDir,
 
+            // path to "My Documents" or /home/XXX/ or something similar
+            UserDocumentsDir,
+
             //--
 
             MAX,

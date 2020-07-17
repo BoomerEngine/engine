@@ -12,6 +12,7 @@
 
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -64,6 +65,20 @@ namespace base
             virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override
             {
                 file.readTypedData(*(T*)data);
+            }
+
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override
+            {
+                StringBuilder txt;
+                txt << *(const T*)data;
+                node.writeValue(txt.view());
+            }
+
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override
+            {
+                const auto ret = node.value().match(*(T*)data);
+                if (ret != MatchResult::OK)
+                    TRACE_WARNING("XMLLoad: Unable to load value for type '{}' at {} from '{}'", name(), typeContext, node.value());
             }
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags) const override
@@ -178,6 +193,18 @@ namespace base
                     str = "";
                 }
             }
+
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override
+            {
+                const auto& str = *(const StringBuf*)data;
+                node.writeValue(str);
+            }
+
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override
+            {
+                auto& str = *(StringBuf*)data;
+                str = StringBuf(node.value());
+            }
         };
 
         class SimpleTypeStringID : public SimpleValueType<StringID>
@@ -230,6 +257,18 @@ namespace base
             {
                 const auto str = file.readStringID();
                 *(StringID*)data = str;
+            }
+
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override
+            {
+                const auto& str = *(const StringID*)data;
+                node.writeValue(str.view());
+            }
+
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override
+            {
+                auto& str = *(StringID*)data;
+                str = StringID(node.value());
             }
         };
 

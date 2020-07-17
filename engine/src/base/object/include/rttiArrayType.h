@@ -29,7 +29,7 @@ namespace base
             virtual ~IArrayType();
 
             /// get the inner array type
-            INLINE Type innerType() const { return m_innertType; }
+            INLINE Type innerType() const { return m_innerType; }
 
             /// get meta type for the handle type :)
             virtual ArrayMetaType arrayMetaType() const = 0;
@@ -72,12 +72,15 @@ namespace base
             virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
             virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
+            virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+            virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
+
             virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override;
             virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
             virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override ;
 
         private:
-            Type m_innertType;
+            Type m_innerType;
         };
 
     } // rtti

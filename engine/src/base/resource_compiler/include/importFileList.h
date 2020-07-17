@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "base/resource/include/resource.h"
+
 namespace base
 {
     namespace res
@@ -22,7 +24,7 @@ namespace base
 
             StringBuf depotPath;
             StringBuf assetPath;
-            Array<ResourceConfigurationPtr> configurations;
+            ResourceConfigurationPtr userConfiguration;
         };
 
         //--
@@ -38,6 +40,8 @@ namespace base
 
             /// list of files
             INLINE const Array<ImportFileEntry>& files() const { return m_files; }
+
+            ///---
 
         private:
             Array<ImportFileEntry> m_files;

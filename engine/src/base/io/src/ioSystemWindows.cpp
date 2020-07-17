@@ -644,6 +644,18 @@ namespace base
 
                         return builder.toAbsolutePath();
                     }
+
+                    case PathCategory::UserDocumentsDir:
+                    {
+                        wchar_t path[MAX_PATH + 1];
+
+                        HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, path);
+                        ASSERT(result == S_OK);
+                        wcscat_s(path, MAX_PATH, L"\\");
+
+                        AbsolutePathBuilder builder(path);
+                        return builder.toAbsolutePath();
+                    }
                 }
 
                 return AbsolutePath();
@@ -691,17 +703,16 @@ namespace base
                 static void AppendUni(base::Array<wchar_t>& outFormatString, const wchar_t* buf)
                 {
                     auto length  = wcslen(buf);
-                    auto destStr  = outFormatString.allocateUninitialized(range_cast<uint32_t>(length + 1));
+                    auto destStr  = outFormatString.allocateUninitialized(range_cast<uint32_t>(length));
                     memcpy(destStr, buf, sizeof(wchar_t) * length);
                 }
 
 				static void AppendUni(base::Array<wchar_t>& outFormatString, const char* buf)
 				{
 					auto length  = strlen(buf);
-					auto destStr  = outFormatString.allocateUninitialized(range_cast<uint32_t>(length + 1));
+					auto destStr  = outFormatString.allocateUninitialized(range_cast<uint32_t>(length));
 					for (size_t i = 0; i < length; ++i)
 						*destStr++ = buf[i];
-					*destStr++ = 0;
 				}
 
                 static void AppendFormatStrings(base::Array<wchar_t>& outFormatString, base::Array<StringBuf> outFormatNames, int& outCurrentFilterIndex, const Array<FileFormat>& formats, const base::StringBuf& currentFilter, bool allowMultipleFormats)
@@ -715,7 +726,7 @@ namespace base
                             base::StringBuilder formatDisplayString;
                             base::StringBuilder formatFilterString;
 
-                            if (currentFilter == "AllSupported")
+                            if (currentFilter == "AllSupported" || currentFilter == "")
                                 outCurrentFilterIndex = currentFilterIndex;
 
                             for (auto &format : formats)
@@ -750,6 +761,7 @@ namespace base
                             AppendUni(outFormatString, format.description().c_str());
                             AppendUni(outFormatString, L" [*.");
                             AppendUni(outFormatString, format.extension().c_str());
+                            AppendUni(outFormatString, L"]");
                             outFormatString.pushBack(0);
 
                             AppendUni(outFormatString, L"*.");
@@ -761,7 +773,7 @@ namespace base
                         }
                     }
 
-                    if (allowMultipleFormats || formats.empty())
+                    if (/*allowMultipleFormats || */formats.empty())
                     {
                         if (currentFilter == "All")
                             outCurrentFilterIndex = currentFilterIndex;
@@ -775,6 +787,7 @@ namespace base
                     }
 
                     // end of format list
+                    outFormatString.pushBack(0);
                     outFormatString.pushBack(0);
                 }
 
@@ -810,7 +823,7 @@ namespace base
                     else if (parts.size() > 1)
                     {
                         // in multiple paths case the first entry is the directory path and the rest are the file names
-                        auto basePath = AbsolutePath::Build(parts[0]);
+                        auto basePath = AbsolutePath::BuildAsDir(parts[0]);
                         for (uint32_t i = 1; i < parts.size(); ++i)
                             outPaths.emplaceBack(basePath.addFile(parts[i]));
                     }
@@ -828,7 +841,7 @@ namespace base
 
                 // buffer for user pattern
                 wchar_t userFilterPattern[128];
-                wcscpy_s(userFilterPattern, ARRAY_COUNT(userFilterPattern), persistentData.userPattern.c_str());
+                wcscpy_s(userFilterPattern, ARRAY_COUNT(userFilterPattern), (const wchar_t*)persistentData.userPattern.c_str());
 
                 // buffer for selected files
                 base::Array<wchar_t> fileNamesBuffer;
@@ -918,9 +931,12 @@ namespace base
                 }
 
                 // extract file paths
-                base::Array<AbsolutePath> paths;
-                helper::ExtractFilePaths(info.lpstrFile, paths);
-                outPath = paths[0];
+                auto path = AbsolutePath::Build(info.lpstrFile);
+                if (path.empty())
+                {
+                    TRACE_WARNING("GetOpenFileName returned invalid path '{}'", info.lpstrFile);
+                    return false;
+                }
 
                 // update selected filter
                 if (info.nFilterIndex >= 1 && info.nFilterIndex <= formatNames.size())
@@ -929,7 +945,8 @@ namespace base
                     persistentData.filterExtension = base::StringBuf();
 
                 // update selected path
-                persistentData.directory = paths[0].basePath();
+                persistentData.directory = path.basePath();
+                outPath = path;
 
                 // update custom filter
                 persistentData.userPattern = info.lpstrCustomFilter;

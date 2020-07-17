@@ -121,6 +121,9 @@ namespace ed
         virtual ui::IElement* handleFocusForwarding() override;
     };
      
+    //--
+
+    extern bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir);
 
     //--
 

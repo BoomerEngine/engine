@@ -73,6 +73,13 @@ WindowTitleBar {
 		background: #0000;
     }
 
+    > TextLabel#AppIcon {
+      horizontal-align: center;
+      vertical-align: middle;
+      margin: 8em 6em 8em 6em;
+      background: #0000;
+    }
+
     > TextLabel#Caption {
 		proportion: 100.0f;
         horizontal-align: left;
@@ -80,7 +87,7 @@ WindowTitleBar {
         font-size: 24em;
         text-shadow: 2em 2em 5em #888888;
 		font-weight: bold;
-        content: "Boomer Engine";
+        #content: "Boomer Engine";
     }
 	
 	> #ButtonContainer {

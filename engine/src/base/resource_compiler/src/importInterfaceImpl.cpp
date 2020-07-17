@@ -61,10 +61,11 @@ namespace base
 
         Buffer LocalImporterInterface::loadSourceFileContent(StringView<char> assetImportPath) const
         {
+            io::TimeStamp timestamp;
             ImportFileFingerprint fingerprint;
-            if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, fingerprint))
+            if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, timestamp, fingerprint))
             {
-                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, fingerprint);
+                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, timestamp, fingerprint);
                 return ret;
             }
 
@@ -73,17 +74,18 @@ namespace base
 
         SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView<char> assetImportPath) const
         {
+            io::TimeStamp timestamp;
             ImportFileFingerprint fingerprint;
-            if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, fingerprint))
+            if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, timestamp, fingerprint))
             {
-                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, fingerprint);
+                const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, timestamp, fingerprint);
                 return ret;
             }
 
             return nullptr;
         }
 
-        void LocalImporterInterface::reportImportDependency(StringView<char> assetImportPath, const ImportFileFingerprint& fingerprint)
+        void LocalImporterInterface::reportImportDependency(StringView<char> assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
         {
             auto lock = CreateLock(m_importDependenciesLock);
 
@@ -94,7 +96,7 @@ namespace base
                 auto& entry = m_importDependencies.emplaceBack();
                 entry.assetPath = StringBuf(assetImportPath);
                 entry.fingerprint = fingerprint;
-                TRACE_INFO("Reported '{}' as import dependency", assetImportPath);
+                TRACE_INFO("Reported '{}' as import dependency, last modified at {}, fingerprint: {}", assetImportPath, timestamp, fingerprint);
             }
         }
 
@@ -189,6 +191,7 @@ namespace base
             {
                 auto& entry = ret->importDependencies.emplaceBack();
                 entry.importPath = dep.assetPath;
+                entry.timestamp = dep.timestamp;
                 entry.crc = dep.fingerprint.rawValue();
             }
 

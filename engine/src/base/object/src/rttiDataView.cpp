@@ -52,7 +52,7 @@ namespace base
 
             outPropertyName = StringView<char>(identStart, cur);
             view = StringView<char>(cur, end);
-            return true;
+            return !outPropertyName.empty();
         }
 
         bool ParseArrayIndex(StringView<char>& view, uint32_t& outArrayCount)

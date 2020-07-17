@@ -16,27 +16,25 @@ namespace ed
 {
     //--
 
-    // file entry in the import list
-    class BASE_EDITOR_API AssetImportEntry : public base::IReferencable
+    class AssetImportListModel;
+
+    typedef base::SpecificClassType<base::res::IResource> TImportClass;
+    typedef base::Array<TImportClass> TImportClassRegistry;
+    typedef base::HashMap<base::StringBuf, TImportClassRegistry> TImportClassRegistryMap;
+
+    typedef base::SpecificClassType<base::res::ResourceConfiguration> TConfigClass;
+
+    // internal import check status
+    enum class AssetImportCheckStatus : uint8_t
     {
-    public:
-        AssetImportEntry();
-
-        bool importFlag = true;
-
-        base::StringBuf assetPath;
-
-        const ManagedDirectory* targetDirectory = nullptr;
-
-        base::StringBuf targetFileName;
-        base::SpecificClassType<base::res::IResource> targetClass;
-
-        base::Array<base::res::ResourceConfigurationPtr> configurations;
-
-        void changeResourceType(base::SpecificClassType<base::res::IResource> targetClass); // will create missing configurations
+        Unknown,
+        Checking,
+        New,
+        UpToDate,
+        NewConfig,
+        NewContent,
+        MissingFiles,
     };
-
-    typedef base::RefPtr<AssetImportEntry> AssetImportEntryPtr;
 
     //--
 
@@ -49,27 +47,73 @@ namespace ed
 
         //--
 
-        // get list of files
-        INLINE const Array<AssetImportEntryPtr>& files() const { return m_files; }
+        // add new import file to the list
+        ui::ModelIndex addNewImportFile(const base::StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const base::res::ResourceConfigurationPtr& specificUserConfiguration = nullptr);
+
+        // add new reimport file
+        ui::ModelIndex addReimportFile(ManagedFile* file);
 
         //--
 
         // remove all files
-        void clear();
+        void clearFiles();
 
-        // add entry to list
-        void addFile(AssetImportEntry* file);
+        // remove all given files from list
+        void removeFiles(const base::Array<ui::ModelIndex>& files);
 
-        // remove entry form list
-        void removeFile(AssetImportEntry* file);
+        //--
 
-        // get entry
-        AssetImportEntry* findFile(const ui::ModelIndex& index) const;
+        // get import configuration for given element
+        base::res::ResourceConfigurationPtr fileConfiguration(const ui::ModelIndex& file) const;
+
+        // get file depot path
+        base::StringBuf fileDepotPath(const ui::ModelIndex& file) const;
+
+        // get managed file 
+        ManagedFile* fileManagedFile(const ui::ModelIndex& file) const;
+
+        // get source asset
+        base::StringBuf fileSourceAssetPath(const ui::ModelIndex& file) const;
+
+        // get absolute path to source asset
+        base::io::AbsolutePath fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const;
+
+        //--
+
+        // generate the import list from currently selected resources
+        base::res::ImportListPtr compileResourceList() const;
 
         //--
 
     private:
-        Array<AssetImportEntryPtr> m_files;
+        struct FileData : public base::IReferencable
+        {
+            bool m_importFlag = true;
+
+            const ManagedFile* m_existingFile = nullptr; // NULL for new files, not null for reimports
+
+            base::StringBuf m_sourceAssetPath;
+
+            const ManagedDirectory* m_targetDirectory = nullptr;
+            base::StringBuf m_targetFileName;
+            TImportClass m_targetClass;
+
+            base::res::ResourceConfigurationPtr m_configuration; // user configuration
+        };
+
+
+        base::Array<base::RefPtr<FileData>> m_files;
+
+        base::StringBuf fileDepotPath(const FileData* file) const;
+        ManagedFile* fileManagedFile(const FileData* file) const;
+
+        ui::ModelIndex indexForFile(const FileData* fileData) const;
+        base::RefPtr<FileData> fileForIndex(const ui::ModelIndex& index) const;
+        FileData* fileForIndexFast(const ui::ModelIndex& index) const;
+
+        ui::ModelIndex addFileInternal(const base::RefPtr<FileData>& data);
+
+        //--
 
         virtual uint32_t rowCount(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
         virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
@@ -80,6 +124,8 @@ namespace ed
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
+
+        virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const override final;
 
         mutable base::HashMap<base::StringBuf, base::Array<base::SpecificClassType<base::res::IResource>>> m_classPerExtensionMap;
 
@@ -103,8 +149,11 @@ namespace ed
 
         //--
 
-        void addFile(const ManagedDirectory* currentDirectory, base::StringView<char> selectedAssetPath);
-        void addFiles(const ManagedDirectory* currentDirectory, const base::Array<base::StringBuf>& selectedAssetPaths);
+        // add new files to list
+        void addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const base::Array<base::StringBuf>& selectedAssetPaths);
+
+        // add request to reimprot files
+        void addReimportFiles(const base::Array<ManagedFile*>& files);
 
     public:
         void cmdClearList();
@@ -117,8 +166,14 @@ namespace ed
 
         ui::ToolBarPtr m_toolbar;
         ui::ListViewPtr m_fileList;
-        ui::NotebookPtr m_configProps;
-        //ui::DataInspectorPtr m_properties;
+        ui::NotebookPtr m_configTabs;
+        ui::DataInspectorPtr m_configProperties;
+
+        void updateSelection();
+
+        void addFilesFromList(const base::res::ImportList& list);
+
+        ManagedDirectory* contextDirectory();
 
         base::RefPtr<AssetImportListModel> m_filesListModel;
     };
@@ -137,8 +192,8 @@ namespace ed
         void loadConfig(const ConfigGroup& config);
         void saveConfig(ConfigGroup& config) const;
 
-        void addFile(const ManagedDirectory* currentDirectory, base::StringView<char> selectedAssetPath);
-        void addFiles(const ManagedDirectory* currentDirectory, const base::Array<base::StringBuf> &selectedAssetPaths);
+        void addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const base::Array<base::StringBuf>& selectedAssetPaths);
+        void addReimportFiles(const base::Array<ManagedFile*>& files);
 
     private:
         base::RefPtr<AssetImportPrepareTab> m_prepareTab;

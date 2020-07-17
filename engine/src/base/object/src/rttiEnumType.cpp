@@ -12,6 +12,7 @@
 
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
+#include "base/xml/include/xmlWrappers.h"
 
 namespace base
 {
@@ -272,6 +273,46 @@ namespace base
                 return false;
 
             return enumType->findValue(name, outEnumValue);
+        }
+
+        //--
+
+        void EnumType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+        {
+            int64_t val = 0;
+            readInt64(data, val);
+
+            StringID optionName;
+            if (!findName(val, optionName))
+            {
+                TRACE_WARNING("Missing option name for enum %ld in {} when saving {}, the value would be lost", val, name(), typeContext);
+            }
+            else
+            {
+                node.writeValue(optionName.view());
+            }
+        }
+
+        void EnumType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+        {
+            const auto optionName = node.value();
+
+            if (optionName.empty())
+            {
+                TRACE_WARNING("No option value loaded for enum '{}' at {}, the value will remain as it is", name(), typeContext);
+            }
+            else
+            {
+                int64_t value = 0;
+                if (!findValue(StringID::Find(optionName), value))
+                {
+                    TRACE_WARNING("Unknown option '{}' loaded for enum '{}' at {}, the value will remain as it is", optionName, name(), typeContext);
+                }
+                else
+                {
+                    writeInt64(data, value);
+                }
+            }
         }
 
         //--

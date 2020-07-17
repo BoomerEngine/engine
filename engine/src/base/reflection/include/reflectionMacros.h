@@ -193,6 +193,9 @@ private:\
 // Bind writeBinary and readBinary methods from given type as native binary serialization for the type
 #define RTTI_BIND_NATIVE_BINARY_SERIALIZATION(_type) builder.type().bindBinarySerialization<_type>()
 
+// Bind writeXML and readXML methods from given type as native XML serialization for the type
+#define RTTI_BIND_NATIVE_XML_SERIALIZATION(_type) builder.type().bindXMLSerialization<_type>()
+
 // Bind print and static Parse method from given type as a ToString/FromString interface for the type
 #define RTTI_BIND_NATIVE_PRINT_PARSE(_type) builder.type().bindToStringFromString<_type>()
 
@@ -204,6 +207,9 @@ private:\
 
 // Bind specific static functions as implementation of binary serialization for the type
 #define RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(_writeFunc, _readFunc) builder.type().funcReadBinary = _readFunc; builder.type().funcWriteBinary = _writeFunc
+
+// Bind specific static functions as implementation of XML serialization for the type
+#define RTTI_BIND_CUSTOM_XML_SERIALIZATION(_writeFunc, _readFunc) builder.type().funcReadXML = _readFunc; builder.type().funcWriteXML = _writeFunc
 
 // Bind a custom print function for the type
 #define RTTI_BIND_CUSTOM_PRINT(_printFunc) builder.type().funcPrintToText = _printFunc

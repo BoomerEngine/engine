@@ -86,6 +86,23 @@ namespace base
                 {
                      // TODO
                 }
+                else if (propertyName == "__text")
+                {
+                    StringBuf text;
+                    {
+                        StringBuilder f;
+                        printToText(f, viewData);
+                        text = f.toString();
+                    }
+
+                    static const auto textType = RTTI::GetInstance().findType("StringBuf"_id);
+
+                    if (!rtti::ConvertData(&text, textType, targetData, targetType))
+                        return DataViewResultCode::ErrorTypeConversion;
+
+                    return DataViewResultCode::OK;
+                    
+                }
 
                 return DataViewResultCode::ErrorUnknownProperty;
             }
@@ -117,9 +134,9 @@ namespace base
         {
             bool written = false;
 
-            if (objectContext)
+            if (directObjectContext)
             {
-                f.appendf("object {}", *objectContext);
+                f.appendf("object {}", *directObjectContext);
                 written = true;
             }
 
