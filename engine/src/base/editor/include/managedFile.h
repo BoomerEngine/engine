@@ -15,16 +15,6 @@ namespace ed
 
     //---
 
-    /// managed file reimport possibility - quick check if we have valid source
-    enum class ManagedFileReimportCode : uint8_t
-    {
-        Possible, // reimport is possible
-        NotImported, // file was not originally imported (missing meta data)
-        MissingSources, // file has missing source asset
-    };
-
-    //---
-
     // file in the depot, represents actual file in a file system
     // NOTE: many resource can be created from a single file thus
     class BASE_EDITOR_API ManagedFile : public ManagedItem
@@ -39,108 +29,44 @@ namespace ed
         /// NOTE: if a file has no recognized format than it's not displayed in the depot
         INLINE const ManagedFileFormat& fileFormat() const { return *m_fileFormat; }
 
+        /// get the event key for this item, allows us to observer changes
+        INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
+
+        /// has this file been REPORTED as modified ?
+        /// NOTE: modified files are also stored in a set in the managedDepot for easier access
+        INLINE bool isModified() const { return m_isModified; }
+
     public:
         ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName);
         virtual ~ManagedFile();
 
+        //--
+
         /// request version control status update
         void refreshVersionControlStateRefresh(bool sync = false);
 
-        /// is this file read only ?
-        bool isReadOnly() const;
+        //--
 
-        /// Set read only flag on a file
-        void readOnlyFlag(bool readonly);
+        /// change file's "modified" flag
+        /// NOTE: modified files are stored in a list in managed depot and also can't be "deleted" without additional message box
+        void modify(bool flag);
 
-        /// Can this file be checked out ?
-        bool canCheckout() const;
+        /// toggle the "deleted" flag
+        void deleted(bool flag);
 
-        /// Get short file description
-        StringBuf shortDescription() const;
+        //--
 
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
-        virtual const image::ImageRef& ManagedFile::typeThumbnail() const;
-
-        //---
-
-        /// has this file been REPORTED as modified ?
-        /// NOTE: this is just a flag, does nothing special
-        INLINE bool isModified() const { return m_isModified; }
-
-        /// mark file as modified
-        void markAsModifed();
-
-        /// unmark file as modified
-        void unmarkAsModified();
-
-        //---
-
-        // load content of this file as raw bytes
-        Buffer loadRawContent() const;
-
-        // load content for this file for edition
-        res::ResourcePtr loadContent() const;
-
-        // load resource metadata, valid only for serialized resources
-        res::MetadataPtr loadMetadata() const;
-
-        //---
-
-        // store new raw content for this file
-        bool storeRawContent(Buffer data);
-
-        // store new text for this file
-        bool storeRawContent(base::StringView<char> data);
-
-        // store new content for this file
-        bool storeContent(const res::ResourceHandle& content);
-
-        //---
-
-        /// request a thumbnail to be loaded from backend
-        void loadThubmbnail(bool force = false);
-
-        /// new thumbnail data was loaded
-        void newThumbnailDataAvaiable(const res::ResourceThumbnail& thumbnailData);
-
-        /// query thumbnail data for file
-        virtual bool fetchThumbnailData(uint32_t& versionToken, image::ImageRef& outThumbnailImage, Array<StringBuf>& outComments) const override;
-
-        //---
-
-        /// check if the file can be reimported
-        ManagedFileReimportCode checkReimportPossibility() const;
+        virtual const image::ImageRef& typeThumbnail() const override;
 
         //---
 
     protected:
         const ManagedFileFormat* m_fileFormat; // file format description
 
-        bool m_isInitialStateRefreshed:1; // version control state was initially refreshed
-        bool m_isSaved:1; // file is being saved right now, prevents from some crap to be propagated
-        bool m_isModified : 1; // file was reported as modified
-
-        struct ThumbState
-        {
-            image::ImageRef image;
-            Array<StringBuf> comments;
-            uint32_t version = 0;
-            bool firstLoadRequested = false;
-            bool generatedRequested = false;
-            int loadRequestCount = 0;
-        };
-
-        ThumbState m_thumbnailState;
-        SpinLock m_thumbnailStateLock;
-
-        vsc::FileState m_state; // last source control state
-
-        ///----
-
-        Buffer loadRawContent(StringView<char> depotPath) const;
-        bool storeRawContent(StringView<char> depotPath, Buffer data);
-
-        res::BaseReference loadContentInternal(SpecificClassType<res::IResource> resoureClass);
+        GlobalEventKey m_eventKey;
+        vsc::FileState m_state;
+        bool m_isModified;
 
         ///---
 

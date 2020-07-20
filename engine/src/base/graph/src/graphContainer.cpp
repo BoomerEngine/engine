@@ -121,7 +121,7 @@ namespace base
             ASSERT_EX(block, "Block to remove must be specified");
             ASSERT_EX(m_blocks.contains(block), "Block is not register in this container");
 
-            m_blocks.remove(block);
+            m_blocks.removeUnordered(block);
             block->parent(nullptr);
 
             notifyBlockRemoved(block);
@@ -156,8 +156,7 @@ namespace base
         {
             DEBUG_CHECK(m_observers.contains(observer));
 
-            auto index = m_observers.find(observer);
-            if (INDEX_NONE != index)
+            if (auto index = m_observers.find(observer))
                 m_observers[index] = nullptr;
         }
 
@@ -167,7 +166,7 @@ namespace base
                 if (observer)
                     observer->handleBlockAdded(block);
 
-            m_observers.remove(nullptr);
+            m_observers.removeUnorderedAll(nullptr);
         }
 
         void Container::notifyBlockRemoved(Block* block)
@@ -176,7 +175,7 @@ namespace base
                 if (observer)
                     observer->handleBlockRemoved(block);
 
-            m_observers.remove(nullptr);
+            m_observers.removeUnorderedAll(nullptr);
         }
 
         void Container::notifyBlockStyleChanged(Block* block)
@@ -185,7 +184,7 @@ namespace base
                 if (observer)
                     observer->handleBlockStyleChanged(block);
 
-            m_observers.remove(nullptr);
+            m_observers.removeUnorderedAll(nullptr);
         }
 
         void Container::notifyBlockLayoutChanged(Block* block)
@@ -194,7 +193,7 @@ namespace base
                 if (observer)
                     observer->handleBlockLayoutChanged(block);
 
-            m_observers.remove(nullptr);
+            m_observers.removeUnorderedAll(nullptr);
         }
 
         void Container::notifyBlockConnectionsChanged(Block* block)
@@ -203,7 +202,7 @@ namespace base
                 if (observer)
                     observer->handleBlockConnectionsChanged(block);
 
-            m_observers.remove(nullptr);
+            m_observers.removeUnorderedAll(nullptr);
         }
 
         //--
@@ -290,7 +289,7 @@ namespace base
            // m_persistentBlockState.reset();
 
             // remove deleted/invalid blocks from the list
-            m_blocks.remove(nullptr);
+            m_blocks.removeUnorderedAll(nullptr);
         }
 
         void Container::capturePersistentData() const

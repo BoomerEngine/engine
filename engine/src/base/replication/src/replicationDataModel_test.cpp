@@ -13,7 +13,6 @@
 
 #include "build.h"
 #include "base/test/include/gtest/gtest.h"
-#include "base/resource/include/resource.h"
 
 DECLARE_TEST_FILE(DataModelTest);
 
@@ -126,7 +125,7 @@ namespace test
 
     //---
 
-    struct TestReplicatedStruct_ResRef
+    /*struct TestReplicatedStruct_ResRef
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ResRef);
 
@@ -136,7 +135,7 @@ namespace test
 
     RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ResRef);
         RTTI_PROPERTY(m_path).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
+    RTTI_END_TYPE();*/
 
     //---
 
@@ -590,7 +589,7 @@ TEST(DataModel, CompileTypeRef)
     ASSERT_EQ(0, model->fields()[0].m_packing.m_maxCount);
 }
 
-TEST(DataModel, CompileResourceRef)
+/*TEST(DataModel, CompileResourceRef)
 {
     DataModelRepository rep;
 
@@ -601,6 +600,7 @@ TEST(DataModel, CompileResourceRef)
     ASSERT_EQ(0, model->fields()[0].m_packing.m_maxLength);
     ASSERT_EQ(0, model->fields()[0].m_packing.m_maxCount);
 }
+*/
 
 TEST(DataModel, CompileObjectPtr)
 {
@@ -922,7 +922,7 @@ TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
 
 //--
 
-TEST(DataModel, EncodeWritesPathEmpty)
+/*TEST(DataModel, EncodeWritesPathEmpty)
 {
     test::LocalKnowledgeBase knowledge;
     DataModelRepository rep;
@@ -979,6 +979,7 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
     ASSERT_STREQ("base::res::ITextResource", knowledge.m_paths[1].c_str());
     ASSERT_STREQ("dupa.txt", knowledge.m_paths[2].c_str());
 }
+*/
 
 TEST(DataModel, EncodeWritesObjectId)
 {
@@ -1579,7 +1580,7 @@ TEST(DataModelTransmit, TypeRefClass)
 
 //--
 
-TEST(DataModelTransmit, ResourceRefEmpty)
+/*TEST(DataModelTransmit, ResourceRefEmpty)
 {
     test::LocalKnowledgeBase knowledge;
     test::TransferTest transfer(knowledge);
@@ -1602,7 +1603,7 @@ TEST(DataModelTransmit, ResourceRef)
     transfer.transfer(s, out);
 
     EXPECT_EQ(out.m_path.key(), s.m_path.key());
-}
+}*/
 
 //--
 

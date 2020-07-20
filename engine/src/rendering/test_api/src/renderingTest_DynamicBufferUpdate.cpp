@@ -66,7 +66,7 @@ namespace rendering
                 outVertices[i].y = y + dy * displ;
 
                 // calc color
-                outColors[i] = base::Blend(base::Color::RED, base::Color::GREEN, (0.5f + 0.5f*displPhase) * 256.0f);
+                outColors[i] = base::Lerp(base::Color(base::Color::RED), base::Color(base::Color::GREEN), (0.5f + 0.5f*displPhase));
             }
         }
 

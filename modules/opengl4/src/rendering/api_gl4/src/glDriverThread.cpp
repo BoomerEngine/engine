@@ -228,7 +228,7 @@ namespace rendering
 
                 // remove empty slots
                 if (sequencesFinished)
-                    m_sequencePendingList.remove(nullptr);
+                    m_sequencePendingList.removeAll(nullptr);
             }
 
             // clear frames

@@ -54,7 +54,7 @@ namespace ui
                     return -1;
                 }
 
-                TRACE_INFO("Resolved value for '{}': '{}'", paramId, resolvedValue);
+                //TRACE_INFO("Resolved value for '{}': '{}'", paramId, resolvedValue);
 
                 // store in map
                 index = range_cast<int>(m_resolvedValues.size());

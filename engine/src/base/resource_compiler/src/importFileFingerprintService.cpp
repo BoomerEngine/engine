@@ -27,7 +27,7 @@ namespace base
             {
                 FileLoadingContext context;
                 
-                if (!LoadFile(file, context))
+                if (LoadFile(file, context))
                 {
                     if (auto cache = context.root<ImportFingerprintCache>())
                     {
@@ -111,8 +111,10 @@ namespace base
 
         //--
 
-        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView<wchar_t> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
+        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView<wchar_t> absolutePathStr, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
         {
+            const auto absolutePath = io::AbsolutePath::Build(absolutePathStr);
+
             // first, check the file timestamp, maybe we have the data in cache
             io::TimeStamp timestamp;
             if (!IO::GetInstance().fileTimeStamp(absolutePath, timestamp))
@@ -139,7 +141,7 @@ namespace base
                     lock.release();
 
                     // wait for the signal from the thread that created the job
-                    TRACE_INFO("CRC cache contention on '{}', waiting for previous job", absolutePath);
+                    TRACE_INFO("CRC cache contention on '{}', waiting for previous job '{}'", absolutePath, validCacheJob->path);
                     Fibers::GetInstance().waitForCounterAndRelease(validCacheJob->signal);
 
                     // we have failed
@@ -151,7 +153,7 @@ namespace base
 
             // create a cache job entry
             auto validCacheJob = base::CreateSharedPtr<CacheJob>();
-            validCacheJob->path = io::AbsolutePath::Build(absolutePath);
+            validCacheJob->path = absolutePath;
             validCacheJob->timestamp = timestamp;
             validCacheJob->signal = Fibers::GetInstance().createCounter("ImportFileFingerprintServiceCalcJob");
             m_activeJobMap[validCacheJob->path] = validCacheJob;

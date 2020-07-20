@@ -2280,7 +2280,7 @@ namespace ui
         auto numGeometryUpdate = GStatGeometryRebuild.exchange(0);
         if (numStyleUpdate || numLayoutUpdate || numGeometryUpdate)
         {
-            TRACE_INFO("UI Update: {} style, {} layout, {} geom", numStyleUpdate, numLayoutUpdate, numGeometryUpdate);
+            //TRACE_INFO("UI Update: {} style, {} layout, {} geom", numStyleUpdate, numLayoutUpdate, numGeometryUpdate);
         }
     }
 

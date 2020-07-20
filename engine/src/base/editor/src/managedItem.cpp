@@ -42,38 +42,86 @@ namespace ed
     io::AbsolutePath ManagedItem::absolutePath() const
     {
         io::AbsolutePath ret;
-        m_depot->loader().queryFileAbsolutePath(depotPath(), ret);
+        m_depot->depot().queryFileAbsolutePath(depotPath(), ret);
         return ret;
     }
 
     res::ResourceMountPoint ManagedItem::mountPoint() const
     {
         res::ResourceMountPoint mountPoint;
-        m_depot->loader().queryFileMountPoint(depotPath(), mountPoint);
+        m_depot->depot().queryFileMountPoint(depotPath(), mountPoint);
         return mountPoint;
     }
 
-    static bool IsValidChar(char ch, bool first)
+    /*static bool IsValidChar(char ch, bool first)
     {
         if (ch >= 'A' && ch <= 'Z') return true;
         if (ch >= 'a' && ch <= 'z') return true;
         if (!first && (ch >= '0' && ch <= '9')) return true;
         if (ch == '_' || ch == ' ' || ch == '(' || ch == ')') return true;
         return false;
+    }*/
+
+    static bool IsValidChar(wchar_t ch)
+    {
+        if (ch <= 31)
+            return false;
+
+        switch (ch)
+        {
+        case '<':
+        case '>':
+        case ':':
+        case '\"':
+        case '/':
+        case '\\':
+        case '|':
+        case '?':
+        case '*':
+            return false;
+
+        case '.': // disallow dot in file names - it's confusing AF
+            return false;
+
+        case 0:
+            return false;
+        }
+
+        return true;
     }
 
-    bool ManagedItem::ValidateName(StringView<char> txt)
+    static const wchar_t* InvalidFileNames[] = { 
+        L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9", L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9"
+    };
+
+    static bool IsValidName(StringView<wchar_t> name)
     {
+        for (const auto testName : InvalidFileNames)
+            if (name == testName)
+                return false;
+
+        return true;
+    }
+
+    bool ManagedItem::ValidateFileName(StringView<char> txt)
+    {
+        UTF16StringBuf wide(txt);
+
         if (txt.empty())
             return false;
 
-        bool first = true;
-        for (auto ch : txt)
-        {
-            if (!IsValidChar(ch, first)) return false;
-            first = false;
-        }
+        if (!IsValidName(wide))
+            return false;
+
+        for (auto wch : wide.view()) // we iterate over view to get rid of the TZ
+            if (!IsValidChar(wch)) return false;
+
         return true;
+    }
+
+    bool ManagedItem::ValidateDirectoryName(StringView<char> txt)
+    {
+        return ValidateFileName(txt);
     }
 
     //--

@@ -34,24 +34,15 @@ namespace base
 
         ResourceLoaderCooker::ResourceLoaderCooker()
         {
-            // create depot
             m_depot.create();
-
-            // create dependency tracker
             m_depTracker.create(*m_depot);
-            m_depot->attachObserver(m_depTracker.get());
-
-            // create cooker
             m_cooker.create(*m_depot, this);
         }
 
         ResourceLoaderCooker::~ResourceLoaderCooker()
         {
             m_cooker.reset();
-
-            m_depot->detttachObserver(m_depTracker.get());
             m_depTracker.reset();
-
             m_depot.reset();
         }
 
@@ -307,6 +298,9 @@ namespace base
                     obj->onResourceReloadFinished(currentResource, newResource);
 
                 IStaticResource::ApplyReload(currentResource, newResource);
+
+                if (const auto depotPath = StringBuf(currentResource->key().path().view()))
+                    DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);
 
                 TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->key(), timer, affectedObjects.size(), numObjectsVisited);
             }    

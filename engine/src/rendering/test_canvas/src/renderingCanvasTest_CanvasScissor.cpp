@@ -13,8 +13,6 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-#include "base/math/include/randomFast.h"
-#include "base/math/include/randomMersenne.h"
 
 namespace rendering
 {
@@ -30,24 +28,24 @@ namespace rendering
             {             
             }
 
-            static void BuildGeometry(base::MTGenerator & rng, float canvasW, float canvasH, base::canvas::Geometry& outGeometry)
+            static void BuildGeometry(base::MTRandState & rng, float canvasW, float canvasH, base::canvas::Geometry& outGeometry)
             {
 
                 base::canvas::GeometryBuilder b;
 
                 for (int i = 0; i < 200; ++i)
                 {
-                    float w = base::Lerp(20.0f, 200.0f, rng.nextFloat());
-                    float h = base::Lerp(20.0f, 200.0f, rng.nextFloat());
-                    float x = base::Lerp(0.0f, canvasW - w, rng.nextFloat());
-                    float y = base::Lerp(0.0f, canvasH - h, rng.nextFloat());
-                    float r = base::Lerp(0.0f, std::min(w, h) * 0.9f, rng.nextFloat());
+                    float w = base::Lerp(20.0f, 200.0f, RandOne(rng));
+                    float h = base::Lerp(20.0f, 200.0f, RandOne(rng));
+                    float x = base::Lerp(0.0f, canvasW - w, RandOne(rng));
+                    float y = base::Lerp(0.0f, canvasH - h, RandOne(rng));
+                    float r = base::Lerp(0.0f, std::min(w, h) * 0.9f, RandOne(rng));
 
                     b.beginPath();
                     b.roundedRect(x, y, w, h, r);
 
-                    const auto startColor = base::Color((uint8_t)rng.nextUint32(), (uint8_t)rng.nextUint32(), (uint8_t)rng.nextUint32(), 255);
-                    const auto endColor = base::Color((uint8_t)rng.nextUint32(), (uint8_t)rng.nextUint32(), (uint8_t)rng.nextUint32(), 255);;
+                    const auto startColor = base::Color((uint8_t)Rand(rng), (uint8_t)Rand(rng), (uint8_t)Rand(rng), 255);
+                    const auto endColor = base::Color((uint8_t)Rand(rng), (uint8_t)Rand(rng), (uint8_t)Rand(rng), 255);;
 
                     b.fillPaint(base::canvas::LinearGradienti(0, 0, w, h, startColor, endColor));
                     b.fill();
@@ -66,7 +64,7 @@ namespace rendering
                     m_drawCanvasWidth = c.width();
                     m_drawCanvasHeight = c.height();
 
-                    base::MTGenerator rng;
+                    base::MTRandState rng;
                     BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[0]);
                     BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[1]);
                     BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[2]);

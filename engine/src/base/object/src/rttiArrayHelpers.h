@@ -68,8 +68,10 @@ namespace base
 
             virtual void destroy(BaseArray* array, Type elementType) const override final
             {
+                const auto currentBufferSize = array->capacity() * N;
+
                 array->changeSize(0);
-                array->changeCapacity(POOL_CONTAINERS, 0, N, m_alignment, "PodArray");
+                array->changeCapacity(0, currentBufferSize, 0, m_alignment, "PodArray");
             }
 
             virtual void clear(BaseArray* array, Type elementType) const override final
@@ -81,11 +83,16 @@ namespace base
             {
                 if (array->capacity() < minimalSize)
                 {
-                    auto newCapacity = BaseArray::CalcNextCapacity(array->capacity(), N);
-                    while (newCapacity < minimalSize)
-                        newCapacity = BaseArray::CalcNextCapacity(newCapacity, N);
+                    const auto minimalBufferSize = minimalSize * N;
+                    const auto currentBufferSize = array->capacity() * N;
+                    auto newBufferSize = currentBufferSize;
 
-                    array->changeCapacity(POOL_CONTAINERS, newCapacity, N, m_alignment, "PodArray");
+                    while (newBufferSize < minimalBufferSize)
+                        newBufferSize = BaseArray::CalcNextBufferSize(newBufferSize);
+
+                    const auto newCapacity = newBufferSize / N;
+
+                    array->changeCapacity(newCapacity, currentBufferSize, newBufferSize, elementType->alignment(), elementType->name().c_str());
                 }
             }
 

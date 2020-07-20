@@ -230,7 +230,7 @@ namespace ed
         //------
 
         /// wrapper for a collection of changes that go together
-        class BASE_EDITOR_API IChangelist : public base::IReferencable
+        class BASE_EDITOR_API IChangelist : public IReferencable
         {
         public:
             IChangelist();

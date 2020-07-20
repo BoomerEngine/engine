@@ -312,7 +312,7 @@ namespace base
                     return nullptr;
 
                 auto elemSize = innerType()->size();
-                return arr->elementPtr(index, elemSize);
+                return (const uint8_t*)arr->data() + (index * elemSize);
             }
 
             void* DynamicArrayType::arrayElementData(void* data, uint32_t index) const
@@ -324,7 +324,7 @@ namespace base
                     return nullptr;
 
                 auto elemSize = innerType()->size();
-                return arr->elementPtr(index, elemSize);
+                return (uint8_t*)arr->data() + (index * elemSize);
             }
 
             //---

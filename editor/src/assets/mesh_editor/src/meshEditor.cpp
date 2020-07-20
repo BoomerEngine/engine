@@ -9,10 +9,12 @@
 #include "build.h"
 #include "meshEditor.h"
 #include "meshPreviewPanel.h"
-#include "meshPreviewPanelWithToolbar.h"
+#include "meshStructurePanel.h"
+#include "meshMaterialsPanel.h"
 
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedFileNativeResource.h"
 #include "base/ui/include/uiDockPanel.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDataInspector.h"
@@ -20,9 +22,9 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiRuler.h"
 #include "base/ui/include/uiSplitter.h"
-#include "meshStructurePanel.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
+#include "base/ui/include/uiMenuBar.h"
 
 namespace ed
 {
@@ -31,8 +33,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditor);
     RTTI_END_TYPE();
 
-    MeshEditor::MeshEditor(ConfigGroup config, ManagedFile* file)
-        : SingleLoadedResourceEditor(config, file)
+    MeshEditor::MeshEditor(ConfigGroup config, ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
     {
         createInterface();
     }
@@ -46,7 +48,7 @@ namespace ed
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview");
             tab->layoutVertical();
 
-            m_previewPanel = tab->createChild<MeshPreviewPanelWithToolbar>();
+            m_previewPanel = tab->createChild<MeshPreviewPanel>();
             m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
@@ -63,11 +65,42 @@ namespace ed
 
             dockLayout().right().attachPanel(tab);
         }
+
+        {
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials");
+            tab->layoutVertical();
+
+            m_materialsPanel = tab->createChild<MeshMaterialsPanel>(m_previewPanel, actionHistory());
+            m_materialsPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            m_materialsPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+            dockLayout().right().attachPanel(tab, false);
+        }
+
+        {
+            actions().bindCommand("MeshPreview.ShowBounds"_id) = [this]() {
+                auto settings = m_previewPanel->previewSettings(); 
+                settings.showBounds = !settings.showBounds; 
+                m_previewPanel->previewSettings(settings);
+            };
+            actions().bindToggle("MeshPreview.ShowBounds"_id) = [this]() {
+                return m_previewPanel->previewSettings().showBounds;
+            };
+        }
     }
 
-    void MeshEditor::resourceChanged()
+    void MeshEditor::fillViewMenu(ui::MenuButtonContainer* menu)
     {
-        TBaseClass::resourceChanged();
+        TBaseClass::fillViewMenu(menu);
+        menu->createAction("MeshPreview.ShowBounds"_id, "Show bounds", "cube");
+    }
+
+    void MeshEditor::bindResource(const res::ResourcePtr& resource)
+    {
+        TBaseClass::bindResource(resource);
+
+        if (m_structurePanel)
+            m_structurePanel->bindResource(mesh());
 
         if (m_previewPanel)
             m_previewPanel->previewMesh(mesh());
@@ -87,11 +120,14 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            if (auto mesh = base::rtti_cast<rendering::Mesh>(file->loadContent()))
+            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                auto ret = base::CreateSharedPtr<MeshEditor>(config, file);
-                ret->bindResource(mesh);
-                ret;
+                if (auto mesh = base::rtti_cast<rendering::Mesh>(nativeFile->loadContent()))
+                {
+                    auto ret = base::CreateSharedPtr<MeshEditor>(config, nativeFile);
+                    ret->bindResource(mesh);
+                    return ret;
+                }
             }
 
             return nullptr;

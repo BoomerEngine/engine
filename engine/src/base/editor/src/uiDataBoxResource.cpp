@@ -31,7 +31,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxResource, IDataBox);
 
     public:
-        DataBoxResource(base::SpecificClassType<base::res::IResource> resourceClass)
+        DataBoxResource(SpecificClassType<res::IResource> resourceClass)
             : m_resourceClass(resourceClass)
         {
             hitTest(true);
@@ -97,11 +97,11 @@ namespace ui
             {
                 if (m_resourceClass != nullptr)
                 {
-                    auto picker = base::CreateSharedPtr<AssetMiniPicker>(m_resourceClass);
+                    auto picker = CreateSharedPtr<AssetMiniPicker>(m_resourceClass);
                     if (m_currentFile)
                         picker->currentFile(m_currentFile);
                     else
-                        picker->currentDirectory(base::GetService<AssetBrowser>()->selectedDirectory());
+                        picker->currentDirectory(GetService<AssetBrowser>()->selectedDirectory());
 
                     picker->OnFileSelected = [this, picker](UI_CALLBACK)
                     {
@@ -117,20 +117,20 @@ namespace ui
 
         virtual void handleValueChange() override
         {
-            base::StringView<char> fileName = "Invalid";
-            base::StringView<char> filePath = "";
+            StringView<char> fileName = "Invalid";
+            StringView<char> filePath = "";
             bool fileFound = false;
 
-            base::res::Ref<base::res::IResource> data;
+            res::Ref<res::IResource> data;
             const auto ret = readValue(data);
-            if (ret.code == base::DataViewResultCode::OK)
+            if (ret.code == DataViewResultCode::OK)
             {
                 const auto path = data.key().path().path();
 
-                auto managedFile = base::GetService<ed::Editor>()->managedDepot().findManagedFile(path);
+                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(path);
                 if (managedFile != m_currentFile)
                 {
-                    base::image::ImageRef imageRef;
+                    image::ImageRef imageRef;
                     if (managedFile)
                         imageRef = managedFile->typeThumbnail();
                     m_thumbnail->image(imageRef);
@@ -158,7 +158,7 @@ namespace ui
                 m_buttonBar->visibility(true);
                 m_thumbnail->visibility(true);
             }
-            else if (ret.code == base::DataViewResultCode::ErrorManyValues)
+            else if (ret.code == DataViewResultCode::ErrorManyValues)
             {
                 m_thumbnail->image(nullptr);
                 m_thumbnail->visibility(true);
@@ -171,7 +171,7 @@ namespace ui
             }
             else
             {
-                m_name->text(base::TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                m_name->text(TempString("[tag:#F00][img:error] {}[/tag]", ret));
                 m_name->tooltip("");
 
                 m_buttonBar->visibility(false);
@@ -203,11 +203,11 @@ namespace ui
         ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
         {
             // can we handle this data ?
-            auto fileData = base::rtti_cast<ed::AssetBrowserFileDragDrop>(data);
+            auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
             if (fileData && fileData->file())
             {
                 if (fileData->file()->fileFormat().loadableAsType(m_resourceClass))
-                    return base::CreateSharedPtr<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+                    return CreateSharedPtr<ui::DragDropHandlerGeneric>(data, this, entryPosition);
             }
 
             // not handled
@@ -216,7 +216,7 @@ namespace ui
 
         void DataBoxResource::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
         {
-            auto fileData = base::rtti_cast<ed::AssetBrowserFileDragDrop>(data);
+            auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
             if (fileData)
                 changeFile(fileData->file());
         }
@@ -230,36 +230,36 @@ namespace ui
                 // get depot path to the file
                 if (newFile)
                 {
-                    auto resPath = base::res::ResourcePath(newFile->depotPath().c_str());
+                    auto resPath = res::ResourcePath(newFile->depotPath().c_str());
                     if (!resPath.empty())
                     {
                         // load the file
-                        if (auto loadedResource = base::LoadResource(base::res::ResourceKey(resPath, m_resourceClass)))
+                        if (auto loadedResource = LoadResource(res::ResourceKey(resPath, m_resourceClass)))
                         {
-                            const auto dataType = base::reflection::GetTypeObject<base::res::Ref<base::res::IResource>>();
+                            const auto dataType = reflection::GetTypeObject<res::Ref<res::IResource>>();
                             if (const auto ret = HasError(writeValue(&loadedResource, dataType)))
-                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, base::TempString("Error writing value: '{}'", ret));
+                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                         }
                         else
                         {
-                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, base::TempString("Unable to load '{}'.[br]Target class '{}'", resPath, m_resourceClass));
+                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Unable to load '{}'.[br]Target class '{}'", resPath, m_resourceClass));
                         }
                     }
                 }
                 else
                 {
-                    base::res::Ref<base::res::IResource> emptyRef;
-                    const auto dataType = base::reflection::GetTypeObject<base::res::Ref<base::res::IResource>>();
+                    res::Ref<res::IResource> emptyRef;
+                    const auto dataType = reflection::GetTypeObject<res::Ref<res::IResource>>();
 
                     if (const auto ret = HasError(writeValue(&emptyRef, dataType)))
-                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, base::TempString("Error writing value: '{}'", ret));
+                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                 }
             }
         }
 
         void cmdSelectCurrentAsset()
         {
-            auto file = base::GetService<ed::Editor>()->selectedFile();
+            auto file = GetService<ed::Editor>()->selectedFile();
             changeFile(file);
         }
 
@@ -271,7 +271,7 @@ namespace ui
         void cmdShowInAssetBrowser()
         {
             if (m_currentFile)
-                base::GetService<ed::Editor>()->selectFile(m_currentFile);
+                GetService<ed::Editor>()->selectFile(m_currentFile);
         }
 
     protected:
@@ -280,7 +280,7 @@ namespace ui
         ui::ElementPtr m_buttonBar;
         ui::ElementPtr m_buttonShowInBrowser;
 
-        base::SpecificClassType<base::res::IResource> m_resourceClass;
+        SpecificClassType<res::IResource> m_resourceClass;
 
         ed::ManagedFile* m_currentFile = nullptr;
     };
@@ -296,13 +296,13 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxResourceFactory, IDataBoxFactory);
 
     public:
-        virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
+        virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
         {
-            if (info.dataType->metaType() == base::rtti::MetaType::ResourceRef)
+            if (info.dataType->metaType() == rtti::MetaType::ResourceRef)
             {
-                const auto* refType = static_cast<const base::res::ResourceRefType*>(info.dataType.ptr());
+                const auto* refType = static_cast<const res::ResourceRefType*>(info.dataType.ptr());
                 if (const auto refClass = refType->resourceClass())
-                    return base::CreateSharedPtr<DataBoxResource>(refClass);
+                    return CreateSharedPtr<DataBoxResource>(refClass);
             }
 
             return nullptr;

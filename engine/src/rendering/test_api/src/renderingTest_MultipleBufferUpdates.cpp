@@ -95,6 +95,7 @@ namespace rendering
             cmd.opBindVertexBuffer("VertexStream1"_id, colorBuffer);
 
             // draw the grid
+            base::FastRandState rand;
             for (uint32_t y = 0; y < GRID_SIZE; ++y)
             {
                 for (uint32_t x = 0; x < GRID_SIZE; ++x)
@@ -103,7 +104,7 @@ namespace rendering
                     auto cx = -0.9f + 1.8f * ((x + 0.5f) / (float)GRID_SIZE);
                     auto cy = -0.9f + 1.8f * ((y + 0.5f) / (float)GRID_SIZE);
                     auto r = 0.5f / (float)GRID_SIZE;
-                    auto a = base::Rand() * TWOPI + time;
+                    auto a = base::RandOne(rand) * TWOPI + time;
 
                     // prepare positions
                     base::Vector2 updateVertices[6];
@@ -111,7 +112,7 @@ namespace rendering
 
                     // prepare colors
                     base::Color updateColors[6];
-                    base::Color randomColor = base::Color(base::RandByte(), base::RandByte(), base::RandByte());
+                    base::Color randomColor = base::Color(base::Rand(rand), base::Rand(rand), base::Rand(rand));
                     for (uint32_t i=0; i<ARRAY_COUNT(updateColors); ++i)
                         updateColors[i] = randomColor;
 

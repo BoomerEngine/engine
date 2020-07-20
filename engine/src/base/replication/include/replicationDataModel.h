@@ -79,7 +79,7 @@ namespace base
             DataMappedID mapTypeRef(Type type);
 
             // map resource path, uses the path mapper with "/" or "\" separator
-            DataMappedID mapResourcePath(const res::ResourcePath& path);
+            DataMappedID mapResourcePath(const StringBuf& path);
         };
 
         //--
@@ -110,7 +110,7 @@ namespace base
 
             // map resource path, uses the path mapper with "/" or "\" separator
             // NOTE: this fails auto matically  if path is not valid path
-            bool resolveResourcePath(DataMappedID id, res::ResourcePath& outPath);
+            bool resolveResourcePath(DataMappedID id, StringBuf& outPath);
         };
 
         //--

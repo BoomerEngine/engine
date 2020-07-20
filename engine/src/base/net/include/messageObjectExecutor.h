@@ -20,45 +20,15 @@ namespace base
 
         //--
 
-        /// message dispatcher via function interface on objects
-        class BASE_NET_API MessageObjectExecutor : public NoCopy
-        {
-        public:
-            MessageObjectExecutor(ClassType contextObjectClass = nullptr);
-            ~MessageObjectExecutor();
+        /// check if given object class supports given message type
+        extern BASE_NET_API bool CheckMessageSupport(ClassType contextObjectType, ClassType objectType, Type messageType);
 
-            /// check if given message type is supported by given object type
-            bool checkMessageSupport(ClassType objectType, Type messageType);
-
-            /// queue message for execution
-            void queueMessage(Message* message);
-
-            /// execute all queued messages, clean the message queue
-            void executeQueuedMessges(IObject* contextObject);
-
-        private:
-            ClassType m_contextObjectClass;
-
-            struct ClassEntry
-            {
-                ClassType m_classes;
-                HashMap<ClassType, const rtti::Function*> m_messageFunctions;
-            };
-
-            HashMap<ClassType, ClassEntry*> m_classMap;
-            SpinLock m_classMapLock;
-
-            Queue<Message*> m_queue;
-            SpinLock m_queueLock;
-
-            //--
-
-            void buildSupportedMessageClassesList(ClassType objectClass, HashMap<ClassType, const rtti::Function*>& outFunctions) const;
-
-            const ClassEntry* typeInfoForClass(ClassType classType);
-
-            void executeMessage(IObject* contextObject, const Message* message);
-        };
+        /// dispatch message on object - will call matching function, NOTE: the type of the context object matters, ie, you may have more functions:
+        /// void handleMyMessage(const MyMessage& msg, const RefPtr<Player>& blah); <- called if context object is Player (or downclass)
+        /// void handleMyMessage(const MyMessage& msg, const RefPtr<Game>& blah); <- called if context object is Game (or downclass)
+        /// void handleMyMessage(const MyMessage& msg); <- this actually may be called as a fallback if more specific one is not found
+        /// NOTE: returns true if message was dispatched or FALSE if we didn't find a matching function
+        extern BASE_NET_API bool DispatchObjectMessage(IObject* object, Type messageType, const void* messagePayload, IObject* contextObject = nullptr);
 
         //--
 

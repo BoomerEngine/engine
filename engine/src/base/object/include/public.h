@@ -9,12 +9,20 @@
 // Glue code
 #include "base_object_glue.inl"
 
+#define DECLARE_GLOBAL_EVENT(x) \
+    inline static const base::StringID x = #x##_id;
+
 namespace base
 {
     //--
 
     /// maximum number of template properties in any given class
     static const uint32_t MAX_TEMPLATE_PROPERTIES = 128;
+
+    //--
+
+    DECLARE_GLOBAL_EVENT(EVENT_OBJECT_PROPERTY_CHANGED);
+    DECLARE_GLOBAL_EVENT(EVENT_OBJECT_STRUCTURE_CHANGED);
 
     //--
 
@@ -44,6 +52,10 @@ namespace base
     class IObjectTemplate;
     typedef RefPtr<IObjectTemplate> ObjectTemplatePtr;
     typedef RefWeakPtr<IObjectTemplate> ObjectTemplateWeakPtr;
+
+    // global events
+    class IGlobalEventListener;
+    typedef RefPtr<IGlobalEventListener> GlobalEventListenerPtr;
 
     //--
 
@@ -181,7 +193,9 @@ namespace base
 #include "rttiClassRef.h"
 
 #include "object.h"
-#include "objectObserver.h"
+
+#include "globalEventDispatch.h"
+#include "globalEventTable.h"
 
 //---
 

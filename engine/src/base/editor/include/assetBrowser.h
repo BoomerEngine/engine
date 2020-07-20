@@ -21,7 +21,7 @@ namespace ed
 
     //--
 
-    struct BASE_EDITOR_API AssetItemList : public base::NoCopy
+    struct BASE_EDITOR_API AssetItemList : public NoCopy
     {
         Array<ManagedFile*> files;
         Array<ManagedDirectory*> dirs;
@@ -77,7 +77,7 @@ namespace ed
     ///--
 
     /// assert browser tab
-    class BASE_EDITOR_API AssetBrowser : public ui::DockPanel, public IManagedDepotListener
+    class BASE_EDITOR_API AssetBrowser : public ui::DockPanel
     {
         RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowser, ui::DockPanel);
 
@@ -99,33 +99,33 @@ namespace ed
         ManagedDirectory* selectedDirectory() const;
 
         // show file in the asset browser
-        void showFile(ManagedFile* filePtr);
+        bool showFile(ManagedFile* filePtr);
 
         // show directory in the depot tree and possible also as a file list
-        void showDirectory(ManagedDirectory* dir, bool exploreContent);
+        bool showDirectory(ManagedDirectory* dir, bool exploreContent);
 
         //--
 
     private:
         ManagedDepot* m_depot; // the managed depot
 
-        base::RefPtr<AssetDepotTreeModel> m_depotTreeModel; // tree model for the depot
+        GlobalEventTable m_depotEvents;
+
+        RefPtr<AssetDepotTreeModel> m_depotTreeModel; // tree model for the depot
 
         ui::TreeViewPtr m_depotTree; // tree view for the depot
         ui::DockContainerPtr m_dockContainer;
 
-        //base::RefWeakPtr<AssetBrowserResourceListDialog> m_resourceListDialog;
+        //RefWeakPtr<AssetBrowserResourceListDialog> m_resourceListDialog;
 
         void navigateToDirectory(ManagedDirectory* dir);
-        void navigateToDirectory(ManagedDirectory* dir, base::RefPtr<AssetBrowserTabFiles>& outTab);
+        void navigateToDirectory(ManagedDirectory* dir, RefPtr<AssetBrowserTabFiles>& outTab);
 
         //--
 
         void closeDirectoryTab(ManagedDirectory* dir);
 
         //--
-
-        virtual void managedDepotEvent(ManagedItem* item, ManagedDepotEvent eventType) override final;
     };
 
     ///--

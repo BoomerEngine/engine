@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/editor/include/singleResourceEditor.h"
+#include "base/editor/include/resourceEditorNativeFile.h"
 
 namespace ed
 {
@@ -17,12 +17,12 @@ namespace ed
     class MaterialPreviewPanelWithToolbar;
 
     /// editor for meshes
-    class ASSETS_MATERIAL_EDITOR_API MaterialInstanceEditor : public SingleLoadedResourceEditor
+    class ASSETS_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditorNativeFile
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, SingleLoadedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditorNativeFile);
 
     public:
-        MaterialInstanceEditor(ConfigGroup config, ManagedFile* file);
+        MaterialInstanceEditor(ConfigGroup config, ManagedFileNativeResource* file);
         virtual ~MaterialInstanceEditor();
 
         //--
@@ -42,7 +42,6 @@ namespace ed
 
         void createInterface();
 
-        virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
         virtual bool initialize() override;
     };
 

@@ -13,7 +13,6 @@
 #include "base/memory/include/structurePool.h"
 
 #include "object.h"
-#include "objectObserver.h"
 #include "dataView.h"
 
 namespace base
@@ -22,7 +21,7 @@ namespace base
     ///---
 
     /// native data source 
-    class BASE_OBJECT_API DataViewNative : public IDataView, public IObjectObserver
+    class BASE_OBJECT_API DataViewNative : public IDataView
     {
     public:
         DataViewNative(IObject* obj); // adds ref
@@ -54,9 +53,7 @@ namespace base
 
     private:
         ObjectPtr m_object;
-        uint32_t m_objectObserverIndex = 0;
-
-        virtual void onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData) override final;
+        GlobalEventTable m_events;
     };
 
     //---

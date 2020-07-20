@@ -41,9 +41,6 @@ namespace base
         public:
             virtual ~IMessageReplicatorDispatcher();
 
-            /// allocate a message data, we can fail if we don't support this message this skipping the whole decoding
-            virtual Message* allocateMessage(const replication::DataMappedID targetObjectId, Type dataType) = 0;
-
             /// dispatch given message for execution
             virtual void dispatchMessageForExecution(Message* message) = 0;
         };
@@ -56,13 +53,13 @@ namespace base
         class BASE_NET_API MessageReplicator : public NoCopy
         {
         public:
-            MessageReplicator(const replication::DataModelRepositoryPtr& sharedModelRepository, const MessageObjectRepositoryPtr& sharedObjectRepository);
+            MessageReplicator(const replication::DataModelRepositoryPtr& sharedModelRepository);
             ~MessageReplicator();
 
             //--
 
             // send message to the other end, message should be a structure with proper replication setup for fields
-            void send(const replication::DataMappedID targetObjectId, const void* data, Type dataType, IMessageReplicatorDataSink* dataSink);
+            void send(const void* data, Type dataType, IMessageReplicatorDataSink* dataSink);
 
             //--
 
@@ -80,7 +77,6 @@ namespace base
             UniquePtr<MessageKnowledgeBase> m_outgoingKnowledge;
 
             replication::DataModelRepositoryPtr m_models;
-            MessageObjectRepositoryPtr m_objects;
 
             bool m_corruption;
 

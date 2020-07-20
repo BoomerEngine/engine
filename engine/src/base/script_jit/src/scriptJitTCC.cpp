@@ -27,17 +27,17 @@ namespace base
         JITTCC::JITTCC()
         {}
 
-        UTF16StringBuf JITTCC::FindTCCCompiler()
+        io::AbsolutePath JITTCC::FindTCCCompiler()
         {
             auto basePath  = IO::GetInstance().systemPath(base::io::PathCategory::ExecutableFile);
             base::io::AbsolutePathBuilder builder(basePath);
             builder.fileName(base::UTF16StringBuf(L"tcc"));
-            return builder.toAbsolutePath().toString();
+            return builder.toAbsolutePath();
         }
 
-        UTF16StringBuf  JITTCC::FindGCCCompiler()
+        io::AbsolutePath JITTCC::FindGCCCompiler()
         {
-            return UTF16StringBuf(L"/usr/bin/gcc");
+            return io::AbsolutePath::Build(L"/usr/bin/gcc");
         }
 
         class CompilerErrorPrinter : public base::process::IOutputCallback
@@ -70,7 +70,7 @@ namespace base
             }
 
             base::process::ProcessSetup processSetup;
-            processSetup.m_processPath = compilerPath.c_str();
+            processSetup.m_processPath = compilerPath;
             processSetup.m_showWindow = false;
 
             // create STDOUT forwarded
@@ -78,28 +78,26 @@ namespace base
             processSetup.m_stdOutCallback = &stdOut;
 
             // setup commandline
-            base::UTF16StringBuf commandlineArg;
-            processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-O3"));
-            processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-nostdlib"));
-            processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-shared"));
-            processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-m64"));
+            processSetup.m_arguments.pushBack("-O3");
+            processSetup.m_arguments.pushBack("-nostdlib");
+            processSetup.m_arguments.pushBack("-shared");
+            processSetup.m_arguments.pushBack("-m64");
 
             if (settings.emitSymbols)
-                processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-g"));
+                processSetup.m_arguments.pushBack("-g");
 
             if (useGCC)
             {
-                processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-fPIC"));
+                processSetup.m_arguments.pushBack("-fPIC");
             }
             else
             {
-                processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-nostdinc"));
-                processSetup.m_arguments.pushBack(base::UTF16StringBuf(L"-rdynamic"));
+                processSetup.m_arguments.pushBack("-nostdinc");
+                processSetup.m_arguments.pushBack("-rdynamic");
             }
-            commandlineArg = L"-o";
-            commandlineArg += outputModulePath;
-            processSetup.m_arguments.pushBack(commandlineArg);
-            processSetup.m_arguments.pushBack(tempFile.toString());
+
+            processSetup.m_arguments.pushBack(TempString("-o {}", outputModulePath));
+            processSetup.m_arguments.pushBack(tempFile.toString().ansi_str());
 
             // delete output
             if (IO::GetInstance().fileExists(outputModulePath))

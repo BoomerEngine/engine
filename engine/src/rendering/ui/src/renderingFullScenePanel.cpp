@@ -32,6 +32,8 @@ namespace ui
         setup.type = rendering::scene::SceneType::EditorPreview;
 
         m_scene = MemNew(rendering::scene::Scene, setup);
+
+        createToolbarItems();
     }
 
     RenderingFullScenePanel::~RenderingFullScenePanel()
@@ -60,25 +62,25 @@ namespace ui
 
     //--
 
-    void RenderingFullScenePanel::buildDefaultToolbar(IElement* owner, ToolBar* toolbar)
+    void RenderingFullScenePanel::createToolbarItems()
     {
-        owner->actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [owner, this]()
+        actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this]()
         {
             auto menu = base::CreateSharedPtr<MenuButtonContainer>();
             buildRenderModePopup(menu);
-            menu->show(owner);
+            menu->show(this);
         };
 
-        owner->actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [owner, this]()
+        actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [this]()
         {
             auto menu = base::CreateSharedPtr<MenuButtonContainer>();
             buildFilterPopup(menu);
-            menu->show(owner);
+            menu->show(this);
         };
 
-        toolbar->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().icon("eye").caption("Filters"));
-        toolbar->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().icon("shader").caption("Render mode"));
-        toolbar->createSeparator();
+        toolbar()->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().caption("[img:eye] Filters"));
+        toolbar()->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption("[img:shader] Render mode"));
+        toolbar()->createSeparator();
     }
 
     void RenderingFullScenePanel::configure(rendering::scene::FrameRenderMode mode, base::StringID materialChannelName /*= base::StringID::EMPTY()*/)

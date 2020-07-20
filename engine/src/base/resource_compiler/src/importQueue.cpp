@@ -55,14 +55,6 @@ namespace base
         ImportQueue::~ImportQueue()
         {}
 
-        void ImportQueue::signalCancelRequest()
-        {
-            if (0 == m_asyncCancelationFlag.exchange(1))
-            {
-                TRACE_INFO("Requested job cancelation");
-            }
-        }
-
         void ImportQueue::scheduleJob(const ImportJobInfo& job)
         {
             if (job.depotFilePath && job.assetFilePath)
@@ -97,15 +89,15 @@ namespace base
         class ImportQueueProgressTracker : public IProgressTracker
         {
         public:
-            ImportQueueProgressTracker(IImportQueueCallbacks* callbacks, const StringBuf& depotPath, std::atomic<uint32_t>* cancelationFlag)
+            ImportQueueProgressTracker(IImportQueueCallbacks* callbacks, const StringBuf& depotPath, IProgressTracker* parentTracker)
                 : m_depotPath(depotPath)
                 , m_callbacks(callbacks)
-                , m_cancelationFlag(cancelationFlag)
+                , m_parentTracker(parentTracker)
             {}
 
             virtual bool checkCancelation() const override final
             {
-                return m_cancelationFlag->load();
+                return m_parentTracker->checkCancelation();
             }
 
             virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final
@@ -116,11 +108,12 @@ namespace base
         private:
             StringBuf m_depotPath;
 
+            IProgressTracker* m_parentTracker = nullptr;
             IImportQueueCallbacks* m_callbacks = nullptr;
             std::atomic<uint32_t>* m_cancelationFlag = nullptr;
         };
 
-        bool ImportQueue::processNextJob()
+        bool ImportQueue::processNextJob(IProgressTracker* progressTracker)
         {
             // get next job to process
             const auto* job = popNextJob();
@@ -131,12 +124,19 @@ namespace base
             ScopeTimer timer;
             m_callbacks->queueJobStarted(job->info.depotFilePath);
 
+            // canceled
+            if (progressTracker->checkCancelation())
+            {
+                m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::Canceled, 0.0);
+                return true;
+            }
+
             // check if resource is up to date
             if (m_loader)
             {
                 if (const auto currentMetadata = m_loader->loadExistingMetadata(job->info.depotFilePath))
                 {
-                    const auto status = m_importer->checkStatus(*currentMetadata);
+                    const auto status = m_importer->checkStatus(job->info.depotFilePath, *currentMetadata, job->info.userConfig, progressTracker);
                     if (status == ImportStatus::UpToDate)
                     {
                         m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::UpToDate, timer.timeElapsed());
@@ -154,6 +154,11 @@ namespace base
 
                         return true;
                     }
+                    else if (status == ImportStatus::Canceled)
+                    {
+                        m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::Canceled, timer.timeElapsed());
+                        return true;
+                    }
                 }
             }
 
@@ -162,10 +167,17 @@ namespace base
             if (m_loader)
                 existingResource = m_loader->loadExistingResource(job->info.depotFilePath);
 
+            // we may have been canceled
+            if (progressTracker->checkCancelation())
+            {
+                m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::Canceled, timer.timeElapsed());
+                return true;
+            }
+
             // import resource
             ResourcePtr importedResource;
             {
-                ImportQueueProgressTracker localProgressTracker(m_callbacks, job->info.depotFilePath, &m_asyncCancelationFlag);
+                ImportQueueProgressTracker localProgressTracker(m_callbacks, job->info.depotFilePath, progressTracker);
                 const auto ret = m_importer->importResource(job->info, existingResource, importedResource, &localProgressTracker);
                 m_callbacks->queueJobFinished(job->info.depotFilePath, ret, timer.timeElapsed());
             }

@@ -32,7 +32,7 @@ namespace game
             , m_planeSize(10.0f)
         {
             if (m_planeMesh)
-                m_planeSize = planeMesh->bounds().box.size().x;
+                m_planeSize = planeMesh->bounds().size().x;
         }
 
         void PlaneGround::ensureGroundUnder(float x, float y)

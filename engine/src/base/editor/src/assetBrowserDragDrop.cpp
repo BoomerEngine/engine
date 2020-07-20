@@ -24,7 +24,7 @@ namespace ed
     public:
         AssetBrowserItemPreview(ManagedItem* item)
         {
-            /*m_thumbnail = base::CreateSharedPtr<FileThumbnail>();
+            /*m_thumbnail = CreateSharedPtr<FileThumbnail>();
             m_thumbnail->name("ThumbnailIcon");
             m_thumbnail->file(file);
             attachChild(m_thumbnail);*/
@@ -44,7 +44,7 @@ namespace ed
 
     ui::ElementPtr AssetBrowserFileDragDrop::createPreview() const
     {
-        return base::CreateSharedPtr<AssetBrowserItemPreview>(m_file);
+        return CreateSharedPtr<AssetBrowserItemPreview>(m_file);
     }
 
     //---
@@ -58,7 +58,7 @@ namespace ed
 
     ui::ElementPtr AssetBrowserDirectoryDragDrop::createPreview() const
     {
-        return base::CreateSharedPtr<AssetBrowserItemPreview>(m_dir);
+        return CreateSharedPtr<AssetBrowserItemPreview>(m_dir);
     }
 
     //---

@@ -13,7 +13,6 @@
 #include "game/world/include/worldMeshComponent.h"
 #include "game/world/include/worldEntity.h"
 #include "game/world/include/world.h"
-#include "base/math/include/randomMersenne.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
 namespace game
@@ -73,12 +72,12 @@ namespace game
                 TBaseClass::update(dt);
             }
 
-            static int SelectMesh(base::MTGenerator& rng, int meshCount)
+            static int SelectMesh(base::MTRandState& rng, int meshCount)
             {
                 if (st_MeshType < meshCount)
                     return st_MeshType;
 
-                return rng.nextUint32() % meshCount;
+                return Rand(rng) % meshCount;
             }
 
             virtual void createWorldContent() override
@@ -92,7 +91,7 @@ namespace game
 
                 PlaneGround groundPlane(m_world, loadMesh("plane.obj"));
 
-                base::MTGenerator rng;
+                base::MTRandState rng;
 
                 for (uint32_t n = 0; n < st_RootCount; ++n)
                 {

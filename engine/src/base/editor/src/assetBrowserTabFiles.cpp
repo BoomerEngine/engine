@@ -41,12 +41,13 @@ namespace ed
 {
     //--
 
-    RTTI_BEGIN_TYPE_CLASS(AssetBrowserTabFiles);
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserTabFiles);
     RTTI_END_TYPE();
 
-    AssetBrowserTabFiles::AssetBrowserTabFiles(AssetBrowserContext env)
+    AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env)
         : ui::DockPanel()
         , m_context(env)
+        , m_depot(depot)
     {
         layoutVertical();
         closeButton(true);
@@ -179,10 +180,10 @@ namespace ed
             }
             else if (auto file = m_filesModel->file(index))
             {
-                if (!base::GetService<Editor>()->openFile(file))
+                if (!GetService<Editor>()->openFile(file))
                 {
                     //ui::ShowMessageBox(this, ui::MessageBoxSetup().error().title("Edit asset").message("No editor found capable of editing selected file").error());
-                    ui::PostWindowMessage(this, ui::MessageType::Error, "EditAsset"_id, base::TempString("Failed to open '{}'", file->depotPath()));
+                    ui::PostWindowMessage(this, ui::MessageType::Error, "EditAsset"_id, TempString("Failed to open '{}'", file->depotPath()));
                 }
             }
         };
@@ -210,7 +211,7 @@ namespace ed
     {
         if (locked())
         {
-            base::StringBuilder txt;
+            StringBuilder txt;
             txt.appendf("Tab '{}' is locked, close anyway?", directory()->name());
 
             ui::ShowMessageBox(this, ui::MessageBoxSetup().title("Close locked tab").message(txt.c_str()).yes().no().defaultNo().question()) = [](AssetBrowserTabFiles* tab, ui::MessageButton button)
@@ -227,7 +228,7 @@ namespace ed
 
     void AssetBrowserTabFiles::updateTitle()
     {
-        base::StringBuilder ret;
+        StringBuilder ret;
 
         if (m_locked)
             ret << "[img:lock] ";
@@ -253,12 +254,12 @@ namespace ed
         return m_filesModel->file(m_files->current());
     }
 
-    base::Array<ManagedFile*> AssetBrowserTabFiles::selectedFiles() const
+    Array<ManagedFile*> AssetBrowserTabFiles::selectedFiles() const
     {
         return m_filesModel->files(m_files->selection().keys());
     }
 
-    base::Array<ManagedItem*> AssetBrowserTabFiles::selectedItems() const
+    Array<ManagedItem*> AssetBrowserTabFiles::selectedItems() const
     {
         return m_filesModel->items(m_files->selection().keys());
     }
@@ -312,11 +313,11 @@ namespace ed
         }
     }
 
-    void AssetBrowserTabFiles::filterName(base::StringView<char> txt)
+    void AssetBrowserTabFiles::filterName(StringView<char> txt)
     {
         if (m_filterName != txt)
         {
-            m_filterName = base::StringBuf(txt);
+            m_filterName = StringBuf(txt);
         }
     }
 
@@ -334,7 +335,7 @@ namespace ed
             if (!m_files->current())
                 m_files->select(m_files->model()->index(0, 0, ui::ModelIndex()));
 
-            //base::GetService<Editor>()->managedDepot().thumbnailService().requestFolder(m_dir->depotPath());
+            //GetService<Editor>()->managedDepot().thumbnailService().requestFolder(m_dir->depotPath());
 
             updateTitle();
 
@@ -344,7 +345,7 @@ namespace ed
 
     void AssetBrowserTabFiles::refreshFileList()
     {
-        m_filesModel = base::CreateSharedPtr<AssetBrowserDirContentModel>();
+        m_filesModel = CreateSharedPtr<AssetBrowserDirContentModel>(m_depot);
         m_filesModel->initializeFromDir(m_dir, m_flat);
         
         m_files->sort(0);
@@ -353,7 +354,7 @@ namespace ed
 
     void AssetBrowserTabFiles::duplicateTab()
     {
-        auto copyTab = base::CreateSharedPtr<AssetBrowserTabFiles>(m_context);
+        auto copyTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, m_context);
         if (m_dir)
         {
             copyTab->flat(flat());
@@ -374,7 +375,7 @@ namespace ed
     /*void AssetBrowserTabFiles::showDirectoryCreationDialog()
     {
         // ask for directory name
-        base::StringBuf newDirectoryName = "NewDirectory";
+        StringBuf newDirectoryName = "NewDirectory";
         if (!ui::ShowInputBox((), ui::InputBoxSetup().title("New directory").message("Enter name of new directory:"), newDirectoryName))
             return;
 
@@ -404,9 +405,9 @@ namespace ed
         directory(newChildDirectory);
     }
 
-    static base::StringBuf BuildCoreName(const base::StringBuf& name)
+    static StringBuf BuildCoreName(const StringBuf& name)
     {
-        base::StringBuilder txt;
+        StringBuilder txt;
 
         bool firstChar = true;
 
@@ -442,10 +443,10 @@ namespace ed
         TRACE_INFO("Core name: '{}'", coreName);
 
         uint32_t index = 0;
-        base::StringBuf fileName;
+        StringBuf fileName;
         for (;;)
         {
-            fileName = base::TempString("{}{}.{}", coreName, index, format->extension());
+            fileName = TempString("{}{}.{}", coreName, index, format->extension());
             if (!m_dir->file(fileName))
                 break;
             index += 1;
@@ -461,43 +462,52 @@ namespace ed
             return;
 
         // force the extension
-        fileName = base::TempString("{}.{}", fileName, format->extension());
+        fileName = TempString("{}.{}", fileName, format->extension());
 
         // create depot path
-        auto depotPath = base::StringBuf(base::TempString("{}{}", m_dir->depotPath(), fileName));
+        auto depotPath = StringBuf(TempString("{}{}", m_dir->depotPath(), fileName));
 
         // create a file in the depot
-        if (auto file = base::GetService<Editor>()->managedDepot().createFile(depotPath, format->nativeResourceClass()))
+        if (auto file = GetService<Editor>()->managedDepot().createFile(depotPath, format->nativeResourceClass()))
         {
             if (auto index = m_filesModel->index(file))
                 m_files->select(index);
         }
         else
         {
-            base::StringBuf text = base::TempString("Failed to create file '{}'", fileName);
+            StringBuf text = TempString("Failed to create file '{}'", fileName);
             ui::ShowMessageBox(m_files, ui::MessageBoxSetup().error().title("Create file").message(text.c_str()));
         }
     }*/
 
-    void AssetBrowserTabFiles::selectItem(ManagedItem* ptr)
+    bool AssetBrowserTabFiles::selectItem(ManagedItem* ptr)
     {
         if (auto index = m_filesModel->index(ptr))
         {
             m_files->select(index);
             m_files->ensureVisible(index);
+            return true;
         }
+
+        return false;
     }
 
-    void AssetBrowserTabFiles::selectItems(const base::Array<ManagedItem*>& items)
+    bool AssetBrowserTabFiles::selectItems(const Array<ManagedItem*>& items)
     {
-        base::Array<ui::ModelIndex> indices;
+        Array<ui::ModelIndex> indices;
         indices.reserve(items.size());
 
         for (const auto& item : items)
             if (auto index = m_filesModel->index(item))
                 indices.pushBack(index);
 
-        m_files->select(indices);
+        if (!indices.empty())
+        {
+            m_files->select(indices);
+            return true;
+        }
+
+        return false;
     }
 
     void AssetBrowserTabFiles::saveConfig(ConfigGroup& path) const
@@ -509,22 +519,22 @@ namespace ed
         auto parentDir = m_dir->parentDirectory();
 
         {
-            base::StringBuf dirPath;
+            StringBuf dirPath;
             if (m_dir && !m_dir->isDeleted())
                 dirPath = m_dir->depotPath();
-            path.write<base::StringBuf>("Path", dirPath);
+            path.write<StringBuf>("Path", dirPath);
         }
 
         {
-            base::StringBuf currentFilePath;
+            StringBuf currentFilePath;
             if (auto file = selectedItem())
                 if (file != parentDir)
                     currentFilePath = file->name();
-            path.write<base::StringBuf>("CurrentFile", currentFilePath);
+            path.write<StringBuf>("CurrentFile", currentFilePath);
         }
 
         {
-            base::Array<base::StringBuf> selectedFiles;
+            Array<StringBuf> selectedFiles;
             for (auto& file : selectedItems())
                 if (file != parentDir)
                     selectedFiles.pushBack(file->name());
@@ -542,8 +552,8 @@ namespace ed
         if (m_dir)
         {
             {
-                base::Array<ui::ModelIndex> indices;
-                auto selectedFiles = path.readOrDefault<base::Array<base::StringBuf>>("SelectedFile");
+                Array<ui::ModelIndex> indices;
+                auto selectedFiles = path.readOrDefault<Array<StringBuf>>("SelectedFile");
                 for (auto& name : selectedFiles)
                 {
                     if (auto file = m_dir->file(name))
@@ -555,7 +565,7 @@ namespace ed
             }
 
             {
-                auto currentFile = path.readOrDefault<base::StringBuf>("CurrentFile");
+                auto currentFile = path.readOrDefault<StringBuf>("CurrentFile");
 
                 if (auto file = m_dir->file(currentFile))
                 {
@@ -611,7 +621,7 @@ namespace ed
 
     bool AssetBrowserTabFiles::showGenericContextMenu()
     {
-        auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+        auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
 
         // new directory
         if (m_dir)
@@ -661,47 +671,47 @@ namespace ed
 
     }
 
-    static base::io::OpenSavePersistentData GImportFiles;
+    static io::OpenSavePersistentData GImportFiles;
 
     bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir)
     {
         // get the native class to use for importing
-        auto nativeClass = format ? format->nativeResourceClass() : base::res::IResource::GetStaticClass();
+        auto nativeClass = format ? format->nativeResourceClass() : res::IResource::GetStaticClass();
 
         // get all extensions we support
-        base::InplaceArray<base::StringView<char>, 20> extensions;
-        base::res::IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
+        InplaceArray<StringView<char>, 20> extensions;
+        res::IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
 
         // nothing to import
         if (extensions.empty())
             return false;
 
         // get list of files to import
-        base::Array<base::StringBuf> assetPaths;
+        Array<StringBuf> assetPaths;
 
         {
             // export to file formats
-            base::InplaceArray<io::FileFormat, 20> importFormats;
+            InplaceArray<io::FileFormat, 20> importFormats;
             for (const auto& ext : extensions)
             {
-                io::FileFormat format(base::StringBuf(ext), base::TempString("Format {}", ext));
+                io::FileFormat format(StringBuf(ext), TempString("Format {}", ext));
                 importFormats.emplaceBack(format);
             }
 
             // ask for files
-            auto nativeHandle = base::GetService<Editor>()->windowNativeHandle(owner);
-            base::Array<io::AbsolutePath> importPaths;
+            auto nativeHandle = GetService<Editor>()->windowNativeHandle(owner);
+            Array<io::AbsolutePath> importPaths;
             if (!IO::GetInstance().showFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
                 return false;
 
             // convert the absolute paths to the source paths
-            base::StringBuilder failedPathsMessage;
+            StringBuilder failedPathsMessage;
             assetPaths.reserve(importPaths.size());
             for (const auto& absolutePath : importPaths)
             {
-                const auto* fileService = base::GetService<base::res::ImportFileService>();
+                const auto* fileService = GetService<res::ImportFileService>();
 
-                base::StringBuf sourceAssetPath;
+                StringBuf sourceAssetPath;
                 if (fileService->translateAbsolutePath(absolutePath, sourceAssetPath))
                 {
                     assetPaths.emplaceBack(std::move(sourceAssetPath));
@@ -724,7 +734,7 @@ namespace ed
             return false;
 
         // add to import window
-        return base::GetService<Editor>()->addImportFiles(assetPaths, nativeClass, parentDir);
+        return GetService<Editor>()->addImportFiles(assetPaths, nativeClass, parentDir);
     }
 
     bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)

@@ -147,7 +147,7 @@ namespace base
 
         //---
 
-        void IResourceLoaderCached::feedListenerWithData(IResourceLoaderEventListener* listener)
+        /*void IResourceLoaderCached::feedListenerWithData(IResourceLoaderEventListener* listener)
         {
             auto lock = base::CreateLock(m_lock);
 
@@ -164,7 +164,7 @@ namespace base
             for (const auto& jobRef : m_loadingJobs.values())
                 if (auto job = jobRef.lock())
                     listener->onResourceLoading(job->m_key);
-        }
+        }*/
 
         //---
 

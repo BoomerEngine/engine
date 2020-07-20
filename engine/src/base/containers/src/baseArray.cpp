@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: containers\dynamic #]
+* [#filter: containers #]
 ***/
 
 #include "build.h"
@@ -13,33 +13,57 @@ namespace base
 {
     //--
 
-    void BaseArray::suckFrom(BaseArray& other)
+    BaseArrayBuffer::~BaseArrayBuffer()
     {
-        ASSERT_EX(m_data == nullptr, "Array is not empty");
-        ASSERT_EX(other.empty() || other.isLocal(), "Source array is not local");
-
-        m_data = other.m_data;
-        m_size = other.m_size;
-        m_capacityAndFlags = other.m_capacityAndFlags;
-
-        other.m_data = nullptr;
-        other.m_size = 0;
-        other.m_capacityAndFlags = 0;
+        release();
     }
+
+    void BaseArrayBuffer::resize(Count newCapcity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment)
+    {
+        if (newCapcity == 0)
+        {
+            release();
+        }
+        else if (m_flagOwned)
+        {
+            m_ptr = mem::ResizeBlock(POOL_CONTAINERS, m_ptr, newMemorySize, memoryAlignment);
+        }
+        else
+        {
+            auto* newPtr = mem::ResizeBlock(POOL_CONTAINERS, nullptr, newMemorySize, memoryAlignment);
+            memcpy(newPtr, m_ptr, std::min<uint64_t>(currentMemorySize, newMemorySize));
+            m_ptr = newPtr;
+        }
+
+        m_capacity = newCapcity;
+        m_flagOwned = true;
+    }
+
+    void BaseArrayBuffer::release()
+    {
+        if (m_flagOwned)
+            MemFree(m_ptr);
+
+        m_flagOwned = true;
+        m_capacity = 0;
+        m_ptr = nullptr;
+    }
+
+    //--
 
 #ifndef BUILD_RELEASE
-    void BaseArray::checkIndex(uint32_t index) const
+    void BaseArray::checkIndex(Index index) const
     {
-        ASSERT_EX(index < size(), "Array index out of range");
+        ASSERT_EX(index >= 0 && index <= lastValidIndex(), "Array index out of range");
     }
 
-    void BaseArray::checkIndexRange(uint32_t index, uint32_t count) const
+    void BaseArray::checkIndexRange(Index index, Count count) const
     {
-        ASSERT_EX((index + count) <= size(), "Array range out of range");
+        ASSERT_EX((index >= 0) && (index + count) <= size(), "Array range out of range");
     }
 #endif
 
-    uint32_t BaseArray::changeSize(uint32_t newSize)
+    Count BaseArray::changeSize(Count newSize)
     {
         ASSERT_EX(newSize <= capacity(), "Array does not have capacity for given size")
         auto oldSize = m_size;
@@ -47,78 +71,21 @@ namespace base
         return oldSize;
     }
 
-	void BaseArray::makeLocal(mem::PoolID poolId, uint32_t minimumCapacity, uint32_t elementSize, uint32_t elementAlignment, const char* debugTypeName)
-	{
-		if (m_capacityAndFlags & FLAG_EXTERNAL)
-		{
-			// we are making an empty array local, do not allocate memory
-			if (minimumCapacity == 0)
-			{
-				m_data = nullptr;
-				m_capacityAndFlags = 0;
-			}
-			else
-			{
-				// calculate best capacity based on the number of elements
-				uint32_t newCapacity = 0;
-				while (minimumCapacity > newCapacity)
-					newCapacity = CalcNextCapacity(newCapacity, elementSize);
-
-				// allocate a local data buffer
-				auto newData  = mem::AllocateBlock(poolId, elementSize * (size_t)newCapacity, elementAlignment, __FILE__, __LINE__, debugTypeName);
-
-				// copy data from old buffer to new one
-				uint32_t copyDataSize = elementSize * std::min<uint32_t>(m_size, newCapacity);
-				memcpy(newData, m_data, copyDataSize);
-
-				// fill previous buffer with pattern to indicate it was cleared
-#ifndef BUILD_RELEASE
-				memset(m_data, 0xCD, elementSize * capacity());
-#endif
-
-				// update date
-				m_data = newData;
-				m_capacityAndFlags = newCapacity; // no longer external buffer
-			}
-		}		
-	}
-
-    uint32_t BaseArray::changeCapacity(mem::PoolID poolId, uint32_t newCapacity, uint32_t elementSize, uint32_t elementAlignment, const char* debugTypeName)
+    Count BaseArray::changeCapacity(Count newCapacity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment, const char* typeNameInfo)
     {
-        ASSERT_EX(0 == (m_capacityAndFlags & FLAG_FIXED_CAPACITY), "Array buffer cannot be resized");
-		ASSERT_EX(0 == (m_capacityAndFlags & FLAG_EXTERNAL), "Cannot change capacity of an array with external buffer");
-
         auto oldCapacity = capacity();
-
-        // free memory
-        if (newCapacity == 0)
-        {
-            mem::FreeBlock(m_data);
-            m_data = nullptr;
-            m_capacityAndFlags = 0;
-            return oldCapacity;
-        }
-
-		if (oldCapacity != newCapacity)
-        {
-            // just resize buffer
-            m_data = mem::ResizeBlock(poolId, m_data, (size_t)newCapacity * elementSize, elementAlignment, __FILE__, __LINE__, debugTypeName);
-            m_capacityAndFlags = newCapacity; // no longer external buffer
-        }
-
+        m_buffer.resize(newCapacity, currentMemorySize, newMemorySize, memoryAlignment);
         return oldCapacity;
     }
 
-    uint32_t BaseArray::CalcNextCapacity(uint32_t currentCapacity, uint32_t elementSize)
+    // NOTE: this is in CPP ONLY so we can tinker with it and NOT recompile everything
+    
+    uint64_t BaseArray::CalcNextBufferSize(uint64_t currentSize)
     {
-        // small allocations are shit, prevent them
-        if (currentCapacity == 0)
-            return std::max<uint32_t>(1, 64 / elementSize);
+        if (currentSize < 64)
+            return 64; // smallest sensible allocation for array
 
-        // grow with x1.5 scale
-        return std::max<uint32_t>(currentCapacity+1, (currentCapacity * 3) / 2);
+        return (currentSize * 3) / 2;
     }
-
-    //--
 
 } // base

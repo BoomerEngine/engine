@@ -38,6 +38,8 @@ namespace ed
 
         INLINE ui::Renderer& renderer() const { return *m_renderer; }
 
+        INLINE net::TcpMessageServer& messageServer() const { return *m_messageServer; }
+
         ///---
         
         // start editor application, creates the main window
@@ -71,28 +73,39 @@ namespace ed
         ///--
 
         // get the semi persistent data for the open/save file dialog - mainly the active directory, selected file filter, etc
-        base::io::OpenSavePersistentData& openSavePersistentData(base::StringView<char> category);
-
-        // show/open the asset importer window
-        bool openAssetImporter();
+        io::OpenSavePersistentData& openSavePersistentData(StringView<char> category);
 
         // add a file to import list, if no directory is specified file is added to active directory
-        bool addImportFiles(const base::Array<base::StringBuf>& assetPaths, base::SpecificClassType<base::res::IResource> importClass, const ManagedDirectory* directoryOverride = nullptr);
+        bool addImportFiles(const Array<StringBuf>& assetPaths, SpecificClassType<res::IResource> importClass, const ManagedDirectory* directoryOverride = nullptr, bool showTab = true);
+
+        // add existing files to reimport list
+        bool addReimportFiles(const Array<ManagedFileNativeResource*>& filesToReimport, bool showTab = true);
+
+        // add existing file to reimport list with a new config
+        bool addReimportFile(ManagedFileNativeResource* fileToReimport, const res::ResourceConfigurationPtr& config, bool showTab = true);
 
         ///---
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, base::StringView<char> category, const std::function<base::ObjectPtr()>& makeXMLFunc, base::UTF16StringBuf* currentFileName = nullptr);
+        bool saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, UTF16StringBuf* currentFileName = nullptr);
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, base::StringView<char> category, const base::ObjectPtr& objectPtr, base::UTF16StringBuf* currentFileName=nullptr);
+        bool saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, UTF16StringBuf* currentFileName=nullptr);
 
         /// helper function to load object from XML on user's disk 
-        base::ObjectPtr loadFromXML(ui::IElement* owner, base::StringView<char> category, base::SpecificClassType<IObject> expectedObjectClass);
+        ObjectPtr loadFromXML(ui::IElement* owner, StringView<char> category, SpecificClassType<IObject> expectedObjectClass);
 
         /// helper function to load object from XML on user's disk 
         template< typename T >
-        INLINE base::RefPtr<T> loadFromXML(ui::IElement* owner, base::StringView<char> category) { return base::rtti_cast<T>(loadFromXML(owner, category, T::GetStaticClass())); }
+        INLINE RefPtr<T> loadFromXML(ui::IElement* owner, StringView<char> category) { return rtti_cast<T>(loadFromXML(owner, category, T::GetStaticClass())); }
+
+        ///---
+
+        /// add a generic background runner to the list of runners
+        void attachBackgroundJob(IBackgroundJob* runner);
+
+        /// run a background command, usually this will spawn a child process and run the command there
+        BackgroundJobPtr runBackgroundCommand(IBackgroundCommand* command);
 
         ///---
 
@@ -105,6 +118,22 @@ namespace ed
         NativeTimePoint m_nextAutoSave;
 
         io::AbsolutePath m_configPath;
+
+        //--
+
+        net::TcpMessageServerPtr m_messageServer;
+
+        //--
+
+        Mutex m_backgroundJobsLock;
+        Array<BackgroundJobPtr> m_backgroundJobs;
+
+        Array<BackgroundCommandWeakPtr> m_backgroundCommandsWithMissingConnections;
+        Array<BackgroundJobUnclaimedConnectionPtr> m_backgroundJobsUnclaimedConnections;
+
+        void updateBackgroundJobs();
+
+        //--
             
         ImGuiID m_mainDockId;
 
@@ -114,12 +143,11 @@ namespace ed
 
         //--
             
-        base::RefPtr<MainWindow> m_mainWindow;
-        base::RefPtr<AssetImportWindow> m_assetImporter;
-
+        RefPtr<MainWindow> m_mainWindow;
+        
         //--
 
-        base::HashMap<base::StringBuf, base::io::OpenSavePersistentData*> m_openSavePersistentData;
+        HashMap<StringBuf, io::OpenSavePersistentData*> m_openSavePersistentData;
 
         //--
 

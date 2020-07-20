@@ -410,7 +410,7 @@ namespace ui
         for (int i = m_statusMessages.lastValidIndex(); i >= 0; --i)
         {
             if (m_statusMessages[i].expiresAt.reached())
-                m_statusMessages.eraseUnordered(i, 1);
+                m_statusMessages.erase(i); // keep order
         }
 
         if (!m_statusMessages.empty())

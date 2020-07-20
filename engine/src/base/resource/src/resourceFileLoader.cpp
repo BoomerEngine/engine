@@ -31,7 +31,7 @@ namespace base
             for (uint32_t i = 0; i < numStringIds; ++i, ++ptr)
             {
                 const auto* str = strings + ptr->stringIndex;
-                TRACE_INFO("Name[{}]: '{}'", i, str);
+                //TRACE_INFO("Name[{}]: '{}'", i, str);
                 auto stringID = StringID(str);
                 resolvedReferences.stringIds[i] = stringID;
             }
@@ -58,7 +58,7 @@ namespace base
                     if (!type)
                         TRACE_WARNING("FileLoad: Unknown type '{}' used in serialization. Type may have been removed or renamed. File may load with errors or not a all.", typeName);
 
-                    TRACE_INFO("Type[{}]: '{}'", i, type);
+                    //TRACE_INFO("Type[{}]: '{}'", i, type);
                     resolvedReferences.types[i] = type;
                 }
             }

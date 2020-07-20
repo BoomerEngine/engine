@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "messagePool.h"
+#include "messageObjectExecutor.h"
 
 namespace base
 {
@@ -16,42 +17,38 @@ namespace base
 
         //--
 
-        Message::Message(Type messageType, const ObjectWeakPtr& target, MessagePool* pool, void* payload)
+        Message::Message(Type messageType, void* payload)
             : m_type(messageType)
-            , m_target(target)
-            , m_pool(pool)
             , m_data(payload)
         {}
 
         Message::~Message()
         {
-            ASSERT(m_pool == nullptr);
-        }
-
-        void Message::release()
-        {
-            if (m_pool != nullptr)
+            if (m_type)
             {
-                if (m_type)
-                {
-                    m_type->destruct(m_data);
-                    m_type = nullptr;
-                }
-
-                m_pool = nullptr;
-                MemDelete(this); // TODO: release to pool
+                m_type->destruct(m_data);
+                m_type = nullptr;
             }
         }
 
-        //--
+        void Message::print(IFormatStream& f) const
+        {
+            f.append("Message '{}': ", m_type);
+            m_type->printToText(f, m_data);
+        }
 
-        MessagePool::MessagePool()
-        {}
+        void Message::dispose()
+        {
+            // TODO: pooling
+            IReferencable::dispose();
+        }
 
-        MessagePool::~MessagePool()
-        {}
+        bool Message::dispatch(IObject* object, IObject* context) const
+        {
+            return DispatchObjectMessage(object, m_type, m_data, context);
+        }
 
-        Message* MessagePool::allocate(Type messageType, IObject* target)
+        MessagePtr Message::AllocateFromPool(Type messageType)
         {
             // we only support classes for now
             if (!messageType || messageType->metaType() != rtti::MetaType::Class)
@@ -65,7 +62,7 @@ namespace base
             auto dataSize  = dataOffset + messageClass->size();
             auto data  = MemAlloc(POOL_NET, dataSize, dataAlignment);
             if (!data)
-                return nullptr; // OOM tha we can handle somehow, also prevents from sending messages of VERY large classes
+                return nullptr; // OOM that we can handle somehow, also prevents from sending messages of VERY large classes
 
             // prevent unsafe data leakage
             memzero(data, dataSize);
@@ -75,7 +72,7 @@ namespace base
             messageClass->construct(payloadPtr);
 
             // make into a message
-            return new (data) Message(messageClass, target, this, payloadPtr);
+            return NoAddRef(new (data) Message(messageClass, payloadPtr));
         }
 
         //--

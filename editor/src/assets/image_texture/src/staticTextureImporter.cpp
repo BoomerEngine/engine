@@ -57,6 +57,19 @@ namespace rendering
         return ret;
     }
 
+    void StaticTextureCompressionConfiguration::computeConfigurationKey(CRC64& crc) const
+    {
+        TBaseClass::computeConfigurationKey(crc);
+
+        crc << (int)m_compressionMasking;
+        crc << (int)m_compressionMode;
+        crc << (int)m_compressionQuality;
+        crc << (int)m_contentAlphaMode;
+        crc << (int)m_contentColorSpace;
+        crc << (int)m_mipmapMode;
+        crc << (int)m_contentType;
+    }
+
     //---
 
     RTTI_BEGIN_TYPE_CLASS(StaticTextureFromImageImporter);

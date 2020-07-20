@@ -90,7 +90,7 @@ namespace base
             if (handler != nullptr)
                 handler->handleActionExecuted(action, valid, redo);
 
-        m_listeners.remove(nullptr);
+        m_listeners.removeUnorderedAll(nullptr);
     }
 
     void ActionHistory::notifyActionUndo(IAction* action, bool valid)
@@ -99,7 +99,7 @@ namespace base
             if (handler != nullptr)
                 handler->handleActionUndone(action, valid);
 
-        m_listeners.remove(nullptr);
+        m_listeners.removeUnorderedAll(nullptr);
     }
 
     bool ActionHistory::execute(const ActionPtr& action)

@@ -113,7 +113,7 @@ namespace rendering
             if (!createRenderingOutput())
                 return false;
 
-            m_imgui = ImGui::CreateContext(ImGui::GetSharedFontAtlas());
+            m_imgui = ImGui::CreateContext();
             ImGui::SetCurrentContext(m_imgui);
 
             m_lastUpdateTime.resetToNow();

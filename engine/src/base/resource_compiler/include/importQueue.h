@@ -61,13 +61,8 @@ namespace base
         class BASE_RESOURCE_COMPILER_API ImportQueue : public NoCopy
         {
         public:
-            ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, ImportSaverThread* saver, IImportQueueCallbacks* callbacks = nullptr);
+            ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, ImportSaverThread* saver, IImportQueueCallbacks* callbacks);
             ~ImportQueue();
-
-            //--
-
-            /// request cancellation of any currently importing jobs
-            void signalCancelRequest();
 
             //--
 
@@ -77,7 +72,7 @@ namespace base
 
             /// process next job from the list, returns false if there are no more jobs
             /// NOTE: thread safe
-            bool processNextJob();
+            bool processNextJob(IProgressTracker* progressTracker);
 
             //--
 
@@ -103,8 +98,6 @@ namespace base
             const LocalJobInfo* popNextJob();
 
             //--
-
-            std::atomic<uint32_t> m_asyncCancelationFlag = 0;
 
             IImportQueueCallbacks* m_callbacks = nullptr;
         };

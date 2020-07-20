@@ -11,6 +11,8 @@
 #include "base/app/include/command.h"
 #include "base/app/include/commandline.h"
 #include "base/app/include/launcherPlatform.h"
+#include "base/socket/include/address.h"
+#include "base/app/include/commandHost.h"
 
 namespace application
 {
@@ -163,38 +165,44 @@ namespace application
 
     bool BCCApp::initialize(const base::app::CommandLine& commandline)
     {
-        // find command to execute
-        const auto commandClass = FindCommandClass(commandline.command());
-        if (!commandClass)
-            return false;
-
         // should we capture errors ?
         const auto captureErrors = !commandline.hasParam("noErrorCapture");
+        m_globalSink.create(captureErrors);
 
-        bool valid = true;
+        // remember the time we started at
+        m_startedTime.resetToNow();
 
-        {
-            BCCLogSinkWithErrorCapture globalSink(captureErrors);
-            ScopeTimer timer;
+        // create the host for the command to run
+        auto host = base::CreateSharedPtr<base::app::CommandHost>();
+        if (!host->start(commandline))
+            return false;
 
-            {
-                auto command = commandClass.create();
-                if (!command->run(commandline))
-                {
-                    TRACE_ERROR("Command '{}' has failed", commandline.command());
-                    valid = false;
-                }
-            }
-
-            valid &= globalSink.printSummary(timer.timeElapsed());
-        }
-
-        return valid;
+        // keep running
+        m_commandHost = host;
+        return true;
     }
 
     void BCCApp::update()
     {
-        base::platform::GetLaunchPlatform().requestExit(0);
+        if (!m_commandHost->update())
+        {
+            TRACE_INFO("Command: Host signalled that it's finished");
+            m_commandHost.reset();
+        }
+
+        if (!m_commandHost)
+        {
+            base::platform::GetLaunchPlatform().requestExit("Command finished");
+        }
+    }
+
+    void BCCApp::cleanup()
+    {
+        if (m_globalSink)
+        {
+            m_globalSink->printSummary(m_startedTime.timeTillNow().toSeconds());
+            m_globalSink.reset();
+        }
     }
 
 } // application

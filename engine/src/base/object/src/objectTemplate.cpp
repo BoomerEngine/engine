@@ -109,6 +109,30 @@ namespace base
         }
     }
 
+    void IObjectTemplate::detach(bool mergeOverrideTables)
+    {
+        if (m_base)
+        {
+            bool somethingAdded = false;
+            if (mergeOverrideTables)
+            {
+
+                auto base = m_base;
+                while (base)
+                {
+                    for (auto& propName : base->m_overridenProperties)
+                        somethingAdded |= m_overridenProperties.insert(propName);
+                    base = base->m_base;
+                }
+            }
+
+            m_base.reset();
+
+            if (somethingAdded)
+                markModified();
+        }
+    }
+
     bool IObjectTemplate::checkPropertyOverrideCaps(StringID name) const
     {
         // no base object, we can't really override any property, display all

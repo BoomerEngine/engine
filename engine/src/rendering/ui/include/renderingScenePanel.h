@@ -121,6 +121,9 @@ namespace ui
         INLINE rendering::scene::FilterFlags& filterFlags() { return m_filterFlags; }
         INLINE const rendering::scene::FilterFlags& filterFlags() const { return m_filterFlags; }
 
+        // get the overlay toolbar
+        INLINE const ToolBarPtr& toolbar() const { return m_toolbar; }
+
         //--
 
         // change area selection mode
@@ -235,6 +238,8 @@ namespace ui
         rendering::scene::CameraContextPtr m_cameraContext;
 
         base::RefWeakPtr<ui::IInputAction> m_renderInputAction;
+
+        ToolBarPtr m_toolbar;
 
         const rendering::scene::Camera& cachedCamera() const;
     };

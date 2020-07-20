@@ -6,6 +6,7 @@
 ***/
 
 #include "build.h"
+#include "messagePool.h"
 #include "tcpMessageClient.h"
 #include "tcpMessageServer.h"
 
@@ -70,7 +71,7 @@ namespace test
 
             AnswerToTheBigQuestionMessage response;
             response.m_answer = 42;
-            con->send(1, response);
+            con->send(response);
         }
 
         bool m_helloReceived = false;
@@ -108,41 +109,98 @@ namespace test
 
 TEST(TcpMessage,ClientServerPassing)
 {
-    uint16_t port = 12000;
-
+    // create server, on any port
     auto server  = CreateSharedPtr<TcpMessageServer>();
-    auto serverObject  = CreateSharedPtr<test::HelloReply>();
-    server->attachObject(1, serverObject);
-
-    auto client  = CreateSharedPtr<TcpMessageClient>();
-    auto clientObject  = CreateSharedPtr<test::AnswerCapture>();
-    client->attachObject(1, clientObject);
-
-    while (!server->startListening(++port)) {};
+    ASSERT_TRUE(server->startListening(0));
     ASSERT_TRUE(server->isListening());
 
-    ASSERT_TRUE(client->connect(socket::Address::Local4(port)));
+    // create client and connect it
+    auto client = CreateSharedPtr<TcpMessageClient>();
+    ASSERT_TRUE(client->connect(socket::Address::Local4(server->listeningAddress().port())));
     ASSERT_TRUE(client->isConnected());
 
-    test::HelloWorldMessage hello;
-    hello.m_text = "Hello, network!";
-    client->send(1, hello);
-
-    while (!serverObject->m_helloReceived)
+    // server should report a connection
+    MessageConnectionPtr connectionOnServerSide;
     {
-        Sleep(500);
-        server->executePendingMessages();
+        auto timeout = NativeTimePoint::Now() + 1.0;
+        while (!timeout.reached())
+        {
+            if (connectionOnServerSide = server->pullNextAcceptedConnection())
+                break;
+            Sleep(100);
+        }
+    }
+    ASSERT_TRUE(connectionOnServerSide);
+
+    // send message to server
+    {
+        test::HelloWorldMessage hello;
+        hello.m_text = "Hello, network!";
+        client->send(hello);
     }
 
-    ASSERT_TRUE(serverObject->m_helloReceived);
-    ASSERT_STREQ(hello.m_text.c_str(), serverObject->m_text.c_str());
-
-    if (!clientObject->m_answerReceived)
+    // wait for message on the server side
+    MessagePtr receivedMessage;
     {
-        Sleep(500);
-        client->executePendingMessages();
+        auto timeout = NativeTimePoint::Now() + 1.0;
+        while (!timeout.reached())
+        {
+            if (receivedMessage = connectionOnServerSide->pullNextMessage())
+                break;
+            Sleep(100);
+        }
+    }
+    ASSERT_TRUE(receivedMessage);
+
+    // dispatch the message to the object, it should be parsed correctly
+    {
+        auto serverObject = CreateSharedPtr<test::HelloReply>();
+        ASSERT_TRUE(receivedMessage->dispatch(serverObject, connectionOnServerSide));
+        ASSERT_TRUE(serverObject->m_helloReceived);
+        ASSERT_STREQ("Hello, network!", serverObject->m_text.c_str());
+        receivedMessage = nullptr;
     }
 
-    ASSERT_TRUE(clientObject->m_answerReceived);
-    ASSERT_EQ(42, clientObject->m_answer);
+    // wait for the response
+    {
+        auto timeout = NativeTimePoint::Now() + 1.0;
+        while (!timeout.reached())
+        {
+            if (receivedMessage = client->pullNextMessage())
+                break;
+            Sleep(100);
+        }
+    }
+    ASSERT_TRUE(receivedMessage);
+
+    // dispatch answer
+    {
+        auto clientObject = CreateSharedPtr<test::AnswerCapture>();
+        ASSERT_TRUE(receivedMessage->dispatch(clientObject));
+        ASSERT_TRUE(clientObject->m_answerReceived);
+        ASSERT_EQ(42, clientObject->m_answer);
+        receivedMessage = nullptr;
+    }
+
+    // close the connection
+    connectionOnServerSide->close();
+    connectionOnServerSide.reset();
+
+    // make sure client registers server closing connection
+    {
+        auto timeout = NativeTimePoint::Now() + 5.0;
+        while (!timeout.reached())
+        {
+            if (!client->isConnected())
+            {
+                client.reset();
+                break;
+            }
+            Sleep(100);
+        }
+    }
+    ASSERT_FALSE(client);
+
+    // destroy server object now
+    server.reset();
 }

@@ -50,7 +50,10 @@ namespace rendering
         }
 
         // observer changes in the depot
-        m_depot->attachObserver(this);
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_CHANGED) = [this](base::StringBuf path)
+        {
+            notifyFileChanged(path);
+        };
 
         // TODO: load global and local shader cache
         // TODO: when active device changes change the shader cache
@@ -67,7 +70,7 @@ namespace rendering
 
     void MaterialTechniqueCacheService::onShutdownService()
     {
-        m_depot->detttachObserver(this);
+        m_depotEvents.clear();
 
         for (;;)
         {
@@ -211,30 +214,18 @@ namespace rendering
         return ret;
     }
 
-    void MaterialTechniqueCacheService::notifyFileChanged(base::StringView<char> depotFilePath)
+    void MaterialTechniqueCacheService::notifyFileChanged(const base::StringBuf& path)
     {
         auto lock = base::CreateLock(m_sourceFileMapLock);
 
-        auto safePath = base::StringBuf(depotFilePath).toLower();
-
         FileInfo* ret = nullptr;
-        if (m_sourceFileMap.find(safePath, ret))
+        if (m_sourceFileMap.find(path, ret))
         {
-            TRACE_INFO("Tracked source shader file '{}' reported as modified", depotFilePath);
+            TRACE_INFO("Tracked source shader file '{}' reported as modified", path);
 
             auto lock2 = base::CreateLock(m_changedFilesLock);
             m_changedFiles.insert(ret);
         }
-    }
-
-    void MaterialTechniqueCacheService::notifyFileAdded(base::StringView<char> depotFilePath)
-    {
-        notifyFileChanged(depotFilePath);
-    }
-
-    void MaterialTechniqueCacheService::notifyFileRemoved(base::StringView<char> depotFilePath)
-    {
-        notifyFileChanged(depotFilePath);
     }
 
     //--

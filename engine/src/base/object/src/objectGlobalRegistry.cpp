@@ -11,7 +11,6 @@
 #include "objectGlobalRegistry.h"
 
 #include "base/object/include/object.h"
-#include "base/object/include/objectObserver.h"
 #include "base/system/include/scopeLock.h"
 
 namespace base

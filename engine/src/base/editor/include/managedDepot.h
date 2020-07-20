@@ -23,46 +23,18 @@ namespace ed
     class DirectoryWatcher;
     class IVersionControl;
 
-    /// Managed file event
-    enum class ManagedDepotEvent : uint8_t
-    {
-        FileCreated, // file was created
-        FileDeleted,  // file was deleted
-        FileOpened, // file was opened for edition
-        FileClosed, // editor for this file was closed
-        FileContentChanged, // content of file on disk was changed (does not mean resource was reloaded)
-        FileVSCChanged, // source control state for the file has changed
-        FileModifiedChanged, // source control state for the file has changed
-
-        DirCreated, // directory was created
-        DirDeleted, // directory was deleted
-        DirBookmarkChanged, // directory bookmark status changed
-    };
-
-    /// Managed depot listener
-    class BASE_EDITOR_API IManagedDepotListener : public NoCopy
-    {
-    public:
-        IManagedDepotListener();
-        virtual ~IManagedDepotListener();
-
-        void detach();
-
-        virtual void managedDepotEvent(ManagedItem* item, ManagedDepotEvent eventType) {};
-
-    private:
-        ManagedDepot* m_depot;
-    };
-
     /// editor side depot
-    class BASE_EDITOR_API ManagedDepot : public depot::IDepotObserver
+    class BASE_EDITOR_API ManagedDepot : public NoCopy
     {
     public:
         ManagedDepot(depot::DepotStructure& loader, ConfigGroup config);
         ~ManagedDepot();
 
-        /// get the related depot loader
-        INLINE depot::DepotStructure& loader() const { return m_loader; }
+        /// get the low-level depot structure
+        INLINE depot::DepotStructure& depot() const { return m_depot; }
+
+        /// get the event key for event listening
+        INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
 
         /// depot configuration entry
         INLINE const ConfigGroup& config() const { return m_config; }
@@ -87,6 +59,9 @@ namespace ed
         /// populate depot with files
         void populate();
 
+        /// update/sync any changed
+        void update();
+
         ///---
 
         /// create path (all directories along the way)
@@ -98,17 +73,6 @@ namespace ed
         /// find managed file for given depot path
         ManagedFile* findManagedFile(StringView<char> depotPath) const;
 
-        //----
-
-        /// dispatch file events to listeners, flushes the event list
-        void dispatchEvents();
-
-        /// register depot listener
-        void registerListener(IManagedDepotListener* listener);
-
-        /// Unregister depot listener
-        void unregisterListener(IManagedDepotListener* listener);
-
         ///---
 
         /// restore depot configuration
@@ -117,31 +81,11 @@ namespace ed
         ///----
 
     private:
-        enum class InternalFileEventType
-        {
-            FileAdded,
-            FileRemoved,
-            DirAdded,
-            DirRemoved,
-        };
-
-        // Internal file event
-        struct InternalFileEvent
-        {
-            InternalFileEventType type;
-            StringBuf depotPath;
-        };
-
         // root structure
         ManagedDirectoryPtr m_root;
 
         // configuration entry
         ConfigGroup m_config;
-
-        // depot listeners
-        typedef Array<IManagedDepotListener*> TListeners;
-        Mutex m_listenersLock;
-        TListeners m_listeners;
 
         // booked marked directories
         TBookmarkedDirectories m_bookmarkedDirectories;
@@ -153,23 +97,25 @@ namespace ed
         UniquePtr<ManagedThumbnailHelper> m_thumbnailHelper;
 
         // depot file loader
-        depot::DepotStructure& m_loader;
+        depot::DepotStructure& m_depot;
 
-        //---
+        //--
 
-        // internal events
-        SpinLock m_internalEventsLock;
-        Array<InternalFileEvent> m_internalEvents;
+        // managed depot event key
+        GlobalEventKey m_eventKey;
 
-        // IDepotObserver
-        virtual void notifyFileChanged(StringView<char> depotFilePath) override final;
-        virtual void notifyFileAdded(StringView<char> depotFilePath) override final;
-        virtual void notifyFileRemoved(StringView<char> depotFilePath) override final;
-        virtual void notifyDirAdded(StringView<char> depotFilePath) override final;
-        virtual void notifyDirRemoved(StringView<char> depotFilePath) override final;
+        // event listener for the low-level depot events
+        GlobalEventTable m_depotEvents;
 
-        // dispatch internal (managed depot) events 
-        void dispatchEvent(ManagedItem* item, ManagedDepotEvent eventType);
+        //--
+
+        // directories has changed
+        HashMap<StringBuf, NativeTimePoint> m_modifiedDirectories;
+
+        void handleDepotFileNotificataion(StringView<char> path);
+        void processDepotFileNotificataion();
+
+        //--
 
         // external events
         void toogleDirectoryBookmark(ManagedDirectory* dir, bool state);

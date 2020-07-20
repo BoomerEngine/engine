@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "base/io/include/absolutePath.h"
+
 namespace base
 {
     namespace process
@@ -32,21 +34,18 @@ namespace base
         {
             // path to process to run (copied out of the pointer)
             // NOTE: if no process specified we will run ourselves
-            UTF16StringBuf m_processPath;
+            io::AbsolutePath m_processPath;
 
             // optional arguments to pass to process
-            Array<UTF16StringBuf> m_arguments;
-
-            // name of the communication endpoint for the built-in message service
-            const char* m_messageEndpointName;
+            Array<StringBuf> m_arguments;
 
             // asynchronous callback for the process communication via stdout
             // callback gets notified whenever we receive any data from the process via it's stdout
             // NOTE: if not specified than no std output will be observed
-            IOutputCallback* m_stdOutCallback;
+            IOutputCallback* m_stdOutCallback = nullptr;
 
             // show the window of the process or not
-            bool m_showWindow;
+            bool m_showWindow = false;
 
             //--
 

@@ -16,12 +16,29 @@ namespace base
     {
         //--
 
+        struct ImportQueueFileCancel;
+
+        //--
+
         class CommandImport : public app::ICommand
         {
             RTTI_DECLARE_VIRTUAL_CLASS(CommandImport, app::ICommand);
 
         public:
-            virtual bool run(const app::CommandLine& commandline) override final;
+            CommandImport();
+            virtual ~CommandImport();
+
+            virtual bool run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline) override final;
+
+            //--
+
+            SpinLock m_canceledFilesLock;
+            HashSet<StringBuf> m_canceledFiles;
+
+            bool checkFileCanceled(const StringBuf& depotPath) const;
+            void handleImportQueueFileCancel(const base::res::ImportQueueFileCancel& message); // NOTE: called from different thread
+
+            //--
         };
 
         //--

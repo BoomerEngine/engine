@@ -25,8 +25,8 @@ namespace base
             virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, const io::AbsolutePath& outputModulePath, const Settings& settings) override final;
 
         private:
-            static UTF16StringBuf FindTCCCompiler();
-            static UTF16StringBuf FindGCCCompiler();
+            static io::AbsolutePath FindTCCCompiler();
+            static io::AbsolutePath FindGCCCompiler();
         };
 
         //--

@@ -8,28 +8,31 @@
 
 #pragma once
 
-#include "singleResourceEditor.h"
+#include "resourceEditor.h"
+#include "managedFileRawResource.h"
 
 namespace ed
 {
     ///---
 
     /// a simple text file editor
-    class BASE_EDITOR_API TextFileResourceEditor : public SingleResourceEditor
+    class BASE_EDITOR_API TextFileResourceEditor : public ResourceEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(TextFileResourceEditor, SingleResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(TextFileResourceEditor, ResourceEditor);
         
     public:
-        TextFileResourceEditor(ConfigGroup config, ManagedFile* file);
+        TextFileResourceEditor(ConfigGroup config, ManagedFileRawResource* file);
 
+        virtual bool modified() const override;
         virtual bool initialize() override;
+        virtual void close() override;
+        virtual bool save() override;
+
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
 
     private:
-        ui::ScintillaTextEditor* m_editor;
-
-        virtual bool saveInternal() override;
-        virtual bool modifiedInternal() const override;
+        RefPtr<ui::ScintillaTextEditor> m_editor;
+        ManagedFileRawResource* m_textFile = nullptr;
 
         void cmdShowFindWindow();
         void cmdNextFind();

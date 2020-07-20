@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: services #]
+* [# filter: resource #]
 ***/
 
 #include "build.h"
@@ -117,18 +117,6 @@ namespace base
                     break;
                 m_retainedFiles.pop();
             }
-        }
-
-        //--
-
-        void LoadingService::attachListener(IResourceLoaderEventListener* listener)
-        {
-            m_resourceLoader->attachListener(listener);
-        }
-
-        void LoadingService::dettachListener(IResourceLoaderEventListener* listener)
-        {
-            m_resourceLoader->dettachListener(listener);
         }
 
         //--

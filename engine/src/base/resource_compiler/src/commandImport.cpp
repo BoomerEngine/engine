@@ -14,6 +14,8 @@
 #include "importSaveThread.h"
 #include "importSourceAssetRepository.h"
 #include "importFileService.h"
+#include "importFileList.h"
+#include "importInterface.h"
 
 #include "base/app/include/command.h"
 #include "base/app/include/commandline.h"
@@ -25,7 +27,7 @@
 #include "base/object/include/object.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/xml/include/xmlUtils.h"
-#include "importFileList.h"
+#include "base/net/include/messageConnection.h"
 
 
 namespace base
@@ -36,32 +38,54 @@ namespace base
 
 
         RTTI_BEGIN_TYPE_CLASS(CommandImport);
-        RTTI_METADATA(app::CommandNameMetadata).name("import");
+            RTTI_METADATA(app::CommandNameMetadata).name("import");
         RTTI_END_TYPE();
 
         //--
 
-        class LocalProgressReporter : public IImportQueueCallbacks
+        class ImportQueueProgressReporter : public IImportQueueCallbacks
         {
         public:
+            ImportQueueProgressReporter(net::MessageConnection* connection)
+                : m_connection(connection)
+            {}
+
+            ~ImportQueueProgressReporter()
+            {}
+
+            //--
+
+        protected:
+            net::MessageConnection* m_connection;
+
             virtual void queueJobAdded(const ImportJobInfo& info) override
             {
-                TRACE_INFO("ImportQueue: added job to cook '{}' from '{}'", info.depotFilePath, info.assetFilePath);
+                ImportQueueFileStatusChangeMessage msg;
+                msg.depotPath = info.depotFilePath;
+                msg.status = ImportStatus::Pending;
+                m_connection->send(msg);
             }
 
             virtual void queueJobStarted(StringView<char> depotPath) override
             {
-                TRACE_INFO("ImportQueue: started cooking of '{}'", depotPath);
+                ImportQueueFileStatusChangeMessage msg;
+                msg.depotPath = StringBuf(depotPath);
+                msg.status = ImportStatus::Processing;
+                m_connection->send(msg);
             }
 
             virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status, double timeTaken) override
             {
-                TRACE_INFO("ImportQueue: finished cooking of '{}' in {}: {}", depotPath, TimeInterval(timeTaken), status);
+                ImportQueueFileStatusChangeMessage msg;
+                msg.depotPath = StringBuf(depotPath);
+                msg.status = status;
+                msg.time = timeTaken;
+                m_connection->send(msg);
             }
 
             virtual void queueJobProgressUpdate(StringView<char> depotPath, uint64_t currentCount, uint64_t totalCount, StringView<char> text) override
             {
-
+                // TODO
             }
         };
 
@@ -164,7 +188,32 @@ namespace base
 
         //--
 
-        bool CommandImport::run(const app::CommandLine& commandline)
+        CommandImport::CommandImport()
+        {
+        }
+
+        CommandImport::~CommandImport()
+        {
+        }
+
+        //--
+
+        bool CommandImport::checkFileCanceled(const StringBuf& depotPath) const
+        {
+            auto lock = CreateLock(m_canceledFilesLock);
+            return m_canceledFiles.contains(depotPath);
+        }
+
+        void CommandImport::handleImportQueueFileCancel(const base::res::ImportQueueFileCancel& message)
+        {
+            auto lock = CreateLock(m_canceledFilesLock);
+            if (m_canceledFiles.insert(message.depotPath))
+            {
+                TRACE_WARNING("Import: Explicit request to cancel import of file '{}'", message.depotPath);
+            }
+        }
+
+        bool CommandImport::run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline)
         {
             // find the source asset service - we need it to have access to source assets
             auto assetSource = GetService<ImportFileService>();
@@ -203,14 +252,21 @@ namespace base
                 SourceAssetRepository repository(assetSource);
 
                 // create the import queue
-                LocalProgressReporter queueProgress;
-                ImportQueue queue(&repository, &loader, &saver, &queueProgress);
+                ImportQueueProgressReporter reporter(connection);
+                ImportQueue queue(&repository, &loader, &saver, &reporter);
 
                 // add work to queue
                 if (AddWorkToQueue(commandline, queue))
                 {
-                    // process jobs
-                    while (queue.processNextJob());
+                    // process all the jobs
+                    while (queue.processNextJob(this))
+                    {
+                        // placeholder for optional work we may want to do BETWEEN JOBS
+                    }
+                }
+                else
+                {
+                    TRACE_INFO("No work specified for ")
                 }
 
                 // wait for saver to finish saving

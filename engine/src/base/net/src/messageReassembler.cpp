@@ -34,7 +34,7 @@ namespace base
             // create initial storage
             m_storageCapacity = std::max<uint32_t>(MIN_CAPACITY, initialStorageSize);
             m_storagePos = 0;
-            m_storagePtr = (uint8_t*) MemAlloc(POOL_NEW, initialStorageSize, 1);
+            m_storagePtr = (uint8_t*) MemAlloc(POOL_NEW, m_storageCapacity, 1);
         }
 
         MessageReassembler::~MessageReassembler()
@@ -88,7 +88,7 @@ namespace base
 
                 // calculate required size, in proper steps
                 uint32_t newCapacity = m_storageCapacity * 2;
-                while (m_storagePos + dataSize > m_storageCapacity)
+                while (m_storagePos + dataSize > newCapacity)
                     newCapacity *= 2;
 
                 // allocate new buffer, may fail (we can handle really large data here)
@@ -102,6 +102,11 @@ namespace base
 
                     m_corrupted = true;
                     return false;
+                }
+                else
+                {
+                    m_storageCapacity = newCapacity;
+                    m_storagePtr = (uint8_t*)newBuffer;
                 }
             }
 

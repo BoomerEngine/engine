@@ -933,7 +933,7 @@ namespace ui
 
                             auto* variable = pc.library().alloc<RawVariable>(pc.extractLocation(parser), varName, value);
                             pc.library().addVariable(variable);
-                            TRACE_INFO("Declared variable '{}': '{}'", varName, *value);
+                            //TRACE_INFO("Declared variable '{}': '{}'", varName, *value);
                             continue;
                         }
                         else

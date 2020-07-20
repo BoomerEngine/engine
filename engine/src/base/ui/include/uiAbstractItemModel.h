@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "base/containers/include/mutableArray.h"
 #include "base/input/include/inputStructures.h"
 
 namespace ui
@@ -216,7 +215,7 @@ namespace ui
         int m_updateArgFirst = INDEX_NONE;
         int m_updateArgCount = INDEX_NONE;
 
-        base::MutableArray<IAbstractItemModelObserver*> m_observers;
+        base::Array<IAbstractItemModelObserver*> m_observers;
     };
 
     //--

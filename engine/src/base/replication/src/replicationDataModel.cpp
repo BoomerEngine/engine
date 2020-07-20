@@ -16,9 +16,6 @@
 #include "base/object/include/rttiArrayType.h"
 #include "base/object/include/rttiHandleType.h"
 #include "base/object/include/rttiProperty.h"
-#include "base/resource/include/resourcePath.h"
-#include "base/resource/include/resourceReference.h"
-#include "base/resource/include/resource.h"
 
 namespace base
 {
@@ -60,7 +57,7 @@ namespace base
                 return mapPath(type->name().view(), "::"); // engine uses "::" as separator in type names
         }
 
-        DataMappedID IDataModelMapper::mapResourcePath(const res::ResourcePath& path)
+        DataMappedID IDataModelMapper::mapResourcePath(const StringBuf& path)
         {
             return mapPath(path.view(), "/");
         }
@@ -112,11 +109,11 @@ namespace base
             return true;
         }
 
-        bool IDataModelResolver::resolveResourcePath(DataMappedID id, res::ResourcePath& outPath)
+        bool IDataModelResolver::resolveResourcePath(DataMappedID id, StringBuf& outPath)
         {
             if (!id)
             {
-                outPath = res::ResourcePath();
+                outPath = StringBuf();
                 return true;
             }
 
@@ -124,7 +121,7 @@ namespace base
             if (!resolvePath(id, "/", txt))
                 return false;
 
-            auto path  = res::ResourcePath(txt.c_str());
+            auto path = StringBuf(txt.c_str());
             if (path.empty()) // building failed
                 return false;
 
@@ -352,12 +349,12 @@ namespace base
 
                 case DataModelFieldType::ResourceRef:
                 {
-                    auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
+                    /*auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
 
                     if (value.empty())
-                    {
+                    {*/
                         w.writeBit(0);
-                    }
+                    /*}
                     else
                     {
                         w.writeBit(1);
@@ -366,7 +363,7 @@ namespace base
                         w.writeAdaptiveNumber(typeId);
                         auto pathId  = mapper.mapResourcePath(value.key().path());
                         w.writeAdaptiveNumber(pathId);
-                    }
+                    }*/
                     break;
                 }
             }
@@ -541,7 +538,7 @@ namespace base
 
                 case DataModelFieldType::ResourceRef:
                 {
-                    auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
+                    //auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
 
                     bool hasData = false;
                     if (!r.readBit(hasData))
@@ -561,11 +558,11 @@ namespace base
                         if (!resolver.resolveTypeRef(typeId, false, rttiType))
                             return decodingError(field, "ResourceRef type decoding error");
 
-                        auto resourceClass = rttiType.toSpecificClass<res::IResource>();
+                        /*auto resourceClass = rttiType.toSpecificClass<res::IResource>();
                         if (!resourceClass)
-                            return decodingError(field, TempString("ResourceRef type '{}' is not a resource class", rttiType->name()));
+                            return decodingError(field, TempString("ResourceRef type '{}' is not a resource class", rttiType->name()));*/
 
-                        res::ResourcePath path;
+                        StringBuf path;
                         if (!resolver.resolveResourcePath(pathId, path))
                             return decodingError(field, "ResourceRef path resolving error");
 
@@ -574,7 +571,7 @@ namespace base
                     }
                     else
                     {
-                        value.reset();
+                        //value.reset();
                     }
 
                     break;

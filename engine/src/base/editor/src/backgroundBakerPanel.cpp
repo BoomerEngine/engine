@@ -52,8 +52,8 @@ namespace ed
 
             static const auto firstTime = NativeTimePoint::Now();
             entry->content[Entry::COL_TYPE] = forced ? "Forced" : "Auto";
-            entry->content[Entry::COL_PATH] = base::TempString("[img:file] {}", key.path().path());
-            entry->content[Entry::COL_CLASS] = base::StringBuf(key.cls()->name().view().afterLastOrFull("::"));
+            entry->content[Entry::COL_PATH] = TempString("[img:file] {}", key.path().path());
+            entry->content[Entry::COL_CLASS] = StringBuf(key.cls()->name().view().afterLastOrFull("::"));
             entry->content[Entry::COL_STATE] = "[color:#AAA][i]Pending";
             entry->content[Entry::COL_PROCESSING_TIME] = "[color:#AAA][i]---";
 
@@ -92,7 +92,7 @@ namespace ed
                 entry->state = EntryState::Failed;
                 entry->content[Entry::COL_STATE] = "[color:#F00][b]Failed";
             }
-            entry->content[Entry::COL_PROCESSING_TIME] = base::TempString("{}", TimeInterval(timeTaken));
+            entry->content[Entry::COL_PROCESSING_TIME] = TempString("{}", TimeInterval(timeTaken));
             requestItemUpdate(indexForEntry(entry));
         }
     }
@@ -166,21 +166,21 @@ namespace ed
         return false;
     }
 
-    base::StringBuf BackgroundBakedListModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
+    StringBuf BackgroundBakedListModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
     {
         if (const auto* entry = entryForIndex(id))
             return entry->content[colIndex];
-        return base::StringBuf::EMPTY();
+        return StringBuf::EMPTY();
     }
 
-    ui::PopupPtr BackgroundBakedListModel::contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const
+    ui::PopupPtr BackgroundBakedListModel::contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const
     {
         return nullptr;
     }
 
     //--
 
-    BackgroundBakedListModelNotificataionForwarder::BackgroundBakedListModelNotificataionForwarder(const base::RefPtr<BackgroundBakedListModel>& model)
+    BackgroundBakedListModelNotificataionForwarder::BackgroundBakedListModelNotificataionForwarder(const RefPtr<BackgroundBakedListModel>& model)
         : m_model(model)
     {}
 
@@ -260,30 +260,30 @@ namespace ed
         }
 
         // attach model
-        m_listModel = base::CreateSharedPtr<BackgroundBakedListModel>();
-        m_listForwarder = base::CreateSharedPtr<BackgroundBakedListModelNotificataionForwarder>(m_listModel);
+        m_listModel = CreateSharedPtr<BackgroundBakedListModel>();
+        m_listForwarder = CreateSharedPtr<BackgroundBakedListModelNotificataionForwarder>(m_listModel);
 
-        //base::GetService<base::res::BackgroundBaker>()->attachListener(m_listForwarder);
-        //base::GetService<base::res::BackgroundBaker>()->attachListener(this);
+        //GetService<res::BackgroundBaker>()->attachListener(m_listForwarder);
+        //GetService<res::BackgroundBaker>()->attachListener(this);
 
         m_fileList->model(m_listModel);
     }
 
     BackgroundBakerPanel::~BackgroundBakerPanel()
     {
-        //base::GetService<base::res::BackgroundBaker>()->dettachListener(this);
-        //base::GetService<base::res::BackgroundBaker>()->dettachListener(m_listForwarder);
+        //GetService<res::BackgroundBaker>()->dettachListener(this);
+        //GetService<res::BackgroundBaker>()->dettachListener(m_listForwarder);
     }
 
     void BackgroundBakerPanel::cmdToggleBackgroundBake()
     {
-        //auto flag = base::GetService<base::res::BackgroundBaker>()->enabled();
-        //base::GetService<base::res::BackgroundBaker>()->enabled(!flag);
+        //auto flag = GetService<res::BackgroundBaker>()->enabled();
+        //GetService<res::BackgroundBaker>()->enabled(!flag);
     }
 
     bool BackgroundBakerPanel::checkBackgroundBake() const
     {
-        //return base::GetService<base::res::BackgroundBaker>()->enabled();
+        //return GetService<res::BackgroundBaker>()->enabled();
         return false;
     }
 
@@ -303,14 +303,14 @@ namespace ed
 
     void BackgroundBakerPanel::handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime)
     {
-        PostWindowMessage(this, ui::MessageType::Info, "Bake"_id, base::TempString("[img:cog] Background Baking Started:\n[i]{}[/i]", key.path()));
+        PostWindowMessage(this, ui::MessageType::Info, "Bake"_id, TempString("[img:cog] Background Baking Started:\n[i]{}[/i]", key.path()));
     }
 
     void BackgroundBakerPanel::handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken)
     {
         if (!valid)
         {
-            PostWindowMessage(this, ui::MessageType::Error, "Bake"_id, base::TempString("[img:error] Background Baking Failed:\n[i]{}[/i]", key.path()));
+            PostWindowMessage(this, ui::MessageType::Error, "Bake"_id, TempString("[img:error] Background Baking Failed:\n[i]{}[/i]", key.path()));
         }
     }
 

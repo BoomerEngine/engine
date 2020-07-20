@@ -23,18 +23,24 @@ namespace base
 
     DataViewNative::DataViewNative(IObject* obj)
         : m_object(AddRef(obj))
+        , m_events(this)
     {
         if (m_object)
-            m_objectObserverIndex = RegisterObserver(m_object, this);
+        {
+            m_events.bind(m_object->eventKey(), EVENT_OBJECT_PROPERTY_CHANGED) = [this](StringBuf path)
+            {
+                dispatchPropertyChanged(path);
+            };
+
+            m_events.bind(m_object->eventKey(), EVENT_OBJECT_STRUCTURE_CHANGED) = [this]()
+            {
+                dispatchFullStructureChanged();
+            };
+        }
     }
 
     DataViewNative::~DataViewNative()
     {
-        if (m_objectObserverIndex)
-        {
-            UnregisterObserver(m_objectObserverIndex, this);
-            m_objectObserverIndex = 0;
-        }
     }
 
     DataViewResult DataViewNative::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
@@ -80,16 +86,6 @@ namespace base
     DataViewResult DataViewNative::resetToDefaultValue(StringView<char> viewPath, void* targetData, Type targetType) const
     {
         return writeDataView(viewPath, targetData, targetType);
-    }
-
-    //----
-
-    void DataViewNative::onObjectChangedEvent(StringID eventID, const IObject* eventObject, StringView<char> eventPath, const rtti::DataHolder& eventData)
-    {
-        if (eventID == "OnPropertyChanged"_id)
-            dispatchPropertyChanged(eventPath);
-        else if (eventID == "OnFullStructureChange"_id && eventPath == "")
-            dispatchFullStructureChanged();
     }
 
     //----

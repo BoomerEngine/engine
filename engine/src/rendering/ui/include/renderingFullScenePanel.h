@@ -30,18 +30,17 @@ namespace ui
 
         //--
 
-        // add default view mode buttons to given toolbar - filters, render mode, etc
-        void buildDefaultToolbar(IElement* owner, ToolBar* toolbar);
-
-    protected:
-        virtual void handleUpdate(float dt) override;
-        virtual void handleRender(rendering::scene::FrameParams& frame) override;
-
         /// inject render mode options into a popup menu
         virtual void buildRenderModePopup(MenuButtonContainer* menu);
 
         /// build filtering popup
         virtual void buildFilterPopup(MenuButtonContainer* menu);
+
+
+    protected:
+        virtual void handleUpdate(float dt) override;
+        virtual void handleRender(rendering::scene::FrameParams& frame) override;
+
 
     private:
         rendering::scene::ScenePtr m_scene;
@@ -52,6 +51,7 @@ namespace ui
         void configure(rendering::scene::FrameRenderMode mode, base::StringID materialChannelName = base::StringID::EMPTY());
 
         void createFilterItem(base::StringView<char> prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu);
+        void createToolbarItems();
     };
 
     ///---

@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "base/editor/include/singleResourceEditor.h"
+#include "base/editor/include/resourceEditor.h"
+#include "base/editor/include/resourceEditorNativeFile.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 
 namespace ed
@@ -19,12 +20,12 @@ namespace ed
     class MaterialPreviewPanelWithToolbar;
 
     /// editor for meshes
-    class ASSETS_MATERIAL_EDITOR_API MaterialGraphEditor : public SingleLoadedResourceEditor
+    class ASSETS_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditorNativeFile
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, SingleLoadedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditorNativeFile);
 
     public:
-        MaterialGraphEditor(ConfigGroup config, ManagedFile* file);
+        MaterialGraphEditor(ConfigGroup config, ManagedFileNativeResource* file);
         virtual ~MaterialGraphEditor();
 
         //--
@@ -50,7 +51,16 @@ namespace ed
         void createInterface();
         void handleChangedSelection();
 
-        virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
+        virtual void handleGeneralCopy() override;
+        virtual void handleGeneralCut() override;
+        virtual void handleGeneralPaste() override;
+        virtual void handleGeneralDelete() override;
+
+        virtual bool checkGeneralCopy() const override;
+        virtual bool checkGeneralCut() const override;
+        virtual bool checkGeneralPaste() const override;
+        virtual bool checkGeneralDelete() const override;
+
         virtual bool initialize() override;
     };
 

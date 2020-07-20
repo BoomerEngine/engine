@@ -49,7 +49,10 @@ namespace base
         {
             DEBUG_CHECK_EX(!m_reloadedData, TempString("Resource '{}' is already reloaded with new data", key()));
             DEBUG_CHECK_EX(key() == reloaded->key(), TempString("Resource '{}' is being reloaded with data of mismatched key '{}'", key(), reloaded->key()));
+            DEBUG_CHECK_EX(reloaded != m_reloadedData, TempString("Resource '{}' reloaded with the same data", key()));
             m_reloadedData = reloaded;
+
+            DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
         }
 
         void IResource::metadata(const MetadataPtr& data)

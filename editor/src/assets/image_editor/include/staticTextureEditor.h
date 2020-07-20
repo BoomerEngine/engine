@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "base/editor/include/singleResourceEditor.h"
+#include "base/editor/include/resourceEditor.h"
+#include "base/editor/include/resourceEditorNativeFile.h"
 
 namespace ed
 {
@@ -19,12 +20,12 @@ namespace ed
     class ImageHistogramPendingData;
 
     /// editor for static textures (baked)
-    class StaticTextureEditor : public SingleLoadedResourceEditor
+    class StaticTextureEditor : public ResourceEditorNativeFile
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, SingleLoadedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditorNativeFile);
 
     public:
-        StaticTextureEditor(ConfigGroup config, ManagedFile* file);
+        StaticTextureEditor(ConfigGroup config, ManagedFileNativeResource* file);
         virtual ~StaticTextureEditor();
 
         INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
@@ -32,6 +33,8 @@ namespace ed
         INLINE rendering::StaticTexturePtr texture() const { return rtti_cast<rendering::StaticTexture>(resource()); }
 
         //--
+
+        virtual void bindResource(const res::ResourcePtr& resource) override;
 
     private:
         ImageHistogramWidget* m_colorHistogram;
@@ -50,8 +53,6 @@ namespace ed
 
         void updateHistogram();
         void checkHistograms();
-
-        virtual void resourceChanged() override;
     };
 
     //--

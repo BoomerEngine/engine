@@ -1408,7 +1408,7 @@ namespace base
             }
 
             // reclaim unused vertices
-            ((BaseArray*)&m_outVertices)->adjustSize(firstVertex + vertexWriter.numWrittenVertices());
+            ((BaseArray*)&m_outVertices)->changeSize(firstVertex + vertexWriter.numWrittenVertices());
 
             // calculate the paint UV for all emitted vertices
             applyPaintXForm(firstVertex, vertexWriter.numWrittenVertices(), m_style.strokeStyle);
@@ -1554,7 +1554,7 @@ namespace base
             }
 
             // reclaim unused vertices
-            ((BaseArray*)&m_outVertices)->adjustSize(firstVertex + vertexWriter.numWrittenVertices());
+            ((BaseArray*)&m_outVertices)->changeSize(firstVertex + vertexWriter.numWrittenVertices());
 
             // calculate the paint UV for all emitted vertices
             applyPaintXForm(firstVertex, vertexWriter.numWrittenVertices(), m_style.fillStyle);

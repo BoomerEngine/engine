@@ -28,6 +28,7 @@
 
 #include "rendering/texture/include/renderingStaticTexture.h"
 #include "rendering/texture/include/renderingTexture.h"
+#include "base/editor/include/managedFileNativeResource.h"
 
 namespace ed
 {
@@ -36,8 +37,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(StaticTextureEditor);
     RTTI_END_TYPE();
 
-    StaticTextureEditor::StaticTextureEditor(ConfigGroup config, ManagedFile* file)
-        : SingleLoadedResourceEditor(config, file)
+    StaticTextureEditor::StaticTextureEditor(ConfigGroup config, ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
         , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
     {
         createInterface();
@@ -236,9 +237,9 @@ namespace ed
         return rendering::ImageContentColorSpace::Linear;
     }
 
-    void StaticTextureEditor::resourceChanged()
+    void StaticTextureEditor::bindResource(const res::ResourcePtr& resource)
     {
-        TBaseClass::resourceChanged();
+        TBaseClass::bindResource(resource);
 
         updateHistogram();
         updateImageInfoText();
@@ -261,12 +262,16 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            if (auto loadedTexture = base::rtti_cast<rendering::StaticTexture>(file->loadContent()))
+            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                auto ret = base::CreateSharedPtr<StaticTextureEditor>(config, file);
-                ret->bindResource(loadedTexture);
-                return ret;
+                if (auto loadedTexture = rtti_cast<rendering::StaticTexture>(nativeFile->loadContent()))
+                {
+                    auto ret = base::CreateSharedPtr<StaticTextureEditor>(config, nativeFile);
+                    ret->bindResource(loadedTexture);
+                    return ret;
+                }
             }
+
             return nullptr;
         }
     };

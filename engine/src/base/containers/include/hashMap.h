@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: containers\dynamic #]
+* [#filter: containers #]
 ***/
 
 #pragma once
@@ -12,9 +12,12 @@
 
 namespace base
 {
-    /// Hashed map
+    /// Ordered hash map
     /*
-        Key-Value Pairs are stored internally inside arrays so the DIRECT iteration is fast (although the order is random)
+        There are some key things:
+         - keys and values are stored in separate arrays to allow for fast iteration
+         - 
+
         Most of the Add/Set/Find function returns pointer directly to the key-value pair data so care must be taken not to modify the map while the pointer is in use.
         Removal of the element from hash map may change the order in the key/value key pair and is in general more expensive than addition
         NOTE: very small hashmaps (<16) elements are do not create the buckets and are used as simple arrays with linear search

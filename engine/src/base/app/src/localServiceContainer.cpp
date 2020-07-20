@@ -12,7 +12,6 @@
 #include "localServiceContainer.h"
 #include "commandline.h"
 
-#include "base/object/include/objectObserver.h"
 #include "base/object/include/rttiClassType.h"
 #include "base/object/include/rttiMetadata.h"
 #include "base/containers/include/queue.h"
@@ -103,10 +102,6 @@ namespace base
 
             // reset per frame memory stats
             base::mem::PoolStats::GetInstance().resetFrameStatistics();
-
-            // process all global events that we may have pending
-            // TODO: consider making this UI only
-            base::IObjectObserver::DispatchPendingEvents();
 
             // update the sync part of all the service
             for (auto service  : m_tickList)

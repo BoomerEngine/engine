@@ -33,13 +33,10 @@ namespace ed
     ManagedThumbnailHelper::ManagedThumbnailHelper(depot::DepotStructure& depot)
         : m_depot(depot)
     {
-        m_depot.attachObserver(this);
     }
 
     ManagedThumbnailHelper::~ManagedThumbnailHelper()
     {
-        m_depot.detttachObserver(this);
-
         fibers::WaitCounter loadingFence;
         {
             auto lock = CreateLock(m_loadingQueueLock);
@@ -180,17 +177,6 @@ namespace ed
                 processLoadingJob(file);
             };
         }
-    }
-
-    ///---
-
-    void ManagedThumbnailHelper::notifyFileChanged(StringView<char> depotFilePath)
-    {
-
-    }
-
-    void ManagedThumbnailHelper::notifyFileAdded(StringView<char> depotFilePath)
-    {
     }
 
     //---

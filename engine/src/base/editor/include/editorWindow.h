@@ -23,7 +23,8 @@ namespace ed
     class ResourceEditor;
     class IResourceEditorOpener;
 
-    typedef base::HashSet<const ManagedFile*> TFileSet;
+    typedef HashSet<const ManagedFile*> TFileSet;
+    typedef SpecificClassType<res::IResource> TImportClass;
 
     /// main editor window 
     class BASE_EDITOR_API MainWindow : public ui::Window
@@ -33,6 +34,8 @@ namespace ed
     public:
         MainWindow();
         virtual ~MainWindow();
+
+        ui::DockLayoutNode& layout();
 
         void loadConfig(const ConfigGroup& config);
         void saveConfig(ConfigGroup& config) const;
@@ -47,8 +50,12 @@ namespace ed
 
         bool saveFiles(const TFileSet& files);
 
-        void collectOpenedFiles(base::Array<ManagedFile*>& outFiles) const;
-        void requestEditorClose(const base::Array<ResourceEditor*>& editors);
+        void collectOpenedFiles(Array<ManagedFile*>& outFiles) const;
+        void requestEditorClose(const Array<ResourceEditor*>& editors);
+
+        void addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
+        void addReimportFiles(const Array<ManagedFileNativeResource*>& files);
+        void addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration);
 
     protected:
         virtual void handleExternalCloseRequest() override;
@@ -60,9 +67,11 @@ namespace ed
 
         ui::DockContainerPtr m_dockArea;
 
-        base::RefPtr<AssetBrowser> m_assetBrowser;
-        //base::Array<base::RefPtr<ResourceEditor>> m_editors;
-        base::Array<IResourceEditorOpener*> m_editorOpeners;
+        RefPtr<AssetBrowser> m_assetBrowserTab;
+        RefPtr<AssetImportPrepareTab> m_assetImportPrepareTab;
+        RefPtr<AssetImportMainTab> m_assetImportProcessTab;
+
+        Array<IResourceEditorOpener*> m_editorOpeners;
     };
 
     ///---

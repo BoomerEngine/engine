@@ -195,7 +195,7 @@ namespace base
                                 if (listener)
                                     listener->handleEvent(evt);
 
-                        m_listeners.remove(nullptr);
+                        m_listeners.removeUnorderedAll(nullptr);
                     }
 
                     // limit CPU usage

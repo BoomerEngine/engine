@@ -11,7 +11,6 @@
 #include "versionControl.h"
 
 #include "base/io/include/absolutePath.h"
-#include "base/object/include/objectObserver.h"
 #include "base/resource/include/resourceMountPoint.h"
 
 namespace ed
@@ -39,7 +38,7 @@ namespace ed
 
     public:
         ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> name);
-            
+
         /// get depot file path of this file
         /// NOTE: file path is constructed on demand (not a cheap call)
         virtual StringBuf depotPath() const;
@@ -51,31 +50,29 @@ namespace ed
         /// resolve absolute file path for this file, valid only for files coming from disk
         virtual io::AbsolutePath absolutePath() const;
 
-        /// query thumbnail data, returns true if data changed
-        virtual bool fetchThumbnailData(uint32_t& versionToken, image::ImageRef& outThumbnailImage, Array<StringBuf>& outComments) const = 0;
-
         /// get the per-type thumbnail, does not depend on the content of the item
         virtual const image::ImageRef& typeThumbnail() const = 0;
 
         //--
 
-        // validate file name (note: no extension here)
-        static bool ValidateName(StringView<char> txt);
+        // validate directory name
+        static bool ValidateDirectoryName(StringView<char> txt);
 
-    protected:
+        // validate file name (without extensions)
+        static bool ValidateFileName(StringView<char> txt);
+
+    private:
         ManagedDepot* m_depot; // depot
         ManagedDirectory* m_directory; // parent directory
 
         StringBuf m_name; // file name with extension
 
-        const ManagedFileFormat* m_fileFormat; // file format description
-
-        bool m_isDeleted:1; // we don't remove the file proxies, just mark them as deleted
+    protected:
+        bool m_isDeleted : 1; // we don't remove the file proxies, just mark them as deleted
 
         virtual ~ManagedItem();
 
-        friend class ManagedDepot;
-        friend class ManagedDirectory;
+        friend class ManagedFilePlaceholder;
     };
 
     //---

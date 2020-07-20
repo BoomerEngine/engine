@@ -67,7 +67,7 @@ namespace ed
     MeshStructurePanel::~MeshStructurePanel()
     {}
 
-    void MeshStructurePanel::setMesh(const rendering::MeshPtr& meshPtr)
+    void MeshStructurePanel::bindResource(const rendering::MeshPtr& meshPtr)
     {
         m_mesh = meshPtr;
         m_treeModel = base::CreateSharedPtr<MeshStructureTreeModel>();

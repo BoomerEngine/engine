@@ -11,7 +11,6 @@
 #include "resourceMountPoint.h"
 #include "resourcePath.h"
 
-#include "base/containers/include/mutableArray.h"
 #include "base/containers/include/hashSet.h"
 #include "base/object/include/object.h"
 

@@ -65,13 +65,9 @@ namespace base
 
         //--
 
-        IDepotObserver::~IDepotObserver()
-        {}
-
-        //--
-
         DepotStructure::DepotStructure()
         {
+            m_eventKey = MakeUniqueEventKey("DepotStructure");
         }
 
         bool DepotStructure::populateFromManifest(const io::AbsolutePath& depotManifestPath)
@@ -225,21 +221,6 @@ namespace base
             }
         }
 
-        void DepotStructure::attachObserver(IDepotObserver* observer)
-        {
-            if (observer)
-            {
-                auto lock = CreateLock(m_observersLock);
-                m_observers.pushBack(observer);
-            }
-        }
-
-        void DepotStructure::detttachObserver(IDepotObserver* observer)
-        {
-            auto lock = CreateLock(m_observersLock);
-            m_observers.remove(observer);
-        }
-
         io::ReadFileHandlePtr DepotStructure::createFileReader(StringView<char> filePath) const
         {
             // resolve location
@@ -332,12 +313,7 @@ namespace base
                     ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
 
                     TRACE_INFO("File {} was reported as changed", fullPath);
-
-                    {
-                        auto lock = CreateLock(m_observersLock);
-                        for (auto it : m_observers)
-                            it->notifyFileChanged(fullPath);
-                    }
+                    DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_CHANGED, fullPath);
 
                     break;
                 }
@@ -346,19 +322,15 @@ namespace base
 
         void DepotStructure::notifyFileAdded(IFileSystem* fs, StringView<char> rawFilePath)
         {
-            for (auto ptr  : m_fileSystemsPtrs)
+            for (auto ptr : m_fileSystemsPtrs)
             {
                 if (&ptr->fileSystem() == fs)
                 {
                     StringBuf fullPath;
                     ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
-                    TRACE_INFO("File {} was reported as added", fullPath);
 
-                    {
-                        auto lock = CreateLock(m_observersLock);
-                        for (auto it : m_observers)
-                            it->notifyFileAdded(fullPath);
-                    }
+                    TRACE_INFO("File {} was reported as added", fullPath);
+                    DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_ADDED, fullPath);
 
                     break;
                 }
@@ -373,13 +345,9 @@ namespace base
                 {
                     StringBuf fullPath;
                     ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+
                     TRACE_INFO("File {} was reported as removed", fullPath);
-                        
-                    {
-                        auto lock = CreateLock(m_observersLock);
-                        for (auto it : m_observers)
-                            it->notifyFileRemoved(fullPath);
-                    }
+                    DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_REMOVED, fullPath);
 
                     break;
                 }
@@ -394,13 +362,9 @@ namespace base
                 {
                     StringBuf fullPath;
                     ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
-                    TRACE_INFO("Directory {} was reported as added", fullPath);
 
-                    {
-                        auto lock = CreateLock(m_observersLock);
-                        for (auto it : m_observers)
-                            it->notifyDirAdded(fullPath);
-                    }
+                    TRACE_INFO("Directory {} was reported as added", fullPath);
+                    DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_ADDED, fullPath);
 
                     break;
                 }
@@ -415,13 +379,9 @@ namespace base
                 {
                     StringBuf fullPath;
                     ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
-                    TRACE_INFO("Directory {} was reported as removed", fullPath);
 
-                    {
-                        auto lock = CreateLock(m_observersLock);
-                        for (auto it : m_observers)
-                            it->notifyDirRemoved(fullPath);
-                    }
+                    TRACE_INFO("Directory {} was reported as removed", fullPath);
+                    DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_REMOVED, fullPath);
 
                     break;
                 }

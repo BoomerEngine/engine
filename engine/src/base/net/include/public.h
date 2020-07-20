@@ -8,6 +8,11 @@
 
 #include "base_net_glue.inl"
 
+#include "base/system/include/timing.h"
+
+#define RESPONSE_FUNC const base::http::RequestResult& result
+#define REQUEST_FUNC const base::http::IncomingRequestPtr& request
+
 namespace base
 {
     namespace net
@@ -15,15 +20,11 @@ namespace base
         //--
 
         struct Message;
-        class MessagePool;
+        typedef RefPtr<Message> MessagePtr;
 
         class MessageReplicator;
-
         class MessageKnowledgeBase;
-
         class MessageObjectExecutor;
-        class MessageObjectRepository;
-        typedef RefPtr<MessageObjectRepository> MessageObjectRepositoryPtr;
 
         /// stats for peer connection
         struct BASE_NET_API MessageStats

@@ -16,9 +16,6 @@ namespace base
     /// a tag typedef, usually it's just indexed string
     typedef StringID Tag;
 
-    /// low-level container for tags
-    typedef SortedArray<Tag, InplaceArray<Tag, 8>> TagContainer;
-
     /// collection of tags
     class BASE_RESOURCE_API TagList
     {
@@ -108,7 +105,7 @@ namespace base
 
     private:
         uint64_t m_hash; // hash of the tags
-        TagContainer m_tags; // tags in the set
+        Array<Tag> m_tags; // tags in the set
 
         void refreshHash();
     };

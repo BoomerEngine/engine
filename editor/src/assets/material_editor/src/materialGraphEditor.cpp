@@ -14,6 +14,7 @@
 #include "base/resource/include/resource.h"
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedFileNativeResource.h"
 #include "base/editor/include/assetBrowser.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockPanel.h"
@@ -36,34 +37,57 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditor);
     RTTI_END_TYPE();
 
-    MaterialGraphEditor::MaterialGraphEditor(ConfigGroup config, ManagedFile* file)
-        : SingleLoadedResourceEditor(config, file)
+    MaterialGraphEditor::MaterialGraphEditor(ConfigGroup config, ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::UndoRedo })
     {
-        actions().bindCommand("MaterialGraphEditor.Copy"_id) = [this]() { m_graphEditor->actionCopySelection(); };
-        actions().bindCommand("MaterialGraphEditor.Cut"_id) = [this]() { m_graphEditor->actionCutSelection(); };
-        actions().bindCommand("MaterialGraphEditor.Paste"_id) = [this]() { m_graphEditor->actionPasteSelection(); };
-        actions().bindCommand("MaterialGraphEditor.Delete"_id) = [this]() { m_graphEditor->actionDeleteSelection(); };
-
-        actions().bindFilter("MaterialGraphEditor.Copy"_id) = [this]() { return m_graphEditor->hasSelection(); };
-        actions().bindFilter("MaterialGraphEditor.Cut"_id) = [this]() { return m_graphEditor->hasSelection(); };
-        actions().bindFilter("MaterialGraphEditor.Paste"_id) = [this]() { return m_graphEditor->hasDataToPaste(); };
-        actions().bindFilter("MaterialGraphEditor.Delete"_id) = [this]() { return m_graphEditor->hasSelection(); };
-
         createInterface();
     }
 
     MaterialGraphEditor::~MaterialGraphEditor()
     {}
 
+    void MaterialGraphEditor::handleGeneralCopy()
+    {
+        m_graphEditor->actionCopySelection();
+    }
+
+    void MaterialGraphEditor::handleGeneralCut()
+    {
+        m_graphEditor->actionCutSelection();
+    }
+
+    void MaterialGraphEditor::handleGeneralPaste()
+    {
+        m_graphEditor->actionPasteSelection();
+    }
+
+    void MaterialGraphEditor::handleGeneralDelete()
+    {
+        m_graphEditor->actionDeleteSelection();
+    }
+
+    bool MaterialGraphEditor::checkGeneralCopy() const
+    {
+        return m_graphEditor->hasSelection();
+    }
+
+    bool MaterialGraphEditor::checkGeneralCut() const
+    {
+        return m_graphEditor->hasSelection();
+    }
+
+    bool MaterialGraphEditor::checkGeneralPaste() const
+    {
+        return m_graphEditor->hasDataToPaste();
+    }
+
+    bool MaterialGraphEditor::checkGeneralDelete() const
+    {
+        return m_graphEditor->hasSelection();
+    }
+
     void MaterialGraphEditor::createInterface()
     {
-        {
-            toolbar()->createButton("MaterialGraphEditor.Copy"_id, ui::ToolbarButtonSetup().icon("copy").caption("Copy").tooltip("Copy selected blocks"));
-            toolbar()->createButton("MaterialGraphEditor.Cut"_id, ui::ToolbarButtonSetup().icon("cut").caption("Cut").tooltip("Cut selected blocks"));
-            toolbar()->createButton("MaterialGraphEditor.Paste"_id, ui::ToolbarButtonSetup().icon("paste").caption("Paste").tooltip("Paste blocks"));
-            toolbar()->createButton("MaterialGraphEditor.Delete"_id, ui::ToolbarButtonSetup().icon("delete").caption("Delete").tooltip("Delete blocks"));
-        }
-
         {
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:schema_graph] Graph", "GraphPanel");
             tab->layoutVertical();
@@ -108,21 +132,9 @@ namespace ed
             m_graphPalette->expand();
 
             dockLayout().right(0.15f).attachPanel(tab);
-        }
-
-        
+        }        
     }
 
-    void MaterialGraphEditor::fillEditMenu(ui::MenuButtonContainer* menu)
-    {
-        TBaseClass::fillEditMenu(menu);
-
-        menu->createSeparator();
-        menu->createAction("MaterialGraphEditor.Copy"_id, "Copy", "[img:copy]");
-        menu->createAction("MaterialGraphEditor.Cut"_id, "Cut", "[img:cut]");
-        menu->createAction("MaterialGraphEditor.Paste"_id, "Paste", "[img:paste]");
-        menu->createAction("MaterialGraphEditor.Delete"_id, "Delete", "[img:delete]");
-    }
 
     bool MaterialGraphEditor::initialize()
     {
@@ -176,11 +188,14 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            if (auto loadedGraph = base::rtti_cast<rendering::MaterialGraph>(file->loadContent()))
+            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                auto ret = base::CreateSharedPtr<MaterialGraphEditor>(config, file);
-                ret->bindResource(loadedGraph);
-                return ret;
+                if (auto loadedGraph = base::rtti_cast<rendering::MaterialGraph>(nativeFile->loadContent()))
+                {
+                    auto ret = base::CreateSharedPtr<MaterialGraphEditor>(config, nativeFile);
+                    ret->bindResource(loadedGraph);
+                    return ret;
+                }
             }
 
             return nullptr;

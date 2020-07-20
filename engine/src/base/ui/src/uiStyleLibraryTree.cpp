@@ -245,7 +245,7 @@ namespace ui
                 DEBUG_CHECK(nullptr == findVariable(variable->name()));
                 m_variables.pushBack(variable);
                 m_variableMap[variable->name()] = variable;
-                TRACE_INFO("Registered variable '{}'", variable->name());
+                //TRACE_INFO("Registered variable '{}'", variable->name());
             }
 
             const RawVariable* RawLibraryData::findVariable(base::StringID name)

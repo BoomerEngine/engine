@@ -17,5 +17,7 @@ namespace base
         class IPipeWriter;
         class IProcess;
 
+        struct ProcessSetup;
+
     } // msg
 } // base

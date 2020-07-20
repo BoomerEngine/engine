@@ -31,14 +31,22 @@ namespace ed
     AssetBrowser::AssetBrowser(ManagedDepot* depot)
         : ui::DockPanel("[img:database] Asset Browser")
         , m_depot(depot)
+        , m_depotEvents(this)
     {
         m_dockContainer = createChild<ui::DockContainer>();
         m_dockContainer->expand();
 
         {
-            auto treePanel = base::CreateSharedPtr<ui::DockPanel>("[img:database] Depot");// , "DepotTree");
+            m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_DELETED) = [this](ManagedDirectoryPtr dir)
+            {
+                closeDirectoryTab(dir);
+            };
+        }
 
-            m_depotTreeModel = base::CreateSharedPtr<AssetDepotTreeModel>(depot);
+        {
+            auto treePanel = CreateSharedPtr<ui::DockPanel>("[img:database] Depot");// , "DepotTree");
+
+            m_depotTreeModel = CreateSharedPtr<AssetDepotTreeModel>(depot);
 
             auto filter = treePanel->createChild<ui::SearchBar>();
 
@@ -50,7 +58,7 @@ namespace ed
 
             m_depotTree->bind("OnSelectionChanged"_id, this) = [this]()
             {
-                if (auto dir = base::rtti_cast<ManagedDirectory>(m_depotTreeModel->dataForNode(m_depotTree->current())))
+                if (auto dir = rtti_cast<ManagedDirectory>(m_depotTreeModel->dataForNode(m_depotTree->current())))
                     navigateToDirectory(dir);
             };
 
@@ -68,17 +76,17 @@ namespace ed
         uint32_t count = config.readOrDefault<uint32_t>("NumTabs", 0);
         for (uint32_t i = 0; i < count; ++i)
         {
-            auto tabConfig = config[base::TempString("Tab{}", i).c_str()];
-            auto tabType = tabConfig.readOrDefault<base::StringBuf>("Type", "");
-            auto tabID = tabConfig.readOrDefault<base::StringBuf>("ID", "");
+            auto tabConfig = config[TempString("Tab{}", i).c_str()];
+            auto tabType = tabConfig.readOrDefault<StringBuf>("Type", "");
+            auto tabID = tabConfig.readOrDefault<StringBuf>("ID", "");
 
             if (tabType == "Directory")
             {
-                auto tabPath = tabConfig.readOrDefault<base::StringBuf>("Path", "");
+                auto tabPath = tabConfig.readOrDefault<StringBuf>("Path", "");
                 if (auto tabDirectory = m_depot->findPath(tabPath))
                 {
                     // create new tab
-                    auto newTab = base::CreateSharedPtr<AssetBrowserTabFiles>(AssetBrowserContext::DirectoryTab);
+                    auto newTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
                     newTab->directory(tabDirectory);
 
                     // load config
@@ -93,7 +101,7 @@ namespace ed
 
         // expand directories
         {
-            auto expandedDirectories = config.readOrDefault<base::Array<base::StringBuf>>("ExpandedDirectories");
+            auto expandedDirectories = config.readOrDefault<Array<StringBuf>>("ExpandedDirectories");
             for (auto& path : expandedDirectories)
             {
                 if (auto dir = m_depot->findPath(path))
@@ -104,7 +112,7 @@ namespace ed
 
         // select directory
         {
-            auto selectedDirectoryPath = config.readOrDefault<base::StringBuf>("SelectedDirectory");
+            auto selectedDirectoryPath = config.readOrDefault<StringBuf>("SelectedDirectory");
             if (selectedDirectoryPath)
             {
                 if (auto dir = m_depot->findPath(selectedDirectoryPath))
@@ -130,9 +138,9 @@ namespace ed
     void AssetBrowser::saveConfig(ConfigGroup config) const
     {
         // tab configuration
-        base::InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
+        InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(fileTabs);
-        base::InplaceArray<AssetBrowserTabFiles*, 10> activeFileTabs;
+        InplaceArray<AssetBrowserTabFiles*, 10> activeFileTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(activeFileTabs, ui::DockPanelIterationMode::ActiveOnly);
 
         config.write<uint32_t>("NumTabs", fileTabs.size());
@@ -142,20 +150,20 @@ namespace ed
             auto tab = fileTabs[i];
 
             // store tab type
-            auto tabId = base::StringBuf(base::TempString("Tab{}", i));
+            auto tabId = StringBuf(TempString("Tab{}", i));
             auto tabConfig = config[tabId];
-            tabConfig.write<base::StringBuf>("Type", "Directory");
-            tabConfig.write<base::StringBuf>("ID", tabId);
+            tabConfig.write<StringBuf>("Type", "Directory");
+            tabConfig.write<StringBuf>("ID", tabId);
             tabConfig.write<bool>("Active", activeFileTabs.contains(tab));
             tab->saveConfig(tabConfig);
         }
 
         // collect opened directories from the depot tree
         {
-            base::Array<ui::ModelIndex> indices;
+            Array<ui::ModelIndex> indices;
             m_depotTree->collectExpandedItems(indices);
 
-            base::Array<base::StringBuf> expandedFolders;
+            Array<StringBuf> expandedFolders;
             for (auto& index : indices)
                 if (auto dir = m_depotTreeModel->dataForNode(index))
                     expandedFolders.pushBack(dir->depotPath());
@@ -205,41 +213,46 @@ namespace ed
         return ret;
     }
 
-    void AssetBrowser::showFile(ManagedFile* filePtr)
+    bool AssetBrowser::showFile(ManagedFile* filePtr)
     {
         if (filePtr)
         {
             auto dir = filePtr->parentDirectory();
     
-            base::RefPtr<AssetBrowserTabFiles> tab;
+            RefPtr<AssetBrowserTabFiles> tab;
             navigateToDirectory(dir, tab);
             if (tab)
-                tab->selectItem(filePtr);
+                return tab->selectItem(filePtr);
         }
+
+        return false;
     }
 
-    void AssetBrowser::showDirectory(ManagedDirectory* dir, bool exploreContent)
+    bool AssetBrowser::showDirectory(ManagedDirectory* dir, bool exploreContent)
     {
         if (auto index = m_depotTreeModel->findNodeForData(dir))
         {
             m_depotTree->expandItem(index);
             m_depotTree->select(index, ui::ItemSelectionModeBit::Default, exploreContent);
+            return true;
         }
+
+        return false;
     }
 
     void AssetBrowser::navigateToDirectory(ManagedDirectory* dir)
     {
-        base::RefPtr<AssetBrowserTabFiles> outTab;
+        RefPtr<AssetBrowserTabFiles> outTab;
         navigateToDirectory(dir, outTab);
     }
 
-    void AssetBrowser::navigateToDirectory(ManagedDirectory* dir, base::RefPtr<AssetBrowserTabFiles>& outTab)
+    void AssetBrowser::navigateToDirectory(ManagedDirectory* dir, RefPtr<AssetBrowserTabFiles>& outTab)
     {
         DEBUG_CHECK(dir != nullptr);
         if (dir == nullptr)
             return;
 
-        base::InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
+        InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(fileTabs);
 
         // switch to tab with that directory
@@ -248,12 +261,12 @@ namespace ed
             if (tab->directory() == dir)
             {
                 m_dockContainer->activatePanel(tab);
-                outTab = base::RefPtr< AssetBrowserTabFiles>(AddRef(tab));
+                outTab = RefPtr< AssetBrowserTabFiles>(AddRef(tab));
                 return;
             }
         }
 
-        base::InplaceArray<AssetBrowserTabFiles*, 10> activeTabs;
+        InplaceArray<AssetBrowserTabFiles*, 10> activeTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(activeTabs, ui::DockPanelIterationMode::ActiveOnly);
 
         // get the active tab and if it's not locked use it
@@ -262,7 +275,7 @@ namespace ed
             if (tab && !tab->locked())
             {
                 tab->directory(dir);
-                outTab = base::RefPtr<AssetBrowserTabFiles>(AddRef(tab));
+                outTab = RefPtr<AssetBrowserTabFiles>(AddRef(tab));
                 return;
             }
         }
@@ -274,13 +287,13 @@ namespace ed
             {
                 tab->directory(dir);
                 m_dockContainer->activatePanel(tab);
-                outTab = base::RefPtr< AssetBrowserTabFiles>(AddRef(tab));
+                outTab = RefPtr< AssetBrowserTabFiles>(AddRef(tab));
                 return;
             }
         }
 
         // create new tab
-        auto newTab = base::CreateSharedPtr<AssetBrowserTabFiles>(AssetBrowserContext::DirectoryTab);
+        auto newTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
         newTab->directory(dir);
         
         // attach it to the main area
@@ -302,21 +315,13 @@ namespace ed
 
     void AssetBrowser::closeDirectoryTab(ManagedDirectory* dir)
     {
-        base::InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
+        InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(fileTabs);
 
         for (auto fileTab : fileTabs)
         {
             if (fileTab->directory() == dir)
                 fileTab->close();
-        }
-    }
-
-    void AssetBrowser::managedDepotEvent(ManagedItem* item, ManagedDepotEvent eventType)
-    {
-        if (eventType == ManagedDepotEvent::DirDeleted)
-        {
-            closeDirectoryTab(static_cast<ManagedDirectory*>(item));
         }
     }
 

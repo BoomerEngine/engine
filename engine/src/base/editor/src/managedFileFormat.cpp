@@ -25,19 +25,19 @@ namespace ed
 
     ///---
 
-    static void ExtractTagFromClass(SpecificClassType<res::IResource> resourceClass, base::Array<ManagedFileTag>& outTags)
+    static void ExtractTagFromClass(SpecificClassType<res::IResource> resourceClass, Array<ManagedFileTag>& outTags)
     {
-        if (const auto* tagData = resourceClass->findMetadata<base::res::ResourceTagColorMetadata>())
+        if (const auto* tagData = resourceClass->findMetadata<res::ResourceTagColorMetadata>())
         {
-            if (const auto* descData = resourceClass->findMetadata<base::res::ResourceDescriptionMetadata>())
+            if (const auto* descData = resourceClass->findMetadata<res::ResourceDescriptionMetadata>())
             {
-                const auto desc = base::StringView<char>(descData->description());
+                const auto desc = StringView<char>(descData->description());
                 if (tagData->color().a > 0 && !desc.empty())
                 {
                     auto& tag = outTags.emplaceBack();
                     tag.color = tagData->color();
-                    tag.name = base::StringBuf(desc);
-                    //tag.baked = resourceClass->findMetadata < base::res::>() != nullptr;
+                    tag.name = StringBuf(desc);
+                    //tag.baked = resourceClass->findMetadata < res::>() != nullptr;
                 }
             }
         }
@@ -90,7 +90,7 @@ namespace ed
                 res::IResourceImporter::ListImportableExtensionsForClass(m_nativeResourceClass, importExtensions);
 
                 for (const auto& view : importExtensions)
-                    m_importExtensions.pushBack(base::StringBuf(view).toLower());
+                    m_importExtensions.pushBack(StringBuf(view).toLower());
             }
         }
 
@@ -141,7 +141,7 @@ namespace ed
     ManagedFileFormat::~ManagedFileFormat()
     {}
 
-    base::res::ResourcePtr ManagedFileFormat::createEmpty() const
+    res::ResourcePtr ManagedFileFormat::createEmpty() const
     {
         if (m_factory)
             return m_factory->createResource();
@@ -171,7 +171,7 @@ namespace ed
         return m_thumbnail;
     }
 
-    bool ManagedFileFormat::loadableAsType(base::ClassType resourceClass) const
+    bool ManagedFileFormat::loadableAsType(ClassType resourceClass) const
     {
         if (m_nativeResourceClass && m_nativeResourceClass == resourceClass)
             return true;

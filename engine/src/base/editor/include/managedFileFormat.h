@@ -10,7 +10,6 @@
 
 #include "base/io/include/absolutePath.h"
 #include "versionControl.h"
-#include "base/object/include/objectObserver.h"
 
 namespace ed
 {
@@ -21,14 +20,14 @@ namespace ed
     // output cooked format
     struct BASE_EDITOR_API ManagedFileCookableOutput : public NoCopy
     {
-        base::SpecificClassType<base::res::IResource> resoureClass; // output resource class
+        SpecificClassType<res::IResource> resoureClass; // output resource class
     };
 
     // resource tag for a managed file
     struct BASE_EDITOR_API ManagedFileTag
     {
-        base::StringBuf name;
-        base::Color color;
+        StringBuf name;
+        Color color;
         bool baked = false;
     };
 
@@ -74,12 +73,12 @@ namespace ed
         //--
 
         /// create empty resource
-        base::res::ResourcePtr createEmpty() const;
+        res::ResourcePtr createEmpty() const;
 
         //--
 
         // is this file lodable/cookable as given type ?
-        bool loadableAsType(base::ClassType resourceClass) const;
+        bool loadableAsType(ClassType resourceClass) const;
 
         /// get the default thumbnail image for this file type
         const image::ImageRef& thumbnail() const;
@@ -94,9 +93,9 @@ namespace ed
 
         Array<ManagedFileTag> m_tags;
 
-        base::RefPtr<base::res::IFactory> m_factory;
+        RefPtr<res::IFactory> m_factory;
 
-        base::Array<base::StringBuf> m_importExtensions;
+        Array<StringBuf> m_importExtensions;
 
         bool m_showInBrowser = false;
         mutable bool m_hasTypeThumbnail = false;

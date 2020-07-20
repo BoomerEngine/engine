@@ -613,7 +613,7 @@ namespace ui
 
                 if (auto elem = m_currentHoverElement.lock())
                 {
-                    TRACE_INFO("Hover: '{}' ({})", elem->name(), elem->cls()->name());
+                    //TRACE_INFO("Hover: '{}' ({})", elem->name(), elem->cls()->name());
                     elem->handleHoverEnter(m_lastHoverUpdatePosition);
                 }
             }            

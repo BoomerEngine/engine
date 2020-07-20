@@ -56,6 +56,13 @@ namespace base
             changeImportMetadata(GetUserName(), GetHostName(), io::TimeStamp::GetNow());
         }
 
+        void ResourceConfiguration::computeConfigurationKey(CRC64& crc) const
+        {
+            // ignore most of the "source" settings
+            crc << m_sourceAuthor;
+            crc << m_sourceLicense;
+        }
+
         //--
 
         RTTI_BEGIN_TYPE_STRUCT(SourceDependency);
@@ -87,6 +94,7 @@ namespace base
             RTTI_PROPERTY(resourceClassVersion);
             RTTI_PROPERTY(importBaseConfiguration);
             RTTI_PROPERTY(importUserConfiguration);
+            RTTI_PROPERTY(importFullConfiguration);
             RTTI_PROPERTY(cookerClass);
             RTTI_PROPERTY(internalRevision);
         RTTI_END_TYPE();

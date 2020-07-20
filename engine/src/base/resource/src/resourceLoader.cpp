@@ -20,13 +20,13 @@ namespace base
 
         //--
 
-        IResourceLoaderEventListener::~IResourceLoaderEventListener()
-        {}
-
-        //--
-
         RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceLoader);
         RTTI_END_TYPE();
+
+        IResourceLoader::IResourceLoader()
+        {
+            m_eventKey = MakeUniqueEventKey("ResourceLoader");
+        }
 
         IResourceLoader::~IResourceLoader()
         {
@@ -39,61 +39,22 @@ namespace base
 
         void IResourceLoader::notifyResourceLoading(const ResourceKey& path)
         {
-            auto lock = CreateLock(m_listenersLock);
-            for (auto it  : m_listeners)
-                it->onResourceLoading(path);
+            DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_LOADING, path);
         }
 
         void IResourceLoader::notifyResourceFailed(const ResourceKey& path)
         {
-            auto lock = CreateLock(m_listenersLock);
-            for (auto it  : m_listeners)
-                it->onResourceFailed(path);
+            DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_FAILED, path);
         }
 
         void IResourceLoader::notifyResourceLoaded(const ResourceKey& path, const ResourceHandle& data)
         {
-            auto lock = CreateLock(m_listenersLock);
-            for (auto it  : m_listeners)
-                it->onResourceLoaded(path, data);
-        }
-
-        void IResourceLoader::notifyMissingBakedResource(const ResourceKey& path)
-        {
-            TRACE_WARNING("Missing baked resource '{}'", path);
-
-            for (auto it : m_listeners)
-                it->onResourceMissingBakedResource(path); 
-        }
-
-        void IResourceLoader::feedListenerWithData(IResourceLoaderEventListener* listener)
-        {
-
+            DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_LOADED, data);
         }
 
         void IResourceLoader::notifyResourceUnloaded(const ResourceKey& path)
         {
-            auto lock = CreateLock(m_listenersLock);
-            TRACE_INFO("Unloaded resource '{}'", path);
-
-            for (auto it  : m_listeners)
-                it->onResourceUnloaded(path);
-        }
-        
-        void IResourceLoader::attachListener(IResourceLoaderEventListener* listener)
-        {
-            {
-                auto lock = CreateLock(m_listenersLock);
-                m_listeners.pushBack(listener);
-            }
-
-            feedListenerWithData(listener);
-        }
-
-        void IResourceLoader::dettachListener(IResourceLoaderEventListener* listener)
-        {
-            auto lock = CreateLock(m_listenersLock);
-            m_listeners.remove(listener);
+            DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_UNLOADED, path);
         }
 
         //---

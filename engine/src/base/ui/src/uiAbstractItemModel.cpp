@@ -141,7 +141,10 @@ namespace ui
         m_updateState = UpdateState::Reset;
 
         for (auto* entry : m_observers)
-            entry->modelReset();
+            if (entry)
+                entry->modelReset();
+
+        m_observers.removeAll(nullptr);
 
         ASSERT(m_updateState == UpdateState::Reset);
         m_updateState = UpdateState::None;
@@ -156,7 +159,10 @@ namespace ui
         m_updateArgCount = count;
 
         for (auto* entry : m_observers)
-            entry->modelRowsAboutToBeAdded(parent, first, count);
+            if (entry)
+                entry->modelRowsAboutToBeAdded(parent, first, count);
+
+        m_observers.removeAll(nullptr);
     }
 
     void IAbstractItemModel::endInsertRows()
@@ -164,7 +170,10 @@ namespace ui
         ASSERT(m_updateState == UpdateState::InsertRows);
 
         for (auto* entry : m_observers)
-            entry->modelRowsAdded(m_updateIndex, m_updateArgFirst, m_updateArgCount);
+            if (entry)
+                entry->modelRowsAdded(m_updateIndex, m_updateArgFirst, m_updateArgCount);
+
+        m_observers.removeAll(nullptr);
 
         m_updateState = UpdateState::None;
         m_updateIndex = ModelIndex();
@@ -181,7 +190,10 @@ namespace ui
         m_updateArgCount = count;
 
         for (auto* entry : m_observers)
-            entry->modelRowsAboutToBeRemoved(parent, first, count);
+            if (entry)
+                entry->modelRowsAboutToBeRemoved(parent, first, count);
+
+        m_observers.removeAll(nullptr);
     }
 
     void IAbstractItemModel::endRemoveRows()
@@ -189,7 +201,10 @@ namespace ui
         ASSERT(m_updateState == UpdateState::RemoveRows);
 
         for (auto* entry : m_observers)
-            entry->modelRowsRemoved(m_updateIndex, m_updateArgFirst, m_updateArgCount);
+            if (entry)
+                entry->modelRowsRemoved(m_updateIndex, m_updateArgFirst, m_updateArgCount);
+
+        m_observers.removeAll(nullptr);
 
         m_updateState = UpdateState::None;
         m_updateIndex = ModelIndex();
@@ -216,7 +231,7 @@ namespace ui
 
     void IAbstractItemModel::unregisterObserver(IAbstractItemModelObserver* observer)
     {
-        m_observers.remove(observer);
+        m_observers.replace(observer, nullptr);
     }
 
     //---    

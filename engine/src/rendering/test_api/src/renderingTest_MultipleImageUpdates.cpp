@@ -106,6 +106,7 @@ namespace rendering
             cmd.opBeingPass(fb);
 
             // draw the grid
+            base::MTRandState rng;
             for (uint32_t y = 0; y < GRID_SIZE; ++y)
             {
                 for (uint32_t x = 0; x < GRID_SIZE; ++x)
@@ -127,7 +128,7 @@ namespace rendering
                     {
                         // prepare data
                         base::Color updateColors[IMAGE_SIZE*IMAGE_SIZE];
-                        base::Color randomColor = base::Color(base::RandByte(), base::RandByte(), base::RandByte());
+                        base::Color randomColor = base::Color(base::Rand(rng), base::Rand(rng), base::Rand(rng));
                         for (uint32_t i=0; i<ARRAY_COUNT(updateColors); ++i)
                             updateColors[i] = randomColor;
 

@@ -8,41 +8,42 @@
 
 #pragma once
 
-#include "base/editor/include/singleResourceEditor.h"
+#include "base/editor/include/resourceEditorNativeFile.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
 namespace ed
 {
 
     class MeshPreviewPanel;
-    class MeshPreviewPanelWithToolbar;
     class MeshStructurePanel;
+    class MeshMaterialsPanel;
 
     /// editor for meshes
-    class ASSETS_MESH_EDITOR_API MeshEditor : public SingleLoadedResourceEditor
+    class ASSETS_MESH_EDITOR_API MeshEditor : public ResourceEditorNativeFile
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, SingleLoadedResourceEditor);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, ResourceEditorNativeFile);
 
     public:
-        MeshEditor(ConfigGroup config, ManagedFile* file);
+        MeshEditor(ConfigGroup config, ManagedFileNativeResource* file);
         virtual ~MeshEditor();
 
         //--
 
-        INLINE MeshPreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
+        INLINE MeshPreviewPanel* previewPanel() const { return m_previewPanel; }
 
         INLINE rendering::MeshPtr mesh() const { return base::rtti_cast<rendering::Mesh>(resource()); }
 
         //--
 
+        virtual void bindResource(const res::ResourcePtr& resource) override;
+        virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
+
     private:
-        base::RefPtr<MeshPreviewPanelWithToolbar> m_previewPanel;
+        base::RefPtr<MeshPreviewPanel> m_previewPanel;
         base::RefPtr<MeshStructurePanel> m_structurePanel;
+        base::RefPtr<MeshMaterialsPanel> m_materialsPanel;
 
-
-        void createInterface();
-
-        virtual void resourceChanged() override;
+        void createInterface();        
     };
 
 } // ed

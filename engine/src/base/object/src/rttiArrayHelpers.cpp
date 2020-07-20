@@ -19,9 +19,12 @@ namespace base
 
         void ArrayGeneric::destroy(BaseArray* array, Type elementType) const
         {
+            const auto currentCapacity = array->capacity();
+
             clear(array, elementType);
 
-            array->changeCapacity(POOL_CONTAINERS, 0, 0, elementType->alignment(), elementType->name().c_str());
+            const auto currentBufferSize = currentCapacity * elementType->size();
+            array->changeCapacity(0, currentBufferSize, 0, elementType->alignment(), "");
         }
 
         void ArrayGeneric::clear(BaseArray* array, Type elementType) const
@@ -48,12 +51,17 @@ namespace base
             if (array->capacity() < minimalSize)
             {
                 auto stride = elementType->size();
+                
+                const auto minimalBufferSize = minimalSize * stride;
+                const auto currentBufferSize = array->capacity() * stride;
+                auto newBufferSize = currentBufferSize;
 
-                auto newCapacity = BaseArray::CalcNextCapacity(array->capacity(), stride);
-                while (newCapacity < minimalSize)
-                    newCapacity = BaseArray::CalcNextCapacity(newCapacity, stride);
+                while (newBufferSize < minimalBufferSize)
+                    newBufferSize = BaseArray::CalcNextBufferSize(newBufferSize);
 
-                array->changeCapacity(POOL_CONTAINERS, newCapacity, stride, elementType->alignment(), elementType->name().c_str());
+                const auto newCapacity = newBufferSize / stride;
+
+                array->changeCapacity(newCapacity, currentBufferSize, newBufferSize, elementType->alignment(), elementType->name().c_str());
             }
         }
 

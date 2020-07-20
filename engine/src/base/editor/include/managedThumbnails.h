@@ -12,7 +12,6 @@
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
-#include "base/containers/include/mutableArray.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
@@ -23,7 +22,7 @@ namespace ed
     //--
 
     /// frontend for thumbnail loading/generation
-    class BASE_EDITOR_API ManagedThumbnailHelper : public depot::IDepotObserver
+    class BASE_EDITOR_API ManagedThumbnailHelper : public base::NoCopy
     {
     public:
         ManagedThumbnailHelper(depot::DepotStructure& depot);
@@ -67,18 +66,7 @@ namespace ed
 
         // get next file to load a thumbnail for
         ManagedFile* popFileLoadingQueueOrSignalFence();
-        ManagedFile* popFileLoadingQueue_NoLock();
-
-            
-        //---
-
-
-
-        //---
-
-        // IDepotObserver
-        virtual void notifyFileChanged(StringView<char> depotFilePath) override final;
-        virtual void notifyFileAdded(StringView<char> depotFilePath) override final;
+        ManagedFile* popFileLoadingQueue_NoLock();           
     };
 
     //---

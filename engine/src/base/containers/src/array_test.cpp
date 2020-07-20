@@ -761,7 +761,7 @@ TEST(Array, EraseUnordered)
 	Array<uint32_t> a(data, ARRAY_COUNT(data));
 	ASSERT_EQ(6, a.size());
 
-	a.eraseUnordered(1, 1); // removes 2
+	a.eraseUnordered(1); // removes 2
 	
 	ASSERT_EQ(5, a.size());
 	ASSERT_EQ(1, a[0]);

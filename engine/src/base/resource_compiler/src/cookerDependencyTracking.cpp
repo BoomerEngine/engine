@@ -22,6 +22,12 @@ namespace base
             // create the root directory
             m_sourceAssetRootDir = MemNew(TrackedDepotDir);
             m_sourceAssetDirs.pushBack(m_sourceAssetRootDir);
+
+            // register to depot events
+            m_events.bind(depot.eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path)
+            {
+                notifyFileChanged(path);
+            };
         }
 
         DependencyTracker::~DependencyTracker()
@@ -180,12 +186,7 @@ namespace base
                 return nullptr;
         }
 
-        void DependencyTracker::notifyFileAdded(StringView<char> depotFilePath)
-        {
-            notifyFileChanged(depotFilePath);
-        }
-
-        void DependencyTracker::notifyFileChanged(StringView<char> depotFilePath)
+        void DependencyTracker::notifyFileChanged(const StringBuf& depotFilePath)
         {
             InplaceArray<TrackedCookedFile*, 20> changedFiles;
 

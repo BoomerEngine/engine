@@ -28,10 +28,10 @@ namespace ui
         //--
 
         // get auto render flag
-        inline bool autoRender() const { return m_autoRender; }
+        INLINE bool autoRender() const { return m_autoRender; }
 
         // get rendering rate
-        inline float renderRate() const { return m_renderRate; }
+        INLINE float renderRate() const { return m_renderRate; }
 
         //--
 

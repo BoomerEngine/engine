@@ -76,7 +76,7 @@ namespace base
         if (auto* pathEntry = createPathEntry(path))
         {
             if (0 == m_callbackDepth)
-                pathEntry->observers.remove(nullptr);
+                pathEntry->observers.removeUnorderedAll(nullptr);
             pathEntry->observers.pushBackUnique(observer);
         }
     }
@@ -85,13 +85,12 @@ namespace base
     {
         if (auto* pathEntry = findPathEntry(path))
         {
-            const auto index = pathEntry->observers.find(observer);
-            if (index != INDEX_NONE)
+            if (const auto index = pathEntry->observers.find(observer))
             {
                 pathEntry->observers[index] = nullptr;
 
                 if (0 == m_callbackDepth)
-                    pathEntry->observers.remove(nullptr);
+                    pathEntry->observers.removeUnorderedAll(nullptr);
             }
         }
     }

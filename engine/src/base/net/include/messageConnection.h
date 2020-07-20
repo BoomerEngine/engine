@@ -44,18 +44,28 @@ namespace base
             /// are we still connected ?
             virtual bool isConnected() const = 0;
 
+            /// request connection to be closed, NOTE: all outgoing messages will still be sent
+            virtual void close() = 0;
+
+            ///---
+
+            /// pull next message from queue of received messages, returns NULL if there are no more messages in the queue
+            virtual MessagePtr pullNextMessage() = 0;
+
             ///---
 
             /// send message over the connection
             template< typename T >
-            INLINE void send(uint32_t targetObjectId, const T& messageData)
+            INLINE void send(T& messageData)
             {
-                sendPtr(targetObjectId, &messageData, reflection::GetTypeObject<T>());
+                sendPtr(&messageData, reflection::GetTypeObject<T>());
             }
 
+            ///---
+
         protected:
-            /// send message over the connection
-            virtual void sendPtr(uint32_t targetObjectId, const void* messageData, Type messageClass) = 0;
+            /// send message over the connection - raw form
+            virtual void sendPtr(const void* messageData, Type messageClass) = 0;
         };
 
         //---;

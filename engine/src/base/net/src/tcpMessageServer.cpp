@@ -9,8 +9,6 @@
 #include "build.h"
 #include "messageConnection.h"
 #include "messagePool.h"
-#include "messageObjectRepository.h"
-#include "messageObjectExecutor.h"
 #include "messageReplicator.h"
 #include "tcpMessageServer.h"
 #include "tcpMessageInternal.h"
@@ -30,10 +28,7 @@ namespace base
         TcpMessageServer::TcpMessageServer()
             : m_server(this)
         {
-            m_objects = CreateSharedPtr<MessageObjectRepository>();
             m_models = CreateSharedPtr<replication::DataModelRepository>();
-
-            m_pool.create();
         }
 
         TcpMessageServer::~TcpMessageServer()
@@ -64,29 +59,24 @@ namespace base
             return m_server.isListening();
         }
 
-        ///---
-
-        uint32_t TcpMessageServer::allocObjectId()
-        {
-            return m_objects->allocateObjectId();
-        }
-
-        void TcpMessageServer::attachObject(uint32_t id, const ObjectPtr& ptr)
-        {
-            m_objects->attachObject(id, ptr);
-        }
-
-        void TcpMessageServer::dettachObject(uint32_t id)
-        {
-            m_objects->detachObject(id);
-        }
-
-        ObjectPtr TcpMessageServer::resolveObject(uint32_t id) const
-        {
-            return m_objects->resolveObject(id);
-        }
-
         //--
+
+        void TcpMessageServer::closeConnection(socket::ConnectionID id)
+        {
+            auto lock = CreateLock(m_activeConnectionsLock);
+
+            TcpMessageServerConnectionState* info = nullptr;
+            if (m_activeConnectionMap.find(id, info))
+            {
+                TRACE_INFO("TcpMessage: Connection to remote client '{}' closed by server", info->m_address);
+
+                m_activeConnections.removeUnordered(info);
+                m_activeConnectionMap.remove(id);
+                MemDelete(info);
+
+                m_server.disconnect(id);
+            }            
+        }
 
         bool TcpMessageServer::checkConnectionStatus(socket::ConnectionID id)
         {
@@ -94,7 +84,7 @@ namespace base
             return m_activeConnectionMap.contains(id);
         }
 
-        void TcpMessageServer::broadcast(uint32_t targetObjectId, const void* messageData, Type messageClass)
+        void TcpMessageServer::broadcast(const void* messageData, Type messageClass)
         {
             auto lock  = CreateLock(m_activeConnectionsLock);
 
@@ -102,48 +92,81 @@ namespace base
             {
                 // compose a message via the replicator and send the generated data down the TCP link
                 TcpMessageServerReplicatorDataSink dataSink(m_server, info->m_id);
-                info->m_replicator.send(targetObjectId, messageData, messageClass, &dataSink);
+                info->m_replicator.send(messageData, messageClass, &dataSink);
             }
         }
 
-        void TcpMessageServer::send(socket::ConnectionID id, uint32_t targetObjectId, const void* messageData, Type messageClass)
+        void TcpMessageServer::send(socket::ConnectionID id, const void* messageData, Type messageClass)
         {
-            auto lock  = CreateLock(m_activeConnectionsLock);
+            auto lock = CreateLock(m_activeConnectionsLock);
 
             // get live connection
             TcpMessageServerConnectionState* state = nullptr;
             if (m_activeConnectionMap.find(id, state))
             {
+                StringBuilder messageContent;
+                messageClass->printToText(messageContent, messageData);
+                TRACE_INFO("TcpMessage: Sending {}: {} via connection {}", messageClass, messageContent, m_id);
+
                 // compose a message via the replicator and send the generated data down the TCP link
                 TcpMessageServerReplicatorDataSink dataSink(m_server, id);
-                state->m_replicator.send(targetObjectId, messageData, messageClass, &dataSink);
+                state->m_replicator.send(messageData, messageClass, &dataSink);
             }
+            else
+            {
+                TRACE_WARNING("TcpMessage: Sending {} to closed connection {}", messageClass, id);
+            }
+        }
+
+        MessageConnectionPtr TcpMessageServer::pullNextAcceptedConnection()
+        {
+            MessageConnectionPtr ret;
+
+            {
+                auto lock = CreateLock(m_activeConnectionsLock);
+                if (!m_newConnections.empty())
+                {
+                    ret = m_newConnections.top();
+                    m_newConnections.pop();
+
+                    TRACE_INFO("TcpMessage: Collected new connection from '{}'", ret->remoteAddress());
+                }
+            }
+
+            return ret;
         }
 
         //--
 
         void TcpMessageServer::handleConnectionAccepted(socket::tcp::Server* server, const socket::Address& address, socket::ConnectionID connection)
         {
-            TRACE_INFO("New connection to message server from '{}'", address);
+            TRACE_INFO("TcpMessage: New connection to message server from '{}'", address);
 
-            auto info  = MemNewPool(POOL_NET, TcpMessageServerConnectionState, connection, m_models, m_objects, address);
+            auto info = MemNewPool(POOL_NET, TcpMessageServerConnectionState, connection, m_models, address);
             info->m_handler = base::CreateSharedPtr<TcpMessageServerConnection>(this, connection, m_server.address(), address);
 
-            auto lock  = CreateLock(m_activeConnectionsLock);
-            m_activeConnections.pushBack(info);
-            m_activeConnectionMap[connection] = info;
+            {
+                auto lock = CreateLock(m_activeConnectionsLock);
+                m_activeConnections.pushBack(info);
+                m_activeConnectionMap[connection] = info;
+            }
+        
+            {
+                auto lock = CreateLock(m_newConnectionsLock);
+                m_newConnections.push(info->m_handler);
+            }
         }
 
         void TcpMessageServer::handleConnectionClosed(socket::tcp::Server* server, const socket::Address& address, socket::ConnectionID connection)
         {
-            TRACE_INFO("Closed connection to message server from '{}'", address);
-
             auto lock  = CreateLock(m_activeConnectionsLock);
 
             TcpMessageServerConnectionState* info = nullptr;
             if (m_activeConnectionMap.find(connection, info))
             {
-                m_activeConnections.remove(info);
+                TRACE_INFO("TcpMessage: Connection to remote client '{}' closed by client", address);
+
+                m_activeConnections.removeUnordered(info);
                 m_activeConnectionMap.remove(connection);
                 MemDelete(info);
             }
@@ -163,7 +186,7 @@ namespace base
                 // push data to reassembler, we will buffer it until we can assemble a packet
                 if (!info->m_reassembler.pushData(data, dataSize))
                 {
-                    TRACE_ERROR("TcpMessageServer: Fatal error on message reassembly from '{}'", info->m_address);
+                    TRACE_ERROR("TcpMessage: Fatal error on message reassembly from '{}'", info->m_address);
                     info->m_fatalError = true;
                     return;
                 }
@@ -186,16 +209,16 @@ namespace base
                         {
                             auto header  = (const TcpMessageTransportHeader*) messageData;
 
-                            TRACE_INFO("TcpMessageServer: reassembled message, size {} from '{}'", header->m_length, info->m_address);
+                            //TRACE_INFO("TcpMessage: reassembled message, size {} from '{}'", header->m_length, info->m_address);
 
-                            TcpMessageExecutorForwarder executor(info->m_executor, *m_pool, *m_objects);
+                            TcpMessageQueueCollector executor(static_cast<TcpMessageServerConnection*>(info->m_handler.get()));
                             info->m_replicator.processMessageData(messageData + sizeof(TcpMessageTransportHeader), header->m_length - sizeof(TcpMessageTransportHeader), &executor);
                             break;
                         }
 
                         case ReassemblerResult::Corruption:
                         {
-                            TRACE_ERROR("TcpMessageServer: Fatal error on message reassembly from '{}'", info->m_address);
+                            TRACE_ERROR("TcpMessage: Fatal error on message reassembly from '{}'", info->m_address);
                             info->m_fatalError = true;
                             break;
                         }
@@ -211,17 +234,5 @@ namespace base
 
         //--
 
-        void TcpMessageServer::executePendingMessages()
-        {
-            auto lock = CreateLock(m_activeConnectionsLock);
-
-            // TODO: this MAY crash if
-
-            for (auto info  : m_activeConnections)
-                info->m_executor.executeQueuedMessges(info->m_handler);
-        }
-
-        //--
-
-} // net
+    } // net
 } // base

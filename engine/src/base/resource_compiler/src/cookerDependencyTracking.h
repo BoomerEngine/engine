@@ -24,7 +24,7 @@ namespace base
         //--
 
         // helper class for tracking changes to the assets
-        class DependencyTracker : public depot::IDepotObserver
+        class DependencyTracker : public NoCopy
         {
         public:
             DependencyTracker(depot::DepotStructure& depot);
@@ -51,6 +51,8 @@ namespace base
             //--
 
             depot::DepotStructure& m_depot;
+
+            GlobalEventTable m_events;
 
             //--
 
@@ -124,8 +126,7 @@ namespace base
 
             //--
 
-            virtual void notifyFileChanged(StringView<char> depotFilePath) override;
-            virtual void notifyFileAdded(StringView<char> depotFilePath) override;
+            void notifyFileChanged(const StringBuf& depotFilePath);
         };
 
     } // res

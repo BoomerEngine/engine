@@ -462,7 +462,8 @@ namespace rendering
 
         SimpleMeshPtr IRenderingTest::loadMesh(const base::StringBuf& assetFile, const MeshSetup& setup)
         {
-            // assemble full path
+            return nullptr;
+            /*// assemble full path
             auto fullMeshPath = base::res::ResourcePath(base::TempString("engine/tests/meshes/{}", assetFile));
             auto loadedAsset = base::LoadResource<base::res::RawTextData>(fullMeshPath).acquire();
             if (!loadedAsset)
@@ -683,7 +684,7 @@ namespace rendering
                     return nullptr;
             }
 
-            return ret;
+            return ret;*/
         }
 
         //--

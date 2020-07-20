@@ -28,7 +28,7 @@ namespace ed
     class AssetBrowserTabFiles;
 
     /// build menu for given items
-    extern void BuildDepotContextMenu(ui::MenuButtonContainer& menu, AssetBrowserTabFiles* tab, const base::Array<ManagedItem*>& items);
+    extern void BuildDepotContextMenu(ui::MenuButtonContainer& menu, AssetBrowserTabFiles* tab, const Array<ManagedItem*>& items);
 
     /// build menu for given single item
     extern void BuildDepotContextMenu(ui::MenuButtonContainer& menu, AssetBrowserTabFiles* tab, ManagedItem* item);

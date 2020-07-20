@@ -52,8 +52,8 @@ namespace base
         void ImportFingerprintCache::conformPath(io::AbsolutePathView path, StringBuf& outPath) const
         {
             outPath = StringBuf(path);
-            outPath = outPath.toLower();
-            outPath.replaceChar('\\', '/');
+            //outPath = outPath.toLower();
+            //outPath.replaceChar('\\', '/');
         }
 
         bool ImportFingerprintCache::findEntry(io::AbsolutePathView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint)
@@ -105,6 +105,7 @@ namespace base
                 index = m_entries.size();
                 auto& entry = m_entries.emplaceBack();
                 entry.absolutePathUTF8 = conformedPath;
+                m_entriesMap[conformedPath] = index;
             }
 
             // find/create time entry
@@ -135,7 +136,10 @@ namespace base
             m_entriesMap.reserve(m_entries.size());
 
             for (uint32_t i = 0; i < m_entries.size(); ++i)
+            {
+                TRACE_INFO("Fingerprint: Loaded entry '{}': {}", m_entries[i].absolutePathUTF8, i);
                 m_entriesMap[m_entries[i].absolutePathUTF8] = i;
+            }
         }
 
         void ImportFingerprintCache::onPostLoad()

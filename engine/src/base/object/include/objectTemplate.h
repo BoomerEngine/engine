@@ -41,6 +41,9 @@ namespace base
         // NOTE: this will cause full object refresh in editor
         void rebase(const IObjectTemplate* base, bool copyValuesOfNonOverriddenProperties=true);
 
+        // detach base object - basically makes all set values marked as "overridden"
+        void detach(bool mergeOverrideTables = true);
+
         //--
 
         /// check if property can have the override semantic

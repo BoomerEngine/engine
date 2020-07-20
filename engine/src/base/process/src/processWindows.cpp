@@ -167,6 +167,9 @@ namespace base
 
             bool WinProcess::wait(uint32_t timeoutMS)
             {
+                if (m_hProcess == NULL)
+                    return true;
+
                 int ret = WaitForSingleObject(m_hProcess, timeoutMS);
                 if (ret != WAIT_OBJECT_0)
                     return false;
@@ -290,16 +293,8 @@ namespace base
 				for (auto& arg : setup.m_arguments)
 				{
 					temp += L"\" ";
-					temp += arg.c_str();
+					temp += arg.uni_str().c_str();
 				}
-
-                // append the end point name
-                if (setup.m_messageEndpointName != nullptr)
-                {
-                    temp += L" -endpointName=\"";
-                    temp += StringBuf(setup.m_messageEndpointName).uni_str().c_str();
-                    temp += L"\" ";
-                }
 
                 // create argument buffer
                 auto argsSize = temp.length();

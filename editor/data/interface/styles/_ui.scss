@@ -16,3 +16,23 @@ TextLabel#AssetBrowserCaption
     font-size: 34em;
     padding: 5em 0em 5em 5em;
 }
+
+AssetFileSmallImportIndicator
+{
+	padding: 6em 6em 6em 6em;
+	background: #8888;
+	opacity: 50%;
+	border-radius: 4em;
+	border-color: #000;
+	border-width: 1em;
+}
+
+AssetFileImportWidget
+{
+	margin: 4em 4em 4em 4em;
+	padding: 6em 6em 6em 6em;
+	background: #8882;
+	border-radius: 6em;
+	border-color: #000;
+	border-width: 1em;
+}

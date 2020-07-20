@@ -9,7 +9,6 @@
 #include "build.h"
 #include "messageKnowledgeBase.h"
 #include "messageKnowledgeSync.h"
-#include "messageObjectRepository.h"
 
 #include "base/containers/include/inplaceArray.h"
 
@@ -25,10 +24,9 @@ namespace base
 
         //---
 
-        KnowledgeUpdater::KnowledgeUpdater(MessageKnowledgeBase& base, IKnowledgeUpdaterSink* sink, MessageObjectRepository& objectRepository)
+        KnowledgeUpdater::KnowledgeUpdater(MessageKnowledgeBase& base, IKnowledgeUpdaterSink* sink)
             : m_knowledge(base)
             , m_updateSink(sink)
-            , m_objectRepository(objectRepository)
         {}
 
         replication::DataMappedID KnowledgeUpdater::mapString(StringView<char> txt)
@@ -70,14 +68,13 @@ namespace base
 
         replication::DataMappedID KnowledgeUpdater::mapObject(const IObject* obj)
         {
-            return m_objectRepository.findObjectId(obj);
+            return 0;
         }
 
         //---
 
-        KnowledgeResolver::KnowledgeResolver(const MessageKnowledgeBase& base, const MessageObjectRepository& objectRepository)
+        KnowledgeResolver::KnowledgeResolver(const MessageKnowledgeBase& base)
             : m_knowledge(base)
-            , m_objectRepository(objectRepository)
         {}
 
         bool KnowledgeResolver::resolveString(const replication::DataMappedID id, IFormatStream& f)
@@ -92,17 +89,7 @@ namespace base
 
         bool KnowledgeResolver::resolveObject(const replication::DataMappedID id, ObjectPtr& outObject)
         {
-            if (!id)
-            {
-                outObject = nullptr;
-                return true;
-            }
-
-            auto obj = m_objectRepository.resolveObject(id);
-            if (!obj)
-                return false;
-
-            outObject = std::move(obj);
+            outObject = nullptr;
             return true;
         }
 

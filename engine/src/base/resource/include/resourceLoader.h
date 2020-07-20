@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/containers/include/array.h"
-#include "base/containers/include/mutableArray.h"
+#include "base/object/include/globalEventKey.h"
 
 namespace base
 {
@@ -22,30 +22,6 @@ namespace base
     {
         //-----
 
-        // Listener interface for global resource events, can be used to monitor what is going on inside the loader
-        class BASE_RESOURCE_API IResourceLoaderEventListener : public base::NoCopy
-        {
-        public:
-            virtual ~IResourceLoaderEventListener();
-
-            /// resource has started loading
-            virtual void onResourceLoading(const ResourceKey& path) {};
-
-            /// resource has has failed loading
-            virtual void onResourceFailed(const ResourceKey& path) {};
-
-            /// resource has been loaded
-            virtual void onResourceLoaded(const ResourceKey& path, const ResourceHandle& resHandle) {};
-
-            /// resource has been unloaded
-            virtual void onResourceUnloaded(const ResourceKey& path) {};
-
-            /// missing baked resource
-            virtual void onResourceMissingBakedResource(const ResourceKey& path) {};
-        };
-
-        //---
-
         /// Resource loader - top level wrapper for all loading activities within the resource system
         class BASE_RESOURCE_API IResourceLoader : public IReferencable
         {
@@ -53,6 +29,11 @@ namespace base
 
         public:
             virtual ~IResourceLoader();
+
+            //----
+
+            /// get the event key, we can use the key to observer for events
+            INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
 
             //----
 
@@ -74,14 +55,6 @@ namespace base
 
             //----
 
-            /// register listener that will get informations about what's happening with resources in this loader
-            void attachListener(IResourceLoaderEventListener* listener);
-
-            /// detach previously attached listener
-            void dettachListener(IResourceLoaderEventListener* listener);
-
-            //----
-
             /// Load a resource from specified path, may return NULL resource
             /// NOTE: this function can wait for other jobs and thus yield the active fiber
             template<typename T>
@@ -100,9 +73,9 @@ namespace base
             ///----
 
         protected:
-            typedef MutableArray<IResourceLoaderEventListener*> TListeners;
-            Mutex m_listenersLock;
-            TListeners m_listeners;
+            IResourceLoader();
+
+            GlobalEventKey m_eventKey;
 
             //--
 
@@ -110,9 +83,6 @@ namespace base
             void notifyResourceLoaded(const ResourceKey& path, const ResourceHandle& data);
             void notifyResourceFailed(const ResourceKey& path);
             void notifyResourceUnloaded(const ResourceKey& path);
-            void notifyMissingBakedResource(const ResourceKey& path);
-
-            virtual void feedListenerWithData(IResourceLoaderEventListener* listener);
 
             //--
 

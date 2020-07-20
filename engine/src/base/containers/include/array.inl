@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: containers\dynamic #]
+* [#filter: containers #]
 ***/
 
 #pragma once
@@ -12,19 +12,19 @@ namespace base
 {
 
     template<typename T>
-    INLINE Array<T>::Array()
+    ALWAYS_INLINE Array<T>::Array()
     {};
 
     template<typename T>
-    INLINE Array<T>::Array(const T* ptr, uint32_t size)
+    Array<T>::Array(const T* ptr, Count size)
     {
 		auto elems  = allocateUninitialized(size);
 		std::uninitialized_copy_n(ptr, size, elems);
     }
 
 	template<typename T>
-	INLINE Array<T>::Array(void* ptr, uint32_t maxCapcity, EInplaceArrayData)
-		: BaseArray(ptr, maxCapcity)
+	Array<T>::Array(BaseArrayBuffer&& buffer)
+		: BaseArray(std::move(buffer))
 	{}
 
     template<typename T>
@@ -34,105 +34,117 @@ namespace base
     }
 
     template<typename T>
-    INLINE Array<T>::Array(Array<T> &&other)
+    Array<T>::Array(Array<T> &&other)
     {
-		if (other.isLocal())
-		{
-            suckFrom(other);
-		}
-		else
-		{
-			reserve(other.size());
-
-			auto elems  = allocateUninitialized(other.size());
-			std::uninitialized_move_n(other.typedData(), other.size(), elems);
-
-			other.reset();
-		}
+        *this = std::move(other);
     }
 
     template<typename T>
-    INLINE Array<T>::~Array()
+    Array<T>::~Array()
     {
         clear();
     }
 
     template<typename T>
-    INLINE uint32_t Array<T>::size() const
+    ALWAYS_INLINE Count Array<T>::size() const
     {
         return BaseArray::size();
     }
 
     template<typename T>
-    INLINE int Array<T>::lastValidIndex() const
+    ALWAYS_INLINE int Array<T>::lastValidIndex() const
     {
         return (int)BaseArray::size() - 1;
     }
 
     template<typename T>
-    INLINE uint32_t Array<T>::capacity() const
+    ALWAYS_INLINE Count Array<T>::capacity() const
     {
         return BaseArray::capacity();
     }
 
     template<typename T>
-    INLINE void* Array<T>::data()
+    ALWAYS_INLINE void* Array<T>::data()
     {
         return BaseArray::data();
     }
 
     template<typename T>
-    INLINE const void* Array<T>::data() const
+    ALWAYS_INLINE const void* Array<T>::data() const
     {
         return BaseArray::data();
     }
 
     template<typename T>
-    INLINE uint32_t Array<T>::dataSize() const
+    ALWAYS_INLINE uint64_t Array<T>::dataSize() const
     {
-        return size() * sizeof(T);
+        return ((uint64_t)size()) * sizeof(T);
     }
 
     template<typename T>
-    INLINE const T* Array<T>::typedData() const
+    ALWAYS_INLINE const T* Array<T>::typedData() const
     {
         return (const T*)data();
     }
 
     template<typename T>
-    INLINE T* Array<T>::typedData()
+    ALWAYS_INLINE T* Array<T>::typedData()
     {
         return (T*)data();
     }
 
     template<typename T>
-    INLINE bool Array<T>::empty() const
+    ALWAYS_INLINE bool Array<T>::empty() const
     {
         return BaseArray::empty();
     }
 
     template<typename T>
-    INLINE bool Array<T>::full() const
+    ALWAYS_INLINE bool Array<T>::full() const
     {
         return BaseArray::full();
     }
 
     template<typename T>
-    INLINE T& Array<T>::operator[](uint32_t index)
+    ALWAYS_INLINE T& Array<T>::operator[](Index index)
     {
         checkIndex(index);
         return typedData()[index];
     }
 
     template<typename T>
-    INLINE const T& Array<T>::operator[](uint32_t index) const
+    ALWAYS_INLINE const T& Array<T>::operator[](Index index) const
     {
         checkIndex(index);
         return typedData()[index];
     }
 
     template<typename T>
-    INLINE void Array<T>::popBack()
+    ALWAYS_INLINE PointerRange<T> Array<T>::pointerRange()
+    {
+        return PointerRange<T>(typedData(), size());
+    }
+
+    template<typename T>
+    ALWAYS_INLINE const PointerRange<T> Array<T>::pointerRange() const
+    {
+        return PointerRange<T>(typedData(), size());
+    }
+
+    template<typename T>
+    ALWAYS_INLINE IndexRange Array<T>::indexRange() const
+    {
+        return IndexRange(0, size());
+    }
+
+    template<typename T>
+    ALWAYS_INLINE BasePointerRange Array<T>::bytes() const
+    {
+        return BasePointerRange(data(), (const uint8_t*)data() + dataSize());
+    }
+
+    template<typename T>
+    void Array<T>::popBack()
     {
         checkIndex(size() - 1);
         changeSize(size() - 1);
@@ -140,43 +152,41 @@ namespace base
     }
 
     template<typename T>
-    INLINE T& Array<T>::back()
+    ALWAYS_INLINE T& Array<T>::back()
     {
         checkIndex(size() - 1);
         return typedData()[size() - 1];
     }
 
     template<typename T>
-    INLINE const T& Array<T>::back() const
+    ALWAYS_INLINE const T& Array<T>::back() const
     {
         checkIndex(size() - 1);
         return typedData()[size() - 1];
     }
 
     template<typename T>
-    INLINE T& Array<T>::front()
+    ALWAYS_INLINE T& Array<T>::front()
     {
         checkIndex(0);
         return typedData()[0];
     }
 
     template<typename T>
-    INLINE const T& Array<T>::front() const
+    ALWAYS_INLINE const T& Array<T>::front() const
     {
         checkIndex(0);
         return typedData()[0];
     }
 
     template<typename T>
-    INLINE void Array<T>::shrink()
+    void Array<T>::shrink()
     {
-		// do not shrink non-local arrays
-		if (isLocal())
-			BaseArray::changeCapacity(POOL_CONTAINERS, size(), sizeof(T), __alignof(T), typeid(typename std::remove_cv<T>::type).name());
+        BaseArray::changeCapacity(size(), sizeof(T) * capacity(), sizeof(T) * size(), __alignof(T), typeid(typename std::remove_cv<T>::type).name());
     }
 
     template<typename T>
-    void Array<T>::resizeWith(uint32_t newSize, const T& elementTemplate)
+    void Array<T>::resizeWith(Count newSize, const T& elementTemplate)
     {
         if (newSize < size())
         {
@@ -193,7 +203,7 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::resize(uint32_t newSize)
+    void Array<T>::resize(Count newSize)
     {
         if (newSize < size())
         {
@@ -210,7 +220,7 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::prepare(uint32_t minimalSize)
+    void Array<T>::prepare(Count minimalSize)
     {
         if (minimalSize > size())
         {
@@ -221,7 +231,7 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::prepareWith(uint32_t minimalSize, const T& elementTemplate /*= T()*/)
+    void Array<T>::prepareWith(Count minimalSize, const T& elementTemplate /*= T()*/)
     {
         if (minimalSize > size())
         {
@@ -232,18 +242,20 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::reserve(uint32_t newSize)
+    void Array<T>::reserve(Count newSize)
     {
         if (newSize > capacity())
         {
-            auto newCapacity  = BaseArray::CalcNextCapacity(capacity(), sizeof(T));
-            while (newCapacity < newSize)
-                newCapacity = BaseArray::CalcNextCapacity(newCapacity, sizeof(T));
+            const auto requiresBufferSize = sizeof(T) * newSize;
+            const auto currentBufferSize = sizeof(T) * capacity();
+            auto allocatedBufferSize = currentBufferSize;
+            while (allocatedBufferSize < requiresBufferSize)
+                allocatedBufferSize = BaseArray::CalcNextBufferSize(allocatedBufferSize);
 
-			if (isLocal())
-                BaseArray::changeCapacity(POOL_CONTAINERS, newCapacity, sizeof(T), __alignof(T), "");// , typeid(typename std::remove_cv<T>::type).name());
-			else
-                BaseArray::makeLocal(POOL_CONTAINERS, newCapacity, sizeof(T), __alignof(T), "");// , typeid(typename std::remove_cv<T>::type).name());
+            auto newCapacity = allocatedBufferSize / sizeof(T);
+            ASSERT_EX(newCapacity >= newSize, "Computation overflow");
+
+			BaseArray::changeCapacity(newCapacity, currentBufferSize, allocatedBufferSize, __alignof(T), typeid(typename std::remove_cv<T>::type).name());
         }
     }
 
@@ -251,38 +263,44 @@ namespace base
     template<typename FK>
     bool Array<T>::contains(const FK& element) const
     {
-        auto it  = std::find(begin(), end(), element);
-        return (it != end());
+        return pointerRange().contains(element);
     }
 
     template<typename T>
     template<typename FK>
-    int Array<T>::find(const FK& element) const
+    Index Array<T>::find(const FK& element) const
     {
-        auto it  = std::find(begin(), end(), element);
-        return (it != end()) ? std::distance(begin(), it) : INDEX_NONE;
+        Index ret = -1;
+        pointerRange().findFirst(element, ret);
+        return ret;
     }
 
     template<typename T>
     template<typename FK>
-    int Array<T>::findIf(const FK& element) const
+    Index Array<T>::findLast(const FK& func) const
     {
-        auto it = std::find_if(begin(), end(), element);
-        return (it != end()) ? std::distance(begin(), it) : INDEX_NONE;
+        Index ret = size();
+        if (!pointerRange().findLast(element, ret))
+            return Index();
+        return ret;
     }
 
     template<typename T>
     template<typename FK>
-    const T& Array<T>::findIfOrDefault(const FK& func, const T& defaultValue /*= T()*/) const
+    bool Array<T>::find(const FK& key, Index& outFoundIndex) const
     {
-        auto it = std::find_if(begin(), end(), element);
-        if (it != end())
-            return *it;
-        return defaultValue;
+        return pointerRange().findFirst(key, outFoundIndex);
     }
 
     template<typename T>
-    void Array<T>::erase(uint32_t index, uint32_t count)
+    template<typename FK>
+    bool Array<T>::findLast(const FK& key, Index& outFoundIndex) const
+    {
+        return pointerRange().findLast(key, outFoundIndex);
+    }
+
+    template<typename T>
+    void Array<T>::erase(Index index, Count count)
     {
         checkIndexRange(index, count);
 
@@ -293,14 +311,17 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::eraseUnordered(uint32_t index, uint32_t count)
+    void Array<T>::eraseUnordered(Index index)
     {
-        checkIndexRange(index, count);
+        checkIndex(index);
 
-		std::destroy_n(begin() + index, count);
-		memmove(typedData() + index, typedData() + size() - count, count * sizeof(T));
+        const auto last = lastValidIndex();
+        if (index < last)
+            std::swap(typedData()[index], typedData()[last]);
 
-        BaseArray::changeSize(size() - count);
+		std::destroy_n(begin() + last, 1);
+
+        BaseArray::changeSize(size() - 1);
     }
 
     template<typename T>
@@ -308,9 +329,7 @@ namespace base
     {
         std::destroy(begin(), end());
         BaseArray::changeSize(0);
-
-		if (isLocal())
-			BaseArray::changeCapacity(POOL_CONTAINERS, 0, sizeof(T), __alignof(T), typeid(typename std::remove_cv<T>::type).name());
+	    BaseArray::changeCapacity(0, capacity() * sizeof(T), 0, __alignof(T), typeid(typename std::remove_cv<T>::type).name());
     }
 
     template<typename T>
@@ -319,9 +338,7 @@ namespace base
         std::for_each(begin(), end(), [](T& val) { MemDelete(val); });
         std::destroy(begin(), end());
         BaseArray::changeSize(0);
-
-		if (isLocal())
-			BaseArray::changeCapacity(POOL_CONTAINERS, 0, sizeof(T), __alignof(T), typeid(typename std::remove_cv<T>::type).name());
+        BaseArray::changeCapacity(0, capacity() * sizeof(T), 0, __alignof(T), typeid(typename std::remove_cv<T>::type).name());
     }
 
     template<typename T>
@@ -336,7 +353,7 @@ namespace base
     {
         if (this != &other)
         {
-			reset();
+			reset(); // destroy elements without freeing memory
 			std::uninitialized_copy_n(other.begin(), other.size(), allocateUninitialized(other.size()));
         }
 
@@ -344,24 +361,24 @@ namespace base
     }
 
     template<typename T>
-    INLINE Array<T>& Array<T>::operator=(Array<T> &&other)
+    Array<T>& Array<T>::operator=(Array<T> &&other)
     {
         if (this != &other)
         {
-            auto old  = std::move(*this);
+            if (other.owned())
+            {
+                clear();
 
-			if (other.isLocal())
-			{
-                suckFrom(other);
-			}
-			else
-			{
-				reserve(other.size());
+                m_buffer = std::move(other.m_buffer);
+                m_size = other.m_size;
+                other.m_size = 0;
+            }
+            else
+            {
+                reset();
+                std::uninitialized_move_n(other.typedData(), other.size(), allocateUninitialized(other.size()));
 
-				auto elems  = allocateUninitialized(other.size());
-				std::uninitialized_move_n(other.typedData(), other.size(), typedData());
-
-				other.reset();
+                other.reset();
 			}
         }
 
@@ -381,45 +398,45 @@ namespace base
     }
 
     template<typename T>
-    INLINE void Array<T>::pushBack(const T &item)
+    void Array<T>::pushBack(const T &item)
     {
         new (allocateUninitialized(1)) T(item);
     }
 
     template<typename T>
-    void Array<T>::pushBack(const T* items, uint32_t count)
+    void Array<T>::pushBack(const T* items, Count count)
     {
         std::uninitialized_copy_n(items, count, allocateUninitialized(count));
     }
 
     template<typename T>
-    INLINE void Array<T>::pushBack(T &&item)
+    void Array<T>::pushBack(T &&item)
     {
         new (allocateUninitialized(1)) T(std::move(item));
     }
 
     template<typename T>
     template<typename ...Args>
-    INLINE T& Array<T>::emplaceBack(Args&&... args)
+    ALWAYS_INLINE T& Array<T>::emplaceBack(Args&&... args)
     {
         return *new (allocateUninitialized(1)) T(std::forward<Args>(args)...);
     }
 
     template<typename T>
-    INLINE void Array<T>::pushBackUnique(const T &element)
+    void Array<T>::pushBackUnique(const T &element)
     {
         if (!contains(element))
             pushBack(element);
     }
 
     template<typename T>
-    void Array<T>::insert(uint32_t index, const T &item)
+    void Array<T>::insert(Index index, const T &item)
     {
         insert(index, &item, 1);
     }
 
     template<typename T>
-    void Array<T>::insertWith(uint32_t index, uint32_t count, const T& itemTemplate)
+    void Array<T>::insertWith(Index index, Count count, const T& itemTemplate)
     {
         if (count == 0)
             return;
@@ -439,12 +456,12 @@ namespace base
         }
 
         // initialize new items as if the memory was trash
-        for (uint32_t i=0; i<count; ++i)
+        for (Count i=0; i<count; ++i)
             std::uninitialized_copy_n(&itemTemplate, 1, typedData() + index + i);
     }
 
     template<typename T>
-    void Array<T>::insert(uint32_t index, const T* items, uint32_t count)
+    void Array<T>::insert(Index index, const T* items, Count count)
     {
 		if (count == 0)
 			return;
@@ -468,14 +485,14 @@ namespace base
     }
 
     template<typename T>
-    template< typename FK >
-    uint32_t Array<T>::remove(const FK &item)
+    template<typename FK>
+    Count Array<T>::removeAll(const FK &item)
     {
         auto it  = std::remove(begin(), end(), item);
         if (it == end())
             return 0;
 
-		auto count  = std::distance(it, end());
+		auto count = std::distance(it, end());
 
         std::destroy(it, end());
         BaseArray::changeSize(std::distance(begin(), it));
@@ -483,39 +500,138 @@ namespace base
     }
 
     template<typename T>
-    template< typename FK >
-    uint32_t Array<T>::removeUnordered(const FK &item)
+    template<typename FK>
+    bool Array<T>::remove(const FK& item)
     {
-        // TODO: more optimal
-        return remove(item);
+        Index index = -1;
+        if (pointerRange().findFirst(item, index))
+        {
+            erase(index);
+            return true;
+        }
+
+        return false;
     }
 
     template<typename T>
-    INLINE ArrayIterator<T> Array<T>::begin()
+    template<typename FK>
+    bool Array<T>::removeLast(const FK& item)
+    {
+        Index index = size();
+        if (pointerRange().findLast(item, index))
+        {
+            erase(index);
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename T>
+    template<typename FK>
+    Count Array<T>::removeUnorderedAll(const FK &item)
+    {
+        Count removed = 0;
+
+        Index cur = -1;
+        while (pointerRange().findFirst(item, cur))
+        {
+            eraseUnordered(cur);
+            removed += 1;
+        }
+
+        return removed;
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::removeUnordered(const FK& item)
+    {
+        Index index = -1;
+        if (pointerRange().findFirst(item, index))
+        {
+            eraseUnordered(index);
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::removeUnorderedLast(const FK& item)
+    {
+        Index index = size();
+        if (pointerRange().findLast(item, index))
+        {
+            eraseUnordered(index);
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename T>
+    template<typename FK>
+    Count Array<T>::replaceAll(const FK& item, const T& itemTemplate)
+    {
+        return pointerRange().replaceAll(item, itemTemplate);
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::replace(const FK& item, T&& itemTemplate)
+    {
+        return pointerRange().replaceFirst(item, itemTemplate);
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::replaceLast(const FK& item, T&& itemTemplate)
+    {
+        return pointerRange().replaceLast(item, itemTemplate);
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::replace(const FK& item, const T& itemTemplate)
+    {
+        return pointerRange().replaceFirst(item, itemTemplate);
+    }
+
+    template<typename T>
+    template<typename FK>
+    bool Array<T>::replaceLast(const FK& item, const T& itemTemplate)
+    {
+        return pointerRange().replaceLast(item, itemTemplate);
+    }
+
+    template<typename T>
+    ArrayIterator<T> Array<T>::begin()
     {
         return ArrayIterator<T>(typedData());
     }
 
     template<typename T>
-    INLINE ArrayIterator<T> Array<T>::end()
+    ArrayIterator<T> Array<T>::end()
     {
         return ArrayIterator<T>(typedData() + size());
     }
 
     template<typename T>
-    INLINE ConstArrayIterator<T> Array<T>::begin() const
+    ConstArrayIterator<T> Array<T>::begin() const
     {
         return ConstArrayIterator<T>(typedData());
     }
 
     template<typename T>
-    INLINE ConstArrayIterator<T> Array<T>::end() const
+    ConstArrayIterator<T> Array<T>::end() const
     {
         return ConstArrayIterator<T>(typedData() + size());
     }
 
     template<typename T>
-    T* Array<T>::allocateUninitialized(uint32_t count)
+    T* Array<T>::allocateUninitialized(Count count)
     {
         auto newSize  = size() + count;
         reserve(newSize);
@@ -523,7 +639,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE T* Array<T>::allocate(uint32_t count)
+    T* Array<T>::allocate(Count count)
     {
         auto newSize  = size() + count;
         reserve(newSize);
@@ -532,7 +648,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE T* Array<T>::allocateWith(uint32_t count, const T& templateElement)
+    T* Array<T>::allocateWith(Count count, const T& templateElement)
     {
         auto newSize  = size() + count;
         reserve(newSize);
@@ -541,18 +657,12 @@ namespace base
     }
 
     template<typename T>
-    void Array<T>::makeLocal()
-    {
-        BaseArray::makeLocal(POOL_CONTAINERS, size(), sizeof(T), __alignof(T), typeid(typename std::remove_cv<T>::type).name());
-    }
-
-    template<typename T>
-    Buffer Array<T>::createBuffer(base::mem::PoolID poolID, uint32_t forcedAlignment) const
+    Buffer Array<T>::createBuffer(base::mem::PoolID poolID, uint64_t forcedAlignment) const
     {
         if (empty())
             return Buffer();
 
-        return Buffer::Create(poolID, dataSize(), std::max<uint32_t>(alignof(T), forcedAlignment), data());
+        return Buffer::Create(poolID, dataSize(), std::max(alignof(T), forcedAlignment), data());
     }
 
     static void NoFreeFunc(mem::PoolID pool, void* memory, uint64_t size)

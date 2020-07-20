@@ -39,7 +39,7 @@ namespace base
 
         //--
 
-        bool CommandCook::run(const app::CommandLine& commandline)
+        bool CommandCook::run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline)
         {
             m_outputDir = io::AbsolutePath::BuildAsDir(commandline.singleValueUTF16("outDir"));
             if (m_outputDir.empty())

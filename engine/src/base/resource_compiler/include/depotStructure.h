@@ -55,30 +55,6 @@ namespace base
 
         //---
 
-        /// Depot file system observer
-        class BASE_RESOURCE_COMPILER_API IDepotObserver : public base::NoCopy
-        {
-        public:
-            virtual ~IDepotObserver();
-
-            // file was changed
-            virtual void notifyFileChanged(StringView<char> depotFilePath) {};
-
-            // file was added
-            virtual void notifyFileAdded(StringView<char> depotFilePath) {};
-
-            // file was removed
-            virtual void notifyFileRemoved(StringView<char> depotFilePath) {};
-
-            // directory was added
-            virtual void notifyDirAdded(StringView<char> depotFilePath) {};
-
-            // directory was removed
-            virtual void notifyDirRemoved(StringView<char> depotFilePath) {};
-        };
-
-        //---
-
         /// helper class for managing depot structure of the project
         /// NOTE: depot files are RAW files from which we can load resources
         class BASE_RESOURCE_COMPILER_API DepotStructure : public NoCopy
@@ -88,6 +64,9 @@ namespace base
             virtual ~DepotStructure();
 
             //---
+            
+            /// get the event key for this depot structure, allows us to listen to changes
+            INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
 
             /// get the list of the mounted file systems
             INLINE const Array<const DepotFileSystem*>& mountedFileSystems() const { return m_fileSystemsPtrs; }
@@ -110,14 +89,6 @@ namespace base
             /// detach all project file systems
             void detachProjectFileSystems();
             
-            //--
-
-            /// attach observer
-            void attachObserver(IDepotObserver* observer);
-
-            /// detach observer
-            void detttachObserver(IDepotObserver* observer);
-
             //--
 
             /// get the context name for the given file
@@ -208,13 +179,12 @@ namespace base
             void notifyDirRemoved(IFileSystem* fs, StringView<char> rawFilePath);
 
         private:
+            // global event notifications
+            GlobalEventKey m_eventKey;
+                
             // file systems
             Array<UniquePtr<DepotFileSystem>> m_fileSystems;
             Array<const DepotFileSystem*> m_fileSystemsPtrs;
-
-            // depot observers
-            Mutex m_observersLock;
-            MutableArray<IDepotObserver*> m_observers;
 
             struct DepotFileSystemBindingInfo
             {

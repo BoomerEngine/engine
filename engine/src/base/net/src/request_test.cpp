@@ -9,8 +9,6 @@
 #include "requestArguments.h"
 
 #include "base/test/include/gtest/gtest.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/app/include/commandline.h"
 #include "base/system/include/thread.h"
 
 DECLARE_TEST_FILE(Requests);

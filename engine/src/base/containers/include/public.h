@@ -9,6 +9,12 @@
 // Glue headers and logic
 #include "base_containers_glue.inl"
 
+namespace base
+{
+    typedef int32_t Index;
+    typedef uint32_t Count;
+} // base
+
 // All shared pointer stuff is always exposed
 #include "uniquePtr.h"
 //#include "untypedWeakPtr.h"

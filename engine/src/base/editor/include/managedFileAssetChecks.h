@@ -17,34 +17,36 @@ namespace ed
     //---
 
     /// internal helper class that checks the reimport status of a file
-    class ManagedFileImportStatusCheck : public base::IReferencable, public base::IProgressTracker
+    class ManagedFileImportStatusCheck : public IReferencable, public IProgressTracker
     {
     public:
-        ManagedFileImportStatusCheck(const ManagedFile* file);
+        ManagedFileImportStatusCheck(const ManagedFileNativeResource* file, ui::IElement* owner = nullptr);
         ~ManagedFileImportStatusCheck();
 
         /// file being checked
-        INLINE const ManagedFile* file() const { return m_file; }
+        INLINE const ManagedFileNativeResource* file() const { return m_file; }
 
         //--
 
         /// get last posted status
-        base::res::ImportStatus status();
+        res::ImportStatus status();
 
         /// cancel request 
         void cancel();
 
     private:
-        const ManagedFile* m_file = nullptr;
+        const ManagedFileNativeResource* m_file = nullptr;
 
-        base::SpinLock m_lock;
-        base::res::ImportStatus m_status = base::res::ImportStatus::Checking;
+        SpinLock m_lock;
+        res::ImportStatus m_status = res::ImportStatus::Checking;
         std::atomic<uint32_t> m_cancelFlag = 0;
+
+        ui::ElementWeakPtr m_owner;
 
         virtual bool checkCancelation() const override final;
         virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
 
-        void postStatusChange(base::res::ImportStatus status);
+        void postStatusChange(res::ImportStatus status);
 
         CAN_YIELD void runCheck();
     };
@@ -52,10 +54,10 @@ namespace ed
     //---
 
     /// internal helper class that checks ONE SINGLE SOURCE ASSET
-    class ManagedFileSourceAssetCheck : public base::IReferencable, public base::IProgressTracker
+    class ManagedFileSourceAssetCheck : public IReferencable, public IProgressTracker
     {
     public:
-        ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const base::res::ImportFileFingerprint& lastKnownCRC);
+        ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
         ~ManagedFileSourceAssetCheck();
 
         /// file being checked
@@ -64,7 +66,7 @@ namespace ed
         //--
 
         /// get last posted status
-        base::res::SourceAssetStatus status();
+        res::SourceAssetStatus status();
 
         /// last progress (0-1) of check (usually CRC computation)
         float progress();
@@ -73,13 +75,13 @@ namespace ed
         void cancel();
 
     private:
-        base::StringBuf m_sourceAssetPath;
+        StringBuf m_sourceAssetPath;
         io::TimeStamp m_sourceLastKnownTimestamp;
-        base::res::ImportFileFingerprint m_sourceLastKnownCRC;
+        res::ImportFileFingerprint m_sourceLastKnownCRC;
 
-        base::SpinLock m_lock;
+        SpinLock m_lock;
 
-        base::res::SourceAssetStatus m_status = base::res::SourceAssetStatus::Checking;
+        res::SourceAssetStatus m_status = res::SourceAssetStatus::Checking;
         float m_progress = 0.0f;
 
         std::atomic<uint32_t> m_cancelFlag = 0;
@@ -87,7 +89,7 @@ namespace ed
         virtual bool checkCancelation() const override final;
         virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
 
-        void postStatusChange(base::res::SourceAssetStatus status);
+        void postStatusChange(res::SourceAssetStatus status);
 
         CAN_YIELD void runCheck();
     };

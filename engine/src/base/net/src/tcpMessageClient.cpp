@@ -12,7 +12,6 @@
 
 #include "messageReassembler.h"
 #include "messagePool.h"
-#include "messageObjectRepository.h"
 #include "messageObjectExecutor.h"
 #include "messageReplicator.h"
 
@@ -33,12 +32,9 @@ namespace base
             , m_client(this)
             , m_fatalError(false)
         {
-            m_objects = CreateSharedPtr<MessageObjectRepository>();
             m_models = CreateSharedPtr<replication::DataModelRepository>();
 
-            m_pool.create();
-            m_replicator.create(m_models, m_objects);
-            m_executor.create(MessageConnection::GetStaticClass());
+            m_replicator.create(m_models);
             m_reassembler.create(&TcpMessageReassemblerHandler::GetInstance());
         }
 
@@ -62,6 +58,11 @@ namespace base
             return m_client.isConnected() && !m_fatalError;
         }
 
+        void TcpMessageClient::close()
+        {
+            m_client.close();
+        }
+
         uint32_t TcpMessageClient::connectionId() const
         {
             return m_connectionId;
@@ -83,49 +84,46 @@ namespace base
 
         ///---
 
-        uint32_t TcpMessageClient::allocObjectId()
-        {
-            return m_objects->allocateObjectId();
-        }
-
-        void TcpMessageClient::attachObject(uint32_t id, const ObjectPtr& ptr)
-        {
-            m_objects->attachObject(id, ptr);
-        }
-
-        void TcpMessageClient::dettachObject(uint32_t id)
-        {
-            m_objects->detachObject(id);
-        }
-
-        ObjectPtr TcpMessageClient::resolveObject(uint32_t id) const
-        {
-            return m_objects->resolveObject(id);
-        }
-
-        //---
-
-        void TcpMessageClient::executePendingMessages()
-        {
-            m_executor->executeQueuedMessges(this);
-        }
-
-        //---
-
-        void TcpMessageClient::sendPtr(uint32_t targetObjectId, const void* messageData, Type messageClass)
+        void TcpMessageClient::sendPtr(const void* messageData, Type messageClass)
         {
             // if we are in error state don't do anything more
             if (m_fatalError)
                 return;
 
             TcpMessageClientReplicatorDataSink dataSink(m_client);
-            m_replicator->send(targetObjectId, messageData, messageClass, &dataSink);
+            m_replicator->send(messageData, messageClass, &dataSink);
         }
+
+
+        MessagePtr TcpMessageClient::pullNextMessage()
+        {
+            auto lock = CreateLock(m_receivedMessagesQueueLock);
+
+            if (m_receivedMessagesQueue.empty())
+                return nullptr;
+
+            auto msg = m_receivedMessagesQueue.top();
+            m_receivedMessagesQueue.pop();
+
+            return msg;
+        }
+
+        void TcpMessageClient::pushNextMessage(const MessagePtr& message)
+        {
+            if (message)
+            {
+                auto lock = CreateLock(m_receivedMessagesQueueLock);
+                m_receivedMessagesQueue.push(message);
+            }
+        }
+
+        //---
 
         void TcpMessageClient::handleConnectionClosed(socket::tcp::Client* client, const socket::Address& address)
         {
 
         }
+
 
         void TcpMessageClient::handleConnectionData(socket::tcp::Client* client, const socket::Address& address, const void* data, uint32_t dataSize)
         {
@@ -161,8 +159,8 @@ namespace base
 
                         TRACE_INFO("TcpMessageClient: reassembled message, size {} from '{}'", header->m_length, m_client.remoteAddress());
 
-                        TcpMessageExecutorForwarder executor(*m_executor, *m_pool, *m_objects);
-                        m_replicator->processMessageData(messageData + sizeof(TcpMessageTransportHeader), header->m_length - sizeof(TcpMessageTransportHeader), &executor);
+                        TcpMessageQueueCollector collector(this);
+                        m_replicator->processMessageData(messageData + sizeof(TcpMessageTransportHeader), header->m_length - sizeof(TcpMessageTransportHeader), &collector);
                         break;
                     }
 

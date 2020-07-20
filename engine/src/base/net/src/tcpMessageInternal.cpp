@@ -9,11 +9,10 @@
 #include "build.h"
 #include "messageConnection.h"
 #include "messagePool.h"
-#include "messageObjectRepository.h"
-#include "messageObjectExecutor.h"
 #include "messageReplicator.h"
 #include "tcpMessageInternal.h"
 #include "tcpMessageServer.h"
+#include "tcpMessageClient.h"
 
 #include "base/socket/include/tcpServer.h"
 #include "base/socket/include/tcpClient.h"
@@ -24,6 +23,9 @@ namespace base
     namespace net
     {
         //--
+
+        RTTI_BEGIN_TYPE_NATIVE_CLASS(TcpMessageServerConnection);
+        RTTI_END_TYPE();
 
         TcpMessageServerConnection::TcpMessageServerConnection(TcpMessageServer* server, const socket::ConnectionID id, const socket::Address& localAddress, const socket::Address& remoteAddress)
             : m_id(id)
@@ -58,22 +60,46 @@ namespace base
             return false;
         }
 
-        void TcpMessageServerConnection::sendPtr(uint32_t targetObjectId, const void* messageData, Type messageClass)
+        void TcpMessageServerConnection::close()
         {
             if (auto server = m_server.lock())
-                return server->send(m_id, targetObjectId, messageData, messageClass);
+                server->closeConnection(m_id);
         }
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(TcpMessageServerConnection);
-        RTTI_END_TYPE();
+        void TcpMessageServerConnection::sendPtr(const void* messageData, Type messageClass)
+        {
+            if (auto server = m_server.lock())
+                return server->send(m_id, messageData, messageClass);
+        }
+
+        MessagePtr TcpMessageServerConnection::pullNextMessage()
+        {
+            auto lock = CreateLock(m_receivedMessagesQueueLock);
+
+            if (m_receivedMessagesQueue.empty())
+                return nullptr;
+
+            auto msg = m_receivedMessagesQueue.top();
+            m_receivedMessagesQueue.pop();
+
+            return msg;
+        }
+
+        void TcpMessageServerConnection::pushNextMessage(const MessagePtr& message)
+        {
+            if (message)
+            {
+                auto lock = CreateLock(m_receivedMessagesQueueLock);
+                m_receivedMessagesQueue.push(message);
+            }
+        }
 
         //--
 
-        TcpMessageServerConnectionState::TcpMessageServerConnectionState(const socket::ConnectionID id, const replication::DataModelRepositoryPtr& sharedModelRepository, const MessageObjectRepositoryPtr& sharedObjectRepository, const socket::Address& address)
+        TcpMessageServerConnectionState::TcpMessageServerConnectionState(const socket::ConnectionID id, const replication::DataModelRepositoryPtr& sharedModelRepository, const socket::Address& address)
             : m_id(id)
             , m_address(address)
-            , m_replicator(sharedModelRepository, sharedObjectRepository)
-            , m_executor(MessageConnection::GetStaticClass())
+            , m_replicator(sharedModelRepository)
             , m_reassembler(&TcpMessageReassemblerHandler::GetInstance())
         {
         }
@@ -154,29 +180,21 @@ namespace base
 
         //--
 
-        TcpMessageExecutorForwarder::TcpMessageExecutorForwarder(MessageObjectExecutor& executor, MessagePool& pool, MessageObjectRepository& objects)
-            : m_executor(executor)
-            , m_objects(objects)
-            , m_pool(pool)
+        TcpMessageQueueCollector::TcpMessageQueueCollector(TcpMessageServerConnection* connection)
+            : m_connection(connection)
         {}
 
-        Message* TcpMessageExecutorForwarder::allocateMessage(const replication::DataMappedID targetObjectId, Type dataType)
+        TcpMessageQueueCollector::TcpMessageQueueCollector(TcpMessageClient* client)
+            : m_client(client)
+        {}
+
+        void TcpMessageQueueCollector::dispatchMessageForExecution(Message* message)
         {
-            // don't bother decoding if the target object does not exist
-            auto targetObject = m_objects.resolveObject(targetObjectId);
-            if (!targetObject)
-                return nullptr;
+            if (m_connection)
+                m_connection->pushNextMessage(AddRef(message));
 
-            // don't bother decoding if we don't support the message on the target object
-            if (!m_executor.checkMessageSupport(targetObject->cls(), dataType))
-                return nullptr;
-
-            return m_pool.allocate(dataType, targetObject);
-        }
-
-        void TcpMessageExecutorForwarder::dispatchMessageForExecution(Message* message)
-        {
-            m_executor.queueMessage(message);
+            if (m_client)
+                m_client->pushNextMessage(AddRef(message));
         }
 
         //--

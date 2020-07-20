@@ -33,8 +33,8 @@ namespace ed
         virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-        virtual base::StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
-        virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const override final;
+        virtual StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
+        virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const override final;
 
         enum class EntryState : uint8_t
         {
@@ -48,7 +48,7 @@ namespace ed
         struct Entry
         {
             res::ResourceKey key;
-            base::NativeTimePoint scheduleTime;
+            NativeTimePoint scheduleTime;
             EntryState state = EntryState::Pending;
             float waitTime = FLT_MAX;
             float processingTime = FLT_MAX;
@@ -61,11 +61,11 @@ namespace ed
             static const auto COL_STATE = 3;
             static const auto COL_PROCESSING_TIME = 4;
             static const auto COL_DATA_SIZE = 5;
-            base::StringBuf content[NUM_COLUMNS];
+            StringBuf content[NUM_COLUMNS];
         };
 
-        base::Array<Entry*> m_entries;
-        base::HashMap<base::res::ResourceKey, Entry*> m_entriesMap;
+        Array<Entry*> m_entries;
+        HashMap<res::ResourceKey, Entry*> m_entriesMap;
 
         Entry* entryForIndex(const ui::ModelIndex& index) const;
         ui::ModelIndex indexForEntry(const Entry* entry) const;
@@ -73,10 +73,10 @@ namespace ed
 
     ///---
 
-    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public base::IReferencable
+    class BASE_EDITOR_API BackgroundBakedListModelNotificataionForwarder : public IReferencable
     {
     public:
-        BackgroundBakedListModelNotificataionForwarder(const base::RefPtr<BackgroundBakedListModel>& model);
+        BackgroundBakedListModelNotificataionForwarder(const RefPtr<BackgroundBakedListModel>& model);
 
     protected:
         //virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
@@ -84,7 +84,7 @@ namespace ed
         //virtual void handleBackgroundBakingFinished(const res::ResourceKey& key, bool valid, float timeTaken) override final;
         //virtual void handleBackgroundBakingMissingBakedResource(const res::ResourceKey& key) override final;
 
-        base::RefPtr<BackgroundBakedListModel> m_model;
+        RefPtr<BackgroundBakedListModel> m_model;
     };
 
     ///---
@@ -107,8 +107,8 @@ namespace ed
         void cmdToggleBackgroundBake();
         bool checkBackgroundBake() const;
 
-        base::RefPtr<BackgroundBakedListModel> m_listModel;
-        base::RefPtr<BackgroundBakedListModelNotificataionForwarder> m_listForwarder;
+        RefPtr<BackgroundBakedListModel> m_listModel;
+        RefPtr<BackgroundBakedListModelNotificataionForwarder> m_listForwarder;
 
         //virtual void handleBackgroundBakingRequested(const res::ResourceKey& key, bool forced) override final;
         //virtual void handleBackgroundBakingStarted(const res::ResourceKey& key, float waitTime) override final;

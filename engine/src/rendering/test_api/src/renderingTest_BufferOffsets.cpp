@@ -51,7 +51,7 @@ namespace rendering
             auto i  = (int)floor(fabs(x));
             auto f  = fabs(x) - (float)i;
 
-            return base::Blend(colors[i % numSegs], colors[(i + 1) % numSegs], f * 256.0f);
+            return base::Lerp(colors[i % numSegs], colors[(i + 1) % numSegs], f);
         }
 
         static void PrepareIndexedTriangleList(float x, float y, float w, float h, VertexIndexBunch<>& outGeometry)

@@ -406,7 +406,7 @@ namespace base
             switch (m_mode)
             {
                 case PackingMode::Default:
-                    if (type->size() > 4) return false;
+                    if (type->size() > 8) return false;
                     if (type == reflection::GetTypeObject<StringBuf>()) return false;
                     if (type == reflection::GetTypeObject<StringID>()) return false;
                     if (type->metaType() == rtti::MetaType::Simple) return true;

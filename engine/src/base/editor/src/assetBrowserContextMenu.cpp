@@ -34,9 +34,9 @@ namespace ed
 
     ///---
 
-    struct DepotContext : public base::IReferencable
+    struct DepotContext : public IReferencable
     {
-        DepotContext(AssetBrowserTabFiles* tab, const base::Array<ManagedItem*>& items)
+        DepotContext(AssetBrowserTabFiles* tab, const Array<ManagedItem*>& items)
             : m_tab(tab)
             , m_items(items)
         {
@@ -45,9 +45,9 @@ namespace ed
 
             for (auto& item : items)
             {
-                if (auto dir = base::rtti_cast<ManagedDirectory>(item))
+                if (auto dir = rtti_cast<ManagedDirectory>(item))
                     m_dirs.emplaceBack(std::move(dir));
-                else if (auto file = base::rtti_cast<ManagedFile>(item))
+                else if (auto file = rtti_cast<ManagedFile>(item))
                     m_files.emplaceBack(std::move(file));
             }
 
@@ -64,10 +64,10 @@ namespace ed
             m_hasStuffToPaste = false;// m_fileClipboard && !m_fileClipboard->m_entries.empty();
         }
 
-        base::RefWeakPtr<AssetBrowserTabFiles> m_tab;
-        base::Array<ManagedItem*> m_items;
-        base::Array<ManagedFile*> m_files;
-        base::Array<ManagedDirectory*> m_dirs;
+        RefWeakPtr<AssetBrowserTabFiles> m_tab;
+        Array<ManagedItem*> m_items;
+        Array<ManagedFile*> m_files;
+        Array<ManagedDirectory*> m_dirs;
 
         bool m_hasFilesWithAbsolutePath = false;
         bool m_hasVersionedFiles = false;
@@ -82,17 +82,17 @@ namespace ed
 
         void cmdOpen()
         {
-            base::Array<ManagedItem*> failedToOpen;
+            Array<ManagedItem*> failedToOpen;
 
             for (const auto& file : m_files)
-                if (!base::GetService<Editor>()->openFile(file))
+                if (!GetService<Editor>()->openFile(file))
                     failedToOpen.pushBack(file);
 
             if (!failedToOpen.empty())
             {
                 if (auto tab = m_tab.lock())
                 {
-                    base::StringBuilder txt;
+                    StringBuilder txt;
                     txt << "No editor found capable of editing following";
 
                     if (failedToOpen.size() == 1)
@@ -112,7 +112,7 @@ namespace ed
                         printCount -= 1;
                     }
 
-                    ui::PostWindowMessage(tab, ui::MessageType::Error, "EditAsset"_id, base::TempString("Failed to open files:[br]{}", txt.c_str()));
+                    ui::PostWindowMessage(tab, ui::MessageType::Error, "EditAsset"_id, TempString("Failed to open files:[br]{}", txt.c_str()));
                     //ui::ShowMessageBox(tab, ui::MessageBoxSetup().error().title("Edit asset").message(txt.c_str()).error());
                 }
             }
@@ -168,7 +168,7 @@ namespace ed
 
         void cmdCopyDepotPath()
         {
-            base::StringBuilder txt;
+            StringBuilder txt;
 
             for (auto& item : m_items)
             {
@@ -182,14 +182,14 @@ namespace ed
 
             if (!txt.empty())
             {
-                base::ClipboardData data(txt.toString());
+                ClipboardData data(txt.toString());
                 //m_context->windowRenderer()->clipboardData(&data, 1);
             }
         }
 
         void cmdCopyAbsolutePath()
         {
-            base::StringBuilder txt;
+            StringBuilder txt;
 
             for (auto& item : m_items)
             {
@@ -203,16 +203,16 @@ namespace ed
 
             if (!txt.empty())
             {
-                base::ClipboardData data(txt.toString());
+                ClipboardData data(txt.toString());
                 //m_context->windowRenderer()->clipboardData(&data, 1);
             }
         }
     };
 
-    void BuildDepotContextMenu(ui::MenuButtonContainer& menu, AssetBrowserTabFiles* tab, const base::Array<ManagedItem*>& items)
+    void BuildDepotContextMenu(ui::MenuButtonContainer& menu, AssetBrowserTabFiles* tab, const Array<ManagedItem*>& items)
     {
-        auto editor = base::GetService<Editor>();
-        auto menuContext = base::CreateSharedPtr<DepotContext>(tab, items);
+        auto editor = GetService<Editor>();
+        auto menuContext = CreateSharedPtr<DepotContext>(tab, items);
 
         /*(if (menuContext->m_isPhysicalDirectory)
         {
@@ -221,7 +221,7 @@ namespace ed
             ret->addItem().caption("Add directory...").imageName("folder_add").OnClick = [menuContext](UI_CALLBACK) { menuContext->cmdAddDirectory(); };
         }*/
 
-        base::HashSet<const ManagedFileFormat*> fileFormats;
+        HashSet<const ManagedFileFormat*> fileFormats;
         for (const auto& file : menuContext->m_files)
             fileFormats.insert(&file->fileFormat());
 
@@ -270,7 +270,7 @@ namespace ed
     {
         if (item)
         {
-            base::InplaceArray<ManagedItem*, 1> items;
+            InplaceArray<ManagedItem*, 1> items;
             items.pushBack(item);
             BuildDepotContextMenu(menu, tab, items);
         }
@@ -291,7 +291,7 @@ namespace ed
 
     ui::EventFunctionBinder DeleteFiles(ui::IElement* owner, const AssetItemList& assetItems)
     {
-        auto window = base::CreateSharedPtr<ui::Window>();
+        auto window = CreateSharedPtr<ui::Window>();
         window->layoutVertical();
         window->createChild<ui::WindowTitleBar>("Save files")->addStyleClass("mini"_id);
 
@@ -315,7 +315,7 @@ namespace ed
             elem->text(txt.view());
         }
 
-        auto fileList = base::CreateSharedPtr<AssetItemsSimpleListModel>();
+        auto fileList = CreateSharedPtr<AssetItemsSimpleListModel>();
         for (auto* file : assetItems.files)
             fileList->addItem(file);
         for (auto* dir : assetItems.dirs)
@@ -350,14 +350,14 @@ namespace ed
                     }
                     else
                     {
-                        if (auto file = base::rtti_cast<ManagedFile>(item))
+                        if (auto file = rtti_cast<ManagedFile>(item))
                         {
                             if (IO::GetInstance().deleteFile(file->absolutePath()))
                                 deleted = true;
                             else
                                 fileList->comment(item, "  [img:error] Failed to delete physical file");
                         }
-                        else if (auto file = base::rtti_cast<ManagedDirectory>(item))
+                        else if (auto file = rtti_cast<ManagedDirectory>(item))
                         {
                             if (IO::GetInstance().deleteDir(file->absolutePath()))
                                 deleted = true;
@@ -387,21 +387,21 @@ namespace ed
             };
         }
 
-        window->bind("OnKeyDown"_id) = [fileList](ui::Window* window, ui::IElement*, base::input::KeyCode code)
+        window->bind("OnKeyDown"_id) = [fileList](ui::Window* window, ui::IElement*, input::KeyCode code)
         {
-            if (code == base::input::KeyCode::KEY_UP || code == base::input::KeyCode::KEY_DOWN)
+            if (code == input::KeyCode::KEY_UP || code == input::KeyCode::KEY_DOWN)
             {
                 if (auto elem = window->findChildByName<ui::ListView>("FileList"_id))
                     elem->focus();
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_ESCAPE)
+            else if (code == input::KeyCode::KEY_ESCAPE)
             {
                 window->call("OnResult"_id, 0);
                 window->requestClose();
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_SPACE)
+            else if (code == input::KeyCode::KEY_SPACE)
             {
                 if (auto elem = window->findChildByName<ui::ListView>("FileList"_id))
                 {
@@ -410,7 +410,7 @@ namespace ed
                 }
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_RETURN)
+            else if (code == input::KeyCode::KEY_RETURN)
             {
                 if (auto elem = window->findChildByName<ui::Button>("Delete"_id))
                     return elem->call("OnClick"_id);
@@ -439,13 +439,13 @@ namespace ed
 
     ui::EventFunctionBinder SaveFiles(ui::IElement* owner, const AssetItemList& assetItems)
     {
-        auto window = base::CreateSharedPtr<ui::Window>();
+        auto window = CreateSharedPtr<ui::Window>();
         window->layoutVertical();
         window->createChild<ui::WindowTitleBar>("Save files")->addStyleClass("mini"_id);
 
         window->createChild<ui::TextLabel>("Following files are [b][color:#F88]modified[/color][/b] and should be saved:")->customMargins(5.0f);
 
-        auto fileList = base::CreateSharedPtr<AssetItemsSimpleListModel>();
+        auto fileList = CreateSharedPtr<AssetItemsSimpleListModel>();
         for (auto* file : assetItems.files)
             fileList->addItem(file);
 
@@ -466,13 +466,13 @@ namespace ed
             button->bind("OnClick"_id, window) = [fileList](ui::Window* window)
             {
                 auto listToSave = fileList->checked();
-                auto& mainWindow = base::GetService<Editor>()->mainWindow();
+                auto& mainWindow = GetService<Editor>()->mainWindow();
 
                 for (const auto& item : listToSave)
                 {
                     bool saved = false;
 
-                    if (auto file = base::rtti_cast<ManagedFile>(item))
+                    if (auto file = rtti_cast<ManagedFile>(item))
                     {
                         if (!mainWindow.saveFile(file))
                         {
@@ -516,21 +516,21 @@ namespace ed
             };
         }
 
-        window->bind("OnKeyDown"_id) = [fileList](ui::Window* window, ui::IElement*, base::input::KeyCode code)
+        window->bind("OnKeyDown"_id) = [fileList](ui::Window* window, ui::IElement*, input::KeyCode code)
         {
-            if (code == base::input::KeyCode::KEY_UP || code == base::input::KeyCode::KEY_DOWN)
+            if (code == input::KeyCode::KEY_UP || code == input::KeyCode::KEY_DOWN)
             {
                 if (auto elem = window->findChildByName<ui::ListView>("FileList"_id))
                     elem->focus();
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_ESCAPE)
+            else if (code == input::KeyCode::KEY_ESCAPE)
             {
                 window->call("OnResult"_id, 0);
                 window->requestClose();
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_SPACE)
+            else if (code == input::KeyCode::KEY_SPACE)
             {
                 if (auto elem = window->findChildByName<ui::ListView>("FileList"_id))
                 {
@@ -539,7 +539,7 @@ namespace ed
                 }
                 return true;
             }
-            else if (code == base::input::KeyCode::KEY_RETURN)
+            else if (code == input::KeyCode::KEY_RETURN)
             {
                 if (auto elem = window->findChildByName<ui::Button>("Save"_id))
                     return elem->call("OnClick"_id);

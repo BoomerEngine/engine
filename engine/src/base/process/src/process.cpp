@@ -23,9 +23,6 @@ namespace base
         //---
 
         ProcessSetup::ProcessSetup()
-            : m_messageEndpointName(nullptr)
-            , m_stdOutCallback(nullptr)
-            , m_showWindow(true)
         {}
 
         //---

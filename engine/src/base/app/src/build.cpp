@@ -11,6 +11,9 @@
 * [#dependency: base_fibers #]
 * [#dependency: base_memory #]
 * [#dependency: base_socket #]
+* [#dependency: base_process #]
+* [#dependency: base_replication #]
+* [#dependency: base_net #]
 ***/
 
 #include "build.h"

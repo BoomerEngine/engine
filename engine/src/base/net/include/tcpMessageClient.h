@@ -44,38 +44,28 @@ namespace base
             /// are we still connected ?
             virtual bool isConnected() const override final;
 
-            /// connect to TCP server
-            bool connect(const socket::Address& address);
-
-            ///---
-
-            /// get an unused ID for object registration
-            uint32_t allocObjectId();
-
-            /// attach object to object table, it will be able to receive messages if targeted with it's number
-            /// NOTE: objects are auto matically  detached when deleted
-            void attachObject(uint32_t id, const ObjectPtr& ptr);
-
-            /// detach object from object table, it will no longer receive messages
-            void dettachObject(uint32_t id);
-
-            /// get object that we have registered for given ID
-            ObjectPtr resolveObject(uint32_t id) const;
+            /// close connection to server
+            virtual void close() override final;
 
             //---
 
-            /// execute all pending messages
-            void executePendingMessages();
+            /// pull next message from queue of received messages, returns NULL if there are no more messages in the queue
+            virtual MessagePtr pullNextMessage() override final;
+
+            //---
+
+            /// connect to TCP server
+            bool connect(const socket::Address& address);
+
+            /// push message onto the queue (NOTE: does not have to be a real one)
+            void pushNextMessage(const MessagePtr& message);
 
             //---
 
         private:
             replication::DataModelRepositoryPtr m_models;
-            MessageObjectRepositoryPtr m_objects;
 
-            UniquePtr<MessagePool> m_pool;
             UniquePtr<MessageReplicator> m_replicator;
-            UniquePtr<MessageObjectExecutor> m_executor;
 
             UniquePtr<MessageReassembler> m_reassembler;
 
@@ -86,9 +76,14 @@ namespace base
 
             Mutex m_lock;
 
-            //
+            //--
 
-            virtual void sendPtr(uint32_t targetObjectId, const void* messageData, Type messageClass) override final;
+            SpinLock m_receivedMessagesQueueLock;
+            Queue<MessagePtr> m_receivedMessagesQueue;
+
+            //--
+
+            virtual void sendPtr(const void* messageData, Type messageClass) override final;
 
             virtual void handleConnectionClosed(socket::tcp::Client* client, const socket::Address& address) override final;
             virtual void handleConnectionData(socket::tcp::Client* client, const socket::Address& address, const void* data, uint32_t dataSize) override final;

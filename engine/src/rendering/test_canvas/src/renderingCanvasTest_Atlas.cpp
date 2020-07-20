@@ -13,9 +13,9 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-#include "base/math/include/randomMersenne.h"
 #include "base/resource/include/public.h"
 #include "base/system/include/timing.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace rendering
 {
@@ -38,9 +38,9 @@ namespace rendering
             RTTI_PROPERTY(h);
         RTTI_END_TYPE();
 
-        class SimpleAtlas : public base::res::ITextResource
+        class SimpleAtlas : public base::res::IResource
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(SimpleAtlas, base::res::ITextResource);
+            RTTI_DECLARE_VIRTUAL_CLASS(SimpleAtlas, base::res::IResource);
 
         public:
             base::Array<SimpleAtlasEntry> m_entries;
@@ -196,7 +196,7 @@ namespace rendering
                 return ret;
             }
 
-            GeometryPtr generateGrassPatch(base::MTGenerator& rnd, uint32_t width, uint32_t height) const
+            GeometryPtr generateGrassPatch(base::MTRandState& rnd, uint32_t width, uint32_t height) const
             {
                 base::canvas::GeometryBuilder b;
                 b.compositeOperation(base::canvas::CompositeOperation::Copy);
@@ -210,7 +210,7 @@ namespace rendering
 
                         auto grassType = 0;
 
-                        auto pp = rnd.nextUint32() % 16;
+                        auto pp = Rand(rnd) % 16;
                         if (pp > 7)
                             grassType = 1;
                         if (pp > 11)
@@ -231,7 +231,7 @@ namespace rendering
                 return ret;
             }
 
-            GeometryPtr generateDirtyPatch(base::MTGenerator& rnd, uint32_t width, uint32_t height, uint32_t circles, uint32_t maxSize, const Patch& styles) const
+            GeometryPtr generateDirtyPatch(base::MTRandState& rnd, uint32_t width, uint32_t height, uint32_t circles, uint32_t maxSize, const Patch& styles) const
             {
                 base::Array<char> map;
                 map.prepareWith(width * height, 0);
@@ -239,15 +239,15 @@ namespace rendering
 
                 for (uint32_t i = 0; i < circles; ++i)
                 {
-                    uint32_t size = 1 + rnd.nextUint32() % maxSize;
+                    uint32_t size = 1 + Rand(rnd) % maxSize;
                     int minX = size + 1;
                     int minY = size + 1;
                     int maxX = width - (size + 1);
                     int maxY = height - (size + 1);
                     if (minX < maxX && minY < maxY)
                     {
-                        float x = base::Lerp((float)minX, (float)minY, rnd.nextFloat());
-                        float y = base::Lerp((float)minY, (float)minY, rnd.nextFloat());
+                        float x = base::Lerp((float)minX, (float)minY, RandOne(rnd));
+                        float y = base::Lerp((float)minY, (float)minY, RandOne(rnd));
 
                         minX = (int)std::floor(x - size);
                         minY = (int)std::floor(y - size);
@@ -430,7 +430,7 @@ namespace rendering
 
             void generateLevel()
             {
-                base::MTGenerator rnd;
+                base::MTRandState rnd;
 
                 // generate ground
                 {
@@ -451,10 +451,10 @@ namespace rendering
 
                     for (uint32_t i = 0; i < numIslands; ++i)
                     {
-                        uint32_t size = 10 + (rnd.nextUint32() % 20);
+                        uint32_t size = 10 + (Rand(rnd) % 20);
 
-                        uint32_t x = rnd.nextUint32() % m_width;
-                        uint32_t y = rnd.nextUint32() % m_height;
+                        uint32_t x = Rand(rnd) % m_width;
+                        uint32_t y = Rand(rnd) % m_height;
 
                         if (auto geometry = m_atlas.generateDirtyPatch(rnd, size, size, 1 + size/4, std::max<uint32_t>(4, size / 2), (i & 1) ? m_atlas.m_darkDirt : m_atlas.m_lightDirt))
                             m_patches.emplaceBack(geometry, x * TILE_SIZE, y * TILE_SIZE);
@@ -486,10 +486,10 @@ namespace rendering
 
                     for (uint32_t i = 0; i < 1000; ++i)
                     {
-                        uint32_t x = rnd.nextUint32() % m_width;
-                        uint32_t y = rnd.nextUint32() % m_height;
+                        uint32_t x = Rand(rnd) % m_width;
+                        uint32_t y = Rand(rnd) % m_height;
 
-                        uint32_t o = rnd.nextUint32() % sum;
+                        uint32_t o = Rand(rnd) % sum;
 
                         uint32_t r = 0;
                         for (const auto& e : geometries)

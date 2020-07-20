@@ -37,11 +37,9 @@ namespace base
 
             //--
 
-            // compute the hash from configuration parameters that when changed should be consider grounds to indicate that resource has to be reimported
-            // NOTE: this is used mostly in two situations
-            //  a) another importer requested a follow-up import of this resource but with different parameters
-            //  b) the import configuration of the folder(s) changed
-            //virtual void computeConfigurationKey(CRC64& crc) const;
+            // compute the hash from configuration parameters
+            // NOTE: hash is never stored but instead used to compare configurations when detecting if resource should be reimproted or not
+            virtual void computeConfigurationKey(CRC64& crc) const;
 
             //--
 
@@ -138,6 +136,10 @@ namespace base
             // user specific configuration for this resource, user has taken active part in setting import values for the resource
             // NOTE: rebase the user on base to get full set of values to use
             ResourceConfigurationPtr importUserConfiguration;
+
+            // final FULL merged configuration (not based on ANYTHING)
+            // this is what we used for importing, can be used to compare if we need to reimport stuff because of changed settings
+            ResourceConfigurationPtr importFullConfiguration;
         };
 
         ///---

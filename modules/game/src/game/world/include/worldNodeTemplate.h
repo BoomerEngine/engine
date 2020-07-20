@@ -11,7 +11,6 @@
 #include "worldNodePlacement.h"
 
 #include "base/resource/include/resource.h"
-#include "base/containers/include/mutableArray.h"
 #include "base/containers/include/hashSet.h"
 #include "base/script/include/scriptObject.h"
 #include "base/object/include/objectTemplate.h"

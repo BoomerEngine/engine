@@ -11,12 +11,22 @@
 namespace application
 {
 
+    class BCCLogSinkWithErrorCapture;
+
     // commandline processor application
     class APP_COMMON_API BCCApp : public base::app::IApplication
     {
     public:
         virtual bool initialize(const base::app::CommandLine& commandline) override final;
         virtual void update() override final;
+        virtual void cleanup() override final;
+
+        base::UniquePtr<BCCLogSinkWithErrorCapture> m_globalSink;
+        base::app::CommandHostPtr m_commandHost;
+
+        base::NativeTimePoint m_startedTime;
+
+        void runInternal();
     };
 
 } // application

@@ -10,7 +10,9 @@
 #include "editorService.h"
 #include "editorConfig.h"
 #include "editorWindow.h"
-#include "assetFileImportWindow.h"
+
+#include "backgroundCommand.h"
+#include "backgroundCommandLocalRunner.h"
 
 #include "managedDepot.h"
 #include "managedFile.h"
@@ -27,6 +29,9 @@
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlWrappers.h"
 #include "base/io/include/fileFormat.h"
+#include "base/net/include/tcpMessageServer.h"
+#include "base/net/include/messageConnection.h"
+#include "base/net/include/messagePool.h"
 
 namespace ed
 {
@@ -78,6 +83,14 @@ namespace ed
         // create configuration
         m_config.create();
 
+        // start the message service 
+        m_messageServer = CreateSharedPtr<net::TcpMessageServer>();
+        if (!m_messageServer->startListening(0))
+        {
+            TRACE_ERROR("Unable to start TCP server for communication with background processes");
+            return app::ServiceInitializationResult::FatalError;
+        }
+
         // cache format information
         ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
@@ -102,6 +115,7 @@ namespace ed
 
     void Editor::onShutdownService()
     {
+        m_messageServer.reset();
         m_managedDepot.reset();
         m_versionControl.reset();
         m_config.reset();
@@ -114,7 +128,7 @@ namespace ed
 
         if (!m_mainWindow)
         {
-            m_mainWindow = base::CreateSharedPtr<MainWindow>();
+            m_mainWindow = CreateSharedPtr<MainWindow>();
             m_mainWindow->loadConfig(config()["Editor"]);
             renderer->attachWindow(m_mainWindow);
         }
@@ -125,12 +139,6 @@ namespace ed
     void Editor::stop()
     {
         saveConfig();
-
-        if (m_assetImporter)
-        {
-            m_assetImporter->requestClose();
-            m_assetImporter.reset();
-        }
 
         if (m_mainWindow)
         {
@@ -154,15 +162,9 @@ namespace ed
             m_mainWindow->saveConfig(mainWindowConfig);
         }
 
-        if (m_assetImporter)
-        {
-            auto assetWindowConfig = config()["AssetImporter"];
-            m_assetImporter->saveConfig(assetWindowConfig);
-        }
-
         // save open/save settings
         {
-            auto openSaveConfig = config()["AssetImporter"];
+            auto openSaveConfig = config()["OpenSaveDialogs"];
             saveOpenSaveSettings(openSaveConfig);
         }
 
@@ -184,8 +186,196 @@ namespace ed
         if (m_nextAutoSave.reached())
             saveAssetsSafeCopy();
 
-        // process internal IO events
-        m_managedDepot->dispatchEvents();
+        // kick the depot changes
+        m_managedDepot->update();
+
+        // update the state of background processes
+        updateBackgroundJobs();
+    }
+
+    //---
+
+    static BackgroundJobPtr CreateCommandRunner(const app::CommandLine& cmdline, IBackgroundCommand* command)
+    {
+        return BackgroundCommandRunnerLocal::Run(cmdline, command);
+    }
+
+    void Editor::attachBackgroundJob(IBackgroundJob* job)
+    {
+        if (job)
+        {
+            TRACE_INFO("Editor: Started background job '{}'", job->description());
+
+            // add command runner to list so we can observe if it's not dead
+            {
+                auto lock = CreateLock(m_backgroundJobsLock);
+                m_backgroundJobs.pushBack(AddRef(job));
+            }
+
+            ui::PostWindowMessage(m_mainWindow, ui::MessageType::Info, "BackgroundJob"_id, TempString("Background job {} started", job->description()));
+        }
+    }
+
+    BackgroundJobPtr Editor::runBackgroundCommand(IBackgroundCommand* command)
+    {
+        // no command
+        if (!command)
+            return nullptr;
+
+        // gather the required commandline parameters
+        app::CommandLine commandline;
+        if (!command->configure(commandline))
+        {
+            TRACE_WARNING("Editor: Command '{}' failed to configure", command->name());
+            return nullptr;
+        }
+
+        // insert the command name
+        commandline.addCommand(command->name());
+
+        // add the information about message server to the commandline so the running commands will be able to communicate with the editor
+        if (true)
+        {
+            const auto localServerAddress = socket::Address::Local4(m_messageServer->listeningAddress().port());
+            commandline.param("messageServer", TempString("{}", localServerAddress));
+            commandline.param("messageConnectionKey", command->connectionKey());
+            commandline.param("messageStartupTimestamp", TempString("{}", NativeTimePoint::Now().rawValue()));
+        }
+
+        // create command runner
+        auto runner = CreateCommandRunner(commandline, command);
+        if (!runner)
+        {
+            TRACE_WARNING("Editor: Command '{}' failed to start", command->name());
+            return nullptr;
+        }
+
+        // remember background command that require network connections
+        m_backgroundCommandsWithMissingConnections.pushBack(command);
+
+        // keep the command runner around for the duration of the command execution
+        attachBackgroundJob(runner);
+        return runner;
+    }
+
+    class BackgroundJobUnclaimedConnection : public IObject
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(BackgroundJobUnclaimedConnection, IObject);
+
+    public:
+        net::MessageConnectionPtr m_connection;
+        NativeTimePoint m_expirationTime;
+        StringBuf m_receivedConnectionKey;
+
+        BackgroundJobUnclaimedConnection(const net::MessageConnectionPtr& connection)
+            : m_connection(connection)
+        {
+            m_expirationTime = NativeTimePoint::Now() + 60.0;
+        }
+
+        bool update()
+        {
+            while (auto message = m_connection->pullNextMessage())
+            {
+                message->dispatch(this, m_connection);
+
+                if (!m_receivedConnectionKey.empty())
+                    return false;
+            }
+
+            if (m_expirationTime.reached())
+                return false;
+
+            return true; // keep going
+        }
+
+        void handleHelloMessage(const app::CommandHelloMessage& msg)
+        {
+            const auto diff = NativeTimePoint(msg.startupTimestamp).timeTillNow().toSeconds();
+            TRACE_INFO("Editor: Got remote connection key '{}' from '{}', took {} to start", msg.connectionKey, m_connection->remoteAddress(), TimeInterval(diff));
+
+            m_receivedConnectionKey = msg.connectionKey;
+
+            app::CommandHelloResponseMessage response;
+            response.timestampSentBack = msg.localTimestamp;
+            m_connection->send(response);
+        }
+    };
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(BackgroundJobUnclaimedConnection);
+        RTTI_FUNCTION_SIMPLE(handleHelloMessage);
+    RTTI_END_TYPE();
+
+    void Editor::updateBackgroundJobs()
+    {
+        auto lock = CreateLock(m_backgroundJobsLock);
+
+        // TODO: handle dead server case
+
+        // check for new connections
+        while (auto newConnection = m_messageServer->pullNextAcceptedConnection())
+        {
+            TRACE_INFO("Editor: Got new connection to message server from '{}'", newConnection->remoteAddress());
+
+            auto unclaimedWrapper = base::CreateSharedPtr<BackgroundJobUnclaimedConnection>(newConnection);
+            m_backgroundJobsUnclaimedConnections.pushBack(unclaimedWrapper);
+        }
+
+        // update the unclaimed connections - wait for the "hello" message
+        for (auto index : m_backgroundJobsUnclaimedConnections.indexRange().reversed())
+        {
+            const auto& runner = m_backgroundJobsUnclaimedConnections[index];
+
+            if (!runner->update())
+            {
+                if (runner->m_receivedConnectionKey)
+                {
+                    bool commandFound = false;
+                    for (auto& ptr : m_backgroundCommandsWithMissingConnections)
+                    {
+                        if (auto command = ptr.lock())
+                        {
+                            if (command->connectionKey() == runner->m_receivedConnectionKey)
+                            {
+                                command->confirmed(runner->m_connection);
+                                m_backgroundCommandsWithMissingConnections.remove(ptr);
+                                commandFound = true;
+                            }
+                        }
+                    }
+
+                    if (!commandFound)
+                    {
+                        TRACE_WARNING("Editor: No active background command with connection key '{}'", runner->m_receivedConnectionKey);
+                        runner->m_connection->close();
+                    }
+                }
+                else
+                {
+                    TRACE_WARNING("Editor: Message connect '{}' did not follow up with HelloMessage, closing", runner->m_connection->remoteAddress());
+                    runner->m_connection->close();
+                }
+
+                // no more update needed
+                m_backgroundJobsUnclaimedConnections.eraseUnordered(index);
+            }
+        }
+
+        // update the jobs itself
+        for (auto index : m_backgroundJobs.indexRange().reversed())
+        {
+            const auto& runner = m_backgroundJobs[index];
+            if (!runner->update())
+            {
+                const auto exitCode = runner->exitCode();
+                if (exitCode == 0)
+                    ui::PostWindowMessage(m_mainWindow, ui::MessageType::Info, "BackgroundJob"_id, TempString("Background job {} finished", runner->description()));
+                else
+                    ui::PostWindowMessage(m_mainWindow, ui::MessageType::Warning, "BackgroundJob"_id, TempString("Background job {} failed with exit code {}", runner->description(), exitCode));
+
+                m_backgroundJobs.eraseUnordered(index);
+            }
+        }
     }
 
     //---
@@ -227,7 +417,7 @@ namespace ed
 
     }
 
-    base::io::OpenSavePersistentData& Editor::openSavePersistentData(base::StringView<char> category)
+    io::OpenSavePersistentData& Editor::openSavePersistentData(StringView<char> category)
     {
         if (!category)
             category = "Generic";
@@ -235,27 +425,14 @@ namespace ed
         if (const auto* data = m_openSavePersistentData.find(category))
             return **data;
 
-        auto entry = MemNew(base::io::OpenSavePersistentData).ptr;
-        entry->directory = IO::GetInstance().systemPath(base::io::PathCategory::UserDocumentsDir);
+        auto entry = MemNew(io::OpenSavePersistentData).ptr;
+        entry->directory = IO::GetInstance().systemPath(io::PathCategory::UserDocumentsDir);
 
-        m_openSavePersistentData[base::StringBuf(category)] = entry;
+        m_openSavePersistentData[StringBuf(category)] = entry;
         return *entry;
     }
 
-    bool Editor::openAssetImporter()
-    {
-        if (!m_assetImporter)
-        {
-            m_assetImporter = base::CreateSharedPtr<AssetImportWindow>();
-            m_assetImporter->loadConfig(config()["AssetImporter"]);
-            m_renderer->attachWindow(m_assetImporter);
-        }
-
-        m_assetImporter->requestShow(true);
-        return true;
-    }
-
-    bool Editor::addImportFiles(const base::Array<base::StringBuf>& assetPaths, base::SpecificClassType<base::res::IResource> importClass, const ManagedDirectory* directoryOverride)
+    bool Editor::addImportFiles(const Array<StringBuf>& assetPaths, SpecificClassType<res::IResource> importClass, const ManagedDirectory* directoryOverride, bool showTab)
     {
         if (!directoryOverride)
         {
@@ -267,18 +444,25 @@ namespace ed
             }
         }
 
-        if (!openAssetImporter())
-            return false;
+        m_mainWindow->addNewImportFiles(directoryOverride, importClass, assetPaths);
+        return true;
+    }
 
-        m_assetImporter->addNewImportFiles(directoryOverride, importClass, assetPaths);
+    bool Editor::addReimportFiles(const Array<ManagedFileNativeResource*>& filesToReimport, bool showTab /*= true*/)
+    {
+        m_mainWindow->addReimportFiles(filesToReimport);
+        return true;
+    }
+
+    bool Editor::addReimportFile(ManagedFileNativeResource* fileToReimport, const res::ResourceConfigurationPtr& config, bool showTab /*= true*/)
+    {
+        m_mainWindow->addReimportFile(fileToReimport, config);
         return true;
     }
 
     //--
 
-
-
-    bool Editor::saveToXML(ui::IElement* owner, base::StringView<char> category, const std::function<base::ObjectPtr()>& makeXMLFunc, base::UTF16StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, UTF16StringBuf* currentFileNamePtr)
     {
         // use main window when nothing was provided
         if (!owner)
@@ -288,18 +472,18 @@ namespace ed
         auto& dialogSettings = openSavePersistentData(category);
 
         // add XML format
-        base::InplaceArray<base::io::FileFormat, 1> formatList;
+        InplaceArray<io::FileFormat, 1> formatList;
         formatList.emplaceBack("xml", "Extensible Markup Language file");
 
         // current file name
-        base::UTF16StringBuf currentFileName;
+        UTF16StringBuf currentFileName;
         if (currentFileNamePtr)
             currentFileName = *currentFileNamePtr;
         else if (!dialogSettings.lastSaveFileName.empty())
             currentFileName = dialogSettings.lastSaveFileName;
 
         // ask for file path
-        base::io::AbsolutePath selectedPath;
+        io::AbsolutePath selectedPath;
         const auto nativeHandle = windowNativeHandle(owner);
         if (!IO::GetInstance().showFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
             return false;
@@ -319,32 +503,32 @@ namespace ed
         }
 
         // compile into XML document
-        const auto document = base::SaveObjectToXML(object);
+        const auto document = SaveObjectToXML(object);
         if (!document)
         {
-            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, base::TempString("Failed to serialize '{}' into XML", object));
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, TempString("Failed to serialize '{}' into XML", object));
             return false;
         }
 
         // save on disk
-        if (!base::xml::SaveDocument(*document, selectedPath))
+        if (!xml::SaveDocument(*document, selectedPath))
         {
-            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, base::TempString("Failed to save XML to '{}'", selectedPath));
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLSave"_id, TempString("Failed to save XML to '{}'", selectedPath));
             return false;
         }
 
         // saved
-        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLSave"_id, base::TempString("XML '{}' saved", selectedPath));
+        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLSave"_id, TempString("XML '{}' saved", selectedPath));
         return true;
 
     }
 
-    bool Editor::saveToXML(ui::IElement* owner, base::StringView<char> category, const base::ObjectPtr& objectPtr, base::UTF16StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, UTF16StringBuf* currentFileNamePtr)
     {
         return saveToXML(owner, category, [objectPtr]() { return objectPtr;  });
     }
 
-    base::ObjectPtr Editor::loadFromXML(ui::IElement* owner, base::StringView<char> category, base::SpecificClassType<IObject> expectedObjectClass)
+    ObjectPtr Editor::loadFromXML(ui::IElement* owner, StringView<char> category, SpecificClassType<IObject> expectedObjectClass)
     {
         // use main window when nothing was provided
         if (!owner)
@@ -354,52 +538,52 @@ namespace ed
         auto& dialogSettings = openSavePersistentData(category);
 
         // add XML format
-        base::InplaceArray<base::io::FileFormat, 1> formatList;
+        InplaceArray<io::FileFormat, 1> formatList;
         formatList.emplaceBack("xml", "Extensible Markup Language file");
 
         // ask for file path
-        base::Array<base::io::AbsolutePath> selectedPaths;
+        Array<io::AbsolutePath> selectedPaths;
         const auto nativeHandle = windowNativeHandle(owner);
         if (!IO::GetInstance().showFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
             return false;
 
         // load the document from the file
         const auto& loadPath = selectedPaths.front();
-        auto& reporter = base::xml::ILoadingReporter::GetDefault();
-        const auto document = base::xml::LoadDocument(reporter, loadPath);
+        auto& reporter = xml::ILoadingReporter::GetDefault();
+        const auto document = xml::LoadDocument(reporter, loadPath);
         if (!document)
         {
-            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Failed to load XML from '{}'", loadPath));
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, TempString("Failed to load XML from '{}'", loadPath));
             return nullptr;
         }
 
         // check the class without actual object loading
-        const auto rootNode = base::xml::Node(document);
+        const auto rootNode = xml::Node(document);
         if (const auto className = rootNode.attribute("class"))
         {
             const auto classType = RTTI::GetInstance().findClass(StringID::Find(className));
             if (!classType || classType->isAbstract() || !classType->is(expectedObjectClass))
             {
-                ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Incompatible object '{}' from in XML '{}'", className, loadPath));
+                ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, TempString("Incompatible object '{}' from in XML '{}'", className, loadPath));
                 return nullptr;
             }
         }
         else
         {
-            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("No object serialized in XML '{}'", loadPath));
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, TempString("No object serialized in XML '{}'", loadPath));
             return nullptr;
         }
 
         // load object
-        const auto obj = base::LoadObjectFromXML(document);
+        const auto obj = LoadObjectFromXML(document);
         if (!obj)
         {
-            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, base::TempString("Failed to deserialize XML from '{}'", loadPath));
+            ui::PostWindowMessage(owner, ui::MessageType::Warning, "XMLLoad"_id, TempString("Failed to deserialize XML from '{}'", loadPath));
             return nullptr;
         }
 
         // loaded
-        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLLoad"_id, base::TempString("Loaded '{}' from '{}'", obj->cls()->name(), loadPath));
+        ui::PostWindowMessage(owner, ui::MessageType::Info, "XMLLoad"_id, TempString("Loaded '{}' from '{}'", obj->cls()->name(), loadPath));
         return obj;
     }
 

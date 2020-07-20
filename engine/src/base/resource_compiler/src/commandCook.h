@@ -19,7 +19,7 @@ namespace base
             RTTI_DECLARE_VIRTUAL_CLASS(CommandCook, app::ICommand);
 
         public:
-            virtual bool run(const app::CommandLine& commandline) override final;
+            virtual bool run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline) override final;
 
         private:
             io::AbsolutePath m_outputDir;

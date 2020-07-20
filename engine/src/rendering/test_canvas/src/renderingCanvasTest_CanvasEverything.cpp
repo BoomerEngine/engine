@@ -968,7 +968,7 @@ namespace rendering
         {
             float m1, m2;
             base::Vector4 col;
-            h = base::Frac(h);
+            h -= std::round(h);
             if (h < 0.0f) h += 1.0f;
             s = std::clamp(s, 0.0f, 1.0f);
             l = std::clamp(l, 0.0f, 1.0f);

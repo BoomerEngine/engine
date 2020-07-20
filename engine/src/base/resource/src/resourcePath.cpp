@@ -294,6 +294,9 @@ namespace base
 
         //---
 
+        RTTI_BEGIN_CUSTOM_TYPE(ResourceKey);
+        RTTI_END_TYPE();
+
         const ResourceKey& ResourceKey::EMPTY()
         {
             static ResourceKey theEmptyKey;
@@ -316,6 +319,13 @@ namespace base
             {
                 f << "null";
             }
+        }
+
+        GlobalEventKey ResourceKey::buildEventKey() const
+        {
+            StringBuilder tempString;
+            print(tempString);
+            return MakeSharedEventKey(tempString.view());
         }
 
         void ResourceKey::printForFileName(IFormatStream& f) const

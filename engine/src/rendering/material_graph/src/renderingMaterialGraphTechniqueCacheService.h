@@ -18,7 +18,7 @@ namespace rendering
     class MaterialTechniqueCompiler;
 
     // local service for compiling techniques for materials, only reason it's a service is that we need to observer the depot
-    class  MaterialTechniqueCacheService : public base::app::ILocalService, public base::depot::IDepotObserver
+    class  MaterialTechniqueCacheService : public base::app::ILocalService
     {
         RTTI_DECLARE_VIRTUAL_CLASS(MaterialTechniqueCacheService, base::app::ILocalService);
 
@@ -42,6 +42,7 @@ namespace rendering
         //---
 
         base::depot::DepotStructure* m_depot;
+        base::GlobalEventTable m_depotEvents;
 
         //---
 
@@ -89,9 +90,7 @@ namespace rendering
 
         //---
 
-        virtual void notifyFileChanged(base::StringView<char> depotFilePath) override final;
-        virtual void notifyFileAdded(base::StringView<char> depotFilePath) override final;
-        virtual void notifyFileRemoved(base::StringView<char> depotFilePath) override final;
+        void notifyFileChanged(const base::StringBuf& path);
     };
 
     //---

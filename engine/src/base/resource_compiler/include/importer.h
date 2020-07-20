@@ -41,7 +41,7 @@ namespace base
 
             /// check if given resource is up to date
             /// NOTE: we need the metadata loaded to check this
-            ImportStatus checkStatus(const Metadata& metadata) const;
+            ImportStatus checkStatus(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration = nullptr, IProgressTracker* progress = nullptr) const;
 
             /// import single resource, produces imported resource (with meta data)
             ImportStatus importResource(const ImportJobInfo& info, const IResource* existingData, ResourcePtr& outImportedResource, IProgressTracker* progress=nullptr) const;
@@ -60,6 +60,8 @@ namespace base
             void buildClassMap();
 
             bool findBestImporter(StringView<char> assetFilePath, SpecificClassType<IResource>, SpecificClassType<IResourceImporter>& outImporterClass) const;
+
+            ResourceConfigurationPtr compileFinalImportConfiguration(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration) const;
 
             //--
 

@@ -43,7 +43,10 @@ namespace base
 
     INLINE bool TagList::add(const Tag& tag)
     {
-        return m_tags.insert(tag);
+        if (m_tags.contains(tag))
+            return false;
+        m_tags.pushBack(tag);
+        return true;
     }
 
     INLINE bool TagList::remove(const Tag& tag)

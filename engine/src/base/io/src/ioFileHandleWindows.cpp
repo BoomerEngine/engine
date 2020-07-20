@@ -221,11 +221,11 @@ namespace base
                     // move temp file to the target place
                     if (MoveFile(m_tempFilePath.c_str(), m_targetFilePath.c_str()))
                     {
-                        TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", m_targetFilePath, m_tempFileWriter);
+                        TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", m_targetFilePath, m_tempFilePath);
                     }
                     else
                     {
-                        TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.", m_targetFilePath, m_tempFileWriter);
+                        TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.", m_targetFilePath, m_tempFilePath);
                     }
                 }
             }

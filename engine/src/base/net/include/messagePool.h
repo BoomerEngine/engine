@@ -20,10 +20,10 @@ namespace base
         //--
 
         /// a message
-        struct BASE_NET_API Message : public NoCopy
+        struct BASE_NET_API Message : public IReferencable
         {
         public:
-            Message(Type messageType, const ObjectWeakPtr& target, MessagePool* pool, void* payload);
+            Message(Type messageType, void* payload);
             ~Message();
 
             //--
@@ -31,35 +31,31 @@ namespace base
             /// get message type
             INLINE Type type() const { return m_type; }
 
-            /// get target to execute the message one
-            INLINE const ObjectWeakPtr& targetObject() const { return m_target; }
-
             /// get message payload (data)
             INLINE void* payload() const { return m_data; }
 
             //--
 
-            /// release message back to pool
-            void release();
+            /// dump the message content (all fields) into a stream (mostly used for debugging)
+            void print(IFormatStream& f) const;
+
+            /// dispatch message on given object (call a message handler function)
+            /// optionally we may specify the connection object that should be used to respond to the message RIGHT AWAY
+            /// NOTE: this function makes no assumption over the thread safety of the dispatch, it's up to the caller to know this, in principle it's possible to process messages fully ansychronously
+            bool dispatch(IObject* object, IObject* context = nullptr) const;
+
+            //--
+
+            // allocate message of given type
+            static MessagePtr AllocateFromPool(Type messageType);
+
+            //--
 
         private:
             Type m_type;
-            ObjectWeakPtr m_target;
-            MessagePool* m_pool; // owner
             void* m_data; // payload
-        };
 
-        //--
-
-        /// message pool, allocates message
-        class BASE_NET_API MessagePool : public NoCopy
-        {
-        public:
-            MessagePool();
-            ~MessagePool();
-
-            /// allocate message of given type targeted at given object
-            Message* allocate(Type messageType, IObject* target);
+            virtual void dispose() override final;
         };
 
         //--

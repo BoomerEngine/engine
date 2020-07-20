@@ -6,17 +6,16 @@
 * [#filter: messages\tcp #]
 ***/
 
-#include "build.h"
+#pragma once
+
 #include "messageConnection.h"
 #include "messagePool.h"
-#include "messageObjectRepository.h"
-#include "messageObjectExecutor.h"
 #include "messageReplicator.h"
 #include "messageReassembler.h"
 
 #include "base/socket/include/address.h"
-
 #include "base/replication/include/replicationDataModelRepository.h"
+#include "base/containers/include/queue.h"
 
 namespace base
 {
@@ -44,11 +43,19 @@ namespace base
             virtual StringBuf localAddress() const override final;
             virtual StringBuf remoteAddress() const override final;
             virtual bool isConnected() const override final;
+            virtual void close() override final;
 
-            virtual void sendPtr(uint32_t targetObjectId, const void* messageData, Type messageClass) override final;
+            virtual void sendPtr(const void* messageData, Type messageClass) override final;
+
+            virtual MessagePtr pullNextMessage() override final;
+
+            void pushNextMessage(const MessagePtr& message);
 
         private:
             RefWeakPtr<TcpMessageServer> m_server;
+
+            SpinLock m_receivedMessagesQueueLock;
+            Queue<MessagePtr> m_receivedMessagesQueue;
 
             socket::ConnectionID m_id;
             socket::Address m_localAddress;
@@ -74,12 +81,11 @@ namespace base
             socket::ConnectionID m_id;
             socket::Address m_address;
             MessageReplicator m_replicator;
-            MessageObjectExecutor m_executor;
             MessageReassembler m_reassembler;
             MessageConnectionPtr m_handler;
             bool m_fatalError = false;
 
-            TcpMessageServerConnectionState(const socket::ConnectionID id, const replication::DataModelRepositoryPtr& sharedModelRepository, const MessageObjectRepositoryPtr& sharedObjectRepository, const socket::Address& address);
+            TcpMessageServerConnectionState(const socket::ConnectionID id, const replication::DataModelRepositoryPtr& sharedModelRepository, const socket::Address& address);
         };
 
         //--
@@ -111,19 +117,17 @@ namespace base
 
         //--
 
-        class TcpMessageExecutorForwarder : public IMessageReplicatorDispatcher
+        class TcpMessageQueueCollector : public IMessageReplicatorDispatcher
         {
         public:
-            TcpMessageExecutorForwarder(MessageObjectExecutor& executor, MessagePool& pool, MessageObjectRepository& objects);
-
-            virtual Message* allocateMessage(const replication::DataMappedID targetObjectId, Type dataType) override final;
+            TcpMessageQueueCollector(TcpMessageServerConnection* connection);
+            TcpMessageQueueCollector(TcpMessageClient* client);
 
             virtual void dispatchMessageForExecution(Message* message) override final;
 
         private:
-            MessageObjectExecutor& m_executor;
-            MessageObjectRepository& m_objects;
-            MessagePool& m_pool;
+            TcpMessageServerConnection* m_connection = nullptr;
+            TcpMessageClient* m_client = nullptr;
         };
 
         //--

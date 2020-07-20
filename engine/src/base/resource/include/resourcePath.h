@@ -226,6 +226,11 @@ namespace base
 
             //--
 
+            /// build unique event key (slow)
+            GlobalEventKey buildEventKey() const;
+
+            //--
+
         private:
             ResourcePath m_path;
             SpecificClassType<IResource> m_class;

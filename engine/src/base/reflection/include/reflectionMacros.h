@@ -283,6 +283,10 @@ private:\
 #define RTTI_FUNCTION(_name, _func)\
     builder.addFunction<TType>(_name).setupProxy(&TType::_func, MakeMethodPtr(TType, _func))
 
+// Define a type's object function (requires pointer to "this" to work)
+#define RTTI_FUNCTION_SIMPLE(_func)\
+    builder.addFunction<TType>(#_func).setupProxy(&TType::_func, MakeMethodPtr(TType, _func))
+
 // Define a type's static function (does not require a this pointer)
 #define RTTI_STATIC_FUNCTION(_name, _func)\
     builder.addStaticFunction(_name).setupProxy(&TType::_func, MakeFunctionPtr(TType::_func))

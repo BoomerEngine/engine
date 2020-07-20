@@ -11,11 +11,12 @@
 #include "materialPreviewPanel.h"
 
 #include "rendering/material/include/renderingMaterialInstance.h"
-#include "base/editor/include/singleResourceEditor.h"
+
 #include "base/ui/include/uiDockLayout.h"
-#include "base/editor/include/assetBrowser.h"
 #include "base/ui/include/uiDataInspector.h"
+#include "base/editor/include/assetBrowser.h"
 #include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedFileNativeResource.h"
 
 namespace ed
 {
@@ -25,8 +26,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialInstanceEditor);
     RTTI_END_TYPE();
 
-    MaterialInstanceEditor::MaterialInstanceEditor(ConfigGroup config, ManagedFile* file)
-        : SingleLoadedResourceEditor(config, file)
+    MaterialInstanceEditor::MaterialInstanceEditor(ConfigGroup config, ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
     {
         createInterface();
     }
@@ -55,12 +56,7 @@ namespace ed
             m_properties->expand();
 
             dockLayout().right(0.2f).attachPanel(tab);
-        }        
-    }
-
-    void MaterialInstanceEditor::fillEditMenu(ui::MenuButtonContainer* menu)
-    {
-        TBaseClass::fillEditMenu(menu);
+        }
     }
 
     bool MaterialInstanceEditor::initialize()
@@ -88,11 +84,14 @@ namespace ed
 
         virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(file->loadContent()))
+            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(config, file);
-                ret->bindResource(loadedGraph);
-                return ret;
+                if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(nativeFile->loadContent()))
+                {
+                    auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(config, nativeFile);
+                    ret->bindResource(loadedGraph);
+                    return ret;
+                }
             }
 
             return nullptr;

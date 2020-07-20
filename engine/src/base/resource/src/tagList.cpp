@@ -45,7 +45,13 @@ namespace base
 
         bool tagsAdded = false;
         for (auto& tag : b.m_tags)
-            tagsAdded |= ret.m_tags.insert(tag);
+        {
+            if (!ret.m_tags.contains(tag))
+            {
+                ret.m_tags.pushBack(tag);
+                tagsAdded = true;
+            }
+        }
         
         if (tagsAdded)
             ret.refreshHash();
@@ -155,7 +161,7 @@ namespace base
         for (uint32_t i=0; i<count; ++i)
         {
             if (auto tag = stream.readStringID())
-    			m_tags.insert(tag);
+    			m_tags.pushBack(tag);
         }
 
         refreshHash();

@@ -26,7 +26,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserTabFiles, ui::DockPanel);
 
     public:
-        AssetBrowserTabFiles(AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
+        AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
         virtual ~AssetBrowserTabFiles();
 
         //--
@@ -37,10 +37,12 @@ namespace ed
         INLINE bool flat() const { return m_flat; } // flat view (flatten subdirectories)
         INLINE bool locked() const { return m_locked; } // locked tab
 
+        INLINE ManagedDepot* depot() const { return m_depot; }
+
         INLINE ManagedDirectory* directory() const { return m_dir; }
 
-        INLINE const base::Array<const ManagedFileFormat*>& filterFormats() const { return m_filterFormats.keys(); }
-        INLINE const base::StringBuf& filterName() const { return m_filterName; }
+        INLINE const Array<const ManagedFileFormat*>& filterFormats() const { return m_filterFormats.keys(); }
+        INLINE const StringBuf& filterName() const { return m_filterName; }
 
         //---
 
@@ -57,16 +59,16 @@ namespace ed
         void filterFormat(const ManagedFileFormat* filterFormat, bool toggle);
 
         /// change the name filter
-        void filterName(base::StringView<char> txt);
+        void filterName(StringView<char> txt);
 
         /// set active directory
         void directory(ManagedDirectory* dir, ManagedItem* autoSelectItem = nullptr);
 
         /// select item in the list
-        void selectItem(ManagedItem* item);
+        bool selectItem(ManagedItem* item);
 
         /// select specific items
-        void selectItems(const base::Array<ManagedItem*>& items);
+        bool selectItems(const Array<ManagedItem*>& items);
 
         /// get selected item (may be file/directory or something else)
         ManagedItem* selectedItem() const;
@@ -75,10 +77,10 @@ namespace ed
         ManagedFile* selectedFile() const;
 
         /// get all selected files
-        base::Array<ManagedFile*> selectedFiles() const;
+        Array<ManagedFile*> selectedFiles() const;
 
         /// get all selected items
-        base::Array<ManagedItem*> selectedItems() const;
+        Array<ManagedItem*> selectedItems() const;
 
         /// collect selected items into a list
         void collectItems(AssetItemList& outList, bool resursive) const;
@@ -91,17 +93,19 @@ namespace ed
     private:
         AssetBrowserContext m_context;
 
+        ManagedDepot* m_depot = nullptr;
         ManagedDirectory* m_dir = nullptr;
+
         bool m_locked = false;
         bool m_flat = false;
         bool m_list = false;
         uint32_t m_iconSize = 128;
 
         ui::ListView* m_files;
-        base::RefPtr<AssetBrowserDirContentModel> m_filesModel;
+        RefPtr<AssetBrowserDirContentModel> m_filesModel;
 
-        base::HashSet<const ManagedFileFormat*> m_filterFormats;
-        base::StringBuf m_filterName;
+        HashSet<const ManagedFileFormat*> m_filterFormats;
+        StringBuf m_filterName;
 
         void refreshFileList();
         void updateTitle();

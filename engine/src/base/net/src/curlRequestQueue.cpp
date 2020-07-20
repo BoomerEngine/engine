@@ -19,8 +19,11 @@ namespace base
 
         //---
 
-        base::ConfigProperty<int> cvDefaultRequestTimeout("Engine.CURL", "RequestTimeout", 5000);
-        base::ConfigProperty<int> cvDefaultLoopTimeout("Engine.CURL", "LoopTimeout", 1000);
+        //ConfigProperty<int> cvDefaultRequestTimeout("Engine.CURL", "RequestTimeout", 5000);
+        //ConfigProperty<int> cvDefaultLoopTimeout("Engine.CURL", "LoopTimeout", 1000);
+
+        static const int cvDefaultRequestTimeout = 5000;
+        static const int cvDefaultLoopTimeout = 1000;
 
         mem::PoolID POOL_REQUEST_DATA("Engine.HTTP.RequestData");
 
@@ -155,7 +158,7 @@ namespace base
             , m_handle(handle)
         {
             // setup timeout
-            auto validTimeout  = std::clamp<uint32_t>(timeout ? timeout : cvDefaultRequestTimeout.get(), 0, 60000);
+            auto validTimeout  = std::clamp<uint32_t>(timeout ? timeout : cvDefaultRequestTimeout, 0, 60000);
             m_sentTime.resetToNow();
             m_timeoutTime = timeout ? (m_sentTime + NativeTimeInterval(timeout / 1000.0)) : NativeTimePoint();
 
@@ -332,7 +335,7 @@ namespace base
         {
             auto lock = CreateLock(m_pendingRequestsLock);
 
-            auto minTimeout = cvDefaultLoopTimeout.get();
+            auto minTimeout = cvDefaultLoopTimeout;
 
             for (auto request  : m_pendingRequests)
             {
@@ -398,7 +401,7 @@ namespace base
                                     // delete
                                     {
                                         auto lock = CreateLock(m_pendingRequestsLock);
-                                        m_pendingRequests.remove(request);
+                                        m_pendingRequests.removeUnordered(request);
                                     }
 
                                     // cleanup

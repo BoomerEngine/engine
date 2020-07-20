@@ -10,7 +10,6 @@
 #include "messageReplicator.h"
 #include "messageKnowledgeBase.h"
 #include "messageKnowledgeSync.h"
-#include "messageObjectRepository.h"
 #include "messagePool.h"
 
 #include "base/socket/include/blockBuilder.h"
@@ -61,7 +60,6 @@ namespace base
         struct CallHeader
         {
             ReplicatorMessageType m_type = ReplicatorMessageType::CallFunction;;
-            replication::DataMappedID m_objectId;
             replication::DataMappedID m_messageTypeId;
             // serialized data follows
         };
@@ -158,9 +156,8 @@ namespace base
 
         //--
 
-        MessageReplicator::MessageReplicator( const replication::DataModelRepositoryPtr& sharedModelRepository, const MessageObjectRepositoryPtr& sharedObjectRepository)
+        MessageReplicator::MessageReplicator( const replication::DataModelRepositoryPtr& sharedModelRepository)
             : m_models(sharedModelRepository)
-            , m_objects(sharedObjectRepository)
         {
             // create local knowledge base to map data between remote and local systems
             // NOTE: we have separate stores bo avoid races between what was defined and what was not defined
@@ -174,7 +171,7 @@ namespace base
             TRACE_INFO("Connection message stats:\n{}", m_stats);
         }
 
-        void MessageReplicator::send(const replication::DataMappedID targetObjectId, const void* data, Type dataType, IMessageReplicatorDataSink* dataSink)
+        void MessageReplicator::send(const void* data, Type dataType, IMessageReplicatorDataSink* dataSink)
         {
             ASSERT(data != nullptr);
             ASSERT(dataType != nullptr);
@@ -193,7 +190,7 @@ namespace base
 
             // map type of the message we are sending, capture updates and transform them into messages
             KnowledgeUpdateDataSinkByMessage knowledgeUpdateToMessage(dataSink);
-            KnowledgeUpdater knowledgeUpdater(*m_outgoingKnowledge, &knowledgeUpdateToMessage, *m_objects);
+            KnowledgeUpdater knowledgeUpdater(*m_outgoingKnowledge, &knowledgeUpdateToMessage);
             auto messageTypeId  = knowledgeUpdater.mapTypeRef(dataType);
             ASSERT(messageTypeId != 0);
 
@@ -210,7 +207,6 @@ namespace base
                 // write data header
                 CallHeader header;
                 header.m_messageTypeId = messageTypeId;
-                header.m_objectId = targetObjectId;
                 msg.write(&header, sizeof(header));
                 msg.write(bitWriter.data(), bitWriter.byteSize());
 
@@ -321,18 +317,15 @@ namespace base
                 return reportDataError(TempString("Call type '{}' uses invalid data model", typeName.c_str()));
 
             // allocate message structure
-            auto message  = dispatcher->allocateMessage(call->m_objectId, dataType);
+            auto message  = Message::AllocateFromPool(dataType);
             if (!message)
                 return true; // message ignored
 
             // deserialize data
             replication::BitReader bitReader(data, dataSize * 8);
-            KnowledgeResolver resolver(*m_incomingKnowledge, *m_objects);
+            KnowledgeResolver resolver(*m_incomingKnowledge);
             if (!dataModel->decodeToNativeData(message->payload(), resolver, bitReader))
-            {
-                message->release();
                 return reportDataError(TempString("Call '{}' data decoding error", typeName.c_str()));
-            }
 
             // count stats
             {

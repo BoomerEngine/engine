@@ -26,6 +26,8 @@ namespace rendering
             RenderingTest_Clear();
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+
+            base::FastRandState m_random;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_Clear);
@@ -45,9 +47,9 @@ namespace rendering
         void RenderingTest_Clear::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
         {
             base::Vector4 clearColor;
-            clearColor.x = base::Rand();
-            clearColor.y = base::Rand();
-            clearColor.z = base::Rand();
+            clearColor.x = base::RandOne(m_random);
+            clearColor.y = base::RandOne(m_random);
+            clearColor.z = base::RandOne(m_random);
             clearColor.w = 1.0f;
 
             FrameBuffer fb;

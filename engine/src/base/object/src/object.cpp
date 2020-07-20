@@ -10,7 +10,6 @@
 #include "object.h"
 #include "objectTemplate.h"
 #include "objectGlobalRegistry.h"
-#include "objectObserverEventDispatcher.h"
 
 #include "rttiTypeSystem.h"
 #include "rttiNativeClassType.h"
@@ -19,6 +18,8 @@
 #include "rttiMetadata.h"
 #include "rttiDataView.h"
 #include "rttiProperty.h"
+
+#include "globalEventDispatch.h"
 
 #include "dataView.h"
 #include "dataViewNative.h"
@@ -83,6 +84,7 @@ namespace base
         if (!base::IsDefaultObjectCreation())
         {
             m_id = AllocUniqueObjectID();
+            m_eventKey = MakeUniqueEventKey();
             ObjectGlobalRegistry::GetInstance().registerObject(m_id, this);
         }
     }
@@ -304,7 +306,11 @@ namespace base
     {
         markModified();
         TRACE_INFO("OnPropertyChanged prop '{}', this 0x{}", path, Hex((uint64_t)this));
-        postEvent("OnPropertyChanged"_id, path);
+
+        static const auto stringType = RTTI::GetInstance().findType("StringBuf"_id);
+        StringBuf stringPath(path);
+
+        postEvent(EVENT_OBJECT_PROPERTY_CHANGED, &stringPath, stringType);
     }
 
     bool IObject::onPropertyFilter(StringID propertyName) const
@@ -333,9 +339,9 @@ namespace base
 
     //---
 
-    void IObject::postEvent(StringID eventID, StringView<char> eventPath /*= ""*/, rtti::DataHolder eventData /*= DataHolder*/, bool alwaysExecuteLater /*= false*/)
+    void IObject::postEvent(StringID eventID, const void* data, Type dataType)
     {
-        ObjectObserverEventDispatcher::GetInstance().postEvent(eventID, m_id, this, eventPath, eventData);
+        DispatchGlobalEvent(m_eventKey, eventID, this, data, dataType);
     }
 
     //--

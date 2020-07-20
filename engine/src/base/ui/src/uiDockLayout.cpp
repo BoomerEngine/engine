@@ -120,7 +120,7 @@ namespace ui
     {
         if (m_panels.contains(panel))
         {
-            m_panels.remove(panel);
+            m_panels.removeUnordered(panel);
             m_container->applyLayout();
             //if (panel->parentElement() == m_notebook)
             //{

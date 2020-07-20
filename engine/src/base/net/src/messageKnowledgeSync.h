@@ -39,7 +39,7 @@ namespace base
         class KnowledgeUpdater : public replication::IDataModelMapper
         {
         public:
-            KnowledgeUpdater(MessageKnowledgeBase& base, IKnowledgeUpdaterSink* sink, MessageObjectRepository& objectRepository);
+            KnowledgeUpdater(MessageKnowledgeBase& base, IKnowledgeUpdaterSink* sink);
 
             virtual replication::DataMappedID mapString(StringView<char> txt) override final;
             virtual replication::DataMappedID mapPath(StringView<char> path, const char* pathSeparators) override final;
@@ -48,7 +48,6 @@ namespace base
         private:
             MessageKnowledgeBase& m_knowledge;
             IKnowledgeUpdaterSink* m_updateSink;
-            MessageObjectRepository& m_objectRepository;
         };
 
         //--
@@ -57,7 +56,7 @@ namespace base
         class KnowledgeResolver : public replication::IDataModelResolver
         {
         public:
-            KnowledgeResolver(const MessageKnowledgeBase& base, const MessageObjectRepository& objectRepository);
+            KnowledgeResolver(const MessageKnowledgeBase& base);
 
             virtual bool resolveString(const replication::DataMappedID id, IFormatStream& f) override final;
             virtual bool resolvePath(const replication::DataMappedID id, const char* pathSeparator, IFormatStream& f) override final;
@@ -65,7 +64,6 @@ namespace base
 
         private:
             const MessageKnowledgeBase& m_knowledge;
-            const MessageObjectRepository& m_objectRepository;
         };
 
         //--

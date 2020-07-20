@@ -14,6 +14,7 @@
 #include "base/resource/include/resourceLoader.h"
 #include "base/imgui/include/imgui.h"
 #include "base/resource/include/resourceLoadingService.h"
+#include "base/object/include/globalEventTable.h"
 
 namespace base
 {
@@ -24,31 +25,22 @@ namespace base
     //--
 
     // debug page showing resource loading log
-    class DebugPage_Resources : public IDebugPage, public base::res::IResourceLoaderEventListener
+    class DebugPage_Resources : public IDebugPage
     {
         RTTI_DECLARE_VIRTUAL_CLASS(DebugPage_Resources, IDebugPage);
 
     public:
         DebugPage_Resources()
             : m_fileListSortedInvalid(false)
+            , m_events(this)
         {
         }
 
         ~DebugPage_Resources()
         {
-            if (m_registered)
-            {
-                auto loadingService = base::GetService<res::LoadingService>();
-                if (loadingService && loadingService->loader())
-                    loadingService->loader()->dettachListener(this);
-
-                m_registered = false;
-            }
-
+            m_events.clear();
             m_fileMap.clearPtr();
         }
-
-        bool m_registered = false;
 
         virtual bool handleInitialize()
         {
@@ -56,8 +48,33 @@ namespace base
             if (!loadingService || !loadingService->loader())
                 return false;
 
-            loadingService->loader()->attachListener(this);
-            m_registered = true;
+            if (auto key = loadingService->loader()->eventKey())
+            {
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](res::ResourceKey data)
+                {
+                    auto lock = base::CreateLock(m_fileMapLock);
+                    updateStatusNoLock(data, FileStatusMode::Loading);
+                };
+
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](res::ResourceKey data)
+                {
+                    auto lock = base::CreateLock(m_fileMapLock);
+                    updateStatusNoLock(data, FileStatusMode::Failed);
+                };
+
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourceKey data)
+                {
+                    auto lock = base::CreateLock(m_fileMapLock);
+                    updateStatusNoLock(data, FileStatusMode::Unloaded);
+                };
+
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourceHandle data)
+                {
+                    auto lock = base::CreateLock(m_fileMapLock);
+                    updateStatusNoLock(data->key(), FileStatusMode::Loaded);
+                };
+            }
+
             return true;
         }
 
@@ -173,31 +190,7 @@ namespace base
             entry->lastStatusTimestamp.resetToNow();
             m_fileListSortedInvalid = true;
         }
-
-        virtual void onResourceLoading(const res::ResourceKey& key) override final
-        {
-            auto lock = base::CreateLock(m_fileMapLock);
-            updateStatusNoLock(key, FileStatusMode::Loading);
-        }
-
-        virtual void onResourceFailed(const res::ResourceKey& key) override final
-        {
-            auto lock = base::CreateLock(m_fileMapLock);
-            updateStatusNoLock(key, FileStatusMode::Failed);
-        }
-
-        virtual void onResourceLoaded(const res::ResourceKey& key, const res::ResourceHandle& resHandle) override final
-        {
-            auto lock = base::CreateLock(m_fileMapLock);
-            updateStatusNoLock(key, FileStatusMode::Loaded); // TODO: stub detection
-        }
-
-        virtual void onResourceUnloaded(const res::ResourceKey& key) override final
-        {
-            auto lock = base::CreateLock(m_fileMapLock);
-            updateStatusNoLock(key, FileStatusMode::Unloaded);
-        }
-            
+   
         struct FileInfo
         {
             base::res::ResourceKey key;
@@ -209,6 +202,8 @@ namespace base
         base::Array<const FileInfo*> m_fileListSorted;
         bool m_fileListSortedInvalid;
         base::Mutex m_fileMapLock;
+
+        GlobalEventTable m_events;
     };
 
     RTTI_BEGIN_TYPE_CLASS(DebugPage_Resources);

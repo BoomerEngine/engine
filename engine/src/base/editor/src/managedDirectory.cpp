@@ -20,6 +20,8 @@
 #include "managedFileFormat.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/resource/include/resourceFileSaver.h"
+#include "managedFileNativeResource.h"
+#include "managedFileRawResource.h"
 
 namespace ed
 {
@@ -32,17 +34,11 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectory);
     RTTI_END_TYPE();
 
-    ManagedDirectory::ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath, bool isFileSystemRoot)
+    ManagedDirectory::ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath)
         : ManagedItem(dep, parentDirectory, name)
         , m_depotPath(depotPath)
-        , m_isFileSystemRoot(isFileSystemRoot)
         , m_fileCount(0)
     {
-        m_directories.reserve(32);
-        m_files.reserve(512);
-        m_dirMap.reserve(32);
-        m_fileMap.reserve(512);
-
         m_directoryIcon = resDirectoryTexture.loadAndGetAsRef();
     }
 
@@ -54,33 +50,15 @@ namespace ed
         return m_directoryIcon;
     }
 
-    bool ManagedDirectory::fetchThumbnailData(uint32_t& versionToken, image::ImageRef& outThumbnailImage, Array<StringBuf>& outComments) const
-    {
-        if (versionToken != 1)
-        {
-            versionToken = 1;
-            outThumbnailImage = typeThumbnail();
-            outComments.reset();
-
-            if (isFileSystemRoot())
-            {
-                outComments.emplaceBack("Package");
-            }
-            return true;
-        }
-
-        return false;
-    }
-
     void ManagedDirectory::collect(const std::function<bool(const ManagedFile*)>& filter, Array<ManagedFile*>& outFiles) const
     {
         // collect files
-        for (auto* ptr : m_files)
+        for (auto* ptr : m_files.list())
             if (filter(ptr))
                 outFiles.pushBack(ptr);
 
         // recurse
-        for (auto childDirectory : m_directories)
+        for (auto childDirectory : m_directories.list())
             childDirectory->collect(filter, outFiles);
     }
 
@@ -89,103 +67,117 @@ namespace ed
         if (m_bookmarked != state)
         {
             m_bookmarked = state;
-            m_depot->toogleDirectoryBookmark(this, state);
+            depot()->toogleDirectoryBookmark(this, state);
+        }
+    }
+
+    void ManagedDirectory::deleted(bool flag)
+    {
+        if (flag != isDeleted())
+        {
+            m_isDeleted = flag;
+
+            if (flag)
+            {
+                DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_DELETED, ManagedDirectoryPtr(AddRef(this)));
+                DispatchGlobalEvent(eventKey(), EVENT_MANAGED_DIRECTORY_DELETED);
+            }
+            else
+            {
+                DispatchGlobalEvent(eventKey(), EVENT_MANAGED_DIRECTORY_CREATED);
+                DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, ManagedDirectoryPtr(AddRef(this)));
+            }
         }
     }
 
     void ManagedDirectory::populate()
     {
-        refreshContent(true);
+        refreshContent();
     }
 
-    const ManagedDirectory::TFiles& ManagedDirectory::files()
+    static ManagedFilePtr CreateManagedFile(ManagedDepot* depot, ManagedDirectory* dir, StringView<char> name)
     {
-        if (m_filesRequireSorting)
+        const auto fileExt = name.afterFirst(".");
+        if (fileExt)
         {
-            std::sort(m_files.begin(), m_files.end(), [](const ManagedFile* a, const ManagedFile* b)
-                {
-                    return a->name() < b->name();
-                });
-            m_filesRequireSorting = false;
-        }
-        return m_files;
-    }
-
-    const ManagedDirectory::TDirectories& ManagedDirectory::directories()
-    {
-        if (m_directoriesRequireSortying)
-        {
-            std::sort(m_directories.begin(), m_directories.end(), [](const ManagedDirectory* a, const ManagedDirectory* b)
-                {
-                    return a->name() < b->name();
-                });
-            m_directoriesRequireSortying = false;
+            if (const auto format = ManagedFileFormatRegistry::GetInstance().format(fileExt))
+            {
+                if (format->nativeResourceClass())
+                    return CreateSharedPtr<ManagedFileNativeResource>(depot, dir, name);
+                else
+                    return CreateSharedPtr<ManagedFileRawResource>(depot, dir, name);
+            }
         }
 
-        return m_directories;
+        return nullptr;
     }
 
-
-    void ManagedDirectory::refreshContent(bool isCaller)
+    void ManagedDirectory::refreshContent()
     {
         PC_SCOPE_LVL0(RefreshContent);
 
         // create files
         {
-            bool added = false;
-            m_depot->loader().enumFilesAtPath(depotPath(), [this, &added](const depot::DepotStructure::FileInfo& info)
+            HashSet<ManagedFile*> visitedFiles;
+            depot()->depot().enumFilesAtPath(depotPath(), [this, &visitedFiles](const depot::DepotStructure::FileInfo& info)
                 {
                     if (auto existingFile = file(info.name, true))
                     {
-                        if (existingFile->m_isDeleted)
-                            existingFile->m_isDeleted = false;
+                        existingFile->deleted(false);
+                        visitedFiles.insert(existingFile);
                     }
                     else
                     {
-                        if (auto fileWrapper = CreateSharedPtr<ManagedFile>(m_depot, this, info.name))
+                        if (auto fileWrapper = CreateManagedFile(depot(), this, info.name))
                         {
-                            m_fileRefs.pushBack(fileWrapper);
-                            m_files.pushBack(fileWrapper);
-                            m_fileMap[fileWrapper->name()] = fileWrapper;
+                            m_files.add(fileWrapper);
+                            visitedFiles.insert(fileWrapper);
+
+                            DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, fileWrapper);
                         }
                     }
 
                     return false;
                 });
 
-            if (added)
-                m_filesRequireSorting = true;
+            for (auto& file : m_files.list())
+                if (!visitedFiles.contains(file))
+                    file->deleted(true);
         }
 
         // create directories
+        Array<ManagedDirectory*> newDirectories;
         {
-            bool added = false;
-            m_depot->loader().enumDirectoriesAtPath(depotPath(), [this, &added](const depot::DepotStructure::DirectoryInfo& info)
+            HashSet<ManagedDirectory*> visitedDirs;
+            depot()->depot().enumDirectoriesAtPath(depotPath(), [this, &visitedDirs, &newDirectories](const depot::DepotStructure::DirectoryInfo& info)
                 {
                     if (auto existingDir = directory(info.name, true))
                     {
-                        if (existingDir->m_isDeleted)
-                            existingDir->m_isDeleted = false;
+                        existingDir->deleted(false);
+                        visitedDirs.insert(existingDir);
                     }
                     else
                     {
-                        if (auto dirWrapper = CreateSharedPtr<ManagedDirectory>(m_depot, this, info.name, TempString("{}{}/", depotPath(), info.name), info.fileSystemRoot))
+                        if (auto dirWrapper = CreateSharedPtr<ManagedDirectory>(depot(), this, info.name, TempString("{}{}/", depotPath(), info.name)))
                         {
-                            m_dirRefs.pushBack(dirWrapper);
-                            m_directories.pushBack(dirWrapper);
-                            m_dirMap[dirWrapper->name()] = dirWrapper;
+                            m_directories.add(dirWrapper);
+                            newDirectories.pushBack(dirWrapper);
+                            visitedDirs.insert(dirWrapper);
+
+                            DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, dirWrapper);
                         }
                     }
                     return false;
                 });
 
-            if (added)
-                m_directoriesRequireSortying = true;
+            for (auto& dir : m_directories.list())
+                if (!visitedDirs.contains(dir))
+                    dir->deleted(true);
         }
 
         // scan children directories
-        for (const auto& dir : m_directories)
-            dir->refreshContent(false);
+        for (const auto& dir : newDirectories)
+            dir->refreshContent();
 
         // finally, update local counts
         updateFileCount(false);
@@ -194,17 +186,16 @@ namespace ed
 
     ManagedDirectory* ManagedDirectory::directory(StringView<char> dirName, bool allowDeleted /*= false*/) const
     {
-        ManagedDirectory* ret = nullptr;
-        if (m_dirMap.find(dirName, ret))
+        if (auto ret = m_directories.find(dirName))
             if (allowDeleted || !ret->isDeleted())
                 return ret;
+
         return nullptr;
     }
 
     ManagedFile* ManagedDirectory::file(StringView<char> fileName, bool allowDeleted /*= false*/) const
     {
-        ManagedFile* ret = nullptr;
-        if (m_fileMap.find(fileName, ret))
+        if (auto ret = m_files.find(fileName))
             if (allowDeleted || !ret->isDeleted())
                 return ret;
         return nullptr;
@@ -214,11 +205,24 @@ namespace ed
     {
         // return existing sub-directory
         auto curDir = directory(name, true);
-        if (curDir && !curDir->isDeleted())
+        if (curDir)
+        {
+            // "undelete" deleted directories
+            if (curDir->isDeleted())
+            {
+                curDir->deleted(false);
+
+                auto dirPath = absolutePath().addDir(StringBuf(name).c_str());
+                IO::GetInstance().createPath(dirPath);
+
+                curDir->populate(); // just in case it was not really deleted
+            }
+            
             return curDir;
+        }
 
         // validate file name
-        if (!ValidateName(name))
+        if (!ValidateDirectoryName(name))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': invalid directory name", name, depotPath());
             return nullptr;
@@ -240,21 +244,10 @@ namespace ed
         }
 
         // create wrapper
-        if (curDir)
-        {
-            curDir->m_isDeleted = false;
-        }
-        else
-        {
-            auto childDepotPath = TempString("{}{}/", m_depotPath, name);
-            auto newDir = CreateSharedPtr<ManagedDirectory>(m_depot, this, StringBuf(name), childDepotPath, false);
-
-            m_directories.pushBack(newDir);
-            m_dirRefs.pushBack(newDir);
-            m_dirMap[newDir->name()] = newDir;
-            m_directoriesRequireSortying = true;
-            curDir = newDir;
-        }
+        auto childDepotPath = TempString("{}{}/", m_depotPath, name);
+        auto newDir = CreateSharedPtr<ManagedDirectory>(depot(), this, StringBuf(name), childDepotPath);
+        m_directories.add(newDir);
+        curDir = newDir;
 
         // fill new directory with content, usually such directories are empty
         curDir->populate();
@@ -263,18 +256,18 @@ namespace ed
         updateFileCount();
 
         // report events
-        m_depot->dispatchEvent(curDir, ManagedDepotEvent::DirCreated);
+        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, curDir);
         return curDir;
     }
 
     StringBuf ManagedDirectory::adjustFileName(StringView<char> fileName) const
     {
         HashSet<StringBuf> names;
-        for (const auto& file : m_files)
+        for (const auto& file : m_files.list())
             if (!file->isDeleted())
                 names.insert(file->name().toLower());
 
-        for (const auto& dir : m_directories)
+        for (const auto& dir : m_directories.list())
             if (!dir->isDeleted())
                 names.insert(dir->name().toLower());
 
@@ -306,7 +299,7 @@ namespace ed
             return nullptr;
 
         // validate file name
-        if (!ValidateName(fileName.beforeFirstOrFull(".")))
+        if (!ValidateFileName(fileName.beforeLastOrFull(".")))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': invalid file name", fileName, depotPath());
             return nullptr;
@@ -343,7 +336,7 @@ namespace ed
         }
 
         res::ResourceMountPoint mountPoint;
-        if (!m_depot->loader().queryFileMountPoint(fileDepotPath, mountPoint))
+        if (!depot()->depot().queryFileMountPoint(fileDepotPath, mountPoint))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': no valid moutin point in depot", fileName, depotPath());
             return nullptr;
@@ -354,7 +347,6 @@ namespace ed
         if (IO::GetInstance().fileExists(absFilePath))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
-            notifyDepotFileCreated(fileName);
             return file(fileName, true);
         }
 
@@ -370,7 +362,7 @@ namespace ed
 
         // store content for the file
         StringBuf depotFilePath = TempString("{}{}", depotPath(), fileName);
-        const auto writer = m_depot->loader().createFileWriter(depotFilePath);
+        const auto writer = depot()->depot().createFileWriter(depotFilePath);
         if (!writer)
         {
             TRACE_ERROR("Unable to create '{}' in '{}': filed to open file for writing (out of disk space?)", fileName, depotPath());
@@ -378,12 +370,12 @@ namespace ed
         }
 
         // setup saving context
-        base::res::FileSavingContext context;
+        res::FileSavingContext context;
         context.rootObject.pushBack(initialContent);
         context.basePath = mountPoint.path();
 
         // save the file
-        if (!base::res::SaveFile(writer, context))
+        if (!res::SaveFile(writer, context))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': filed to write file's content (out of disk space?)", fileName, depotPath());
             writer->discardContent();
@@ -394,16 +386,11 @@ namespace ed
         auto managedFile = file(fileName, true);
         if (managedFile)
         {
-            if (managedFile->isDeleted())
-                managedFile->m_isDeleted = false;
+            managedFile->deleted(false);
         }
-        else
+        else if (auto newFile = CreateManagedFile(depot(), this, fileName))
         {
-            auto newFile = CreateSharedPtr<ManagedFile>(depot(), this, StringBuf(fileName));
-            m_files.pushBack(newFile);
-            m_fileMap[newFile->name()] = newFile;
-            m_fileRefs.pushBack(newFile);
-            m_filesRequireSorting = true;
+            m_files.add(newFile);
             managedFile = newFile;
         }
 
@@ -411,7 +398,7 @@ namespace ed
         updateFileCount();
 
         // report file event
-        m_depot->dispatchEvent(managedFile, ManagedDepotEvent::FileCreated);
+        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_FILE_CREATED, managedFile);
         return managedFile;
 
     }
@@ -424,7 +411,7 @@ namespace ed
             return nullptr;
 
         // validate file name
-        if (!ValidateName(fileName.beforeFirstOrFull(".")))
+        if (!ValidateFileName(fileName.beforeFirstOrFull(".")))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': invalid file name", fileName, depotPath());
             return nullptr;
@@ -450,7 +437,7 @@ namespace ed
             return nullptr;
 
         // validate file name
-        if (!ValidateName(fileName.beforeFirst(".")))
+        if (!ValidateFileName(fileName.beforeLast(".")))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': invalid file name", fileName, depotPath());
             return nullptr;
@@ -461,7 +448,6 @@ namespace ed
         if (IO::GetInstance().fileExists(absFilePath))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
-            notifyDepotFileCreated(fileName);
             return file(fileName, true);
         }
 
@@ -477,7 +463,7 @@ namespace ed
 
         // store content for the file
         StringBuf depotFilePath = TempString("{}{}", depotPath(), fileName);
-        const auto writer = m_depot->loader().createFileWriter(depotFilePath);
+        const auto writer = depot()->depot().createFileWriter(depotFilePath);
         if (!writer)
         {
             TRACE_ERROR("Unable to create '{}' in '{}': filed to open file for writing (out of disk space?)", fileName, depotPath());
@@ -496,24 +482,19 @@ namespace ed
         auto managedFile = file(fileName, true);
         if (managedFile)
         {
-            if (managedFile->isDeleted())
-                managedFile->m_isDeleted = false;
+            managedFile->deleted(false);
         }
         else
         {
-            auto newFile = CreateSharedPtr<ManagedFile>(depot(), this, StringBuf(fileName));
-            m_files.pushBack(newFile);
-            m_fileMap[newFile->name()] = newFile;
-            m_fileRefs.pushBack(newFile);
-            m_filesRequireSorting = true;
-            managedFile = newFile;
+            auto newFile = CreateManagedFile(depot(), this, fileName);
+            m_files.add(newFile);
         }
 
         // update file counts
         updateFileCount();
 
         // report file event
-        m_depot->dispatchEvent(managedFile, ManagedDepotEvent::FileCreated);
+        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_FILE_CREATED, managedFile);
         return managedFile;
     }
 
@@ -522,7 +503,7 @@ namespace ed
         if (auto parent  = parentDirectory())
         {
             parent->directoryNames(outDirectoryNames);
-            outDirectoryNames.pushBack(m_name);
+            outDirectoryNames.pushBack(name());
         }
     }
 
@@ -532,11 +513,11 @@ namespace ed
 
         m_modifiedContentCount = 0;
 
-        for (auto& a : m_directories)
+        for (auto& a : m_directories.list())
             if (!a->isDeleted() && a->isModified())
                 m_modifiedContentCount += 1;
 
-        for (auto& a : m_files)
+        for (auto& a : m_files.list())
             if (!a->isDeleted() && a->isModified())
                 m_modifiedContentCount += 1;
 
@@ -554,11 +535,11 @@ namespace ed
         auto oldFileCount = m_fileCount;
 
         m_fileCount = 0;
-        for (auto& a : m_files)
+        for (auto& a : m_files.list())
             if (!a->isDeleted())
                 m_fileCount += 1;
             
-        for (auto& a : m_directories)
+        for (auto& a : m_directories.list())
             if (!a->isDeleted())
                 m_fileCount += a->files().size();
 
@@ -569,114 +550,16 @@ namespace ed
         }
     }
 
-    bool ManagedDirectory::notifyDepotFileCreated(StringView<char> name)
-    {
-        bool added = false;
-
-        if (auto existingFile = file(name, true))
-        {
-            if (existingFile->m_isDeleted)
-            {
-                existingFile->m_isDeleted = false;
-                m_fileCount += 1;
-                added = true;
-            }
-        }
-        else
-        {
-            if (auto fileWrapper = CreateSharedPtr<ManagedFile>(m_depot, this, StringBuf(name)))
-            {
-                m_files.pushBack(fileWrapper);
-                m_fileRefs.pushBack(fileWrapper);
-                m_fileMap[fileWrapper->name()] = fileWrapper;
-                m_fileCount += 1;
-                added = true;
-            }
-        }    
-
-        if (auto parent = parentDirectory())
-            parent->updateFileCount();
-
-        return added;
-    }
-
-    bool ManagedDirectory::notifyDepotFileDeleted(StringView<char> name)
-    {
-        if (auto existingFile = file(name, true))
-        {
-            if (!existingFile->m_isDeleted)
-            {
-                existingFile->m_isDeleted = true;
-                m_fileCount -= 1;
-
-                if (auto parent = parentDirectory())
-                    parent->updateFileCount();
-
-                updateModifiedContentCount();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool ManagedDirectory::notifyDepotDirCreated(StringView<char> name, bool fileSystemRoot)
-    {
-        bool added = false;
-
-        if (auto existingDir = directory(name, true))
-        {
-            if (existingDir->m_isDeleted)
-            {
-                existingDir->m_isDeleted = false;
-
-                updateModifiedContentCount();
-                updateFileCount();
-                added = true;
-            }
-        }
-        else
-        {
-            StringBuf childDepotPath = TempString("{}{}/", depotPath(), name);
-            if (auto dirWrapper = CreateSharedPtr<ManagedDirectory>(m_depot, this, StringBuf(name), childDepotPath, fileSystemRoot))
-            {
-                m_directories.pushBack(dirWrapper);
-                m_dirRefs.pushBack(dirWrapper);
-                m_dirMap[dirWrapper->name()] = dirWrapper;
-                added = true;
-            }
-        }
-
-        return added;
-    }
-
-    bool ManagedDirectory::notifyDepotDirDeleted(StringView<char> name)
-    {
-        if (auto existingDir = directory(name, true))
-        {
-            if (!existingDir->m_isDeleted)
-            {
-                existingDir->m_isDeleted = true;
-
-                updateModifiedContentCount();
-                updateFileCount();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     bool ManagedDirectory::visitFiles(bool recursive, StringView<char> fileNamePattern, const std::function<bool(ManagedFile*)>& enumFunc)
     {
-        for (auto& file : m_files)
+        for (auto& file : m_files.list())
             if (!file->isDeleted())
                 if (fileNamePattern.empty() || file->name().view().matchPattern(fileNamePattern))
                     if (enumFunc(file))
                         return true;
 
         if (recursive)
-            for (auto& subDir : m_directories)
+            for (auto& subDir : m_directories.list())
                 if (!subDir->isDeleted())
                     if (subDir->visitFiles(recursive, fileNamePattern, enumFunc))
                         return true;
@@ -687,7 +570,7 @@ namespace ed
     bool ManagedDirectory::visitDirectories(bool recursive, const std::function<bool(ManagedDirectory*)>& enumFunc)
     {
         if (recursive)
-            for (auto& subDir : m_directories)
+            for (auto& subDir : m_directories.list())
                 if (subDir->visitDirectories(recursive, enumFunc))
                     return true;
 

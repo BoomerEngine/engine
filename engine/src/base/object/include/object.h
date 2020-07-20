@@ -7,6 +7,7 @@
 ***/
 
 #pragma once
+#include "globalEventKey.h"
 
 #include "base/containers/include/stringID.h"
 
@@ -37,6 +38,9 @@ namespace base
 
         // Get unique object ID, this number will never repeat (pointer might though...)
         INLINE ObjectID id() const { return m_id; }
+
+        // Get event ID we can use to listen for events on this object
+        INLINE GlobalEventKey eventKey() const { return m_eventKey; }
 
         // Get parent object, does not have to be defined
         INLINE IObject* parent() const { return m_parent; }
@@ -191,7 +195,14 @@ namespace base
         // post event from this object to all interested object's observers
         // NOTE: this is intended for editor or non-time critical functionality as most of the events will be routed through main thread
         // NOTE: if calling function is running on main thread we will execute callbacks immediately, if it's not the even will be posted to be executed later on main thread
-        void postEvent(StringID eventID, StringView<char> eventPath = "", rtti::DataHolder eventData = nullptr, bool alwaysExecuteLater = false);
+        void postEvent(StringID eventID, const void* data = nullptr, Type dataType = Type());
+
+        // post event from this object to all interested object's observers
+        template< typename T >
+        INLINE void postEvent(StringID eventID, const T & data)
+        {
+            postEvent(eventID, &data, reflection::GetTypeObject<T>());
+        }
 
         //--
 
@@ -233,6 +244,9 @@ namespace base
 
         // unique (runtime) ID for this object
         ObjectID m_id;
+
+        // event key (TODO: merge somehow with ObjectID ?)
+        GlobalEventKey m_eventKey;
     };
 
 } // base

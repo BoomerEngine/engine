@@ -3,83 +3,142 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [#filter: containers\dynamic #]
+* [#filter: containers #]
 ***/
 
 #pragma once
 
 namespace base
 {
+    //--
+
+    ALWAYS_INLINE BaseArrayBuffer::BaseArrayBuffer()
+    {
+        m_capacity = 0;
+        m_flagOwned = true;
+    }
+
+    ALWAYS_INLINE BaseArrayBuffer::BaseArrayBuffer(void* externalPointer, Count capacity, bool canResize)
+        : m_ptr(externalPointer)
+    {
+        m_capacity = capacity;
+        m_flagOwned = canResize;
+    }
+
+    ALWAYS_INLINE BaseArrayBuffer::BaseArrayBuffer(BaseArrayBuffer&& other)
+    {
+        m_ptr = other.m_ptr;
+        m_capacity = other.m_capacity;
+        m_flagOwned = other.m_flagOwned;
+
+        other.m_ptr = nullptr;
+        other.m_capacity = 0;
+        other.m_flagOwned = true;
+    }
+
+    ALWAYS_INLINE BaseArrayBuffer& BaseArrayBuffer::operator=(BaseArrayBuffer&& other)
+    {
+        if (this != &other)
+        {
+            m_ptr = other.m_ptr;
+            m_capacity = other.m_capacity;
+            m_flagOwned = other.m_flagOwned;
+
+            other.m_ptr = nullptr;
+            other.m_capacity = 0;
+            other.m_flagOwned = true;
+        }
+
+        return *this;
+    }
+
+    ALWAYS_INLINE void* BaseArrayBuffer::data()
+    {
+        return m_ptr;
+    }
+
+    ALWAYS_INLINE const void* BaseArrayBuffer::data() const
+    {
+        return m_ptr;
+    }
+
+    ALWAYS_INLINE Count BaseArrayBuffer::capacity() const
+    {
+        return m_capacity;
+    }
+
+    ALWAYS_INLINE bool BaseArrayBuffer::owned() const
+    {
+        return m_flagOwned;
+    }
+
+    ALWAYS_INLINE bool BaseArrayBuffer::empty() const
+    {
+        return m_capacity == 0;
+    }
 
     //--
 
-    INLINE BaseArray::BaseArray(void* externalBuffer, uint32_t externalCapacity)
+    ALWAYS_INLINE BaseArray::BaseArray(BaseArrayBuffer&& buffer)
         : m_size(0)
-        , m_capacityAndFlags(externalCapacity | FLAG_EXTERNAL)
-        , m_data(externalBuffer)
+        , m_buffer(std::move(buffer))
     {}
 
-    INLINE BaseArray::~BaseArray()
+    ALWAYS_INLINE BaseArray::~BaseArray()
     {
 		DEBUG_CHECK_EX(0 == m_size, "Array still has elements that will now leak");
-        DEBUG_CHECK_EX(!m_data || !isLocal(), "Destructor called on non-empty array");
     }
 
-    INLINE void* BaseArray::data()
+    ALWAYS_INLINE void* BaseArray::data()
     {
-        return m_data;
+        return m_buffer.data();
     }
 
-    INLINE void BaseArray::adjustSize(uint32_t newSize)
+    ALWAYS_INLINE const void* BaseArray::data() const
     {
-        m_size = newSize;
+        return m_buffer.data();
     }
 
-    INLINE const void* BaseArray::data() const
-    {
-        return m_data;
-    }
-
-    INLINE bool BaseArray::empty() const
+    ALWAYS_INLINE bool BaseArray::empty() const
     {
         return m_size == 0;
     }
 
-    INLINE bool BaseArray::full() const
+    ALWAYS_INLINE bool BaseArray::full() const
     {
         return m_size == capacity();
     }
 
-    INLINE uint32_t BaseArray::size() const
+    ALWAYS_INLINE bool BaseArray::owned() const
+    {
+        return m_buffer.owned();
+    }
+
+    ALWAYS_INLINE uint32_t BaseArray::size() const
     {
         return m_size;
     }
 
-    INLINE uint32_t BaseArray::capacity() const
+    ALWAYS_INLINE Index BaseArray::lastValidIndex() const
     {
-        return m_capacityAndFlags & FLAG_MASK;
+        return (Index)m_size - 1;
     }
 
-    INLINE const void* BaseArray::elementPtr(uint32_t index, uint32_t elementSize) const
+    ALWAYS_INLINE uint32_t BaseArray::capacity() const
     {
-        checkIndex(index);
-        return base::OffsetPtr(m_data, index * elementSize);
+        return m_buffer.capacity();
     }
 
-    INLINE void* BaseArray::elementPtr(uint32_t index, uint32_t elementSize)
+    ALWAYS_INLINE BaseArrayBuffer& BaseArray::buffer()
     {
-        checkIndex(index);
-        return base::OffsetPtr(m_data, index * elementSize);
+        return m_buffer;
     }
 
-	INLINE bool BaseArray::isLocal() const
-	{
-		return 0 == (m_capacityAndFlags & FLAG_EXTERNAL);
-	}
+    ALWAYS_INLINE const BaseArrayBuffer& BaseArray::buffer() const
+    {
+        return m_buffer;
+    }
 
-	INLINE bool BaseArray::canResize() const
-	{
-		return 0 == (m_capacityAndFlags & FLAG_FIXED_CAPACITY);
-	}
+    //--
 
 } // base

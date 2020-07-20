@@ -73,7 +73,7 @@ namespace ed
         MeshStructurePanel();
         virtual ~MeshStructurePanel();
 
-        void setMesh(const rendering::MeshPtr& mesh);
+        void bindResource(const rendering::MeshPtr& mesh);
 
     private:
         rendering::MeshPtr m_mesh;

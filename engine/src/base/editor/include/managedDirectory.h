@@ -17,15 +17,17 @@
 
 namespace ed
 {
+    //---
+
     /// a special lower-case only key
     struct ManagedDirectoryLowerCaseKey
     {
-        ManagedDirectoryLowerCaseKey(base::StringView<char> view)
+        ManagedDirectoryLowerCaseKey(StringView<char> view)
         {
-            m_data = base::StringBuf(view).toLower();
+            m_data = StringBuf(view).toLower();
         }
 
-        ManagedDirectoryLowerCaseKey(const base::StringBuf& txt)
+        ManagedDirectoryLowerCaseKey(const StringBuf& txt)
         {
             m_data = txt.toLower();
         }
@@ -33,12 +35,12 @@ namespace ed
         static uint32_t CalcHash(const ManagedDirectoryLowerCaseKey& key)
         {
             const auto& txt = key.m_data.view();
-            return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
+            return prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
 
-        static uint32_t CalcHash(base::StringView<char> txt)
+        static uint32_t CalcHash(StringView<char> txt)
         {
-            return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
+            return prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
 
         INLINE bool operator==(const ManagedDirectoryLowerCaseKey& key) const
@@ -46,14 +48,46 @@ namespace ed
             return m_data == key.m_data;
         }
 
-        INLINE bool operator==(base::StringView<char> txt) const
+        INLINE bool operator==(StringView<char> txt) const
         {
             return 0 == m_data.view().caseCmp(txt);
         }
 
-        base::StringBuf m_data;
+        StringBuf m_data;
     };
 
+    //--
+
+    /// helper "container"
+    template< typename T >
+    struct ManagedDirectoryItemList
+    {
+        void add(T* ptr)
+        {
+            elemRefs.emplaceBack(AddRef(ptr));
+            elemList.emplaceBack(ptr);
+            elemMap[ptr->name()] = ptr;
+        }
+
+        T* find(StringView<char> name) const
+        {
+            T* ret = nullptr;
+            elemMap.find(name, ret);
+            return ret;
+        }
+
+        const Array<T*>& list() const
+        {
+            return elemList;
+        }
+
+    private:
+        HashMap<ManagedDirectoryLowerCaseKey, T*> elemMap;
+        Array<T*> elemList;
+        Array<RefPtr<T>> elemRefs;
+    };
+
+    //--
 
     /// directory in the managed depot
     class BASE_EDITOR_API ManagedDirectory : public ManagedItem
@@ -63,9 +97,6 @@ namespace ed
     public:
         /// is this a root depot directory ?
         INLINE bool isRoot() const { return parentDirectory() == nullptr; }
-
-        /// is this a file system mounting directory ?
-        INLINE bool isFileSystemRoot() const { return m_isFileSystemRoot; }
 
         /// is this directory modified ? (has modified files/directories)
         INLINE bool isModified() const { return m_modifiedContentCount > 0; }
@@ -82,16 +113,14 @@ namespace ed
         //--
 
         /// get list of managed files in this directory
-        typedef Array< ManagedFile* > TFiles;
-        const TFiles& files();
+        INLINE const Array<ManagedFile*>& files() const { return m_files.list(); }
 
         /// get list of managed directories in this directory
-        typedef Array< ManagedDirectory* > TDirectories;
-        const TDirectories& directories();
+        INLINE const Array<ManagedDirectory*>& directories() const { return m_directories.list(); }
 
         //--
 
-        ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath, bool isFileSystemRoot);
+        ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath);
         virtual ~ManagedDirectory();
 
         /// fill directory with content by scanning actual depot
@@ -113,6 +142,9 @@ namespace ed
 
         /// toggle bookmark
         void bookmark(bool state);
+
+        /// toggle the "deleted" flag
+        void deleted(bool flag);
 
         ///---
 
@@ -152,46 +184,27 @@ namespace ed
             
         ///---
 
-        // fetch directory thumbnail
-        virtual bool fetchThumbnailData(uint32_t& versionToken, image::ImageRef& outThumbnailImage, Array<StringBuf>& outComments) const override;
-
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
         virtual const image::ImageRef& typeThumbnail() const;
+
+        ///---
 
     protected:
         StringBuf m_depotPath;
 
-        base::HashMap<ManagedDirectoryLowerCaseKey, ManagedFile*> m_fileMap;
-        base::HashMap<ManagedDirectoryLowerCaseKey, ManagedDirectory*> m_dirMap;
+        ManagedDirectoryItemList<ManagedFile> m_files;
+        ManagedDirectoryItemList<ManagedDirectory> m_directories;
 
-        TFiles m_files;
-        TDirectories m_directories;
+        image::ImageRef m_directoryIcon;
 
-        base::Array<base::RefPtr<ManagedDirectory>> m_dirRefs;
-        base::Array<base::RefPtr<ManagedFile>> m_fileRefs;
-
-        base::image::ImageRef m_directoryIcon;
-
-        bool m_isPopulated = false;
-        bool m_isFileSystemRoot = false;
         bool m_bookmarked = false;
-        bool m_filesRequireSorting = false;
-        bool m_directoriesRequireSortying = false;
 
         uint32_t m_fileCount = 0;
         uint32_t m_modifiedContentCount = 0;
 
         SpinLock m_lock;
 
-        bool notifyDepotFileCreated(StringView<char> name);
-        bool notifyDepotFileDeleted(StringView<char> name);
-        bool notifyDepotDirCreated(StringView<char> name, bool fileSystemRoot=false);
-        bool notifyDepotDirDeleted(StringView<char> name);
-
-        void refreshContent(bool isCaller);
-
-        void refreshFiles(bool reportEvents);
-        void refreshDirectories(bool reportEvents, Array<ManagedDirectory*>* outNewDirectories = nullptr);
+        void refreshContent();
 
         friend class ManagedDepot;
     };

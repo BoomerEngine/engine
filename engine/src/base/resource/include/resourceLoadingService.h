@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: services #]
+* [# filter: resource #]
 ***/
 
 #pragma once
@@ -30,15 +30,6 @@ namespace base
 
             /// created resource loader
             INLINE const RefPtr<IResourceLoader>& loader() const { return m_resourceLoader; }
-
-            //--
-
-            /// register listener that will get informations about what's happening with resources in this loaded
-            /// NOTE: this is mainly for the editor managed depot integration
-            void attachListener(IResourceLoaderEventListener* listener);
-
-            /// detach previously attached listener
-            void dettachListener(IResourceLoaderEventListener* listener);
 
             //--
 

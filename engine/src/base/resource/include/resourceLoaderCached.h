@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/containers/include/array.h"
-#include "base/containers/include/mutableArray.h"
 
 #include "resourceLoader.h"
 
@@ -45,9 +44,6 @@ namespace base
 
             /// Internal interface - check if internal resource can be used (ie. is still up to date)
             virtual bool validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const;
-
-            // Interna interface - feed newly added listener with info about existing resources
-            virtual void feedListenerWithData(IResourceLoaderEventListener* listener) override;
 
             //--
         

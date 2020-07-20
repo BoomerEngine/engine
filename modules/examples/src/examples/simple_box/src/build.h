@@ -11,7 +11,6 @@
 #include "BoomerEngine.h"
 
 using namespace base;
-using namespace base::mesh;
 using namespace base::app;
 using namespace base::image;
 using namespace base::input;

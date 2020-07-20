@@ -22,6 +22,7 @@ namespace base
         {
             RTTI_DECLARE_NONVIRTUAL_CLASS(ImportFileEntry);
 
+            bool enabled = true;
             StringBuf depotPath;
             StringBuf assetPath;
             ResourceConfigurationPtr userConfiguration;

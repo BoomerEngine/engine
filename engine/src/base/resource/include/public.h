@@ -9,6 +9,14 @@
 // glue code
 #include "base_resource_glue.inl"
 
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_LOADING)
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_LOADED)
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_UNLOADED)
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_FAILED)
+
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_MODIFIED)
+DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_RELOADED)
+
 namespace base
 {
     namespace res
@@ -25,7 +33,6 @@ namespace base
         class IResourceLoader;
         class IResourcePackageLoader;
         class IResourceReloadingHook;
-        class IResourceLoaderEventListener;
 
         typedef uint32_t ResourceUniqueID;
         typedef uint32_t ResourceRuntimeVersion;

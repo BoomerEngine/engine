@@ -26,6 +26,9 @@ namespace base
         //--
 
         RTTI_BEGIN_TYPE_ENUM(ImportStatus);
+            RTTI_ENUM_OPTION(Pending);
+            RTTI_ENUM_OPTION(Checking);
+            RTTI_ENUM_OPTION(Processing);
             RTTI_ENUM_OPTION(UpToDate);
             RTTI_ENUM_OPTION(NotUpToDate);
             RTTI_ENUM_OPTION(NotSupported);
@@ -54,7 +57,77 @@ namespace base
         Importer::~Importer()
         {}
             
-        ImportStatus Importer::checkStatus(const Metadata& metadata) const
+        ResourceConfigurationPtr Importer::compileFinalImportConfiguration(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration) const
+        {
+            // get the extension requested resource class for given depot extension
+            const auto depotExtension = depotPath.view().afterLast(".");
+            const auto targetResourceClass = IResource::FindResourceClassByExtension(depotExtension);
+            if (!targetResourceClass)
+                return nullptr;
+
+            // find importer class
+            SpecificClassType<IResourceImporter> importerClass;
+            const auto& sourcePath = metadata.importDependencies[0].importPath;
+            if (!findBestImporter(sourcePath, targetResourceClass, importerClass))
+                return nullptr;
+
+            // get the resource configuration class needed to import this resource
+            auto resourceConfigurationClass = importerClass->findMetadata<ResourceImporterConfigurationClassMetadata>()->configurationClass();
+            DEBUG_CHECK_EX(resourceConfigurationClass, "Invalid resource configuration class");
+            if (!resourceConfigurationClass)
+                resourceConfigurationClass = ResourceConfiguration::GetStaticClass();
+
+            // load the asset depot configuration for the resource
+            auto folderBaseConfig = m_assets->compileBaseResourceConfiguration(sourcePath, resourceConfigurationClass);
+
+            // if we were given extra config how to import this resource then use it
+            ResourceConfigurationPtr baseConfig;
+            if (metadata.importBaseConfiguration && metadata.importBaseConfiguration->is(resourceConfigurationClass))
+            {
+                baseConfig = CloneObject(metadata.importBaseConfiguration); // keep only delta properties
+                baseConfig->rebase(folderBaseConfig); // apply delta properties on top of what we have in the folder
+            }
+            else
+            {
+                baseConfig = resourceConfigurationClass.create(); // create empty one
+                baseConfig->rebase(folderBaseConfig); // apply delta properties on top of what we have in the folder
+            }
+
+            // apply user config
+            ResourceConfigurationPtr importConfig;
+            if (newUserConfiguration && newUserConfiguration->is(resourceConfigurationClass))
+            {
+                importConfig = CloneObject(newUserConfiguration); // keep only delta properties from user config
+                importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
+            }
+            else if (metadata.importUserConfiguration && metadata.importUserConfiguration->is(resourceConfigurationClass))
+            {
+                importConfig = CloneObject(metadata.importUserConfiguration); // keep only delta properties from user config
+                importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
+            }
+            else
+            {
+                importConfig = resourceConfigurationClass.create(); // create empty one
+                importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
+            }
+
+            // done
+            return importConfig;
+        }
+
+        static uint64_t CalcConfigurationKey(const ResourceConfiguration* cfg)
+        {
+            if (cfg)
+            {
+                CRC64 crc;
+                cfg->computeConfigurationKey(crc);
+                return crc;
+            }
+
+            return 0;
+        }
+
+        ImportStatus Importer::checkStatus(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration, IProgressTracker* progress) const
         {
             // check if import class still exists
             if (metadata.cookerClass == nullptr)
@@ -70,24 +143,50 @@ namespace base
             if (currentCookerVersion->version() != metadata.cookerClassVersion)
                 return ImportStatus::NotUpToDate;*/
 
+            // not imported from any files
+            if (metadata.importDependencies.empty())
+                return ImportStatus::NotImportable;
+
             // check asset dependencies
             for (const auto& dep : metadata.importDependencies)
             {
                 ImportFileFingerprint fingerprint(dep.crc);
-                const auto ret = m_assets->checkFileStatus(dep.importPath, dep.timestamp, fingerprint, nullptr);
+                const auto ret = m_assets->checkFileStatus(dep.importPath, dep.timestamp, fingerprint, progress);
 
-                if (ret == SourceAssetStatus::Missing)
-                    return ImportStatus::MissingAssets;
+                switch (ret)
+                {
+                    case SourceAssetStatus::ContentChanged: 
+                        return ImportStatus::NotUpToDate;
 
-                if (ret == SourceAssetStatus::UpToDate)
-                    continue;
+                    case SourceAssetStatus::Missing: 
+                        return ImportStatus::MissingAssets;
 
-                return ImportStatus::InvalidAssets;
+                    case SourceAssetStatus::ReadFailure: 
+                        return ImportStatus::InvalidAssets;
+
+                    case SourceAssetStatus::Canceled: 
+                        return ImportStatus::Canceled;
+                }
+            }
+
+            // build import configuration
+            {
+                const auto importConfiguration = compileFinalImportConfiguration(depotPath, metadata, newUserConfiguration);
+                if (!importConfiguration)
+                    return ImportStatus::NotSupported;
+
+                // check configuration
+                const auto originalConfigurationKey = CalcConfigurationKey(metadata.importFullConfiguration);
+                const auto currentConfigurationKey = CalcConfigurationKey(importConfiguration);
+                if (originalConfigurationKey != currentConfigurationKey)
+                    return ImportStatus::NotUpToDate;
             }
 
             // looks up to date
             return ImportStatus::UpToDate;
         }
+
+
 
         ImportStatus Importer::importResource(const ImportJobInfo& info, const IResource* existingData, ResourcePtr& outImportedResource, IProgressTracker* progress /*= nullptr*/) const
         {
@@ -124,7 +223,7 @@ namespace base
 
             // if we were given extra config how to import this resource then use it
             ResourceConfigurationPtr baseConfig;
-            if (info.externalConfig)
+            if (info.externalConfig && info.externalConfig->is(resourceConfigurationClass))
             {
                 baseConfig = CloneObject(info.externalConfig); // keep only delta properties
                 baseConfig->rebase(folderBaseConfig); // apply delta properties on top of what we have in the folder
@@ -137,7 +236,7 @@ namespace base
 
             // apply user config
             ResourceConfigurationPtr importConfig;
-            if (info.userConfig)
+            if (info.userConfig && info.userConfig->is(resourceConfigurationClass))
             {
                 importConfig = CloneObject(info.userConfig); // keep only delta properties from user config
                 importConfig->rebase(baseConfig); // apply delta properties on top of what we have as the base
@@ -156,6 +255,12 @@ namespace base
             // create import interface
             LocalImporterInterface importerInterface(m_assets, existingData, info.assetFilePath, ResourcePath(info.depotFilePath), ResourceMountPoint(), progress, importConfig);
             const auto importedResource = importer->importResource(importerInterface);
+
+            // regardless if we produced asset or not never return anything if we got canceled
+            if (progress->checkCancelation())
+                return ImportStatus::Canceled;
+
+            // no output
             if (!importedResource)
             {
                 TRACE_ERROR("Failed to import resource '{}' from '{}'", info.depotFilePath, info.assetFilePath);
@@ -186,6 +291,12 @@ namespace base
             // remember the final configuration as well
             metadata->importUserConfiguration = importConfig;
             importConfig->parent(metadata);
+
+            // build the full import configuration
+            metadata->importFullConfiguration = CloneObject(importConfig);
+            metadata->importFullConfiguration->rebase(baseConfig);
+            metadata->importFullConfiguration->detach();
+            metadata->importFullConfiguration->parent(metadata);
 
             // store metadata in the imported object
             importedResource->metadata(metadata);

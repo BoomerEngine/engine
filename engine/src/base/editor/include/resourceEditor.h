@@ -18,9 +18,19 @@ namespace ed
 {
     ///---
 
-    struct AssetItemList;
+    /// editor "capabilities", controls the basic features
+    enum class ResourceEditorFeatureBit : uint32_t
+    {
+        Native = FLAG(0), // this is a native resource editor
+        Imported = FLAG(1), // file is imported and not user-created 
+        Save = FLAG(2), // file can be saved
+        UndoRedo = FLAG(3), // show and implement the "undo/redo" stuff, creates the action history
+        CopyPaste = FLAG(4), // show the "copy/paste" stuff
+    };
 
-    typedef base::HashSet<const ManagedFile*> TFileSet;
+    typedef base::DirectFlags<ResourceEditorFeatureBit> ResourceEditorFeatureFlags;
+
+    ///---
 
     /// generate resource editor window
     class BASE_EDITOR_API ResourceEditor : public ui::DockPanel
@@ -28,34 +38,136 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditor, ui::DockPanel);
 
     public:
-        ResourceEditor(ConfigGroup config, base::StringView<char> title = "Panel");
+        ResourceEditor(ConfigGroup typeConfig, ManagedFile* file, ResourceEditorFeatureFlags flags);
         virtual ~ResourceEditor();
 
-        INLINE ConfigGroup& config() { return m_config; }
-        INLINE const ConfigGroup& config() const { return m_config; }
+        INLINE ResourceEditorFeatureFlags features() const { return m_features; }
 
-        virtual bool initialize() = 0;
-        virtual void saveConfig() const = 0;
-        virtual bool containsFile(const TFileSet& files) const = 0;
-        virtual bool showFile(const TFileSet& files) = 0;
-        virtual bool saveFile(const TFileSet& files) = 0;
+        INLINE ManagedFile* file() const { return m_file; }
 
-        virtual void collectOpenedFiles(AssetItemList& outList) const = 0;
-        virtual void collectModifiedFiles(AssetItemList& outList) const = 0;
+        INLINE ConfigGroup& typeConfig() { return m_typeConfig; }
+        INLINE const ConfigGroup& typeConfig() const { return m_typeConfig; }
 
+        INLINE ConfigGroup& fileConfig() { return m_fileConfig; }
+        INLINE const ConfigGroup& fileConfig() const { return m_fileConfig; }
+
+        INLINE const Array<ResourceEditorAspectPtr>& aspects() const { return m_aspects; }
+
+        INLINE const ActionHistoryPtr& actionHistory() const { return m_actionHistory; }
+
+        INLINE ui::DockContainer* dockContainer() const { return m_dock; }
+        INLINE ui::ToolBar* toolbar() const { return m_toolbar; }
+        INLINE ui::MenuBar* menubar() const { return m_menubar; }
+
+        //--
+
+        // root layout node for the editor panel
+        ui::DockLayoutNode& dockLayout();
+
+        //--
+
+        // check if editor contains modified content
+        virtual bool modified() const;
+
+        // initialize editor, usually loads the content of the file, can fail (editor will not be shown then)
+        virtual bool initialize();
+
+        // close editor - cleanup as much as possible
+        virtual void close();
+
+        // save content edited in this editor
+        virtual bool save() = 0;
+
+        //--
+
+        // file the standard menu with editor related options
+        virtual void fillFileMenu(ui::MenuButtonContainer* menu);
+        virtual void fillEditMenu(ui::MenuButtonContainer* menu);
+        virtual void fillViewMenu(ui::MenuButtonContainer* menu);
+        virtual void fillToolMenu(ui::MenuButtonContainer* menu);
+        
     protected:
-        ConfigGroup m_config;
+        virtual void handleGeneralUndo();
+        virtual void handleGeneralRedo();
+        virtual void handleGeneralSave();
+        virtual void handleGeneralCopy();
+        virtual void handleGeneralCut();
+        virtual void handleGeneralPaste();
+        virtual void handleGeneralDelete();
+        virtual void handleGeneralReimport();
+
+        virtual bool checkGeneralUndo() const;
+        virtual bool checkGeneralRedo() const;
+        virtual bool checkGeneralSave() const;
+        virtual bool checkGeneralCopy() const;
+        virtual bool checkGeneralCut() const;
+        virtual bool checkGeneralPaste() const;
+        virtual bool checkGeneralDelete() const;
+
+    private:
+        ManagedFile* m_file = nullptr; // file being edited
+
+        ResourceEditorFeatureFlags m_features; // editor flags & features
+ 
+        ConfigGroup m_typeConfig; // configuration for the resource editor type
+        ConfigGroup m_fileConfig; // configuration for file related stuff
+
+        ActionHistoryPtr m_actionHistory; // undo/redo action history
+
+        ui::DockContainerPtr m_dock; // master dock area for the editor
+        ui::ToolBarPtr m_toolbar; // main toolbar
+        ui::MenuBarPtr m_menubar; // main menu
+
+        Array<ResourceEditorAspectPtr> m_aspects; // created and initialized editor aspects (plugins)
+
+        //--
+
+        void createActions();
+        void createAspects();
+        void destroyAspects();
+        bool showTabContextMenu(const ui::Position& pos);
 
         MainWindow* findMainWindow() const;
-
         virtual void handleCloseRequest() override final;
+    };
+
+    ///---
+
+    /// resource editor "aspect" - simple plugins for resource editors
+    class BASE_EDITOR_API IResourceEditorAspect : public IObject
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(IResourceEditorAspect, IObject);
+
+    public:
+        IResourceEditorAspect();
+        virtual ~IResourceEditorAspect();
+
+        //---
+
+        // editor we are bound to
+        INLINE ResourceEditor* editor() const { return m_editor; }
+
+        //---
+
+        // initialize on given editor, should return true if we can operate or false if we cant
+        // NOTE: this is usually called AFTER all main UI for the editor was created and the inital resource data was loaded
+        virtual bool initialize(ResourceEditor* editor);
+
+        // called when editor is closed
+        virtual void close();
+
+        // resource being edited in the editor has been changed (usually a reload happened)
+        virtual void resourceChanged();
+
+    private:
+        ResourceEditor* m_editor;
     };
 
     ///---
 
     /// file opener, provides way to edit file content, usually creates a ResourceEditor
     /// NOTE: this is called only if no existing opened editor is found that can open the file
-    class BASE_EDITOR_API IResourceEditorOpener : public base::NoCopy
+    class BASE_EDITOR_API IResourceEditorOpener : public NoCopy
     {
         RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IResourceEditorOpener);
 
@@ -66,7 +178,7 @@ namespace ed
         virtual bool canOpen(const ManagedFileFormat& format) const = 0;
 
         // create editor for given file type
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const = 0;
+        virtual RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const = 0;
     };
 
     ///---

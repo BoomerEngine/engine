@@ -29,7 +29,7 @@ namespace base
 
         //--
 
-        bool CommandFingerprint::run(const app::CommandLine& commandline)
+        bool CommandFingerprint::run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline)
         {
             // find the source asset service - we need it to have access to source assets
             auto fingerprintService = GetService<ImportFileFingerprintService>();

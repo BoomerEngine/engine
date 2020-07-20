@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/resource/include/resource.h"
-#include "base/containers/include/mutableArray.h"
 #include "base/containers/include/hashSet.h"
 
 namespace game

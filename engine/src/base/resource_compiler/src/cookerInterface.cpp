@@ -253,7 +253,7 @@ namespace base
             entry.sourcePath = StringBuf(fileSystemPath);
 
             if (ret)
-                TRACE_INFO("Discovered dependency for '{}' on '{}'", m_referencePath, fileSystemPath);
+                TRACE_SPAM("Discovered dependency for '{}' on '{}'", m_referencePath, fileSystemPath);
 
             return ret;
         }

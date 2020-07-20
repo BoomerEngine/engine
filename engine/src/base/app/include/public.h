@@ -9,10 +9,6 @@
 #include "base_app_glue.inl"
 #include "base/system/include/timing.h"
 
-#define RESPONSE_FUNC const base::http::RequestResult& result
-
-#define REQUEST_FUNC const base::http::IncomingRequestPtr& request
-
 namespace base
 {
     namespace app
@@ -26,6 +22,12 @@ namespace base
         class IFramework;
 
         class CommandLine;
+
+        class ICommand;
+        typedef RefPtr<ICommand> CommandPtr;
+
+        class CommandHost;
+        typedef RefPtr<CommandHost> CommandHostPtr;
 
     } // app
 

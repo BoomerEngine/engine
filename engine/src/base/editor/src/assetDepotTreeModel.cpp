@@ -19,9 +19,35 @@ namespace ed
 
     AssetDepotTreeModel::AssetDepotTreeModel(ManagedDepot* depot)
         : m_depot(depot)
+        , m_depotEvents(this)
     {
         if (auto rootDirectory = depot->root())
             addDirNode(ui::ModelIndex(), rootDirectory);
+
+        m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED) = [this](ManagedDirectoryPtr dir)
+        {
+            if (auto parentDir = dir->parentDirectory())
+                if (auto parentEntry = findNodeForData(parentDir))
+                    addChildNode(parentEntry, dir);
+        };
+
+        m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_DELETED) = [this](ManagedDirectoryPtr dir)
+        {
+            if (auto dirEntry = findNodeForData(dir))
+                removeNode(dirEntry);
+        };
+
+        m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED) = [this](ManagedDirectoryPtr dir)
+        {
+            if (auto item = findNodeForData(dir))
+                requestItemUpdate(item);
+        };
+
+        m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED) = [this](ManagedDirectoryPtr dir)
+        {
+            if (auto item = findNodeForData(dir))
+                requestItemUpdate(item);
+        };
     }
 
     AssetDepotTreeModel::~AssetDepotTreeModel()
@@ -45,9 +71,9 @@ namespace ed
         return filter.testString(data->name());
     }
 
-    base::StringBuf AssetDepotTreeModel::displayContent(ManagedItem* data, int colIndex /*= 0*/) const
+    StringBuf AssetDepotTreeModel::displayContent(ManagedItem* data, int colIndex /*= 0*/) const
     {
-        base::StringBuilder ret;
+        StringBuilder ret;
 
         if (data->cls() == ManagedDirectory::GetStaticClass())
         {
@@ -56,10 +82,10 @@ namespace ed
             {
                 ret << "[img:database]  <depot>";
             }
-            else if (dir->isFileSystemRoot())
+            /*else if (dir->isFileSystemRoot())
             {
                 ret << "[img:package]  " << dir->name();
-            }
+            }*/
             else
             {
                 ret << "[img:folder]  " << dir->name();
@@ -71,44 +97,6 @@ namespace ed
         }
 
         return ret.toString();
-    }
-
-    void AssetDepotTreeModel::managedDepotEvent(ManagedItem* depotItem, ManagedDepotEvent eventType)
-    {
-        if (eventType == ManagedDepotEvent::FileCreated || eventType == ManagedDepotEvent::FileDeleted)
-        {
-            if (auto parentDir = depotItem->parentDirectory())
-            {
-                if (auto item = this->findNodeForData(parentDir))
-                {
-                    requestItemUpdate(item, ui::ItemUpdateModeBit::ItemAndParents);
-                }
-            }
-        }
-        else if (eventType == ManagedDepotEvent::DirCreated)
-        {
-            if (auto parentDir = depotItem->parentDirectory())
-            {
-                if (auto parentEntry = findNodeForData(parentDir))
-                {
-                    addChildNode(parentEntry, depotItem);
-                }
-            }
-        }
-        else if (eventType == ManagedDepotEvent::DirDeleted)
-        {
-            if (auto dirEntry = findNodeForData(depotItem))
-            {
-                removeNode(dirEntry);
-            }
-        }
-        else if (eventType == ManagedDepotEvent::DirBookmarkChanged)
-        {
-            if (auto item = findNodeForData(depotItem))
-            {
-                requestItemUpdate(item);
-            }
-        }
     }
 
     //---

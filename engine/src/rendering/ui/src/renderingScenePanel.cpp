@@ -21,6 +21,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/canvas/include/canvas.h"
+#include "base/ui/include/uiToolBar.h"
 
 namespace ui
 {
@@ -193,6 +194,11 @@ namespace ui
         };
 
         m_updateTimer.startRepeated(1.0f / cvViewportUpdateInterval.get());
+
+        m_toolbar = createChildWithType<ToolBar>("PreviewPanelToolbar"_id);
+        m_toolbar->customHorizontalAligment(ElementHorizontalLayout::Expand);
+        m_toolbar->customVerticalAligment(ElementVerticalLayout::Top);
+        m_toolbar->overlay(true);
 
         m_filterFlags = rendering::scene::FilterFlags::DefaultEditor();
     }

@@ -25,18 +25,10 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(TextFileResourceEditor);
     RTTI_END_TYPE();
 
-    TextFileResourceEditor::TextFileResourceEditor(ConfigGroup config, ManagedFile* file)
-        : SingleResourceEditor(config, file)
+    TextFileResourceEditor::TextFileResourceEditor(ConfigGroup config, ManagedFileRawResource* file)
+        : ResourceEditor(config, file, { ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo })
+        , m_textFile(file)
     {
-        actions().bindCommand("TextEditor.Copy"_id) = [this]() { return m_editor->actions().run("Edit.Copy"_id); };
-        actions().bindFilter("TextEditor.Copy"_id) = [this]() { return m_editor->hasSelection(); };
-        actions().bindCommand("TextEditor.Cut"_id) = [this]() { return m_editor->actions().run("Edit.Cut"_id); };
-        actions().bindFilter("TextEditor.Cut"_id) = [this]() { return m_editor->hasSelection(); };
-        actions().bindCommand("TextEditor.Paste"_id) = [this]() { return m_editor->actions().run("Edit.Paste"_id); };
-        actions().bindFilter("TextEditor.Paste"_id) = [this]() { return true; };
-        actions().bindCommand("TextEditor.Delete"_id) = [this]() { return m_editor->actions().run("Edit.Delete"_id); };
-        actions().bindFilter("TextEditor.Delete"_id) = [this]() { return m_editor->hasSelection(); };
-
         actions().bindCommand("TextEditor.Find"_id) = [this]() { cmdShowFindWindow(); };
         actions().bindCommand("TextEditor.NextFind"_id) = [this]() { cmdNextFind(); };
         actions().bindCommand("TextEditor.PrevFind"_id) = [this]() { cmdPrevFind(); };
@@ -44,61 +36,63 @@ namespace ed
         actions().bindShortcut("TextEditor.NextFind"_id, "F3");
         actions().bindShortcut("TextEditor.PrevFind"_id, "Shift+F3");
 
-        toolbar()->createButton("TextEditor.Copy"_id, ui::ToolbarButtonSetup().icon("copy").caption("Copy").tooltip("Copy selected text"));
-        toolbar()->createButton("TextEditor.Cut"_id, ui::ToolbarButtonSetup().icon("cut").caption("Cut").tooltip("Cut selected text"));
-        toolbar()->createButton("TextEditor.Paste"_id, ui::ToolbarButtonSetup().icon("paste").caption("Paste").tooltip("Paste text"));
-        toolbar()->createButton("TextEditor.Delete"_id, ui::ToolbarButtonSetup().icon("delete").caption("Delete").tooltip("Delete selected text"));
-
         {
-            auto panel = base::CreateSharedPtr<ui::DockPanel>("[img:text] Text", "TextPanel");
+            auto panel = CreateSharedPtr<ui::DockPanel>("[img:text] Text", "TextPanel");
             m_editor = panel->createChild<ui::ScintillaTextEditor>();
             dockLayout().attachPanel(panel);
         }
     }
 
+    bool TextFileResourceEditor::modified() const
+    {
+        return m_editor->isModified();
+    }
+
     bool TextFileResourceEditor::initialize()
     {
-        TBaseClass::initialize();
+        if (!TBaseClass::initialize())
+            return false;
 
         if (!m_editor)
             return false;
 
-        if (auto content = file()->loadRawContent())
+        if (auto content = m_textFile->loadContent())
         {
-            auto str = base::StringBuf(content);
+            auto str = StringBuf(content);
             m_editor->text(str);
         }
 
         return true;
     }
 
-    void TextFileResourceEditor::fillEditMenu(ui::MenuButtonContainer* menu)
+    void TextFileResourceEditor::close()
     {
-        TBaseClass::fillEditMenu(menu);
+        TBaseClass::close();
 
-        menu->createSeparator();
-        menu->createAction("TextEditor.Copy"_id, "Copy", "[img:copy]");
-        menu->createAction("TextEditor.Cut"_id, "Cut", "[img:cut]");
-        menu->createAction("TextEditor.Paste"_id, "Paste", "[img:paste]");
-        menu->createAction("TextEditor.Delete"_id, "Delete", "[img:delete]");
+        if (m_editor)
+        {
+            detachChild(m_editor);
+            m_editor.reset();
+        }
     }
 
-    bool TextFileResourceEditor::modifiedInternal() const
-    {
-        return m_editor->isModified();
-    }
-
-    bool TextFileResourceEditor::saveInternal()
+    bool TextFileResourceEditor::save() 
     {
         auto txt = m_editor->text();
+        auto buffer = txt.view().toBuffer();
 
-        if (file()->storeRawContent(txt))
+        if (m_textFile->storeContent(buffer))
         {
             m_editor->markAsSaved();
             return true;
         }
 
         return false;
+    }
+
+    void TextFileResourceEditor::fillEditMenu(ui::MenuButtonContainer* menu)
+    {
+        TBaseClass::fillEditMenu(menu);
     }
 
     void TextFileResourceEditor::cmdShowFindWindow()
@@ -125,9 +119,11 @@ namespace ed
             return format.extension() == "txt" || format.extension() == "md";
         }
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
         {
-            return base::CreateSharedPtr<TextFileResourceEditor>(config, file);
+            if (auto* rawFile = rtti_cast<ManagedFileRawResource>(file))
+                return CreateSharedPtr<TextFileResourceEditor>(config, rawFile);
+            return nullptr;
         }        
     };
 
