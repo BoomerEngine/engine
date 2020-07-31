@@ -18,17 +18,6 @@ namespace ui
 
     //---
 
-    ConfigPathStack::ConfigPathStack()
-    {
-        m_buffer[m_length] = 0;
-    }
-
-    void ConfigPathStack::clear()
-    {
-        m_length = 0;
-        m_buffer[m_length] = 0;
-    }
-
     static bool IsValidChar(char ch)
     {
         if (ch >= 'a' && ch <= 'z') return true;
@@ -47,48 +36,6 @@ namespace ui
             if (!IsValidChar(ch))
                 return false;
         return true;
-    }
-
-    bool ConfigPathStack::pushTag(base::StringView<char> tag)
-    {
-        DEBUG_CHECK_RETURN_V(IsValidTag(tag), false);
-
-        const auto neededLength = tag.length() + 1;
-        DEBUG_CHECK_RETURN_V(m_length + neededLength < MAX_PATH, false);
-
-        m_positions.pushBack(m_length);
-        memcpy(m_buffer, tag.data(), tag.length());
-        m_length += tag.length();
-        m_buffer[m_length] = 0;
-        return true;
-    }
-
-    bool ConfigPathStack::pushPath(base::StringView<char> path)
-    {
-        if (path.empty())
-            return false;
-
-        base::StringBuilder tag;
-
-        const auto fileName = path.afterLast("/").beforeFirst(".");
-
-        tag << "Path_";
-        tag << Hex(path.calcCRC64());
-        tag << "_";
-
-        for (const auto ch : fileName)
-            if (IsValidChar(ch))
-                tag << ch;
-
-        return pushTag(tag.view());
-    }
-
-    void ConfigPathStack::popTag()
-    {
-        DEBUG_CHECK_RETURN(!m_positions.empty());
-        m_length = m_positions.back();
-        m_buffer[m_length] = 0;
-        m_positions.popBack();
     }
 
     //---

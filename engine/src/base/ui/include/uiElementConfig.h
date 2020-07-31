@@ -14,32 +14,6 @@ namespace ui
 {
     //------
 
-    // stack based configuration path
-    class BASE_UI_API ConfigPathStack : public base::NoCopy
-    {
-    public:
-        ConfigPathStack();
-
-        INLINE base::StringView<char> path() const { return base::StringView<char>(m_buffer, m_length); }
-
-        void clear();
-
-        bool pushPath(base::StringView<char> path); // use this for resource paths
-        bool pushTag(base::StringView<char> tag); // tag must be alpha-numerical
-
-        void popTag();
-
-    private:
-        static const uint32_t MAX_PATH = 1024;
-
-        char m_buffer[MAX_PATH+1];
-        uint32_t m_length = 0;
-
-        base::InplaceArray<uint32_t, 20> m_positions; // saved positions
-    };
-
-    //------
-
     /// configuration writer interface
     class BASE_UI_API IConfigDataInterface : public base::NoCopy
     {
