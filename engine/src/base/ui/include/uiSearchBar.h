@@ -13,6 +13,10 @@
 namespace ui
 {
     ///---
+    
+    DECLARE_UI_EVENT(EVENT_SEARCH_CHANGED);
+
+    ///---
 
     /// helper widget that provides a search bar, usually integrated with a ItemView
     /// NOTE: the search list can be automatically loaded/stored in config
@@ -23,10 +27,6 @@ namespace ui
     public:
         SearchBar(bool extendedSearchParams = false);
         virtual ~SearchBar();
-
-        //--
-
-        ElementEventProxy OnSearchPatternChanged;
 
         //--
 
@@ -52,7 +52,7 @@ namespace ui
         //--
 
     private:
-        TextEditorPtr m_text;
+        EditBoxPtr m_text;
         ButtonPtr m_flagWholeWords;
         ButtonPtr m_flagCaseSensitive;
         ButtonPtr m_flagRegEx;

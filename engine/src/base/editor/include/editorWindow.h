@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "editorConfig.h"
-
 #include "base/ui/include/uiWindow.h"
 #include "base/ui/include/uiDockContainer.h"
 #include "base/ui/include/uiDockPanel.h"
@@ -19,9 +17,6 @@ namespace ed
     ///---
 
     class AssetBrowser;
-    class AssetImportWindow;
-    class ResourceEditor;
-    class IResourceEditorOpener;
 
     typedef HashSet<const ManagedFile*> TFileSet;
     typedef SpecificClassType<res::IResource> TImportClass;
@@ -37,31 +32,27 @@ namespace ed
 
         ui::DockLayoutNode& layout();
 
-        void loadConfig(const ConfigGroup& config);
-        void saveConfig(ConfigGroup& config) const;
+        virtual void configLoad(const ui::ConfigBlock& block) override;
+        virtual void configSave(const ui::ConfigBlock& block) const override;
 
         ManagedFile* selectedFile() const;
         ManagedDirectory* selectedDirectory() const;
 
-        bool canOpenFile(const ManagedFileFormat& format) const;
         bool selectFile(ManagedFile* file);
-        bool openFile(ManagedFile* file);
-        bool saveFile(ManagedFile* file);
-
-        bool saveFiles(const TFileSet& files);
-
-        void collectOpenedFiles(Array<ManagedFile*>& outFiles) const;
-        void requestEditorClose(const Array<ResourceEditor*>& editors);
+        bool selectDirectory(ManagedDirectory* dir, bool exploreContent);
 
         void addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
         void addReimportFiles(const Array<ManagedFileNativeResource*>& files);
-        void addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration);
+        void addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration, bool quickstart);
+
+        bool iterateMainTabs(const std::function<bool(ui::DockPanel * panel)>& enumFunc, ui::DockPanelIterationMode mode = ui::DockPanelIterationMode::All) const;
+        void attachMainTab(ui::DockPanel* mainTab, bool focus=true);
+        void detachMainTab(ui::DockPanel* mainTab);
+        bool activateMainTab(ui::DockPanel* mainTab);
 
     protected:
         virtual void handleExternalCloseRequest() override;
         virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
-
-        //--
 
         //--
 
@@ -70,8 +61,6 @@ namespace ed
         RefPtr<AssetBrowser> m_assetBrowserTab;
         RefPtr<AssetImportPrepareTab> m_assetImportPrepareTab;
         RefPtr<AssetImportMainTab> m_assetImportProcessTab;
-
-        Array<IResourceEditorOpener*> m_editorOpeners;
     };
 
     ///---

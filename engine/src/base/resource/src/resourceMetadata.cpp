@@ -82,6 +82,8 @@ namespace base
 
         RTTI_BEGIN_TYPE_STRUCT(ImportFollowup);
             RTTI_PROPERTY(depotPath);
+            RTTI_PROPERTY(sourceImportPath);
+            RTTI_PROPERTY(configuration);
         RTTI_END_TYPE();
 
         //--

@@ -30,7 +30,7 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resDebugGeometryShader("engine/shaders/debug.fx");
+        static base::res::StaticResource<ShaderLibrary> resDebugGeometryShader("/engine/shaders/debug.fx");
 
         //---
 

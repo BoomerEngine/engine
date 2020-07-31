@@ -11,22 +11,26 @@
 using namespace base;
 
 // event to observe files in depot, all events have "ManagedFilePtr" as data
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_CREATED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_DELETED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_OPENED); // in asset browser
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_CLOSED); // in asset browser
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_MODIFIED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_UNMODIFIED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_SAVED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_RELOADED);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_DELETED, ManagedFilePtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_OPENED, ManagedFilePtr); // in asset browser
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_CLOSED, ManagedFilePtr); // in asset browser
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_MODIFIED, ManagedFilePtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_UNMODIFIED, ManagedFilePtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_SAVED, ManagedFilePtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_RELOADED, ManagedFilePtr);
 
 // event to observe directories in depot, all events have "ManagedDirectoryPtr" as data
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_OPENED); // in asset browser
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_CLOSED); // in asset browser
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_CREATED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_DELETED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED);
-DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_OPENED, ManagedDirectoryPtr); // in asset browser
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_CLOSED, ManagedDirectoryPtr); // in asset browser
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, ManagedDirectoryPtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_DELETED, ManagedDirectoryPtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED, ManagedDirectoryPtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED, ManagedDirectoryPtr);
+
+// event to indicate that placeholder items were discarded/accepted, take ManagedItemPtr
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr);
 
 // event to observer on specific file, no data
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_FILE_MODIFIED);
@@ -42,6 +46,11 @@ DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DIRECTORY_DELETED);
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DIRECTORY_CREATED); // called also when we are undeleted
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DIRECTORY_BOOKMARKED);
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DIRECTORY_UNBOOKMARKED);
+
+// event to indicate that placeholder items were discarded/accepted
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_DISCARDED);
+DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
+
 
 namespace ed
 {
@@ -68,10 +77,8 @@ namespace ed
     class BackgroundJobUnclaimedConnection;
     typedef RefPtr<BackgroundJobUnclaimedConnection> BackgroundJobUnclaimedConnectionPtr;
 
-    class ConfigGroup;
-    class ConfigRoot;
-
     class ManagedDepot;
+    class ManagedFileCollection;
 
     class ManagedItem;
     typedef RefPtr<ManagedItem> ManagedItemPtr;
@@ -84,6 +91,14 @@ namespace ed
     class ManagedFileNativeResource;
     typedef RefPtr<ManagedFileNativeResource> ManagedFileNativeResourcePtr;
     typedef RefWeakPtr<ManagedFileNativeResource> ManagedFileNativeResourceWeakPtr;
+
+    class ManagedFilePlaceholder;
+    typedef RefPtr<ManagedFilePlaceholder> ManagedFilePlaceholderPtr;
+    typedef RefWeakPtr<ManagedFilePlaceholder> ManagedFilePlaceholderWeakPtr;
+
+    class ManagedDirectoryPlaceholder;
+    typedef RefPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderPtr;
+    typedef RefWeakPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderWeakPtr;
 
     class ManagedDirectory;
     typedef RefPtr<ManagedDirectory> ManagedDirectoryPtr;
@@ -101,6 +116,9 @@ namespace ed
     class ManagedFilePlaceholder;
 
     //--
+
+    class ResourceEditor;
+    typedef RefPtr<ResourceEditor> ResourceEditorPtr;
 
     class IResourceEditorAspect;
     typedef RefPtr<IResourceEditorAspect> ResourceEditorAspectPtr;
@@ -127,5 +145,4 @@ using input::KeyCode;
 
 #include "managedDepot.h"
 #include "managedFile.h"
-#include "editorConfig.h"
 #include "editorWindow.h"

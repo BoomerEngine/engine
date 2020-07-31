@@ -65,21 +65,26 @@ namespace base
 
         void IResource::markModified()
         {
-            // this resource may be contained inside other file, we still need to propagate
-            TBaseClass::markModified();
-
             // invalidate runtime version of the resource, this may cause refresh of the preview panels or other cached data
             invalidateRuntimeVersion();
 
-            // mark as modified
-            if (!m_modified && !key().empty())
-            {
-                TRACE_INFO("Resource '{}' marked as modified");
-            }
-            m_modified = true;
+            // this resource may be contained inside other file, we still need to propagate
+            TBaseClass::markModified();
 
-            // notify any object based users of this resource that it has been modified
-            postEvent("ResourceModified"_id);
+            // mark as modified only if we are standalone resource
+            if (key() && parent() == nullptr)
+            {
+                // mark as modified
+                if (!m_modified && !key().empty())
+                {
+                    TRACE_INFO("Resource '{}' marked as modified");
+                }
+                m_modified = true;
+
+                // notify any object based users of this resource that it has been modified
+                auto selfRef = ResourcePtr(AddRef(this));
+                DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
+            }
         }
 
 

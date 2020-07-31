@@ -163,16 +163,6 @@ int __preDec(out int a)
 
 //----
 
-struct EncodedSelectable
-{
-    uint id;
-    uint pixel; // y<<16 | x
-    float depth;
-    uint _padding;
-};
-
-//----
-
 void UnpackClusterCounts(uint counts, out uint lightCount, out uint decalCount, out uint probeCount)
 {
     lightCount = counts & 255;

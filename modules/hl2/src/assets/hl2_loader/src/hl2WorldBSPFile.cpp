@@ -37,7 +37,7 @@ namespace hl2
         const base::RefPtr<File> File::LoadFromFile(base::res::IResourceCookerInterface& cooker)
         {
             // load content to path
-            auto sourcePath = cooker.queryResourcePath().path();
+            const auto& sourcePath = cooker.queryResourcePath();
             auto data = cooker.loadToBuffer(sourcePath);
             if (!data)
             {

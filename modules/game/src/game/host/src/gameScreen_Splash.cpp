@@ -18,7 +18,7 @@ namespace game
 {
     //---
 
-    static base::res::StaticResource<rendering::ShaderLibrary> resShaderSplash("engine/shaders/effects/loading_splash_cube.fx");
+    static base::res::StaticResource<rendering::ShaderLibrary> resShaderSplash("/engine/shaders/effects/loading_splash_cube.fx");
 
     //---
 

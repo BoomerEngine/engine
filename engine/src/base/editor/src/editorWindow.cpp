@@ -8,16 +8,21 @@
 
 #include "build.h"
 #include "editorService.h"
-#include "editorConfig.h"
 #include "editorWindow.h"
+
 #include "assetBrowser.h"
 #include "assetBrowserTabFiles.h"
-#include "assetBrowserContextMenu.h"
+#include "assetBrowserDialogs.h"
 #include "assetFileImportPrepareTab.h"
 #include "assetFileImportProcessTab.h"
-#include "backgroundBakerPanel.h"
+
 #include "resourceEditor.h"
+
 #include "managedFileFormat.h"
+#include "managedFile.h"
+#include "managedDirectory.h"
+#include "managedItemCollection.h"
+#include "managedFileNativeResource.h"
 
 #include "base/canvas/include/canvas.h"
 #include "base/app/include/launcherPlatform.h"
@@ -25,6 +30,9 @@
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiDockContainer.h"
+#include "base/resource/include/resourceMetadata.h"
+#include "base/resource_compiler/include/importFileList.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -52,26 +60,16 @@ namespace ed
     }
 
     MainWindow::MainWindow()
+        : Window(ui::WindowFeatureFlagBit::DEFAULT_FRAME, BuildWindowCaption())
     {
-        createChild<ui::WindowTitleBar>(BuildWindowCaption());
         customMinSize(1200, 900);
 
         m_dockArea = createChild<ui::DockContainer>();
         m_dockArea->layout().notebook()->styleType("FileNotebook"_id);
-
-        InplaceArray<SpecificClassType<IResourceEditorOpener>, 10> openerClasses;
-        RTTI::GetInstance().enumClasses(openerClasses);
-
-        for (const auto cls : openerClasses)
-        {
-            if (auto opener = cls->createPointer<IResourceEditorOpener>())
-                m_editorOpeners.pushBack(opener);
-        }
     }
 
     MainWindow::~MainWindow()
     {
-        m_editorOpeners.clearPtr();
     }
 
     ui::DockLayoutNode& MainWindow::layout()
@@ -79,24 +77,24 @@ namespace ed
         return m_dockArea->layout();
     }
 
-    void MainWindow::loadConfig(const ConfigGroup& config)
+    void MainWindow::configLoad(const ui::ConfigBlock& block)
     {
         auto& depot = GetService<Editor>()->managedDepot();
 
         // create asset browser
         {
             m_assetBrowserTab = CreateSharedPtr<AssetBrowser>(&depot);
-            m_assetBrowserTab->loadConfig(config["AssetBrowser"]);
+            m_assetBrowserTab->configLoad(block.tag("AssetBrowser"));
             m_dockArea->layout().bottom().attachPanel(m_assetBrowserTab);
         }
 
         // create asset import list
         {
             m_assetImportPrepareTab = CreateSharedPtr<AssetImportPrepareTab>();
-            //m_assetImportPrepareTab->loadConfig(config["AssetImportPrepare"]);
+            m_assetImportPrepareTab->configLoad(block.tag("AssetImportPrepare"));
             m_assetImportPrepareTab->expand();
 
-            m_assetImportPrepareTab->OnStartImport = [this]()
+            m_assetImportPrepareTab->bind(EVENT_START_ASSET_IMPORT) = [this]()
             {
                 if (auto files = m_assetImportPrepareTab->compileResourceList())
                 {
@@ -111,7 +109,7 @@ namespace ed
         // create asset processing tab (import queue)
         {
             m_assetImportProcessTab = CreateSharedPtr<AssetImportMainTab>();
-            //m_assetImportProcessTab->loadConfig(config["AssetImportProcess"]);
+            m_assetImportProcessTab->configLoad(block.tag("AssetImportProcess"));
             m_assetImportProcessTab->expand();
 
             m_dockArea->layout().bottom().attachPanel(m_assetImportProcessTab, false);
@@ -120,141 +118,78 @@ namespace ed
         // make sure asset browser is the first visible
         m_dockArea->activatePanel(m_assetBrowserTab);
 
+        // load the dock panel config
+        m_dockArea->configLoad(block.tag("Docking"));
+
         // open previously opened resources
-        auto openedFilePaths = config.readOrDefault<Array<StringBuf>>("OpenedFiles");
+        auto openedFilePaths = block.readOrDefault<Array<StringBuf>>("OpenedFiles");
         for (const auto& path : openedFilePaths)
         {
             if (auto file = depot.findManagedFile(path))
-                openFile(file);
+                file->open();
         }
     }
 
-    void MainWindow::collectOpenedFiles(Array<ManagedFile*>& outFiles) const
-    {
-        AssetItemList list;
-
-        m_dockArea->iterateSpecificPanels<ResourceEditor>([this, &list](ResourceEditor* editor)
-            {
-                if (editor->file())
-                    list.collectFile(editor->file());
-                return false;
-            });
-
-        for (auto* file : list.files)
-            outFiles.pushBack(file);
-    }
-
-    void MainWindow::saveConfig(ConfigGroup& config) const
+    void MainWindow::configSave(const ui::ConfigBlock& block) const
     {
         // save tabs
-        m_assetBrowserTab->saveConfig(config["AssetBrowser"]);
-//      m_assetImportPrepareTab->saveConfig(config["AssetImportPrepare"]);
-        //assetImportProcessTab->saveConfig(config["AssetImportProcess"]);
+        m_assetBrowserTab->configSave(block.tag("AssetBrowser"));
+        m_assetImportPrepareTab->configSave(block.tag("AssetImportPrepare"));
+        m_assetImportProcessTab->configSave(block.tag("AssetImportProcess"));
 
         // save list of opened files
         {
-            Array<ManagedFile*> openedFiles;
             Array<StringBuf> openedFilePaths;
-            collectOpenedFiles(openedFiles);
-            for (const auto& file : openedFiles)
-                if (auto path = file->depotPath())
-                    openedFilePaths.pushBack(path);
-            config.write("OpenedFiles", openedFilePaths);
+            m_dockArea->iterateSpecificPanels<ResourceEditor>([this, &openedFilePaths](ResourceEditor* editor)
+                {
+                    if (editor->file())
+                        openedFilePaths.pushBack(editor->file()->depotPath());
+                    return false;
+                });
+
+            block.write("OpenedFiles", openedFilePaths);
         }
+    }
+
+    bool MainWindow::iterateMainTabs(const std::function<bool(ui::DockPanel * panel)>& enumFunc, ui::DockPanelIterationMode mode) const
+    {
+        return m_dockArea->iteratePanels(enumFunc, mode);
+    }
+
+    void MainWindow::attachMainTab(ui::DockPanel* mainTab, bool focus)
+    {
+        m_dockArea->layout().attachPanel(mainTab, focus);
+    }
+
+    void MainWindow::detachMainTab(ui::DockPanel* mainTab)
+    {
+        m_dockArea->layout().detachPanel(mainTab);
+    }
+
+    bool MainWindow::activateMainTab(ui::DockPanel* mainTab)
+    {
+        if (m_dockArea->layout().activatePanel(mainTab))
+        {
+            requestActivate();
+            return true;
+        }
+
+        return false;
     }
 
     //--
 
     void MainWindow::handleExternalCloseRequest()
     {
-        AssetItemList modifiedFiles;
+        // if we have modified files make sure we have a chance to save them, this is also last change to cancel the close
+        const auto& modifiedFiles = GetService<Editor>()->managedDepot().modifiedFilesList();
+        if (!SaveDepotFiles(this, modifiedFiles))
+            return;
 
-        m_dockArea->iterateSpecificPanels<ResourceEditor>([this, &modifiedFiles](ResourceEditor* editor)
-            {
-                if (editor->file() && editor->modified())
-                    modifiedFiles.collectFile(editor->file());
-                return false;
-            });
-
-        // if we have modified files make sure we have a chance to save them
-        if (!modifiedFiles.files.empty())
-        {
-            SaveFiles(this, modifiedFiles) = [](ui::IElement*, int result)
-            {
-                if (result)
-                    platform::GetLaunchPlatform().requestExit("Editor window closed");
-            };
-        }
-        else
-        {
-            // just close the window
-            platform::GetLaunchPlatform().requestExit("Editor window closed");
-        }
+        // just close the window
+        platform::GetLaunchPlatform().requestExit("Editor window closed");
     }   
-
-    void MainWindow::requestEditorClose(const Array<ResourceEditor*>& editors)
-    {
-        AssetItemList modifiedFiles;
-        Array<ResourceEditor*> editorsToClose;
-        for (const auto& editor : editors)
-        {
-            const auto prevCount = modifiedFiles.files.size();
-            if (editor->file() && editor->modified())
-                modifiedFiles.collectFile(editor->file());
-
-            if (modifiedFiles.files.size() == prevCount)
-                editor->close();
-            else
-                editorsToClose.pushBack(editor);
-        }
-
-        if (!modifiedFiles.empty())
-        {
-            SaveFiles(this, modifiedFiles) = [this, editorsToClose](ui::IElement*, int result)
-            {
-                if (result)
-                {
-                    for (const auto& editor : editorsToClose)
-                        editor->close();
-                }
-            };
-        }
-    }
-
-    bool MainWindow::canOpenFile(const ManagedFileFormat& format) const
-    {
-        for (auto* opener : m_editorOpeners)
-            if (opener->canOpen(format))
-                return true;
-
-        if (!format.cookableOutputs().empty() || format.nativeResourceClass())
-            return true;
-
-        return false;
-    }
-
-    bool MainWindow::saveFile(ManagedFile* file)
-    {
-        TFileSet files;
-        if (file)
-            files.insert(file);
-        return saveFiles(files);
-    }
-
-    bool MainWindow::saveFiles(const TFileSet& files)
-    {
-        bool ret = true;
-
-        m_dockArea->iterateSpecificPanels<ResourceEditor>([&files, &ret](ResourceEditor* editor)
-            {
-                if (files.contains(editor->file()))
-                    ret &= editor->save();
-                return true;
-            });
-
-        return ret;
-    }
-
+    
     bool MainWindow::selectFile(ManagedFile* file)
     {
         if (file && !file->isDeleted())
@@ -271,6 +206,22 @@ namespace ed
         return false;
     }
 
+    bool MainWindow::selectDirectory(ManagedDirectory* dir, bool exploreContent)
+    {
+        if (dir && !dir->isDeleted())
+        {
+            if (m_assetBrowserTab->showDirectory(dir, exploreContent))
+            {
+                m_dockArea->activatePanel(m_assetBrowserTab);
+                return true;
+            }
+
+            ui::PostWindowMessage(this, ui::MessageType::Warning, "AssetBrowser"_id, TempString("Unable to locate directory '{}'", dir->depotPath()));
+        }
+
+        return false;
+    }
+
     ManagedFile* MainWindow::selectedFile() const
     {
         return m_assetBrowserTab->selectedFile();
@@ -281,64 +232,18 @@ namespace ed
         return m_assetBrowserTab->selectedDirectory();
     }
 
-    bool MainWindow::openFile(ManagedFile* file)
+    void MainWindow::addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths)
     {
-        // no file to open
-        if (!file)
-            return false;
-
-        // activate existing editor
-        if (m_dockArea->iterateSpecificPanels<ResourceEditor>([this, file](ResourceEditor* editor)
-            {
-                if (editor->file() == file)
-                {
-                    m_dockArea->activatePanel(editor);
-                    return true;
-                }
-
-                return false;
-            }))
-            return true;
-            
-
-        // look for a handler capable of servicing file
-        for (auto* opener : m_editorOpeners)
+        if (!currentDirectory)
         {
-            if (opener->canOpen(file->fileFormat()))
+            currentDirectory = selectedDirectory();
+            if (!currentDirectory)
             {
-                auto editorName = opener->cls()->name().view().afterLastOrFull("::");
-                auto editorConfig = GetService<Editor>()->config()[editorName];
-
-                if (auto editor = opener->createEditor(editorConfig, file))
-                {
-                    if (editor->initialize())
-                    {
-                        m_dockArea->layout().attachPanel(editor);
-                        return true;
-                    }
-                }
+                ui::PostNotificationMessage(this, ui::MessageType::Warning, "ImportAsset"_id, "No directory selected to import to");
+                return;
             }
         }
 
-        /*// try to create a generic editor
-        {
-            auto editorConfig = GetService<Editor>()->config()["Generic"];
-            auto editor = CreateSharedPtr<GenericResourceEditor>(editorConfig, file);
-            auto resourceEditor = rtti_cast<ResourceEditor>(editor);
-            if (resourceEditor->initialize())
-            {
-                m_dockNotebook->attachTab(resourceEditor);
-                m_dockArea->selectPanel(resourceEditor);
-                return true;
-            }
-        }*/
-
-        TRACE_WARNING("No editor to service file '{}'", file->depotPath());
-        return false;
-    }
-
-    void MainWindow::addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths)
-    {
         m_assetImportPrepareTab->addNewImportFiles(currentDirectory, resourceClass, selectedAssetPaths);
         m_dockArea->activatePanel(m_assetImportPrepareTab);
     }
@@ -349,8 +254,31 @@ namespace ed
         m_dockArea->activatePanel(m_assetImportPrepareTab);
     }
 
-    void MainWindow::addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration)
+    void MainWindow::addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration, bool quickstart)
     {
+        if (quickstart)
+        {
+            if (auto metadata = file->loadMetadata())
+            {
+                if (metadata->importDependencies.size() >= 1)
+                {
+                    base::res::ImportFileEntry entry;
+                    entry.assetPath = metadata->importDependencies[0].importPath;
+                    entry.depotPath = file->depotPath();
+                    entry.userConfiguration = reimportConfiguration;
+
+                    if (auto fileList = CreateSharedPtr<res::ImportList>(entry))
+                    {
+                        if (m_assetImportProcessTab->startAssetImport(fileList))
+                        {
+                            m_dockArea->activatePanel(m_assetImportProcessTab);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         m_assetImportPrepareTab->addReimportFile(file, reimportConfiguration);
         m_dockArea->activatePanel(m_assetImportPrepareTab);
     }

@@ -53,15 +53,6 @@ namespace ed
         return mountPoint;
     }
 
-    /*static bool IsValidChar(char ch, bool first)
-    {
-        if (ch >= 'A' && ch <= 'Z') return true;
-        if (ch >= 'a' && ch <= 'z') return true;
-        if (!first && (ch >= '0' && ch <= '9')) return true;
-        if (ch == '_' || ch == ' ' || ch == '(' || ch == ')') return true;
-        return false;
-    }*/
-
     static bool IsValidChar(wchar_t ch)
     {
         if (ch <= 31)

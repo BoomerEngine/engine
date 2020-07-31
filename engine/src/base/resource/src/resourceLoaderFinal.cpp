@@ -37,7 +37,7 @@ namespace base
             }
             else
             {
-                m_looseFileDir = IO::GetInstance().systemPath(io::PathCategory::ExecutableDir).addDir("cooked");
+                m_looseFileDir = base::io::SystemPath(io::PathCategory::ExecutableDir).addDir("cooked");
 
                 // LOAD packages
                 //TRACE_ERROR("No cooked packages found");
@@ -90,7 +90,7 @@ namespace base
             if (!entryTable || entryTable->empty())
                 return false;
 
-            const auto loadingExt = key.path().extension();
+            const auto loadingExt = key.extension();
             for (const auto& entry : *entryTable)
                 if (entry.extension == loadingExt)
                     return loadingExt;
@@ -112,7 +112,7 @@ namespace base
             if (!ext)
                 return false;
 
-            outPath = m_looseFileDir.addFile(key.path().path()).addExtension(ext);
+            outPath = m_looseFileDir.addFile(key.path()).addExtension(ext);
             return true;
         }
 
@@ -124,7 +124,7 @@ namespace base
                 io::AbsolutePath filePath;
                 if (assembleCookedFilePath(key, filePath))
                 {
-                    if (auto reader = IO::GetInstance().openForAsyncReading(filePath))
+                    if (auto reader = base::io::OpenForAsyncReading(filePath))
                     {
                         FileLoadingContext context;
                         // context.knownMainFileSize = 0;

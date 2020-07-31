@@ -368,7 +368,7 @@ namespace game
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
-        static base::res::StaticResource<base::font::Font> resDefaultFont("engine/fonts/aileron_regular.otf");
+        static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf");
 
         static void Print(base::canvas::Canvas& c, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16, 
             base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold=false)

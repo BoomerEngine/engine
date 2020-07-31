@@ -113,7 +113,7 @@ namespace game
 
     //--
 
-    static base::res::StaticResource<game::ResourceList> cvResCommonResources("game/common_resources.v4reslist");
+    static base::res::StaticResource<game::ResourceList> cvResCommonResources("/game/common_resources.v4reslist");
 
     void GameSystem_Resources::handleInitialize(IGame* game)
     {

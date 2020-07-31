@@ -19,6 +19,7 @@
 #include "base/ui/include/uiDockContainer.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiSearchBar.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -29,7 +30,7 @@ namespace ed
     ///--
 
     AssetBrowser::AssetBrowser(ManagedDepot* depot)
-        : ui::DockPanel("[img:database] Asset Browser")
+        : ui::DockPanel("[img:database] Asset Browser", "AssetBrowser")
         , m_depot(depot)
         , m_depotEvents(this)
     {
@@ -56,7 +57,7 @@ namespace ed
             m_depotTree->model(m_depotTreeModel);
             filter->bindItemView(m_depotTree);
 
-            m_depotTree->bind("OnSelectionChanged"_id, this) = [this]()
+            m_depotTree->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
             {
                 if (auto dir = rtti_cast<ManagedDirectory>(m_depotTreeModel->dataForNode(m_depotTree->current())))
                     navigateToDirectory(dir);
@@ -70,15 +71,14 @@ namespace ed
     {
     }
 
-    void AssetBrowser::loadConfig(const ConfigGroup& config)
+    void AssetBrowser::configLoad(const ui::ConfigBlock& block)
     {
         // restore tabs
-        uint32_t count = config.readOrDefault<uint32_t>("NumTabs", 0);
+        uint32_t count = block.readOrDefault<uint32_t>("NumTabs", 0);
         for (uint32_t i = 0; i < count; ++i)
         {
-            auto tabConfig = config[TempString("Tab{}", i).c_str()];
+            auto tabConfig = block.tag(TempString("Tab{}", i));
             auto tabType = tabConfig.readOrDefault<StringBuf>("Type", "");
-            auto tabID = tabConfig.readOrDefault<StringBuf>("ID", "");
 
             if (tabType == "Directory")
             {
@@ -88,20 +88,18 @@ namespace ed
                     // create new tab
                     auto newTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
                     newTab->directory(tabDirectory);
+                    newTab->configLoad(tabConfig);
 
-                    // load config
-                    if (newTab->loadConfig(tabConfig))
-                    {
-                        auto active = tabConfig.readOrDefault<bool>("Active", false);
-                        m_dockContainer->layout().attachPanel(newTab, active);
-                    }
+                    // attach
+                    auto active = tabConfig.readOrDefault<bool>("Active", false);
+                    m_dockContainer->layout().attachPanel(newTab, active);
                 }
             }
         }
 
         // expand directories
         {
-            auto expandedDirectories = config.readOrDefault<Array<StringBuf>>("ExpandedDirectories");
+            auto expandedDirectories = block.readOrDefault<Array<StringBuf>>("ExpandedDirectories");
             for (auto& path : expandedDirectories)
             {
                 if (auto dir = m_depot->findPath(path))
@@ -112,7 +110,7 @@ namespace ed
 
         // select directory
         {
-            auto selectedDirectoryPath = config.readOrDefault<StringBuf>("SelectedDirectory");
+            auto selectedDirectoryPath = block.readOrDefault<StringBuf>("SelectedDirectory");
             if (selectedDirectoryPath)
             {
                 if (auto dir = m_depot->findPath(selectedDirectoryPath))
@@ -133,9 +131,12 @@ namespace ed
             auto root = m_depot->root();
             navigateToDirectory(root);
         }
+
+        // load docking layout (AFTER panels are created)
+        m_dockContainer->configLoad(block);
     }
 
-    void AssetBrowser::saveConfig(ConfigGroup config) const
+    void AssetBrowser::configSave(const ui::ConfigBlock& block) const
     {
         // tab configuration
         InplaceArray<AssetBrowserTabFiles*, 10> fileTabs;
@@ -143,19 +144,18 @@ namespace ed
         InplaceArray<AssetBrowserTabFiles*, 10> activeFileTabs;
         m_dockContainer->collectSpecificPanels<AssetBrowserTabFiles>(activeFileTabs, ui::DockPanelIterationMode::ActiveOnly);
 
-        config.write<uint32_t>("NumTabs", fileTabs.size());
+        block.write<uint32_t>("NumTabs", fileTabs.size());
+
         //config.write<int>("ActiveTab", m_tabs->selectedTab());
         for (uint32_t i=0; i<fileTabs.size(); ++i)
         {
             auto tab = fileTabs[i];
 
             // store tab type
-            auto tabId = StringBuf(TempString("Tab{}", i));
-            auto tabConfig = config[tabId];
+            auto tabConfig = block.tag(TempString("Tab{}", i));
             tabConfig.write<StringBuf>("Type", "Directory");
-            tabConfig.write<StringBuf>("ID", tabId);
             tabConfig.write<bool>("Active", activeFileTabs.contains(tab));
-            tab->saveConfig(tabConfig);
+            tab->configSave(tabConfig);
         }
 
         // collect opened directories from the depot tree
@@ -168,16 +168,16 @@ namespace ed
                 if (auto dir = m_depotTreeModel->dataForNode(index))
                     expandedFolders.pushBack(dir->depotPath());
 
-            config.write("ExpandedDirectories", expandedFolders);
+            block.write("ExpandedDirectories", expandedFolders);
         }
 
         // get the focused folder
         if (auto selected = m_depotTree->current())
             if (auto dir = m_depotTreeModel->dataForNode(selected))
-                config.write("SelectedDirectory", dir->depotPath());
+                block.write("SelectedDirectory", dir->depotPath());
 
-        // UI
-        //m_config.set("LeftSplitterFrac", m_splitter->splitFraction());
+        // docking layout
+        m_dockContainer->configSave(block);
     }
 
     ManagedFile* AssetBrowser::selectedFile() const

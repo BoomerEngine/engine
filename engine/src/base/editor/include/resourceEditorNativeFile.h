@@ -20,7 +20,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeFile, ResourceEditor);
         
     public:
-        ResourceEditorNativeFile(ConfigGroup typeConfig, ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags);
+        ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags);
         virtual ~ResourceEditorNativeFile();
 
         INLINE ManagedFileNativeResource* nativeFile() const { return m_nativeFile; }
@@ -29,7 +29,7 @@ namespace ed
 
         virtual void bindResource(const res::ResourcePtr& resource);
         virtual bool save() override;
-        virtual void close() override;
+        virtual void cleanup() override;
 
     protected:
         res::ResourcePtr m_resource; // resource being edited

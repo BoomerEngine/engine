@@ -28,7 +28,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(CheckBox, Button);
 
     public:
-        CheckBox();
+        CheckBox(bool initialState=false);
 
         //---
 
@@ -49,5 +49,8 @@ namespace ui
 
         virtual void clicked();
     };
+
+    // make a checkbox with a label
+    extern BASE_UI_API CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView<char> txt, bool initialState = false);
 
 } // ui

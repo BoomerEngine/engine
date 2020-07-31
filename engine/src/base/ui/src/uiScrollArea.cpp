@@ -124,10 +124,7 @@ namespace ui
                 m_verticalScrollBar = base::CreateSharedPtr<Scrollbar>(Direction::Vertical, true);
                 m_verticalScrollBar->persistentElementFlag(true);
                 m_verticalScrollBar->ignoredInAutomaticLayout(true);
-                m_verticalScrollBar->bind("OnScroll"_id) = [this](ui::Scrollbar* bar, IElement*)
-                {
-                    m_scrollOffset.y = bar->scrollPosition();
-                };
+                m_verticalScrollBar->bind(EVENT_SCROLL) = [this](float pos) { m_scrollOffset.y = pos; };
 
                 attachChild(m_verticalScrollBar);
                 hitTest(true);
@@ -146,10 +143,7 @@ namespace ui
                 m_horizontalScrollBar = base::CreateSharedPtr<Scrollbar>(Direction::Horizontal, true);
                 m_horizontalScrollBar->persistentElementFlag(true);
                 m_horizontalScrollBar->ignoredInAutomaticLayout(true);
-                m_horizontalScrollBar->bind("OnScroll"_id) = [this](ui::Scrollbar* bar, IElement*)
-                {
-                    m_scrollOffset.x = m_horizontalScrollBar->scrollPosition();
-                };
+                m_horizontalScrollBar->bind(EVENT_SCROLL) = [this](float pos) { m_scrollOffset.x = pos; };
                 attachChild(m_horizontalScrollBar);
             }
         }

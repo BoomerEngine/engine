@@ -15,68 +15,55 @@ namespace base
 
         ///----
 
-        /// config system, global key-value pairs used to pull configuation data from outside world without the resources
-        class BASE_CONFIG_API System : public ISingleton
-        {
-            DECLARE_SINGLETON(System);
+        // get configuration storage
+        extern BASE_CONFIG_API Storage& RawStorageData();
 
-        public:
-            System();
+        ///---
 
-            //--
+        // make/find config group with given name
+        extern BASE_CONFIG_API Group& MakeGroup(StringView<char> name);
 
-            // get configuration storage
-            INLINE Storage& storage() { return *m_storage; }
-            INLINE const Storage& storage() const { return *m_storage; }
+        // find config group, returns NULL if not found
+        extern BASE_CONFIG_API const Group* FindGroup(StringView<char> name);
 
-            //--
+        // get config entry, creates an empty new one if not found
+        extern BASE_CONFIG_API Entry& MakeEntry(StringView<char> groupName, StringView<char> entryName);
 
-            // get config group, creates an empty new one if not found
-            Group& group(StringID name);
+        // find config entry, return NULL if not found
+        extern BASE_CONFIG_API const Entry* FindEntry(StringView<char> groupName, StringView<char> entryName);
 
-            // find config group, returns NULL if not found
-            const Group* findGroup(StringID name) const;
+        // find all groups starting with given start string
+        extern BASE_CONFIG_API Array<const Group*> FindAllGroups(StringView<char> groupNameSubString);
 
-            // get config entry, creates an empty new one if not found
-            Entry& entry(StringID groupName, StringID entryName);
+        //--
 
-            // find config entry, return NULL if not found
-            const Entry* findEntry(StringID groupName, StringID entryName) const;
+        /// get all values
+        extern BASE_CONFIG_API const Array<StringBuf> Values(StringView<char> groupName, StringView<char> entryName);
 
-            // find all groups starting with given start string
-            Array<const Group*> findAllGroups(StringView<char> groupNameSubString) const;
+        /// get value (last value from a list or empty string)
+        extern BASE_CONFIG_API StringBuf Value(StringView<char> groupName, StringView<char> entryName, const StringBuf& defaultValue = StringBuf::EMPTY());
 
-            //--
+        /// read as integer, returns default value if not parsed correctly
+        extern BASE_CONFIG_API int ValueInt(StringView<char> groupName, StringView<char> entryName, int defaultValue = 0);
 
-            /// get all values, NOTE: slow as fuck but needed since we want to make the config entry thread safe
-            const Array<StringBuf> values(StringID groupName, StringID entryName) const;
+        /// read as a float, returns default value if not parsed correctly
+        extern BASE_CONFIG_API float ValueFloat(StringView<char> groupName, StringView<char> entryName, float defaultValue = 0);
 
-            /// get value (last value from a list or empty string)
-            StringBuf value(StringID groupName, StringID entryName, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
+        /// read as a boolean, returns default value if not parsed correctly
+        extern BASE_CONFIG_API bool ValueBool(StringView<char> groupName, StringView<char> entryName, bool defaultValue = 0);
 
-            /// read as integer, returns default value if not parsed correctly
-            int valueInt(StringID groupName, StringID entryName, int defaultValue = 0) const;
+        //--
 
-            /// read as a float, returns default value if not parsed correctly
-            float valueFloat(StringID groupName, StringID entryName, float defaultValue = 0) const;
+        /// write value to config storage
+        extern BASE_CONFIG_API void Write(StringView<char> groupName, StringView<char> entryName, StringView<char> value);
 
-            /// read as a boolean, returns default value if not parsed correctly
-            bool valueBool(StringID groupName, StringID entryName, bool defaultValue = 0) const;
+        /// write integer value to config storage
+        extern BASE_CONFIG_API void WriteInt(StringView<char> groupName, StringView<char> entryName, bool value);
 
-            //--
+        /// write boolean value to config storage
+        extern BASE_CONFIG_API void WriteBool(StringView<char> groupName, StringView<char> entryName, bool value);
 
-            /// write boolean
-            void wrtiteBool(StringID groupName, StringID entryName, bool value);
-
-            //--
-
-        private:
-            Storage* m_storage;
-
-            virtual void deinit() override;
-        };
+        //---
 
     } // config
 } // base
-
-typedef base::config::System Config;

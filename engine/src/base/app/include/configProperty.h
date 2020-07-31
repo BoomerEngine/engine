@@ -32,14 +32,14 @@ namespace base
     class BASE_APP_API ConfigPropertyBase : public base::NoCopy
     {
     public:
-        ConfigPropertyBase(StringID groupName, StringID name, ConfigPropertyFlags flags);
+        ConfigPropertyBase(StringView<char> groupName, StringView<char> name, ConfigPropertyFlags flags);
         virtual ~ConfigPropertyBase();
 
-        /// get the group name
-        INLINE StringID group() const { return m_group; }
+        /// get the group name (config group)
+        INLINE const StringBuf& group() const { return m_group; }
 
         /// get the property name
-        INLINE StringID name() const { return m_name; }
+        INLINE const StringBuf& name() const { return m_name; }
 
         /// is this config value modifiable only from console?
         INLINE bool isReadOnly() const { return m_flags.test(ConfigPropertyFlag::ReadOnly); }
@@ -81,11 +81,11 @@ namespace base
         ///--
 
         /// refresh property value from entry
-        static void RefreshPropertyValue(StringID group, StringID name);
+        static void RefreshPropertyValue(StringView<char> group, StringView<char> name);
 
     protected:
-        StringID m_group;
-        StringID m_name;
+        StringBuf m_group;
+        StringBuf m_name;
         ConfigPropertyFlags m_flags;
 
         void registerInList();
@@ -101,8 +101,8 @@ namespace base
     class ConfigProperty : public ConfigPropertyBase
     {
     public:
-        INLINE ConfigProperty(const char* groupName, const char* name, const T& value, ConfigPropertyFlags flags = ConfigPropertyFlags())
-            : ConfigPropertyBase(StringID(groupName), StringID(name), flags)
+        INLINE ConfigProperty(StringView<char> groupName, StringView<char> name, const T& value, ConfigPropertyFlags flags = ConfigPropertyFlags())
+            : ConfigPropertyBase(groupName, name, flags)
             , m_defaultValue(value)
             , m_value(value)
         {

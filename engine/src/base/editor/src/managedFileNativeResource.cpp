@@ -9,11 +9,14 @@
 #include "build.h"
 #include "managedFileNativeResource.h"
 #include "managedFileFormat.h"
+#include "resourceEditorNativeFile.h"
+
 #include "base/resource/include/resourceFileLoader.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resourceFileSaver.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/resource_compiler/include/importFileService.h"
+#include "base/resource/include/resourceLoadingService.h"
 
 namespace ed
 {
@@ -37,10 +40,81 @@ namespace ed
 
     void ManagedFileNativeResource::discardContent()
     {
+        if (isModified())
+            modify(false);
         m_loadedResource.reset();
         m_modifiedResource.reset();
+    }
 
-        modify(false);
+    void ManagedFileNativeResource::onResourceReloadFinished(base::res::IResource* currentResource, base::res::IResource* newResource)
+    {
+        if (m_loadedResource == newResource)
+        {
+            if (auto nativeEditor = rtti_cast<ResourceEditorNativeFile>(editor()))
+                nativeEditor->bindResource(AddRef(newResource));
+        }
+    }
+
+    bool ManagedFileNativeResource::onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource)
+    {
+        if (m_loadedResource == currentResource)
+        {
+            if (isModified())
+                modify(false);
+
+            m_loadedResource = newResource;
+            m_modifiedResource.reset();
+
+            m_fileEvents.clear();
+            m_fileEvents.bind(newResource->eventKey(), EVENT_RESOURCE_MODIFIED) = [this]() {
+                modify(true);
+            };
+
+            return true;
+        }
+
+        return TBaseClass::onResourceReloading(currentResource, newResource);
+    }
+
+    bool ManagedFileNativeResource::inUse() const
+    {
+        if (m_loadedResource.lock())
+            return true;
+
+        auto loadingService = GetService<base::res::LoadingService>();
+        if (!loadingService)
+            return false;
+
+        base::res::ResourcePtr loadedResource;
+        return loadingService->acquireLoadedResource(MakePath(depotPath(), m_resourceNativeClass), loadedResource);
+    }
+
+    void ManagedFileNativeResource::modify(bool flag)
+    {
+        if (flag != isModified())
+        {
+            if (flag)
+            {
+                DEBUG_CHECK_EX(!m_modifiedResource, "File already marked as modified");
+                DEBUG_CHECK_EX(!m_loadedResource.empty(), "Trying to modify resource that was never loaded");
+
+                auto modified = m_loadedResource.lock();
+                DEBUG_CHECK_EX(modified, "Trying to modify resource that was unloaded");
+
+                if (modified)
+                {
+                    m_modifiedResource = modified;
+                    ManagedFile::modify(true);
+                }
+            }
+            else
+            {
+                DEBUG_CHECK_EX(m_modifiedResource, "File was not modified");
+                m_modifiedResource.reset();
+
+                ManagedFile::modify(false);
+            }
+        }
     }
 
     res::ResourcePtr ManagedFileNativeResource::loadContent()
@@ -59,8 +133,7 @@ namespace ed
             discardContent();
 
             // load as a normal resource from repository
-            const auto resourceKey = res::ResourceKey(res::ResourcePath(depotPath()), m_resourceNativeClass);
-            if (const auto loaded = LoadResource(resourceKey).acquire())
+            if (const auto loaded = LoadResource(MakePath(depotPath(), m_resourceNativeClass)).acquire())
             {
                 // wait for the "modified" event in the resource
                 m_fileEvents.clear();
@@ -68,6 +141,8 @@ namespace ed
                     modify(true);
                 };
 
+                // keep around
+                m_loadedResource = loaded;
                 return loaded;
             }
 

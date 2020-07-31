@@ -37,7 +37,7 @@ Toolbar {
             background: color.transparent($active-color, 100%);
         }
 
-        &.disabled:hover {
+        &:disabled:hover {
             background: #0000;
         }
     }
@@ -53,5 +53,43 @@ Toolbar {
         margin: 2em 4em 2em 4em;
         background: color.scale(color.grayscale($toolbar-background), 40%);
         vertical-align: middle;
+    }
+}
+
+PreviewPanelToolbar {
+    background: #0000;
+    padding-top: 8em;
+    padding-left: 15em;
+    padding-right: 15em;
+
+    ToolbarButton {
+        padding: 4em 2em 4em 2em;
+        border-color: #000;
+        border-radius: 4em;
+        border-width: 1em;
+        min-height: 22em;
+        margin: 4em 0em 4em 0em;
+        background: color.transparent($toolbar-background, 90%);
+
+        &:hover {
+            background: color.transparent($active-color, 80%);
+        }
+
+        &.toggled {
+            background: color.transparent($active-color, 50%);
+        }
+
+        &.toggled:hover {
+            background: color.transparent($active-color, 85%);
+        }
+
+        &:pressed {
+            background: color.transparent($active-color, 100%);
+        }
+    }
+
+    ToolbarSeparator {
+        width: 0em;
+        background: #0000;
     }
 }

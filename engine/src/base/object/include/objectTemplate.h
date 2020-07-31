@@ -55,6 +55,9 @@ namespace base
         /// reset property, returns true if property was reset
         bool resetPropertyOverride(StringID name);
 
+        /// mark property as having an override
+        void markPropertyOverride(StringID name);
+
         //--
 
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc

@@ -174,7 +174,7 @@ namespace ui
             m_expandButton = base::CreateSharedPtr<Button>();
             m_expandButton->styleType("DataInspectorExpandButton"_id);
             m_expandButton->createChild<TextLabel>();
-            m_expandButton->bind("OnClick"_id) = [this]()
+            m_expandButton->bind(EVENT_CLICKED) = [this]()
             {
                 if (expanded())
                     collapse();

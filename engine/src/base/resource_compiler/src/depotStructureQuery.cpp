@@ -27,6 +27,8 @@ namespace base
 
         bool DepotStructure::queryFileMountPoint(StringView<char> fileSystemPath, res::ResourceMountPoint& outMountPoint) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath), false);
+
             // look at mounted file systems looking for one that can service loading
             for (auto dep  : m_fileSystemsPtrs)
             {
@@ -51,17 +53,15 @@ namespace base
 
         bool DepotStructure::queryFilePlacement(StringView<char> fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly /*= false*/) const
         {
-            // look at mounted file systems looking for one that can service loading
-            for (auto dep  : m_fileSystemsPtrs)
-            {
-                // last one, always matches
-                if (dep->mountPoint().root())
-                {
-                    outFileSystemPath = StringBuf(fileSystemPath);
-                    outFileSystem = &dep->fileSystem();
-                    return true;
-                }
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AbsoluteFilePath), false);
+            return translatePath(fileSystemPath, outFileSystem, outFileSystemPath, physicalOnly);
+        }
 
+        bool DepotStructure::translatePath(StringView<char> fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly /*= false*/) const
+        {
+            // look at mounted file systems looking for one that can service loading
+            for (auto dep : m_fileSystemsPtrs)
+            {
                 // try match
                 if (!physicalOnly || dep->fileSystem().isWritable())
                 {
@@ -79,10 +79,12 @@ namespace base
 
         bool DepotStructure::queryContextName(StringView<char> fileSystemPath, StringBuf& contextName) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AbsoluteFilePath), false);
+
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath))
+            if (!translatePath(fileSystemPath, localFileSystem, localFileSystemPath))
                 return false;
 
             // get the timestamp
@@ -91,10 +93,12 @@ namespace base
 
         bool DepotStructure::queryFileTimestamp(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AbsoluteFilePath), false);
+
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath))
+            if (!translatePath(fileSystemPath, localFileSystem, localFileSystemPath))
                 return false;
 
             // get the timestamp
@@ -103,10 +107,12 @@ namespace base
 
         bool DepotStructure::queryFileAbsolutePath(StringView<char> fileSystemPath, io::AbsolutePath& outAbsolutePath) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath), false);
+
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (!queryFilePlacement(fileSystemPath, localFileSystem, localFileSystemPath))
+            if (!translatePath(fileSystemPath, localFileSystem, localFileSystemPath))
                 return false;
 
             // get the timestamp
@@ -143,6 +149,7 @@ namespace base
 
             if (!bestFileSystemPath.empty())
             {
+                ASSERT(ValidateDepotPath(bestFileSystemPath, DepotPathClass::AbsoluteFilePath));
                 outFileSystemPath = bestFileSystemPath;
                 return true;
             }
@@ -152,12 +159,12 @@ namespace base
 
         bool DepotStructure::enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(const DirectoryInfo& info)>& enumFunc) const
         {
-            ASSERT_EX(rawDirectoryPath.empty() || rawDirectoryPath.endsWith("/"), TempString("Invalid raw directory path {}", rawDirectoryPath));
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::AbsoluteDirectoryPath), false);
 
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (queryFilePlacement(rawDirectoryPath, localFileSystem, localFileSystemPath))
+            if (translatePath(rawDirectoryPath, localFileSystem, localFileSystemPath))
             {
                 // ask file system for directories
                 if (localFileSystem->enumDirectoriesAtPath(localFileSystemPath, [localFileSystem, &enumFunc](StringView<char> dirName)
@@ -172,8 +179,7 @@ namespace base
             }
 
             // look at the mounted packages at this directory
-            auto fileSystemListAtDir  = m_fileSystemsAtDirectory.find(rawDirectoryPath);
-            if (fileSystemListAtDir)
+            if (auto fileSystemListAtDir = m_fileSystemsAtDirectory.find(rawDirectoryPath))
             {
                 for (auto& fsEntry : *fileSystemListAtDir)
                 {
@@ -191,12 +197,12 @@ namespace base
 
         bool DepotStructure::enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(const FileInfo & info)>& enumFunc) const
         {
-            ASSERT_EX(rawDirectoryPath.empty() || rawDirectoryPath.endsWith("/"), "Invalid raw directory path");
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::AbsoluteDirectoryPath), false);
 
             // resolve location
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
-            if (queryFilePlacement(rawDirectoryPath, localFileSystem, localFileSystemPath))
+            if (translatePath(rawDirectoryPath, localFileSystem, localFileSystemPath))
             {
                 // ask file system for directories
                 return localFileSystem->enumFilesAtPath(localFileSystemPath, [&enumFunc, localFileSystem](StringView<char> fileName)
@@ -223,6 +229,133 @@ namespace base
                     outAbsolutePathRoots.pushBack(mountPointAbsolutePath);
                 }
             }
+        }
+
+        struct DepotPathAppendBuffer
+        {
+            static const uint32_t MAX_LENGTH = 512;
+
+            char m_buffer[MAX_LENGTH+1]; // NOTE: not terminated with zero while building, only at the end
+            uint32_t m_pos = 0;
+
+            DepotPathAppendBuffer()
+            {}
+
+            ALWAYS_INLINE bool empty() const
+            {
+                return m_pos == 0;
+            }
+
+            ALWAYS_INLINE StringView<char> view() const
+            {
+                return StringView<char>(m_buffer, m_pos);
+            }
+
+            bool append(StringView<char> text, uint32_t& outPos)
+            {
+                DEBUG_CHECK_RETURN_V(m_pos + text.length() <= MAX_LENGTH, false); // should not happen in healthy system
+
+                outPos = m_pos;
+
+                memcpy(m_buffer + m_pos, text.data(), text.length());
+                m_pos += text.length();
+                return true;
+            }
+
+            void revert(uint32_t pos)
+            {
+                m_pos = pos;
+            }
+        };
+
+
+        bool DepotStructure::findFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const
+        {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(depotPath, DepotPathClass::AbsoluteDirectoryPath), false);
+            DEBUG_CHECK_RETURN_V(ValidateFileNameWithExtension(fileName), false);
+
+            uint32_t pos = 0;
+            DepotPathAppendBuffer path;
+            DEBUG_CHECK_RETURN_V(path.append(depotPath, pos), false); // handle case when path is to long
+
+            for (auto dep : m_fileSystemsPtrs)
+                if (depotPath.beginsWith(dep->mountPoint().view()))
+                    if (findFileInternal(dep, path, fileName, maxDepth, outFoundFileDepotPath))
+                        return true;
+
+            return findFileInternal(path, fileName, maxDepth, outFoundFileDepotPath);
+        }
+
+        bool DepotStructure::findFileInternal(DepotPathAppendBuffer& path, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const
+        {
+            if (maxDepth > 0)
+            {
+                if (auto fileSystemListAtDir = m_fileSystemsAtDirectory.find(path.view()))
+                {
+                    for (auto& fsEntry : *fileSystemListAtDir)
+                    {
+                        uint32_t prevPos = 0;
+                        if (path.append(TempString("{}/", fsEntry.name), prevPos))
+                        {
+                            if (fsEntry.fileSystem)
+                            {
+                                ASSERT(path.view().beginsWith(fsEntry.fileSystem->mountPoint().view()));
+                                if (findFileInternal(fsEntry.fileSystem, path, fileName, maxDepth - 1, outFoundFileDepotPath))
+                                    return true;
+                            }
+                            else
+                            {
+                                if (findFileInternal(path, fileName, maxDepth - 1, outFoundFileDepotPath))
+                                    return true;
+                            }
+
+                            path.revert(prevPos);
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        bool DepotStructure::findFileInternal(const DepotFileSystem* fs, DepotPathAppendBuffer& path, StringView<char> matchFileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const
+        {
+            const auto mountPoint = fs->mountPoint().view();
+            const auto relativePath = path.view().subString(mountPoint.length());
+
+            if (fs->fileSystem().enumFilesAtPath(relativePath, [&outFoundFileDepotPath, &path, matchFileName](StringView<char> name)
+                {
+                    if (name.caseCmp(matchFileName) == 0)
+                    {
+                        outFoundFileDepotPath = TempString("{}{}", path.view(), name);
+                        return true;
+                    }
+
+                    return false;
+                }))
+                return true;
+
+            if (maxDepth > 0)
+            {
+                maxDepth -= 1;
+
+                if (fs->fileSystem().enumDirectoriesAtPath(relativePath, [this, fs, &outFoundFileDepotPath, &path, matchFileName, maxDepth](StringView<char> name)
+                    {
+                        uint32_t pos = 0;
+                        if (path.append(TempString("{}/", name), pos))
+                        {
+                            if (findFileInternal(fs, path, matchFileName, maxDepth, outFoundFileDepotPath))
+                                return true;
+
+                            path.revert(pos);
+                        }
+
+                        return false;
+                    }))
+                    return true;
+            }
+
+            return false;
         }
 
     } // depot

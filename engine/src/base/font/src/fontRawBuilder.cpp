@@ -11,7 +11,6 @@
 
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/absolutePath.h"
-#include "base/io/include/utils.h"
 #include "base/memory/include/buffer.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
@@ -32,7 +31,7 @@ namespace base
             virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
             {
                 // load the raw content from the source file
-                auto rawSourceFilePath = cooker.queryResourcePath().path();
+                const auto& rawSourceFilePath = cooker.queryResourcePath();
                 auto rawContent = cooker.loadToBuffer(rawSourceFilePath);
                 if (!rawContent)
                     return nullptr;

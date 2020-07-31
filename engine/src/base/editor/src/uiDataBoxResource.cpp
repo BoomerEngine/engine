@@ -19,6 +19,7 @@
 #include "managedFile.h"
 #include "managedFileFormat.h"
 #include "assetBrowser.h"
+#include "base/resource/include/resourceAsyncReferenceType.h"
 
 namespace ui
 {
@@ -31,8 +32,10 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxResource, IDataBox);
 
     public:
-        DataBoxResource(SpecificClassType<res::IResource> resourceClass)
+        DataBoxResource(SpecificClassType<res::IResource> resourceClass, bool async, Type dataType)
             : m_resourceClass(resourceClass)
+            , m_async(async)
+            , m_dataType(dataType)
         {
             hitTest(true);
             layoutHorizontal();
@@ -65,7 +68,7 @@ namespace ui
                     {
                         auto button = buttons->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:goto_prev][size:-]Use");
                         button->tooltip("Use resource from asset browser");
-                        button->OnClick = [this]()
+                        button->bind(EVENT_CLICKED) = [this]()
                         {
                             cmdSelectCurrentAsset();
                         };
@@ -74,7 +77,7 @@ namespace ui
                     {
                         auto button = buttons->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:cross][size:-]Clear");
                         button->tooltip("Remove resource reference");
-                        button->OnClick = [this]()
+                        button->bind(EVENT_CLICKED) = [this]()
                         {
                             cmdClearCurrentAsset();
                         };
@@ -83,7 +86,7 @@ namespace ui
                     {
                         auto button = buttons->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:zoom][size:-]Show");
                         button->tooltip("Show selected resource in asset browser");
-                        button->OnClick = [this]()
+                        button->bind(EVENT_CLICKED) = [this]()
                         {
                             cmdShowInAssetBrowser();
                         };
@@ -121,13 +124,25 @@ namespace ui
             StringView<char> filePath = "";
             bool fileFound = false;
 
-            res::Ref<res::IResource> data;
-            const auto ret = readValue(data);
+            res::ResourceKey key;
+            DataViewResult ret;
+
+            if (m_async)
+            {
+                res::AsyncRef<res::IResource> data;
+                ret = readValue(data);
+                key = data.key();
+            }
+            else
+            {
+                res::Ref<res::IResource> data;
+                ret = readValue(data);
+                key = data.key();
+            }
+
             if (ret.code == DataViewResultCode::OK)
             {
-                const auto path = data.key().path().path();
-
-                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(path);
+                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(key.path());
                 if (managedFile != m_currentFile)
                 {
                     image::ImageRef imageRef;
@@ -138,9 +153,9 @@ namespace ui
                 }
 
                 // set file name
-                if (!path.empty())
+                if (key)
                 {
-                    fileName = path.afterLast("/");
+                    fileName = key.fileName();
                     fileFound = (managedFile != nullptr);
                 }
                 else
@@ -167,7 +182,7 @@ namespace ui
                 m_name->tooltip("");
 
                 m_buttonShowInBrowser->visibility(false);
-                m_buttonBar->visibility(true);                
+                m_buttonBar->visibility(true);
             }
             else
             {
@@ -230,14 +245,21 @@ namespace ui
                 // get depot path to the file
                 if (newFile)
                 {
-                    auto resPath = res::ResourcePath(newFile->depotPath().c_str());
+                    auto resPath = newFile->depotPath();
                     if (!resPath.empty())
                     {
+                        const auto key = res::ResourceKey(resPath, m_resourceClass);
+
                         // load the file
-                        if (auto loadedResource = LoadResource(res::ResourceKey(resPath, m_resourceClass)))
+                        if (m_async)
                         {
-                            const auto dataType = reflection::GetTypeObject<res::Ref<res::IResource>>();
-                            if (const auto ret = HasError(writeValue(&loadedResource, dataType)))
+                            res::AsyncRef<res::IResource> newRef = key;
+                            if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
+                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                        }
+                        else if (auto loadedResource = LoadResource(key))
+                        {
+                            if (const auto ret = HasError(writeValue(&loadedResource, m_dataType)))
                                 ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                         }
                         else
@@ -248,18 +270,25 @@ namespace ui
                 }
                 else
                 {
-                    res::Ref<res::IResource> emptyRef;
-                    const auto dataType = reflection::GetTypeObject<res::Ref<res::IResource>>();
-
-                    if (const auto ret = HasError(writeValue(&emptyRef, dataType)))
-                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                    if (m_async)
+                    {
+                        res::AsyncRef<res::IResource> emptyRef;
+                        if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                    }
+                    else
+                    {
+                        res::Ref<res::IResource> emptyRef;
+                        if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                    }
                 }
             }
         }
 
         void cmdSelectCurrentAsset()
         {
-            auto file = GetService<ed::Editor>()->selectedFile();
+            auto file = GetService<ed::Editor>()->mainWindow().selectedFile();
             changeFile(file);
         }
 
@@ -271,8 +300,10 @@ namespace ui
         void cmdShowInAssetBrowser()
         {
             if (m_currentFile)
-                GetService<ed::Editor>()->selectFile(m_currentFile);
+                GetService<ed::Editor>()->mainWindow().selectFile(m_currentFile);
         }
+
+        //--
 
     protected:
         ui::ImagePtr m_thumbnail;
@@ -281,6 +312,8 @@ namespace ui
         ui::ElementPtr m_buttonShowInBrowser;
 
         SpecificClassType<res::IResource> m_resourceClass;
+        Type m_dataType;
+        bool m_async = false;
 
         ed::ManagedFile* m_currentFile = nullptr;
     };
@@ -302,7 +335,13 @@ namespace ui
             {
                 const auto* refType = static_cast<const res::ResourceRefType*>(info.dataType.ptr());
                 if (const auto refClass = refType->resourceClass())
-                    return CreateSharedPtr<DataBoxResource>(refClass);
+                    return CreateSharedPtr<DataBoxResource>(refClass, false, info.dataType);
+            }
+            else if (info.dataType->metaType() == rtti::MetaType::AsyncResourceRef)
+            {
+                const auto* refType = static_cast<const res::ResourceAsyncRefType*>(info.dataType.ptr());
+                if (const auto refClass = refType->resourceClass())
+                    return CreateSharedPtr<DataBoxResource>(refClass, true, info.dataType);
             }
 
             return nullptr;

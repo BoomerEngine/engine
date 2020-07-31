@@ -12,8 +12,16 @@
 
 namespace ui
 {
-    class WindowFrame;
-    class WindowMessage;
+    
+    //---
+
+    DECLARE_UI_EVENT(EVENT_WINDOW_CLOSED)
+    DECLARE_UI_EVENT(EVENT_WINDOW_ACTIVATED)
+    DECLARE_UI_EVENT(EVENT_WINDOW_DEACTIVATED)
+    DECLARE_UI_EVENT(EVENT_WINDOW_MAXIMIZED)
+    DECLARE_UI_EVENT(EVENT_WINDOW_MINIMIZED)
+
+    //---
 
     /// UI Window request for platform that renders the windows
     struct BASE_UI_API WindowRequests
@@ -32,7 +40,9 @@ namespace ui
         bool requestClose = false;
     };
 
-    /// saved window placement
+    //---
+
+    /// saved window placement, can be stored in config
     struct WindowSavedPlacementSetup
     {
         Position position;
@@ -40,6 +50,38 @@ namespace ui
         bool maximized = false;
         bool minimized = false;
     };
+
+
+    //---
+
+    /// window features
+    enum class WindowFeatureFlagBit : uint32_t
+    {
+        Resizable = FLAG(0), // allow this window to be resized
+        HasTitleBar = FLAG(1), // create the automatic title bar for the window
+        ToolWindow = FLAG(2), // if titlebar is used it will be smaller, better for "in-app" windows
+        ShowOnTaskBar = FLAG(3), // should this window be listed as a window in the OS? should be set only for main windows
+        TopMost = FLAG(4), // window should be topmost
+        ShowInactive = FLAG(5), // window should not be activated when shown
+        Popup = FLAG(6), // window is a popup window
+
+        CanMaximize = FLAG(10), // shows the "maximize" widget in the title bar
+        CanMinimize = FLAG(11), // shows the "minimize" widget in the title bar
+        CanClose = FLAG(12), // shows the close button in the title bar
+        Maximized = FLAG(13), // start maximized
+        Minimized = FLAG(14), // start minimized
+
+        DEFAULT_FRAME = Resizable | HasTitleBar | ShowOnTaskBar | CanMaximize | CanMinimize | CanClose,
+        DEFAULT_POPUP = Popup,
+        DEFAULT_TOOLTIP = Popup | ShowInactive,
+        DEFAULT_DIALOG = HasTitleBar | ToolWindow | CanClose,
+        DEFAULT_POPUP_DIALOG = DEFAULT_DIALOG | DEFAULT_POPUP,
+        MAIN_WINDOW = DEFAULT_FRAME | Maximized,
+    };
+
+    typedef base::DirectFlags<WindowFeatureFlagBit> WindowFeatureFlags;
+
+    //---
 
     /// initial placement mode
     enum class WindowInitialPlacementMode : uint8_t
@@ -55,23 +97,8 @@ namespace ui
         AreaCenter, // center in the reference area (of if no reference elemetn specified - the cursor) - good for bigger picker dialogs
     };
 
-    /// window state flags, as prompted by native window
-    enum class WindowStateFlagBit : uint8_t
-    {
-        Resizable = FLAG(0),
-        HasSystemTitleBar = FLAG(1),
-        CanMaximize = FLAG(2),
-        CanMinimize = FLAG(3),
-        CanClose = FLAG(4),
-        Maximized = FLAG(5),
-        Minimized = FLAG(6),
-        Active = FLAG(7),
-    };
-
-    typedef base::DirectFlags<WindowStateFlagBit> WindowStateFlags;
-
-
-    /// window initial placement information
+    /// Window initial placement information
+    /// This structure is used by the uiRenderer to let the window describe itself to it, based on this returned data a native window is created
     struct WindowInitialPlacementSetup
     {
         bool flagTopMost = false; // show the window on top of every other window
@@ -86,6 +113,8 @@ namespace ui
 
         WindowWeakPtr owner = nullptr; // owner of this window, owner window is still considered "active" if one of it's children is, useful for Popup Windows
 
+        uint64_t externalParentWindowHandle = 0; // parent for the modal window
+
         Position offset; // offset to apply to placedd window
         Position size; // specific size, non zero size on given axis is assumed to be the forced size, the rest is computed from content size, NOTE: if both sizes are zero than window if fitted to it's content size
         WindowInitialPlacementMode mode = WindowInitialPlacementMode::ScreenCenter; // how to place window
@@ -93,13 +122,16 @@ namespace ui
         WindowSavedPlacementSetup* savedPlacement = nullptr; // saved placement, try to position window exactly there
     };
 
-    /// window
+    ///--
+
+    // A window - basically still a UI element but able to "communicate" with a native OS
+    // NOTE: in general the communication is very one way (ie. from window to OS) and in form of "kind requests" that do not have to be fullfilled right away 
     class BASE_UI_API Window : public IElement
     {
         RTTI_DECLARE_VIRTUAL_CLASS(Window, IElement);
 
     public:
-        Window();
+        Window(WindowFeatureFlags flags, base::StringView<char> title = "Boomer Engine");
         virtual ~Window();
 
         //--
@@ -107,10 +139,16 @@ namespace ui
         // current title
         INLINE const base::StringBuf& title() const { return m_title; }
 
+        // get the "Exit Code" the window was closed with
+        INLINE int exitCode() const { return m_exitCode; }
+
         //--
 
+        // did we request closing of this window ?
+        bool requestedClose() const;
+
         // request window to be closed
-        void requestClose();
+        void requestClose(int exitCode = 0);
 
         // request window to be activated
         void requestActivate();
@@ -147,9 +185,6 @@ namespace ui
         /// handle external activation request for this window
         virtual void handleExternalActivation(bool isActive);
 
-        /// handle flag update
-        virtual void handleStateUpdate(WindowStateFlags flags);
-
         /// query initial setup for window
         virtual void queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const;
 
@@ -169,13 +204,11 @@ namespace ui
 
         //--
 
-        // refresh all UI cached data, done after reloads
-        static void ForceRedrawOfEverything();
+        /// Show window as modal window on given owner, owner must have valid renderer
+        /// This function returns the exit code the window was closed with
+        int runModal(IElement* owner);
 
         //--
-
-        /// show as a modal window
-        void showModal(IElement* owner);
 
     private:
         WindowRequests* m_requests = nullptr; // pending requests
@@ -187,11 +220,11 @@ namespace ui
         mutable bool m_clearColorHack = false;
 
         float m_lastPixelScale = 1.0f;
-        bool m_hasMaximizeButton = true;
-        bool m_hasMinimizeButton = true;
-        bool m_hasCloseButton = true;
-        bool m_resizable = true;
+        uint64_t m_parentModalWindowHandle = 0;
+        int m_exitCode = 0;
+
         base::StringBuf m_title;
+        WindowFeatureFlags m_flags;
 
         ElementWeakPtr m_modalOwner;
 
@@ -201,7 +234,6 @@ namespace ui
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override final;
         virtual void prepareBackgroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
         virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
@@ -210,87 +242,6 @@ namespace ui
 
         friend class Renderer;
         friend class PopupWindow;
-    };
-
-    //--
-
-    /// popup window setup
-    struct PopupWindowSetup
-    {
-        WindowInitialPlacementMode m_mode = WindowInitialPlacementMode::BottomLeft;
-        Size m_initialSize = Size(0, 0); // use content size 
-        Position m_initialOffset = Position(0, 0); // no offset
-        bool m_interactive = true;
-        bool m_closeWhenDeactivated = true;
-        bool m_relativeToCursor = false;
-        WindowWeakPtr m_popupOwner;
-
-        INLINE PopupWindowSetup() {};
-        INLINE PopupWindowSetup& relativeToCursor() { m_relativeToCursor = true; return *this; }
-        INLINE PopupWindowSetup& size(Size size) { m_initialSize = size; return *this; }
-        INLINE PopupWindowSetup& size(float x, float y) { m_initialSize = Size(x, y); return *this; }
-        INLINE PopupWindowSetup& offset(Position pos) { m_initialOffset = pos; return *this; }
-        INLINE PopupWindowSetup& offset(float x, float y) { m_initialOffset = Position(x, y); return *this; }
-        INLINE PopupWindowSetup& mode(WindowInitialPlacementMode mode) { m_mode = mode; return *this; }
-        INLINE PopupWindowSetup& bottomLeft() { m_mode = WindowInitialPlacementMode::BottomLeft; return *this; }
-        INLINE PopupWindowSetup& bottomRight() { m_mode = WindowInitialPlacementMode::BottomRight; return *this; }
-        INLINE PopupWindowSetup& topLeft() { m_mode = WindowInitialPlacementMode::TopLeft; return *this; }
-        INLINE PopupWindowSetup& topRight() { m_mode = WindowInitialPlacementMode::TopRight; return *this; }
-        INLINE PopupWindowSetup& topRightNeighbour() { m_mode = WindowInitialPlacementMode::TopRightNeighbour; return *this; }
-        INLINE PopupWindowSetup& center() { m_mode = WindowInitialPlacementMode::WindowCenter; return *this; }
-        INLINE PopupWindowSetup& screenCenter() { m_mode = WindowInitialPlacementMode::ScreenCenter; return *this; }
-        INLINE PopupWindowSetup& areaCenter() { m_mode = WindowInitialPlacementMode::AreaCenter; return *this; }
-        INLINE PopupWindowSetup& interactive(bool flag=true) { m_interactive = flag; return *this; }
-        INLINE PopupWindowSetup& autoClose(bool flag=true) { m_closeWhenDeactivated = flag; return *this; }
-        INLINE PopupWindowSetup& owner(Window* window) { m_popupOwner = window; }
-    };
-
-    /// popup is a simple window that will close 
-    class BASE_UI_API PopupWindow : public Window
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(PopupWindow, Window);
-
-    public:
-        PopupWindow();
-
-        /// get owner of this popup
-        INLINE const WindowWeakPtr& owner() const { return m_setup.m_popupOwner; }
-
-        /// setup popup position/size to pop at, shows the popup
-        void show(IElement* owner, const PopupWindowSetup& setup = PopupWindowSetup());
-
-    protected:
-        ElementWeakPtr m_parent; // we auto close if parent is gone
-        PopupWindowSetup m_setup;
-
-        virtual bool queryResizableState() const override;
-        virtual void queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const override;
-        virtual void handleExternalActivation(bool isActive) override;
-        virtual bool runAction(base::StringID name) override;
-        virtual ActionStatusFlags checkAction(base::StringID name) const override;
-    };
-
-    //--
-
-    /// title bar for the window, allows to move the window and, if window supports resizing, also maximize/minimize it
-    /// NOTE: add as a first element to the window's sizer
-    class BASE_UI_API WindowTitleBar : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(WindowTitleBar, IElement);
-
-    public:
-        WindowTitleBar(base::StringView<char> title = "", base::StringView<char> customIcon = "");
-        virtual ~WindowTitleBar();
-
-        void updateWindowState(ui::Window* window, WindowStateFlags flags);
-
-    private:
-        virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const override final;
-
-        ButtonPtr m_minimizeButton;
-        ButtonPtr m_maximizeButton;
-        ButtonPtr m_closeButton;
-        TextLabelPtr m_title;
     };
 
     //--

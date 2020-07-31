@@ -27,8 +27,8 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resDepthVis("engine/shaders/screen/visualize_depth.fx");
-        static base::res::StaticResource<ShaderLibrary> resDepthVisMSAA("engine/shaders/screen/visualize_depth_msaa.fx");
+        static base::res::StaticResource<ShaderLibrary> resDepthVis("/engine/shaders/screen/visualize_depth.fx");
+        static base::res::StaticResource<ShaderLibrary> resDepthVisMSAA("/engine/shaders/screen/visualize_depth_msaa.fx");
 
         struct DepthVisParams
         {

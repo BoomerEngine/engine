@@ -91,7 +91,7 @@ namespace hl2
         virtual base::res::ResourcePtr cook(base::res::IResourceCookerInterface& cooker) const override
         {
             // load raw content
-            auto materialScriptPath = cooker.queryResourcePath().path();
+            const auto& materialScriptPath = cooker.queryResourcePath();
             auto rawContent = cooker.loadToBuffer(materialScriptPath);
             if (!rawContent)
                 return false;
@@ -107,7 +107,7 @@ namespace hl2
                 return false;
 
             // load primary template code based on the material
-            base::StringBuf templateFullPath = base::TempString("engine/materials/hl2interop/{}.csl", doc->name.toLower());
+            base::StringBuf templateFullPath = base::TempString("/engine/materials/hl2interop/{}.csl", doc->name.toLower());
             base::StringBuf templateCode;
             if (!cooker.loadToString(templateFullPath, templateCode))
             {

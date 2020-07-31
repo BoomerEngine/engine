@@ -12,6 +12,7 @@
 #include "uiButton.h"
 #include "uiTextLabel.h"
 #include "uiRenderer.h"
+#include "uiWindowPopup.h"
 
 namespace ui
 {
@@ -95,9 +96,11 @@ namespace ui
             {
                 closeOtherPopups();
 
-                popup->bind("OnClosed"_id, this) = [](MenuBarItem* menu)
+                auto selfRef = base::RefWeakPtr<MenuBarItem>(this);
+                popup->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
                 {
-                    menu->closePopup();
+                    if (auto menu = selfRef.lock())
+                        menu->closePopup();
                 };
 
                 popup->show(this, PopupWindowSetup().autoClose().bottomLeft());
@@ -209,6 +212,12 @@ namespace ui
             popup->show(owner, ui::PopupWindowSetup().autoClose().relativeToCursor());
     }
 
+    void MenuButtonContainer::showAsDropdown(IElement* owner)
+    {
+        if (auto popup = convertToPopup())
+            popup->show(owner, ui::PopupWindowSetup().autoClose().bottomLeft());
+    }
+
     void MenuButtonContainer::createAction(base::StringID action, base::StringView<char> text, base::StringView<char> icon /*= ""*/)
     {
         createChild<MenuButton>(action, text, icon);
@@ -217,7 +226,7 @@ namespace ui
     EventFunctionBinder MenuButtonContainer::createCallback(base::StringView<char> text, base::StringView<char> icon /*= ""*/, base::StringView<char> shortcut /*= ""*/)
     {
         auto button = createChild<MenuButton>(base::StringID(), text, icon, shortcut);
-        return button->bind("OnMenuItemClick"_id);
+        return button->bind(EVENT_MENU_ITEM_CLICKED);
     }
 
     void MenuButtonContainer::createSubMenu(const TPopupFunc& func, base::StringView<char> text, base::StringView<char> icon /*= ""*/)
@@ -356,33 +365,51 @@ namespace ui
         createInternalNamedChild<TextLabel>("MenuCaption"_id, text ? text : action.view());
         createInternalNamedChild<TextLabel>("MenuShortcut"_id, shortcut);
 
+        if (auto* parentPopup = FindRootPopupWindow(this))
+            parentPopup->requestClose();
+
         if (action)
         {
             customStyle("action"_id, action);
 
-            bind("OnClick"_id, this) = [](MenuButton* button) {
+            bind(EVENT_CLICKED) = [this]() {
 
-                if (auto* parentPopup = FindRootPopupWindow(button))
-                    parentPopup->requestClose();
 
-                if (auto* parentWindow = FindRootWindow(button))
+                if (auto* parentWindow = FindRootWindow(this))
+                {
                     parentWindow->requestActivate();
 
-                if (auto action = button->evalStyleValue<base::StringID>("action"_id))
-                    button->runAction(action);
+                    if (auto action = evalStyleValue<base::StringID>("action"_id))
+                    {
+                        auto windowRef = base::RefWeakPtr<Window>(parentWindow);
+                        auto buttonRef = base::RefPtr<MenuButton>(AddRef(this));
+
+                        RunSync("MenuCommand") << [windowRef, buttonRef, action](FIBER_FUNC)
+                        {
+                            if (auto window = windowRef.lock())
+                                window->runAction(action, buttonRef);
+                        };
+                    }
+                }
             };
         }
         else
         {
-            bind("OnClick"_id, this) = [](MenuButton* button) {
+            bind(EVENT_CLICKED) = [this]() {
 
-                if (auto* parentPopup = FindRootPopupWindow(button))
+                if (auto* parentPopup = FindRootPopupWindow(this))
                     parentPopup->requestClose();
 
-                if (auto* parentWindow = FindRootWindow(button))
+                if (auto* parentWindow = FindRootWindow(this))
+                {
                     parentWindow->requestActivate();
 
-                button->call("OnMenuItemClick"_id);
+                    auto buttonRef = base::RefPtr<MenuButton>(AddRef(this));
+                    RunSync("MenuCommand") << [buttonRef](FIBER_FUNC)
+                    {
+                        buttonRef->call(EVENT_MENU_ITEM_CLICKED);
+                    };
+                }
             };
         }
     }
@@ -443,9 +470,12 @@ namespace ui
         {
             if (auto popup = m_func())
             {
-                popup->bind("OnClosed"_id, this) = [](MenuButton* menu)
+                auto selfRef = base::RefWeakPtr<MenuButton>(this);
+
+                popup->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
                 {
-                    menu->m_openedPopup.reset();
+                    if (auto menu = selfRef.lock())
+                        menu->m_openedPopup.reset();
                 };
 
                 popup->show(this, PopupWindowSetup().autoClose().topRightNeighbour());

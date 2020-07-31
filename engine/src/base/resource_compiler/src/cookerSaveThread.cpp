@@ -110,7 +110,7 @@ namespace base
         bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, const io::AbsolutePath& path)
         {
             // create staged writer for the file
-            if (auto file = IO::GetInstance().openForWriting(path, base::io::FileWriteMode::StagedWrite))
+            if (auto file = base::io::OpenForWriting(path, base::io::FileWriteMode::StagedWrite))
             {
                 FileSavingContext context;
                 context.rootObject.pushBack(data);

@@ -20,11 +20,17 @@ namespace base
 {
     namespace utf8
     {
+        //--
+
         // is c the start of a utf8 sequence
-        INLINE static bool IsUTF8(char c)
+        ALWAYS_INLINE static bool IsUTF8(char c)
         {
             return (c & 0xC0) != 0x80;
         }
+
+        ///--
+
+        // TODO: inline 
 
         // Convert UTF-8 data to 16-bit wide character
         // NOTE: the target buffer must be large enough, returns number of written chars
@@ -50,6 +56,12 @@ namespace base
         // Return next character, updating an index variable
         extern BASE_CONTAINERS_API uint32_t NextChar(const char*& ptr, const char* endPtr);
 
+        // Return true if we can parse a utf-8 character at given position
+        extern BASE_CONTAINERS_API bool ValidChar(const char* ptr, const char* endPtr);
+
+        // Get char code parser from utf-8 characters at given position
+        extern BASE_CONTAINERS_API uint32_t GetChar(const char* ptr, const char* endPtr);
+
         // Count the number of characters in a UTF-8 string
         extern BASE_CONTAINERS_API size_t Length(const char* s);
 
@@ -61,5 +73,35 @@ namespace base
         // NOTE: does not include the terminating zero
         extern BASE_CONTAINERS_API size_t CalcSizeRequired(const wchar_t* s, size_t maxLength = MAX_SIZE_T);
 
+        ///--
+
+        // "Iterate" over decoded UTF8 chars, should be used when we want to interpret the string content as actual text
+        class CharIterator
+        {
+        public:
+            INLINE CharIterator() {};
+            INLINE CharIterator(const char* start, uint32_t length=UINT_MAX);
+            INLINE CharIterator(const char* start, const char* end);
+            INLINE CharIterator(StringView<char> txt);
+            INLINE CharIterator(const CharIterator& other) = default;
+            INLINE CharIterator& operator=(const CharIterator& other) = default;
+            INLINE ~CharIterator() = default;
+
+            INLINE operator bool() const;
+            
+            INLINE uint32_t operator*() const;
+
+            INLINE void operator++();
+            INLINE void operator++(int);
+
+        private:
+            const char* m_pos = nullptr;
+            const char* m_end = nullptr;
+        };
+
+        ///--
+
     } // utf8
 } // base
+
+#include "utf8StringFunctions.inl"

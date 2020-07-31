@@ -30,6 +30,7 @@ namespace rendering
             {
                 MeshChunkRenderID meshChunkId = 0;
                 uint8_t detailMask = 1;
+                uint16_t materialIndex = 0;
                 MaterialCachedTemplatePtr materialTemplate = nullptr;
                 MaterialDataProxyPtr materialData = nullptr;
             };
@@ -37,6 +38,7 @@ namespace rendering
             base::Array<Chunk> chunks;
             base::Box localBounds;
             bool castsShadows = true;
+            bool selected = false;
         };
 
         ///--

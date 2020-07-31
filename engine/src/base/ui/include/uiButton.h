@@ -12,6 +12,11 @@
 
 namespace ui
 {
+    //--
+
+    DECLARE_UI_EVENT(EVENT_CLICKED, bool)
+
+    //--
 
     class ButtonInputAction;
 
@@ -46,11 +51,6 @@ namespace ui
 
         ///---
 
-        /// button was clicked 
-        ElementEventProxy OnClick;
-
-        ///---
-
         /// get button mode
         INLINE ButtonMode mode() const { return m_mode; }
 
@@ -74,7 +74,6 @@ namespace ui
         // IElement
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
 
         ButtonMode m_mode;
         bool m_pressed = false;

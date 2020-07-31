@@ -46,7 +46,7 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_CLASS(MeshMaterial);
     RTTI_PROPERTY(name);
-    RTTI_PROPERTY(baseMaterial); // imported resource
+    //RTTI_PROPERTY(baseMaterial); // imported resource
     RTTI_PROPERTY(material); // owned by mesh
     RTTI_END_TYPE();
 
@@ -57,6 +57,7 @@ namespace rendering
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Mesh");
         RTTI_METADATA(base::res::ResourceDataVersionMetadata).version(11);
         RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0xed, 0x6b, 0x86);
+        RTTI_PROPERTY(m_bounds);
         RTTI_PROPERTY(m_materials);
         RTTI_PROPERTY(m_details);
         RTTI_PROPERTY(m_chunks);
@@ -79,6 +80,17 @@ namespace rendering
     {
         if (m_bounds.empty())
             m_bounds = base::Box(base::Vector3::ZERO(), 0.1f);
+
+        for (auto& material : m_materials)
+        {
+            DEBUG_CHECK(material.material);
+
+            if (!material.material)
+                material.material = base::CreateSharedPtr<MaterialInstance>();
+
+            DEBUG_CHECK(material.material->parent() == nullptr);
+            material.material->parent(this);
+        }
 
         registerChunks();
     }

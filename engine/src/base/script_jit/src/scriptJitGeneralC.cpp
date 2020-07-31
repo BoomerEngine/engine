@@ -12,7 +12,6 @@
 
 #include "base/script/include/scriptCompiledProject.h"
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
 
@@ -165,7 +164,7 @@ namespace base
 
         static io::AbsolutePath GetTempFilePath()
         {
-            auto filePath  = IO::GetInstance().systemPath(io::PathCategory::TempDir).addDir("jit");
+            auto filePath  = base::io::SystemPath(io::PathCategory::TempDir).addDir("jit");
             //auto randomFileName  = StringBuf(TempString("jit_{}.c", io::TimeStamp::GetNow().toSafeString()));
             auto randomFileName  = StringBuf(TempString("jit_temp.c", io::TimeStamp::GetNow().toSafeString()));
             filePath.appendFile(randomFileName.c_str());
@@ -174,7 +173,7 @@ namespace base
 
         static io::AbsolutePath GetPrologCodeFile()
         {
-            return IO::GetInstance().systemPath(io::PathCategory::ExecutableDir).addFile("jit.h");
+            return base::io::SystemPath(io::PathCategory::ExecutableDir).addFile("jit.h");
         }
 
         void JITGeneralC::printFunctionSignature(IFormatStream& f, const StubFunction* func)  const

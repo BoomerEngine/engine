@@ -23,7 +23,7 @@ namespace base
 
         static RefPtr<ImportFingerprintCache> LoadCache(io::AbsolutePathView path)
         {
-            if (auto file = IO::GetInstance().openForAsyncReading(path))
+            if (auto file = base::io::OpenForAsyncReading(path))
             {
                 FileLoadingContext context;
                 
@@ -43,7 +43,7 @@ namespace base
 
         static bool SaveCache(io::AbsolutePathView path, const RefPtr<ImportFingerprintCache>& cache)
         {
-            if (auto file = IO::GetInstance().openForWriting(path))
+            if (auto file = base::io::OpenForWriting(path))
             {
                 FileSavingContext context;
                 context.rootObject.pushBack(cache);
@@ -72,7 +72,7 @@ namespace base
         app::ServiceInitializationResult ImportFileFingerprintService::onInitializeService(const app::CommandLine& cmdLine)
         {
             // determine the fingerprint cache file
-            m_cacheFilePath = IO::GetInstance().systemPath(io::PathCategory::UserConfigDir).addFile("fingerprint.cache");
+            m_cacheFilePath = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("fingerprint.cache");
             TRACE_INFO("Fingerprint: Cache located at '{}'", m_cacheFilePath);
 
             // load/cache the cache
@@ -117,7 +117,7 @@ namespace base
 
             // first, check the file timestamp, maybe we have the data in cache
             io::TimeStamp timestamp;
-            if (!IO::GetInstance().fileTimeStamp(absolutePath, timestamp))
+            if (!base::io::FileTimeStamp(absolutePath, timestamp))
                 return FingerpintCalculationStatus::ErrorNoFile;
 
             // locate in cache
@@ -162,7 +162,7 @@ namespace base
             lock.release();
 
             // open the file and calculate the fingerprint
-            if (auto file = IO::GetInstance().openForAsyncReading(absolutePath))
+            if (auto file = base::io::OpenForAsyncReading(absolutePath))
             {
                 validCacheJob->status = CalculateFileFingerprint(file, !background, progress, validCacheJob->fingerprint);
             }

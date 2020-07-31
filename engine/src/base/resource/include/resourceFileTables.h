@@ -19,7 +19,8 @@ namespace base
         {
         public:
             static const uint32_t FILE_MAGIC;
-            static const uint32_t FILE_VERSION;
+            static const uint32_t FILE_VERSION_MIN;
+            static const uint32_t FILE_VERSION_MAX;
 
             static const uint16_t EMPTY_OBJECT_PARENT = 0xFFFF;
 

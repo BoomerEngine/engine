@@ -190,17 +190,17 @@ namespace rendering
             base::io::AbsolutePath absolutePath;
             if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
             {
-                TRACE_ERROR("{}({}): error: {}", absolutePath, loc.line(), message);
+                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.ansi_str().c_str(), loc.line(), "", message.data());
 
                 if (!m_firstErrorPrinted)
-                    TRACE_ERROR("{}({}): error: when compiling '{}' with '{}'", absolutePath, loc.line(), m_contextName, m_setup);
+                    TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
             }
             else
             {
-                TRACE_ERROR("{}({}): error: {}", loc.contextName(), loc.line(), message);
+                base::logging::Log::Print(base::logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", message.data());
 
                 if (!m_firstErrorPrinted)
-                    TRACE_ERROR("{}({}): error: when compiling '{}' with '{}'", loc.contextName(), loc.line(), m_contextName, m_setup);
+                    TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
             }
 
             m_firstErrorPrinted = true;
@@ -211,14 +211,17 @@ namespace rendering
     {
         if (cvPrintShaderCompilationWarnings.get())
         {
-            base::io::AbsolutePath absolutePath;
-            if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
+            if (!loc.contextName().empty())
             {
-                TRACE_WARNING("{}({}): warning: {}", absolutePath, loc.line(), message);
+                base::io::AbsolutePath absolutePath;
+                if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.ansi_str().c_str(), loc.line(), "", message.data());
+                else
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", message.data());
             }
             else
             {
-                TRACE_WARNING("{}({}): warning: {}", loc.contextName(), loc.line(), message);
+                TRACE_WARNING("{}", message);
             }
         }
     }
@@ -234,7 +237,7 @@ namespace rendering
         if (global)
         {
             base::StringBuf ret;
-            if (base::res::ApplyRelativePath("engine/shaders/", relativePath, ret))
+            if (base::ApplyRelativePath("/engine/shaders/", relativePath, ret))
             {
                 outResourcePath = ret;
                 return true;
@@ -244,7 +247,7 @@ namespace rendering
         {
             base::StringBuf ret;
             auto contextPathToUse = contextFileSystemPath.empty() ? m_contextName.view() : contextFileSystemPath;
-            if (base::res::ApplyRelativePath(contextPathToUse, relativePath, ret))
+            if (base::ApplyRelativePath(contextPathToUse, relativePath, ret))
             {
                 outResourcePath = ret;
                 return true;

@@ -39,7 +39,7 @@ namespace base
             ++m_version;
         }
 
-        Group& Storage::group(StringID name)
+        Group& Storage::group(StringView<char> name)
         {
             ASSERT_EX(!name.empty(), "Group name cannot be empty");
 
@@ -47,25 +47,26 @@ namespace base
             return *group_NoLock(name);
         }
 
-        Group* Storage::group_NoLock(StringID name)
+        Group* Storage::group_NoLock(StringView<char> name)
         {
             auto group  = m_groups.findSafe(name, nullptr);
             if (!group)
             {
-                group = MemNewPool(POOL_CONFIG, Group, this, name);
-                m_groups[name] = group;
+                auto nameStr = StringBuf(name);
+                group = MemNewPool(POOL_CONFIG, Group, this, nameStr);
+                m_groups[nameStr] = group;
             }
 
             return group;
         }
 
-        const Group* Storage::findGroup(StringID name) const
+        const Group* Storage::findGroup(StringView<char> name) const
         {
             auto lock  = CreateLock(m_lock);
             return findGroup_NoLock(name);
         }
 
-        const Group* Storage::findGroup_NoLock(StringID name) const
+        const Group* Storage::findGroup_NoLock(StringView<char> name) const
         {
             return m_groups.findSafe(name, nullptr);
         }
@@ -86,7 +87,7 @@ namespace base
             return ret;
         }
 
-        bool Storage::removeGroup(StringID name)
+        bool Storage::removeGroup(StringView<char> name)
         {
             auto lock  = CreateLock(m_lock);
 
@@ -97,7 +98,7 @@ namespace base
             return false;
         }
 
-        bool Storage::removeEntry(StringID groupName, StringID varName)
+        bool Storage::removeEntry(StringView<char> groupName, StringView<char> varName)
         {
             auto lock  = CreateLock(m_lock);
 

@@ -180,9 +180,7 @@ namespace ui
     {
         if (name == "src")
         {
-            auto loadPath = base::res::ResourcePath(base::StringBuf(value));
-
-            if (auto img = base::LoadResource<base::image::Image>(loadPath))
+            if (auto img = base::LoadResource<base::image::Image>(value))
                 image(img);
 
             return true;

@@ -54,7 +54,7 @@ namespace rendering
 
         //---
 
-        base::res::StaticResource<ShaderLibrary> resHBAOCalcShader("engine/shaders/screen/hbao_calc.fx");
+        base::res::StaticResource<ShaderLibrary> resHBAOCalcShader("/engine/shaders/screen/hbao_calc.fx");
 
         #define AO_RANDOMTEX_SIZE 4
 

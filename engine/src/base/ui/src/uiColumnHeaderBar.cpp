@@ -110,10 +110,10 @@ namespace ui
 
         if (entry.m_canSort)
         {
-            entry.m_header->bind("OnClick"_id, this) = [](ColumnHeader* button, ColumnHeaderBar* bar)
+            entry.m_header->bind(EVENT_CLICKED) = [this](ColumnHeader* button)
             {
-                auto index = bar->findColumnIndex(button);
-                bar->sort(index, (index == bar->m_sortingColumn) ? !bar->m_sortingAscending : true);
+                auto index = findColumnIndex(button);
+                sort(index, (index == m_sortingColumn) ? !m_sortingAscending : true);
             };
         }
 
@@ -133,7 +133,7 @@ namespace ui
             auto& entry = m_columns.emplaceBack();
             /*if (icon)
             {
-                auto iconFile = base::LoadResource<base::image::Image>(base::res::ResourcePath(base::StringBuf(icon)));
+                auto iconFile = base::LoadResource<base::image::Image>(base::res::ResourcePath(icon));
                 entry.m_header = base::CreateSharedPtr<ColumnHeader>("[icon]");// iconFile);
                 entry.m_currentWidth = 0.0f;
                 entry.m_canSort = false;
@@ -152,10 +152,10 @@ namespace ui
 
                 if (entry.m_canSort)
                 {
-                    entry.m_header->bind("OnClick"_id, this) = [](ColumnHeader* button, ColumnHeaderBar* bar)
+                    entry.m_header->bind(EVENT_CLICKED) = [this](ColumnHeader* button)
                     {
-                        auto index = bar->findColumnIndex(button);
-                        bar->sort(index, (index == bar->m_sortingColumn) ? !bar->m_sortingAscending : true);
+                        auto index = findColumnIndex(button);
+                        sort(index, (index == m_sortingColumn) ? !m_sortingAscending : true);
                     };
                 }
 

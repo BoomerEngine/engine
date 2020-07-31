@@ -21,13 +21,13 @@ namespace base
         class CookerInterface : public IResourceCookerInterface
         {
         public:
-            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, const ResourcePath& referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
+            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView<char> referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
             virtual ~CookerInterface();
 
             virtual bool checkCancelation() const override final;
             virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
 
-            virtual const ResourcePath& queryResourcePath() const override final;
+            virtual const StringBuf& queryResourcePath() const override final;
             virtual const ResourceMountPoint& queryResourceMountPoint() const override final;
             virtual const StringBuf& queryResourceContextName() const override final;
             virtual bool queryResolvedPath(StringView<char> relativePath, StringView<char> contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) override final;
@@ -52,8 +52,8 @@ namespace base
             INLINE const TReportedDependencies& generatedDependencies() const { return m_dependencies; }
 
         private:
-            ResourcePath m_referencePath;
             ResourceMountPoint m_referenceMountingPoint;
+            StringBuf m_referencePath;
             StringBuf m_referenceContextName;
             StringBuf m_referencePathBase;
 

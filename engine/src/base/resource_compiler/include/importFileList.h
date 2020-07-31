@@ -38,6 +38,7 @@ namespace base
         public:
             ImportList();
             ImportList(Array<ImportFileEntry>&& files);
+            ImportList(const ImportFileEntry& file);
 
             /// list of files
             INLINE const Array<ImportFileEntry>& files() const { return m_files; }

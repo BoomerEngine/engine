@@ -11,6 +11,7 @@
 #include "renderingFrameSurfaceCache.h"
 
 #include "rendering/driver/include/renderingDriver.h"
+#include "renderingSelectable.h"
 #
 namespace rendering
 {
@@ -49,6 +50,20 @@ namespace rendering
             const auto maxWidth = device()->maxRenderTargetSize().x;
             const auto maxHeight = device()->maxRenderTargetSize().y;
             createViewportSurfaces(maxWidth, maxHeight);
+
+            // create the selection capture buffer
+            {
+                m_maxSelectables = maxWidth * maxHeight * 2;
+
+                BufferCreationInfo bufferInfo;
+                bufferInfo.label = "SelectableCaptureBuffer";
+                bufferInfo.stride = sizeof(EncodedSelectable);
+                bufferInfo.size = bufferInfo.stride * m_maxSelectables;
+                bufferInfo.allowShaderReads = true;
+                bufferInfo.allowUAV = true;
+                bufferInfo.allowCopies = true;
+                m_selectables = device()->createBuffer(bufferInfo);
+            }
         }
 
         FrameSurfaceCache::~FrameSurfaceCache()
@@ -97,6 +112,18 @@ namespace rendering
                 info.format = DepthFormat;
                 m_sceneFullDepthRT = device()->createImage(info);
                 if (!m_sceneFullDepthRT)
+                {
+                    destroyViewportSurfaces();
+                    return false;
+                }
+            }
+
+            // create selection depth
+            {
+                info.label = "SelectionDepth";
+                info.format = DepthFormat;
+                m_sceneSelectionDepthRT = device()->createImage(info);
+                if (!m_sceneSelectionDepthRT)
                 {
                     destroyViewportSurfaces();
                     return false;

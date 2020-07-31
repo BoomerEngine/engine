@@ -91,6 +91,9 @@ namespace base
         //! Check if point is inside rect
         bool contains(const Point &point) const;
 
+        //! Check if point is inside rect
+        bool contains(int x, int y) const;
+
         //! Check if rect is inside rect
         bool contains(const Rect &rect) const;
 
@@ -117,6 +120,9 @@ namespace base
 
         //! Extend rectangle to include given point
         Rect& merge(const Point& point);
+
+        //! Extend rectangle to include given point
+        Rect& merge(int x, int y);
 
         //---
 

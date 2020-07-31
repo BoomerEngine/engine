@@ -22,7 +22,7 @@ namespace ui
 {
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomRenderingIntegrationHandler("editor/shaders/canvas_rendering_panel_integration.csl");
+    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomRenderingIntegrationHandler("/editor/shaders/canvas_rendering_panel_integration.csl");
 
     /// custom rendering handler
     class CanvasRenderingPanelIntegrationHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler

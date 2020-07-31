@@ -14,155 +14,63 @@ namespace ui
 {
     ///----
 
+    /// message button
+    enum class MessageButton
+    {
+        None,
+        Yes,
+        No,
+        Cancel,
+        OK,
+
+        MAX,
+    };
+
     /// message box setup
     class BASE_UI_API MessageBoxSetup
     {
     public:
         MessageBoxSetup();
 
-        //--
-
-        /// set message type
-        INLINE MessageBoxSetup& type(MessageType messageType)
-        {
-            m_type = messageType;
-            return *this;
-        }
-
-        /// set message type to informative message
-        INLINE MessageBoxSetup& info()
-        {
-            m_type = MessageType::Info;
-            return *this;
-        }
-
-        /// set message type to warning message
-        INLINE MessageBoxSetup& warn()
-        {
-            m_type = MessageType::Warning;
-            return *this;
-        }
-
-        /// set message type to error message
-        INLINE MessageBoxSetup& error()
-        {
-            m_type = MessageType::Error;
-            return *this;
-        }
-
-        /// set message type to question message
-        INLINE MessageBoxSetup& question()
-        {
-            m_type = MessageType::Question;
-            return *this;
-        }
-
-        /// enable button
-        INLINE MessageBoxSetup& button(MessageButton button)
-        {
-            if (button != MessageButton::None)
-                m_buttons |= 1 << (uint8_t)button;
-            return *this;
-        }
-
-        /// enable the Yes button
-        INLINE MessageBoxSetup& yes()
-        {
-            return button(MessageButton::Yes);
-        }
-
-        /// enable the Yes button
-        INLINE MessageBoxSetup& no()
-        {
-            return button(MessageButton::No);
-        }
-
-        /// enable the OK button
-        INLINE MessageBoxSetup& ok()
-        {
-            return button(MessageButton::OK);
-        }
-
-        /// enable the Cancel button
-        INLINE MessageBoxSetup& cancel()
-        {
-            return button(MessageButton::Cancel);
-        }
-
-        /// set the default button to Yes
-        INLINE MessageBoxSetup& defaultYes()
-        {
-            m_defaultButton = MessageButton::Yes;
-            return *this;
-        }
-
-        /// set the default button to No
-        INLINE MessageBoxSetup& defaultNo()
-        {
-            m_defaultButton = MessageButton::No;
-            return *this;
-        }
-
-        /// set the default button to Cancel
-        INLINE MessageBoxSetup& defaultCancel()
-        {
-            m_defaultButton = MessageButton::Cancel;
-            return *this;
-        }
-
-        /// set the default button to OK
-        INLINE MessageBoxSetup& defaultOK()
-        {
-            m_defaultButton = MessageButton::OK;
-            return *this;
-        }
-
-        /// set title string
-        INLINE MessageBoxSetup& title(const char* txt)
-        {
-            m_title = txt;
-            return *this;
-        }
-
-        /// set message string
-        INLINE MessageBoxSetup& message(const char* txt)
-        {
-            m_caption = txt;
-            return *this;
-        }
-
-        //--
-
-        /// get the title string
-        INLINE const base::StringBuf& title() const { return m_title; }
-
-        /// get the caption string
-        INLINE const base::StringBuf& caption() const { return m_caption; }
-
-        /// get the message box type
-        INLINE MessageType type() const { return m_type; }
-
-        /// get the button mask
-        INLINE uint8_t buttonMask() const { return m_buttons; }
-
-        /// get the button mask
-        INLINE bool hasButton(MessageButton button) const { return 0 != (m_buttons & (1 << (uint8_t)button)); }
-
-        /// get the default button
-        INLINE MessageButton defaultButton() const { return m_defaultButton; }
-
-    private:
         base::StringBuf m_title;
-        base::StringBuf m_caption;
-        MessageType m_type;
-        uint8_t m_buttons;
-        MessageButton m_defaultButton;
+        base::StringBuf m_message;
+        MessageType m_type = MessageType::Info;
+        uint8_t m_buttons = 0;
+        MessageButton m_defaultButton = MessageButton::OK;
+        MessageButton m_destructiveButton = MessageButton::None;
+        MessageButton m_constructiveButton = MessageButton::None;
+
+        base::StringBuf m_captions[(int)MessageButton::MAX];
+
+        INLINE MessageBoxSetup& type(MessageType messageType) { m_type = messageType; return *this; }
+        INLINE MessageBoxSetup& info() { m_type = MessageType::Info; return *this; }
+        INLINE MessageBoxSetup& warn() { m_type = MessageType::Warning; return *this; }
+        INLINE MessageBoxSetup& error() { m_type = MessageType::Error; return *this; }
+        INLINE MessageBoxSetup& question() { m_type = MessageType::Question; return *this; }
+
+        INLINE MessageBoxSetup& button(MessageButton button) { if (button != MessageButton::None) m_buttons |= 1 << (uint8_t)button; return *this; }
+        INLINE MessageBoxSetup& yes() { button(MessageButton::Yes); return *this; }
+        INLINE MessageBoxSetup& no() { button(MessageButton::No); return *this; }
+        INLINE MessageBoxSetup& ok() { button(MessageButton::OK); return *this; }
+        INLINE MessageBoxSetup& cancel() { button(MessageButton::Cancel); return *this; }
+        INLINE MessageBoxSetup& caption(MessageButton button, base::StringView<char> txt) { m_captions[(int)button] = base::StringBuf(txt); return *this; }
+
+        INLINE MessageBoxSetup& defaultYes() { m_defaultButton = MessageButton::Yes; return *this; }
+        INLINE MessageBoxSetup& defaultNo() { m_defaultButton = MessageButton::No; return *this; }
+        INLINE MessageBoxSetup& defaultOK() { m_defaultButton = MessageButton::OK; return *this; }
+        INLINE MessageBoxSetup& defaultCancel() { m_defaultButton = MessageButton::Cancel; return *this; }
+
+        INLINE MessageBoxSetup& title(base::StringView<char> txt) { m_title = base::StringBuf(txt); return *this; }
+        INLINE MessageBoxSetup& message(base::StringView<char> txt) { m_message = base::StringBuf(txt); return *this; }
+
+        INLINE bool hasButton(MessageButton button) const { return 0 != (m_buttons & (1 << (uint8_t)button)); }
     };
 
     ///----
 
-    /// Show message box window, locks UI
-    extern BASE_UI_API EventFunctionBinder ShowMessageBox(IElement* parent, const MessageBoxSetup& setup);
+    /// Show a little nice MODAL message box, old-school way but still works best
+    /// This functions returns the button pressed
+    extern BASE_UI_API MessageButton ShowMessageBox(IElement* parent, const MessageBoxSetup& setup);
 
     ///----
 

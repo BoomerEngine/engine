@@ -9,19 +9,11 @@
 #pragma once
 
 #include "base/ui/include/uiAbstractItemModel.h"
-#include "base/ui/include/uiSimpleListModel.h"
-
-#include "managedDepot.h"
 
 namespace ed
 {
     //--
 
-    class AssetBrowserFileEntry;
-    class AssetBrowserDirectoryEntry;
-
-    //--
-    
     // list model for directory content
     class AssetBrowserDirContentModel : public ui::IAbstractItemModel
     {
@@ -50,8 +42,6 @@ namespace ed
         Array<ManagedFile*> files(const Array<ui::ModelIndex>& indices) const;
         Array<ManagedItem*> items(const Array<ui::ModelIndex>& indices) const;
 
-        void collectItems(const Array<ui::ModelIndex>& indices, AssetItemList& outList, bool resursive) const;
-
         ui::ModelIndex index(const ManagedItem* ptr) const;
 
         //--
@@ -60,7 +50,7 @@ namespace ed
 
         //--
 
-        void addAdHocElement(ManagedItem* item);
+        ui::ModelIndex addAdHocElement(ManagedItem* item);
         void removeAdHocElement(ManagedItem* item);
 
     private:
@@ -76,6 +66,14 @@ namespace ed
         virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const override final;
         virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::ModelIndex& item) override final;
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
+
+        static const int TYPE_PARENT_DIRECTORY = 1;
+        static const int TYPE_DIRECTORY = 2;
+        static const int TYPE_ADHOC_DIRECTORY = 3;
+        static const int TYPE_FILE = 4;
+        static const int TYPE_ADHOC_FILE = 5;
+
+        static int TypeFromItem(const ManagedItem* item);
 
         struct Entry : public IReferencable
         {
@@ -95,7 +93,7 @@ namespace ed
 
         uint32_t m_iconSize = 128;
 
-        void handleCreateItemRepresentation(const ManagedItemPtr& item);
+        ui::ModelIndex handleCreateItemRepresentation(const ManagedItemPtr& item);
         void handleDestroyItemRepresentation(const ManagedItemPtr& item);
 
         bool canDisplayItem(const ManagedItem* item) const;
@@ -103,75 +101,5 @@ namespace ed
     };
 
     //--
-
-    class AssetFileSmallImportIndicator;
-
-    // general visualization element for file list
-    class AssetBrowserFileVisItem : public ui::IElement
-    {
-    public:
-        AssetBrowserFileVisItem(ManagedItem* item, uint32_t size, const StringView<char> customText = "");
-
-        INLINE ManagedItem* item() const { return m_item; }
-
-        void refreshFileData();
-        void resizeIcon(uint32_t size);
-
-    protected:
-        ui::ImagePtr m_icon;
-        ui::TextLabelPtr m_label;
-        //ui::TextLabelPtr m_ext;
-        StringBuf m_name;
-
-        RefPtr<AssetFileSmallImportIndicator> m_importIndicator;
-
-        ManagedItem* m_item;
-        uint32_t m_size;
-    };
-
-    //--
-
-    class AssetItemsSimpleListModel : public ui::SimpleListModel
-    {
-    public:
-        AssetItemsSimpleListModel();
-        virtual ~AssetItemsSimpleListModel();
-
-        void clear();
-
-        virtual uint32_t size() const override final;
-
-        void removeItem(ManagedItem* item);
-        void addItem(ManagedItem* item, bool checked = true, StringView<char> comment = "");
-        void comment(ManagedItem* item, StringView<char> comment);
-
-        bool checked(ManagedItem* item) const;
-        void checked(ManagedItem* item, bool checked) const;
-
-        bool checked(const ui::ModelIndex& item) const;
-        void checked(const ui::ModelIndex& item, bool checked) const;
-
-        Array<ManagedItem*> checked() const;
-
-    private:
-        struct Item
-        {
-            ManagedItem* item = nullptr;
-            StringBuf name;
-            bool checked = true;
-            StringBuf comment;
-        };
-
-        Array<Item*> m_items;
-        HashMap<ManagedItem*, int> m_itemMap;
-
-        virtual StringBuf content(const ui::ModelIndex& id, int colIndex /*= 0*/) const override final;
-        virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
-
-        Item* itemForIndex(const ui::ModelIndex& index) const;
-
-        ui::ModelIndex index(int index) const;
-        ui::ModelIndex index(ManagedItem* item) const;
-    };
 
 } // ed

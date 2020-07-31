@@ -11,17 +11,22 @@
 #include "importInterface.h"
 #include "importFileService.h"
 #include "importSourceAssetRepository.h"
+#include "importInterfaceImpl.h"
+#include "importFileFingerprint.h"
 
 #include "base/resource/include/resourceMetadata.h"
 #include "base/object/include/rttiTypeSystem.h"
-#include "importInterfaceImpl.h"
 #include "base/resource/include/resourceTags.h"
-#include "importFileFingerprint.h"
 
 namespace base
 {
     namespace res
     {
+
+        //--
+
+        IImportDepotChecker::~IImportDepotChecker()
+        {}
 
         //--
 
@@ -48,8 +53,9 @@ namespace base
 
         //--
 
-        Importer::Importer(SourceAssetRepository* assets)
+        Importer::Importer(SourceAssetRepository* assets, const IImportDepotChecker* depotChecker)
             : m_assets(assets)
+            , m_depotChecker(depotChecker)
         {
             buildClassMap();
         }
@@ -253,7 +259,7 @@ namespace base
             // TODO: add a change for importer to test resource and check if it's up to date without the need for reimporting
 
             // create import interface
-            LocalImporterInterface importerInterface(m_assets, existingData, info.assetFilePath, ResourcePath(info.depotFilePath), ResourceMountPoint(), progress, importConfig);
+            LocalImporterInterface importerInterface(m_assets, m_depotChecker, existingData, info.assetFilePath, info.depotFilePath, ResourceMountPoint(), progress, importConfig);
             const auto importedResource = importer->importResource(importerInterface);
 
             // regardless if we produced asset or not never return anything if we got canceled

@@ -9,8 +9,9 @@
 #pragma once
 
 #include "uiEventFunction.h"
-#include "uiWindow.h"
+#include "uiWindowPopup.h"
 #include "uiSimpleListModel.h"
+
 #include "base/graph/include/graphContainer.h"
 
 namespace ui
@@ -50,6 +51,8 @@ namespace ui
         base::StringID socketName;
     };
 
+    DECLARE_UI_EVENT(EVENT_GRAPH_BLOCK_CLASS_SELECTED, BlockClassPickResult)
+
     // helper dialog that allows to select a type from type list
     class BlockClassPickerBox : public PopupWindow
     {
@@ -67,8 +70,6 @@ namespace ui
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         void closeWithType(const BlockClassPickResult& result);
         void closeIfValidTypeSelected();
-
-        virtual IElement* handleFocusForwarding() override;
     };
 
     ///----

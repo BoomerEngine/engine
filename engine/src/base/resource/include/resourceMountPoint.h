@@ -14,12 +14,13 @@ namespace base
     {
         class ResourcePath;
 
-        /// Helper string to describe where are the resources mounted to
-        /// Similar to resource path but always has to have the "/" at the end (unless it's empty)
+        /// Helper string to describe where are the resources mounted to - it's just absolute directory path (ie. "/" or "/engine/")
+        /// Stripping the mounting point from the absolute depot path gives you the relative path inside the file system
+        /// NOTE: the mounting point path always STARTS and END with the path separator!, there's no "empty" mount point
         class BASE_RESOURCE_API ResourceMountPoint
         {
         public:
-            INLINE ResourceMountPoint() {};
+            INLINE ResourceMountPoint() : m_path("/") {}; // creates root mount point
             INLINE ResourceMountPoint(const ResourceMountPoint& other) = default;
             INLINE ResourceMountPoint(ResourceMountPoint&& other) = default;
             INLINE ResourceMountPoint& operator=(const ResourceMountPoint& other) = default;
@@ -30,11 +31,14 @@ namespace base
             /// Convert to chars
             INLINE const char* c_str() const { return m_path.c_str(); }
 
+            /// Convert to char view
+            INLINE StringView<char> view() const { return m_path.view(); }
+
             /// Get the inner string
             INLINE const StringBuf& path() const { return m_path; }
 
             /// Is the the root mount point ?
-            INLINE bool root() const { return m_path.empty(); }
+            INLINE bool root() const { return m_path == "/"; }
 
             /// Compare paths for being equal (uses the fast hash comparison)
             INLINE bool operator==(const ResourceMountPoint& other) const { return m_path == other.m_path; }
@@ -47,7 +51,7 @@ namespace base
 
             //--
 
-            // can we service this file
+            // can we service this absolute path
             bool containsPath(StringView<char> path) const;
 
             //--
@@ -56,17 +60,10 @@ namespace base
             // NOTE: will fail if the path is outside the mount point
             bool translatePathToRelative(StringView<char> path, StringBuf& outRelativePath) const;
 
-            // translate resource path to a path relative to this mount point
-            // NOTE: will fail if the path is outside the mount point
-            bool translatePathToRelative(ResourcePath path, ResourcePath& outRelativePath) const;
-
             //--
 
             // expand relative path to a full path using this mount point as a base
             void expandPathFromRelative(StringView<char> relativePath, StringBuf& fullPath) const;
-
-            // expand relative path to a full path using this mount point as a base
-            void expandPathFromRelative(ResourcePath relativePath, ResourcePath& outAbsolutePath) const;
 
             //--
 

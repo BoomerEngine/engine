@@ -53,7 +53,7 @@ namespace ed
     {
         if (m_tempListPath)
         {
-            IO::GetInstance().deleteFile(m_tempListPath);
+            base::io::DeleteFile(m_tempListPath);
             m_tempListPath = io::AbsolutePath();
         }
     }
@@ -80,7 +80,7 @@ namespace ed
             return false;
 
         static std::atomic<uint32_t> GImportIndex = 0;
-        auto tempListPath = IO::GetInstance().systemPath(io::PathCategory::TempDir).addFile(TempString("importList{}.xml", GImportIndex++).c_str());
+        auto tempListPath = base::io::SystemPath(io::PathCategory::TempDir).addFile(TempString("importList{}.xml", GImportIndex++).c_str());
 
         // save the XML to a temporary file
         if (!xml::SaveDocument(*xml, tempListPath))

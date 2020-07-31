@@ -43,7 +43,7 @@ namespace base
             if (const auto absolutePath = io::AbsolutePath::Build(commandline.singleValueUTF16("absolutePath")))
             {
                 // open source file
-                if (auto file = IO::GetInstance().openForAsyncReading(absolutePath))
+                if (auto file = base::io::OpenForAsyncReading(absolutePath))
                 {
                     ScopeTimer timer;
                     ImportFileFingerprint fingerprint;

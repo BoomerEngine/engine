@@ -14,6 +14,11 @@ namespace ui
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_GROUP_EXPANDED)
+    DECLARE_UI_EVENT(EVENT_GROUP_COLLAPSED)
+    
+    //--
+
     /// ui group container (3ds max style) that can be collapsed (hidden)
     /// very good for placing tools in a side panel
     class BASE_UI_API Group : public IElement
@@ -22,11 +27,6 @@ namespace ui
 
     public:
         Group(base::StringView<char> caption = "Group", bool expanded = true);
-
-        //--
-
-        ElementEventProxy OnExpanded; // bool
-        ElementEventProxy OnCollapsed;
 
         //--
 

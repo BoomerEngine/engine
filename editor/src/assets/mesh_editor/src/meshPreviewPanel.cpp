@@ -24,10 +24,23 @@ namespace ed
     RTTI_END_TYPE();
 
     MeshPreviewPanel::MeshPreviewPanel()
-    {}
+    {
+        m_previewSettings.showBounds = true;
+        m_panelSettings.cameraForceOrbit = false;// true;
+    }
 
     MeshPreviewPanel::~MeshPreviewPanel()
     {}
+
+    void MeshPreviewPanel::configSave(const ui::ConfigBlock& block) const
+    {
+        TBaseClass::configSave(block);
+    }
+
+    void MeshPreviewPanel::configLoad(const ui::ConfigBlock& block)
+    {
+        TBaseClass::configLoad(block);
+    }
 
     void MeshPreviewPanel::previewMesh(const rendering::MeshPtr& ptr)
     {
@@ -36,6 +49,18 @@ namespace ed
             destroyPreviewElements();
             m_mesh = ptr;
             createPreviewElements();
+
+            if (m_mesh && !m_mesh->bounds().empty())
+            {
+                if (m_lastBounds.empty() || !m_lastBounds.contains(m_mesh->bounds()))
+                {
+                    auto resetRotation = m_lastBounds.empty();
+                    auto idealRotation = base::Angles(40, 30, 0);
+
+                    m_lastBounds = m_mesh->bounds();
+                    setupCameraAroundBounds(m_lastBounds, 1.0f, resetRotation ? &idealRotation : nullptr);
+                }
+            }
         }
     }
 
@@ -43,6 +68,13 @@ namespace ed
     {
         destroyPreviewElements();
         m_previewSettings = settings;
+        createPreviewElements();
+    }
+
+    void MeshPreviewPanel::changePreviewSettings(const std::function<void(MeshPreviewPanelSettings&)>& func)
+    {
+        destroyPreviewElements();
+        func(m_previewSettings);
         createPreviewElements();
     }
 
@@ -74,31 +106,75 @@ namespace ed
         }
     }
 
+    void MeshPreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+    {
+        base::Array<base::StringID> materialNames;
+
+        if (m_mesh)
+        {
+            const auto& materials = m_mesh->materials();
+            for (const auto& selectable : selectables)
+            {
+                if (selectable.objectID() == 42)
+                {
+                    if (selectable.subObjectID() < materials.size())
+                    {
+                        if (auto name = materials[selectable.subObjectID()].name)
+                            materialNames.pushBackUnique(name);
+                    }
+                }
+            }
+        }
+
+        call(EVENT_MATERIAL_CLICKED, materialNames);
+    }
+
+    void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+    {
+
+    }
+
     void MeshPreviewPanel::destroyPreviewElements()
     {
-        if (m_mainProxy)
-        {
-            renderingScene()->proxyDestroy(m_mainProxy);
-            m_mainProxy.reset();
-        }
+        for (const auto& proxy : m_proxies)
+            renderingScene()->proxyDestroy(proxy);
+        m_proxies.clear();
     }
 
     void MeshPreviewPanel::createPreviewElements()
     {
+        m_proxies.clear();
+
         if (m_mesh)
         {
             rendering::scene::ProxyMeshDesc desc;
             desc.mesh = m_mesh;
+            desc.selectable = rendering::scene::Selectable(42, 0);
             desc.forcedLodLevel = m_previewSettings.forceLod;
+            desc.meshBounds = m_mesh->bounds();
 
-            desc.materialOverrides.reserve(m_previewMaterials.size());
-            m_previewMaterials.forEach([&desc](const base::StringID& name, const rendering::MaterialPtr& material)
+            bool drawSplit = (m_previewSettings.isolateMaterials || m_previewSettings.highlightMaterials) && !m_previewSettings.selectedMaterials.empty();
+            if (drawSplit)
+            {
+                if (!m_previewSettings.isolateMaterials)
                 {
-                    if (material)
-                        desc.materialOverrides[name] = material;
-                });
+                    for (auto materialName : m_previewSettings.selectedMaterials.keys())
+                        desc.excludedMaterialMask.insert(materialName);
 
-            m_mainProxy = renderingScene()->proxyCreate(desc);
+                    m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+                }
+
+                desc.selected = m_previewSettings.highlightMaterials;
+                desc.excludedMaterialMask.clear();
+                for (auto materialName : m_previewSettings.selectedMaterials.keys())
+                    desc.selectiveMaterialMask.insert(materialName);
+
+                m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+            }
+            else
+            {
+                m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+            }
         }
     }
 

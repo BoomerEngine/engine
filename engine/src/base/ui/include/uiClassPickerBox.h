@@ -9,11 +9,15 @@
 #pragma once
 
 #include "uiEventFunction.h"
-#include "uiWindow.h"
 #include "uiSimpleTreeModel.h"
+#include "uiWindowPopup.h"
 
 namespace ui
 {
+    ///----
+
+    DECLARE_UI_EVENT(EVENT_CLASS_SELECTED, base::ClassType)
+
     ///----
 
     // data model for listing all engine types

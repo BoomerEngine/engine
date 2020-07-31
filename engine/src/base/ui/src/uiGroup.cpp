@@ -21,8 +21,6 @@ namespace ui
     RTTI_END_TYPE();
 
     Group::Group(base::StringView<char> caption, bool expanded)
-        : OnExpanded(this, "OnExpanded"_id)
-        , OnCollapsed(this, "OnCollapsed"_id)
     {
         layoutMode(LayoutMode::Vertical);
 
@@ -34,7 +32,7 @@ namespace ui
 
         {
             m_button = m_header->createChild<Button>(ButtonModeBit::EventOnClick);
-            m_button->bind("OnClick"_id, this) = [](Group* group) { group->expand(!group->expanded()); };
+            m_button->bind(EVENT_CLICKED, this) = [](Group* group) { group->expand(!group->expanded()); };
             m_button->createNamedChild<TextLabel>("ExpandIcon"_id);
             m_caption = m_button->createChild<TextLabel>();
         }
@@ -58,12 +56,12 @@ namespace ui
             if (expand)
             {
                 addStyleClass("expanded"_id);
-                OnExpanded();
+                call(EVENT_GROUP_EXPANDED);
             }
             else
             {
                 removeStyleClass("expanded"_id);
-                OnCollapsed();
+                call(EVENT_GROUP_COLLAPSED);
             }
         }
     }

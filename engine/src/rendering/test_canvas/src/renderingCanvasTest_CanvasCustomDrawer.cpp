@@ -25,7 +25,7 @@ namespace rendering
 
         //--
 
-        base::res::StaticResource<ShaderLibrary> resCanvasCustomHandlerTestShaders("engine/shaders/canvas/canvas_mandelbrot.fx");
+        base::res::StaticResource<ShaderLibrary> resCanvasCustomHandlerTestShaders("/engine/shaders/canvas/canvas_mandelbrot.fx");
 
         /// custom rendering handler
         class SceneTest_MandelbrotCustomRenderer : public rendering::canvas::ICanvasRendererCustomBatchHandler

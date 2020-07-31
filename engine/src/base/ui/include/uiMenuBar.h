@@ -13,6 +13,9 @@
 
 namespace ui
 {
+    //--
+
+    DECLARE_UI_EVENT(EVENT_MENU_ITEM_CLICKED)
 
     //--
 
@@ -78,6 +81,7 @@ namespace ui
         EventFunctionBinder createCallback(base::StringView<char> text, base::StringView<char> icon = "", base::StringView<char> shortcut="");
 
         void show(IElement* owner);
+        void showAsDropdown(IElement* owner);
 
         PopupPtr convertToPopup();
 

@@ -17,6 +17,9 @@ namespace application
     class APP_COMMON_API BCCApp : public base::app::IApplication
     {
     public:
+        BCCApp();
+        virtual ~BCCApp();
+
         virtual bool initialize(const base::app::CommandLine& commandline) override final;
         virtual void update() override final;
         virtual void cleanup() override final;

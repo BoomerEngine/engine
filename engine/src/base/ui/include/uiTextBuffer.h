@@ -91,7 +91,7 @@ namespace ui
     class TextBuffer : public base::NoCopy
     {
     public:
-        TextBuffer();
+        TextBuffer(bool multiline);
         ~TextBuffer();
 
         /// get length of the text
@@ -124,6 +124,9 @@ namespace ui
         /// get size of the all text in the buffer if no size constraint was applied
         INLINE const Size& size() const { return m_totalSize; }
 
+        /// are we modified from initial state ?
+        INLINE bool modified() const { return m_modified; }
+
         ///---
 
         /// reset to contain text content
@@ -139,9 +142,6 @@ namespace ui
 
         /// setup styles
         void style(const IElement* styleOwner);
-
-        /// enable disable the multi-line text edit mode
-        void multiLine(bool isMultiLine);
 
         /// set the wrapping width, 0 to disable
         void wrapWidth(uint32_t wrapWidth);
@@ -269,6 +269,8 @@ namespace ui
         uint32_t m_wrapWidth;
 
         CharInfo m_finalGlyph;
+
+        bool m_modified;
 
         base::canvas::GeometryPtr m_cachedCursorGeometry;
         base::canvas::GeometryPtr m_cachedSelectionGeometry;

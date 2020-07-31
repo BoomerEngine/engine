@@ -98,8 +98,7 @@ namespace base
                 {
                     if (info.name.endsWith(seedFileExtension))
                     {
-                        const auto path = ResourcePath(TempString("{}{}", depotPath, info.name));
-                        outList.emplaceBack(path, SeedFile::GetStaticClass());
+                        outList.emplaceBack(TempString("{}{}", depotPath, info.name), SeedFile::GetStaticClass());
                     }
 
                     return false;
@@ -126,11 +125,10 @@ namespace base
 
                 for (const auto* info : staticResources)
                 {
-                    const auto path = ResourcePath(info->path());
                     const auto cls = info->resourceClass().cast<IResource>();
-                    if (cls && path)
+                    if (cls && info->path())
                     {
-                        auto key = ResourceKey(path, cls);
+                        auto key = ResourceKey(info->path(), cls);
                         TRACE_INFO("Collected static resource '{}'", key);
                         m_seedFiles.insert(key);
                         m_allCollectedFiles.insert(key);
@@ -239,7 +237,7 @@ namespace base
 
                 // evaluate dirty state of the file, especially if we can skip cooking it :)
                 // first, target file must exist to have any chance of skipping the cook :)
-                if (IO::GetInstance().fileExists(cookedFilePath))
+                if (base::io::FileExists(cookedFilePath))
                 {
                     // load the source dependencies of the file (metadata)
                     auto metadata = loadFileMetadata(cookedFilePath);
@@ -317,7 +315,7 @@ namespace base
 
         MetadataPtr CommandCook::loadFileMetadata(const io::AbsolutePath& cookedOutputPath) const
         {
-            if (auto fileReader = IO::GetInstance().openForAsyncReading(cookedOutputPath))
+            if (auto fileReader = base::io::OpenForAsyncReading(cookedOutputPath))
             {
                 base::res::FileLoadingContext context;
                 return base::res::LoadFileMetadata(fileReader, context);
@@ -337,8 +335,8 @@ namespace base
 
             StringBuilder localPath;
             localPath << "cooked/";
-            localPath << key.path().directory();
-            localPath << key.path().fileName();
+            localPath << key.directories();
+            localPath << key.fileName();
             localPath << "." << loadExtension;
 
             outPath = m_outputDir.addFile(localPath.view());
@@ -376,7 +374,7 @@ namespace base
 
         void CommandCook::queueDependencies(const io::AbsolutePath& cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
         {
-            if (auto fileReader = IO::GetInstance().openForAsyncReading(cookedFilePath))
+            if (auto fileReader = base::io::OpenForAsyncReading(cookedFilePath))
             {
                 InplaceArray<FileLoadingDependency, 100> dependencies;
                 FileLoadingContext loadingContext;
@@ -400,7 +398,7 @@ namespace base
                 : m_fullyCaptured(captureFully)
             {
                 m_logFilePath = outPath.addExtension(".log");
-                m_logOutput = IO::GetInstance().openForWriting(m_logFilePath);
+                m_logOutput = base::io::OpenForWriting(m_logFilePath);
             }
 
             void discardLog()
@@ -408,7 +406,7 @@ namespace base
                 if (m_logOutput)
                     m_logOutput.reset();
 
-                IO::GetInstance().deleteFile(m_logFilePath);
+                base::io::DeleteFile(m_logFilePath);
             }
 
             virtual bool print(logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override

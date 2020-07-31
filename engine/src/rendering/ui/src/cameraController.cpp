@@ -13,6 +13,7 @@
 #include "base/app/include/localServiceContainer.h"
 #include "base/ui/include/uiInputAction.h"
 #include "base/ui/include/uiElement.h"
+#include "base/ui/include/uiElementConfig.h"
 
 #include "rendering/scene/include/renderingFrameCamera.h"
 
@@ -36,7 +37,6 @@ namespace ui
         , m_currentRotation(0,0,0)
         , m_internalLinearVelocity(0,0,0)
         , m_internalAngularVelocity(0,0,0)
-        , m_speedFactor(0.0f)
         , m_stamp(0)
     {
         resetInput();
@@ -50,12 +50,7 @@ namespace ui
     void CameraController::resetInput()
     {
     }
-
-    void CameraController::speedFactor(float speedFactor)
-    {
-        m_speedFactor = std::clamp(speedFactor, -2.0f, 2.0f);
-    }
-
+    
     void CameraController::animate(float timeDelta)
     {
     }
@@ -104,10 +99,11 @@ namespace ui
         class MouseCameraControlFreeFly : public IInputAction
         {
         public:
-            MouseCameraControlFreeFly(IElement* ptr, CameraController *owner, uint8_t mode)
+            MouseCameraControlFreeFly(IElement* ptr, CameraController *owner, uint8_t mode, float speed)
                 : IInputAction(ptr)
                 , m_owner(owner)
                 , m_mode(mode)
+                , m_speed(speed)
                 , m_inputVelocity(0,0,0)
             {
                 memzero(m_movementKeys, sizeof(m_movementKeys));
@@ -193,16 +189,17 @@ namespace ui
                     base::Vector3 cameraDirRight, cameraDirUp(0, 0, 1);
                     m_owner->rotation().someAngleVectors(nullptr, &cameraDirRight, nullptr);
 
-                    float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_owner->speedFactor());
+                    float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_speed);
                     if (m_movementKeys[KEY_FAST]) cameraSpeed *= config::cvCameraFastMultiplier.get();
                     if (m_movementKeys[KEY_SLOW]) cameraSpeed *= config::cvCameraSlowMultiplier.get();
 
-                    deltaPos = cameraDirRight * evt.delta().x * 0.02f * cameraSpeed;
-                    deltaPos -= cameraDirUp * evt.delta().y * 0.02f * cameraSpeed;
+                    deltaPos = cameraDirRight * evt.delta().x * 0.01f * cameraSpeed;
+                    deltaPos -= cameraDirUp * evt.delta().y * 0.01f * cameraSpeed;
                 }
 
                 // apply movement to camera controller
                 m_owner->moveTo(m_owner->position() + deltaPos, m_owner->rotation() + deltaRot);
+                m_owner->origin(m_owner->origin() + deltaPos);
 
                 // continue
                 return InputActionResult();
@@ -217,7 +214,7 @@ namespace ui
             void computeMovement(float timeDelta)
             {
                 // compute target velocity
-                float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_owner->speedFactor());
+                float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_speed);
                 base::Vector3 targetVelocity(0, 0, 0);
                 {
                     // aggregate movement
@@ -275,7 +272,8 @@ namespace ui
             base::Point m_startPoint;
             bool m_movementKeys[KEY_MAX];
 
-            uint8_t m_mode;
+            float m_speed = 1.0f;
+            uint8_t m_mode = 0;
         };
 
         //---
@@ -284,19 +282,12 @@ namespace ui
         class MouseCameraControlOrbitAroundPoint : public IInputAction
         {
         public:
-            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraController *owner, uint8_t mode, const base::AbsolutePosition& orbitCenter)
+            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraController *owner, uint8_t mode)
                 : IInputAction(ptr), m_owner(owner), m_mode(mode)
             {
-                m_orbitCenter = orbitCenter;
-                m_distance = owner->position().distance(orbitCenter.approximate());
-
-                auto dir = orbitCenter.approximate() - owner->position();
-                m_rotation = dir.toRotator();
-
-                auto targetRot = m_rotation.toQuat();
-                auto currentRot = owner->rotation().toQuat();
-
-                m_rotationOffset = targetRot.inverted() * currentRot;
+                const auto orbitCenter = owner->origin();
+                m_distance = owner->position().distance(orbitCenter);
+                m_rotation = owner->rotation();
             }
 
             virtual void onUpdateRedrawPolicy(WindowRedrawPolicy& outRedrawPolicy) override final
@@ -347,24 +338,19 @@ namespace ui
             virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
             {
                 // rotate local reference frame
-                m_rotation.pitch += evt.delta().y * 0.25f;
+                m_rotation.pitch = std::clamp<float>(m_rotation.pitch + evt.delta().y * 0.25f, -89.9f, 89.9f);
                 m_rotation.yaw += evt.delta().x * 0.25f;
 
-                // calcualte position and rotation of the camera
-                auto pos = m_orbitCenter.approximate() - m_distance * m_rotation.forward();
-                auto rot = m_rotation.toQuat() * m_rotationOffset;
-                auto cameraAngles = rot.toRotator();
-                cameraAngles.roll = 0.0f;
-                m_owner->moveTo(pos, cameraAngles);
+                // calculate position and rotation of the camera
+                auto pos = m_owner->origin() - (m_distance * m_rotation.forward());
+                m_owner->moveTo(pos, m_rotation);
 
                 return InputActionResult();
             }
 
         private:
             CameraController *m_owner;
-            base::AbsolutePosition m_orbitCenter;
             base::Angles m_rotation;
-            base::Quat m_rotationOffset;
 
             float m_distance;
             uint8_t m_mode;
@@ -374,21 +360,26 @@ namespace ui
 
     } // helper
 
-    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button)
+    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float speed)
     {
-        return base::CreateSharedPtr<helper::MouseCameraControlFreeFly>(ptr, this, button);
+        return base::CreateSharedPtr<helper::MouseCameraControlFreeFly>(ptr, this, button, speed);
     }
 
-    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button, const base::AbsolutePosition& orbitCenterPos)
+    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button)
     {
-        return base::CreateSharedPtr<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button, orbitCenterPos);
+        return base::CreateSharedPtr<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button);
     }
 
-    void CameraController::moveTo(const base::Vector3& position, const base::Angles& rotation)
+    void CameraController::moveTo(const base::AbsolutePosition& position, const base::Angles& rotation)
     {
         m_currentPosition = position;
         m_currentRotation = rotation;
         invalidateCameraStamp();
+    }
+
+    void CameraController::origin(const base::AbsolutePosition& originPosition)
+    {
+        m_origin = originPosition;
     }
 
     void CameraController::processMouseWheel(const base::input::MouseMovementEvent& evt, float delta)
@@ -401,7 +392,7 @@ namespace ui
     void CameraController::computeRenderingCamera(rendering::scene::CameraSetup& outCamera) const
     {
         // setup position and rotation
-        outCamera.position = m_currentPosition;
+        outCamera.position = m_currentPosition.approximate();
         outCamera.rotation = m_currentRotation.toQuat();
 
         // setup clipping planes
@@ -418,6 +409,22 @@ namespace ui
             outCamera.farPlane = 8000.0f;
             outCamera.zoom = 1.0f;
         }
+    }
+
+    //---
+
+    void CameraController::configLoad(const ConfigBlock& config)
+    {
+        m_currentPosition = config.readOrDefault("CameraPosition", m_currentPosition.approximate());
+        m_currentRotation = config.readOrDefault("CameraRotation", m_currentRotation);
+        m_origin = config.readOrDefault("CameraOrigin", m_origin.approximate());
+    }
+
+    void CameraController::configSave(const ConfigBlock& config) const
+    {
+        config.write("CameraPosition", m_currentPosition.approximate());
+        config.write("CameraRotation", m_currentRotation);
+        config.write("CameraOrigin", m_origin.approximate());
     }
 
     //---

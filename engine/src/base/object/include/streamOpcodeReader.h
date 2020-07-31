@@ -243,14 +243,20 @@ namespace base
         {
             checkOp(StreamOpcode::DataObjectPointer);
             const auto index = readCompressedNumber();
-            return m_refs.objects[index];
+            if (index == 0 || index > (int)m_refs.objects.size())
+                return nullptr;
+
+            return m_refs.objects[index - 1];
         }
 
         INLINE const OpcodeResolvedResourceReference* OpcodeReader::readResource()
         {
             checkOp(StreamOpcode::DataResourceRef);
             const auto index = readCompressedNumber();
-            return &m_refs.resources[index];
+            if (index == 0 || index > (int)m_refs.resources.size())
+                return nullptr;
+
+            return &m_refs.resources[index - 1];
         }
 
         INLINE uint64_t OpcodeReader::readCompressedNumber()

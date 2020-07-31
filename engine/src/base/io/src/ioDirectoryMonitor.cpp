@@ -46,7 +46,7 @@ namespace base
             , m_modified(0)
         {
             // create the watcher
-            m_watcher = System::GetInstance().createDirectoryWatcher(path);
+            m_watcher = CreateDirectoryWatcher(path);
             if (m_watcher)
             {
                 // create and attach listener

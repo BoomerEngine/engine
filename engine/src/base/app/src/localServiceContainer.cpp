@@ -100,12 +100,18 @@ namespace base
         {
             PC_SCOPE_LVL1(UpdateLocalServices);
 
+            // make sure sync jobs are done
+            Fibers::GetInstance().runSyncJobs();
+
             // reset per frame memory stats
             base::mem::PoolStats::GetInstance().resetFrameStatistics();
 
             // update the sync part of all the service
-            for (auto service  : m_tickList)
+            for (auto service : m_tickList)
                 service->onSyncUpdate();
+
+            // make sure sync jobs are done
+            Fibers::GetInstance().runSyncJobs();
         }
 
         namespace helper

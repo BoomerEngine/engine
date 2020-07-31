@@ -66,7 +66,7 @@ namespace base
             m_key = ResourceKey();
         }
 
-        void BaseAsyncReference::set(ResourcePath path, SpecificClassType<IResource> cls)
+        void BaseAsyncReference::set(StringView<char> path, SpecificClassType<IResource> cls)
         {
             set(ResourceKey(path, cls));
         }
@@ -95,20 +95,22 @@ namespace base
                 if (customLoader)
                 {
                     // the resource may be already loaded, if that's the case we can save from creating a fiber
-                    if (auto alreadyLoaed  = customLoader->acquireLoadedResource(m_key))
                     {
-                        onLoadedFunc(BaseReference(alreadyLoaed));
-                    }
-                    else
-                    {
-                        // we need to run a proper fiber
-                        auto key  = m_key;
-                        RunFiber("LoadResourceRef") << [key, onLoadedFunc, customLoader](FIBER_FUNC)
+                        ResourcePtr alreadyLoaded;
+                        if (customLoader->acquireLoadedResource(m_key, alreadyLoaded))
                         {
-                            auto loadedObject = customLoader->loadResource(key);
-                            onLoadedFunc(BaseReference(loadedObject));
-                        };
+                            if (alreadyLoaded)
+                                onLoadedFunc(BaseReference(alreadyLoaded));
+                        }
                     }
+
+                    // follow the normal loading on a job path
+                    auto key  = m_key;
+                    RunFiber("LoadResourceRef") << [key, onLoadedFunc, customLoader](FIBER_FUNC)
+                    {
+                        auto loadedObject = customLoader->loadResource(key);
+                        onLoadedFunc(BaseReference(loadedObject));
+                    };
                 }
                 else
                 {

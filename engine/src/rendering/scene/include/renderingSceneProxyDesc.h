@@ -48,6 +48,9 @@ namespace rendering
             // initial selection state
             bool selected = false;
 
+            // selectable ID (returned when querying selection)
+            Selectable selectable;
+
         private:
             ProxyType m_proxyType;
         };
@@ -70,8 +73,11 @@ namespace rendering
             // force single material to be used for whole mesh
             MaterialDataProxyPtr forceMaterial = nullptr;
 
-            // render only given materials
-            const uint64_t* selectiveMaterialMask = nullptr;
+            // render only given materials (NOTE: expensive, used mostly in debug/editor)
+            base::HashSet<base::StringID> selectiveMaterialMask;
+
+            // do not render given materials (NOTE: expensive, used mostly in debug/editor)
+            base::HashSet<base::StringID> excludedMaterialMask;
 
             // force single LOD distance on the whole mesh
             char forcedLodLevel = 0;

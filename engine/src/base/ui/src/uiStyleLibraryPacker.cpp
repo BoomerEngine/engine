@@ -132,6 +132,7 @@ namespace ui
                     base::StringID matchClass;
                     base::StringID matchClass2;
                     base::StringID matchPseudoClass;
+                    base::StringID matchPseudoClass2;
                     base::StringID matchId;
 
                     if (selector->classes().entries().size() > 2)
@@ -140,9 +141,9 @@ namespace ui
                         return;
                     }
 
-                    if (selector->pseudoClasses().entries().size() > 1)
+                    if (selector->pseudoClasses().entries().size() > 2)
                     {
-                        err.reportError(selector->location(), "Unable to map selector, exceeded pseudo class limit: 1");
+                        err.reportError(selector->location(), "Unable to map selector, exceeded pseudo class limit: 2");
                         return;
                     }
 
@@ -161,12 +162,17 @@ namespace ui
                     }
 
                     if (!selector->pseudoClasses().empty())
+                    {
                         matchPseudoClass = selector->pseudoClasses().entries()[0];
+
+                        if (selector->pseudoClasses().entries().size() >= 2)
+                            matchPseudoClass2 = selector->pseudoClasses().entries()[1];
+                    }
 
                     if (!selector->identifiers().empty())
                         matchId = selector->identifiers().entries()[0];
 
-                    outParams.emplaceBack(type, matchClass, matchClass2, matchId, matchPseudoClass);
+                    outParams.emplaceBack(type, matchClass, matchClass2, matchId, matchPseudoClass, matchPseudoClass2);
                 }
             }
 

@@ -30,7 +30,7 @@ namespace ed
 
         INLINE ManagedDepot& managedDepot() const { return *m_managedDepot; }
 
-        INLINE ConfigGroup& config() const { return *(ConfigGroup*)m_config.get(); }
+        INLINE ui::ConfigBlock& config() const { return *m_configRootBlock; }
 
         INLINE vsc::IVersionControl& versionControl() const { return *m_versionControl; }
 
@@ -50,23 +50,6 @@ namespace ed
 
         ///---
 
-        // can given file format be opened ?
-        bool canOpenFile(const ManagedFileFormat& format) const;
-
-        // open editor(s) for given file
-        bool openFile(ManagedFile* file);
-
-        // select file in the asset browser
-        bool selectFile(ManagedFile* file);
-
-        // get selected depot file
-        ManagedFile* selectedFile() const;
-
-        // get selected directory
-        ManagedDirectory* selectedDirectory() const;
-
-        ///---
-
         // get parent window native handle for given ui element (useful for OS interop)
         uint64_t windowNativeHandle(ui::IElement* elem) const;
 
@@ -74,15 +57,6 @@ namespace ed
 
         // get the semi persistent data for the open/save file dialog - mainly the active directory, selected file filter, etc
         io::OpenSavePersistentData& openSavePersistentData(StringView<char> category);
-
-        // add a file to import list, if no directory is specified file is added to active directory
-        bool addImportFiles(const Array<StringBuf>& assetPaths, SpecificClassType<res::IResource> importClass, const ManagedDirectory* directoryOverride = nullptr, bool showTab = true);
-
-        // add existing files to reimport list
-        bool addReimportFiles(const Array<ManagedFileNativeResource*>& filesToReimport, bool showTab = true);
-
-        // add existing file to reimport list with a new config
-        bool addReimportFile(ManagedFileNativeResource* fileToReimport, const res::ResourceConfigurationPtr& config, bool showTab = true);
 
         ///---
 
@@ -112,7 +86,9 @@ namespace ed
     private:
         UniquePtr<ManagedDepot> m_managedDepot;
         UniquePtr<vsc::IVersionControl> m_versionControl;
-        UniquePtr<ConfigRoot> m_config;
+
+        UniquePtr<ui::ConfigFileStorageDataInterface> m_configStorage;
+        UniquePtr<ui::ConfigBlock> m_configRootBlock;
 
         NativeTimePoint m_nextConfigSave;
         NativeTimePoint m_nextAutoSave;
@@ -158,8 +134,8 @@ namespace ed
         void saveConfig();
         void saveAssetsSafeCopy();
 
-        void loadOpenSaveSettings(const ConfigGroup& config);
-        void saveOpenSaveSettings(ConfigGroup& config) const;
+        void loadOpenSaveSettings(const ui::ConfigBlock& config);
+        void saveOpenSaveSettings(const ui::ConfigBlock& config) const;
     };
 
 } // editor

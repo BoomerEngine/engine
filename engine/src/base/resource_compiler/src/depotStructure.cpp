@@ -24,6 +24,7 @@
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
 #include "base/io/include/absolutePathBuilder.h"
+#include "base/containers/include/utf8StringFunctions.h"
 
 namespace base
 {
@@ -97,39 +98,52 @@ namespace base
                     // convert to depot path separators
                     depotPath.replaceChar('\\', '/');
 
-                    // fixup ending
-                    if (!depotPath.empty())
-                        if (!depotPath.endsWith("/"))
-                            depotPath = TempString("{}/", depotPath);
+                    // fixup the path to be a propper mound point path
+                    if (!depotPath.endsWith("/"))
+                        depotPath = TempString("{}/", depotPath);
+                    if (!depotPath.beginsWith("/"))
+                        depotPath = TempString("/{}", depotPath);
 
-                    // get the module path (it's relative to the project.xml)
-                    if (auto modulePath = StringBuf(settings->nodeValue(node)))
+                    // make sure mount path is valid
+                    if (ValidateDepotPath(depotPath, DepotPathClass::AbsoluteDirectoryPath))
                     {
-                        // fixup path separator at the end
-                        modulePath.replaceChar('\\', '/');
-                        if (!modulePath.endsWith("/"))
-                            modulePath = TempString("{}/", modulePath);
-
-                        // format the path to the depot data folder
-                        io::AbsolutePathBuilder moduleDepothPathBuilder(depotManifestPath.basePath());
-                        moduleDepothPathBuilder.pushDirectories(UTF16StringBuf(modulePath));
-                        moduleDepothPathBuilder.pushDirectory(L"data");
-
-                        // create the absolute path to the project's depot
-                        const auto moduleDepotPath = moduleDepothPathBuilder.toAbsolutePath(false);
-                        TRACE_INFO("Depot path for module '{}' resolved to '{}'", modulePath, moduleDepotPath);
-
-                        // add the file system
-                        auto fileSystemType = DepotFileSystemType::Engine;
-                        auto projectFileSystem = CreateUniquePtr<FileSystemNative>(moduleDepotPath, !readonly, this);
-                        if (!processFileSystem(depotPath, std::move(projectFileSystem), fileSystemType))
+                        // get the module path (it's relative to the project.xml)
+                        if (auto modulePath = StringBuf(settings->nodeValue(node)))
                         {
-                            TRACE_ERROR("Failed to mount engine file system from '{}' to '{}'", moduleDepotPath, depotPath);
+                            // fixup path separator at the end
+                            modulePath.replaceChar('\\', '/');
+                            if (!modulePath.endsWith("/"))
+                                modulePath = TempString("{}/", modulePath);
+
+                            // format the path to the depot data folder
+                            io::AbsolutePathBuilder moduleDepothPathBuilder(depotManifestPath.basePath());
+                            moduleDepothPathBuilder.pushDirectories(UTF16StringBuf(modulePath));
+                            moduleDepothPathBuilder.pushDirectory(L"data");
+
+                            // create the absolute path to the project's depot
+                            const auto moduleDepotPath = moduleDepothPathBuilder.toAbsolutePath(false);
+                            TRACE_INFO("Depot path for module '{}' resolved to '{}'", modulePath, moduleDepotPath);
+
+                            // parse the mount point path
+                            const auto depotMountPoint = res::ResourceMountPoint(depotPath);
+
+                            // add the file system
+                            auto fileSystemType = DepotFileSystemType::Engine;
+                            auto projectFileSystem = CreateUniquePtr<FileSystemNative>(moduleDepotPath, !readonly, this);
+                            if (!processFileSystem(depotMountPoint, std::move(projectFileSystem), fileSystemType))
+                            {
+                                TRACE_ERROR("Failed to mount engine file system from '{}' to '{}'", moduleDepotPath, depotPath);
+                            }
+                            else
+                            {
+                                TRACE_INFO("Attached '{}' from '{}'", depotPath, moduleDepotPath);
+                            }
                         }
-                        else
-                        {
-                            TRACE_INFO("Attached '{}' from '{}'", depotPath, moduleDepotPath);
-                        }
+                    }
+                    else
+                    {
+                        TRACE_ERROR("Mount path '{}' is not a valid absolute depot directory path, unable to mount this file system", depotPath);
+                        continue;
                     }
                 }
 
@@ -187,14 +201,10 @@ namespace base
             }
         }
 
-        void DepotStructure::attachFileSystem(StringView<char> prefixPath, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
+        void DepotStructure::attachFileSystem(const res::ResourceMountPoint& depotMountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
         {
-            // validate path
-            ASSERT_EX(prefixPath.empty() || prefixPath.endsWith("/"), "Invalid prefix path for mounting file system")
-
             // create wrapper
-            auto depotMountPoint = base::res::ResourceMountPoint(prefixPath);
-            auto depotWrapper = base::CreateUniquePtr<DepotFileSystem>(depotMountPoint, std::move(fileSystem), type);
+            auto depotWrapper = CreateUniquePtr<DepotFileSystem>(depotMountPoint, std::move(fileSystem), type);
             m_fileSystems.pushBack(std::move(depotWrapper));
             m_fileSystemsPtrs.pushBack(m_fileSystems.back().get());
 
@@ -390,7 +400,7 @@ namespace base
 
         //---
 
-        bool DepotStructure::processFileSystem(StringView<char> mountPath, UniquePtr<IFileSystem> fs, DepotFileSystemType type)
+        bool DepotStructure::processFileSystem(const res::ResourceMountPoint& depotMountPoint, UniquePtr<IFileSystem> fs, DepotFileSystemType type)
         {
             // no file system
             if (!fs)
@@ -449,11 +459,13 @@ namespace base
 
             // finally, attach file system to the loader
             // NOTE: we are attached after our dependencies to make sure the path filtering can be done in a simple way
-            attachFileSystem(mountPath, std::move(fs), type);
+            attachFileSystem(depotMountPoint, std::move(fs), type);
 
             // mounted
             return true;
         }
+
+        //--
 
     } // depot
 } // base

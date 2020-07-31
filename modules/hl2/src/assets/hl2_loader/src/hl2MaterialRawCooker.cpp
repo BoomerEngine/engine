@@ -90,7 +90,7 @@ namespace hl2
         virtual base::res::ResourcePtr cook(base::res::IResourceCookerInterface& cooker) const override
         {
             // load raw content
-            auto materialScriptPath = cooker.queryResourcePath().path();
+            const auto& materialScriptPath = cooker.queryResourcePath();
             auto rawContent = cooker.loadToBuffer(materialScriptPath);
             if (!rawContent)
                 return false;

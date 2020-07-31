@@ -35,6 +35,27 @@ namespace base
             {}
         };
 
+        class ImportQueueDepotChecker : public IImportDepotChecker
+        {
+        public:
+            ImportQueueDepotChecker(const IImportDepotLoader* loader)
+                : m_loader(loader)
+            {}
+
+            virtual bool depotFileExists(StringView<char> depotPath) const override final
+            {
+                return m_loader->depotFileExists(depotPath);
+            }
+
+            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+            {
+                return m_loader->depotFindFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+            }
+
+        private:
+            const IImportDepotLoader* m_loader;
+        };
+
         //--
 
         ImportQueue::ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, ImportSaverThread* saver, IImportQueueCallbacks* callbacks)
@@ -43,7 +64,8 @@ namespace base
             , m_saver(saver)
             , m_callbacks(callbacks)
         {
-            m_importer.create(assets);
+            m_importerDepotChecker.create(loader);
+            m_importer.create(assets, m_importerDepotChecker.get());
 
             if (!m_callbacks)
             {
@@ -159,6 +181,9 @@ namespace base
                         m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::Canceled, timer.timeElapsed());
                         return true;
                     }
+
+                    if (!job->info.externalConfig)
+                        job->info.externalConfig = CloneObject(currentMetadata->importBaseConfiguration);
                 }
             }
 
@@ -180,6 +205,20 @@ namespace base
                 ImportQueueProgressTracker localProgressTracker(m_callbacks, job->info.depotFilePath, progressTracker);
                 const auto ret = m_importer->importResource(job->info, existingResource, importedResource, &localProgressTracker);
                 m_callbacks->queueJobFinished(job->info.depotFilePath, ret, timer.timeElapsed());
+            }
+
+            // follow up with resources that were imported last time
+            if (importedResource && importedResource->metadata())
+            {
+                for (const auto& followup : importedResource->metadata()->importFollowups)
+                {
+                    ImportJobInfo jobInfo;
+                    jobInfo.depotFilePath = followup.depotPath;
+                    jobInfo.assetFilePath = followup.sourceImportPath;
+                    jobInfo.externalConfig = followup.configuration;
+                    jobInfo.userConfig = nullptr; // no specific user configuration, will use the resource's one
+                    scheduleJob(jobInfo);
+                }
             }
 
             // if resource was imported send it to saving

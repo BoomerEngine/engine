@@ -45,7 +45,6 @@ namespace ui
     CanvasArea::CanvasArea()
         : m_viewOffset(0,0)
         , m_viewScale(1,1)
-        , OnCanvasViewChanged(this, "OnCanvasViewChanged"_id)
     {
         hitTest(true);
         allowFocusFromClick(true);
@@ -119,7 +118,7 @@ namespace ui
 
         updateCachedGeometryAndSizes();
 
-        OnCanvasViewChanged();
+        call(EVENT_CANVAS_VIEW_CHANGED);
     }
 
     void CanvasArea::zoomToFit()
@@ -178,7 +177,7 @@ namespace ui
         if (offset != m_viewOffset)
         {
             m_viewOffset = offset;
-            OnCanvasViewChanged();
+            call(EVENT_CANVAS_VIEW_CHANGED);
         }
     }
 
@@ -270,7 +269,7 @@ namespace ui
             m_viewOffset.x = (sx / 2.0f) - (neededSizeX * zoom / 2.0f);
             m_viewOffset.y = (sy / 2.0f) - (neededSizeY * zoom / 2.0f);
 
-            OnCanvasViewChanged();
+            call(EVENT_CANVAS_VIEW_CHANGED);
 
             updateCachedGeometryAndSizes();
         }
@@ -306,7 +305,7 @@ namespace ui
 
             updateCachedGeometryAndSizes();
 
-            OnCanvasViewChanged();
+            call(EVENT_CANVAS_VIEW_CHANGED);
         }
     }
 

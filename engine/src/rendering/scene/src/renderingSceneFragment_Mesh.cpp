@@ -31,6 +31,7 @@ namespace rendering
         {
             ObjectRenderID objectId; // object - gives the transform
             uint32_t meshChunkId; // index in the global geometry table
+            uint32_t subObjectID;
         };
 
         struct GPUMeshDrawData
@@ -97,6 +98,7 @@ namespace rendering
                 {
                     renderChunkData->objectId = it->objectId;
                     renderChunkData->meshChunkId = it->meshChunkdId;
+                    renderChunkData->subObjectID = it->subObjectID;
                     renderChunkData += 1;
                 }
             }

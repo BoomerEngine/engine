@@ -26,6 +26,8 @@ namespace rendering
             PassDepthPrepass, // render the depth prepass
             PassShadowDepth, // render the depth prepass
             PassForward, // render the forward pass
+            PassDepthSelection, // render depth pass with selected proxies
+            PassSelectionFragments, // render selection fragments
 
             FragOpaqueNonMovable, // render the static non movable fragments
             FragOpaqueSolid, // render solid fragments
@@ -58,6 +60,8 @@ namespace rendering
             Lighting_IBL, // toggle global IBL
 
             PostProcessing, // all of it
+            PostProcesses_SelectionOutline, // render the outline around the selection
+            PostProcesses_SelectionHighlight, // render the highlight on the selection
             PostProcesses_ToneMap, 
 
             MAX,

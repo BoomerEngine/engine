@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        base::res::StaticResource<ShaderLibrary> resShadowMaskShader("engine/shaders/screen/global_shadow_mask.fx");
+        base::res::StaticResource<ShaderLibrary> resShadowMaskShader("/engine/shaders/screen/global_shadow_mask.fx");
 
         struct ShadowMaskParams
         {

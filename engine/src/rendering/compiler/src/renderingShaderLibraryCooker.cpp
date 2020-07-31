@@ -68,7 +68,7 @@ namespace rendering
         ShaderLibraryCookerIncludeHandler::ShaderLibraryCookerIncludeHandler(base::res::IResourceCookerInterface& cooker)
             : m_cooker(cooker)
         {
-            m_includePaths.pushBack("engine/shaders/");
+            m_includePaths.pushBack("/engine/shaders/");
         }
 
         void ShaderLibraryCookerIncludeHandler::addGlobalIncludePath(const base::StringBuf& path)
@@ -136,7 +136,7 @@ namespace rendering
                 auto mainFilePath = cooker.queryResourcePath();
 
                 // load the root file content
-                auto rootCodeBuffer = cooker.loadToBuffer(mainFilePath.path());
+                auto rootCodeBuffer = cooker.loadToBuffer(mainFilePath);
                 base::StringView<char> rootCode((char*)rootCodeBuffer.data(), rootCodeBuffer.size());
                 if (!rootCode)
                 {
@@ -149,7 +149,7 @@ namespace rendering
                 ShaderLibraryCookerErrorReporter errorHandler(cooker);
 
                 // compile the loaded code and return a compiled object
-                return CompileShaderLibrary(rootCode, mainFilePath.path(), &includeHandler, errorHandler, "GLSL"_id);
+                return CompileShaderLibrary(rootCode, mainFilePath, &includeHandler, errorHandler, "GLSL"_id);
             }
         };
 

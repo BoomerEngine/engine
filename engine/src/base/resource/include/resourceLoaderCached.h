@@ -36,7 +36,7 @@ namespace base
             /// Try to get already loaded resource IF IT EXISTS
             /// NOTE: this can be used to optimize calls to async loading functions by first querying if resource exists
             /// NOTE: this ONLY returns fully loaded resources (so if the resource is actually being loaded now it's not returned, as the name of the function states)
-            virtual ResourceHandle acquireLoadedResource(const ResourceKey& key) override;
+            virtual bool acquireLoadedResource(const ResourceKey& key, ResourceHandle& outLoadedResource) override;
 
         protected:
             /// Internal interface - load a single resource

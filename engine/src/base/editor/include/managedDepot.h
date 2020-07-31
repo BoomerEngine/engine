@@ -14,20 +14,16 @@
 #include "base/system/include/mutex.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource_compiler/include/depotStructure.h"
-#include "editorConfig.h"
 
 namespace ed
 {
-    class ManagedDepotVersionControlListener;
-    class ManagedThumbnailHelper;
-    class DirectoryWatcher;
-    class IVersionControl;
+    //--
 
     /// editor side depot
     class BASE_EDITOR_API ManagedDepot : public NoCopy
     {
     public:
-        ManagedDepot(depot::DepotStructure& loader, ConfigGroup config);
+        ManagedDepot(depot::DepotStructure& loader);
         ~ManagedDepot();
 
         /// get the low-level depot structure
@@ -36,20 +32,13 @@ namespace ed
         /// get the event key for event listening
         INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
 
-        /// depot configuration entry
-        INLINE const ConfigGroup& config() const { return m_config; }
-        INLINE ConfigGroup& config() { return m_config; }
-
         /// get modified files
-        typedef HashSet<ManagedFile*> TModifiedFiles;
-        INLINE const TModifiedFiles& modifiedFiles() { return m_modifiedFiles; }
-
+        INLINE const HashSet<ManagedFile*>& modifiedFiles() { return m_modifiedFiles; }
+        INLINE const Array<ManagedFile*>& modifiedFilesList() { return m_modifiedFiles.keys(); }
+        
         /// get bookmarked directories
-        typedef HashSet<ManagedDirectory*> TBookmarkedDirectories;
-        INLINE const TBookmarkedDirectories& bookmarkedDirectories() const { return m_bookmarkedDirectories; }
-
-        /// get the thumbnail service helper
-        INLINE ManagedThumbnailHelper& thumbnailHelper() const { return *m_thumbnailHelper; }
+        INLINE const HashSet<ManagedDirectory*>& bookmarkedDirectories() const { return m_bookmarkedDirectories; }
+        INLINE const Array<ManagedDirectory*>& bookmarkedDirectoriesList() const { return m_bookmarkedDirectories.keys(); }
 
         /// get root directory for the depot
         INLINE ManagedDirectory* root() const { return m_root; }
@@ -75,8 +64,8 @@ namespace ed
 
         ///---
 
-        /// restore depot configuration
-        void restoreConfiguration();
+        void configLoad(const ui::ConfigBlock& block);
+        void configSave(const ui::ConfigBlock& block);
 
         ///----
 
@@ -84,17 +73,11 @@ namespace ed
         // root structure
         ManagedDirectoryPtr m_root;
 
-        // configuration entry
-        ConfigGroup m_config;
-
         // booked marked directories
-        TBookmarkedDirectories m_bookmarkedDirectories;
+        HashSet<ManagedDirectory*> m_bookmarkedDirectories;
 
         // list of modified filed
-        TModifiedFiles m_modifiedFiles;
-
-        // thumbnail service
-        UniquePtr<ManagedThumbnailHelper> m_thumbnailHelper;
+        HashSet<ManagedFile*> m_modifiedFiles;
 
         // depot file loader
         depot::DepotStructure& m_depot;
@@ -124,5 +107,7 @@ namespace ed
         friend class ManagedFile;
         friend class ManagedDirectory;
     };
+
+    //--
 
 } // ed

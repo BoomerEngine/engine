@@ -16,6 +16,13 @@
 
 namespace ui
 {
+    //---
+
+    DECLARE_UI_EVENT(EVENT_ITEM_SELECTION_CHANGED)
+    DECLARE_UI_EVENT(EVENT_ITEM_ACTIVATED, ModelIndex)
+    DECLARE_UI_EVENT(EVENT_ITEM_CONTEXT_MENU)
+
+    //---
 
     /// base class for a widget that interacts with abstract model
     class BASE_UI_API AbstractItemView : public ScrollArea, public IAbstractItemModelObserver
@@ -25,10 +32,6 @@ namespace ui
     public:
         AbstractItemView(bool allowItemSearch = false);
         virtual ~AbstractItemView();
-
-        //--
-
-        ElementEventProxy OnSelectionChanged;
 
         //--
 
@@ -96,6 +99,7 @@ namespace ui
 
         virtual void visualizeSelectionState(const ModelIndex& item, bool selected) = 0;
         virtual void visualizeCurrentState(const ModelIndex& item, bool selected) = 0;
+        virtual void focusElement(const ModelIndex& item) = 0;
         virtual void rebuildSortedOrder() = 0;
         virtual void rebuildDisplayList() = 0;
     };

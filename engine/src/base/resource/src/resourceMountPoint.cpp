@@ -33,6 +33,8 @@ namespace base
                 if (!str.endsWith("/"))
                     str = TempString("{}/", str);
 
+                ASSERT_EX(ValidateDepotPath(str, DepotPathClass::AbsoluteDirectoryPath), "Mount path is not valid");
+
                 m_path = std::move(str);
                 m_hash = str.cRC64();
             }
@@ -40,48 +42,21 @@ namespace base
 
         bool ResourceMountPoint::containsPath(StringView<char> path) const
         {
-            if (m_path.empty())
-                return true;
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AnyAbsolutePath), false);
 
             return path.beginsWith(m_path);
         }
 
-        bool ResourceMountPoint::translatePathToRelative(ResourcePath path, ResourcePath& outRelativePath) const
-        {
-            if (path.empty())
-                return false;
-
-            if (root())
-            {
-                outRelativePath = path;
-                return true;
-            }
-
-            if (!path.path().beginsWith(m_path))
-                return false;
-
-            ResourcePathBuilder builder(path);
-            builder.directory = builder.directory.subString(m_path.length());
-
-            outRelativePath = builder.toPath();
-            return true;
-        }
-
         bool ResourceMountPoint::translatePathToRelative(StringView<char> path, StringBuf& outRelativePath) const
         {
-            if (path.empty())
-                return false;
-
-            if (root())
-            {
-                outRelativePath = StringBuf(path);
-                return true;
-            }
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AnyAbsolutePath), false);
 
             if (!path.beginsWith(m_path))
                 return false;
 
             outRelativePath = StringBuf(path.subString(m_path.length()));
+            ASSERT(ValidateDepotPath(outRelativePath, DepotPathClass::AnyRelativePath));
+
             return true;
         }
 
@@ -89,39 +64,15 @@ namespace base
         {
             if (!relativePath.empty())
             {
-                if (root())
-                {
-                    fullPath = StringBuf(relativePath);
-                }
-                else
-                {
-                    fullPath = TempString("{}{}", m_path, relativePath);
-                }
-            }
-            else
-            {
-                fullPath = StringBuf::EMPTY();
-            }
-        }
+                DEBUG_CHECK_RETURN(ValidateDepotPath(relativePath, DepotPathClass::AnyRelativePath));
 
-        void ResourceMountPoint::expandPathFromRelative(ResourcePath relativePath, ResourcePath& outAbsolutePath) const
-        {
-            if (!relativePath.empty())
-            {
-                if (root())
-                {
-                    outAbsolutePath = relativePath;
-                }
-                else
-                {
-                    ResourcePathBuilder builder(relativePath);
-                    expandPathFromRelative(builder.directory, builder.directory);
-                    outAbsolutePath = builder.toPath();
-                }
+                fullPath = TempString("{}{}", m_path, relativePath);
+
+                ASSERT(ValidateDepotPath(fullPath, DepotPathClass::AnyAbsolutePath));
             }
             else
             {
-                outAbsolutePath = ResourcePath();
+                fullPath = m_path;
             }
         }
 

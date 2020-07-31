@@ -517,7 +517,7 @@ namespace base
             uint32_t numArgs = cmdLine.params().size() + cmdLine.commands().size() + 1;
 
             // get path to executable
-            auto executablePath = IO::GetInstance().systemPath(base::io::PathCategory::ExecutableFile);
+            auto executablePath = base::io::SystemPath(base::io::PathCategory::ExecutableFile);
             if (!executablePath.empty())
                 numArgs += 1;
 

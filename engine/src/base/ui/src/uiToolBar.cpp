@@ -67,7 +67,7 @@ namespace ui
             if (setup.m_tooltip)
                 but->tooltip(setup.m_tooltip);
 
-            but->bind("OnClick"_id, this) = action;
+            but->bind(EVENT_CLICKED, this) = action;
             but->customStyle("action"_id, action);
         }
     }
@@ -82,7 +82,7 @@ namespace ui
             if (setup.m_tooltip)
                 but->tooltip(setup.m_tooltip);
 
-            but->OnClick = simpleCallback;
+            but->bind(EVENT_CLICKED) = simpleCallback;
         }
     }
 

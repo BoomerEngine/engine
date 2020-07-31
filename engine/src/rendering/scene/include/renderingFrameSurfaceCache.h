@@ -35,6 +35,7 @@ namespace rendering
             ImageView m_sceneFullDepthRT; // main scene depth buffer
             ImageView m_sceneResolvedColor; // resolved copy of scene color buffer
             ImageView m_sceneResolvedDepth; // resolved copy of scene depth buffer
+            ImageView m_sceneSelectionDepthRT; // selection outline rendering depth RT
 
             ImageView m_cascadesShadowDepthRT; // array of shadow maps for global cascade shadows
             ImageView m_globalAOShadowMaskRT; // screen size AO/shadow mask buffer
@@ -42,6 +43,9 @@ namespace rendering
             ImageView m_velocityBufferRT; // full scale screen space XY velocity buffer
             ImageView m_linarizedDepthRT; // full scale linearized depth (AO)
             ImageView m_viewNormalRT; // full scale linearized reconstructed normal (AO)
+
+            BufferView m_selectables; // capture buffer for selection
+            uint32_t m_maxSelectables = 0; // maximum number of selectables we can capture
 
             //--
 

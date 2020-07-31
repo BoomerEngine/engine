@@ -217,7 +217,7 @@ namespace ui
             if (m_value.x >= 0.0f)
                 m_value.y = std::clamp<float>(pos.x - cachedDrawArea().left(), 0.0f, sizeX) / sizeX;
 
-            call("OnColorChanged"_id);
+            call(EVENT_COLOR_SELECTED);
         }
     }
 
@@ -405,7 +405,7 @@ namespace ui
         if (sizeX > 0.0f)
         {
             m_hue = (std::clamp<float>(pos.x - cachedDrawArea().left(), 0.0f, sizeX) / sizeX) * 360.0f;
-            call("OnColorChanged"_id);
+            call(EVENT_COLOR_SELECTED);
         }
     }
 
@@ -471,15 +471,11 @@ namespace ui
     RTTI_END_TYPE();
 
     ColorPickerBox::ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView<char> caption /*= ""*/)
-        : m_initialColor(initialColor)
+        : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Select color")
+        , m_initialColor(initialColor)
         , m_currentColor(initialColor)
         , m_editAlpha(editAlpha)
     {
-        layoutVertical();
-        requestTitleChange("Pick your colo(u)r");
-
-        createChild<WindowTitleBar>()->addStyleClass("mini"_id);
-
         // color modes
         auto notebook = createChild<Notebook>();
         //notebook->customInitialSize(500, 500);
@@ -493,7 +489,7 @@ namespace ui
 
             // color widgets
             {
-                auto widgets = tab->createChild<IElement>();
+                auto widgets = tab->createChild();
                 widgets->layoutVertical();
                 widgets->customMargins(5, 5, 5, 5);
 
@@ -501,22 +497,22 @@ namespace ui
                 m_lsBox = widgets->createChild<ColorPickerLSBox>();
                 m_lsBox->customMargins(0, 0, 0, 10);
                 m_lsBox->customMinSize(256, 256);
-                m_lsBox->bind("OnColorChanged"_id) = [this]() { recomputeFromHLS(); sendColorChange(); };
+                m_lsBox->bind(EVENT_COLOR_SELECTED) = [this]() { recomputeFromHLS(); sendColorChange(); };
 
                 // Hue bar
                 m_hueBar = widgets->createChild<ColorPickerHueBar>();
                 m_hueBar->customMinSize(256, 32);
-                m_hueBar->bind("OnColorChanged"_id) = [this]() { syncHue(); recomputeFromHLS(); sendColorChange(); };
+                m_hueBar->bind(EVENT_COLOR_SELECTED) = [this]() { syncHue(); recomputeFromHLS(); sendColorChange(); };
             }
 
             // color bars
             {
-                auto bars = tab->createChild<IElement>();
+                auto bars = tab->createChild();
                 bars->layoutVertical();
                 bars->customMargins(10, 10, 10, 0);
 
                 {
-                    auto bar = bars->createChild<IElement>();
+                    auto bar = bars->createChild();
                     bar->layoutHorizontal();
                     bar->customMargins(0, 0, 0, 5);
                     bar->createChild<TextLabel>("[size:+][b][color:#F00]R: ")->customVerticalAligment(ElementVerticalLayout::Middle);
@@ -526,12 +522,12 @@ namespace ui
                     m_barR->resolution(0);
                     m_barR->allowEditBox(true);
                     m_barR->customStyle("width"_id, 256.0f);
-                    m_barR->bind("OnValueChanged"_id) = [this]() { recomputeFromColor(); sendColorChange(); };
+                    m_barR->bind(EVENT_TRACK_VALUE_CHANGED) = [this]() { recomputeFromColor(); sendColorChange(); };
                     m_barR->value(m_currentColor.r);
                 }
 
                 {
-                    auto bar = bars->createChild<IElement>();
+                    auto bar = bars->createChild();
                     bar->layoutHorizontal();
                     bar->customMargins(0, 0, 0, 5);
                     bar->createChild<TextLabel>("[size:+][b][color:#0F0]G: ")->customVerticalAligment(ElementVerticalLayout::Middle);
@@ -541,12 +537,12 @@ namespace ui
                     m_barG->resolution(0);
                     m_barG->allowEditBox(true);
                     m_barG->customStyle("width"_id, 256.0f);
-                    m_barG->bind("OnValueChanged"_id) = [this]() { recomputeFromColor(); sendColorChange(); };
+                    m_barG->bind(EVENT_TRACK_VALUE_CHANGED) = [this]() { recomputeFromColor(); sendColorChange(); };
                     m_barG->value(m_currentColor.g);
                 }
 
                 {
-                    auto bar = bars->createChild<IElement>();
+                    auto bar = bars->createChild();
                     bar->layoutHorizontal();
                     bar->customMargins(0, 0, 0, 5);
                     bar->createChild<TextLabel>("[size:+][b][color:#00F]B: ")->customVerticalAligment(ElementVerticalLayout::Middle);
@@ -556,13 +552,13 @@ namespace ui
                     m_barB->resolution(0);
                     m_barB->allowEditBox(true);
                     m_barB->customStyle("width"_id, 256.0f);
-                    m_barB->bind("OnValueChanged"_id) = [this]() { recomputeFromColor(); sendColorChange(); };
+                    m_barB->bind(EVENT_TRACK_VALUE_CHANGED) = [this]() { recomputeFromColor(); sendColorChange(); };
                     m_barB->value(m_currentColor.b);
                 }
 
                 if (editAlpha)
                 {
-                    auto bar = bars->createChild<IElement>();
+                    auto bar = bars->createChild();
                     bar->layoutHorizontal();
                     bar->customMargins(0, 0, 0, 5);
                     bar->createChild<TextLabel>("[size:+][b][color:#FFF]A: ")->customVerticalAligment(ElementVerticalLayout::Middle);
@@ -572,19 +568,19 @@ namespace ui
                     m_barA->resolution(0);
                     m_barA->allowEditBox(true);
                     m_barA->customStyle("width"_id, 256.0f);
-                    m_barA->bind("OnValueChanged"_id) = [this]() { recomputeFromColor(); sendColorChange(); };
+                    m_barA->bind(EVENT_TRACK_VALUE_CHANGED) = [this]() { recomputeFromColor(); sendColorChange(); };
                     m_barA->value(m_currentColor.a);
                 }
 
                 {
-                    auto boxes = bars->createChild<IElement>();
+                    auto boxes = bars->createChild();
                     boxes->layoutHorizontal();
                     boxes->customMargins(5, 5, 5, 5);
 
-                    m_previousColorBox = boxes->createChild<IElement>();
+                    m_previousColorBox = boxes->createChild();
                     m_previousColorBox->customMinSize(64, 64);
 
-                    m_currentColorBox = boxes->createChild<IElement>();
+                    m_currentColorBox = boxes->createChild();
                     m_currentColorBox->customMinSize(64, 64);
                 }
 
@@ -596,14 +592,14 @@ namespace ui
         }
 
         {
-            auto buttons = createChild<IElement>();
+            auto buttons = createChild();
             buttons->layoutHorizontal();
             buttons->customHorizontalAligment(ElementHorizontalLayout::Right);
             buttons->customPadding(3);
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:undo] Undo");
-                buttons->bind("OnClick"_id) = [this]() {
+                buttons->bind(EVENT_CLICKED) = [this]() {
                     m_barR->value(m_initialColor.r);
                     m_barG->value(m_initialColor.g);
                     m_barB->value(m_initialColor.b);
@@ -615,7 +611,7 @@ namespace ui
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Close");
-                button->bind("OnClick"_id) = [this]() { requestClose(); };
+                button->bind(EVENT_CLICKED) = [this]() { requestClose(); };
             }
         }
 
@@ -705,7 +701,7 @@ namespace ui
 
     void ColorPickerBox::sendColorChange()
     {
-        call("OnColorChanged"_id, m_currentColor);
+        call(EVENT_COLOR_SELECTED, m_currentColor);
     }
 
 } // ui

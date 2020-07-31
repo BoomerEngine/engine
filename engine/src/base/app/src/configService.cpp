@@ -16,7 +16,6 @@
 #include "base/app/include/commandline.h"
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/utils.h"
 
 namespace base
 {
@@ -35,25 +34,25 @@ namespace base
 
         app::ServiceInitializationResult ConfigService::onInitializeService( const app::CommandLine& cmdLine)
         {
-            /*m_engineConfigDir = IO::GetInstance().systemPath(io::PathCategory::).addDir("config");
+            /*m_engineConfigDir = base::io::SystemPath(io::PathCategory::).addDir("config");
             TRACE_INFO("Engine config directory: '{}'", m_engineConfigDir);
 
-            m_engineConfigWatcher = IO::GetInstance().createDirectoryWatcher(m_engineConfigDir);
+            m_engineConfigWatcher = base::io::CreateDirectoryWatcher(m_engineConfigDir);
             if (m_engineConfigWatcher)
                 m_engineConfigWatcher->attachListener(this);*/
 
-            /*auto& projectDir = IO::GetInstance().systemPath(io::PathCategory::);
+            /*auto& projectDir = base::io::SystemPath(io::PathCategory::);
             if (!projectDir.empty())
             {
                 m_projectConfigDir = projectDir.addDir("config");
                 TRACE_INFO("Project config directory: '{}'", m_engineConfigDir);
 
-                m_projectConfigWatcher = IO::GetInstance().createDirectoryWatcher(m_projectConfigDir);
+                m_projectConfigWatcher = base::io::CreateDirectoryWatcher(m_projectConfigDir);
                 if (m_projectConfigWatcher)
                     m_projectConfigWatcher->attachListener(this);
             }*/
 
-            m_userConfigFile = IO::GetInstance().systemPath(io::PathCategory::UserConfigDir).addFile("user.ini");
+            m_userConfigFile = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("user.ini");
             TRACE_INFO("User config file: '{}'", m_userConfigFile);
 
             if (!reloadConfig())
@@ -70,7 +69,7 @@ namespace base
 
         bool ConfigService::loadFileConfig(const io::AbsolutePath& path, config::Storage& outStorage) const
         {
-            if (IO::GetInstance().fileExists(path))
+            if (base::io::FileExists(path))
             {
                 StringBuf txt;
                 if (!io::LoadFileToString(path, txt))
@@ -98,7 +97,7 @@ namespace base
             bool ret = true;
 
             InplaceArray<io::AbsolutePath, 20> configPaths;
-            IO::GetInstance().findFiles(path, L"*.ini", configPaths, false);
+            base::io::FindFiles(path, L"*.ini", configPaths, false);
             if (!configPaths.empty())
             {
                 TRACE_INFO("Found {} config file(s) at '{}'", configPaths.size(), path);
@@ -145,7 +144,7 @@ namespace base
             StringBuilder txt;
             ConfigPropertyBase::PrintAll(txt);
 
-            auto path = IO::GetInstance().systemPath(io::PathCategory::UserConfigDir).addFile("dump.ini");
+            auto path = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("dump.ini");
             io::SaveFileFromString(path, txt.toString());
         }
 
@@ -168,13 +167,13 @@ namespace base
             m_hasValidBase = true;
 
             // reset all stored values
-            Config::GetInstance().storage().clear();
+            config::RawStorageData().clear();
 
             // load again into the config system
-            loadBaseConfig(Config::GetInstance().storage());
+            loadBaseConfig(config::RawStorageData());
 
             // load the user config on top
-            loadFileConfig(m_userConfigFile, Config::GetInstance().storage());
+            loadFileConfig(m_userConfigFile, config::RawStorageData());
 
             // apply the loaded configuration to config properties
             ConfigPropertyBase::PullAll();
@@ -190,7 +189,7 @@ namespace base
 
             // get the difference between base and
             StringBuilder txt;
-            config::Storage::Save(txt, Config::GetInstance().storage(), *m_baseConfig);
+            config::Storage::Save(txt, config::RawStorageData(), *m_baseConfig);
 
             // store the user config
             if (!io::SaveFileFromString(m_userConfigFile, txt.toString()))

@@ -56,6 +56,9 @@ namespace rendering
         /// hide window
         virtual void windowHide() = 0;
 
+        /// enable/disable window
+        virtual void windowEnable(bool enabled) = 0;
+
         /// get pixel scale of the window
         virtual float windowGetPixelScale() const = 0;
 

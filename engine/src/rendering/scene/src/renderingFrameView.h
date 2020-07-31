@@ -141,6 +141,12 @@ namespace rendering
         // render a shadow depth pass
         extern RENDERING_SCENE_API void RenderShadowDepthPass(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT, float depthBiasConstant, float depthBiasSlope, float depthBiasClamp, uint32_t index = 0);
 
+        // render to depth buffer fragments that are selected so an outline can be created around them
+        extern RENDERING_SCENE_API void RenderDepthSelection(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT);
+
+        // render the selection fragments
+        extern RENDERING_SCENE_API void RenderSelectionFragments(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT);
+
         //---------------------------------
         // final composition with outside world
 
@@ -164,6 +170,9 @@ namespace rendering
 
         // compute ambient occlusion (HBAO) into G channel
         extern RENDERING_SCENE_API void HBAOIntoShadowMask(command::CommandWriter& cmd, uint32_t sourceWidth, uint32_t sourceHeight, const ImageView& sourceLinearDepth, const ImageView& targetSSAOMask, const Camera& viewCamera, const FrameParams_AmbientOcclusion& setup);
+
+        // selection outline
+        extern RENDERING_SCENE_API void VisualizeSelectionOutline(command::CommandWriter& cmd, uint32_t width, uint32_t height, const ImageView& targetColor, const ImageView& sceneDepth, const ImageView& selectionDepth, const FrameParams_SelectionOutline& params);
 
         //---------------------------------
         // debug visualizations

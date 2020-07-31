@@ -315,7 +315,7 @@ namespace example
 
     bool SimpleApp::compileShaders()
     {
-        m_shaders = LoadResource<ShaderLibrary>(ResourcePath("examples/shaders/simple_box_example.csl")).acquire();
+        m_shaders = LoadResource<ShaderLibrary>("examples/shaders/simple_box_example.csl").acquire();
         return !m_shaders.empty();
     }
 

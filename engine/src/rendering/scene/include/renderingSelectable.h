@@ -15,86 +15,36 @@ namespace rendering
 
         //---
 
-        /// encoded (for rendering) selectable ID
-        struct RENDERING_SCENE_API EncodedSelectable
-        {
-            uint32_t SelectableId;
-            uint32_t SelectablePixel;
-            float SelectableDepth;
-            uint32_t Dummy;
-
-            INLINE EncodedSelectable()
-                : SelectableId(0)
-                , SelectablePixel(0)
-                , SelectableDepth(0.0f)
-            {}
-
-            INLINE base::Point position() const
-            {
-                auto x  = SelectablePixel & 0xFFFF;
-                auto y  = (SelectablePixel >> 16) & 0xFFFF;
-                return base::Point((int)x, (int)y);
-            }
-        };
-
-        //---
-
         /// rendering selectable
         /// this contains information required to implement selection by clicking
         class RENDERING_SCENE_API Selectable
         {
         public:
-            INLINE Selectable()
-                : m_objectID()
-                , m_subObjectID(0)
-                , m_extraBits(0)
-                , m_hash(0)
-            {}
+            INLINE Selectable() {}
+            INLINE Selectable(const Selectable& other) = default;
+            INLINE Selectable(Selectable&& other) = default;
+            INLINE Selectable& operator=(const Selectable& other) = default;
+            INLINE Selectable& operator=(Selectable && other) = default;
+            INLINE ~Selectable() {}
 
-            INLINE Selectable(const EncodedSelectable& encodedSelectable)
-                : m_objectID(encodedSelectable.SelectableId)
-                , m_subObjectID(0)
-                , m_extraBits(0)
-            {
-                updateHash();
-            }
-
-            INLINE Selectable(uint32_t objectID, uint64_t subObjectID=0, uint32_t extra=0)
+            INLINE Selectable(uint32_t objectID, uint32_t subObjectID = 0)
                 : m_objectID(objectID)
                 , m_subObjectID(subObjectID)
-                , m_extraBits(extra)
-            {
-                updateHash();
-            }
-
-            INLINE Selectable(const Selectable& other)
-                : m_objectID(other.m_objectID)
-                , m_subObjectID(other.m_subObjectID)
-                , m_extraBits(other.m_extraBits)
-                , m_hash(other.m_hash)
             {}
 
-            INLINE Selectable& operator=(const Selectable& other)
+            INLINE bool valid() const
             {
-                if (this != &other)
-                {
-                    m_objectID = other.m_objectID;
-                    m_subObjectID = other.m_subObjectID;
-                    m_extraBits = other.m_extraBits;
-                    m_hash = other.m_hash;
-                }
-
-                return *this;
+                return m_objectID != 0;
             }
 
-            INLINE bool empty() const
+            INLINE operator bool() const
             {
-                return m_objectID == 0;
+                return m_objectID != 0;
             }
 
             INLINE static uint32_t CalcHash(const Selectable& key)
             {
-                return key.m_hash;
+                return base::CRC32() << key.m_objectID << key.m_subObjectID;
             }
 
             INLINE uint32_t objectID() const
@@ -102,21 +52,28 @@ namespace rendering
                 return m_objectID;
             }
 
+            INLINE uint32_t subObjectID() const
+            {
+                return m_subObjectID;
+            }
+
             //--
 
             INLINE bool operator==(const Selectable& other) const
             {
-                return m_hash == other.m_hash;
-            }
-
-            INLINE bool operator<(const Selectable& other) const
-            {
-                return m_hash < other.m_hash;
+                return m_objectID == other.m_objectID && m_subObjectID == other.m_subObjectID;
             }
 
             INLINE bool operator!=(const Selectable& other) const
             {
-                return m_hash != other.m_hash;
+                return !operator==(other);
+            }
+
+            INLINE bool operator<(const Selectable& other) const
+            {
+                if (m_objectID != other.m_objectID)
+                    return m_objectID < other.m_objectID;
+                return m_subObjectID < other.m_subObjectID;
             }
 
             //--
@@ -126,17 +83,40 @@ namespace rendering
 
             //--
 
-            // encode for rendering
-            EncodedSelectable encode() const;
-
         private:
             uint32_t m_objectID;
-            uint64_t m_subObjectID;
-            uint32_t m_extraBits;
-            uint64_t m_hash; // computed from data
-
-            void updateHash();
+            uint32_t m_subObjectID;
         };
+
+        //---
+
+        /// encoded (for rendering) selectable ID
+#pragma pack(push)
+#pragma pack(2)
+        struct RENDERING_SCENE_API EncodedSelectable
+        {
+            Selectable object;
+            uint16_t x = 0;
+            uint16_t y = 0;
+            float depth = 0.0f; // linear distance from camera
+
+            INLINE bool valid() const
+            {
+                return object.valid();
+            }
+
+            INLINE operator bool() const
+            {
+                return object.valid();
+            }
+
+            void print(base::IFormatStream& f) const; // debug print
+        };
+#pragma pack(pop)
+
+        static_assert(sizeof(EncodedSelectable) == 16, "Invalid packing for shared CPU/GPU structured");
+
+        //---
 
     } // scene
 } // rendering

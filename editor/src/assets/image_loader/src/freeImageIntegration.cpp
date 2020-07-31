@@ -36,8 +36,8 @@ namespace base
             virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override final
             {
                 // load content of the file to buffer
-                auto importPath = cooker.queryResourcePath();
-                auto content = cooker.loadToBuffer(importPath.path());
+                const auto& importPath = cooker.queryResourcePath();
+                auto content = cooker.loadToBuffer(importPath);
                 if (content.size() <= 4)
                 {
                     TRACE_ERROR("No bitmap content for file '{}'", importPath);

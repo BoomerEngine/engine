@@ -75,7 +75,7 @@ namespace rendering
             TBaseClass::handlePrepare(cmd);
         }
 
-        static base::res::StaticResource<IMaterial> resFallbackMaterial("engine/materials/fallback.v4mg");
+        static base::res::StaticResource<IMaterial> resFallbackMaterial("/engine/materials/fallback.v4mg");
 
         static MaterialDataProxyPtr ResolveMaterial(base::StringID name, IMaterial* material, const ProxyMeshDesc& settings)
         {
@@ -120,6 +120,8 @@ namespace rendering
             objectInfo.proxyPtr = proxy;
             objectInfo.proxyType = ProxyType::Mesh;
             objectInfo.sceneBounds = meshDesc.localToScene.transformBox(meshDesc.meshBounds);
+            objectInfo.selectable = meshDesc.selectable;
+            objectInfo.color = meshDesc.color;
             if (!scene()->objects().registerObject(objectInfo, proxy->objectId))
             {
                 proxy->~ProxyMesh();
@@ -133,16 +135,20 @@ namespace rendering
             proxy->castsShadows = meshDesc.castsShadows;
             proxy->localBounds = meshDesc.meshBounds;
             proxy->chunks.reserve(meshDesc.mesh->chunks().size());
+            proxy->selected = meshDesc.selected;
             for (const auto& meshChunk : meshDesc.mesh->chunks())
             {
                 MaterialDataProxyPtr materialData;
 
+                const auto materialName = meshDesc.mesh->materials()[meshChunk.materialIndex].name;
+
                 // skip over disabled materials
-                if (meshDesc.selectiveMaterialMask)
-                {
-                    if (!base::TestBit(meshDesc.selectiveMaterialMask, meshChunk.materialIndex))
-                        continue;
-                }
+                if (meshDesc.excludedMaterialMask.contains(materialName))
+                    continue;
+                
+                // allow only enabled materials
+                if (!meshDesc.selectiveMaterialMask.empty() && !meshDesc.selectiveMaterialMask.contains(materialName))
+                    continue;
 
                 // use the forced material or the material from payload
                 if (meshDesc.forceMaterial)
@@ -176,6 +182,7 @@ namespace rendering
                 chunk.materialTemplate = materialCachedTemplate;
                 chunk.materialData = materialData;
                 chunk.detailMask = meshChunk.detailMask;
+                chunk.materialIndex = meshChunk.materialIndex;
             }
 
             // add to list of all proxies
@@ -221,6 +228,7 @@ namespace rendering
                         frag->materialTemplate = chunk.materialTemplate;
                         frag->meshChunkdId = chunk.meshChunkId;
                         frag->materialData = chunk.materialData;
+                        frag->subObjectID = chunk.materialIndex;
 
                         if (view.type() == FrameViewType::GlobalCascades)
                         {
@@ -237,6 +245,10 @@ namespace rendering
                         {
                             outFragmentList.collectFragment(frag, FragmentDrawBucket::OpaqueNotMoving);
                         }
+
+                        // if proxy is selected draw it in the special pass to create an outline
+                        if (view.type() == FrameViewType::MainColor && it->selected)
+                            outFragmentList.collectFragment(frag, FragmentDrawBucket::SelectionOutline);
                     }
                 }
             }

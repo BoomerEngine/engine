@@ -9,7 +9,6 @@
 #include "build.h"
 #include "wavefrontFormatMTL.h"
 
-#include "base/io/include/utils.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/stringParser.h"

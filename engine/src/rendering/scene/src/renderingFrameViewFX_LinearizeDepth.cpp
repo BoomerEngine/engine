@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        base::res::StaticResource<ShaderLibrary> resLinearizeDepth("engine/shaders/screen/linearize_depth.fx");
+        base::res::StaticResource<ShaderLibrary> resLinearizeDepth("/engine/shaders/screen/linearize_depth.fx");
 
         //---
 

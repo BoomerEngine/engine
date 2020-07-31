@@ -94,6 +94,19 @@ namespace rendering
                 break;
             }
 
+            case MaterialPass::SelectionFragments:
+            {
+                // TODO: this seems fishy
+                if (!outRenderStates.alphaToCoverage || !outRenderStates.depthWrite)
+                    outRenderStates.earlyPixelTests = true;
+
+                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
+                const auto subObjectID = compiler.vertexData(MaterialVertexDataType::SubObjectID);
+                compiler.appendf("EmitSelection({},{});\n", objectID, subObjectID);
+                compiler.appendf("gl_Target0 = vec4(0,0,0,0);\n");
+                break;
+            }
+
             case MaterialPass::ConstantColor:
             {
                 const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);

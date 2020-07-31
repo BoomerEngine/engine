@@ -31,7 +31,7 @@ namespace base
     //-----------------------------------------------------------------------------
 
     /// View of a string buffer
-    template< typename T >
+    template< typename T = char >
     class StringView
     {
     public:
@@ -223,7 +223,7 @@ namespace base
     //-----------------------------------------------------------------------------
 
     // helper class to eat parts of the path from a string
-    template< typename T >
+    template< typename T = char >
     class PathEater
     {
     public:

@@ -13,7 +13,6 @@
 #include "uiStyleLibrary.h"
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/absolutePathBuilder.h"
-#include "base/io/include/utils.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/image.h"
@@ -60,7 +59,7 @@ namespace ui
                 if (!m_cooker.findFile(context, imageFileName, fullResourcePath, 4))
                     return nullptr;
 
-                auto image = m_cooker.loadDependencyResource<base::image::Image>(base::res::ResourcePath(fullResourcePath));
+                auto image = m_cooker.loadDependencyResource<base::image::Image>(fullResourcePath);
                 if (!image)
                     return nullptr;
 
@@ -82,7 +81,7 @@ namespace ui
                 if (!m_cooker.findFile(context, fontFileName, fullResourcePath, 4))
                     return nullptr;
 
-                auto font = m_cooker.loadDependencyResource<base::font::Font>(base::res::ResourcePath(fullResourcePath));
+                auto font = m_cooker.loadDependencyResource<base::font::Font>(fullResourcePath);
                 if (!font)
                     return nullptr;
 
@@ -115,7 +114,7 @@ namespace ui
         base::res::ResourceHandle StylesLibraryCooker::cook(base::res::IResourceCookerInterface& cooker) const
         {
             // load content
-            base::StringBuf contextName = base::StringBuf(cooker.queryResourcePath().path());
+            base::StringBuf contextName = base::StringBuf(cooker.queryResourcePath());
             auto rawContent = cooker.loadToBuffer(contextName);
 
             // load the CCS library

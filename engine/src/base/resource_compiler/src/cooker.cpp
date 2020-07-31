@@ -116,11 +116,11 @@ namespace base
         {
             // get mount point for the resource path
             ResourceMountPoint mountPoint;
-            if (!m_depot.queryFileMountPoint(key.path().path(), mountPoint))
+            if (!m_depot.queryFileMountPoint(key.path(), mountPoint))
                 return false;
 
             // get the extension of the path we want to load from
-            auto pathExtension = key.path().extension();
+            auto pathExtension = key.extension();
             if (pathExtension.empty())
                 return false;
 
@@ -206,7 +206,7 @@ namespace base
         static bool SelfCookingResource(ResourceKey key)
         {
             const auto loadExtension = IResource::GetResourceExtensionForClass(key.cls());
-            const auto fileExtension = key.path().extension();
+            const auto fileExtension = key.extension();
             return loadExtension == fileExtension;
         }
 
@@ -217,7 +217,7 @@ namespace base
 
             // get mount point for the resource path
             ResourceMountPoint mountPoint;
-            if (m_depot.queryFileMountPoint(key.path().path(), mountPoint))
+            if (m_depot.queryFileMountPoint(key.path(), mountPoint))
             {
                 // find best cooker for the job
                 CookableClass info;

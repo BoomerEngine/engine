@@ -42,6 +42,14 @@ namespace ed
 
         //--
 
+        /// get the opened editor for this file (valid only if file has been opened)
+        INLINE const ResourceEditorPtr& editor() const { return m_editor; }
+
+        /// is the file open? (editor must exist)
+        INLINE bool opened() const { return !m_editor.empty(); }
+
+        //--
+
         /// request version control status update
         void refreshVersionControlStateRefresh(bool sync = false);
 
@@ -49,15 +57,32 @@ namespace ed
 
         /// change file's "modified" flag
         /// NOTE: modified files are stored in a list in managed depot and also can't be "deleted" without additional message box
-        void modify(bool flag);
+        virtual void modify(bool flag);
 
         /// toggle the "deleted" flag
-        void deleted(bool flag);
+        virtual void deleted(bool flag);
 
         //--
 
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
         virtual const image::ImageRef& typeThumbnail() const override;
+
+        //---
+
+        /// can this file be opened ?
+        virtual bool canOpen() const;
+
+        /// is file in use (loaded?)
+        virtual bool inUse() const;
+
+        /// open this file edition, optionally the window can be activate
+        virtual bool open(bool activate=true);
+
+        /// save edited file (valid only if editor opened)
+        virtual bool save();
+
+        /// close this editor, if force closed we won't ask for saving
+        virtual bool close(bool force=false);
 
         //---
 
@@ -67,6 +92,8 @@ namespace ed
         GlobalEventKey m_eventKey;
         vsc::FileState m_state;
         bool m_isModified;
+
+        ResourceEditorPtr m_editor;
 
         ///---
 

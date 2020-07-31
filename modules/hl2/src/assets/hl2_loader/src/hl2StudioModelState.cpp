@@ -42,7 +42,7 @@ namespace hl2
     base::Buffer ModelState::LoadModelData(base::res::IResourceCookerInterface& cooker, const base::StringBuf& pathOverride)
     {
         // we should cook a texture
-        base::StringBuf sourceFilePath = pathOverride.empty() ? base::StringBuf(cooker.queryResourcePath().path()) : pathOverride;
+        const auto& sourceFilePath = pathOverride.empty() ? cooker.queryResourcePath() : pathOverride;
 
         // load into buffer
         auto data = cooker.loadToBuffer(sourceFilePath);
@@ -92,7 +92,7 @@ namespace hl2
     base::Buffer ModelState::LoadVertexData(base::res::IResourceCookerInterface& cooker, const base::StringBuf& modelName)
     {
         // get model path
-        auto modelBasePath = cooker.queryResourcePath().path().beforeFirst("models/");
+        auto modelBasePath = cooker.queryResourcePath().view().beforeFirst("models/");
         base::StringBuf vertexFilePath = base::TempString("{}models/{}.vvd", modelBasePath, modelName.toLower().stringBeforeLast("."));
         vertexFilePath.replaceChar('\\', '/');
         TRACE_INFO("Trying to load vertex data from '{}'", vertexFilePath);
@@ -124,7 +124,7 @@ namespace hl2
     base::Buffer ModelState::LoadOptimizedModelData(base::res::IResourceCookerInterface& cooker, const base::StringBuf& modelName)
     {
         // get model path
-        auto modelBasePath = cooker.queryResourcePath().path().beforeFirst("models/");
+        auto modelBasePath = cooker.queryResourcePath().view().beforeFirst("models/");
         base::StringBuf vertexFilePath = base::TempString("{}models/{}.dx90.vtx", modelBasePath, modelName.toLower().stringBeforeLast("."));
         vertexFilePath.replaceChar('\\', '/');
         TRACE_INFO("Trying to load vertex data from '{}'", vertexFilePath);

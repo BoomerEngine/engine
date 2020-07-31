@@ -31,6 +31,7 @@ namespace ui
             m_keys.emplaceBack(base::input::KeyCode::KEY_PAUSE, "Pause");
             m_keys.emplaceBack(base::input::KeyCode::KEY_CAPITAL, "Capslock");
             m_keys.emplaceBack(base::input::KeyCode::KEY_ESCAPE, "Esc");
+            m_keys.emplaceBack(base::input::KeyCode::KEY_ESCAPE, "Escape");
             m_keys.emplaceBack(base::input::KeyCode::KEY_SPACE, "Space");
             m_keys.emplaceBack(base::input::KeyCode::KEY_PRIOR, "PageUp");
             m_keys.emplaceBack(base::input::KeyCode::KEY_NEXT, "PageDown");
@@ -355,12 +356,12 @@ namespace ui
         return ret;
     }
 
-    bool ActionTable::run(base::StringID name) const
+    bool ActionTable::run(base::StringID name, IElement* source) const
     {
         if (const auto* info = find(name))
         {
             if (info->runFunc)
-                return info->runFunc(name, m_host, m_host, info->data);
+                return info->runFunc(name, source, m_host, info->data);
         }
 
         return false;
@@ -370,7 +371,7 @@ namespace ui
     {
         for (const auto& it : m_shortcuts)
             if (it.shortcut.matches(evt))
-                return run(it.name);
+                return run(it.name, m_host);
 
         return false;
     }

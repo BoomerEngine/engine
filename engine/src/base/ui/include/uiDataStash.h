@@ -34,16 +34,10 @@ namespace ui
         // add search path for icons
         void addIconSearchPath(base::StringView<char> path);
 
-        // add search path for templates
-        void addTemplateSearchPath(base::StringView<char> path);
-
         //---
 
         /// load image by name, uses the search paths
         base::image::ImageRef loadImage(base::StringID key);
-
-        /// load template by name, uses the search paths
-        base::storage::XMLDataRef loadTemplate(base::StringID key);
 
     protected:
         StyleLibraryRef m_styles;
@@ -51,8 +45,6 @@ namespace ui
 
         base::HashMap<base::StringID, base::image::ImageRef> m_imageMap;
         base::Array<base::StringBuf> m_imageSearchPaths;
-
-        base::Array<base::StringBuf> m_templateSearchPath;
 
         virtual void onPropertyChanged(base::StringView<char> path) override;
     };

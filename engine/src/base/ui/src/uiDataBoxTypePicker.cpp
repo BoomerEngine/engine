@@ -36,7 +36,7 @@ namespace ui
             m_button->customVerticalAligment(ElementVerticalLayout::Middle);
             m_button->createChild<TextLabel>("[img:selection_list]");
             m_button->tooltip("Select from type list");
-            m_button->bind("OnClick"_id) = [this]() { showTypePicker(); };
+            m_button->bind(EVENT_CLICKED) = [this]() { showTypePicker(); };
         }
 
         virtual void handleValueChange() override
@@ -76,14 +76,18 @@ namespace ui
                     m_picker = base::CreateSharedPtr<TypePickerBox>(data, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
-                    m_picker->bind("OnClosed"_id, this) = [](DataBoxTypePicker* box)
+                    auto selfRef = base::RefWeakPtr<DataBoxTypePicker>(this);
+
+                    m_picker->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
                     {
-                        box->m_picker.reset();
+                        if (auto box = selfRef.lock())
+                            box->m_picker.reset();
                     };
 
-                    m_picker->bind("OnTypeSelected"_id, this) = [](DataBoxTypePicker* box, base::Type data)
+                    m_picker->bind(EVENT_TYPE_SELECTED) = [selfRef](base::Type data)
                     {
-                        box->writeValue(data);
+                        if (auto box = selfRef.lock())
+                            box->writeValue(data);
                     };
                 }
             }

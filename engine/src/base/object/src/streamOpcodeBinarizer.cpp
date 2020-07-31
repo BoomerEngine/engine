@@ -132,6 +132,7 @@ namespace base
                 ASSERT(!"Object not mapped");
             }
 
+            //ASSERT_EX(index != 0, "Valid opcode cannot be mapped to zero");
             return index;
         }
 
@@ -150,6 +151,7 @@ namespace base
                 ASSERT(!"Resource not mapped");
             }
 
+            ASSERT_EX(index != 0, "Valid resource cannot be mapped to zero");
             return index;
         }
 

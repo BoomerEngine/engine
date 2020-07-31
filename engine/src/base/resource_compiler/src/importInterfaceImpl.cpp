@@ -7,10 +7,12 @@
 ***/
 
 #include "build.h"
+#include "importer.h"
 #include "importInterface.h"
 #include "importInterfaceImpl.h"
-#include "base/resource/include/resourceMetadata.h"
 #include "importSourceAssetRepository.h"
+
+#include "base/resource/include/resourceMetadata.h"
 
 namespace base
 {
@@ -19,7 +21,7 @@ namespace base
 
         //--
 
-        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IResource* originalData, const StringBuf& importPath, const ResourcePath& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
+        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
             : m_originalData(originalData)
             , m_importPath(importPath)
             , m_depotPath(depotPath)
@@ -27,6 +29,7 @@ namespace base
             , m_externalProgressTracker(externalProgressTracker)
             , m_assetRepository(assetRepository)
             , m_configuration(configuration)
+            , m_depotChecker(depot)
         {
             ASSERT(configuration != nullptr)
         }
@@ -39,7 +42,7 @@ namespace base
             return m_originalData;
         }
 
-        const ResourcePath& LocalImporterInterface::queryResourcePath() const
+        const StringBuf& LocalImporterInterface::queryResourcePath() const
         {
             return m_depotPath;
         }
@@ -104,60 +107,10 @@ namespace base
 
         bool LocalImporterInterface::findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth /*= 2*/) const
         {
-            // slice the input path
-            InplaceArray<StringView<char>, 20> inputParts;
-            inputPath.slice("\\/", false, inputParts);
-            if (inputParts.empty())
-                return false;
-
-            // get current path
-            InplaceArray<StringView<char>, 20> referenceParts;
-            assetImportPath.slice("\\/", false, referenceParts);
-            if (referenceParts.empty())
-                return false;
-
-            // remove the file name of the reference path
-            referenceParts.popBack();
-
-            // outer search (on the reference path)
-            for (uint32_t i = 0; i < maxScanDepth; ++i)
-            {
-                // try all allowed combinations of reference path as well
-                auto innerSearchDepth = std::min<uint32_t>(maxScanDepth, inputParts.size());
-                for (uint32_t j = 0; j < innerSearchDepth; ++j)
+            return ScanRelativePaths(assetImportPath, inputPath, maxScanDepth, outImportPath, [this](StringView<char> testPath)
                 {
-                    StringBuilder pathBuilder;
-
-                    for (auto& str : referenceParts)
-                    {
-                        if (!pathBuilder.empty()) pathBuilder << "/";
-                        pathBuilder << str;
-                    }
-
-                    auto firstInputPart = inputParts.size() - j - 1;
-                    for (uint32_t k = firstInputPart; k < inputParts.size(); ++k)
-                    {
-                        if (!pathBuilder.empty()) pathBuilder << "/";
-                        pathBuilder << inputParts[k];
-                    }
-
-                    // does the file exist ?
-                    auto fileSystemPath = pathBuilder.toString();
-                    if (m_assetRepository->fileExists(fileSystemPath))
-                    {
-                        outImportPath = fileSystemPath;
-                        return true;
-                    }
-                }
-
-                // ok, we didn't found anything, retry with less base directories
-                if (referenceParts.empty())
-                    break;
-                referenceParts.popBack();
-            }
-
-            // no matching file found
-            return false;
+                    return m_assetRepository->fileExists(testPath);
+                });
         }
 
         void LocalImporterInterface::followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config)
@@ -182,6 +135,17 @@ namespace base
 
         //--
 
+        bool LocalImporterInterface::findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth) const
+        {
+            StringBuf depotFinalSearchPath;
+            if (!ApplyRelativePath(depotReferencePath, depotSearchPath, depotFinalSearchPath))
+                return false;
+
+            return m_depotChecker->depotFindFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath);
+        }
+
+        //--
+
         MetadataPtr LocalImporterInterface::buildMetadata() const
         {
             auto ret = CreateSharedPtr<Metadata>();
@@ -201,7 +165,7 @@ namespace base
                 auto& entry = ret->importFollowups.emplaceBack();
                 entry.sourceImportPath = info.assetPath;
                 entry.depotPath = info.depotPath;
-                entry.configuration = info.config;
+                entry.configuration = CloneObject(info.config, ret);
             }
 
             return ret;

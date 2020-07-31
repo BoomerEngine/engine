@@ -94,9 +94,15 @@ namespace rendering
         // IMaterial interface
         virtual MaterialDataProxyPtr dataProxy() const override final;
         virtual const MaterialTemplate* resolveTemplate() const override final;
-        virtual bool resetParameterRaw(base::StringID name) override final;
-        virtual bool writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh = true) override final; // NOTE: writing to template is not supported
-        virtual bool readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly = false) const override final;
+
+        virtual bool checkParameterOverride(base::StringID name) const override final;
+        virtual bool resetParameter(base::StringID name) override final;
+        virtual bool writeParameter(base::StringID name, const void* data, base::Type type, bool refresh = true) override final; // NOTE: writing to template is not supported (immutable resources and all...)
+        virtual bool readParameter(base::StringID name, void* data, base::Type type) const override final;
+        virtual bool readBaseParameter(base::StringID name, void* data, base::Type type) const override final;
+
+        virtual const void* findParameterDataInternal(base::StringID name, base::Type& outType) const override final; // NOTE: returns pointer to the value inside the material block that defines the value
+        virtual const void* findBaseParameterDataInternal(base::StringID name, base::Type& outType) const override final;
 
         // IObject - extension of object property model that allows to see the template parameters
         virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;

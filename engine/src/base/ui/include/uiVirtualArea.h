@@ -15,6 +15,12 @@ namespace ui
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, Position)
+    DECLARE_UI_EVENT(EVENT_VIRTUAL_AREA_SCALE_CHANGED, float)
+    DECLARE_UI_EVENT(EVENT_VIRTUAL_AREA_SELECTION_CHANGED)
+
+    //--
+
     typedef base::Vector2 VirtualPosition;
 
     class VirtualAreaElement;
@@ -77,10 +83,6 @@ namespace ui
     public:
         VirtualArea();
         virtual ~VirtualArea();
-
-        //--
-
-        ElementEventProxy OnSelectionChanged;
 
         //--
 

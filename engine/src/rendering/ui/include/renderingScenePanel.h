@@ -106,6 +106,31 @@ namespace ui
 
     //--
 
+    /// base panel settings
+    struct RENDERING_UI_API RenderingScenePanelSettings
+    {
+        float cameraSpeedFactor = 1.0f;
+        bool cameraForceOrbit = false;
+
+        bool paused = false;
+        float timeDeltaScale = 1.0f;
+
+        AreaSelectionMode areaSelectionMode = AreaSelectionMode::ExcludeBorder;
+        PointSelectionMode pointSelectionMode = PointSelectionMode::Closest;
+
+        bool drawInternalGrid = true;
+        bool drawInternalWorldAxis = true;
+        bool drawInternalCameraAxis = true;
+        bool drawInternalCameraData = true;
+
+        //--
+
+        void configSave(const ConfigBlock& block) const;
+        void configLoad(const ConfigBlock& block);
+    };
+
+    //--
+
     /// ui widget capable of rendering a 3D scene with a camera and stuff
     class RENDERING_UI_API RenderingScenePanel : public RenderingPanel
     {
@@ -124,27 +149,16 @@ namespace ui
         // get the overlay toolbar
         INLINE const ToolBarPtr& toolbar() const { return m_toolbar; }
 
-        //--
+        // get the panel settings
+        INLINE const RenderingScenePanelSettings& panelSettings() const { return m_panelSettings; }
 
-        // change area selection mode
-        void areaSelectionMode(AreaSelectionMode mode);
-
-        // change point selection mode
-        void pointSelectionMode(PointSelectionMode mode);
+        // change panel settings
+        void panelSettings(const RenderingScenePanelSettings& settings);
 
         //--
 
-        /// set camera speed factor
-        void cameraSpeedFactor(float speedFactor);
-
-        /// setup general orbiting camera
-        void setupCameraForceOrbitMode(bool forceOrbitMode);
-
-        /// setup the perspective camera
-        void setupCamera(const base::Angles& rotation, const base::Vector3& position);
-
-        /// setup the perspective camera
-        void setupCameraAtAngle(const base::Angles& rotation, float distance);
+        /// setup the camera at specific location
+        void setupCamera(const base::Angles& rotation, const base::Vector3& position, const base::Vector3* oribitCenter = nullptr);
 
         /// setup the perspective camera so it can view given bounds
         void setupCameraAroundBounds(const base::Box& bounds, float distanceFactor = 1.0f, const base::Angles* newRotation = nullptr);
@@ -210,20 +224,15 @@ namespace ui
 
         bool queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition);
 
-        bool m_drawInternalGrid = true;
-        bool m_drawInternalWorldAxis = true;
-        bool m_drawInternalCameraAxis = true;
-        bool m_drawInternalCameraData = true;
+        //-
+
+        RenderingScenePanelSettings m_panelSettings;
 
     private:
         Timer m_updateTimer;
         base::NativeTimePoint m_lastUpdateTime;
 
-        PointSelectionMode m_pointSelectionMode;
-        AreaSelectionMode m_areaSelectionMode;
-
         CameraController m_cameraController;
-        bool m_cameraForceOrbitModeFlag;
 
         double m_engineTimeCounter = 0.0;
         double m_gameTimeCounter = 0.0;

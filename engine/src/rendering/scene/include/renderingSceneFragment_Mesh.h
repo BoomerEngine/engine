@@ -23,6 +23,7 @@ namespace rendering
 
             ObjectRenderID objectId = 0;
             MeshChunkRenderID meshChunkdId = 0;
+            uint32_t subObjectID = 0;
             MaterialCachedTemplate* materialTemplate = nullptr; // cached template for the material - matches the geometry type
             const MaterialDataProxy* materialData = nullptr; // TODO: convert to offset
         };

@@ -9,7 +9,7 @@
 // Glue code
 #include "base_object_glue.inl"
 
-#define DECLARE_GLOBAL_EVENT(x) \
+#define DECLARE_GLOBAL_EVENT(x, ...) \
     inline static const base::StringID x = #x##_id;
 
 namespace base
@@ -273,3 +273,15 @@ static INLINE base::DataViewErrorResult HasError(const base::DataViewResult& res
 }
 
 //---
+
+namespace base
+{
+    static const uint32_t VER_INITIAL = 1;
+
+    static const uint32_t VER_ABSOLUTE_DEPOT_PATHS = 2;
+
+    static const uint32_t VER_CURRENT = 2;
+}
+
+//---
+

@@ -289,7 +289,7 @@ namespace rendering
                     base::StringBuf texturePath;
                     if (param.data.get(texturePath))
                     {
-                        const auto texture = base::LoadResource<rendering::ITexture>(base::res::ResourcePath(texturePath));
+                        const auto texture = base::LoadResource<rendering::ITexture>(texturePath);
                         exportInfo.baseMaterial->writeParameter(param.name, texture);
                         TRACE_INFO("Bound texture '{}' to '{}'", texture.key(), param.name);
                     }

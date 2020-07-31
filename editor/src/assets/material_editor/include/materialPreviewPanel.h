@@ -46,8 +46,11 @@ namespace ed
         inline const MaterialPreviewPanelSettings& previewSettings() const { return m_previewSettings; }
 
         void previewSettings(const MaterialPreviewPanelSettings& settings);
+        void previewShape(MaterialPreviewShape shape);
 
         void bindMaterial(const rendering::MaterialRef& material);
+
+        virtual void buildShapePopup(ui::MenuButtonContainer* menu);
 
     private:
         MaterialPreviewPanelSettings m_previewSettings;
@@ -58,6 +61,8 @@ namespace ed
         void destroyVisualization();
         void createVisualization();
 
+        void createToolbarItems();
+
         virtual bool computeContentBounds(base::Box& outBox) const override;
         virtual void handleRender(rendering::scene::FrameParams& frame) override;
 
@@ -66,30 +71,7 @@ namespace ed
 
         virtual void onPropertyChanged(base::StringView<char> path) override;
     };
-
-    //--
-
-    // preview panel with toolbar
-    class ASSETS_MATERIAL_EDITOR_API MaterialPreviewPanelWithToolbar : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialPreviewPanelWithToolbar, ui::IElement);
-
-    public:
-        MaterialPreviewPanelWithToolbar();
-        virtual ~MaterialPreviewPanelWithToolbar();
-
-        const MaterialPreviewPanelSettings& previewSettings() const;
-        void previewSettings(const MaterialPreviewPanelSettings& settings);
-
-        void bindMaterial(const rendering::MaterialRef& material);
-
-    private:
-        ui::ToolBarPtr m_toolbar;
-        base::RefPtr<MaterialPreviewPanel> m_panel;
-
-        void changePreviewShape(MaterialPreviewShape shape);
-    };
-
+    
     //--
 
 } // ed

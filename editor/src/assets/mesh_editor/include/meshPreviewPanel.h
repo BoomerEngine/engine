@@ -14,6 +14,8 @@ namespace ed
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_MATERIAL_CLICKED);
+
     class  MeshPreview;
 
     struct MeshPreviewPanelSettings
@@ -25,7 +27,9 @@ namespace ed
         bool showBoneNames = false;
         bool showBoneAxes = false;
 
-        base::HashSet<base::StringID> highlightedMaterials;
+        bool isolateMaterials = false;
+        bool highlightMaterials = false;
+        base::HashSet<base::StringID> selectedMaterials;
     };
 
     //--
@@ -47,6 +51,9 @@ namespace ed
         // change preview settings
         void previewSettings(const MeshPreviewPanelSettings& settings);
 
+        // change preview settings
+        void changePreviewSettings(const std::function<void(MeshPreviewPanelSettings&)>& func);
+
         // set preview material
         void previewMaterial(base::StringID name, rendering::MaterialPtr data);
 
@@ -55,18 +62,25 @@ namespace ed
 
         //--
 
+        virtual void configSave(const ui::ConfigBlock& block) const;
+        virtual void configLoad(const ui::ConfigBlock& block);
+
     private:
         rendering::MeshPtr m_mesh;
 
         MeshPreviewPanelSettings m_previewSettings;
         base::HashMap<base::StringID, rendering::MaterialPtr> m_previewMaterials;
 
-        rendering::scene::ProxyHandle m_mainProxy;
+        base::Array<rendering::scene::ProxyHandle> m_proxies;
+
+        base::Box m_lastBounds;
 
         void destroyPreviewElements();
         void createPreviewElements();
 
         virtual void handleRender(rendering::scene::FrameParams& frame) override;
+        virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
+        virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
     };
 
     //--

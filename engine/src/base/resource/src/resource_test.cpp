@@ -62,7 +62,7 @@ namespace tests
             return true;
         }
 
-        void addBufferResource(const res::ResourcePath& path, const Buffer& buf, ClassType classPtr)
+        void addBufferResource(StringView<char> path, const Buffer& buf, ClassType classPtr)
         {
             // create entry
             auto entry  = MemNew(FakeResource);
@@ -71,7 +71,7 @@ namespace tests
             m_resources.set(entry->key, entry);
         }
 
-        void addObjectResource(const res::ResourcePath& path, const res::ResourceHandle& resource)
+        void addObjectResource(StringView<char> path, const res::ResourceHandle& resource)
         {
             base::io::MemoryWriterFileHandle writer;
 
@@ -87,9 +87,9 @@ namespace tests
             addBufferResource(path, data, resource->cls());
         }
 
-        virtual res::ResourceHandle acquireLoadedResource(const res::ResourceKey& key) override final
+        virtual bool acquireLoadedResource(const res::ResourceKey& key, res::ResourceHandle& outRet) override final
         {
-            return nullptr;
+            return false;
         }
 
         virtual CAN_YIELD res::ResourceHandle loadResource(const res::ResourceKey& key) override final
@@ -145,14 +145,14 @@ namespace tests
 
 } // tests
 
-static auto RES_A = res::ResourcePath("resa.dupa");
-static auto RES_B = res::ResourcePath("resb.dupa");
-static auto RES_C = res::ResourcePath("resc.dupa");
+static auto RES_A = "resa.dupa";
+static auto RES_B = "resb.dupa";
+static auto RES_C = "resc.dupa";
 
-static auto RES_MISSING = res::ResourcePath("missing.dupa");
-static auto RES_CROPPED = res::ResourcePath("crop.dupa");
-static auto RES_INVALID = res::ResourcePath("invalid.dupa");
-static auto RES_TRICKY = res::ResourcePath("tricky.dupa");
+static auto RES_MISSING = "missing.dupa";
+static auto RES_CROPPED = "crop.dupa";
+static auto RES_INVALID = "invalid.dupa";
+static auto RES_TRICKY = "tricky.dupa";
 
 class ResourceFixture : public ::testing::Test
 {
@@ -269,7 +269,7 @@ TEST_F(ResourceFixture, ResourceLoadsWithImports)
     //auto other = resource->stub.peak();
     //ASSERT_TRUE(!!other) << "Other object is missing";
     //ASSERT_TRUE(other->data == "This is a resource test");
-    ASSERT_EQ(RES_A, resource->m_ref.key());
+    ASSERT_STREQ(RES_A, resource->m_ref.key().view().data());
 }
 
 //----
@@ -340,5 +340,5 @@ TEST_F(ResourceFixtureXML, ResourceLoadsWithImports)
     //.auto other = resource->stub.peak();
     //ASSERT_TRUE(!!other) << "Other object is missing";
     //ASSERT_TRUE(other->data == "This is a resource test");
-    ASSERT_EQ(RES_A, resource->m_ref.key());
+    ASSERT_STREQ(RES_A, resource->m_ref.key().view().data());
 }

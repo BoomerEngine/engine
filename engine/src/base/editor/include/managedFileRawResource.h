@@ -35,6 +35,9 @@ namespace ed
         bool storeContent(const Buffer& content);
 
         //--
+
+        // is the file in use ?
+        virtual bool inUse() const override;
     };
 
     //---

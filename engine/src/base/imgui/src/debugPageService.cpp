@@ -116,7 +116,7 @@ namespace base
         {
             // look for the "IsVisible" property in the "DebugPage.XXX.YYY" group
             const auto groupName = prop->group().view();
-            if (prop->name() == "IsVisible"_id && groupName.beginsWith("DebugPage.") && prop->type() == reflection::GetTypeObject<bool>())
+            if (prop->name() == "IsVisible" && groupName.beginsWith("DebugPage.") && prop->type() == reflection::GetTypeObject<bool>())
             {
                 InplaceArray<StringView<char>, 4> nameParts;
                 groupName.afterFirst("DebugPage.").slice(".", false, nameParts);
@@ -138,11 +138,11 @@ namespace base
     {
         if (entry.children.empty())
         {
-            bool flag = Config::GetInstance().valueBool(entry.configGroupName, "IsVisible"_id, false);
+            bool flag = config::ValueBool(entry.configGroupName, "IsVisible", false);
             if (ImGui::MenuItem(entry.name.c_str(), "", &flag, true))
             {
-                Config::GetInstance().wrtiteBool(entry.configGroupName, "IsVisible"_id, flag);
-                ConfigPropertyBase::RefreshPropertyValue(entry.configGroupName, "IsVisible"_id);
+                config::WriteBool(entry.configGroupName, "IsVisible", flag);
+                ConfigPropertyBase::RefreshPropertyValue(entry.configGroupName, "IsVisible");
             }
         }
         else

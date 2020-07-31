@@ -133,11 +133,16 @@ namespace base
         void LoadingService::loadResourceAsync(const ResourceKey& key, const std::function<void(const res::BaseReference&)>& funcLoaded)
         {
             // ask the resource loader if it already has the resource
-            auto existingResource = m_resourceLoader->acquireLoadedResource(key);
-            if (existingResource)
             {
-                funcLoaded(existingResource);
-                return;
+                ResourcePtr existingResource;
+                if (m_resourceLoader->acquireLoadedResource(key, existingResource))
+                {
+                    if (existingResource)
+                    {
+                        funcLoaded(existingResource);
+                        return;
+                    }
+                }
             }
 
             // take the lock
@@ -184,6 +189,11 @@ namespace base
         }
 
         //--
+
+        bool LoadingService::acquireLoadedResource(const ResourceKey& key, ResourcePtr& outLoadedPtr)
+        {
+            return m_resourceLoader->acquireLoadedResource(key, outLoadedPtr);
+        }
 
     } // res
 

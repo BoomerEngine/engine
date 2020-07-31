@@ -161,13 +161,19 @@ namespace base
             }
 
             /// sync ref to async ref
-            static bool Conversion_SyncHandleToAsyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
+/*            static bool Conversion_SyncHandleToAsyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
+            {
+                srcType->copy(destData, srcData);
+                return true;
+            }*/
+
+            static bool Conversion_SyncHandleToSyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
             {
                 srcType->copy(destData, srcData);
                 return true;
             }
 
-            static bool Conversion_SyncHandleToSyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
+            static bool Conversion_AsyncHandleToAsyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
             {
                 srcType->copy(destData, srcData);
                 return true;
@@ -378,8 +384,9 @@ namespace base
                     SET_CAST_RAW(StrongHandle, WeakHandle, Conversion_DynamicHandleCast);
                     SET_CAST_RAW(WeakHandle, StrongHandle, Conversion_DynamicHandleCast);
 
-                    SET_CAST_RAW(SyncRef, AsyncRef, Conversion_SyncHandleToAsyncHandle);
+                    //SET_CAST_RAW(SyncRef, AsyncRef, Conversion_SyncHandleToAsyncHandle);
                     SET_CAST_RAW(SyncRef, SyncRef, Conversion_SyncHandleToSyncHandle);
+                    SET_CAST_RAW(AsyncRef, AsyncRef, Conversion_AsyncHandleToAsyncHandle);
 
                     SET_CAST_RAW(ClassRef, ClassRef, Conversion_ClassRefCast);
 

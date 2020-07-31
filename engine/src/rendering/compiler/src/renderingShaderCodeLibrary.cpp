@@ -16,7 +16,6 @@
 #include "renderingShaderCodeLibrary.h"
 
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/absolutePathBuilder.h"
 #include "base/memory/include/linearAllocator.h"
 #include "base/containers/include/sortedArray.h"

@@ -96,11 +96,18 @@ namespace rendering
         initInfo.m_windowCallback = this;
 
         ui::NativeWindowID ownerWindowId = 0;
-        if (auto* ownerWindow = m_nativeWindowMap.findSafe(setup.owner, nullptr))
+        if (setup.externalParentWindowHandle)
         {
-            ownerWindowId = ownerWindow->id;
-            if (ownerWindow->output)
-                initInfo.m_windowNativeParent = ownerWindow->window->windowGetNativeHandle();
+            initInfo.m_windowNativeParent = setup.externalParentWindowHandle;
+        }
+        else
+        {
+            if (auto* ownerWindow = m_nativeWindowMap.findSafe(setup.owner, nullptr))
+            {
+                ownerWindowId = ownerWindow->id;
+                if (ownerWindow->output)
+                    initInfo.m_windowNativeParent = ownerWindow->window->windowGetNativeHandle();
+            }
         }
 
         auto output = device->createOutput(initInfo);
@@ -146,6 +153,24 @@ namespace rendering
                 window->window->windowShow(false);
             else
                 window->window->windowHide();
+    }
+
+    void NativeWindowRenderer::windowMinimize(ui::NativeWindowID id)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            window->window->windowMinimize();
+    }
+
+    void NativeWindowRenderer::windowMaximize(ui::NativeWindowID id)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            window->window->windowMaximize();
+    }
+
+    void NativeWindowRenderer::windowEnable(ui::NativeWindowID id, bool enabled)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            window->window->windowEnable(enabled);
     }
 
     uint64_t NativeWindowRenderer::windowNativeHandle(ui::NativeWindowID id)

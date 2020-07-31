@@ -8,11 +8,11 @@
 
 #include "build.h"
 #include "editorService.h"
-#include "editorConfig.h"
 #include "editorWindow.h"
 #include "resourceEditor.h"
-#include "assetBrowserContextMenu.h"
+
 #include "managedFileNativeResource.h"
+#include "managedDepotContextMenu.h"
 
 #include "base/canvas/include/canvas.h"
 #include "base/app/include/launcherPlatform.h"
@@ -20,6 +20,7 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiDockContainer.h"
 #include "base/ui/include/uiDockLayout.h"
+#include "base/ui/include/uiWindowPopup.h"
 #include "base/object/include/actionHistory.h"
 #include "base/ui/include/uiDockNotebook.h"
 
@@ -39,9 +40,8 @@ namespace ed
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ResourceEditor);
     RTTI_END_TYPE();
 
-    ResourceEditor::ResourceEditor(ConfigGroup typeConfig, ManagedFile* file, ResourceEditorFeatureFlags flags)
+    ResourceEditor::ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags)
         : DockPanel("Editor")
-        , m_typeConfig(typeConfig)
         , m_features(flags)
         , m_file(file)
     {
@@ -52,12 +52,6 @@ namespace ed
         // action history
         m_actionHistory = CreateSharedPtr<ActionHistory>();
        
-        // load config
-        {
-            StringBuf fileHash = TempString("{}_{}", Hex(m_file->depotPath().cRC64()), m_file->name().stringBeforeFirst(".", true));
-            m_fileConfig = typeConfig[fileHash];
-        }
-
         // set title
         {
             StringBuf baseTitle = TempString("[img:file_edit] {}", file->name());
@@ -108,9 +102,9 @@ namespace ed
 
         //--
 
-        bind("OnTabContextMenu"_id, this) = [](ResourceEditor* ed, ui::Position pos)
+        bind(ui::EVENT_TAB_CONTEXT_MENU) = [this](ui::Position pos)
         {
-            ed->showTabContextMenu(pos);
+            showTabContextMenu(pos);
         };
     }
 
@@ -228,12 +222,9 @@ namespace ed
         return true;
     }
 
-    void ResourceEditor::close()
+    void ResourceEditor::cleanup()
     {
         destroyAspects();
-
-        if (auto node = findParent<ui::DockNotebook>())
-            node->closeTab(this);
     }
 
     bool ResourceEditor::modified() const
@@ -282,24 +273,18 @@ namespace ed
 
     bool ResourceEditor::showTabContextMenu(const ui::Position& pos)
     {
-        Array<ManagedItem*> depotItems;
+        InplaceArray<ManagedItem*, 1> depotItems;
         depotItems.pushBack(m_file);
 
         auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
         {
             // editor crap
-            menu->createCallback("Close", "[img:cross]") = [this]() {
-                if (auto* mainWindow = findMainWindow())
-                {
-                    InplaceArray<ResourceEditor*, 1> editors;
-                    editors.pushBack(this);
-                    mainWindow->requestEditorClose(editors);
-                }
-            };
+            menu->createCallback("Close", "[img:cross]") = [this]() { m_file->close(); };
             menu->createSeparator();
 
             // general file crap
-            BuildDepotContextMenu(*menu, nullptr, depotItems);
+            DepotMenuContext context;
+            BuildDepotContextMenu(this, *menu, context, depotItems);
         }
 
         auto ret = CreateSharedPtr<ui::PopupWindow>();
@@ -311,12 +296,7 @@ namespace ed
 
     void ResourceEditor::handleCloseRequest()
     {
-        if (auto mainWindow = findMainWindow())
-        {
-            Array<ResourceEditor*> editors;
-            editors.pushBack(this);
-            mainWindow->requestEditorClose(editors);
-        }
+        m_file->close();
     }
 
     //---
@@ -366,7 +346,7 @@ namespace ed
             InplaceArray<ManagedFileNativeResource*, 1> files;
             files.emplaceBack(nativeFile);
 
-            base::GetService<Editor>()->addReimportFiles(files);
+            base::GetService<Editor>()->mainWindow().addReimportFiles(files);
         }
     }
 

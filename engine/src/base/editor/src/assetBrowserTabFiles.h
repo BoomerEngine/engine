@@ -16,9 +16,12 @@ namespace ed
 {
 
     //--
+
+    DECLARE_UI_EVENT(EVENT_DIRECTORY_CHANGED)
+
+    //--
     
     class AssetBrowserDirContentModel;
-    struct AssetItemList;
 
     // classic list of files
     class AssetBrowserTabFiles : public ui::DockPanel
@@ -82,13 +85,10 @@ namespace ed
         /// get all selected items
         Array<ManagedItem*> selectedItems() const;
 
-        /// collect selected items into a list
-        void collectItems(AssetItemList& outList, bool resursive) const;
-
         //--
 
-        void saveConfig(ConfigGroup& config) const;
-        bool loadConfig(const ConfigGroup& config);
+        virtual void configLoad(const ui::ConfigBlock& block);
+        virtual void configSave(const ui::ConfigBlock& block) const;
 
     private:
         AssetBrowserContext m_context;
@@ -107,6 +107,10 @@ namespace ed
         HashSet<const ManagedFileFormat*> m_filterFormats;
         StringBuf m_filterName;
 
+        Array<ManagedFilePlaceholderPtr> m_filePlaceholders;
+        Array<ManagedDirectoryPlaceholderPtr> m_directoryPlaceholders;
+        GlobalEventTable m_fileEvents;
+
         void refreshFileList();
         void updateTitle();
         void duplicateTab();
@@ -118,11 +122,15 @@ namespace ed
         void createNewFile(const ManagedFileFormat* format);
         bool importNewFile(const ManagedFileFormat* format);
 
+        void finishFilePlaceholder(ManagedFilePlaceholderPtr ptr);
+        void cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr);
+        void finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
+        void cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
+
         void buildNewAssetMenu(ui::MenuButtonContainer* menu);
         void buildImportAssetMenu(ui::MenuButtonContainer* menu);
 
-        virtual void handleCloseRequest() override;
-        virtual ui::IElement* handleFocusForwarding() override;
+        virtual void handleCloseRequest() override;        
     };
      
     //--

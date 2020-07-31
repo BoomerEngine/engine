@@ -29,6 +29,7 @@ namespace rendering
         virtual bool testPosition(const ui::Position& pos) const override;
         virtual bool testArea(const ui::ElementArea& area) const override;
         virtual ui::ElementArea adjustArea(const ui::ElementArea& area, ui::WindowInitialPlacementMode placement = ui::WindowInitialPlacementMode::ScreenCenter) const override;
+        virtual void playSound(ui::MessageType type) override;
 
         virtual ui::NativeWindowID windowCreate(const ui::NativeWindowSetup& setup) override;
         virtual void windowDestroy(ui::NativeWindowID id)  override;
@@ -37,6 +38,7 @@ namespace rendering
         virtual base::input::EventPtr windowPullInputEvent(ui::NativeWindowID id) override;
         virtual uint64_t windowNativeHandle(ui::NativeWindowID id) override;
         virtual void windowShow(ui::NativeWindowID id, bool visible) override;
+        virtual void windowEnable(ui::NativeWindowID id, bool enabled) override;
         virtual void windowSetPos(ui::NativeWindowID id, const ui::Position& pos) override;
         virtual void windowSetSize(ui::NativeWindowID id, const ui::Size& size) override;
         virtual float windowPixelScale(ui::NativeWindowID id) override;
@@ -53,6 +55,8 @@ namespace rendering
         virtual bool windowHasCloseRequest(ui::NativeWindowID id) override;
         virtual bool windowGetResizable(ui::NativeWindowID id) override;
         virtual bool windowGetMovable(ui::NativeWindowID id) override;
+        virtual void windowMinimize(ui::NativeWindowID id) override;
+        virtual void windowMaximize(ui::NativeWindowID id) override;
 
         virtual bool stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size) override final;
         virtual base::Buffer loadClipboardData(base::StringView<char> format) override final;

@@ -44,6 +44,9 @@ namespace base
 
             //--
 
+            /// check if resource is in use
+            bool acquireLoadedResource(const ResourceKey& key, ResourcePtr& outLoadedPtr);
+
         protected:
             virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
             virtual void onShutdownService() override final;

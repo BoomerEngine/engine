@@ -81,6 +81,9 @@ namespace base
             return append(str);
         }
 
+        // add wide character (encodes it in UTF8)
+        IFormatStream& appendUTF32(uint32_t ch);
+
         // append padding string
         IFormatStream& appendPadding(char ch, uint32_t count);
 

@@ -15,6 +15,7 @@
 #include "base/image/include/image.h"
 #include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
+#include "base/resource/include/resourcePath.h"
 
 namespace ui
 {
@@ -36,18 +37,6 @@ namespace ui
     {
     }
 
-
-    static base::StringBuf SantizePath(base::StringView<char> path)
-    {
-        auto fixedPath = base::StringBuf(path);
-        fixedPath.replaceChar('\\', '/');
-        while (fixedPath.beginsWith("/"))
-            fixedPath = fixedPath.subString(1);
-        while (fixedPath.endsWith("/"))
-            fixedPath = fixedPath.leftPart(fixedPath.length() - 1);
-        return fixedPath;
-    }
-
     void DataStash::onPropertyChanged(base::StringView<char> path)
     {
         TBaseClass::onPropertyChanged(path);
@@ -56,23 +45,16 @@ namespace ui
         {
             TRACE_INFO("UI styles were changed, all UI layouts will refresh");
             ui::IElement::InvalidateAllDataEverywhere();
-            ui::Window::ForceRedrawOfEverything();
             m_stylesVersion += 1;
         }
     }
     
     void DataStash::addIconSearchPath(base::StringView<char> path)
     {
-        auto fixedPath = SantizePath(path);
-        if (!fixedPath.empty())
-            m_imageSearchPaths.pushBackUnique(fixedPath);
-    }
+        DEBUG_CHECK_RETURN(base::ValidateDepotPath(path, base::DepotPathClass::AbsoluteDirectoryPath));
 
-    void DataStash::addTemplateSearchPath(base::StringView<char> path)
-    {
-        auto fixedPath = SantizePath(path);
-        if (!fixedPath.empty())
-            m_templateSearchPath.pushBackUnique(fixedPath);
+        if (!path.empty())
+            m_imageSearchPaths.pushBackUnique(base::StringBuf(path));
     }
 
     base::image::ImageRef DataStash::loadImage(base::StringID key)
@@ -83,8 +65,7 @@ namespace ui
         {
             for (const auto& searchPath : m_imageSearchPaths)
             {
-                auto fullPath = base::res::ResourcePath(base::TempString("{}/{}.png", searchPath, key));
-                ret = base::LoadResource<base::image::Image>(fullPath);
+                ret = base::LoadResource<base::image::Image>(base::TempString("{}{}.png", searchPath, key));
 
                 if (ret)
                 {
@@ -96,11 +77,6 @@ namespace ui
         }
 
         return ret;
-    }
-
-    base::storage::XMLDataRef DataStash::loadTemplate(base::StringID key)
-    {
-        return nullptr;
     }
 
     //---

@@ -219,7 +219,7 @@ namespace ui
         if (!data)
             return false;
 
-        return ApplyTemplate(ptr, data->path().path(), data->document());
+        return ApplyTemplate(ptr, data->path(), data->document());
     }
 
     ElementPtr LoadTemplate(base::StringView<char> contextName, const base::xml::IDocument& doc)
@@ -241,7 +241,7 @@ namespace ui
         if (!data)
             return nullptr;
 
-        return LoadTemplate(data->path().path(), data->document());
+        return LoadTemplate(data->path(), data->document());
     }
 
     //--

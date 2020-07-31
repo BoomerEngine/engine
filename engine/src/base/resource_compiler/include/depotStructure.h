@@ -23,6 +23,7 @@ namespace base
 
         class TrackedDepot;
         class DepotStructureTrackingDepotIntegration;
+        struct DepotPathAppendBuffer;
 
         //---
 
@@ -83,8 +84,8 @@ namespace base
 
             //---
 
-            /// attach a file system so we can load from it
-            void attachFileSystem(StringView<char> prefixPath, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
+            /// attach a file system as a particular directory in the root (note: no nested path support!)
+            void attachFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
 
             /// detach all project file systems
             void detachProjectFileSystems();
@@ -153,13 +154,18 @@ namespace base
                 }
             };
 
-            /// get files at given path
-            bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(const FileInfo& info)>& enumFunc) const;
+            /// get files at given path (should be aboslute depot DIRECTORY path)
+            bool enumFilesAtPath(StringView<char> path, const std::function<bool(const FileInfo& info)>& enumFunc) const;
 
             //--
 
             /// enumerate all physical file system roots we have (so we know what to observe)
             void enumAbsolutePathRoots(Array<io::AbsolutePath>& outAbsolutePathRoots) const;
+
+            //--
+
+            // find file in depot
+            bool findFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
 
             //--
 
@@ -194,7 +200,7 @@ namespace base
 
             HashMap<StringBuf, Array<DepotFileSystemBindingInfo>> m_fileSystemsAtDirectory;
 
-            Array<res::ResourcePath> m_resourcesToReload;
+            Array<StringBuf> m_resourcesToReload;
             SpinLock m_resourcesToReloadLock;
 
             //---
@@ -202,10 +208,17 @@ namespace base
             void rebuildFileSystemMap();
             void registerFileSystemBinding(const DepotFileSystem* fs);
 
-            bool processFileSystem(StringView<char> mountPath, UniquePtr<IFileSystem> fs, DepotFileSystemType type);
+            bool translatePath(StringView<char> fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly = false) const;
+
+            bool processFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fs, DepotFileSystemType type);
+
+            bool findFileInternal(DepotPathAppendBuffer& path, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
+            bool findFileInternal(const DepotFileSystem* fs, DepotPathAppendBuffer& path, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
 
             //---
         };
+
+        //--
 
     } // depot
 } // base

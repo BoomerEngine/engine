@@ -22,11 +22,12 @@ namespace base
             class WinAsyncReadDispatcher;
             class TempPathStringBuffer;
 
-            class WinIOSystem : public ISystemHandler
+            class WinIOSystem : public ISystemHandler, public ISingleton
             {
+                DECLARE_SINGLETON(WinIOSystem);
+
             public:
                 WinIOSystem();
-                virtual ~WinIOSystem();
 
                 virtual ReadFileHandlePtr openForReading(AbsolutePathView absoluteFilePath) override final;
                 virtual WriteFileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) override final;
@@ -58,7 +59,9 @@ namespace base
                 virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData) override final;
 
             private:
-                UniquePtr<WinAsyncReadDispatcher> m_asyncDispatcher;
+                WinAsyncReadDispatcher* m_asyncDispatcher;
+
+                virtual void deinit() override;
 
                 bool findFilesInternal(TempPathStringBuffer& dirPath, StringView<wchar_t> searchPattern, const std::function<bool(AbsolutePathView fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse);
             };

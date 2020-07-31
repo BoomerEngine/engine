@@ -40,7 +40,7 @@ namespace hl2
             // create file path
             auto& entry = m_openedPackages.emplaceBack();
             entry.m_fullPath = m_rootPath.addFile(srcPackageName);
-            entry.m_fileHandle = IO::GetInstance().openForReading(entry.m_fullPath);
+            entry.m_fileHandle = base::io::OpenForReading(entry.m_fullPath);
             if (!entry.m_fileHandle)
             {
                 TRACE_WARNING("Unable to open package '{}', some files will not load", entry.m_fullPath);

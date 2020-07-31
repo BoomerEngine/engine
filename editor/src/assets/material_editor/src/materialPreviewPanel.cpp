@@ -7,12 +7,14 @@
 ***/
 
 #include "build.h"
+
 #include "materialPreviewPanel.h"
 #include "rendering/scene/include/renderingSceneProxy.h"
 #include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/material/include/renderingMaterial.h"
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/scene/include/renderingScene.h"
+#include "base/ui/include/uiMenuBar.h"
 #include "base/editor/include/assetBrowser.h"
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
@@ -23,7 +25,7 @@ namespace ed
 
     //--
 
-    static base::res::StaticResource<rendering::Mesh> resDefaultCustomMesh("engine/tests/meshes/teapot.obj");
+    static base::res::StaticResource<rendering::Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
 
     MaterialPreviewPanelSettings::MaterialPreviewPanelSettings()
     {
@@ -38,18 +40,28 @@ namespace ed
 
     MaterialPreviewPanel::MaterialPreviewPanel()
     {
-        setupCameraForceOrbitMode(true);
-        setupCameraAtAngle(base::Angles(35.0f, 50.0f, 0.0f), 2.0f);
+        m_panelSettings.cameraForceOrbit = true;
+        m_panelSettings.drawInternalGrid = true;
+        m_panelSettings.drawInternalWorldAxis = false;
+        m_panelSettings.drawInternalCameraAxis = false;
+        m_panelSettings.drawInternalCameraData = false;
 
-        m_drawInternalGrid = true;
-        m_drawInternalWorldAxis = false;
-        m_drawInternalCameraAxis = false;
-        m_drawInternalCameraData = false;
+        const auto rotation = base::Angles(35.0f, 50.0f, 0.0f);
+        setupCamera(rotation, rotation.forward() * -2.0f);
+
+        createToolbarItems();
     }
 
     MaterialPreviewPanel::~MaterialPreviewPanel()
     {
         destroyVisualization();
+    }
+
+    void MaterialPreviewPanel::previewShape(MaterialPreviewShape shape)
+    {
+        auto settings = m_previewSettings;
+        settings.shape = shape;
+        previewSettings(settings);
     }
 
     void MaterialPreviewPanel::previewSettings(const MaterialPreviewPanelSettings& settings)
@@ -127,7 +139,7 @@ namespace ed
                     auto settings = previewSettings();
 
                     // TODO: async
-                    if (auto loadedMash = base::LoadResource<rendering::Mesh>(base::res::ResourcePath(file->depotPath())))
+                    if (auto loadedMash = base::LoadResource<rendering::Mesh>(file->depotPath()))
                     {
                         settings.customMesh = loadedMash;
                         settings.shape = MaterialPreviewShape::Custom;
@@ -138,10 +150,10 @@ namespace ed
         }
     }
 
-    base::res::StaticResource<rendering::Mesh> resBoxMesh("engine/tests/meshes/cube.obj");
-    base::res::StaticResource<rendering::Mesh> resBoxSphere("engine/tests/meshes/sphere.obj");
-    base::res::StaticResource<rendering::Mesh> resBoxCylinder("engine/tests/meshes/cylinder.obj");
-    base::res::StaticResource<rendering::Mesh> resBoxQuad("engine/tests/meshes/quad.obj");
+    base::res::StaticResource<rendering::Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
+    base::res::StaticResource<rendering::Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
+    base::res::StaticResource<rendering::Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
+    base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
 
     void MaterialPreviewPanel::createVisualization()
     {
@@ -170,6 +182,7 @@ namespace ed
                     desc.autoHideDistanceOverride = 10000.0f;
                     desc.forcedLodLevel = 0;
                     desc.forceMaterial = m_material.acquire()->dataProxy();
+                    desc.meshBounds = mesh->bounds();
 
                     const auto minZ = mesh->bounds().min.z;
                     const auto offset = base::Vector3(0, 0, -minZ);
@@ -187,62 +200,31 @@ namespace ed
 
     //--
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialPreviewPanelWithToolbar);
-    RTTI_END_TYPE();
-
-    MaterialPreviewPanelWithToolbar::MaterialPreviewPanelWithToolbar()
+    void MaterialPreviewPanel::buildShapePopup(ui::MenuButtonContainer* menu)
     {
-        layoutVertical();
-
-        actions().bindCommand("MaterialPreviewPanel.ShapeBox"_id) = [this]() { changePreviewShape(MaterialPreviewShape::Box); };
-        actions().bindCommand("MaterialPreviewPanel.ShapeCylinder"_id) = [this]() { changePreviewShape(MaterialPreviewShape::Cylinder); };
-        actions().bindCommand("MaterialPreviewPanel.ShapeSphere"_id) = [this]() { changePreviewShape(MaterialPreviewShape::Sphere); };
-        actions().bindCommand("MaterialPreviewPanel.ShapePlane"_id) = [this]() { changePreviewShape(MaterialPreviewShape::Plane); };
-        actions().bindCommand("MaterialPreviewPanel.ShapeCustom"_id) = [this]() { changePreviewShape(MaterialPreviewShape::Custom); };
-
-        actions().bindToggle("MaterialPreviewPanel.ShapeBox"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Box; };
-        actions().bindToggle("MaterialPreviewPanel.ShapeCylinder"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Cylinder; };
-        actions().bindToggle("MaterialPreviewPanel.ShapeSphere"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Sphere; };
-        actions().bindToggle("MaterialPreviewPanel.ShapePlane"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Plane; };
-        actions().bindToggle("MaterialPreviewPanel.ShapeCustom"_id) = [this]() { return previewSettings().shape == MaterialPreviewShape::Custom; };
-
-        m_toolbar = createChild<ui::ToolBar>();
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeBox"_id, ui::ToolbarButtonSetup().caption("Cube"));
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeCylinder"_id, ui::ToolbarButtonSetup().caption("Cylinder"));
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeSphere"_id, ui::ToolbarButtonSetup().caption("Sphere"));
-        m_toolbar->createButton("MaterialPreviewPanel.ShapePlane"_id, ui::ToolbarButtonSetup().caption("Quad"));
-        m_toolbar->createButton("MaterialPreviewPanel.ShapeCustom"_id, ui::ToolbarButtonSetup().caption("Custom"));
-
-        m_panel = createChild<MaterialPreviewPanel>();
-        m_panel->expand();
+        // default modes
+        menu->createCallback("Cube", "") = [this]() { previewShape(MaterialPreviewShape::Box); };
+        menu->createCallback("Cylinder", "") = [this]() { previewShape(MaterialPreviewShape::Cylinder); };
+        menu->createCallback("Sphere", "") = [this]() { previewShape(MaterialPreviewShape::Sphere); };
+        menu->createCallback("Plane", "") = [this]() { previewShape(MaterialPreviewShape::Plane); };
+        menu->createSeparator();
+        menu->createCallback("Custom", "") = [this]() { previewShape(MaterialPreviewShape::Custom); };
     }
 
-    MaterialPreviewPanelWithToolbar::~MaterialPreviewPanelWithToolbar()
-    {}
-
-    void MaterialPreviewPanelWithToolbar::changePreviewShape(MaterialPreviewShape shape)
+    void MaterialPreviewPanel::createToolbarItems()
     {
-        auto settings = previewSettings();
-        if (settings.shape != shape)
+        actions().bindCommand("MaterialPreviewPanel.Shape"_id) = [this](ui::Button* button)
         {
-            settings.shape = shape;
-            previewSettings(settings);
-        }
-    }
+            if (button)
+            {
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                buildShapePopup(menu);
+                menu->showAsDropdown(button);
+            }
+        };
 
-    const MaterialPreviewPanelSettings& MaterialPreviewPanelWithToolbar::previewSettings() const
-    {
-        return m_panel->previewSettings();
-    }
-
-    void MaterialPreviewPanelWithToolbar::previewSettings(const MaterialPreviewPanelSettings& settings)
-    {
-        m_panel->previewSettings(settings);
-    }
-
-    void MaterialPreviewPanelWithToolbar::bindMaterial(const rendering::MaterialRef& material)
-    {
-        m_panel->bindMaterial(material);
+        toolbar()->createButton("MaterialPreviewPanel.Shape"_id, ui::ToolbarButtonSetup().caption("[img:cube] Shape"));
+        toolbar()->createSeparator();
     }
 
     //--

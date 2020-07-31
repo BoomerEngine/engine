@@ -170,6 +170,18 @@ namespace ed
 
         ///---
 
+        struct CollectionContext
+        {
+            HashSet<const ManagedDirectory*> visitedDirectories;
+            std::function<bool(const ManagedFile*)> filterFilesFunc;
+            std::function<bool(const ManagedDirectory*)> filterDirectoriesFunc;
+        };
+
+        // collect files from this directory (probably recursive), returns true if at least one file was collected
+        bool collectFiles(CollectionContext& context, bool recursive, ManagedFileCollection& outFiles) const;
+
+        ///---
+
         /// create a directory in the file system, if it worked we return the created directory
         ManagedDirectory* createDirectory(StringView<char> name);
 

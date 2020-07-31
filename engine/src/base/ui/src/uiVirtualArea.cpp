@@ -82,7 +82,6 @@ namespace ui
 
     VirtualArea::VirtualArea()
         : m_viewOffset(0,0)
-        , OnSelectionChanged(this, "OnSelectionChanged"_id)
     {
         hitTest(true);
         allowFocusFromClick(true);
@@ -152,6 +151,9 @@ namespace ui
         m_viewOffset.y = 0.0f;
         m_viewScale = 1.0f;
         m_viewInvScale = 1.0f;
+
+        call(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, m_viewOffset);
+        call(EVENT_VIRTUAL_AREA_SCALE_CHANGED, m_viewScale);
 
         invalidateAllStoredSizes();
     }
@@ -320,7 +322,7 @@ namespace ui
             m_selection.clear();
 
             if (postEvent)
-                OnSelectionChanged();
+                call(EVENT_VIRTUAL_AREA_SELECTION_CHANGED);
         }
     }
 
@@ -452,7 +454,7 @@ namespace ui
 
         // notify anybody interested, usually this refreshes some kind of property grid
         if (somethingChanged && postEvent)
-            OnSelectionChanged();
+            call(EVENT_VIRTUAL_AREA_SELECTION_CHANGED);
     }
 
     bool VirtualArea::actionChangeSelection(const base::Array<const VirtualAreaElement*>& oldSelection, const base::Array<const VirtualAreaElement*>& newSelection)
@@ -528,7 +530,7 @@ namespace ui
         if (offset != m_viewOffset)
         {
             m_viewOffset = offset;
-            //call("OnCanvasViewChanged"_id);
+            call(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, m_viewOffset);
         }
     }
 
@@ -572,6 +574,9 @@ namespace ui
                 // advance positions
                 m_viewOffset.x -= xSpeed * dt;
                 m_viewOffset.y -= ySpeed * dt;
+
+                // update event
+                call(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, m_viewOffset);
 
                 // output the offset
                 if (outViewScrollAmount)
@@ -753,6 +758,8 @@ namespace ui
         {
             m_viewOffset = m_scheduledOffset;
             m_scheduledOffsetChangeMode = 0;
+
+            call(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, m_viewOffset);
         }
     }
 
@@ -817,6 +824,8 @@ namespace ui
 
                 invalidateAllStoredSizes();
                 m_scheduledZoomChangeMode = 0;
+
+                call(EVENT_VIRTUAL_AREA_SCALE_CHANGED, m_viewScale);
             }
         }   
     }
@@ -842,6 +851,9 @@ namespace ui
             m_viewOffset.y -= (nvy - pos.y);
 
             invalidateAllStoredSizes();
+
+            call(EVENT_VIRTUAL_AREA_OFFSET_CHANGED, m_viewOffset);
+            call(EVENT_VIRTUAL_AREA_SCALE_CHANGED, m_viewScale);
         }
     }
 

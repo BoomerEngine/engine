@@ -50,7 +50,7 @@ namespace base
             void reset();
 
             // setup reference to a given resource key
-            void set(ResourcePath path, SpecificClassType<IResource> cls);
+            void set(StringView<char> path, SpecificClassType<IResource> cls);
 
             // setup reference to a given resource key
             void set(const ResourceKey& key);
@@ -110,12 +110,23 @@ namespace base
                     set(key);
             }
 
-            INLINE AsyncRef(const ResourcePath& path)
-                : BaseAsyncReference(ResourceKey(path, T::GetStaticClass()))
+            INLINE AsyncRef(StringView<char> path)
+                : BaseAsyncReference(MakePath<T>(path))
             {}
 
             INLINE bool operator==(const AsyncRef<T>& other) const { return BaseReference::operator==(other); }
             INLINE bool operator!=(const AsyncRef<T>& other) const { return BaseReference::operator!=(other); }
+
+            template< typename U = T >
+            INLINE Ref<U> load(IResourceLoader* customLoader = nullptr) const CAN_YIELD
+            {
+                static_assert(std::is_base_of<T, U>::value || std::is_base_of<U, T>::value, "Types are unrelated");
+
+                if (auto loaded = BaseAsyncReference::load(customLoader).acquire())
+                    return base::rtti_cast<U>(loaded);
+
+                return nullptr;
+            }
         };
 
         ///--------

@@ -16,6 +16,8 @@
 #include "rendering/driver/include/renderingCommandBuffer.h"
 #include "renderingFrameView.h"
 #include "renderingFrameView_Main.h"
+#include "renderingFrameView_Selection.h"
+#include "renderingSceneUtils.h"
 
 namespace rendering
 {
@@ -75,11 +77,32 @@ namespace rendering
                     {
                         renderer.prepareFrame(cmd);
 
+                        if (frame.capture.mode == FrameCaptureMode::Disabled)
                         {
+                            // render main camera view
                             FrameView_Main view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullColorRT, m_surfaceCache->m_sceneFullDepthRT, frame.mode);
                             view.render(cmd);
 
+                            // post process the result
                             FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
+
+                            // regardless of the rendering mode draw the depth buffer with selected fragments so we can compose a selection outline
+                            if (frame.filters & FilterBit::PostProcesses_SelectionHighlight || frame.filters & FilterBit::PostProcesses_SelectionOutline)
+                            {
+                                command::CommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
+
+                                BindSingleCamera(localCmd, frame.camera.camera);
+
+                                const auto selectionDepthBufferRT = renderer.surfaces().m_sceneSelectionDepthRT;
+                                RenderDepthSelection(localCmd, view, selectionDepthBufferRT);
+
+                                VisualizeSelectionOutline(localCmd, view.width(), view.height(), targetView, m_surfaceCache->m_sceneFullDepthRT, m_surfaceCache->m_sceneSelectionDepthRT, frame.selectionOutline);
+                            }
+                        }
+                        else if (frame.capture.mode == FrameCaptureMode::SelectionRect && frame.capture.dataBuffer)
+                        {
+                            FrameView_Selection view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullDepthRT, frame.capture.area, frame.capture.dataBuffer);
+                            view.render(cmd);
                         }
 
                         renderer.finishFrame();

@@ -36,7 +36,7 @@ namespace ui
             // revert back to old value on ESC key
             if (evt.pressed() && evt.keyCode() == base::input::KeyCode::KEY_ESCAPE)
             {
-                m_box->call("OnDragCanceled"_id);
+                m_box->call(EVENT_VALUE_DRAG_CANCELED);
                 return nullptr;
             }
 
@@ -47,7 +47,7 @@ namespace ui
         {
             if (evt.leftReleased())
             {
-                m_box->call("OnDragFinished"_id);
+                m_box->call(EVENT_VALUE_DRAG_FINISHED);
                 return nullptr;
             }
 
@@ -87,7 +87,7 @@ namespace ui
             }
 
             if (valueDelta)
-                m_box->call("OnDrag"_id, -valueDelta);
+                m_box->call(EVENT_VALUE_DRAG_STEP, -valueDelta);
 
             return InputActionResult(); // continue
         }
@@ -119,7 +119,7 @@ namespace ui
     {
         if (evt.leftClicked())
         {
-            call("OnDragStarted"_id);
+            call(EVENT_VALUE_DRAG_STARTED);
             return base::CreateSharedPtr<DraggerInputAction>(this, evt.absolutePosition());
         }
 
@@ -128,11 +128,6 @@ namespace ui
 
     bool Dragger::handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta)
     {
-        /*if (evt.delta().z < 0.0f)
-            call("OnValueDown"_id);
-        else if (evt.delta().z > 0.0f)
-            call("OnValueUp"_id);*/
-
         return false;
     }
 

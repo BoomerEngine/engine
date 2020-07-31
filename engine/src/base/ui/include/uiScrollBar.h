@@ -12,6 +12,13 @@
 
 namespace ui
 {
+    //--
+
+    DECLARE_UI_EVENT(EVENT_SCROLL, float)
+    DECLARE_UI_EVENT(EVENT_SCROLLED, float)
+
+    //--
+
     class Button;
     class Scrollbar;
     class ScrollbarThumb;

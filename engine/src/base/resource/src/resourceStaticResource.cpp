@@ -84,7 +84,7 @@ namespace base
                     }
                 }
 
-                INLINE ResourceHandle load(ClassType resourceClass, const ResourcePath& path)
+                INLINE ResourceHandle load(ClassType resourceClass, StringView<char> path)
                 {
                     ASSERT(!path.empty());
 
@@ -155,8 +155,7 @@ namespace base
                     return m_handle;
             }
 
-            auto path = ResourcePath(m_path);
-            auto handle = prv::StaticResourceRegistry::GetInstance().load(resourceClass(), path);
+            auto handle = prv::StaticResourceRegistry::GetInstance().load(resourceClass(), m_path);
 
             if (handle)
             {

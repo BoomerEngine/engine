@@ -33,6 +33,11 @@ namespace ed
     {
     }
     
+    bool ManagedFileRawResource::inUse() const
+    {
+        return false;
+    }
+
     Buffer ManagedFileRawResource::loadContent()
     {
         DEBUG_CHECK_EX(!isDeleted(), "Trying to load contet from deleted file");

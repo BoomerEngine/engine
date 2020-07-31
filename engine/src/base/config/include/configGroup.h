@@ -23,14 +23,14 @@ namespace base
         class BASE_CONFIG_API Group : public base::NoCopy
         {
         public:
-            Group(Storage* storage, StringID name);
+            Group(Storage* storage, const StringBuf& name);
             ~Group();
 
             /// get the owning storage
             INLINE Storage* storage() const { return m_storage; }
 
             /// get name of the group
-            INLINE StringID name() const { return m_name; }
+            INLINE const StringBuf& name() const { return m_name; }
 
             /// is this an empty group ?
             INLINE bool empty() const { return m_entries.empty(); }
@@ -44,16 +44,16 @@ namespace base
             bool clear();
 
             /// get entry for given name, does not create one if not found
-            const Entry* findEntry(StringID name) const;
+            const Entry* findEntry(StringView<char> name) const;
 
             /// remove entry from group (clears all data for the entry)
-            bool removeEntry(StringID name);
+            bool removeEntry(StringView<char> name);
 
             /// get entry for given name, creates and empty entry if not found
-            Entry& entry(StringID name);
+            Entry& entry(StringView<char> name);
 
             /// get value of entry
-            StringBuf entryValue(StringID name, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
+            StringBuf entryValue(StringView<char> name, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
 
             //--
 
@@ -66,11 +66,11 @@ namespace base
         private:
             friend class Entry;
 
-            const Entry* findEntry_NoLock(StringID name) const;
+            const Entry* findEntry_NoLock(StringView<char> name) const;
 
             Storage* m_storage;
-            StringID m_name;
-            HashMap<StringID, Entry*> m_entries;
+            StringBuf m_name;
+            HashMap<StringBuf, Entry*> m_entries;
             SpinLock m_lock;
 
             void modified();

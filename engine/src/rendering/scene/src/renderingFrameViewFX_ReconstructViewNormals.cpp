@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        base::res::StaticResource<ShaderLibrary> resReconstructViewNormals("engine/shaders/screen/reconstruct_view_normal.fx");
+        base::res::StaticResource<ShaderLibrary> resReconstructViewNormals("/engine/shaders/screen/reconstruct_view_normal.fx");
 
         //---
 

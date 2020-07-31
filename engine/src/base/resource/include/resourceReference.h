@@ -42,9 +42,6 @@ namespace base
             // acquire the resource
             INLINE const ResourceHandle& acquire() const { return m_handle; }
 
-            // is this a valid reference ? we need either a key or an object
-            INLINE bool valid() const { return m_handle; }
-
             // is this an empty reference ? empty reference is one without key and without object
             INLINE bool empty() const { return !m_handle && !m_key; }
 
@@ -52,7 +49,7 @@ namespace base
             INLINE bool inlined() const { return m_handle && !m_key; } // bound but not loaded from anywhere
 
             // validate
-            INLINE operator bool() const { return valid(); }
+            INLINE operator bool() const { return !empty(); }
 
             //---
 
@@ -133,7 +130,7 @@ namespace base
             INLINE bool operator!=(const Ref<T>& other) const { return BaseReference::operator!=(other); }
 
             // validate
-            INLINE operator bool() const { return valid(); }
+            INLINE operator bool() const { return !empty(); }
 
             ///---
 
@@ -146,7 +143,12 @@ namespace base
         template< typename T >
         INLINE Ref<T> BaseReference::cast() const
         {
-            return Ref<T>(rtti_cast<T>(acquire()));
+            if (m_handle)
+                return Ref<T>(rtti_cast<T>(m_handle));
+            else if (m_key.cls().is<T>())
+                return *(Ref<T>*)this;
+            else
+                return Ref<T>();
         }
 
         ///--------

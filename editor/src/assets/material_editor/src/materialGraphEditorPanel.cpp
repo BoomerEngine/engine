@@ -41,7 +41,7 @@ namespace ed
         m_graphEditor->customVerticalAligment(ui::ElementVerticalLayout::Expand);
         m_graphEditor->bindActionHistory(actions);
 
-        m_graphEditor->bind("OnSelectionChanged"_id) = [this]()
+        m_graphEditor->bind(ui::EVENT_VIRTUAL_AREA_SELECTION_CHANGED) = [this]()
         {
             m_selectedBlocks.reset();
 
@@ -55,7 +55,7 @@ namespace ed
 
             m_hasValidSelection = !m_selectedBlocks.empty();
 
-            call("OnSelectionChanged"_id);
+            call(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
         };
     }
 

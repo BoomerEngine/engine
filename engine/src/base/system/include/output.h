@@ -188,6 +188,12 @@ namespace base
 
 #define FATAL_CHECK(expr) if (expr) {}
 
+#define DEBUG_CHECK_RETURN( expr ) \
+    if (!(expr)) return;
+
+#define DEBUG_CHECK_RETURN_V( expr, ret ) \
+    if (!(expr)) return (ret);
+
 #else
 
 #define DEBUG_CHECK( expr )                                                                                              \
@@ -202,6 +208,28 @@ namespace base
         static bool isEnabled = true;                                                                               \
         if (isEnabled && !(expr))                                                                                   \
             base::logging::IErrorHandler::Assert(false,  __FILE__, __LINE__, #expr, msg, &isEnabled);           \
+    }
+
+#define DEBUG_CHECK_RETURN( expr )                                                                                  \
+    {                                                                                                               \
+        static bool isEnabled = true;                                                                               \
+        if (!(expr)) {                                                                                              \
+            if (isEnabled)                                                                                          \
+                base::logging::IErrorHandler::Assert(false,  __FILE__, __LINE__, #expr, "Required data is missing", &isEnabled);           \
+            TRACE_WARNING("Debug: Check '" #expr "' failed, returning from function " __FUNCTION__)                 \
+            return;                                                                                                 \
+        }                                                                                                           \
+    }
+
+#define DEBUG_CHECK_RETURN_V( expr, ret )                                                                           \
+    {                                                                                                               \
+        static bool isEnabled = true;                                                                               \
+        if (!(expr)) {                                                                                              \
+            if (isEnabled)                                                                                          \
+                base::logging::IErrorHandler::Assert(false,  __FILE__, __LINE__, #expr, "Required data is missing", &isEnabled);           \
+            TRACE_WARNING("Debug: Check '" #expr "' failed, returning " #ret " from function " __FUNCTION__)        \
+            return (ret);                                                                                           \
+        }                                                                                                           \
     }
 
 #define ASSERT( expr )                                                                                        \

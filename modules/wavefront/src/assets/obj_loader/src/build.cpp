@@ -5,6 +5,7 @@
 *
 * [# dependency: base_* #]
 * [# dependency: assets_mesh_loader #]
+* [# dependency: rendering_material #]
 * [# devonly #]
 ***/
 

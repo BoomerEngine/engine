@@ -14,6 +14,10 @@ namespace ed
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
+
+    //--
+
     // inner material graph panel
     class ASSETS_MATERIAL_EDITOR_API MaterialGraphInnerEditorPanel : public ui::GraphEditor
     {

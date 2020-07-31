@@ -108,7 +108,7 @@ namespace base
 
     INLINE float AbsolutePosition::distance(const AbsolutePosition& base) const
     {
-        return m_primary.distance(m_primary);
+        return m_primary.distance(base.m_primary);
     }
 
     INLINE double AbsolutePosition::exactDistance(const AbsolutePosition& base) const

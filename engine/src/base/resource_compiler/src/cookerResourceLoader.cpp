@@ -49,11 +49,11 @@ namespace base
         bool ResourceLoaderCooker::initialize(const app::CommandLine& cmdLine)
         {
             // look for "project.xml"
-            auto startPath = IO::GetInstance().systemPath(io::PathCategory::ExecutableDir);
+            auto startPath = base::io::SystemPath(io::PathCategory::ExecutableDir);
             while (!startPath.empty() && startPath.view() != L"/" && startPath.view() != L"\\")
             {
                 const auto depotManifestPath = startPath.addFile("project.xml");
-                if (IO::GetInstance().fileExists(depotManifestPath))
+                if (base::io::FileExists(depotManifestPath))
                 {
                     if (m_depot->populateFromManifest(depotManifestPath))
                         break;
@@ -341,6 +341,7 @@ namespace base
 
                 FileLoadingContext context;
                 context.basePath = mountPoint.path();
+                context.resourceLoader = this;
 
                 if (LoadFile(file, context))
                 {
@@ -387,10 +388,10 @@ namespace base
             }*/
 
             // direct load 
-            const auto fileLoadClass = IResource::FindResourceClassByExtension(key.path().extension());
+            const auto fileLoadClass = IResource::FindResourceClassByExtension(key.extension());
             if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
-                auto depotPath = key.path().path();
+                const auto& depotPath = key.path();
                 if (const auto loadedRes = loadInternalDirectly(key.cls(), depotPath))
                 {
                     loadedRes->bindToLoader(this, key, mountPoint, false);
@@ -412,6 +413,16 @@ namespace base
 
                     return cookedFile;
                 }
+            }
+
+            // create stub
+            if (fileLoadClass && fileLoadClass->is(key.cls()))
+            {
+                const auto& depotPath = key.path();
+                auto stubRes = fileLoadClass->create<IResource>();
+                stubRes->bindToLoader(this, key, mountPoint, true);
+                updateEmptyFileDependencies(key, depotPath);
+                return stubRes;
             }
 
             // loading failed with no stub as there's no hope of recovery

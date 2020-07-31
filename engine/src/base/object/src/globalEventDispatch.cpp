@@ -31,7 +31,7 @@ namespace base
     {
         static mem::PoolID POOL_EVENTS("Engine.Events");
 
-        struct DispatchList
+        struct DispatchList : public IReferencable
         {
             DispatchList(StringID name)
                 : m_name(name)
@@ -72,23 +72,40 @@ namespace base
             StringID m_name;
         };
 
-        struct KeyEntry
+        struct KeyEntry : public IReferencable
         {
             KeyEntry(GlobalEventKey key)
             {}
 
+            virtual ~KeyEntry()
+            {
+                auto entries = std::move(m_lists);
+                for (auto* entry : entries)
+                    entry->releaseRef();
+            }
+
             void dispatch(StringID name, base::IObject* source, const void* data, base::Type dataType)
             {
-                for (auto* list : m_lists)
-                    if (list->name() == name)
+                for (auto index : m_lists.indexRange().reversed())
+                {
+                    auto list = m_lists.typedData()[index];
+                    if (list && list->name() == name)
+                    {
+                        list->addRef();
                         list->dispatch(source, data, dataType);
+                        list->releaseRef();
+                        break;
+                    }
+                }
+
+                m_lists.removeUnorderedAll(nullptr);
             }
 
             void add(StringID name, IGlobalEventListener* listener)
             {
                 for (auto* list : m_lists)
                 {
-                    if (list->name() == name)
+                    if (list && list->name() == name)
                     {
                         list->add(listener);
                         return;
@@ -99,15 +116,19 @@ namespace base
                 m_lists.pushBack(list);
                 list->add(listener);
             }
-
+            
             bool remove(StringID name, IGlobalEventListener* listener)
             {
-                for (auto* list : m_lists)
+                for (auto index : m_lists.indexRange().reversed())
                 {
+                    auto list = m_lists.typedData()[index];
                     if (list->name() == name)
                     {
                         if (list->remove(listener))
-                            m_lists.remove(list);
+                        {
+                            m_lists.eraseUnordered(index);
+                            list->releaseRef();
+                        }
                         break;
                     }
                 }
@@ -152,14 +173,16 @@ namespace base
                 if (listener && listener->key() && listener->name())
                 {
                     auto lock = CreateLock(m_lock);
+                    auto listenerKey = listener->key();
+                    auto listenerName = listener->name();
 
                     KeyEntry* key = nullptr;
-                    if (m_keyMaps.find(listener->key(), key))
+                    if (m_keyMaps.find(listenerKey, key))
                     {
-                        if (key->remove(listener->name(), listener))
+                        if (key->remove(listenerName, listener))
                         {
-                            m_keyMaps.remove(listener->key());
-                            MemDelete(key);
+                            m_keyMaps.remove(listenerKey);
+                            key->releaseRef();
                         }
                     }
                 }
@@ -175,7 +198,9 @@ namespace base
                     if (m_keyMaps.find(keyName, key))
                     {
                         TRACE_INFO("GlobalEvent: Dispatching {} from {}", eventName, keyName);
+                        key->addRef();
                         key->dispatch(eventName, source, data, dataType);
+                        key->releaseRef();
                     }
                 }
             }
@@ -186,7 +211,9 @@ namespace base
 
             virtual void deinit() override
             {
-                m_keyMaps.clearPtr();
+                for (auto* entry : m_keyMaps.values())
+                    entry->releaseRef();
+                m_keyMaps.clear();
             }
         };
 

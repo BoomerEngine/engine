@@ -15,6 +15,7 @@ namespace rendering
     class IMaterial;
     typedef base::RefPtr<IMaterial> MaterialPtr;
     typedef base::res::Ref<IMaterial> MaterialRef;
+    typedef base::res::AsyncRef<IMaterial> MaterialAsyncRef;
 
     class IMaterialCompiledParameters;
     typedef base::RefPtr<IMaterialCompiledParameters> MaterialCompiledParametersPtr;

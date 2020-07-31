@@ -60,7 +60,7 @@ namespace rendering
             markModified();
 
             if (auto graph = findParent<MaterialGraph>())
-                graph->postEvent("OnFullStructureChange"_id);
+                graph->postEvent(base::EVENT_OBJECT_STRUCTURE_CHANGED);
         }
     }
 

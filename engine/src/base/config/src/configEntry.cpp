@@ -17,7 +17,7 @@ namespace base
     {
         //---
 
-        Entry::Entry(Group* group, StringID name)
+        Entry::Entry(Group* group, const StringBuf& name)
             : m_name(name)
             , m_group(group)
         {}

@@ -12,6 +12,7 @@
 #include "uiGraphEditor.h"
 #include "uiGraphEditorNode.h"
 #include "uiGraphEditorNodeClassSelector.h"
+#include "uiRenderer.h"
 #include "uiMenuBar.h"
 
 #include "base/graph/include/graphBlock.h"
@@ -118,7 +119,7 @@ namespace ui
         auto socketName = socket ? socket->name() : base::StringID();
 
         auto window = base::CreateSharedPtr<BlockClassPickerBox>(*m_graph, socket);
-        window->bind("OnBlockClassSelected"_id) = [selfRef, virtualPosition, blockRef, socketName](BlockClassPickerBox* box, BlockClassPickResult result)
+        window->bind(EVENT_GRAPH_BLOCK_CLASS_SELECTED) = [selfRef, virtualPosition, blockRef, socketName](BlockClassPickResult result)
         {
             if (auto editor = selfRef.lock())
             {
@@ -129,7 +130,7 @@ namespace ui
             }
         };
         
-        window->showModal(this);// , ui::PopupWindowSetup().bottomLeft().relativeToCursor().autoClose(true).interactive(true));
+        renderer()->runModalLoop(window);
         return true;
     }
 

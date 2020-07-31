@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "editorService.h"
-#include "editorConfig.h"
 #include "editorWindow.h"
 
 #include "backgroundCommand.h"
@@ -25,6 +24,7 @@
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/ui/include/uiRenderer.h"
+#include "base/ui/include/uiElementConfig.h"
 #include "base/xml/include/xmlUtils.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlWrappers.h"
@@ -81,7 +81,8 @@ namespace ed
         depot->enableDepotObservers();
 
         // create configuration
-        m_config.create();
+        m_configStorage.create();
+        m_configRootBlock.create(m_configStorage.get(), "");
 
         // start the message service 
         m_messageServer = CreateSharedPtr<net::TcpMessageServer>();
@@ -94,20 +95,21 @@ namespace ed
         // cache format information
         ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
+        // load config data (does not apply the config)
+        m_configPath = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("editor.ini");
+        m_configStorage->loadFromFile(m_configPath);
+        
         // load open/save settings
-        loadOpenSaveSettings(config()["OpenSaveDialog"]);
+        loadOpenSaveSettings(m_configRootBlock->tag("OpenSaveDialog"));
 
         // initialize the managed depot
-        m_managedDepot = CreateUniquePtr<ManagedDepot>(*depot, config()["Depot"]);
+        m_managedDepot = CreateUniquePtr<ManagedDepot>(*depot);
         m_managedDepot->populate();
+        m_managedDepot->configLoad(m_configRootBlock->tag("Depot"));
 
         // create version control
         // TODO: add actual integration
         m_versionControl = vsc::CreateLocalStub();
-
-        // load config
-        m_configPath = IO::GetInstance().systemPath(io::PathCategory::UserConfigDir).addFile("editor.ini");
-        m_config->load(m_configPath);
 
         // we are initialized
         return app::ServiceInitializationResult::Finished;
@@ -118,7 +120,8 @@ namespace ed
         m_messageServer.reset();
         m_managedDepot.reset();
         m_versionControl.reset();
-        m_config.reset();
+        m_configRootBlock.reset();
+        m_configStorage.reset();
     }
 
     bool Editor::start(ui::Renderer* renderer)
@@ -129,7 +132,7 @@ namespace ed
         if (!m_mainWindow)
         {
             m_mainWindow = CreateSharedPtr<MainWindow>();
-            m_mainWindow->loadConfig(config()["Editor"]);
+            m_mainWindow->configLoad(m_configRootBlock->tag("Editor"));
             renderer->attachWindow(m_mainWindow);
         }
 
@@ -147,7 +150,7 @@ namespace ed
         }
 
         m_renderer = nullptr;
-        m_config->save(m_configPath);
+        m_configStorage->saveToFile(m_configPath);
 
         m_openSavePersistentData.clearPtr();
     }
@@ -156,19 +159,16 @@ namespace ed
     {
         TRACE_INFO("Saving config...");
 
+        if (m_managedDepot)
+            m_managedDepot->configSave(m_configRootBlock->tag("Depot"));
+
         if (m_mainWindow)
-        {
-            auto mainWindowConfig = config()["Editor"];
-            m_mainWindow->saveConfig(mainWindowConfig);
-        }
+            m_mainWindow->configSave(m_configRootBlock->tag("Editor"));
 
-        // save open/save settings
-        {
-            auto openSaveConfig = config()["OpenSaveDialogs"];
-            saveOpenSaveSettings(openSaveConfig);
-        }
+        saveOpenSaveSettings(m_configRootBlock->tag("OpenSaveDialogs"));
 
-        m_config->save(m_configPath); 
+        // save
+        m_configStorage->saveToFile(m_configPath); 
         m_nextConfigSave = NativeTimePoint::Now() + cvConfigAutoSaveTime.get();
     }
 
@@ -378,41 +378,14 @@ namespace ed
         }
     }
 
-    //---
-
-    bool Editor::canOpenFile(const ManagedFileFormat& format) const
-    {
-        return m_mainWindow->canOpenFile(format);
-    }
-
-    bool Editor::openFile(ManagedFile* file)
-    {
-        return m_mainWindow->openFile(file);
-    }
-
-    bool Editor::selectFile(ManagedFile* file)
-    {
-        return m_mainWindow->selectFile(file);
-    }
-
-    ManagedFile* Editor::selectedFile() const
-    {
-        return m_mainWindow->selectedFile();
-    }
-
-    ManagedDirectory* Editor::selectedDirectory() const
-    {
-        return m_mainWindow->selectedDirectory();
-    }
-
     //--
 
-    void Editor::loadOpenSaveSettings(const ConfigGroup& config)
+    void Editor::loadOpenSaveSettings(const ui::ConfigBlock& config)
     {
 
     }
 
-    void Editor::saveOpenSaveSettings(ConfigGroup& config) const
+    void Editor::saveOpenSaveSettings(const ui::ConfigBlock& config) const
     {
 
     }
@@ -426,38 +399,10 @@ namespace ed
             return **data;
 
         auto entry = MemNew(io::OpenSavePersistentData).ptr;
-        entry->directory = IO::GetInstance().systemPath(io::PathCategory::UserDocumentsDir);
+        entry->directory = base::io::SystemPath(io::PathCategory::UserDocumentsDir);
 
         m_openSavePersistentData[StringBuf(category)] = entry;
         return *entry;
-    }
-
-    bool Editor::addImportFiles(const Array<StringBuf>& assetPaths, SpecificClassType<res::IResource> importClass, const ManagedDirectory* directoryOverride, bool showTab)
-    {
-        if (!directoryOverride)
-        {
-            directoryOverride = m_mainWindow->selectedDirectory();
-            if (!directoryOverride)
-            {
-                ui::PostNotificationMessage(m_mainWindow, ui::MessageType::Warning, "ImportAsset"_id, "No directory selected to import to");
-                return false;
-            }
-        }
-
-        m_mainWindow->addNewImportFiles(directoryOverride, importClass, assetPaths);
-        return true;
-    }
-
-    bool Editor::addReimportFiles(const Array<ManagedFileNativeResource*>& filesToReimport, bool showTab /*= true*/)
-    {
-        m_mainWindow->addReimportFiles(filesToReimport);
-        return true;
-    }
-
-    bool Editor::addReimportFile(ManagedFileNativeResource* fileToReimport, const res::ResourceConfigurationPtr& config, bool showTab /*= true*/)
-    {
-        m_mainWindow->addReimportFile(fileToReimport, config);
-        return true;
     }
 
     //--
@@ -485,7 +430,7 @@ namespace ed
         // ask for file path
         io::AbsolutePath selectedPath;
         const auto nativeHandle = windowNativeHandle(owner);
-        if (!IO::GetInstance().showFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
+        if (!base::io::ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
             return false;
 
         // extract file name
@@ -544,7 +489,7 @@ namespace ed
         // ask for file path
         Array<io::AbsolutePath> selectedPaths;
         const auto nativeHandle = windowNativeHandle(owner);
-        if (!IO::GetInstance().showFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
+        if (!base::io::ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
             return false;
 
         // load the document from the file

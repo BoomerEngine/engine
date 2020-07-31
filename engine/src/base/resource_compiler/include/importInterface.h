@@ -59,7 +59,7 @@ namespace base
             //--
 
             /// get the path to the resource being imported, this is a depot path
-            virtual const ResourcePath& queryResourcePath() const = 0;
+            virtual const StringBuf& queryResourcePath() const = 0;
 
             /// get the mount point for cooked resource, this is the base directory of the package the resource is at
             virtual const ResourceMountPoint& queryResourceMountPoint() const = 0;
@@ -104,6 +104,9 @@ namespace base
             ///  "rendering/Box/Textures/wood.jpg"
             ///  etc, up to the maxScanDepth
             virtual bool findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const = 0;
+
+            // same as findSourceFile but finds files in depot
+            virtual bool findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const = 0;
 
             //--
 

@@ -133,7 +133,7 @@ namespace base
 
     //---
 
-    ConfigPropertyBase::ConfigPropertyBase(StringID groupName, StringID name, ConfigPropertyFlags flags)
+    ConfigPropertyBase::ConfigPropertyBase(StringView<char> groupName, StringView<char> name, ConfigPropertyFlags flags)
         : m_group(groupName)
         , m_name(name)
         , m_flags(flags)
@@ -189,7 +189,7 @@ namespace base
     {
         if (auto type  = this->type())
         {
-            if (auto entry  = Config::GetInstance().findEntry(m_group, m_name))
+            if (auto entry = config::FindEntry(m_group, m_name))
             {
                  if (!LoadFromEntry(type, data(), defaultData(), *entry))
                  {
@@ -285,7 +285,7 @@ namespace base
             if (!type->compare(data(), defaultData()))
             {
                 // get the configuration entry
-                auto &entry = Config::GetInstance().entry(m_group, m_name);
+                auto &entry = config::MakeEntry(m_group, m_name);
                 SaveToEntry(type, data(), defaultData(), entry);
             }
         }
@@ -296,7 +296,7 @@ namespace base
         helper::ConfigPropertyRegistry::GetInstance().all(outProperties);
     }
 
-    void ConfigPropertyBase::RefreshPropertyValue(StringID group, StringID name)
+    void ConfigPropertyBase::RefreshPropertyValue(StringView<char> group, StringView<char> name)
     {
         helper::ConfigPropertyRegistry::GetInstance().run([group, name](ConfigPropertyBase* prop) {
             if (prop->group() == group && prop->name() == name)
@@ -324,8 +324,8 @@ namespace base
             return a->name() < b->name();
         });
 
-        StringID groupName;
-        for (auto prop  : allValues)
+        StringBuf groupName;
+        for (auto prop : allValues)
         {
             if (groupName != prop->group())
             {

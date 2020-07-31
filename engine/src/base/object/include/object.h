@@ -43,7 +43,10 @@ namespace base
         INLINE GlobalEventKey eventKey() const { return m_eventKey; }
 
         // Get parent object, does not have to be defined
-        INLINE IObject* parent() const { return m_parent; }
+        INLINE IObject* parent() const { return m_parent.unsafe(); }
+
+        // Get parent object, does not have to be defined
+        INLINE ObjectPtr parentRef() const { return m_parent.lock(); }
 
         // Check if object is of given class
         template< class T > INLINE bool is() const;
@@ -240,7 +243,7 @@ namespace base
 
         // objects form a hierarchy, mostly for the purpose of saving in resources, this is our pointer to parent object
         // NOTE: it's considered dick move to delete parent object without deleting the children
-        IObject* m_parent = nullptr;
+        ObjectWeakPtr m_parent;
 
         // unique (runtime) ID for this object
         ObjectID m_id;

@@ -40,7 +40,7 @@ namespace rendering
     {
         if (base::rtti::ConvertData(data, type, (void*)dataValue(), dataType()))
         {
-            postEvent("OnPropertyChanged"_id, "value");
+            postEvent(base::EVENT_OBJECT_PROPERTY_CHANGED, base::StringBuf("value"));
             return true;
         }
 

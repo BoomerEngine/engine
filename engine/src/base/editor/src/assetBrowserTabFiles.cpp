@@ -9,14 +9,17 @@
 #include "build.h"
 
 #include "assetBrowserTabFiles.h"
-#include "assetBrowserContextMenu.h"
 #include "assetFileListModel.h"
+#include "assetFileListVisualizations.h"
 #include "assetBrowser.h"
+#include "assetBrowserDialogs.h"
 
 #include "editorService.h"
 #include "managedDirectory.h"
 #include "managedFile.h"
 #include "managedFileFormat.h"
+#include "managedFilePlaceholder.h"
+#include "managedDirectoryPlaceholder.h"
 
 #include "base/resource/include/resourceFactory.h"
 #include "base/io/include/ioSystem.h"
@@ -36,6 +39,8 @@
 #include "base/resource_compiler/include/importInterface.h"
 #include "base/resource_compiler/include/importFileService.h"
 #include "base/io/include/fileFormat.h"
+#include "base/ui/include/uiRenderer.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -48,6 +53,7 @@ namespace ed
         : ui::DockPanel()
         , m_context(env)
         , m_depot(depot)
+        , m_fileEvents(this)
     {
         layoutVertical();
         closeButton(true);
@@ -73,10 +79,7 @@ namespace ed
                 bar->allowEditBox(false);
                 bar->customStyle<float>("width"_id, 200.0f);
                 bar->value(m_iconSize);
-                bar->bind("OnValueChanged"_id, this) = [](AssetBrowserTabFiles* bar, double value)
-                {
-                    bar->iconSize(value);
-                };
+                bar->bind(ui::EVENT_TRACK_VALUE_CHANGED) = [this](double value) { iconSize(value); };
             }
         }
 
@@ -121,10 +124,7 @@ namespace ed
 
         actions().bindCommand("AssetBrowserTab.Delete"_id) = [this]()
         {
-            AssetItemList items;
-            collectItems(items, true);
-            if (!items.empty())
-                DeleteFiles(this, items);
+            DeleteDepotItems(this, selectedItems());
         };
             
         actions().bindCommand("AssetBrowserTab.Navigate"_id) = [this]()
@@ -171,7 +171,7 @@ namespace ed
 
         //--
 
-        m_files->bind("OnItemActivated"_id, this) = [this](AssetBrowserTabFiles* tabs, ui::ModelIndex index)
+        m_files->bind(ui::EVENT_ITEM_ACTIVATED) = [this](ui::ModelIndex index)
         {
             if (auto dir = m_filesModel->directory(index))
             {
@@ -180,15 +180,12 @@ namespace ed
             }
             else if (auto file = m_filesModel->file(index))
             {
-                if (!GetService<Editor>()->openFile(file))
-                {
-                    //ui::ShowMessageBox(this, ui::MessageBoxSetup().error().title("Edit asset").message("No editor found capable of editing selected file").error());
+                if (!file->open())
                     ui::PostWindowMessage(this, ui::MessageType::Error, "EditAsset"_id, TempString("Failed to open '{}'", file->depotPath()));
-                }
             }
         };
 
-        m_files->bind("OnContextMenu"_id, this) = [this]()
+        m_files->bind(ui::EVENT_CONTEXT_MENU) = [this]()
         {
             return showGenericContextMenu();
         };
@@ -202,28 +199,22 @@ namespace ed
         m_filesModel.reset();
     }
 
-    ui::IElement* AssetBrowserTabFiles::handleFocusForwarding()
-    {
-        return m_files;
-    }
-
     void AssetBrowserTabFiles::handleCloseRequest()
     {
         if (locked())
         {
+            ui::MessageBoxSetup setup;
+            setup.title("Close locked tab").yes().no().defaultNo().question();
+
             StringBuilder txt;
             txt.appendf("Tab '{}' is locked, close anyway?", directory()->name());
+            setup.message(txt.view());
 
-            ui::ShowMessageBox(this, ui::MessageBoxSetup().title("Close locked tab").message(txt.c_str()).yes().no().defaultNo().question()) = [](AssetBrowserTabFiles* tab, ui::MessageButton button)
-            {
-                if (button == ui::MessageButton::Yes)
-                    tab->close();
-            };
+            if (ui::MessageButton::Yes != ui::ShowMessageBox(this, setup))
+                return;
         }
-        else
-        {
-            close();
-        }
+
+        close();
     }
 
     void AssetBrowserTabFiles::updateTitle()
@@ -262,11 +253,6 @@ namespace ed
     Array<ManagedItem*> AssetBrowserTabFiles::selectedItems() const
     {
         return m_filesModel->items(m_files->selection().keys());
-    }
-
-    void AssetBrowserTabFiles::collectItems(AssetItemList& outList, bool resursive) const
-    {
-        m_filesModel->collectItems(m_files->selection().keys(), outList, resursive);
     }
 
     void AssetBrowserTabFiles::locked(bool isLocked)
@@ -335,11 +321,9 @@ namespace ed
             if (!m_files->current())
                 m_files->select(m_files->model()->index(0, 0, ui::ModelIndex()));
 
-            //GetService<Editor>()->managedDepot().thumbnailService().requestFolder(m_dir->depotPath());
-
             updateTitle();
 
-            call("OnDirectoryChanged"_id);
+            call(EVENT_DIRECTORY_CHANGED);
         }
     }
 
@@ -372,114 +356,6 @@ namespace ed
         }
     }
 
-    /*void AssetBrowserTabFiles::showDirectoryCreationDialog()
-    {
-        // ask for directory name
-        StringBuf newDirectoryName = "NewDirectory";
-        if (!ui::ShowInputBox((), ui::InputBoxSetup().title("New directory").message("Enter name of new directory:"), newDirectoryName))
-            return;
-
-        // empty name
-        if (newDirectoryName.empty())
-            return;
-
-        // if directory exists just open it
-        {
-            auto existingDirectory = m_dir->childDirectory(newDirectoryName.c_str());
-            if (existingDirectory)
-            {
-                directory(existingDirectory);
-                return;
-            }
-        }
-
-        // create child directory
-        auto newChildDirectory = m_dir->addChildDirectory(newDirectoryName);
-        if (!newChildDirectory)
-        {
-            ui::ShowMessageBox((), ui::MessageBoxSetup().title("New directory").error().message("Failed to create new directory"));
-            return;
-        }
-
-        // switch to new directory
-        directory(newChildDirectory);
-    }
-
-    static StringBuf BuildCoreName(const StringBuf& name)
-    {
-        StringBuilder txt;
-
-        bool firstChar = true;
-
-        for (auto ch : name.view())
-        {
-            if (ch <= ' ')
-                continue;
-
-            if (firstChar && isupper(ch))
-                ch = tolower(ch);
-
-            txt.appendch(ch);
-            firstChar = false;
-        }
-
-        return txt.toString();
-    }
-
-    void AssetBrowserTabFiles::showAssetCreationDialog(const depot::ManagedFileFormat* format)
-    {
-        if (!format)
-            return;
-
-        if (!format->nativeResourceClass())
-        {
-            TRACE_ERROR("Format '{}' does not support direct resource creation", format->description());
-            return;
-        }
-
-        TRACE_INFO("Format selected: '{}'", format->description());
-
-        auto coreName = BuildCoreName(format->description());
-        TRACE_INFO("Core name: '{}'", coreName);
-
-        uint32_t index = 0;
-        StringBuf fileName;
-        for (;;)
-        {
-            fileName = TempString("{}{}.{}", coreName, index, format->extension());
-            if (!m_dir->file(fileName))
-                break;
-            index += 1;
-        }
-
-        // ask for file name
-        if (!ui::ShowInputBox((), ui::InputBoxSetup().title("New file").message("Enter name of new file:"), fileName))
-            return;
-
-        // remove the ext
-        fileName = fileName.stringBeforeFirst(".", true);
-        if (fileName.empty())
-            return;
-
-        // force the extension
-        fileName = TempString("{}.{}", fileName, format->extension());
-
-        // create depot path
-        auto depotPath = StringBuf(TempString("{}{}", m_dir->depotPath(), fileName));
-
-        // create a file in the depot
-        if (auto file = GetService<Editor>()->managedDepot().createFile(depotPath, format->nativeResourceClass()))
-        {
-            if (auto index = m_filesModel->index(file))
-                m_files->select(index);
-        }
-        else
-        {
-            StringBuf text = TempString("Failed to create file '{}'", fileName);
-            ui::ShowMessageBox(m_files, ui::MessageBoxSetup().error().title("Create file").message(text.c_str()));
-        }
-    }*/
-
     bool AssetBrowserTabFiles::selectItem(ManagedItem* ptr)
     {
         if (auto index = m_filesModel->index(ptr))
@@ -510,11 +386,11 @@ namespace ed
         return false;
     }
 
-    void AssetBrowserTabFiles::saveConfig(ConfigGroup& path) const
+    void AssetBrowserTabFiles::configSave(const ui::ConfigBlock& block) const
     {
-        path.write("Locked", m_locked);
-        path.write("Flat", m_flat);
-        path.write("List", m_list);
+        block.write("Locked", m_locked);
+        block.write("Flat", m_flat);
+        block.write("List", m_list);
 
         auto parentDir = m_dir->parentDirectory();
 
@@ -522,7 +398,7 @@ namespace ed
             StringBuf dirPath;
             if (m_dir && !m_dir->isDeleted())
                 dirPath = m_dir->depotPath();
-            path.write<StringBuf>("Path", dirPath);
+            block.write<StringBuf>("Path", dirPath);
         }
 
         {
@@ -530,7 +406,7 @@ namespace ed
             if (auto file = selectedItem())
                 if (file != parentDir)
                     currentFilePath = file->name();
-            path.write<StringBuf>("CurrentFile", currentFilePath);
+            block.write<StringBuf>("CurrentFile", currentFilePath);
         }
 
         {
@@ -538,22 +414,22 @@ namespace ed
             for (auto& file : selectedItems())
                 if (file != parentDir)
                     selectedFiles.pushBack(file->name());
-            path.write("SelectedFile", selectedFiles);
+            block.write("SelectedFile", selectedFiles);
         }
     }
 
-    bool AssetBrowserTabFiles::loadConfig(const ConfigGroup& path)
+    void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
     {
-        m_locked = path.readOrDefault("Locked", false);
-        m_flat = path.readOrDefault("Flat", false);
+        m_locked = block.readOrDefault("Locked", false);
+        m_flat = block.readOrDefault("Flat", false);
 
-        list(path.readOrDefault("List", false));
+        list(block.readOrDefault("List", false));
 
         if (m_dir)
         {
             {
                 Array<ui::ModelIndex> indices;
-                auto selectedFiles = path.readOrDefault<Array<StringBuf>>("SelectedFile");
+                auto selectedFiles = block.readOrDefault<Array<StringBuf>>("SelectedFile");
                 for (auto& name : selectedFiles)
                 {
                     if (auto file = m_dir->file(name))
@@ -565,7 +441,7 @@ namespace ed
             }
 
             {
-                auto currentFile = path.readOrDefault<StringBuf>("CurrentFile");
+                auto currentFile = block.readOrDefault<StringBuf>("CurrentFile");
 
                 if (auto file = m_dir->file(currentFile))
                 {
@@ -585,7 +461,6 @@ namespace ed
         }
 
         updateTitle();
-        return true;
     }
 
     //--
@@ -654,7 +529,7 @@ namespace ed
             m_filesModel->iconSize(m_iconSize);
 
             m_iconSize = size;
-            m_files->forEachVisualization<AssetBrowserFileVisItem>([size](AssetBrowserFileVisItem* item)
+            m_files->forEachVisualization<IAssetBrowserVisItem>([size](IAssetBrowserVisItem* item)
                 {
                     item->resizeIcon(size);
                 });
@@ -663,12 +538,103 @@ namespace ed
 
     void AssetBrowserTabFiles::createNewDirectory()
     {
+        if (m_dir)
+        {
+            if (const auto addHocDir = base::CreateSharedPtr<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
+            {
+                if (auto index = m_filesModel->addAdHocElement(addHocDir))
+                {
+                    selectItem(addHocDir);
 
+                    auto addHocDirRef = addHocDir.weak();
+
+                    m_directoryPlaceholders.pushBack(addHocDir);
+                    m_fileEvents.bind(addHocDir->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED) = [this, addHocDirRef]()
+                    {
+                        if (auto dir = addHocDirRef.lock())
+                            finishDirPlaceholder(dir);
+                    };
+                    m_fileEvents.bind(addHocDir->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED) = [this, addHocDirRef]()
+                    {
+                        if (auto dir = addHocDirRef.lock())
+                            cancelDirPlaceholder(dir);
+                    };
+                }
+            }
+        }
     }
 
     void AssetBrowserTabFiles::createNewFile(const ManagedFileFormat* format)
     {
+        if (m_dir)
+        {
+            const auto initialFileName = m_dir->adjustFileName(TempString("New{}", format->description()));
+            if (const auto addHocFile = base::CreateSharedPtr<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
+            {
+                if (auto index = m_filesModel->addAdHocElement(addHocFile))
+                {
+                    selectItem(addHocFile);
 
+                    auto addHocFileRef = addHocFile.weak();
+
+                    m_filePlaceholders.pushBack(addHocFile);
+                    m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED) = [this, addHocFileRef]()
+                    {
+                        if (auto file = addHocFileRef.lock())
+                            finishFilePlaceholder(file);
+                    };
+                    m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED) = [this, addHocFileRef]()
+                    {
+                        if (auto file = addHocFileRef.lock())
+                            cancelFilePlaceholder(file);
+                    };
+                }
+            }
+        }
+    }
+
+    void AssetBrowserTabFiles::finishFilePlaceholder(ManagedFilePlaceholderPtr ptr)
+    {
+        m_fileEvents.unbind(ptr->eventKey());
+        m_filesModel->removeAdHocElement(ptr);
+
+        if (m_filePlaceholders.remove(ptr))
+        {
+            const auto fileName = ptr->shortName();
+            if (auto file = m_dir->createFile(fileName, ptr->format()))
+            {
+                selectItem(file);
+            }
+        }
+    }
+
+    void AssetBrowserTabFiles::cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr)
+    {
+        m_fileEvents.unbind(ptr->eventKey());
+        m_filesModel->removeAdHocElement(ptr);
+        m_filePlaceholders.remove(ptr);
+    }
+
+    void AssetBrowserTabFiles::finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr)
+    {
+        m_fileEvents.unbind(ptr->eventKey());
+        m_filesModel->removeAdHocElement(ptr);
+
+        if (m_directoryPlaceholders.remove(ptr))
+        {
+            const auto dirName = ptr->name();
+            if (auto file = m_dir->createDirectory(dirName))
+            {
+                selectItem(file);
+            }
+        }
+    }
+
+    void AssetBrowserTabFiles::cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr)
+    {
+        m_fileEvents.unbind(ptr->eventKey());
+        m_filesModel->removeAdHocElement(ptr);
+        m_directoryPlaceholders.remove(ptr);
     }
 
     static io::OpenSavePersistentData GImportFiles;
@@ -701,7 +667,7 @@ namespace ed
             // ask for files
             auto nativeHandle = GetService<Editor>()->windowNativeHandle(owner);
             Array<io::AbsolutePath> importPaths;
-            if (!IO::GetInstance().showFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
+            if (!base::io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
                 return false;
 
             // convert the absolute paths to the source paths
@@ -734,58 +700,13 @@ namespace ed
             return false;
 
         // add to import window
-        return GetService<Editor>()->addImportFiles(assetPaths, nativeClass, parentDir);
+        GetService<Editor>()->mainWindow().addNewImportFiles(parentDir, nativeClass, assetPaths);
+        return true;
     }
 
     bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
     {
         return ImportNewFiles(this, format, m_dir);
-    }
-
-    //--
-
-    void AssetItemList::clear()
-    {
-        fileSet.reset();
-        dirSet.reset();
-        files.reset();
-        dirs.reset();
-    }
-
-    void AssetItemList::collect(ManagedItem* item, bool recrusive)
-    {
-        if (auto* file = rtti_cast<ManagedFile>(item))
-            collectFile(file);
-        else if (auto* dir = rtti_cast<ManagedDirectory>(item))
-            collectDir(dir, recrusive);
-    }
-
-    void AssetItemList::collectDir(ManagedDirectory* dir, bool recrusive)
-    {
-        if (dirSet.insert(dir))
-        {
-            if (recrusive)
-            {
-                for (const auto& child : dir->directories())
-                    collectDir(child);
-            }
-
-            dirs.emplaceBack(dir);
-            
-            if (recrusive)
-            {
-                for (const auto& file : dir->files())
-                    collectFile(file);
-            }
-        }
-    }
-
-    void AssetItemList::collectFile(ManagedFile* file)
-    {
-        if (fileSet.insert(file))
-            files.emplaceBack(file);
-
-        // TODO: get the ".manifest" files for the deleted file as well
     }
 
     //--

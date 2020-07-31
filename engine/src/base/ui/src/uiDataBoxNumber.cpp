@@ -237,12 +237,14 @@ namespace ui
     {
         layoutHorizontal();
 
-        m_editBox = createChild<TextEditor>();
+        auto flags = ui::EditBoxFeatureFlags({ ui::EditBoxFeatureBit::AcceptsEnter, ui::EditBoxFeatureBit::NoBorder });
+
+        m_editBox = createChild<EditBox>(flags);
         m_editBox->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_editBox->customVerticalAligment(ui::ElementVerticalLayout::Expand);
         m_editBox->postfixText(units);
 
-        m_editBox->bind("OnTextAccepted"_id) = [this]()
+        m_editBox->bind(EVENT_TEXT_ACCEPTED, this) = [this]()
         {
             write();
         };
@@ -250,10 +252,10 @@ namespace ui
         if (dragger)
         {
             m_dragBox = createChild<Dragger>();
-            m_dragBox->bind("OnDragStarted"_id) = [this]() { dragStart(); };
-            m_dragBox->bind("OnDrag"_id) = [this](Dragger*, int64_t delta) { dragUpdate(delta); };
-            m_dragBox->bind("OnDragFinished"_id) = [this]() { dragFinish(); };
-            m_dragBox->bind("OnDragCanceled"_id) = [this]() { dragCancel(); };
+            m_dragBox->bind(EVENT_VALUE_DRAG_STARTED) = [this]() { dragStart(); };
+            m_dragBox->bind(EVENT_VALUE_DRAG_STEP) = [this](int64_t delta) { dragUpdate(delta); };
+            m_dragBox->bind(EVENT_VALUE_DRAG_FINISHED) = [this]() { dragFinish(); };
+            m_dragBox->bind(EVENT_VALUE_DRAG_CANCELED) = [this]() { dragCancel(); };
         }
     }
 
@@ -385,7 +387,7 @@ namespace ui
         m_bar->resolution(numDigits);
         m_bar->allowEditBox(editable);
 
-        m_bar->bind("OnValueChanged"_id) = [this]()
+        m_bar->bind(EVENT_TRACK_VALUE_CHANGED) = [this]()
         {
             write();
         };

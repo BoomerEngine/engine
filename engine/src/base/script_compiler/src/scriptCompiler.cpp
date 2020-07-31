@@ -238,10 +238,10 @@ namespace base
                 return base::CreateSharedPtr<CompiledProject>(data);
             }
 
-            res::ResourcePath FindScriptImportPath(StringID name) const
+            StringBuf FindScriptImportPath(StringID name) const
             {
                 int importPriority = 0;
-                res::ResourcePath importPath;
+                StringBuf importPath;
 
                 /*for (auto& manifest : base::GetService<depot::DepotService>()->manifests())
                 {

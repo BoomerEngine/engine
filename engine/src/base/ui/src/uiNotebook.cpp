@@ -186,7 +186,7 @@ namespace ui
     bool Notebook::tabHandleContextMenu(IElement* tab, const Position& pos)
     {
         if (tab)
-            return tab->call("OnTabContextMenu"_id, pos);
+            return tab->call(EVENT_TAB_CONTEXT_MENU, pos);
         return false;
     }
 
@@ -201,18 +201,19 @@ namespace ui
     ButtonPtr Notebook::createHeaderButtonForTab(IElement* tab)
     {
         auto tabButton = m_header->createChildWithType<Button>("NotebookHeaderTabButton"_id, ButtonModeBit::EventOnClick);
-        tabButton->bind("OnClick"_id, this) = [](Button* tabButton, Notebook* ptr)
+        tabButton->bind(EVENT_CLICKED, this) = [this](Button* tabButton)
         {
-            if (auto* tab = ptr->tabForButton(tabButton))
-                ptr->tab(tab);
+            if (auto* newTab = tabForButton(tabButton))
+                this->tab(newTab);
         };
 
         tabButton->createNamedChild<TextLabel>("Title"_id, tabTitle(tab));
 
-        tabButton->bind("OnContextMenu"_id, this) = [](ui::Button* button, ui::Notebook* parent, Position position)
+        tabButton->bind(EVENT_CONTEXT_MENU) = [this](ui::Button* button, Position position)
         {
-            if (auto* tab = parent->tabForButton(button))
-                return parent->tabHandleContextMenu(tab, position);
+            if (auto* tab = tabForButton(button))
+                return tabHandleContextMenu(tab, position);
+
             return false;
         };
 
@@ -222,11 +223,11 @@ namespace ui
             closeButton->createChild<TextLabel>();
             closeButton->visibility(tabHasCloseButton(tab));
 
-            closeButton->bind("OnClick"_id, this) = [](Button* closeButton, Notebook* ptr)
+            closeButton->bind(EVENT_CLICKED, this) = [this](Button* closeButton)
             {
                 if (auto tabButton = closeButton->findParent<Button>())
-                    if (auto* tab = ptr->tabForButton(tabButton))
-                        ptr->tabHandleCloseRequest(tab);
+                    if (auto* tab = tabForButton(tabButton))
+                        tabHandleCloseRequest(tab);
             };
         }
 

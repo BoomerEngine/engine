@@ -383,6 +383,15 @@ namespace base
         return *this;
     }
 
+    IFormatStream& IFormatStream::appendUTF32(uint32_t ch)
+    {
+        char buf[7];
+        auto len = prv::ConvertChar(buf, ch);
+        append(buf, len);
+
+        return *this;
+    }
+    
     IFormatStream& IFormatStream::appendPadding(char ch, uint32_t count)
     {
         auto maxPadding = std::min<uint32_t>(count, 64);

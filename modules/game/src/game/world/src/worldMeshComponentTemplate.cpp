@@ -16,7 +16,7 @@ namespace game
 {
     //--
 
-    base::res::StaticResource<rendering::Mesh> resDefaultMesh("engine/meshes/cube.v4mesh");
+    base::res::StaticResource<rendering::Mesh> resDefaultMesh("/engine/meshes/cube.v4mesh");
     //--
 
     RTTI_BEGIN_TYPE_CLASS(MeshComponentTemplate);

@@ -37,8 +37,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditor);
     RTTI_END_TYPE();
 
-    MaterialGraphEditor::MaterialGraphEditor(ConfigGroup config, ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::UndoRedo })
+    MaterialGraphEditor::MaterialGraphEditor(ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::UndoRedo })
     {
         createInterface();
     }
@@ -95,7 +95,7 @@ namespace ed
             m_graphEditor = tab->createChild<MaterialGraphEditorPanel>(actionHistory());
             m_graphEditor->expand();
 
-            m_graphEditor->bind("OnSelectionChanged"_id) = [this]()
+            m_graphEditor->bind(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED) = [this]()
             {
                 handleChangedSelection();
             };
@@ -107,7 +107,7 @@ namespace ed
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
             tab->layoutVertical();
 
-            m_previewPanel = tab->createChild<MaterialPreviewPanelWithToolbar>();
+            m_previewPanel = tab->createChild<MaterialPreviewPanel>();
             m_previewPanel->expand();
 
             dockLayout().left(0.2f).attachPanel(tab);
@@ -151,7 +151,7 @@ namespace ed
 
         m_previewInstance = base::CreateSharedPtr<rendering::MaterialInstance>();
 
-        if (auto existingMaterial = base::LoadResource<rendering::MaterialTemplate>(base::res::ResourcePath(file()->depotPath())))
+        if (auto existingMaterial = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()))
             m_previewInstance->baseMaterial(existingMaterial);
 
         m_previewPanel->bindMaterial(m_previewInstance);
@@ -186,13 +186,13 @@ namespace ed
             return (format.nativeResourceClass() == graphClass);
         }
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
                 if (auto loadedGraph = base::rtti_cast<rendering::MaterialGraph>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<MaterialGraphEditor>(config, nativeFile);
+                    auto ret = base::CreateSharedPtr<MaterialGraphEditor>(nativeFile);
                     ret->bindResource(loadedGraph);
                     return ret;
                 }

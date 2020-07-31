@@ -18,7 +18,7 @@ namespace base
 
         //---
 
-        Group::Group(Storage* storage, StringID name)
+        Group::Group(Storage* storage, const StringBuf& name)
             : m_storage(storage)
             , m_name(name)
         {
@@ -40,25 +40,25 @@ namespace base
             return wasModified;
         }
 
-        StringBuf Group::entryValue(StringID name, const StringBuf& defaultValue/*= ""*/) const
+        StringBuf Group::entryValue(StringView<char> name, const StringBuf& defaultValue/*= ""*/) const
         {
             if (auto entry  = findEntry(name))
                 return entry->value();
             return defaultValue;
         }
 
-        const Entry* Group::findEntry(StringID name) const
+        const Entry* Group::findEntry(StringView<char> name) const
         {
             auto lock  = CreateLock(m_lock);
             return findEntry_NoLock(name);
         }
 
-        const Entry* Group::findEntry_NoLock(StringID name) const
+        const Entry* Group::findEntry_NoLock(StringView<char> name) const
         {
             return m_entries.findSafe(name, nullptr);
         }
 
-        Entry& Group::entry(StringID name)
+        Entry& Group::entry(StringView<char> name)
         {
             auto lock  = CreateLock(m_lock);
 
@@ -67,15 +67,16 @@ namespace base
             auto entry  = m_entries.findSafe(name, nullptr);
             if (!entry)
             {
-                entry = MemNewPool(POOL_CONFIG, Entry, this, name);
-                m_entries[name] = entry;
+                auto nameStr = StringBuf(name);
+                entry = MemNewPool(POOL_CONFIG, Entry, this, nameStr);
+                m_entries[nameStr] = entry;
                 // NOTE: we do not mark a group as modified since empty entry will NOT be saved any way
             }
 
             return *entry;
         }
 
-        bool Group::removeEntry(StringID name)
+        bool Group::removeEntry(StringView<char> name)
         {
             auto lock  = CreateLock(m_lock);
 

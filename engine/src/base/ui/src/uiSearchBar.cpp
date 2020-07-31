@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: elements\controls\layout #]
+* [# filter: elements\controls\simple #]
 ***/
 
 #include "build.h"
@@ -87,7 +87,6 @@ namespace ui
 
     SearchBar::SearchBar(bool extendedSearchParams)
         : m_timer(this)
-        , OnSearchPatternChanged(this, "OnSearchPatternChanged"_id)
     {
         layoutHorizontal();
         enableAutoExpand(true, false);
@@ -95,16 +94,16 @@ namespace ui
         {
             m_showHistory = createChild<ui::Button>("[img:search_glyph]");
             m_showHistory->customVerticalAligment(ElementVerticalLayout::Middle);
-            m_showHistory->OnClick = [this]()
+            m_showHistory->bind(EVENT_CLICKED) = [this]()
             {
 
             };
         }
 
-        m_text = createChild<ui::TextEditor>();
+        m_text = createChild<ui::EditBox>();
         m_text->customHorizontalAligment(ElementHorizontalLayout::Expand);
         m_text->customVerticalAligment(ElementVerticalLayout::Middle);
-        m_text->OnTextModified = [this]()
+        m_text->bind(EVENT_TEXT_MODIFIED) = [this]()
         {
             m_timer.startOneShot(0.1f);
         };
@@ -112,7 +111,7 @@ namespace ui
         {
             m_flagCaseSensitive = createChild<ui::Button>("Aa", ButtonMode{ ButtonModeBit::EventOnClickRelease, ButtonModeBit::Toggle, ButtonModeBit::AutoToggle });
             m_flagCaseSensitive->customVerticalAligment(ElementVerticalLayout::Middle);
-            m_flagCaseSensitive->OnClick = [this]()
+            m_flagCaseSensitive->bind(EVENT_CLICKED) = [this]()
             {
                 updateSearchPattern();
             };
@@ -123,7 +122,7 @@ namespace ui
             {
                 m_flagWholeWords = createChild<ui::Button>("Word", ButtonMode{ ButtonModeBit::EventOnClickRelease, ButtonModeBit::Toggle, ButtonModeBit::AutoToggle });
                 m_flagWholeWords->customVerticalAligment(ElementVerticalLayout::Middle);
-                m_flagWholeWords->OnClick = [this]()
+                m_flagWholeWords->bind(EVENT_CLICKED) = [this]()
                 {
 
                 };
@@ -132,7 +131,7 @@ namespace ui
             {
                 m_flagRegEx = createChild<ui::Button>("RegEx", ButtonMode{ ButtonModeBit::EventOnClickRelease, ButtonModeBit::Toggle, ButtonModeBit::AutoToggle });
                 m_flagRegEx->customVerticalAligment(ElementVerticalLayout::Middle);
-                m_flagRegEx->OnClick = [this]()
+                m_flagRegEx->bind(EVENT_CLICKED) = [this]()
                 {
 
                 };
@@ -200,12 +199,12 @@ namespace ui
         if (auto view = m_itemView.lock())
             view->filter(m_currentSearchPattern);
 
-        OnSearchPatternChanged();
+        call(EVENT_SEARCH_CHANGED);
     }
 
     bool SearchBar::handleExternalKeyEvent(const base::input::KeyEvent& evt)
     {
-        if (m_blockExternalKeyPropagation)
+        /*if (m_blockExternalKeyPropagation)
         {
             m_externalEventReceived = true;
             return false;
@@ -221,20 +220,28 @@ namespace ui
                 return elem->handleKeyEvent(evt);
             }
         }
-
+        */
         return false;
+    }
+
+    static bool IsGoodCharToStartTyping(wchar_t ch)
+    {
+        if (ch <= ' ')
+            return false;
+
+        return true;
     }
 
     bool SearchBar::handleExternalCharEvent(const base::input::CharEvent& evt)
     {
-        if (m_blockExternalKeyPropagation)
+        if (IsGoodCharToStartTyping(evt.scanCode()))
         {
-            m_externalEventReceived = true;
-            return false;
-        }
+            if (m_blockExternalKeyPropagation)
+            {
+                m_externalEventReceived = true;
+                return false;
+            }
 
-        if (evt.scanCode() != 13 && evt.scanCode() != 10)
-        {
             if (!m_text->isFocused())
             {
                 m_text->focus();

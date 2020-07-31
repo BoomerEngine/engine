@@ -16,30 +16,6 @@ namespace base
     namespace io
     {
 
-        // type of location we want to retrieve from the system
-        enum class PathCategory : uint8_t
-        {
-            // path to the executable file currently running
-            ExecutableFile,
-
-            // path to the bin/ directory we are running from
-            ExecutableDir,
-
-            // path to the temporary directory when temporary files may be stored
-            // NOTE: temp directory may be totally purged between runs
-            TempDir,
-
-            // path to the user config directory - a directory where we can store user specific configuration files (like settings)
-            UserConfigDir,
-
-            // path to "My Documents" or /home/XXX/ or something similar
-            UserDocumentsDir,
-
-            //--
-
-            MAX,
-        };
-
         class AbsolutePath;
 
         class IReadFileHandle;
@@ -72,3 +48,5 @@ namespace base
 
     } // io
 } // base
+
+#include "ioSystem.h"

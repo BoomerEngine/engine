@@ -11,6 +11,7 @@
 #include "uiEditBox.h"
 #include "uiInputAction.h"
 #include "base/containers/include/stringParser.h"
+#include "uiTextValidation.h"
 
 namespace ui
 {
@@ -107,7 +108,7 @@ namespace ui
             updateDisplayLabel();
 
             if (callEvent)
-                call("OnValueChanged"_id, m_value);
+                call(EVENT_TRACK_VALUE_CHANGED, m_value);
         }
     }
 
@@ -407,22 +408,28 @@ namespace ui
     {
         if (!m_editBox)
         {
-            m_editBox = createChild<TextEditor>();
+            m_editBox = createChild<EditBox>(EditBoxFeatureFlags({ EditBoxFeatureBit::AcceptsEnter, EditBoxFeatureBit::NoBorder }));
             m_editBox->customHorizontalAligment(ElementHorizontalLayout::Expand);
             m_editBox->customVerticalAligment(ElementVerticalLayout::Expand);
+
+            if (m_numFractionDigits == 0)
+                m_editBox->validation(MakeIntegerNumbersInRangeValidationFunction((int64_t)m_min, (int64_t)m_max));
+            else
+                m_editBox->validation(MakeRealNumbersInRangeValidationFunction(m_min, m_max));
+
             m_editBox->text(formatDisplayText());
             m_editBox->selectWholeText();
             m_editBox->focus();
 
-            m_editBox->bind("OnTextAccepted"_id, this) = [](TextEditor* box, TrackBar* bar)
+            m_editBox->bind(EVENT_TEXT_ACCEPTED, this) = [this](EditBox* box)
             {
                 auto valueString = box->text();
 
-                double value = bar->value();
-                if (base::StringParser(valueString).parseDouble(value))
+                double number = value();
+                if (base::StringParser(valueString).parseDouble(number))
                 {
-                    bar->closeEditBox();
-                    bar->value(value, true);
+                    closeEditBox();
+                    value(number, true);
                 }
             };
         }

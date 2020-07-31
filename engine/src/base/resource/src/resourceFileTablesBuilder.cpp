@@ -161,6 +161,8 @@ namespace base
             if (!path)
                 return 0;
 
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AbsoluteFilePath), 0);
+
             uint32_t ret = 0;
             if (pathRawMap.find(path, ret))
                 return ret;
@@ -172,7 +174,7 @@ namespace base
             for (const auto& pathElem : pathParts)
                 parentPath = mapPath(parentPath, pathElem);
 
-            pathRawMap[StringBuf(path)] = ret;
+            pathRawMap[StringBuf(path)] = parentPath;
 
             return parentPath;
         }
@@ -269,15 +271,17 @@ namespace base
             uint32_t ret = 0;
             if (importMap.find(key, ret))
             {
-                auto& entry = importTable[ret];
+                ASSERT(ret != 0);
+                auto& entry = importTable[ret - 1];
                 entry.flags |= importInfo.flags;
                 return ret;
             }
 
-            ret = importTable.size();
             importTable.pushBack(importInfo);
+            ret = importTable.size();
 
-            return ret + 1;
+            importMap[key] = ret;
+            return ret;
         }
 
         //--
@@ -320,7 +324,7 @@ namespace base
                 return false;
 
             // update header
-            writeHeader.version = FileTables::FILE_VERSION;
+            writeHeader.version = FileTables::FILE_VERSION_MAX;
             writeHeader.magic = FileTables::FILE_MAGIC;
             writeHeader.headersEnd = file->pos() - baseOffset;
             writeHeader.buffersEnd = bufferEndPos;

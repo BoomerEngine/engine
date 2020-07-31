@@ -28,7 +28,7 @@ namespace ui
             m_box->customHorizontalAligment(ElementHorizontalLayout::Expand);
             m_box->customVerticalAligment(ElementVerticalLayout::Expand);
 
-            m_box->bind("OnChanged"_id) = [this]()
+            m_box->bind(EVENT_COMBO_SELECTED) = [this]()
             {
                 if (m_box->isEnabled())
                     write();

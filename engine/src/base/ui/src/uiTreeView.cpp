@@ -192,9 +192,9 @@ namespace ui
         if (!item->m_content)
         {
             auto itemContainer = base::CreateSharedPtr<TreeViewItem>(item->m_depth);
-            itemContainer->m_expandButton->bind("OnClick"_id, this) = [item](TreeView* view)
+            itemContainer->m_expandButton->bind(EVENT_CLICKED, this) = [item, this]()
             {                
-                view->changeExpandState(item, !item->m_expanded);
+                changeExpandState(item, !item->m_expanded);
             };
 
             itemContainer->customHorizontalAligment(ElementHorizontalLayout::Expand);
@@ -375,7 +375,7 @@ namespace ui
         if (evt.leftDoubleClicked())
         {
             auto index = indexAtPoint(evt.absolutePosition().toVector());
-            if (index && !OnItemActivated(index))
+            if (index && !call(EVENT_ITEM_ACTIVATED, index))
             {
                 select(index, ItemSelectionModeBit::Default);
                 

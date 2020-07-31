@@ -17,6 +17,12 @@
 namespace application
 {
  
+    BCCApp::BCCApp()
+    {}
+
+    BCCApp::~BCCApp()
+    {}
+
     struct CommandInfo
     {
         base::StringView<char> name;

@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "uiItemView.h"
-#include "uiWindow.h"
+#include "uiWindowPopup.h"
 #include "uiInputAction.h"
 #include "uiDragDrop.h"
 
@@ -24,7 +24,6 @@ namespace ui
     RTTI_END_TYPE();
 
     ItemView::ItemView()
-        : OnItemActivated(this, "OnItemActivated"_id)
     {
         hitTest(true);
     }
@@ -361,6 +360,25 @@ namespace ui
                 }
             }
         }
+    }
+
+    void ItemView::focusElement(const ModelIndex& index)
+    {
+        IElement* focusElement = this;
+
+        ViewItem* item = nullptr;
+        if (findViewElement(index, item))
+        {
+            if (item->m_content)
+            {
+                focusElement = item->m_content;
+
+                if (auto customFocusElement = item->m_content->focusFindFirst())
+                    focusElement = customFocusElement;
+            }
+        }
+
+        focusElement->focus();
     }
 
     bool ItemView::iterateDrawChildren(ElementDrawListToken& token) const
@@ -741,24 +759,22 @@ namespace ui
 
     InputActionPtr ItemView::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
-        if (evt.rightClicked())
-        {
-            auto index = indexAtPoint(evt.absolutePosition().toVector());
-            if (!m_selection.contains(index))
-                select(index, ItemSelectionModeBit::Default);
-            return InputActionPtr();
-        }
-        else if (evt.leftDoubleClicked())
+        if (evt.leftDoubleClicked())
         {
             auto index = indexAtPoint(evt.absolutePosition().toVector());
             if (index)
             {
-                select(index, ItemSelectionModeBit::Default);
-                OnItemActivated(index);
+                call(EVENT_ITEM_ACTIVATED, index);
                 return InputActionPtr();
             }
         }
-        else if (evt.leftClicked())
+
+        return TBaseClass::handleMouseClick(area, evt);
+    }
+
+    InputActionPtr ItemView::handleOverlayMouseClick(const ElementArea &area, const base::input::MouseClickEvent &evt)
+    {
+        if (evt.leftClicked() || evt.rightClicked())
         {
             auto clickedItem = indexAtPoint(evt.absolutePosition().toVector());
             if (evt.keyMask().isShiftDown())
@@ -779,18 +795,6 @@ namespace ui
             {
                 select(clickedItem, ItemSelectionModeBit::Default);
             }
-            return InputActionPtr();
-        }        
-
-        return TBaseClass::handleMouseClick(area, evt);
-    }
-
-    InputActionPtr ItemView::handleOverlayMouseClick(const ElementArea &area, const base::input::MouseClickEvent &evt)
-    {
-        if (evt.leftClicked())
-        {
-            auto index = indexAtPoint(evt.absolutePosition().toVector());
-            select(index, ItemSelectionModeBit::Default);
         }
 
         return TBaseClass::handleOverlayMouseClick(area, evt);
@@ -974,7 +978,8 @@ namespace ui
             {
                 if (evt.keyCode() == base::input::KeyCode::KEY_RETURN)
                 {
-                    return OnItemActivated(m_current);
+                    if (call(EVENT_ITEM_ACTIVATED, m_current))
+                        return true;
                 }                   
             }
 

@@ -33,8 +33,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditor);
     RTTI_END_TYPE();
 
-    MeshEditor::MeshEditor(ConfigGroup config, ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
+    MeshEditor::MeshEditor(ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
     {
         createInterface();
     }
@@ -51,6 +51,11 @@ namespace ed
             m_previewPanel = tab->createChild<MeshPreviewPanel>();
             m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+            m_previewPanel->bind(EVENT_MATERIAL_CLICKED, this) = [this](base::Array<base::StringID> materialNames)
+            {
+                m_materialsPanel->showMaterials(materialNames);
+            };
 
             dockLayout().attachPanel(tab);
         }
@@ -70,18 +75,24 @@ namespace ed
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials");
             tab->layoutVertical();
 
-            m_materialsPanel = tab->createChild<MeshMaterialsPanel>(m_previewPanel, actionHistory());
+            m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());
             m_materialsPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_materialsPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+            m_materialsPanel->bind(EVENT_MATERIAL_SELECTION_CHANGED, this) = [this]()
+            {
+                updateMaterialHighlights();
+            };
 
             dockLayout().right().attachPanel(tab, false);
         }
 
         {
             actions().bindCommand("MeshPreview.ShowBounds"_id) = [this]() {
-                auto settings = m_previewPanel->previewSettings(); 
-                settings.showBounds = !settings.showBounds; 
-                m_previewPanel->previewSettings(settings);
+                m_previewPanel->changePreviewSettings([](MeshPreviewPanelSettings& settings)
+                    {
+                        settings.showBounds = !settings.showBounds;
+                    });
             };
             actions().bindToggle("MeshPreview.ShowBounds"_id) = [this]() {
                 return m_previewPanel->previewSettings().showBounds;
@@ -104,6 +115,20 @@ namespace ed
 
         if (m_previewPanel)
             m_previewPanel->previewMesh(mesh());
+
+        if (m_materialsPanel)
+            m_materialsPanel->bindResource(mesh());
+    }
+
+    void MeshEditor::updateMaterialHighlights()
+    {
+        m_previewPanel->changePreviewSettings([this](MeshPreviewPanelSettings& settings)
+            {
+                settings.highlightMaterials = m_materialsPanel->settings().highlight;
+                settings.isolateMaterials = m_materialsPanel->settings().isolate;
+                settings.selectedMaterials.clear();
+                m_materialsPanel->collectSelectedMaterialNames(settings.selectedMaterials);
+            });
     }
 
     //---
@@ -118,13 +143,13 @@ namespace ed
             return format.nativeResourceClass() == rendering::Mesh::GetStaticClass();
         }
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
                 if (auto mesh = base::rtti_cast<rendering::Mesh>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<MeshEditor>(config, nativeFile);
+                    auto ret = base::CreateSharedPtr<MeshEditor>(nativeFile);
                     ret->bindResource(mesh);
                     return ret;
                 }

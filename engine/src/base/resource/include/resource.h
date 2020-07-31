@@ -33,8 +33,8 @@ namespace base
             // Get the resource key (class + path)
             INLINE const ResourceKey& key() const { return m_key; }
 
-            // Get the resource path used to load this resource
-            INLINE const ResourcePath& path() const { return m_key.path(); }
+            // Get the resource path used to load this resource (it's an absolute depot path, ie. "/engine/textures/lena.png")
+            INLINE const StringBuf& path() const { return m_key.path(); }
 
             // Get the mount point for the package this resource was loaded from
             INLINE const ResourceMountPoint& mountPoint() const { return m_mountPoint; }

@@ -21,11 +21,11 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(TextFileResourceEditor, ResourceEditor);
         
     public:
-        TextFileResourceEditor(ConfigGroup config, ManagedFileRawResource* file);
+        TextFileResourceEditor(ManagedFileRawResource* file);
 
         virtual bool modified() const override;
         virtual bool initialize() override;
-        virtual void close() override;
+        virtual void cleanup() override;
         virtual bool save() override;
 
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;

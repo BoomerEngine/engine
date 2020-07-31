@@ -255,22 +255,48 @@ namespace rendering
         return this;
     }
 
-    bool MaterialTemplate::resetParameterRaw(base::StringID name)
+    bool MaterialTemplate::checkParameterOverride(base::StringID name) const
     {
         return false;
     }
 
-    bool MaterialTemplate::writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh /*= true*/)
+    bool MaterialTemplate::resetParameter(base::StringID name)
+    {
+        return false;
+    }
+
+    bool MaterialTemplate::writeParameter(base::StringID name, const void* data, base::Type type, bool refresh /*= true*/)
     {
         return false; // templates are read only
     }
 
-    bool MaterialTemplate::readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly /*= false*/) const
+    bool MaterialTemplate::readParameter(base::StringID name, void* data, base::Type type) const
     {
         if (const auto* info = findParameterInfo(name))
             return info->defaultValue.get(data, type);
 
         return false;
+    }
+
+    bool MaterialTemplate::readBaseParameter(base::StringID name, void* data, base::Type type) const
+    {
+        return readParameter(name, data, type);
+    }
+
+    const void* MaterialTemplate::findParameterDataInternal(base::StringID name, base::Type& outType) const
+    {
+        if (const auto* info = findParameterInfo(name))
+        {
+            outType = info->defaultValue.type();
+            return info->defaultValue.data();
+        }
+
+        return nullptr;
+    }
+
+    const void* MaterialTemplate::findBaseParameterDataInternal(base::StringID name, base::Type& outType) const
+    {
+        return findParameterDataInternal(name, outType);
     }
 
     ///---

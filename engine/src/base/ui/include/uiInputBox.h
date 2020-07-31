@@ -18,32 +18,23 @@ namespace ui
     public:
         InputBoxSetup();
 
-        //--
-
-        /// set title string
-        InputBoxSetup& title(const char* txt);
-
-        /// set message string
-        InputBoxSetup& message(const char* txt);
-
-        //--
-
-        /// get the title string
-        INLINE const base::StringBuf& title() const { return m_title; }
-
-        /// get the caption string
-        INLINE const base::StringBuf& caption() const { return m_caption; }
-
-    private:
         base::StringBuf m_title;
-        base::StringBuf m_caption;
+        base::StringBuf m_message; // if empty we won't add the TextLabel
+        base::StringBuf m_hint;
+        TInputValidationFunction m_validation;
+        bool m_multiline = false;
+
+        INLINE InputBoxSetup& title(base::StringView<char> txt) { m_title = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& message(base::StringView<char> txt) { m_message = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& hint(base::StringView<char> txt) { m_hint = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& multiline(bool flag = true) { m_multiline = flag; return *this; }
     };
 
     ///----
 
     /// Show input box window, locks UI
-    /// Returns true if the text in the "text" inout argument was modified
-    extern BASE_UI_API bool ShowInputBox(const ElementPtr& parent, const InputBoxSetup& setup, base::StringBuf& text);
+    /// Returns true if the text in the "text" argument was modified
+    extern BASE_UI_API bool ShowInputBox(IElement* owner, const InputBoxSetup& setup, base::StringBuf& inOutText);
 
     ///----
 

@@ -120,12 +120,13 @@ namespace base
             WinIOSystem::WinIOSystem()
             {
                 // create the dispatcher for async IO operations
-                m_asyncDispatcher = CreateUniquePtr<WinAsyncReadDispatcher>(1024);
+                m_asyncDispatcher = MemNew(WinAsyncReadDispatcher, 1024);
             }
 
-            WinIOSystem::~WinIOSystem()
+            void WinIOSystem::deinit()
             {
-                m_asyncDispatcher.reset();
+                MemDelete(m_asyncDispatcher);
+                m_asyncDispatcher = nullptr;
             }
 
             ReadFileHandlePtr WinIOSystem::openForReading(AbsolutePathView absoluteFilePath)
@@ -243,7 +244,7 @@ namespace base
 
                 // Return file reader
                 if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for async reading ({})", cstr, MemSize(size.QuadPart));
-                return CreateSharedPtr<WinAsyncFileHandle>(handle, std::move(cstr), size.QuadPart, m_asyncDispatcher.get());
+                return CreateSharedPtr<WinAsyncFileHandle>(handle, std::move(cstr), size.QuadPart, m_asyncDispatcher);
             }
 
             //--
@@ -283,18 +284,21 @@ namespace base
 
                 uint32_t batchSize = 1024 * 1024 * 64;
                 uint64_t bytesLeft = size;
+                uint8_t* writeOffset = ret.data();
                 while (bytesLeft > 0)
                 {
                     auto maxRead = (uint32_t) std::min<uint64_t>(bytesLeft, batchSize);
                     bytesLeft -= maxRead;
 
                     DWORD numRead = 0;
-                    if (!ReadFile(hHandle, ret.data(), maxRead, &numRead, NULL))
+                    if (!ReadFile(hHandle, writeOffset, maxRead, &numRead, NULL))
                     {
                         TRACE_WARNING("WinIO: IO error reading content of file '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
                         CloseHandle(hHandle);
                         return nullptr;
                     }
+
+                    writeOffset += numRead;
                 }
 
                 if (GTraceIO) TRACE_INFO("WinIO: Loaded '{}' into memory ({})", cstr, MemSize(size));

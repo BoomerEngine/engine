@@ -9,7 +9,6 @@
 #include "build.h"
 #include "utils.h"
 #include "ioFileHandle.h"
-#include "ioMemoryPool.h"
 #include "ioSystem.h"
 #include "ioDirectoryWatcher.h"
 #include "base/containers/include/utf8StringFunctions.h"
@@ -30,177 +29,160 @@ namespace base
     {
         //--
 
-        System::System()
+        ReadFileHandlePtr OpenForReading(AbsolutePathView absoluteFilePath)
         {
-            // create the native bind point
-            m_handler = MemNew(NativeHandlerClass);
-
-            // create the memory pool
-            m_memoryPool.create();
-
-            // started
-            TRACE_SPAM("File system started");
+            return NativeHandlerClass::GetInstance().openForReading(absoluteFilePath);
         }
 
-        ReadFileHandlePtr System::openForReading(AbsolutePathView absoluteFilePath)
+        WriteFileHandlePtr OpenForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
         {
-            return m_handler->openForReading(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().openForWriting(absoluteFilePath, mode);
         }
 
-        WriteFileHandlePtr System::openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
+        AsyncFileHandlePtr OpenForAsyncReading(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->openForWriting(absoluteFilePath, mode);
+            return NativeHandlerClass::GetInstance().openForAsyncReading(absoluteFilePath);
         }
 
-        AsyncFileHandlePtr System::openForAsyncReading(AbsolutePathView absoluteFilePath)
+        Buffer OpenMemoryMappedForReading(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->openForAsyncReading(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().openMemoryMappedForReading(absoluteFilePath);
         }
 
-        Buffer System::loadIntoMemoryForReading(AbsolutePathView absoluteFilePath)
+        Buffer LoadFileToBuffer(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->loadIntoMemoryForReading(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().loadIntoMemoryForReading(absoluteFilePath);
         }
         
-        Buffer System::openMemoryMappedForReading(AbsolutePathView absoluteFilePath)
+        bool FileSize(AbsolutePathView absoluteFilePath, uint64_t& outFileSize)
         {
-            return m_handler->openMemoryMappedForReading(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().fileSize(absoluteFilePath, outFileSize);
         }
 
-        bool System::fileSize(AbsolutePathView absoluteFilePath, uint64_t& outFileSize)
+        bool FileTimeStamp(AbsolutePathView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize /*= nullptr*/)
         {
-            return m_handler->fileSize(absoluteFilePath, outFileSize);
+            return NativeHandlerClass::GetInstance().fileTimeStamp(absoluteFilePath, outTimeStamp, outFileSize);
         }
 
-        bool System::fileTimeStamp(AbsolutePathView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize /*= nullptr*/)
+        bool CreatePath(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->fileTimeStamp(absoluteFilePath, outTimeStamp, outFileSize);
+            return NativeHandlerClass::GetInstance().createPath(absoluteFilePath);
         }
 
-        bool System::createPath(AbsolutePathView absoluteFilePath)
+        bool CopyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
         {
-            return m_handler->createPath(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().copyFile(srcAbsolutePath, destAbsolutePath);
         }
 
-        bool System::copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+        bool MoveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
         {
-            return m_handler->copyFile(srcAbsolutePath, destAbsolutePath);
+            return NativeHandlerClass::GetInstance().moveFile(srcAbsolutePath, destAbsolutePath);
         }
 
-        bool System::moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+        bool DeleteDir(AbsolutePathView absoluteDirPath)
         {
-            return m_handler->moveFile(srcAbsolutePath, destAbsolutePath);
+            return NativeHandlerClass::GetInstance().deleteDir(absoluteDirPath);
         }
 
-        bool System::deleteDir(AbsolutePathView absoluteDirPath)
+        bool DeleteFile(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->deleteDir(absoluteDirPath);
+            return NativeHandlerClass::GetInstance().deleteFile(absoluteFilePath);
         }
 
-        bool System::deleteFile(AbsolutePathView absoluteFilePath)
+        bool FileExists(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->deleteFile(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().fileExists(absoluteFilePath);
         }
 
-        bool System::fileExists(AbsolutePathView absoluteFilePath)
+        bool TouchFile(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->fileExists(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().touchFile(absoluteFilePath);
         }
 
-        bool System::touchFile(AbsolutePathView absoluteFilePath)
+        bool IsFileReadOnly(AbsolutePathView absoluteFilePath)
         {
-            return m_handler->touchFile(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().isFileReadOnly(absoluteFilePath);
         }
 
-        bool System::isFileReadOnly(AbsolutePathView absoluteFilePath)
+        bool ReadOnlyFlag(AbsolutePathView absoluteFilePath, bool flag)
         {
-            return m_handler->isFileReadOnly(absoluteFilePath);
+            return NativeHandlerClass::GetInstance().readOnlyFlag(absoluteFilePath, flag);
         }
 
-        bool System::readOnlyFlag(AbsolutePathView absoluteFilePath, bool flag)
+        bool FindFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(AbsolutePathView fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse)
         {
-            return m_handler->readOnlyFlag(absoluteFilePath, flag);
+            return NativeHandlerClass::GetInstance().findFiles(absoluteFilePath, searchPattern, enumFunc, recurse);
         }
 
-        bool System::findFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(AbsolutePathView fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse)
+        bool FindSubDirs(AbsolutePathView absoluteFilePath, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
         {
-            return m_handler->findFiles(absoluteFilePath, searchPattern, enumFunc, recurse);
+            return NativeHandlerClass::GetInstance().findSubDirs(absoluteFilePath, enumFunc);
         }
 
-        bool System::findSubDirs(AbsolutePathView absoluteFilePath, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
+        bool FindLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
         {
-            return m_handler->findSubDirs(absoluteFilePath, enumFunc);
+            return NativeHandlerClass::GetInstance().findLocalFiles(absoluteFilePath, searchPattern, enumFunc);
         }
 
-        bool System::findLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
+        void FindFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, Array<AbsolutePath>& outAbsoluteFiles, bool recurse)
         {
-            return m_handler->findLocalFiles(absoluteFilePath, searchPattern, enumFunc);
-        }
-
-        void System::findFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, Array<AbsolutePath>& outAbsoluteFiles, bool recurse)
-        {
-            m_handler->findFiles(absoluteFilePath, searchPattern, [&outAbsoluteFiles](AbsolutePathView fullPath, base::StringView<wchar_t> name)
+            NativeHandlerClass::GetInstance().findFiles(absoluteFilePath, searchPattern, [&outAbsoluteFiles](AbsolutePathView fullPath, base::StringView<wchar_t> name)
                 {
                     outAbsoluteFiles.emplaceBack(AbsolutePath::Build(fullPath));
                     return false;
                 }, recurse);
         }
 
-        void System::findSubDirs(AbsolutePathView absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames)
+        void FindSubDirs(AbsolutePathView absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames)
         {
-            m_handler->findSubDirs(absoluteFilePath, [&outDirectoryNames](StringView<wchar_t> name)
+            NativeHandlerClass::GetInstance().findSubDirs(absoluteFilePath, [&outDirectoryNames](StringView<wchar_t> name)
                 {
                     outDirectoryNames.emplaceBack(name);
                     return false;
                 });
         }
 
-        void System::findLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, Array< UTF16StringBuf >& outFileNames)
+        void FindLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, Array< UTF16StringBuf >& outFileNames)
         {
-            m_handler->findSubDirs(absoluteFilePath, [&outFileNames](StringView<wchar_t> name)
+            NativeHandlerClass::GetInstance().findSubDirs(absoluteFilePath, [&outFileNames](StringView<wchar_t> name)
                 {
                     outFileNames.emplaceBack(name);
                     return false;
                 });
         }
 
-        const AbsolutePath& System::systemPath(PathCategory category)
+        const AbsolutePath& SystemPath(PathCategory category)
         {
-            auto& entry = m_paths[(uint8_t)category];
-            if (entry.empty())
-                entry = m_handler->systemPath(category);
+            static AbsolutePath systemPaths[(int)PathCategory::MAX];
 
-            return entry;
+            auto& pathRef = systemPaths[(int)category];
+            if (pathRef.empty())
+                pathRef = NativeHandlerClass::GetInstance().systemPath(category);
+
+            return pathRef;
         }
 
-        DirectoryWatcherPtr System::createDirectoryWatcher(AbsolutePathView path)
+        DirectoryWatcherPtr CreateDirectoryWatcher(AbsolutePathView path)
         {
-            return m_handler->createDirectoryWatcher(path);
+            return NativeHandlerClass::GetInstance().createDirectoryWatcher(path);
         }
 
-        void System::showFileExplorer(AbsolutePathView path)
+        void ShowFileExplorer(AbsolutePathView path)
         {
-            m_handler->showFileExplorer(path);
+            NativeHandlerClass::GetInstance().showFileExplorer(path);
         }
 
-        bool System::showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData)
+        bool ShowFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData)
         {
-            return m_handler->showFileOpenDialog(nativeWindowHandle, allowMultiple, formats, outPaths, persistentData);
+            return NativeHandlerClass::GetInstance().showFileOpenDialog(nativeWindowHandle, allowMultiple, formats, outPaths, persistentData);
         }
 
-        bool System::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData)
+        bool ShowFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData)
         {
-            return m_handler->showFileSaveDialog(nativeWindowHandle, currentFileName, formats, outPath, persistentData);
+            return NativeHandlerClass::GetInstance().showFileSaveDialog(nativeWindowHandle, currentFileName, formats, outPath, persistentData);
         }
 
-        void System::deinit()
-        {
-            MemDelete(m_handler);
-            m_memoryPool.reset();
-
-            for (uint32_t i=0; i<ARRAY_COUNT(m_paths); ++i)
-                m_paths[i] = AbsolutePath();
-        }
+        //--
 
     } // io
 } // base

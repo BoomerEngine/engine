@@ -84,7 +84,7 @@ namespace ed
             RunSync("ManagedFileImportStatusUpdate") << [ownerRef](FIBER_FUNC)
             {
                 if (auto owner = ownerRef.lock())
-                    owner->call("OnImportStatusChanged"_id);
+                    owner->call(EVENT_IMPORT_STATUS_CHANGED);
             };
         }
     }
@@ -112,7 +112,7 @@ namespace ed
         {
             auto* assetSource = GetService<res::ImportFileService>();
             static res::SourceAssetRepository repository(assetSource);
-            static res::Importer localImporter(&repository); // TODO: cleanup!
+            static res::Importer localImporter(&repository, nullptr); // TODO: cleanup!
 
             const auto status = localImporter.checkStatus(m_file->depotPath(), *metadata, nullptr, this);
             postStatusChange(status);

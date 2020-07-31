@@ -19,25 +19,6 @@ namespace ed
     class AssetBrowserTabFiles;
     class AssetBrowserResourceListDialog;
 
-    //--
-
-    struct BASE_EDITOR_API AssetItemList : public NoCopy
-    {
-        Array<ManagedFile*> files;
-        Array<ManagedDirectory*> dirs;
-
-        INLINE bool empty() const { return files.empty() && dirs.empty(); }
-
-        void clear();
-        void collect(ManagedItem* item, bool recrusive = true);
-        void collectDir(ManagedDirectory* dir, bool recrusive = true);
-        void collectFile(ManagedFile* file);
-
-    private:
-        HashSet<ManagedFile*> fileSet;
-        HashSet<ManagedDirectory*> dirSet;
-    };
-
     //---
 
     /// drag&drop data with file
@@ -87,11 +68,6 @@ namespace ed
 
         //--
 
-        void loadConfig(const ConfigGroup& config);
-        void saveConfig(ConfigGroup config) const;
-
-        //--
-
         // get selected file
         ManagedFile* selectedFile() const;
 
@@ -103,6 +79,11 @@ namespace ed
 
         // show directory in the depot tree and possible also as a file list
         bool showDirectory(ManagedDirectory* dir, bool exploreContent);
+
+        //--
+
+        virtual void configLoad(const ui::ConfigBlock& block) override;
+        virtual void configSave(const ui::ConfigBlock& block) const override;
 
         //--
 

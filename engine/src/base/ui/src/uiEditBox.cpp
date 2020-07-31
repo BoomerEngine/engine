@@ -5,7 +5,6 @@
 *
 * [# filter: elements\controls\text #]
 ***/
-
 #include "build.h"
 #include "uiEditBox.h"
 #include "uiTextBuffer.h"
@@ -13,122 +12,124 @@
 #include "uiInputAction.h"
 #include "uiWindow.h"
 #include "uiMenuBar.h"
+#include "uiRenderer.h"
 
 #include "base/input/include/inputStructures.h"
 #include "base/image/include/image.h"
 #include "base/containers/include/clipboard.h"
+#include "base/canvas/include/canvasGeometryBuilder.h"
 
 namespace ui
 {
 
-    RTTI_BEGIN_TYPE_CLASS(TextEditor);
-        RTTI_METADATA(ElementClassNameMetadata).name("TextEditor");
+    RTTI_BEGIN_TYPE_CLASS(EditBox);
+        RTTI_METADATA(ElementClassNameMetadata).name("EditBox");
     RTTI_END_TYPE();
     
-    TextEditor::TextEditor()
+    EditBox::EditBox(EditBoxFeatureFlags features, base::StringView<char> initialText)
         : ScrollArea(ScrollMode::None, ScrollMode::Hidden)
+        , m_features(features)
         , m_cursorToggleInterval(0.5)
-        , OnTextModified(this, "OnTextModified"_id)
-        , OnTextAccepted(this, "OnTextAccepted"_id)
     {
         layoutMode(LayoutMode::Vertical);
         allowFocusFromKeyboard(true);
+        allowFocusFromClick(true);
 
         hitTest(HitTestState::Enabled);
 
-        m_textBuffer = base::CreateUniquePtr<TextBuffer>();
+        const bool multiline = m_features.test(ui::EditBoxFeatureBit::Multiline);
+        m_textBuffer = base::CreateUniquePtr<TextBuffer>(multiline);
+
+        verticalScrollMode(multiline ? ScrollMode::Auto : ScrollMode::None);
 
         m_cursorToggleTime.resetToNow();
         m_cursorToggleTime += m_cursorToggleInterval;
 
+        if (features.test(ui::EditBoxFeatureBit::NoBorder))
+            addStyleClass("noborder"_id);
+
+        text(initialText);
+
         bindCommands();
     }
 
-    TextEditor::~TextEditor()
+    EditBox::~EditBox()
     {
         m_textBuffer.reset();
     }
 
-    void TextEditor::multiline(bool flag)
-    {
-        if (flag != m_multiline)
-        {
-            m_multiline = flag;
-            m_textBuffer->multiLine(m_multiline);
-            verticalScrollMode(m_multiline ? ScrollMode::Auto : ScrollMode::None);
-        }
-    }
-
-    bool TextEditor::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
-    {
-        if (name == "text")
-        {
-            text(value);
-            return true;
-        }
-        else if (name == "prefix")
-        {
-            prefixText(value);
-            return true;
-        }
-        else if (name == "postfix")
-        {
-            postfixText(value);
-            return true;
-        }
-        else if (name == "multiline" || name == "multiLine")
-        {
-            bool flag = false;
-            if (base::MatchResult::OK != value.match(flag))
-                return false;
-
-            multiline(flag);
-            return true;
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
-    }
-
-    void TextEditor::text(base::StringView<char> txt)
+    void EditBox::text(base::StringView<char> txt)
     {
         m_textBuffer->text(txt);
-        m_selectWholeTextOnNextClick = true;
 
+        if (isFocused())
+        {
+            m_focusedClickConter = 0;
+            selectWholeText();
+        }
+
+        recheckValidation();
         invalidateLayout();
         invalidateGeometry();
     }
 
-    void TextEditor::postfixText(base::StringView<char> txt)
+    void EditBox::recheckValidation()
+    {
+        bool valid = m_validation ? m_validation(text()) : true;
+        if (valid != m_validationResult)
+        {
+            m_validationResult = valid;
+            call(EVENT_TEXT_VALIDATION_CHANGED, valid);
+
+            if (valid)
+                removeStylePseudoClass("invalid"_id);
+            else
+                addStylePseudoClass("invalid"_id);
+        }
+    }
+
+    void EditBox::validation(const TInputValidationFunction& func)
+    {
+        m_validation = func;
+        recheckValidation();
+    }
+
+    void EditBox::postfixText(base::StringView<char> txt)
     {
         m_textBuffer->postfixText(txt);
         invalidateLayout();
         invalidateGeometry();
     }
 
-    void TextEditor::prefixText(base::StringView<char> txt)
+    void EditBox::prefixText(base::StringView<char> txt)
     {
         m_textBuffer->prefixText(txt);
         invalidateLayout();
         invalidateGeometry();
     }
 
-    base::StringBuf TextEditor::text() const
+    void EditBox::hintText(base::StringView<char> txt)
+    {
+        // TODO
+    }
+
+    base::StringBuf EditBox::text() const
     {
         return m_textBuffer->text();
     }
 
-    void TextEditor::selectWholeText()
+    void EditBox::selectWholeText()
     {
         moveCursor(0, false);
         moveCursor(m_textBuffer->length(), true);
     }
 
-    void TextEditor::clearSelection()
+    void EditBox::clearSelection()
     {
         moveCursor(m_textBuffer->length(), false);
     }
 
-    base::StringBuf TextEditor::selectedText() const
+    base::StringBuf EditBox::selectedText() const
     {
         if (m_textBuffer->hasSelection())
             return m_textBuffer->text(m_textBuffer->selectionStartPos(), m_textBuffer->selectionEndPos());
@@ -136,37 +137,46 @@ namespace ui
             return base::StringBuf::EMPTY();
     }
 
-    void TextEditor::computeLayout(ElementLayout& outLayout)
+    void EditBox::computeLayout(ElementLayout& outLayout)
     {
         m_textBuffer->style(this);
         TBaseClass::computeLayout(outLayout);
     }
 
-    void TextEditor::computeSize(Size& outSize) const
+    void EditBox::computeSize(Size& outSize) const
     {
         TBaseClass::computeSize(outSize);
         outSize = m_textBuffer->size();
     }
 
-    void TextEditor::prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void EditBox::prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
         TBaseClass::prepareForegroundGeometry(drawArea, pixelScale, builder);
-        m_textBuffer->renderText(drawArea, pixelScale, builder);
+
+        // apply the padding to the text being built...
+        auto innerArea = cachedLayoutParams().calcInnerAreaFromDrawArea(drawArea);
+        auto offset = innerArea.absolutePosition() - drawArea.absolutePosition();
+
+        builder.pushTransform();
+        builder.translate(offset.x, offset.y);
+        m_textBuffer->renderText(innerArea, pixelScale, builder);
+        builder.popTransform();
     }
 
-    void TextEditor::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void EditBox::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        m_textBuffer->renderHighlight(drawArea, canvas, mergedOpacity);
+        auto innerArea = cachedLayoutParams().calcInnerAreaFromDrawArea(drawArea);
+        m_textBuffer->renderHighlight(innerArea, canvas, mergedOpacity);
 
         if (isFocused())
-            m_textBuffer->renderSelection(drawArea, canvas, mergedOpacity);
+            m_textBuffer->renderSelection(innerArea, canvas, mergedOpacity);
 
         TBaseClass::renderForeground(drawArea, canvas, mergedOpacity); // text
 
         if (isFocused())
         {
-            if (m_cursorVisible)
-                m_textBuffer->renderCursor(drawArea, canvas, mergedOpacity);
+            if (m_cursorVisible && isEnabled())
+                m_textBuffer->renderCursor(innerArea, canvas, mergedOpacity);
 
             if (m_cursorToggleTime.reached() || !m_cursorToggleTime.valid())
             {
@@ -177,7 +187,7 @@ namespace ui
         }
     }
 
-    void TextEditor::moveCursor(const CursorNavigation& pos, bool extendSelection)
+    void EditBox::moveCursor(const CursorNavigation& pos, bool extendSelection)
     {
         m_textBuffer->moveCursor(pos, extendSelection);
 
@@ -194,20 +204,22 @@ namespace ui
         m_cursorToggleTime += m_cursorToggleInterval;
     }
 
-    bool TextEditor::canModify() const
+    bool EditBox::canModify() const
     {
         return isEnabled();
     }
 
-    void TextEditor::textModified()
+    void EditBox::textModified()
     {
         invalidateLayout();
         invalidateGeometry();
 
-        OnTextModified();
+        call(EVENT_TEXT_MODIFIED, text());
+
+        recheckValidation();
     }
 
-    bool TextEditor::handleKeyEvent(const base::input::KeyEvent& evt)
+    bool EditBox::handleKeyEvent(const base::input::KeyEvent& evt)
     {
         if (evt.isDown())
         {
@@ -351,7 +363,7 @@ namespace ui
         return true;
     }
 
-    void TextEditor::cmdCopySelection()
+    void EditBox::cmdCopySelection()
     {
         if (m_textBuffer->hasSelection())
         {
@@ -365,7 +377,7 @@ namespace ui
         }
     }
 
-    void TextEditor::cmdCutSelection()
+    void EditBox::cmdCutSelection()
     {
         if (canModify())
         {
@@ -387,7 +399,7 @@ namespace ui
         }
     }
 
-    void TextEditor::cmdPasteSelection()
+    void EditBox::cmdPasteSelection()
     {
         if (canModify())
         {
@@ -414,7 +426,7 @@ namespace ui
         }
     }
 
-    void TextEditor::cmdDeleteSelection()
+    void EditBox::cmdDeleteSelection()
     {
         if (canModify())
         {
@@ -426,22 +438,22 @@ namespace ui
         }
     }
 
-    void TextEditor::cmdSelectAll()
+    void EditBox::cmdSelectAll()
     {
         selectWholeText();
     }
 
-    void TextEditor::bindCommands()
+    void EditBox::bindCommands()
     {
-        actions().bindCommand("TextEdit.Copy"_id) = [](TextEditor* box) { box->cmdCopySelection(); };
-        actions().bindCommand("TextEdit.Cut"_id) = [](TextEditor* box) { box->cmdCutSelection(); };
-        actions().bindCommand("TextEdit.Delete"_id) = [](TextEditor* box) { box->cmdDeleteSelection(); };
-        actions().bindCommand("TextEdit.SelectAll"_id) = [](TextEditor* box) { box->cmdSelectAll(); };
-        actions().bindCommand("TextEdit.Undo"_id) = [](TextEditor* box) { };
-        actions().bindCommand("TextEdit.Redo"_id) = [](TextEditor* box) { };
+        actions().bindCommand("TextEdit.Copy"_id) = [](EditBox* box) { box->cmdCopySelection(); };
+        actions().bindCommand("TextEdit.Cut"_id) = [](EditBox* box) { box->cmdCutSelection(); };
+        actions().bindCommand("TextEdit.Delete"_id) = [](EditBox* box) { box->cmdDeleteSelection(); };
+        actions().bindCommand("TextEdit.SelectAll"_id) = [](EditBox* box) { box->cmdSelectAll(); };
+        actions().bindCommand("TextEdit.Undo"_id) = [](EditBox* box) { };
+        actions().bindCommand("TextEdit.Redo"_id) = [](EditBox* box) { };
 
-        auto hasSelectionFunc = [](TextEditor* box) { return box->m_textBuffer->hasSelection(); };
-        auto hasClipbordData = [](TextEditor* box) { return true; };
+        auto hasSelectionFunc = [](EditBox* box) { return box->m_textBuffer->hasSelection(); };
+        auto hasClipbordData = [](EditBox* box) { return true; };
 
         actions().bindFilter("TextEdit.Copy"_id) = hasSelectionFunc;
         actions().bindFilter("TextEdit.Cut"_id) = hasSelectionFunc;
@@ -456,7 +468,7 @@ namespace ui
         actions().bindShortcut("TextEdit.Redo"_id, "Ctrl+Y");
     }
 
-    bool TextEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
+    bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
     {
         auto ret = base::CreateSharedPtr<MenuButtonContainer>();
         ret->createAction("TextEdit.Undo"_id, "Undo", "[img:undo]");
@@ -472,17 +484,28 @@ namespace ui
         return true;
     }
 
-    bool TextEditor::handleCharEvent(const base::input::CharEvent& evt)
+    bool EditBox::handleCharEvent(const base::input::CharEvent& evt)
     {
+        // ignore tabs
+        if (evt.scanCode() == 9 && !m_features.test(EditBoxFeatureBit::AcceptsTab))
+            return TBaseClass::handleCharEvent(evt);
+
+        // ignore enter
+        if (evt.scanCode() == 13 && !m_features.test(EditBoxFeatureBit::AcceptsEnter))
+            return TBaseClass::handleCharEvent(evt);
+
         // ignore backspace and delete
         if ((evt.scanCode() >= 32 && evt.scanCode() < 127) || evt.scanCode() == 13 || evt.scanCode() == 9)
         {
             if (canModify())
             {
-                // accept
-                if (!m_textBuffer->isMultiLine() && evt.scanCode() == 13)
+                // enter ?
+                if (evt.scanCode() == 13 && !m_textBuffer->isMultiLine())
                 {
-                    OnTextAccepted(m_textBuffer->text());
+                    if (m_validationResult)
+                        call(EVENT_TEXT_ACCEPTED, text());
+                    else
+                        renderer()->playSound(MessageType::Warning);
                     return true;
                 }
 
@@ -497,7 +520,7 @@ namespace ui
                 {
                     textToInsert = "\n";
                 }
-                else if (evt.scanCode() == 9 && m_textBuffer->isMultiLine())
+                else if (evt.scanCode() == 9)
                 {
                     textToInsert = "\t";
                 }
@@ -507,10 +530,17 @@ namespace ui
                     textToInsert = base::StringBuf(base::StringView<wchar_t>(uniChars));
                 }
 
-                // insert new characters
+                // check if text will validate after insertion
+
                 auto insertPos = m_textBuffer->cursorPos().m_char;
+
+
+                // insert new characters
                 m_textBuffer->insertCharacters(insertPos, textToInsert);
-                //moveCursor(m_textBuffer->cursorPos(), false);
+                
+
+                EditBox::
+
 
                 textModified();
             }
@@ -522,7 +552,7 @@ namespace ui
     class EditBoxSelectionDragInputAction : public IInputAction
     {
     public:
-        EditBoxSelectionDragInputAction(TextEditor* editBox, int startSelection)
+        EditBoxSelectionDragInputAction(EditBox* editBox, int startSelection)
             : IInputAction(editBox)
             , m_editBox(editBox)
             , m_startSelection(startSelection)
@@ -593,11 +623,23 @@ namespace ui
         }
 
     private:
-        base::RefWeakPtr<TextEditor> m_editBox;
+        base::RefWeakPtr<EditBox> m_editBox;
         int m_startSelection;
     };
 
-    InputActionPtr TextEditor::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
+    void EditBox::handleFocusGained()
+    {
+        TBaseClass::handleFocusGained();
+
+        // reset click counter
+        m_focusedClickConter = 0;
+
+        // if we haven't changed anything in the text buffer so far select whole text
+        if (!m_textBuffer->modified())
+            selectWholeText();
+    }
+
+    InputActionPtr EditBox::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
         if (evt.leftDoubleClicked())
         {
@@ -606,114 +648,30 @@ namespace ui
         }
         else if (evt.leftClicked())
         {
-            if (m_selectWholeTextOnNextClick)
+            if (isFocused())
             {
-                selectWholeText();
-                m_selectWholeTextOnNextClick = false;
-            }
-            else
-            {
-                auto relativePos = evt.absolutePosition().toVector() - area.absolutePosition();
+                auto clickIndex = m_focusedClickConter++;
+                if (clickIndex > 0)
+                {
+                    auto relativePos = evt.absolutePosition().toVector() - area.absolutePosition();
 
-                bool extendSelection = evt.keyMask().isShiftDown();
-                auto clickPos = m_textBuffer->findCursorPosition(relativePos);
-                m_textBuffer->moveCursor(clickPos, extendSelection);
-            }
+                    bool extendSelection = evt.keyMask().isShiftDown();
+                    auto clickPos = m_textBuffer->findCursorPosition(relativePos);
+                    m_textBuffer->moveCursor(clickPos, extendSelection);
 
-            return base::CreateSharedPtr<EditBoxSelectionDragInputAction>(this, m_textBuffer->selectionStartPos());
+                    // TODO: enter drag action only if whole text is NOT yet selected
+                    return base::CreateSharedPtr<EditBoxSelectionDragInputAction>(this, m_textBuffer->selectionStartPos());
+                }
+            }
         }
 
         return InputActionPtr();
     }
 
-    bool TextEditor::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const
+    bool EditBox::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const
     {
         outCursorType = base::input::CursorType::TextBeam;
         return true;
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(EditBox);
-        RTTI_METADATA(ElementClassNameMetadata).name("EditBox");
-    RTTI_END_TYPE();
-
-    EditBox::EditBox()
-        : OnTextModified(this, "OnTextModified"_id)
-        , OnTextAccepted(this, "OnTextAccepted"_id)
-    {
-        hitTest(true);
-        allowFocusFromClick(true);
-        layoutHorizontal();
-
-        if (!base::IsDefaultObjectCreation())
-        {
-            m_editor = createInternalChild<TextEditor>();
-            m_editor->bind("OnTextModified"_id, this) = [](EditBox* box) { box->OnTextModified(); };
-            m_editor->bind("OnTextAccepted"_id, this) = [](EditBox* box) { box->OnTextAccepted(); };
-            m_editor->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_editor->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-        }
-    }
-
-    void EditBox::text(base::StringView<char> txt)
-    {
-        m_editor->text(txt);
-    }
-
-    base::StringBuf EditBox::text() const
-    {
-        return m_editor->text();
-    }
-
-    void EditBox::selectWholeText()
-    {
-        m_editor->selectWholeText();
-    }
-
-    void EditBox::clearSelection()
-    {
-        m_editor->clearSelection();
-    }
-
-    base::StringBuf EditBox::selectedText() const
-    {
-        return m_editor->selectedText();
-    }
-
-    IElement* EditBox::handleFocusForwarding()
-    {
-        return m_editor;
-    }
-
-    bool EditBox::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
-    {
-        if (name == "text")
-        {
-            m_editor->text(value);
-            return true;
-        }
-        else if (name == "prefix")
-        {
-            m_editor->prefixText(value);
-            return true;
-        }
-        else if (name == "postfix")
-        {
-            m_editor->postfixText(value);
-            return true;
-        }
-        else if (name == "multiline" || name == "multiLine")
-        {
-            bool flag = false;
-            if (base::MatchResult::OK != value.match(flag))
-                return false;
-
-            m_editor->multiline(flag);
-            return true;
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
     }
 
     //--

@@ -29,7 +29,7 @@ namespace base
 
         io::AbsolutePath JITTCC::FindTCCCompiler()
         {
-            auto basePath  = IO::GetInstance().systemPath(base::io::PathCategory::ExecutableFile);
+            auto basePath  = base::io::SystemPath(base::io::PathCategory::ExecutableFile);
             base::io::AbsolutePathBuilder builder(basePath);
             builder.fileName(base::UTF16StringBuf(L"tcc"));
             return builder.toAbsolutePath();
@@ -100,9 +100,9 @@ namespace base
             processSetup.m_arguments.pushBack(tempFile.toString().ansi_str());
 
             // delete output
-            if (IO::GetInstance().fileExists(outputModulePath))
+            if (base::io::FileExists(outputModulePath))
             {
-                if (!IO::GetInstance().deleteFile(outputModulePath))
+                if (!base::io::DeleteFile(outputModulePath))
                 {
                     TRACE_ERROR("JIT: Output '{}' already exists and can't be deleted (probably in use)", outputModulePath);
                     return false;
@@ -137,7 +137,7 @@ namespace base
             }
 
             // output generated ?
-            if (!IO::GetInstance().fileExists(outputModulePath))
+            if (!base::io::FileExists(outputModulePath))
             {
                 TRACE_ERROR("JIT: No output found after compiled finished");
                 return false;

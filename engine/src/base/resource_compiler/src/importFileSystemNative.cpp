@@ -49,7 +49,7 @@ namespace base
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return IO::GetInstance().fileExists(path);
+            return base::io::FileExists(path);
         }
 
         SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
@@ -59,7 +59,7 @@ namespace base
                 return SourceAssetStatus::Missing;
 
             io::TimeStamp timestamp;
-            if (!IO::GetInstance().fileTimeStamp(path, timestamp))
+            if (!base::io::FileTimeStamp(path, timestamp))
                 return SourceAssetStatus::Missing;
 
             // if timestamp is given then check and use it to save CRC check
@@ -93,10 +93,10 @@ namespace base
                 return Buffer();
 
             io::TimeStamp timestamp;
-            if (!IO::GetInstance().fileTimeStamp(path, timestamp))
+            if (!base::io::FileTimeStamp(path, timestamp))
                 return Buffer();
 
-            const auto ret = IO::GetInstance().loadIntoMemoryForReading(path);
+            const auto ret = base::io::LoadFileToBuffer(path);
             if (ret)
             {
                 CalculateMemoryFingerprint(ret.data(), ret.size(), nullptr, outFingerprint);
@@ -112,7 +112,7 @@ namespace base
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return IO::GetInstance().findSubDirs(path, [enumFunc](io::AbsolutePathView view)
+            return base::io::FindSubDirs(path, [enumFunc](io::AbsolutePathView view)
                 {
                     if (view.beginsWith(L"."))
                         return false;
@@ -128,7 +128,7 @@ namespace base
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return IO::GetInstance().findLocalFiles(path, L"*.*", [enumFunc](io::AbsolutePathView view)
+            return base::io::FindLocalFiles(path, L"*.*", [enumFunc](io::AbsolutePathView view)
                 {
                     if (view.beginsWith(L"."))
                         return false;

@@ -9,12 +9,16 @@
 #pragma once
 
 #include "uiEventFunction.h"
-#include "uiWindow.h"
+#include "uiWindowPopup.h"
 #include "uiSimpleTreeModel.h"
 #include "base/canvas/include/canvas.h"
 
 namespace ui
 {
+    ///----
+
+    DECLARE_UI_EVENT(EVENT_COLOR_SELECTED, base::Color)
+
     ///----
 
     class ColorPickerLSBoxInputAction;

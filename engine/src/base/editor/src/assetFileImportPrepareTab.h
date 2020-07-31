@@ -16,6 +16,10 @@ namespace ed
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_START_ASSET_IMPORT);
+
+    //--
+
     class AssetImportListModel;
 
     typedef SpecificClassType<res::IResource> TImportClass;
@@ -153,10 +157,6 @@ namespace ed
     public:
         AssetImportPrepareTab();
         virtual ~AssetImportPrepareTab();
-
-        //--
-
-        ui::ElementEventProxy OnStartImport;
 
         //--
 

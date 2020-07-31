@@ -36,7 +36,7 @@ namespace ui
             m_button->customVerticalAligment(ElementVerticalLayout::Middle);
             m_button->createChild<TextLabel>("[img:class]");
             m_button->tooltip("Select from class list");
-            m_button->bind("OnClick"_id) = [this]() { showClassPicker(); };
+            m_button->bind(EVENT_CLICKED) = [this]() { showClassPicker(); };
         }
 
         virtual void handleValueChange() override
@@ -77,14 +77,16 @@ namespace ui
                     m_picker = base::CreateSharedPtr<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
-                    m_picker->bind("OnClosed"_id, this) = [](DataBoxClassPicker* box)
-                    {
-                        box->m_picker.reset();
+                    auto safeRef = base::RefWeakPtr<DataBoxClassPicker>(this); // NOTE: picker may linger and thus close after the data box gets destroyed
+
+                    m_picker->bind(EVENT_WINDOW_CLOSED) = [safeRef]() {
+                        if (auto box = safeRef.lock())
+                            box->m_picker.reset();
                     };
 
-                    m_picker->bind("OnClassSelected"_id, this) = [](DataBoxClassPicker* box, base::ClassType data)
-                    {
-                        box->writeValue(data);
+                    m_picker->bind(EVENT_CLASS_SELECTED) = [safeRef](base::ClassType data) {
+                        if (auto box = safeRef.lock())
+                            box->writeValue(data);
                     };
                 }
             }
@@ -135,7 +137,7 @@ namespace ui
             m_button->customVerticalAligment(ElementVerticalLayout::Middle);
             m_button->createChild<TextLabel>("[img:class]");
             m_button->tooltip("Select from class list");
-            m_button->bind("OnClick"_id) = [this]() { showClassPicker(); };
+            m_button->bind(EVENT_CLICKED) = [this]() { showClassPicker(); };
         }
 
         virtual void handleValueChange() override
@@ -175,14 +177,16 @@ namespace ui
                     m_picker = base::CreateSharedPtr<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
-                    m_picker->bind("OnClosed"_id, this) = [](DataBoxSpecificClassPicker* box)
-                    {
-                        box->m_picker.reset();
+                    auto safeRef = base::RefWeakPtr<DataBoxSpecificClassPicker>(this); // NOTE: picker may linger and thus close after the data box gets destroyed
+
+                    m_picker->bind(EVENT_WINDOW_CLOSED) = [safeRef]() {
+                        if (auto box = safeRef.lock())
+                            box->m_picker.reset();
                     };
 
-                    m_picker->bind("OnClassSelected"_id, this) = [](DataBoxSpecificClassPicker* box, base::ClassType data)
-                    {
-                        box->writeValue(&data, box->m_metaType);
+                    m_picker->bind(EVENT_CLASS_SELECTED) = [safeRef](base::ClassType data) {
+                        if (auto box = safeRef.lock())
+                            box->writeValue(&data, box->m_metaType);
                     };
                 }
             }

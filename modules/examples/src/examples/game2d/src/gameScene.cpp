@@ -27,7 +27,7 @@ namespace example
         buildGeometry();
 
         if (auto image = ptr.acquire())
-            m_name = StringBuf(image->key().path().fileStem());
+            m_name = StringBuf(image->key().fileStem());
     }
 
     void GameSpriteAsset::setupSnapBottom()
@@ -133,8 +133,7 @@ namespace example
     {
         for (uint32_t i = 1; i < numFrames; ++i)
         {
-            const ResourcePath path = TempString("{} ({}).png", baseDepotPath, i + 1);
-            auto image = LoadResource<Image>(path).acquire();
+            auto image = LoadResource<Image>(TempString("{} ({}).png", baseDepotPath, i + 1)).acquire();
 
             for (int j=0; j<downsample; ++j)
                 image = Downsampled(image->view(), DownsampleMode::AverageWithAlphaWeight, ColorSpace::SRGB);
@@ -243,8 +242,7 @@ namespace example
 
         for (uint32_t i = 1; i < numTiles; ++i)
         {
-            const ResourcePath path = TempString("{}/{}.png", baseDepotPath, i);
-            m_tileImages[i] = LoadResource<Image>(path);
+            m_tileImages[i] = LoadResource<Image>(TempString("{}/{}.png", baseDepotPath, i));
         }
     }
 

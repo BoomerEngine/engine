@@ -17,6 +17,7 @@
 #include "base/containers/include/utf8StringFunctions.h"
 #include "uiInputAction.h"
 #include "uiScrollBar.h"
+#include "uiEditBox.h"
 
 namespace Scintilla
 {
@@ -54,9 +55,9 @@ namespace Scintilla
         // scroll event
         if (scrollbar)
         {
-            scrollbar->bind("OnScroll"_id) = [this](ui::Scrollbar* scrollbar)
+            scrollbar->bind(ui::EVENT_SCROLL) = [this](float value)
             {
-                auto pos = scrollbar->scrollPosition() / vs.lineHeight;
+                auto pos = value / vs.lineHeight;
                 SetTopLine(pos);
             };
         }
@@ -554,7 +555,7 @@ namespace Scintilla
     {
         auto parent = findParent<ui::ScintillaTextEditor>();
         if (parent)
-            parent->call("OnTextModified"_id);
+            parent->call(ui::EVENT_TEXT_MODIFIED);
     }
 
     void ScintillaInnerWidget::NotifyParent(SCNotification scn)

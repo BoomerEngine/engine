@@ -9,7 +9,7 @@
 #include "build.h"
 #include "uiComboBox.h"
 #include "uiScrollArea.h"
-#include "uiWindow.h"
+#include "uiWindowPopup.h"
 #include "uiTextLabel.h"
 #include "uiButton.h"
 
@@ -41,9 +41,12 @@ namespace ui
             if (selected)
                 item->addStyleClass("selected"_id);
 
-            item->bind("OnClick"_id, this) = [index](ComboBoxOptions* options)
+            auto selfRef = base::RefWeakPtr<ComboBoxOptions>(this);
+
+            item->bind(EVENT_CLICKED) = [selfRef, index]()
             {
-                return options->call("OnSelected"_id, index);
+                if (auto options = selfRef.lock())
+                    options->call(EVENT_COMBO_SELECTED, index);
             };
         }
 
@@ -69,12 +72,12 @@ namespace ui
         m_text = m_area->createNamedChild<TextLabel>("ComboBoxCaption"_id);
         m_area->createNamedChild<TextLabel>("ComboBoxIcon"_id);
 
-        m_area->bind("OnClick"_id, this) = [](ComboBox* box)
+        m_area->bind(EVENT_CLICKED, this) = [this]()
         {
-            if (box->m_popup)
-                box->closePopupList();
+            if (m_popup)
+                closePopupList();
             else
-                box->showPopupList();
+                showPopupList();
         };
     }
 
@@ -192,16 +195,22 @@ namespace ui
             options->addOption(option, i, selected);
         }
 
-        options->bind("OnSelected"_id, this) = [](ComboBox* box, int index)
+        auto selfRef = base::RefWeakPtr<ComboBox>(this);
+
+        options->bind(EVENT_COMBO_SELECTED) = [selfRef](int index)
         {
-            box->selectOption(index);
-            box->closePopupList();
-            box->call("OnChanged"_id, index);
+            if (auto box = selfRef.lock())
+            {
+                box->selectOption(index);
+                box->closePopupList();
+                box->call(EVENT_COMBO_SELECTED, index);
+            }
         };
 
-        m_popup->bind("OnClosed"_id, this) = [](ComboBox* box)
+        m_popup->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
         {
-            box->m_popup.reset();
+            if (auto box = selfRef.lock())
+                box->m_popup.reset();
         };
 
         auto totalSize = cachedLayoutParams().calcTotalAreaFromDrawArea(cachedDrawArea()).size();

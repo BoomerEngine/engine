@@ -21,13 +21,13 @@ namespace base
         class BASE_CONFIG_API Entry : public base::NoCopy
         {
         public:
-            Entry(Group* group, StringID name);
+            Entry(Group* group, const StringBuf& name);
 
             /// get the parent group
             INLINE Group* group() const { return m_group;}
 
             /// get SHORT name of the entry (within a group)
-            INLINE StringID name() const { return m_name; }
+            INLINE const StringBuf& name() const { return m_name; }
 
             //--
 
@@ -73,7 +73,7 @@ namespace base
 
         private:
             Group* m_group;
-            StringID m_name;
+            StringBuf m_name;
             Array<StringBuf> m_values;
             SpinLock m_lock;
 

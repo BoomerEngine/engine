@@ -74,31 +74,41 @@ namespace ui
 
         void unlink(T* elem)
         {
-            if (nullptr != elem->m_displayNext)
+            if (elem->m_displayIndex != -1)
             {
-                DEBUG_CHECK(m_tail != elem);
-                elem->m_displayNext->m_displayPrev = elem->m_displayPrev;
+                if (nullptr != elem->m_displayNext)
+                {
+                    DEBUG_CHECK(m_tail != elem);
+                    elem->m_displayNext->m_displayPrev = elem->m_displayPrev;
+                }
+                else
+                {
+                    DEBUG_CHECK(m_tail == elem);
+                    m_tail = elem->m_displayPrev;
+                }
+
+                if (nullptr != elem->m_displayPrev)
+                {
+                    DEBUG_CHECK(m_head != elem);
+                    elem->m_displayPrev->m_displayNext = elem->m_displayNext;
+                }
+                else
+                {
+                    DEBUG_CHECK(m_head == elem);
+                    m_head = elem->m_displayNext;
+                }
+
+                elem->m_displayPrev = nullptr;
+                elem->m_displayNext = nullptr;
+                elem->m_displayIndex = -1;
             }
             else
             {
-                DEBUG_CHECK(m_tail == elem);
-                m_tail = elem->m_displayPrev;
+                DEBUG_CHECK(elem->m_displayNext == nullptr);
+                DEBUG_CHECK(elem->m_displayPrev == nullptr);
+                DEBUG_CHECK(elem != m_head);
+                DEBUG_CHECK(elem != m_tail);
             }
-
-            if (nullptr != elem->m_displayPrev)
-            {
-                DEBUG_CHECK(m_head != elem);
-                elem->m_displayPrev->m_displayNext = elem->m_displayNext;
-            }
-            else
-            {
-                DEBUG_CHECK(m_head == elem);
-                m_head = elem->m_displayNext;
-            }
-
-            elem->m_displayPrev = nullptr;
-            elem->m_displayNext = nullptr;
-            elem->m_displayIndex = -1;
 
             m_linearized.reset();
         }
@@ -169,10 +179,6 @@ namespace ui
     public:
         ItemView();
         virtual ~ItemView();
-
-        //--
-
-        ElementEventProxy OnItemActivated;
 
         //--
 
@@ -304,6 +310,7 @@ namespace ui
         virtual void visualizeSelectionState(const ModelIndex& item, bool selected) override final;
         virtual void visualizeCurrentState(const ModelIndex& item, bool selected) override final;
         virtual bool iterateDrawChildren(ElementDrawListToken& token) const override final;
+        virtual void focusElement(const ModelIndex& item) override final;
 
         // IElement
         virtual void handleFocusGained() override;

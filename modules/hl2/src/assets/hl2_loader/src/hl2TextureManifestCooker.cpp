@@ -834,7 +834,7 @@ namespace hl2
         virtual base::res::ResourcePtr cook(base::res::IResourceCookerInterface& cooker) const override final
         {
             // we should cook a texture
-            auto sourceFilePath = cooker.queryResourcePath().path();
+            const auto& sourceFilePath = cooker.queryResourcePath();
 
             // load into buffer
             auto data = cooker.loadToBuffer(sourceFilePath);

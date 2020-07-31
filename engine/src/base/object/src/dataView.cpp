@@ -85,7 +85,8 @@ namespace base
     {
         if (auto* pathEntry = findPathEntry(path))
         {
-            if (const auto index = pathEntry->observers.find(observer))
+            const auto index = pathEntry->observers.find(observer);
+            if (index != -1)
             {
                 pathEntry->observers[index] = nullptr;
 

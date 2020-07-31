@@ -309,14 +309,10 @@ namespace ed
             }
 
 
-            m_previewPanel->bind("OnCanvasViewChanged"_id, m_previewHorizontalRuler) = [](ui::CanvasArea* area, ui::HorizontalRuler* ruller)
+            m_previewPanel->bind(ui::EVENT_CANVAS_VIEW_CHANGED) = [this]()
             {
-                ruller->region(area->virtualAreaLeft(), area->virtualAreaRight());
-            };
-
-            m_previewPanel->bind("OnCanvasViewChanged"_id, m_previewVerticalRuler) = [](ui::CanvasArea* area, ui::VerticalRuler* ruller)
-            {
-                ruller->region(area->virtualAreaTop(), area->virtualAreaBottom());
+                m_previewHorizontalRuler->region(m_previewPanel->virtualAreaLeft(), m_previewPanel->virtualAreaRight());
+                m_previewVerticalRuler->region(m_previewPanel->virtualAreaTop(), m_previewPanel->virtualAreaBottom());
             };
         }
 
@@ -414,10 +410,10 @@ namespace ed
             m_mipmapChoiceBox->selectOption(0);
             m_mipmapChoiceBox->visibility(false);
 
-            m_mipmapChoiceBox->bind("OnChanged"_id) = [this](ui::ComboBox* box, ui::IElement* owner)
+            m_mipmapChoiceBox->bind(ui::EVENT_COMBO_SELECTED) = [this](int option)
             {
                 auto settings = previewSettings();
-                settings.selectedMip = box->selectedOption();
+                settings.selectedMip = option;
                 previewSettings(settings);
             };
         }
@@ -441,11 +437,11 @@ namespace ed
             m_sliceChoicebox->selectOption(0);
             m_sliceChoicebox->visibility(false);
 
-            m_sliceChoicebox->bind("OnChanged"_id) = [this](ui::ComboBox* box, ui::IElement* owner)
+            m_sliceChoicebox->bind(ui::EVENT_COMBO_SELECTED) = [this](int option)
             {
                 auto settings = previewSettings();
                 settings.allSlices = false;
-                settings.selectedSlice = box->selectedOption();
+                settings.selectedSlice = option;
                 previewSettings(settings);
             };
         }
@@ -468,10 +464,10 @@ namespace ed
             m_toneMapMode->selectOption(0);
             m_toneMapMode->visibility(false);
 
-            m_toneMapMode->bind("OnChanged"_id) = [this](ui::ComboBox* box, ui::IElement* owner)
+            m_toneMapMode->bind(ui::EVENT_COMBO_SELECTED) = [this](int option)
             {
                 auto settings = previewSettings();
-                settings.toneMapMode = box->selectedOption();
+                settings.toneMapMode = option;
                 previewSettings(settings);
             };
             
@@ -482,7 +478,7 @@ namespace ed
             m_exposureControl->units(" EV");
             m_exposureControl->visibility(false);
 
-            m_exposureControl->bind("OnValueChanged"_id) = [this]()
+            m_exposureControl->bind(ui::EVENT_TRACK_VALUE_CHANGED) = [this]()
             {
                 auto settings = previewSettings();
                 settings.exposureAdj = m_exposureControl->value();

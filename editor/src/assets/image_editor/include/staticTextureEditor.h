@@ -25,7 +25,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditorNativeFile);
 
     public:
-        StaticTextureEditor(ConfigGroup config, ManagedFileNativeResource* file);
+        StaticTextureEditor(ManagedFileNativeResource* file);
         virtual ~StaticTextureEditor();
 
         INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }

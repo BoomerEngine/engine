@@ -14,29 +14,35 @@
 #include "uiStyleValue.h"
 #include "uiInputAction.h"
 #include "uiImage.h"
-
-#include "base/canvas/include/canvas.h"
 #include "uiRenderer.h"
 #include "uiTextLabel.h"
 #include "uiButton.h"
+#include "uiWindowTitlebar.h"
+
+#include "base/canvas/include/canvas.h"
 
 namespace ui
 {
     //--
 
-    RTTI_BEGIN_TYPE_CLASS(Window);
-    RTTI_METADATA(ElementClassNameMetadata).name("Window");
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(Window);
+        RTTI_METADATA(ElementClassNameMetadata).name("Window");
     RTTI_END_TYPE();
 
-    Window::Window()
-        : m_title("Boomer Engine")
+    Window::Window(WindowFeatureFlags flags, base::StringView<char> title)
+        : m_title(title)
+        , m_flags(flags)
     {
         hitTest(HitTestState::Enabled);
-        layoutMode(LayoutMode::Vertical);
+        layoutVertical();
+
         enableAutoExpand(true, true);
         allowFocusFromClick(false);
         allowFocusFromKeyboard(false);
         allowHover(false);
+
+        if (flags.test(WindowFeatureFlagBit::HasTitleBar))
+            createChild<WindowTitleBar>(flags, title);
     }
 
     Window::~Window()
@@ -44,13 +50,8 @@ namespace ui
         MemDelete(m_requests);
         m_requests = nullptr;
 
-        TRACE_INFO("Window destroyed");
+        TRACE_INFO("Window '{}' destroyed", m_title);
     }
-
-    void Window::ForceRedrawOfEverything()
-    {
-    }
-
 
     WindowRequests* Window::createPendingRequests()
     {
@@ -66,15 +67,23 @@ namespace ui
         return ret;
     }
 
-    void Window::requestClose()
+    bool Window::requestedClose() const
+    {
+        return m_requests && m_requests->requestClose;
+    }
+
+    void Window::requestClose(int exitCode)
     {
         auto requests = createPendingRequests();
         if (!requests->requestClose)
         {
             TRACE_INFO("Requested to close window '{}'", this->name());
             requests->requestClose = true;
-            call("OnClosed"_id);
+            call(EVENT_WINDOW_CLOSED);
 
+            m_exitCode = exitCode;
+
+            // hacky hack...
             if (auto owner = m_modalOwner.lock())
                 owner->focus();
         }
@@ -84,40 +93,28 @@ namespace ui
     {
         auto requests = createPendingRequests();
         if (!requests->requestActivation)
-        {
-            TRACE_INFO("Requested to activate window '{}'", this->name());
             requests->requestActivation = true;
-        }
     }
 
     void Window::requestMaximize(bool restore)
     {
         auto requests = createPendingRequests();
         if (!requests->requestMaximize)
-        {
-            TRACE_INFO("Requested to maximize window '{}'", this->name());
             requests->requestMaximize = true;
-        }
     }
 
     void Window::requestMinimize()
     {
         auto requests = createPendingRequests();
         if (!requests->requestMinimize)
-        {
-            TRACE_INFO("Requested to minimize window '{}'", this->name());
             requests->requestMinimize = true;
-        }
     }
 
     void Window::requestMove(const Position& screenPosition)
     {
         auto requests = createPendingRequests();
         if (!requests->requestPositionChange)
-        {
-            //TRACE_INFO("Requested to move window '{}' to [{},{}]", this->name(), screenPosition.x, screenPosition.y);
             requests->requestPositionChange = true;
-        }
 
         requests->requestedPosition = screenPosition;
     }
@@ -126,10 +123,7 @@ namespace ui
     {
         auto requests = createPendingRequests();
         if (!requests->requestSizeChange)
-        {
-            //TRACE_INFO("Requested to resize window '{}' to [{},{}]", this->name(), screenSize.x, screenSize.y);
             requests->requestSizeChange = true;
-        }
 
         requests->requestedSize = screenSize;
     }
@@ -239,25 +233,10 @@ namespace ui
 
     void Window::handleExternalActivation(bool isActive)
     {
-        /*if (isActive)
+        if (isActive)
             addStyleClass("active"_id);
         else
-            removeStyleClass("active"_id);*/
-    }
-
-    void Window::handleStateUpdate(WindowStateFlags flags)
-    {
-        if (auto titleBar = findChildByName<WindowTitleBar>(""_id))
-        {
-            auto titleBarFlags = flags;
-            if (!m_hasCloseButton)
-                titleBarFlags -= WindowStateFlagBit::CanClose;
-            if (!m_hasMaximizeButton)
-                titleBarFlags -= WindowStateFlagBit::CanMaximize;
-            if (!m_hasMinimizeButton)
-                titleBarFlags -= WindowStateFlagBit::CanMinimize;
-            titleBar->updateWindowState(this, flags);
-        }
+            removeStyleClass("active"_id);
     }
 
     InputActionPtr Window::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
@@ -344,62 +323,6 @@ namespace ui
         return false;
     }
 
-    bool Window::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
-    {
-        if (name == "title")
-        {
-            m_title = base::StringBuf(value);
-            return true;
-        }
-        else if (name == "resizable")
-        {
-            return base::MatchResult::OK == value.match(m_resizable);
-        }
-        else if (name == "canMaximize")
-        {
-            return base::MatchResult::OK == value.match(m_hasMaximizeButton);
-        }
-        else if (name == "canMinimize")
-        {
-            return base::MatchResult::OK == value.match(m_hasMinimizeButton);
-        }
-        else if (name == "canClose")
-        {
-            return base::MatchResult::OK == value.match(m_hasCloseButton);
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
-    }
-
-    /*void Window::restoreConfiguration(WindowInitialPlacementSetup& outSetup)
-    {
-        auto configKey = configKey();
-        if (configKey.empty())
-            return;
-
-        auto fullConfigKey = base::StringBuf("Windows/") + configKey;
-
-        // load the window size
-        if (Config::GetTypedValue<float>(fullConfigKey.c_str(), "Width", outSetup.m_initialSize.x) &&
-            Config::GetTypedValue<float>(fullConfigKey.c_str(), "Height", outSetup.m_initialSize.y))
-        {
-            outSetup.m_sizingMode = WindowSizing::FreeSize; // use the specified window size
-        }
-
-        // load the window position
-        Position pos;
-        if (Config::GetTypedValue<float>(fullConfigKey.c_str(), "X", pos.x) && Config::GetTypedValue<float>(fullConfigKey.c_str(), "Y", pos.y))
-        {
-            m_absolutePosition = pos;
-        }
-
-        // is the window maximized ?
-        if (Config::GetTypedValue<bool>(fullConfigKey.c_str(), "Maximized", false))
-        {
-            outSetup.m_placementMode = WindowPlacement::WholeCurrentArea;
-        }
-    }*/
-
     void Window::queryCurrentPlacementForSaving(WindowSavedPlacementSetup& outPlacement) const
     {
     }
@@ -407,11 +330,13 @@ namespace ui
     void Window::queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const
     {
         outSetup.title = m_title;
-        outSetup.flagAllowResize = m_resizable;
-        outSetup.flagForceActive = true;
-        outSetup.flagShowOnTaskBar = true;
-        outSetup.flagPopup = false;
-        outSetup.flagTopMost = false;
+        outSetup.flagAllowResize = m_flags.test(WindowFeatureFlagBit::Resizable);
+        outSetup.flagForceActive = !m_flags.test(WindowFeatureFlagBit::ShowInactive);
+        outSetup.flagShowOnTaskBar = m_flags.test(WindowFeatureFlagBit::ShowOnTaskBar);
+        outSetup.flagPopup = m_flags.test(WindowFeatureFlagBit::Popup);
+        outSetup.flagTopMost = m_flags.test(WindowFeatureFlagBit::TopMost);
+        outSetup.owner = base::rtti_cast<Window>(m_modalOwner.lock());
+        outSetup.externalParentWindowHandle = m_parentModalWindowHandle;
     }
 
     bool Window::queryMovableState() const
@@ -430,300 +355,21 @@ namespace ui
         return false;
     }
 
-    /*base::StringBuf Window::configKey() const
-    {
-        return base::StringBuf::EMPTY();
-    }
-
-    void Window::storeConfiguration()
-    {
-        auto configKey = configKey();
-        if (configKey.empty())
-            return;
-
-        auto fullConfigKey = base::StringBuf("Windows/") + configKey;
-
-        Config::SetTypedValue<float>(fullConfigKey.c_str(), "Width", m_absoluteSize.x);
-        Config::SetTypedValue<float>(fullConfigKey.c_str(), "Height", m_absoluteSize.y);
-        Config::SetTypedValue<float>(fullConfigKey.c_str(), "X", m_absolutePosition.x);
-        Config::SetTypedValue<float>(fullConfigKey.c_str(), "Y", m_absolutePosition.y);
-
-        bool isMaximized = m_nativeWindow && m_nativeWindow->isMaximized();
-        Config::SetTypedValue<bool>(fullConfigKey.c_str(), "Maximized", isMaximized);
-
-        bool isMinimized = m_nativeWindow && m_nativeWindow->isMinimized();
-        Config::SetTypedValue<bool>(fullConfigKey.c_str(), "Minimized", isMinimized);
-    }*/
-
-    /*void Window::attachOverlay(const base::RefPtr<WindowOverlay>& overlay)
-    {
-        ASSERT_EX(overlay, "Invalid overlay window");
-        ASSERT_EX(!m_overlays.contains(overlay), "Overlay window already added");
-        m_overlays.pushBack(overlay);
-        attachChild(overlay);
-    }
-
-    void Window::dettachOverlay(const base::RefPtr<WindowOverlay>& overlay)
-    {
-        ASSERT_EX(m_overlays.contains(overlay), "Overlay window not added");
-        m_overlays.remove(overlay);
-        detachChild(overlay);
-    }*/
-
-    /*void Window::arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const
-    {
-        TBaseClass::arrangeChildren(innerArea, clipArea, outArrangedChildren, dynamicSizing);
-
-        if (nullptr != m_localNativeWindow)
-        {
-            for (const auto& overlay : m_overlays)
-            {
-                if (overlay->visibility() == VisibilityState::Visible)
-                {
-                    auto windowArea = m_localNativeWindow->queryClientArea();
-                    auto area = ElementArea(windowArea.absolutePosition() + overlay->overlayPosition(), overlay->overlaySize());
-                    outArrangedChildren.add(overlay, area, area);
-                }
-            }
-        }
-    }*/
-
     //--
 
-    /*void Window::manageMessages()
+    int Window::runModal(IElement* owner)
     {
-        PC_SCOPE_LVL1(ManageMessages);
+        DEBUG_CHECK_RETURN_V(owner && owner->renderer(), 0);
 
-        // remove dead messages
-        for (int i=m_overlays.lastValidIndex(); i >= 0; --i)
-        {
-			const auto& overlay = m_overlays[i];
-            if (overlay && overlay->hasFinishedAnimating())
-            {
-                detachChild(overlay);
-                m_overlays.erase(i);
-            }
-        }
+        auto parentWindow = owner->findParentWindow();
+        DEBUG_CHECK_RETURN_V(parentWindow, 0);
 
-        // sort by priority
-        //std::sort(m_messages.begin(), m_messages.end(), [](const WindowMessagePtr& a, const WindowMessagePtr& b) { return a->priority() < b->priority(); });
+        m_exitCode = 0;
+        m_modalOwner = parentWindow;
+        m_parentModalWindowHandle = owner->renderer()->queryWindowNativeHandle(parentWindow);
 
-        // place the messages in the window
-        float rightEdge = cachedDrawArea().size().x - 10.0f;
-        float bottomEdge = cachedDrawArea().size().y - 10.0f;
-        for (int i=m_overlays.lastValidIndex(); i >= 0; --i)
-        {
-            auto msg = base::rtti_cast<WindowMessage>(m_overlays[i]);
-            if (msg)
-            {
-                auto windowLeft = rightEdge - msg->overlaySize().x;
-                auto windowTop = bottomEdge - msg->overlaySize().y;
-                msg->move(ui::Position(windowLeft, windowTop));
-                bottomEdge = windowTop;
-            }
-        }
-    }*/
-
-    void Window::showModal(IElement* owner)
-    {
-        if (m_requests && m_requests->requestClose)
-            return;
-
-        DEBUG_CHECK_EX(!renderer(), "Cannot show popup that is already visible");
-        if (renderer())
-            return;
-
-        DEBUG_CHECK_EX(owner, "Owner is required for popups");
-        if (!owner)
-            return;
-
-        auto renderer = owner->renderer();
-        DEBUG_CHECK_EX(renderer, "Cannot create popups for elements that are not attached to renderig hierarchy");
-        if (renderer)
-            renderer->attachWindow(this);
-
-        m_modalOwner = owner;
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(PopupWindow);
-        RTTI_METADATA(ElementClassNameMetadata).name("PopupWindow");
-    RTTI_END_TYPE();
-
-    PopupWindow::PopupWindow()
-    {
-        m_resizable = false;
-    }
-
-    void PopupWindow::show(IElement* owner, const PopupWindowSetup& setup /*= PopupWindowSetup()*/)
-    {
-        if (m_requests && m_requests->requestClose)
-            return;
-
-        DEBUG_CHECK_EX(!renderer(), "Cannot show popup that is already visible");
-        if (renderer())
-            return;
-
-        DEBUG_CHECK_EX(owner, "Owner is required for popups");
-        if (!owner)
-            return;
-
-        m_parent = owner;
-        m_setup = setup;
-
-        if (m_setup.m_popupOwner.empty())
-           m_setup.m_popupOwner = owner->findParentWindow();
-
-        auto renderer = owner->renderer();
-        DEBUG_CHECK_EX(renderer, "Cannot create popups for elements that are not attached to renderig hierarchy");
-        if (renderer)
-            renderer->attachWindow(this);
-    }
-
-    void PopupWindow::handleExternalActivation(bool isActive)
-    {
-        TBaseClass::handleExternalActivation(isActive);
-
-        if (!isActive && m_setup.m_closeWhenDeactivated)
-            requestClose();
-    }
-
-    bool PopupWindow::runAction(base::StringID name)
-    {
-        if (TBaseClass::runAction(name))
-            return true;
-
-        if (auto parent = m_parent.lock())
-            return parent->runAction(name);
-
-        if (auto owner = m_setup.m_popupOwner.lock())
-            return owner->runAction(name);
-
-        return false;
-    }
-
-    ActionStatusFlags PopupWindow::checkAction(base::StringID name) const
-    {
-        ActionStatusFlags ret = TBaseClass::checkAction(name);
-
-        if (auto parent = m_parent.lock())
-            ret |= parent->checkAction(name);
-
-        if (auto owner = m_setup.m_popupOwner.lock())
-            ret |= owner->checkAction(name);
-
-        return ret;
-    }
-
-    bool PopupWindow::queryResizableState() const
-    {
-        return false;
-    }
-
-    void PopupWindow::queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const
-    {
-        outSetup.flagPopup = true;
-        outSetup.flagShowOnTaskBar = false;
-        outSetup.flagTopMost = false;
-        outSetup.flagForceActive = m_setup.m_closeWhenDeactivated; // if we want to auto close the popup once focus is lost we need to make sure window is auto-activated
-        outSetup.flagRelativeToCursor = m_setup.m_relativeToCursor;
-        outSetup.mode = m_setup.m_mode;
-        outSetup.referenceElement = m_parent;
-        outSetup.owner = m_setup.m_popupOwner;
-        outSetup.offset = m_setup.m_initialOffset;
-        outSetup.size = m_setup.m_initialSize;
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(WindowTitleBar);
-        RTTI_METADATA(ElementClassNameMetadata).name("WindowTitleBar");
-    RTTI_END_TYPE();
-
-    WindowTitleBar::WindowTitleBar(base::StringView<char> title, base::StringView<char> customIcon)
-    {
-        hitTest(HitTestState::Enabled);
-        layoutMode(LayoutMode::Horizontal);
-
-        if (customIcon)
-        {
-            auto appIcon = createNamedChild<TextLabel>("AppIcon"_id, customIcon);
-            appIcon->hitTest(true);
-            appIcon->customStyle("windowAreaType"_id, base::input::AreaType::SysMenu);
-        }
-        else
-        {
-            auto appIcon = createNamedChild<Image>("AppIcon"_id);
-            appIcon->hitTest(true);
-            appIcon->customStyle("windowAreaType"_id, base::input::AreaType::SysMenu);
-        }
-
-        {
-            m_title = createNamedChild<TextLabel>("Caption"_id, title);
-        }
-
-        {
-            auto buttonCluster = createNamedChild<>("ButtonContainer"_id);
-            buttonCluster->layoutHorizontal();
-
-            m_minimizeButton = buttonCluster->createNamedChild<Button>("Minimize"_id);
-            m_minimizeButton->attachChild(base::CreateSharedPtr<TextLabel>());
-            m_minimizeButton->visibility(false);
-
-            m_maximizeButton = buttonCluster->createNamedChild<Button>("Maximize"_id);
-            m_maximizeButton->attachChild(base::CreateSharedPtr<TextLabel>());
-            m_maximizeButton->visibility(false);
-
-            m_closeButton = buttonCluster->createNamedChild<Button>("Close"_id);
-            m_closeButton->attachChild(base::CreateSharedPtr<TextLabel>());
-
-            //m_minimizeButton->customStyle("windowAreaType"_id, base::input::AreaType::Minimize);
-            //m_maximizeButton->customStyle("windowAreaType"_id, base::input::AreaType::Maximize);
-            //m_closeButton->customStyle("windowAreaType"_id, base::input::AreaType::Close);
-
-            m_closeButton->bind("OnClick"_id, this) = [](WindowTitleBar* bar)
-            {
-                if (auto* window = bar->findParentWindow())
-                    window->handleExternalCloseRequest();
-            };
-
-            m_maximizeButton->bind("OnClick"_id, this) = [](WindowTitleBar* bar)
-            {
-                if (auto window = bar->findParentWindow())
-                    window->requestMaximize(true);
-            };
-
-            m_minimizeButton->bind("OnClick"_id, this) = [](WindowTitleBar* bar)
-            {
-                if (auto window = bar->findParentWindow())
-                    window->requestMinimize();
-            };
-        }
-    }
-
-    WindowTitleBar::~WindowTitleBar()
-    {}
-
-    void WindowTitleBar::updateWindowState(ui::Window* window, WindowStateFlags flags)
-    {
-        if (m_maximizeButton)
-            m_maximizeButton->visibility(flags.test(WindowStateFlagBit::CanMaximize));
-
-        if (m_minimizeButton)
-            m_minimizeButton->visibility(flags.test(WindowStateFlagBit::CanMinimize));
-
-        if (m_closeButton)
-            m_closeButton->visibility(flags.test(WindowStateFlagBit::CanClose));
-
-        if (m_title)
-            m_title->text(window->title());
-    }
-
-    bool WindowTitleBar::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const
-    {
-        outAreaType = base::input::AreaType::Caption;
-        return true;
+        owner->renderer()->runModalLoop(this);
+        return m_exitCode;
     }
 
     //--

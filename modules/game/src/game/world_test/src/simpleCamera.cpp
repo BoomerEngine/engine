@@ -22,7 +22,7 @@ namespace game
     {
         //---
 
-        base::res::StaticResource<InputDefinitions> resFreeCameraInput("game/input/free_camera.v4input");
+        base::res::StaticResource<InputDefinitions> resFreeCameraInput("/game/input/free_camera.v4input");
 
         //---
 

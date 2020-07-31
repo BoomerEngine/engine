@@ -124,7 +124,7 @@ namespace base
         xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView<char> path /*= ""*/)
         {
             // load the xml content
-            auto xmlFilePath = cooker.queryResourcePath().path();
+            const auto& xmlFilePath = cooker.queryResourcePath();
             auto rawContent = cooker.loadToBuffer(xmlFilePath);
             if (!rawContent)
                 return nullptr;

@@ -25,7 +25,7 @@ namespace base
 
         //--
 
-        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, const ResourcePath& referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker)
+        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView<char> referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker)
             : m_referencePath(referenceFilePath)
             , m_referenceMountingPoint(referenceMountingPoint)
             , m_externalProgressTracker(externalProgressTracker)
@@ -34,10 +34,10 @@ namespace base
             , m_loader(dependencyLoader)
         {
             m_referenceMountingPoint.translatePathToRelative(m_referencePath.view(), m_referencePathBase);
-            queryContextName(queryResourcePath().path(), m_referenceContextName);
+            queryContextName(queryResourcePath(), m_referenceContextName);
 
             if (m_referenceContextName.empty())
-                m_referenceContextName = StringBuf(queryResourcePath().path());
+                m_referenceContextName = queryResourcePath();
         }
 
         CookerInterface::~CookerInterface()
@@ -56,7 +56,7 @@ namespace base
                 m_externalProgressTracker->reportProgress(currentCount, totalCount, text);
         }
 
-        const ResourcePath& CookerInterface::queryResourcePath() const
+        const StringBuf& CookerInterface::queryResourcePath() const
         {
             return m_referencePath;
         }
@@ -182,7 +182,7 @@ namespace base
 
             // get the system path to look at
             StringBuf systemRootPath;
-            if (!ApplyRelativePath(m_referencePath.path(), relativePath, systemRootPath))
+            if (!ApplyRelativePath(m_referencePath, relativePath, systemRootPath))
                 return false;
 
             // list files
@@ -205,7 +205,7 @@ namespace base
             if (isLocal)
             {
                 StringBuf ret;
-                auto contextPathToUse = contextFileSystemPath.empty() ? m_referencePath.path() : contextFileSystemPath;
+                auto contextPathToUse = contextFileSystemPath.empty() ? m_referencePath : contextFileSystemPath;
                 if (ApplyRelativePath(contextPathToUse, relativePath, ret))
                 {
                     outResourcePath = ret;
@@ -265,60 +265,10 @@ namespace base
 
         bool CookerInterface::findFile(StringView<char> contextPath, StringView<char> inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth /*= 2*/)
         {
-            // slice the input path
-            InplaceArray<StringView<char>, 20> inputParts;
-            inputPath.slice("\\/", false, inputParts);
-            if (inputParts.empty())
-                return false;
-
-            // get current path
-            InplaceArray<StringView<char>, 20> referenceParts;
-            contextPath.slice("\\/", false, referenceParts);
-            if (referenceParts.empty())
-                return false;
-
-            // remove the file name of the reference path
-            referenceParts.popBack();
-
-            // outer search (on the reference path)
-            for (uint32_t i=0; i<maxScanDepth; ++i)
-            {
-                // try all allowed combinations of reference path as well
-                auto innerSearchDepth = std::min<uint32_t>(maxScanDepth, inputParts.size());
-                for (uint32_t j=0; j<innerSearchDepth; ++j)
+            return ScanRelativePaths(contextPath, inputPath, maxScanDepth, outFileSystemPath, [this](StringView<char> testPath)
                 {
-                    StringBuilder pathBuilder;
-
-                    for (auto& str : referenceParts)
-                    {
-                        if (!pathBuilder.empty()) pathBuilder << "/";
-                        pathBuilder << str;
-                    }
-
-                    auto firstInputPart = inputParts.size() - j - 1;
-                    for (uint32_t k=firstInputPart; k<inputParts.size(); ++k)
-                    {
-                        if (!pathBuilder.empty()) pathBuilder << "/";
-                        pathBuilder << inputParts[k];
-                    }
-
-                    // does the file exist ?
-                    auto fileSystemPath = pathBuilder.toString();
-                    if (touchFile(fileSystemPath))
-                    {
-                        outFileSystemPath = fileSystemPath;
-                        return true;
-                    }
-                }
-
-                // ok, we didn't found anything, retry with less base directories
-                if (referenceParts.empty())
-                    break;
-                referenceParts.popBack();
-            }
-
-            // no matching file found
-            return false;
+                    return touchFile(testPath);
+                });
         }
 
         io::ReadFileHandlePtr CookerInterface::createReader(StringView<char> fileSystemPath)

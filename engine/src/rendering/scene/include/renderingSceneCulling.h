@@ -10,6 +10,7 @@
 
 #include "rendering/driver/include/renderingManagedBuffer.h"
 #include "base/containers/include/staticStructurePool.h"
+#include "renderingSelectable.h"
 
 namespace rendering
 {
@@ -32,6 +33,7 @@ namespace rendering
             ProxyType proxyType = ProxyType::None;
             const IProxy* proxyPtr = nullptr;
             float autoHideDistance = 100.0f;
+            Selectable selectable;
         };
 
 #pragma pack(push)
@@ -42,8 +44,14 @@ namespace rendering
             uint32_t flags = 0;
             uint32_t color = 0;
             uint32_t colorEx = 0;
+
+            Selectable selectable;
+            uint32_t _padding0 = 0;
+            uint32_t _padding1 = 0;
+
             base::Vector4 sceneBoundsMin; // unpacked bounds, W can be used for something
             base::Vector4 sceneBoundsMax; // unpacked bounds, W can be used for something
+
             base::Matrix localToScene; // transformation matrix
         };
 #pragma pack(pop)

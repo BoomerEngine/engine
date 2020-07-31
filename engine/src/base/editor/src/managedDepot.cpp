@@ -16,14 +16,14 @@
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/localService.h"
 #include "base/system/include/thread.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
     //--
 
-    ManagedDepot::ManagedDepot(depot::DepotStructure& depot, ConfigGroup config)
+    ManagedDepot::ManagedDepot(depot::DepotStructure& depot)
         : m_depot(depot)
-        , m_config(config)
     {
         // event key for listening our events
         m_eventKey = MakeUniqueEventKey("ManagedDepot");
@@ -32,7 +32,7 @@ namespace ed
         //m_thumbnailHelper = CreateUniquePtr<ManagedThumbnailHelper>(loader);
 
         // create the root directory, it never goes away
-        m_root = CreateSharedPtr<ManagedDirectory>(this, nullptr, "Assets", "");
+        m_root = CreateSharedPtr<ManagedDirectory>(this, nullptr, "root", "/");
 
         // bind events
         m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path) {
@@ -64,7 +64,6 @@ namespace ed
 
     ManagedDepot::~ManagedDepot()
     {
-        m_thumbnailHelper.reset();
         m_depotEvents.clear();
         m_root.reset();
     }
@@ -193,29 +192,10 @@ namespace ed
 
     void ManagedDepot::toogleDirectoryBookmark(ManagedDirectory* dir, bool state)
     {
-        bool saveConfig = false;
-
         if (state && m_bookmarkedDirectories.insert(dir))
-        {
-            DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED, dir->depotPath());
-            saveConfig = true;
-        }
+            DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED, ManagedDirectoryPtr(AddRef(dir)));
         else if (!state && m_bookmarkedDirectories.remove(dir))
-        {
-            DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED, dir->depotPath());
-            saveConfig = true;
-        }
-
-        if (saveConfig)
-        {
-            Array<StringBuf> bookmarkedDirectories;
-            bookmarkedDirectories.reserve(m_bookmarkedDirectories.size());
-
-            for (auto* dir : m_bookmarkedDirectories.keys())
-                bookmarkedDirectories.pushBack(dir->depotPath());
-
-            m_config.write("Bookmarks", bookmarkedDirectories);
-        }            
+            DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED, ManagedDirectoryPtr(AddRef(dir)));
     }
 
     void ManagedDepot::toogleFileModified(ManagedFile* file, bool state)
@@ -234,22 +214,36 @@ namespace ed
 
     //---
 
-    void ManagedDepot::restoreConfiguration()
+    void ManagedDepot::configLoad(const ui::ConfigBlock& block)
     {
-        // load list of bookmarked directories
-        {
-            auto bookmarkedDirectories = m_config.readOrDefault< Array<StringBuf> >("Bookmarks");
-            m_bookmarkedDirectories.clear();
+        m_bookmarkedDirectories.clear();
 
-            for (auto& path : bookmarkedDirectories)
+        auto bookmarkedDirectories = block.readOrDefault<Array<StringBuf>>("Bookmarks");
+        for (auto& path : bookmarkedDirectories)
+        {
+            auto dir = findPath(path);
+            if (dir)
             {
-                auto dir = findPath(path);
-                if (dir)
-                {
-                    m_bookmarkedDirectories.insert(dir);
-                    dir->bookmark(true);
-                }
+                m_bookmarkedDirectories.insert(dir);
+                dir->bookmark(true);
             }
+        }
+    }
+
+    void ManagedDepot::configSave(const ui::ConfigBlock& block)
+    {
+        {
+            Array<StringBuf> bookmarkedDirectories;
+            bookmarkedDirectories.reserve(m_bookmarkedDirectories.size());
+
+            for (auto* dir : m_bookmarkedDirectories.keys())
+                bookmarkedDirectories.pushBack(dir->depotPath());
+
+            block.write("Bookmarks", bookmarkedDirectories);
+        }
+
+        {
+
         }
     }
 

@@ -57,6 +57,8 @@ namespace ui
 
         bool calculateCurrentPixelUnderCursor(base::Point& outPixel) const;
 
+        void renderInternal(const rendering::scene::FrameParams_Capture* capture = nullptr);
+
     private:
         rendering::ImageView m_colorSurface; // TODO: make shared!
         rendering::ImageView m_depthSurface; // TODO: make shared!
@@ -79,8 +81,6 @@ namespace ui
 
         void releaseSurfaces();
         bool prepareSurfaces(uint32_t minWidth, uint32_t minHeight);
-        void renderInternal(const rendering::scene::FrameParams_Capture* capture = nullptr);
-
 
         virtual base::StringBuf describe() const override;
         virtual void handleDeviceReset() override;

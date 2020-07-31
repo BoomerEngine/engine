@@ -71,33 +71,6 @@ namespace ui
 
     //---
 
-    ElementEventProxy::ElementEventProxy(IElement* host, base::StringID eventName)
-        : m_host(host)
-        , m_eventName(eventName)
-    {
-    }
-
-    ElementEventProxy::~ElementEventProxy()
-    {
-    }
-
-    EventFunctionBinder ElementEventProxy::bind(IElement* owner)
-    {
-        return m_host->bind(m_eventName, owner);
-    }
-
-    void ElementEventProxy::unbind(IElement* owner)
-    {
-        m_host->unbind(m_eventName, owner);
-    }
-
-    bool ElementEventProxy::call(const base::Variant& data) const
-    {
-        return m_host->callGeneric(m_eventName, data);
-    }
-
-    //---
-
     RTTI_BEGIN_TYPE_CLASS(IElement);
         RTTI_PROPERTY(m_name);
         RTTI_METADATA(ElementClassNameMetadata).name("Element");
@@ -135,7 +108,7 @@ namespace ui
 
         for (auto it = childrenList(); it; ++it)
         {
-            ASSERT_EX(it->parentElement() == this, "Child was already removed from this parent");
+            ASSERT_EX(!it->parentElement() || it->parentElement() == this, "Child was already removed from this parent");
             detachElementFromChildList(*it);
         }
 
@@ -630,18 +603,6 @@ namespace ui
 
     InputActionPtr IElement::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
-        /*if (evt.leftDoubleClicked())
-            if (call("OnMouseLeftDoubleClick"_id, evt))
-                return IInputAction::CONSUME();*/
-
-        /*if (evt.leftClicked())
-            if (call("OnMouseLeftClick"_id, evt))
-                return IInputAction::CONSUME();*/
-
-        /*if (evt.rightClicked())
-            if (call("OnMouseRightClick"_id, evt))
-                return IInputAction::CONSUME();*/
-
         return InputActionPtr();
     }
 
@@ -652,12 +613,12 @@ namespace ui
     
     bool IElement::handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta)
     {
-        return call("OnMouseWheel"_id, delta);
+        return false;
     }
 
     bool IElement::handleMouseMovement(const base::input::MouseMovementEvent& evt)
     {
-        return false;// call("OnMouseMove"_id, evt);
+        return false;
     }
 
     bool IElement::previewKeyEvent(const base::input::KeyEvent& evt)
@@ -673,11 +634,27 @@ namespace ui
             if (m_actionTable && m_actionTable->processKeyEvent(evt))
                 return true;
 
-            return call("OnKeyDown"_id, evt.keyCode());
+            if (evt.keyCode() == base::input::KeyCode::KEY_TAB)
+            {
+                const auto back = evt.keyMask().isShiftDown();
+                if (back)
+                {
+                    if (auto* nextFocus = focusFindPrev())
+                        nextFocus->focus();
+                }
+                else
+                {
+                    if (auto* nextFocus = focusFindNext())
+                        nextFocus->focus();
+                }
+                return true;
+            }
+
+            return false;
         }
         else if (evt.released())
         {
-            return call("OnKeyUp"_id, evt.keyCode());
+            return false;
         }
 
         return false;
@@ -690,7 +667,7 @@ namespace ui
 
     bool IElement::handleCharEvent(const base::input::CharEvent& evt)
     {
-        return call("OnChar"_id, (int)evt.scanCode());
+        return false;
     }
 
     bool IElement::handleExternalCharEvent(const base::input::CharEvent& evt)
@@ -718,7 +695,7 @@ namespace ui
     bool IElement::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
     {
         // try local event
-        if (call("OnContextMenu"_id, absolutePosition))
+        if (call(EVENT_CONTEXT_MENU, absolutePosition))
             return true;
 
         // propagate to parent
@@ -731,7 +708,7 @@ namespace ui
 
     bool IElement::handleHoverDuration(const Position& absolutePosition)
     {
-        return call("OnHoverDuration"_id, absolutePosition);
+        return false;
     }
 
     void IElement::handleHoverEnter(const Position& absolutePosition)
@@ -741,8 +718,6 @@ namespace ui
             m_cachedHoveredFlag = true;
             addStylePseudoClass("hover"_id);
         }
-
-        call("OnHoverEnter"_id, absolutePosition);
     }
 
     void IElement::handleHoverLeave(const Position& absolutePosition)
@@ -752,8 +727,6 @@ namespace ui
             m_cachedHoveredFlag = false;
             removeStylePseudoClass("hover"_id);
         }
-
-        call("OnHoverLeave"_id, absolutePosition);
     }
 
     void IElement::handleFocusGained()
@@ -763,8 +736,6 @@ namespace ui
             addStylePseudoClass("focused"_id);
             m_cachedFocusFlag = true;
         }
-
-        call("OnFocusGained"_id);
     }
 
     void IElement::handleFocusLost()
@@ -774,15 +745,63 @@ namespace ui
             removeStylePseudoClass("focused"_id);
             m_cachedFocusFlag = false;
         }
-
-        call("OnFocusLost"_id);
     }
 
-    IElement* IElement::handleFocusForwarding()
+    IElement* IElement::focusFindFirst()
+    {
+        if (isAllowingFocusFromKeyboard())
+            return this;
+
+        for (ElementChildIterator it(childrenList()); it; ++it)
+        {
+            if (auto* first = it->focusFindFirst())
+                return first;
+        }
+
+        return nullptr;
+    }
+
+    IElement* IElement::focusFindNextSibling(IElement* childSelected)
+    {
+        // find next focus item in local child list
+        bool focusOnNext = false;
+        for (ElementChildIterator it(childrenList()); it; ++it)
+        {
+            if (it == childrenList())
+            {
+                focusOnNext = true;
+                continue;
+            }
+            else if (focusOnNext)
+            {
+                return it->focusFindFirst();
+            }
+        }
+
+        // use our next item
+        return focusFindNext();
+    }
+
+    IElement* IElement::focusFindNext()
+    {
+        // there's no "next" sibling to focus, try in parent
+        if (auto* parent = parentElement())
+            return parent->focusFindNextSibling(this);
+
+        // wow, we got to the end of the list, recurse back starting from first
+        return focusFindFirst();
+    }
+
+    IElement* IElement::focusFindPrev()
     {
         return nullptr;
     }
 
+    IElement* IElement::focusFindPrevSibling(IElement* childSelected)
+    {
+        return nullptr;
+    }
+    
     void IElement::handleChildrenChange()
     {
         invalidateCachedChildrenPlacement();
@@ -810,9 +829,9 @@ namespace ui
             m_enabled = isEnabled;
 
             if (m_enabled)
-                removeStyleClass("disabled"_id);
+                removeStylePseudoClass("disabled"_id);
             else
-                addStyleClass("disabled"_id);
+                addStylePseudoClass("disabled"_id);
 
             handleEnableStateChange(m_enabled);
         }
@@ -831,7 +850,7 @@ namespace ui
 
     void IElement::handleEnableStateChange(bool isEnabled)
     {
-        call("OnEnabled"_id, isEnabled);
+        // nothing here
     }
 
     bool IElement::handleTemplateFinalize()
@@ -847,9 +866,8 @@ namespace ui
 
     bool IElement::handleTimer(base::StringID name, float elapsedTime)
     {
-        return call("OnTimer"_id, name);
+        return false;
     }
-
 
     //--
 
@@ -1368,7 +1386,7 @@ namespace ui
     void IElement::detachElementFromChildList(IElement *childElement)
     {
         ASSERT(childElement);
-        ASSERT(childElement->parentElement() == this);
+        ASSERT(!childElement->parentElement() || childElement->parentElement() == this);
 
         childElement->bindNativeWindowRenderer(nullptr);
 
@@ -2236,13 +2254,13 @@ namespace ui
         return m_actionTable ? *m_actionTable : theEmptyTable;
     }
 
-    bool IElement::runAction(base::StringID name)
+    bool IElement::runAction(base::StringID name, IElement* source)
     {
-        if (m_actionTable && m_actionTable->run(name))
+        if (m_actionTable && m_actionTable->run(name, source))
             return true;
 
         if (auto parent = parentElement())
-            return parent->runAction(name);
+            return parent->runAction(name, source);
 
         return false;
     }
@@ -2268,7 +2286,10 @@ namespace ui
         // TODO
     }
 
-    void IElement::restoreConfig()
+    void IElement::configLoad(const ConfigBlock& block)
+    {}
+
+    void IElement::configSave(const ConfigBlock& block) const
     {}
 
     //--

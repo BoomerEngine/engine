@@ -3,15 +3,6 @@
 * Written by Tomasz "Rex Dex" Jonarski
 ***/
 
-TextEditor {
-    height: $text-font-size; // make the edit box the SAME SIZE as a normal text line - this allows for no visual difference between line of text and edit box
-    selection: color.grayscale(color.scale($active-color, 80%));
-
-    &:focused {
-        selection: $active-color;
-    }
-}
-
 EditBox {
     padding: 5em 2em 5em 3em;
     maring: 2em 2em 2em 2em;
@@ -22,9 +13,28 @@ EditBox {
     border-width: 1em;
     border-radius: 3em;
 
-    /*&:focused {
-        border-color: $active-color;
-    }*/
+    selection: color.grayscale(color.scale($active-color, 80%));
+
+    &:focused {
+        selection: $active-color;
+    }
+
+    &.noborder {
+        border-width: 0em;
+        padding: 0em 0em 0em 0em;
+        maring: 0em 0em 0em 0em;
+        height: $text-font-size; // make the edit box the SAME SIZE as a normal text line - this allows for no visual difference between line of text and edit box
+    }
+
+    &:invalid {
+        background: #E16552;
+    }
+
+    &:disabled {
+        opacity: 50%;
+        background: #7777;
+        selection: color.grayscale(color.scale($active-color, 50%));
+    }
 }
 
 Dragger {

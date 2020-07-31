@@ -14,7 +14,7 @@ namespace ui
 {
     ///---
 
-    class TextEditor;
+    class EditBox;
 
     /// test based data box, type is required to support from sting/to string
     class BASE_UI_API IDataBoxText : public IDataBox
@@ -37,7 +37,7 @@ namespace ui
 
         void write();
 
-        base::RefPtr<TextEditor> m_editBox;
+        base::RefPtr<EditBox> m_editBox;
     };
 
     ///---

@@ -33,6 +33,7 @@ namespace base
             for (auto& entry : m_table->entries)
                 UnregisterGlobalEventListener(entry);
             MemDelete(m_table);
+            m_table = nullptr;
         }
     }
 

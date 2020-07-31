@@ -45,7 +45,7 @@ namespace ed
 
     ///---
 
-    static res::StaticResource<image::Image> resFileIcon("engine/thumbnails/file.png");
+    static res::StaticResource<image::Image> resFileIcon("/engine/thumbnails/file.png");
 
     ManagedFileFormat::ManagedFileFormat(StringView<char> extension)
         : m_extension(extension)
@@ -96,9 +96,8 @@ namespace ed
 
         // get config entry for the file
         // TODO: move somewhere else
-        auto configGroupName = StringID(TempString("Format.{}", extension));
-        if (auto configGroup  = Config::GetInstance().findGroup(configGroupName))
-            m_description = configGroup->entryValue("Description"_id, m_description);
+        if (const auto& configGroup = base::config::FindGroup(TempString("Format.{}", extension)))
+            m_description = configGroup->entryValue("Description", m_description);
 
         // look at cookers if we support this format
         for (auto cookerClass : cookerClasses)
@@ -155,8 +154,7 @@ namespace ed
         {
             m_thumbnailLoadAttempted = true;
 
-            auto fileThumbnailPath = res::ResourcePath(TempString("engine/thumbnails/{}.png", m_extension).c_str());
-            auto classThumbnailImage = LoadResource<image::Image>(fileThumbnailPath);
+            auto classThumbnailImage = LoadResource<image::Image>(TempString("/engine/thumbnails/{}.png", m_extension)); // TODO: move to editor
             if (classThumbnailImage)
             {
                 m_thumbnail = classThumbnailImage;

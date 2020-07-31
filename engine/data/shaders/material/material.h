@@ -13,6 +13,7 @@
 #include <camera.h>
 #include <shadows.h>
 #include <lighting.h>
+#include <selection.h>
 #include "vertex.h"
 
 //--
@@ -41,11 +42,18 @@ export shader MaterialPS
 	}
 	
 	//--
+
+	void EmitSelection(uint objectId, uint subObjectId)
+	{
+		uint selectableId = ObjectData[objectId].SelectionObjectID;
+		SelectionGatherPS.EmitSelection(selectableId, subObjectId, 0.0f);
+	}
+
+	//--
 	
 }
 
 //--
-
 
 
          

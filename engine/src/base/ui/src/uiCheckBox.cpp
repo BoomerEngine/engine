@@ -19,10 +19,13 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("CheckBox");
     RTTI_END_TYPE();
 
-    CheckBox::CheckBox()
+    CheckBox::CheckBox(bool initialState /*= false*/)
         : Button(ButtonModeBit::EventOnClick)
-        , m_state(CheckBoxState::Unchecked)
+        , m_state(initialState ? CheckBoxState::Checked : CheckBoxState::Unchecked)
     {
+        allowFocusFromClick(true);
+        allowFocusFromKeyboard(true);
+
         if (!base::IsDefaultObjectCreation())
             createInternalChild<ui::TextLabel>();
     }
@@ -96,7 +99,21 @@ namespace ui
     void CheckBox::clicked()
     {
         state(NextState(state()));
-        TBaseClass::clicked();
+        call(EVENT_CLICKED, stateBool());
+    }
+
+    //--
+
+    CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView<char> txt, bool initialState)
+    {
+        auto container = parent->createChild();
+        container->layoutHorizontal();
+
+        auto box = container->createChild<CheckBox>(initialState);
+        auto text = container->createChild<TextLabel>(txt);
+        text->customHorizontalAligment(ElementHorizontalLayout::Expand);
+
+        return box;
     }
 
     //--

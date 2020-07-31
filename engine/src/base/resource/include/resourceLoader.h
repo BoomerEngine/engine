@@ -51,14 +51,14 @@ namespace base
             /// Try to get already loaded resource if it's already loaded
             /// NOTE: this should be used to optimize calls to async loading functions by first querying if resource exists
             /// NOTE: this ONLY returns fully loaded resources (so if the resource is actually being loaded now it's not returned, as the name of the function states)
-            virtual ResourceHandle acquireLoadedResource(const ResourceKey& key) = 0;
+            virtual bool acquireLoadedResource(const ResourceKey& key, ResourceHandle& outLoadedPtr) = 0;
 
             //----
 
             /// Load a resource from specified path, may return NULL resource
             /// NOTE: this function can wait for other jobs and thus yield the active fiber
             template<typename T>
-            INLINE CAN_YIELD base::RefPtr<T> loadResource(const ResourcePath& path)
+            INLINE CAN_YIELD base::RefPtr<T> loadResource(StringView<char> path)
             {
                 ResourceKey key(path, T::GetStaticClass());
                 return rtti_cast<T>(loadResource(key));

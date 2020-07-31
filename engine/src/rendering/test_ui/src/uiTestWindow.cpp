@@ -21,6 +21,7 @@
 #include "base/ui/include/uiNotebook.h"
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiMenuBar.h"
+#include "base/ui/include/uiWindowPopup.h"
 
 namespace rendering
 {
@@ -29,12 +30,11 @@ namespace rendering
         //--
 
         TestWindow::TestWindow()
+            : ui::Window({ui::WindowFeatureFlagBit::DEFAULT_FRAME}, "Boomer Engine - Test UI")
         {
             customMinSize(300, 300);
             layoutMode(ui::LayoutMode::Vertical);
             
-            createChild<ui::WindowTitleBar>();
-
             static bool canEdit = true;
 
             {
@@ -191,7 +191,7 @@ namespace rendering
 
                 attachChild(but);
 
-                but->bind("OnClick"_id, this) = [this]()
+                but->bind(ui::EVENT_CLICKED) = [this]()
                 {
                     auto wnd = base::CreateSharedPtr<ui::PopupWindow>();
 
@@ -350,7 +350,7 @@ namespace rendering
 
                     if (i == 1)
                     {
-                        auto data = base::LoadResource<base::image::Image>(base::res::ResourcePath("editor/interface/images/honkler.png"));
+                        auto data = base::LoadResource<base::image::Image>("/editor/interface/images/honkler.png");
                         auto image = elem->createChild<ui::Image>(data);
                     }
                     else if (i == 2)
@@ -371,7 +371,7 @@ namespace rendering
 
                         auto box = elem->createChild<ui::EditBox>();
                         box->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-                        box->bind("OnTextModified"_id) = [label, box]()
+                        box->bind(ui::EVENT_TEXT_MODIFIED) = [label, box]()
                         {
                             label->text(box->text());
                         };

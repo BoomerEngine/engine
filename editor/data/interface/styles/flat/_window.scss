@@ -64,30 +64,26 @@ WindowTitleBar {
     min-height: 32em;
     background: $window-title-bar-color;
     horizontal-align: expand;
+    padding: 2em 2em 2em 2em;
+    margin: 0em 0em 0em 0em;
 
     > Image#AppIcon {
         horizontal-align: center;
         vertical-align: middle;
         image: url("images/engine_logo_small.png");
-		margin: 8em 6em 8em 6em;
+		margin-left: 8em;
+        margin-right: 8em;
 		background: #0000;
     }
 
-    > TextLabel#AppIcon {
-      horizontal-align: center;
-      vertical-align: middle;
-      margin: 8em 6em 8em 6em;
-      background: #0000;
-    }
-
     > TextLabel#Caption {
-		proportion: 100.0f;
+		proportion: 100%;
         horizontal-align: left;
         vertical-align: middle;
         font-size: 24em;
         text-shadow: 2em 2em 5em #888888;
 		font-weight: bold;
-        #content: "Boomer Engine";
+        //content: "Boomer Engine";
     }
 	
 	> #ButtonContainer {
@@ -146,23 +142,24 @@ Window.inactive WindowTitleBar > TextLabel#AppIcon {
 WindowTitleBar.mini {
   min-width: 250em;
   min-height: 20em;
-  margin: 0em 0em 0em 0em;
 
   > Image#AppIcon {
-    margin: 8em 1em 8em 1em;
+    margin-left: 6em;
+    margin-right: 6em;
     image: url("images/engine_logo_very_small.png");
   }
 
   > TextLabel#Caption {
     vertical-align: middle;
-    font-size: 16em;
+    font-size: 18em;
   }
 
   > #ButtonContainer {
     > Button {
-      padding: 2em 2em 2em 2em;
+      padding: 3em 3em 3em 3em;
     }
   }
 }
+
 
 //--

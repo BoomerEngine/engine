@@ -140,7 +140,8 @@ namespace base
                     case ReassemblerResult::NeedsMore:
                     {
                         // hold on a minute, check if the header size even makes sense
-                        if (m_storagePos > m_maxHeaderSize)
+                        const auto outstandingDataSize = m_storagePos - m_readPos;
+                        if (outstandingDataSize > m_maxHeaderSize)
                         {
                             fatalError("Header not found");
                             return ReassemblerResult::Corruption;

@@ -46,6 +46,7 @@ namespace rendering
         virtual void windowActivate() override;
         virtual void windowShow(bool bringToFront = true) override;
         virtual void windowHide() override;
+        virtual void windowEnable(bool enabled) override;
         virtual uint64_t windowGetNativeHandle() const override;
         virtual uint64_t windowGetNativeDisplay() const override;
         virtual float windowGetPixelScale() const override;

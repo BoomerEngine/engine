@@ -81,9 +81,9 @@ namespace base
 
                     // resolve to absolute path based on current resource location
                     base::StringBuf depotPath;
-                    if (cooker.queryResolvedPath(relativePath, cooker.queryResourcePath().path(), true, depotPath))
+                    if (cooker.queryResolvedPath(relativePath, cooker.queryResourcePath(), true, depotPath))
                     {
-                        files.emplaceBack(ResourceKey(ResourcePath(depotPath), resourceClass));
+                        files.emplaceBack(ResourceKey(depotPath, resourceClass));
                     }
                     else
                     {

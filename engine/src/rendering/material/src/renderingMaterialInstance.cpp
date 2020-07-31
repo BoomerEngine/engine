@@ -34,7 +34,6 @@ namespace rendering
     RTTI_BEGIN_TYPE_CLASS(MaterialInstanceParam);
         RTTI_PROPERTY(name);
         RTTI_PROPERTY(value);
-        RTTI_PROPERTY(loadedTexture);
     RTTI_END_TYPE();
 
     //----
@@ -62,16 +61,20 @@ namespace rendering
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4mi");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Material Instance");
         RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0x4c, 0x5b, 0x61);
-        //RTTI_METADATA(base::SerializationLoaderMetadata).bind<base::res::text::TextLoader>();
-        //RTTI_METADATA(base::SerializationSaverMetadata).bind<base::res::text::TextSaver>();
         RTTI_PROPERTY(m_parameters);
+        RTTI_PROPERTY(m_imported);
         RTTI_CATEGORY("Material hierarchy");
         RTTI_PROPERTY(m_baseMaterial).editable("Base material");
     RTTI_END_TYPE();
 
+    static const base::StringID BASE_MATERIAL_NAME = "baseMaterial"_id;
+
     MaterialInstance::MaterialInstance()
     {
-        createMaterialProxy();
+        if (!base::IsDefaultObjectCreation())
+        {
+            createMaterialProxy();
+        }
     }
 
     MaterialInstance::MaterialInstance(const MaterialRef& baseMaterialRef)
@@ -80,11 +83,36 @@ namespace rendering
         createMaterialProxy();
     }
 
+    MaterialInstance::MaterialInstance(const MaterialRef& baseMaterialRef, base::Array<MaterialInstanceParam>&& parameters, MaterialInstance* importedMaterialBase)
+    {
+        if (importedMaterialBase)
+        {
+            DEBUG_CHECK_EX(importedMaterialBase->parent() == nullptr, "Imported material is already part of something");
+
+            m_imported = AddRef(importedMaterialBase);
+            m_imported->parent(this);
+
+            m_parameters = m_imported->m_parameters;
+
+            for (auto& param : parameters)
+                writeParameterInternal(std::move(param));
+
+            parameters.reset();
+        }
+        else
+        {
+            m_parameters = std::move(parameters);
+        }           
+
+        baseMaterial(baseMaterialRef);
+        createMaterialProxy();
+    }
+
     MaterialInstance::~MaterialInstance()
     {
     }
 
-    static base::res::StaticResource<MaterialTemplate> resFallbackMaterial("engine/materials/fallback.v4mg");
+    static base::res::StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg");
 
     MaterialDataProxyPtr MaterialInstance::dataProxy() const
     {
@@ -113,37 +141,115 @@ namespace rendering
         return fallbackTemplate;
     }
 
-    bool MaterialInstance::resetParameterRaw(base::StringID name)
+    bool MaterialInstance::resetParameter(base::StringID name)
     {
-        const auto* params = m_parameters.typedData();
-        for (uint32_t i = 0; i < m_parameters.size(); ++i)
+        bool reset = false;
+
+        if (m_imported && name == BASE_MATERIAL_NAME)
+        {
+            baseMaterial(m_imported->baseMaterial());
+            return true;
+        }
+
+        auto* params = m_parameters.typedData();
+        for (auto i : m_parameters.indexRange())
         {
             if (params[i].name == name)
             {
-                markModified();
-                m_parameters.eraseUnordered(i);
+                // if we were imported from somewhere than "resetting to base" means "reset to the value at import"
+                bool shouldErase = true;
+                if (m_imported)
+                {
+                    if (const auto* improtedValue = m_imported->findParameterInternal(name))
+                    {
+                        params[i].value = improtedValue->value;
+                        shouldErase = false;
+                    }
+                }
+
+                if (shouldErase)
+                    m_parameters.eraseUnordered(i);
+
                 onPropertyChanged(name.view());
-                return true;
+                reset = true;
+                break;
             }
         }
 
-        return false;
+        return reset;
     }
 
-    bool MaterialInstance::writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh /*= true*/)
+    MaterialInstanceParam* MaterialInstance::findParameterInternal(base::StringID name)
+    {
+        for (auto& param : m_parameters)
+            if (param.name == name)
+                return &param;
+        return nullptr;
+    }
+
+    const MaterialInstanceParam* MaterialInstance::findParameterInternal(base::StringID name) const
+    {
+        for (const auto& param : m_parameters)
+            if (param.name == name)
+                return &param;
+        return nullptr;
+    }
+
+    void MaterialInstance::writeParameterInternal(base::StringID name, base::Variant&& value)
     {
         for (auto& param : m_parameters)
         {
             if (param.name == name)
             {
-                if (param.value.set(data, type))
-                {
-                    onPropertyChanged(name.view());
-                    return true;
-                }
+                param.value = std::move(value);
+                return;
             }
         }
 
+        auto& entry = m_parameters.emplaceBack();
+        entry.name = name;
+        entry.value = std::move(value);
+    }
+
+    void MaterialInstance::writeParameterInternal(MaterialInstanceParam&& data)
+    {
+        for (auto& param : m_parameters)
+        {
+            if (param.name == data.name)
+            {
+                param.value = std::move(data.value);
+                return;
+            }
+        }
+
+        m_parameters.emplaceBack(std::move(data));
+    }
+
+    bool MaterialInstance::writeParameter(base::StringID name, const void* data, base::Type type, bool refresh /*= true*/)
+    {
+        // allow to change the base material via the same interface (for completeness)
+        if (name == BASE_MATERIAL_NAME)
+        {
+            MaterialRef materialRef;
+            if (!base::rtti::ConvertData(data, type, &materialRef, TYPE_OF(materialRef)))
+                return false;
+
+            baseMaterial(materialRef);
+            return true;
+        }
+
+        // update existing parameter
+        if (auto* paramInfo = findParameterInternal(name))
+        {
+            // write new value, can fail is the value is not compatible
+            if (paramInfo->value.set(data, type))
+            {
+                onPropertyChanged(name.view());
+                return true;
+            }
+        }
+
+        // we don't know about this parameter, add it only if it's in the base material
         if (auto materialTemplate = resolveTemplate())
         {
             if (const auto* paramInfo = materialTemplate->findParameterInfo(name))
@@ -151,11 +257,7 @@ namespace rendering
                 auto value = paramInfo->defaultValue;
                 if (base::rtti::ConvertData(data, type, value.data(), value.type()))
                 {
-                    auto& entry = m_parameters.emplaceBack();
-                    entry.name = base::StringID(name);
-                    entry.value = std::move(value);
-
-                    onPropertyChanged(name.view());
+                    writeParameterInternal(name, std::move(value));
                     return true;
                 }
             }
@@ -164,15 +266,30 @@ namespace rendering
         return false;
     }
 
-    bool MaterialInstance::readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly /*= false*/) const
+    const void* MaterialInstance::findParameterDataInternal(base::StringID name, base::Type& outType) const
     {
-        if (!defaultValueOnly)
-            for (const auto& param : m_parameters)
-                if (param.name == name)
-                    return param.value.get(data, type);
+        if (const auto* param = findParameterInternal(name))
+        {
+            outType = param->value.type();
+            return param->value.data();
+        }
 
         if (auto base = m_baseMaterial.acquire())
-            return base->readParameterRaw(name, data, type);
+            return base->findParameterDataInternal(name, outType);
+
+        return nullptr;
+    }
+
+    bool MaterialInstance::readParameter(base::StringID name, void* data, base::Type type) const
+    {
+        // allow to read the "baseMaterial" via the same interface, for completeness
+        if (name == BASE_MATERIAL_NAME)
+            return base::rtti::ConvertData(&m_baseMaterial, TYPE_OF(m_baseMaterial), data, type);
+
+        // find data
+        base::Type paramType;
+        if (const auto* paramData = findParameterDataInternal(name, paramType))
+            return base::rtti::ConvertData(paramData, paramType, data, type);
         
         return false;
     }
@@ -184,6 +301,10 @@ namespace rendering
         if (!m_parameters.empty())
         {
             auto oldParams = std::move(m_parameters);
+
+            if (m_imported)
+                m_parameters = m_imported->parameters();
+
             notifyDataChanged();
 
             for (const auto& param : oldParams)
@@ -196,7 +317,25 @@ namespace rendering
         if (m_baseMaterial != baseMaterial)
         {
             m_baseMaterial = baseMaterial;
-            onPropertyChanged("baseMaterial");
+
+            // HARD-drop all parameters that have incompatible types (this should be rare)
+            // ie. in previous base DiffuseScale was "float" but in current base is "Color"
+            if (auto materialTemplate = resolveTemplate())
+            {
+                for (const auto& templateParamInfo : materialTemplate->parameters())
+                {
+                    if (auto* paramInfo = findParameterInternal(templateParamInfo.name))
+                    {
+                        if (paramInfo->value.type() != templateParamInfo.type)
+                        {
+                            TRACE_INFO("Changed type for parameter '{}' from '{}' to '{}', dropping it", templateParamInfo.name, paramInfo->value.type(), templateParamInfo.type);
+                            m_parameters.eraseUnordered(paramInfo - m_parameters.typedData());
+                        }
+                    }
+                }
+            }
+
+            onPropertyChanged(BASE_MATERIAL_NAME.view());
         }
     }
 
@@ -204,17 +343,9 @@ namespace rendering
     {
         TBaseClass::onPostLoad();
 
-        for (int i = m_parameters.lastValidIndex(); i >= 0; --i)
+        for (int i : m_parameters.indexRange().reversed())
             if (m_parameters[i].value.type() == nullptr)
-                m_parameters.erase(i);
-
-        for (auto& param : m_parameters)
-        {
-            if (param.loadedTexture)
-            {
-                TRACE_INFO("Preloaded texture for '{}': '{}'", param.name, param.loadedTexture.acquire()->path().view());
-            }
-        }
+                m_parameters.eraseUnordered(i);
 
         changeTrackedMaterial(m_baseMaterial.acquire());
         createMaterialProxy();
@@ -228,7 +359,7 @@ namespace rendering
 
     void MaterialInstance::notifyBaseMaterialChanged()
     {
-        postEvent("OnFullStructureChange"_id);
+        postEvent(base::EVENT_OBJECT_STRUCTURE_CHANGED);
         createMaterialProxy();
         TBaseClass::notifyBaseMaterialChanged();
     }
@@ -237,7 +368,7 @@ namespace rendering
     {
         auto orgPropName = path;
 
-        if (path == "baseMaterial"_id)
+        if (path == BASE_MATERIAL_NAME.view())
         {
             const auto baseMaterial = m_baseMaterial.acquire();
             changeTrackedMaterial(baseMaterial);
@@ -304,27 +435,39 @@ namespace rendering
         createMaterialProxy();
     }
 
-    bool MaterialInstance::hasParameterOverride(const base::StringID name) const
+    bool MaterialInstance::checkParameterOverride(base::StringID name) const
     {
-        for (const auto& paramInfo : m_parameters)
-            if (paramInfo.name == name && !paramInfo.value.empty())
-                return true;
-
-        return false;
-    }
-
-    bool MaterialInstance::resetParameterOverride(const base::StringID name)
-    {
-        for (uint32_t i = 0; i < m_parameters.size(); ++i)
+        // in general the "base material" is not resetable...
+        if (name == BASE_MATERIAL_NAME)
         {
-            if (m_parameters[i].name == name)
-            {
-                m_parameters.erase(i);
-                onPropertyChanged(name.view());
-                return true;
-            }
+            // ... but in the case we got imported we do have a base value for this parameter
+            if (m_imported)
+                return m_imported->baseMaterial() != m_baseMaterial;
+            return true;// m_baseMaterial != nullptr;
         }
 
+        if (const auto* localParam = findParameterInternal(name))
+        {
+            // if we were imported than we are truly overridden only if the local value here differs from the one from the import
+            if (m_imported)
+            {
+                if (const auto* importedParam = m_imported->findParameterInternal(name))
+                {
+                    // watch out for type change - can happen if we use different base material than original import and the parameter there is redefined to different type
+                    // real world example. DiffuseScale was float in std_pbr_simple, but in std_pbr is a Color
+                    if (importedParam->value.type() == localParam->value.type())
+                    {
+                        if (localParam->value.type()->compare(importedParam->value.data(), localParam->value.data()))
+                            return false;
+                    }
+                }
+            }
+
+            // since parameter exists assume it's overridden
+            return true;
+        }
+
+        // it doesn't look like anything to me
         return false;
     }
 
@@ -335,20 +478,11 @@ namespace rendering
         base::StringView<char> propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
-            if (const auto* materialTemplate = resolveTemplate())
-            {
-                if (const auto* paramInfo = materialTemplate->findParameterInfo(base::StringID::Find(propertyName)))
-                {
-                    // read value from our overrides
-                    for (const auto& paramInfo : m_parameters)
-                        if (paramInfo.name == propertyName && !paramInfo.value.empty())
-                            return paramInfo.value.type()->readDataView(viewPath, paramInfo.value.data(), targetData, targetType);
-
-                    // read default value from base material
-                    if (const auto baseMaterial = m_baseMaterial.acquire())
-                        return baseMaterial->readDataView(originalViewPath, targetData, targetType); // NOTE orignal path used
-                }
-            }            
+            // try to read as a parameter name
+            base::Type paramType;
+            const auto parameterName = base::StringID::Find(propertyName); // do not allocate invalid name
+            if (const auto* paramData = findParameterDataInternal(parameterName, paramType))
+                return paramType->readDataView(viewPath, paramData, targetData, targetType);
         }
 
         return TBaseClass::readDataView(originalViewPath, targetData, targetType);
@@ -361,35 +495,19 @@ namespace rendering
         base::StringView<char> propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
-            // find base type info
+            // we can only write/create parameters that exist in the material TEMPLATE
             if (const auto* materialTemplate = resolveTemplate())
             {
-                if (const auto* paramInfo = materialTemplate->findParameterInfo(base::StringID(propertyName)))
+                const auto paramName = base::StringID::Find(propertyName);
+                if (const auto* paramInfo = materialTemplate->findParameterInfo(paramName))
                 {
-                    // ALWAYS write to compatible type
+                    // ALWAYS write to compatible type to avoid confusion
                     auto value = paramInfo->defaultValue;
                     if (const auto ret = HasError(value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType)))
                         return ret; // writing data to type container failed - something is wrong with the data
 
-                    // update if we already have it
-                    bool createNew = true;
-                    for (auto& paramInfo : m_parameters)
-                    {
-                        if (paramInfo.name == propertyName)
-                        {
-                            paramInfo.value = value;
-                            createNew = false;
-                            break;
-                        }
-                    }
-
-                    // or write a new one
-                    if (createNew)
-                    {
-                        auto& entry = m_parameters.emplaceBack();
-                        entry.name = base::StringID(propertyName);
-                        entry.value = value;
-                    }
+                    // add or replace the value
+                    writeParameterInternal(paramName, std::move(value));
 
                     onPropertyChanged(propertyName);
                     return base::DataViewResultCode::OK;
@@ -420,8 +538,14 @@ namespace rendering
                 if (const auto* materialTemplate = resolveTemplate())
                 {
                     if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::CheckIfResetable))
-                        if (hasParameterOverride(base::StringID(propertyName)))
-                                outInfo.flags |= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                    {
+                        if (checkParameterOverride(base::StringID(propertyName)))
+                            outInfo.flags |= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+
+                        // HACK: there's no default "baseMaterial" on non-imported instances
+                        if (propertyName == BASE_MATERIAL_NAME.view() && !m_imported)
+                            outInfo.flags -= base::rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                    }
 
                     const auto ret = materialTemplate->describeParameterView(propertyName, viewPath, outInfo);
                     if (ret.code != base::DataViewResultCode::ErrorUnknownProperty)
@@ -433,17 +557,38 @@ namespace rendering
         return TBaseClass::describeDataView(originalViewPath, outInfo);
     }
 
-    bool MaterialInstance::readParameterDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    const void* MaterialInstance::findBaseParameterDataInternal(base::StringID name, base::Type& outType) const
     {
-        auto originalPath = viewPath;
+        // if we were imported then use the imported values as a base FIRST
+        if (m_imported)
+        {
+            if (const auto* importParamInfo = m_imported->findParameterInternal(name))
+            {
+                outType = importParamInfo->value.type();
+                return importParamInfo->value.data();
+            }
+        }
 
-        base::StringView<char> propertyName;
-        if (base::rtti::ParsePropertyName(viewPath, propertyName))
-            if (auto temp = resolveTemplate())
-                if (nullptr != temp->findParameterInfo(base::StringID::Find(propertyName)))
-                    if (auto base = baseMaterial().acquire())
-                        return base->readDataView(originalPath, targetData, targetType).valid();
+        // check the base as normal
+        if (auto base = m_baseMaterial.acquire())
+            return base->findParameterDataInternal(name, outType); // NOTE: we ask base for it's value, not it's base value
 
+        return nullptr;
+    }
+
+    bool MaterialInstance::readBaseParameter(base::StringID name, void* data, base::Type type) const
+    {
+        // small "hack" for imported materials to report the base material from the imported template
+        if (m_imported && name == BASE_MATERIAL_NAME)
+            return base::rtti::ConvertData(&m_imported->m_baseMaterial, TYPE_OF(m_baseMaterial), data, type);
+
+        // find the data holder
+        base::Type paramType;
+        if (const auto* paramValue = findBaseParameterDataInternal(name, paramType))
+            return base::rtti::ConvertData(paramValue, paramType, data, type);
+
+        // no base value to read
+        // TODO: consider returning default value for the type ?
         return false;
     }
 
@@ -467,17 +612,14 @@ namespace rendering
             base::StringView<char> propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
             {
-                if (auto temp = m_material->resolveTemplate())
-                {
-                    if (nullptr != temp->findParameterInfo(base::StringID::Find(propertyName)))
-                    {
-                        if (m_material->readParameterDefaultValue(originalPath, targetData, targetType))
-                            return base::DataViewResultCode::OK;
-                    }
-                }
+                const auto paramName = base::StringID::Find(propertyName); // avoid allocating BS names
+
+                base::Type paramType;
+                if (const auto* paramValue = m_material->findBaseParameterDataInternal(paramName, paramType))
+                    return paramType->readDataView(viewPath, paramValue, targetData, targetType); // just follow with the read
             }
 
-            return DataViewNative::readDataView(originalPath, targetData, targetType);
+            return DataViewNative::readDefaultDataView(originalPath, targetData, targetType);
         }
 
         virtual base::DataViewResult resetToDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
@@ -490,9 +632,9 @@ namespace rendering
             {
                 if (viewPath.empty())
                 {
-                    if (m_material->resetParameterOverride(base::StringID::Find(propertyName)))
+                    if (m_material->resetParameter(base::StringID::Find(propertyName)))
                         return base::DataViewResultCode::OK;
-                    return base::DataViewResultCode::ErrorIllegalOperation;
+                    return base::DataViewResultCode::ErrorIllegalOperation; // we can't reset sub-component of a value
                 }
             }
 
@@ -507,7 +649,7 @@ namespace rendering
             base::StringView<char> propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
                 if (viewPath.empty())
-                    return !m_material->hasParameterOverride(base::StringID::Find(propertyName));
+                    return !m_material->checkParameterOverride(base::StringID::Find(propertyName));
 
             return base::DataViewNative::checkIfCurrentlyADefaultValue(viewPath);
         }

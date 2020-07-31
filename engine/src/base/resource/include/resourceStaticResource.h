@@ -29,9 +29,9 @@ namespace base
             virtual ~IStaticResource();
 
             /// get the resource path
-            INLINE const char* path() const { return m_path; }
+            INLINE StringView<char> path() const { return m_path; }
 
-            /// get the resoure class
+            /// get the resource class
             virtual ClassType resourceClass() const = 0;
 
             /// get the loaded resource, valid only if loaded
@@ -96,6 +96,13 @@ namespace base
             INLINE Ref<T> loadAndGetAsRef()
             {
                 Ref<T> ret(rtti_cast<T>(IStaticResource::loadAndGet()));
+                return ret;
+            }
+
+            /// get as async ref
+            INLINE AsyncRef<T> asyncRef() const
+            {
+                AsyncRef<T> ret(ResourceKey(path(), T::GetStaticClass()));
                 return ret;
             }
 

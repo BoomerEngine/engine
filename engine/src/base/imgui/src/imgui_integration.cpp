@@ -29,7 +29,7 @@ namespace ImGui
     public:
         IconRegistry()
         {
-            m_searchPaths.emplaceBack("engine/icons");
+            m_searchPaths.emplaceBack("/engine/icons");
             m_defaultImage = base::CreateSharedPtr<base::image::Image>(16, 16, base::Color::GRAY);
             m_imageList.reserve(1024);
             m_imageList.pushBack(m_defaultImage); // ID 0
@@ -79,11 +79,10 @@ namespace ImGui
                 base::image::ImagePtr loadedImage;
                 for (const auto& path : m_searchPaths)
                 {
-                    auto fullPath = base::res::ResourcePath(base::TempString("{}/{}.png", path, name));
-                    loadedImage = base::LoadResource<base::image::Image>(fullPath).acquire();
+                    loadedImage = base::LoadResource<base::image::Image>(base::TempString("{}/{}.png", path, name)).acquire();
                     if (loadedImage)
                     {
-                        TRACE_INFO("ImGui: Loaded '{}' from '{}'", name, fullPath);
+                        TRACE_INFO("ImGui: Loaded '{}' from '{}'", name, path);
                         break;
                     }
                 }

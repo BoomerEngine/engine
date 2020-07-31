@@ -140,7 +140,7 @@ namespace hl2
                 if (cooker.queryResolvedPath(hl2FullPath, cooker.queryResourcePath().path(), false, fullPath))
                 {
                     // try to load the texture
-                    auto textureResource = base::LoadResource<rendering::content::StaticTexture>(base::res::ResourcePath(fullPath));
+                    auto textureResource = base::LoadResource<rendering::content::StaticTexture>(fullPath);
 
                     // bind, use loaded resource if possible
                     if (textureResource)
@@ -185,7 +185,7 @@ namespace hl2
         {
             // get the context name
             base::StringBuf sourceFileContextName;
-            base::StringBuf contextName = base::StringBuf(cooker.queryResourcePath().path());
+            base::StringBuf contextName = base::StringBuf(cooker.queryResourcePath());
             cooker.queryContextName(contextName, sourceFileContextName);
 
             // CRAP
@@ -222,9 +222,9 @@ namespace hl2
                 TRACE_INFO("Material '{}' redirects to '{}'", contextName.c_str(), includePath.c_str());
 
                 // get the root path
-                auto rootPathToDepot = cooker.queryResourcePath().path().beforeFirst("/materials/");
+                auto rootPathToDepot = cooker.queryResourcePath().view().beforeFirst("/materials/");
                 if (rootPathToDepot.empty())
-                    rootPathToDepot = cooker.queryResourcePath().path().beforeFirst("/maps/");
+                    rootPathToDepot = cooker.queryResourcePath().view().beforeFirst("/maps/");
 
                 // get the include path to load
                 auto includedMaterialPath = base::StringBuf(base::TempString("{}/{}", rootPathToDepot, includePath));

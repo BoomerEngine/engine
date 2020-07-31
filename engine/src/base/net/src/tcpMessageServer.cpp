@@ -220,6 +220,7 @@ namespace base
                         {
                             TRACE_ERROR("TcpMessage: Fatal error on message reassembly from '{}'", info->m_address);
                             info->m_fatalError = true;
+                            needsMore = false;
                             break;
                         }
                     }

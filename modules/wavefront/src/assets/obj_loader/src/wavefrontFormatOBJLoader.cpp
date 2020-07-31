@@ -9,7 +9,6 @@
 #include "build.h"
 #include "wavefrontFormatOBJ.h"
 
-#include "base/io/include/utils.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/stringBuilder.h"
@@ -533,6 +532,12 @@ namespace wavefront
                     {
                         base::StringView<char> word;
                         EatName(readPtr, endPtr, word);
+
+                        while (readPtr < endPtr && *readPtr <= ' ')
+                        {
+                            if (*readPtr == '\n') lineCount++;
+                            ++readPtr;
+                        }
 
                         if (!cvAllowUnrecognizedControlWords.get())
                         {

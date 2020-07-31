@@ -35,7 +35,7 @@ namespace ui
             m_button->customVerticalAligment(ElementVerticalLayout::Middle);
             m_button->createChild<TextLabel>("[img:color_wheel]");
             m_button->tooltip("Select color");
-            m_button->bind("OnClick"_id) = [this]() { showColorPicker(); };
+            m_button->bind(EVENT_CLICKED) = [this]() { showColorPicker(); };
         }
 
         virtual void handleValueChange() override
@@ -73,19 +73,23 @@ namespace ui
                 base::Color data;
                 const auto ret = readValue(data);
 
-                if (ret.code == base::DataViewResultCode::OK && ret.code == base::DataViewResultCode::ErrorManyValues)
+                if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
                     m_picker = base::CreateSharedPtr<ColorPickerBox>(data, m_allowAlpha);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
-                    m_picker->bind("OnClosed"_id, this) = [](DataBoxColorPicker* box)
+                    auto selfRef = base::RefWeakPtr<DataBoxColorPicker>(this);
+
+                    m_picker->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
                     {
-                        box->m_picker.reset();
+                        if (auto box = selfRef.lock())
+                            box->m_picker.reset();
                     };
 
-                    m_picker->bind("OnColorChanged"_id, this) = [](DataBoxColorPicker* box, base::Color data)
+                    m_picker->bind(EVENT_COLOR_SELECTED) = [selfRef](base::Color data)
                     {
-                        box->writeValue(data);
+                        if (auto box = selfRef.lock())
+                            box->writeValue(data);
                     };
                 }
             }

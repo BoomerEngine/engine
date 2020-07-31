@@ -21,6 +21,10 @@ namespace ui
 {
     //---
 
+    DECLARE_UI_EVENT(EVENT_CONTEXT_MENU, Position)
+
+    //---
+
     class StyleStack;
     
     // Short name of the element class, needed for styling (so we dont use the "ui::Button" but "button" in the CSS)
@@ -295,60 +299,6 @@ namespace ui
 
     //------
 
-    /// widget event bind point, transparent proxy that passes data to IElement::bind()
-    class BASE_UI_API ElementEventProxy : public base::NoCopy
-    {
-    public:
-        ElementEventProxy(IElement* host, base::StringID eventName);
-        ~ElementEventProxy();
-
-        //--
-
-        // get host of this event proxy
-        INLINE IElement* host() const { return m_host; }
-
-        // get the event name
-        INLINE base::StringID eventName() const { return m_eventName; }
-
-        //--
-
-        /// bind event handler connected to other element, NOTE: event won't be called if owner dies 
-        EventFunctionBinder bind(IElement* owner);
-
-        /// unbind event
-        void unbind(IElement* owner);
-
-        //--
-
-        template< typename F >
-        INLINE void operator=(F func)
-        {
-            bind(nullptr) = func;
-        }
-
-        //--
-
-        template< typename T >
-        INLINE bool operator()(const T& data)
-        {
-            return call(base::CreateVariant(data));
-        }
-
-        INLINE bool operator()()
-        {
-            return call(base::Variant::EMPTY());
-        }
-
-        /// call event on this element, notifies any registered callbacks, no data version
-        bool call(const base::Variant& data) const;
-
-    private:
-        IElement* m_host;
-        base::StringID m_eventName;
-    };
-
-    //------
-
     /// basic ui element
     /// containers form a hierarchy and do all the heavy lifting of a "control"
     /// the tiny bits are left to be implemented by the "elements"
@@ -512,7 +462,7 @@ namespace ui
         const ActionTable& actions() const;
 
         /// call action on this element, if action is not found here we propagate it to parent
-        virtual bool runAction(base::StringID name);
+        virtual bool runAction(base::StringID name, IElement* source);
 
         /// check action status
         virtual ActionStatusFlags checkAction(base::StringID name) const;
@@ -754,9 +704,6 @@ namespace ui
         // handle loosing focus state
         virtual void handleFocusLost();
 
-        // get "auto focus" element to focus in case this element get's focused
-        virtual IElement* handleFocusForwarding();
-
         // handle change of children count, called when child is attached/detached
         virtual void handleChildrenChange();
 
@@ -785,6 +732,23 @@ namespace ui
 
         /// called when a function-less (no callback) timer expires, by default calls the "OnTimer" event with the name of the timer
         virtual bool handleTimer(base::StringID name, float elapsedTime);
+
+        //--
+
+        // first first focusable element in this item tree
+        virtual IElement* focusFindFirst();
+
+        // starting from current element what is the next element to focus
+        virtual IElement* focusFindNext();
+
+        // starting from this current child what is the next child to focus in this element
+        virtual IElement* focusFindNextSibling(IElement* childSelected);
+
+        // starting from current element what is the previous element to focus
+        virtual IElement* focusFindPrev();
+
+        // starting from this current child what is the previous child to focus in this element
+        virtual IElement* focusFindPrevSibling(IElement* childSelected);
 
         //--
 
@@ -1024,8 +988,13 @@ namespace ui
 
         //---
 
-        /// optional restore configuration for this ui element
-        virtual void restoreConfig();
+        /// load configuration
+        virtual void configLoad(const ConfigBlock& block);
+
+        /// save configuration
+        virtual void configSave(const ConfigBlock& block) const;
+
+        //--
 
     protected:
         friend class ElementChildIterator;

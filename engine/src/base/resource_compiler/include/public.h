@@ -63,6 +63,8 @@ namespace base
 
         class IResourceImporter;
 
+        class IResourceImporterInterface;
+
         class ImportFileFingerprint;
 
         class ImportList;

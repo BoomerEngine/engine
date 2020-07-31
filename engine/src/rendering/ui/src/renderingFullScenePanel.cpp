@@ -64,18 +64,24 @@ namespace ui
 
     void RenderingFullScenePanel::createToolbarItems()
     {
-        actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this]()
+        actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this](ui::Button* button)
         {
-            auto menu = base::CreateSharedPtr<MenuButtonContainer>();
-            buildRenderModePopup(menu);
-            menu->show(this);
+            if (button)
+            {
+                auto menu = base::CreateSharedPtr<MenuButtonContainer>();
+                buildRenderModePopup(menu);
+                menu->showAsDropdown(button);
+            }
         };
 
-        actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [this]()
+        actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [this](ui::Button* button)
         {
-            auto menu = base::CreateSharedPtr<MenuButtonContainer>();
-            buildFilterPopup(menu);
-            menu->show(this);
+            if (button)
+            {
+                auto menu = base::CreateSharedPtr<MenuButtonContainer>();
+                buildFilterPopup(menu);
+                menu->showAsDropdown(button);
+            }
         };
 
         toolbar()->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().caption("[img:eye] Filters"));

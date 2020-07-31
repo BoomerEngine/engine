@@ -15,7 +15,8 @@ namespace base
     {
 
         const uint32_t FileTables::FILE_MAGIC = 0x49524346; // 'IRCF';
-        const uint32_t FileTables::FILE_VERSION = 1;
+        const uint32_t FileTables::FILE_VERSION_MIN = 1;
+        const uint32_t FileTables::FILE_VERSION_MAX = VER_CURRENT;
 
         //---
 
@@ -24,7 +25,7 @@ namespace base
             if (header.magic != FILE_MAGIC)
                 return false;
 
-            if (header.version != FILE_VERSION)
+            if (header.version < FILE_VERSION_MIN || header.version > FILE_VERSION_MAX)
                 return false;
 
             const auto headerCRC = CalcHeaderCRC(header);
@@ -51,10 +52,10 @@ namespace base
                 return false;
             }
 
-            // TODO: check version range
-            if (headerData->version != FILE_VERSION)
+            // check version range
+            if (headerData->version < FILE_VERSION_MIN || headerData->version > FILE_VERSION_MAX)
             {
-                TRACE_WARNING("Invalid header version {} != {}", headerData->version, Hex(FILE_VERSION));
+                TRACE_WARNING("Invalid header version {}}", headerData->version);
                 return false;
             }
 

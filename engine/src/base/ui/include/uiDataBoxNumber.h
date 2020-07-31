@@ -42,7 +42,7 @@ namespace ui
 
         //--
 
-        TextEditorPtr m_editBox;
+        EditBoxPtr m_editBox;
         DraggerPtr m_dragBox;
 
         //--

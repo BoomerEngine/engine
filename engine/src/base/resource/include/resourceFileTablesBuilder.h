@@ -32,6 +32,8 @@ namespace base
 
             //--
 
+            int version = VER_CURRENT;
+
             Array<char> stringTable;
             Array<FileTables::Name> nameTable;
             Array<FileTables::Type> typeTable;

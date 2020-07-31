@@ -33,16 +33,16 @@ namespace base
             //--
 
             // get group, creates an empty new one if not found
-            Group& group(StringID name);
+            Group& group(StringView<char> name);
 
             // find group, does not create a new one
-            const Group* findGroup(StringID name) const;
+            const Group* findGroup(StringView<char> name) const;
 
             // remove group and all stored entries from the storage
-            bool removeGroup(StringID name);
+            bool removeGroup(StringView<char> name);
 
             // remove entry in group
-            bool removeEntry(StringID groupName, StringID varName);
+            bool removeEntry(StringView<char> groupName, StringView<char> varName);
 
             // find all groups starting with given start string
             Array<const Group*> findAllGroups(StringView<char> groupNameSubString) const;
@@ -66,13 +66,13 @@ namespace base
         private:
             friend class Group;
 
-            HashMap<StringID, Group*> m_groups;
+            HashMap<StringBuf, Group*> m_groups;
             std::atomic<uint32_t> m_version;
 
             SpinLock m_lock;
 
-            Group* group_NoLock(StringID name);
-            const Group* findGroup_NoLock(StringID name) const;
+            Group* group_NoLock(StringView<char> name);
+            const Group* findGroup_NoLock(StringView<char> name) const;
             Array<const Group*> findAllGroups_NoLock(StringView<char> groupNameSubString) const;
 
             void modified();

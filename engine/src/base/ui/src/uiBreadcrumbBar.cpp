@@ -10,7 +10,7 @@
 #include "uiBreadcrumbBar.h"
 #include "uiButton.h"
 #include "uiTextLabel.h"
-#include "uiWindow.h"
+#include "uiWindowPopup.h"
 
 namespace ui
 {
@@ -52,7 +52,7 @@ namespace ui
                 auto breadcrumbButton = createNamedChild<Button>("content"_id);
                 breadcrumbButton->attachChild(breadcrumb);
 
-                breadcrumbButton->bind("OnClick"_id, this) = [](BreadcrumbContainer* container)
+                breadcrumbButton->bind(EVENT_CLICKED, this) = [](BreadcrumbContainer* container)
                 {
                     base::Array<base::StringBuf> childPath;
                     if (container->m_breadcrumb->canClick() && container->m_breadcrumb->activate())
@@ -67,11 +67,11 @@ namespace ui
                 auto navigationButton = createNamedChild<Button>("navigation"_id);
                 navigationButton->createNamedChild<TextLabel>("BreadcrumbNavigationIcon"_id);
 
-                navigationButton->bind("OnClick"_id, this) = [](BreadcrumbContainer* container)
+                navigationButton->bind(EVENT_CLICKED) = [this]()
                 {
                     // collect the navigation elements
                     base::InplaceArray<base::StringBuf, 20> childrenNames;
-                    container->m_breadcrumb->listChildren(childrenNames);
+                    m_breadcrumb->listChildren(childrenNames);
 
                     // if we have some children to navigate to create the menu
                     if (!childrenNames.empty())
@@ -93,7 +93,7 @@ namespace ui
                             };
                         }*/
 
-                        popup->show(container);
+                        popup->show(this);
                     }
                 };
             }

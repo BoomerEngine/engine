@@ -706,6 +706,15 @@ namespace rendering
         }
     }
 
+    void WindowWinApi::windowEnable(bool enabled)
+    {
+        DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+        if (Fibers::GetInstance().isMainThread())
+        {
+            ::EnableWindow(m_hWnd, enabled);
+        }
+    }
+
     void WindowWinApi::windowShow(bool bringToFront)
     {
         DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");

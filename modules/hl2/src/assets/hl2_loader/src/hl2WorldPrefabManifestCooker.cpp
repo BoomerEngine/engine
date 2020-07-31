@@ -9,7 +9,6 @@
 
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/timestamp.h"
-#include "base/io/include/utils.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/app/include/localServiceContainer.h"
@@ -204,7 +203,7 @@ namespace hl2
             base::Task task(2, "Loading from cache");
 
             // get the file name part
-            auto sourceFilePath = cooker.queryResourcePath().path();
+            const auto& sourceFilePath = cooker.queryResourcePath();
 
             // load stuff from cache
             /*return cooker.cacheData<bsp::File>(sourceFilePath, "BSPData", [sourceFilePath, &cooker]() -> base::RefPtr<bsp::File>

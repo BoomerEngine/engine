@@ -81,10 +81,10 @@ namespace Scintilla
         return crc.crc();
     }
 
-    base::res::StaticResource<base::font::Font> resFontNormal("engine/fonts/DejaVuSansMono.ttf");
-    base::res::StaticResource<base::font::Font> resFontBold("engine/fonts/DejaVuSansMono-Bold.ttf");
-    base::res::StaticResource<base::font::Font> resFontItalic("engine/fonts/DejaVuSansMono-Oblique.ttf");
-    base::res::StaticResource<base::font::Font> resFontBoldItalic("engine/fonts/DejaVuSansMono-BoldOblique.ttf");
+    base::res::StaticResource<base::font::Font> resFontNormal("/engine/fonts/DejaVuSansMono.ttf");
+    base::res::StaticResource<base::font::Font> resFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf");
+    base::res::StaticResource<base::font::Font> resFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf");
+    base::res::StaticResource<base::font::Font> resFontBoldItalic("/engine/fonts/DejaVuSansMono-BoldOblique.ttf");
 
     static base::RefPtr<base::font::Font> SelectFont(bool bold, bool italic)
     {

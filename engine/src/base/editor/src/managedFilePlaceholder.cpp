@@ -33,6 +33,7 @@ namespace ed
     ManagedFilePlaceholder::ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> initialName, const ManagedFileFormat* format)
         : ManagedItem(depot, parentDir, FormatFileName(initialName, format))
         , m_fileFormat(format)
+        , m_shortName(initialName)
     {
         m_eventKey = MakeUniqueEventKey();
     }

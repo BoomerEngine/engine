@@ -150,6 +150,22 @@ namespace rendering
 
         //--
 
+        static base::ConfigProperty<base::Color> cvSelectionOutlineBackColor("Rendering.Selection", "OutlineColorBack", base::Color(200, 200, 30));
+        //static base::ConfigProperty<base::Color> cvSelectionOutlineFrontColor("Rendering.Cascades", "OutlineColorFront", base::Color(30, 30, 200));
+        static base::ConfigProperty<base::Color> cvSelectionOutlineFrontColor("Rendering.Selection", "OutlineColorFront", base::Color(200, 200, 30));
+        static base::ConfigProperty<float> cvSelectionOutlineWidth("Rendering.Cascades", "OutlineWidth", 3.0f);
+        static base::ConfigProperty<float> cvSelectionOutlineCenterOpacity("Rendering.Cascades", "OutlineCenterOpacity", 0.6f);
+
+        FrameParams_SelectionOutline::FrameParams_SelectionOutline()
+        {
+            colorFront = cvSelectionOutlineFrontColor.get();
+            colorBack = cvSelectionOutlineBackColor.get();
+            outlineWidth = cvSelectionOutlineWidth.get();
+            centerOpacity = cvSelectionOutlineCenterOpacity.get();
+        }
+
+        //--
+
         static base::ConfigProperty<float> cvCascadesBaseEdgeFade("Rendering.Cascades", "BaseEdgeFade", 0.05f);
         static base::ConfigProperty<float> cvCascadesBaseFilterSize("Rendering.Cascades", "BaseFilterSize", 8.0f);
         static base::ConfigProperty<float> cvCascadesBaseRange("Rendering.Cascades", "BaseRange", 4.0f);

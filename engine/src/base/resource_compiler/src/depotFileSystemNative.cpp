@@ -15,6 +15,8 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/absolutePath.h"
 #include "base/containers/include/inplaceArray.h"
+#include "base/containers/include/utf8StringFunctions.h"
+#include "base/resource/include/resourcePath.h"
 
 namespace base
 {
@@ -37,6 +39,9 @@ namespace base
 
                 memcpy(m_path, rootPath.data(), rootPath.length() * sizeof(wchar_t));
                 m_path[rootPath.length()] = 0;
+
+                /*ASSERT(m_path[rootPath.length() - 1] == io::AbsolutePath::SYSTEM_PATH_SEPARATOR);
+                m_path[rootPath.length() - 1] = 0;*/
 
                 m_writePtr = m_path + rootPath.length();
                 m_writeEnd = m_path + MAX_LENGTH;
@@ -89,7 +94,8 @@ namespace base
             }
         };
 
-        //--
+            //--
+
 
         FileSystemNative::FileSystemNative(const io::AbsolutePath& rootPath, bool allowWrites, DepotStructure* owner)
             : m_rootPath(rootPath)
@@ -125,6 +131,8 @@ namespace base
 
         bool FileSystemNative::contextName(StringView<char> rawFilePath, StringBuf& outContextName) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return false;
@@ -135,15 +143,19 @@ namespace base
 
         bool FileSystemNative::timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return false;
 
-            return IO::GetInstance().fileTimeStamp(path.view(), outTimestamp);
+            return base::io::FileTimeStamp(path.view(), outTimestamp);
         }
 
         bool FileSystemNative::absolutePath(StringView<char> rawFilePath, io::AbsolutePath& outAbsolutePath) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::AnyRelativePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (path.append(rawFilePath))
             {
@@ -156,11 +168,13 @@ namespace base
 
         bool FileSystemNative::enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.appendAsDirName(rawDirectoryPath))
                 return false;
 
-            return IO::GetInstance().findSubDirs(path.view(), [&enumFunc](StringView<wchar_t> name) {
+            return base::io::FindSubDirs(path.view(), [&enumFunc](StringView<wchar_t> name) {
                     if (name == L".boomer")
                         return false;
                     return enumFunc(TempString("{}", name));
@@ -169,52 +183,60 @@ namespace base
 
         bool FileSystemNative::enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.appendAsDirName(rawDirectoryPath))
                 return false;
 
-            return IO::GetInstance().findLocalFiles(path.view(), L"*.*", [&enumFunc](StringView<wchar_t> name) {
+            return base::io::FindLocalFiles(path.view(), L"*.*", [&enumFunc](StringView<wchar_t> name) {
                 return enumFunc(TempString("{}", name));
                 });
         }
 
         io::ReadFileHandlePtr FileSystemNative::createReader(StringView<char> rawFilePath) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return nullptr;
 
             // do not open if file does not exist
-            if (!IO::GetInstance().fileExists(path.view()))
+            if (!base::io::FileExists(path.view()))
                 return nullptr;
 
             // create a reader
-            return IO::GetInstance().openForReading(path.view());
+            return base::io::OpenForReading(path.view());
         }
 
         io::AsyncFileHandlePtr FileSystemNative::createAsyncReader(StringView<char> rawFilePath) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return nullptr;
 
             // do not open if file does not exist
-            if (!IO::GetInstance().fileExists(path.view()))
+            if (!base::io::FileExists(path.view()))
                 return nullptr;
 
             // create a reader
-            return IO::GetInstance().openForAsyncReading(path.view());
+            return base::io::OpenForAsyncReading(path.view());
         }
 
         io::WriteFileHandlePtr FileSystemNative::createWriter(StringView<char> rawFilePath) const
         {
+            DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
+
             LocalAbsolutePathBuilder path(m_rootPath);
             if (!path.append(rawFilePath))
                 return nullptr;
 
             // create a STAGED writer
             const auto writeMode = io::FileWriteMode::StagedWrite;
-            return IO::GetInstance().openForWriting(path.view(), writeMode);
+            return base::io::OpenForWriting(path.view(), writeMode);
         }
 
         void FileSystemNative::enableFileSystemObservers()
@@ -222,7 +244,7 @@ namespace base
             if (!m_tracker)
             {
                 // create a watcher of file modifications
-                m_tracker = IO::GetInstance().createDirectoryWatcher(m_rootPath);
+                m_tracker = base::io::CreateDirectoryWatcher(m_rootPath);
                 if (m_tracker)
                 {
                     TRACE_INFO("Enabled live tracking of file system at '{}'", m_rootPath);
@@ -269,35 +291,48 @@ namespace base
                 if (evt.type == io::DirectoryWatcherEventType::FileContentChanged ||
                     evt.type == io::DirectoryWatcherEventType::FileMetadataChanged)
                 {
-                    auto localPath = evt.path.relativeTo(m_rootPath);
-                    NormalizeFilePath(localPath);
-                    m_depot->notifyFileChanged(this, StringBuf(localPath.view()));
+                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    {
+                        auto localPath = evt.path.relativeTo(m_rootPath);
+                        NormalizeFilePath(localPath);
+                        m_depot->notifyFileChanged(this, StringBuf(localPath.view()));
+                    }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::FileAdded)
                 {
-                    auto localPath = evt.path.relativeTo(m_rootPath);
-                    NormalizeFilePath(localPath);
-                    m_depot->notifyFileAdded(this, StringBuf(localPath.view()));
+                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    {
+                        auto localPath = evt.path.relativeTo(m_rootPath);
+                        NormalizeFilePath(localPath);
+                        m_depot->notifyFileAdded(this, StringBuf(localPath.view()));
+                    }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::FileRemoved)
                 {
-                    auto localPath = evt.path.relativeTo(m_rootPath);
-                    NormalizeFilePath(localPath);
-                    m_depot->notifyFileRemoved(this, StringBuf(localPath.view()));
+                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    {
+                        auto localPath = evt.path.relativeTo(m_rootPath);
+                        NormalizeFilePath(localPath);
+                        m_depot->notifyFileRemoved(this, StringBuf(localPath.view()));
+                    }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::DirectoryAdded)
                 {
-                    auto localPath = evt.path.relativeTo(m_rootPath);
-                    NormalizeDirPath(localPath);
-                    if (localPath != L".boomer")
+                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteDirectoryPath))
+                    {
+                        auto localPath = evt.path.relativeTo(m_rootPath);
+                        NormalizeDirPath(localPath);
                         m_depot->notifyDirAdded(this, StringBuf(localPath.view()));
+                    }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::DirectoryRemoved)
                 {
-                    auto localPath = evt.path.relativeTo(m_rootPath);
-                    NormalizeDirPath(localPath);
-                    if (localPath != L".boomer")
+                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteDirectoryPath))
+                    {
+                        auto localPath = evt.path.relativeTo(m_rootPath);
+                        NormalizeDirPath(localPath);
                         m_depot->notifyDirRemoved(this, StringBuf(localPath.view()));
+                    }
                 }
             }
         }

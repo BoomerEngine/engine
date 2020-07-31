@@ -11,6 +11,7 @@
 
 #include "rendering/driver/include/renderingCommandBuffer.h"
 #include "rendering/driver/include/renderingDriver.h"
+#include "rendering/driver/include/renderingDeviceService.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingSelectable.h"
@@ -39,6 +40,13 @@ namespace ui
     {
     }
 
+    static float SquaredDistanceTo(uint16_t x, uint16_t y, const base::Point& point)
+    {
+        auto dx = (float)((int)x - point.x);
+        auto dy = (float)((int)y - point.y);
+        return dx * dx + dy * dy;
+    }
+
     bool RenderingPanelSelectionQuery::extractPointSelection(PointSelectionMode mode, const base::Point& point, rendering::scene::Selectable& outSelectable) const
     {
         // no data yet captured
@@ -56,12 +64,12 @@ namespace ui
             for (const auto& raw : m_entries)
             {
                 static const auto selectionRange = 4.0f * 4.0f;
-                if (raw.position().squaredDistanceTo(point) <= selectionRange)
+                if (SquaredDistanceTo(raw.x, raw.y, point) <= selectionRange)
                 {
-                    if (raw.SelectableDepth <= bestDepth)
+                    if (raw.depth <= bestDepth)
                     {
-                        bestSelectable = rendering::scene::Selectable(raw);
-                        bestDepth = raw.SelectableDepth;
+                        bestSelectable = raw.object;
+                        bestDepth = raw.depth;
                     }
                 }
             }
@@ -69,13 +77,13 @@ namespace ui
 
         // TODO: modes
 
-        // nothing found
-        if (bestSelectable.empty())
-            return false;
+        if (bestSelectable)
+        {
+            outSelectable = bestSelectable;
+            return true;
+        }
 
-        // return found selectable
-        outSelectable = bestSelectable;
-        return true;
+        return false;
     }
 
     bool RenderingPanelSelectionQuery::extractAreaSelection(AreaSelectionMode mode, const base::Rect& rect, base::HashSet<rendering::scene::Selectable>& outSelectables) const
@@ -96,8 +104,8 @@ namespace ui
             // collect all elements
             for (const auto& raw : m_entries)
             {
-                if (clippedRect.contains(raw.position()))
-                    outSelectables.insert(rendering::scene::Selectable(raw));
+                if (clippedRect.contains(raw.x, raw.y))
+                    outSelectables.insert(raw.object);
             }
         }
         else if (mode == AreaSelectionMode::ExcludeBorder)
@@ -108,16 +116,15 @@ namespace ui
             // collect all elements
             for (const auto& raw : m_entries)
             {
-                if (innerSize.contains(raw.position()))
-                    outSelectables.insert(rendering::scene::Selectable(raw));
+                if (innerSize.contains(raw.x, raw.y))
+                    outSelectables.insert(raw.object);
             }
 
             // remove the border elements
             for (const auto& raw : m_entries)
             {
-                auto rawPos = raw.position();
-                if (clippedRect.contains(rawPos) && !innerSize.contains(rawPos))
-                    outSelectables.remove(rendering::scene::Selectable(raw));
+                if (clippedRect.contains(raw.x, raw.y) && !innerSize.contains(raw.x, raw.y))
+                    outSelectables.remove(raw.object);
             }
         }
         else
@@ -176,13 +183,18 @@ namespace ui
     base::ConfigProperty<float> cvViewportAxisLength("Editor", "ViewportAxisLength", 40.0f);
     base::ConfigProperty<float> cvViewportUpdateInterval("Editor", "ViewportUpdateInterval", 1000.0f);
 
+    //----
+
+    void RenderingScenePanelSettings::configSave(const ConfigBlock& block) const
+    {}
+
+    void RenderingScenePanelSettings::configLoad(const ConfigBlock& block)
+    {}
+
     //---
 
     RenderingScenePanel::RenderingScenePanel()
-        : m_pointSelectionMode(PointSelectionMode::Closest)
-        , m_areaSelectionMode(AreaSelectionMode::ExcludeBorder)
-        , m_cameraForceOrbitModeFlag(false)
-        , m_updateTimer(this, "Update"_id)
+        : m_updateTimer(this, "Update"_id)
     {
         m_cameraContext = base::CreateSharedPtr<rendering::scene::CameraContext>("PreviewPanelCamera");
 
@@ -211,35 +223,17 @@ namespace ui
         return false;
     }
 
-    void RenderingScenePanel::areaSelectionMode(AreaSelectionMode mode)
+    void RenderingScenePanel::panelSettings(const RenderingScenePanelSettings& settings)
     {
-        m_areaSelectionMode = mode;
+        m_panelSettings = settings;
     }
 
-    void RenderingScenePanel::pointSelectionMode(PointSelectionMode mode)
-    {
-        m_pointSelectionMode = mode;
-    }
-
-    void RenderingScenePanel::cameraSpeedFactor(float speedFactor)
-    {
-        m_cameraController.speedFactor(speedFactor);
-    }
-
-    void RenderingScenePanel::setupCameraForceOrbitMode(bool flag)
-    {
-        m_cameraForceOrbitModeFlag = flag;
-    }
-
-    void RenderingScenePanel::setupCamera(const base::Angles& rotation, const base::Vector3& position)
+    void RenderingScenePanel::setupCamera(const base::Angles& rotation, const base::Vector3& position, const base::Vector3* oribitCenter)
     {
         m_cameraController.moveTo(position, rotation);
-    }
 
-    void RenderingScenePanel::setupCameraAtAngle(const base::Angles& rotation, float distance)
-    {
-        auto pos = -rotation.forward() * distance;
-        m_cameraController.moveTo(pos, rotation);
+        if (oribitCenter)
+            m_cameraController.origin(*oribitCenter);
     }
 
     void RenderingScenePanel::setupCameraAroundBounds(const base::Box& bounds, float distanceFactor /*= 1.0f*/, const base::Angles* newRotation/*=nullptr*/)
@@ -251,6 +245,7 @@ namespace ui
         auto distance = bounds.extents().length() * 3.0f * distanceFactor;
         auto position = bounds.center() - distance * rotation.forward();
         m_cameraController.moveTo(position, rotation);
+        m_cameraController.origin(bounds.center());
     }
 
     base::Point RenderingScenePanel::clientPositionFromNormalizedPosition(const base::Vector3& normalizedPosition) const
@@ -550,9 +545,9 @@ namespace ui
         }
         else  if (evt.leftClicked() && !evt.keyMask().isAltDown())
         {
-            if (m_cameraForceOrbitModeFlag)
+            if (m_panelSettings.cameraForceOrbit)
             {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 1, base::AbsolutePosition(0,0,0)))
+                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 1))
                 {
                     m_renderInputAction = ret;
                     return ret;
@@ -578,9 +573,9 @@ namespace ui
         }
         else if (evt.rightClicked())
         {
-            if (m_cameraForceOrbitModeFlag)
+            if (m_panelSettings.cameraForceOrbit)
             {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 2, base::AbsolutePosition(0, 0, 0)))
+                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 2))
                 {
                     m_renderInputAction = ret;
                     return ret;
@@ -602,7 +597,8 @@ namespace ui
                 auto viewportPos = (evt.absolutePosition() - cachedDrawArea().absolutePosition());
                 if (queryWorldPositionUnderCursor(viewportPos, worldOrbitPosition))
                 {
-                    if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4, worldOrbitPosition))
+                    //m_panelSettings.
+                    if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4))
                     {
                         m_renderInputAction = ret;
                         return ret;
@@ -694,7 +690,7 @@ namespace ui
         if (selectionData)
         {
             rendering::scene::Selectable singleSelectable;
-            if (selectionData->extractPointSelection(m_pointSelectionMode, clientPosition, singleSelectable))
+            if (selectionData->extractPointSelection(m_panelSettings.pointSelectionMode, clientPosition, singleSelectable))
             {
                 selectables.pushBack(singleSelectable);
             }
@@ -713,7 +709,7 @@ namespace ui
         base::HashSet<rendering::scene::Selectable> selectables;
         if (selectionData)
         {
-            selectionData->extractAreaSelection(m_areaSelectionMode, clientRect, selectables);
+            selectionData->extractAreaSelection(m_panelSettings.areaSelectionMode, clientRect, selectables);
         }
 
         // handle the selection with the list of selectables
@@ -723,22 +719,22 @@ namespace ui
     void RenderingScenePanel::handleRender(rendering::scene::FrameParams& frame)
     {
         // draw grid
-        if (m_drawInternalGrid && (frame.filters & rendering::scene::FilterBit::ViewportWorldGrid))
+        if (m_panelSettings.drawInternalGrid && (frame.filters & rendering::scene::FilterBit::ViewportWorldGrid))
             drawGrid(frame);
 
         // draw world axes
-        if (m_drawInternalWorldAxis && (frame.filters & rendering::scene::FilterBit::ViewportWorldAxes))
+        if (m_panelSettings.drawInternalWorldAxis && (frame.filters & rendering::scene::FilterBit::ViewportWorldAxes))
         {
             rendering::scene::DebugLineDrawer dd(frame.geometry.solid);
             dd.axes(base::Matrix::IDENTITY(), 1.0f);
         }
 
         // draw screen axis
-        if (m_drawInternalCameraAxis && (frame.filters & rendering::scene::FilterBit::ViewportCameraAxes))
+        if (m_panelSettings.drawInternalCameraAxis && (frame.filters & rendering::scene::FilterBit::ViewportCameraAxes))
             drawViewAxes(frame);
 
         // draw camera info
-        if (m_drawInternalCameraData && (frame.filters & rendering::scene::FilterBit::ViewportCameraInfo))
+        if (m_panelSettings.drawInternalCameraData && (frame.filters & rendering::scene::FilterBit::ViewportCameraInfo))
             drawCameraInfo(frame);
 
         // draw input action
@@ -892,7 +888,7 @@ namespace ui
         auto bx = frame.resolution.finalCompositionWidth - 20;
         auto by = frame.resolution.finalCompositionHeight - 20;
 
-        auto pos = m_cameraController.position();
+        auto pos = m_cameraController.position().approximate();
         auto rot = m_cameraController.rotation();
 
         auto params = rendering::scene::DebugTextParams().right().bottom().color(base::Color::WHITE);
@@ -933,8 +929,14 @@ namespace ui
         capture.dataBuffer = captureBuffer;
         capture.mode = rendering::scene::FrameCaptureMode::SelectionRect;
 
+        // flush rendering
+        base::GetService<DeviceService>()->sync();
+
         // render the frame
-        //renderScene()
+        renderInternal(&capture);
+
+        // flush rendering
+        base::GetService<DeviceService>()->sync();
 
         // buffer with data must be available
         if (!captureBuffer->isReady())
@@ -960,10 +962,10 @@ namespace ui
         auto selectionRect = base::Rect::EMPTY();
         for (uint32_t i = 0; i < maxEntires; ++i, ++ptr)
         {
-            if (ptr->SelectableId)
+            if (*ptr)
             {
                 allSelectables.pushBack(*ptr);
-                selectionRect.merge(ptr->position());
+                selectionRect.merge(ptr->x, ptr->y);
             }
         }
 

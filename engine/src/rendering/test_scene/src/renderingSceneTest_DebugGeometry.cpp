@@ -22,8 +22,8 @@ namespace rendering
 
         //---
 
-        //static base::res::StaticResource<rendering::texture::StaticTexture> resIconPointLight("engine/icons/point_light.png", true);
-        //static base::res::StaticResource<rendering::texture::StaticTexture> resLena("engine/tests/textures/lena.png");
+        //static base::res::StaticResource<rendering::texture::StaticTexture> resIconPointLight("/engine/icons/point_light.png", true);
+        //static base::res::StaticResource<rendering::texture::StaticTexture> resLena("/engine/tests/textures/lena.png");
 
         //--
 

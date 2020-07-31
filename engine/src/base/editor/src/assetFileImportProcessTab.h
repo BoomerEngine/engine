@@ -16,6 +16,10 @@ namespace ed
 {
     //--
 
+    DECLARE_UI_EVENT(EVENT_ASSET_IMPORT_FINISHED);
+
+    //--
+
     class AssetImportCommand;
     class AssetProcessingListModel;
 
@@ -89,10 +93,6 @@ namespace ed
     public:
         AssetImportMainTab();
         virtual ~AssetImportMainTab();
-
-        //--
-
-        ui::ElementEventProxy OnImportFinished;
 
         //--
 

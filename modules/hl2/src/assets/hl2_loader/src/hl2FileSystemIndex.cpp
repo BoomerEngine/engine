@@ -10,7 +10,6 @@
 
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/timestamp.h"
 #include "base/containers/include/stringBuilder.h"
 
@@ -168,12 +167,12 @@ namespace hl2
         {
             // get timestamp
             base::io::TimeStamp timeStamp;
-            if (!IO::GetInstance().fileTimeStamp(filePath, timeStamp))
+            if (!base::io::FileTimeStamp(filePath, timeStamp))
                 return 0;
 
             // get size of the file
             uint64_t fileSize = 0;
-            if (!IO::GetInstance().fileSize(filePath, fileSize))
+            if (!base::io::FileSize(filePath, fileSize))
                 return 0;
 
             // calculate file CRC
@@ -212,14 +211,14 @@ namespace hl2
 
                 auto coreName = packageName.beforeLast(L"_dir");
                 auto packageFilePath = dirPath.basePath().addFile(base::TempString("{}_{}.vpk", coreName, (char*)archiveIndexStr).c_str());
-                if (!IO::GetInstance().fileTimeStamp(packageFilePath, timeStamp))
+                if (!base::io::FileTimeStamp(packageFilePath, timeStamp))
                 {
                     TRACE_WARNING("Referenced package '{}' does not exist", packageFilePath);
                 }
             }
             else
             {
-                IO::GetInstance().fileTimeStamp(dirPath, timeStamp);
+                base::io::FileTimeStamp(dirPath, timeStamp);
             }
 
             auto& entry = m_data.m_packages.emplaceBack();
@@ -423,7 +422,7 @@ namespace hl2
         bool processDirectoryVPK(const base::io::AbsolutePath& packageFilePath)
         {
             // open the archive file
-            auto file = IO::GetInstance().openForReading(packageFilePath);
+            auto file = base::io::OpenForReading(packageFilePath);
             if (!file)
                 return false;
 
@@ -560,7 +559,7 @@ namespace hl2
         bool processBSPMapFile(uint32_t packageIndex, const base::io::AbsolutePath& packageFilePath)
         {
             // open the archive file
-            auto file = IO::GetInstance().openForReading(packageFilePath);
+            auto file = base::io::OpenForReading(packageFilePath);
             if (!file)
                 return false;
 
@@ -777,7 +776,7 @@ namespace hl2
         // try to load directly
         auto indexFilePath = contentPath.addFile("boomer.fscache");
         {
-            auto indexFileHandle = IO::GetInstance().openForReading(indexFilePath);
+            auto indexFileHandle = base::io::OpenForReading(indexFilePath);
             if (indexFileHandle)
             {
                 if (ret->load(*indexFileHandle))
@@ -794,7 +793,7 @@ namespace hl2
             // look for the pack files
             {
                 base::Array<base::UTF16StringBuf> packFileNames;
-                IO::GetInstance().findLocalFiles(contentPath, L"*_dir.vpk", packFileNames);
+                base::io::FindLocalFiles(contentPath, L"*_dir.vpk", packFileNames);
                 TRACE_INFO("Found {} dir VPKs", packFileNames.size());
 
                 // process each VPK
@@ -814,7 +813,7 @@ namespace hl2
                 auto mapContentPath = contentPath.addDir("maps");
 
                 base::Array<base::UTF16StringBuf> bspFileNames;
-                IO::GetInstance().findLocalFiles(mapContentPath, L"*.bsp", bspFileNames);
+                base::io::FindLocalFiles(mapContentPath, L"*.bsp", bspFileNames);
                 TRACE_INFO("Found {} BSP files in '{}'", bspFileNames.size(), mapContentPath);
 
                 for (auto &name : bspFileNames)
@@ -851,7 +850,7 @@ namespace hl2
 
         // save to file
         {
-            auto indexFileHandle = IO::GetInstance().openForWriting(indexFilePath);
+            auto indexFileHandle = base::io::OpenForWriting(indexFilePath);
             if (indexFileHandle)
             {
                 if (!ret->save(*indexFileHandle))

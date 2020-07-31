@@ -186,7 +186,7 @@ namespace base
                     {
                         const auto resourceClass = resData->type.cast<res::IResource>();
                         if (resourceClass && resourceClass->is(m_resourceClass))
-                            loadedRef = res::BaseReference(res::ResourceKey(res::ResourcePath(resData->path), resourceClass));
+                            loadedRef = res::BaseReference(res::ResourceKey(resData->path, resourceClass));
                     }
                 }
             }
@@ -212,7 +212,7 @@ namespace base
                 }
                 else if (ptr.key().path())
                 {
-                    const auto fileExt = ptr.key().path().extension();
+                    const auto fileExt = ptr.key().extension();
                     const auto classByExtension = IResource::FindResourceClassByExtension(fileExt);
 
                     node.writeAttribute("path", ptr.key().path().view());
@@ -228,7 +228,7 @@ namespace base
         {
             res::BaseReference loadedRef;
 
-            const auto path = res::ResourcePath(node.attribute("path"));
+            const auto path = node.attribute("path");
             const auto className = node.attribute("class");
             if (className && !path)
             {
@@ -274,7 +274,7 @@ namespace base
 
                 if (!resourceClass)
                 {
-                    const auto fileExt = path.extension();
+                    const auto fileExt = path.afterLastOrFull("/").afterFirst(".");
                     resourceClass = IResource::FindResourceClassByExtension(fileExt);
                 }
 

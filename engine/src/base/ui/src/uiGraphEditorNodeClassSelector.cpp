@@ -100,12 +100,8 @@ namespace ui
     //---
 
     BlockClassPickerBox::BlockClassPickerBox(const base::graph::Container& filter, const base::graph::Socket* compatibleSocket)
+        : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Create block")
     {
-        layoutVertical();
-
-        // title bar
-        createChild<WindowTitleBar>()->addStyleClass("mini"_id);
-
         // filter
         auto filterBar = createChild<ui::SearchBar>();
 
@@ -117,26 +113,26 @@ namespace ui
 
         // buttons
         {
-            auto buttons = createChild<IElement>();
+            auto buttons = createChild();
             buttons->customPadding(5);
             buttons->layoutHorizontal();
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:accept] Select");
                 button->addStyleClass("green"_id);
-                button->bind("OnClick"_id) = [this]() { closeIfValidTypeSelected(); };
+                button->bind(EVENT_CLICKED) = [this]() { closeIfValidTypeSelected(); };
             }
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
-                button->bind("OnClick"_id) = [this]() { requestClose(); };
+                button->bind(EVENT_CLICKED) = [this]() { requestClose(); };
             }
         }
 
         // bind model
         m_listModel = base::CreateSharedPtr<BlockClassListModel>(filter, compatibleSocket);
         m_list->model(m_listModel);
-        m_list->bind("OnItemActivated"_id) = [this]()
+        m_list->bind(EVENT_ITEM_ACTIVATED) = [this]()
         {
             closeIfValidTypeSelected();
         };
@@ -156,11 +152,6 @@ namespace ui
         }
 
         return TBaseClass::handleKeyEvent(evt);
-    }
-
-    IElement* BlockClassPickerBox::handleFocusForwarding()
-    {
-        return m_list;
     }
 
     void BlockClassPickerBox::closeIfValidTypeSelected()
@@ -183,7 +174,7 @@ namespace ui
 
     void BlockClassPickerBox::closeWithType(const BlockClassPickResult& result)
     {
-        call("OnBlockClassSelected"_id, result);
+        call(EVENT_GRAPH_BLOCK_CLASS_SELECTED, result);
         requestClose();
     }
 

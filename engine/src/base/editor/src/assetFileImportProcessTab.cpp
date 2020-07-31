@@ -8,7 +8,6 @@
 
 #include "build.h"
 
-#include "editorConfig.h"
 #include "editorService.h"
 
 #include "backgroundCommand.h"
@@ -158,7 +157,7 @@ namespace ed
         return name;
     }
 
-    StringView<char> ImportStatusToDisplayText(res::ImportStatus status)
+    StringView<char> ImportStatusToDisplayText(res::ImportStatus status, bool withIcon=false)
     {
         switch (status)
         {
@@ -166,12 +165,42 @@ namespace ed
             case res::ImportStatus::Processing: return "[b][color:#FF7]Processing...[/color]";
             case res::ImportStatus::Checking: return "[b][color:#AAA]Checking...[/color]";
             case res::ImportStatus::Canceled: return "[b][tag:#AAA]Canceled[/tag]";
-            case res::ImportStatus::NotSupported: return "[b][tag:#F88][color:#000]Not supported[/tag]";
-            case res::ImportStatus::MissingAssets: return "[b][tag:#F88][color:#000]Missing files[/tag]";
-            case res::ImportStatus::InvalidAssets: return "[b][tag:#F88][color:#000]Invalid files[/tag]";
-            case res::ImportStatus::UpToDate: return "[b][tag:#88F]Up to date[/tag]";
-            case res::ImportStatus::NotUpToDate: return "[b][tag:#FF8][color:#000]Assets modified[/tag]";
-            case res::ImportStatus::NewAssetImported: return "[b][tag:#8F8][color:#000]Imported[/tag]";
+
+            case res::ImportStatus::NotSupported: 
+                if (withIcon)
+                    return "[b][tag:#F88][color:#000][img:skull] Not supported[/tag]";
+                else
+                    return "[b][tag:#F88][color:#000]Not supported[/tag]";
+
+            case res::ImportStatus::MissingAssets: 
+                if (withIcon)
+                    return "[b][tag:#F88][color:#000][img:exclamation] Missing files[/tag]";
+                else
+                    return "[b][tag:#F88][color:#000]Missing files[/tag]";
+
+            case res::ImportStatus::InvalidAssets: 
+                if (withIcon)
+                    return "[b][tag:#F88][color:#000][img:skull] Invalid files[/tag]";
+                else
+                    return "[b][tag:#F88][color:#000]Invalid files[/tag]";
+
+            case res::ImportStatus::UpToDate:
+                if (withIcon)
+                    return "[b][tag:#88F][img:tick] Up to date[/tag]";
+                else
+                    return "[b][tag:#88F]Up to date[/tag]";
+
+            case res::ImportStatus::NotUpToDate: 
+                if (withIcon)
+                    return "[b][tag:#FF8][color:#000][img:exclamation] Assets modified[/tag]";
+                else
+                    return "[b][tag:#FF8][color:#000]Assets modified[/tag]";
+
+            case res::ImportStatus::NewAssetImported:
+                if (withIcon)
+                    return "[b][tag:#8F8][img:cog] [color:#000]Imported[/tag]";
+                else
+                    return "[b][tag:#8F8][color:#000]Imported[/tag]";
         }
 
         return "[color:#888][b]---[/color]";
@@ -267,8 +296,7 @@ namespace ed
     RTTI_END_TYPE();
 
     AssetImportMainTab::AssetImportMainTab()
-        : ui::DockPanel("[img:cog] Asset Processing")
-        , OnImportFinished(this, "OnImportFinished"_id)
+        : ui::DockPanel("[img:cog] Asset Processing", "AssetImportMainTab")
         , m_updateTimer(this, "UpdateTimer"_id)
     {
         layoutVertical();
@@ -309,17 +337,17 @@ namespace ed
             m_fileList->model(m_filesListModel);
             filter->bindItemView(m_fileList);
 
-            m_fileList->OnSelectionChanged = [this]()
+            m_fileList->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
             {
                 updateSelection();
             };
 
-            m_fileList->OnItemActivated = [this]()
+            m_fileList->bind(ui::EVENT_ITEM_ACTIVATED) = [this]()
             {
                 showSelectedFilesInBrowser();
             };
 
-            m_fileList->bind("OnContextMenu"_id) = [this]()
+            m_fileList->bind(ui::EVENT_CONTEXT_MENU) = [this]()
             {
                 showFilesContextMenu();
             };
@@ -412,7 +440,7 @@ namespace ed
             {
                 if (auto* managedFile = GetService<Editor>()->managedDepot().findManagedFile(depotPath))
                 {
-                    GetService<Editor>()->selectFile(managedFile);
+                    GetService<Editor>()->mainWindow().selectFile(managedFile);
                     break;
                 }
             }
@@ -434,7 +462,7 @@ namespace ed
             if (auto* managedFile = GetService<Editor>()->managedDepot().findManagedFile(depotPaths[0]))
             {
                 menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() {
-                    GetService<ed::Editor>()->selectFile(managedFile);
+                    GetService<ed::Editor>()->mainWindow().selectFile(managedFile);
                 };
             }
 

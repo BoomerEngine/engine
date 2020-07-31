@@ -10,6 +10,7 @@
 
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceMetadata.h"
+#include "renderingMaterialImportConfig.h"
 
 namespace rendering
 {
@@ -70,6 +71,18 @@ namespace rendering
 
     //---
 
+    enum class MeshMaterialImportMode : uint8_t
+    {
+        DontImport, // do nothing, leaves the material uninitialized
+        FindOnly, // only attempt to find materials, do not import anything missing
+        EmbedAll, // import materials and embed them into mesh
+        EmbedMissing, // use materials that are already there but embed everything else
+        ImportAll, // always report material for importing, does not use the search path
+        ImportMissing, // import only the materials that were not found already in depot
+    };
+
+    //---
+
     /// common manifest for assets importable into mesh formats
     /// contains coordinate system conversion and other setup for geometry importing from outside sources
     class ASSETS_MESH_LOADER_API MeshImportConfig : public res::ResourceConfiguration
@@ -110,14 +123,23 @@ namespace rendering
         //--
 
         // material import
-        bool m_autoImportMaterials = true;
-        base::Array<base::StringBuf> m_materialSearchPath;
-        base::StringBuf m_materialsImportPath;
+        MeshMaterialImportMode m_materialImportMode;
+        base::StringBuf m_materialSearchPath;
+        base::StringBuf m_materialImportPath;
 
         // texture import
-        bool m_autoImportTextures = true;
-        base::Array<base::StringBuf> m_textureSearchPath;
+        MaterialTextureImportMode m_textureImportMode;
+        base::StringBuf m_textureSearchPath;
         base::StringBuf m_textureImportPath;
+
+        //--
+
+        // search depth when looking file up in depot
+        int m_depotSearchDepth = 6;
+
+        // search depth when looking file up in source asset repository
+        int m_sourceAssetsSearchDepth = 6;
+
 
         //--
 
@@ -136,6 +158,10 @@ namespace rendering
 
         //--
 
+        MaterialAsyncRef m_templateDefault;
+
+        //--
+
         // calculate the space conversion matrix for given content type
         // NOTE: includes custom transformation specified in the manifest itself
         Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
@@ -151,6 +177,10 @@ namespace rendering
         {
             return (space == MeshImportSpace::Auto) ? defaultAssetSpace : space;
         }
+
+        //--
+
+        virtual void computeConfigurationKey(CRC64& crc) const override;
     };
 
     //---

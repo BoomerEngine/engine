@@ -25,8 +25,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(TextFileResourceEditor);
     RTTI_END_TYPE();
 
-    TextFileResourceEditor::TextFileResourceEditor(ConfigGroup config, ManagedFileRawResource* file)
-        : ResourceEditor(config, file, { ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo })
+    TextFileResourceEditor::TextFileResourceEditor(ManagedFileRawResource* file)
+        : ResourceEditor(file, { ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo })
         , m_textFile(file)
     {
         actions().bindCommand("TextEditor.Find"_id) = [this]() { cmdShowFindWindow(); };
@@ -65,9 +65,9 @@ namespace ed
         return true;
     }
 
-    void TextFileResourceEditor::close()
+    void TextFileResourceEditor::cleanup()
     {
-        TBaseClass::close();
+        TBaseClass::cleanup();
 
         if (m_editor)
         {
@@ -119,10 +119,10 @@ namespace ed
             return format.extension() == "txt" || format.extension() == "md";
         }
 
-        virtual RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto* rawFile = rtti_cast<ManagedFileRawResource>(file))
-                return CreateSharedPtr<TextFileResourceEditor>(config, rawFile);
+                return CreateSharedPtr<TextFileResourceEditor>(rawFile);
             return nullptr;
         }        
     };

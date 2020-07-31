@@ -84,6 +84,9 @@ namespace ed
             m_config = configClass.create();
         }
 
+        // rebase the config on the BASE config stuff
+        m_config->rebase(baseConfig);
+
         //--
 
         {

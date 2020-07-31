@@ -14,7 +14,7 @@ namespace ed
 {
 
     class MaterialPreviewPanel;
-    class MaterialPreviewPanelWithToolbar;
+    class MaterialPreviewPanel;
 
     /// editor for meshes
     class ASSETS_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditorNativeFile
@@ -22,12 +22,12 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditorNativeFile);
 
     public:
-        MaterialInstanceEditor(ConfigGroup config, ManagedFileNativeResource* file);
+        MaterialInstanceEditor(ManagedFileNativeResource* file);
         virtual ~MaterialInstanceEditor();
 
         //--
 
-        INLINE MaterialPreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
+        INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
 
         INLINE rendering::MaterialInstancePtr materialInstance() const { return base::rtti_cast<rendering::MaterialInstance>(resource()); }
 
@@ -37,7 +37,7 @@ namespace ed
 
         //---
 
-        base::RefPtr<MaterialPreviewPanelWithToolbar> m_previewPanel;
+        base::RefPtr<MaterialPreviewPanel> m_previewPanel;
         ui::DataInspectorPtr m_properties;
 
         void createInterface();

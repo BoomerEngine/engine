@@ -133,6 +133,17 @@ namespace base
                 return nullptr;
             }
 
+            virtual bool depotFileExists(StringView<char> depotPath) const override final
+            {
+                io::TimeStamp timestamp;
+                return m_depot.queryFileTimestamp(depotPath, timestamp);
+            }
+
+            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+            {
+                return m_depot.findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+            }
+
         private:
             depot::DepotStructure& m_depot;
         };

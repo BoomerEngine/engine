@@ -200,17 +200,19 @@ namespace ui
             RTTI_PROPERTY(m_class2);
             RTTI_PROPERTY(m_id);
             RTTI_PROPERTY(m_pseudoClass);
+            RTTI_PROPERTY(m_pseudoClass2);
         RTTI_END_TYPE();
 
         SelectorMatchParams::SelectorMatchParams()
         {}
 
-        SelectorMatchParams::SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass)
+        SelectorMatchParams::SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass, const base::StringID pseudoClass2)
             : m_type(type)
             , m_class(clas)
             , m_class2(clas2)
             , m_id(id)
             , m_pseudoClass(pseudoClass)
+            , m_pseudoClass2(pseudoClass2)
         {}
 
         void SelectorMatchParams::calcHash(base::CRC64& crc) const
@@ -219,6 +221,7 @@ namespace ui
             crc << m_class;
             crc << m_class2;
             crc << m_pseudoClass;
+            crc << m_pseudoClass2;
             crc << m_id;
         }
 
@@ -237,6 +240,9 @@ namespace ui
 
             if (m_pseudoClass)
                 f << ":" << m_pseudoClass;
+
+            if (m_pseudoClass2)
+                f << ":" << m_pseudoClass2;
 
             if (m_id)
                 f << "#" << m_id;

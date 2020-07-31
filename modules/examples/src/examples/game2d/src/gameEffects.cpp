@@ -13,7 +13,7 @@ namespace example
 {
     //---
 
-    static base::res::StaticResource<ShaderLibrary> resSkyShader("examples/canvas/shaders/plasma_sky.fx");
+    static base::res::StaticResource<ShaderLibrary> resSkyShader("/examples/canvas/shaders/plasma_sky.fx");
 
     struct SkyParams
     {

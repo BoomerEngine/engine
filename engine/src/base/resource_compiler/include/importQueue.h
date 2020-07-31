@@ -24,6 +24,7 @@ namespace base
 
         class Importer;
         class ImportSaverThread;
+        class ImportQueueDepotChecker;
         struct ImportJobInfo;
 
         //--
@@ -53,6 +54,12 @@ namespace base
 
             // load existing content of a resource, should not be cached or reused
             virtual ResourcePtr loadExistingResource(StringView<char> depotPath) const = 0;
+
+            // check if file exists
+            virtual bool depotFileExists(StringView<char> depotPath) const = 0;
+
+            // find depot file
+            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
         };
 
         //--
@@ -81,6 +88,7 @@ namespace base
             ImportSaverThread* m_saver = nullptr;
             SourceAssetRepository* m_assets = nullptr;
 
+            UniquePtr<ImportQueueDepotChecker> m_importerDepotChecker;
             UniquePtr<Importer> m_importer;
 
             //--

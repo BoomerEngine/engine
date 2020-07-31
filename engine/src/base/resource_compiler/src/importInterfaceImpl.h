@@ -18,6 +18,7 @@ namespace base
         //--
 
         class SourceAssetRepository;
+        class IImportDepotChecker;
 
         //--
 
@@ -25,18 +26,19 @@ namespace base
         class BASE_RESOURCE_COMPILER_API LocalImporterInterface : public IResourceImporterInterface
         {
         public:
-            LocalImporterInterface(SourceAssetRepository* assetRepository, const IResource* originalData, const StringBuf& importPath, const ResourcePath& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& importConfiguration);
+            LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& importConfiguration);
             virtual ~LocalImporterInterface();
 
             /// IResourceImporterInterface
             virtual const IResource* existingData() const override final;
-            virtual const ResourcePath& queryResourcePath() const override final;
+            virtual const StringBuf& queryResourcePath() const override final;
             virtual const ResourceMountPoint& queryResourceMountPoint() const  override final;
             virtual const StringBuf& queryImportPath() const  override final;
             virtual const ResourceConfiguration* queryConfigrationTypeless() const  override final;
             virtual Buffer loadSourceFileContent(StringView<char> assetImportPath) const override final;
             virtual SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath) const override final;
-            virtual bool findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const  override final;
+            virtual bool findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const override final;
+            virtual bool findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const override final;
             virtual void followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config = nullptr)  override final;
 
             // IProgressTracker
@@ -49,8 +51,10 @@ namespace base
         private:
             const IResource* m_originalData;
 
+            const IImportDepotChecker* m_depotChecker;
+
             StringBuf m_importPath;
-            ResourcePath m_depotPath;
+            StringBuf m_depotPath;
             ResourceMountPoint m_depotMountPoint;
             
             IProgressTracker* m_externalProgressTracker = nullptr;

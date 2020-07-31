@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resLinearDepthVis("engine/shaders/screen/visualize_linear_depth.fx");
+        static base::res::StaticResource<ShaderLibrary> resLinearDepthVis("/engine/shaders/screen/visualize_linear_depth.fx");
 
         struct LinearDepthVisParams
         {

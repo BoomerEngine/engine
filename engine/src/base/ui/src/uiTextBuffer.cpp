@@ -22,7 +22,7 @@ namespace ui
 
     //--
 
-    TextBuffer::TextBuffer()
+    TextBuffer::TextBuffer(bool multiline)
         : m_lastPos(0)
         , m_cursorPos(0)
         , m_selectionStartPos(0)
@@ -30,7 +30,7 @@ namespace ui
         , m_highlightStartPos(0)
         , m_highlightEndPos(0)
         , m_fontSize(10)
-        , m_multiline(false)
+        , m_multiline(multiline)
         , m_wrapWidth(0)
         , m_finalGlyph(0)
     {
@@ -85,7 +85,7 @@ namespace ui
         // return as string
         return base::StringBuf(tempBuffer.typedData());
     }
-
+    
     void TextBuffer::style(const IElement* styleOwner)
     {
         auto prevFont = m_font;
@@ -127,22 +127,6 @@ namespace ui
             ch.glyph = nullptr;
     }
 
-    /*void TextBuffer::updateLayout()
-    {
-            invalidateGeometry();
-            generateLayout();
-        }
-    }*/
-
-    void TextBuffer::multiLine(bool isMultiLine)
-    {
-        if (m_multiline != isMultiLine)
-        {
-            m_multiline = isMultiLine;
-            generateLayout();
-        }
-    }
-
     void TextBuffer::wrapWidth(uint32_t wrapWidth)
     {
         if (m_wrapWidth != wrapWidth)
@@ -163,6 +147,7 @@ namespace ui
         m_cursorPos = m_chars.size();
         m_selectionEndPos = m_lastPos;
         m_selectionStartPos = m_lastPos;
+        m_modified = false;
 
         // render the visuals of the text
         generateLayout();
@@ -483,6 +468,7 @@ namespace ui
         if (rangeEnd > rangeStart)
         {
             m_chars.erase(rangeStart, rangeEnd - rangeStart);
+            m_modified = true;
             generateLayout();
         }
     }
@@ -495,6 +481,8 @@ namespace ui
         if (!newChars.empty())
         {
             m_chars.insert(pos, newChars.typedData(), newChars.size());
+            m_modified = true;
+
             generateLayout();
 
             moveCursor(pos + newChars.size(), false);

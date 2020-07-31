@@ -37,8 +37,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(StaticTextureEditor);
     RTTI_END_TYPE();
 
-    StaticTextureEditor::StaticTextureEditor(ConfigGroup config, ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
+    StaticTextureEditor::StaticTextureEditor(ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
         , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
     {
         createInterface();
@@ -260,13 +260,13 @@ namespace ed
             return format.nativeResourceClass() == rendering::StaticTexture::GetStaticClass();
         }
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
                 if (auto loadedTexture = rtti_cast<rendering::StaticTexture>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<StaticTextureEditor>(config, nativeFile);
+                    auto ret = base::CreateSharedPtr<StaticTextureEditor>(nativeFile);
                     ret->bindResource(loadedTexture);
                     return ret;
                 }

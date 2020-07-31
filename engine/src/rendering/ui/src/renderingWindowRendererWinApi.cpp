@@ -33,6 +33,26 @@ namespace rendering
         return false;
     }
 
+    void NativeWindowRenderer::playSound(ui::MessageType type)
+    {
+        switch (type)
+        {
+        case ui::MessageType::Error: 
+            ::MessageBeep(MB_ICONHAND);
+            break;
+        case ui::MessageType::Warning:
+            ::MessageBeep(MB_ICONEXCLAMATION);
+            break;
+        case ui::MessageType::Info:
+            ::MessageBeep(MB_ICONASTERISK);
+            break;
+        case ui::MessageType::Question:
+            ::MessageBeep(MB_ICONQUESTION);
+            break;
+        }
+
+    }
+
     ui::NativeWindowID NativeWindowRenderer::windowAtPos(const ui::Position& absoluteWindowPosition)
     {
         POINT p;

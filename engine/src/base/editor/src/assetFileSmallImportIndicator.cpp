@@ -28,9 +28,11 @@ namespace ed
         : m_file(file)
         , m_events(this)
     {
+        visibility(false);
+
         m_caption = createChild<ui::TextLabel>("[img:question_red]");
 
-        bind("OnImportStatusChanged"_id) = [this]() { updateStatus(); };
+        bind(EVENT_IMPORT_STATUS_CHANGED) = [this]() { updateStatus(); };
 
         m_checker = base::CreateSharedPtr<ManagedFileImportStatusCheck>(m_file, this);
 
@@ -69,6 +71,8 @@ namespace ed
     {
         StringView<char> statusText = "[img:question_red]";
 
+        bool visible = true;
+
         const auto status = m_checker->status();
         switch (status)
         {
@@ -76,6 +80,7 @@ namespace ed
             case res::ImportStatus::Checking:
             case res::ImportStatus::Canceled:
             case res::ImportStatus::Processing:
+                visible = false;
                 tooltip("Unknown file status");
                 break;
             
@@ -108,10 +113,12 @@ namespace ed
             case res::ImportStatus::NotImportable:
                 tooltip("File was not imported from any source data but was generated in-engine");
                 statusText = "[img:tick]";
+                visible = false;
                 break;
         }
 
         m_caption->text(statusText);
+        visibility(visible);
     }
 
     //--

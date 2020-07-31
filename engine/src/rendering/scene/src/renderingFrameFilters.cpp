@@ -64,6 +64,10 @@ namespace rendering
         static FilterFlags MakeDefaultEditorFilter()
         {
             FilterFlags ret = MakeDefaultGameFilter();
+
+            ret |= FilterBit::PassDepthSelection;
+            ret |= FilterBit::PassSelectionFragments;
+
             ret |= FilterBit::DebugGeometry;
             ret |= FilterBit::DebugGeometryLines;
             ret |= FilterBit::DebugGeometrySolid;
@@ -74,6 +78,9 @@ namespace rendering
             ret |= FilterBit::ViewportCameraAxes; // small camera orientation axes in the BL
             ret |= FilterBit::ViewportWorldGrid; // world grid at Z=0
             ret |= FilterBit::ViewportWorldAxes; // bit, one meter axes at [0,0,0]
+
+            ret |= FilterBit::PostProcesses_SelectionHighlight;
+            ret |= FilterBit::PostProcesses_SelectionOutline;
 
             return ret;
         }
@@ -105,6 +112,8 @@ namespace rendering
                     auto* parent = create(m_root, "Pass");
                     create(parent, "Clear", FilterBit::PassClear);
                     create(parent, "DepthPrepass", FilterBit::PassDepthPrepass);
+                    create(parent, "DepthSelection", FilterBit::PassDepthSelection);
+                    create(parent, "SelectionFragments", FilterBit::PassSelectionFragments);
                     create(parent, "ShadowDepth", FilterBit::PassShadowDepth);
                     create(parent, "Forward", FilterBit::PassForward);
                 }
@@ -149,6 +158,8 @@ namespace rendering
                 {
                     auto* parent = create(m_root, "POSTFX", FilterBit::PostProcessing);
                     create(parent, "Tonemap", FilterBit::PostProcesses_ToneMap);
+                    create(parent, "SelectionOutline", FilterBit::PostProcesses_SelectionOutline);
+                    create(parent, "SelectionHighlight", FilterBit::PostProcesses_SelectionHighlight);
                 }
             }
 

@@ -22,12 +22,13 @@
 #include "base/resource/include/resourceFileSaver.h"
 #include "managedFileNativeResource.h"
 #include "managedFileRawResource.h"
+#include "managedItemCollection.h"
 
 namespace ed
 {
     //--
 
-    static res::StaticResource<image::Image> resDirectoryTexture("engine/thumbnails/directory.png");
+    static res::StaticResource<image::Image> resDirectoryTexture("/engine/thumbnails/directory.png");
 
     //--
 
@@ -213,7 +214,7 @@ namespace ed
                 curDir->deleted(false);
 
                 auto dirPath = absolutePath().addDir(StringBuf(name).c_str());
-                IO::GetInstance().createPath(dirPath);
+                base::io::CreatePath(dirPath);
 
                 curDir->populate(); // just in case it was not really deleted
             }
@@ -237,7 +238,7 @@ namespace ed
 
         // create the physical path in file system
         auto dirPath = absolutePath().addDir(StringBuf(name).c_str());
-        if (!IO::GetInstance().createPath(dirPath))
+        if (!base::io::CreatePath(dirPath))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': failed to create physical directory on disk", name, depotPath());
             return nullptr;
@@ -256,7 +257,7 @@ namespace ed
         updateFileCount();
 
         // report events
-        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, curDir);
+        DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, ManagedDirectoryPtr(AddRef(curDir)));
         return curDir;
     }
 
@@ -344,7 +345,7 @@ namespace ed
 
         // file already exists, do not overwrite
         auto absFilePath = absolutePath().addFile(StringBuf(fileName).c_str());
-        if (IO::GetInstance().fileExists(absFilePath))
+        if (base::io::FileExists(absFilePath))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
             return file(fileName, true);
@@ -398,7 +399,7 @@ namespace ed
         updateFileCount();
 
         // report file event
-        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_FILE_CREATED, managedFile);
+        DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr(AddRef(managedFile)));
         return managedFile;
 
     }
@@ -445,7 +446,7 @@ namespace ed
 
         // file already exists, do not overwrite
         auto absFilePath = absolutePath().addFile(StringBuf(fileName).c_str());
-        if (IO::GetInstance().fileExists(absFilePath))
+        if (base::io::FileExists(absFilePath))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
             return file(fileName, true);
@@ -494,7 +495,7 @@ namespace ed
         updateFileCount();
 
         // report file event
-        DispatchGlobalEvent(m_eventKey, EVENT_MANAGED_DEPOT_FILE_CREATED, managedFile);
+        DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr(AddRef(managedFile)));
         return managedFile;
     }
 
@@ -578,6 +579,27 @@ namespace ed
     }
 
     //--
+
+    bool ManagedDirectory::collectFiles(CollectionContext& context, bool recursive, ManagedFileCollection& outFiles) const
+    {
+        bool ret = false;
+
+        if (context.visitedDirectories.insert(this))
+        {
+            for (auto* file : m_files.list())
+                if (!context.filterFilesFunc || context.filterFilesFunc(file))
+                    ret |= outFiles.collectFile(file);
+
+            if (recursive)
+            {
+                for (auto* dir : m_directories.list())
+                    if (!context.filterDirectoriesFunc || context.filterDirectoriesFunc(dir))
+                        ret |= dir->collectFiles(context, recursive, outFiles);
+            }
+        }
+
+        return ret;
+    }
         
 } // depot
 

@@ -15,6 +15,8 @@
 
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiImage.h"
+#include "base/ui/include/uiEditBox.h"
+#include "base/resource/include/resourceMetadata.h"
 
 namespace ed
 {
@@ -27,51 +29,59 @@ namespace ed
 
     AssetFileImportWidget::AssetFileImportWidget()
     {
-        layoutHorizontal();
+        layoutVertical();
+        customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
 
-        /*if (auto leftPanel = createChild<>())
+        if (auto top = createChild())
         {
-            auto image = leftPanel->createChild<ui::TextLabel>("[img:import32]");
+            top->layoutHorizontal();
+            top->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
+            auto image = top->createChild<ui::TextLabel>("[img:import32]");
             image->customVerticalAligment(ui::ElementVerticalLayout::Top);
             image->customMargins(5, 5, 5, 5);
-        }*/
 
-        if (auto rightPanel = createChild<>())
+            if (auto rightPanel = top->createChild())
+            {
+                rightPanel->layoutVertical();
+                rightPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
+                m_fileNameText = rightPanel->createChild<ui::EditBox>();
+                m_fileNameText->text("-- no file --");
+                m_fileNameText->customMargins(4, 2, 4, 2);
+                m_fileNameText->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                m_fileNameText->enable(false);
+
+                m_statusText = rightPanel->createChild<ui::TextLabel>("[img:question_red] Unknown");
+                m_statusText->customMargins(0, 2, 0, 2);
+
+                bind(EVENT_IMPORT_STATUS_CHANGED) = [this]() { updateStatus(); };
+            }
+        }
+
         {
-            rightPanel->expand();
-            
-            m_fileNameText = rightPanel->createChild<ui::TextLabel>("-- no file --");
-            m_fileNameText->customMargins(0, 2, 0, 2);
-
-            m_statusText = rightPanel->createChild<ui::TextLabel>("[img:question_red] Unknown");
-            m_statusText->customMargins(0, 2, 0, 2);
-
-            bind("OnImportStatusChanged"_id) = [this]() { updateStatus(); };
+            auto buttonBox = createChild();
+            buttonBox->layoutHorizontal();
 
             {
-                auto buttonBox = rightPanel->createChild();
-                buttonBox->layoutHorizontal();
+                m_buttonRecheck = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:arrow_refresh] Recheck");
+                m_buttonRecheck->bind(ui::EVENT_CLICKED) = [this]() { cmdRecheckeck(); };
+                m_buttonRecheck->customProportion(1.0f);
+                m_buttonRecheck->enable(false);
+            }
 
-                {
-                    m_buttonRecheck = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:arrow_refresh] Recheck");
-                    m_buttonRecheck->OnClick = [this]() { cmdRecheckeck(); };
-                    m_buttonRecheck->customProportion(1.0f);
-                    m_buttonRecheck->enable(false);
-                }
+            {
+                m_buttonReimport = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:cog] Reimport");
+                m_buttonReimport->bind(ui::EVENT_CLICKED) = [this]() { cmdReimport(); };
+                m_buttonReimport->customProportion(1.0f);
+                m_buttonReimport->enable(false);
+            }
 
-                {
-                    m_buttonReimport = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:cog] Reimport");
-                    m_buttonReimport->OnClick = [this]() { cmdReimport(); };
-                    m_buttonReimport->customProportion(1.0f);
-                    m_buttonReimport->enable(false);
-                }
-
-                {
-                    m_buttonShowFileList = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:table_gear] Assets");
-                    m_buttonShowFileList->OnClick = [this]() { cmdShowSourceAssets(); };
-                    m_buttonShowFileList->customProportion(1.0f);
-                    m_buttonShowFileList->enable(false);
-                }
+            {
+                m_buttonShowFileList = buttonBox->createChildWithType<ui::Button>("PushButton"_id, "[img:table_gear] Assets");
+                m_buttonShowFileList->bind(ui::EVENT_CLICKED) = [this]() { cmdShowSourceAssets(); };
+                m_buttonShowFileList->customProportion(1.0f);
+                m_buttonShowFileList->enable(false);
             }
         }
     }
@@ -104,8 +114,8 @@ namespace ed
             }
             else
             {
-                m_fileNameText = createChild<ui::TextLabel>("-- no file --");
-                m_statusText = createChild<ui::TextLabel>("[img:question_red] [b]Unknown");
+                m_fileNameText->text("-- no file --");
+                m_statusText->text("[img:question_red] [b]Unknown");
             }
 
             m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]() {
@@ -130,7 +140,7 @@ namespace ed
 
         if (m_file)
         {
-            m_fileNameText->text(m_file->name());
+            m_fileNameText->text(m_file->depotPath());
             m_statusText->text("[img:hourglass] Checking...");
 
             m_checker = base::CreateSharedPtr<ManagedFileImportStatusCheck>(m_file, this);
@@ -140,7 +150,10 @@ namespace ed
     void AssetFileImportWidget::cmdReimport()
     {
         if (m_file)
-            base::GetService<Editor>()->addReimportFile(m_file, m_config);
+        {
+            auto config = CloneObject(m_config, nullptr);
+            base::GetService<Editor>()->mainWindow().addReimportFile(m_file, config, true);
+        }
     }
 
     void AssetFileImportWidget::cmdSaveConfiguration()
@@ -155,14 +168,12 @@ namespace ed
 
     //--
 
-    extern StringView<char> ImportStatusToDisplayText(res::ImportStatus status);
+    extern StringView<char> ImportStatusToDisplayText(res::ImportStatus status, bool withIcon);
 
     void AssetFileImportWidget::updateStatus()
     {
         bool canShowFiles = false;
         bool canReimport = false;
-
-        StringBuilder txt;
 
         const auto status = m_checker->status();
         switch (status)
@@ -171,49 +182,27 @@ namespace ed
         case res::ImportStatus::Checking:
         case res::ImportStatus::Canceled:
         case res::ImportStatus::Processing:
+        case res::ImportStatus::NotImportable:
             break;
 
         case res::ImportStatus::NewAssetImported:
         case res::ImportStatus::NotUpToDate:
-            txt.append("[img:warning] ");
-            canShowFiles = true;
-            canReimport = true;
-            break;
-
+        case res::ImportStatus::UpToDate:
         case res::ImportStatus::MissingAssets:
-            txt.append("[img:exclamation] ");
             canShowFiles = true;
             canReimport = true;
-            break;
-
-        case res::ImportStatus::NotSupported:
-            txt.append("[img:skull] ");
-            canShowFiles = true;
             break;
 
         case res::ImportStatus::InvalidAssets:
-            txt.append("[img:skull] ");
+        case res::ImportStatus::NotSupported:
             canShowFiles = true;
-            break;
-
-        case res::ImportStatus::UpToDate:
-            txt.append("[img:tick] ");
-            canShowFiles = true;
-            canReimport = true;
-            break;
-
-        case res::ImportStatus::NotImportable:
-            txt.append("[img:tick] ");
             break;
         }
-
-        txt.append(ImportStatusToDisplayText(status));
 
         m_buttonReimport->enable(canReimport);
         m_buttonShowFileList->enable(canShowFiles);
         m_buttonRecheck->enable(true);
-
-        m_statusText->text(txt.view());
+        m_statusText->text(ImportStatusToDisplayText(status, true));
     }
 
 } // ed

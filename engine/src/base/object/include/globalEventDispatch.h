@@ -57,6 +57,7 @@ namespace base
     template< typename T >
     INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, const T& data)
     {
+        static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
         DispatchGlobalEvent(key, eventName, nullptr, &data, reflection::GetTypeObject<T>());
     }
 
@@ -64,6 +65,7 @@ namespace base
     template< typename T >
     INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, IObject* source, const T& data)
     {
+        static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
         DispatchGlobalEvent(key, eventName, source, &data, reflection::GetTypeObject<T>());
     }
 #endif

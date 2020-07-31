@@ -102,5 +102,9 @@ namespace base
 
 } // base
 
+// TODO: change names to avoid potential conflicts
+#define TYPE_OF(x) base::reflection::GetTypeObject<decltype(x)>()
+#define TYPE_NAME_OF(x) base::reflection::GetTypeName<decltype(x)>()
+
 #include "propertyDecorators.h"
 #include "variant.h"

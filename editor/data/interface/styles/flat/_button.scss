@@ -107,7 +107,7 @@ PushButton.blue {
 }
 
 Button {
-    &.disabled {
+    &:disabled {
         background: linear(90, color.scale(color.scale($button-background, 80%), $disable-scale), color.scale($button-background, $disable-scale));
 
         TextLabel {

@@ -20,7 +20,7 @@ namespace viewer
         TRACE_INFO("Loading '{}'...", path);
 
         // load content of file into memory buffer
-        auto fileContent = IO::GetInstance().openMemoryMappedForReading(path);
+        auto fileContent = base::io::OpenMemoryMappedForReading(path);
         if (!fileContent)
         {
             TRACE_ERROR("Unable to open file '{}'", path);

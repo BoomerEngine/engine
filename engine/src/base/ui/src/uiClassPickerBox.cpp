@@ -138,13 +138,11 @@ namespace ui
     //---
 
     ClassPickerBox::ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption)
-        : m_allowAbstract(allowAbstract)
+        : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Select class")
+        , m_allowAbstract(allowAbstract)
         , m_allowNull(allowNull)
     {
         layoutVertical();
-
-        // title bar
-        createChild<WindowTitleBar>()->addStyleClass("mini"_id);
 
         // comment text
         if (!caption.empty())
@@ -160,19 +158,19 @@ namespace ui
 
         // buttons
         {
-            auto buttons = createChild<IElement>();
+            auto buttons = createChild();
             buttons->customPadding(5);
             buttons->layoutHorizontal();
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:accept] Select");
                 button->addStyleClass("green"_id);
-                button->bind("OnClick"_id) = [this]() { closeIfValidTypeSelected(); };
+                button->bind(EVENT_CLICKED) = [this]() { closeIfValidTypeSelected(); };
             }
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
-                button->bind("OnClick"_id) = [this]() { requestClose(); };
+                button->bind(EVENT_CLICKED) = [this]() { requestClose(); };
             }
         }
 
@@ -189,7 +187,7 @@ namespace ui
             m_tree->ensureVisible(id);
         }
 
-        m_tree->bind("OnItemActivated"_id) = [this]()
+        m_tree->bind(EVENT_ITEM_ACTIVATED) = [this]()
         {
             closeIfValidTypeSelected();
         };
@@ -229,7 +227,7 @@ namespace ui
 
     void ClassPickerBox::closeWithType(base::ClassType value)
     {
-        call("OnClassSelected"_id, value);
+        call(EVENT_CLASS_SELECTED, value);
         requestClose();
     }
 

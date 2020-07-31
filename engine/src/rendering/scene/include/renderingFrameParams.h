@@ -230,6 +230,19 @@ namespace rendering
 
         //----
 
+        /// selection outline parameters
+        struct RENDERING_SCENE_API FrameParams_SelectionOutline
+        {
+            base::Color colorFront;
+            base::Color colorBack;
+            float outlineWidth = 4.0f; // DPI invariant (get's thicker with higher DPI)
+            float centerOpacity = 0.5f; // inner highlight opacity
+
+            FrameParams_SelectionOutline();
+        };
+
+        //----
+
         /// collected debug geometry to render
         struct RENDERING_SCENE_API FrameParams_DebugData
         {
@@ -281,6 +294,7 @@ namespace rendering
             FrameParams_ColorGrading colorGrading;
             FrameParams_ShadowCascades cascades;
             FrameParams_AmbientOcclusion ao;
+            FrameParams_SelectionOutline selectionOutline;
 
             //--
 

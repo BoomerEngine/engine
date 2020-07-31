@@ -13,7 +13,6 @@
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/imageView.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/ioSystem.h"
 
 namespace rendering
@@ -68,15 +67,14 @@ namespace rendering
 
         const ShaderLibrary* IRenderingTest::loadShader(base::StringView<char> partialPath)
         {
-            auto fullPath = base::res::ResourcePath(base::TempString("engine/tests/shaders/{}", partialPath).c_str());
-            if (auto res = base::LoadResource<ShaderLibrary>(fullPath))
+            if (auto res = base::LoadResource<ShaderLibrary>(base::TempString("/engine/tests/shaders/{}", partialPath)))
             {
                 auto lock = base::CreateLock(m_allLoadedResourcesLock);
                 m_allLoadedResources.pushBack(res);
                 return res.acquire();
             }
 
-            reportError(base::TempString("Failed to load shaders from '{}'", fullPath));
+            reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
             return nullptr;
         }
 
@@ -244,11 +242,10 @@ namespace rendering
 
         ImageView IRenderingTest::loadImage2D(const base::StringBuf& assetFile, bool createMipmaps /*= false*/, bool uavCapable /*= false*/, bool forceAlpha)
         {
-            auto fullImagePath = base::res::ResourcePath(base::TempString("engine/tests/textures/{}", assetFile));
-            auto imagePtr = base::LoadResource<base::image::Image>(fullImagePath).acquire();
+            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
             if (!imagePtr)
             {
-                reportError(base::TempString("Failed to load image '{}'", fullImagePath));
+                reportError(base::TempString("Failed to load image '{}'", assetFile));
                 return ImageView();
             }
 
@@ -387,11 +384,10 @@ namespace rendering
 
         bool IRenderingTest::loadCubemapSide(base::Array<TextureSlice>& outSlices, const base::StringBuf& assetFile, bool createMipmaps /*= false*/)
         {
-            auto fullImagePath = base::res::ResourcePath(base::TempString("engine/tests/textures/{}", assetFile));
-            auto imagePtr = base::LoadResource<base::image::Image>(fullImagePath).acquire();
+            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
             if (!imagePtr)
             {
-                reportError(base::TempString("Failed to load image '{}'", fullImagePath));
+                reportError(base::TempString("Failed to load image '{}'", assetFile));
                 return false;
             }
 
@@ -464,7 +460,7 @@ namespace rendering
         {
             return nullptr;
             /*// assemble full path
-            auto fullMeshPath = base::res::ResourcePath(base::TempString("engine/tests/meshes/{}", assetFile));
+            auto fullMeshPath = base::res::ResourcePath(base::TempString("/engine/tests/meshes/{}", assetFile));
             auto loadedAsset = base::LoadResource<base::res::RawTextData>(fullMeshPath).acquire();
             if (!loadedAsset)
                 return nullptr;

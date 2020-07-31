@@ -50,6 +50,9 @@ namespace rendering
 
         bool SceneObjectRegistry::registerObject(const SceneObjectInfo& info, ObjectRenderID& outIndex)
         {
+            DEBUG_CHECK(info.proxyType != ProxyType::None);
+            DEBUG_CHECK(!info.sceneBounds.empty());
+
             if (m_objectInfos.full())
                 return false;
 
@@ -109,6 +112,7 @@ namespace rendering
             outObject.flags = info.flags;
             outObject.color = info.color.toRGBA();
             outObject.colorEx = 0xFFFFFFFF;
+            outObject.selectable = info.selectable;
         }
 
         //--
@@ -137,21 +141,26 @@ namespace rendering
 
             m_objectInfos.enumerate([&outResult, &stats, &setup](const SceneObjectInfo& info, uint32_t index)
                 {
-                    stats.proxies[(int)info.proxyType].numTestedProxies += 1;
-
-                    uint8_t furstumMask = 0;
-                    for (uint32_t i = 0; i < setup.cameraFrustumCount; ++i)
-                        if (info.visibilityBox.isInFrustum(setup.cameraFrustums[i]))
-                            furstumMask |= (1 << i);
-
-                    if (furstumMask)
+                    if (index)
                     {
-                        stats.proxies[(int)info.proxyType].numCollectedProxies += 1;
+                        DEBUG_CHECK(info.proxyType != ProxyType::None);
 
-                        auto& entry = outResult.visibleObjects[(int)info.proxyType].emplaceBack();
-                        entry.frustumMask = furstumMask;
-                        entry.distance = 0;
-                        entry.proxy = info.proxyPtr;
+                        stats.proxies[(int)info.proxyType].numTestedProxies += 1;
+
+                        uint8_t furstumMask = 0;
+                        for (uint32_t i = 0; i < setup.cameraFrustumCount; ++i)
+                            if (info.visibilityBox.isInFrustum(setup.cameraFrustums[i]))
+                                furstumMask |= (1 << i);
+
+                        if (furstumMask)
+                        {
+                            stats.proxies[(int)info.proxyType].numCollectedProxies += 1;
+
+                            auto& entry = outResult.visibleObjects[(int)info.proxyType].emplaceBack();
+                            entry.frustumMask = furstumMask;
+                            entry.distance = 0;
+                            entry.proxy = info.proxyPtr;
+                        }
                     }
 
                     return false; // continue iterating

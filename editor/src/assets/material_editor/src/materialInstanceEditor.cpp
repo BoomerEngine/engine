@@ -26,8 +26,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialInstanceEditor);
     RTTI_END_TYPE();
 
-    MaterialInstanceEditor::MaterialInstanceEditor(ConfigGroup config, ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(config, file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
+    MaterialInstanceEditor::MaterialInstanceEditor(ManagedFileNativeResource* file)
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
     {
         createInterface();
     }
@@ -41,7 +41,7 @@ namespace ed
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
             tab->layoutVertical();
 
-            m_previewPanel = tab->createChild<MaterialPreviewPanelWithToolbar>();
+            m_previewPanel = tab->createChild<MaterialPreviewPanel>();
             m_previewPanel->expand();
 
             dockLayout().attachPanel(tab);
@@ -82,13 +82,13 @@ namespace ed
             return (format.nativeResourceClass() == graphClass);
         }
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const override
+        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
                 if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(config, nativeFile);
+                    auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(nativeFile);
                     ret->bindResource(loadedGraph);
                     return ret;
                 }

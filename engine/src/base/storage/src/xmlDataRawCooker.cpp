@@ -11,7 +11,6 @@
 
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/absolutePath.h"
-#include "base/io/include/utils.h"
 #include "base/memory/include/buffer.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
@@ -59,7 +58,7 @@ namespace base
             virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
             {
                 // load the xml content
-                auto xmlFilePath  = cooker.queryResourcePath().path();
+                const auto& xmlFilePath  = cooker.queryResourcePath();
                 auto rawContent  = cooker.loadToBuffer(xmlFilePath);
                 if (!rawContent)
                     return nullptr;

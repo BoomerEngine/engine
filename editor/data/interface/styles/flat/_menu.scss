@@ -120,13 +120,13 @@ MenuButton {
         content: "&#f0da;";
     }
 
-    &.disabled TextLabel#MenuCaption
+    &:disabled TextLabel#MenuCaption
     {
         font-style: italic;
         color: color.scale($text-color, 40%);
     }
 
-    &.disabled TextLabel#MenuIcon
+    &:disabled TextLabel#MenuIcon
     {
         opacity: 0.5;
     }

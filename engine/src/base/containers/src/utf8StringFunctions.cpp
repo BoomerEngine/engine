@@ -280,6 +280,16 @@ namespace base
             return ch;
         }
 
+        bool ValidChar(const char* ptr, const char* endPtr)
+        {
+            return 0 != NextChar(ptr, endPtr);
+        }
+
+        uint32_t GetChar(const char* ptr, const char* endPtr)
+        {
+            return NextChar(ptr, endPtr);
+        }
+
         uint32_t NextChar(const char*& ptr, const char* end)
         {
             if (ptr >= end)

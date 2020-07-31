@@ -24,8 +24,23 @@ namespace base
             StringBuf depotFilePath;
 
             // NOTE: configs must be free-objects (not parented to existing hierarchy)
-            ResourceConfigurationPtr externalConfig; // follow-up import configuragion 
-            ResourceConfigurationPtr userConfig; // user given configuragion
+            mutable ResourceConfigurationPtr externalConfig; // follow-up import configuration 
+            ResourceConfigurationPtr userConfig; // user given configuration
+        };
+
+        //--
+
+        /// helper class to check if given depot file already exists
+        class BASE_RESOURCE_COMPILER_API IImportDepotChecker : public NoCopy
+        {
+        public:
+            virtual ~IImportDepotChecker();
+
+            // check if file exists
+            virtual bool depotFileExists(StringView<char> depotPath) const = 0;
+
+            // given a depot root path and file name find existing depot file
+            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
         };
 
         //--
@@ -34,7 +49,7 @@ namespace base
         class BASE_RESOURCE_COMPILER_API Importer : public NoCopy
         {
         public:
-            Importer(SourceAssetRepository* assets);
+            Importer(SourceAssetRepository* assets, const IImportDepotChecker* depotChecker);
             ~Importer();
 
             //--
@@ -66,6 +81,8 @@ namespace base
             //--
 
             SourceAssetRepository* m_assets;
+
+            const IImportDepotChecker* m_depotChecker;
         };
 
         //--

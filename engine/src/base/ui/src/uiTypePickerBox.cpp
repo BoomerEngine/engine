@@ -86,20 +86,9 @@ namespace ui
     //---
 
     TypePickerBox::TypePickerBox(base::Type initialType, bool allowNullType, base::StringView<char> caption)
-        : m_allowNullType(allowNullType)
+        : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, caption)
+        , m_allowNullType(allowNullType)
     {
-        layoutVertical();
-
-        // title bar
-        createChild<WindowTitleBar>()->addStyleClass("mini"_id);
-
-        // comment text
-        if (!caption.empty())
-        {
-            auto captionLabel = createChild<ui::TextLabel>(caption);
-            captionLabel->customMargins(5);
-        }
-
         // list of types
         m_list = createChild<ui::ListView>();
         m_list->customInitialSize(500, 400);
@@ -107,19 +96,19 @@ namespace ui
 
         // buttons
         {
-            auto buttons = createChild<IElement>();
+            auto buttons = createChild();
             buttons->customPadding(5);
             buttons->layoutHorizontal();
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:accept] Select");
                 button->addStyleClass("green"_id);
-                button->bind("OnClick"_id) = [this]() { closeIfValidTypeSelected(); };
+                button->bind(EVENT_CLICKED) = [this]() { closeIfValidTypeSelected(); };
             }
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
-                button->bind("OnClick"_id) = [this]() { requestClose(); };
+                button->bind(EVENT_CLICKED) = [this]() { requestClose(); };
             }
         }
 
@@ -133,7 +122,7 @@ namespace ui
             m_list->ensureVisible(id);
         }
 
-        m_list->bind("OnItemActivated"_id) = [this]()
+        m_list->bind(EVENT_ITEM_ACTIVATED) = [this]()
         {
             closeIfValidTypeSelected();
         };
@@ -170,7 +159,7 @@ namespace ui
 
     void TypePickerBox::closeWithType(base::Type value)
     {
-        call("OnTypeSelected"_id, value);
+        call(EVENT_TYPE_SELECTED, value);
         requestClose();
     }
 

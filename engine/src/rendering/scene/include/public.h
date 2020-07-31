@@ -116,6 +116,7 @@ namespace rendering
         {
             MainColor, // main color view (or derivatives)
             GlobalCascades, // view for global cascades - only shadow casting fragments should be collected
+            SelectionRect, // selection rect capture
 
             MAX,
         };

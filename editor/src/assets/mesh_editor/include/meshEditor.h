@@ -24,7 +24,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, ResourceEditorNativeFile);
 
     public:
-        MeshEditor(ConfigGroup config, ManagedFileNativeResource* file);
+        MeshEditor(ManagedFileNativeResource* file);
         virtual ~MeshEditor();
 
         //--
@@ -43,7 +43,12 @@ namespace ed
         base::RefPtr<MeshStructurePanel> m_structurePanel;
         base::RefPtr<MeshMaterialsPanel> m_materialsPanel;
 
-        void createInterface();        
+        bool m_hasDefaultCamera = false;
+        base::Vector3 m_defaultCameraPosition;
+        base::Angles m_defaultCameraRotation;
+
+        void createInterface();
+        void updateMaterialHighlights();
     };
 
 } // ed

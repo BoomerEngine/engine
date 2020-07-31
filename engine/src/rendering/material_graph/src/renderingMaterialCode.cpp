@@ -673,6 +673,7 @@ namespace rendering
 
     static MaterialVertexDataInfo GMaterialVertexDataInfoTable[(int)MaterialVertexDataType::MAX] = {
         {CodeChunkType::Numerical1, ImageFormat::R32_UINT, "uint", "ObjectID"},
+        {CodeChunkType::Numerical1, ImageFormat::R32_UINT, "uint", "SubObjectID"},
         {CodeChunkType::Numerical3, ImageFormat::RGB32F, "vec3", "VertexPosition", true},
         {CodeChunkType::Numerical3, ImageFormat::RGB32F, "vec3", "VertexNormal", true, true},
         {CodeChunkType::Numerical3, ImageFormat::RGB32F, "vec3", "VertexTangent", true, true},

@@ -17,7 +17,6 @@ namespace ed
 
     class MaterialGraphEditorPanel;
     class MaterialPreviewPanel;
-    class MaterialPreviewPanelWithToolbar;
 
     /// editor for meshes
     class ASSETS_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditorNativeFile
@@ -25,12 +24,12 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditorNativeFile);
 
     public:
-        MaterialGraphEditor(ConfigGroup config, ManagedFileNativeResource* file);
+        MaterialGraphEditor(ManagedFileNativeResource* file);
         virtual ~MaterialGraphEditor();
 
         //--
 
-        INLINE MaterialPreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
+        INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
         INLINE MaterialGraphEditorPanel* graphEditor() const { return m_graphEditor; }
         INLINE rendering::MaterialGraph* graph() const { return m_graph; }
 
@@ -42,7 +41,7 @@ namespace ed
 
         //---
 
-        base::RefPtr<MaterialPreviewPanelWithToolbar> m_previewPanel;
+        base::RefPtr<MaterialPreviewPanel> m_previewPanel;
         base::RefPtr<MaterialGraphEditorPanel> m_graphEditor;
         ui::GraphBlockPalettePtr m_graphPalette;
 

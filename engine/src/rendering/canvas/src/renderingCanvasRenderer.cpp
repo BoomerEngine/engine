@@ -120,8 +120,8 @@ namespace rendering
             outParams.ShaderType = 0;
         }
 
-        base::res::StaticResource<ShaderLibrary> resCanvasShaderMask("engine/shaders/canvas/canvas_mask.fx");
-        base::res::StaticResource<ShaderLibrary> resCanvasShaderFill("engine/shaders/canvas/canvas_fill.fx");
+        base::res::StaticResource<ShaderLibrary> resCanvasShaderMask("/engine/shaders/canvas/canvas_mask.fx");
+        base::res::StaticResource<ShaderLibrary> resCanvasShaderFill("/engine/shaders/canvas/canvas_fill.fx");
         
         CanvasRenderer::CanvasRenderer()
         {

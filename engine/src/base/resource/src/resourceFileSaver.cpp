@@ -100,6 +100,8 @@ namespace base
                     ret->object = AddRef(object);
                     ret->parent = nullptr;
                     m_objectMap[object] = ret;
+
+                    object->onPreSave();
                 }
 
                 return ret;
@@ -261,6 +263,7 @@ namespace base
                 for (const auto& ref : obj->localReferences.syncResources.keys())
                 {
                     const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourcePath, false);
+                    DEBUG_CHECK(index != 0);
                     outMappedReferences.mappedResources[ref] = index;
                 }
             }
@@ -270,6 +273,7 @@ namespace base
                 for (const auto& ref : obj->localReferences.asyncResources.keys())
                 {
                     const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourcePath, true);
+                    DEBUG_CHECK(index != 0);
                     outMappedReferences.mappedResources[ref] = index;
                 }
             }

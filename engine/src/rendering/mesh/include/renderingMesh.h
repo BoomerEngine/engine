@@ -83,7 +83,6 @@ namespace rendering
         RTTI_DECLARE_NONVIRTUAL_CLASS(MeshMaterial);
 
         base::StringID name;
-        MaterialRef baseMaterial; // as imported
         MaterialInstancePtr material; // local override built base on config
     };
 

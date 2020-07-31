@@ -397,7 +397,7 @@ namespace base
 #endif
         }
 
-        static StringBuf GetCoreScriptModuleName(const StringView<char> path)
+        static StringBuf GetCoreScriptModuleName(StringView<char> path)
         {
             InplaceArray<StringView<char>, 10> parts;
             path.beforeLast(".").slice("/", false, parts);
@@ -413,14 +413,14 @@ namespace base
             return builder.toString();
         }
 
-        static io::AbsolutePath GetJITModulePath(const res::ResourcePath& path)
+        static io::AbsolutePath GetJITModulePath(StringView<char> path)
         {
-            auto coreProjectModuleName = GetCoreScriptModuleName(path.path().beforeLast("."));
+            auto coreProjectModuleName = GetCoreScriptModuleName(path.beforeLast("."));
 
             auto nonce = io::TimeStamp::GetNow().toSafeString();
             auto compiledModuleFileName = StringBuf(TempString("{}_{}.jit", coreProjectModuleName, nonce));
 
-            auto filePath = IO::GetInstance().systemPath(io::PathCategory::TempDir).addDir("jit");
+            auto filePath = base::io::SystemPath(io::PathCategory::TempDir).addDir("jit");
             filePath.appendFile(compiledModuleFileName.uni_str());
 
             return filePath;

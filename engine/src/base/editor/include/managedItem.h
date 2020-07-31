@@ -15,7 +15,6 @@
 
 namespace ed
 {
-
     //---
 
     // item in depot directory
@@ -73,7 +72,19 @@ namespace ed
         virtual ~ManagedItem();
 
         friend class ManagedFilePlaceholder;
+        friend class ManagedDirectoryPlaceholder;
     };
+
+    //---
+
+    // get the main selected depot file
+    extern BASE_EDITOR_API ManagedFile* SelectedFile();
+
+    // get the main selected depot file
+    extern BASE_EDITOR_API Array<ManagedFile*> SelectedFiles();
+
+    // get selected directory
+    extern BASE_EDITOR_API ManagedDirectory* SelectedDirectory();
 
     //---
 

@@ -67,16 +67,16 @@ namespace ui
 
     Button::Button(ButtonMode m)
         : m_mode(m)
-        , OnClick(this, "OnClick"_id)
     {
         hitTest(HitTestState::Enabled);
         layoutMode(LayoutMode::Horizontal);
+        allowFocusFromKeyboard(true);
+        allowFocusFromClick(true);
         mode(m);
     }
 
     Button::Button(base::StringView<char> txt, ButtonMode m)
         : m_mode(m)
-        , OnClick(this, "OnClick"_id)
     {
         hitTest(HitTestState::Enabled);
         layoutMode(LayoutMode::Horizontal);
@@ -111,7 +111,10 @@ namespace ui
             {
                 if (evt.keyCode() == base::input::KeyCode::KEY_SPACE)
                 {
-                    pressedState(true);
+                    if (m_mode.test(ui::ButtonModeBit::EventOnClick))
+                        clicked();
+                    else
+                        pressedState(true);
                     return true;
                 }
             }
@@ -184,71 +187,7 @@ namespace ui
             toggle(!toggled());
 
         // pass to handler
-        OnClick(m_toggled);
-    }
-
-    bool Button::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
-    {
-        if (name == "text" || name == "label")
-        {
-            if (auto label = findChildByName<TextLabel>("ButtonText"))
-            {
-                label->text(value);
-            }
-            else
-            {
-                createNamedChild<TextLabel>("ButtonText"_id, value);
-            }
-            return true;
-        }
-        else if (name == "mode")
-        {
-            if (value == "Click")
-            {
-                m_mode -= ButtonModeBit::EVENT_MASK;
-                m_mode |= ButtonModeBit::EventOnClick;
-                return true;
-            }
-            else if (value == "ClickRelease")
-            {
-                m_mode -= ButtonModeBit::EVENT_MASK;
-                m_mode |= ButtonModeBit::EventOnClickRelease;
-                return true;
-            }
-            else if (value == "ClickReleaseAnywhere")
-            {
-                m_mode -= ButtonModeBit::EVENT_MASK;
-                m_mode |= ButtonModeBit::EventOnClickReleaseAnywhere;
-                return true;
-            }
-            else if (value == "DoubleClick")
-            {
-                m_mode -= ButtonModeBit::EVENT_MASK;
-                m_mode |= ButtonModeBit::EventOnDoubleClick;
-                return true;
-            }
-        }
-        else if (name == "toggle")
-        {
-            m_mode |= ButtonModeBit::Toggle;
-
-            if (value == "auto")
-                m_mode |= ButtonModeBit::AutoToggle;
-            return true;
-        }
-        else if (name == "onClick")
-        {
-            if (auto actionName = base::StringID(value))
-            {
-                bind("OnClick"_id) = [this, actionName]()
-                {
-                    runAction(actionName);
-                };
-            }
-            return true;
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
+        call(EVENT_CLICKED, m_toggled);
     }
 
     //--

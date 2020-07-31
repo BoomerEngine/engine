@@ -224,6 +224,12 @@ namespace base
         return wasReset;
     }
 
+    void IObjectTemplate::markPropertyOverride(StringID name)
+    {
+        if (name)
+            m_overridenProperties.insert(name);
+    }
+
     void IObjectTemplate::onPropertyChanged(StringView<char> path)
     {
         IObject::onPropertyChanged(path);
@@ -235,7 +241,7 @@ namespace base
             if (base::rtti::ParsePropertyName(path, propertyName))
             {
                 if (auto propertyStringID = StringID::Find(propertyName))
-                    m_overridenProperties.insert(propertyStringID);
+                    markPropertyOverride(propertyStringID);                    
             }
         }
     }

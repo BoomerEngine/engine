@@ -15,6 +15,13 @@ namespace ui
 
     //--
 
+    DECLARE_UI_EVENT(EVENT_VALUE_DRAG_STEP, int)
+    DECLARE_UI_EVENT(EVENT_VALUE_DRAG_STARTED)
+    DECLARE_UI_EVENT(EVENT_VALUE_DRAG_FINISHED)
+    DECLARE_UI_EVENT(EVENT_VALUE_DRAG_CANCELED)
+
+    //--
+
     /// helper class to change the numerical value via dragging up/down
     class Dragger : public TextLabel
     {

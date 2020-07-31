@@ -20,7 +20,6 @@ namespace ui
 
     AbstractItemView::AbstractItemView(bool allowItemSearch /*= false*/)
         : m_model(nullptr)
-        , OnSelectionChanged(this, "OnSelectionChanged"_id)
     {
         hitTest(HitTestState::Enabled);
         allowFocusFromKeyboard(true);
@@ -216,9 +215,13 @@ namespace ui
             }
         }
 
+        // focus inner widget if required
+        if (m_current)
+            focusElement(m_current);
+
         // notify interested parties
         if (somethingChanged && postEvent)
-            OnSelectionChanged();
+            call(EVENT_ITEM_SELECTION_CHANGED);
     }
 
     void AbstractItemView::select(const ModelIndex& item, ItemSelectionMode mode /*= ItemSelectionModeBit::Default*/, bool postEvent /*= true*/)

@@ -31,8 +31,8 @@ namespace base
             /// check if given file exists
             virtual bool queryFileExists(StringView<char> fileSystemPath) const = 0;
 
-            /// get the path to the resource being processed, this is a depot path
-            virtual const ResourcePath& queryResourcePath() const = 0;
+            /// get the path to the resource being processed, this is an absolute depot path
+            virtual const StringBuf& queryResourcePath() const = 0;
 
             /// get the context path of the resource being cooked (usually it's an absolute file path)
             virtual const StringBuf& queryResourceContextName() const = 0;
@@ -89,9 +89,9 @@ namespace base
             virtual ResourceHandle loadDependencyResource(const ResourceKey& key) = 0;
 
             template< typename T >
-            CAN_YIELD INLINE RefPtr<T> loadDependencyResource(const ResourcePath& resourcePath)
+            CAN_YIELD INLINE RefPtr<T> loadDependencyResource(StringView<char> resourcePath)
             {
-                return rtti_cast<T>(loadDependencyResource(ResourceKey(resourcePath, T::GetStaticClass())));
+                return rtti_cast<T>(loadDependencyResource(MakePath<T>(resourcePath)));
             }
         };
 

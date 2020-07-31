@@ -19,8 +19,8 @@ namespace ed
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ResourceEditorNativeFile);
     RTTI_END_TYPE();
 
-    ResourceEditorNativeFile::ResourceEditorNativeFile(ConfigGroup typeConfig, ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags)
-        : ResourceEditor(typeConfig, file, flags)
+    ResourceEditorNativeFile::ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags)
+        : ResourceEditor(file, flags)
         , m_nativeFile(file)
     {}
 
@@ -39,10 +39,11 @@ namespace ed
             aspect->resourceChanged();
 
         // in case the edited resource get's reloaded rebind this editor to the new resource
-        m_resourceEvents.bind(m_resource->eventKey(), EVENT_RESOURCE_RELOADED) = [this](res::ResourcePtr reloadedResource)
+        // NOTE: handled in the file itself
+        /*m_resourceEvents.bind(m_resource->eventKey(), EVENT_RESOURCE_RELOADED) = [this](res::ResourcePtr reloadedResource)
         {
             bindResource(reloadedResource);
-        };
+        };*/
     }
 
     bool ResourceEditorNativeFile::save()
@@ -50,11 +51,11 @@ namespace ed
         return m_nativeFile->storeContent();
     }
 
-    void ResourceEditorNativeFile::close()
+    void ResourceEditorNativeFile::cleanup()
     {
         m_nativeFile->discardContent();
         m_resource.reset();
-        TBaseClass::close();
+        TBaseClass::cleanup();
     }
 
     //--

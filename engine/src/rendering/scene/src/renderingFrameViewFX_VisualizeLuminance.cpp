@@ -27,8 +27,8 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resLumVis("engine/shaders/screen/visualize_luminance.fx");
-        static base::res::StaticResource<ShaderLibrary> resLumVisMSAA("engine/shaders/screen/visualize_luminance_msaa.fx");
+        static base::res::StaticResource<ShaderLibrary> resLumVis("/engine/shaders/screen/visualize_luminance.fx");
+        static base::res::StaticResource<ShaderLibrary> resLumVisMSAA("/engine/shaders/screen/visualize_luminance_msaa.fx");
 
         struct LumVisParams
         {

@@ -19,96 +19,135 @@ namespace base
     namespace config
     {
 
-        System::System()
+        //--
+
+        namespace prv
         {
-            m_storage = MemNewPool(POOL_CONFIG, Storage);
+
+            class ConfigStorage : public ISingleton
+            {
+                DECLARE_SINGLETON(ConfigStorage);
+
+            public:
+                ConfigStorage()
+                {
+                    m_storage = MemNewPool(POOL_CONFIG, Storage);
+                }
+
+                virtual void deinit() override
+                {
+                    MemDelete(m_storage);
+                }
+
+                Storage* m_storage;
+            };
         }
 
-        void System::deinit()
+        //--
+
+        Storage& RawStorageData()
         {
-            MemDelete(m_storage);
-            m_storage = nullptr;
+            return *prv::ConfigStorage::GetInstance().m_storage;
         }
 
-        Group& System::group(StringID name)
+        //--
+
+        Group& MakeGroup(StringView<char> name)
         {
-            return m_storage->group(name);
+            return prv::ConfigStorage::GetInstance().m_storage->group(name);
         }
 
-        const Group* System::findGroup(StringID name) const
+        const Group* FindGroup(StringView<char> name)
         {
-            return m_storage->findGroup(name);
+            return prv::ConfigStorage::GetInstance().m_storage->findGroup(name);
         }
 
-        Array<const Group*> System::findAllGroups(StringView<char> groupNameSubString) const
+        Array<const Group*> FindAllGroups(StringView<char> groupNameSubString)
         {
-            return m_storage->findAllGroups(groupNameSubString);
+            return prv::ConfigStorage::GetInstance().m_storage->findAllGroups(groupNameSubString);
         }
 
-        Entry& System::entry(StringID groupName, StringID entryName)
+        Entry& MakeEntry(StringView<char> groupName, StringView<char> entryName)
         {
-            return group(groupName).entry(entryName);
+            return MakeGroup(groupName).entry(entryName);
         }
 
-        const Entry* System::findEntry(StringID groupName, StringID entryName) const
+        const Entry* FindEntry(StringView<char> groupName, StringView<char> entryName)
         {
-            if (auto group  = findGroup(groupName))
+            if (auto group = FindGroup(groupName))
                 return group->findEntry(entryName);
 
             return nullptr;
         }
 
-        const Array<StringBuf> System::values(StringID groupName, StringID entryName) const
+        const Array<StringBuf> Values(StringView<char> groupName, StringView<char> entryName)
         {
-            if (auto entry  = findEntry(groupName, entryName))
+            if (auto entry = FindEntry(groupName, entryName))
                 return entry->values();
 
             return Array<StringBuf>();
         }
 
-        StringBuf System::value(StringID groupName, StringID entryName, const StringBuf& defaultValue) const
+        StringBuf Value(StringView<char> groupName, StringView<char> entryName, const StringBuf& defaultValue)
         {
-            if (auto entry  = findEntry(groupName, entryName))
+            if (auto entry = FindEntry(groupName, entryName))
                 return entry->value();
 
             return defaultValue;
         }
 
-        int System::valueInt(StringID groupName, StringID entryName, int defaultValue/* = 0*/) const
+        int ValueInt(StringView<char> groupName, StringView<char> entryName, int defaultValue/* = 0*/)
         {
-            if (auto entry  = findEntry(groupName, entryName))
+            if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueInt(defaultValue);
 
             return defaultValue;
         }
 
-        float System::valueFloat(StringID groupName, StringID entryName, float defaultValue/* = 0*/) const
+        float ValueFloat(StringView<char> groupName, StringView<char> entryName, float defaultValue/* = 0*/)
         {
-            if (auto entry  = findEntry(groupName, entryName))
+            if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueInt(defaultValue);
 
             return defaultValue;
         }
 
-        void System::wrtiteBool(StringID groupName, StringID entryName, bool value)
+        bool ValueBool(StringView<char> groupName, StringView<char> entryName, bool defaultValue/*= 0*/)
         {
-            if (groupName && entryName)
-            {
-                auto& data = entry(groupName, entryName);
-                if (data.value(value ? "true" : "false"))
-                {
-
-                }
-            }
-        }
-
-        bool System::valueBool(StringID groupName, StringID entryName, bool defaultValue/*= 0*/) const
-        {
-            if (auto entry  = findEntry(groupName, entryName))
+            if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueBool(defaultValue);
 
             return defaultValue;
         }
+
+        void Write(StringView<char> groupName, StringView<char> entryName, StringView<char> value)
+        {
+            if (groupName && entryName)
+            {
+                auto& data = MakeEntry(groupName, entryName);
+                data.value(StringBuf(value));
+            }
+        }
+
+        void WriteInt(StringView<char> groupName, StringView<char> entryName, bool value)
+        {
+            if (groupName && entryName)
+            {
+                auto& data = MakeEntry(groupName, entryName);
+                data.value(TempString("{}", value));
+            }
+        }
+
+        void WriteBool(StringView<char> groupName, StringView<char> entryName, bool value)
+        {
+            if (groupName && entryName)
+            {
+                auto& data = MakeEntry(groupName, entryName);
+                data.value(value ? "true" : "false");
+            }
+        }
+
+        //--
 
     } // config
 } // storage

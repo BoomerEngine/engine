@@ -35,7 +35,7 @@ namespace ed
 
         GlobalEventTable m_events;
 
-        ui::TextLabelPtr m_fileNameText;
+        ui::EditBoxPtr m_fileNameText;
         ui::TextLabelPtr m_statusText;
         ui::ButtonPtr m_buttonRecheck;
         ui::ButtonPtr m_buttonReimport;

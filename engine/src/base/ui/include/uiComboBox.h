@@ -12,10 +12,13 @@
 
 namespace ui
 {
-    class Button;
-    class TextLabel;
+    ///---
+
+    DECLARE_UI_EVENT(EVENT_COMBO_SELECTED, int) // value in the combo box was selected (data: int)
+
+    ///---
     
-    /// simple text based combo box
+    /// VERY simple text based combo box
     class BASE_UI_API ComboBox : public IElement
     {
         RTTI_DECLARE_VIRTUAL_CLASS(ComboBox, IElement);
@@ -26,33 +29,21 @@ namespace ui
 
         //---
 
-        // clear all options
-        void clearOptions();
+        int numOptions() const;
 
-        // add option
+        void clearOptions();
         void addOption(const base::StringBuf& txt);
 
-        // select option
         void selectOption(int option);
-
-        // select option by text
         void selectOption(const base::StringBuf& text);
 
-        // get selected option
         int selectedOption() const;
-
-        // get text for selected option
         base::StringBuf selectedOptionText() const;
 
-        // get number of options
-        int numOptions() const;
 
         //--
 
-        // hide the popup if displayed
         void closePopupList();
-
-        // show popup window
         void showPopupList();
 
     private:
@@ -66,5 +57,7 @@ namespace ui
         virtual void handleEnableStateChange(bool isEnabled) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
     };
+
+    ///--
 
 } // ui

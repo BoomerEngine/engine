@@ -18,6 +18,12 @@ struct ObjectInfo
     uint Flags; // per object flags
     uint Color; // rgba8 packed
     uint ColorEx; // rgba8 packed
+
+    uint SelectionObjectID;
+    uint SelectionSubObjectID;
+    uint _Padding0;
+    uint _Padding1;
+
     vec4 SceneBoundsMin; // .w = free
     vec4 SceneBoundsMax; // .w = size (length of max-min)
     mat4 LocalToScene; // transformation matrix
@@ -57,7 +63,7 @@ struct MeshDrawChunkInfo
 {
     uint ObjectID;
     uint MeshChunkID;
-//    uint MaterialID;
+    uint SubObjectID;
 };
 
 descriptor MeshDrawData
@@ -101,7 +107,7 @@ vec3 UnpackNormalVector(uint data)
 
 vec4 UnpackColorRGBA4(uint data)
 {
-    return unpackUnorm4x8(data);
+    return vec4(1);//unpackUnorm4x8(data);
 }
 
 vec2 UnpackHalf2(uint data)

@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "editorConfig.h"
-
 #include "base/ui/include/uiWindow.h"
 #include "base/ui/include/uiDockContainer.h"
 #include "base/ui/include/uiDockPanel.h"
@@ -38,18 +36,12 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditor, ui::DockPanel);
 
     public:
-        ResourceEditor(ConfigGroup typeConfig, ManagedFile* file, ResourceEditorFeatureFlags flags);
+        ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags);
         virtual ~ResourceEditor();
 
         INLINE ResourceEditorFeatureFlags features() const { return m_features; }
 
         INLINE ManagedFile* file() const { return m_file; }
-
-        INLINE ConfigGroup& typeConfig() { return m_typeConfig; }
-        INLINE const ConfigGroup& typeConfig() const { return m_typeConfig; }
-
-        INLINE ConfigGroup& fileConfig() { return m_fileConfig; }
-        INLINE const ConfigGroup& fileConfig() const { return m_fileConfig; }
 
         INLINE const Array<ResourceEditorAspectPtr>& aspects() const { return m_aspects; }
 
@@ -72,8 +64,8 @@ namespace ed
         // initialize editor, usually loads the content of the file, can fail (editor will not be shown then)
         virtual bool initialize();
 
-        // close editor - cleanup as much as possible
-        virtual void close();
+        // cleanup as much as possible, used when editor is closing
+        virtual void cleanup();
 
         // save content edited in this editor
         virtual bool save() = 0;
@@ -109,9 +101,6 @@ namespace ed
 
         ResourceEditorFeatureFlags m_features; // editor flags & features
  
-        ConfigGroup m_typeConfig; // configuration for the resource editor type
-        ConfigGroup m_fileConfig; // configuration for file related stuff
-
         ActionHistoryPtr m_actionHistory; // undo/redo action history
 
         ui::DockContainerPtr m_dock; // master dock area for the editor
@@ -178,7 +167,7 @@ namespace ed
         virtual bool canOpen(const ManagedFileFormat& format) const = 0;
 
         // create editor for given file type
-        virtual RefPtr<ResourceEditor> createEditor(ConfigGroup config, ManagedFile* file) const = 0;
+        virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const = 0;
     };
 
     ///---

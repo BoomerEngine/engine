@@ -130,7 +130,12 @@ namespace base
 
     INLINE bool Rect::contains(const Point &point) const
     {
-        return (point.x <= max.x) && (point.x >= min.x) && (point.y <= max.y) && (point.y >= min.y);
+        return (point.x < max.x) && (point.x >= min.x) && (point.y < max.y) && (point.y >= min.y);
+    }
+
+    INLINE bool Rect::contains(int x, int y) const
+    {
+        return (x < max.x) && (x >= min.x) && (y < max.y) && (y >= min.y);
     }
 
     INLINE bool Rect::contains(const Rect &rect) const

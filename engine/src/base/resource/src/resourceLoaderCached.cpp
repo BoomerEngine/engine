@@ -120,7 +120,7 @@ namespace base
             return loadingJob->m_loadedResource;
         }
 
-        ResourceHandle IResourceLoaderCached::acquireLoadedResource(const ResourceKey& key)
+        bool IResourceLoaderCached::acquireLoadedResource(const ResourceKey& key, ResourceHandle& outLoadedPtr)
         {
             // class and path are required for lookup
             if (!key.empty())
@@ -130,12 +130,29 @@ namespace base
                 // get the loaded resource, that's the most common case so do it first
                 base::RefWeakPtr<IResource> loadedResourceWeakRef;
                 if (m_loadedResources.find(key, loadedResourceWeakRef))
+                {
                     if (auto loadedResource = loadedResourceWeakRef.lock())
-                        return loadedResource;
+                    {
+                        outLoadedPtr = loadedResource;
+                        return true;
+                    }
+                }
+
+                // are we loading it ?
+                base::RefWeakPtr<LoadingJob> weakJobRef;
+                if (m_loadingJobs.find(key, weakJobRef))
+                {
+                    // get the lock to the loading job
+                    if (auto loadingJob = weakJobRef.lock())
+                    {
+                        outLoadedPtr = loadingJob->m_loadedResource;
+                        return true;
+                    }
+                }
             }
 
             // not found or loading
-            return nullptr;
+            return false;
         }
 
         //---

@@ -5,11 +5,13 @@
 *
 * [#filter: resource\serialization #]
 ***/
-
 #include "build.h"
 #include "resourceMetadata.h"
 #include "resourceFileTables.h"
 #include "resourceFileLoader.h"
+#include "resourceLoader.h"
+#include "resourcePath.h"
+#include "resource.h"
 
 #include "base/io/include/ioAsyncFileHandle.h"
 #include "base/object/include/streamOpcodeReader.h"
@@ -104,6 +106,7 @@ namespace base
                 }
 
                 const auto* pathString = tables.stringTable() + pathEntry.stringIndex;
+                //DEBUG_CHECK(ValidateFileNameWithExtension(pathString));
                 str.append(pathString);
             }
         }
@@ -111,9 +114,7 @@ namespace base
         void ResolveImports(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
         {
             const auto numImports = tables.chunkCount(FileTables::ChunkType::Imports);
-            resolvedReferences.resources.resize(numImports + 1);
-
-            resolvedReferences.resources[0] = stream::OpcodeResolvedResourceReference();
+            resolvedReferences.resources.resize(numImports);
 
             Array<uint32_t> resourcesToLoad;
             resourcesToLoad.reserve(numImports);
@@ -123,19 +124,23 @@ namespace base
             {
                 auto classType = resolvedReferences.types[ptr->classTypeIndex].toClass();
 
-                StringBuilder depothPath;
-                ResolvePath(tables, ptr->pathIndex, depothPath);
+                StringBuilder depotPath;
+                depotPath.append("/"); // TODO: "is relative" flag ?
+                ResolvePath(tables, ptr->pathIndex, depotPath);
 
-                resolvedReferences.resources[i + 1].type = classType;
-                resolvedReferences.resources[i + 1].path = depothPath.toString();
+                DEBUG_CHECK(ValidateDepotPath(depotPath.view(), DepotPathClass::AbsoluteFilePath));
+
+                resolvedReferences.resources[i].type = classType;
+                resolvedReferences.resources[i].path = depotPath.toString();
 
                 // load ?
                 auto flagLoad = (0 != (ptr->flags & FileTables::ImportFlag_Load));
                 if (context.resourceLoader && flagLoad)
-                    resourcesToLoad.pushBack(i + 1);
+                    resourcesToLoad.pushBack(i);
             }
 
             // load the imports
+            if (context.resourceLoader)
             {
                 auto allLoadedSignal = Fibers::GetInstance().createCounter("WaitForImports", resourcesToLoad.size());
 
@@ -145,6 +150,11 @@ namespace base
 
                     RunChildFiber("LoadImport") << [&entry, &context, &allLoadedSignal](FIBER_FUNC)
                     {
+                        const auto key = ResourceKey(entry.path, entry.type.cast<IResource>());
+                        entry.loaded = context.resourceLoader->loadResource(key);
+                        if (!entry.loaded)
+                            TRACE_WARNING("Loader: Missing reference to file '{}'", key);
+
                         Fibers::GetInstance().signalCounter(allLoadedSignal);
                     };
                 }
@@ -156,9 +166,7 @@ namespace base
         void ResolveExports(const FileTables& tables, FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
         {
             const auto numExports = tables.chunkCount(FileTables::ChunkType::Exports);
-            resolvedReferences.objects.resize(numExports + 1);
-
-            resolvedReferences.objects[0] = nullptr;
+            resolvedReferences.objects.resize(numExports);
 
             HashSet<int> warnedClasses;
 
@@ -181,22 +189,26 @@ namespace base
                     {
                         parentObject = nullptr;
                     }
-                    else
+                    else if (ptr->parentIndex != 0)
                     {
-                        parentObject = resolvedReferences.objects[ptr->parentIndex];
+                        parentObject = resolvedReferences.objects[ptr->parentIndex - 1];
                         if (!parentObject)
                             continue;
+                    }
+                    else
+                    {
+                        continue;
                     }
                 }
                 else if (ptr->parentIndex != 0)
                 {
-                    parentObject = resolvedReferences.objects[ptr->parentIndex];
+                    parentObject = resolvedReferences.objects[ptr->parentIndex - 1];
                     if (!parentObject)
                         continue;
                 }
 
                 auto obj = classType->create<IObject>();
-                resolvedReferences.objects[i + 1] = obj;
+                resolvedReferences.objects[i] = obj;
 
                 if (parentObject)
                     obj->parent(parentObject);
@@ -234,7 +246,7 @@ namespace base
             for (uint32_t i = 0; i < numObjects; ++i, ++ptr)
             {
                 // do not consider objects that were disabled from loading
-                if (!resolvedReferences.objects[i + 1])
+                if (!resolvedReferences.objects[i])
                     continue;
 
                 // get size of the object to load
@@ -274,7 +286,7 @@ namespace base
             while (objectIndex < numObjects)
             {
                 // do not consider objects that were disabled from loading
-                if (!resolvedReferences.objects[objectIndex + 1])
+                if (!resolvedReferences.objects[objectIndex])
                 {
                     objectIndex += 1;
                     continue;
@@ -290,7 +302,7 @@ namespace base
                 while (objectIndex < numObjects)
                 {
                     // do not consider objects that were disabled from loading
-                    if (resolvedReferences.objects[objectIndex + 1])
+                    if (resolvedReferences.objects[objectIndex])
                     {
                         const auto currentLoadEnd = objectTable[objectIndex].dataOffset + objectTable[objectIndex].dataSize;
                         if (currentLoadEnd > batchStartOffset + loadBufferSize)
@@ -316,7 +328,7 @@ namespace base
 
                 for (uint32_t i = firstLoadObject; i < objectIndex; ++i)
                 {
-                    if (auto object = resolvedReferences.objects[i+1])
+                    if (auto object = resolvedReferences.objects[i])
                     {
                         // get the memory range in the loaded buffer where the object content is
                         const auto& objectEntry = objectTable[i];
@@ -347,7 +359,7 @@ namespace base
             // post load objects
             for (uint32_t i=0; i<numObjects; ++i)
             {
-                if (auto obj = resolvedReferences.objects[i+1])
+                if (auto obj = resolvedReferences.objects[i])
                     obj->onPostLoad();
             }
 
@@ -451,7 +463,7 @@ namespace base
                 if (const auto resourceClass = info.type.cast<IResource>())
                 {
                     auto& outEntry = outDependencies.emplaceBack();
-                    outEntry.key = ResourceKey(ResourcePath(info.path), resourceClass);
+                    outEntry.key = ResourceKey(info.path, resourceClass);
                     outEntry.loaded = info.loaded;
                 }
             }

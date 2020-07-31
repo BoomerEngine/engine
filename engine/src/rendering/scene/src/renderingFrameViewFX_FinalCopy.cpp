@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resBlitShader("engine/shaders/screen/final_copy.fx");
+        static base::res::StaticResource<ShaderLibrary> resBlitShader("/engine/shaders/screen/final_copy.fx");
 
         struct BlitParams
         {

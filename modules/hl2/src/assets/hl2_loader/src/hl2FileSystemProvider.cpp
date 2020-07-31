@@ -36,7 +36,7 @@ namespace hl2
         TRACE_INFO("Found Steam installation at '{}'", steamDirectory);
 
         auto libFoldersPath = steamDirectory.appendFile("steamapps\\libraryfolders.vdf");
-        auto libFolderData = IO::GetInstance().loadIntoMemoryForReading(libFoldersPath);
+        auto libFolderData = base::io::LoadFileToBuffer(libFoldersPath);
         auto libFolder = base::StringView<char>(libFolderData);
         if (libFolder.empty())
         {
@@ -76,7 +76,7 @@ namespace hl2
             {
                 auto testFolder = steamGameDir.addDir("Half-Life 2");
                 auto testFile = testFolder.addFile("hl2.exe");
-                if (IO::GetInstance().fileExists(testFile))
+                if (base::io::FileExists(testFile))
                     return testFolder;
             }
         }

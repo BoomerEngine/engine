@@ -170,10 +170,18 @@ namespace base
         /// copy value from one place to other, does type conversion when needed
         /// returns false if type conversion was not possible
         /// supported conversions:
+        ///   same type to same type always works
         ///   numerical types (int8,16,32,64, uint8,16,32,64)
-        ///   real types: float -> double, double -> float (force only)
+        ///   real types: float -> double, double -> float
         ///   handle types (via rtti_cast)
+        ///   resource refs (of matching classes, ie Ref<StaticTexture> -> Ref<ITexture>, actual class is only checked if resource is loaded)
+        ///   async resource refs (of matching classes, ie AsyncRef<StaticTexture> -> AsyncRef<ITexture>, downcasting is not possible as actual class is not known)
         ///   stringBuf <-> stringId
+        ///   enum <-> stringID (if enum does not have a option with that name then we fail the conversion)
+        ///   enum <-> (u)int64 (raw value)
+        ///   bitfield <-> (u)int64 (raw value)
+        ///   classTypes <-> specficClassTypes
+        ///   SIMPLE string <-> type conversions (numbers, boolean)
         extern BASE_OBJECT_API bool ConvertData(const void* srcData, Type srcType, void* destData, Type destType);
 
         //--

@@ -13,6 +13,9 @@
 
 namespace ed
 {
+    //---
+
+    DECLARE_UI_EVENT(EVENT_IMPORT_STATUS_CHANGED)
 
     //---
 

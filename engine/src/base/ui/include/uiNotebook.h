@@ -12,6 +12,9 @@
 
 namespace ui
 {
+    //--
+
+    DECLARE_UI_EVENT(EVENT_TAB_CONTEXT_MENU, Position);
 
     //--
 

@@ -30,17 +30,14 @@ namespace ui
 
         //--
 
-        /// inject render mode options into a popup menu
         virtual void buildRenderModePopup(MenuButtonContainer* menu);
-
-        /// build filtering popup
         virtual void buildFilterPopup(MenuButtonContainer* menu);
 
+        //--
 
     protected:
         virtual void handleUpdate(float dt) override;
         virtual void handleRender(rendering::scene::FrameParams& frame) override;
-
 
     private:
         rendering::scene::ScenePtr m_scene;

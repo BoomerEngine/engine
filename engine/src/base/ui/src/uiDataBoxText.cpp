@@ -22,11 +22,13 @@ namespace ui
 
     IDataBoxText::IDataBoxText()
     {
-        m_editBox = createChild<TextEditor>();
+        auto flags = ui::EditBoxFeatureFlags({ ui::EditBoxFeatureBit::AcceptsEnter, ui::EditBoxFeatureBit::NoBorder });
+
+        m_editBox = createChild<EditBox>(flags);
         m_editBox->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_editBox->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
-        m_editBox->bind("OnTextAccepted"_id) = [this]()
+        m_editBox->bind(EVENT_TEXT_ACCEPTED) = [this]()
         {
             if (m_editBox->isEnabled())
                 write();

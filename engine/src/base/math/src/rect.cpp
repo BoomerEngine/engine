@@ -51,6 +51,15 @@ namespace base
         return *this;
     }
 
+    Rect& Rect::merge(int x, int y)
+    {
+        min.x = std::min(min.x, x);
+        min.y = std::min(min.y, y);
+        max.x = std::max(max.x, x);
+        max.y = std::max(max.y, y);
+        return *this;
+    }
+
     //--
 
     Rect Min(const Rect& a, const Rect& b)

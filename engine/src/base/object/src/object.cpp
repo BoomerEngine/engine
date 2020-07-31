@@ -112,12 +112,12 @@ namespace base
 
     bool IObject::hasParent(const IObject* parentObject) const
     {
-        auto parent = m_parent;
+        auto parent = m_parent.unsafe();
         while (parent)
         {
             if (parent == parentObject)
                 return true;
-            parent = parent->m_parent;
+            parent = parent->m_parent.unsafe();
         }
 
         return false;
@@ -125,12 +125,12 @@ namespace base
 
     IObject* IObject::findParent(ClassType parentObjectClass) const
     {
-        auto* parent = m_parent;
+        auto* parent = m_parent.unsafe();
         while (parent)
         {
             if (parent->is(parentObjectClass))
                 return parent;
-            parent = parent->m_parent;
+            parent = parent->m_parent.unsafe();
         }
 
         return nullptr;

@@ -117,7 +117,7 @@ namespace ui
         ///---
 
         /// run action
-        bool run(base::StringID name) const;
+        bool run(base::StringID name, IElement* source) const;
 
         /// process key event short cut
         /// looks for matching command and if found calls it

@@ -22,7 +22,7 @@ namespace base
     //--
 
     static Box ZERO_B(Vector3(0,0,0), Vector3(0,0,0));
-    static Box EMPTY_B(Vector3(VERY_LARGE_FLOAT, VERY_LARGE_FLOAT, VERY_LARGE_FLOAT), -Vector3(-VERY_LARGE_FLOAT,-VERY_LARGE_FLOAT,-VERY_LARGE_FLOAT));
+    static Box EMPTY_B(Vector3(VERY_LARGE_FLOAT, VERY_LARGE_FLOAT, VERY_LARGE_FLOAT), Vector3(-VERY_LARGE_FLOAT,-VERY_LARGE_FLOAT,-VERY_LARGE_FLOAT));
     static Box UNIT_B(Vector3(0,0,0), Vector3(1,1,1));
 
     const Box& Box::ZERO()

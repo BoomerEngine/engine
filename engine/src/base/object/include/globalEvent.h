@@ -14,7 +14,7 @@ namespace base
 {
     ///---
 
-    typedef std::function<bool(UI_EVENT_FUNC)> TEventFunction;
+    typedef std::function<bool(EVENT_FUNC)> TEventFunction;
 
     //--
 

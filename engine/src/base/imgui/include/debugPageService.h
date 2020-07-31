@@ -41,7 +41,7 @@ namespace base
         struct MenuEntry
         {
             StringBuf name;
-            StringID configGroupName;
+            StringBuf configGroupName;
             Array<const ConfigPropertyBase*> configProperties;
             Array<MenuEntry> children;
         };

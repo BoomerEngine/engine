@@ -27,8 +27,8 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderLibrary> resChannelVis("engine/shaders/screen/visualize_channel.fx");
-        static base::res::StaticResource<ShaderLibrary> resChannelVisMSAA("engine/shaders/screen/visualize_channel_msaa.fx");
+        static base::res::StaticResource<ShaderLibrary> resChannelVis("/engine/shaders/screen/visualize_channel.fx");
+        static base::res::StaticResource<ShaderLibrary> resChannelVisMSAA("/engine/shaders/screen/visualize_channel_msaa.fx");
 
         struct ChannelVisParams
         {

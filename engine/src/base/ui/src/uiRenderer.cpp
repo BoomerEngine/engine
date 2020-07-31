@@ -10,11 +10,13 @@
 #include "uiDataStash.h"
 #include "uiRenderer.h"
 #include "uiWindow.h"
+#include "uiWindowPopup.h"
 #include "uiInputAction.h"
 #include "uiElementHitCache.h"
 #include "uiDragDrop.h"
 #include "base/canvas/include/canvas.h"
 #include "base/system/include/thread.h"
+#include "base/app/include/localServiceContainer.h"
 
 namespace ui
 {
@@ -196,6 +198,50 @@ namespace ui
                     break;
                 }
             }
+        }
+    }
+
+    void Renderer::prepareForModalLoop()
+    {
+        // disable all windows
+        for (auto& entry : m_windows)
+            if (entry.nativeId)
+                m_native->windowEnable(entry.nativeId, false);
+    }
+
+    void Renderer::returnFromModalLoop()
+    {
+        // reenable all windows
+        for (auto& entry : m_windows)
+            if (entry.nativeId)
+                m_native->windowEnable(entry.nativeId, true);
+
+    }
+
+    void Renderer::runModalLoop(Window* window)
+    {
+        DEBUG_CHECK_EX(window, "No window to run modal loop for");
+
+        prepareForModalLoop();
+
+        {
+            Renderer childRenderer(m_stash, m_native);
+            childRenderer.attachWindow(window);
+
+            // loop until we request the window to close
+            base::NativeTimePoint timeDelta;
+            while (childRenderer.windows().contains(window) && !window->requestedClose())
+            {
+                base::app::LocalServiceContainer::GetInstance().update();
+
+                auto dt = timeDelta.timeTillNow().toSeconds();
+                timeDelta.resetToNow();
+
+                childRenderer.updateAndRender(dt);
+            }
+
+            // note: it's important to Enable back the previous windows before destroying the 
+            returnFromModalLoop();
         }
     }
 
@@ -461,7 +507,11 @@ namespace ui
             setup.activate = placement.flagForceActive;
             setup.callback = this;
 
-            if (auto owner = placement.owner.lock())
+            if (placement.externalParentWindowHandle)
+            {
+                setup.externalParentWindowHandle = placement.externalParentWindowHandle;
+            }
+            else if (auto owner = placement.owner.lock())
             {
                 for (const auto& otherInfo : m_windows)
                 {
@@ -503,11 +553,11 @@ namespace ui
             if (requests->requestShow)
                 m_native->windowShow(window.nativeId, true);
 
-            /*if (requests->requestMaximize)
+            if (requests->requestMaximize)
                 m_native->windowMaximize(window.nativeId);
 
             if (requests->requestMinimize)
-                m_native->windowMinimize(window.nativeId);*/
+                m_native->windowMinimize(window.nativeId);
 
             if (requests->requestPositionChange)
                 m_native->windowSetPos(window.nativeId, requests->requestedPosition);
@@ -524,14 +574,6 @@ namespace ui
 
     void Renderer::focus(IElement* element)
     {
-        while (element)
-        {
-            if (auto nextElement = element->handleFocusForwarding())
-                element = nextElement;
-            else
-                break;
-        }
-
         if (m_currentFocusElement != element)
         {
             if (auto current = m_currentFocusElement.lock())
@@ -945,7 +987,7 @@ namespace ui
                         m_currentTooltip->attachChild(tooltip);
                         m_currentTooltip->show(*it, PopupWindowSetup().relativeToCursor().offset(10, 10).bottomLeft().autoClose(false).interactive(false));
 
-                        m_currentTooltip->bind("OnClosed"_id) = [this]()
+                        m_currentTooltip->bind(EVENT_WINDOW_CLOSED) = [this]()
                         {
                             m_lastHoverUpdateTime = base::NativeTimePoint::Now();
                             m_currentTooltipOwnerArea = ElementArea();
@@ -1239,8 +1281,8 @@ namespace ui
                         overlayClickChangedFocus = true;
                 }
 
-                // get the mouse focus element
-                if (!m_currentInputAction)
+                // get the mouse focus element unless the focus was already handled by the overlay click (like in lists/trees)
+                if (!m_currentInputAction && !overlayClickChangedFocus)
                 {
                     if (evt.leftClicked() || evt.rightClicked())
                     {
@@ -1254,9 +1296,7 @@ namespace ui
                             }
                         }
 
-                        // focus the element
-                        if (!overlayClickChangedFocus || !m_currentFocusElementStack.contains(newFocus))
-                            focus(newFocus);
+                        focus(newFocus);
                     }
                 }
 
@@ -1575,6 +1615,13 @@ namespace ui
         }
 
         return false;
+    }
+
+    //--
+
+    void Renderer::playSound(MessageType type)
+    {
+        m_native->playSound(type);
     }
 
     //--

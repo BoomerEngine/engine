@@ -25,7 +25,7 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerChecker("editor/shaders/canvas_checkers.csl");
+    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
 
     struct CanvasCheckersData
     {
@@ -73,7 +73,7 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPreview("editor/shaders/canvas_image_preview.csl");
+    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
 
     struct CanvasImagePreviewData
     {
@@ -122,7 +122,7 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomCompressedTexturePreview("editor/shaders/canvas_texture_compression_preview.csl");
+    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
 
     struct CanvasTextureCompressionPreviewParams
     {
@@ -184,7 +184,7 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPixelGrid("editor/shaders/canvas_pixel_grid.csl");
+    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
 
     /// custom rendering handler
     class CanvasImagePixelGridHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler

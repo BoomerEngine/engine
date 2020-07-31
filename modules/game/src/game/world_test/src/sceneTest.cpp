@@ -177,10 +177,9 @@ namespace game
 
         rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile, bool fullPathFlag)
         {
-            auto fullPath = fullPathFlag
-                ? base::res::ResourcePath(base::TempString("engine/{}", assetFile))
-                : base::res::ResourcePath(base::TempString("engine/tests/meshes/{}", assetFile));
-            auto meshPtr = base::LoadResource<rendering::Mesh>(fullPath);
+            auto meshPtr = base::LoadResource<rendering::Mesh>(fullPathFlag
+                    ? base::TempString("/engine/{}", assetFile)
+                    : base::TempString("/engine/tests/meshes/{}", assetFile));
             if (!meshPtr)
             {
                 reportError(base::TempString("Failed to load mesh '{}'", meshPtr));

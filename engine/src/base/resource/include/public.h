@@ -26,7 +26,6 @@ namespace base
         class BaseReference;
         class BaseAsyncReference;
           
-        class ResourcePath;
         class ResourceKey;
         class ResourceThumbnail;
 
@@ -91,14 +90,14 @@ namespace base
     /// load resource from the default depot directory
      /// NOTE: this will yield the current job until the resource is loaded
     template< typename T >
-    INLINE res::Ref<T> LoadResource(const res::ResourcePath& path)
+    INLINE res::Ref<T> LoadResource(StringView<char> path)
     {
         return rtti_cast<T>(LoadResource(res::ResourceKey(path, T::GetStaticClass())));
     }
 
     /// typed wrapper for loadResourceAsync
     template< typename T >
-    INLINE void LoadResourceAsync(const res::ResourcePath& path, const std::function<void(const res::Ref<T>&)>& funcLoaded)
+    INLINE void LoadResourceAsync(StringView<char> path, const std::function<void(const res::Ref<T>&)>& funcLoaded)
     {
         auto funcWrapper = [funcLoaded](const res::BaseReference& loaded)
         {
@@ -144,6 +143,8 @@ namespace base
     extern BASE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::IResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
     //--
+
+
 
 } // base
 

@@ -111,10 +111,13 @@ namespace rendering
             // find output node and read settings
             auto sortGroup = MaterialSortGroup::Opaque;
             const auto* outputBlock = sourceGraph->graph()->findOutputBlock();
-            if (!outputBlock)
+            if (outputBlock)
+            {
+                sortGroup = outputBlock->resolveSortGroup();
+            }
+            else
             {
                 TRACE_WARNING("Material graph '{}' contains no output block", importPath);
-                sortGroup = outputBlock->resolveSortGroup();
             }
 
             // enumerate parameters

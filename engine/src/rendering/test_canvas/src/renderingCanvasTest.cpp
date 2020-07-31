@@ -47,11 +47,10 @@ namespace rendering
 
         base::image::ImagePtr ICanvasTest::loadImage(base::StringView<char> assetFile)
         {
-            auto fullImagePath = base::res::ResourcePath(base::TempString("engine/tests/textures/{}", assetFile));
-            auto imagePtr = base::LoadResource<base::image::Image>(fullImagePath);
+            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
             {
-                reportError(base::TempString("Failed to load image '{}'", fullImagePath));
+                reportError(base::TempString("Failed to load image '{}'", assetFile));
                 return m_defaultImage;
             }
 
@@ -60,11 +59,10 @@ namespace rendering
 
         base::FontPtr ICanvasTest::loadFont(base::StringView<char> assetFile)
         {
-            auto fullImagePath = base::res::ResourcePath(base::TempString("engine/tests/fonts/{}", assetFile));
-            auto imagePtr = base::LoadResource<base::font::Font>(fullImagePath);
+            auto imagePtr = base::LoadResource<base::font::Font>(base::TempString("/engine/tests/fonts/{}", assetFile));
             if (!imagePtr)
             {
-                reportError(base::TempString("Failed to load font '{}'", fullImagePath));
+                reportError(base::TempString("Failed to load font '{}'", assetFile));
                 return base::CreateSharedPtr<base::font::Font>();
             }
 

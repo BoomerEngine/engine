@@ -80,32 +80,32 @@ namespace rendering
             {
                 case MaterialDataLayoutParameterType::Float:
                 {
-                    dataSource.readParameterRaw(entry.name, destDataPtr, base::reflection::GetTypeObject<float>());
+                    dataSource.readParameter(entry.name, destDataPtr, base::reflection::GetTypeObject<float>());
                     break;
                 }
 
                 case MaterialDataLayoutParameterType::Vector2:
                 {
-                    dataSource.readParameterRaw(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector2>());
+                    dataSource.readParameter(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector2>());
                     break;
                 }
 
                 case MaterialDataLayoutParameterType::Vector3:
                 {
-                    dataSource.readParameterRaw(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector3>());
+                    dataSource.readParameter(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector3>());
                     break;
                 }
 
                 case MaterialDataLayoutParameterType::Vector4:
                 {
-                    dataSource.readParameterRaw(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector4>());
+                    dataSource.readParameter(entry.name, destDataPtr, base::reflection::GetTypeObject<base::Vector4>());
                     break;
                 }
 
                 case MaterialDataLayoutParameterType::Color:
                 {
                     base::Color color(255, 255, 255, 255);
-                    dataSource.readParameterRaw(entry.name, &color, base::reflection::GetTypeObject<base::Color>());
+                    dataSource.readParameter(entry.name, &color, base::reflection::GetTypeObject<base::Color>());
                     *(base::Vector4*)destDataPtr = color.toVectorSRGB();
                     break;
                 }
@@ -128,7 +128,7 @@ namespace rendering
                 case MaterialDataLayoutParameterType::Texture2D:
                 {
                     TextureRef texture;
-                    dataSource.readParameterRaw(entry.name, &texture, base::reflection::GetTypeObject<TextureRef>());
+                    dataSource.readParameter(entry.name, &texture, base::reflection::GetTypeObject<TextureRef>());
 
                     ImageView view;
                     if (const auto data = texture.acquire())

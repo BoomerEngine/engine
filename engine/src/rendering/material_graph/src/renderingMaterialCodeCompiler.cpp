@@ -11,7 +11,6 @@
 #include "rendering/mesh/include/renderingMeshFormat.h"
 #include "rendering/material/include/renderingMaterialRuntimeLayout.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
-#include "base/io/include/utils.h"
 
 namespace rendering
 {
@@ -307,6 +306,11 @@ namespace rendering
         if (requestedData.contains(MaterialVertexDataType::WorldBitangent))
         {
             outStr.append("    WorldBitangent = (LocalToScene * VertexBitangent.xyz0).xyz;\n");
+        }
+
+        if (requestedData.contains(MaterialVertexDataType::SubObjectID))
+        {
+            outStr.append("    SubObjectID = MeshChunkDrawData[drawObjectIndex].SubObjectID;\n");
         }
 
         // append custom code, this will mostly modify

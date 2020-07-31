@@ -13,285 +13,12 @@
 
 #include "base/memory/include/linearAllocator.h"
 #include "base/containers/include/inplaceArray.h"
+#include "base/containers/include/utf8StringFunctions.h"
 
 namespace base
 {
     namespace res
     {
-        //---
-
-        namespace prv
-        {
-
-            mem::PoolID POOL_RESOURCE_PATHS("Engine.Paths");
-
-            /// registry for resource paths
-            class ResourcePathDataRegistry : public ISingleton
-            {
-                DECLARE_SINGLETON(ResourcePathDataRegistry);
-
-            public:
-                ResourcePathDataRegistry()
-                    : m_mem(POOL_RESOURCE_PATHS)
-                {}
-
-                static bool IsValidPathChar(char ch)
-                {
-                    //if (ch == '%' || ch == '$' || ch == '?' || ch == '&' || ch == ':' || ch == '\\') return false;
-                    if (ch == '%' || ch == '?' || ch == '&' || ch == '\\' || ch == '$' || ch == '%') return false;
-                    if (ch >= 0 && ch < 32) return false;
-                    return true;
-                }
-
-                static bool IsValidKeyChar(char ch)
-                {
-                    if (ch <= 32) return false;
-                    if (ch >= 'a' && ch <= 'z') return true;
-                    if (ch >= '0' && ch <= '9') return true;
-                    if (ch == '_') return true;
-                    return true;
-                }
-
-                static bool IsValidValueChar(char ch)
-                {
-                    if (ch < 32) return false;
-                    return true;
-                }
-
-                struct SantizedKey
-                {
-                    StringView<char> key;
-                    StringView<char> value;
-
-                    INLINE bool operator==(const SantizedKey& other) const { return key == other.key; }
-                    INLINE bool operator<(const SantizedKey& other) const { return key < other.key; }
-                };
-
-                static bool ParseKeyPairs(StringView<char> params, Array<SantizedKey>& outKeys)
-                {
-                    auto readPtr  = params.data();
-                    auto endPtr  = params.data() + params.length();
-
-                    while (readPtr < endPtr)
-                    {
-                        auto keyStart = readPtr;
-                        while (readPtr < endPtr && *readPtr != '=')
-                        {
-                            if (!IsValidKeyChar(*readPtr))
-                            {
-                                TRACE_ERROR("Path contains invalid character {} in key name", *readPtr);
-                                return false;
-                            }
-
-                            ++readPtr;
-                        }
-
-                        if (readPtr == endPtr)
-                        {
-                            TRACE_ERROR("Path contains key without a value");
-                            return false;
-                        }
-                        else if (keyStart == readPtr)
-                        {
-                            TRACE_ERROR("Path contains empty key name");
-                            return false;
-                        }
-
-                        auto key = StringView<char>(keyStart, readPtr);
-                        readPtr += 1;
-
-                        auto valueStart = readPtr;
-                        while (readPtr < endPtr && *readPtr != ':')
-                        {
-                            if (!IsValidValueChar(*readPtr))
-                            {
-                                TRACE_ERROR("Path contains invalid character {} in value for key '{}'", *readPtr, key);
-                                return false;
-                            }
-
-                            ++readPtr;
-                        }
-
-                        auto value = StringView<char>(valueStart, readPtr);
-                        if (readPtr < endPtr) ++readPtr; // skip the ':'
-
-                        auto& entry = outKeys.emplaceBack();
-                        entry.key = key;
-                        entry.value = value;
-                    }
-
-                    return true;
-                }
-
-                static bool ParseKeyPairs(StringView<char> view, Array<SantizedKey>& outKeys, StringView<char>& normalPath)
-                {
-                    auto params = view.afterFirst(":");
-                    if (params)
-                    {
-                        normalPath = view.beforeFirst(":");
-                        return ParseKeyPairs(params, outKeys);
-                    }
-                    else
-                    {
-                        normalPath = view;
-                        return true;
-                    }
-                }
-
-                const ResourcePathData* alloc(StringView<char> data)
-                {
-                    DEBUG_CHECK_EX(data.length() <= ResourcePathData::MAX_PATH_LENGTH, "Resource path is to long");
-
-                    if (data.length() > ResourcePathData::MAX_PATH_LENGTH)
-                        return nullptr; // yes, do ignore such paths
-
-                    // try to get a hit via the original hash
-                    auto originalHash = data.calcCRC64();
-                    {
-                        ResourcePathData* ret = nullptr;
-                        auto lock = CreateLock(m_remapMapLock);
-                        if (m_remapMap.find(originalHash, ret))
-                            return ret;
-                    }
-
-                    // sanitize path
-                    char buffer[ResourcePathData::MAX_PATH_LENGTH + 1];
-                    memcpy(buffer, data.data(), data.length());
-                    buffer[data.length()] = 0;
-
-                    // change all "\" to "/"
-                    {
-                        auto readPtr  = buffer;
-                        auto endReadPtr  = buffer + data.length();
-                        while (readPtr < endReadPtr)
-                        {
-                            if (*readPtr == ResourcePathData::WRONG_PATH_SEPARATOR)
-                                *readPtr = ResourcePathData::PATH_SEPARATOR;
-
-                            if (!IsValidPathChar(*readPtr))
-                            {
-                                TRACE_INFO("Path contains invalid char code {}", *readPtr);
-                                return nullptr;
-                            }
-
-                            // make path lower case
-                            if (*readPtr >= 'A' && *readPtr <= 'Z')
-                                *readPtr = 'a' + (*readPtr - 'A');
-
-                            ++readPtr;
-                        }
-                    }
-
-                    // calculate confirmed hash
-                    const auto conformedHash = base::StringView<char>(buffer).calcCRC64();
-
-                    // look for existing definition
-                    {
-                        ResourcePathData* ret = nullptr;
-                        auto lock = CreateLock(m_dataMapLock);
-                        if (m_dataMap.find(conformedHash, ret))
-                        {
-                            auto lock2 = CreateLock(m_remapMapLock);
-                            m_remapMap[originalHash] = ret;
-                            return ret;
-                        }
-                    }
-
-                    // create a new definition
-                    auto memorySizeNeeded = sizeof(ResourcePathData) + data.length() + 1;
-                    auto ret  = (ResourcePathData*)m_mem.alloc(memorySizeNeeded, 1);
-
-                    // write string 
-                    auto strPtr = (char*)ret + sizeof(ResourcePathData);
-                    memcpy(strPtr, buffer, data.length() + 1);
-
-                    // slice the entries
-                    ret->path = StringView<char>(strPtr, strPtr + data.length());
-                    ret->dirPart = ret->path.beforeLast("/");
-                    if (!ret->dirPart.empty()) ret->dirPart = StringView<char>(ret->dirPart.data(), ret->dirPart.length() + 1);
-                    ret->fileNamePart = ret->path.afterLastOrFull("/").beforeFirstOrFull(":");
-                    ret->fileStemPart = ret->fileNamePart.beforeLastOrFull(".");
-                    ret->extensionPart = ret->fileNamePart.afterLast(".");
-                    //ret->paramsPart = ret->full.afterFirst(":");
-
-                    // store in cache
-                    {
-                        auto lock = CreateLock(m_dataMapLock);
-                        if (m_dataMap.find(conformedHash, ret))
-                        {
-                            auto lock2 = CreateLock(m_remapMapLock);
-                            m_remapMap[originalHash] = ret;
-                            return ret;
-                        }
-
-                        m_dataMap[conformedHash] = ret;
-
-                        {
-                            auto lock2 = CreateLock(m_remapMapLock);
-                            m_remapMap[originalHash] = ret;
-                        }
-                    }
-
-                    return ret;
-                }
-
-            private:
-                typedef HashMap<uint64_t, ResourcePathData*> TPathMap;
-
-                TPathMap m_remapMap;
-                SpinLock m_remapMapLock;
-
-                TPathMap m_dataMap;
-                SpinLock m_dataMapLock;
-
-
-                mem::LinearAllocator m_mem;
-
-                virtual void deinit() override
-                {
-                    m_remapMap.clear();
-                    m_dataMap.clear();
-                    m_mem.clear();
-                }
-            };
-
-        } // prv
-
-        const ResourcePathData* ResourcePathData::Build(const StringView<char> fullPathString)
-        {
-            if (fullPathString.empty())
-                return nullptr;
-
-            return prv::ResourcePathDataRegistry::GetInstance().alloc(fullPathString);
-        }
-
-        //---
-
-        ResourcePath::ResourcePath(StringView<char> path)
-        {
-            m_data = ResourcePathData::Build(path);
-            DEBUG_CHECK_EX(!path || m_data, "Invalid path passed");
-        }
-
-        ResourcePath& ResourcePath::operator=(StringView<char> path)
-        {
-            m_data = ResourcePathData::Build(path);
-            DEBUG_CHECK_EX(!path || m_data, "Invalid path passed");
-            return *this;
-        }
-
-        const ResourcePath& ResourcePath::EMPTY()
-        {
-            static ResourcePath theEmptyPath;
-            return theEmptyPath;
-        }
-
-        void ResourcePath::print(base::IFormatStream& f) const
-        {
-            if (m_data)
-                f << m_data->path;
-        }
-
         //---
 
         RTTI_BEGIN_CUSTOM_TYPE(ResourceKey);
@@ -328,30 +55,6 @@ namespace base
             return MakeSharedEventKey(tempString.view());
         }
 
-        void ResourceKey::printForFileName(IFormatStream& f) const
-        {
-            if (!empty())
-            {
-                if (m_path.directory())
-                {
-                    DEBUG_CHECK(m_path.directory().endsWith("/"));
-                    f << m_path.directory();
-                }
-
-                f << m_path.fileStem();
-                
-                f << ".";
-
-                if (m_class->shortName())
-                    f << m_class->shortName();
-                else
-                    f << m_class->name().view().afterLastOrFull("::");
-
-                f << ".";
-                f << m_path.extension();
-            }
-        }
-
         bool ResourceKey::Parse(StringView<char> path, ResourceKey& outKey)
         {
             if (path.empty() || path == "null")
@@ -360,7 +63,7 @@ namespace base
                 return true;
             }
 
-            auto index = path.findFirstChar('$');
+            auto index = path.findFirstChar(':');
             if (index == INDEX_NONE)
                 return false;
 
@@ -369,133 +72,363 @@ namespace base
             if (classNameStringID.empty())
                 return false; // class "StringID" is not known - ie class was never registered
 
-            auto resourceClass  = RTTI::GetInstance().findClass(classNameStringID).cast<IResource>();
+            auto resourceClass = RTTI::GetInstance().findClass(classNameStringID).cast<IResource>();
             if (!resourceClass)
                 return false;
 
             auto pathPart = path.subString(index + 1);
-            auto returnPath = ResourcePath(pathPart);
-            if (returnPath.empty())
+            if (pathPart.empty())
                 return false;
 
             outKey.m_class = resourceClass;
-            outKey.m_path = returnPath;
+            outKey.m_path = StringBuf(pathPart);
             return true;
         }
-
-        //---
-
-        ResourcePathBuilder::ResourcePathBuilder()
-        {}
-
-        StringBuf ResourcePathBuilder::filePath() const
-        {
-            StringBuilder txt;
-            txt << directory;
-            txt << file;
-
-            if (!extension.empty())
-                txt << "." << extension;
-
-            return txt.toString();
-        }
-
-        void ResourcePathBuilder::filePath(StringView<char> txt)
-        {
-            directory = StringBuf(txt.beforeLast("/"));
-            if (!directory.empty() && !directory.endsWith("/"))
-                directory = TempString("{}/", directory);
-
-            file = StringBuf(txt.afterLastOrFull("/").beforeLastOrFull("."));
-            extension = StringBuf(txt.afterLast("."));
-        }
-
-        ResourcePathBuilder::ResourcePathBuilder(ResourcePath path)
-        {
-            if (!path.empty())
-            {
-                directory = StringBuf(path.directory());
-                file = StringBuf(path.fileStem());
-                extension = StringBuf(path.extension());
-            }
-        }
-
-        void ResourcePathBuilder::print(IFormatStream& f) const
-        {
-            f << directory;
-            f << file;
-
-            if (extension)
-                f << "." << extension;
-        }
-
-        ResourcePath ResourcePathBuilder::toPath() const
-        {
-            TempString f;
-            print(f);
-            return ResourcePath(f.c_str());
-        }
-
-        //---
-
-        bool ApplyRelativePath(StringView<char> contextPath, StringView<char> relativePath, StringBuf& outPath)
-        {
-            // nothing to resolve
-            if (relativePath.empty())
-                return false;
-
-            // split path into parts
-            InplaceArray<StringView<char>, 20> referencePathParts;
-            contextPath.slice("/\\", false, referencePathParts);
-
-            // remove the last path that's usually the file name
-            if (!referencePathParts.empty() && !contextPath.endsWith("/"))
-                referencePathParts.popBack();
-
-            // split control path
-            InplaceArray<StringView<char>, 20> pathParts;
-            relativePath.slice("/\\", false, pathParts);
-
-            // append
-            for (auto& part : pathParts)
-            {
-                // single path, nothing
-                if (part == ".")
-                    continue;
-
-                // go up
-                if (part == "..")
-                {
-                    if (referencePathParts.empty())
-                        return false;
-                    referencePathParts.popBack();
-                    continue;
-                }
-
-                // append
-                referencePathParts.pushBack(part);
-            }
-
-            // reassmeble into a full path
-            StringBuilder reassemblePathBuilder;
-            for (auto& part : referencePathParts)
-            {
-                if (!reassemblePathBuilder.empty())
-                    reassemblePathBuilder << "/";
-                reassemblePathBuilder << part;
-            }
-
-            // if the path to resolve was a directory then add the final separator
-            auto relativePathIsDir = relativePath.endsWith("/");
-            if (relativePathIsDir)
-                reassemblePathBuilder << "/";
-
-            // load content
-            outPath = reassemblePathBuilder.toString();
-            return true;
-        }
-
-        //--
 
     } // res
+
+    //---
+
+    static const char* InvalidFileNames[] = {
+        "CON", "PRN", "AUX", "NU", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+
+    bool IsValidPathChar(uint32_t ch)
+    {
+        if (ch <= 31)
+            return false;
+
+        if (ch >= 0xFFFE)
+            return false;
+
+        switch (ch)
+        {
+        case '<':
+        case '>':
+        case ':':
+        case '\"':
+        case '/':
+        case '\\':
+        case '|':
+        case '?':
+        case '*':
+            return false;
+
+        case '.': // disallow dot in file names - it's confusing AF
+            return false;
+
+        case 0:
+            return false;
+        }
+
+        return true;
+    }
+
+    static bool IsValidName(StringView<char> name)
+    {
+        for (const auto testName : InvalidFileNames)
+            if (name.caseCmp(testName) == 0)
+                return false;
+
+        return true;
+    }
+
+    bool MakeSafeFileName(StringView<char> fileName, StringBuf& outFixedFileName)
+    {
+        if (ValidateFileName(fileName))
+        {
+            outFixedFileName = StringBuf(fileName);
+            return true;
+        }
+
+        StringBuilder txt;
+
+        for (utf8::CharIterator it(fileName); it; ++it)
+        {
+            if (*it < 32)
+                continue;
+
+            if (IsValidPathChar(*it))
+                txt.appendUTF32(*it);
+            else
+                txt.append("_");
+        }
+
+        if (txt.empty())
+            return false; // not a single char was valid
+
+        outFixedFileName = txt.toString();
+        return true;
+    }
+
+    bool ValidateFileName(StringView<char> txt)
+    {
+        if (txt.empty())
+            return false;
+
+        if (!IsValidName(txt))
+            return false;
+
+        for (utf8::CharIterator it(txt); it; ++it)
+            if (!IsValidPathChar(*it))
+                return false;
+
+        return true;
+    }
+
+    bool ValidateFileNameWithExtension(StringView<char> text)
+    {
+        StringView<char> mainPart, rest;
+        text.splitAt(".", mainPart, rest);
+
+        if (rest.empty())
+            return false;
+
+        if (!ValidateFileName(mainPart))
+            return false;
+
+        if (!ValidateFileName(rest))
+            return false;
+
+        return true;
+    }
+
+    bool ValidateDepotPath(StringView<char> text, bool expectFileNameAtTheEnd)
+    {
+        bool absolute = text.beginsWith("/");
+
+        if (text.beginsWith("/"))
+            text = text.subString(1);
+        if (text.endsWith("/"))
+            text = text.leftPart(text.length() - 1);
+
+        InplaceArray<StringView<char>, 20> parts;
+        text.slice("/", true, parts);
+
+        bool hadFileName = false;
+
+        for (auto i : parts.indexRange())
+        {
+            const auto& part = parts[i];
+
+            if (part.empty())
+                return false;
+
+            if (part == "." || part == "..")
+            {
+                if (absolute)
+                    return false;
+                continue;
+            }
+
+            if (expectFileNameAtTheEnd && i == parts.lastValidIndex())
+            {
+                if (!ValidateFileNameWithExtension(part))
+                    return false;
+                hadFileName = true;
+            }
+            else
+            {
+                if (!ValidateFileName(part))
+                    return false;
+            }
+        }
+
+        if (expectFileNameAtTheEnd && !hadFileName)
+            return false;
+
+        return true;
+    }
+
+    bool ValidateDepotPath(StringView<char> text, DepotPathClass pathClass)
+    {
+        if (pathClass == DepotPathClass::AbsoluteDirectoryPath || pathClass == DepotPathClass::AbsoluteFilePath || pathClass == DepotPathClass::AnyAbsolutePath)
+        {
+            if (!text.beginsWith("/"))
+                return false;
+        }
+        else if (pathClass == DepotPathClass::RelativeFilePath || pathClass == DepotPathClass::RelativeDirectoryPath || pathClass == DepotPathClass::AnyRelativePath)
+        {
+            if (text.beginsWith("/"))
+                return false;
+        }
+
+        bool expectFileNameAtTheEnd = true;
+        if (pathClass == DepotPathClass::AbsoluteDirectoryPath)
+        {
+            expectFileNameAtTheEnd = false;
+
+            if (!text.endsWith("/"))
+                return false;
+        }
+        else if (pathClass == DepotPathClass::RelativeDirectoryPath || pathClass == DepotPathClass::AnyDirectoryPath)
+        {
+            expectFileNameAtTheEnd = false;
+
+            if (!text.empty() && !text.endsWith("/"))
+                return false;
+        }
+        else if (pathClass == DepotPathClass::AbsoluteFilePath || pathClass == DepotPathClass::RelativeFilePath || pathClass == DepotPathClass::AnyFilePath)
+        {
+            if (text.endsWith("/"))
+                return false;
+        }
+        else
+        {
+            expectFileNameAtTheEnd = !text.endsWith("/") && !text.empty();
+        }
+
+        return ValidateDepotPath(text, expectFileNameAtTheEnd);
+    }
+
+    DepotPathClass ClassifyDepotPath(StringView<char> path)
+    {
+        if (path.empty())
+            return DepotPathClass::Invalid;
+
+        const bool absolute = path.beginsWith("/");
+        const bool directory = path.endsWith("/");
+
+        if (!ValidateDepotPath(path, !directory))
+            return DepotPathClass::Invalid;
+
+        if (absolute)
+            return directory ? DepotPathClass::AbsoluteDirectoryPath : DepotPathClass::AbsoluteFilePath;
+        else
+            return directory ? DepotPathClass::RelativeDirectoryPath : DepotPathClass::RelativeFilePath;
+    }
+
+
+    //---
+
+    bool ApplyRelativePath(StringView<char> contextPath, StringView<char> relativePath, StringBuf& outPath)
+    {
+        DEBUG_CHECK_RETURN_V(ValidateDepotPath(relativePath, DepotPathClass::Any), false);
+        DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
+
+        // split path into parts
+        InplaceArray<StringView<char>, 20> referencePathParts;
+        contextPath.slice("/", false, referencePathParts);
+
+        // remove the last path that's usually the file name
+        if (!referencePathParts.empty() && !contextPath.endsWith("/"))
+            referencePathParts.popBack();
+
+        // if relative path is in fact absolute path (starts with path separator) discard all context data
+        if (relativePath.beginsWith("/"))
+            referencePathParts.reset();
+
+        // split control path
+        InplaceArray<StringView<char>, 20> pathParts;
+        relativePath.slice("/", false, pathParts);
+
+        // append
+        for (auto& part : pathParts)
+        {
+            // single path, nothing
+            if (part == ".")
+                continue;
+
+            // go up
+            if (part == "..")
+            {
+                if (referencePathParts.empty())
+                    return false;
+                referencePathParts.popBack();
+                continue;
+            }
+
+            // append
+            referencePathParts.pushBack(part);
+        }
+
+        // reassemble into a full path
+        StringBuilder reassemblePathBuilder;
+        reassemblePathBuilder << "/";
+
+        const auto relativePathIsDir = relativePath.endsWith("/");
+        for (auto i : referencePathParts.indexRange())
+        {
+            const auto& part = referencePathParts[i];
+
+            reassemblePathBuilder << part;
+
+            if (relativePathIsDir || i < referencePathParts.lastValidIndex())
+                reassemblePathBuilder << "/";
+        }
+
+        // export created path
+        outPath = reassemblePathBuilder.toString();
+        DEBUG_CHECK_RETURN_V(ValidateDepotPath(outPath, relativePathIsDir ? DepotPathClass::AbsoluteDirectoryPath : DepotPathClass::AbsoluteFilePath), false);
+
+        return true;
+    }
+
+    //--
+
+    bool ScanRelativePaths(StringView<char> contextPath, StringView<char> pathPartsStr, uint32_t maxScanDepth, StringBuf& outPath, const std::function<bool(StringView<char>)>& testFunc)
+    {
+        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
+
+        // slice the path parts that are given, we don't assume much about their structure
+        InplaceArray<StringView<char>, 20> pathParts;
+        pathPartsStr.slice("\\/", false, pathParts);
+        if (pathParts.empty())
+            return false; // nothing was given
+
+        // slice the context path
+        InplaceArray<StringView<char>, 20> contextParts;
+        contextPath.slice("/", false, contextParts);
+
+        // remove the file name of the reference pat
+        if (!contextPath.endsWith("/") && !contextParts.empty())
+            contextParts.popBack();
+
+        // outer search (on the reference path)
+        for (uint32_t i = 0; i < maxScanDepth; ++i)
+        {
+            // try all allowed combinations of reference path as well
+            auto innerSearchDepth = std::min<uint32_t>(maxScanDepth, pathParts.size());
+            for (uint32_t j = 0; j < innerSearchDepth; ++j)
+            {
+                StringBuilder pathBuilder;
+
+                // build base part of the path
+                auto printSeparator = contextPath.beginsWith("/");
+                for (auto& str : contextParts)
+                {
+                    if (printSeparator) pathBuilder << "/";
+                    pathBuilder << str;
+                    printSeparator = true;
+                }
+
+                // add rest of the parts
+                auto firstInputPart = pathParts.size() - j - 1;
+                for (uint32_t k = firstInputPart; k < pathParts.size(); ++k)
+                {
+                    if (printSeparator) pathBuilder << "/";
+                    pathBuilder << pathParts[k];
+                    printSeparator = true;
+                }
+
+                // does the file exist ?
+                if (testFunc(pathBuilder.view()))
+                {
+                    outPath = pathBuilder.toString();
+                    return true;
+                }
+            }
+
+            // ok, we didn't found anything, retry with less base directories
+            if (contextParts.empty())
+                break;
+            contextParts.popBack();
+        }
+
+        // no matching file found
+        return false;
+    }
+
+    //--
+
 } // base

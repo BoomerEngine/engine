@@ -49,6 +49,20 @@ namespace base
             }
         }
 
+        ImportList::ImportList(const ImportFileEntry& entry)
+        {
+            m_files.pushBack(entry);
+
+            for (auto& entry : m_files)
+            {
+                if (entry.userConfiguration)
+                {
+                    DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
+                    entry.userConfiguration->parent(this);
+                }
+            }
+        }
+
         //--
 
         //--

@@ -13,7 +13,6 @@
 
 #include "base/app/include/commandline.h"
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/timestamp.h"
 #include "base/system/include/thread.h"
 #include "base/system/include/debug.h"
@@ -64,7 +63,7 @@ namespace base
             {
                 // prepare the special file name
                 // we want the commandline.txt file to be related to the app
-                auto commandlinePath = IO::GetInstance().systemPath(base::io::PathCategory::ExecutableFile).changeExtension(UTF16StringBuf(L"commandline.txt"));
+                auto commandlinePath = base::io::SystemPath(base::io::PathCategory::ExecutableFile).changeExtension(UTF16StringBuf(L"commandline.txt"));
                 TRACE_WARNING("Command line not specified, loading stuff from '{}'", commandlinePath);
 
                 // open the file using most basic function
@@ -139,34 +138,8 @@ namespace base
 
             app::LocalServiceContainer::GetInstance().update();
 
-            Fibers::GetInstance().runSyncJobs();
-
             if (m_application)
                 m_application->update();
-
-            static NativeTimePoint nextMemoryPrint = NativeTimePoint::Now() + 120.0;
-            if (nextMemoryPrint.reached())
-            {
-                static mem::PoolStatsData Stats[1024];
-
-                uint32_t numPools = 0;
-                mem::PoolStats::GetInstance().allStats(ARRAY_COUNT(Stats), Stats, numPools);
-
-                OutputDebugStringA("Pool status:\n");
-                for (uint32_t i = 0; i < numPools; ++i)
-                {
-                    const auto& info = Stats[i];
-                    if (info.m_totalAllocations)
-                    {
-                        char s[256];
-                        const auto name = mem::PoolID::GetPoolNameForID(i);
-                        sprintf(s, "Pool[%s]: %f KB (%f KB max), %u allocs\n", name, info.m_totalSize / 1024.0f, info.m_maxSize / 1024.0f, info.m_totalAllocations);
-                        OutputDebugStringA(s);
-                    }
-                }
-
-                nextMemoryPrint = NativeTimePoint::Now() + 5.0;
-            }
         }
 
         void CommonPlatform::handleCleanup()

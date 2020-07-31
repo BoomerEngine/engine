@@ -42,6 +42,7 @@ namespace ui
         base::Point size;
         base::StringBuf title;
         NativeWindowID owner = (NativeWindowID)0;
+        uint64_t externalParentWindowHandle = 0;
         INativeWindowCallback* callback = nullptr;
     };
 
@@ -62,6 +63,9 @@ namespace ui
 
         /// adjust window area to be placed within operating desktop
         virtual ElementArea adjustArea(const ElementArea& area, WindowInitialPlacementMode placement = WindowInitialPlacementMode::ScreenCenter) const = 0;
+
+        /// play a system sound
+        virtual void playSound(MessageType type) = 0;
 
         //--
 
@@ -85,6 +89,9 @@ namespace ui
 
         /// show/hide window, newly created windows are initially hidden so SetWindowPos/Size/Title can be called on them first
         virtual void windowShow(NativeWindowID id, bool visible) = 0;
+
+        /// enable/disable window, mostly used to disable the existing window when modal window pops up
+        virtual void windowEnable(NativeWindowID id, bool visible) = 0;
 
         /// set window position
         virtual void windowSetPos(NativeWindowID id, const Position& pos) = 0;
@@ -133,6 +140,12 @@ namespace ui
 
         /// check if window has system close request (Alt-F4, pressing the "X" on a window with sytem border, etc)
         virtual bool windowHasCloseRequest(NativeWindowID id) = 0;
+
+        /// minimize window to iconinc form
+        virtual void windowMinimize(NativeWindowID id) = 0;
+
+        /// maximize window to take full screen
+        virtual void windowMaximize(NativeWindowID id) = 0;
 
         ///--
 
@@ -227,6 +240,16 @@ namespace ui
 
         //--
 
+        /// play nice sound
+        void playSound(MessageType type);
+
+        //--
+
+        /// enter modal loop with given window, returns once the window is closed
+        void runModalLoop(Window* window);
+
+        //--
+
     protected:
         DataStash* m_stash = nullptr;
         IRendererNative* m_native = nullptr;
@@ -288,6 +311,9 @@ namespace ui
 
         Size calcWindowContentSize(Window* window, float pixelScale);
         Position calcWindowPlacement(Size& outSize, const WindowInitialPlacementSetup& placement, float pixelScale);
+
+        void prepareForModalLoop();
+        void returnFromModalLoop();
 
         ElementArea bestScreenForPosition(Position pos);
 

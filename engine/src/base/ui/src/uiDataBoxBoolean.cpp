@@ -25,7 +25,7 @@ namespace ui
         DataBoxBool()
         {
             m_box = createChild<CheckBox>();
-            m_box->bind("OnClick"_id) = [this]()
+            m_box->bind(EVENT_CLICKED) = [this]()
             {
                 if (m_box->isEnabled())
                     write();
@@ -55,11 +55,6 @@ namespace ui
                 m_box->state(CheckBoxState::Undecided);
                 m_box->enable(false);
             }
-        }
-
-        virtual ui::IElement* handleFocusForwarding() override
-        {
-            return m_box;
         }
 
     protected:

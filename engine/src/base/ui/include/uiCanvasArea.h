@@ -15,6 +15,10 @@ namespace ui
 
     //--
 
+    DECLARE_UI_EVENT(EVENT_CANVAS_VIEW_CHANGED)
+
+    //--
+
     /// drawable element of the canvas area
     class BASE_UI_API ICanvasAreaElement : public base::IReferencable
     {
@@ -43,11 +47,6 @@ namespace ui
     public:
         CanvasArea();
         virtual ~CanvasArea();
-
-        //--
-
-        // view was changed (offset or zoom changed)
-        ElementEventProxy OnCanvasViewChanged;
 
         //--
 

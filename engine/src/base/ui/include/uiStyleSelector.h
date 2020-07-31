@@ -154,7 +154,7 @@ namespace ui
 
         public:
             SelectorMatchParams();
-            SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass);
+            SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass, const base::StringID pseudoClass2);
 
             //---
             
@@ -171,6 +171,7 @@ namespace ui
             base::StringID m_type;
             base::StringID m_id;
             base::StringID m_pseudoClass;
+            base::StringID m_pseudoClass2;
             base::StringID m_class;
             base::StringID m_class2;
         };

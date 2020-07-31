@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: aspects #]
+* [# filter: editor #]
 ***/
 
 #include "build.h"
@@ -24,118 +24,25 @@
 #include "base/ui/include/uiListView.h"
 #include "base/ui/include/uiSearchBar.h"
 #include "base/ui/include/uiDragDrop.h"
+#include "base/ui/include/uiCheckBox.h"
 
 #include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/object/include/dataViewNative.h"
 #include "base/object/include/rttiDataView.h"
+#include "base/ui/include/uiToolBar.h"
 
 namespace ed
 {
     //---
 
-    class MeshEditorMaterialInstance : public rendering::MaterialInstance
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditorMaterialInstance, rendering::MaterialInstance);
-
-    public:
-        MeshEditorMaterialInstance(rendering::MeshMaterialConfig* manifest, base::StringID name, const rendering::MaterialRef& baseMaterial)
-            : m_manifest(manifest)
-            , m_name(name)
-            //, m_originalMeshMaterialData(baseMaterial)
-        {
-            //m_baseMaterial = meshBaseParams->baseMaterial();
-            //m_parameters = meshBaseParams->parameters();
-            //m_originalBaseMaterial = m_baseMaterial;
-
-            m_manifest->applyMaterial(name, *this);
-
-            createMaterialProxy();
-        }
-
-        virtual bool readParameterDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override
-        {
-            return m_originalMeshMaterialData->readDataView(viewPath, targetData, targetType).valid();
-        }
-
-        virtual bool resetParameterOverride(const base::StringID name) override
-        {
-            if (name == "baseMaterial"_id)
-            {
-                baseMaterial(m_originalBaseMaterial);
-                return true;
-            }
-
-            if (const auto materialTemplate = m_originalMeshMaterialData->resolveTemplate())
-            {
-                if (const auto* paramInfo = materialTemplate->findParameterInfo(name))
-                {
-                    base::rtti::DataHolder data(paramInfo->type);
-                    if (m_originalMeshMaterialData->readParameterRaw(name, data.data(), data.type()))
-                    {
-                        return writeParameterRaw(name, data.data(), data.type());
-                    }
-                }
-            }
-
-            return TBaseClass::resetParameterOverride(name);
-        }
-
-        virtual bool hasParameterOverride(const base::StringID name) const override
-        {
-            if (name == "baseMaterial"_id)
-                return baseMaterial() != m_originalBaseMaterial;
-
-            for (const auto& param : parameters())
-            {
-                if (param.name == name && param.value)
-                {
-                    base::rtti::DataHolder holder(param.value.type());
-                    if (!m_originalMeshMaterialData->readParameterRaw(name, holder.data(), holder.type()))
-                        return true;
-                    
-                    return !holder.type()->compare(param.value.data(), holder.data());
-                }
-            }
-
-            return false;
-        }
-
-        virtual void onPropertyChanged(base::StringView<char> path) override
-        {
-            TBaseClass::onPropertyChanged(path);
-            m_manifest->captureMaterial(m_name, *this, m_originalMeshMaterialData);
-        }
-
-    private:
-        rendering::MeshMaterialConfig* m_manifest;
-        base::StringID m_name;
-
-        rendering::MaterialInstancePtr m_originalMeshMaterialData;
-        rendering::MaterialRef m_originalBaseMaterial;
-    };
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditorMaterialInstance);
-    RTTI_END_TYPE();
-
-    //---
-
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialParameters);
     RTTI_END_TYPE();
 
-    MeshMaterialParameters::MeshMaterialParameters(rendering::MeshMaterialConfig* manifest, base::StringID name, const rendering::MaterialRef& baseMaterial)
+    MeshMaterialParameters::MeshMaterialParameters(rendering::MaterialInstance* data, base::StringID name)
         : m_name(name)
-        , m_manifest(manifest)
-        , m_baseMaterial(baseMaterial)
+        , m_data(AddRef(data))
     {
-        //m_previewParams = base::CreateSharedPtr<rendering::MaterialInstance>();
-        //m_previewParams->baseMaterial(meshBaseParams);
-
-        auto loader = base::GetService<base::res::LoadingService>()->loader();
-
-        m_previewParams = base::CreateSharedPtr<MeshEditorMaterialInstance>(manifest, name, m_baseMaterial);
-        m_previewParams->parent(this);
-
         updateDisplayString();
     }
 
@@ -146,22 +53,22 @@ namespace ed
         txt.append("[img:material] ");
         txt.append(m_name);
 
-        if (m_previewParams)
+        if (m_data)
         {
-            if (auto materialTemplate = m_previewParams->resolveTemplate())
+            if (auto materialTemplate = m_data->resolveTemplate())
             {
-                if (const auto fileName = materialTemplate->path().fileStem())
+                if (const auto fileName = materialTemplate->key().fileStem())
                 {
                     txt.appendf(" [tag:#888]{}[/tag]", fileName);
                 }
 
                 bool hasTextureOverrides = false;
                 bool hasParamOverrides = false;
-                for (const auto& param : m_previewParams->parameters())
+                for (const auto& param : materialTemplate->parameters())
                 {
-                    if (m_previewParams->hasParameterOverride(param.name))
+                    if (m_data->checkParameterOverride(param.name))
                     {
-                        const auto metaType = param.value.type()->metaType();
+                        const auto metaType = param.type->metaType();
                         if (metaType == base::rtti::MetaType::ResourceRef || metaType == base::rtti::MetaType::AsyncResourceRef)
                             hasTextureOverrides = true;
                         else
@@ -192,15 +99,35 @@ namespace ed
 
     bool MeshMaterialParameters::baseMaterial(const rendering::MaterialRef& material)
     {
-        m_previewParams->baseMaterial(material);
-        return true;
+        if (m_data)
+        {
+            m_data->baseMaterial(material);
+            return true;
+        }
+
+        return false;
     }
 
     //---
 
-    MeshMaterialListModel::MeshMaterialListModel(rendering::MeshMaterialConfig* manifest)
-        : m_manifest(manifest)
+    MeshMaterialListModel::MeshMaterialListModel()
     {}
+
+    StringID MeshMaterialListModel::materialName(const ui::ModelIndex& index) const
+    {
+        if (auto elem = data(index))
+            return elem->name();
+        return StringID::EMPTY();
+    }
+
+    ui::ModelIndex MeshMaterialListModel::findMaterial(StringID name) const
+    {
+        for (const auto& elem : elements())
+            if (elem->name() == name)
+                return index(elem);
+
+        return ui::ModelIndex();
+    }
 
     bool MeshMaterialListModel::compare(const base::RefPtr<MeshMaterialParameters>& a, const base::RefPtr<MeshMaterialParameters>& b, int colIndex) const
     {
@@ -241,7 +168,7 @@ namespace ed
             auto fileData = base::rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
             if (fileData && fileData->file())
             {
-                if (auto material = base::LoadResource<rendering::IMaterial>(base::res::ResourcePath(fileData->file()->depotPath())))
+                if (auto material = base::LoadResource<rendering::IMaterial>(fileData->file()->depotPath()))
                 {
                     return elem->baseMaterial(material);
                 }
@@ -256,29 +183,47 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialsPanel);
     RTTI_END_TYPE();
 
-    MeshMaterialsPanel::MeshMaterialsPanel(MeshPreviewPanel* previewPanel, base::ActionHistory* actionHistory)
-        : m_previewPanel(previewPanel)
-        , m_captionsRefreshTimer(this, "UpdateCaptions"_id)
+    MeshMaterialsPanel::MeshMaterialsPanel(base::ActionHistory* actionHistory)
+        : m_captionsRefreshTimer(this, "UpdateCaptions"_id)
     {
         layoutVertical();
 
         auto splitter = createChild<ui::Splitter>(ui::Direction::Horizontal, 0.4f);
 
         {
+            actions().bindCommand("MaterialList.Highlight"_id) = [this]() {
+                m_settings.highlight = !m_settings.highlight;
+                call(EVENT_MATERIAL_SELECTION_CHANGED);
+            };
+
+            actions().bindCommand("MaterialList.Isolate"_id) = [this]() {
+                m_settings.isolate = !m_settings.isolate;
+                call(EVENT_MATERIAL_SELECTION_CHANGED);
+            };
+
+            actions().bindToggle("MaterialList.Highlight"_id) = [this]() { return m_settings.highlight; };
+            actions().bindToggle("MaterialList.Isolate"_id) = [this]() { return m_settings.isolate; };
+
+        }
+
+        {
             auto panel = splitter->createChild<ui::IElement>();
-            expand();
-            layoutVertical();
+            panel->expand();
+            panel->layoutVertical();
 
-            auto searchBar = createChild<ui::SearchBar>(false);
+            auto toolbar = panel->createChild<ui::ToolBar>();
+            toolbar->createButton("MaterialList.Highlight"_id, ui::ToolbarButtonSetup().caption("Highlight"));
+            toolbar->createButton("MaterialList.Isolate"_id, ui::ToolbarButtonSetup().caption("Isolate"));
 
-            m_list = createChild<ui::ListView>();
+            auto searchBar = panel->createChild<ui::SearchBar>(false);
+
+            m_list = panel->createChild<ui::ListView>();
             m_list->expand();
 
             searchBar->bindItemView(m_list);
 
-            m_listModel = base::CreateSharedPtr<MeshMaterialListModel>(nullptr);// m_materialConfig);
+            m_listModel = base::CreateSharedPtr<MeshMaterialListModel>();
             m_list->model(m_listModel);
-
         }
 
         {
@@ -288,9 +233,10 @@ namespace ed
         }
 
         {
-            m_list->OnSelectionChanged = [this]()
+            m_list->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
             {
                 refreshMaterialProperties();
+                call(EVENT_MATERIAL_SELECTION_CHANGED);
             };
         }
 
@@ -310,10 +256,31 @@ namespace ed
         }
     }
 
+    void MeshMaterialsPanel::collectSelectedMaterialNames(HashSet<StringID>& outNames) const
+    {
+        for (const auto& id : m_list->selection().keys())
+            if (auto name = m_listModel->materialName(id))
+                outNames.insert(name);
+    }
+
+    void MeshMaterialsPanel::showMaterials(const Array<StringID>& names)
+    {
+        Array<ui::ModelIndex> selection;
+
+        for (auto name : names)
+            if (auto index = m_listModel->findMaterial(name))
+                selection.pushBack(index);
+
+        m_list->select(selection);
+
+        if (!selection.empty())
+            m_list->ensureVisible(selection[0]);
+    }
+
     void MeshMaterialsPanel::refreshMaterialProperties()
     {
         auto material = m_listModel->data(m_list->selectionRoot());
-        m_properties->bindObject(material ? material->previewParams() : nullptr);
+        m_properties->bindObject(material ? material->data() : nullptr);
     }
 
     void MeshMaterialsPanel::refreshMaterialList()
@@ -333,10 +300,8 @@ namespace ed
         {
             for (const auto& mat : m_mesh->materials())
             {
-                auto entry = base::CreateSharedPtr<MeshMaterialParameters>(nullptr, mat.name, mat.baseMaterial);
+                auto entry = base::CreateSharedPtr<MeshMaterialParameters>(mat.material, mat.name);
                 m_listModel->add(entry);
-
-                m_previewPanel->previewMaterial(mat.name, entry->previewParams());
 
                 if (entry->name() == selectedMaterialName)
                     materialToSelect = entry;

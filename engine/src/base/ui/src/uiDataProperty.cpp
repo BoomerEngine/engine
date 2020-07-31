@@ -154,14 +154,14 @@ namespace ui
                 auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:table_sort] [size:-]Clear");
                 but->tooltip("Remove all elements from array");
-                but->bind("OnClick"_id) = [this]() { arrayClear(); };
+                but->bind(EVENT_CLICKED) = [this]() { arrayClear(); };
             }
 
             {
                 auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:table_refresh] [size:-]New");
                 but->tooltip("Add new element at the end");
-                but->bind("OnClick"_id) = [this]() { arrayAddNew(); };
+                but->bind(EVENT_CLICKED) = [this]() { arrayAddNew(); };
             }
         }
         else if (m_viewInfo.flags.test(base::rtti::DataViewInfoFlagBit::LikeValue) && m_viewInfo.flags.test(base::rtti::DataViewInfoFlagBit::Inlined))
@@ -170,14 +170,14 @@ namespace ui
                 auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:delete] [size:-]Clear");
                 but->tooltip("Delete inlined object");
-                but->bind("OnClick"_id) = [this]() { inlineObjectClear(); };
+                but->bind(EVENT_CLICKED) = [this]() { inlineObjectClear(); };
             }
 
             {
                 auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:add] [size:-]New");
                 but->tooltip("Create new inlined object");
-                but->bind("OnClick"_id) = [this]() { inlineObjectNew(); };
+                but->bind(EVENT_CLICKED) = [this]() { inlineObjectNew(); };
             }
         }
 
@@ -187,14 +187,14 @@ namespace ui
                 auto but = m_nameLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:table_row_delete]");
                 but->tooltip("Remove this element from table");
-                but->bind("OnClick"_id) = [this]() { arrayElementDelete(); };
+                but->bind(EVENT_CLICKED) = [this]() { arrayElementDelete(); };
             }
 
             {
                 auto but = m_nameLine->createChildWithType<Button>("DataPropertyButton"_id);
                 but->createChild<TextLabel>("[img:table_row_insert]");
                 but->tooltip("Insert new element before this element");
-                but->bind("OnClick"_id) = [this]() { arrayElementInsertBefore(); };
+                but->bind(EVENT_CLICKED) = [this]() { arrayElementInsertBefore(); };
             }
         }
 
@@ -202,7 +202,7 @@ namespace ui
             auto but = m_nameLine->createChildWithType<Button>("DataPropertyButton"_id);
             but->createChild<TextLabel>("[img:arrow_refresh]");
             but->tooltip("Reset to base value");
-            but->bind("OnClick"_id) = [this]() { resetToBaseValue(); };
+            but->bind(EVENT_CLICKED) = [this]() { resetToBaseValue(); };
             but->visibility(false);
             m_resetToBaseButton = but;
         }
@@ -328,15 +328,23 @@ namespace ui
                 if (ptr)
                     currentClass = ptr->cls();
 
+                auto selfRef = base::RefWeakPtr<DataProperty>(this);
+
                 m_classPicker = base::CreateSharedPtr<ClassPickerBox>(baseClass, currentClass, false, false, "Select class for inlined object");
-                m_classPicker->bind("OnClassSelected"_id, this) = [](DataProperty* prop, base::ClassType type)
+
+                m_classPicker->bind(EVENT_CLASS_SELECTED) = [selfRef](base::ClassType type)
                 {
-                    prop->inlineObjectNewWithClass(type);
-                    prop->m_classPicker.reset();
+                    if (auto prop = selfRef.lock())
+                    {
+                        prop->inlineObjectNewWithClass(type);
+                        prop->m_classPicker.reset();
+                    }
                 };
-                m_classPicker->bind("OnClosed"_id, this) = [](DataProperty* prop)
+
+                m_classPicker->bind(EVENT_WINDOW_CLOSED) = [selfRef]()
                 {
-                    prop->m_classPicker.reset();
+                    if (auto prop = selfRef.lock())
+                        prop->m_classPicker.reset();
                 };
 
                 m_classPicker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));

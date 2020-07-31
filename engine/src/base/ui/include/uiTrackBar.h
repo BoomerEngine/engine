@@ -16,6 +16,10 @@ namespace ui
 
     //--
 
+    DECLARE_UI_EVENT(EVENT_TRACK_VALUE_CHANGED, double);
+
+    //--
+
     /// a simple track bar - used to modify a floating point value in a continous way
     class BASE_UI_API TrackBar : public IElement
     {
@@ -64,7 +68,7 @@ namespace ui
 
         base::RefPtr<TextLabel> m_displayLabel;
         base::RefPtr<IElement> m_displayArea;
-        base::RefPtr<TextEditor> m_editBox;
+        base::RefPtr<EditBox> m_editBox;
 
         float m_dragMargin;
 

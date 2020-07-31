@@ -74,7 +74,7 @@ namespace ed
     
     //--
 
-    //base::res::StaticResource<rendering::ShaderLibrary> resComputeImagePreviewHistogram("editor/shaders/canvas_rendering_panel_integration.csl");
+    //base::res::StaticResource<rendering::ShaderLibrary> resComputeImagePreviewHistogram("/editor/shaders/canvas_rendering_panel_integration.csl");
 
     //--
 

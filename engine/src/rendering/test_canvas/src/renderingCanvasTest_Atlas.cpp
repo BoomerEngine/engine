@@ -532,7 +532,7 @@ namespace rendering
                 m_time.resetToNow();
 
                 m_atlasImage = loadImage("terrain_atlas.png");
-                m_atlasData = base::LoadResource<SimpleAtlas>(base::res::ResourcePath("engine/tests/textures/terrain_atlas.v4atlas")).acquire();
+                m_atlasData = base::LoadResource<SimpleAtlas>("/engine/tests/textures/terrain_atlas.v4atlas").acquire();
 
                 if (m_atlasImage && m_atlasData)
                 {

@@ -15,7 +15,6 @@
 #include "managedFileAssetChecks.h"
 #include "managedFileNativeResource.h"
 
-#include "editorConfig.h"
 #include "editorService.h"
 
 #include "assetFileImportPrepareTab.h"
@@ -37,6 +36,7 @@
 #include "base/ui/include/uiNotebook.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiDataInspector.h"
+#include "base/ui/include/uiTextValidation.h"
 #include "base/resource_compiler/include/importInterface.h"
 #include "base/resource_compiler/include/importFileService.h"
 #include "base/io/include/ioSystem.h"
@@ -439,9 +439,10 @@ namespace ed
 
                 {
                     auto importFlag = content->createNamedChild<ui::CheckBox>("ImportFlag"_id);
-                    importFlag->OnClick = [this, file](ui::CheckBox* box, ui::IElement* parent)
+                    importFlag->allowFocusFromKeyboard(false); // disable to avoid confusion of the highest orda
+                    importFlag->bind(ui::EVENT_CLICKED) = [this, file](bool state)
                     {
-                        file->m_importFlag = box->stateBool();
+                        file->m_importFlag = state;
                     };
                 }
 
@@ -456,11 +457,11 @@ namespace ed
                     auto fileName = content->createNamedChild<ui::EditBox>("FileName"_id);
                     fileName->customMargins(4, 0, 4, 0);
                     fileName->text(file->m_targetFileName);
+                    fileName->validation(ui::MakeFilenameValidationFunction());
                     fileName->expand();
 
-                    fileName->OnTextModified = [this, file](ui::EditBox* box, ui::IElement* parent)
+                    fileName->bind(ui::EVENT_TEXT_MODIFIED) = [this, file](base::StringBuf name)
                     {
-                        const auto name = box->text();
                         if (file->m_targetFileName != name)
                         {
                             file->m_targetFileName = name;
@@ -562,14 +563,6 @@ namespace ed
 
     ui::PopupPtr AssetImportListModel::contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const
     {
-        /*InplaceArray<FileData*, 20> files;
-        for (const auto& index : indices)
-            if (auto file = fileForIndex(index))
-                files.pushBack(file);
-
-        if (files.empty())
-            return nullptr;*/
-
         auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
 
         if (indices.size() == 1)
@@ -578,16 +571,16 @@ namespace ed
             if (auto* managedFile = fileManagedFile(rootFile))
             {
                 menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() { 
-                    GetService<ed::Editor>()->selectFile(managedFile);
+                    GetService<ed::Editor>()->mainWindow().selectFile(managedFile);
                 };
             }
 
             if (const auto path = fileSourceAssetAbsolutePath(rootFile))
             {
-                if (IO::GetInstance().fileExists(path))
+                if (base::io::FileExists(path))
                 {
                     menu->createCallback("Show source asset...", "[img:find_blue]") = [path]() {
-                        IO::GetInstance().showFileExplorer(path);
+                        base::io::ShowFileExplorer(path);
                     };
                 }
             }
@@ -639,8 +632,7 @@ namespace ed
     RTTI_END_TYPE();
 
     AssetImportPrepareTab::AssetImportPrepareTab()
-        : ui::DockPanel("[img:import] Asset Import")
-        , OnStartImport(this, "StartImport"_id)
+        : ui::DockPanel("[img:import] Asset Import", "AssetImportPrepareTab")
     {
         layoutVertical();
 
@@ -695,7 +687,7 @@ namespace ed
             m_fileList->model(m_filesListModel);
             filter->bindItemView(m_fileList);
 
-            m_fileList->OnSelectionChanged = [this]()
+            m_fileList->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
             {
                 updateSelection();
             };
@@ -835,7 +827,7 @@ namespace ed
 
     ManagedDirectory* AssetImportPrepareTab::contextDirectory()
     {
-        return GetService<Editor>()->selectedDirectory();
+        return GetService<Editor>()->mainWindow().selectedDirectory();
     }
 
     void AssetImportPrepareTab::cmdAddFiles()
@@ -921,7 +913,7 @@ namespace ed
 
     void AssetImportPrepareTab::cmdStartImport()
     {
-        OnStartImport();
+        call(EVENT_START_ASSET_IMPORT);
     }
 
     ///--

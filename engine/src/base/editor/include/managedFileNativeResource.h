@@ -51,6 +51,12 @@ namespace ed
 
         //--
 
+        // modifying native file has few extra steps
+        virtual void modify(bool flag) override;
+
+        // is the file in use
+        virtual bool inUse() const override;
+
     protected:
         SpecificClassType<res::IResource> m_resourceNativeClass;
 
@@ -58,6 +64,9 @@ namespace ed
         res::ResourceWeakPtr m_loadedResource; // can be used to retrieve data
 
         GlobalEventTable m_fileEvents;
+
+        virtual bool onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource) override;
+        virtual void onResourceReloadFinished(base::res::IResource* currentResource, base::res::IResource* newResource) override;
     };
 
     //---

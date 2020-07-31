@@ -20,7 +20,6 @@
 #include "base/containers/include/bitSet.h"
 
 #include "base/io/include/absolutePathBuilder.h"
-#include "base/io/include/utils.h"
 #include "base/io/include/ioSystem.h"
 
 #include <functional>
@@ -46,7 +45,7 @@ namespace rendering
             , m_dumpInputShaders(false)
             , m_dumpOutputShaders(false)
         {
-            m_dumpDirectory = IO::GetInstance().systemPath(base::io::PathCategory::TempDir).addDir("glsl_out");
+            m_dumpDirectory = base::io::SystemPath(base::io::PathCategory::TempDir).addDir("glsl_out");
         }
 
         GLSLOpcodeGenerator::~GLSLOpcodeGenerator()

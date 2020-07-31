@@ -15,9 +15,9 @@ namespace ui
 {
     //----
 
-    bool EventFunctionBinder::RunAction(IElement* element, base::StringID action)
+    bool EventFunctionBinder::RunAction(IElement* element, IElement* source, base::StringID action)
     {
-        return element ? element->runAction(action) : false;
+        return element ? element->runAction(action, source) : false;
     }
 
     //----

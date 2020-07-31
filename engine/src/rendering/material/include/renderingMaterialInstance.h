@@ -26,8 +26,6 @@ namespace rendering
 
         base::StringID name;
         base::Variant value;
-
-        TextureRef loadedTexture; // loaded texture reference
     };
 
     ///----
@@ -40,13 +38,19 @@ namespace rendering
     public:
         MaterialInstance();
         MaterialInstance(const MaterialRef& baseMaterial); // create instance of base material
+        MaterialInstance(const MaterialRef& baseMaterial, base::Array<MaterialInstanceParam>&& parameters, MaterialInstance* importedMaterialBase = nullptr);
         virtual ~MaterialInstance();
+
+        //---
+
+        /// get the current base material
+        INLINE const MaterialRef& baseMaterial() const { return m_baseMaterial; }
 
         /// get the parameter table
         INLINE const base::Array<MaterialInstanceParam>& parameters() const { return m_parameters; }
 
-        /// get the current base material
-        INLINE const MaterialRef& baseMaterial() const { return m_baseMaterial; }
+        /// get the original imported material (valid only if we were imported obviously)
+        INLINE const MaterialInstancePtr& imported() const { return m_imported; }
 
         //---
 
@@ -64,9 +68,15 @@ namespace rendering
         // IMaterial
         virtual MaterialDataProxyPtr dataProxy() const override final;
         virtual const MaterialTemplate* resolveTemplate() const override final;
-        virtual bool resetParameterRaw(base::StringID name) override final;
-        virtual bool writeParameterRaw(base::StringID name, const void* data, base::Type type, bool refresh = true) override final;
-        virtual bool readParameterRaw(base::StringID name, void* data, base::Type type, bool defaultValueOnly = false) const override final;
+
+        virtual bool checkParameterOverride(base::StringID name) const override final;
+        virtual bool resetParameter(base::StringID name) override final;
+        virtual bool writeParameter(base::StringID name, const void* data, base::Type type, bool refresh = true) override final;
+        virtual bool readParameter(base::StringID name, void* data, base::Type type) const override final;
+        virtual bool readBaseParameter(base::StringID name, void* data, base::Type type) const override final;
+
+        virtual const void* findBaseParameterDataInternal(base::StringID name, base::Type& dataType) const override;
+        virtual const void* findParameterDataInternal(base::StringID name, base::Type& dataType) const override;
 
         // IObject
         virtual base::DataViewPtr createDataView() const;
@@ -86,12 +96,21 @@ namespace rendering
         virtual void notifyDataChanged() override;
         virtual void notifyBaseMaterialChanged() override;
 
-        virtual bool hasParameterOverride(const base::StringID name) const;
-        virtual bool resetParameterOverride(const base::StringID name);
-        virtual bool readParameterDefaultValue(base::StringView<char> path, void* targetData, base::Type targetType) const;
+        //--
+
+        void writeParameterInternal(MaterialInstanceParam&& data);
+        void writeParameterInternal(base::StringID name, base::Variant&& value);
+
+        const MaterialInstanceParam* findParameterInternal(base::StringID name) const;
+        MaterialInstanceParam* findParameterInternal(base::StringID name);
+
+
+        //--
 
         MaterialRef m_baseMaterial;
         base::Array<MaterialInstanceParam> m_parameters;
+
+        MaterialInstancePtr m_imported; // original imported material (for reference), set only if we were imported
 
     private:
         MaterialDataProxyPtr m_dataProxy;

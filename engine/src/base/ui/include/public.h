@@ -14,9 +14,13 @@
 #define UI_MODEL_CALLBACK const ui::ElementPtr& callingElement, const ui::ModelIndex& index, const void* data
 #define UI_TIMER const ui::ElementPtr& callingElement, base::StringID name, float elapsedTime
 
+#define DECLARE_UI_EVENT(x, ...) \
+    inline static const base::StringID x = #x##_id;
+
+// events always have the valid ui::IElement as source
+
 namespace ui
 {
-
     typedef base::Vector2 Position;
     typedef base::Vector2 Size;
     typedef base::Vector2 VirtualPosition;
@@ -26,6 +30,10 @@ namespace ui
     
     class RenderingPanel;
     class ModelIndex;
+
+    class ConfigBlock;
+    class IConfigDataInterface;
+    class ConfigFileStorageDataInterface;
 
     class EventTable;
     class ElementArea;
@@ -98,16 +106,6 @@ namespace ui
         Question,
     };
 
-    /// message button
-    enum class MessageButton
-    {
-        None,
-        Yes,
-        No,
-        Cancel,
-        OK,
-    };
-
     // sizer direction
     enum class Direction : uint8_t
     {
@@ -139,6 +137,13 @@ namespace ui
 
     // function to create popup window - used whenever a popup is expected
     typedef std::function<PopupPtr()> TPopupFunc;
+
+    //--
+
+    /// validation function for text input
+    typedef std::function<bool(base::StringView<char>)> TInputValidationFunction;
+
+    //--
 
     // drag and drop
     class IDragDropData;
@@ -316,9 +321,6 @@ namespace ui
     class EditBox;
     typedef base::RefPtr<EditBox> EditBoxPtr;
 
-    class TextEditor;
-    typedef base::RefPtr<TextEditor> TextEditorPtr;
-
     class ToolBar;
     typedef base::RefPtr<ToolBar> ToolBarPtr;
 
@@ -354,9 +356,6 @@ namespace ui
 
     class MenuButtonContainer;
     typedef base::RefPtr<MenuButtonContainer> MenuButtonContainerPtr;
-
-    class SearchWidget;
-    typedef base::RefPtr<SearchWidget> SearchWidgetPtr;
 
     class SearchBar;
     typedef base::RefPtr<SearchBar> SearchBarPtr;

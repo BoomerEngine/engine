@@ -12,6 +12,5 @@ namespace rendering
 {
 
     class MeshImportConfig;
-    class MeshMaterialConfig;
 
 } // renering
