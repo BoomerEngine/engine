@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "utils.h"
 #include "ioFileHandle.h"
 #include "ioSystem.h"
 #include "ioDirectoryWatcher.h"

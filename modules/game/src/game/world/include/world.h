@@ -104,8 +104,11 @@ namespace game
         /// NOTE: this function will wait for the internal tasks to finish
         CAN_YIELD void update(double dt);
 
+        /// calculate camera
+        CAN_YIELD void prepareFrameCamera(rendering::scene::FrameParams& info);
+
         /// render the scene
-        CAN_YIELD void render(rendering::scene::FrameParams& info);
+        CAN_YIELD void renderFrame(rendering::scene::FrameParams& info);
 
         /// render special debug gui with ImGui
         void renderDebugGui();

@@ -332,9 +332,9 @@ namespace game
 
     //--
 
-    void CAN_YIELD World::render(rendering::scene::FrameParams& info)
+    void World::prepareFrameCamera(rendering::scene::FrameParams& info)
     {
-        PC_SCOPE_LVL1(RenderSceneSystems);
+        PC_SCOPE_LVL1(PrepareWorldFrame);
 
         // setup default camera
         rendering::scene::CameraSetup defaultCamera;
@@ -349,6 +349,11 @@ namespace game
 
         // set camera
         info.camera.camera.setup(defaultCamera);
+    }
+
+    void CAN_YIELD World::renderFrame(rendering::scene::FrameParams& info)
+    {
+        PC_SCOPE_LVL1(RenderWorldFrame);
 
         // render all system stuff
         for (auto &sys : m_systems)
