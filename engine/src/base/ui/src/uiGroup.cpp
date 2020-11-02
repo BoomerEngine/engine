@@ -32,9 +32,9 @@ namespace ui
 
         {
             m_button = m_header->createChild<Button>(ButtonModeBit::EventOnClick);
-            m_button->bind(EVENT_CLICKED, this) = [](Group* group) { group->expand(!group->expanded()); };
+            m_button->bind(EVENT_CLICKED) = [this]() { expand(!this->expanded()); };
             m_button->createNamedChild<TextLabel>("ExpandIcon"_id);
-            m_caption = m_button->createChild<TextLabel>();
+            m_caption = m_button->createChild<TextLabel>(caption);
         }
 
         m_container = createInternalNamedChild<>("Container"_id);

@@ -52,11 +52,12 @@ namespace ui
             endRemoveRows();
         }
 
-        void add(RefT data)
+        ModelIndex add(RefT data)
         {
             beingInsertRows(ui::ModelIndex(), m_elements.size(), 1);
             m_elements.pushBack(data);
             endInsertRows();
+            return ModelIndex(this, m_elements.lastValidIndex(), 0);
         }
 
         int find(RefT data) const

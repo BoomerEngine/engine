@@ -260,7 +260,6 @@ namespace ui
 
         virtual void visualizeViewElement(ViewItem* item) = 0;
         virtual void unvisualizeViewElement(ViewItem* item) = 0;
-        virtual void destroyViewElement(ViewItem* item) = 0;
 
         bool findViewElement(const ModelIndex& index, const ViewItemChildren& items, ViewItem*& outViewElement) const;
         bool findViewElement(const ModelIndex& index, ViewItem*& outViewElement) const;

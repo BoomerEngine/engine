@@ -78,7 +78,7 @@ namespace ui
         void createSubMenu(const PopupPtr& popup, base::StringView<char> text, base::StringView<char> icon = "");
         void createSeparator();
 
-        EventFunctionBinder createCallback(base::StringView<char> text, base::StringView<char> icon = "", base::StringView<char> shortcut="");
+        EventFunctionBinder createCallback(base::StringView<char> text, base::StringView<char> icon = "", base::StringView<char> shortcut="", bool enabled=true);
 
         void show(IElement* owner);
         void showAsDropdown(IElement* owner);

@@ -223,9 +223,10 @@ namespace ui
         createChild<MenuButton>(action, text, icon);
     }
 
-    EventFunctionBinder MenuButtonContainer::createCallback(base::StringView<char> text, base::StringView<char> icon /*= ""*/, base::StringView<char> shortcut /*= ""*/)
+    EventFunctionBinder MenuButtonContainer::createCallback(base::StringView<char> text, base::StringView<char> icon /*= ""*/, base::StringView<char> shortcut /*= ""*/, bool enabled /*= true*/)
     {
         auto button = createChild<MenuButton>(base::StringID(), text, icon, shortcut);
+        button->enable(enabled);
         return button->bind(EVENT_MENU_ITEM_CLICKED);
     }
 

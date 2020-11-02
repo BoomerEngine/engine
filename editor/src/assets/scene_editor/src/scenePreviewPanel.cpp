@@ -3,77 +3,83 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: editor #]
+* [# filter: editor\ui #]
 ***/
 
 #include "build.h"
-#include "editorSceneEditMode.h"
-#include "editorScenePreviewPanel.h"
-#include "editorScene.h"
+#include "sceneEditMode.h"
+#include "sceneContentStructure.h"
+#include "scenePreviewContainer.h"
+#include "scenePreviewPanel.h"
 
 #include "rendering/scene/include/renderingScene.h"
 #include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
+#include "game/world/include/world.h"
+
 namespace ed
 {
 
     //--
      
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(EditorScenePreviewPanel);
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePreviewPanel);
     RTTI_END_TYPE();
 
-    EditorScenePreviewPanel::EditorScenePreviewPanel(EditorScenePreviewContainer* container, EditorScene* scene)
+    ScenePreviewPanel::ScenePreviewPanel(ScenePreviewContainer* container)
         : m_container(container)
-        , m_scene(AddRef(scene))
     {
         m_panelSettings.cameraForceOrbit = false;// true;
     }
 
-    EditorScenePreviewPanel::~EditorScenePreviewPanel()
+    ScenePreviewPanel::~ScenePreviewPanel()
     {}
 
-    void EditorScenePreviewPanel::configSave(const ui::ConfigBlock& block) const
+    void ScenePreviewPanel::configSave(const ui::ConfigBlock& block) const
     {
         TBaseClass::configSave(block);
     }
 
-    void EditorScenePreviewPanel::configLoad(const ui::ConfigBlock& block)
+    void ScenePreviewPanel::configLoad(const ui::ConfigBlock& block)
     {
         TBaseClass::configLoad(block);
     }
 
-    void EditorScenePreviewPanel::bindEditMode(IEditorSceneEditMode* editMode)
+    void ScenePreviewPanel::bindEditMode(ISceneEditMode* editMode)
     {
         m_editMode = editMode;
     }
 
-    void EditorScenePreviewPanel::handleRender(rendering::scene::FrameParams& frame)
+    void ScenePreviewPanel::handleRender(rendering::scene::FrameParams& frame)
     {
         TBaseClass::handleRender(frame);
 
         frame.scenes.scenesToDraw.clear();
 
-        m_scene->render(frame);
+        if (m_container && m_container->content())
+        {
+            if (const auto& world = m_container->content()->previewWorld())
+                world->renderFrame(frame);
+        }
 
         if (auto editMode = m_editMode.lock())
             editMode->handleRender(this, frame);
     }
 
-    void EditorScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+    void ScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
     {
         if (auto editMode = m_editMode.lock())
             editMode->handlePointSelection(this, ctrl, shift, clientPosition, selectables);
     }
 
-    void EditorScenePreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+    void ScenePreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
     {
         if (auto editMode = m_editMode.lock())
             editMode->handleAreaSelection(this, ctrl, shift, clientRect, selectables);
     }
 
-    ui::InputActionPtr EditorScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt)
+    ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt)
     {
         if (auto editMode = m_editMode.lock())
             if (auto action = editMode->handleMouseClick(this, evt))
@@ -82,7 +88,7 @@ namespace ed
         return TBaseClass::handleMouseClick(area, evt);
     }
 
-    bool EditorScenePreviewPanel::handleKeyEvent(const base::input::KeyEvent& evt)
+    bool ScenePreviewPanel::handleKeyEvent(const base::input::KeyEvent& evt)
     {
         if (auto editMode = m_editMode.lock())
             if (editMode->handleKeyEvent(this, evt))

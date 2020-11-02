@@ -72,7 +72,7 @@ namespace base
         //--
 
         /// create editable data view
-        virtual DataViewPtr createDataView() const override;
+        virtual DataViewPtr createDataView(bool forceReadOnly=false) const override;
 
         //--
 

@@ -11,7 +11,6 @@
 * [# dependency: rendering_ui #]
 * [# dependency: rendering_mesh #]
 * [# dependency: rendering_api_* #]
-* [# dependency: assets_scene_common #]
 * [# dependency: game_world #]
 * [# devonly #]
 ***/

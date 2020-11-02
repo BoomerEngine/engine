@@ -290,9 +290,9 @@ namespace base
 
     //--
 
-    DataViewPtr IObject::createDataView() const
+    DataViewPtr IObject::createDataView(bool forceReadOnly) const
     {
-        return CreateSharedPtr<DataViewNative>(const_cast<IObject*>(this));
+        return CreateSharedPtr<DataViewNative>(const_cast<IObject*>(this), forceReadOnly);
     }
 
     //--

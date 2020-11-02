@@ -73,6 +73,8 @@ namespace game
     class CompiledWorld;
     typedef base::RefPtr<CompiledWorld> CompiledWorldPtr;
 
+    class NodeTemplatePlacement;
+
     class NodeTemplate;
     typedef base::RefPtr<NodeTemplate> NodeTemplatePtr;
 

@@ -9,7 +9,12 @@
 #include "build.h"
 #include "scenePrefabEditor.h"
 #include "sceneStructurePanel.h"
+#include "sceneContentNodes.h"
+#include "sceneContentStructure.h"
+#include "scenePreviewPanel.h"
+#include "scenePreviewContainer.h"
 
+#include "base/object/include/actionHistory.h"
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
 #include "base/editor/include/managedFileNativeResource.h"
@@ -22,7 +27,8 @@
 #include "base/ui/include/uiSplitter.h"
 
 #include "base/ui/include/uiMenuBar.h"
-#include "assets/scene_common/include/editorScenePreviewContainer.h"
+#include "game/world/include/world.h"
+#include "sceneEditMode_Default.h"
 
 namespace ed
 {
@@ -40,15 +46,33 @@ namespace ed
     ScenePrefabEditor::~ScenePrefabEditor()
     {}
 
+    void ScenePrefabEditor::createContentStructure()
+    {    
+    }
+
     void ScenePrefabEditor::createInterface()
     {
         {
             auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview");
             tab->layoutVertical();
 
-            m_previewContainer = tab->createChild<EditorScenePreviewContainer>(false);
+            m_previewContainer = tab->createChild<ScenePreviewContainer>();
             m_previewContainer->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_previewContainer->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+            m_previewContainer->bind(EVENT_EDIT_MODE_CHANGED) = [this]()
+            {
+                refreshEditMode();
+            };
+
+            m_previewContainer->bind(EVENT_EDIT_MODE_SELECTION_CHANGED) = [this]()
+            {
+                if (auto mode = m_previewContainer->mode())
+                {
+                    const auto selection = mode->querySelection();
+                    m_structurePanel->syncExternalSelection(selection);
+                }
+            };
 
             dockLayout().attachPanel(tab);
         }
@@ -61,39 +85,83 @@ namespace ed
             m_structurePanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_structurePanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
-            dockLayout().right().attachPanel(tab);
+            dockLayout().left().attachPanel(tab);
         }
 
-        /*{
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials");
+        {
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Inspector");
+            tab->expand();
             tab->layoutVertical();
 
-            m_materialsPanel = tab->createChild<SceneMaterialsPanel>(actionHistory());
-            m_materialsPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_materialsPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-
-            m_materialsPanel->bind(EVENT_MATERIAL_SELECTION_CHANGED, this) = [this]()
-            {
-                updateMaterialHighlights();
-            };
+            m_inspectorPanel = tab->createChild<ui::ScrollArea>(ui::ScrollMode::Auto);
+            m_inspectorPanel->expand();
+            m_inspectorPanel->layoutVertical();
 
             dockLayout().right().attachPanel(tab, false);
-        }*/
-
-        {
         }
     }
 
     void ScenePrefabEditor::fillViewMenu(ui::MenuButtonContainer* menu)
     {
         TBaseClass::fillViewMenu(menu);
-        menu->createAction("ScenePreview.ShowBounds"_id, "Show bounds", "cube");
+        //menu->createAction("ScenePreview.ShowBounds"_id, "Show bounds", "cube");
+    }
+
+    bool ScenePrefabEditor::initialize()
+    {
+        if (!TBaseClass::initialize())
+            return false;
+
+        m_previewWorld = CreateSharedPtr<game::World>(game::WorldType::Editor);
+
+        auto rootNode = CreateSharedPtr<SceneContentPrefabRootNode>(nativeFile());
+        rootNode->reloadContent();
+
+        m_content = CreateSharedPtr<SceneContentStructure>(m_previewWorld, rootNode);
+
+        m_defaultEditMode = CreateSharedPtr<SceneEditMode_Default>(actionHistory());
+
+        m_structurePanel->bindScene(m_content, m_previewContainer);
+        m_previewContainer->bindContent(m_content, m_defaultEditMode);
+
+        refreshEditMode();
+        return true;
     }
 
     void ScenePrefabEditor::bindResource(const res::ResourcePtr& resource)
     {
         TBaseClass::bindResource(resource);
 
+        if (m_content)
+        {
+            if (auto rootNode = rtti_cast<SceneContentPrefabRootNode>(m_content->root()))
+                rootNode->reloadContent();
+
+            actionHistory()->clear();
+
+            m_defaultEditMode->reset();
+            m_previewContainer->actionSwitchMode(m_defaultEditMode);
+        }
+    }
+
+    void ScenePrefabEditor::refreshEditMode()
+    {
+        m_inspectorPanel->removeAllChildren();
+
+        if (auto mode = m_previewContainer->mode())
+        {
+            if (auto ui = mode->queryUserInterface())
+            {
+                m_inspectorPanel->attachChild(ui);
+                ui->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                ui->customVerticalAligment(ui::ElementVerticalLayout::Top);
+            }
+        }
+    }
+
+    bool ScenePrefabEditor::save()
+    {
+        return TBaseClass::save();
     }
 
     //---

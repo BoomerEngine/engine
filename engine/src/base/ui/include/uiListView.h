@@ -31,9 +31,10 @@ namespace ui
 
         virtual void visualizeViewElement(ViewItem* item) override;
         virtual void unvisualizeViewElement(ViewItem* item) override;
-        virtual void destroyViewElement(ViewItem* item) override;
 
         virtual void updateItem(ViewItem* item) override;
+
+        void destroyViewElement(ViewItem* item);
     };
 
     //---

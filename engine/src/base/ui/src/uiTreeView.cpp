@@ -239,15 +239,11 @@ namespace ui
         if (nullptr == item)
             return;
 
-        //if (!partOfParentCleanup)
-        {
-            auto& parentChildren = item->m_parent ? item->m_parent->m_children : m_mainRows;
-            parentChildren.m_orderedChildren.remove(item);
-            parentChildren.m_displayOrder.remove(item);
-        }
+        auto& parentChildren = item->m_parent ? item->m_parent->m_children : m_mainRows;
+        DEBUG_CHECK(!parentChildren.m_orderedChildren.contains(item));
+        DEBUG_CHECK(!parentChildren.m_displayOrder.contains(item));
 
         unvisualizeViewElement(item);
-
         m_displayList.unlink(item);
 
         auto children = std::move(item->m_children.m_orderedChildren);
@@ -302,6 +298,7 @@ namespace ui
 
                 auto& items = parentItem ? parentItem->m_children : m_mainRows;
                 auto& children = items.m_orderedChildren;
+                auto hadChildren = !children.empty();
                 ASSERT(first <= (int)children.size());
 
                 for (int i = first; i <= children.lastValidIndex(); ++i)
@@ -327,6 +324,12 @@ namespace ui
                 buildSortedList(items);
                 rebuildDisplayList();
             }
+
+            if (parentItem)
+            {
+                updateItemWithMode(parentItem, ItemUpdateModeBit::Item);
+                updateExpandStyle(parentItem);
+            }
         }
     }
 
@@ -347,13 +350,19 @@ namespace ui
                 auto& children = parentItem ? parentItem->m_children : m_mainRows;
                 ASSERT(first + count <= (int)children.m_orderedChildren.size());
 
+                base::InplaceArray<ViewItem*, 10> itemsToRemove;
+
                 for (int i = 0; i < count; ++i)
                 {
                     auto* item = children.m_orderedChildren[first + i];
-                    destroyViewElement(item);
+                    children.m_displayOrder.remove(item);
+                    itemsToRemove.pushBack(item);
                 }
 
                 children.m_orderedChildren.erase(first, count);
+
+                for (auto* item : itemsToRemove)
+                    destroyViewElement(item);
 
                 for (int i = first; i <= children.m_orderedChildren.lastValidIndex(); ++i)
                 {
@@ -362,6 +371,12 @@ namespace ui
                 }
 
                 buildSortedList(children.m_orderedChildren, children.m_displayOrder);
+            }
+
+            if (parentItem)
+            {
+                updateItemWithMode(parentItem, ItemUpdateModeBit::Item);
+                updateExpandStyle(parentItem);
             }
         }
 

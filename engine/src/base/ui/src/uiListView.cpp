@@ -103,13 +103,18 @@ namespace ui
             auto& children = parentItem ? parentItem->m_children : m_mainRows;
             ASSERT(first + count <= (int)children.m_orderedChildren.size());
 
-            for (int i = count-1; i >= 0; --i)
+            base::InplaceArray<ViewItem*, 10> itemsToRemove;
+            for (int i = 0; i < count; ++i)
             {
                 auto* item = children.m_orderedChildren[first + i];
-                destroyViewElement(item);
+                children.m_displayOrder.remove(item);
+                itemsToRemove.pushBack(item);
             }
 
-            //children.m_orderedChildren.erase(first, count);
+            children.m_orderedChildren.erase(first, count);
+
+            for (auto* item : itemsToRemove)
+                destroyViewElement(item);
 
             for (int i = first; i <= children.m_orderedChildren.lastValidIndex(); ++i)
             {
@@ -128,14 +133,11 @@ namespace ui
         if (nullptr == item)
             return;
 
-        {
-            auto& parentChildren = item->m_parent ? item->m_parent->m_children : m_mainRows;
-            parentChildren.m_orderedChildren.remove(item);
-            parentChildren.m_displayOrder.remove(item);
-        }
+        auto& parentChildren = item->m_parent ? item->m_parent->m_children : m_mainRows;
+        DEBUG_CHECK(!parentChildren.m_orderedChildren.contains(item));
+        DEBUG_CHECK(!parentChildren.m_displayOrder.contains(item));
 
         unvisualizeViewElement(item);
-
         m_displayList.unlink(item);
 
         auto children = std::move(item->m_children.m_orderedChildren);

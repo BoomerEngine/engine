@@ -26,19 +26,11 @@ namespace ui
     RenderingFullScenePanel::RenderingFullScenePanel()
     {
         m_renderMode = rendering::scene::FrameRenderMode::Default;
-
-        rendering::scene::SceneSetupInfo setup;
-        setup.name = "RenderingPanelScene";
-        setup.type = rendering::scene::SceneType::EditorPreview;
-
-        m_scene = MemNew(rendering::scene::Scene, setup);
-
         createToolbarItems();
     }
 
     RenderingFullScenePanel::~RenderingFullScenePanel()
     {
-        m_scene->releaseRef();
     }
 
     void RenderingFullScenePanel::handleUpdate(float dt)
@@ -52,12 +44,6 @@ namespace ui
         frame.debug.materialDebugMode = m_renderMaterialDebugChannelName;
 
         TBaseClass::handleRender(frame);
-
-        if (m_scene)
-        {
-            auto& scene = frame.scenes.scenesToDraw.emplaceBack();
-            scene.scenePtr = m_scene;
-        }
     }
 
     //--
@@ -136,6 +122,36 @@ namespace ui
                 menu->createSeparator();
                 createFilterItem("", child, menu);
             }
+        }
+    }
+
+    //--
+
+    RTTI_BEGIN_TYPE_CLASS(RenderingFullScenePanelWithScene);
+    RTTI_END_TYPE();
+
+    RenderingFullScenePanelWithScene::RenderingFullScenePanelWithScene()
+    {
+        rendering::scene::SceneSetupInfo setup;
+        setup.name = "RenderingPanelScene";
+        setup.type = rendering::scene::SceneType::EditorPreview;
+
+        m_scene = MemNew(rendering::scene::Scene, setup);
+    }
+
+    RenderingFullScenePanelWithScene::~RenderingFullScenePanelWithScene()
+    {
+        m_scene.reset();
+    }
+
+    void RenderingFullScenePanelWithScene::handleRender(rendering::scene::FrameParams& frame)
+    {
+        TBaseClass::handleRender(frame);
+
+        if (m_scene)
+        {
+            auto& scene = frame.scenes.scenesToDraw.emplaceBack();
+            scene.scenePtr = m_scene;
         }
     }
 

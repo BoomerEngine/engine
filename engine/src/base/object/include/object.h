@@ -228,7 +228,7 @@ namespace base
         //--
 
         // create data view for editing this object, especially in data inspector + data view is usually needed for undo/redo
-        virtual DataViewPtr createDataView() const;
+        virtual DataViewPtr createDataView(bool forceReadOnly=false) const;
 
         //--
 

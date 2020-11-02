@@ -45,6 +45,11 @@ namespace game
         S = absoluteTransform.scale();
     }
 
+    bool NodeTemplatePlacement::identity() const
+    {
+        return T.isZero() && R.isZero() && (S == Vector3::ONE());
+    }
+
     base::AbsoluteTransform NodeTemplatePlacement::toAbsoluteTransform() const
     {
         return base::AbsoluteTransform(T, R.toQuat(), S);

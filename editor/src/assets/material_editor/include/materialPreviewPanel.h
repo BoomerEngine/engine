@@ -35,9 +35,9 @@ namespace ed
     //--
 
     // a preview panel for the material
-    class ASSETS_MATERIAL_EDITOR_API MaterialPreviewPanel : public ui::RenderingFullScenePanel
+    class ASSETS_MATERIAL_EDITOR_API MaterialPreviewPanel : public ui::RenderingFullScenePanelWithScene
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialPreviewPanel, ui::RenderingFullScenePanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialPreviewPanel, ui::RenderingFullScenePanelWithScene);
 
     public:
         MaterialPreviewPanel();

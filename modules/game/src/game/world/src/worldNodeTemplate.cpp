@@ -226,7 +226,7 @@ namespace game
             }
         }
 
-        NodeTemplateCompiledDataPtr compileNode() const
+        NodeTemplateCompiledDataPtr compileNode(const base::Transform& parentToReference) const
         {
             auto ret = base::CreateSharedPtr<NodeTemplateCompiledData>();
 
@@ -241,6 +241,28 @@ namespace game
                     ret->templates.pushBack(nodeInfo.m_data);
             }
 
+            for (auto i : ret->templates.indexRange().reversed())
+            {
+                const auto& data = ret->templates[i];
+                if (data->type() == NodeTemplateType::Content)
+                {
+                    ret->localToParent = data->placement().toTransform();
+                    i += 1;
+
+                    while (i < ret->templates.size())
+                    {
+                        const auto& overrideData = ret->templates[i++];
+                        if (!overrideData->placement().identity())
+                        {
+                            const auto overrideTransform = overrideData->placement().toTransform();
+                            ret->localToParent = overrideTransform.applyTo(ret->localToParent);
+                        }
+                    }
+                }
+            }
+
+            ret->localToReference = ret->localToParent.applyTo(parentToReference);
+
             DEBUG_CHECK_EX(!ret->templates.empty(), "No data for a node - how did we know about it then?");
             return ret;
         }
@@ -251,7 +273,8 @@ namespace game
     public:
         NodeCompiler(NodeTemplateCompiledOutput& outputContainer)
             : m_output(outputContainer)
-        {}
+        {
+        }
 
         void addDependency(const PrefabRef& prefab)
         {
@@ -287,7 +310,9 @@ namespace game
                 }
             }
 
-            if (auto compiledNode = localIt.compileNode())
+            const auto& parentToReference = compiledParent ? compiledParent->localToReference : base::Transform::IDENTITY();
+
+            if (auto compiledNode = localIt.compileNode(parentToReference))
             {
                 DEBUG_CHECK_EX(compiledNode->name, "Node has no name");
                 m_output.allNodes.pushBack(compiledNode);
@@ -308,6 +333,7 @@ namespace game
 
     private:
         NodeTemplateCompiledOutput& m_output;
+        NodeTemplatePlacement m_referencePlacement;
     };
 
     void NodeTemplateContainer::compileNode(int nodeId, base::StringID nodeName, NodeTemplateCompiledOutput& outContainer, NodeTemplateCompiledData* outContainerParent) const

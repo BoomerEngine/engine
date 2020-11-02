@@ -13,7 +13,8 @@
 
 namespace game
 {
-    /// node placement helper
+
+    /// node placement helper, all placement of this type are relative
     class GAME_WORLD_API NodeTemplatePlacement
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(NodeTemplatePlacement);
@@ -29,6 +30,11 @@ namespace game
         NodeTemplatePlacement(const base::Vector3& pos, const base::Angles& rot = base::Angles(0,0,0), const base::Vector3& scale = base::Vector3(1,1,1));
         NodeTemplatePlacement(float tx, float ty, float tz, float pitch = 0.0f, float yaw = 0.0f, float roll = 0.0f, float sx = 1.0f, float sy = 1.0f, float sz = 1.0f);
         NodeTemplatePlacement(const base::AbsoluteTransform& absoluteTransform);
+
+        //---
+
+        /// check if transform is identity
+        bool identity() const;
 
         //--
 

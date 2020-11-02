@@ -24,9 +24,6 @@ namespace ui
         RenderingFullScenePanel();
         virtual ~RenderingFullScenePanel();
 
-        //--
-
-        INLINE rendering::scene::Scene* renderingScene() const { return m_scene; }
 
         //--
 
@@ -40,8 +37,6 @@ namespace ui
         virtual void handleRender(rendering::scene::FrameParams& frame) override;
 
     private:
-        rendering::scene::ScenePtr m_scene;
-
         rendering::scene::FrameRenderMode m_renderMode;
         base::StringID m_renderMaterialDebugChannelName;
 
@@ -52,5 +47,29 @@ namespace ui
     };
 
     ///---
+
+    /// ui widget with a full 3D rendering scene with actual rendering scene
+    class RENDERING_UI_API RenderingFullScenePanelWithScene : public RenderingFullScenePanel
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(RenderingFullScenePanelWithScene, RenderingFullScenePanel);
+
+    public:
+        RenderingFullScenePanelWithScene();
+        virtual ~RenderingFullScenePanelWithScene();
+
+        //--
+
+        INLINE rendering::scene::Scene* renderingScene() const { return m_scene; }
+
+        //--
+
+    private:
+        rendering::scene::ScenePtr m_scene;
+
+    protected:
+        virtual void handleRender(rendering::scene::FrameParams& frame) override;
+    };
+
+    //---
 
 } // ui

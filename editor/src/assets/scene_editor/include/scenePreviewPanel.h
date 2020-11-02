@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: editor #]
+* [# filter: editor\ui #]
 ***/
 
 #pragma once
@@ -15,18 +15,18 @@ namespace ed
     //--
     
     // a preview panel for editor scene
-    class ASSETS_SCENE_COMMON_API EditorScenePreviewPanel : public ui::RenderingFullScenePanel
+    class ASSETS_SCENE_EDITOR_API ScenePreviewPanel : public ui::RenderingFullScenePanel
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(EditorScenePreviewPanel, ui::RenderingFullScenePanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(ScenePreviewPanel, ui::RenderingFullScenePanel);
 
     public:
-        EditorScenePreviewPanel(EditorScenePreviewContainer* container, EditorScene* scene);
-        virtual ~EditorScenePreviewPanel();
+        ScenePreviewPanel(ScenePreviewContainer* container);
+        virtual ~ScenePreviewPanel();
 
         //--
 
         // attach edit mode to the panel, events will be routed through it
-        void bindEditMode(IEditorSceneEditMode* editMode);
+        void bindEditMode(ISceneEditMode* editMode);
 
         //--
 
@@ -40,10 +40,9 @@ namespace ed
         virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        EditorSceneEditModeWeakPtr m_editMode;
+        SceneEditModeWeakPtr m_editMode;
 
-        EditorScenePreviewContainer* m_container;
-        EditorScenePtr m_scene;
+        ScenePreviewContainer* m_container;
     };
 
     //--

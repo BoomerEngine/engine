@@ -10,6 +10,7 @@
 
 #include "base/resource/include/resource.h"
 #include "base/containers/include/hashSet.h"
+#include "worldNodePlacement.h"
 
 namespace game
 {
@@ -42,7 +43,10 @@ namespace game
     {
     public:
         base::StringID name; // assigned name of the node (NOTE: may be different than name of the node in the prefab)
-        base::Array<NodeTemplatePtr> templates; // all collected templates from all prefabs that matched the node's path
+        base::Array<NodeTemplatePtr> templates; // all collected templates from all prefabs that matched the node's path, NOTE: NOT OWNED and NOT modified
+        
+        base::Transform localToParent; // placement of the actual node with respect to parent node, 99% of time matches the one source data
+        base::Transform localToReference; // concatenated transform using the "scale-safe" transform rules, used during instantiation
 
         base::RefWeakPtr<NodeTemplateCompiledData> parent;
         base::Array<base::RefPtr<NodeTemplateCompiledData>> children; // collected children of this node

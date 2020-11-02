@@ -21,9 +21,10 @@ namespace base
 
     //----
 
-    DataViewNative::DataViewNative(IObject* obj)
+    DataViewNative::DataViewNative(IObject* obj, bool readOnly)
         : m_object(AddRef(obj))
         , m_events(this)
+        , m_readOnly(readOnly)
     {
         if (m_object)
         {
@@ -46,7 +47,12 @@ namespace base
     DataViewResult DataViewNative::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (m_object)
-            return m_object->describeDataView(viewPath, outInfo);
+        {
+            const auto result = m_object->describeDataView(viewPath, outInfo);
+            if (m_readOnly && result.valid())
+                outInfo.flags |= rtti::DataViewInfoFlagBit::ReadOnly;
+            return result;
+        }
         
         return DataViewResultCode::ErrorNullObject;
     }
@@ -76,6 +82,9 @@ namespace base
     DataViewResult DataViewNative::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const
     {
         // TODO: prevalidate ?
+
+        if (m_readOnly)
+            return DataViewResultCode::ErrorReadOnly;
 
         if (m_object)
             return m_object->writeDataView(viewPath, sourceData, sourceType);
@@ -164,6 +173,10 @@ namespace base
 
     DataViewActionResult DataViewNative::actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const
     {
+        // protect read only objects
+        if (m_readOnly)
+            return DataViewResultCode::ErrorReadOnly;
+
         // describe the data view to know is the value is not read only
         rtti::DataViewInfo info;
         info.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
@@ -192,6 +205,10 @@ namespace base
 
     DataViewActionResult DataViewNative::actionValueReset(StringView<char> viewPath) const
     {
+        // protect read only objects
+        if (m_readOnly)
+            return DataViewResultCode::ErrorReadOnly;
+
         // describe the data view to know the type and if it even can be reset
         rtti::DataViewInfo info;
         info.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
@@ -224,6 +241,10 @@ namespace base
 
     DataViewActionResult DataViewNative::actionArrayClear(StringView<char> viewPath) const
     {
+        // protect read only objects
+        if (m_readOnly)
+            return DataViewResultCode::ErrorReadOnly;
+
         // describe the data view to know the type and if it even can be reset
         rtti::DataViewInfo info;
         if (auto ret = HasError(describeDataView(viewPath, info)))

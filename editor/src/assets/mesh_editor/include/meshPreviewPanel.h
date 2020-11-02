@@ -35,9 +35,9 @@ namespace ed
     //--
 
     // a preview panel for an image
-    class ASSETS_MESH_EDITOR_API MeshPreviewPanel : public ui::RenderingFullScenePanel
+    class ASSETS_MESH_EDITOR_API MeshPreviewPanel : public ui::RenderingFullScenePanelWithScene
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshPreviewPanel, ui::RenderingFullScenePanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshPreviewPanel, ui::RenderingFullScenePanelWithScene);
 
     public:
         MeshPreviewPanel();

@@ -354,8 +354,8 @@ namespace base
     class ObjectTemplateDataView : public DataViewNative
     {
     public:
-        ObjectTemplateDataView(IObjectTemplate* ot)
-            : DataViewNative(ot)
+        ObjectTemplateDataView(IObjectTemplate* ot, bool readOnly)
+            : DataViewNative(ot, readOnly)
             , m_objectTemplate(ot)
         {}
 
@@ -424,9 +424,9 @@ namespace base
         IObjectTemplate* m_objectTemplate;
     };
 
-    DataViewPtr IObjectTemplate::createDataView() const
+    DataViewPtr IObjectTemplate::createDataView(bool forceReadOnly) const
     {
-        return base::CreateSharedPtr<ObjectTemplateDataView>(const_cast<IObjectTemplate*>(this));
+        return base::CreateSharedPtr<ObjectTemplateDataView>(const_cast<IObjectTemplate*>(this), forceReadOnly);
     }
 
     //---
