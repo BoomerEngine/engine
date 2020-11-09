@@ -26,51 +26,58 @@ namespace ed
 
     AssetItemsSimpleListModel::~AssetItemsSimpleListModel()
     {
-        m_items.clearPtr();
+        m_items.clear();
         m_itemMap.clear();
+    }
+
+    bool AssetItemsSimpleListModel::hasChildren(const ui::ModelIndex& parent) const
+    {
+        return !parent && !m_items.empty();
+    }
+
+    ui::ModelIndex AssetItemsSimpleListModel::parent(const ui::ModelIndex& item) const
+    {
+        return ui::ModelIndex();
+    }
+
+    void AssetItemsSimpleListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+    {
+        if (!parent)
+        {
+            outChildrenIndices.reserve(m_items.size());
+
+            for (const auto& item : m_items)
+                outChildrenIndices.pushBack(item->index);
+        }
     }
 
     void AssetItemsSimpleListModel::clear()
     {
-        beingRemoveRows(ui::ModelIndex(), 0, m_items.size());
-        m_items.clearPtr();
+        m_items.clear();
         m_itemMap.clear();
-        endRemoveRows();
-    }
-
-    ui::ModelIndex AssetItemsSimpleListModel::index(int index) const
-    {
-        if (index >= 0 && index <= m_items.lastValidIndex())
-            return ui::ModelIndex(this, index, 0);
-        return ui::ModelIndex();
+        reset();
     }
 
     ui::ModelIndex AssetItemsSimpleListModel::index(ManagedItem* item) const
     {
-        int localItemIndex = -1;
-        m_itemMap.find(item, localItemIndex);
-        return index(localItemIndex);
+        Item* localItem = nullptr;
+        if (m_itemMap.find(item, localItem))
+            return localItem->index;
+        return ui::ModelIndex();
     }
 
     void AssetItemsSimpleListModel::removeItem(ManagedItem* item)
     {
         if (item)
         {
-            int localItemIndex = 0;
-            if (m_itemMap.find(item, localItemIndex))
+            Item* localItem = nullptr;
+            if (m_itemMap.find(item, localItem))
             {
-                auto* localItem = m_items[localItemIndex];
-
-                beingRemoveRows(ui::ModelIndex(), localItemIndex, 1);
-                m_items.erase(localItemIndex);
-                endRemoveRows();
-
-                MemDelete(localItem);
+                RefPtr<Item> itemRef = AddRef(localItem);
+                m_items.remove(localItem);
                 m_itemMap.remove(item);
 
-                for (auto& val : m_itemMap.values())
-                    if (val > localItemIndex)
-                        val -= 1;
+                notifyItemRemoved(ui::ModelIndex(), itemRef->index);
             }
         }
     }
@@ -79,90 +86,90 @@ namespace ed
     {
         if (item)
         {
-            int localItemIndex = 0;
-            if (m_itemMap.find(item, localItemIndex))
+            Item* localItem = nullptr;
+            if (m_itemMap.find(item, localItem))
             {
-                auto* localItem = m_items[localItemIndex];
                 localItem->checked = checked;
                 localItem->item = item;
                 localItem->comment = StringBuf(comment);
                 localItem->name = item->depotPath();
 
-                requestItemUpdate(index(localItemIndex));
+                requestItemUpdate(localItem->index);
             }
             else
             {
                 int localItemIndex = m_items.size();
 
-                auto localItem = MemNew(Item);
+                auto localItem = CreateSharedPtr<Item>();
+                localItem->index = ui::ModelIndex(this, localItem);
                 localItem->checked = checked;// && (localItemIndex & 1);
                 localItem->item = item;
                 localItem->comment = StringBuf(comment);
                 localItem->name = item->depotPath();
 
-                beingInsertRows(ui::ModelIndex(), localItemIndex, 1);
                 m_items.pushBack(localItem);
-                m_itemMap[item] = localItemIndex;
-                endInsertRows();
+                m_itemMap[item] = localItem;
+                
+                notifyItemAdded(ui::ModelIndex(), localItem->index);
             }
         }
     }
 
     void AssetItemsSimpleListModel::comment(ManagedItem* item, StringView<char> comment)
     {
-        int localItemIndex = 0;
-        if (m_itemMap.find(item, localItemIndex))
+        Item* localItem = nullptr;
+        if (m_itemMap.find(item, localItem))
         {
-            auto* localItem = m_items[localItemIndex];
             if (localItem->comment != comment)
             {
                 localItem->comment = StringBuf(comment);
-                requestItemUpdate(index(localItemIndex));
+                requestItemUpdate(localItem->index);
             }
         }
     }
 
     bool AssetItemsSimpleListModel::checked(ManagedItem* item) const
     {
-        int localItemIndex = 0;
-        if (m_itemMap.find(item, localItemIndex))
-        {
-            auto* localItem = m_items[localItemIndex];
+        Item* localItem = nullptr;
+        if (m_itemMap.find(item, localItem))
             return localItem->checked;
-        }
 
         return false;
     }
 
     void AssetItemsSimpleListModel::checked(ManagedItem* item, bool selected) const
     {
-        int localItemIndex = 0;
-        if (m_itemMap.find(item, localItemIndex))
+        Item* localItem = nullptr;
+        if (m_itemMap.find(item, localItem))
         {
-            auto* localItem = m_items[localItemIndex];
             if (localItem->checked != selected)
             {
                 localItem->checked = selected;
-                requestItemUpdate(index(localItemIndex));
+                requestItemUpdate(localItem->index);
             }
         }
     }
 
     bool AssetItemsSimpleListModel::checked(const ui::ModelIndex& item) const
     {
-        if (item.row() >= 0 && item.row() <= m_items.lastValidIndex())
-            return m_items[item.row()]->checked;
+        if (item.model() == this)
+            if (auto* entry = item.unsafe<Item>())
+                return entry->checked;
+
         return false;
     }
 
     void AssetItemsSimpleListModel::checked(const ui::ModelIndex& item, bool checked) const
     {
-        if (item.row() >= 0 && item.row() <= m_items.lastValidIndex())
+        if (item.model() == this)
         {
-            if (m_items[item.row()]->checked != checked)
+            if (auto* entry = item.unsafe<Item>())
             {
-                m_items[item.row()]->checked = checked;
-                requestItemUpdate(item);
+                if (entry->checked != checked)
+                {
+                    entry->checked = checked;
+                    requestItemUpdate(item);
+                }
             }
         }
     }
@@ -172,73 +179,81 @@ namespace ed
         Array<ManagedItem*> ret;
         ret.reserve(m_items.size());
 
-        for (const auto* item : m_items)
+        for (const auto& item : m_items)
             if (item->checked || !checkedOnly)
                 ret.pushBack(item->item);
 
         return ret;
     }
 
-    AssetItemsSimpleListModel::Item* AssetItemsSimpleListModel::itemForIndex(const ui::ModelIndex& id) const
+    bool AssetItemsSimpleListModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex) const
     {
-        if (id.row() >= 0 && id.row() <= m_items.lastValidIndex())
-            return m_items[id.row()];
-        return nullptr;
+        if (first.model() == this && second.model() == this)
+        {
+            const auto* firstData = first.unsafe<Item>();
+            const auto* secondData = first.unsafe<Item>();
+            if (firstData && secondData)
+                return firstData->name < secondData->name;
+        }
+
+        return first < second;
     }
 
-    StringBuf AssetItemsSimpleListModel::content(const ui::ModelIndex& id, int colIndex /*= 0*/) const
+    bool AssetItemsSimpleListModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex) const
     {
-        if (const auto* item = itemForIndex(id))
-            return item->name;
-        return StringBuf::EMPTY();
-    }
+        if (id.model() == this)
+        {
+            if (auto* data = id.unsafe<Item>())
+            {
+                return filter.testString(data->name.view());
+            }
+        }
 
-    uint32_t AssetItemsSimpleListModel::size() const
-    {
-        return m_items.size();
+        return false;
     }
 
     void AssetItemsSimpleListModel::visualize(const ui::ModelIndex& id, int columnCount, ui::ElementPtr& content) const
     {
-        if (id.row() >= 0 && id.row() <= m_items.lastValidIndex())
+        if (id.model() == this)
         {
-            auto* item = m_items[id.row()];
-
-            if (!content)
+            if (auto* item = id.unsafe<Item>())
             {
-                content = CreateSharedPtr<ui::IElement>();
-                content->customPadding(2);
-                content->layoutHorizontal();
-
+                if (!content)
                 {
-                    auto elem = content->createNamedChild<ui::CheckBox>("State"_id);
-                    elem->customMargins(5, 0, 5, 0);
-                    elem->state(item->checked);
-                    elem->bind(ui::EVENT_CLICKED) = [this, item](ui::CheckBox* box) {
-                        item->checked = box->stateBool();
-                    };
+                    content = CreateSharedPtr<ui::IElement>();
+                    content->customPadding(2);
+                    content->layoutHorizontal();
+
+                    {
+                        auto elem = content->createNamedChild<ui::CheckBox>("State"_id);
+                        elem->customMargins(5, 0, 5, 0);
+                        elem->state(item->checked);
+                        elem->bind(ui::EVENT_CLICKED) = [this, item](ui::CheckBox* box) {
+                            item->checked = box->stateBool();
+                        };
+                    }
+
+                    {
+                        auto elem = content->createNamedChild<ui::TextLabel>("Name"_id);
+                        elem->text(item->name);
+                    }
+
+                    {
+                        auto elem = content->createNamedChild<ui::TextLabel>("Comment"_id, "");
+                        elem->text(item->comment);
+                    }
                 }
-
+                else
                 {
-                    auto elem = content->createNamedChild<ui::TextLabel>("Name"_id);
-                    elem->text(item->name);
+                    if (auto elem = content->findChildByName<ui::CheckBox>("State"_id))
+                        elem->state(item->checked);
+
+                    if (auto elem = content->findChildByName<ui::TextLabel>("Name"_id))
+                        elem->text(item->name);
+
+                    if (auto elem = content->findChildByName<ui::TextLabel>("Comment"_id))
+                        elem->text(item->comment);
                 }
-
-                {
-                    auto elem = content->createNamedChild<ui::TextLabel>("Comment"_id, "");
-                    elem->text(item->comment);
-                }                
-            }
-            else
-            {
-                if (auto elem = content->findChildByName<ui::CheckBox>("State"_id))
-                    elem->state(item->checked);
-
-                if (auto elem = content->findChildByName<ui::TextLabel>("Name"_id))
-                    elem->text(item->name);
-
-                if (auto elem = content->findChildByName<ui::TextLabel>("Comment"_id))
-                    elem->text(item->comment);
             }
         }
     }

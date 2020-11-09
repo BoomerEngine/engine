@@ -21,12 +21,9 @@ namespace ed
         virtual ~SceneContentTreeModel();
 
         // IAbstractItemModel
-        virtual uint32_t rowCount(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-        virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-        virtual bool hasIndex(int row, int col, const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
         virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
-        virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-
+        virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
         virtual base::StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
@@ -44,34 +41,17 @@ namespace ed
         ui::ModelIndex indexForNode(const SceneContentNode* node) const;
 
     private:
-        class EditorNodeProxy : public IReferencable
-        {
-        public:
-            SceneContentNodeWeakPtr m_node; // actual node data
-            EditorNodeProxy* m_parent = nullptr;
-            Array<EditorNodeProxy*> m_children; // only the created ones
-
-            EditorNodeProxy(SceneContentNode* node, EditorNodeProxy* parent);
-            ~EditorNodeProxy();
-
-            EditorNodeProxy* addChild(SceneContentTreeModel* model, SceneContentNode* node);
-            EditorNodeProxy* removeChild(SceneContentTreeModel* model, SceneContentNode* node);
-
-            int indexInParent() const;
-            ui::ModelIndex index(const SceneContentTreeModel* model) const;
-        };
-
         SceneContentStructure* m_structure = nullptr;
         ScenePreviewContainer* m_preview = nullptr; // TOOD: remove? 
-            
-        HashMap<SceneContentNodeWeakPtr, EditorNodeProxy*> m_proxiesMap;
-        EditorNodeProxy* m_rootProxy = nullptr;
+
+        SceneContentNodePtr m_root;
 
         GlobalEventTable m_contentEvents;
 
         void handleChildNodeAttached(SceneContentNode* child);
         void handleChildNodeDetached(SceneContentNode* child);
         void handleNodeVisualFlagsChanged(SceneContentNode* child);
+        void handleNodeModifiedFlagsChanged(SceneContentNode* child);
         void handleNodeVisibilityChanged(SceneContentNode* child);
         void handleNodeNameChanged(SceneContentNode* child);
     };
@@ -84,10 +64,8 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneStructurePanel, ui::IElement);
 
     public:
-        SceneStructurePanel();
+        SceneStructurePanel(SceneContentStructure* scene, ScenePreviewContainer* preview);
         virtual ~SceneStructurePanel();
-
-        void bindScene(SceneContentStructure* scene, ScenePreviewContainer* preview);
 
         void syncExternalSelection(const Array<SceneContentNodePtr>& nodes);
 

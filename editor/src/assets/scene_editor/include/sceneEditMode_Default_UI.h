@@ -36,6 +36,7 @@ namespace ed
         //--
 
         void refreshName();
+        void refreshProperties();
 
     protected:
         ui::EditBoxPtr m_name;
@@ -44,52 +45,26 @@ namespace ed
         SceneEditMode_Default* m_host = nullptr;
 
         Array<ui::ElementPtr> m_commonElements;
+        Array<ui::ElementPtr> m_dataElements;
         Array<ui::ElementPtr> m_entityElements;
 
         //---
 
-        struct PartInfo
-        {
-            StringID name; // null for entity, not null for components
-            bool localData = false;
-            bool overrideData = false;
-        };
-
-        class PartListModel : public ui::SimpleTypedListModel<PartInfo>
-        {
-        public:
-            virtual bool compare(const PartInfo& a, const PartInfo& b, int colIndex) const override;
-            virtual bool filter(const PartInfo& data, const ui::SearchPattern& filter, int colIndex = 0) const override;
-            virtual base::StringBuf content(const PartInfo& data, int colIndex = 0) const override;
-        };
-
-        ui::ListViewPtr m_partList;
-        ui::ButtonPtr m_buttonCreateComponent;
-        ui::ButtonPtr m_buttonRemoveComponent;
-
-        RefPtr<PartListModel> m_partListModel;
-
-        Array<SceneContentNodePtr> m_nodes;
-
-        void collectSelectedEditableObjects(Array<SceneContentEditableObject>& outList) const;
-        void refreshPartList(base::StringID autoSelectName);
-        void collectSelectedParts(Array<PartInfo>& outParts) const;
-
-        void cmdAddComponent();
-        void cmdRemoveComponent();
-        void cmdChangeName();
-
-        //---
+        Array<SceneContentNodePtr> m_nodes; // active selection
 
 
         ui::DataInspectorPtr m_properties;
-        ui::ButtonPtr m_buttonCreateLocalData;
-        ui::ButtonPtr m_buttonRemoveLocalData;
+        ClassType m_commonClassType;
 
-        void refreshProperties();
-        void cmdCreateLocalData();
-        void cmdRemoveLocalData();
+        ui::EditBoxPtr m_partClass;
+        ui::ButtonPtr m_buttonChangeClass;
+
+        ui::ClassPickerBoxPtr m_classPicker;
+
+        void changeDataClass(ClassType newDataClass, const Array<SceneContentNodePtr>& nodes);
+
         void cmdChangeClass();
+        void cmdChangeName();
 
         //--
     };

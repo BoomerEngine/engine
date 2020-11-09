@@ -99,9 +99,9 @@ namespace base
 
     INLINE AbsoluteTransform& AbsoluteTransform::operator*=(const Transform& relativeTransform)
     {
-        m_position += m_rotation.transformVector(m_scale * relativeTransform.translation());
-        m_rotation *= relativeTransform.rotation();
-        m_scale *= relativeTransform.scale();
+        m_position += m_rotation.transformVector(m_scale * relativeTransform.T);
+        m_rotation *= relativeTransform.R;
+        m_scale *= relativeTransform.S;
         return *this;
     }
 

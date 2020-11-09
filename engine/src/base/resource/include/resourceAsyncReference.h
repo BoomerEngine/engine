@@ -114,8 +114,8 @@ namespace base
                 : BaseAsyncReference(MakePath<T>(path))
             {}
 
-            INLINE bool operator==(const AsyncRef<T>& other) const { return BaseReference::operator==(other); }
-            INLINE bool operator!=(const AsyncRef<T>& other) const { return BaseReference::operator!=(other); }
+            INLINE bool operator==(const AsyncRef<T>& other) const { return BaseAsyncReference::operator==(other); }
+            INLINE bool operator!=(const AsyncRef<T>& other) const { return BaseAsyncReference::operator!=(other); }
 
             template< typename U = T >
             INLINE Ref<U> load(IResourceLoader* customLoader = nullptr) const CAN_YIELD

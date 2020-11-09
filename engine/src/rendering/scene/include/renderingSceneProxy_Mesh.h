@@ -71,6 +71,7 @@ namespace rendering
             //--
 
             virtual void runMoveProxy(Scene* scene, IProxy* proxy, const CommandMoveProxy& cmd) override final;
+            virtual void runEffectSelectionHighlight(Scene* scene, IProxy* proxy, const CommandEffectSelectionHighlight& cmd) override final;
 
             virtual void handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies) override final;
         };

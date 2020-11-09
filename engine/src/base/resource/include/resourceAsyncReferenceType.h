@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "base/object/include/rttiResourceReferenceType.h"
+
 namespace base
 {
     namespace res
@@ -17,7 +19,7 @@ namespace base
         //--
 
         /// Type for a resource reference
-        class BASE_RESOURCE_API ResourceAsyncRefType : public rtti::IType
+        class BASE_RESOURCE_API ResourceAsyncRefType : public rtti::IResourceReferenceType
         {
         public:
             ResourceAsyncRefType(SpecificClassType<IResource> classType);
@@ -48,11 +50,18 @@ namespace base
 
             //----
 
+            virtual ClassType referenceResourceClass() const override final;
+            /*virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const override final;
+            virtual void referenceWriteResource(void* data, res::IResource* resource) const override final;*/
+            virtual bool referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const override final;
+
+            //----
+
             static const char* TypePrefix;
             static Type ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem);
 
         private:
-            SpecificClassType<IResource>  m_resourceClass;
+            SpecificClassType<IResource> m_resourceClass;
         };
 
         //---

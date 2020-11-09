@@ -10,28 +10,8 @@
 #include "build.h"
 #include "gameInputMapping.h"
 
-#include "base/resource/include/resourceFactory.h"
-#include "base/resource/include/resourceTags.h"
-
 namespace game
 {
-    ///----
-
-    // factory class for the scene world
-    class InputDefinitionsFactory : public base::res::IFactory
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitionsFactory, base::res::IFactory);
-
-    public:
-        virtual base::res::ResourceHandle createResource() const override final
-        {
-            return base::CreateSharedPtr<InputDefinitions>();
-        }
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(InputDefinitionsFactory);
-        RTTI_METADATA(base::res::FactoryClassMetadata).bindResourceClass<InputDefinitions>();
-    RTTI_END_TYPE();
 
     ///--
 
@@ -67,44 +47,5 @@ namespace game
     {}
 
     ///--
-
-	RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
-        RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4input");
-        RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Input Definitions");
-        RTTI_PROPERTY(m_root);
-    RTTI_END_TYPE();
-
-    InputDefinitions::InputDefinitions()
-    {}
-
-    static InputActionTablePtr FindChildren(const InputActionTable* table, base::StringView<char> name)
-    {
-        for (const auto& child : table->children())
-            if (child->name() == name)
-                return child;
-
-        return nullptr;
-    }
-
-    InputActionTablePtr InputDefinitions::findTable(base::StringView<char> name) const
-    {
-        auto table = m_root;
-        if (table)
-        {
-            base::InplaceArray<base::StringView<char>, 5> nameParts;
-            name.slice(".", false, nameParts);
-
-            for (const auto& partName : nameParts)
-            {
-                table = FindChildren(table, partName);
-                if (!table)
-                    break;
-            }
-        }
-
-        return table;
-    }
-
-    //--
     
 } // game

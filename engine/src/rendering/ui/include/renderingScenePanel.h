@@ -149,6 +149,9 @@ namespace ui
         // get the overlay toolbar
         INLINE const ToolBarPtr& toolbar() const { return m_toolbar; }
 
+        // get the bottom overlay toolbar
+        INLINE const ToolBarPtr& bottomToolbar() const { return m_bottomToolbar; }
+
         // get the panel settings
         INLINE const RenderingScenePanelSettings& panelSettings() const { return m_panelSettings; }
 
@@ -249,6 +252,7 @@ namespace ui
         base::RefWeakPtr<ui::IInputAction> m_renderInputAction;
 
         ToolBarPtr m_toolbar;
+        ToolBarPtr m_bottomToolbar;
 
         const rendering::scene::Camera& cachedCamera() const;
     };

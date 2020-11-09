@@ -30,6 +30,8 @@ namespace rendering
             uint8_t msaaLevel = 1; // disabled
 
             FrameParams_Resolution(uint32_t width_, uint32_t height_);
+
+            float aspect() const; // width/height
         };
 
         ///---

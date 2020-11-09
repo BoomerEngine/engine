@@ -28,6 +28,24 @@ namespace base
         
     }
 
+    ObjectPtr ObjectGlobalRegistry::findObject(uint32_t id)
+    {
+        auto lock = CreateLock(m_objectsLock);
+
+        // locate the entry
+        const auto bucketIndex = id % MAX_BUCKETS;
+        auto* curEntry = m_objectHashBuckets[bucketIndex];
+        while (curEntry)
+        {
+            if (curEntry->id == id)
+                return curEntry->ptr.lock();
+            curEntry = curEntry->nextBucket;
+        }
+
+        // object not found
+        return nullptr;
+    }
+
     bool ObjectGlobalRegistry::iterateAllObjects(const std::function<bool(IObject*)>& enumFunc)
     {
         base::Array<ObjectWeakPtr> allObjects;

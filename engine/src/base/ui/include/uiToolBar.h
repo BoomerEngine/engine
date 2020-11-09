@@ -46,7 +46,7 @@ namespace ui
         void createButton(base::StringID action, const ToolbarButtonSetup& setup);
 
         // add a simple tool button with direct action
-        void createCallback(const ToolbarButtonSetup& setup, const std::function<void()>& simpleCallback);
+        EventFunctionBinder createCallback(const ToolbarButtonSetup& setup);
 
     protected:
         Timer m_timerUpdateState;

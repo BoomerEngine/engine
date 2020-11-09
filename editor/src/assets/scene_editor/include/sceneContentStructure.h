@@ -19,7 +19,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentStructure, IObject);
 
     public:
-        SceneContentStructure(const game::WorldPtr& previewWorld, SceneContentNode* rootNode); // usually the root is either WorldRoot or PrefabRoot
+        SceneContentStructure(bool prefab); // usually the root is either WorldRoot or PrefabRoot
         virtual ~SceneContentStructure();
 
         // the root node
@@ -31,9 +31,6 @@ namespace ed
         // all attached nodes, parents first
         INLINE const Array<SceneContentNodePtr>& nodes() const { return m_nodes; }
 
-        // preview world where all the visualizations are created
-        INLINE const game::WorldPtr& previewWorld() const { return m_previewWorld; }
-
         //--
 
         // render in-editor debug representation of entities
@@ -42,12 +39,22 @@ namespace ed
         //--
 
         // inform about node being added to structure
-        void handleNodeAdded(SceneContentNode* node);
+        void nodeAdded(SceneContentNode* node);
 
         // inform about node being removed to structure
-        void handleNodeRemoved(SceneContentNode* node);
+        void nodeRemoved(SceneContentNode* node);
+
+        // inform that node has requested dirty state to be set (some part of it's content has changed)
+        void nodeDirtyContent(SceneContentNode* node);
 
         //--
+
+        // get list of nodes added/removed since last sync
+        void syncNodeChanges(Array<SceneContentNodePtr>& outAddedNodes, Array<SceneContentNodePtr>& outRemovedNodes);
+
+        // visit all nodes marked as dirty, used to sync the preview state with content state
+        // synced state should be cleared from the dirtyFlags bitfield
+        void visitDirtyNodes(const std::function<void(const SceneContentNode*, SceneContentNodeDirtyFlags&)>& func);
 
     private:
         SceneContentNodePtr m_root;
@@ -55,7 +62,9 @@ namespace ed
         Array<SceneContentEntityNodePtr> m_entities;
         Array<SceneContentNodePtr> m_nodes;
 
-        game::WorldPtr m_previewWorld;
+        HashSet<SceneContentNodePtr> m_addedNodes;
+        HashSet<SceneContentNodePtr> m_removedNodes;
+        HashSet<SceneContentNodeWeakPtr> m_dirtyNodes;
     };
 
     //--

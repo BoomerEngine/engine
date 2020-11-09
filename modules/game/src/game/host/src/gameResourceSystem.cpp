@@ -8,42 +8,42 @@
 
 #include "build.h"
 #include "gameResourceSystem.h"
-#include "gameResourceMapping.h"
+#include "gameResourceDefinitions.h"
 
 namespace game
 {
     //----
 
-    RTTI_BEGIN_TYPE_CLASS(GameSystem_Resources);
+    RTTI_BEGIN_TYPE_CLASS(GameResourceSystem);
     RTTI_END_TYPE();
 
     //---
 
-    GameSystem_Resources::GameSystem_Resources()
+    GameResourceSystem::GameResourceSystem()
     {}
 
-    GameSystem_Resources::~GameSystem_Resources()
+    GameResourceSystem::~GameResourceSystem()
     {
         m_tableMap.clearPtr();
         m_entryMap.clearPtr();
     }
 
-    void GameSystem_Resources::requestTablePreload(base::StringID name)
+    void GameResourceSystem::requestTablePreload(base::StringID name)
     {
         // TODO
     }
 
-    void GameSystem_Resources::discardTablePreload(base::StringID name)
+    void GameResourceSystem::discardTablePreload(base::StringID name)
     {
         // TODO
     }
 
-    bool GameSystem_Resources::tablePreload(base::StringID name) const
+    bool GameResourceSystem::tablePreload(base::StringID name) const
     {
         return true;
     }
 
-    void GameSystem_Resources::processMappingFile(const game::ResourceList* resources)
+    void GameResourceSystem::processMappingFile(const game::ResourceDefinitions* resources)
     {
         if (!resources)
             return;
@@ -86,7 +86,7 @@ namespace game
         }
     }
 
-    base::res::ResourcePtr GameSystem_Resources::acquireResource(base::StringID name, bool forceLoad /*= false*/)
+    base::res::ResourcePtr GameResourceSystem::acquireResource(base::StringID name, bool forceLoad /*= false*/)
     {
         if (!name)
             return nullptr;
@@ -113,19 +113,19 @@ namespace game
 
     //--
 
-    static base::res::StaticResource<game::ResourceList> cvResCommonResources("/game/common_resources.v4reslist");
+    static base::res::StaticResource<game::ResourceDefinitions> cvResCommonResources("/game/common_resources.v4reslist");
 
-    void GameSystem_Resources::handleInitialize(IGame* game)
+    void GameResourceSystem::handleInitialize(IGame* game)
     {
         processMappingFile(cvResCommonResources.loadAndGet());
     }
 
-    void GameSystem_Resources::handlePreUpdate(IGame* game, double dt)
+    void GameResourceSystem::handlePreUpdate(IGame* game, double dt)
     {
         // TODO: update loading
     }
 
-    void GameSystem_Resources::handleDebug(IGame* game)
+    void GameResourceSystem::handleDebug(IGame* game)
     {
 
     }

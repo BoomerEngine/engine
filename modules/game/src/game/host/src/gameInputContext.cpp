@@ -10,6 +10,7 @@
 #include "build.h"
 #include "gameInputMapping.h"
 #include "gameInputContext.h"
+#include "gameInputDefinitions.h"
 #include "base/input/include/inputStructures.h"
 
 namespace game

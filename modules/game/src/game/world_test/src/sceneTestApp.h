@@ -11,7 +11,6 @@
 #include "base/io/include/absolutePath.h"
 #include "base/app/include/application.h"
 
-#include "simpleCamera.h"
 #include "rendering/scene/include/renderingSceneStats.h"
 
 namespace game
@@ -43,7 +42,7 @@ namespace game
 
             //--
 
-            ImGuiContext* m_imgui = nullptr;            
+            ImGuiContext* m_imgui = nullptr;
 
             //--
 

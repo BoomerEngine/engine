@@ -26,6 +26,7 @@
 #include "base/font/include/fontGlyphBuffer.h"
 
 #include "rendering/scene/include/renderingFrameParams.h"
+#include "rendering/scene/include/renderingSimpleFlyCamera.h"
 
 namespace game
 {
@@ -76,11 +77,13 @@ namespace game
 
             void reportError(base::StringView<char> msg);
 
-            rendering::MeshPtr loadMesh(base::StringView<char> meshName, bool fullPath=false);
+            rendering::MeshPtr loadMesh(base::StringView<char> meshName);
 
         protected:
-            WorldPtr m_world;
+            base::world::WorldPtr m_world;
             bool m_failed = false;
+
+            base::RefPtr<rendering::scene::FlyCamera> m_camera;
 
             //--
 
@@ -137,8 +140,6 @@ namespace game
 
         protected:
             virtual void initialize() override;
-
-            base::RefPtr<FlyCameraEntity> m_camera;
 
             base::Vector3 m_initialCameraPosition;
             base::Angles m_initialCameraRotation;

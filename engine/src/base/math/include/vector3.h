@@ -214,6 +214,8 @@ namespace base
 
         //--
 
+        void print(IFormatStream& f) const;
+
     private:
         INLINE Vector2 _xy() const;
         INLINE Vector2 _yz() const;

@@ -42,10 +42,8 @@ namespace ui
 
     protected:
         virtual void modelReset() override;
-        virtual void modelRowsAboutToBeAdded(const ModelIndex& parent, int first, int count) override;
-        virtual void modelRowsAdded(const ModelIndex& parent, int first, int count) override;
-        virtual void modelRowsAboutToBeRemoved(const ModelIndex& parent, int first, int count) override;
-        virtual void modelRowsRemoved(const ModelIndex& parent, int first, int count) override;
+        virtual void modelItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items) override;
+        virtual void modelItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items) override;
 
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;

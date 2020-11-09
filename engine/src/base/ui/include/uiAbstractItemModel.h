@@ -14,11 +14,12 @@ namespace ui
     //---
 
     /// non-persistent index in the model, based on Qt's idea
+    /// NOTE: the model indices are transient and should not be stored as they may become invalid
     class BASE_UI_API ModelIndex
     {
     public:
-        INLINE ModelIndex(); // -1 -1
-        INLINE ModelIndex(const IAbstractItemModel *model, int rowIndex, int colIndex, const base::UntypedRefWeakPtr &ptr = nullptr);
+        INLINE ModelIndex(); // empty
+        ModelIndex(const IAbstractItemModel* model, const base::UntypedRefWeakPtr& ptr = nullptr, uint64_t uniqueIndex = 0); // non-indexed model index - marks actual object
 
         INLINE ModelIndex(const ModelIndex &other) = default;
 
@@ -31,16 +32,13 @@ namespace ui
         // get the model
         INLINE const IAbstractItemModel *model() const { return m_model; }
 
+        // get globally unique index
+        INLINE uint64_t index() const { return m_uniqueIndex; }
+
         // is this a valid item ?
-        INLINE bool valid() const { return (m_row >= 0) && (m_col >= 0) && (nullptr != m_model); }
+        INLINE bool valid() const { return nullptr != m_model; }
 
-        // get row element index
-        INLINE int row() const { return m_row; }
-
-        // get column element index
-        INLINE int column() const { return m_row; }
-
-        // get internal pointer
+        // get internal pointer, valid only for non indexed
         INLINE const base::UntypedRefWeakPtr &weakRef() const { return m_ref; }
 
         // lock internal pointer
@@ -57,7 +55,7 @@ namespace ui
         INLINE operator bool() const noexcept { return valid(); }
 
         // compare
-        INLINE bool operator==(const ModelIndex &other) const noexcept { return (other.m_row == m_row) && (other.m_col == m_col) && (other.m_model == m_model) && (other.m_ref == m_ref); }
+        INLINE bool operator==(const ModelIndex &other) const noexcept { return (other.m_uniqueIndex == m_uniqueIndex); }
 
         INLINE bool operator!=(const ModelIndex &other) const noexcept { return !operator==(other); }
 
@@ -77,11 +75,13 @@ namespace ui
         // hashing
         static uint32_t CalcHash(const ui::ModelIndex& index);
 
+        // allocate unique index for future use
+        static uint64_t AllocateUniqueIndex();
+
     private:
         const IAbstractItemModel *m_model = nullptr;
-        int m_row = INDEX_NONE;
-        int m_col = INDEX_NONE;
         base::UntypedRefWeakPtr m_ref;
+        uint64_t m_uniqueIndex = 0; // globally unique index
     };
     
     //--
@@ -95,17 +95,11 @@ namespace ui
         /// data model was reset
         virtual void modelReset() = 0;
 
-        /// rows about to be added
-        virtual void modelRowsAboutToBeAdded(const ModelIndex &parent, int first, int count) = 0;
+        /// items were added
+        virtual void modelItemsAdded(const ModelIndex &parent, const base::Array<ModelIndex>& children) = 0;
 
-        /// rows added
-        virtual void modelRowsAdded(const ModelIndex &parent, int first, int count) = 0;
-
-        /// rows about to be removed
-        virtual void modelRowsAboutToBeRemoved(const ModelIndex &parent, int first, int count) = 0;
-
-        /// rows removed
-        virtual void modelRowsRemoved(const ModelIndex &parent, int first, int count) = 0;
+        /// items were removed
+        virtual void modelItemsRemoved(const ModelIndex &parent, const base::Array<ModelIndex>& children) = 0;
 
         /// item requires an update
         virtual void modelItemUpdate(const ModelIndex& index, ItemUpdateMode mode) = 0;
@@ -121,20 +115,14 @@ namespace ui
     public:
         virtual ~IAbstractItemModel();
 
-        /// get number of rows in the model
-        virtual uint32_t rowCount(const ui::ModelIndex& parent = ui::ModelIndex()) const = 0;
+        /// get parent for given item
+        virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const = 0;
 
         /// check if we have children at given item
-        virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const = 0;
+        virtual bool hasChildren(const ui::ModelIndex& parent) const = 0;
 
-        /// check if given item has given child
-        virtual bool hasIndex(int row, int col, const ui::ModelIndex& parent = ui::ModelIndex()) const = 0;
-
-        /// get parent for given item
-        virtual ui::ModelIndex parent(const ui::ModelIndex &item = ui::ModelIndex()) const = 0;
-
-        /// get child index
-        virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex &parent = ui::ModelIndex()) const = 0;
+        /// get all children of given parent, used only if element is visualized for the first time, incremental updates depend on the notifications
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const = 0;
 
         /// compare for sorting
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex=0) const;
@@ -175,17 +163,17 @@ namespace ui
         /// calling on root invalidates everything
         void reset();
 
-        /// begin adding items
-        void beingInsertRows(const ModelIndex& parent, int first, int count);
+        /// notify that new element was just added
+        void notifyItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items);
 
-        /// finish adding items
-        void endInsertRows();
+        /// notify that new element was just added
+        void notifyItemAdded(const ModelIndex& parent, const ModelIndex& item);
 
-        /// begin removing items
-        void beingRemoveRows(const ModelIndex& parent, int first, int count);
+        /// notify that new element was just removed
+        void notifyItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items);
 
-        /// finish removing items
-        void endRemoveRows();
+        /// notify that new element was just removed
+        void notifyItemRemoved(const ModelIndex& parent, const ModelIndex& item);
 
         //--
 
@@ -202,19 +190,6 @@ namespace ui
         void unregisterObserver(IAbstractItemModelObserver* observer);
 
     private:
-        enum class UpdateState
-        {
-            None,
-            Reset,
-            InsertRows,
-            RemoveRows,
-        };
-
-        ModelIndex m_updateIndex;
-        UpdateState m_updateState = UpdateState::None;
-        int m_updateArgFirst = INDEX_NONE;
-        int m_updateArgCount = INDEX_NONE;
-
         base::Array<IAbstractItemModelObserver*> m_observers;
     };
 
@@ -223,26 +198,13 @@ namespace ui
     INLINE ModelIndex::ModelIndex()
     {}
 
-    INLINE ModelIndex::ModelIndex(const IAbstractItemModel* model, int rowIndex, int colIndex, const base::UntypedRefWeakPtr& ptr)
-        : m_model(model)
-        , m_row(rowIndex)
-        , m_col(colIndex)
-        , m_ref(ptr)
-    {
-        ASSERT(nullptr != model);
-        ASSERT(rowIndex >= 0);
-        ASSERT(colIndex >= 0);
-    }
-
     INLINE ModelIndex::ModelIndex(ModelIndex&& other)
         : m_model(other.m_model)
-        , m_row(other.m_row)
-        , m_col(other.m_col)
+        , m_uniqueIndex(other.m_uniqueIndex)
         , m_ref(other.m_ref)
     {
         other.m_model = nullptr;
-        other.m_row = INDEX_NONE;
-        other.m_col = INDEX_NONE;
+        other.m_uniqueIndex = 0;
         other.m_ref.reset();
     }
 
@@ -251,12 +213,10 @@ namespace ui
         if (this != &other)
         {
             m_model = other.m_model;
-            m_row = other.m_row;
-            m_col = other.m_col;
+            m_uniqueIndex = other.m_uniqueIndex;
             m_ref = std::move(other.m_ref);
             other.m_model = nullptr;
-            other.m_row = INDEX_NONE;
-            other.m_col = INDEX_NONE;
+            other.m_uniqueIndex = 0;
             other.m_ref.reset();
         }
 
@@ -265,125 +225,13 @@ namespace ui
 
     INLINE bool ModelIndex::operator<(const ModelIndex& other) const
     {
-        if (m_row != other.m_row)
-            return m_row < other.m_row;
-
-        if (m_col != other.m_col)
-            return m_col < other.m_col;
-
-        if (m_ref != other.m_ref)
-            return m_ref.unsafe() < other.m_ref.unsafe();
-
-        return (void*)m_model < (void*)other.m_model;
+        return m_uniqueIndex < other.m_uniqueIndex;
     }
 
     INLINE ModelIndex ModelIndex::parent() const
     {
         return m_model ? m_model->parent(*this) : ModelIndex();
     }
-
-    //--
-
-    enum class ReindexerResult : uint8_t
-    {
-        NotChanged,
-        Changed,
-        Removed,
-    };
-
-    // helper class to reindex elements when adding new stuff
-    class ModelIndexReindexerInsert : public base::NoCopy
-    {
-    public:
-        ModelIndexReindexerInsert(const ModelIndex& parent, int first, int count)
-            : m_parent(parent)
-            , m_first(first)
-            , m_count(count)
-        {}
-
-        INLINE const ModelIndex& parent() const { return m_parent; }
-        INLINE int first() const { return m_first; }
-        INLINE int count() const { return m_count; }
-
-        INLINE ReindexerResult reindex(const ModelIndex& cur, ModelIndex& outIndex) const
-        {
-            if (cur.parent() == m_parent)
-            {
-                if (cur.row() >= m_first)
-                {
-                    outIndex = ModelIndex(cur.model(), cur.row() + m_count, cur.column(), cur.weakRef());
-                    return ReindexerResult::Changed;
-                }
-            }
-
-            return ReindexerResult::NotChanged;
-        }
-
-    private:
-        ModelIndex m_parent;
-        int m_first;
-        int m_count;
-    };
-
-    // helper class to reindex elements when removing stuff
-    class ModelIndexReindexerRemove : public base::NoCopy
-    {
-    public:
-        ModelIndexReindexerRemove(const ModelIndex& parent, int first, int count)
-            : m_parent(parent)
-            , m_first(first)
-            , m_count(count)
-        {}
-
-        INLINE const ModelIndex& parent() const { return m_parent; }
-        INLINE int first() const { return m_first; }
-        INLINE int count() const { return m_count; }
-
-        INLINE ReindexerResult reindex(const ModelIndex& cur, ModelIndex& outIndex) const
-        {
-            if (cur.parent() == m_parent)
-            {
-                if (cur.row() >= (m_count + m_first))
-                {
-                    outIndex = ModelIndex(cur.model(), cur.row() - m_count, cur.column(), cur.weakRef());
-                    return ReindexerResult::Changed;
-                }
-                else if (cur.row() >= m_first)
-                {
-                    return ReindexerResult::Removed;
-                }
-            }
-
-            return ReindexerResult::NotChanged;
-        }
-
-    private:
-        ModelIndex m_parent;
-        int m_first;
-        int m_count;
-    };
-
-    //--
-
-    /// simple list model
-    class ISimpleListModel : public IAbstractItemModel
-    {
-    public:
-        RTTI_DECLARE_VIRTUAL_CLASS(ISimpleListModel, IAbstractItemModel);
-
-    public:
-        ISimpleListModel(uint32_t size);
-        virtual ~ISimpleListModel();
-
-        virtual uint32_t rowCount(const ModelIndex& parent = ModelIndex()) const override final;
-        virtual bool hasChildren(const ModelIndex& parent = ModelIndex()) const override final;
-        virtual bool hasIndex(int row, int col, const ModelIndex& parent = ModelIndex()) const  override final;
-        virtual ModelIndex parent(const ModelIndex& item = ModelIndex()) const  override final;
-        virtual ModelIndex index(int row, int column, const ModelIndex& parent = ModelIndex()) const override final;
-
-    private:
-        uint32_t m_size;
-    };
 
     //--
 

@@ -58,7 +58,7 @@ namespace base
         auto scale = base.scale().oneOverFast() * obj.scale();
 
         // compose final transform
-        return Transform::TRS(pos, rot, scale);
+        return Transform(pos, rot, scale);
     }
 
     AbsolutePosition AbsoluteTransform::transformPointFromSpace(const base::Vector3 &localPoint) const

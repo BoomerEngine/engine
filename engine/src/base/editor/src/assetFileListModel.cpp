@@ -70,16 +70,16 @@ namespace ed
             index = this->index(item);
             if (!index && canDisplayItem(item))
             {
-                beingInsertRows(ui::ModelIndex(), m_items.size(), 1);
-
                 auto entry = CreateSharedPtr<Entry>();
-                entry->m_item = item;
-                entry->m_itemType = TypeFromItem(item);
+                entry->item = item;
+                entry->itemType = TypeFromItem(item);
+                entry->index = ui::ModelIndex(this, entry);
                 m_items.pushBack(entry);
 
-                endInsertRows();
+                index = entry->index;
 
-                index = this->index(item);
+                notifyItemAdded(ui::ModelIndex(), entry->index);
+
             }
         }
 
@@ -88,11 +88,14 @@ namespace ed
 
     void AssetBrowserDirContentModel::handleDestroyItemRepresentation(const ManagedItemPtr& item)
     {
-        if (auto index = this->index(item))
+        for (auto i : m_items.indexRange())
         {
-            beingRemoveRows(ui::ModelIndex(), index.row(), 1);
-            m_items.erase(index.row(), 1);
-            endRemoveRows();
+            if (m_items[i]->item == item)
+            {
+                auto savedEntry = m_items[i];
+                m_items.erase(i);
+                notifyItemRemoved(ui::ModelIndex(), savedEntry->index);
+            }
         }
     }
 
@@ -159,9 +162,10 @@ namespace ed
             if (dir->parentDirectory())
             {
                 auto entry = CreateSharedPtr<Entry>();
-                entry->m_item = dir->parentDirectory();
-                entry->m_itemType = TYPE_PARENT_DIRECTORY;
-                entry->m_customName = "..";
+                entry->index = ui::ModelIndex(this, entry);
+                entry->item = dir->parentDirectory();
+                entry->itemType = TYPE_PARENT_DIRECTORY;
+                entry->customName = "..";
                 m_items.pushBack(entry);
             }
 
@@ -170,8 +174,9 @@ namespace ed
                 if (!dir->isDeleted())
                 {
                     auto entry = CreateSharedPtr<Entry>();
-                    entry->m_item = dir;
-                    entry->m_itemType = TYPE_DIRECTORY;
+                    entry->index = ui::ModelIndex(this, entry);
+                    entry->item = dir;
+                    entry->itemType = TYPE_DIRECTORY;
                     m_items.pushBack(entry);
                 }
             }
@@ -183,8 +188,9 @@ namespace ed
                     if (canDisplayFile(file))
                     {
                         auto entry = CreateSharedPtr<Entry>();
-                        entry->m_item = file;
-                        entry->m_itemType = TYPE_FILE;
+                        entry->index = ui::ModelIndex(this, entry);
+                        entry->item = file;
+                        entry->itemType = TYPE_FILE;
                         m_items.pushBack(entry);
                     }
                 }
@@ -195,19 +201,35 @@ namespace ed
     ManagedDirectory* AssetBrowserDirContentModel::directory(const ui::ModelIndex& index) const
     {
         auto entry  = index.unsafe<Entry>();
-        return entry ? rtti_cast<ManagedDirectory>(entry->m_item) : nullptr;
+        return entry ? rtti_cast<ManagedDirectory>(entry->item) : nullptr;
     }
 
     ManagedFile* AssetBrowserDirContentModel::file(const ui::ModelIndex& index) const
     {
         auto entry  = index.unsafe<Entry>();
-        return entry ? rtti_cast<ManagedFile>(entry->m_item) : nullptr;
+        return entry ? rtti_cast<ManagedFile>(entry->item) : nullptr;
     }
 
     ManagedItem* AssetBrowserDirContentModel::item(const ui::ModelIndex& index) const
     {
         auto entry  = index.unsafe<Entry>();
-        return entry ? entry->m_item : nullptr;
+        return entry ? entry->item : nullptr;
+    }
+    
+    ui::ModelIndex AssetBrowserDirContentModel::index(const ManagedItem* ptr) const
+    {
+        for (const auto& item : m_items)
+            if (item->item == ptr)
+                return item->index;
+
+        return ui::ModelIndex();
+    }
+
+    ui::ModelIndex AssetBrowserDirContentModel::first() const
+    {
+        if (!m_items.empty())
+            return m_items.front()->index;
+        return ui::ModelIndex();
     }
 
     Array<ManagedFile*> AssetBrowserDirContentModel::files(const Array<ui::ModelIndex>& indices) const
@@ -217,7 +239,7 @@ namespace ed
 
         for (auto& index : indices)
             if (auto entry  = index.unsafe<Entry>())
-                if (auto file = rtti_cast<ManagedFile>(entry->m_item))
+                if (auto file = rtti_cast<ManagedFile>(entry->item))
                     files.emplaceBack(file);
 
         return files;
@@ -230,59 +252,29 @@ namespace ed
 
         for (auto& index : indices)
             if (auto entry  = index.unsafe<Entry>())
-                files.emplaceBack(entry->m_item);
+                files.emplaceBack(entry->item);
 
         return files;
     }
 
-    ui::ModelIndex AssetBrowserDirContentModel::index(const ManagedItem* ptr) const
-    {
-        if (!ptr)
-            return ui::ModelIndex();
-
-        /*if (m_observedDirs.contains(ptr->parentDirectory()))
-            return ui::ModelIndex();*/
-
-        for (int i = 0; i <= m_items.lastValidIndex(); ++i)
-            if (m_items[i]->m_item == ptr)
-                return ui::ModelIndex(this, i, 0, m_items[i]);
-
-        return ui::ModelIndex();
-    }
-
-    uint32_t AssetBrowserDirContentModel::rowCount(const ui::ModelIndex& parent) const
-    {
-        if (!parent)
-            return m_items.size();
-        return 0;
-    }
-
     bool AssetBrowserDirContentModel::hasChildren(const ui::ModelIndex& parent) const
     {
-        return false;
+        return !parent && !m_items.empty();
     }
 
-    bool AssetBrowserDirContentModel::hasIndex(int row, int col, const ui::ModelIndex& parent) const
+    void AssetBrowserDirContentModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
     {
-        if (parent)
-            return false;
+        if (!parent)
+        {
+            outChildrenIndices.reserve(m_items.size());
 
-        if (row >= 0 && row <= m_items.lastValidIndex())
-            return true;
-
-        return false;
+            for (const auto& item : m_items)
+                outChildrenIndices.pushBack(item->index);
+        }
     }
 
     ui::ModelIndex AssetBrowserDirContentModel::parent(const ui::ModelIndex& item) const
     {
-        return ui::ModelIndex();
-    }
-
-    ui::ModelIndex AssetBrowserDirContentModel::index(int row, int column, const ui::ModelIndex& parent) const
-    {
-        if (!parent && row >= 0 && row <= m_items.lastValidIndex())
-            return ui::ModelIndex(this, row, 0, m_items[row]);
-
         return ui::ModelIndex();
     }
 
@@ -291,17 +283,17 @@ namespace ed
         auto firstEntry  = first.unsafe<Entry>();
         auto secondEntry  = second.unsafe<Entry>();
 
-        if (firstEntry->m_itemType != secondEntry->m_itemType)
-            return firstEntry->m_itemType < secondEntry->m_itemType;
+        if (firstEntry->itemType != secondEntry->itemType)
+            return firstEntry->itemType < secondEntry->itemType;
 
-        return firstEntry->m_item->name() < secondEntry->m_item->name();
+        return firstEntry->item->name() < secondEntry->item->name();
     }
 
     bool AssetBrowserDirContentModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex) const
     {
         auto entry = id.unsafe<Entry>();
         if (entry)
-            return filter.testString(entry->m_item->name());
+            return filter.testString(entry->item->name());
         return true;
     }
 
@@ -338,7 +330,7 @@ namespace ed
         {
             StringBuilder txt;
 
-            if (auto* file = rtti_cast<ManagedFile>(entry->m_item))
+            if (auto* file = rtti_cast<ManagedFile>(entry->item))
             {
                 txt << "  [img:page]  ";
 
@@ -349,7 +341,7 @@ namespace ed
 
                 txt << "  [i][color:#888](" << file->fileFormat().description() << ")[/i][/color]";
             }
-            else if (auto* dir = rtti_cast<ManagedDirectory>(entry->m_item))
+            else if (auto* dir = rtti_cast<ManagedDirectory>(entry->item))
             {
                 auto parentDir = rootDir() && (dir == rootDir()->parentDirectory());
 
@@ -374,11 +366,11 @@ namespace ed
     {
         auto entry  = item.unsafe<Entry>();
 
-        if (auto file = rtti_cast<ManagedFile>(entry->m_item))
+        if (auto file = rtti_cast<ManagedFile>(entry->item))
         {
             return CreateSharedPtr<AssetBrowserFileDragDrop>(file);
         }
-        else if (auto dir = rtti_cast<ManagedDirectory>(entry->m_item))
+        else if (auto dir = rtti_cast<ManagedDirectory>(entry->item))
         {
             return CreateSharedPtr<AssetBrowserDirectoryDragDrop>(dir);
         }

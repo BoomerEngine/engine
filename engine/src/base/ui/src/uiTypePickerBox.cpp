@@ -23,56 +23,45 @@ namespace ui
 
     TypeListModel::TypeListModel()
     {
-        RTTI::GetInstance().enumBaseTypes(m_allTypes);
+        base::Array<base::Type> allTypes;
+        RTTI::GetInstance().enumBaseTypes(allTypes);
+
+        for (const auto& type : allTypes)
+            add(type);
     }
 
-    base::Type TypeListModel::typeForIndex(uint32_t index) const
+    bool TypeListModel::compare(const base::Type& a, const base::Type& b, int colIndex) const
     {
-        if (index < m_allTypes.size())
-            return m_allTypes[index];
-        return base::Type();
+        return a.name().view() < b.name().view();
     }
 
-    ModelIndex TypeListModel::findIndexForType(base::Type data) const
+    bool TypeListModel::filter(const base::Type& data, const SearchPattern& filter, int colIndex) const
     {
-        const auto index = m_allTypes.find(data);
-        if (index != -1)
-            return ModelIndex(this, index, 0);
-        return ModelIndex();
+        return filter.testString(data.name().view());
     }
 
-    uint32_t TypeListModel::size() const
-    {
-        return m_allTypes.size();
-    }
-
-    base::StringBuf TypeListModel::content(const ModelIndex& id, int colIndex /*= 0*/) const
+    base::StringBuf TypeListModel::content(const base::Type& typeInfo, int colIndex) const
     {
         base::StringBuilder txt;
 
-        if (id.row() >= 0 && id.row() <= m_allTypes.lastValidIndex())
+        switch (typeInfo.metaType())
         {
-            const auto typeInfo = m_allTypes[id.row()];
+        case base::rtti::MetaType::Enum: txt << "[img:vs2012/object_enum] "; break;
+            case base::rtti::MetaType::Bitfield: txt << "[img:vs2012/object_bitfield] "; break;
+            case base::rtti::MetaType::Class: txt << "[img:vs2012/object_class] "; break;
+            //case base::rtti::MetaType::ClassRef: txt << "[img:vs2012/object_class_ref] ";
+            case base::rtti::MetaType::Simple: txt << "[img:vs2012/object_simple_type] "; break;
+        }
 
-            switch (typeInfo.metaType())
-            {
-            case base::rtti::MetaType::Enum: txt << "[img:vs2012/object_enum] "; break;
-                case base::rtti::MetaType::Bitfield: txt << "[img:vs2012/object_bitfield] "; break;
-                case base::rtti::MetaType::Class: txt << "[img:vs2012/object_class] "; break;
-                //case base::rtti::MetaType::ClassRef: txt << "[img:vs2012/object_class_ref] ";
-                case base::rtti::MetaType::Simple: txt << "[img:vs2012/object_simple_type] "; break;
-            }
+        txt << typeInfo->name();
 
-            txt << typeInfo->name();
-
-            txt << "  [i][color:#888]";
-            switch (typeInfo.metaType())
-            {
-                case base::rtti::MetaType::Enum: txt << "(Enum)"; break;
-                case base::rtti::MetaType::Bitfield: txt << "(Bitfield)"; break;
-                case base::rtti::MetaType::Class: txt << "(Class)"; break;
-                case base::rtti::MetaType::Simple: txt << "(Simple)"; break;
-            }
+        txt << "  [i][color:#888]";
+        switch (typeInfo.metaType())
+        {
+            case base::rtti::MetaType::Enum: txt << "(Enum)"; break;
+            case base::rtti::MetaType::Bitfield: txt << "(Bitfield)"; break;
+            case base::rtti::MetaType::Class: txt << "(Class)"; break;
+            case base::rtti::MetaType::Simple: txt << "(Simple)"; break;
         }
 
         return txt.toString();
@@ -116,7 +105,7 @@ namespace ui
         m_listModel = base::CreateSharedPtr<TypeListModel>();
         m_list->model(m_listModel);
 
-        if (const auto id = m_listModel->findIndexForType(initialType))
+        if (const auto id = m_listModel->index(initialType))
         {
             m_list->select(id);
             m_list->ensureVisible(id);
@@ -148,12 +137,9 @@ namespace ui
     {
         if (m_list)
         {
-            auto selected = m_listModel->typeForIndex(m_list->selectionRoot().row());
-
-            if (!selected && !m_allowNullType)
-                return;
-
-            closeWithType(selected);
+            auto selected = m_listModel->data(m_list->selectionRoot());
+            if (selected || m_allowNullType)
+                closeWithType(selected);
         }
     }
 

@@ -8,6 +8,11 @@
 
 #include "build.h"
 #include "sceneEditMode.h"
+#include "scenePreviewPanel.h"
+#include "base/ui/include/uiToolBar.h"
+#include "scenePreviewContainer.h"
+#include "base/ui/include/uiButton.h"
+#include "base/ui/include/uiMenuBar.h"
 
 namespace ed
 {
@@ -50,6 +55,10 @@ namespace ed
         return {};
     }
 
+    void ISceneEditMode::configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar)
+    {
+    }
+    
     void ISceneEditMode::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
     {
     }
@@ -94,6 +103,381 @@ namespace ed
 
     void ISceneEditMode::handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode)
     {}
+
+    //--
+
+    void ISceneEditMode::handleGeneralCopy()
+    {}
+
+    void ISceneEditMode::handleGeneralCut()
+    {}
+
+    void ISceneEditMode::handleGeneralPaste()
+    {}
+
+    void ISceneEditMode::handleGeneralDelete()
+    {}
+
+    bool ISceneEditMode::checkGeneralCopy() const
+    {
+        return false;
+    }
+
+    bool ISceneEditMode::checkGeneralCut() const
+    {
+        return false;
+    }
+
+    bool ISceneEditMode::checkGeneralPaste() const
+    {
+        return false;
+    }
+
+    bool ISceneEditMode::checkGeneralDelete() const
+    {
+        return false;
+    }
+
+    //--
+
+    static void PrintGridSize(IFormatStream& f, float size)
+    {
+        if (size < 0.01f)
+            f.appendf("{}mm", (int)(size * 1000.0f));
+        else if (size < 1.00f)
+            f.appendf("{}cm", (int)(size * 100.0f));
+        else
+            f.appendf("{}m", (int)size);
+    }
+
+    static void PrintRotationSize(IFormatStream& f, float size)
+    {
+        if (size < 1.0f)
+            f.appendf("{}'", (int)(size * 60.0f));
+        else if (std::trunc(size) < 0.001f)
+            f.appendf("{}°", (int)size);
+        else if (std::trunc(size*10) < 0.001f)
+            f.appendf("{}°", Prec(size, 1)); 
+        else
+            f.appendf("{}°", Prec(size, 2));
+    }
+
+    void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar)
+    {
+        auto gridSettings = container->gridSettings();
+
+        toolbar->createSeparator();
+
+        // position grid
+        {
+            StringBuilder txt;
+
+            if (!gridSettings.positionGridEnabled)
+                txt << "[color:#8888]";
+
+            txt << "[img:grid] ";
+
+            PrintGridSize(txt, gridSettings.positionGridSize);
+
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+            {
+                static const float GridSizes[] = { 0.01f, 0.02f, 0.05f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 25.0f, 50.0f, 100.0f };
+
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto gridSettings = container->gridSettings();
+
+                menu->createCallback("Enable", gridSettings.positionGridEnabled ? "[img:tick]" : "") = [container]() {
+                    auto gridSettings = container->gridSettings();
+                    gridSettings.positionGridEnabled = !gridSettings.positionGridEnabled;
+                    container->gridSettings(gridSettings);
+                };
+
+                menu->createSeparator();
+
+                for (auto size : GridSizes)
+                {
+                    StringBuilder txt;
+                    PrintGridSize(txt, size);
+
+                    float sizeCopy = size; // compiler crash ;)
+
+                    menu->createCallback(txt.view(), size == gridSettings.positionGridSize ? "[img:tick]" : "") = [container, sizeCopy]() {
+                        auto gridSettings = container->gridSettings();
+                        gridSettings.positionGridSize = sizeCopy;
+                        container->gridSettings(gridSettings);
+                    };
+                }
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        // rotation grid
+        {
+            StringBuilder txt;
+
+            if (!gridSettings.rotationGridEnabled)
+                txt << "[color:#8888]";
+
+            txt << "[img:angle] ";
+
+            PrintRotationSize(txt, gridSettings.rotationGridSize);
+
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+            {
+                static const float GridSizes[] = { 1.0f, 3.0f, 4.5f, 6.0f, 7.5f, 10.0f, 12.25f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
+
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto gridSettings = container->gridSettings();
+
+                menu->createCallback("Enable", gridSettings.rotationGridEnabled ? "[img:tick]" : "") = [container]() {
+                    auto gridSettings = container->gridSettings();
+                    gridSettings.rotationGridEnabled = !gridSettings.rotationGridEnabled;
+                    container->gridSettings(gridSettings);
+                };
+
+                menu->createSeparator();
+
+                for (auto size : GridSizes)
+                {
+                    StringBuilder txt;
+                    PrintRotationSize(txt, size);
+
+                    float sizeCopy = size; // compiler crash ;)
+
+                    menu->createCallback(txt.view(), size == gridSettings.rotationGridSize ? "[img:tick]" : "") = [container, sizeCopy]() {
+                        auto gridSettings = container->gridSettings();
+                        gridSettings.rotationGridSize = sizeCopy;
+                        container->gridSettings(gridSettings);
+                    };
+                }
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        // snapping to features
+        {
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:snap] Snap")) = [container](ui::Button* button)
+            {
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+
+                auto gridSettings = container->gridSettings();
+
+                menu->createCallback("Enable", gridSettings.featureSnappingEnabled ? "[img:tick]" : "") = [container]() {
+                    auto gridSettings = container->gridSettings();
+                    gridSettings.featureSnappingEnabled = !gridSettings.featureSnappingEnabled;
+                    container->gridSettings(gridSettings);
+                };
+
+                menu->createCallback("Rotation", gridSettings.rotationSnappingEnabled ? "[img:tick]" : "") = [container]() {
+                    auto gridSettings = container->gridSettings();
+                    gridSettings.rotationSnappingEnabled = !gridSettings.rotationSnappingEnabled;
+                    container->gridSettings(gridSettings);
+                };
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        toolbar->createSeparator();
+    }
+
+    //--
+
+    void CreateDefaultSelectionButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar)
+    {
+        toolbar->createSeparator();
+
+        // snapping to features
+        {
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:selection_point] Selection")) = [container](ui::Button* button)
+            {
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+
+                auto selectionSettings = container->selectionSettings();
+
+                menu->createCallback("[img:brick] Explore prefabs", selectionSettings.explorePrefabs ? "[img:tick]" : "") = [container]() {
+                    auto data = container->selectionSettings();
+                    data.explorePrefabs = !data.explorePrefabs;
+                    container->selectionSettings(data);
+                };
+
+                menu->createCallback("[img:entity] Explore entities", selectionSettings.exploreComponents ? "[img:tick]" : "") = [container]() {
+                    auto data = container->selectionSettings();
+                    data.exploreComponents = !data.exploreComponents;
+                    container->selectionSettings(data);
+                };
+
+                menu->createCallback("[img:transparent] Select transparent", selectionSettings.allowTransparent ? "[img:tick]" : "") = [container]() {
+                    auto data = container->selectionSettings();
+                    data.allowTransparent = !data.allowTransparent;
+                    container->selectionSettings(data);
+                };
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        toolbar->createSeparator();
+    }
+
+    //--
+
+    static void PrintGizmoSpace(IFormatStream& f, SceneGizmoSpace space)
+    {
+        switch (space)
+        {
+            case SceneGizmoSpace::World: f << "[img:world] World"; break;
+            case SceneGizmoSpace::Local: f << "[img:axis_local] Local"; break;
+            case SceneGizmoSpace::Parent: f << "[img:axis_global] Parent"; break;
+            case SceneGizmoSpace::View: f << "[img:camera] View"; break;
+        }
+    }
+
+    static void PrintGizmoTarget(IFormatStream& f, SceneGizmoTarget space)
+    {
+        switch (space)
+        {
+            case SceneGizmoTarget::WholeHierarchy: f << "[img:home] Hierarchy"; break;
+            case SceneGizmoTarget::SelectionOnly: f << "[img:node] Single"; break;
+        }
+    }
+
+    void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar)
+    {
+        auto data = container->gizmoSettings();
+
+        toolbar->createSeparator();
+
+        {
+            const auto title = (data.mode == SceneGizmoMode::Translation) ? "[img:gizmo_translate16]" : "[color:#8888][img:gizmo_translate16]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+                {
+                    auto data = container->gizmoSettings();
+                    data.mode = SceneGizmoMode::Translation;
+                    container->gizmoSettings(data);
+                };
+        }
+
+        {
+            const auto title = (data.mode == SceneGizmoMode::Rotation) ? "[img:gizmo_rotate16]" : "[color:#8888][img:gizmo_rotate16]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+            {
+                auto data = container->gizmoSettings();
+                data.mode = SceneGizmoMode::Rotation;
+                container->gizmoSettings(data);
+            };
+        }
+
+        {
+            const auto title = (data.mode == SceneGizmoMode::Scale) ? "[img:gizmo_scale16]" : "[color:#8888][img:gizmo_scale16]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+            {
+                auto data = container->gizmoSettings();
+                data.mode = SceneGizmoMode::Scale;
+                container->gizmoSettings(data);
+            };
+        }
+
+        toolbar->createSeparator();
+
+        // space
+        {
+            StringBuilder txt;
+
+            PrintGizmoSpace(txt, data.space);
+
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+            {
+                static const SceneGizmoSpace GizmoSpaces[] = { SceneGizmoSpace::World, SceneGizmoSpace::Local, SceneGizmoSpace::Parent, SceneGizmoSpace::View };
+
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto data = container->gizmoSettings();
+
+                for (auto space : GizmoSpaces)
+                {
+                    StringBuilder txt;
+                    PrintGizmoSpace(txt, space);
+
+                    auto spaceCopy = space; // compiler crash ;)
+
+                    menu->createCallback(txt.view(), space == data.space ? "[img:tick]" : "") = [container, spaceCopy]() {
+                        auto data = container->gizmoSettings();
+                        data.space = spaceCopy;
+                        container->gizmoSettings(data);
+                    };
+                }
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        // movement mode
+        {
+            StringBuilder txt;
+
+            PrintGizmoTarget(txt, data.target);
+
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+            {
+                static const SceneGizmoTarget GizmoSpaces[] = { SceneGizmoTarget::WholeHierarchy, SceneGizmoTarget::SelectionOnly };
+
+                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto data = container->gizmoSettings();
+
+                for (auto space : GizmoSpaces)
+                {
+                    StringBuilder txt;
+                    PrintGizmoTarget(txt, space);
+
+                    auto spaceCopy = space; // compiler crash ;)
+
+                    menu->createCallback(txt.view(), space == data.target ? "[img:tick]" : "") = [container, spaceCopy]() {
+                        auto data = container->gizmoSettings();
+                        data.target = spaceCopy;
+                        container->gizmoSettings(data);
+                    };
+                }
+
+                menu->showAsDropdown(button);
+            };
+        }
+
+        toolbar->createSeparator();
+
+        {
+            const auto title = data.enableX ? "[img:lock_x]" : "[color:#8888][img:lock_x]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+            {
+                auto data = container->gizmoSettings();
+                data.enableX = !data.enableX;
+                container->gizmoSettings(data);
+            };
+        }
+
+        {
+            const auto title = data.enableY ? "[img:lock_y]" : "[color:#8888][img:lock_y]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+            {
+                auto data = container->gizmoSettings();
+                data.enableY = !data.enableY;
+                container->gizmoSettings(data);
+            };
+        }
+
+        {
+            const auto title = data.enableZ ? "[img:lock_z]" : "[color:#8888][img:lock_z]";
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+            {
+                auto data = container->gizmoSettings();
+                data.enableZ = !data.enableZ;
+                container->gizmoSettings(data);
+            };
+        }
+
+        toolbar->createSeparator();
+    }
 
     //--
     

@@ -8,17 +8,13 @@
 
 #pragma once
 
-#include "base/reflection/include/reflectionMacros.h"
-#include "vector3.h"
-#include "quat.h"
-
 namespace base
 {
 
     /// TRS (translation-rotation-scale) transform of a node in the node chain
-    /// NOTE: this is prefered over the matrix because of easy and readable component separation
+    /// NOTE: this is preferred over the matrix because of easy and readable component separation
     /// NOTE: the transform concatenation is done in a way that always maps back to TRS space (so TRS * TRS -> TRS
-    /// this means that not all possible actual 3D transformations are encodable here, especially we cannot encode anything with sheering
+    /// this means that not all possible actual 3D transformations can be encoded, especially we cannot encode anything with sheering
     /// NOTE: the translation is NOT a POSITION - the position may require much higher precision
     TYPE_ALIGN(16, class) BASE_MATH_API Transform
     {
@@ -44,55 +40,9 @@ namespace base
 
         //--
 
-        /// get raw translation element
-        INLINE const Translation& translation() const { return m_trans; }
-
-        /// set translation
-        INLINE Transform& translation(const Translation& t);
-
-        /// set translation
-        INLINE Transform& translation(float x, float y, float z);
-
-        /// get raw rotation element
-        INLINE const Rotation& rotation() const { return m_rot; }
-
-        /// set rotation
-        INLINE Transform& rotation(const Rotation& rotation);
-
-        /// set rotation
-        INLINE Transform& rotation(float pitch, float yaw, float roll);
-
-        /// get raw scale element
-        INLINE const Scale& scale() const { return m_scale; }
-
-        /// set scale
-        INLINE Transform& scale(const Scale& s);
-
-        /// set scale
-        INLINE Transform& scale(float s);
-
-        //---
-
-        /// build a translation only transform
-        INLINE static Transform T(const Translation& t);
-
-        /// build a rotation only transform
-        INLINE static Transform R(const Rotation& r);
-
-        /// build a translation and rotation only transform
-        INLINE static Transform TR(const Translation& t, const Rotation& r);
-
-        /// build a scale only transform
-        INLINE static Transform S(const Scale& s);
-
-        /// build a scale only transform (uniform scaling version)
-        INLINE static Transform S(float s);
-
-        /// build a full TRS transform
-        INLINE static Transform TRS(const Translation& t, const Rotation& r, const Scale& s);
-
-        /// build a full TRS transform (uniform scale version)
-        INLINE static Transform TRS(const Translation& t, const Rotation& r, float s);
+        Rotation R;
+        Translation T;
+        Scale S;
 
         //---
 
@@ -167,18 +117,16 @@ namespace base
         /// get a matrix representation of the inverse transform without the scaling
         Matrix toInverseMatrixNoScale() const;
 
+        /// convert to Euler transform (NOTE: rotation conversion may have singularities)
+        EulerTransform toEulerTransform() const;
+
         //---
 
         // Custom type implementation requirements
         void writeBinary(base::stream::OpcodeWriter& stream) const;
         void readBinary(base::stream::OpcodeReader& stream);
 
-        //---
-
-    private:
-        Rotation m_rot;
-        Translation m_trans;
-        Scale m_scale;
+        //---        
     };
 
-} // scene
+} // base

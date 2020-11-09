@@ -67,7 +67,7 @@ namespace base
             return m_resourceClass;
         }
 
-        void ResourceRefType::referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const
+        /*void ResourceRefType::referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const
         {
             const auto& ptr1 = *(const res::BaseReference*) data;
             outRef = ptr1.acquire();
@@ -77,7 +77,7 @@ namespace base
         {
             auto& ptr1 = *(res::BaseReference*) data;
             ptr1 = ResourcePtr(AddRef(resource));
-        }
+        }*/
 
         bool ResourceRefType::referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const
         {

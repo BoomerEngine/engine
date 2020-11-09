@@ -10,14 +10,13 @@
 #include "sceneTest.h"
 #include "sceneTestUtil.h"
 
-#include "game/world/include/world.h"
-#include "game/world/include/worldEntity.h"
-#include "game/world/include/worldDefinition.h"
+#include "base/world/include/world.h"
+#include "base/world/include/worldEntity.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
-#include "game/world/include/worldMeshComponent.h"
-#include "game/world/include/worldMeshComponentTemplate.h"
-#include "game/world/include/worldNodePath.h"
+#include "rendering/world/include/meshComponent.h"
+#include "rendering/world/include/meshComponentTemplate.h"
+#include "../../../../../../engine/src/base/world/include/worldEntityTemplate.h"
 
 namespace game
 {
@@ -26,7 +25,7 @@ namespace game
 
         //--
 
-        PlaneGround::PlaneGround(World* world, const rendering::MeshPtr& planeMesh)
+        PlaneGround::PlaneGround(base::world::World* world, const rendering::MeshPtr& planeMesh)
             : m_world(world)
             , m_planeMesh(planeMesh)
             , m_planeSize(10.0f)
@@ -47,10 +46,10 @@ namespace game
                     base::AbsoluteTransform entityTransform;
                     entityTransform.position(planeX * m_planeSize, planeY * m_planeSize, 0);
 
-                    auto entity = base::CreateSharedPtr<Entity>();
+                    auto entity = base::CreateSharedPtr<base::world::Entity>();
                     entity->requestTransform(entityTransform);
 
-                    auto mc = base::CreateSharedPtr<MeshComponent>(m_planeMesh);
+                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(m_planeMesh);
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);
@@ -62,45 +61,66 @@ namespace game
 
         PrefabBuilder::PrefabBuilder()
         {
-            m_container = base::CreateSharedPtr<NodeTemplateContainer>();
         }
 
-        int PrefabBuilder::addMeshEntity(const rendering::MeshPtr& mesh, const NodeTemplatePlacement& placement, int parentNode, base::Color color)
+        int PrefabBuilder::addNode(const base::world::NodeTemplatePtr& node, int parentNode /*= -1*/)
         {
-            if (!mesh)
-                return 0;
+            DEBUG_CHECK_RETURN_V(node, -1);
 
-            NodeTemplateConstructionInfo data;
-            data.name = "MeshNode"_id;
-
+            if (parentNode < 0)
             {
-                auto componentTemplate = base::CreateSharedPtr<MeshComponentTemplate>();
-                componentTemplate->m_mesh = mesh->key();
-                componentTemplate->m_placement = placement;
-                componentTemplate->m_color = color;
-                data.componentData.emplaceBack("Mesh"_id, componentTemplate);
+                m_roots.pushBack(node);
+            }
+            else
+            {
+                DEBUG_CHECK_RETURN_V(parentNode <= m_nodes.lastValidIndex(), -1);
+                auto& parent = m_nodes[parentNode];
+                parent->m_children.pushBack(node);
             }
 
-            auto node = base::CreateSharedPtr<NodeTemplate>(data);
-            return m_container->addNode(node, parentNode);
+            m_nodes.pushBack(node);
+            return m_nodes.lastValidIndex();
         }
 
-        int PrefabBuilder::addPrefab(const game::PrefabPtr& prefab, const NodeTemplatePlacement& placement, int parentNode)
+        base::world::NodeTemplatePtr PrefabBuilder::BuildMeshNode(const rendering::MeshPtr& mesh, const base::EulerTransform& placement, base::Color color /*= base::Color::WHITE*/)
         {
-            if (!prefab)
-                return 0;
+            DEBUG_CHECK_RETURN_V(mesh, nullptr);
 
-            NodeTemplateConstructionInfo data;
-            data.name = "PrefabBone"_id;
-            data.prefabAssets.pushBack(prefab);
+            auto node = base::CreateSharedPtr<base::world::NodeTemplate>();
+            node->m_name = "node"_id;
 
-            auto node = base::CreateSharedPtr<NodeTemplate>(data);
-            return m_container->addNode(node, parentNode);
+            {
+                node->m_entityTemplate = base::CreateSharedPtr<base::world::EntityTemplate>();
+                node->m_entityTemplate->placement(placement);
+            }
+
+            {
+                auto componentTemplate = base::CreateSharedPtr<rendering::MeshComponentTemplate>();
+                componentTemplate->mesh(mesh->key());
+                //componentTemplate->placement(placement);
+                componentTemplate->color(color);
+
+                auto& info = node->m_componentTemplates.emplaceBack();
+                info.name = "Mesh"_id;
+                info.data = componentTemplate;
+            }
+
+            return node;
         }
 
-        PrefabPtr PrefabBuilder::extractPrefab()
+        base::world::NodeTemplatePtr PrefabBuilder::BuildPrefabNode(const base::world::PrefabPtr& prefab, const base::EulerTransform& placement)
         {
-            return base::CreateSharedPtr<Prefab>(m_container);
+            DEBUG_CHECK_RETURN_V(prefab, nullptr);
+
+            auto node = base::CreateSharedPtr<base::world::NodeTemplate>();
+            node->m_prefabAssets.pushBack(prefab);
+
+            return node;
+        }
+
+        base::world::PrefabPtr PrefabBuilder::extractPrefab()
+        {
+            return base::CreateSharedPtr<base::world::Prefab>(m_roots);
         }
 
         //--
@@ -127,29 +147,6 @@ namespace game
                 return base::Point(-k + (m - n), k);
             else
                 return base::Point(k, k - (m - n - t));
-        }
-
-        //--
-
-        void AttachPrefab(World* world, const PrefabPtr& prefab, const base::AbsoluteTransform& placement)
-        {
-            if (prefab)
-            {
-                if (auto nodes = prefab->compile())
-                {
-                    NodeTemplateCreatedEntities entities;
-                    nodes->createSingleRoot(0, game::NodePath(), placement, entities);
-                    AttachEntities(world, entities);
-                }
-            }
-        }
-
-        //--
-
-        void AttachEntities(World* world, const NodeTemplateCreatedEntities& nodes)
-        {
-            for (const auto& entity : nodes.allEntities)
-                world->attachEntity(entity);
         }
 
         //--

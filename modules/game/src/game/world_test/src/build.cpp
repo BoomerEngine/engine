@@ -5,8 +5,8 @@
 *
 * [# dependency: base_* #]
 * [# dependency: assets_* #]
-* [# dependency: game_host #]
-* [# dependency: game_world #]
+* [# dependency: rendering_world #]
+* [# dependency: rendering_scene #]
 * [# devonly #]
 * [# app #]
 * [# editor #]

@@ -265,6 +265,12 @@ namespace rendering
             }
         }
 
+        void ProxyMeshHandler::runEffectSelectionHighlight(Scene* scene, IProxy* proxy, const CommandEffectSelectionHighlight& cmd)
+        {
+            auto* localProxy = static_cast<ProxyMesh*>(proxy);
+            localProxy->selected = cmd.flag;
+        }
+
         void ProxyMeshHandler::handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies)
         {
             for (auto* proxy : m_allProxies.keys())

@@ -16,6 +16,7 @@
 
 #include "base/containers/include/stringBuf.h"
 #include "base/containers/include/stringID.h"
+#include "rttiResourceReferenceType.h"
 
 namespace base
 {
@@ -167,16 +168,24 @@ namespace base
                 return true;
             }*/
 
-            static bool Conversion_SyncHandleToSyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
+            static bool Conversion_ResourceHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
             {
-                srcType->copy(destData, srcData);
-                return true;
-            }
+                DEBUG_CHECK(srcType->metaType() == MetaType::ResourceRef || srcType->metaType() == MetaType::AsyncResourceRef);
+                DEBUG_CHECK(destType->metaType() == MetaType::ResourceRef || destType->metaType() == MetaType::AsyncResourceRef);
 
-            static bool Conversion_AsyncHandleToAsyncHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
-            {
-                srcType->copy(destData, srcData);
-                return true;
+                const auto* destRefType = static_cast<const IResourceReferenceType*>(destType);
+                const auto* srcRefType = static_cast<const IResourceReferenceType*>(srcType);
+
+                const auto destResourceClass = destRefType->referenceResourceClass();
+                const auto srcResourceClass = destRefType->referenceResourceClass();
+
+                if (destResourceClass.is(srcResourceClass))
+                {
+                    srcType->copy(destData, srcData);
+                    return true;
+                }
+
+                return false;
             }
 
             #define SET_CAST(_srcType, _destType)  m_functions[(uint8_t)TypeConversionClass::Type##_srcType][(uint8_t)TypeConversionClass::Type##_destType] = &Conversion_##_srcType##_##_destType;
@@ -384,9 +393,8 @@ namespace base
                     SET_CAST_RAW(StrongHandle, WeakHandle, Conversion_DynamicHandleCast);
                     SET_CAST_RAW(WeakHandle, StrongHandle, Conversion_DynamicHandleCast);
 
-                    //SET_CAST_RAW(SyncRef, AsyncRef, Conversion_SyncHandleToAsyncHandle);
-                    SET_CAST_RAW(SyncRef, SyncRef, Conversion_SyncHandleToSyncHandle);
-                    SET_CAST_RAW(AsyncRef, AsyncRef, Conversion_AsyncHandleToAsyncHandle);
+                    SET_CAST_RAW(SyncRef, SyncRef, Conversion_ResourceHandle);
+                    SET_CAST_RAW(AsyncRef, AsyncRef, Conversion_ResourceHandle);
 
                     SET_CAST_RAW(ClassRef, ClassRef, Conversion_ClassRefCast);
 

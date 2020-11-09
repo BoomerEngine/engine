@@ -227,6 +227,9 @@ namespace ed
         destroyAspects();
     }
 
+    void ResourceEditor::update()
+    {}
+
     bool ResourceEditor::modified() const
     {
         return m_file->isModified();

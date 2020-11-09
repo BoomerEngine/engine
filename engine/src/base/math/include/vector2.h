@@ -158,6 +158,8 @@ namespace base
 
         //--
 
+        void print(IFormatStream& f) const;
+
     private:
         INLINE Vector2 _xy() const;
     };

@@ -122,9 +122,12 @@ namespace ed
 
     ui::ModelIndex MeshMaterialListModel::findMaterial(StringID name) const
     {
-        for (const auto& elem : elements())
+        for (uint32_t i = 0; i < size(); ++i)
+        {
+            const auto& elem = at(i);
             if (elem->name() == name)
                 return index(elem);
+        }
 
         return ui::ModelIndex();
     }
@@ -314,8 +317,9 @@ namespace ed
     
     void MeshMaterialsPanel::updateCaptions()
     {
-        for (auto elem : m_listModel->elements())
+        for (uint32_t i=0; i<m_listModel->size(); ++i)
         {
+            const auto& elem = m_listModel->at(i);
             if (elem->updateDisplayString())
             {
                 if (auto index = m_listModel->index(elem))

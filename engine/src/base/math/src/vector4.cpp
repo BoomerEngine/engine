@@ -142,6 +142,13 @@ namespace base
 
     //--
 
+    void Vector4::print(IFormatStream& f) const
+    {
+        f.appendf("[{},{},{},{}]", x, y, z, w);
+    }
+
+    //--
+
     static Vector4 opNegV4(const Vector4& a) { return -a; }
     static Vector4 opAddV4(const Vector4& a, const Vector4& b) { return a + b; }
     static Vector4 opSubV4(const Vector4& a, const Vector4& b) { return a - b; }

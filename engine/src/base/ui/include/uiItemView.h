@@ -223,6 +223,8 @@ namespace ui
         {
             base::Array<ViewItem*> m_orderedChildren;
             base::Array<ViewItem*> m_displayOrder; // sorted, empty indicates no sorting needed
+
+            ViewItem* findItem(const ModelIndex& index) const;
         };
 
         struct ViewItem
@@ -230,6 +232,9 @@ namespace ui
             ModelIndex m_index;
             ElementPtr m_content; // content element or the container
             ElementPtr m_innerContent;
+
+            //int m_indexInParent = INDEX_NONE;
+            //base::UntypedRefWeakPtr m_indexRefPtr;
 
             uint8_t m_depth = 0;
             ViewItem* m_parent = nullptr;
@@ -254,9 +259,6 @@ namespace ui
         base::RefWeakPtr<IElement> m_inputPropagationElement;
 
         bool resolveItemFromModelIndex(const ModelIndex& index, ViewItem*& outItem) const;
-
-        void attachViewElement(const ModelIndex& index);
-        void attachViewElement(ViewItem* parent, const ModelIndex& index);
 
         virtual void visualizeViewElement(ViewItem* item) = 0;
         virtual void unvisualizeViewElement(ViewItem* item) = 0;

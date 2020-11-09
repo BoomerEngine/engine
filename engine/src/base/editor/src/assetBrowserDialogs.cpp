@@ -104,7 +104,7 @@ namespace ed
                         fileList->removeItem(item);
                 }
 
-                if (fileList->size() == 0)
+                if (fileList->empty())
                     windowRef->requestClose(1);
             };
         }
@@ -289,7 +289,7 @@ namespace ed
                         fileList->removeItem(item);
                 }
 
-                if (fileList->size() == 0)
+                if (fileList->empty())
                     windowRef->requestClose();
             };
         }

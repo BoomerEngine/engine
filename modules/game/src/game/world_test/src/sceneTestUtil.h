@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "game/world/include/world.h"
-#include "game/world/include/worldPrefab.h"
+#include "base/world/include/world.h"
+#include "base/world/include/worldPrefab.h"
 
 namespace game
 {
@@ -20,14 +20,14 @@ namespace game
         struct PlaneGround
         {
         public:
-            PlaneGround(World* world, const rendering::MeshPtr& planeMesh);
+            PlaneGround(base::world::World* world, const rendering::MeshPtr& planeMesh);
 
             void ensureGroundUnder(float x, float y);
 
         private:
             base::HashSet<uint32_t> m_planeCoordinatesSet;
 
-            World* m_world;
+            base::world::World* m_world;
 
             rendering::MeshPtr m_planeMesh;
             float m_planeSize = 1.0f;
@@ -40,24 +40,21 @@ namespace game
         public:
             PrefabBuilder();
 
-            int addMeshEntity(const rendering::MeshPtr& mesh, const NodeTemplatePlacement& placement, int parentNode = -1, base::Color color = base::Color::WHITE);
-            int addPrefab(const game::PrefabPtr& prefab, const NodeTemplatePlacement& placement, int parentNode=-1);
+            static base::world::NodeTemplatePtr BuildMeshNode(const rendering::MeshPtr& mesh, const base::EulerTransform& placement, base::Color color = base::Color::WHITE);
+            static base::world::NodeTemplatePtr BuildPrefabNode(const base::world::PrefabPtr& prefab, const base::EulerTransform& placement);
 
-            PrefabPtr extractPrefab();
+            int addNode(const base::world::NodeTemplatePtr& node, int parentNode = -1);
+
+            base::world::PrefabPtr extractPrefab();
 
         private:
-            NodeTemplateContainerPtr m_container;
+            base::Array<base::world::NodeTemplatePtr> m_roots;
+            base::Array<base::world::NodeTemplatePtr> m_nodes;
         };
 
         //---
 
         extern base::Point UlamSpiral(uint32_t n);
-
-        //---
-
-        extern void AttachPrefab(World* world, const PrefabPtr& prefab, const base::AbsoluteTransform& placement);
-
-        extern void AttachEntities(World* world, const NodeTemplateCreatedEntities& nodes);
 
         //---
 

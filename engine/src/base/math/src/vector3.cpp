@@ -83,6 +83,11 @@ namespace base
         return ret;
     }
 
+    void Vector3::print(IFormatStream& f) const
+    {
+        f.appendf("[{},{},{}]", x, y, z);
+    }
+
     float Dot(const Vector3 &a, const Vector3 &b)
     {
         return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);

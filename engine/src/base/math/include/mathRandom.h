@@ -90,7 +90,10 @@ namespace base
     extern BASE_MATH_API Vector3 RandSphereSurfacePoint(const Vector2& rand, const Sphere& sphere);
 
     // convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 and with N=0,0,1 (standard tangent-space hemisphere)
-    extern BASE_MATH_API Vector3 RandHemiSphereSurfacePoint(const Vector2& rand);
+    extern BASE_MATH_API Vector3 RandHemiSphereSurfacePoint(Vector2 rand);
+
+    // convert 2 (TWO)
+    extern BASE_MATH_API Vector3 RandSphereSurfacePointFast(Vector2 rand);
 
     // convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 with specified N
     extern BASE_MATH_API Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& N);

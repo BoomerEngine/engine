@@ -318,8 +318,8 @@ namespace ed
                 selectItem(autoSelectItem);
 
             // select first item if nothing else is selected
-            if (!m_files->current())
-                m_files->select(m_files->model()->index(0, 0, ui::ModelIndex()));
+            if (!m_files->current() && m_filesModel)
+                m_files->select(m_filesModel->first());
 
             updateTitle();
 
@@ -453,11 +453,8 @@ namespace ed
                 }
             }
 
-            if (m_files->selection().empty())
-            {
-                auto index = m_files->model()->index(0, 0, ui::ModelIndex());
-                m_files->select(index);
-            }
+            if (m_files->selection().empty() && m_filesModel)
+                m_files->select(m_filesModel->first());
         }
 
         updateTitle();

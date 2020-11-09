@@ -15,7 +15,7 @@ namespace ed
 
     struct SceneContentEditableObject
     {
-        StringID name;
+        StringBuf name;
         SceneContentEntityNodePtr owningNode;
         base::ObjectTemplatePtr baseData;
         base::ObjectTemplatePtr editableData; // must be valid

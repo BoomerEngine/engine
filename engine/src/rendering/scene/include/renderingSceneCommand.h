@@ -68,6 +68,11 @@ namespace rendering
             base::Matrix localToScene;
         };
 
+        RENDER_DECLARE_COMMAND_DATA(EffectSelectionHighlight)
+        {
+            bool flag = false;
+        };
+
 #undef RENDER_DECLARE_COMMAND_DATA
 
         ///--

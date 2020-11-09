@@ -661,7 +661,7 @@ namespace base
 
     Transform Matrix::toTransform() const
     {
-        return Transform::TRS(translation(), toQuat(), columnLengths());
+        return Transform(translation(), toQuat(), columnLengths());
     }
 
     //--

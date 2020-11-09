@@ -82,6 +82,13 @@ namespace base
         return Vector2_INF;
     }
 
+    //--
+
+    void Vector2::print(IFormatStream& f) const
+    {
+        f.appendf("[{},{}]", x, y);
+    }
+
     //-----
 
     float Dot(const Vector2 &a, const Vector2 &b)

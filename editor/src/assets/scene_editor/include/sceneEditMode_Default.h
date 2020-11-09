@@ -30,6 +30,7 @@ namespace ed
         // ISceneEditMode
         virtual ui::ElementPtr queryUserInterface() const override;
         virtual Array<SceneContentNodePtr> querySelection() const override;
+        virtual void configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar) override;
 
         virtual void handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame) override;
         virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
@@ -47,7 +48,21 @@ namespace ed
 
         //--
 
+        virtual void handleGeneralCopy() override;
+        virtual void handleGeneralCut() override;
+        virtual void handleGeneralPaste() override;
+        virtual void handleGeneralDelete() override;
+
+        virtual bool checkGeneralCopy() const override;
+        virtual bool checkGeneralCut() const override;
+        virtual bool checkGeneralPaste() const override;
+        virtual bool checkGeneralDelete() const override;
+
+        //--
+
         INLINE const HashSet<SceneContentNodePtr>& selection() const { return m_selection; }
+
+        void actionChangeSelection(const Array<SceneContentNodePtr>& selection);
 
         void changeSelection(const Array<SceneContentNodePtr>& selection);
 
@@ -62,9 +77,27 @@ namespace ed
 
         RefPtr<SceneDefaultPropertyInspectorPanel> m_panel;
 
+        //--
+
         HashSet<SceneContentNodePtr> m_selection;
 
+        bool m_canCopySelection = false;
+        bool m_canCutSelection = false;
+        bool m_canDeleteSelection = false;
+
+        void updateSelectionFlags();
+
+        //--
+
+        RefPtr<ui::ClassPickerBox> m_entityClassSelector;
+        RefPtr<ui::ClassPickerBox> m_componentClassSelector;
+
         SceneContentNodeWeakPtr m_activeNode;
+
+        void processVisualSelection(bool ctrl, bool shift, const base::Array<rendering::scene::Selectable>& selectables);
+
+        void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass);
+        void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass);
     };
 
     //--

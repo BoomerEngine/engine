@@ -68,7 +68,7 @@ namespace base
                     updateStatusNoLock(data, FileStatusMode::Unloaded);
                 };
 
-                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourceHandle data)
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](res::ResourceHandle data)
                 {
                     auto lock = base::CreateLock(m_fileMapLock);
                     updateStatusNoLock(data->key(), FileStatusMode::Loaded);

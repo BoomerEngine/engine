@@ -89,21 +89,8 @@ namespace ui
 
     void TreeView::expandAll(bool recrusive)
     {
-        if (m_model)
-        {
-            auto count = m_model->rowCount(ModelIndex());
-            for (uint32_t i = 0; i < count; ++i)
-            {
-                if (auto childIndex = m_model->index(i, 0, ModelIndex()))
-                {
-                    ViewItem* item = nullptr;
-                    if (findViewElement(childIndex, item))
-                    {
-                        changeExpandState(item, true, recrusive);
-                    }
-                }
-            }
-        }
+        for (auto* rootItem : m_mainRows.m_orderedChildren)
+            changeExpandState(rootItem, true, recrusive);
     }
 
     void TreeView::expandItem(const ModelIndex& index)
@@ -135,13 +122,20 @@ namespace ui
             auto hasChildren = m_model->hasChildren(item->m_index);
             if (hasChildren && state)
             {
-                auto childrenCount = m_model->rowCount(item->m_index);
-                for (uint32_t i = 0; i < childrenCount; ++i)
+                base::InplaceArray<ModelIndex, 128> children;
+                m_model->children(item->m_index, children);
+
+                for (const auto& childIndex : children)
                 {
-                    auto childIndex = m_model->index(i, 0, item->m_index);
-                    DEBUG_CHECK(childIndex.row() == i);
-                    attachViewElement(item, childIndex);
+                    auto* childItem = m_pool.alloc();
+                    childItem->m_index = childIndex;
+                    childItem->m_depth = item->m_depth + 1;
+                    item->m_children.m_orderedChildren.pushBack(childItem);
+
+                    visualizeViewElement(childItem);
                 }
+
+                buildSortedList(item->m_children);
             }
             else if (!state)
             {
@@ -264,15 +258,21 @@ namespace ui
     {
         discardAllElements();
 
+        DEBUG_CHECK(m_mainRows.m_orderedChildren.empty());
+        DEBUG_CHECK(m_mainRows.m_displayOrder.empty());
+
         if (nullptr != m_model)
         {
-            uint32_t numRows = m_model->rowCount();
-            for (uint32_t i = 0; i < numRows; ++i)
+            base::Array<ModelIndex> initialChildren;
+            m_model->children(ModelIndex(), initialChildren);
+
+            for (const auto& index : initialChildren)
             {
-                if (auto index = m_model->index(i, 0))
-                {
-                    attachViewElement(index);
-                }
+                auto* item = m_pool.alloc();
+                item->m_index = index;
+                m_mainRows.m_orderedChildren.pushBack(item);
+
+                visualizeViewElement(item);
             }
 
             rebuildSortedOrder();
@@ -280,48 +280,31 @@ namespace ui
         }
     }
 
-    void TreeView::modelRowsAboutToBeAdded(const ModelIndex& parent, int first, int count)
+    void TreeView::modelItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        TBaseClass::modelRowsAboutToBeAdded(parent, first, count);
-    }
-
-    void TreeView::modelRowsAdded(const ModelIndex& parent, int first, int count)
-    {
-        TBaseClass::modelRowsAdded(parent, first, count);
+        TBaseClass::modelItemsAdded(parent, items);
 
         ViewItem* parentItem = nullptr;
-        if (resolveItemFromModelIndex(parent, parentItem) && count)
+        if (resolveItemFromModelIndex(parent, parentItem))
         {
             if (!parentItem || parentItem->m_expanded)
             {
-                ModelIndexReindexerInsert reindexer(parent, first, count);
+                auto& children = parentItem ? parentItem->m_children : m_mainRows;
+                auto hadChildren = !children.m_orderedChildren.empty();
 
-                auto& items = parentItem ? parentItem->m_children : m_mainRows;
-                auto& children = items.m_orderedChildren;
-                auto hadChildren = !children.empty();
-                ASSERT(first <= (int)children.size());
-
-                for (int i = first; i <= children.lastValidIndex(); ++i)
-                {
-                    auto item = children[i];
-                    reindexer.reindex(item->m_index, item->m_index);
-                }
-
-                children.insertWith(first, count, nullptr);
-
-                for (int i = 0; i < count; ++i)
+                for (const auto& itemIndex : items)
                 {
                     auto item = m_pool.alloc();
 
-                    item->m_index = m_model->index(i + first, 0, parent);
+                    item->m_index = itemIndex;
                     item->m_parent = parentItem;
                     item->m_depth = parentItem ? parentItem->m_depth + 1 : 0;
-                    children[i + first] = item;
+                    children.m_orderedChildren.pushBack(item);
 
                     visualizeViewElement(item);
                 }
 
-                buildSortedList(items);
+                buildSortedList(children);
                 rebuildDisplayList();
             }
 
@@ -331,46 +314,33 @@ namespace ui
                 updateExpandStyle(parentItem);
             }
         }
+
     }
 
-    void TreeView::modelRowsAboutToBeRemoved(const ModelIndex& parent, int first, int count)
+    void TreeView::modelItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        TBaseClass::modelRowsAboutToBeRemoved(parent, first, count);
-    }
+        TBaseClass::modelItemsRemoved(parent, items);
 
-    void TreeView::modelRowsRemoved(const ModelIndex& parent, int first, int count)
-    {
         ViewItem* parentItem = nullptr;
-        if (resolveItemFromModelIndex(parent, parentItem) && count)
+        if (resolveItemFromModelIndex(parent, parentItem))
         {
-            ModelIndexReindexerRemove reindexer(parent, first, count);
-
             if (!parentItem || parentItem->m_expanded)
             {
                 auto& children = parentItem ? parentItem->m_children : m_mainRows;
-                ASSERT(first + count <= (int)children.m_orderedChildren.size());
 
-                base::InplaceArray<ViewItem*, 10> itemsToRemove;
-
-                for (int i = 0; i < count; ++i)
+                for (const auto& itemIndex : items)
                 {
-                    auto* item = children.m_orderedChildren[first + i];
-                    children.m_displayOrder.remove(item);
-                    itemsToRemove.pushBack(item);
+                    if (auto* childItem = children.findItem(itemIndex))
+                    {
+                        children.m_orderedChildren.remove(childItem);
+                        children.m_displayOrder.remove(childItem);
+
+                        destroyViewElement(childItem);
+                    }
                 }
 
-                children.m_orderedChildren.erase(first, count);
-
-                for (auto* item : itemsToRemove)
-                    destroyViewElement(item);
-
-                for (int i = first; i <= children.m_orderedChildren.lastValidIndex(); ++i)
-                {
-                    auto* item = children.m_orderedChildren[i];
-                    reindexer.reindex(item->m_index, item->m_index);
-                }
-
-                buildSortedList(children.m_orderedChildren, children.m_displayOrder);
+                // TODO: this can be unnecessary
+                //buildSortedList(children.m_orderedChildren, children.m_displayOrder);
             }
 
             if (parentItem)
@@ -379,8 +349,6 @@ namespace ui
                 updateExpandStyle(parentItem);
             }
         }
-
-        TBaseClass::modelRowsRemoved(parent, first, count);
     }
 
     //---
@@ -418,7 +386,8 @@ namespace ui
                 {
                     case base::input::KeyCode::KEY_RETURN:
                     {
-                        changeExpandState(item, !item->m_expanded);
+                        if (!call(EVENT_ITEM_ACTIVATED, item->m_index))
+                            changeExpandState(item, !item->m_expanded);
                         return true;
                     }
 

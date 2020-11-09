@@ -72,18 +72,15 @@ namespace ui
         }
     }
 
-    void ToolBar::createCallback(const ToolbarButtonSetup& setup, const std::function<void()>& simpleCallback)
+    EventFunctionBinder ToolBar::createCallback(const ToolbarButtonSetup& setup)
     {
-        if (simpleCallback)
-        {
-            const auto captionString = RenderToolbarCaption(setup);
-            auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
+        const auto captionString = RenderToolbarCaption(setup);
+        auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
 
-            if (setup.m_tooltip)
-                but->tooltip(setup.m_tooltip);
+        if (setup.m_tooltip)
+            but->tooltip(setup.m_tooltip);
 
-            but->bind(EVENT_CLICKED) = simpleCallback;
-        }
+        return but->bind(EVENT_CLICKED);
     }
 
     void ToolBar::attachChild(IElement* childElement)

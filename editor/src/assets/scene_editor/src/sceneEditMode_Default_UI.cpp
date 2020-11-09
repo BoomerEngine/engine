@@ -18,11 +18,13 @@
 #include "base/ui/include/uiListView.h"
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiDataInspector.h"
-#include "game/world/include/worldNodeTemplate.h"
-#include "game/world/include/worldEntityTemplate.h"
-#include "game/world/include/worldComponentTemplate.h"
 #include "base/object/include/action.h"
 #include "base/ui/include/uiGroup.h"
+#include "base/ui/include/uiClassPickerBox.h"
+#include "base/world/include/worldNodeTemplate.h"
+#include "base/world/include/worldEntityTemplate.h"
+#include "base/world/include/worldComponentTemplate.h"
+#include "base/world/include/worldEntity.h"
 
 namespace ed
 {
@@ -117,76 +119,38 @@ namespace ed
         }
 
         {
-            auto group = createChild<ui::Group>("Payload", true);
-            m_entityElements.pushBack(group);
-
-            m_partList = group->createChild<ui::ListView>();
-            m_partList->expand();
-            m_partList->customMinSize(0, 200);
-            m_partList->customMaxSize(0, 200);
-
-            m_partList->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]() {
-                refreshProperties();
-            };
-
-            auto panel = group->createChild<ui::IElement>();
-            panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            panel->layoutHorizontal();
+            auto group = createChild<ui::Group>("Data", true);
+            m_dataElements.pushBack(group);
 
             {
-                m_buttonCreateComponent = panel->createChildWithType<ui::Button>("PushButton"_id, "[img:add] Add component");
-                m_buttonCreateComponent->addStyleClass("green"_id);
-                m_buttonCreateComponent->customProportion(1.0f);
-                m_buttonCreateComponent->expand();
-                m_buttonCreateComponent->bind(ui::EVENT_CLICKED) = [this]() {
-                    cmdAddComponent();
-                };
-            }
+                auto panel = group->createChild<ui::IElement>();
+                panel->layoutHorizontal();
+                panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                panel->customMargins(4, 4, 4, 0);
 
-            {
-                m_buttonRemoveComponent = panel->createChildWithType<ui::Button>("PushButton"_id, "[img:delete] Remove component");
-                m_buttonRemoveComponent->addStyleClass("red"_id);
-                m_buttonRemoveComponent->customProportion(1.0f);
-                m_buttonRemoveComponent->expand();
-                m_buttonRemoveComponent->bind(ui::EVENT_CLICKED) = [this]() {
-                    cmdRemoveComponent();
-                };
-            }
-        }
+                m_partClass = panel->createChild<ui::EditBox>();
+                m_partClass->enable(false);
+                m_partClass->text("<no data>");
+                m_partClass->expand();
+                m_partClass->customProportion(1.0f);
+                m_partClass->customMargins(0, 0, 4, 0);
 
-        {
-            auto group = createChild<ui::Group>("Properties", true);
-            m_entityElements.pushBack(group);
-
-            auto panel = group->createChild<ui::IElement>();
-            panel->layoutHorizontal();
-            panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-
-            {
-                m_buttonCreateLocalData = panel->createChildWithType<ui::Button>("PushButton"_id, "[img:add] Add data");
-                m_buttonCreateLocalData->addStyleClass("green"_id);
-                m_buttonCreateLocalData->customProportion(1.0f);
-                m_buttonCreateLocalData->expand();
-                m_buttonCreateLocalData->bind(ui::EVENT_CLICKED) = [this]() {
-                    cmdCreateLocalData();
-                };
-            }
-
-            {
-                m_buttonRemoveLocalData = panel->createChildWithType<ui::Button>("PushButton"_id, "[img:delete] Remove data");
-                m_buttonRemoveLocalData->addStyleClass("red"_id);
-                m_buttonRemoveLocalData->customProportion(1.0f);
-                m_buttonRemoveLocalData->expand();
-                m_buttonRemoveLocalData->bind(ui::EVENT_CLICKED) = [this]() {
-                    cmdRemoveLocalData();
-                };
+                {
+                    m_buttonChangeClass = panel->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:class]");
+                    m_buttonChangeClass->bind(ui::EVENT_CLICKED) = [this]() {
+                        cmdChangeClass();
+                    };
+                }
             }
 
             m_properties = group->createChild<ui::DataInspector>();
             m_properties->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_properties->customMinSize(0, 700);
             m_properties->bindActionHistory(host->actionHistory());
+            m_properties->customMargins(4, 4, 4, 0);
         }
+
+        unbind();
     }
 
     SceneDefaultPropertyInspectorPanel::~SceneDefaultPropertyInspectorPanel()
@@ -196,15 +160,17 @@ namespace ed
     {
         m_nodes.reset();
 
+        m_commonClassType = ClassType();
+
         m_name->text("");
         m_name->enable(false);
 
+        if (m_classPicker)
+            m_classPicker->requestClose();
+        m_classPicker.reset();
+
         m_prefabList->model(nullptr);
         m_prefabList->enable(false);
-
-        m_partList->model(nullptr);
-        m_partList->enable(false);
-        m_partListModel.reset();
 
         m_properties->bindNull();
 
@@ -212,6 +178,9 @@ namespace ed
             elem->visibility(false);
 
         for (const auto& elem : m_entityElements)
+            elem->visibility(false);
+
+        for (const auto& elem : m_dataElements)
             elem->visibility(false);
     }
 
@@ -223,12 +192,16 @@ namespace ed
 
         if (!m_nodes.empty())
         {
-            bool allowAntityElements = true;
+            bool allowDataElements = true;
+            bool allowEntityElements = true;
             bool allowCommonElements = true;
             for (const auto& node : m_nodes)
             {
+                if (!node->is<SceneContentDataNode>())
+                    allowDataElements = false;
+
                 if (!node->is<SceneContentEntityNode>())
-                    allowAntityElements = false;
+                    allowEntityElements = false;
 
                 if (node->type() == SceneContentNodeType::PrefabRoot)
                     allowCommonElements = false;
@@ -237,13 +210,17 @@ namespace ed
             for (const auto& elem : m_commonElements)
                 elem->visibility(true);
 
-            if (allowAntityElements)
+            if (allowDataElements)
+                for (const auto& elem : m_dataElements)
+                    elem->visibility(true);
+
+            if (allowEntityElements)
                 for (const auto& elem : m_entityElements)
                     elem->visibility(true);
         }
 
         refreshName();
-        refreshPartList(StringID());
+        refreshProperties();
     }
 
     void SceneDefaultPropertyInspectorPanel::refreshName()
@@ -262,158 +239,86 @@ namespace ed
 
     //--
 
-    bool SceneDefaultPropertyInspectorPanel::PartListModel::compare(const PartInfo& a, const PartInfo& b, int colIndex) const
-    {
-        return a.name < b.name;
-    }
-
-    bool SceneDefaultPropertyInspectorPanel::PartListModel::filter(const PartInfo& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
-    {
-        return filter.testString(data.name.view());
-    }
-
-    base::StringBuf SceneDefaultPropertyInspectorPanel::PartListModel::content(const PartInfo& data, int colIndex /*= 0*/) const
-    {
-        base::StringBuilder txt;
-
-        if (data.name)
-        {
-            txt << "[img:component] ";
-            txt << data.name;
-        }
-        else
-        {
-            txt << "[img:brick_blue] Entity";
-        }
-
-        if (data.localData)
-            txt << "[tag:#88A]Local[/tag]";
-
-        if (data.overrideData)
-            txt << "[tag:#888]Override[/tag]";
-
-        if (!data.localData && !data.overrideData)
-            txt << "[tag:#888]No data[/tag]";
-
-        return txt.toString();
-    }
-
-    void SceneDefaultPropertyInspectorPanel::collectSelectedParts(Array<PartInfo>& outParts) const
-    {
-        for (const auto id : m_partList->selection())
-            outParts.emplaceBack(m_partListModel->data(id));
-    }
-
-    void SceneDefaultPropertyInspectorPanel::refreshPartList(base::StringID autoSelectName)
-    {
-        m_partList->model(nullptr);
-        m_partList->enable(false);
-        m_partListModel.reset();
-
-        HashMap<StringID, PartInfo> partsMap;
-        for (const auto& node : m_nodes)
-        {
-            if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
-            {
-                for (const auto& payload : entityNode->payloads())
-                {
-                    auto& part = partsMap[payload->name];
-                    part.name = payload->name;
-                    part.localData |= (nullptr != payload->editableData);
-                    part.overrideData |= (nullptr != payload->baseData);
-                }
-            }
-        }
-
-        if (!partsMap.empty())
-        {
-            m_partListModel = CreateSharedPtr<PartListModel>();
-
-            ui::ModelIndex selectedIndex;
-            for (const auto& data : partsMap.values())
-            {
-                const auto index = m_partListModel->add(data);
-                if (data.name == autoSelectName)
-                    selectedIndex = index;
-            }
-
-            m_partList->model(m_partListModel);
-            m_partList->enable(true);
-
-            if (selectedIndex)
-                m_partList->select(selectedIndex, ui::ItemSelectionModeBit::Default, false);
-        }
-
-        refreshProperties();
-    }
-
-    void SceneDefaultPropertyInspectorPanel::collectSelectedEditableObjects(Array<SceneContentEditableObject>& outList) const
-    {
-        // collect names of selected parts
-        HashSet<StringID> selectedNames;
-        for (const auto& id : m_partList->selection())
-            selectedNames.insert(m_partListModel->data(id).name);
-
-        // extract data from nodes
-        for (const auto& node : m_nodes)
-        {
-            if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
-            {
-                for (const auto& payload : entityNode->payloads())
-                {
-                    if (selectedNames.contains(payload->name))
-                    {
-                        auto& outData = outList.emplaceBack();
-                        outData.owningNode = entityNode;
-                        outData.name = payload->name;
-                        outData.baseData = payload->baseData;
-                        outData.editableData = payload->editableData;
-                    }
-                }
-            }
-        }
-    }
-
-    //--
-
     void SceneDefaultPropertyInspectorPanel::refreshProperties()
     {
-        Array<SceneContentEditableObject> content;
-        collectSelectedEditableObjects(content);
+        bool hasEntityData = false;
+        bool hasComponentData = false;
 
-        bool canCreateLocalData = false;
-        bool canRemoveLocalData = false;
-        for (const auto& data : content)
+        Array<SceneContentEditableObject> editableObjects;
+        for (const auto& node : m_nodes)
         {
-            canCreateLocalData |= !data.editableData;
-            canRemoveLocalData |= (data.editableData && data.baseData);
+            if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+            {
+                if (auto editableData = dataNode->editableData())
+                {
+                    auto& info = editableObjects.emplaceBack();
+                    info.baseData = dataNode->baseData();
+                    info.editableData = dataNode->editableData();
+                    info.name = dataNode->name();
+                    info.owningNode = dataNode;
+                    
+                    if (editableData->is<base::world::EntityTemplate>())
+                        hasEntityData = true;
+                    else if (editableData->is<base::world::ComponentTemplate>())
+                        hasComponentData = true;
+                }
+            }
         }
 
-        m_buttonCreateLocalData->enable(canCreateLocalData);
-        m_buttonRemoveLocalData->enable(canRemoveLocalData);
+        // do not edit anything if both entities and components are selected at the same time
+        if (hasEntityData && hasComponentData)
+            editableObjects.reset();
 
-        if (content.empty())
+        m_commonClassType = ClassType();
+
+        if (m_classPicker)
+            m_classPicker->requestClose();
+        m_classPicker.reset();
+
+        if (!editableObjects.empty())
         {
-            m_properties->bindNull();
+            ClassType commonClass;
+            bool canResetData = false;
+            bool commonClassInconsistent = false;
+            for (const auto& data : editableObjects)
+            {
+                const auto dataClass = data.editableData->cls();
+                if (!commonClass)
+                {
+                    if (!commonClassInconsistent)
+                        commonClass = dataClass;
+                }
+                else if (commonClass != dataClass)
+                {
+                    commonClassInconsistent = true;
+                    commonClass = ClassType();
+                }
+            }
+
+            auto view = CreateSharedPtr<SceneContentNodeDataView>(std::move(editableObjects));
+            m_properties->bindData(view, false);
+
+            if (commonClassInconsistent)
+            {
+                m_partClass->text("<inconsistent class>");
+                m_buttonChangeClass->enable(false);
+            }
+            else
+            {
+                m_commonClassType = commonClass;
+                m_partClass->text(commonClass->name().view());
+                m_buttonChangeClass->enable(true);
+            }
         }
         else
         {
-            auto view = CreateSharedPtr<SceneContentNodeDataView>(std::move(content));
-            m_properties->bindData(view, false);
+            m_properties->bindNull();
+            m_buttonChangeClass->enable(false);
+            m_partClass->text("<no data>");
         }
     }
 
     //--
-
-    void SceneDefaultPropertyInspectorPanel::cmdAddComponent()
-    {
-
-    }
-
-    void SceneDefaultPropertyInspectorPanel::cmdRemoveComponent()
-    {
-
-    }
 
     struct NameActionInfo
     {
@@ -516,19 +421,165 @@ namespace ed
 
     //--
 
-    void SceneDefaultPropertyInspectorPanel::cmdCreateLocalData()
+    struct ChangeClassActionInfo
     {
+        SceneContentDataNodePtr node;
+        ObjectTemplatePtr oldData;
+        ObjectTemplatePtr newData;
+    };
 
+    struct ActionChangeDataClass : public IAction
+    {
+    public:
+        ActionChangeDataClass(Array<ChangeClassActionInfo>&& nodes, SceneDefaultPropertyInspectorPanel* host)
+            : m_nodes(std::move(nodes))
+            , m_host(host)
+        {
+        }
+
+        virtual StringID id() const override
+        {
+            return "ChangeNodesDataClass"_id;
+        }
+
+        StringBuf description() const override
+        {
+            if (m_nodes.size() == 1)
+                return TempString("Change node class");
+            else
+                return TempString("Change class on {} nodes", m_nodes.size());
+        }
+
+        virtual bool execute() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->changeData(info.newData);
+            m_host->refreshProperties();
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->changeData(info.oldData);
+            m_host->refreshProperties();
+            return true;
+        }
+
+    private:
+        Array<ChangeClassActionInfo> m_nodes;
+        SceneDefaultPropertyInspectorPanel* m_host;
+    };
+
+    static bool IsClassCompatible(const SceneContentDataNodePtr& dataNode, ClassType newDataClass)
+    {
+        if (dataNode->editableData()->is<world::EntityTemplate>())
+        {
+            if (dataNode->baseData())
+                return newDataClass->is(dataNode->baseData()->cls());
+            else
+                return newDataClass->is<world::EntityTemplate>();
+        }
+        else if (dataNode->editableData()->is<world::ComponentTemplate>())
+        {
+            if (dataNode->baseData())
+                return newDataClass->is(dataNode->baseData()->cls());
+            else
+                return newDataClass->is<world::ComponentTemplate>();
+        }
+    
+        return false;
     }
 
-    void SceneDefaultPropertyInspectorPanel::cmdRemoveLocalData()
-    {
+    //--
 
+    struct DupaEntityTemplate : public base::world::EntityTemplate
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(DupaEntityTemplate, base::world::EntityTemplate);
+
+    public:
+        virtual world::EntityPtr createEntity() const override { return CreateSharedPtr<world::Entity>(); }
+
+        int m_value = 0;
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(DupaEntityTemplate);
+        RTTI_PROPERTY(m_value).editable().overriddable();
+    RTTI_END_TYPE();
+
+    //--
+
+    struct DupaComponentTemplate : public base::world::ComponentTemplate
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(DupaComponentTemplate, base::world::ComponentTemplate);
+
+        virtual world::ComponentPtr createComponent() const override { return nullptr; }
+
+    public:
+        int m_value = 0;
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(DupaComponentTemplate);
+        RTTI_PROPERTY(m_value).editable().overriddable();
+    RTTI_END_TYPE();
+
+    //--
+
+    void SceneDefaultPropertyInspectorPanel::changeDataClass(ClassType newDataClass, const Array<SceneContentNodePtr>& inputNodes)
+    {
+        Array<ChangeClassActionInfo> nodes;
+
+        for (const auto& node : inputNodes)
+        {
+            if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+            {
+                if (IsClassCompatible(dataNode, newDataClass))
+                {
+                    auto& info = nodes.emplaceBack();
+                    info.node = dataNode;
+                    info.oldData = dataNode->editableData();
+                    info.newData = CloneObject(info.oldData, nullptr, nullptr, newDataClass.cast<IObject>());
+                }
+            }
+        }
+
+        if (!nodes.empty())
+        {
+            auto action = CreateSharedPtr<ActionChangeDataClass>(std::move(nodes), this);
+            m_host->actionHistory()->execute(action);
+        }
+    }
+
+    static ClassType SelectRootClass(ClassType currentClass)
+    {
+        if (currentClass->is<base::world::EntityTemplate>())
+            return base::world::EntityTemplate::GetStaticClass();
+
+        if (currentClass->is<base::world::ComponentTemplate>())
+            return base::world::ComponentTemplate::GetStaticClass();
+
+        return nullptr;
     }
 
     void SceneDefaultPropertyInspectorPanel::cmdChangeClass()
     {
+        if (!m_classPicker && m_commonClassType)
+        {
+            if (const auto rootClass = SelectRootClass(m_commonClassType))
+            {
+                m_classPicker = base::CreateSharedPtr<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
 
+                m_classPicker->bind(ui::EVENT_WINDOW_CLOSED) = [this]() {
+                    m_classPicker.reset();
+                };
+
+                m_classPicker->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType data) {
+                    changeDataClass(data, m_nodes);
+                };
+
+                m_classPicker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
+            }
+        }
     }
 
     //--

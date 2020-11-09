@@ -47,6 +47,9 @@ namespace ed
         // get the nodes that are selected in the edit mod
         virtual Array<SceneContentNodePtr> querySelection() const;
 
+        // create toolbar content 
+        virtual void configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar);
+
         //--
 
         // render edit mode content, called for each panel separately
@@ -85,10 +88,35 @@ namespace ed
         // handle request to paste nodes at given tree node
         virtual void handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode);
 
+        //--
+
+        // general clipboard operations
+        virtual void handleGeneralCopy();
+        virtual void handleGeneralCut();
+        virtual void handleGeneralPaste();
+        virtual void handleGeneralDelete();
+
+        // general clipboard operation filter
+        virtual bool checkGeneralCopy() const;
+        virtual bool checkGeneralCut() const;
+        virtual bool checkGeneralPaste() const;
+        virtual bool checkGeneralDelete() const;
+
     private:
         ScenePreviewContainer* m_container = nullptr;
         ActionHistory* m_actionHistory = nullptr;
     };
+
+    //--
+
+    // create default set of tools for grid control
+    extern ASSETS_SCENE_EDITOR_API void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar);
+
+    // create default set of tools for selection
+    extern ASSETS_SCENE_EDITOR_API void CreateDefaultSelectionButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar);
+
+    // create default set of tools for gizmos
+    extern ASSETS_SCENE_EDITOR_API void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar);
 
     //--
 

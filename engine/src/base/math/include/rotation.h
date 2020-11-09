@@ -133,6 +133,10 @@ namespace base
         static const Angles& Y90_CCW();
         static const Angles& Z90_CW();
         static const Angles& Z90_CCW();
+
+        //--
+
+        void print(IFormatStream& f) const;
     };
 
 } // base

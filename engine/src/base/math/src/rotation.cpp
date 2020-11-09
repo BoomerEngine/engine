@@ -229,6 +229,42 @@ namespace base
 
     //--
 
+    void Angles::print(IFormatStream& f) const
+    {
+        f.append("[");
+
+        bool hasSomething = false;
+
+        if (pitch != 0.0f)
+        {
+            f.appendf("pitch={}", pitch);
+            hasSomething = true;
+        }
+
+        if (yaw != 0.0f)
+        {
+            if (hasSomething)
+                f << ", ";
+            f.appendf("yaw={}", yaw);
+            hasSomething = true;
+        }
+
+        if (roll != 0.0f)
+        {
+            if (hasSomething)
+                f << ", ";
+            f.appendf("roll={}", roll);
+            hasSomething = true;
+        }
+
+        if (!hasSomething)
+            f << "identity";
+
+        f.append("]");
+    }
+
+    //--
+
     Angles Min(const Angles &a, const Angles &b)
     {
         return Angles(std::min(a.pitch, b.pitch), std::min(a.yaw, b.yaw), std::min(a.roll, b.roll));

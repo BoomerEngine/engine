@@ -26,25 +26,32 @@ namespace ui
 
     //---
 
+    static std::atomic<uint64_t> GModelIndexGlobalUniqueCounter = 1;
+
+    uint64_t ModelIndex::AllocateUniqueIndex()
+    {
+        return GModelIndexGlobalUniqueCounter++;
+    }
+
+    ModelIndex::ModelIndex(const IAbstractItemModel* model, const base::UntypedRefWeakPtr& ptr, uint64_t uniqueIndex)
+        : m_model(model)
+        , m_ref(ptr)
+    {
+        ASSERT(nullptr != model);
+        m_uniqueIndex = uniqueIndex ? uniqueIndex : AllocateUniqueIndex();
+    }
+
     uint32_t ModelIndex::CalcHash(const ui::ModelIndex& index)
     {
-        base::CRC32 crc;
-        crc << index.m_row;
-        crc << index.m_col;
-        crc << index.m_ref.unsafe();
-        return crc.crc();
+        return (uint32_t)index.m_uniqueIndex;
     }
 
     void ModelIndex::print(base::IFormatStream& f) const
     {
         if (!valid())
-        {
             f << "empty";
-        }
         else
-        {
-            f.appendf("row={}, col={}, ptr={}", m_row, m_col, m_ref.unsafe());
-        }
+            f.appendf("ModelIndex(#{})", m_uniqueIndex);
     }
 
     //---
@@ -134,82 +141,51 @@ namespace ui
 
     void IAbstractItemModel::reset()
     {
-        if (m_observers.empty())
-            return;
-
-        ASSERT(m_updateState == UpdateState::None);
-        m_updateState = UpdateState::Reset;
-
         for (auto* entry : m_observers)
             if (entry)
                 entry->modelReset();
 
         m_observers.removeAll(nullptr);
-
-        ASSERT(m_updateState == UpdateState::Reset);
-        m_updateState = UpdateState::None;
     }
 
-    void IAbstractItemModel::beingInsertRows(const ModelIndex& parent, int first, int count)
+    void IAbstractItemModel::notifyItemAdded(const ModelIndex& parent, const ModelIndex& item)
     {
-        ASSERT(m_updateState == UpdateState::None);
-        m_updateState = UpdateState::InsertRows;
-        m_updateIndex = parent;
-        m_updateArgFirst = first;
-        m_updateArgCount = count;
+        if (item)
+        {
+            base::InplaceArray<ModelIndex, 1> items;
+            items.pushBack(item);
 
+            notifyItemsAdded(parent, items);
+        }
+    }
+
+    void IAbstractItemModel::notifyItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items)
+    {
         for (auto* entry : m_observers)
             if (entry)
-                entry->modelRowsAboutToBeAdded(parent, first, count);
+                entry->modelItemsAdded(parent, items);
 
         m_observers.removeAll(nullptr);
     }
 
-    void IAbstractItemModel::endInsertRows()
+    void IAbstractItemModel::notifyItemRemoved(const ModelIndex& parent, const ModelIndex& item)
     {
-        ASSERT(m_updateState == UpdateState::InsertRows);
+        if (item)
+        {
+            base::InplaceArray<ModelIndex, 1> items;
+            items.pushBack(item);
 
-        for (auto* entry : m_observers)
-            if (entry)
-                entry->modelRowsAdded(m_updateIndex, m_updateArgFirst, m_updateArgCount);
-
-        m_observers.removeAll(nullptr);
-
-        m_updateState = UpdateState::None;
-        m_updateIndex = ModelIndex();
-        m_updateArgFirst = INDEX_NONE;
-        m_updateArgCount = INDEX_NONE;
+            notifyItemsRemoved(parent, items);
+        }
     }
 
-    void IAbstractItemModel::beingRemoveRows(const ModelIndex& parent, int first, int count)
+    void IAbstractItemModel::notifyItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        ASSERT(m_updateState == UpdateState::None);
-        m_updateState = UpdateState::RemoveRows;
-        m_updateIndex = parent;
-        m_updateArgFirst = first;
-        m_updateArgCount = count;
-
         for (auto* entry : m_observers)
             if (entry)
-                entry->modelRowsAboutToBeRemoved(parent, first, count);
+                entry->modelItemsRemoved(parent, items);
 
         m_observers.removeAll(nullptr);
-    }
-
-    void IAbstractItemModel::endRemoveRows()
-    {
-        ASSERT(m_updateState == UpdateState::RemoveRows);
-
-        for (auto* entry : m_observers)
-            if (entry)
-                entry->modelRowsRemoved(m_updateIndex, m_updateArgFirst, m_updateArgCount);
-
-        m_observers.removeAll(nullptr);
-
-        m_updateState = UpdateState::None;
-        m_updateIndex = ModelIndex();
-        m_updateArgFirst = INDEX_NONE;
-        m_updateArgCount = INDEX_NONE;
     }
 
     bool IAbstractItemModel::compare(const ModelIndex& first, const ModelIndex& second, int colIndex /*=0*/) const

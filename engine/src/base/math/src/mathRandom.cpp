@@ -183,12 +183,25 @@ namespace base
         return sphere.position() + (RandSphereSurfacePoint(rand) * sphere.radius());
     }
 
-    Vector3 RandHemiSphereSurfacePoint(const Vector2& rand)
+    Vector3 RandHemiSphereSurfacePoint(Vector2 rand)
     {
         auto azimuthal = TWOPI * rand.x;
 
         auto xyproj = std::sqrtf(1 - rand.y * rand.y);
         return Vector3(xyproj * std::cosf(azimuthal), xyproj * std::sinf(azimuthal), rand.y);
+    }
+
+    Vector3 RandSphereSurfacePointFast(Vector2 rand)
+    {
+        auto azimuthal = TWOPI * rand.x;
+
+        // map [0,1) to [0,1) or [-1,0) with half probability
+        auto y = (2.0f * rand.y);
+        if (rand.y < 0.5f)
+            y += -2.0f; // [1-2) -> [-1,0)
+
+        auto xyproj = std::sqrtf(1 - y * y); // cancels sign change
+        return Vector3(xyproj * std::cosf(azimuthal), xyproj * std::sinf(azimuthal), y);
     }
 
     Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& normal)

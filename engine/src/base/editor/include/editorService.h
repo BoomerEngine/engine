@@ -136,6 +136,8 @@ namespace ed
 
         void loadOpenSaveSettings(const ui::ConfigBlock& config);
         void saveOpenSaveSettings(const ui::ConfigBlock& config) const;
+
+        void updateResourceEditors();
     };
 
 } // editor

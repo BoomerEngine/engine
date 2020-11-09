@@ -17,6 +17,7 @@
 #include "managedFile.h"
 #include "managedFileFormat.h"
 #include "versionControl.h"
+#include "resourceEditor.h"
 
 #include "base/io/include/absolutePath.h"
 #include "base/io/include/ioSystem.h"
@@ -32,6 +33,7 @@
 #include "base/net/include/tcpMessageServer.h"
 #include "base/net/include/messageConnection.h"
 #include "base/net/include/messagePool.h"
+#include "base/ui/include/uiDockLayout.h"
 
 namespace ed
 {
@@ -191,6 +193,9 @@ namespace ed
 
         // update the state of background processes
         updateBackgroundJobs();
+        
+        // update all opened resource editors
+        updateResourceEditors();
     }
 
     //---
@@ -541,6 +546,19 @@ namespace ed
                 return m_renderer->queryWindowNativeHandle(window);
 
         return 0;
+    }
+
+    //--
+
+    void Editor::updateResourceEditors()
+    {
+        m_mainWindow->layout().iteratePanels([this](ui::DockPanel* panel) -> bool
+            {
+                if (auto* resourceEditor = rtti_cast<ResourceEditor>(panel))
+                    resourceEditor->update();
+
+                return false;
+            }, ui::DockPanelIterationMode::All);
     }
 
     //--

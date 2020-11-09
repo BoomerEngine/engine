@@ -143,31 +143,28 @@ namespace ui
     {
         if (nullptr != m_model)
             buildSortedList(m_mainRows);
-    }
+    }    
 
     void ItemView::buildSortedList(const base::Array<ViewItem*>& rawItems, base::Array<ViewItem*>& outSortedItems) const
     {
         outSortedItems.reset();
 
-        if (m_sortingColumnIndex != INDEX_NONE)
-        {
-            outSortedItems.reserve(rawItems.size());
-            outSortedItems = rawItems;
+        outSortedItems.reserve(rawItems.size());
+        outSortedItems = rawItems;
 
-            if (m_sortingAsc)
+        if (m_sortingAsc || m_sortingColumnIndex == INDEX_NONE)
+        {
+            std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)
             {
-                std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)
-                {
-                    return m_model->compare(a->m_index, b->m_index, m_sortingColumnIndex);
-                });
-            }
-            else
+                return m_model->compare(a->m_index, b->m_index, m_sortingColumnIndex);
+            });
+        }
+        else
+        {
+            std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)
             {
-                std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)
-                {
-                    return m_model->compare(b->m_index, a->m_index, m_sortingColumnIndex);
-                });
-            }
+                return m_model->compare(b->m_index, a->m_index, m_sortingColumnIndex);
+            });
         }
     }
 
@@ -215,6 +212,15 @@ namespace ui
         }
     }
 
+    ItemView::ViewItem* ItemView::ViewItemChildren::findItem(const ModelIndex& index) const
+    {
+        for (auto* child : m_orderedChildren)
+            if (child->m_index == index)
+                return child;
+
+        return nullptr;
+    }
+
     bool ItemView::resolveItemFromModelIndex(const ModelIndex& index, ViewItem*& outItem) const
     {
         // the "null" root item that is always there
@@ -224,14 +230,15 @@ namespace ui
             return true;
         }
 
+        // TODO: add cache ?
+
         // if we have a parent than resolve it first
         auto parent = index.parent();
         if (!parent)
         {
-            // this is a root item
-            if (index.row() >= 0 && index.row() <= m_mainRows.m_orderedChildren.lastValidIndex())
+            if (auto* childItem = m_mainRows.findItem(index))
             {
-                outItem = m_mainRows.m_orderedChildren[index.row()];
+                outItem = childItem;
                 return true;
             }
 
@@ -244,10 +251,10 @@ namespace ui
         if (!resolveItemFromModelIndex(parent, parentItem))
             return false;
 
-        // this is a root item
-        if (index.row() >= 0 && index.row() <= parentItem->m_children.m_orderedChildren.lastValidIndex())
+        // find in child
+        if (auto* childItem = parentItem->m_children.findItem(index))
         {
-            outItem = parentItem->m_children.m_orderedChildren[index.row()];
+            outItem = childItem;
             return true;
         }
 
@@ -255,51 +262,15 @@ namespace ui
         return false;
     }
 
-    void ItemView::attachViewElement(ViewItem* parentItemContainer, const ModelIndex& index)
-    {
-        auto* item = m_pool.alloc();
-        item->m_index = index;
-        item->m_parent = parentItemContainer;
-
-        if (nullptr != parentItemContainer)
-            item->m_depth = parentItemContainer->m_depth + 1;
-
-        auto& container = (nullptr != parentItemContainer) ? parentItemContainer->m_children.m_orderedChildren : m_mainRows.m_orderedChildren;
-
-        container.prepareWith(index.row() + 1, nullptr);
-        ASSERT_EX(container[index.row()] == nullptr, "Slot for given row is already occupied");
-        container[index.row()] = item;
-
-        visualizeViewElement(item);
-    }
-
-    void ItemView::attachViewElement(const ModelIndex& index)
-    {
-        // resolve the parent container
-        ViewItem* parentItemContainer = nullptr;
-        if (!resolveItemFromModelIndex(index.parent(), parentItemContainer))
-        {
-            TRACE_ERROR("Unable to attach view item {}, unable to resovle parent", index);
-            return;
-        }
-
-        attachViewElement(parentItemContainer, index);
-    }
-
     bool ItemView::findViewElement(const ModelIndex& index, const ViewItemChildren& items, ViewItem*& outViewElement) const
     {
-        // index is out of range, probably old
-        if (index.row() < 0 || index.row() > items.m_orderedChildren.lastValidIndex())
-            return false;
+        if (auto* item = items.findItem(index))
+        {
+            outViewElement = item;
+            return true;
+        }
 
-        // still, check that we are pointing to the same data in case of index shift
-        auto* item = items.m_orderedChildren[index.row()];
-        if (item->m_index != index)
-            return false;
-
-        // item seems to match
-        outViewElement = item;
-        return true;
+        return false;
     }
 
     bool ItemView::findViewElement(const ModelIndex& index, ViewItem*& outViewElement) const
@@ -777,23 +748,27 @@ namespace ui
         if (evt.leftClicked() || evt.rightClicked())
         {
             auto clickedItem = indexAtPoint(evt.absolutePosition().toVector());
-            if (evt.keyMask().isShiftDown())
+
+            if (evt.leftClicked() || !selection().contains(clickedItem))
             {
-                if (selectionRoot() && clickedItem) // at lest one element should be selected as the root
+                if (evt.keyMask().isShiftDown())
                 {
-                    base::InplaceArray<ModelIndex, 64> selectedIndices;
-                    if (buildIndicesFromIndexRange(selectionRoot(), clickedItem, selectedIndices))
-                        select(selectedIndices, ItemSelectionMode(ItemSelectionModeBit::Clear) | ItemSelectionModeBit::Select | ItemSelectionModeBit::UpdateCurrent);
+                    if (selectionRoot() && clickedItem) // at lest one element should be selected as the root
+                    {
+                        base::InplaceArray<ModelIndex, 64> selectedIndices;
+                        if (buildIndicesFromIndexRange(selectionRoot(), clickedItem, selectedIndices))
+                            select(selectedIndices, ItemSelectionMode(ItemSelectionModeBit::Clear) | ItemSelectionModeBit::Select | ItemSelectionModeBit::UpdateCurrent);
+                    }
                 }
-            }
-            else if (evt.keyMask().isCtrlDown())
-            {
-                if (clickedItem)
-                    select(clickedItem, ItemSelectionMode(ItemSelectionModeBit::Toggle) | ItemSelectionModeBit::UpdateCurrent);
-            }
-            else
-            {
-                select(clickedItem, ItemSelectionModeBit::Default);
+                else if (evt.keyMask().isCtrlDown())
+                {
+                    if (clickedItem)
+                        select(clickedItem, ItemSelectionMode(ItemSelectionModeBit::Toggle) | ItemSelectionModeBit::UpdateCurrent);
+                }
+                else
+                {
+                    select(clickedItem, ItemSelectionModeBit::Default);
+                }
             }
         }
 
@@ -813,7 +788,7 @@ namespace ui
 
             if (auto menu = m_model->contextMenu(this, items))
             {
-                menu->show(this, PopupWindowSetup().relativeToCursor().topLeft().interactive().autoClose());
+                menu->show(this, PopupWindowSetup().relativeToCursor().bottomLeft().interactive().autoClose());
                 return true;
             }
         }

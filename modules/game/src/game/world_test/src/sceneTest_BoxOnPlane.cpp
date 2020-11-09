@@ -9,9 +9,9 @@
 #include "build.h"
 #include "sceneTest.h"
 
-#include "game/world/include/worldMeshComponent.h"
-#include "game/world/include/worldEntity.h"
-#include "game/world/include/world.h"
+#include "rendering/world/include/meshComponent.h"
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/world.h"
 
 namespace game
 {
@@ -43,23 +43,23 @@ namespace game
 
             virtual void createWorldContent() override
             {
-                if (auto mesh = loadMesh("plane.obj"))
+                if (auto mesh = loadMesh("/engine/meshes/plane.v4mesh"))
                 {
-                    auto mc = base::CreateSharedPtr<MeshComponent>(mesh);
+                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(mesh);
 
-                    auto entity = base::CreateSharedPtr<Entity>();
+                    auto entity = base::CreateSharedPtr<base::world::Entity>();
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);
                 }
 
-                if (auto mesh = loadMesh("cube.obj"))
+                if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
                 {
-                    auto mc = base::CreateSharedPtr<MeshComponent>(mesh);
+                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(mesh);
                     mc->relativePosition(base::Vector3(0, 0, 0.5f));
                     m_mesh = mc;
 
-                    auto entity = base::CreateSharedPtr<Entity>();
+                    auto entity = base::CreateSharedPtr<base::world::Entity>();
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);
@@ -67,7 +67,7 @@ namespace game
             }
 
         protected:
-            base::RefPtr<MeshComponent> m_mesh;
+            base::RefPtr<rendering::MeshComponent> m_mesh;
             float m_meshYaw = 0.0f;
         };
 

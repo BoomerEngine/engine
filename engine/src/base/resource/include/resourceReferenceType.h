@@ -39,8 +39,8 @@ namespace base
 
             // IResourceReferenceType
             virtual ClassType referenceResourceClass() const override final;
-            virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const override final;
-            virtual void referenceWriteResource(void* data, res::IResource* resource) const override final;
+            /*virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const override final;
+            virtual void referenceWriteResource(void* data, res::IResource* resource) const override final;*/
             virtual bool referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const override final;
 
             //----

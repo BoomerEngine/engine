@@ -38,6 +38,12 @@ namespace base
         return ++GObjectIDAllocator;
     }
 
+    ObjectPtr IObject::FindUniqueObjectById(ObjectID id)
+    {
+        return ObjectGlobalRegistry::GetInstance().findObject(id);
+    }
+
+
     //--
 
     static std::function<ObjectPtr(const IObject*, const IObject*, res::IResourceLoader * loader, SpecificClassType<IObject>)> GCloneFunction;

@@ -103,18 +103,20 @@ namespace ed
     private:
         struct FileData : public IReferencable
         {
-            bool m_importFlag = true;
+            ui::ModelIndex index;
 
-            const ManagedFileNativeResource* m_existingFile = nullptr; // NULL for new files, not null for reimports
+            bool importFlag = true;
 
-            StringBuf m_sourceAssetPath;
+            const ManagedFileNativeResource* existingFile = nullptr; // NULL for new files, not null for reimports
 
-            const ManagedDirectory* m_targetDirectory = nullptr;
-            StringBuf m_targetFileName;
+            StringBuf sourceAssetPath;
 
-            TImportClass m_targetClass;
+            const ManagedDirectory* targetDirectory = nullptr;
+            StringBuf targetFileName;
 
-            res::ResourceConfigurationPtr m_configuration; // user configuration
+            TImportClass targetClass;
+
+            res::ResourceConfigurationPtr configuration; // user configuration
         };
 
         Array<RefPtr<FileData>> m_files;
@@ -122,20 +124,11 @@ namespace ed
         StringBuf fileDepotPath(const FileData* file) const;
         ManagedFileNativeResource* fileManagedFile(const FileData* file) const;
 
-        ui::ModelIndex indexForFile(const FileData* fileData) const;
-        RefPtr<FileData> fileForIndex(const ui::ModelIndex& index) const;
-        FileData* fileForIndexFast(const ui::ModelIndex& index) const;
-
-        ui::ModelIndex addFileInternal(const RefPtr<FileData>& data);
-
         //--
 
-        virtual uint32_t rowCount(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
         virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-        virtual bool hasIndex(int row, int col, const ui::ModelIndex& parent = ui::ModelIndex()) const  override final;
-        virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const  override final;
-        virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-
+        virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;

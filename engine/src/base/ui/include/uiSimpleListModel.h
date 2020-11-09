@@ -14,108 +14,128 @@ namespace ui
 
     //--
 
-    /// simple list model
-    class BASE_UI_API SimpleListModel : public IAbstractItemModel
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SimpleListModel, IAbstractItemModel);
-
-    public:
-        SimpleListModel();
-        virtual ~SimpleListModel();
-
-        virtual uint32_t rowCount(const ModelIndex& parent = ModelIndex()) const override final;
-        virtual bool hasChildren(const ModelIndex& parent = ModelIndex()) const override final;
-        virtual bool hasIndex(int row, int col, const ModelIndex& parent = ModelIndex()) const  override final;
-        virtual ModelIndex parent(const ModelIndex& item = ModelIndex()) const override final;
-        virtual ModelIndex index(int row, int column, const ModelIndex& parent = ModelIndex()) const override final;
-        virtual bool compare(const ModelIndex& first, const ModelIndex& second, int colIndex=0) const;
-        virtual bool filter(const ModelIndex& id, const ui::SearchPattern& filter, int colIndex=0) const;
-        virtual base::StringBuf displayContent(const ModelIndex& id, int colIndex = 0) const override;
-
-        virtual uint32_t size() const = 0;
-        virtual base::StringBuf content(const ModelIndex& id, int colIndex = 0) const = 0;
-    };
-
-    //--
-
     /// simple typed list model 
     template< typename T, typename RefT = const T& >
-    class SimpleTypedListModel : public SimpleListModel
+    class SimpleTypedListModel : public IAbstractItemModel
     {
     public:
-        INLINE const base::Array<T>& elements() const { return m_elements; }
-
         void clear()
         {
-            beingRemoveRows(ui::ModelIndex(), 0, m_elements.size());
             m_elements.clear();
-            endRemoveRows();
+            reset();
         }
 
         ModelIndex add(RefT data)
         {
-            beingInsertRows(ui::ModelIndex(), m_elements.size(), 1);
-            m_elements.pushBack(data);
-            endInsertRows();
-            return ModelIndex(this, m_elements.lastValidIndex(), 0);
-        }
+            auto holder = base::CreateSharedPtr<ElemHolder>();
+            holder->data = data;
+            holder->displayIndex = m_displayIndex++;
+            holder->index = ModelIndex(this, holder);
+            m_elements.pushBack(holder);
 
-        int find(RefT data) const
-        {
-            return m_elements.find(data);
+            notifyItemAdded(ModelIndex(), holder->index);
+
+            return holder->index;
         }
 
         ModelIndex index(RefT data) const
         {
-            auto index = find(data);
-            if (index != -1)
-                return ModelIndex(this, index, 0);
+            for (const auto& elem : m_elements)
+                if (elem->data == data)
+                    return ModelIndex(this, elem);
+
             return ModelIndex();
         }
 
-        void remove(RefT data)
+        uint32_t remove(RefT data, bool all = false)
         {
-            erase(m_elements.find(data));
-        }
+            uint32_t count = 0;
 
-        void erase(int index)
-        {
-            if (index >= 0 && index <= m_elements.size())
+            for (auto i : m_elements.indexRange().reversed())
             {
-                beingRemoveRows(ui::ModelIndex(), index, 1);
-                m_elements.erase(index, 1);
-                endRemoveRows();
+                if (elem->data == data)
+                {
+                    m_elements.eraseUnordered(i);
+                    count += 1;
+
+                    notifyItemRemoved(ModelIndex(), ModelIndex(this, elem));
+
+                    if (!all)
+                        break;
+                }
             }
+
+            return count;
         }
 
-        RefT data(const ui::ModelIndex& id, RefT defaultData = T()) const
+        bool erase(const ModelIndex& index)
         {
-            if (id.row() >= 0 && id.row() <= m_elements.lastValidIndex())
-                return m_elements[id.row()];
+            if (index.model() == this)
+            {
+                auto index = m_elements.find(index.unsafe());
+                if (index != INDEX_NONE)
+                {
+                    auto removedElem = m_elements[index]; // keep alive
+                    m_elements.eraseUnordered(index);
+                    notifyItemRemoved(ModelIndex(), index);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        RefT data(const ModelIndex& id, RefT defaultData = T()) const
+        {
+            if (id.model() == this)
+                if (const auto* data = id.unsafe<ElemHolder>())
+                    return data->data;
+
             return defaultData;
         }
 
-        const T* dataPtr(const ui::ModelIndex& id) const
+        const T* dataPtr(const ModelIndex& id) const
         {
-            if (id.row() >= 0 && id.row() <= m_elements.lastValidIndex())
-                return &m_elements[id.row()];
+            if (id.model() == this)
+                if (const auto* data = id.unsafe<ElemHolder>())
+                    return &data->data;
+
             return nullptr;
         }
 
-        T* dataPtr(const ui::ModelIndex& id)
+        T* dataPtr(const ModelIndex& id)
         {
-            if (id.row() >= 0 && id.row() <= m_elements.lastValidIndex())
-                return &m_elements[id.row()];
-            return nullptr;
+            if (id.model() == this)
+                if (const auto* data = id.unsafe<ElemHolder>())
+                    return &data->data;
+
+            return defaultData;
         }
         
-        virtual uint32_t size() const override { return m_elements.size(); }
-
-        virtual base::StringBuf content(const ModelIndex& id, int colIndex = 0) const override
+        INLINE uint32_t size() const
         {
-            if (id.row() >= 0 && id.row() <= m_elements.lastValidIndex())
-                return content(m_elements[id.row()], colIndex);
-            return base::StringBuf();
+            return m_elements.size();
+        }
+
+        INLINE const T& operator[](uint32_t index) const
+        {
+            return m_elements[index]->data;
+        }
+
+        INLINE T& operator[](uint32_t index)
+        {
+            return m_elements[index]->data;
+        }
+
+        INLINE const T& at(uint32_t index) const
+        {
+            return m_elements[index]->data;
+        }
+
+        INLINE T& at(uint32_t index)
+        {
+            return m_elements[index]->data;
         }
 
         //--
@@ -124,17 +144,30 @@ namespace ui
         virtual bool compare(RefT a, RefT b, int colIndex) const = 0;
 
         /// filter items by data
-        virtual bool filter(RefT data, const ui::SearchPattern& filter, int colIndex = 0) const = 0;
+        virtual bool filter(RefT data, const SearchPattern& filter, int colIndex = 0) const = 0;
 
         // get display content for item
         virtual base::StringBuf content(RefT data, int colIndex = 0) const = 0;
 
     protected:
         virtual bool compare(const ModelIndex& first, const ModelIndex& second, int colIndex = 0) const override;
-        virtual bool filter(const ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override;
+        virtual bool filter(const ModelIndex& id, const SearchPattern& filter, int colIndex = 0) const override;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override;
+        virtual bool hasChildren(const ui::ModelIndex& parent) const override;
+        virtual ModelIndex parent(const ModelIndex& item = ModelIndex()) const override final;
+        virtual base::StringBuf displayContent(const ModelIndex& id, int colIndex = 0) const override;
 
     private:
-        base::Array<T> m_elements;
+        struct ElemHolder : public base::IReferencable
+        {
+            T data;
+            ModelIndex index;
+            int displayIndex = 0;
+        };
+
+        base::Array<base::RefPtr<ElemHolder>> m_elements;
+
+        int m_displayIndex = 0;
     };
 
     //--
@@ -154,23 +187,67 @@ namespace ui
     //--
 
     template< typename T, typename TV >
-    bool SimpleTypedListModel<T, TV>::compare(const ModelIndex& first, const ModelIndex& second, int colIndex) const
+    void SimpleTypedListModel<T, TV>::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
     {
-        const auto* firstEntry = dataPtr(first);
-        const auto* secondEntry = dataPtr(second);
-        if (firstEntry && secondEntry)
-            compare(*firstEntry, *secondEntry, colIndex);
+        if (!parent)
+        {
+            outChildrenIndices.reserve(m_elements.size());
 
-        return first < second;
+            for (const auto& elem : m_elements)
+                outChildrenIndices.emplaceBack(elem->index);
+        }
     }
 
     template< typename T, typename TV >
-    bool SimpleTypedListModel<T, TV>::filter(const ModelIndex& id, const ui::SearchPattern& filterText, int colIndex) const
+    bool SimpleTypedListModel<T, TV>::hasChildren(const ui::ModelIndex& parent) const
+    {
+        return !parent.valid() && !m_elements.empty();
+    }
+
+    template< typename T, typename TV >
+    bool SimpleTypedListModel<T, TV>::compare(const ModelIndex& first, const ModelIndex& second, int colIndex) const
+    {
+        if (colIndex == -1)
+        {
+            const auto* firstEntry = first.unsafe<ElemHolder>();
+            const auto* secondEntry = second.unsafe<ElemHolder>();
+            if (firstEntry && secondEntry)
+                return firstEntry->displayIndex < secondEntry->displayIndex;
+
+            return first < second;
+        }
+        else
+        {
+            const auto* firstEntry = dataPtr(first);
+            const auto* secondEntry = dataPtr(second);
+            if (firstEntry && secondEntry)
+                compare(*firstEntry, *secondEntry, colIndex);
+
+            return first < second;
+        }
+    }
+
+    template< typename T, typename TV >
+    bool SimpleTypedListModel<T, TV>::filter(const ModelIndex& id, const SearchPattern& filterText, int colIndex) const
     {
         const auto* data = dataPtr(id);
         if (data)
             return filter(*data, filterText, colIndex);
         return false;
+    }
+
+    template< typename T, typename TV >
+    ModelIndex SimpleTypedListModel<T, TV>::parent(const ModelIndex& item) const
+    {
+        return ModelIndex();
+    }
+
+    template< typename T, typename TV >
+    base::StringBuf SimpleTypedListModel<T, TV>::displayContent(const ModelIndex& id, int colIndex) const
+    {
+        if (const auto* entry = id.unsafe<ElemHolder>())
+            return content(entry->data, colIndex);
+        return base::StringBuf::EMPTY();
     }
 
     //--

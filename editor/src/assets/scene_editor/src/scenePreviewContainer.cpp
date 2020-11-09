@@ -10,39 +10,121 @@
 #include "sceneEditMode.h"
 #include "scenePreviewPanel.h"
 #include "scenePreviewContainer.h"
+#include "scenePreviewStreaming.h"
+#include "sceneContentStructure.h"
 
 #include "rendering/scene/include/renderingScene.h"
 #include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
+#include "base/ui/include/uiToolBar.h"
+#include "base/world/include/world.h"
+#include "sceneContentNodes.h"
+
 namespace ed
 {
+    //--
+
+    SceneGridSettings::SceneGridSettings()
+    {}
+
+    //--
+
+    SceneGizmoSettings::SceneGizmoSettings()
+    {}
+
+    //--
+
+    SceneSelectionSettings::SceneSelectionSettings()
+    {}
+
+    //--
+
+    RTTI_BEGIN_TYPE_ENUM(SceneGizmoMode);
+    RTTI_ENUM_OPTION(Translation);
+    RTTI_ENUM_OPTION(Rotation);
+    RTTI_ENUM_OPTION(Scale);
+    RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_ENUM(SceneGizmoSpace);
+    RTTI_ENUM_OPTION(World);
+    RTTI_ENUM_OPTION(Local);
+    RTTI_ENUM_OPTION(Parent);
+    RTTI_ENUM_OPTION(View);
+    RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_ENUM(SceneGizmoTarget);
+    RTTI_ENUM_OPTION(WholeHierarchy);
+    RTTI_ENUM_OPTION(SelectionOnly);
+    RTTI_END_TYPE();
 
     //--
      
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePreviewContainer);
     RTTI_END_TYPE();
 
-    ScenePreviewContainer::ScenePreviewContainer()
+    ScenePreviewContainer::ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode)
+        : m_content(content)
     {
+        createWorld();
         createPanels();
+
+        m_editMode = AddRef(initialEditMode);
+        activateEditMode();
     }
 
     ScenePreviewContainer::~ScenePreviewContainer()
     {
+        m_visualization->clearAllProxies();
+        m_visualization.reset();
+    }
+    
+    void ScenePreviewContainer::gridSettings(const SceneGridSettings& settings)
+    {
+        m_gridSettings = settings;
+        recreatePanelBottomToolbars();
     }
 
-    void ScenePreviewContainer::bindContent(SceneContentStructure* content, ISceneEditMode* initialEditMode /*= nullptr*/)
+    void ScenePreviewContainer::gizmoSettings(const SceneGizmoSettings& settings)
     {
-        deactivateEditMode();
+        m_gizmoSettings = settings;
+        recreatePanelBottomToolbars();
+    }
 
-        m_content = content;
+    static bool IsDevivedNode(const SceneContentNode* node)
+    {
+        if (node && node->type() == SceneContentNodeType::Entity)
+        {
+            const auto* entityNode = static_cast<const SceneContentEntityNode*>(node);
+            if (entityNode->baseData())
+                return true;
+        }
 
-        if (initialEditMode)
-            m_editMode = AddRef(initialEditMode);
+        return false;
+    }
 
-        activateEditMode();
+    SceneContentNodePtr ScenePreviewContainer::resolveSelectable(const rendering::scene::Selectable& selectable, bool raw /*= false*/) const
+    {
+        auto node = m_visualization->resolveSelectable(selectable);
+
+        if (node && !raw)
+        {
+            if (node->type() == SceneContentNodeType::Component && !m_selectionSettings.exploreComponents)
+                node = AddRef(node->parent());
+
+            if (!m_selectionSettings.explorePrefabs)
+                while (IsDevivedNode(node))
+                    node = AddRef(node->parent());
+        }
+
+        return node;
+    }
+
+    void ScenePreviewContainer::selectionSettings(const SceneSelectionSettings& settings)
+    {
+        m_selectionSettings = settings;
+        recreatePanelBottomToolbars();
     }
 
     void ScenePreviewContainer::deactivateEditMode()
@@ -52,7 +134,12 @@ namespace ed
             m_editMode->deactivate(this);
 
             for (const auto& panel : m_panels)
+            {
                 panel->bindEditMode(nullptr);
+
+                if (const auto& toolbar = panel->bottomToolbar())
+                    toolbar->removeAllChildren();
+            }
         }
     }
 
@@ -65,6 +152,8 @@ namespace ed
             for (const auto& panel : m_panels)
                 panel->bindEditMode(m_editMode);
         }
+
+        recreatePanelBottomToolbars();
     }
 
     void ScenePreviewContainer::actionSwitchMode(ISceneEditMode* newMode)
@@ -77,7 +166,9 @@ namespace ed
             m_editMode = AddRef(newMode);
             activateEditMode();
 
-            postEvent(EVENT_EDIT_MODE_CHANGED);
+            recreatePanelBottomToolbars();
+
+            call(EVENT_EDIT_MODE_CHANGED);
         }
     }
 
@@ -89,6 +180,61 @@ namespace ed
     {
     }
     
+    //--
+    
+    void ScenePreviewContainer::update()
+    {
+        syncNodeState();
+        updateWorld();
+    }
+
+    void ScenePreviewContainer::syncNodeState()
+    {
+        PC_SCOPE_LVL0(SyncNodeState);
+
+        {
+            Array<SceneContentNodePtr> addedNodes, removedNodes;
+            m_content->syncNodeChanges(addedNodes, removedNodes);
+
+            {
+                PC_SCOPE_LVL0(CreateProxies);
+                for (const auto& node : addedNodes)
+                    m_visualization->createProxy(node);
+            }
+
+            {
+                PC_SCOPE_LVL0(DestroyProxies);
+                for (const auto& node : removedNodes)
+                    m_visualization->removeProxy(node);
+            }
+        }
+
+        {
+            PC_SCOPE_LVL0(UpdateProxies);
+            m_content->visitDirtyNodes([this](const SceneContentNode* node, SceneContentNodeDirtyFlags& flags)
+                {
+                    m_visualization->updateProxy(node, flags);
+                });
+        }
+    }
+
+    void ScenePreviewContainer::updateWorld()
+    {
+        auto realWorldTime = m_lastWorldTick.timeTillNow().toSeconds();
+        m_lastWorldTick.resetToNow();
+
+        auto dt = std::clamp<float>(realWorldTime * m_worldTickRatio, 0.0001f, 0.1f);
+        m_world->update(dt);
+    }
+
+    void ScenePreviewContainer::createWorld()
+    {
+        m_world = CreateSharedPtr<world::World>();
+        m_lastWorldTick.resetToNow();
+
+        m_visualization = CreateSharedPtr<SceneNodeVisualizationHandler>(m_world);
+    }
+
     //--
 
     void ScenePreviewContainer::destroyPanels()
@@ -115,11 +261,35 @@ namespace ed
             m_panels.pushBack(panel);
         }
 
-        if (m_editMode)
-            for (auto& panel : m_panels)
+        for (auto& panel : m_panels)
+        {
+            if (m_editMode)
                 panel->bindEditMode(m_editMode);
+
+            if (const auto& toolbar = panel->bottomToolbar())
+            {
+                toolbar->removeAllChildren();
+
+                if (m_editMode)
+                    m_editMode->configurePanelToolbar(this, panel, toolbar);
+            }
+        }
+    }
+
+    void ScenePreviewContainer::recreatePanelBottomToolbars()
+    {
+        for (auto& panel : m_panels)
+        {
+            if (const auto& toolbar = panel->bottomToolbar())
+            {
+                toolbar->removeAllChildren();
+
+                if (m_editMode)
+                    m_editMode->configurePanelToolbar(this, panel, toolbar);
+            }
+        }
     }
 
     //--
-    
+
 } // ed

@@ -17,7 +17,7 @@
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
-#include "game/world/include/world.h"
+#include "base/world/include/world.h"
 
 namespace ed
 {
@@ -57,10 +57,10 @@ namespace ed
 
         frame.scenes.scenesToDraw.clear();
 
-        if (m_container && m_container->content())
+        if (m_container)
         {
-            if (const auto& world = m_container->content()->previewWorld())
-                world->renderFrame(frame);
+            m_container->world()->render(frame);
+            m_container->content()->handleDebugRender(frame);
         }
 
         if (auto editMode = m_editMode.lock())

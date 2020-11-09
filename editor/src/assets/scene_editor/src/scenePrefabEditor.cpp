@@ -25,10 +25,11 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiRuler.h"
 #include "base/ui/include/uiSplitter.h"
+#include "base/world/include/world.h"
 
 #include "base/ui/include/uiMenuBar.h"
-#include "game/world/include/world.h"
 #include "sceneEditMode_Default.h"
+#include "base/world/include/worldPrefab.h"
 
 namespace ed
 {
@@ -38,8 +39,11 @@ namespace ed
     RTTI_END_TYPE();
 
     ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo })
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste })
     {
+        m_content = CreateSharedPtr<SceneContentStructure>(true);
+        m_defaultEditMode = CreateSharedPtr<SceneEditMode_Default>(actionHistory());
+
         createInterface();
     }
 
@@ -47,16 +51,16 @@ namespace ed
     {}
 
     void ScenePrefabEditor::createContentStructure()
-    {    
+    {
     }
 
     void ScenePrefabEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
             tab->layoutVertical();
 
-            m_previewContainer = tab->createChild<ScenePreviewContainer>();
+            m_previewContainer = tab->createChild<ScenePreviewContainer>(m_content, m_defaultEditMode);
             m_previewContainer->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_previewContainer->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
@@ -78,10 +82,10 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
             tab->layoutVertical();
 
-            m_structurePanel = tab->createChild<SceneStructurePanel>();
+            m_structurePanel = tab->createChild<SceneStructurePanel>(m_content, m_previewContainer);
             m_structurePanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_structurePanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
@@ -89,7 +93,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Inspector");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Inspector", "InspectorPanel");
             tab->expand();
             tab->layoutVertical();
 
@@ -112,36 +116,38 @@ namespace ed
         if (!TBaseClass::initialize())
             return false;
 
-        m_previewWorld = CreateSharedPtr<game::World>(game::WorldType::Editor);
-
-        auto rootNode = CreateSharedPtr<SceneContentPrefabRootNode>(nativeFile());
-        rootNode->reloadContent();
-
-        m_content = CreateSharedPtr<SceneContentStructure>(m_previewWorld, rootNode);
-
-        m_defaultEditMode = CreateSharedPtr<SceneEditMode_Default>(actionHistory());
-
-        m_structurePanel->bindScene(m_content, m_previewContainer);
-        m_previewContainer->bindContent(m_content, m_defaultEditMode);
-
+        recreateContent();
         refreshEditMode();
         return true;
     }
 
-    void ScenePrefabEditor::bindResource(const res::ResourcePtr& resource)
+    void ScenePrefabEditor::recreateContent()
     {
-        TBaseClass::bindResource(resource);
-
         if (m_content)
         {
-            if (auto rootNode = rtti_cast<SceneContentPrefabRootNode>(m_content->root()))
-                rootNode->reloadContent();
+            if (auto rootNode = rtti_cast<SceneContentPrefabRoot>(m_content->root()))
+            {
+                rootNode->detachAllChildren();
+
+                if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+                    for (const auto& prefabRootNode : prefabData->nodes())
+                        if (const auto editableNode = UnpackNode(prefabRootNode))
+                            rootNode->attachChildNode(editableNode);
+
+                rootNode->resetModifiedStatus();
+            }
 
             actionHistory()->clear();
 
             m_defaultEditMode->reset();
             m_previewContainer->actionSwitchMode(m_defaultEditMode);
         }
+    }
+
+    void ScenePrefabEditor::bindResource(const res::ResourcePtr& resource)
+    {
+        TBaseClass::bindResource(resource);
+        recreateContent();
     }
 
     void ScenePrefabEditor::refreshEditMode()
@@ -159,9 +165,96 @@ namespace ed
         }
     }
 
+    bool ScenePrefabEditor::checkGeneralSave() const
+    {
+        if (const auto& root = m_content->root())
+            return root->modified();
+
+        return false;
+    }
+
+    void ScenePrefabEditor::update()
+    {
+        m_previewContainer->update();
+    }
+
     bool ScenePrefabEditor::save()
     {
-        return TBaseClass::save();
+        if (const auto& root = m_content->root())
+        {
+            Array<world::NodeTemplatePtr> nodes;
+            for (const auto& rootChild : root->entities())
+            {
+                bool unused = false;
+                if (const auto compiledNode = rootChild->compileDifferentialData(unused))
+                    nodes.pushBack(compiledNode);
+            }
+
+            if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+                prefabData->setup(nodes);
+
+            if (TBaseClass::save())
+            {
+                root->resetModifiedStatus();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    //---
+
+    void ScenePrefabEditor::handleGeneralCopy()
+    {
+        if (auto mode = m_previewContainer->mode())
+            mode->handleGeneralCopy();
+    }
+
+    void ScenePrefabEditor::handleGeneralCut()
+    {
+        if (auto mode = m_previewContainer->mode())
+            mode->handleGeneralCut();
+    }
+
+    void ScenePrefabEditor::handleGeneralPaste()
+    {
+        if (auto mode = m_previewContainer->mode())
+            mode->handleGeneralPaste();
+    }
+
+    void ScenePrefabEditor::handleGeneralDelete()
+    {
+        if (auto mode = m_previewContainer->mode())
+            mode->handleGeneralDelete();
+    }
+
+    bool ScenePrefabEditor::checkGeneralCopy() const
+    {
+        if (auto mode = m_previewContainer->mode())
+            return mode->checkGeneralCopy();
+        return false;
+    }
+
+    bool ScenePrefabEditor::checkGeneralCut() const
+    {
+        if (auto mode = m_previewContainer->mode())
+            return mode->checkGeneralCut();
+        return false;
+    }
+
+    bool ScenePrefabEditor::checkGeneralPaste() const
+    {
+        if (auto mode = m_previewContainer->mode())
+            return mode->checkGeneralPaste();
+        return false;
+    }
+
+    bool ScenePrefabEditor::checkGeneralDelete() const
+    {
+        if (auto mode = m_previewContainer->mode())
+            return mode->checkGeneralDelete();
+        return false;
     }
 
     //---
@@ -173,14 +266,14 @@ namespace ed
     public:
         virtual bool canOpen(const ManagedFileFormat& format) const override
         {
-            return format.nativeResourceClass() == game::Prefab::GetStaticClass();
+            return format.nativeResourceClass() == base::world::Prefab::GetStaticClass();
         }
 
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                if (auto mesh = base::rtti_cast<game::Prefab>(nativeFile->loadContent()))
+                if (auto mesh = base::rtti_cast<base::world::Prefab>(nativeFile->loadContent()))
                 {
                     auto ret = base::CreateSharedPtr<ScenePrefabEditor>(nativeFile);
                     ret->bindResource(mesh);

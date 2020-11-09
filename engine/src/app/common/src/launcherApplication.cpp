@@ -16,15 +16,16 @@
 #include "base/input/include/inputContext.h"
 #include "game/host/include/gameScreen.h"
 #include "game/host/include/gameHost.h"
-#include "game/host/include/gameFactory.h"
 #include "rendering/driver/include/renderingCommandWriter.h"
 #include "rendering/mesh/include/renderingMesh.h"
+#include "game/host/include/gameDefinitionFile.h"
+#include "game/host/include/game.h"
 
 namespace application
 {
     //--
 
-    base::ConfigProperty<base::StringBuf> cvGameFactoryClass("Game", "FactoryClass", "");
+    base::ConfigProperty<base::StringBuf> cvGameStartupGamePath("Game", "StartupGame", "");
 
     //--
 
@@ -143,54 +144,43 @@ namespace application
     }
 
 
-    base::SpecificClassType<game::IGameFactory> GetGameFactoryClass(const base::app::CommandLine& commandline)
+    game::DefinitionFilePtr LoadGameDefinitions(const base::app::CommandLine& commandline)
     {
         // use game from commandline
         if (commandline.hasParam("game"))
         {
-            const auto gameClassName = commandline.singleValue("game");
-            TRACE_INFO("Using game factory class '{}' from commandline", gameClassName);
+            const auto gameDefinitionDepotPath = commandline.singleValue("game");
+            TRACE_INFO("Using game definition file '{}' from commandline", gameDefinitionDepotPath);
 
-            const auto gameClass = RTTI::GetInstance().findClass(base::StringID(gameClassName)).cast<game::IGameFactory>();
-            if (!gameClass)
+            const auto data = LoadResource<game::DefinitionFile>(gameDefinitionDepotPath).acquire();
+            if (!data)
             {
-                TRACE_ERROR("Game factory class '{}' not found", gameClassName);
+                TRACE_ERROR("Could not load game definition '{}'", gameDefinitionDepotPath);
                 return nullptr;
             }
 
-            return gameClass;
+            return data;
         }
 
         // use game class from config
-        if (const auto gameClassName = cvGameFactoryClass.get())
+        if (const auto gameDefinitionDepotPath = cvGameStartupGamePath.get())
         {
-            TRACE_INFO("Using game factory class '{}' from config", gameClassName);
+            TRACE_INFO("Using game definition file '{}' from config", gameDefinitionDepotPath);
 
-            const auto gameClass = RTTI::GetInstance().findClass(base::StringID(gameClassName)).cast<game::IGameFactory>();
-            if (!gameClass)
+            const auto data = LoadResource<game::DefinitionFile>(gameDefinitionDepotPath).acquire();
+            if (!data)
             {
-                TRACE_ERROR("Game factory class '{}' not found", gameClassName);
+                TRACE_ERROR("Could not load game definition '{}'", gameDefinitionDepotPath);
                 return nullptr;
             }
 
-            return gameClass;
+            return data;
         }
-
-        // enumerate game classes
-        base::InplaceArray<base::SpecificClassType<game::IGameFactory>, 5> gameFactoryClasses;
-        RTTI::GetInstance().enumClasses(gameFactoryClasses);
-        TRACE_INFO("Found {} game factory classes", gameFactoryClasses.size());
-        if (gameFactoryClasses.empty())
-        {
-            TRACE_ERROR("No game factories linked with executable, unable to start any game");
-            return nullptr;
-        }
-
-        // TODO: choice using debug menu ?
 
         // use just first game class
-        TRACE_INFO("Using game factory '{}'", gameFactoryClasses[0]->name());
-        return gameFactoryClasses[0];
+        TRACE_ERROR("No game definition specified");
+        // TODO: enter the debug menu
+        return nullptr;
     }
 
     bool ParseGameInitData(const base::app::CommandLine& commandline, game::GameInitData& outData)
@@ -202,9 +192,16 @@ namespace application
     bool LauncherApp::createGame(const base::app::CommandLine& commandline)
     {
         // get game factory
-        const auto gameFactoryClass = GetGameFactoryClass(commandline);
-        if (!gameFactoryClass)
+        const auto gameResource = LoadGameDefinitions(commandline);
+        if (!gameResource)
             return false;
+
+        // start he game
+        auto gameLauncher = gameResource->m_standaloneLauncher;
+        if (!gameLauncher)
+            gameLauncher = gameResource->m_editorLauncher;
+        if (!gameLauncher)
+            return false; // TODO: debug menu via error screen
 
         // fill in the game init info
         game::GameInitData initData;
@@ -212,8 +209,7 @@ namespace application
             return false;
 
         // create the game factory
-        const auto gameFactory = gameFactoryClass.create();
-        const auto game = gameFactory->createGame(initData);
+        const auto game = gameLauncher->createGame(initData);
         if (!game)
             return false;
 

@@ -31,54 +31,19 @@ namespace ui
     {
         discardAllElements();
 
+        DEBUG_CHECK(m_mainRows.m_orderedChildren.empty());
+        DEBUG_CHECK(m_mainRows.m_displayOrder.empty());
+
         if (nullptr != m_model)
         {
-            uint32_t numRows = m_model->rowCount();
-            for (uint32_t i = 0; i < numRows; ++i)
+            base::Array<ModelIndex> initialChildren;
+            m_model->children(ModelIndex(), initialChildren);
+
+            for (const auto& index : initialChildren)
             {
-                if (auto index = m_model->index(i, 0))
-                {
-                    attachViewElement(index);
-                }
-            }
-
-            rebuildSortedOrder();
-            rebuildDisplayList();
-        }
-    }
-
-    void ListView::modelRowsAboutToBeAdded(const ModelIndex& parent, int first, int count)
-    {
-        TBaseClass::modelRowsAboutToBeAdded(parent, first, count);
-    }
-
-    void ListView::modelRowsAdded(const ModelIndex& parent, int first, int count)
-    {
-        TBaseClass::modelRowsAdded(parent, first, count);
-
-        ViewItem* parentItem = nullptr;
-        if (resolveItemFromModelIndex(parent, parentItem) && count)
-        {
-            ModelIndexReindexerInsert reindexer(parent, first, count);
-
-            auto& children = parentItem ? parentItem->m_children.m_orderedChildren : m_mainRows.m_orderedChildren;
-            ASSERT(first <= (int)children.size());
-
-            for (int i = first; i <= children.lastValidIndex(); ++i)
-            {
-                auto item = children[i];
-                reindexer.reindex(item->m_index, item->m_index);
-            }
-
-            children.insertWith(first, count, nullptr);
-
-            for (int i = 0; i < count; ++i)
-            {
-                auto item = m_pool.alloc();
-
-                item->m_index = m_model->index(i + first, 0, parent);
-                item->m_parent = parentItem;
-                children[i + first] = item;
+                auto* item = m_pool.alloc();
+                item->m_index = index;
+                m_mainRows.m_orderedChildren.pushBack(item);
 
                 visualizeViewElement(item);
             }
@@ -88,44 +53,54 @@ namespace ui
         }
     }
 
-    void ListView::modelRowsAboutToBeRemoved(const ModelIndex& parent, int first, int count)
+    void ListView::modelItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        TBaseClass::modelRowsAboutToBeRemoved(parent, first, count);
+        TBaseClass::modelItemsAdded(parent, items);
+
+        ViewItem* parentItem = nullptr;
+        if (resolveItemFromModelIndex(parent, parentItem))
+        {
+            auto& children = parentItem ? parentItem->m_children.m_orderedChildren : m_mainRows.m_orderedChildren;
+
+            for (const auto& itemIndex : items)
+            {
+                auto item = m_pool.alloc();
+
+                item->m_index = itemIndex;
+                item->m_parent = parentItem;
+                children.pushBack(item);
+
+                visualizeViewElement(item);
+            }
+
+            rebuildSortedOrder();
+            rebuildDisplayList();
+        }
     }
 
-    void ListView::modelRowsRemoved(const ModelIndex& parent, int first, int count)
+    void ListView::modelItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
+        TBaseClass::modelItemsRemoved(parent, items);
+
         ViewItem* parentItem = nullptr;
-        if (resolveItemFromModelIndex(parent, parentItem) && count)
+        if (resolveItemFromModelIndex(parent, parentItem))
         {
-            ModelIndexReindexerRemove reindexer(parent, first, count);
-
             auto& children = parentItem ? parentItem->m_children : m_mainRows;
-            ASSERT(first + count <= (int)children.m_orderedChildren.size());
 
-            base::InplaceArray<ViewItem*, 10> itemsToRemove;
-            for (int i = 0; i < count; ++i)
+            for (const auto& itemIndex : items)
             {
-                auto* item = children.m_orderedChildren[first + i];
-                children.m_displayOrder.remove(item);
-                itemsToRemove.pushBack(item);
+                if (auto* childItem = children.findItem(itemIndex))
+                {
+                    children.m_orderedChildren.remove(childItem);
+                    children.m_displayOrder.remove(childItem);
+
+                    destroyViewElement(childItem);
+                }
             }
 
-            children.m_orderedChildren.erase(first, count);
-
-            for (auto* item : itemsToRemove)
-                destroyViewElement(item);
-
-            for (int i = first; i <= children.m_orderedChildren.lastValidIndex(); ++i)
-            {
-                auto* item = children.m_orderedChildren[i];
-                reindexer.reindex(item->m_index, item->m_index);
-            }
-
-            buildSortedList(children.m_orderedChildren, children.m_displayOrder);
+            // TODO: this can be unnecessary
+            //buildSortedList(children.m_orderedChildren, children.m_displayOrder);
         }
-
-        TBaseClass::modelRowsRemoved(parent, first, count);
     }
 
     void ListView::destroyViewElement(ViewItem* item)

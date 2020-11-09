@@ -84,6 +84,56 @@ namespace ui
         return ret;
     }
 
+    static PopupWindow* FindRootPopupWindow(IElement* element)
+    {
+        if (element)
+        {
+            if (auto* popup = base::rtti_cast<PopupWindow>(element->findParentWindow()))
+            {
+                auto ownerPopup = base::rtti_cast<PopupWindow>(popup->owner().lock());
+                while (ownerPopup)
+                {
+                    popup = ownerPopup.get();
+                    ownerPopup = base::rtti_cast<PopupWindow>(popup->owner().lock());
+                }
+
+                return popup;
+            }
+        }
+
+        return nullptr;
+    }
+
+    static Window* FindRootWindow(IElement* element)
+    {
+        if (element)
+        {
+            if (auto* popup = base::rtti_cast<PopupWindow>(element->findParentWindow()))
+            {
+                auto ownerPopup = base::rtti_cast<PopupWindow>(popup->owner().lock());
+                while (ownerPopup)
+                {
+                    popup = ownerPopup.get();
+                    ownerPopup = base::rtti_cast<PopupWindow>(popup->owner().lock());
+                }
+
+                if (auto owner = popup->owner().lock())
+                    return owner->findParentWindow();
+            }
+        }
+
+        return nullptr;
+    }
+
+    void PopupWindow::closeParentPopup()
+    {
+        if (auto* parentPopup = FindRootPopupWindow(this))
+            parentPopup->requestClose();
+
+        if (auto* parentWindow = FindRootWindow(this))
+            parentWindow->requestActivate();
+    }
+
     bool PopupWindow::queryResizableState() const
     {
         return false;

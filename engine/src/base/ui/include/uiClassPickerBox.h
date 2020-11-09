@@ -35,12 +35,12 @@ namespace ui
     ///----
 
     // helper dialog that allows to select a type from type list
-    class ClassPickerBox : public PopupWindow
+    class BASE_UI_API ClassPickerBox : public PopupWindow
     {
         RTTI_DECLARE_VIRTUAL_CLASS(ClassPickerBox, PopupWindow);
 
     public:
-        ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption="");
+        ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption="", bool showButtons=true);
 
         // generated OnTypeSelected when selected and general OnClosed when window itself is closed
 
@@ -50,6 +50,7 @@ namespace ui
 
         bool m_allowAbstract;
         bool m_allowNull;
+        bool m_hasButtons;
 
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         void closeWithType(base::ClassType value);

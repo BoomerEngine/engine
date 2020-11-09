@@ -39,6 +39,8 @@ namespace game
         InputAction();
     };
 
+    //---
+
     /// table of input actions that are to be used together
     class GAME_HOST_API InputActionTable : public base::IObject
     {
@@ -60,28 +62,6 @@ namespace game
         base::StringID m_name;
         base::Array<InputAction> m_actions;
         base::Array<InputActionTablePtr> m_children;
-    };
-
-    //---
-
-    /// file with input mapping definitions
-    class GAME_HOST_API InputDefinitions : public base::res::IResource
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::IResource);
-
-    public:
-        InputDefinitions();
-
-        // get root context
-        INLINE const InputActionTablePtr& root() const { return m_root; }
-
-        //--
-
-        // find input table by name
-        InputActionTablePtr findTable(base::StringView<char> name) const;
-
-    public:
-        InputActionTablePtr m_root; // root context
     };
 
     //---

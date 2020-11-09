@@ -21,14 +21,14 @@ namespace base
 
     Transform Transform::invertedWithNoScale() const
     {
-        auto invRotation  = m_rot.inverted();
-        auto invTranslation  = -invRotation.transformVector(m_trans);
-        return Transform::TR(invTranslation, invRotation);
+        auto invRotation  = R.inverted();
+        auto invTranslation  = -invRotation.transformVector(T);
+        return Transform(invTranslation, invRotation);
     }
 
     Transform Transform::inverted() const
     {
-        return Transform::TRS(-m_rot.inverted().transformVector(m_trans) / m_scale, m_rot.inverted(), m_scale.oneOver());
+        return Transform(-R.inverted().transformVector(T) / S, R.inverted(), S.oneOver());
     }
 
     Transform Transform::relativeTo(const Transform& baseTransform) const
@@ -42,9 +42,9 @@ namespace base
         // x3 = R2*x2 + T2 = R2(R1*x1 + T1) + T2
         // = R2*R1*x1 + T2 + T1*R2
 
-        return Transform::TRS(baseTransform.m_rot.transformVector(baseTransform.m_scale * m_trans) + baseTransform.m_trans,
-                              baseTransform.m_rot * m_rot,
-                              m_scale * baseTransform.m_scale);
+        return Transform(baseTransform.R.transformVector(baseTransform.S * T) + baseTransform.T,
+                              baseTransform.R * R,
+                              S * baseTransform.S);
     }
 
     static Transform IDENTITY_TRANSFORM;
@@ -56,9 +56,9 @@ namespace base
 
     base::Matrix Transform::toMatrix() const
     {
-        base::Matrix ret = m_rot.toMatrix();
-        ret.translation(m_trans);
-        ret.scaleColumns(m_scale);
+        base::Matrix ret = R.toMatrix();
+        ret.translation(T);
+        ret.scaleColumns(S);
         return ret;
     }
 
@@ -73,23 +73,23 @@ namespace base
     {
         uint8_t flags = 0;
 
-        if (m_trans != Vector3::ZERO())
+        if (T != Vector3::ZERO())
             flags |= 1;
-        if (m_rot != Quat::IDENTITY())
+        if (R != Quat::IDENTITY())
             flags |= 2;
-        if (m_scale != Vector3::ONE())
+        if (S != Vector3::ONE())
             flags |= 4;
 
         stream.writeTypedData(flags);
 
         if (flags & 1)
-            stream.writeTypedData(m_trans);
+            stream.writeTypedData(T);
 
         if (flags & 2)
-            stream.writeTypedData(m_rot);
+            stream.writeTypedData(R);
 
         if (flags & 4)
-            stream.writeTypedData(m_scale);
+            stream.writeTypedData(S);
     }
 
     void Transform::readBinary(base::stream::OpcodeReader& stream)
@@ -98,19 +98,19 @@ namespace base
         stream.readTypedData(flags);
 
         if (flags & 1)
-            stream.readTypedData(m_trans);
+            stream.readTypedData(T);
         else
-            m_trans = Vector3::ZERO();
+            T = Vector3::ZERO();
 
         if (flags & 2)
-            stream.readTypedData(m_rot);
+            stream.readTypedData(R);
         else
-            m_rot = Quat::IDENTITY();
+            R = Quat::IDENTITY();
 
         if (flags & 4)
-            stream.readTypedData(m_scale);
+            stream.readTypedData(S);
         else
-            m_scale = Vector3::ONE();
+            S = Vector3::ONE();
     }
 
 } // base

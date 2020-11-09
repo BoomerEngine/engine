@@ -72,11 +72,9 @@ namespace ui
         void removeNode(const ModelIndex& index);
 
     protected:
-        virtual uint32_t rowCount(const ModelIndex& parent) const override;
         virtual bool hasChildren(const ModelIndex& parent) const override;
-        virtual bool hasIndex(int row, int col, const ModelIndex& parent) const override;
         virtual ModelIndex parent(const ModelIndex& item) const override;
-        virtual ModelIndex index(int row, int column, const ModelIndex& parent) const override;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override;
         virtual bool compare(const ModelIndex& first, const ModelIndex& second, int colIndex = 0) const override;
         virtual bool filter(const ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override;
         virtual base::StringBuf displayContent(const ModelIndex& id, int colIndex = 0) const override;
@@ -84,24 +82,14 @@ namespace ui
 
         struct Entry;
 
-        struct EntryChildList
-        {
-            base::Array<base::RefPtr<Entry>> m_children;
-            int indexOf(const Entry* entry) const
-            {
-                for (uint32_t i = 0; i < m_children.size(); ++i)
-                    if (m_children[i].get() == entry)
-                        return i;
-
-                return -1;
-            }
-        };
+        typedef base::Array<base::RefPtr<Entry>> EntryChildList;
 
         struct Entry : public IReferencable
         {
-            T m_data;
-            Entry* m_parent = nullptr;
-            EntryChildList m_children;
+            T data;
+            ModelIndex index;
+            Entry* parent = nullptr;
+            EntryChildList children;
         };
 
         EntryChildList m_roots;

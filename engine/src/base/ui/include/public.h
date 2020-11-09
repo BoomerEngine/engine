@@ -418,6 +418,9 @@ namespace ui
     class IDataBox;
     typedef base::RefPtr<IDataBox> DataBoxPtr;
 
+    class ClassPickerBox;
+    typedef base::RefPtr<ClassPickerBox> ClassPickerBoxPtr;    
+
     //--
 
     class CanvasArea;

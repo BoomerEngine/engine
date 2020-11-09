@@ -314,7 +314,7 @@ namespace ui
 
     //---
 
-    PopupWindow* FindRootPopupWindow(IElement* element)
+    static PopupWindow* FindRootPopupWindow(IElement* element)
     {
         if (element)
         {
@@ -334,7 +334,7 @@ namespace ui
         return nullptr;
     }
 
-    Window* FindRootWindow(IElement* element)
+    static Window* FindRootWindow(IElement* element)
     {
         if (element)
         {

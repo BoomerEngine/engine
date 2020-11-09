@@ -14,23 +14,19 @@ namespace game
 {
     //--
 
-    class ResourceList;
-
-    //--
-
     /// Resource system for the game - loading/unloading for game related resources
-    class GAME_HOST_API GameSystem_Resources : public IGameSystem
+    class GAME_HOST_API GameResourceSystem : public IGameSystem
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(GameSystem_Resources, IGameSystem);
+        RTTI_DECLARE_VIRTUAL_CLASS(GameResourceSystem, IGameSystem);
 
     public:
-        GameSystem_Resources();
-        virtual ~GameSystem_Resources();
+        GameResourceSystem();
+        virtual ~GameResourceSystem();
 
         //-- 
 
         // process mapping file
-        void processMappingFile(const game::ResourceList* resources);
+        void processMappingFile(const game::ResourceDefinitions* resources);
 
         //--
 

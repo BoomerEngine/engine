@@ -45,6 +45,7 @@ namespace base
     class Capsule;
     class AbsolutePosition;
     class AbsoluteTransform;
+    class EulerTransform;
 
     //--
 

@@ -182,6 +182,9 @@ namespace base
                     continue;
                 }
 
+                if (i == 0 && context.mutatedRootClass)
+                    classType = context.mutatedRootClass;
+
                 ObjectPtr parentObject;
                 if (context.loadSpecificClass)
                 {

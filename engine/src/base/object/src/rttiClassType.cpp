@@ -793,13 +793,8 @@ namespace base
 
             switch (type.metaType())
             {
-                case MetaType::AsyncResourceRef:
-                {
-                    // anything to do here ?
-                    break;
-                }
-
                 case MetaType::ResourceRef:
+                case MetaType::AsyncResourceRef:
                 {
                     const auto* specificType = static_cast<const IResourceReferenceType*>(type.ptr());
                     patched = specificType->referencePatchResource(data, currentResource, newResource);

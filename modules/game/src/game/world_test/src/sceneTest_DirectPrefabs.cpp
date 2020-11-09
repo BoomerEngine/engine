@@ -10,9 +10,9 @@
 #include "sceneTest.h"
 #include "sceneTestUtil.h"
 
-#include "game/world/include/worldMeshComponent.h"
-#include "game/world/include/worldEntity.h"
-#include "game/world/include/world.h"
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/world.h"
+#include "rendering/world/include/meshComponent.h"
 
 namespace game
 {
@@ -55,55 +55,55 @@ namespace game
                 TBaseClass::update(dt);
             }
 
-            PrefabPtr buildPrefab()
+            base::world::PrefabPtr buildPrefab()
             {
                 PrefabBuilder prefabBuilder;
 
-                if (auto mesh = loadMesh("cube.obj"))
+                if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
                 {
-                    NodeTemplatePlacement placement;
-                    placement.T = base::Vector3(0, 0, 0.5f);
-                    prefabBuilder.addMeshEntity(mesh, placement);
+                    base::EulerTransform placement;
+                    placement.T = base::Vector3(0,0,0);
+                    prefabBuilder.addNode(PrefabBuilder::BuildMeshNode(mesh, placement));
                 }
 
                 return prefabBuilder.extractPrefab();
             }
 
-            PrefabPtr buildPrefabInPrefab()
+            base::world::PrefabPtr buildPrefabInPrefab()
             {
                 PrefabBuilder prefabBuilder;
 
                 const auto innerPrefab = buildPrefab();
 
-                NodeTemplatePlacement placement;
-                placement.T = base::Vector3(0, 0, 0.5f);
-                prefabBuilder.addPrefab(innerPrefab, placement);
+                base::EulerTransform placement;
+                placement.T = base::Vector3(0, 0, 0);
+                prefabBuilder.addNode(PrefabBuilder::BuildPrefabNode(innerPrefab, placement));
 
                 return prefabBuilder.extractPrefab();
             }
 
-            PrefabPtr buildPrefabChildEntity()
+            base::world::PrefabPtr buildPrefabChildEntity()
             {
                 PrefabBuilder prefabBuilder;
 
-                if (auto mesh = loadMesh("cube.obj"))
+                if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
                 {
-                    NodeTemplatePlacement placement;
-                    placement.T = base::Vector3(0, 0, 0.5f);
-                    int parent = prefabBuilder.addMeshEntity(mesh, placement);
+                    base::EulerTransform placement;
+                    placement.T = base::Vector3(0,0,0);
+                    int parent = prefabBuilder.addNode(PrefabBuilder::BuildMeshNode(mesh, placement));
 
-                    if (auto mesh = loadMesh("sphere.obj"))
+                    if (auto mesh = loadMesh("/engine/meshes/sphere.v4mesh"))
                     {
-                        NodeTemplatePlacement placement;
-                        placement.T = base::Vector3(0, 0, 1.5f);
-                        prefabBuilder.addMeshEntity(mesh, placement, parent);
+                        base::EulerTransform placement;
+                        placement.T = base::Vector3(0, 0, 1.0f);
+                        prefabBuilder.addNode(PrefabBuilder::BuildMeshNode(mesh, placement), parent);
                     }
                 }
 
                 return prefabBuilder.extractPrefab();
             }
 
-            PrefabPtr selectPrefab()
+            base::world::PrefabPtr selectPrefab()
             {
                 switch (m_sceneType)
                 {
@@ -117,22 +117,22 @@ namespace game
 
             virtual void createWorldContent() override
             {
-                PlaneGround ground(m_world, loadMesh("plane.obj"));
+                PlaneGround ground(m_world, loadMesh("/engine/meshes/plane.v4mesh"));
 
                 const auto prefab = selectPrefab();
 
                 for (uint32_t i=0; i<m_numPrefabs; ++i)
                 {
                     AbsoluteTransform placement;
-                    placement.position(UlamSpiral(i).toVector().xyz() * m_placementDistance);
+                    placement.position(UlamSpiral(i).toVector().xyz() * m_placementDistance + base::Vector3(0,0,0.5f));
                     ground.ensureGroundUnder(placement.position().approximate().x, placement.position().approximate().y);
 
-                    AttachPrefab(m_world, prefab, placement);
+                    m_world->createPrefabInstance(placement, prefab);
                 }
             }
 
         protected:
-            base::RefPtr<MeshComponent> m_mesh;
+            base::RefPtr<rendering::MeshComponent> m_mesh;
         };
 
         RTTI_BEGIN_TYPE_CLASS(SceneTest_DirectPrefabs);

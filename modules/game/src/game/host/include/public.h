@@ -30,8 +30,15 @@ namespace game
     class IGame;
     typedef base::RefPtr<IGame> GamePtr;
 
+    class IGameLauncher;
+    typedef base::RefPtr<IGameLauncher> GameLauncherPtr;
+
     class IGameSystem;
     typedef base::RefPtr<IGameSystem> GameSystemPtr;
+
+    class DefinitionFile;
+    typedef base::RefPtr<DefinitionFile> DefinitionFilePtr;
+    typedef base::res::Ref<DefinitionFile> DefinitionFileRef;
 
     enum class GameScreenType : uint8_t
     {
@@ -57,6 +64,10 @@ namespace game
     class InputDefinitions;
     typedef base::RefPtr<InputDefinitions> InputDefinitionsPtr;
     typedef base::res::Ref<InputDefinitions> InputDefinitionsRef;
+
+    class ResourceDefinitions;
+    typedef base::RefPtr<ResourceDefinitions> ResourceDefinitionsPtr;
+    typedef base::res::Ref<ResourceDefinitions> ResourceDefinitionsRef;
 
     //--
 

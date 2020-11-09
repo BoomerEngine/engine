@@ -10,10 +10,10 @@
 #include "sceneTest.h"
 #include "sceneTestUtil.h"
 
-#include "game/world/include/worldMeshComponent.h"
-#include "game/world/include/worldEntity.h"
-#include "game/world/include/world.h"
 #include "rendering/mesh/include/renderingMesh.h"
+#include "rendering/world/include/meshComponent.h"
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/world.h"
 
 namespace game
 {
@@ -40,7 +40,7 @@ namespace game
                     changed |= ImGui::SliderInt("Tower height", &st_TowerHeight, 1, 10);
                     changed |= ImGui::SliderFloat("Separation", &st_RootDistance, 0.1f, 10.0, "%.2f", 2.0f);
                     changed |= ImGui::Combo("Mesh Type", &st_MeshType, "Box\0Cylinder\0Sphere\0Random");
-                    ImGui::Checkbox("Rotate meshes", &st_RotateMeshes);                    
+                    ImGui::Checkbox("Rotate meshes", &st_RotateMeshes);
 
                     if (st_TowerHeight * st_RootCount > 300)
                     {
@@ -83,13 +83,13 @@ namespace game
             virtual void createWorldContent() override
             {
                 rendering::MeshPtr meshes[3];
-                meshes[0] = loadMesh("cube.obj");
-                meshes[1] = loadMesh("cylinder.obj");
-                meshes[2] = loadMesh("sphere.obj");
+                meshes[0] = loadMesh("/engine/meshes/cube.v4mesh");
+                meshes[1] = loadMesh("/engine/meshes/cylinder.v4mesh");
+                meshes[2] = loadMesh("/engine/meshes/sphere.v4mesh");
 
                 m_meshes.reset();
 
-                PlaneGround groundPlane(m_world, loadMesh("plane.obj"));
+                PlaneGround groundPlane(m_world, loadMesh("/engine/meshes/plane.v4mesh"));
 
                 base::MTRandState rng;
 
@@ -100,15 +100,15 @@ namespace game
                     entityTransform.position(center.xyz(0.5f));
                     groundPlane.ensureGroundUnder(center.x, center.y);
 
-                    auto entity = base::CreateSharedPtr<Entity>();
+                    auto entity = base::CreateSharedPtr<base::world::Entity>();
                     entity->requestTransform(entityTransform);
 
-                    ComponentPtr prevComponent;
+                    base::world::ComponentPtr prevComponent;
                     for (uint32_t k = 0; k < st_TowerHeight; ++k)
                     {
                         auto meshIndex = SelectMesh(rng, ARRAY_COUNT(meshes));
 
-                        auto mc = base::CreateSharedPtr<MeshComponent>(meshes[meshIndex]);
+                        auto mc = base::CreateSharedPtr<rendering::MeshComponent>(meshes[meshIndex]);
                         if (prevComponent)
                         {
                             mc->relativePosition(base::Vector3(0, 0, 1.0f));
@@ -126,7 +126,7 @@ namespace game
             }
 
         protected:
-            base::Array<base::RefPtr<MeshComponent>> m_meshes;
+            base::Array<base::RefPtr<rendering::MeshComponent>> m_meshes;
             float m_totalTime = 0.0f;
             static int st_RootCount;
             static float st_RootDistance;

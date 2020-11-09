@@ -60,6 +60,9 @@ namespace ui
         /// setup popup position/size to pop at, shows the popup
         void show(IElement* owner, const PopupWindowSetup& setup = PopupWindowSetup());
 
+        /// close parent popup window
+        void closeParentPopup();
+
     protected:
         ElementWeakPtr m_parent; // we auto close if parent is gone
         PopupWindowSetup m_setup;

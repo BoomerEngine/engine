@@ -13,8 +13,11 @@
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
 #include "base/ui/include/uiMenuBar.h"
+#include "base/ui/include/uiClassPickerBox.h"
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
+#include "base/world/include/worldEntityTemplate.h"
+#include "base/world/include/worldComponentTemplate.h"
 
 
 namespace ed
@@ -24,8 +27,8 @@ namespace ed
 
     struct AddedNodeData
     {
-        SceneContentNodePtr m_parent;
-        SceneContentNodePtr m_child;
+        SceneContentNodePtr parent;
+        SceneContentNodePtr child;
     };
 
     struct ActionCreateNode : public IAction
@@ -55,7 +58,10 @@ namespace ed
             Array< SceneContentNodePtr> newSelection;
 
             for (const auto& info : m_nodes)
-                info.m_parent->attachChildNode(info.m_child);
+            {
+                info.parent->attachChildNode(info.child);
+                newSelection.pushBack(info.child);
+            }
 
             m_mode->changeSelection(newSelection);
             return true;
@@ -64,7 +70,7 @@ namespace ed
         virtual bool undo() override
         {
             for (const auto& info : m_nodes)
-                info.m_parent->detachChildNode(info.m_child);
+                info.parent->detachChildNode(info.child);
 
             m_mode->changeSelection(m_oldSelection);
             return true;
@@ -86,7 +92,7 @@ namespace ed
         {
             auto newSelection = mode->selection();
             for (const auto& node : m_nodes)
-                newSelection.remove(node.m_child);
+                newSelection.remove(node.child);
         }
 
         virtual StringID id() const override
@@ -105,7 +111,7 @@ namespace ed
         virtual bool execute() override
         {
             for (const auto& info : m_nodes)
-                info.m_parent->detachChildNode(info.m_child);
+                info.parent->detachChildNode(info.child);
 
             m_mode->changeSelection(m_newSelection);
             return true;
@@ -114,7 +120,7 @@ namespace ed
         virtual bool undo() override
         {
             for (const auto& info : m_nodes)
-                info.m_parent->attachChildNode(info.m_child);
+                info.parent->attachChildNode(info.child);
 
             m_mode->changeSelection(m_oldSelection);
             return true;
@@ -129,6 +135,20 @@ namespace ed
 
     //--
 
+    static const bool CanAddEmptyEntity(const SceneContentNode* node)
+    {
+        if (!node)
+            return false;
+
+        if (node->type() == SceneContentNodeType::PrefabRoot)
+            return true;
+
+        if (node->type() == SceneContentNodeType::Entity)
+            return true;
+
+        return false;
+    }
+
     static const bool CanAddEntity(const SceneContentNode* node)
     {
         if (!node)
@@ -138,13 +158,14 @@ namespace ed
             return true;
 
         if (node->type() == SceneContentNodeType::Entity)
-        {
-            /*if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
-                return entityNode->originalContent(); // can't add a child node to a */
             return true;
-        }
 
         return false;
+    }
+
+    static const bool CanAddComponent(const SceneContentNode* node)
+    {
+        return (node && node->type() == SceneContentNodeType::Entity);
     }
 
     static const bool CanDeleteNode(const SceneContentNode* node)
@@ -155,10 +176,10 @@ namespace ed
         if (!node->parent())
             return false;
 
-        if (node->type() == SceneContentNodeType::Entity)
+        if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
         {
-            if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
-                return entityNode->originalContent(); // can only delete original content nodes
+            auto dataNode = rtti_cast<SceneContentDataNode>(node);
+            return dataNode->baseData() == nullptr;
         }
 
         return false;
@@ -169,11 +190,8 @@ namespace ed
         if (!node)
             return false;
 
-        if (node->type() == SceneContentNodeType::Entity)
-        {
-            if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
-                return entityNode->originalContent(); // can only delete original content nodes
-        }
+        if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
+            return true;
 
         return false;
     }
@@ -217,8 +235,8 @@ namespace ed
             if (info.shouldDelete)
             {
                 auto& node = nodesToDelete.emplaceBack();
-                node.m_parent = AddRef(info.node->parent());
-                node.m_child = info.node;
+                node.parent = AddRef(info.node->parent());
+                node.child = info.node;
             }
         }
 
@@ -230,6 +248,65 @@ namespace ed
     }
 
     //--
+
+    void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass)
+    {
+        if (!entityClass)
+            entityClass = base::world::EntityTemplate::GetStaticClass();
+
+        DEBUG_CHECK_RETURN(entityClass);
+        DEBUG_CHECK_RETURN(!entityClass->isAbstract());
+
+        auto coreName = entityClass->name().view();
+        coreName = coreName.beforeFirstNoCaseOrFull("Template");
+        coreName = coreName.afterLastOrFull("::");
+        
+        Array<AddedNodeData> createdNodes;
+        for (const auto& node : selection)
+        {
+            if (CanAddEntity(node))
+            {
+                const auto safeName = node->buildUniqueName(coreName);
+                const auto entityData = entityClass->create<base::world::EntityTemplate>();
+
+                Array<RefPtr<SceneContentEntityNodePrefabSource>> prefabs;
+
+                auto& info = createdNodes.emplaceBack();
+                info.parent = node;
+                info.child = CreateSharedPtr<SceneContentEntityNode>(safeName, std::move(prefabs), entityData, nullptr);
+            }
+        }
+
+        auto action = CreateSharedPtr<ActionCreateNode>(std::move(createdNodes), this);
+        actionHistory()->execute(action);
+    }
+
+    void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass)
+    {
+        DEBUG_CHECK_RETURN(componentClass);
+        DEBUG_CHECK_RETURN(!componentClass->isAbstract());
+
+        auto coreName = componentClass->name().view();
+        coreName = coreName.beforeFirstNoCaseOrFull("Template");
+        coreName = coreName.afterLastOrFull("::");
+
+        Array<AddedNodeData> createdNodes;
+        for (const auto& node : selection)
+        {
+            if (CanAddComponent(node))
+            {
+                const auto safeName = node->buildUniqueName(coreName);
+                const auto entityData = componentClass->create<base::world::ComponentTemplate>();
+
+                auto& info = createdNodes.emplaceBack();
+                info.parent = node;
+                info.child = CreateSharedPtr<SceneContentComponentNode>(safeName, entityData, nullptr);
+            }
+        }
+
+        auto action = CreateSharedPtr<ActionCreateNode>(std::move(createdNodes), this);
+        actionHistory()->execute(action);
+    }
 
     void SceneEditMode_Default::handleTreeContextMenu(ui::MenuButtonContainer* menu, const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection)
     {
@@ -247,32 +324,39 @@ namespace ed
 
         // "add" 
         {
-            Array<AddedNodeData> newNodes;
+            bool canAddEntity = false;
+            bool canAddEmptyEntity = false;
+            bool canAddComponent = false;
             for (const auto& node : selection)
             {
                 if (CanAddEntity(node))
                 {
-                    auto& info = newNodes.emplaceBack();
-                    info.m_parent = node;
+                    canAddEntity = true;
+
+                    if (CanAddEmptyEntity(node))
+                        canAddEmptyEntity = true;
                 }
+                
+                if (CanAddComponent(node))
+                    canAddComponent = true;
             }
 
-            if (!newNodes.empty())
+            if (canAddEmptyEntity)
             {
-                menu->createCallback("Add empty node", "[img:add]") = [this, newNodes]()
+                menu->createCallback("Add child", "[img:add]") = [this, selection]()
                 {
-                    const auto coreName = "node";
-
-                    auto newNodesTemp = newNodes;
-                    for (auto& info : newNodesTemp)
-                    {
-                        const auto safeName = info.m_parent->buildUniqueName(coreName);
-                        info.m_child = CreateSharedPtr<SceneContentEntityNode>(safeName, Transform::IDENTITY(), Array<game::NodeTemplatePtr>());
-                    }
-
-                    auto action = CreateSharedPtr<ActionCreateNode>(std::move(newNodesTemp), this);
-                    actionHistory()->execute(action);
+                    createEntityAtNodes(selection, nullptr);
                 };
+            }
+
+            if (canAddEntity)
+            {
+                menu->createSubMenu(m_entityClassSelector, "Add entity", "[img:add]");
+            }
+
+            if (canAddComponent)
+            {
+                menu->createSubMenu(m_componentClassSelector, "Add component", "[img:add]");
             }
 
             menu->createSeparator();
@@ -328,6 +412,97 @@ namespace ed
     void SceneEditMode_Default::handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode)
     {
 
+    }
+
+    //--
+
+    struct ActionSelectNodes : public IAction
+    {
+    public:
+        ActionSelectNodes(const Array<SceneContentNodePtr>& nodes, SceneEditMode_Default* mode)
+            : m_newSelection(nodes)
+            , m_oldSelection(mode->selection().keys())
+            , m_mode(mode)
+        {
+        }
+
+        virtual StringID id() const override
+        {
+            return "SelectNode"_id;
+        }
+
+        StringBuf description() const override
+        {
+            if (m_newSelection.empty())
+                return TempString("Clear selection");
+            else
+                return TempString("Change selection");
+        }
+
+        virtual bool execute() override
+        {
+            m_mode->changeSelection(m_newSelection);
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            m_mode->changeSelection(m_oldSelection);
+            return true;
+        }
+
+    private:
+        Array<SceneContentNodePtr> m_oldSelection;
+        Array<SceneContentNodePtr> m_newSelection;
+        SceneEditMode_Default* m_mode = nullptr;
+    };
+
+    void SceneEditMode_Default::actionChangeSelection(const Array<SceneContentNodePtr>& selection)
+    {
+        auto action = base::CreateSharedPtr<ActionSelectNodes>(selection, this);
+        actionHistory()->execute(action);
+    }
+
+    //--
+
+    void SceneEditMode_Default::handleGeneralCopy()
+    {
+
+    }
+
+    void SceneEditMode_Default::handleGeneralCut()
+    {
+
+    }
+
+    void SceneEditMode_Default::handleGeneralPaste()
+    {
+
+    }
+
+    void SceneEditMode_Default::handleGeneralDelete()
+    {
+        processObjectDeletion(selection().keys());
+    }
+
+    bool SceneEditMode_Default::checkGeneralCopy() const
+    {
+        return m_canCopySelection;
+    }
+
+    bool SceneEditMode_Default::checkGeneralCut() const
+    {
+        return m_canCutSelection;
+    }
+
+    bool SceneEditMode_Default::checkGeneralPaste() const
+    {
+        return m_activeNode.lock();
+    }
+
+    bool SceneEditMode_Default::checkGeneralDelete() const
+    {
+        return !selection().empty();
     }
 
     //--

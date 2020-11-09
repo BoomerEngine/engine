@@ -11,14 +11,13 @@
 namespace ed
 {
 
-
     //--
 
     /// general visual flags
     enum class SceneContentNodeVisualBit : uint32_t
     {
         ActiveNode = FLAG(0),
-        SelectedNode = FLAG(1),
+        SelectedNode = FLAG(1), // directly selected
     };
 
     typedef DirectFlags<SceneContentNodeVisualBit> SceneContentNodeVisualFlags;
@@ -53,17 +52,26 @@ namespace ed
         // is the node visible ?
         INLINE bool visible() const { return m_visible; }
 
-        // is the node visualized ?
-        INLINE bool visualized() const { return m_visualizationCreated; }
-
         // child nodes
         INLINE const Array<SceneContentNodePtr>& children() const { return m_children; }
 
         // child nodes that are entities (helper)
         INLINE const Array<SceneContentEntityNodePtr>& entities() const { return m_entities; }
 
+        // child nodes that are components (helper)
+        INLINE const Array<SceneContentComponentNodePtr>& components() const { return m_components; }
+
         // visual flags
         INLINE SceneContentNodeVisualFlags visualFlags() const { return m_visualFlags; }
+
+        // model index for tree view
+        INLINE uint64_t uniqueModelIndex() const { return m_uniqueModelIndex; }
+
+        // was the node marked as modified
+        INLINE bool modified() const { return m_modified; }
+
+        // dirty flags - what has changed since last sync
+        INLINE SceneContentNodeDirtyFlags dirtyFlags() const { return m_dirtyFlags; }
 
         //--
 
@@ -88,23 +96,29 @@ namespace ed
         // bind root structure
         void bindRootStructure(SceneContentStructure* structure);
 
+        // mark node (and children as not modified)
+        void resetModifiedStatus(bool recursive = true);
+
+        // reset dirty status of node
+        void resetDirtyStatus(SceneContentNodeDirtyFlags flags);
+
+        // report dirty content of some sorts that will require sync with visual 
+        void markDirty(SceneContentNodeDirtyFlags flags);
+
         //--
 
         virtual void handleChildAdded(SceneContentNode* child);
         virtual void handleChildRemoved(SceneContentNode* child);
-        virtual void handleAttachedToStructure();
-        virtual void handleDetachedFromStructure();
         virtual void handleParentChanged();
         virtual void handleVisibilityChanged();
-        virtual void handleCreateVisualization();
-        virtual void handleDestroyVisualization();
         virtual void handleDebugRender(rendering::scene::FrameParams& frame) const;
 
         //--
 
         virtual void displayText(IFormatStream& f) const;
+        virtual void markModified() override;
 
-        StringBuf buildUniqueName(const StringBuf& name, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
+        StringBuf buildUniqueName(StringView<char> coreName, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
 
         void name(const StringBuf& name);
 
@@ -113,17 +127,21 @@ namespace ed
     private:
         SceneContentStructure* m_structure = nullptr;
 
+        bool m_modified = false;
         bool m_visible = true;
         bool m_localVisibilityFlag = true;
-        bool m_visualizationCreated = false;
         SceneContentNodeType m_type = SceneContentNodeType::None;
 
         Array<SceneContentNodePtr> m_children; // objects just in this file
         Array<SceneContentEntityNodePtr> m_entities; // specific list of just entities
+        Array<SceneContentComponentNodePtr> m_components; // specific list of just components
 
         SceneContentNodeVisualFlags m_visualFlags;
+        SceneContentNodeDirtyFlags m_dirtyFlags;
 
         StringBuf m_name;
+
+        uint64_t m_uniqueModelIndex = 0;
 
         mutable HashSet<StringBuf> m_childrenNames;
         
@@ -134,101 +152,74 @@ namespace ed
 
         void conditionalAttachToStructure();
         void conditionalDetachFromStructure();
-        void conditionalCreateVisualization();
-        void conditionalDestroyVisualization();
-        void conditionalRecreateVisualization(bool force=false);
-    };
-
-    //--
-
-    /// general scene node that maps to a file on disk
-    class ASSETS_SCENE_EDITOR_API SceneContentFileNode : public SceneContentNode
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentFileNode, SceneContentNode);
-
-    public:
-        SceneContentFileNode(const StringBuf& name, ManagedFileNativeResource* file, bool prefab=false); // always valid
-
-        INLINE ManagedFileNativeResource* file() const { return m_file; }
-
-        void reloadContent();
-
-    private:
-        ManagedFileNativeResource* m_file = nullptr;
-
-        
-    };
-
-    //--
-
-    /// general scene node that maps to a directory on disk
-    class ASSETS_SCENE_EDITOR_API SceneContentDirNode : public SceneContentNode
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentDirNode, SceneContentNode);
-
-    public:
-        SceneContentDirNode(const StringBuf& name);
-
-
-    private:
-    };
-
-    //--
-
-    /// general scene node for root of a prefab structure
-    class ASSETS_SCENE_EDITOR_API SceneContentPrefabRootNode : public SceneContentFileNode
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentPrefabRootNode, SceneContentFileNode);
-
-    public:
-        SceneContentPrefabRootNode(ManagedFileNativeResource* prefabAssetFile);
-
+        void conditionalChangeModifiedStatus(bool newStatus);
     };
 
     //--
 
     /// general scene node for root of a world structure
-    class ASSETS_SCENE_EDITOR_API SceneContentWorldRootNode : public SceneContentNode
+    class ASSETS_SCENE_EDITOR_API SceneContentWorldRoot : public SceneContentNode
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentWorldRootNode, SceneContentNode);
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentWorldRoot, SceneContentNode);
 
     public:
-        SceneContentWorldRootNode();
+        SceneContentWorldRoot();
     };
 
     //--
 
-    /// entity data for scene entity node
-    struct ASSETS_SCENE_EDITOR_API SceneContentEntityNodeData : public IReferencable
+    /// general scene node that maps to a file on disk
+    class ASSETS_SCENE_EDITOR_API SceneContentWorldLayer : public SceneContentNode
     {
-        StringID name; // empty for entity
-        ObjectTemplatePtr editableData; // may be empty if payload is not locally defined
-        ObjectTemplatePtr baseData; // all base templates merged into one, can be empty if node is not coming from a prefab
-    };
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentWorldLayer, SceneContentNode);
 
-    typedef RefPtr<SceneContentEntityNodeData> SceneContentEntityNodeDataPtr;
+    public:
+        SceneContentWorldLayer(const StringBuf& name);
+    };
 
     //--
 
-    /// general entity node (always in a file, can be parented to other entity)
-    class ASSETS_SCENE_EDITOR_API SceneContentEntityNode : public SceneContentNode
+    /// general scene node that maps to a directory on disk
+    class ASSETS_SCENE_EDITOR_API SceneContentWorldDir : public SceneContentNode
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentNode);
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentWorldDir, SceneContentNode);
 
     public:
-        SceneContentEntityNode(const StringBuf& name, const Transform& localToParent, const Array<game::NodeTemplatePtr>& templates, bool originalContent=true);
+        SceneContentWorldDir(const StringBuf& name);
+    };
 
-        // is this an original content node - ie. the node actually created by user, not from a prefab
-        INLINE bool originalContent() const { return m_originalContent; }
+    //--
 
-        // do we have local content defined at this node
-        INLINE bool hasLocalContent() const { return m_hasLocalContent; }
+    /// general scene node for root of a prefab structure
+    class ASSETS_SCENE_EDITOR_API SceneContentPrefabRoot : public SceneContentNode
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentPrefabRoot, SceneContentNode);
+
+    public:
+        SceneContentPrefabRoot();
+    };
+
+    //--
+
+    /// general node with editable content (component/entity)
+    class ASSETS_SCENE_EDITOR_API SceneContentDataNode : public SceneContentNode
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentDataNode, SceneContentNode);
+
+    public:
+        SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const EulerTransform& localToParent, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData=nullptr); // NOTE: objects ownership is changed
 
         // do we have override content defined at this node (coming from prefab)
-        INLINE bool hasBaseContent() const { return m_hasBaseContent; }
+        INLINE bool hasBaseContent() const { return !!m_baseData; }
+
+        // editable data of this node, always valid
+        INLINE const ObjectTemplatePtr& editableData() const { return m_editableData; }
+
+        // base data of this node, always valid
+        INLINE const ObjectTemplatePtr& baseData() const { return m_baseData; }
 
         // get the placement between this node and the parent node
-        INLINE const base::Transform& localToParent() const { return m_localToParent; }
+        INLINE const EulerTransform& localToParent() const { return m_localToParent; }
 
         // get the cached "local to world" for this node
         INLINE const AbsoluteTransform& cachedLocalToWorldTransform() const { return m_cachedLocalToWorldTransform; }
@@ -238,68 +229,110 @@ namespace ed
 
         //--
 
-        // get all editable data payloads
-        INLINE const Array<SceneContentEntityNodeDataPtr>& payloads() const { return m_payloads; } // at least 1 - the entity
-
-        // get the entity payload
-        INLINE const SceneContentEntityNodeDataPtr& entityPayload() const { return m_payloads[0]; }
-
-        // find data for given name
-        SceneContentEntityNodeDataPtr findPayload(StringID name) const;
-
-        // attach data payload, will trigger data recompilation
-        void attachPayload(SceneContentEntityNodeData* payload);
-
-        // detach data payload, will trigger data recompilation
-        void detachPayload(SceneContentEntityNodeData* payload);
-
-        // invalidate payload data - will trigger node visual recompilation
-        void invalidatePayload();
-
-        //--
-
         // change placement of the node in local mode (relative to parent)
         // this is the most "normal" mode
-        void changeLocalPlacement(const Transform& newTramsform, bool force = false);
+        void changeLocalPlacement(const EulerTransform& newTramsform, bool force = false);
+
+        // change data object hold at node
+        void changeData(const ObjectTemplatePtr& data);
 
         //--
 
-        // describe node
+    protected:
+        void updateTransform(bool force = false, bool recursive = true);
+        bool cacheTransformData();
+
+        virtual void handleTransformUpdated();
+        virtual void handleDebugRender(rendering::scene::FrameParams& frame) const override;
+        virtual void handleParentChanged() override;
+        virtual void handleDataPropertyChanged(const StringBuf& data);
         virtual void displayText(IFormatStream& txt) const override;
 
     private:
-        Transform m_localToParent;
+        EulerTransform m_localToParent;
 
         AbsoluteTransform m_cachedLocalToWorldTransform; // changed whenever parent changes as well
         Matrix m_cachedLocalToWorldMatrix; // changed whenever parent changes as well
 
-        Array<SceneContentEntityNodeDataPtr> m_payloads; // data payloads
+        ObjectTemplatePtr m_editableData; // always valid
+        ObjectTemplatePtr m_baseData; // valid only if we are instanced from a prefab
 
-        bool m_hasLocalContent = false;
-        bool m_hasBaseContent = false;
-        bool m_originalContent = false;
-
-        //--
-
-        void refreshContentFlags();
-
-        void updateTransform(bool force=false, bool recursive=true);
-        bool cacheTransformData();
-
-        virtual void handleTransformUpdated();
-
-        virtual void handleCreateVisualization() override;
-        virtual void handleDestroyVisualization() override;
-        virtual void handleDebugRender(rendering::scene::FrameParams& frame) const override;
-        virtual void handleParentChanged() override;
-
-        static void CompilePayloads(const Array<game::NodeTemplatePtr>& templates, SceneContentEntityNode* owner, Array<SceneContentEntityNodeDataPtr>& outPayloads);
+        GlobalEventTable m_dataEvents;
     };
 
     //--
 
-    // unpack prefab into node structure
-    extern ASSETS_SCENE_EDITOR_API void UnpackNodeContainer(const game::NodeTemplateContainer& nodeContainer, const Transform& additionalRootPlacement, Array<SceneContentEntityNodePtr>* outRootEntities, Array<SceneContentEntityNodePtr>* outAllEntities = nullptr);
+    class ASSETS_SCENE_EDITOR_API SceneContentEntityNodePrefabSource : public IObject
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNodePrefabSource, IObject);
+
+    public:
+        SceneContentEntityNodePrefabSource(const base::world::PrefabRef& prefab, bool enabled, bool inherited);
+
+        INLINE const base::world::PrefabRef& prefab() const { return m_prefab; }
+
+        INLINE bool enabled() const { return m_enabled; }
+
+        INLINE bool inherited() const { return m_inherited; }
+
+    private:
+        base::world::PrefabRef m_prefab;
+        bool m_enabled = true;
+        bool m_inherited = false;
+    };
+
+    //--
+
+    /// general entity node (always in a file, can be parented to other entity)
+    class ASSETS_SCENE_EDITOR_API SceneContentEntityNode : public SceneContentDataNode
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentDataNode);
+
+    public:
+        SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData = nullptr);
+
+        INLINE const Array<RefPtr<SceneContentEntityNodePrefabSource>>& prefabs() const { return m_prefabAssets; }
+
+        base::world::EntityTemplatePtr compileData() const;
+
+        base::world::NodeTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
+
+        base::world::NodeTemplatePtr compileSnapshot() const;
+
+    private:
+        Array<RefPtr<SceneContentEntityNodePrefabSource>> m_prefabAssets;
+
+        bool m_dirtyVisualData = false;
+        bool m_dirtyVisualTransform = false;
+
+        virtual void handleDataPropertyChanged(const StringBuf& data) override;
+        virtual void handleChildAdded(SceneContentNode* child) override;
+        virtual void handleChildRemoved(SceneContentNode* child) override;
+    };
+
+    //--
+
+    /// general component node 
+    class ASSETS_SCENE_EDITOR_API SceneContentComponentNode : public SceneContentDataNode
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentComponentNode, SceneContentDataNode);
+
+    public:
+        SceneContentComponentNode(const StringBuf& name, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData = nullptr);
+
+        base::world::ComponentTemplatePtr compileData() const;
+
+        base::world::ComponentTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
+
+    protected:
+        virtual void handleDataPropertyChanged(const StringBuf& data) override;
+    };
+
+    //--
+
+    // unpack a node hierarchy into editable node structure
+    // NOTE: this can be called only on non-instanced node data, usually the root node, otherwise it's meaningless
+    extern ASSETS_SCENE_EDITOR_API SceneContentEntityNodePtr UnpackNode(const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities = nullptr);
 
     //--
 

@@ -70,6 +70,9 @@ namespace ed
         // save content edited in this editor
         virtual bool save() = 0;
 
+        // tick - called every frame BEFORE ui, can be used to push/pull data around, update internal simulations, etc 
+        virtual void update();
+
         //--
 
         // file the standard menu with editor related options

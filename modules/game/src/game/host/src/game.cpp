@@ -13,6 +13,28 @@
 
 namespace game
 {
+    //--
+
+    RTTI_BEGIN_TYPE_CLASS(GameInitData)
+        RTTI_PROPERTY(spawnPositionOverride);
+        RTTI_PROPERTY(spawnRotationOverride);
+        RTTI_PROPERTY(spawnPositionOverrideEnabled);
+        RTTI_PROPERTY(spawnRotationOverrideEnabled);
+        RTTI_PROPERTY(worldPathOverride);
+    RTTI_END_TYPE();
+
+    //--
+
+    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IGameLauncher);
+    RTTI_END_TYPE();
+
+    IGameLauncher::IGameLauncher()
+    {}
+
+    IGameLauncher::~IGameLauncher()
+    {}
+
+
     //----
 
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IGame);

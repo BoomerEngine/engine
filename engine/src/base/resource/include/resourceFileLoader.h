@@ -31,6 +31,9 @@ namespace base
             // base reference path for resource loading
             StringBuf basePath;
 
+            // class override for root object - force changes the root object class but still tries to load properties
+            ClassType mutatedRootClass;
+
             //--
 
             // ALL loaded object (may be big)

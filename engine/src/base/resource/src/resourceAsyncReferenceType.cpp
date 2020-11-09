@@ -43,14 +43,15 @@ namespace base
         //--
 
         ResourceAsyncRefType::ResourceAsyncRefType(SpecificClassType<IResource> classType)
-            : IType(FormatAsyncRefTypeName(classType->name()))
+            : IResourceReferenceType(FormatAsyncRefTypeName(classType->name()))
             , m_resourceClass(classType)
         {
             m_traits.metaType = rtti::MetaType::AsyncResourceRef;
+            m_traits.convClass = rtti::TypeConversionClass::TypeAsyncRef;
             m_traits.alignment = alignof(res::BaseAsyncReference);
             m_traits.size = sizeof(res::BaseAsyncReference);
             m_traits.initializedFromZeroMem = true;
-            m_traits.requiresConstructor = false;
+            m_traits.requiresConstructor = true;
             m_traits.requiresDestructor = false;
             m_traits.simpleCopyCompare = true;
             m_traits.hashable = true;
@@ -58,6 +59,16 @@ namespace base
 
         ResourceAsyncRefType::~ResourceAsyncRefType()
         {
+        }
+
+        ClassType ResourceAsyncRefType::referenceResourceClass() const
+        {
+            return m_resourceClass;
+        }
+
+        bool ResourceAsyncRefType::referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const
+        {
+            return true;
         }
 
         void ResourceAsyncRefType::readResourceRef(const void* data, res::BaseAsyncReference& outResRef) const

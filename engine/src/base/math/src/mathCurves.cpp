@@ -90,10 +90,10 @@ namespace base
 
     Transform Lerp3(const Transform& p0, const Transform& p1, const Transform& p2, const Vector3& fractions)
     {
-        auto t = Lerp3(p0.translation(), p1.translation(), p2.translation(), fractions);
-        auto r = Lerp3(p0.rotation(), p1.rotation(), p2.rotation(), fractions);
-        auto s = Lerp3(p0.scale(), p1.scale(), p2.scale(), fractions);
-        return Transform::TRS(t, r, s);
+        auto t = Lerp3(p0.T, p1.T, p2.T, fractions);
+        auto r = Lerp3(p0.R, p1.R, p2.R, fractions);
+        auto s = Lerp3(p0.S, p1.S, p2.S, fractions);
+        return Transform(t, r, s);
     }
 
     //---
@@ -146,10 +146,10 @@ namespace base
 
     Transform Lerp4(const Transform& p0, const Transform& p1, const Transform& p2, const Transform& p3, const Vector4& fractions)
     {
-        auto t = Lerp4(p0.translation(), p1.translation(), p2.translation(), p3.translation(), fractions);
-        auto r = Lerp4(p0.rotation(), p1.rotation(), p2.rotation(), p3.rotation(), fractions);
-        auto s = Lerp4(p0.scale(), p1.scale(), p2.scale(), p3.scale(), fractions);
-        return Transform::TRS(t, r, s);
+        auto t = Lerp4(p0.T, p1.T, p2.T, p3.T, fractions);
+        auto r = Lerp4(p0.R, p1.R, p2.R, p3.R, fractions);
+        auto s = Lerp4(p0.S, p1.S, p2.S, p3.S, fractions);
+        return Transform(t, r, s);
     }
 
     //--

@@ -8,13 +8,12 @@
 
 #include "build.h"
 #include "sceneTest.h"
-#include "simpleCamera.h"
 
-#include "game/world/include/world.h"
-#include "game/world/include/worldDefinition.h"
-#include "game/world/include/worldEntity.h"
+#include "base/world/include/world.h"
+#include "base/world/include/worldEntity.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
+#include "rendering/scene/include/renderingSimpleFlyCamera.h"
 
 namespace game
 {
@@ -104,12 +103,18 @@ namespace game
 
         ISceneTest::ISceneTest()
             : m_failed(false)
-        {            
+        {
         }
 
         bool ISceneTest::processInitialization()
         {
+            m_camera = base::CreateSharedPtr<rendering::scene::FlyCamera>();
+
+            const auto angles = base::Angles(30.0f, -15.0f, 0.0f);
+            m_camera->place(base::Vector3(0, 0, 0.5f) - angles.forward() * 3.0f, angles);
+
             initialize();
+
             return !m_failed;
         }
 
@@ -152,20 +157,26 @@ namespace game
             if (st_GlobalColorGradingAdjustEnabled)
                 info.colorGrading = st_GlobalColorGradingAdjust;
 
+            if (m_camera)
+                m_camera->compute(info);
+
             if (m_world)
                 m_world->render(info);
         }
 
         void ISceneTest::update(float dt)
         {
+            if (m_camera)
+                m_camera->update(dt);
+
             if (m_world)
                 m_world->update(dt);
         }
 
         bool ISceneTest::processInput(const base::input::BaseEvent& evt)
         {
-            if (m_world)
-                return m_world->processInput(evt);
+            if (m_camera)
+                return m_camera->processRawInput(evt);
             return false;
         }
 
@@ -175,11 +186,9 @@ namespace game
             m_failed = true;
         }
 
-        rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile, bool fullPathFlag)
+        rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile)
         {
-            auto meshPtr = base::LoadResource<rendering::Mesh>(fullPathFlag
-                    ? base::TempString("/engine/{}", assetFile)
-                    : base::TempString("/engine/tests/meshes/{}", assetFile));
+            auto meshPtr = base::LoadResource<rendering::Mesh>(assetFile);
             if (!meshPtr)
             {
                 reportError(base::TempString("Failed to load mesh '{}'", meshPtr));
@@ -340,32 +349,13 @@ namespace game
         ISceneTestEmptyWorld::ISceneTestEmptyWorld()
         {
             m_initialCameraPosition = base::Vector3(-2, 0, 1);
-            m_initialCameraRotation = base::Angles(20.0f, 0.0f, 0.0f);;
+            m_initialCameraRotation = base::Angles(20.0f, 0.0f, 0.0f);
         }
 
         void ISceneTestEmptyWorld::recreateWorld()
         {
-            if (m_camera)
-            {
-                m_camera->deactivate();
-
-                if (m_world)
-                    m_world->detachEntity(m_camera);
-            }
-
             m_world.reset();
-
-            auto data = base::CreateSharedPtr<WorldDefinition>();
-            m_world = base::CreateSharedPtr<World>(WorldType::Game, data);
-
-            if (!m_camera)
-            {
-                m_camera = base::CreateSharedPtr<FlyCameraEntity>();
-                m_camera->place(m_initialCameraPosition, m_initialCameraRotation);
-            }
-
-            m_world->attachEntity(m_camera);
-            m_camera->activate();
+            m_world = base::CreateSharedPtr<base::world::World>();
 
             createWorldContent();
         }

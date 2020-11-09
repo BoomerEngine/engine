@@ -36,6 +36,11 @@ namespace rendering
                 msaaLevel = 16;
         }
 
+        float FrameParams_Resolution::aspect() const
+        {
+            return height ? width / (float)height : 1.0f;
+        }
+
         //--
 
         RTTI_BEGIN_TYPE_ENUM(FrameRenderMode);

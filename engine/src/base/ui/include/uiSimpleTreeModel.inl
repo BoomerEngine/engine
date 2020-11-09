@@ -41,7 +41,7 @@ namespace ui
         if (nullptr == entry)
             return  nullptr;
 
-        return &entry->m_children;
+        return &entry->children;
     }
 	
 	template< typename T, typename TV >
@@ -58,7 +58,7 @@ namespace ui
         if (entry == nullptr)
             return nullptr;
 
-        return &entry->m_data;
+        return &entry->data;
     }
 
     template< typename T, typename TV >
@@ -70,21 +70,13 @@ namespace ui
     template< typename T, typename TV >
     ModelIndex SimpleTreeModel<T, TV>::findNodeForData(const EntryChildList& childList, TV data) const
     {
-        // local search
-        for (uint32_t i = 0; i < childList.m_children.size(); ++i)
-        {
-            const auto& child = childList.m_children[i];
-            if (child->m_data == data)
-                return ui::ModelIndex(this, i, 0, child);
-        }
+        for (const auto& child : childList)
+            if (child->data == data)
+                return child->index;
 
-        // recruse
-        for (uint32_t i = 0; i < childList.m_children.size(); ++i)
-        {
-            const auto& child = childList.m_children[i];
-            if (auto found = findNodeForData(child->m_children, data))
+        for (const auto& child : childList)
+            if (auto found = findNodeForData(child->children, data))
                 return found;
-        }
 
         return ModelIndex();
     }
@@ -92,13 +84,10 @@ namespace ui
     template< typename T, typename TV >
     ModelIndex SimpleTreeModel<T, TV>::findChildNodeForData(const ModelIndex& parent, TV data) const
     {
-        const auto* children = entryChildListForNode(parent);
-        if (nullptr == children)
-            return ModelIndex();
-
-        for (int i = 0; i <= children->m_children.lastValidIndex(); ++i)
-            if (children->m_children[i]->m_data == data)
-                return ModelIndex(this, i, 0, children->m_children[i]);
+        if (const auto* children = entryChildListForNode(parent))
+            for (const auto& child : *children)
+                if (child->data == data)
+                    return child->index;
 
         return ModelIndex();
     }
@@ -106,27 +95,21 @@ namespace ui
     //---
 
     template< typename T, typename TV >
-    uint32_t SimpleTreeModel<T, TV>::rowCount(const ModelIndex& parent) const
+    void SimpleTreeModel<T, TV>::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
     {
-        const auto* children = entryChildListForNode(parent);
-        return children ? children->m_children.size() : 0;
+        if (const auto* children = entryChildListForNode(parent))
+        {
+            outChildrenIndices.reserve(children->size());
+            for (const auto& item : *children)
+                outChildrenIndices.pushBack(item->index);
+        }
     }
 
     template< typename T, typename TV >
     bool SimpleTreeModel<T, TV>::hasChildren(const ModelIndex& parent) const
     {
         const auto* children = entryChildListForNode(parent);
-        return children ? !children->m_children.empty() : false;
-    }
-
-    template< typename T, typename TV >
-    bool SimpleTreeModel<T, TV>::hasIndex(int row, int col, const ModelIndex& parent) const
-    {
-        if (row < 0 || col != 0)
-            return false;
-
-        const auto* children = entryChildListForNode(parent);
-        return children ? (row <= children->m_children.lastValidIndex()) : false;
+        return children && !children->empty();
     }
 
     template< typename T, typename TV >
@@ -136,38 +119,10 @@ namespace ui
         if (nullptr == entry)
             return ModelIndex();
 
-        if (nullptr == entry->m_parent)
+        if (nullptr == entry->parent)
             return ui::ModelIndex();
 
-        auto index = entry->m_parent->m_children.indexOf(entry);
-        DEBUG_CHECK_EX(index == item.row(), "Invalid index of child in actual parent");
-
-        auto parentIndex = 0;
-        if (entry->m_parent->m_parent)
-        {
-            parentIndex = entry->m_parent->m_parent->m_children.indexOf(entry->m_parent);
-            DEBUG_CHECK_EX(parentIndex != INDEX_NONE, "Item no longer in its parent's childrens list");
-        }
-        else
-        {
-            parentIndex = m_roots.indexOf(entry->m_parent);
-            DEBUG_CHECK_EX(parentIndex != INDEX_NONE, "Item no longer in root list");
-        }
-
-        return ui::ModelIndex(this, parentIndex, 0, entry->m_parent);
-    }
-
-    template< typename T, typename TV >
-    ModelIndex SimpleTreeModel<T, TV>::index(int row, int column, const ModelIndex& parent) const
-    {
-        const auto* children = entryChildListForNode(parent);
-        if (nullptr == children)
-            return ModelIndex();
-
-        if (row > children->m_children.size())
-            return ModelIndex();
-
-        return ModelIndex(this, row, column, children->m_children[row]);
+        return entry->parent->index;
     }
 
     template< typename T, typename TV >
@@ -176,7 +131,7 @@ namespace ui
         const auto* firstEntry = entryForNode(first);
         const auto* secondEntry = entryForNode(second);
         if (firstEntry && secondEntry)
-            compare(firstEntry->m_data, secondEntry->m_data, colIndex);
+            compare(firstEntry->data, secondEntry->data, colIndex);
 
         return first < second;
     }
@@ -188,7 +143,7 @@ namespace ui
         if (nullptr == entry)
             return false;
 
-        return filter(entry->m_data, filterText, colIndex);
+        return filter(entry->data, filterText, colIndex);
     }
     
     template< typename T, typename TV >
@@ -196,7 +151,7 @@ namespace ui
     {
         auto* entry = entryForNode(id);
         if (nullptr != entry)
-            return displayContent(entry->m_data, colIndex);
+            return displayContent(entry->data, colIndex);
         return base::StringBuf::EMPTY();
     }
 
@@ -205,7 +160,7 @@ namespace ui
     {
         auto* entry = entryForNode(id);
         if (nullptr != entry)
-            return tooltip(entry->m_data);
+            return tooltip(entry->data);
         return nullptr;
     }
 
@@ -238,17 +193,15 @@ namespace ui
 		if (!parentChildrenList)
 			return ModelIndex();
 		
-		auto index = parentChildrenList->m_children.size();
-		beingInsertRows(parent, index, 0);
-		
 		auto entry = base::CreateSharedPtr<Entry>();
-		entry->m_parent = parentEntry;
-		entry->m_data = data;		
-		parentChildrenList->m_children.pushBack(entry);
+        entry->index = ModelIndex(this, entry);
+		entry->parent = parentEntry;
+		entry->data = data;
+		parentChildrenList->pushBack(entry);
 
-		endInsertRows();
+        notifyItemAdded(parent, entry->index);
 		
-		return ModelIndex(this, index, 0, entry);
+		return entry->index;
     }
 
     template< typename T, typename TV >
@@ -261,19 +214,15 @@ namespace ui
 		if (!entry)
 			return;
 			
-		auto parentChildrenList = entryChildListForNode(index.parent());
-		if (!parentChildrenList)
-			return;
-			
-        auto childIndex = parentChildrenList->indexOf(entry);
-		if (childIndex == -1)
-			return;
-			
-        beingRemoveRows(index.parent(), childIndex, 1);
+        auto& parentChildrenList = entry->parent ? entry->parent->children : m_roots;
+        auto indexInParent = parentChildrenList.find(index.unsafe<Entry>());
+        if (indexInParent == INDEX_NONE)
+            return;
 
-        parentChildrenList->m_children.erase(childIndex, 1);
+        auto elementRef = parentChildrenList[indexInParent];
+        parentChildrenList.erase(indexInParent);
 
-        endRemoveRows(); 
+        notifyItemRemoved(entry->parent ? entry->parent->index : ModelIndex(), index);
     }
 
     //--

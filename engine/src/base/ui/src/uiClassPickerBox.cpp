@@ -16,6 +16,7 @@
 #include "uiTreeView.h"
 
 #include "base/containers/include/stringBuilder.h"
+#include "uiSearchBar.h"
 
 namespace ui
 {
@@ -137,10 +138,11 @@ namespace ui
 
     //---
 
-    ClassPickerBox::ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption)
-        : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Select class")
+    ClassPickerBox::ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption, bool showButtons)
+        : PopupWindow(showButtons ? ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG : ui::WindowFeatureFlagBit::DEFAULT_TOOLTIP, "Select class")
         , m_allowAbstract(allowAbstract)
         , m_allowNull(allowNull)
+        , m_hasButtons(showButtons)
     {
         layoutVertical();
 
@@ -151,12 +153,17 @@ namespace ui
             captionLabel->customMargins(5);
         }
 
+        // filter
+        auto filter = createChild<ui::SearchBar>();
+
         // list of types
         m_tree = createChild<ui::TreeView>();
         m_tree->customInitialSize(500, 400);
         m_tree->expand();
+        filter->bindItemView(m_tree);
 
         // buttons
+        if (showButtons)
         {
             auto buttons = createChild();
             buttons->customPadding(5);
@@ -190,6 +197,7 @@ namespace ui
         m_tree->bind(EVENT_ITEM_ACTIVATED) = [this]()
         {
             closeIfValidTypeSelected();
+            return true;
         };
     }
 
@@ -197,8 +205,11 @@ namespace ui
     {
         if (evt.pressed() && evt.keyCode() == base::input::KeyCode::KEY_ESCAPE)
         {
-            requestClose();
-            return true;
+            if (m_hasButtons)
+            {
+                requestClose();
+                return true;
+            }
         }
         else if (evt.pressed() && evt.keyCode() == base::input::KeyCode::KEY_RETURN)
         {
@@ -229,6 +240,7 @@ namespace ui
     {
         call(EVENT_CLASS_SELECTED, value);
         requestClose();
+        closeParentPopup();
     }
 
     //---

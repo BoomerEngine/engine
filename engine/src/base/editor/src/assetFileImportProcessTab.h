@@ -53,31 +53,26 @@ namespace ed
     private:
         struct FileData : public IReferencable
         {
-            StringBuf m_depotPath;
+            ui::ModelIndex index;
 
-            res::ImportStatus m_status = res::ImportStatus::Pending;
-            float m_time = 0.0f; // time it took to check/process the resource
+            StringBuf depotPath;
 
-            StringBuf m_progressLastStatus;
-            uint64_t m_progressLastCount = 0;
-            uint64_t m_progressLastTotal = 0;
+            res::ImportStatus status = res::ImportStatus::Pending;
+            float time = 0.0f; // time it took to check/process the resource
+
+            StringBuf progressLastStatus;
+            uint64_t progressLastCount = 0;
+            uint64_t progressLastTotal = 0;
         };
 
         Array<RefPtr<FileData>> m_files;
         HashMap<StringBuf, FileData*> m_fileMap;
 
-        ui::ModelIndex indexForFile(const FileData* fileData) const;
-        RefPtr<FileData> fileForIndex(const ui::ModelIndex& index) const;
-        FileData* fileForIndexFast(const ui::ModelIndex& index) const;
-
         //--
 
-        virtual uint32_t rowCount(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-        virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-        virtual bool hasIndex(int row, int col, const ui::ModelIndex& parent = ui::ModelIndex()) const  override final;
         virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const  override final;
-        virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-
+        virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;

@@ -519,6 +519,10 @@ namespace base
         //! get random vector
         static Vector4 Rand(float min=0.0f, float max=1.0f);
 
+        //---
+
+        void print(IFormatStream& f) const;
+
     private:
         INLINE Vector2 _xy() const;
         INLINE Vector2 _yz() const;

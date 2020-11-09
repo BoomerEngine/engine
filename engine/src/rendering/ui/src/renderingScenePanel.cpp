@@ -212,6 +212,11 @@ namespace ui
         m_toolbar->customVerticalAligment(ElementVerticalLayout::Top);
         m_toolbar->overlay(true);
 
+        m_bottomToolbar = createChildWithType<ToolBar>("PreviewPanelToolbar"_id);
+        m_bottomToolbar->customHorizontalAligment(ElementHorizontalLayout::Expand);
+        m_bottomToolbar->customVerticalAligment(ElementVerticalLayout::Bottom);
+        m_bottomToolbar->overlay(true);
+
         m_filterFlags = rendering::scene::FilterFlags::DefaultEditor();
     }
 

@@ -241,62 +241,16 @@ namespace ui
         m_current = ModelIndex();
     }
 
-    void AbstractItemView::modelRowsAboutToBeAdded(const ModelIndex& parent, int first, int count)
+    void AbstractItemView::modelItemsAdded(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        ModelIndexReindexerInsert reindexer(parent, first, count);
-
-        // reindex the selection indices
-        {
-            m_tempSelection.reset();
-            for (const auto &id : m_selection.keys())
-            {
-                ModelIndex newIndex = id;
-                reindexer.reindex(id, newIndex);
-                m_tempSelection.insert(newIndex);
-            }
-
-            std::swap(m_tempSelection, m_selection);
-            m_tempSelection.reset();
-        }
-
-        // update the current
-        if (m_current)
-            reindexer.reindex(m_current, m_current);
+        // nothing
     }
 
-    void AbstractItemView::modelRowsAdded(const ModelIndex& parent, int first, int lacountst)
-    {}
-
-    void AbstractItemView::modelRowsAboutToBeRemoved(const ModelIndex& parent, int first, int count)
+    void AbstractItemView::modelItemsRemoved(const ModelIndex& parent, const base::Array<ModelIndex>& items)
     {
-        ModelIndexReindexerRemove reindexer(parent, first, count);
-
-        // reindex the selection indices
-        {
-            m_tempSelection.reset();
-            for (const auto &id : m_selection.keys())
-            {
-                ModelIndex newIndex = id;
-
-                switch (reindexer.reindex(id, newIndex))
-                {
-                    case ReindexerResult::NotChanged:
-                    case ReindexerResult::Changed:
-                        m_tempSelection.insert(newIndex);
-                }
-            }
-
-            std::swap(m_tempSelection, m_selection);
-            m_tempSelection.reset();
-        }
-
-        // update the current
-        if (m_current)
-            reindexer.reindex(m_current, m_current);
+        for (const auto& item : items)
+            m_selection.remove(item);
     }
-
-    void AbstractItemView::modelRowsRemoved(const ModelIndex& parent, int first, int count)
-    {}
 
     //---
 

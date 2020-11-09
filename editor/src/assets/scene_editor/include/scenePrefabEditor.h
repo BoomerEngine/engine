@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/editor/include/resourceEditorNativeFile.h"
-#include "game/world/include/worldPrefab.h"
+#include "base/world/include/worldPrefab.h"
 
 namespace ed
 {
@@ -29,15 +29,11 @@ namespace ed
 
         //--
 
-        INLINE ScenePreviewContainer* previewPanel() const { return m_previewContainer; }
-
-        INLINE game::PrefabPtr prefab() const { return base::rtti_cast<game::Prefab>(resource()); }
-
-        //--
-
         virtual bool initialize() override;
         virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
         virtual void bindResource(const res::ResourcePtr& resource) override;
+        virtual bool checkGeneralSave() const override;
+        virtual void update() override;
         virtual bool save() override;
 
     private:
@@ -48,13 +44,26 @@ namespace ed
         base::RefPtr<SceneEditMode_Default> m_defaultEditMode;
         
         base::RefPtr<SceneContentStructure> m_content;
-        game::WorldPtr m_previewWorld;
+        base::world::WorldPtr m_previewWorld;
 
         void createInterface();
         void createContentStructure();
 
-        void resetEditMode();
         void refreshEditMode();
+
+        void recreateContent();
+
+        //--
+
+        virtual void handleGeneralCopy() override;
+        virtual void handleGeneralCut() override;
+        virtual void handleGeneralPaste() override;
+        virtual void handleGeneralDelete() override;
+
+        virtual bool checkGeneralCopy() const override;
+        virtual bool checkGeneralCut() const override;
+        virtual bool checkGeneralPaste() const override;
+        virtual bool checkGeneralDelete() const override;
     };
 
 } // ed

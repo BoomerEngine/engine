@@ -12,8 +12,83 @@ namespace ed
 {
     //--
 
+    enum class SceneGizmoSpace : uint8_t
+    {
+        World, // use transformations in world space
+        Local, // use transformations in local space
+        Parent, // use transformations in parent space
+        View, // use transformations in view space
+    };
+
+    ///---
+
+    enum class SceneGizmoMode : uint8_t
+    {
+        Translation,
+        Rotation,
+        Scale,
+    };
+
+    //---
+
+    enum class SceneGizmoTarget : uint8_t
+    {
+        WholeHierarchy,
+        SelectionOnly,
+    };
+
+    //---
+
+    /// grid settings
+    struct ASSETS_SCENE_EDITOR_API SceneGridSettings
+    {   
+        bool positionGridEnabled = true;
+        bool rotationGridEnabled = true;
+        float positionGridSize = 0.1f;
+        float rotationGridSize = 15.0f;
+
+        bool featureSnappingEnabled = false;
+        bool rotationSnappingEnabled = false;
+        float snappingDistance = 0.2f;
+
+        SceneGridSettings();
+    };
+
+    //---
+
+    /// selection settings
+    struct ASSETS_SCENE_EDITOR_API SceneSelectionSettings
+    {
+        bool explorePrefabs = false; // ignore prefab instances and select actual nodes
+        bool exploreComponents = false;
+        bool allowTransparent = false;
+
+        SceneSelectionSettings();
+    };
+
+    //---
+
+    /// gizmo settings
+    struct ASSETS_SCENE_EDITOR_API SceneGizmoSettings
+    {
+        SceneGizmoMode mode = SceneGizmoMode::Translation;
+        SceneGizmoSpace space = SceneGizmoSpace::World;
+        SceneGizmoTarget target = SceneGizmoTarget::WholeHierarchy;
+        bool enableX = true;
+        bool enableY = true;
+        bool enableZ = true;
+
+        SceneGizmoSettings();
+    };
+
+    //--
+
+    class SceneNodeVisualizationHandler;
+
     DECLARE_UI_EVENT(EVENT_EDIT_MODE_CHANGED);
     DECLARE_UI_EVENT(EVENT_EDIT_MODE_SELECTION_CHANGED);
+
+    //--
     
     // a container for preview panels in various layouts (single, 4 views, etc)
     class ASSETS_SCENE_EDITOR_API ScenePreviewContainer : public ui::IElement
@@ -21,7 +96,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ScenePreviewContainer, ui::IElement);
 
     public:
-        ScenePreviewContainer();
+        ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode = nullptr);
         virtual ~ScenePreviewContainer();
 
         //--
@@ -35,31 +110,89 @@ namespace ed
         // all created preview panels
         INLINE const Array<ScenePreviewPanelPtr>& panels() const { return m_panels; }
 
+        // preview world displayed in all the panels
+        INLINE const base::world::WorldPtr& world() const { return m_world; }
+
         //--
 
-        // bind content
-        void bindContent(SceneContentStructure* content, ISceneEditMode* initialEditMode=nullptr);
+        // shared grid settings
+        INLINE const SceneGridSettings& gridSettings() const { return m_gridSettings; }
+
+        // shared gizmo settings
+        INLINE const SceneGizmoSettings& gizmoSettings() const { return m_gizmoSettings; }
+
+        // shared selection settings
+        INLINE const SceneSelectionSettings& selectionSettings() const { return m_selectionSettings; }
+
+        //--
 
         // switch to edit mode 
         void actionSwitchMode(ISceneEditMode* newMode);
 
         //--
 
+        // sync visuals with 
+        void update();
+
+        //--
+
         virtual void configSave(const ui::ConfigBlock& block) const;
         virtual void configLoad(const ui::ConfigBlock& block);
 
+        //--
+
+        // change grid settings
+        void gridSettings(const SceneGridSettings& settings);
+
+        // change gizmo settings
+        void gizmoSettings(const SceneGizmoSettings& settings);
+
+        // change selection settings
+        void selectionSettings(const SceneSelectionSettings& settings);
+
+        //--
+
+        // resolve rendering selectable to scene node
+        SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable, bool raw=false) const;
+
+        //--
+
     private:
         Array<ScenePreviewPanelPtr> m_panels;
+
+        world::WorldPtr m_world;
+
+        NativeTimePoint m_lastWorldTick;
+        float m_worldTickRatio = 1.0f;
+
+        SceneGridSettings m_gridSettings;
+        SceneGizmoSettings m_gizmoSettings;
+        SceneSelectionSettings m_selectionSettings;
 
         SceneEditModePtr m_editMode;
 
         SceneContentStructure* m_content = nullptr;
 
+        RefPtr<SceneNodeVisualizationHandler> m_visualization;
+
+        //--
+
+        void createWorld();
+        void updateWorld();
+
         void createPanels();
         void destroyPanels();
 
+        void recreatePanelBottomToolbars();
+
         void deactivateEditMode();
         void activateEditMode();
+
+        //--
+
+        void syncNodeState();
+
+        //--
     };
 
     //--

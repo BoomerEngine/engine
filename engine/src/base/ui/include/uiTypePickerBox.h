@@ -21,19 +21,15 @@ namespace ui
     ///----
 
     // data model for listing all engine types
-    class TypeListModel : public SimpleListModel
+    class TypeListModel : public SimpleTypedListModel<base::Type>
     {
     public:
         TypeListModel();
 
-        base::Type typeForIndex(uint32_t index) const;
-        ModelIndex findIndexForType(base::Type) const;
-
     private:
-        base::Array<base::Type> m_allTypes;
-
-        virtual uint32_t size() const override final;
-        virtual base::StringBuf content(const ModelIndex& id, int colIndex = 0) const override final;
+        virtual bool compare(const base::Type& a, const base::Type& b, int colIndex) const override final;
+        virtual bool filter(const base::Type& data, const SearchPattern& filter, int colIndex = 0) const  override final;
+        virtual base::StringBuf content(const base::Type& data, int colIndex = 0) const override final;
     };
 
     ///----

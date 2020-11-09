@@ -35,6 +35,11 @@ namespace base
 
         ///---
 
+        /// get object by ID
+        ObjectPtr findObject(uint32_t id);
+
+        ///---
+
         /// visit all objects with a function on EACH OBJECT, do I have to say it will be slow ? :) 
         /// NOTE: registry is locked during this update 
         bool iterateAllObjects(const std::function<bool(IObject*)>& enumFunc);

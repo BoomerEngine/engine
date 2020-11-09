@@ -15,7 +15,7 @@ namespace ed
     //--
 
     // simple list model that lists files/directories with optional comments, files hanve checkboxes so they can be individually selected
-    class AssetItemsSimpleListModel : public ui::SimpleListModel
+    class AssetItemsSimpleListModel : public ui::IAbstractItemModel
     {
     public:
         AssetItemsSimpleListModel();
@@ -23,11 +23,11 @@ namespace ed
 
         //--
 
+        // is the list empty ?
+        INLINE bool empty() const { return m_items.empty(); }
+
         // remove all items from list
         void clear();
-
-        // get number of elements in the list
-        virtual uint32_t size() const override final;
 
         //--
 
@@ -58,23 +58,25 @@ namespace ed
         //--
 
     private:
-        struct Item
+        struct Item : public base::IReferencable
         {
+            ui::ModelIndex index;
             ManagedItem* item = nullptr;
             StringBuf name;
             bool checked = true;
             StringBuf comment;
         };
 
-        Array<Item*> m_items;
-        HashMap<ManagedItem*, int> m_itemMap;
+        Array<base::RefPtr<Item>> m_items;
+        HashMap<ManagedItem*, Item*> m_itemMap;
 
-        virtual StringBuf content(const ui::ModelIndex& id, int colIndex /*= 0*/) const override final;
+        virtual bool hasChildren(const ui::ModelIndex& parent) const override final;
+        virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
+        virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
+        virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
 
-        Item* itemForIndex(const ui::ModelIndex& index) const;
-
-        ui::ModelIndex index(int index) const;
         ui::ModelIndex index(ManagedItem* item) const;
     };
 

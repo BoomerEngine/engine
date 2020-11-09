@@ -212,6 +212,9 @@ namespace base
         // allocate unique object ID
         static ObjectID AllocUniqueObjectID();
 
+        // get object by ID
+        static ObjectPtr FindUniqueObjectById(ObjectID id);
+
         //--
 
         // clone this object

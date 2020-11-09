@@ -20,6 +20,8 @@ namespace rendering
         class Camera;
         struct CameraSetup;
 
+        class FlyCamera;
+
         ///---
 
         class IFrameInspector;
@@ -84,6 +86,8 @@ namespace rendering
         struct SceneObjectCullingEntry;
 
         struct Command;
+
+        class Selectable;
 
         struct IProxy;
         class IProxyHandler;

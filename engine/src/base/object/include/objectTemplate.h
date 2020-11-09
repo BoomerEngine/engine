@@ -27,6 +27,9 @@ namespace base
         // NOTE: the base object does not have to be exactly the same class, can be of parent class
         INLINE const ObjectTemplatePtr& base() const { return m_base; }
 
+        // do we have any overridden properties ?
+        INLINE bool hasAnyOverrides() const { return !m_overridenProperties.empty(); }
+
         //--
 
         // Get static object class, overloaded in child classes

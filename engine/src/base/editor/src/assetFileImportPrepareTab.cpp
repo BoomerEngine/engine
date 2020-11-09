@@ -62,16 +62,16 @@ namespace ed
 
         for (const auto& file : m_files)
         {
-            if (file->m_importFlag || !activeOnly)
+            if (file->importFlag || !activeOnly)
             {
-                if (activeOnly && !ManagedItem::ValidateFileName(file->m_targetFileName))
+                if (activeOnly && !ManagedItem::ValidateFileName(file->targetFileName))
                     continue;
 
                 auto& outEntry = fileEntries.emplaceBack();
-                outEntry.enabled = file->m_importFlag;
-                outEntry.assetPath = file->m_sourceAssetPath;
+                outEntry.enabled = file->importFlag;
+                outEntry.assetPath = file->sourceAssetPath;
                 outEntry.depotPath = fileDepotPath(file);
-                outEntry.userConfiguration = CloneObject(file->m_configuration);
+                outEntry.userConfiguration = CloneObject(file->configuration);
             }
         }
 
@@ -86,7 +86,7 @@ namespace ed
     bool AssetImportListModel::hasImportableFiles() const
     {
         for (const auto& file : m_files)
-            if (file->m_importFlag)
+            if (file->importFlag)
                 return true;
 
         return false;
@@ -94,14 +94,8 @@ namespace ed
 
     void AssetImportListModel::clearFiles()
     {
-        beingRemoveRows(ui::ModelIndex(), 0, m_files.size());
-
-        for (auto& file : m_files)
-        {
-        }
         m_files.clear();
-
-        endRemoveRows();
+        reset();
     }
 
     static StringView<char> ExtractFileExtension(StringView<char> assetPath)
@@ -116,8 +110,10 @@ namespace ed
 
     res::ResourceConfigurationPtr AssetImportListModel::fileConfiguration(const ui::ModelIndex& file) const
     {
-        if (const auto data = fileForIndex(file))
-            return data->m_configuration;
+        if (file.model() == this)
+            if (const auto data = file.unsafe<FileData>())
+                return data->configuration;
+
         return nullptr;
     }
 
@@ -125,11 +121,11 @@ namespace ed
     {
         if (data)
         {
-            if (data->m_targetDirectory && data->m_targetFileName)
+            if (data->targetDirectory && data->targetFileName)
             {
-                if (const auto ext = res::IResource::GetResourceExtensionForClass(data->m_targetClass))
+                if (const auto ext = res::IResource::GetResourceExtensionForClass(data->targetClass))
                 {
-                    return StringBuf(TempString("{}{}.{}", data->m_targetDirectory->depotPath(), data->m_targetFileName, ext));
+                    return StringBuf(TempString("{}{}.{}", data->targetDirectory->depotPath(), data->targetFileName, ext));
                 }
             }
         }
@@ -139,7 +135,11 @@ namespace ed
 
     StringBuf AssetImportListModel::fileDepotPath(const ui::ModelIndex& file) const
     {
-        return fileDepotPath(fileForIndex(file));
+        if (file.model() == this)
+            if (const auto data = file.unsafe<FileData>())
+                return fileDepotPath(data);
+
+        return StringBuf::EMPTY();
     }
 
     ManagedFileNativeResource* AssetImportListModel::fileManagedFile(const FileData* file) const
@@ -158,32 +158,26 @@ namespace ed
 
     StringBuf AssetImportListModel::fileSourceAssetPath(const ui::ModelIndex& file) const
     {
-        if (const auto data = fileForIndex(file))
-            return data->m_sourceAssetPath;
+        if (file.model() == this)
+            if (const auto data = file.unsafe<FileData>())
+                return data->sourceAssetPath;
+
         return StringBuf::EMPTY();
     }
 
     io::AbsolutePath AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const
     {
-        if (const auto data = fileForIndex(file))
+        if (file.model() == this)
         {
-            StringBuf contextPath;
-            if (GetService<res::ImportFileService>()->resolveContextPath(data->m_sourceAssetPath, contextPath))
-                return io::AbsolutePath::Build(UTF16StringBuf(contextPath.c_str()));
+            if (const auto data = file.unsafe<FileData>())
+            {
+                StringBuf contextPath;
+                if (GetService<res::ImportFileService>()->resolveContextPath(data->sourceAssetPath, contextPath))
+                    return io::AbsolutePath::Build(UTF16StringBuf(contextPath.c_str()));
+            }
         }
 
         return io::AbsolutePath();
-    }
-
-    ui::ModelIndex AssetImportListModel::addFileInternal(const RefPtr<FileData>& data)
-    {
-        auto index = m_files.size();
-
-        beingInsertRows(ui::ModelIndex(), index, 1);
-        m_files.pushBack(data);
-        endInsertRows();
-
-        return indexForFile(data);
     }
 
     ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePath, TImportClass resourceClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration)
@@ -192,8 +186,8 @@ namespace ed
         {
             // do not add the same file twice
             for (const auto& existing : m_files)
-                if (existing->m_targetDirectory == directory && existing->m_targetClass == resourceClass && existing->m_targetFileName == fileName)
-                    return indexForFile(existing);
+                if (existing->targetDirectory == directory && existing->targetClass == resourceClass && existing->targetFileName == fileName)
+                    return existing->index;
 
             // get required config class, we need the source path to know what we will be importing
             TConfigClass configClass;
@@ -205,12 +199,13 @@ namespace ed
 
             // create new entry
             auto fileEntry = CreateSharedPtr<FileData>();
-            fileEntry->m_existingFile = nullptr;
-            fileEntry->m_importFlag = true;
-            fileEntry->m_sourceAssetPath = sourcePath;
-            fileEntry->m_targetClass = resourceClass;
-            fileEntry->m_targetFileName = fileName;
-            fileEntry->m_targetDirectory = directory;
+            fileEntry->index = ui::ModelIndex(this, fileEntry);
+            fileEntry->existingFile = nullptr;
+            fileEntry->importFlag = true;
+            fileEntry->sourceAssetPath = sourcePath;
+            fileEntry->targetClass = resourceClass;
+            fileEntry->targetFileName = fileName;
+            fileEntry->targetDirectory = directory;
 
             // build the base import config from source asset directory
             auto baseConfig = GetService<res::ImportFileService>()->compileBaseResourceConfiguration(sourcePath, configClass);
@@ -218,21 +213,23 @@ namespace ed
             // create default file configuration
             if (specificUserConfiguration && specificUserConfiguration->is(configClass))
             {
-                fileEntry->m_configuration = CloneObject(specificUserConfiguration);
-                fileEntry->m_configuration->rebase(baseConfig);
+                fileEntry->configuration = CloneObject(specificUserConfiguration);
+                fileEntry->configuration->rebase(baseConfig);
             }
             else
             {
-                fileEntry->m_configuration = configClass.create();
-                fileEntry->m_configuration->rebase(baseConfig);
+                fileEntry->configuration = configClass.create();
+                fileEntry->configuration->rebase(baseConfig);
             }
 
             // always set the imported by stuff
             // TODO: change to VSC user name
-            fileEntry->m_configuration->setupDefaultImportMetadata();
+            fileEntry->configuration->setupDefaultImportMetadata();
 
             // add to internal file list and create UI model index
-            return addFileInternal(fileEntry);
+            m_files.pushBack(fileEntry);
+            notifyItemAdded(ui::ModelIndex(), fileEntry->index);
+            return fileEntry->index;
         }
 
         return ui::ModelIndex();
@@ -246,8 +243,8 @@ namespace ed
 
         // do not add the same file twice
         for (const auto& existing : m_files)
-            if (existing->m_existingFile == file)
-                return indexForFile(existing);
+            if (existing->existingFile == file)
+                return existing->index;
 
         // get resource class and the required import config class
         const auto resourceClass = file->fileFormat().nativeResourceClass();
@@ -284,17 +281,18 @@ namespace ed
 
         // create new entry
         auto fileEntry = CreateSharedPtr<FileData>();
-        fileEntry->m_existingFile = file;
-        fileEntry->m_importFlag = true;
-        fileEntry->m_sourceAssetPath = sourcePath;
-        fileEntry->m_targetClass = resourceClass;
-        fileEntry->m_targetFileName = file->name().stringBeforeLast(".");
-        fileEntry->m_targetDirectory = file->parentDirectory();
+        fileEntry->index = ui::ModelIndex(this, fileEntry);
+        fileEntry->existingFile = file;
+        fileEntry->importFlag = true;
+        fileEntry->sourceAssetPath = sourcePath;
+        fileEntry->targetClass = resourceClass;
+        fileEntry->targetFileName = file->name().stringBeforeLast(".");
+        fileEntry->targetDirectory = file->parentDirectory();
 
         // use the loaded user configuration
         if (specificUserConfiguration && specificUserConfiguration->is(configClass))
         {
-            fileEntry->m_configuration = CloneObject(specificUserConfiguration);
+            fileEntry->configuration = CloneObject(specificUserConfiguration);
         }
         else
         {
@@ -302,35 +300,38 @@ namespace ed
             DEBUG_CHECK_EX(!metadata->importUserConfiguration || metadata->importUserConfiguration->cls() == configClass, "User configuration stored in metadata has different class that currenyl recommended one");
             if (metadata->importUserConfiguration && metadata->importUserConfiguration->cls() == configClass)
             {
-                fileEntry->m_configuration = metadata->importUserConfiguration;
+                fileEntry->configuration = metadata->importUserConfiguration;
                 metadata->importUserConfiguration->parent(nullptr);
             }
             else
             {
-                fileEntry->m_configuration = configClass.create();
+                fileEntry->configuration = configClass.create();
             }
         }
 
         // always set the imported by stuff
         // TODO: change to VSC user name
-        fileEntry->m_configuration->setupDefaultImportMetadata();
+        fileEntry->configuration->setupDefaultImportMetadata();
 
         // rebase user config onto the folded base config
-        fileEntry->m_configuration->rebase(baseConfig);
+        fileEntry->configuration->rebase(baseConfig);
 
         // add to internal file list and create UI model index
-        return addFileInternal(fileEntry);
+        m_files.pushBack(fileEntry);
+        notifyItemAdded(ui::ModelIndex(), fileEntry->index);
+        return fileEntry->index;
     }
 
     void AssetImportListModel::removeFile(ManagedFileNativeResource* managedFile)
     {
         for (auto index : m_files.indexRange())
         {
-            if (m_files[index]->m_existingFile == managedFile)
+            if (m_files[index]->existingFile == managedFile)
             {
-                beingRemoveRows(ui::ModelIndex(), index, 1);
+                auto file = m_files[index];
                 m_files.erase(index);
-                endRemoveRows();
+                notifyItemRemoved(ui::ModelIndex(), file->index);
+
                 break;
             }
         }
@@ -342,45 +343,11 @@ namespace ed
         files.reserve(indices.size());
 
         for (const auto index : indices)
-            if (auto file = fileForIndex(index))
-                files.pushBack(file);
+            if (index.model() == this)
+                if (auto file = index.unsafe<FileData>())
+                    files.remove(file);
 
-        for (const auto& file : files)
-        {
-            auto fileIndex = m_files.find(file);
-            if (fileIndex != INDEX_NONE)
-            {
-                beingRemoveRows(ui::ModelIndex(), fileIndex, 1);
-                m_files.erase(fileIndex);
-                endRemoveRows();
-            }
-        }
-    }
-    
-    AssetImportListModel::FileData* AssetImportListModel::fileForIndexFast(const ui::ModelIndex& index) const
-    {
-        return static_cast<AssetImportListModel::FileData*>(index.weakRef().lock());
-    }
-
-    RefPtr<AssetImportListModel::FileData> AssetImportListModel::fileForIndex(const ui::ModelIndex& index) const
-    {
-        auto* ptr = fileForIndexFast(index);
-        return RefPtr<AssetImportListModel::FileData>(NoAddRef(ptr));
-    }
-
-    ui::ModelIndex AssetImportListModel::indexForFile(const FileData* entry) const
-    {
-        auto index = m_files.find(entry);
-        if (index != -1)
-            return ui::ModelIndex(this, index, 0, m_files[index]);
-        return ui::ModelIndex();
-    }
-
-    uint32_t AssetImportListModel::rowCount(const ui::ModelIndex& parent) const
-    {
-        if (!parent.valid())
-            return m_files.size();
-        return 0;
+        notifyItemsRemoved(ui::ModelIndex(), indices);
     }
 
     bool AssetImportListModel::hasChildren(const ui::ModelIndex& parent) const
@@ -388,21 +355,20 @@ namespace ed
         return !parent.valid();
     }
 
-    bool AssetImportListModel::hasIndex(int row, int col, const ui::ModelIndex& parent /*= ui::ModelIndex()*/) const
-    {
-        return !parent.valid() && col == 0 && row >= 0 && row < (int)m_files.size();
-    }
-
     ui::ModelIndex AssetImportListModel::parent(const ui::ModelIndex& item /*= ui::ModelIndex()*/) const
     {
         return ui::ModelIndex();
     }
 
-    ui::ModelIndex AssetImportListModel::index(int row, int column, const ui::ModelIndex& parent) const
+    void AssetImportListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
     {
-        if (hasIndex(row, column, parent))
-            return ui::ModelIndex(this, row, column, m_files[row]);
-        return ui::ModelIndex();
+        if (!parent)
+        {
+            outChildrenIndices.reserve(m_files.size());
+
+            for (const auto& file : m_files)
+                outChildrenIndices.pushBack(file->index);
+        }
     }
 
     static StringView<char> GetClassDisplayName(ClassType currentClass)
@@ -430,132 +396,137 @@ namespace ed
 
     void AssetImportListModel::visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const
     {
-        if (auto file = fileForIndexFast(item))
+        if (item.model() == this)
         {
-            if (!content)
+            if (auto file = item.unsafe<FileData>())
             {
-                content = CreateSharedPtr<ui::IElement>();
-                content->layoutMode(ui::LayoutMode::Columns);
-
+                if (!content)
                 {
-                    auto importFlag = content->createNamedChild<ui::CheckBox>("ImportFlag"_id);
-                    importFlag->allowFocusFromKeyboard(false); // disable to avoid confusion of the highest orda
-                    importFlag->bind(ui::EVENT_CLICKED) = [this, file](bool state)
+                    content = CreateSharedPtr<ui::IElement>();
+                    content->layoutMode(ui::LayoutMode::Columns);
+
                     {
-                        file->m_importFlag = state;
-                    };
-                }
-
-                {
-                    auto fileName = content->createNamedChild<ui::TextLabel>("Status"_id);
-                    fileName->customMargins(4, 0, 4, 0);
-                    fileName->expand();
-                }
-
-                if (file->m_existingFile == nullptr)
-                {
-                    auto fileName = content->createNamedChild<ui::EditBox>("FileName"_id);
-                    fileName->customMargins(4, 0, 4, 0);
-                    fileName->text(file->m_targetFileName);
-                    fileName->validation(ui::MakeFilenameValidationFunction());
-                    fileName->expand();
-
-                    fileName->bind(ui::EVENT_TEXT_MODIFIED) = [this, file](base::StringBuf name)
-                    {
-                        if (file->m_targetFileName != name)
+                        auto importFlag = content->createNamedChild<ui::CheckBox>("ImportFlag"_id);
+                        importFlag->allowFocusFromKeyboard(false); // disable to avoid confusion of the highest orda
+                        importFlag->bind(ui::EVENT_CLICKED) = [this, file](bool state)
                         {
-                            file->m_targetFileName = name;
-                            if (auto item = indexForFile(file))
-                                requestItemUpdate(item);
-                        }
-                    };
-                }
-                else
-                {
-                    auto fileName = content->createNamedChild<ui::TextLabel>("FileNameStatic"_id);
-                    fileName->customMargins(4, 0, 4, 0);
-                    fileName->text(file->m_targetFileName);
-                }
+                            file->importFlag = state;
+                        };
+                    }
 
-                {
-                    auto fileClass = content->createNamedChild<ui::TextLabel>("FileClass"_id);
-                    fileClass->customMargins(4, 0, 4, 0);
-                }
-
-                {
-                    auto sourcePath = content->createNamedChild<ui::TextLabel>("SourcePath"_id);
-                    sourcePath->expand();
-                    sourcePath->customMargins(4, 0, 4, 0);
-                    sourcePath->text(file->m_sourceAssetPath);
-                }
-
-                {
-                    auto dirPath = content->createNamedChild<ui::TextLabel>("DirPath"_id);
-                    dirPath->expand();
-                    dirPath->customMargins(4, 0, 4, 0);
-                }
-            }
-
-            if (auto elem = content->findChildByName<ui::CheckBox>("ImportFlag"_id))
-                elem->state(file->m_importFlag);
-
-            if (auto elem = content->findChildByName<ui::TextLabel>("Status"_id))
-            {
-                StringView<char> statusString;
-
-                if (!ManagedItem::ValidateFileName(file->m_targetFileName))
-                {
-                    statusString = "[tag:#A88]Invalid name[/tag]";
-                }
-                else
-                {
-                    if (file->m_existingFile == nullptr)
                     {
-                        if (fileManagedFile(file))
-                            statusString = "[tag:#AA8]Overrwrite[/tag]";
-                        else
-                            statusString = "[tag:#8A8]New[/tag]";
+                        auto fileName = content->createNamedChild<ui::TextLabel>("Status"_id);
+                        fileName->customMargins(4, 0, 4, 0);
+                        fileName->expand();
+                    }
+
+                    if (file->existingFile == nullptr)
+                    {
+                        auto fileName = content->createNamedChild<ui::EditBox>("FileName"_id);
+                        fileName->customMargins(4, 0, 4, 0);
+                        fileName->text(file->targetFileName);
+                        fileName->validation(ui::MakeFilenameValidationFunction());
+                        fileName->expand();
+
+                        fileName->bind(ui::EVENT_TEXT_MODIFIED) = [this, file](base::StringBuf name)
+                        {
+                            if (file->targetFileName != name)
+                            {
+                                file->targetFileName = name;
+                                requestItemUpdate(file->index);
+                            }
+                        };
                     }
                     else
                     {
-                        statusString = "[tag:#888]Reimport[/tag]";
+                        auto fileName = content->createNamedChild<ui::TextLabel>("FileNameStatic"_id);
+                        fileName->customMargins(4, 0, 4, 0);
+                        fileName->text(file->targetFileName);
+                    }
+
+                    {
+                        auto fileClass = content->createNamedChild<ui::TextLabel>("FileClass"_id);
+                        fileClass->customMargins(4, 0, 4, 0);
+                    }
+
+                    {
+                        auto sourcePath = content->createNamedChild<ui::TextLabel>("SourcePath"_id);
+                        sourcePath->expand();
+                        sourcePath->customMargins(4, 0, 4, 0);
+                        sourcePath->text(file->sourceAssetPath);
+                    }
+
+                    {
+                        auto dirPath = content->createNamedChild<ui::TextLabel>("DirPath"_id);
+                        dirPath->expand();
+                        dirPath->customMargins(4, 0, 4, 0);
                     }
                 }
 
-                elem->text(statusString);
+                if (auto elem = content->findChildByName<ui::CheckBox>("ImportFlag"_id))
+                    elem->state(file->importFlag);
+
+                if (auto elem = content->findChildByName<ui::TextLabel>("Status"_id))
+                {
+                    StringView<char> statusString;
+
+                    if (!ManagedItem::ValidateFileName(file->targetFileName))
+                    {
+                        statusString = "[tag:#A88]Invalid name[/tag]";
+                    }
+                    else
+                    {
+                        if (file->existingFile == nullptr)
+                        {
+                            if (fileManagedFile(file))
+                                statusString = "[tag:#AA8]Overrwrite[/tag]";
+                            else
+                                statusString = "[tag:#8A8]New[/tag]";
+                        }
+                        else
+                        {
+                            statusString = "[tag:#888]Reimport[/tag]";
+                        }
+                    }
+
+                    elem->text(statusString);
+                }
+
+                if (auto elem = content->findChildByName<ui::TextLabel>("FileClass"_id))
+                    elem->text(TempString("[img:class] {}", file->targetClass));
+
+                if (auto elem = content->findChildByName<ui::TextLabel>("DirPath"_id))
+                    elem->text(file->targetDirectory->depotPath());
             }
-
-            if (auto elem = content->findChildByName<ui::TextLabel>("FileClass"_id))
-                elem->text(TempString("[img:class] {}", file->m_targetClass));
-
-            if (auto elem = content->findChildByName<ui::TextLabel>("DirPath"_id))
-                elem->text(file->m_targetDirectory->depotPath());
         }
     }
 
     bool AssetImportListModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex /*= 0*/) const
     {
-        const auto* firstFile = fileForIndexFast(first);
-        const auto* secondFile = fileForIndexFast(second);
-        if (firstFile && secondFile)
+        if (first.model() == this && second.model() == this)
         {
-            if (colIndex == 0)
-                return (int)firstFile->m_importFlag < (int)secondFile->m_importFlag;
+            const auto* firstFile = first.unsafe<FileData>();
+            const auto* secondFile = second.unsafe<FileData>();
+            if (firstFile && secondFile)
+            {
+                if (colIndex == 0)
+                    return (int)firstFile->importFlag < (int)secondFile->importFlag;
 
-            /*if (colIndex == 1)
-                return (int)firstFile->m_importStatus < (int)secondFile->m_importStatus;*/
+                /*if (colIndex == 1)
+                    return (int)firstFile->m_importStatus < (int)secondFile->m_importStatus;*/
 
-            if (colIndex == 2)
-                return firstFile->m_targetFileName < secondFile->m_targetFileName;
+                if (colIndex == 2)
+                    return firstFile->targetFileName < secondFile->targetFileName;
 
-            if (colIndex == 3)
-                return firstFile->m_targetClass < secondFile->m_targetClass;
+                if (colIndex == 3)
+                    return firstFile->targetClass < secondFile->targetClass;
 
-            if (colIndex == 4)
-                return firstFile->m_sourceAssetPath < secondFile->m_sourceAssetPath;
+                if (colIndex == 4)
+                    return firstFile->sourceAssetPath < secondFile->sourceAssetPath;
 
-            if (colIndex == 5)
-                return firstFile->m_targetDirectory < secondFile->m_targetDirectory;
+                if (colIndex == 5)
+                    return firstFile->targetDirectory < secondFile->targetDirectory;
+            }
         }
 
         return first < second;
@@ -604,12 +575,15 @@ namespace ed
 
     bool AssetImportListModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
     {
-        if (auto* file = fileForIndexFast(id))
+        if (id.model() == this)
         {
-            if (filter.testString(file->m_targetFileName))
-                return true;
-            if (filter.testString(file->m_sourceAssetPath))
-                return true;
+            if (auto* file = id.unsafe<FileData>())
+            {
+                if (filter.testString(file->targetFileName))
+                    return true;
+                if (filter.testString(file->sourceAssetPath))
+                    return true;
+            }
         }
 
         return false;
@@ -646,12 +620,12 @@ namespace ed
         actions().bindFilter("Prepare.StartImport"_id) = [this]() { return m_filesListModel->hasImportableFiles(); };
 
         m_toolbar = createChild<ui::ToolBar>();
-        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("open").caption("Load list").tooltip("Load current import list from XML"), [this]() { cmdLoadList(); });
-        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("save").caption("Save list").tooltip("Save current import list to XML"), [this]() { cmdSaveList(); });
+        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("open").caption("Load list").tooltip("Load current import list from XML")) = [this]() { cmdLoadList(); };
+        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("save").caption("Save list").tooltip("Save current import list to XML")) = [this]() { cmdSaveList(); };
         m_toolbar->createSeparator();
         m_toolbar->createButton("Prepare.ClearList"_id, ui::ToolbarButtonSetup().icon("delete").caption("Clear").tooltip("Clear import list"));
         m_toolbar->createSeparator();
-        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("file_add").caption("Add files").tooltip("Add files to import list"), [this]() { cmdAddFiles(); });
+        m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("file_add").caption("Add files").tooltip("Add files to import list")) = [this]() { cmdAddFiles(); };
         m_toolbar->createButton("Prepare.RemoveFiles"_id, ui::ToolbarButtonSetup().icon("file_delete").caption("Remove files").tooltip("Remove files from import list"));
         m_toolbar->createSeparator();
         m_toolbar->createButton("Prepare.StartImport"_id, ui::ToolbarButtonSetup().icon("cog").caption("[tag:#8A9]Start[/tag]").tooltip("Start importing files"));

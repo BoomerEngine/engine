@@ -60,6 +60,7 @@ namespace base
 
             res::FileLoadingContext loadContext;
             loadContext.resourceLoader = loader;
+            loadContext.mutatedRootClass = mutatedClass;
 
             if (LoadFile(reader, loadContext))
             {

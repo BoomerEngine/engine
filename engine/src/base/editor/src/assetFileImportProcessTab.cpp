@@ -52,10 +52,9 @@ namespace ed
     {
         if (m_files.size())
         {
-            beingRemoveRows(ui::ModelIndex(), 0, m_files.size());
             m_files.clear();
             m_fileMap.clear();
-            endRemoveRows();
+            reset();
         }
     }
 
@@ -64,29 +63,25 @@ namespace ed
         FileData* data = nullptr;
         if (m_fileMap.find(depotFileName, data))
         {
-            if (data->m_status != status || data->m_time != time)
+            if (data->status != status || data->time != time)
             {
-                data->m_status = status;
-                data->m_time = time;
-
-                if (auto index = indexForFile(data))
-                    requestItemUpdate(index);
+                data->status = status;
+                data->time = time;
+                requestItemUpdate(data->index);
             }
         }
         else
         {
-            data = MemNew(FileData);
-            data->m_depotPath = depotFileName;
-            data->m_status = status;
-            data->m_time = time;
+            data = CreateSharedPtr<FileData>();
+            data->index = ui::ModelIndex(this, data);
+            data->depotPath = depotFileName;
+            data->status = status;
+            data->time = time;
 
             m_fileMap[depotFileName] = data;
-
-            uint32_t index = m_files.size();
-
-            beingInsertRows(ui::ModelIndex(), index, 1);
             m_files.pushBack(AddRef(data));
-            endInsertRows();
+
+            notifyItemAdded(ui::ModelIndex(), data->index);
         }
     }
 
@@ -97,45 +92,11 @@ namespace ed
 
     const base::StringBuf& AssetProcessingListModel::fileDepotPath(ui::ModelIndex index) const
     {
-        if (auto* ptr = fileForIndexFast(index))
-            return ptr->m_depotPath;
+        if (index.model() == this)
+            if (auto* ptr = index.unsafe<AssetProcessingListModel::FileData>())
+                return ptr->depotPath;
+
         return base::StringBuf::EMPTY();
-    }
-
-    AssetProcessingListModel::FileData* AssetProcessingListModel::fileForIndexFast(const ui::ModelIndex& index) const
-    {
-        return static_cast<AssetProcessingListModel::FileData*>(index.weakRef().lock());
-    }
-
-    RefPtr<AssetProcessingListModel::FileData> AssetProcessingListModel::fileForIndex(const ui::ModelIndex& index) const
-    {
-        auto* ptr = fileForIndexFast(index);
-        return RefPtr<AssetProcessingListModel::FileData>(NoAddRef(ptr));
-    }
-
-    ui::ModelIndex AssetProcessingListModel::indexForFile(const FileData* entry) const
-    {
-        auto index = m_files.find(entry);
-        if (index != -1)
-            return ui::ModelIndex(this, index, 0, m_files[index]);
-        return ui::ModelIndex();
-    }
-
-    uint32_t AssetProcessingListModel::rowCount(const ui::ModelIndex& parent) const
-    {
-        if (!parent.valid())
-            return m_files.size();
-        return 0;
-    }
-
-    bool AssetProcessingListModel::hasChildren(const ui::ModelIndex& parent) const
-    {
-        return !parent.valid();
-    }
-
-    bool AssetProcessingListModel::hasIndex(int row, int col, const ui::ModelIndex& parent /*= ui::ModelIndex()*/) const
-    {
-        return !parent.valid() && col == 0 && row >= 0 && row < (int)m_files.size();
     }
 
     ui::ModelIndex AssetProcessingListModel::parent(const ui::ModelIndex& item /*= ui::ModelIndex()*/) const
@@ -143,11 +104,20 @@ namespace ed
         return ui::ModelIndex();
     }
 
-    ui::ModelIndex AssetProcessingListModel::index(int row, int column, const ui::ModelIndex& parent) const
+    bool AssetProcessingListModel::hasChildren(const ui::ModelIndex& parent) const
     {
-        if (hasIndex(row, column, parent))
-            return ui::ModelIndex(this, row, column, m_files[row]);
-        return ui::ModelIndex();
+        return !parent.valid();
+    }
+
+    void AssetProcessingListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+    {
+        if (!parent)
+        {
+            outChildrenIndices.reserve(m_files.size());
+
+            for (const auto& file : m_files)
+                outChildrenIndices.pushBack(file->index);
+        }
     }
 
     static StringView<char> GetClassDisplayName(ClassType currentClass)
@@ -209,83 +179,88 @@ namespace ed
 
     void AssetProcessingListModel::visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const
     {
-        if (auto file = fileForIndexFast(item))
+        if (item.model() == this)
         {
-            if (!content)
+            if (auto file = item.unsafe<FileData>())
             {
-                content = CreateSharedPtr<ui::IElement>();
-                content->layoutMode(ui::LayoutMode::Columns);
-
+                if (!content)
                 {
-                    auto icon = content->createChild<ui::TextLabel>("[img:file_add]");
-                    icon->customMargins(4, 0, 4, 0);
-                    icon->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-                    icon->expand();
+                    content = CreateSharedPtr<ui::IElement>();
+                    content->layoutMode(ui::LayoutMode::Columns);
+
+                    {
+                        auto icon = content->createChild<ui::TextLabel>("[img:file_add]");
+                        icon->customMargins(4, 0, 4, 0);
+                        icon->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                        icon->expand();
+                    }
+
+                    {
+                        auto fileClass = content->createNamedChild<ui::TextLabel>("FileClass"_id);
+                        fileClass->customMargins(4, 0, 4, 0);
+                        fileClass->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
+                        const auto ext = file->depotPath.stringAfterLast(".");
+                        const auto resourceClass = res::IResource::FindResourceClassByExtension(ext);
+                        fileClass->text(TempString("[img:class] {}", resourceClass));
+                    }
+
+                    {
+                        auto status = content->createNamedChild<ui::TextLabel>("Status"_id);
+                        status->customMargins(4, 0, 4, 0);
+                        status->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                        status->expand();
+                    }
+
+                    {
+                        auto time = content->createNamedChild<ui::TextLabel>("Time"_id);
+                        time->customMargins(4, 0, 4, 0);
+                        time->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                        time->expand();
+                    }
+
+                    {
+                        auto fileName = content->createNamedChild<ui::TextLabel>("FileNameStatic"_id);
+                        fileName->customMargins(4, 0, 4, 0);
+                        fileName->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                        fileName->text(TempString("[i]{}", file->depotPath));
+                        fileName->expand();
+                    }
                 }
 
+                if (auto elem = content->findChildByName<ui::TextLabel>("Status"_id))
+                    elem->text(ImportStatusToDisplayText(file->status));
+
+                if (auto elem = content->findChildByName<ui::TextLabel>("Time"_id))
                 {
-                    auto fileClass = content->createNamedChild<ui::TextLabel>("FileClass"_id);
-                    fileClass->customMargins(4, 0, 4, 0);
-                    fileClass->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-
-                    const auto ext = file->m_depotPath.stringAfterLast(".");
-                    const auto resourceClass = res::IResource::FindResourceClassByExtension(ext);
-                    fileClass->text(TempString("[img:class] {}", resourceClass));
+                    if (file->time > 0)
+                        elem->text(TempString("{}", TimeInterval(file->time)));
+                    else
+                        elem->text(TempString("[color:#888]---[/color]", TimeInterval(file->time)));
                 }
-
-                {
-                    auto status = content->createNamedChild<ui::TextLabel>("Status"_id);
-                    status->customMargins(4, 0, 4, 0);
-                    status->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-                    status->expand();
-                }
-
-                {
-                    auto time = content->createNamedChild<ui::TextLabel>("Time"_id);
-                    time->customMargins(4, 0, 4, 0);
-                    time->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-                    time->expand();
-                }
-
-                {
-                    auto fileName = content->createNamedChild<ui::TextLabel>("FileNameStatic"_id);
-                    fileName->customMargins(4, 0, 4, 0);
-                    fileName->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-                    fileName->text(TempString("[i]{}", file->m_depotPath));
-                    fileName->expand();
-                }
-            }
-
-            if (auto elem = content->findChildByName<ui::TextLabel>("Status"_id))
-                elem->text(ImportStatusToDisplayText(file->m_status));
-
-            if (auto elem = content->findChildByName<ui::TextLabel>("Time"_id))
-            {
-                if (file->m_time > 0)
-                    elem->text(TempString("{}", TimeInterval(file->m_time)));
-                else
-                    elem->text(TempString("[color:#888]---[/color]", TimeInterval(file->m_time)));
             }
         }
     }
 
     bool AssetProcessingListModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex /*= 0*/) const
     {
-        const auto* firstFile = fileForIndexFast(first);
-        const auto* secondFile = fileForIndexFast(second);
-        if (firstFile && secondFile)
-            return firstFile->m_depotPath < secondFile->m_depotPath;
+        if (first.model() == this && second.model() == this)
+        {
+            const auto* firstFile = first.unsafe<FileData>();
+            const auto* secondFile = second.unsafe<FileData>();
+            if (firstFile && secondFile)
+                return firstFile->depotPath < secondFile->depotPath;
+        }
 
         return first < second;
     }
 
     bool AssetProcessingListModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
     {
-        if (auto* file = fileForIndexFast(id))
-        {
-            if (filter.testString(file->m_depotPath))
-                return true;
-        }
+        if (id.model() == this)
+            if (auto* file = id.unsafe<FileData>())
+                if (filter.testString(file->depotPath))
+                    return true;
 
         return false;
     }

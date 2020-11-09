@@ -42,6 +42,7 @@ namespace ed
         Array<ManagedFile*> files(const Array<ui::ModelIndex>& indices) const;
         Array<ManagedItem*> items(const Array<ui::ModelIndex>& indices) const;
 
+        ui::ModelIndex first() const;
         ui::ModelIndex index(const ManagedItem* ptr) const;
 
         //--
@@ -55,11 +56,9 @@ namespace ed
 
     private:
         // ui::IAbstractItemModel
-        virtual uint32_t rowCount(const ui::ModelIndex& parent) const override final;
         virtual bool hasChildren(const ui::ModelIndex& parent) const override final;
-        virtual bool hasIndex(int row, int col, const ui::ModelIndex& parent) const override final;
+        virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
         virtual ui::ModelIndex parent(const ui::ModelIndex& item) const override final;
-        virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent) const override final;
         virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
         virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
         virtual StringBuf displayContent(const ui::ModelIndex& item, int colIndex = 0) const override final;
@@ -77,9 +76,10 @@ namespace ed
 
         struct Entry : public IReferencable
         {
-            int m_itemType;
-            ManagedItem* m_item;
-            StringBuf m_customName;
+            int itemType = 0;
+            ui::ModelIndex index;
+            ManagedItem* item;
+            StringBuf customName;
         };
 
         Array<RefPtr<Entry>> m_items;

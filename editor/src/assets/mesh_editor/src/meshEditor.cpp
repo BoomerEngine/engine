@@ -45,7 +45,7 @@ namespace ed
     void MeshEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
             tab->layoutVertical();
 
             m_previewPanel = tab->createChild<MeshPreviewPanel>();
@@ -61,7 +61,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
             tab->layoutVertical();
 
             m_structurePanel = tab->createChild<MeshStructurePanel>();
@@ -72,7 +72,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials");
+            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
             tab->layoutVertical();
 
             m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());

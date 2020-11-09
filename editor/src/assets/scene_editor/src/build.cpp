@@ -5,13 +5,13 @@
 *
 * [# dependency: base_image #]
 * [# dependency: base_editor #]
-* [# dependency: base_editor #]
+* [# dependency: base_world #]
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_ui #]
 * [# dependency: rendering_mesh #]
+* [# dependency: rendering_world #]
 * [# dependency: rendering_api_* #]
-* [# dependency: game_world #]
 * [# devonly #]
 ***/
 
