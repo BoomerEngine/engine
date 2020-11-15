@@ -76,6 +76,8 @@ namespace ed
                     const auto selection = mode->querySelection();
                     m_structurePanel->syncExternalSelection(selection);
                 }
+
+                m_previewContainer->requestRecreatePanelGizmos();
             };
 
             dockLayout().attachPanel(tab);
@@ -131,7 +133,7 @@ namespace ed
 
                 if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
                     for (const auto& prefabRootNode : prefabData->nodes())
-                        if (const auto editableNode = UnpackNode(prefabRootNode))
+                        if (const auto editableNode = UnpackNode(nullptr, prefabRootNode))
                             rootNode->attachChildNode(editableNode);
 
                 rootNode->resetModifiedStatus();

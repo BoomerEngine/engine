@@ -77,7 +77,7 @@ namespace ui
         virtual void onRender(base::canvas::Canvas& canvas);
 
         /// Render 3d stuff, subject to owner implementation
-        //virtual void onRender3D(rendering::scene::FrameParams& frame);
+        virtual void onRender3D(rendering::scene::FrameParams& frame);
 
         ///---
 

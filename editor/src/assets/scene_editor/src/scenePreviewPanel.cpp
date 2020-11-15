@@ -49,6 +49,12 @@ namespace ed
     void ScenePreviewPanel::bindEditMode(ISceneEditMode* editMode)
     {
         m_editMode = editMode;
+        recreateGizmo();
+    }
+
+    void ScenePreviewPanel::requestRecreateGizmo()
+    {
+        recreateGizmo();
     }
 
     void ScenePreviewPanel::handleRender(rendering::scene::FrameParams& frame)
@@ -65,6 +71,9 @@ namespace ed
 
         if (auto editMode = m_editMode.lock())
             editMode->handleRender(this, frame);
+
+        if (m_gizmos)
+            m_gizmos->render(frame);
     }
 
     void ScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
@@ -81,11 +90,43 @@ namespace ed
 
     ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt)
     {
+        if (evt.leftClicked() && m_gizmos)
+        {
+            const auto clientPoint = evt.absolutePosition() - area.absolutePosition();
+            if (m_gizmos->updateHover(clientPoint))
+                if (auto action = m_gizmos->activate())
+                    return action;
+        }
+
         if (auto editMode = m_editMode.lock())
             if (auto action = editMode->handleMouseClick(this, evt))
                 return action;
 
         return TBaseClass::handleMouseClick(area, evt);
+    }
+
+    bool ScenePreviewPanel::handleMouseMovement(const base::input::MouseMovementEvent& evt)
+    {
+        if (m_gizmos)
+        {
+            const auto clientPoint = evt.absolutePosition() - cachedDrawArea().absolutePosition();
+            m_gizmos->updateHover(clientPoint);
+        }
+
+        return TBaseClass::handleMouseMovement(evt);
+    }
+
+    bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, base::input::CursorType& outCursorType) const
+    {
+        if (m_gizmos)
+        {
+            const auto clientPoint = absolutePosition - area.absolutePosition();
+            if (m_gizmos->updateHover(clientPoint))
+                if (m_gizmos->updateCursor(outCursorType))
+                    return true;
+        }
+
+        return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
     }
 
     bool ScenePreviewPanel::handleKeyEvent(const base::input::KeyEvent& evt)
@@ -98,5 +139,53 @@ namespace ed
     }
 
     //--
-    
+
+    ui::IElement* ScenePreviewPanel::gizmoHost_element() const
+    {
+        return const_cast<ScenePreviewPanel*>(this);
+    }
+
+    bool ScenePreviewPanel::gizmoHost_hasSelection() const
+    {
+        if (auto editMode = m_editMode.lock())
+            return editMode && editMode->hasSelection();
+        return false;
+    }
+
+    const rendering::scene::Camera& ScenePreviewPanel::gizmoHost_camera() const
+    {
+        return cachedCamera();
+    }
+
+    base::Point ScenePreviewPanel::gizmoHost_viewportSize() const
+    {
+        return cachedDrawArea().size();
+    }
+
+    GizmoReferenceSpace ScenePreviewPanel::gizmoHost_referenceSpace() const
+    {
+        if (auto editMode = m_editMode.lock())
+            return editMode->calculateGizmoReferenceSpace();
+        return GizmoReferenceSpace();
+    }
+
+    GizmoActionContextPtr ScenePreviewPanel::gizmoHost_startAction() const
+    {
+        if (auto editMode = m_editMode.lock())
+            return editMode->createGizmoAction(m_container, this);
+        return nullptr;
+    }
+
+    //--
+
+    void ScenePreviewPanel::recreateGizmo()
+    {
+        m_gizmos.reset();
+
+        if (auto editMode = m_editMode.lock())
+            m_gizmos = editMode->configurePanelGizmos(m_container, this);
+    }
+
+    //--
+
 } // ed

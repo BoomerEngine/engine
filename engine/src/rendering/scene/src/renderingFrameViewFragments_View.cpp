@@ -56,6 +56,11 @@ namespace rendering
                     if (view.frame().filters & FilterBit::DebugGeometrySolid)
                         RenderDebugFragments(cmd, view, view.frame().geometry.solid);
                 }
+                else if (bucket == FragmentDrawBucket::DebugOverlay)
+                {
+                    if (view.frame().filters & FilterBit::DebugGeometryOverlay)
+                        RenderDebugFragments(cmd, view, view.frame().geometry.overlay);
+                }
                 else
                 {
                     for (auto* scene : view.scenes())

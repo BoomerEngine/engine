@@ -32,6 +32,9 @@ namespace ui
     void IInputAction::onRender(base::canvas::Canvas& canvas)
     {}
 
+    void IInputAction::onRender3D(rendering::scene::FrameParams& frame)
+    {}
+
     void IInputAction::onUpdateCursor(base::input::CursorType& outCursorType)
     {
         outCursorType = base::input::CursorType::Default;

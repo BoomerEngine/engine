@@ -209,5 +209,7 @@ namespace rendering
 
         //--
 
+        //--
+
     } // scene
 } // rendering

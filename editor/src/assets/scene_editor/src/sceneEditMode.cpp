@@ -55,6 +55,26 @@ namespace ed
         return {};
     }
 
+    bool ISceneEditMode::hasSelection() const
+    {
+        return false;
+    }
+
+    GizmoGroupPtr ISceneEditMode::configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel)
+    {
+        return nullptr;
+    }
+
+    GizmoReferenceSpace ISceneEditMode::calculateGizmoReferenceSpace() const
+    {
+        return GizmoReferenceSpace();
+    }
+
+    GizmoActionContextPtr ISceneEditMode::createGizmoAction(ScenePreviewContainer* container, const ScenePreviewPanel* panel) const
+    {
+        return nullptr;
+    }
+
     void ISceneEditMode::configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar)
     {
     }
@@ -324,14 +344,14 @@ namespace ed
 
     //--
 
-    static void PrintGizmoSpace(IFormatStream& f, SceneGizmoSpace space)
+    static void PrintGizmoSpace(IFormatStream& f, GizmoSpace space)
     {
         switch (space)
         {
-            case SceneGizmoSpace::World: f << "[img:world] World"; break;
-            case SceneGizmoSpace::Local: f << "[img:axis_local] Local"; break;
-            case SceneGizmoSpace::Parent: f << "[img:axis_global] Parent"; break;
-            case SceneGizmoSpace::View: f << "[img:camera] View"; break;
+            case GizmoSpace::World: f << "[img:world] World"; break;
+            case GizmoSpace::Local: f << "[img:axis_local] Local"; break;
+            case GizmoSpace::Parent: f << "[img:axis_global] Parent"; break;
+            case GizmoSpace::View: f << "[img:camera] View"; break;
         }
     }
 
@@ -390,7 +410,7 @@ namespace ed
 
             toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
             {
-                static const SceneGizmoSpace GizmoSpaces[] = { SceneGizmoSpace::World, SceneGizmoSpace::Local, SceneGizmoSpace::Parent, SceneGizmoSpace::View };
+                static const GizmoSpace GizmoSpaces[] = { GizmoSpace::World, GizmoSpace::Local, GizmoSpace::Parent, GizmoSpace::View };
 
                 auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
                 auto data = container->gizmoSettings();

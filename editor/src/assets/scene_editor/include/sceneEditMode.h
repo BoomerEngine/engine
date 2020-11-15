@@ -9,6 +9,7 @@
 #pragma once
 
 #include "rendering/scene/include/renderingSelectable.h"
+#include "assets/gizmos/include/gizmoReferenceSpace.h"
 
 namespace ed
 {
@@ -47,8 +48,22 @@ namespace ed
         // get the nodes that are selected in the edit mod
         virtual Array<SceneContentNodePtr> querySelection() const;
 
+        // do we have anything selected ?
+        virtual bool hasSelection() const;
+
         // create toolbar content 
         virtual void configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar);
+
+        //--
+
+        // create gizmos for viewport
+        virtual GizmoGroupPtr configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel);
+
+        // compute the reference frame for gizmo operations
+        virtual GizmoReferenceSpace calculateGizmoReferenceSpace() const;
+
+        // create gizmo transform action
+        virtual GizmoActionContextPtr createGizmoAction(ScenePreviewContainer* container, const ScenePreviewPanel* panel) const;
 
         //--
 

@@ -283,7 +283,9 @@ namespace ui
                     region.imageName = base::StringID(arg);
                     region.valign = alignStack.empty() ? LayoutVerticalAlign::Middle : alignStack.back();
                     region.tagColor = tagStack.empty() ? base::Color(0, 0, 0, 0) : tagStack.back();
+                    region.color = colorStack.empty() ? base::Color(255, 255, 255, 255) : colorStack.back();
                     region.flagTag = !tagStack.empty();
+                    region.flagColor = !colorStack.empty();
                     return true;
                 }
                 else if (markup == "valign")

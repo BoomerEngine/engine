@@ -28,6 +28,7 @@ namespace rendering
             PassForward, // render the forward pass
             PassDepthSelection, // render depth pass with selected proxies
             PassSelectionFragments, // render selection fragments
+            PassOverlay, // render the overlay pass
 
             FragOpaqueNonMovable, // render the static non movable fragments
             FragOpaqueSolid, // render solid fragments
@@ -36,6 +37,7 @@ namespace rendering
 
             DebugGeometry, // render debug geometry
             DebugGeometrySolid,
+            DebugGeometryOverlay,
             DebugGeometryLines,
             DebugGeometryTransparent,
             DebugGeometryScreen,

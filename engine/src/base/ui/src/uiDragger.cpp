@@ -66,7 +66,7 @@ namespace ui
 
             m_pixelDelta += (int)evt.delta().y;
 
-            int64_t valueDelta = 0;
+            int valueDelta = 0;
             if (m_pixelDelta > cvDraggerDeadZone.get())
             {
                 const auto steps = (m_pixelDelta - cvDraggerDeadZone.get()) / pixelStep;

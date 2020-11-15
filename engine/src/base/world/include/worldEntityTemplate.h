@@ -63,7 +63,7 @@ namespace base
 
             // placement
             // NOTE: this property is not overridden but stacks (ie. transforms are stacking together)
-            INLINE const EulerTransform& placement() const { return m_placement; }
+            INLINE const Transform& placement() const { return m_placement; }
 
             // streaming model, overridable
             INLINE EntityStreamingModel streamingModel() const { return m_streamingModel; }
@@ -77,7 +77,7 @@ namespace base
             void enable(bool flag, bool callEvent = true);
 
             // set placement
-            void placement(const EulerTransform& placement, bool callEvent = true);
+            void placement(const Transform& placement, bool callEvent = true);
 
             //--
 
@@ -94,7 +94,7 @@ namespace base
 
         protected:
             bool m_enabled = true;
-            EulerTransform m_placement;
+            Transform m_placement;
 
             EntityStreamingModel m_streamingModel = EntityStreamingModel::Auto;
             float m_streamingDistanceOverride = 0.0f;

@@ -451,9 +451,9 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentDataNode);
     RTTI_END_TYPE();
 
-    SceneContentDataNode::SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const EulerTransform& localToParent, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData /*= nullptr*/)
+    SceneContentDataNode::SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const AbsoluteTransform& localToWorld, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData /*= nullptr*/)
         : SceneContentNode(nodeType, name)
-        , m_localToParent(localToParent)
+        , m_localToWorldPlacement(localToWorld)
         , m_baseData(baseData)
         , m_editableData(editableData)
         , m_dataEvents(this)
@@ -552,40 +552,39 @@ namespace ed
         }
     }
 
-    void SceneContentDataNode::changeLocalPlacement(const EulerTransform& newTramsform, bool force /*= false*/)
+    void SceneContentDataNode::changePlacement(const AbsoluteTransform& newLocalToWorld, bool force /*= false*/)
     {
-        if (m_localToParent != newTramsform || force)
+        if (m_localToWorldPlacement != newLocalToWorld || force)
         {
-            m_localToParent = newTramsform;
-            updateTransform(force);
+            m_localToWorldPlacement = newLocalToWorld;
+            cacheTransformData();
+            handleTransformUpdated();
         }
     }
 
-    void SceneContentDataNode::updateTransform(bool force /*= false*/, bool recursive /*= true*/)
+    const AbsoluteTransform& SceneContentDataNode::parentToWorldTransform() const
     {
-        if (cacheTransformData() || force)
-        {
-            if (recursive)
-            {
-                for (const auto& child : children())
-                    if (auto* dataChild = rtti_cast<SceneContentDataNode>(child.get()))
-                        dataChild->updateTransform(force, recursive);
-            }
-        }
+        if (auto parent = rtti_cast<SceneContentDataNode>(this->parent()))
+            return parent->localToWorldTransform();
+
+        return AbsoluteTransform::ROOT();
     }
 
-    bool SceneContentDataNode::cacheTransformData()
+    Transform SceneContentDataNode::calcLocalToParent() const
     {
-        const auto prev = m_cachedLocalToWorldTransform;
-
         if (auto parentEntity = rtti_cast<SceneContentDataNode>(parent()))
-            m_cachedLocalToWorldTransform = parentEntity->cachedLocalToWorldTransform() * m_localToParent.toTransform();
-        else
-            m_cachedLocalToWorldTransform = AbsoluteTransform::ROOT() * m_localToParent.toTransform();
+            return m_localToWorldPlacement / parentEntity->localToWorldTransform();
 
-        m_cachedLocalToWorldMatrix = m_cachedLocalToWorldTransform.approximate();
+        Transform ret;
+        ret.T = m_localToWorldPlacement.position().approximate();
+        ret.R = m_localToWorldPlacement.rotation();
+        ret.S = m_localToWorldPlacement.scale();
+        return ret;
+    }
 
-        return prev != m_cachedLocalToWorldTransform;
+    void SceneContentDataNode::cacheTransformData()
+    {
+        m_cachedLocalToWorldMatrix = m_localToWorldPlacement.approximate();
     }
 
     void SceneContentDataNode::handleTransformUpdated()
@@ -609,8 +608,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentEntityNode);
     RTTI_END_TYPE();
 
-    SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData)
-        : SceneContentDataNode(SceneContentNodeType::Entity, name, editableData->placement(), editableData, baseData)
+    SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const AbsoluteTransform& localToWorld, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData)
+        : SceneContentDataNode(SceneContentNodeType::Entity, name, localToWorld, editableData, baseData)
         , m_prefabAssets(std::move(rootPrefabs))
     {
     }
@@ -638,7 +637,7 @@ namespace ed
             auto ret = CloneObject(cur);
             ret->rebase(baseData());
             ret->detach();
-            ret->placement(cur->placement());
+            ret->placement(calcLocalToParent());
             return ret;
         }
 
@@ -654,6 +653,15 @@ namespace ed
         return ret;
     }
 
+    Transform MakeTransformRelative(const Transform& cur, const Transform& base)
+    {
+        Transform ret = cur;
+        ret.T -= base.T;
+        ret.R = cur.R * base.R.inverted();
+        ret.S /= base.S;
+        return ret;
+    }
+
     template< typename T >
     static bool IsDataNeeded(const T& data)
     {
@@ -663,9 +671,14 @@ namespace ed
         return data.hasAnyOverrides();
     }
 
-    void SceneContentEntityNode::handleDataPropertyChanged(const StringBuf& data)
+    void SceneContentEntityNode::invalidateData()
     {
         markDirty(SceneContentNodeDirtyBit::Content);
+    }
+
+    void SceneContentEntityNode::handleDataPropertyChanged(const StringBuf& data)
+    {
+        invalidateData();
     }
 
     base::world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
@@ -676,6 +689,7 @@ namespace ed
         // clone entity template data
         if (auto entityData = compileData())
         {
+            entityData->placement(Transform::IDENTITY());
             entityData->parent(ret);
             ret->m_entityTemplate = entityData;
         }
@@ -711,12 +725,12 @@ namespace ed
 
             if (auto base = rtti_cast<base::world::EntityTemplate>(baseData()))
             {
-                clonedEntityData->placement(MakeTransformRelative(clonedEntityData->placement(), base->placement()));
+                clonedEntityData->placement(MakeTransformRelative(calcLocalToParent(), base->placement()));
                 outAnyMeaningfulData |= IsDataNeeded(*clonedEntityData);
             }
             else
             {
-                clonedEntityData->placement(entityData->placement());
+                clonedEntityData->placement(calcLocalToParent());
                 outAnyMeaningfulData = true;
             }
 
@@ -762,8 +776,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentComponentNode);
     RTTI_END_TYPE();
 
-    SceneContentComponentNode::SceneContentComponentNode(const StringBuf& name, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData)
-        : SceneContentDataNode(SceneContentNodeType::Component, name, editableData->placement(), editableData, baseData)
+    SceneContentComponentNode::SceneContentComponentNode(const StringBuf& name, const AbsoluteTransform& localToWorld, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData)
+        : SceneContentDataNode(SceneContentNodeType::Component, name, localToWorld, editableData, baseData)
     {
     }
 
@@ -774,7 +788,7 @@ namespace ed
             auto ret = CloneObject(cur);
             ret->rebase(baseData());
             ret->detach();
-            ret->placement(cur->placement());
+            ret->placement(calcLocalToParent());
             return ret;
         }
 
@@ -786,16 +800,16 @@ namespace ed
         auto componentData = rtti_cast<base::world::ComponentTemplate>(editableData());
         DEBUG_CHECK_RETURN_V(componentData, nullptr);
 
-        auto ret = CloneObject(componentData);;
+        auto ret = CloneObject(componentData);
 
         if (auto base = rtti_cast<base::world::ComponentTemplate>(baseData()))
         {
-            ret->placement(MakeTransformRelative(componentData->placement(), base->placement()));
+            ret->placement(MakeTransformRelative(calcLocalToParent(), base->placement()));
             outAnyMeaningfulData |= IsDataNeeded(*ret);
         }
         else
         {
-            ret->placement(componentData->placement());
+            ret->placement(calcLocalToParent());
             outAnyMeaningfulData = true;
         }
 
@@ -806,6 +820,14 @@ namespace ed
     {
         if (auto entity = rtti_cast<SceneContentEntityNode>(parent()))
             entity->markDirty(SceneContentNodeDirtyBit::Content);
+    }
+
+    void SceneContentComponentNode::handleTransformUpdated()
+    {
+        TBaseClass::handleTransformUpdated();
+
+        if (auto entity = rtti_cast<SceneContentEntityNode>(parent()))
+            entity->markDirty(SceneContentNodeDirtyBit::Content); // yeah, content, we need to recompile whole entity
     }
 
     //---
@@ -885,6 +907,21 @@ namespace ed
         return ret;
     }
 
+    static base::Transform MergeTransforms(const base::Transform& base, const base::Transform& cur)
+    {
+        // handle most common case - no transform
+        if (base.isIdentity())
+            return cur;
+        else if (cur.isIdentity())
+            return base;
+
+        base::Transform ret;
+        ret.T = base.T + cur.T;
+        ret.R = base.R * cur.R;
+        ret.S = base.S * cur.S;
+        return ret;
+    }
+
     template< typename T >
     static bool SplitAndMergeTemplates(const base::Array<const T*>& sourceTemplates, const base::world::NodeTemplate* rootNode, RefPtr<T>& outBaseData, RefPtr<T>& outEditableData)
     {
@@ -934,7 +971,7 @@ namespace ed
         return true;
     }
 
-    static SceneContentEntityNodePtr CompileEntityContent(const base::world::NodeTemplate* rootNode, const StringBuf& name, const Array<const base::world::NodeTemplate*>& templates)
+    static SceneContentEntityNodePtr CompileEntityContent(const base::world::NodeTemplate* rootNode, const AbsoluteTransform* rootPlacement, const StringBuf& name, const Array<const base::world::NodeTemplate*>& templates)
     {
         PC_SCOPE_LVL1(CreateEntity);
 
@@ -956,8 +993,13 @@ namespace ed
         // prefabs
         Array<RefPtr<SceneContentEntityNodePrefabSource>> prefabs;
 
+        // calculate placement of the entity
+        AbsoluteTransform entityLocalToWorld = AbsoluteTransform::ROOT();
+        if (rootPlacement)
+            entityLocalToWorld = *rootPlacement * editableEntityData->placement();
+
         // create the content node
-        auto entityNode = base::CreateSharedPtr<SceneContentEntityNode>(name, std::move(prefabs), editableEntityData, baseEntityData);
+        auto entityNode = base::CreateSharedPtr<SceneContentEntityNode>(name, std::move(prefabs), entityLocalToWorld, editableEntityData, baseEntityData);
 
         // gather list of all components to create
         ComponentTemplateList namedComponentTemplates;
@@ -970,8 +1012,11 @@ namespace ed
                 base::world::ComponentTemplatePtr baseComponentData, editableComponentData;
                 if (SplitAndMergeTemplates(templates, rootNode, baseComponentData, editableComponentData))
                 {
+                    // calculate component placement
+                    auto componentLocalToWorld = entityNode->localToWorldTransform() * editableComponentData->placement();
+
                     // create editable node
-                    auto componentNode = base::CreateSharedPtr<SceneContentComponentNode>(StringBuf(name.view()), editableComponentData, baseComponentData);
+                    auto componentNode = base::CreateSharedPtr<SceneContentComponentNode>(StringBuf(name.view()), componentLocalToWorld, editableComponentData, baseComponentData);
                     entityNode->attachChildNode(componentNode);
                 }
             });
@@ -979,7 +1024,7 @@ namespace ed
         return entityNode;
     }
 
-    SceneContentEntityNodePtr ProcessSingleEntity(int depth, const base::world::NodeTemplate* rootNode, const StringBuf& name, const base::world::NodeCompilationStack& it, Array<SceneContentEntityNodePtr>* outAllEntities)
+    SceneContentEntityNodePtr ProcessSingleEntity(int depth, const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, const StringBuf& name, const base::world::NodeCompilationStack& it, Array<SceneContentEntityNodePtr>* outAllEntities)
     {
         InplaceArray<base::world::PrefabRef, 10> prefabsToInstance;
         it.collectPrefabs(prefabsToInstance);
@@ -1000,7 +1045,7 @@ namespace ed
         }
 
         // compile single entity out of the current stack
-        if (auto compiledNode = CompileEntityContent(rootNode, name, localIt.templates()))
+        if (auto compiledNode = CompileEntityContent(rootNode, rootPlacement, name, localIt.templates()))
         {
             if (outAllEntities)
                 outAllEntities->pushBack(compiledNode);
@@ -1015,7 +1060,7 @@ namespace ed
                     base::world::NodeCompilationStack childIt;
                     localIt.enterChild(name, childIt);
 
-                    ProcessSingleEntity(depth + 1, rootNode, StringBuf(name.view()), childIt, outAllEntities);
+                    ProcessSingleEntity(depth + 1, &compiledNode->localToWorldTransform(), rootNode, StringBuf(name.view()), childIt, outAllEntities);
                 }
             }
 
@@ -1027,12 +1072,12 @@ namespace ed
         }
     }
 
-    SceneContentEntityNodePtr UnpackNode(const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities /*= nullptr*/)
+    SceneContentEntityNodePtr UnpackNode(const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities /*= nullptr*/)
     {
         base::world::NodeCompilationStack stack;
         stack.pushBack(rootNode);
 
-        return ProcessSingleEntity(0, rootNode, StringBuf(rootNode->m_name.view()), stack, outAllEntities);
+        return ProcessSingleEntity(0, rootPlacement, rootNode, StringBuf(rootNode->m_name.view()), stack, outAllEntities);
     }
 
     //---

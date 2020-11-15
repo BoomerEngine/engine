@@ -19,6 +19,11 @@ namespace base
         RTTI_BIND_NATIVE_BINARY_SERIALIZATION(Transform);
     RTTI_END_TYPE();
 
+    bool Transform::isIdentity() const
+    {
+        return (T == Translation::ZERO()) && (R == Rotation::IDENTITY()) && (S == Scale::ONE());
+    }
+
     Transform Transform::invertedWithNoScale() const
     {
         auto invRotation  = R.inverted();
@@ -54,17 +59,26 @@ namespace base
         return IDENTITY_TRANSFORM;
     }
 
-    base::Matrix Transform::toMatrix() const
+    Matrix Transform::toMatrix() const
     {
-        base::Matrix ret = R.toMatrix();
+        Matrix ret = R.toMatrix();
         ret.translation(T);
         ret.scaleColumns(S);
         return ret;
     }
 
-    base::Matrix Transform::toInverseMatrix() const
+    Matrix Transform::toInverseMatrix() const
     {
         return inverted().toMatrix();
+    }
+
+    EulerTransform Transform::toEulerTransform() const
+    {
+        EulerTransform ret;
+        ret.T = T;
+        ret.S = S;
+        ret.R = R.toRotator();
+        return ret;
     }
 
     ///----

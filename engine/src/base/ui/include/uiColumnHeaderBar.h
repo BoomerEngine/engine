@@ -36,11 +36,6 @@ namespace ui
 
         //--
 
-        ///// even called when the sorting column is changed
-        //TCallback OnSortingChanged;
-
-        //--
-
         // toggle sorting by given column
         void sort(int columnIndex, bool asc = true, bool callEvent = true);
 

@@ -23,6 +23,7 @@
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/canvas/include/canvas.h"
 #include "base/ui/include/uiToolBar.h"
+#include "base/system/include/thread.h"
 
 namespace ui
 {
@@ -251,111 +252,6 @@ namespace ui
         auto position = bounds.center() - distance * rotation.forward();
         m_cameraController.moveTo(position, rotation);
         m_cameraController.origin(bounds.center());
-    }
-
-    base::Point RenderingScenePanel::clientPositionFromNormalizedPosition(const base::Vector3& normalizedPosition) const
-    {
-        auto viewportSize = cachedDrawArea().size();
-        auto cx = normalizedPosition.x * viewportSize.x;
-        auto cy = normalizedPosition.y * viewportSize.y;
-        return base::Point(cx, cy);
-    }
-
-    base::Vector3 RenderingScenePanel::normalizedScreenPosition(int x, int y, float z) const
-    {
-        auto viewportSize = cachedDrawArea().size();
-        auto wx = viewportSize.x > 0 ? (x / viewportSize.x) : 0.0f;
-        auto wy = viewportSize.y > 0 ? (y / viewportSize.y) : 0.0f;
-        return base::Vector3(wx, wy, z);
-    }
-
-    bool RenderingScenePanel::worldSpaceRayForClientPixelExact(int x, int y, base::AbsolutePosition& outStart, base::Vector3& outDir) const
-    {
-        const auto& camera = cachedCamera();
-
-        auto coords = normalizedScreenPosition(x, y, 0.5f);
-        base::Vector3 start;
-        if (!camera.calcWorldSpaceRay(coords, start, outDir))
-            return false;
-
-        outStart = base::AbsolutePosition(start, base::Vector3());
-        return true;
-    }
-
-    bool RenderingScenePanel::worldSpaceRayForClientPixel(int x, int y, base::Vector3& outStart, base::Vector3& outDir) const
-    {
-        const auto& camera = cachedCamera();
-
-        auto coords = normalizedScreenPosition(x, y, 0.5f);
-        return camera.calcWorldSpaceRay(coords, outStart, outDir);
-    }
-
-    bool RenderingScenePanel::screenToWorld(const base::Vector3* normalizedScreenPos, base::AbsolutePosition* outWorldPosition, uint32_t count) const
-    {
-        const auto& camera = cachedCamera();
-
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            base::Vector3 worldPos;
-            if (!camera.projectWorldToScreen(normalizedScreenPos[i], worldPos))
-                return false;
-
-            outWorldPosition[i] = base::AbsolutePosition(worldPos, base::Vector3::ZERO());
-        }
-
-        return true;
-    }
-
-    bool RenderingScenePanel::worldToScreen(const base::AbsolutePosition* worldPosition, base::Vector3* outScreenPosition, uint32_t count) const
-    {
-        const auto& camera = cachedCamera();
-
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            base::Vector3 screenPos;
-            auto simpleWorldPos = worldPosition[i].approximate();
-            if (!camera.projectWorldToScreen(simpleWorldPos, screenPos))
-                return false;
-
-            outScreenPosition[i] = screenPos;
-        }
-
-        return true;
-    }
-
-    bool RenderingScenePanel::worldToClient(const base::AbsolutePosition* worldPosition, base::Vector3* outClientPosition, uint32_t count) const
-    {
-        const auto& camera = cachedCamera();
-
-        auto viewportSize = cachedDrawArea().size();
-        auto viewportWidthScale = viewportSize.x;
-        auto viewportHeightScale = viewportSize.y;
-
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            base::Vector3 screenPos;
-            auto simpleWorldPos = worldPosition[i].approximate();
-            if (!camera.projectWorldToScreen(simpleWorldPos, screenPos))
-                return false;
-
-            outClientPosition[i].x = screenPos.x * viewportWidthScale;
-            outClientPosition[i].y = screenPos.y * viewportHeightScale;
-            outClientPosition[i].z = screenPos.z; // no conversion
-        }
-
-        return true;
-    }
-
-    float RenderingScenePanel::calculateViewportScaleFactor(const base::AbsolutePosition& worldPosition, bool useDPI) const
-    {
-        const auto& camera = cachedCamera();
-
-        auto viewportSize = cachedDrawArea().size();
-        auto viewportWidthScale = viewportSize.x;
-        auto viewportHeightScale = viewportSize.y;
-
-        auto approximateWorldPos = worldPosition.approximate();
-        return camera.calcScreenSpaceScalingFactor(approximateWorldPos, viewportWidthScale, viewportHeightScale) * 1.0f;// cachedStyleParams().m_scale;
     }
 
     //--
@@ -681,6 +577,8 @@ namespace ui
         // nothing
     }
 
+    static bool GFirstSelectionClickThatMayHaveNoShaders = true;
+
     void RenderingScenePanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition)
     {
         // compute selection area around pixel
@@ -689,6 +587,14 @@ namespace ui
 
         // query the raw selection data from the rendering
         auto selectionData = querySelection(selectionArea);
+
+        // HACK: query again on first use
+        if (GFirstSelectionClickThatMayHaveNoShaders)
+        {
+            base::Sleep(300);
+            GFirstSelectionClickThatMayHaveNoShaders = false;
+            selectionData = querySelection(selectionArea);
+        }
 
         // build selectables
         base::Array<rendering::scene::Selectable> selectables;
@@ -709,6 +615,14 @@ namespace ui
     {
         // query the raw selection data from the rendering
         auto selectionData = querySelection(clientRect);
+
+        // HACK: query again on first use
+        if (GFirstSelectionClickThatMayHaveNoShaders)
+        {
+            base::Sleep(300);
+            GFirstSelectionClickThatMayHaveNoShaders = false;
+            selectionData = querySelection(clientRect);
+        }
 
         // build selectables
         base::HashSet<rendering::scene::Selectable> selectables;

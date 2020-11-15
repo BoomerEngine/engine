@@ -253,7 +253,7 @@ namespace ui
         {
             m_dragBox = createChild<Dragger>();
             m_dragBox->bind(EVENT_VALUE_DRAG_STARTED) = [this]() { dragStart(); };
-            m_dragBox->bind(EVENT_VALUE_DRAG_STEP) = [this](int64_t delta) { dragUpdate(delta); };
+            m_dragBox->bind(EVENT_VALUE_DRAG_STEP) = [this](int delta) { dragUpdate(delta); };
             m_dragBox->bind(EVENT_VALUE_DRAG_FINISHED) = [this]() { dragFinish(); };
             m_dragBox->bind(EVENT_VALUE_DRAG_CANCELED) = [this]() { dragCancel(); };
         }

@@ -69,6 +69,9 @@ namespace base
 
         //---
 
+        /// is transform and identity
+        bool isIdentity() const;
+
         /// get an inversion of this transformation
         Transform inverted() const;
 

@@ -10,15 +10,6 @@
 
 namespace ed
 {
-    //--
-
-    enum class SceneGizmoSpace : uint8_t
-    {
-        World, // use transformations in world space
-        Local, // use transformations in local space
-        Parent, // use transformations in parent space
-        View, // use transformations in view space
-    };
 
     ///---
 
@@ -72,7 +63,7 @@ namespace ed
     struct ASSETS_SCENE_EDITOR_API SceneGizmoSettings
     {
         SceneGizmoMode mode = SceneGizmoMode::Translation;
-        SceneGizmoSpace space = SceneGizmoSpace::World;
+        GizmoSpace space = GizmoSpace::World;
         SceneGizmoTarget target = SceneGizmoTarget::WholeHierarchy;
         bool enableX = true;
         bool enableY = true;
@@ -157,6 +148,9 @@ namespace ed
 
         //--
 
+        // request gizmos to be recreated based on current selection
+        void requestRecreatePanelGizmos();
+
     private:
         Array<ScenePreviewPanelPtr> m_panels;
 
@@ -184,6 +178,7 @@ namespace ed
         void destroyPanels();
 
         void recreatePanelBottomToolbars();
+        void recreatePanelGizmos();
 
         void deactivateEditMode();
         void activateEditMode();

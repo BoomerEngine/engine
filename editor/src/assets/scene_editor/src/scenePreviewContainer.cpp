@@ -47,7 +47,7 @@ namespace ed
     RTTI_ENUM_OPTION(Scale);
     RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_ENUM(SceneGizmoSpace);
+    RTTI_BEGIN_TYPE_ENUM(GizmoSpace);
     RTTI_ENUM_OPTION(World);
     RTTI_ENUM_OPTION(Local);
     RTTI_ENUM_OPTION(Parent);
@@ -76,6 +76,8 @@ namespace ed
 
     ScenePreviewContainer::~ScenePreviewContainer()
     {
+        deactivateEditMode();
+
         m_visualization->clearAllProxies();
         m_visualization.reset();
     }
@@ -216,6 +218,8 @@ namespace ed
                     m_visualization->updateProxy(node, flags);
                 });
         }
+
+        m_visualization->updateAllProxies();
     }
 
     void ScenePreviewContainer::updateWorld()
@@ -288,6 +292,17 @@ namespace ed
                     m_editMode->configurePanelToolbar(this, panel, toolbar);
             }
         }
+    }
+
+    void ScenePreviewContainer::requestRecreatePanelGizmos()
+    {
+        recreatePanelGizmos();
+    }
+
+    void ScenePreviewContainer::recreatePanelGizmos()
+    {
+        for (auto& panel : m_panels)
+            panel->requestRecreateGizmo();
     }
 
     //--

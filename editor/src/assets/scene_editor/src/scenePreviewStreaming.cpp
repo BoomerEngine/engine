@@ -55,6 +55,41 @@ namespace ed
         m_proxies.clear();
     }
 
+    void SceneNodeVisualizationHandler::updateAllProxies()
+    {
+        reattachProxies();
+    }
+
+    void SceneNodeVisualizationHandler::reattachProxies()
+    {
+        PC_SCOPE_LVL0(ReattachProxies);
+
+        auto lock = CreateLock(m_proxyLock);
+
+        for (const auto& entry : m_reattachList)
+        {
+            if (entry.index < m_proxies.size())
+            {
+                if (auto* proxy = m_proxies[entry.index])
+                {
+                    DEBUG_CHECK(proxy->index == entry.index);
+                    if (proxy->generation == entry.generation)
+                    {
+                        if (proxy->entity)
+                            m_world->detachEntity(proxy->entity);
+
+                        proxy->entity = entry.newEntity;
+
+                        if (proxy->entity)
+                            m_world->attachEntity(proxy->entity);
+                    }
+                }
+            }
+        }
+
+        m_reattachList.reset();
+    }
+
     static uint32_t ProxyIndicesAllocationBatchSize(uint32_t currentSize)
     {
         const auto roundedSize = NextPow2(currentSize);
@@ -94,7 +129,7 @@ namespace ed
             proxy->index = index;
             proxy->contentNodeObjectId = node->id();
             proxy->generation = m_proxyGenerationCounter++;
-            proxy->placement = dataNode->cachedLocalToWorldTransform();
+            proxy->placement = dataNode->localToWorldTransform();
             proxy->version = 0;
             
             DEBUG_CHECK(!proxy->entity);
@@ -189,19 +224,15 @@ namespace ed
                     {
                         if (proxy->version.load() == versionIndex)
                         {
-                            if (proxy->entity)
-                                handler->m_world->detachEntity(proxy->entity);
-
-                            proxy->entity = entity;
+                            entity->requestTransform(proxy->placement);
 
                             ApplySelectables(entity, proxy->contentNodeObjectId);
                             ApplySelectionFlagToEntity(entity, proxy->effectSelection, proxy->selectedComponents);
 
-                            if (proxy->entity)
-                            {
-                                auto lock2 = CreateLock(handler->m_renderLock);
-                                handler->m_world->attachEntity(proxy->entity);
-                            }
+                            auto& entry = handler->m_reattachList.emplaceBack();
+                            entry.index = proxyIndex;
+                            entry.generation = proxyGeneration;
+                            entry.newEntity = entity;
                         }
                     }
                 }
@@ -323,7 +354,7 @@ namespace ed
 
             if (flags.test(SceneContentNodeDirtyBit::Transform))
             {
-                proxy->placement = dataNode->cachedLocalToWorldTransform();
+                proxy->placement = dataNode->localToWorldTransform();
 
                 if (proxy->entity)
                     proxy->entity->requestTransform(proxy->placement);

@@ -101,6 +101,9 @@ namespace rendering
             // bind a color buffer and clear it with default color
             void colorClear(uint8_t index, const ImageView& rt);
 
+            // bind a color buffer but do not clear it
+            void colorNoClear(uint8_t index, const ImageView& rt);
+
             // being pass
             void begin();
 
@@ -146,6 +149,9 @@ namespace rendering
 
         // render the selection fragments
         extern RENDERING_SCENE_API void RenderSelectionFragments(command::CommandWriter& cmd, const FrameView& view, const ImageView& depthRT);
+
+        // render general overlay pass (on top of post processes, no depth buffer)
+        extern RENDERING_SCENE_API void RenderOverlay(command::CommandWriter& cmd, const FrameView& view, const ImageView& colorRT);
 
         //---------------------------------
         // final composition with outside world

@@ -10,7 +10,16 @@
 
 namespace rendering
 {
-
     class NativeWindowRenderer;
+}
 
-} // rendering
+namespace ui
+{
+    class RenderingPanel;
+    typedef base::RefPtr<RenderingPanel> RenderingPanelPtr;
+
+    class RenderingScenePanel;
+    typedef base::RefPtr<RenderingScenePanel> RenderingScenePanelPtr;
+
+    class CameraViewportSetup;
+}

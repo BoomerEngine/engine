@@ -154,9 +154,9 @@ namespace base
                 if (!data->placement().isIdentity())
                 {
                     if (first)
-                        ret = data->placement().toTransform();
+                        ret = data->placement();
                     else
-                        ret = data->placement().toTransform().applyTo(ret);
+                        ret = data->placement().applyTo(ret);
                 }
             }
 

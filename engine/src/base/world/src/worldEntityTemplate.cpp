@@ -55,7 +55,7 @@ namespace base
             }
         }
 
-        void EntityTemplate::placement(const EulerTransform& placement, bool callEvent/*= true*/)
+        void EntityTemplate::placement(const Transform& placement, bool callEvent/*= true*/)
         {
             if (m_placement != placement)
             {

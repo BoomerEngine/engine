@@ -148,6 +148,7 @@ namespace rendering
             OpaqueMasked,
 
             DebugSolid,
+            DebugOverlay,
 
             ShadowDepth0,
             ShadowDepth1,

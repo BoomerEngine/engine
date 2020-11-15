@@ -42,6 +42,7 @@ namespace ed
         ~SceneNodeVisualizationHandler();
 
         void clearAllProxies();
+        void updateAllProxies();
 
         void createProxy(const SceneContentNode* node);
         void removeProxy(const SceneContentNode* node);
@@ -64,10 +65,20 @@ namespace ed
 
         HashMap<const SceneContentNode*, SceneNodeVisualization*> m_nodeToProxyMap;
 
+        struct ProxyToReattach
+        {
+            uint32_t index;
+            uint32_t generation;
+            world::EntityPtr newEntity;
+        };
+
+        Array<ProxyToReattach> m_reattachList;
+
         uint32_t allocProxyIndex();
 
         void updateProxySelection(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
         void updateProxyData(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
+        void reattachProxies();
 
         static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);
         static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const world::EntityPtr& entity);

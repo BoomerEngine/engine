@@ -5,14 +5,9 @@
 *
 * [# dependency: base_image #]
 * [# dependency: base_editor #]
-* [# dependency: base_world #]
-* [# dependency: assets_gizmos #]
-* [# dependency: rendering_compiler #]
+* [# dependency: base_ui #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_ui #]
-* [# dependency: rendering_mesh #]
-* [# dependency: rendering_world #]
-* [# dependency: rendering_api_* #]
 * [# devonly #]
 ***/
 

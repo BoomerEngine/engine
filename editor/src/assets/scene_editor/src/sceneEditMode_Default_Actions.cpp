@@ -271,9 +271,13 @@ namespace ed
 
                 Array<RefPtr<SceneContentEntityNodePrefabSource>> prefabs;
 
+                const AbsoluteTransform* placement = &AbsoluteTransform::ROOT();
+                if (auto parentData = rtti_cast<SceneContentDataNode>(node))
+                    placement = &parentData->localToWorldTransform();
+
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = CreateSharedPtr<SceneContentEntityNode>(safeName, std::move(prefabs), entityData, nullptr);
+                info.child = CreateSharedPtr<SceneContentEntityNode>(safeName, std::move(prefabs), *placement, entityData, nullptr);
             }
         }
 
@@ -298,9 +302,13 @@ namespace ed
                 const auto safeName = node->buildUniqueName(coreName);
                 const auto entityData = componentClass->create<base::world::ComponentTemplate>();
 
+                const AbsoluteTransform* placement = &AbsoluteTransform::ROOT();
+                if (auto parentData = rtti_cast<SceneContentDataNode>(node))
+                    placement = &parentData->localToWorldTransform();
+
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = CreateSharedPtr<SceneContentComponentNode>(safeName, entityData, nullptr);
+                info.child = CreateSharedPtr<SceneContentComponentNode>(safeName, *placement, entityData, nullptr);
             }
         }
 
@@ -507,4 +515,75 @@ namespace ed
 
     //--
 
+    // transform store/restore action
+    struct ASSETS_SCENE_EDITOR_API ActionMoveSceneNodes : public IAction
+    {
+    public:
+        ActionMoveSceneNodes(Array<ActionMoveSceneNodeData>&& nodes, SceneEditMode_Default* mode, bool fullContentRefresh)
+            : m_nodes(std::move(nodes))
+            , m_mode(mode)
+            , m_fullContentRefresh(fullContentRefresh)
+        {
+        }
+
+        virtual StringID id() const override
+        {
+            return "TransformNodes"_id;
+        }
+
+        StringBuf description() const override
+        {
+            if (m_nodes.size() == 1)
+                return TempString("Move node");
+            else
+                return TempString("Move {} nodes", m_nodes.size());
+        }
+
+        virtual bool execute() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->changePlacement(info.newTransform);
+
+            if (m_fullContentRefresh)
+                refreshEntityContent();
+
+            m_mode->handleTransformsChanged();
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->changePlacement(info.oldTransform);
+
+            if (m_fullContentRefresh)
+                refreshEntityContent();
+
+            m_mode->handleTransformsChanged();
+            return true;
+        }
+
+        void refreshEntityContent()
+        {
+            for (const auto& info : m_nodes)
+                if (auto* entity = rtti_cast<SceneContentEntityNode>(info.node.get()))
+                    entity->invalidateData();
+        }
+
+    private:
+        Array<ActionMoveSceneNodeData> m_nodes;
+        SceneEditMode_Default* m_mode = nullptr;
+        bool m_fullContentRefresh;
+    };
+
+    ActionPtr CreateSceneNodeTransformAction(Array<ActionMoveSceneNodeData>&& nodes, SceneEditMode_Default* mode, bool fullRefresh)
+    {
+        DEBUG_CHECK_RETURN_V(mode, nullptr);
+        DEBUG_CHECK_RETURN_V(!nodes.empty(), nullptr);
+        return CreateSharedPtr<ActionMoveSceneNodes>(std::move(nodes), mode, fullRefresh);
+    }
+
+    //--
+
 } // ed
+

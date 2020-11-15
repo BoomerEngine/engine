@@ -130,3 +130,26 @@ AssetBrowserFileDragDropPreview, AssetBrowserDirectoryDragDropPreview
     }
 }
 */
+
+SceneTransformGroup {
+	background: #0000;
+	padding: 8em 6em 8em 6em;
+	margin: 4em 2em 4em 2em;
+	horizontal-align: expand;
+	vertical-align: top;
+
+	inner-horizontal-align: left;
+
+	border-color: $client-border;
+	border-width: 1em;
+	border-radius: 5em;
+
+	#GroupCaption {
+		horizontal-align: left;
+		vertical-align: top;
+		font-weight: bold;
+		color: #FFF;
+		font-size: 20em;
+		margin-bottom: 4em;
+	}
+}

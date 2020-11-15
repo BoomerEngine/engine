@@ -98,6 +98,10 @@ namespace rendering
 
                                 VisualizeSelectionOutline(localCmd, view.width(), view.height(), targetView, m_surfaceCache->m_sceneFullDepthRT, m_surfaceCache->m_sceneSelectionDepthRT, frame.selectionOutline);
                             }
+
+                            // draw overlay fragments
+                            RenderOverlay(cmd, view, targetView);
+
                         }
                         else if (frame.capture.mode == FrameCaptureMode::SelectionRect && frame.capture.dataBuffer)
                         {

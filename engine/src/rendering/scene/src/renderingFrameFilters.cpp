@@ -67,12 +67,14 @@ namespace rendering
 
             ret |= FilterBit::PassDepthSelection;
             ret |= FilterBit::PassSelectionFragments;
+            ret |= FilterBit::PassOverlay;
 
             ret |= FilterBit::DebugGeometry;
             ret |= FilterBit::DebugGeometryLines;
             ret |= FilterBit::DebugGeometrySolid;
             ret |= FilterBit::DebugGeometryScreen;
             ret |= FilterBit::DebugGeometryTransparent;
+            ret |= FilterBit::DebugGeometryOverlay;
 
             ret |= FilterBit::ViewportCameraInfo;
             ret |= FilterBit::ViewportCameraAxes; // small camera orientation axes in the BL
@@ -116,6 +118,7 @@ namespace rendering
                     create(parent, "SelectionFragments", FilterBit::PassSelectionFragments);
                     create(parent, "ShadowDepth", FilterBit::PassShadowDepth);
                     create(parent, "Forward", FilterBit::PassForward);
+                    create(parent, "Overlay", FilterBit::PassOverlay);
                 }
 
                 {
@@ -132,6 +135,7 @@ namespace rendering
                     create(parent, "Lines", FilterBit::DebugGeometryLines);
                     create(parent, "Transparent", FilterBit::DebugGeometryTransparent);
                     create(parent, "Screen", FilterBit::DebugGeometryScreen);
+                    create(parent, "Overlay", FilterBit::DebugGeometryOverlay);
                 }
 
                 {

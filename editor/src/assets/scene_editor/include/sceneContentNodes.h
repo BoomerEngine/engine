@@ -124,6 +124,10 @@ namespace ed
 
         //--
 
+        bool tempFlag = false;
+
+        //--
+
     private:
         SceneContentStructure* m_structure = nullptr;
 
@@ -207,7 +211,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentDataNode, SceneContentNode);
 
     public:
-        SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const EulerTransform& localToParent, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData=nullptr); // NOTE: objects ownership is changed
+        SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const AbsoluteTransform& localToWorld, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData=nullptr); // NOTE: objects ownership is changed
 
         // do we have override content defined at this node (coming from prefab)
         INLINE bool hasBaseContent() const { return !!m_baseData; }
@@ -218,20 +222,24 @@ namespace ed
         // base data of this node, always valid
         INLINE const ObjectTemplatePtr& baseData() const { return m_baseData; }
 
-        // get the placement between this node and the parent node
-        INLINE const EulerTransform& localToParent() const { return m_localToParent; }
-
         // get the cached "local to world" for this node
-        INLINE const AbsoluteTransform& cachedLocalToWorldTransform() const { return m_cachedLocalToWorldTransform; }
+        INLINE const AbsoluteTransform& localToWorldTransform() const { return m_localToWorldPlacement; }
 
         // get the cached "local to world" for this node
         INLINE const Matrix& cachedLocalToWorldMatrix() const { return m_cachedLocalToWorldMatrix; }
 
         //--
 
-        // change placement of the node in local mode (relative to parent)
-        // this is the most "normal" mode
-        void changeLocalPlacement(const EulerTransform& newTramsform, bool force = false);
+        // compute node local transform with respect to parent node
+        // NOTE: expensive and not cached
+        Transform calcLocalToParent() const;
+
+        // get parent transform
+        const AbsoluteTransform& parentToWorldTransform() const;
+
+        // change placement of the node in world space 
+        // NOTE: placement of child nodes is NOT changed
+        void changePlacement(const AbsoluteTransform& newLocalToWorld, bool force = false);
 
         // change data object hold at node
         void changeData(const ObjectTemplatePtr& data);
@@ -239,8 +247,7 @@ namespace ed
         //--
 
     protected:
-        void updateTransform(bool force = false, bool recursive = true);
-        bool cacheTransformData();
+        void cacheTransformData();
 
         virtual void handleTransformUpdated();
         virtual void handleDebugRender(rendering::scene::FrameParams& frame) const override;
@@ -249,9 +256,7 @@ namespace ed
         virtual void displayText(IFormatStream& txt) const override;
 
     private:
-        EulerTransform m_localToParent;
-
-        AbsoluteTransform m_cachedLocalToWorldTransform; // changed whenever parent changes as well
+        AbsoluteTransform m_localToWorldPlacement; // local to world placement for the node
         Matrix m_cachedLocalToWorldMatrix; // changed whenever parent changes as well
 
         ObjectTemplatePtr m_editableData; // always valid
@@ -289,7 +294,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentDataNode);
 
     public:
-        SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData = nullptr);
+        SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const AbsoluteTransform& localToWorld, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData = nullptr);
 
         INLINE const Array<RefPtr<SceneContentEntityNodePrefabSource>>& prefabs() const { return m_prefabAssets; }
 
@@ -298,6 +303,8 @@ namespace ed
         base::world::NodeTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
 
         base::world::NodeTemplatePtr compileSnapshot() const;
+
+        void invalidateData();
 
     private:
         Array<RefPtr<SceneContentEntityNodePrefabSource>> m_prefabAssets;
@@ -318,7 +325,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentComponentNode, SceneContentDataNode);
 
     public:
-        SceneContentComponentNode(const StringBuf& name, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData = nullptr);
+        SceneContentComponentNode(const StringBuf& name, const AbsoluteTransform& localToWorld, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData = nullptr);
 
         base::world::ComponentTemplatePtr compileData() const;
 
@@ -326,13 +333,14 @@ namespace ed
 
     protected:
         virtual void handleDataPropertyChanged(const StringBuf& data) override;
+        virtual void handleTransformUpdated() override;
     };
 
     //--
 
     // unpack a node hierarchy into editable node structure
     // NOTE: this can be called only on non-instanced node data, usually the root node, otherwise it's meaningless
-    extern ASSETS_SCENE_EDITOR_API SceneContentEntityNodePtr UnpackNode(const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities = nullptr);
+    extern ASSETS_SCENE_EDITOR_API SceneContentEntityNodePtr UnpackNode(const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities = nullptr);
 
     //--
 

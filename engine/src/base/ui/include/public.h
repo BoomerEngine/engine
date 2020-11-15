@@ -19,6 +19,14 @@
 
 // events always have the valid ui::IElement as source
 
+namespace rendering
+{
+    namespace scene
+    {
+        struct FrameParams;
+    }
+}
+
 namespace ui
 {
     typedef base::Vector2 Position;
@@ -56,6 +64,8 @@ namespace ui
 
     class IInputAction;
     typedef base::RefPtr<IInputAction> InputActionPtr;
+    typedef base::RefWeakPtr<IInputAction> InputActionWeakPtr;
+
     struct InputActionResult;
 
     enum class ElementHorizontalLayout : uint8_t;
@@ -119,21 +129,6 @@ namespace ui
         FreeSize, // window's size can be adjusted by the user
         AutoSize, // window size is automatic and cannot be changed
     };
-
-    // basic ui event
-    typedef std::function<void(UI_EVENT)> TEvent;
-
-    // basic ui callback (direct event)
-    typedef std::function<void(UI_CALLBACK)> TCallback;
-
-    // basic UI timer function
-    typedef std::function<void(UI_TIMER)> TTimer;
-
-    // basic UI callback for stuff with a model
-    typedef std::function<void(UI_MODEL_CALLBACK)> TModelCallback;
-
-    // basic UI callback for stuff with a model
-    typedef std::function<bool(UI_MODEL_CALLBACK)> TModelCallbackRet;
 
     // function to create popup window - used whenever a popup is expected
     typedef std::function<PopupPtr()> TPopupFunc;
@@ -409,6 +404,10 @@ namespace ui
 
     class ScintillaTextEditor;
     typedef base::RefPtr<ScintillaTextEditor> ScintillaTextEditorPtr;
+
+    //--
+
+    class RenderingScenePanel;
 
     //--
 

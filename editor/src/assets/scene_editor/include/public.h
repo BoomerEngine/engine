@@ -93,6 +93,6 @@ namespace ed
 
     typedef DirectFlags<SceneContentNodeDirtyBit> SceneContentNodeDirtyFlags;
 
-    //--
+    ///---
 
 } // ed

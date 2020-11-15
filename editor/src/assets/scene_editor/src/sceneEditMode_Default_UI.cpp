@@ -9,27 +9,34 @@
 #include "build.h"
 #include "sceneEditMode_Default.h"
 #include "sceneEditMode_Default_UI.h"
+#include "sceneEditMode_Default_Transform.h"
+
 #include "sceneContentNodes.h"
 #include "sceneContentStructure.h"
 #include "sceneContentDataView.h"
+
 #include "base/ui/include/uiMenuBar.h"
-#include "base/object/include/actionHistory.h"
 #include "base/ui/include/uiEditBox.h"
 #include "base/ui/include/uiListView.h"
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiDataInspector.h"
-#include "base/object/include/action.h"
+#include "base/ui/include/uiDragger.h"
 #include "base/ui/include/uiGroup.h"
 #include "base/ui/include/uiClassPickerBox.h"
+
+#include "base/object/include/actionHistory.h"
+#include "base/object/include/action.h"
+
 #include "base/world/include/worldNodeTemplate.h"
 #include "base/world/include/worldEntityTemplate.h"
 #include "base/world/include/worldComponentTemplate.h"
 #include "base/world/include/worldEntity.h"
+#include "base/ui/include/uiNotebook.h"
+#include "base/ui/include/uiElement.h"
 
 namespace ed
 {
     //--
-
 
     static bool ValidNodeName(StringView<char> name)
     {
@@ -119,6 +126,35 @@ namespace ed
         }
 
         {
+            auto group = createChild<ui::Group>("Transform", true);
+            m_dataElements.pushBack(group);
+
+            auto tabs = group->createChild<ui::Notebook>();
+            tabs->expand();
+            tabs->customMargins(4, 4, 4, 4);
+
+            {
+                auto panel = CreateSharedPtr<ui::IElement>();
+                panel->customStyle<base::StringBuf>("title"_id, "[img:axis] Local");
+
+                m_transformLocalValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::Local, this);
+                m_transformLocalValues->expand();
+
+                tabs->attachTab(panel);
+            }
+
+            {
+                auto panel = CreateSharedPtr<ui::IElement>();
+                panel->customStyle<base::StringBuf>("title"_id, "[img:world] World");
+
+                m_transformWorldValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::World, this);
+                m_transformWorldValues->expand();
+
+                tabs->attachTab(panel, nullptr, false);
+            }
+        }
+
+        {
             auto group = createChild<ui::Group>("Data", true);
             m_dataElements.pushBack(group);
 
@@ -164,6 +200,9 @@ namespace ed
 
         m_name->text("");
         m_name->enable(false);
+
+        m_transformWorldValues->show(SceneNodeTransformEntry());
+        m_transformLocalValues->show(SceneNodeTransformEntry());
 
         if (m_classPicker)
             m_classPicker->requestClose();
@@ -221,6 +260,7 @@ namespace ed
 
         refreshName();
         refreshProperties();
+        refreshTransforms();
     }
 
     void SceneDefaultPropertyInspectorPanel::refreshName()
@@ -579,6 +619,582 @@ namespace ed
 
                 m_classPicker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
             }
+        }
+    }
+
+    //--
+
+    SceneNodeTransformEntry::SceneNodeTransformEntry()
+    {
+        clear();
+    }
+
+    SceneNodeTransformEntry::SceneNodeTransformEntry(const SceneNodeTransformEntry& other)
+    {
+        for (int i = 0; i < NUM_ENTRIES; ++i)
+            values[i] = other.values[i];
+    }
+
+    SceneNodeTransformEntry& SceneNodeTransformEntry::operator=(const SceneNodeTransformEntry& other)
+    {
+        if (this != &other)
+            for (int i = 0; i < NUM_ENTRIES; ++i)
+                values[i] = other.values[i];
+
+        return *this;
+    }
+
+    void SceneNodeTransformEntry::clear()
+    {
+        for (int i = 0; i < NUM_ENTRIES; ++i)
+        {
+            values[i] = SceneNodeTransformEntryValue();
+            values[i].index = i;
+            values[i].flag = FIELD_BITS[i];
+        }
+    }
+
+    SceneNodeTransformValueFileldBit SceneNodeTransformEntry::FIELD_BITS[NUM_ENTRIES] =
+    {
+        SceneNodeTransformValueFileldBit::TranslationX,
+        SceneNodeTransformValueFileldBit::TranslationY,
+        SceneNodeTransformValueFileldBit::TranslationZ,
+        SceneNodeTransformValueFileldBit::RotationX,
+        SceneNodeTransformValueFileldBit::RotationY,
+        SceneNodeTransformValueFileldBit::RotationZ,
+        SceneNodeTransformValueFileldBit::ScaleX,
+        SceneNodeTransformValueFileldBit::ScaleY,
+        SceneNodeTransformValueFileldBit::ScaleZ,
+    };
+
+    void SceneNodeTransformEntry::setup(const EulerTransform& transform, SceneNodeTransformValueFileldFlags determined /*= SceneNodeTransformValueFileldBit::ALL*/, SceneNodeTransformValueFileldFlags enabled /*= SceneNodeTransformValueFileldBit::ALL*/)
+    {
+        for (int i = 0; i < NUM_ENTRIES; ++i)
+        {
+            const auto flag = FIELD_BITS[i];
+            values[i].determined = determined.test(flag);
+            values[i].enabled = enabled.test(flag);
+        }
+
+        values[(int)SceneNodeTransformValueFieldType::TranslationX].value = transform.T.x;
+        values[(int)SceneNodeTransformValueFieldType::TranslationY].value = transform.T.y;
+        values[(int)SceneNodeTransformValueFieldType::TranslationZ].value = transform.T.z;
+        values[(int)SceneNodeTransformValueFieldType::RotationX].value = transform.R.roll;
+        values[(int)SceneNodeTransformValueFieldType::RotationY].value = transform.R.pitch;
+        values[(int)SceneNodeTransformValueFieldType::RotationZ].value = transform.R.yaw;
+        values[(int)SceneNodeTransformValueFieldType::ScaleX].value = transform.S.x;
+        values[(int)SceneNodeTransformValueFieldType::ScaleY].value = transform.S.y;
+        values[(int)SceneNodeTransformValueFieldType::ScaleZ].value = transform.S.z;
+    }
+
+    //--
+
+    ISceneNodeTransformValuesBoxEventSink::~ISceneNodeTransformValuesBoxEventSink()
+    {}
+
+    //--
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneNodeTransformValuesBox);
+        RTTI_METADATA(ui::ElementClassNameMetadata).name("DataBoxVector"); // stolen style...
+    RTTI_END_TYPE();
+
+    SceneNodeTransformValuesBox::SceneNodeTransformValuesBox(GizmoSpace space, ISceneNodeTransformValuesBoxEventSink* sink)
+        : m_space(space)
+        , m_sink(sink)
+    {
+        layoutVertical();
+
+        {
+            auto group = createChildWithType<ui::IElement>("SceneTransformGroup"_id);
+            group->layoutVertical();
+
+            auto header = group->createChild<ui::IElement>();
+            header->layoutHorizontal();
+            header->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            header->createNamedChild<ui::TextLabel>("GroupCaption"_id, "[img:transform_move] Translation");
+
+            auto reset = header->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:undo] Reset");
+            reset->customMargins(5, 0, 5, 0);
+            reset->bind(ui::EVENT_CLICKED) = [this]() {
+                m_sink->transformBox_ValueReset(m_space, SceneNodeTransformValueFieldType::TranslationX);
+            };
+
+            auto row = group->createChild<ui::IElement>();
+            row->layoutHorizontal();
+            row->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            m_elems[0] = createElem(row, "X"_id, "X", SceneNodeTransformValueFieldType::TranslationX);
+            m_elems[1] = createElem(row, "Y"_id, "Y", SceneNodeTransformValueFieldType::TranslationY);
+            m_elems[2] = createElem(row, "Z"_id, "Z", SceneNodeTransformValueFieldType::TranslationZ);
+        }
+
+        {
+            auto group = createChildWithType<ui::IElement>("SceneTransformGroup"_id);
+            group->layoutVertical();
+
+            auto header = group->createChild<ui::IElement>();
+            header->layoutHorizontal();
+            header->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            header->createNamedChild<ui::TextLabel>("GroupCaption"_id, "[img:transform_rotate] Rotation");
+
+            auto reset = header->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:undo] Reset");
+            reset->customMargins(5, 0, 5, 0);
+            reset->bind(ui::EVENT_CLICKED) = [this]() {
+                m_sink->transformBox_ValueReset(m_space, SceneNodeTransformValueFieldType::RotationX);
+            };
+
+            auto row = group->createChild<ui::IElement>();
+            row->layoutHorizontal();
+            row->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            m_elems[3] = createElem(row, "X"_id, "R", SceneNodeTransformValueFieldType::RotationX);
+            m_elems[4] = createElem(row, "Y"_id, "P", SceneNodeTransformValueFieldType::RotationY);
+            m_elems[5] = createElem(row, "Z"_id, "Y", SceneNodeTransformValueFieldType::RotationZ);
+        }
+
+        {
+            auto group = createChildWithType<ui::IElement>("SceneTransformGroup"_id);
+            group->layoutVertical();
+
+            auto header = group->createChild<ui::IElement>();
+            header->layoutHorizontal();
+            header->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            header->createNamedChild<ui::TextLabel>("GroupCaption"_id, "[img:transform_scale] Scale");
+
+            auto reset = header->createChildWithType<ui::Button>("DataPropertyButton"_id, "[img:undo] Reset");
+            reset->customMargins(5, 0, 5, 0);
+            reset->bind(ui::EVENT_CLICKED) = [this]() {
+                m_sink->transformBox_ValueReset(m_space, SceneNodeTransformValueFieldType::ScaleX);
+            };
+
+            auto row = group->createChild<ui::IElement>();
+            row->layoutHorizontal();
+            row->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            m_elems[6] = createElem(row, "X"_id, "X", SceneNodeTransformValueFieldType::ScaleX);
+            m_elems[7] = createElem(row, "Y"_id, "Y", SceneNodeTransformValueFieldType::ScaleY);
+            m_elems[8] = createElem(row, "Z"_id, "Z", SceneNodeTransformValueFieldType::ScaleZ);
+        }
+    }
+
+    SceneNodeTransformValuesBox::Elem SceneNodeTransformValuesBox::createElem(ui::IElement* row, StringID style, StringView<char> caption, SceneNodeTransformValueFieldType field)
+    {
+        SceneNodeTransformValuesBox::Elem ret;
+
+        auto label = row->createNamedChild<ui::TextLabel>(style, caption);
+        label->customMargins(8.0f, 0.0f, 8.0f, 0.0f);
+
+        auto textFlags = { ui::EditBoxFeatureBit::AcceptsEnter, ui::EditBoxFeatureBit::NoBorder };
+        ret.box = row->createChild<ui::EditBox>(textFlags);
+        ret.box->expand();
+        ret.box->customMaxSize(120.0f, 0.0f);
+        ret.box->customProportion(1.0f);
+        ret.box->bind(ui::EVENT_TEXT_ACCEPTED) = [this, field](ui::EditBox* box)
+        {
+            double value = 0.0;
+            if (box->text().view().match(value) == MatchResult::OK)
+            {
+                m_sink->transformBox_ValueChanged(m_space, field, value);
+            }
+        };
+
+        ret.drag = row->createChild<ui::Dragger>();
+        ret.drag->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+        ret.drag->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+        ret.drag->bind(ui::EVENT_VALUE_DRAG_STARTED) = [this, field]()
+        {
+            m_sink->transformBox_ValueDragStart(m_space, field);
+        };
+
+        ret.drag->bind(ui::EVENT_VALUE_DRAG_STEP) = [this, field](int val)
+        {
+            m_sink->transformBox_ValueDragUpdate(m_space, field, val);
+        };
+
+        ret.drag->bind(ui::EVENT_VALUE_DRAG_CANCELED) = [this, field]()
+        {
+            m_sink->transformBox_ValueDragCancel(m_space, field);
+        };
+
+        ret.drag->bind(ui::EVENT_VALUE_DRAG_FINISHED) = [this, field]()
+        {
+            m_sink->transformBox_ValueDragEnd(m_space, field);
+        };
+
+        return ret;
+    }
+
+    void SceneNodeTransformValuesBox::show(const SceneNodeTransformEntry& data)
+    {
+        for (const auto& field : data.values)
+        {
+            DEBUG_CHECK(field.index >= 0 && field.index < SceneNodeTransformEntry::NUM_ENTRIES);
+
+            if (field.index >= 0 && field.index < SceneNodeTransformEntry::NUM_ENTRIES)
+            {
+                auto& elem = m_elems[field.index];
+                if (!field.enabled)
+                {
+                    elem.box->enable(false);
+                    elem.box->text("<unused>");
+                    elem.drag->visibility(false);
+                }
+                else if (field.determined)
+                {
+                    elem.box->enable(true);
+                    elem.box->text(TempString("{}", Prec(field.value, 3)));
+                    elem.drag->visibility(true);
+                }
+                else
+                {
+                    elem.box->enable(true);
+                    elem.box->text("");
+                    elem.drag->visibility(true);
+                }
+            }
+        }
+    }
+
+    //--
+
+    struct ValueAggregator
+    {
+        double value = 0.0;
+        bool determined = false;
+        uint32_t count = 0;
+
+        void collect(double val)
+        {
+            if (count == 0)
+            {
+                value = val;
+                determined = true;
+            }
+            else if (determined)
+            {
+                if (val != value)
+                    determined = false;
+            }
+
+            count += 1;
+        }
+    };
+
+    struct TransformAggregator
+    {
+        ValueAggregator values[SceneNodeTransformEntry::NUM_ENTRIES];
+
+        void collect(const EulerTransform& data)
+        {
+            values[(int)SceneNodeTransformValueFieldType::TranslationX].collect(data.T.x);
+            values[(int)SceneNodeTransformValueFieldType::TranslationY].collect(data.T.y);
+            values[(int)SceneNodeTransformValueFieldType::TranslationZ].collect(data.T.z);
+
+            values[(int)SceneNodeTransformValueFieldType::RotationX].collect(data.R.roll);
+            values[(int)SceneNodeTransformValueFieldType::RotationY].collect(data.R.pitch);
+            values[(int)SceneNodeTransformValueFieldType::RotationZ].collect(data.R.yaw);
+
+            values[(int)SceneNodeTransformValueFieldType::ScaleX].collect(data.S.x);
+            values[(int)SceneNodeTransformValueFieldType::ScaleY].collect(data.S.y);
+            values[(int)SceneNodeTransformValueFieldType::ScaleZ].collect(data.S.z);
+        }
+
+        void apply(SceneNodeTransformEntry& outEntry) const
+        {
+            outEntry.clear();
+
+            for (uint32_t i = 0; i < SceneNodeTransformEntry::NUM_ENTRIES; ++i)
+            {
+                const auto& src = values[i];
+                auto& dest = outEntry.values[i];
+
+                dest.determined = src.determined;
+                dest.value = src.value;
+                dest.enabled = src.count > 0;
+            }
+        }
+    };
+
+    struct AbsoluteTransformAggregator
+    {
+        ValueAggregator values[SceneNodeTransformEntry::NUM_ENTRIES];
+
+        void collect(const AbsoluteTransform& data)
+        {
+            {
+                double x, y, z;
+                data.position().expand(x, y, z);
+                values[(int)SceneNodeTransformValueFieldType::TranslationX].collect(x);
+                values[(int)SceneNodeTransformValueFieldType::TranslationY].collect(y);
+                values[(int)SceneNodeTransformValueFieldType::TranslationZ].collect(z);
+            }
+
+            {
+                auto rotation = data.rotation().toRotator();
+                values[(int)SceneNodeTransformValueFieldType::RotationX].collect(rotation.roll);
+                values[(int)SceneNodeTransformValueFieldType::RotationY].collect(rotation.pitch);
+                values[(int)SceneNodeTransformValueFieldType::RotationZ].collect(rotation.yaw);
+            }
+
+            values[(int)SceneNodeTransformValueFieldType::ScaleX].collect(data.scale().x);
+            values[(int)SceneNodeTransformValueFieldType::ScaleY].collect(data.scale().y);
+            values[(int)SceneNodeTransformValueFieldType::ScaleZ].collect(data.scale().z);
+        }
+
+        void apply(SceneNodeTransformEntry& outEntry) const
+        {
+            outEntry.clear();
+
+            for (uint32_t i = 0; i < SceneNodeTransformEntry::NUM_ENTRIES; ++i)
+            {
+                const auto& src = values[i];
+                auto& dest = outEntry.values[i];
+
+                dest.determined = src.determined;
+                dest.value = src.value;
+                dest.enabled = src.count > 0;
+            }
+        }
+    };
+
+    void SceneDefaultPropertyInspectorPanel::refreshTransforms()
+    {
+        TransformAggregator localTransform;
+        AbsoluteTransformAggregator worldTransform;
+
+        for (const auto& node : m_nodes)
+        {
+            if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+            {
+                localTransform.collect(dataNode->calcLocalToParent().toEulerTransform());
+                worldTransform.collect(dataNode->localToWorldTransform());
+            }
+        }
+
+        {
+            SceneNodeTransformEntry values;
+            localTransform.apply(values);
+            m_transformLocalValues->show(values);
+        }
+
+        {
+            SceneNodeTransformEntry values;
+            worldTransform.apply(values);
+            m_transformWorldValues->show(values);
+        }
+    }
+
+    //--
+
+    void SceneDefaultPropertyInspectorPanel::cancelTransformAction()
+    {
+        if (m_currentDragTransform)
+        {
+            m_currentDragTransform->cancel();
+            m_currentDragTransform.reset();
+        }
+    }
+
+    static double DefaultDisplacementForFieldType(SceneNodeTransformValueFieldType field)
+    {
+        switch (field)
+        {
+            case SceneNodeTransformValueFieldType::TranslationX:
+            case SceneNodeTransformValueFieldType::TranslationY:
+            case SceneNodeTransformValueFieldType::TranslationZ:
+                return 0.01;
+
+            case SceneNodeTransformValueFieldType::RotationX:
+            case SceneNodeTransformValueFieldType::RotationY:
+            case SceneNodeTransformValueFieldType::RotationZ:
+                return 0.1;
+
+            case SceneNodeTransformValueFieldType::ScaleX:
+            case SceneNodeTransformValueFieldType::ScaleY:
+            case SceneNodeTransformValueFieldType::ScaleZ:
+                return 0.001;
+        }
+
+        return 0.001;
+    }
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueDragStart(GizmoSpace space, SceneNodeTransformValueFieldType field)
+    {
+        cancelTransformAction();
+
+        const auto step = DefaultDisplacementForFieldType(field);
+
+        // get the list of core nodes to change transform - those are always the nodes that are selected
+        Array<SceneContentDataNodePtr> dragNodes;
+        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
+
+        // if we are in the whole hierarchy mode though we will need to update transform for the rest of the nodes as well
+        HashSet<SceneContentDataNode*> coreSelectionSet;
+        if (SceneGizmoTarget::WholeHierarchy == m_host->container()->gizmoSettings().target)
+        {
+            coreSelectionSet.reserve(dragNodes.size());
+            for (const auto& node : dragNodes)
+                coreSelectionSet.insert(node);
+
+            auto roots = std::move(dragNodes);
+            for (const auto& root : roots)
+                SceneEditMode_Default::ExtractSelectionHierarchyWithFilter(root, dragNodes, coreSelectionSet);
+
+            m_currentDragTransform = CreateSharedPtr<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, &coreSelectionSet, m_host->container()->gridSettings(), space, field, step);
+        }
+        else
+        {
+            m_currentDragTransform = CreateSharedPtr<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, nullptr, m_host->container()->gridSettings(), space, field, step);
+        }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueDragUpdate(GizmoSpace space, SceneNodeTransformValueFieldType field, int step)
+    {
+        if (m_currentDragTransform)
+        {
+            m_currentDragTransform->step(step);
+            m_host->handleTransformsChanged();
+        }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueDragEnd(GizmoSpace space, SceneNodeTransformValueFieldType field)
+    {
+        if (m_currentDragTransform)
+        {
+            if (auto action = m_currentDragTransform->createAction())
+                m_host->actionHistory()->execute(action);
+
+            m_currentDragTransform.reset();
+        }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueDragCancel(GizmoSpace space, SceneNodeTransformValueFieldType field)
+    {
+        cancelTransformAction();
+    }
+
+    //--
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueReset(GizmoSpace space, SceneNodeTransformValueFieldType field)
+    {
+        // get the list of core nodes to change transform - those are always the nodes that are selected
+        Array<SceneContentDataNodePtr> dragNodes;
+        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
+
+        // change transforms of the nodes in the selections
+        Array<ActionMoveSceneNodeData> undoData;
+        undoData.reserve(dragNodes.size());
+        if (space == GizmoSpace::Local)
+        {
+            for (const auto& node : dragNodes)
+            {
+                auto& data = undoData.emplaceBack();
+                data.node = node;
+                data.oldTransform = node->localToWorldTransform();
+
+                auto localTransform = node->calcLocalToParent().toEulerTransform();
+                ResetLocalTransformField(localTransform, field);
+
+                data.newTransform = node->parentToWorldTransform() * localTransform.toTransform();
+            }
+        }
+        else if (space == GizmoSpace::World)
+        {
+            for (const auto& node : dragNodes)
+            {
+                auto& data = undoData.emplaceBack();
+                data.node = node;
+                data.oldTransform = node->localToWorldTransform();
+                data.newTransform = data.oldTransform;
+                ResetWorldTransformField(data.newTransform, field);
+            }
+        }
+
+        expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
+
+        if (!undoData.empty())
+        {
+            auto action = CreateSceneNodeTransformAction(std::move(undoData), m_host, true);
+            m_host->actionHistory()->execute(action);
+        }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::expandTransformValuesWithHierarchyChildren(const Array<SceneContentDataNodePtr>& dragNodes, Array<ActionMoveSceneNodeData>& undoData) const
+    {
+        // if moving the whole hierarchy make sure we update also the child nodes
+        if (SceneGizmoTarget::WholeHierarchy == m_host->container()->gizmoSettings().target)
+        {
+            HashMap<SceneContentNode*, int> undoActionMap;
+            undoActionMap.reserve(dragNodes.size());
+
+            for (auto i : dragNodes.indexRange())
+                undoActionMap[dragNodes[i]] = i;
+
+            InplaceArray<SceneContentDataNodePtr, 64> additionalNodes;
+            for (const auto& root : dragNodes)
+            {
+                additionalNodes.reset();
+                SceneEditMode_Default::ExtractSelectionHierarchyWithFilter2(root, additionalNodes, undoActionMap);
+
+                for (const auto& node : additionalNodes)
+                {
+                    int parentUndoActionIndex = -1;
+                    if (undoActionMap.find(node->parent(), parentUndoActionIndex))
+                    {
+                        auto& data = undoData.emplaceBack();
+                        data.node = node;
+                        data.oldTransform = node->localToWorldTransform();
+
+                        const auto& newParentTransform = undoData[parentUndoActionIndex].newTransform;
+                        data.newTransform = newParentTransform * node->calcLocalToParent();
+                    }
+                    else
+                    {
+                        DEBUG_CHECK(parentUndoActionIndex != -1);
+                    }
+                }
+            }
+        }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::transformBox_ValueChanged(GizmoSpace space, SceneNodeTransformValueFieldType field, double value)
+    {
+        // get the list of core nodes to change transform - those are always the nodes that are selected
+        Array<SceneContentDataNodePtr> dragNodes;
+        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
+        
+        // change transforms of the nodes in the selections
+        Array<ActionMoveSceneNodeData> undoData;
+        undoData.reserve(dragNodes.size());
+        if (space == GizmoSpace::Local)
+        {
+            for (const auto& node : dragNodes)
+            {
+                auto& data = undoData.emplaceBack();
+                data.node = node;
+                data.oldTransform = node->localToWorldTransform();
+
+                auto localTransform = node->calcLocalToParent().toEulerTransform();
+                ApplyLocalTransformField(localTransform, field, value, false);
+
+                data.newTransform = node->parentToWorldTransform() * localTransform.toTransform();
+            }
+        }
+        else if (space == GizmoSpace::World)
+        {
+            for (const auto& node : dragNodes)
+            {
+                auto& data = undoData.emplaceBack();
+                data.node = node;
+                data.oldTransform = node->localToWorldTransform();
+                data.newTransform = data.oldTransform;
+                ApplyWorldTransformField(data.newTransform, field, value, false);
+            }
+        }
+
+        expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
+
+        if (!undoData.empty())
+        {
+            auto action = CreateSceneNodeTransformAction(std::move(undoData), m_host, true);
+            m_host->actionHistory()->execute(action);
         }
     }
 

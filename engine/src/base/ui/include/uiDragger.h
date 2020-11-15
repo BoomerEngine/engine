@@ -23,7 +23,7 @@ namespace ui
     //--
 
     /// helper class to change the numerical value via dragging up/down
-    class Dragger : public TextLabel
+    class BASE_UI_API Dragger : public TextLabel
     {
         RTTI_DECLARE_VIRTUAL_CLASS(Dragger, TextLabel);
 

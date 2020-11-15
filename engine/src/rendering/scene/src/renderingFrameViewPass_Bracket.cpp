@@ -57,6 +57,15 @@ namespace rendering
             m_fb.depth.loadOp = LoadOp::Keep;
         }
 
+        void PassBracket::colorNoClear(uint8_t index, const ImageView& rt)
+        {
+            DEBUG_CHECK(!rt.empty());
+            DEBUG_CHECK(rt.renderTarget());
+
+            m_fb.color[index].rt = rt;
+            m_fb.color[index].loadOp = LoadOp::Keep;
+        }
+
         void PassBracket::colorClear(uint8_t index, const ImageView& rt, const base::Vector4& clearValues)
         {
             DEBUG_CHECK(!rt.empty());

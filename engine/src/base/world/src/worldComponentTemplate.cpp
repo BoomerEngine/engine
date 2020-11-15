@@ -35,7 +35,7 @@ namespace base
             }
         }
 
-        void ComponentTemplate::placement(const EulerTransform& placement, bool callEvent/*= true*/)
+        void ComponentTemplate::placement(const Transform& placement, bool callEvent/*= true*/)
         {
             if (m_placement != placement)
             {

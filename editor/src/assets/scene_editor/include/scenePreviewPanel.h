@@ -9,13 +9,14 @@
 #pragma once
 
 #include "rendering/ui/include/renderingFullScenePanel.h"
+#include "assets/gizmos/include/gizmoGroup.h"
 
 namespace ed
 {
     //--
     
     // a preview panel for editor scene
-    class ASSETS_SCENE_EDITOR_API ScenePreviewPanel : public ui::RenderingFullScenePanel
+    class ASSETS_SCENE_EDITOR_API ScenePreviewPanel : public ui::RenderingFullScenePanel, public IGizmoHost
     {
         RTTI_DECLARE_VIRTUAL_CLASS(ScenePreviewPanel, ui::RenderingFullScenePanel);
 
@@ -30,6 +31,11 @@ namespace ed
 
         //--
 
+        // request gizmos to be recreated for this panel
+        void requestRecreateGizmo();
+
+        //--
+
         virtual void configSave(const ui::ConfigBlock& block) const;
         virtual void configLoad(const ui::ConfigBlock& block);
 
@@ -38,11 +44,23 @@ namespace ed
         virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
         virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
         virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt) override;
+        virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
+        virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        SceneEditModeWeakPtr m_editMode;
+        virtual ui::IElement* gizmoHost_element() const override final;
+        virtual bool gizmoHost_hasSelection() const override final;
+        virtual const rendering::scene::Camera& gizmoHost_camera() const override final;
+        virtual base::Point gizmoHost_viewportSize() const override final;
+        virtual GizmoReferenceSpace gizmoHost_referenceSpace() const override final;
+        virtual GizmoActionContextPtr gizmoHost_startAction() const override final;
 
+        void recreateGizmo();
+
+        SceneEditModeWeakPtr m_editMode;
         ScenePreviewContainer* m_container;
+
+        GizmoGroupPtr m_gizmos;
     };
 
     //--

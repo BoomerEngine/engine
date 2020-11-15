@@ -9,6 +9,7 @@
 #pragma once
 
 #include "sceneEditMode.h"
+#include "assets/gizmos/include/gizmoGroup.h"
 
 namespace ed
 {
@@ -30,7 +31,12 @@ namespace ed
         // ISceneEditMode
         virtual ui::ElementPtr queryUserInterface() const override;
         virtual Array<SceneContentNodePtr> querySelection() const override;
+        virtual bool hasSelection() const override;
         virtual void configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar) override;
+
+        virtual GizmoGroupPtr configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel) override;
+        virtual GizmoReferenceSpace calculateGizmoReferenceSpace() const override;
+        virtual GizmoActionContextPtr createGizmoAction(ScenePreviewContainer* container, const ScenePreviewPanel* panel) const override;
 
         virtual void handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame) override;
         virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
@@ -68,9 +74,21 @@ namespace ed
 
         void handleSelectionChanged();
 
+        void handleTransformsChanged();
+
         void activeNode(SceneContentNode* node);
 
+        void buildTransformNodeListFromSelection(Array<SceneContentDataNodePtr>& outTransformList) const;
+
         void reset();
+
+        //--
+
+        static void EnsureParentsFirst(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outTransformList);
+        static void ExtractSelectionRoots(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outRoots);
+        static void ExtractSelectionHierarchy(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes);
+        static void ExtractSelectionHierarchyWithFilter(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashSet<SceneContentDataNode*>& coreSet, int depth = 0);
+        static void ExtractSelectionHierarchyWithFilter2(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashMap<SceneContentNode*, int>& coreSet);
 
     protected:
         void processObjectDeletion(const Array<SceneContentNodePtr>& selection);
@@ -99,8 +117,18 @@ namespace ed
         void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass);
         void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass);
     };
-
+    
     //--
+
+    struct ActionMoveSceneNodeData
+    {
+        SceneContentDataNodePtr node;
+        AbsoluteTransform oldTransform;
+        AbsoluteTransform newTransform;
+    };
+
+    // create transform action
+    extern ASSETS_SCENE_EDITOR_API ActionPtr CreateSceneNodeTransformAction(Array<ActionMoveSceneNodeData>&& nodes, SceneEditMode_Default* mode, bool fullRefresh);
 
     //--
 

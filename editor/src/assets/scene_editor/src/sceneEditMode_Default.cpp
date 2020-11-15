@@ -7,11 +7,17 @@
 ***/
 
 #include "build.h"
+
 #include "sceneEditMode_Default.h"
 #include "sceneEditMode_Default_UI.h"
+#include "sceneEditMode_Default_Transform.h"
+
 #include "sceneContentNodes.h"
 #include "sceneContentStructure.h"
+
 #include "scenePreviewContainer.h"
+#include "scenePreviewPanel.h"
+
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
 #include "base/object/include/actionHistory.h"
@@ -67,6 +73,11 @@ namespace ed
         m_panel->bind(m_selection.keys());
 
         container()->call(EVENT_EDIT_MODE_SELECTION_CHANGED);
+    }
+
+    void SceneEditMode_Default::handleTransformsChanged()
+    {
+        m_panel->refreshTransforms();
     }
 
     void SceneEditMode_Default::updateSelectionFlags()
@@ -147,6 +158,11 @@ namespace ed
         return m_panel;
     }
 
+    bool SceneEditMode_Default::hasSelection() const
+    {
+        return !m_selection.empty();
+    }
+
     Array<SceneContentNodePtr> SceneEditMode_Default::querySelection() const
     {
         return m_selection.keys();
@@ -157,6 +173,186 @@ namespace ed
         CreateDefaultGridButtons(container, toolbar);
         CreateDefaultSelectionButtons(container, toolbar);
         CreateDefaultGizmoButtons(container, toolbar);
+    }
+
+    GizmoGroupPtr SceneEditMode_Default::configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel)
+    {
+        if (!m_selection.empty())
+        {
+            const auto& settings = container->gizmoSettings();
+            if (settings.mode == SceneGizmoMode::Translation)
+            {
+                uint8_t axisMask = 7; // TODO: filter based on the panel camera
+                return CreateTranslationGizmos(panel, axisMask);
+            }
+        }
+
+        return nullptr;
+    }
+
+    GizmoReferenceSpace SceneEditMode_Default::calculateGizmoReferenceSpace() const
+    {
+        if (!m_selection.empty() && container())
+        {
+            // get the root object for the reference space - we can make a config for this but for now use the first one
+            if (auto root = rtti_cast<SceneContentDataNode>(m_selection.keys().front()))
+            {
+                const auto& settings = container()->gizmoSettings();
+                const auto& transform = root->localToWorldTransform();
+
+                if (settings.space == GizmoSpace::Local)
+                {
+                    return GizmoReferenceSpace(settings.space, transform);
+                }
+                else if (settings.space == GizmoSpace::Parent)
+                {
+                    if (auto rootParent = rtti_cast<SceneContentDataNode>(root->parent()))
+                        return GizmoReferenceSpace(settings.space, rootParent->localToWorldTransform());
+                }
+
+                const auto rootPosition = transform.position();
+                return GizmoReferenceSpace(GizmoSpace::World, rootPosition);
+            }
+        }
+
+        return GizmoReferenceSpace();
+    }
+
+    //--
+
+    void SceneEditMode_Default::EnsureParentsFirst(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outTransformList)
+    {
+        HashSet<SceneContentDataNode*> selectedNodes;
+
+        selectedNodes.reserve(nodes.size());
+        outTransformList.reserve(nodes.size());
+
+        for (const auto& node : nodes)
+        {
+            if (auto* dataNode = rtti_cast<SceneContentDataNode>(node.get()))
+            {
+                selectedNodes.insert(dataNode);
+                dataNode->tempFlag = false;
+            }
+        }
+
+        InplaceArray<SceneContentDataNode*, 16> parentChain;
+
+        for (auto* node : selectedNodes.keys())
+        {
+            parentChain.reset();
+
+            while (node)
+            {
+                parentChain.pushBack(node);
+                node = rtti_cast<SceneContentDataNode>(node->parent());
+            }
+
+            for (int i : parentChain.indexRange().reversed())
+            {
+                auto* nodeToAdd = parentChain[i];
+                if (selectedNodes.contains(nodeToAdd) && !nodeToAdd->tempFlag)
+                {
+                    nodeToAdd->tempFlag = true;
+                    outTransformList.pushBack(AddRef(nodeToAdd));
+                }
+            }
+        }
+    }
+
+    void SceneEditMode_Default::ExtractSelectionRoots(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outRoots)
+    {
+        HashSet<SceneContentDataNode*> selectedNodes;
+        selectedNodes.reserve(nodes.size());
+        outRoots.reserve(nodes.size());
+
+        for (const auto& node : nodes)
+            if (auto* dataNode = rtti_cast<SceneContentDataNode>(node.get()))
+                selectedNodes.insert(dataNode);
+
+        for (auto* node : selectedNodes.keys())
+        {
+            bool parentSelected = false;
+
+            if (auto parent = rtti_cast<SceneContentDataNode>(node->parent()))
+            {
+                while (parent)
+                {
+                    if (selectedNodes.contains(parent))
+                    {
+                        parentSelected = true;
+                        break;
+                    }
+
+                    parent = rtti_cast<SceneContentDataNode>(parent->parent());
+                }
+            }
+
+            if (!parentSelected)
+                outRoots.pushBack(AddRef(node));
+        }
+    }
+
+    void SceneEditMode_Default::ExtractSelectionHierarchy(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes)
+    {
+        outNodes.pushBack(AddRef(node));
+
+        for (const auto& comp : node->components())
+            outNodes.pushBack(comp);
+
+        for (const auto& child : node->entities())
+            ExtractSelectionHierarchy(child, outNodes);
+    }
+
+    void SceneEditMode_Default::ExtractSelectionHierarchyWithFilter(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashSet<SceneContentDataNode*>& coreSet, int depth)
+    {
+        if (depth == 0 || !coreSet.contains(node))
+            outNodes.pushBack(AddRef(node));
+
+        for (const auto& child : node->components())
+            ExtractSelectionHierarchyWithFilter(child, outNodes, coreSet, depth + 1);
+
+        for (const auto& child : node->entities())
+            ExtractSelectionHierarchyWithFilter(child, outNodes, coreSet, depth + 1);
+    }
+
+    void SceneEditMode_Default::ExtractSelectionHierarchyWithFilter2(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashMap<SceneContentNode*, int>& coreSet)
+    {
+        if (!coreSet.contains(node))
+            outNodes.pushBack(AddRef(node));
+
+        for (const auto& child : node->components())
+            ExtractSelectionHierarchyWithFilter2(child, outNodes, coreSet);
+
+        for (const auto& child : node->entities())
+            ExtractSelectionHierarchyWithFilter2(child, outNodes, coreSet);
+    }
+
+    void SceneEditMode_Default::buildTransformNodeListFromSelection(Array<SceneContentDataNodePtr>& outTransformList) const
+    {
+        const auto target = container()->gizmoSettings().target;
+        if (target == SceneGizmoTarget::WholeHierarchy)
+        {
+            Array<SceneContentDataNodePtr> roots;
+            ExtractSelectionRoots(m_selection.keys(), roots);
+
+            for (const auto& root : roots)
+                ExtractSelectionHierarchy(root, outTransformList);
+        }
+        else if (target == SceneGizmoTarget::SelectionOnly)
+        {
+            EnsureParentsFirst(m_selection.keys(), outTransformList);
+        }
+    }
+
+    //--
+
+    GizmoActionContextPtr SceneEditMode_Default::createGizmoAction(ScenePreviewContainer* container, const ScenePreviewPanel* panel) const
+    {
+        Array<SceneContentDataNodePtr> transformNodes;
+        buildTransformNodeListFromSelection(transformNodes);
+
+        return CreateSharedPtr<SceneEditModeDefaultTransformAction>(const_cast<SceneEditMode_Default*>(this), panel, transformNodes, container->gridSettings(), container->gizmoSettings());
     }
 
     void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
