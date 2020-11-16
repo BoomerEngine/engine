@@ -24,7 +24,7 @@ namespace base
             {
             public:
                 //! Get search path ( root directory )
-                INLINE const AbsolutePath& searchPath() const { return m_searchPath; }
+                INLINE const StringBuf& searchPath() const { return m_searchPath; }
 
                 //! Are directories allowed ?
                 INLINE bool areDirectoriesAllowed() const { return m_allowDirs; }
@@ -34,7 +34,7 @@ namespace base
 
                 //---
 
-                POSIXFileIterator(const AbsolutePath& searchAbsolutePath, const wchar_t* pattern, bool allowFiles, bool allowDirs);
+                POSIXFileIterator(const StringBuf& searchAbsolutePath, const char* pattern, bool allowFiles, bool allowDirs);
                 ~POSIXFileIterator();
 
                 //! Iterate to next
@@ -47,10 +47,10 @@ namespace base
                 operator bool() const;
 
                 //! Get current file path (full path + name and extension)
-                AbsolutePath filePath() const;
+                StringBuf filePath() const;
 
                 //! Get current file name ( name and extension only )
-                const wchar_t* fileName() const;
+                const char* fileName() const;
 
             private:
                 //! Do we have a valid entry ?
@@ -65,10 +65,8 @@ namespace base
                 bool m_allowDirs;
                 bool m_allowFiles;
 
-                AbsolutePath m_searchPath;
+                StringBuf m_searchPath;
                 StringBuf m_searchPattern;
-
-                mutable UTF16StringBuf m_localBuf;
             };
 
         } // prv

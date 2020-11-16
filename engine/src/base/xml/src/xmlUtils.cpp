@@ -40,7 +40,7 @@ namespace base
 
         //--
 
-        DocumentPtr LoadDocument(ILoadingReporter& ctx, const io::AbsolutePath& absoluteFilePath)
+        DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView<char> absoluteFilePath)
         {
             auto buffer  = io::LoadFileToBuffer(absoluteFilePath);
             return LoadDocument(ctx, buffer);
@@ -86,7 +86,7 @@ namespace base
             }
         }
 
-        bool SaveDocument(const IDocument& ptr, const io::AbsolutePath& absoluteFilePath, bool binaryFormat/*= false*/)
+        bool SaveDocument(const IDocument& ptr, StringView<char> absoluteFilePath, bool binaryFormat/*= false*/)
         {
             if (binaryFormat)
             {

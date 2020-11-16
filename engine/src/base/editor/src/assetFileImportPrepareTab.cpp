@@ -165,7 +165,7 @@ namespace ed
         return StringBuf::EMPTY();
     }
 
-    io::AbsolutePath AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const
+    StringBuf AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const
     {
         if (file.model() == this)
         {
@@ -173,11 +173,11 @@ namespace ed
             {
                 StringBuf contextPath;
                 if (GetService<res::ImportFileService>()->resolveContextPath(data->sourceAssetPath, contextPath))
-                    return io::AbsolutePath::Build(UTF16StringBuf(contextPath.c_str()));
+                    return contextPath;
             }
         }
 
-        return io::AbsolutePath();
+        return StringBuf::EMPTY();
     }
 
     ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePath, TImportClass resourceClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration)

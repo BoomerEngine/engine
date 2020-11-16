@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "absolutePath.h"
-
 namespace base
 {
     namespace io
@@ -19,11 +17,11 @@ namespace base
         class BASE_IO_API DirectoryMonitor : public base::NoCopy
         {
         public:
-            DirectoryMonitor(const AbsolutePath& path, bool recursive);
+            DirectoryMonitor(const StringBuf& path, bool recursive);
             ~DirectoryMonitor();
 
             /// get the path we are watching over
-            INLINE const AbsolutePath& path() const { return m_path; }
+            INLINE const StringBuf& path() const { return m_path; }
 
             /// is the check recursive (are we supposed to react to changes in the sub folders as well?)
             INLINE bool isRecursive() const { return m_isRecursive; }
@@ -35,7 +33,7 @@ namespace base
             bool testAndReset();
 
         private:
-            AbsolutePath m_path;
+            StringBuf m_path;
             bool m_isRecursive;
 
             std::atomic<uint32_t> m_modified;

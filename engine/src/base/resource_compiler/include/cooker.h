@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceMountPoint.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCooker.h"
@@ -63,7 +62,7 @@ namespace base
             {
                 ResourceKey key;
                 Array<uint32_t> externalRequests;
-                io::AbsolutePath cookedFilePath;
+                StringBuf cookedFilePath;
             };
 
             typedef HashMap<ResourceKey, RefWeakPtr<CookingRequest>> TCoookingRequestMap;

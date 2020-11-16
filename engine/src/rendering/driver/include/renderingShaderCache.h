@@ -92,10 +92,10 @@ namespace rendering
         //---
 
         /// load shader cache from file
-        bool load(const base::io::AbsolutePath& path);
+        bool load(base::StringView<char> path);
 
         /// save shader cache to a file (optionally we can only add new entries)
-        bool save(const base::io::AbsolutePath& path, bool updatesOnly=false);
+        bool save(base::StringView<char> path, bool updatesOnly=false);
 
         //---
 

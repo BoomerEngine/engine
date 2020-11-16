@@ -7,60 +7,44 @@
 ***/
 
 #include "build.h"
-#include "absolutePath.h"
-#include "absolutePathBuilder.h"
+#include "pathBuilder.h"
 
 namespace base
 {
     namespace io
     {
 
-        AbsolutePathBuilder::AbsolutePathBuilder()
+        PathBuilder::PathBuilder()
         {}
 
-        AbsolutePathBuilder::AbsolutePathBuilder(const AbsolutePath& path)
+        PathBuilder::PathBuilder(StringView<char> path)
         {
             reset(path);
         }
 
-        AbsolutePathBuilder::AbsolutePathBuilder(const UTF16StringBuf& relaxedPath)
-        {
-            reset(relaxedPath.view());
-        }
-
-        AbsolutePathBuilder::AbsolutePathBuilder(StringView<wchar_t> relaxedPath)
-        {
-            reset(relaxedPath);
-        }
-
-        AbsolutePathBuilder& AbsolutePathBuilder::clear()
+        PathBuilder& PathBuilder::clear()
         {
             m_drive.clear();
-            m_directories.clear();
             m_fileName.clear();
-            m_extensions.clear();
+            m_directories.reset();
+            m_extensions.reset();
             return *this;
-        }
-
-        AbsolutePathBuilder& AbsolutePathBuilder::reset(const AbsolutePath& path)
-        {
-            return reset(path.view());
         }
 
         namespace helper
         {
         
-            INLINE static bool IsPathSeparator(wchar_t ch)
+            INLINE static bool IsPathSeparator(char ch)
             {
-                return AbsolutePath::IsPathSeparator(ch);
+                return ch == '/' || ch == '\\';
             }
 
-            INLINE static bool IsExtensionSeparator(wchar_t ch)
+            INLINE static bool IsExtensionSeparator(char ch)
             {
                 return ch == '.';
             }
 
-            INLINE static bool EatPathPart(const wchar_t*& str, UTF16StringBuf& outResult)
+            INLINE static bool EatPathPart(const char*& str, StringBuf& outResult)
             {
                 if (!*str)
                     return false;
@@ -75,13 +59,13 @@ namespace base
                 }
 
                 // eat the directory name that ends with separator
-                const wchar_t* start = str;
+                const char* start = str;
                 while (*str)
                 {
                     if (IsPathSeparator(*str))
                     {
                         auto len = (uint32_t)(str - start);
-                        outResult = UTF16StringBuf(start, len);
+                        outResult = StringBuf(start, len);
 
                         str += 1; // skip over the separator
                         return true;
@@ -95,11 +79,11 @@ namespace base
                 return false;
             }
 
-            INLINE static bool EatFileNamePart(const wchar_t*& str, UTF16StringBuf& outResult)
+            INLINE static bool EatFileNamePart(const char*& str, StringBuf& outResult)
             {
                 ASSERT(*str);
 
-                const wchar_t* start = str;
+                const char* start = str;
                 while (*str)
                 {
                     if (IsExtensionSeparator(*str))
@@ -114,19 +98,19 @@ namespace base
 
                 // get the file name
                 auto len = (uint32_t)(str - start);
-                outResult = UTF16StringBuf(start, len);
+                outResult = StringBuf(start, len);
 
                 return true;
             }
             
-            INLINE static bool EatFileExtensionPart(const wchar_t*& str, UTF16StringBuf& outResult)
+            INLINE static bool EatFileExtensionPart(const char*& str, StringBuf& outResult)
             {
                 ASSERT(*str);
                 ASSERT(IsExtensionSeparator(*str));
 
                 str += 1; // skip over the dot
 
-                const wchar_t* start = str;
+                const char* start = str;
                 while (*str)
                 {
                     if (IsExtensionSeparator(*str))
@@ -141,18 +125,18 @@ namespace base
 
                 // get the file name
                 auto len = (uint32_t)(str - start);
-                outResult = UTF16StringBuf(start, len);
+                outResult = StringBuf(start, len);
                 return true;
             }
 
         } // helper
 
-        AbsolutePathBuilder& AbsolutePathBuilder::reset(StringView<wchar_t> view)
+        PathBuilder& PathBuilder::reset(StringView<char> view)
         {
             clear();
 
-            const wchar_t* str = view.data(); // TODO: fix
-            UTF16StringBuf part;
+            const char* str = view.data(); // TODO: fix
+            StringBuf part;
 
             // parse the drive path
             if (!helper::IsPathSeparator(*str))
@@ -182,32 +166,32 @@ namespace base
 
         //--
 
-        AbsolutePathBuilder& AbsolutePathBuilder::removeFileNameAndExtension()
+        PathBuilder& PathBuilder::removeFileNameAndExtension()
         {
             m_fileName.clear();
             m_extensions.clear();
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::fileName(StringView<wchar_t> fileName)
+        PathBuilder& PathBuilder::fileName(StringView<char> fileName)
         {
-            m_fileName = fileName;
+            m_fileName = StringBuf(fileName);
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::appendFileName(StringView<wchar_t> partialName)
+        PathBuilder& PathBuilder::appendFileName(StringView<char> partialName)
         {
-            m_fileName += partialName;
+            m_fileName = TempString("{}{}", m_fileName, partialName);
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::removeExtensions()
+        PathBuilder& PathBuilder::removeExtensions()
         {
             m_extensions.clear();
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::removeExtension(uint32_t index /*= 0*/)
+        PathBuilder& PathBuilder::removeExtension(uint32_t index /*= 0*/)
         {
             if (index < m_extensions.size())
                 m_extensions.erase(index);
@@ -215,32 +199,32 @@ namespace base
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::extension(StringView<wchar_t> extension)
+        PathBuilder& PathBuilder::extension(StringView<char> extension)
         {
             m_extensions.clear();
             m_extensions.emplaceBack(extension);
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::addExtension(StringView<wchar_t> extension)
+        PathBuilder& PathBuilder::addExtension(StringView<char> extension)
         {
             m_extensions.emplaceBack(extension);
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::removeDirectories()
+        PathBuilder& PathBuilder::removeDirectories()
         {
             m_directories.clear();
             m_drive.clear();
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::pushDirectory(StringView<wchar_t> directoryName)
+        PathBuilder& PathBuilder::pushDirectory(StringView<char> directoryName)
         {
-            if (directoryName == L"." || directoryName.empty())
+            if (directoryName == "." || directoryName.empty())
                 return *this;
 
-            if (directoryName == L"..")
+            if (directoryName == "..")
                 return popDirectory();
 
             DEBUG_CHECK_EX(!directoryName.empty(), "Directory name cannot be empty");
@@ -248,7 +232,7 @@ namespace base
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::popDirectory()
+        PathBuilder& PathBuilder::popDirectory()
         {
             DEBUG_CHECK_EX(!m_directories.empty(), "Cannot pop directory on empty path");
             if (!m_directories.empty())
@@ -256,32 +240,32 @@ namespace base
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::pushDirectories(StringView<wchar_t> relativeDirectoryPath)
+        PathBuilder& PathBuilder::pushDirectories(StringView<char> relativeDirectoryPath)
         {
             auto cur  = relativeDirectoryPath.data(); // TODO!
 
-            UTF16StringBuf part;
+            StringBuf part;
             while (helper::EatPathPart(cur, part))
                 pushDirectory(part);
 
             return *this;
         }
 
-        AbsolutePathBuilder& AbsolutePathBuilder::drive(StringView<wchar_t> driverPart)
+        PathBuilder& PathBuilder::drive(StringView<char> driverPart)
         {
-            m_drive = driverPart;
+            m_drive = StringBuf(driverPart);
             return *this;
         }
 
         //---
 
-        AbsolutePath AbsolutePathBuilder::toAbsolutePath(bool includeFilePart /*= true*/) const
+        StringBuf PathBuilder::toString(bool includeFilePart /*= true*/) const
         {
-            UTF16StringBuf buf;
+            StringBuilder buf;
 
-            const wchar_t pathSeparator[] =
+            const char pathSeparator[] =
             {
-                AbsolutePath::SYSTEM_PATH_SEPARATOR, 0
+                SYSTEM_PATH_SEPARATOR, 0
             };
 
             buf.append(m_drive);
@@ -304,7 +288,7 @@ namespace base
                 }
             }
 
-            return AbsolutePath(buf);
+            return buf.toString();
         }
 
     } // io

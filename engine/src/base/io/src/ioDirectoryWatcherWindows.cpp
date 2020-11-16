@@ -18,14 +18,14 @@ namespace base
         namespace prv
         {
 
-            WinDirectoryWatcher::WinDirectoryWatcher(StringView<wchar_t> rootPath)
-                : m_watchedPath(AbsolutePath::BuildAsDir(rootPath))
+            WinDirectoryWatcher::WinDirectoryWatcher(Array<wchar_t> rootPath)
+                : m_watchedPath(rootPath)
             {
                 memset(&m_waitCondition, 0, sizeof(m_waitCondition));
                 m_waitCondition.hEvent = ::CreateEvent(NULL, false, false, NULL);
 
                 m_directoryHandle = ::CreateFileW(
-                    m_watchedPath.c_str(),
+                    m_watchedPath.typedData(),
                     FILE_LIST_DIRECTORY,
                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                     NULL,
@@ -54,7 +54,7 @@ namespace base
                 }
                 else
                 {
-                    TRACE_WARNING("Cannot create a file system watcher for absolute path '{}'", rootPath);
+                    TRACE_WARNING("Cannot create a file system watcher for absolute path '{}'", (const wchar_t*)rootPath.typedData());
                 }
             }
 
@@ -84,11 +84,12 @@ namespace base
                     m_listeners[index] = nullptr;
             }
 
-            static bool CheckIfFileFinishedWriting(const AbsolutePath& path, bool& send)
+            static bool CheckIfFileFinishedWriting(const char* path, bool& send)
             {
-                bool finished = false;
+                return true;
+                /*bool finished = false;
 
-                HANDLE handle = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE handle = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (handle != INVALID_HANDLE_VALUE)
                 {
                     OVERLAPPED ovp;
@@ -118,7 +119,7 @@ namespace base
                     TRACE_WARNING("IO: File '{}' still inacessilbe", path);
                 }
 
-                return finished;
+                return finished;*/
             }
 
             void WinDirectoryWatcher::dispatch()
@@ -156,7 +157,7 @@ namespace base
                             {
                                 TRACE_ERROR("Modified reached '{}'", evt.path);
                                 bool emitEvent = true;
-                                if (CheckIfFileFinishedWriting(evt.path, emitEvent))
+                                if (CheckIfFileFinishedWriting(evt.path.c_str(), emitEvent))
                                 {
                                     if (emitEvent)
                                     {
@@ -228,9 +229,13 @@ namespace base
                         auto curInfo  = info;
                         while (curInfo) // there may be more than one info returned in the buffer
                         {
-                            auto filePath  = UTF16StringBuf(curInfo->FileName, curInfo->FileNameLength / sizeof(wchar_t));
-                            auto fullPath  = m_watchedPath.addFile(filePath);
                             auto action = 0U;
+
+                            StringBuilder fullPathBuilder;
+                            fullPathBuilder.append(m_watchedPath.typedData());
+                            fullPathBuilder.append(curInfo->FileName, curInfo->FileNameLength / sizeof(wchar_t));
+
+                            auto fullPath = fullPathBuilder.toString();
 
                             //TRACE_INFO("Event {} for '{}'", curInfo->Action, fullPath);
                             
@@ -252,7 +257,7 @@ namespace base
                             {
                                 auto lock = CreateLock(m_pendingEventsLock);
                                 auto& evt = m_pendingEvents.emplaceBack();
-                                evt.path = std::move(fullPath);
+                                evt.path = std::move(fullPath); 
 
                                 if (directory)
                                     evt.type = DirectoryWatcherEventType::DirectoryRemoved;

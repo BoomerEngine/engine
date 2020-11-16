@@ -21,9 +21,9 @@ namespace base
 
             //--
 
-            WinReadFileHandle::WinReadFileHandle(HANDLE hSyncFile, UTF16StringBuf&& origin)
+            WinReadFileHandle::WinReadFileHandle(HANDLE hSyncFile, const StringView<char> path)
                 : m_hHandle(hSyncFile)
-                , m_origin(std::move(origin))
+                , m_origin(path)
             {
             }
 
@@ -109,9 +109,9 @@ namespace base
 
             //--
 
-            WinWriteFileHandle::WinWriteFileHandle(HANDLE hSyncFile, const UTF16StringBuf& origin)
+            WinWriteFileHandle::WinWriteFileHandle(HANDLE hSyncFile, StringView<char> path)
                 : m_hHandle(hSyncFile)
-                , m_origin(origin)
+                , m_origin(path)
             {
             }
 
@@ -202,7 +202,7 @@ namespace base
 
             //--
 
-            WinWriteTempFileHandle::WinWriteTempFileHandle(const UTF16StringBuf& targetPath, const UTF16StringBuf& tempFilePath, const WriteFileHandlePtr& tempFileWriter)
+            WinWriteTempFileHandle::WinWriteTempFileHandle(Array<wchar_t> targetPath, Array<wchar_t> tempFilePath, const WriteFileHandlePtr& tempFileWriter)
                 : m_tempFileWriter(tempFileWriter)
                 , m_tempFilePath(tempFilePath)
                 , m_targetFilePath(targetPath)
@@ -216,16 +216,18 @@ namespace base
                     m_tempFileWriter.reset();
 
                     // delete target file
-                    DeleteFile(m_targetFilePath.c_str());
+                    DeleteFile(m_targetFilePath.typedData());
 
                     // move temp file to the target place
-                    if (MoveFile(m_tempFilePath.c_str(), m_targetFilePath.c_str()))
+                    if (MoveFile(m_tempFilePath.typedData(), m_targetFilePath.typedData()))
                     {
-                        TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", m_targetFilePath, m_tempFilePath);
+                        TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", 
+                            (const char*)m_targetFilePath.typedData(), (const char*)m_tempFilePath.typedData());
                     }
                     else
                     {
-                        TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.", m_targetFilePath, m_tempFilePath);
+                        TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.",
+                            (const char*)m_targetFilePath.typedData(), (const char*)m_tempFilePath.typedData());
                     }
                 }
             }
@@ -264,13 +266,13 @@ namespace base
                 {
                     TRACE_WARNING("WinIO: Discarded file writing for target '{}'. Temp file '{}' will be delete.");
                     m_tempFileWriter.reset();
-                    DeleteFile(m_tempFilePath.c_str());
+                    DeleteFile(m_tempFilePath.typedData());
                 }
             }
 
             //--
 
-            WinAsyncFileHandle::WinAsyncFileHandle(HANDLE hAsyncFile, const UTF16StringBuf& origin, uint64_t size, WinAsyncReadDispatcher* dispatcher)
+            WinAsyncFileHandle::WinAsyncFileHandle(HANDLE hAsyncFile, StringView<char> origin, uint64_t size, WinAsyncReadDispatcher* dispatcher)
                 : m_hHandle(hAsyncFile)
                 , m_origin(origin)
                 , m_size(size)

@@ -88,10 +88,10 @@ namespace ui
         ~ConfigFileStorageDataInterface();
 
         /// load data from file
-        bool loadFromFile(base::io::AbsolutePathView path);
+        bool loadFromFile(base::StringView<char> path);
 
         /// save data to file
-        bool saveToFile(base::io::AbsolutePathView path) const;
+        bool saveToFile(base::StringView<char> path) const;
 
         //--
 

@@ -11,7 +11,6 @@
 #include "renderingCanvasImageCache.h"
 #include "renderingCanvasRendererCustomBatchHandler.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/image/include/imageDynamicAtlas.h"
 #include "base/canvas/include/canvas.h"

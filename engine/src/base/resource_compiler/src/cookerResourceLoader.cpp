@@ -49,16 +49,19 @@ namespace base
         bool ResourceLoaderCooker::initialize(const app::CommandLine& cmdLine)
         {
             // look for "project.xml"
-            auto startPath = base::io::SystemPath(io::PathCategory::ExecutableDir);
-            while (!startPath.empty() && startPath.view() != L"/" && startPath.view() != L"\\")
+            auto startPath = base::io::SystemPath(io::PathCategory::ExecutableDir).view().baseDirectory();
+            while (!startPath.empty())
             {
-                const auto depotManifestPath = startPath.addFile("project.xml");
+                TRACE_INFO("Checking directory '{}' for project manifest", startPath);
+
+                const auto depotManifestPath = StringBuf(TempString("{}project.xml", startPath));
                 if (base::io::FileExists(depotManifestPath))
                 {
                     if (m_depot->populateFromManifest(depotManifestPath))
                         break;
                 }
-                startPath = startPath.parentPath();
+
+                startPath = startPath.parentDirectory();
             }
 
             // done

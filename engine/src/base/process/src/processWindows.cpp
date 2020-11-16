@@ -10,6 +10,7 @@
 #include "build.h"
 #include "pipe.h"
 #include "processWindows.h"
+#include "base/containers/include/utf8StringFunctions.h"
 
 namespace base
 {
@@ -285,7 +286,15 @@ namespace base
                     }
                     else
                     {
-                        temp += setup.m_processPath.c_str();
+                        const auto* ptr = setup.m_processPath.c_str();
+                        const auto* endPtr = ptr + setup.m_processPath.length();
+                        while (ptr < endPtr)
+                        {
+                            wchar_t txt[2];
+                            txt[0] = (wchar_t)utf8::NextChar(ptr, endPtr);
+                            txt[1] = 0;
+                            temp += txt;
+                        }
                     }
                 }
 

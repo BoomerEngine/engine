@@ -11,10 +11,8 @@
 #include "base/image/include/image.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioDirectoryWatcher.h"
-#include "base/io/include/absolutePathBuilder.h"
 #include "base/containers/include/stringParser.h"
 #include "base/process/include/process.h"
-#include "base/io/include/absolutePath.h"
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceThumbnail.h"
 

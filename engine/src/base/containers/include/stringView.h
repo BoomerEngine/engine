@@ -162,6 +162,15 @@ namespace base
 
         //-----------------------------------------------------------------------------
 
+        INLINE StringView<T> fileName() const; // lena.png.bak (empty for directories)
+        INLINE StringView<T> fileStem() const; // lena (not empty for directories)
+        INLINE StringView<T> extensions() const; // .png.bak
+        INLINE StringView<T> lastExtension() const; // .bak
+        INLINE StringView<T> baseDirectory() const; // Z:\test\files\lena.png -> "Z:\test\files\"
+        INLINE StringView<T> parentDirectory() const; // Z:\test\files\ -> "Z:\test\"
+
+        //-----------------------------------------------------------------------------
+
         INLINE MatchResult match(bool& outValue) const;
         INLINE MatchResult match(uint8_t& outValue, uint32_t base = 10) const;
         INLINE MatchResult match(uint16_t& outValue, uint32_t base = 10) const;

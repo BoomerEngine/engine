@@ -9,7 +9,6 @@
 #pragma once
 
 #include "depotFileSystem.h"
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioDirectoryWatcher.h"
 
 namespace base
@@ -21,11 +20,11 @@ namespace base
         class BASE_RESOURCE_COMPILER_API FileSystemNative : public IFileSystem, public io::IDirectoryWatcherListener
         {
         public:
-            FileSystemNative(const io::AbsolutePath& rootPath, bool allowWrites, DepotStructure* owner);
+            FileSystemNative(StringView<char> rootPath, bool allowWrites, DepotStructure* owner);
             virtual ~FileSystemNative();
 
             /// get the file path
-            INLINE const io::AbsolutePath& rootPath() const { return m_rootPath; }
+            INLINE StringView<char> rootPath() const { return m_rootPath; }
 
             /// IRawFileSystem
             virtual bool isPhysical() const override final;
@@ -33,7 +32,7 @@ namespace base
             virtual bool ownsFile(StringView<char> rawFilePath) const override final;
             virtual bool contextName(StringView<char> rawFilePath, StringBuf& outContextName) const override final;
             virtual bool timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const override final;
-            virtual bool absolutePath(StringView<char> rawFilePath, io::AbsolutePath& outAbsolutePath) const override final;
+            virtual bool absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const override final;
 
             // Enum
             virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
@@ -48,7 +47,8 @@ namespace base
             virtual void enableFileSystemObservers() override final;
 
         private:
-            io::AbsolutePath m_rootPath;
+            StringBuf m_rootPath;
+
             io::DirectoryWatcherPtr m_tracker;
             bool m_writable = false;
 

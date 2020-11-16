@@ -91,7 +91,7 @@ namespace ed
         StringBuf fileSourceAssetPath(const ui::ModelIndex& file) const;
 
         // get absolute path to source asset
-        io::AbsolutePath fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const;
+        StringBuf fileSourceAssetAbsolutePath(const ui::ModelIndex& file) const;
 
         //--
 

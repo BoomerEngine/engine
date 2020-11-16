@@ -165,10 +165,10 @@ namespace base
                 hasWork = true;
             }
 
-            const auto importListPath = commandline.singleValueUTF16("assetListPath");
+            const auto importListPath = commandline.singleValue("assetListPath");
             if (!importListPath.empty())
             {
-                if (const auto assetListDoc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), io::AbsolutePath::Build(importListPath)))
+                if (const auto assetListDoc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), importListPath))
                 {
                     if (const auto assetList = LoadObjectFromXML<ImportList>(assetListDoc))
                     {

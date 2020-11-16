@@ -44,7 +44,7 @@ namespace ed
 
         //--
 
-        io::AbsolutePath m_tempListPath;
+        StringBuf m_tempListPath;
         void deleteTempFile();
 
         //--

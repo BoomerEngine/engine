@@ -40,7 +40,7 @@ namespace base
             }
 
             // absolute path ?
-            if (const auto absolutePath = io::AbsolutePath::Build(commandline.singleValueUTF16("absolutePath")))
+            if (const auto absolutePath = commandline.singleValue("absolutePath"))
             {
                 // open source file
                 if (auto file = base::io::OpenForAsyncReading(absolutePath))
@@ -81,7 +81,7 @@ namespace base
                 }
 
             }
-            else if (const auto assetPath = io::AbsolutePath::Build(commandline.singleValueUTF16("assetPath")))
+            else if (const auto assetPath = commandline.singleValue("assetPath"))
             {
                 // find the source asset service - we need it to have access to source assets
                 auto assetSource = GetService<ImportFileService>();

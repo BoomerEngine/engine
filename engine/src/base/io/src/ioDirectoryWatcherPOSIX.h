@@ -27,7 +27,7 @@ namespace base
             class POSIXDirectoryWatcher : public IDirectoryWatcher
             {
             public:
-                POSIXDirectoryWatcher(const AbsolutePath& rootPath);
+                POSIXDirectoryWatcher(StringView<char> rootPath);
                 virtual ~POSIXDirectoryWatcher();
 
                 //! attach listener
@@ -43,22 +43,22 @@ namespace base
                 Array<IDirectoryWatcherListener*> m_listeners;
 
                 SpinLock m_mapLock;
-                HashMap<int, base::io::AbsolutePath> m_handleToPath;
+                HashMap<int, StringBuf> m_handleToPath;
                 HashMap<uint64_t, int> m_pathToHandle;
 
                 Thread m_localThread;
 
                 Array<DirectoryWatcherEvent> m_tempEvents;
-                Array<AbsolutePath> m_tempAddedDirectories;
-                Array<AbsolutePath> m_tempRemovedDirectories;
+                Array<StringBuf> m_tempAddedDirectories;
+                Array<StringBuf> m_tempRemovedDirectories;
 
-                Array<AbsolutePath> m_filesCreatedButNotYetClosed;
-                Array<AbsolutePath> m_filesModifiedButNotYetClosed;
+                Array<StringBuf> m_filesCreatedButNotYetClosed;
+                Array<StringBuf> m_filesModifiedButNotYetClosed;
 
                 uint8_t m_buffer[BUF_LEN];
 
-                void monitorPath(const base::io::AbsolutePath& path);
-                void unmonitorPath(const base::io::AbsolutePath& path);
+                void monitorPath(base::StringView<char> path);
+                void unmonitorPath(base::StringView<char> path);
 
                 void watch();
             };

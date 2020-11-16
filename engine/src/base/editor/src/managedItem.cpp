@@ -39,9 +39,9 @@ namespace ed
         return ret.toString();
     }
 
-    io::AbsolutePath ManagedItem::absolutePath() const
+    StringBuf ManagedItem::absolutePath() const
     {
-        io::AbsolutePath ret;
+        StringBuf ret;
         m_depot->depot().queryFileAbsolutePath(depotPath(), ret);
         return ret;
     }

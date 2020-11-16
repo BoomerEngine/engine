@@ -11,7 +11,6 @@
 #include "uiStyleValue.h"
 #include "uiStyleSelector.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/font/include/font.h"
 #include "base/image/include/image.h"
 

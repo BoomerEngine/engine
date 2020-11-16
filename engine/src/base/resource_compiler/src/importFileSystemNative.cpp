@@ -35,7 +35,7 @@ namespace base
 
         bool SourceAssetFileSystem_LocalComputer::resolveContextPath(StringView<char> fileSystemPath, StringBuf& outContextPath) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
@@ -45,7 +45,7 @@ namespace base
 
         bool SourceAssetFileSystem_LocalComputer::fileExists(StringView<char> fileSystemPath) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
@@ -54,7 +54,7 @@ namespace base
 
         SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return SourceAssetStatus::Missing;
 
@@ -88,7 +88,7 @@ namespace base
 
         Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return Buffer();
 
@@ -108,40 +108,44 @@ namespace base
 
         bool SourceAssetFileSystem_LocalComputer::enumDirectoriesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return base::io::FindSubDirs(path, [enumFunc](io::AbsolutePathView view)
+            return base::io::FindSubDirs(path, [enumFunc](StringView<char> view)
                 {
-                    if (view.beginsWith(L"."))
-                        return false;
+                    if (!view.beginsWith("."))
+                    {
+                        StringBuf utf8Name(view);
+                        return enumFunc(utf8Name);
+                    }
 
-                    StringBuf utf8Name(view);
-                    return enumFunc(utf8Name);
+                    return false;
                 });
         }
 
         bool SourceAssetFileSystem_LocalComputer::enumFilesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const
         {
-            io::AbsolutePath path;
+            StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return base::io::FindLocalFiles(path, L"*.*", [enumFunc](io::AbsolutePathView view)
+            return base::io::FindLocalFiles(path, "*.*", [enumFunc](StringView<char> view)
                 {
-                    if (view.beginsWith(L"."))
-                        return false;
+                    if (!view.beginsWith("."))
+                    {
+                        StringBuf utf8Name(view);
+                        return enumFunc(utf8Name);
+                    }
 
-                    StringBuf utf8Name(view);
-                    return enumFunc(utf8Name);
+                    return false;
                 });
         }
 
-        bool SourceAssetFileSystem_LocalComputer::translateAbsolutePath(io::AbsolutePathView absolutePath, StringBuf& outFileSystemPath) const
+        bool SourceAssetFileSystem_LocalComputer::translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const
         {
             // non-file path
-            if (absolutePath.empty() || absolutePath.endsWith(L"/") || absolutePath.endsWith(L"\\"))
+            if (absolutePath.empty() || absolutePath.endsWith("/") || absolutePath.endsWith("\\"))
                 return false;
 
             // TODO: LINUX/MacOS
@@ -182,7 +186,7 @@ namespace base
 
         //--
 
-        bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView<char> fileSystemPath, io::AbsolutePath& outAbsolutePath) const
+        bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView<char> fileSystemPath, StringBuf& outAbsolutePath) const
         {
             StringParser parser(fileSystemPath);
 
@@ -206,24 +210,28 @@ namespace base
                 return false;
 
             // assemble the UTF-16 path
-            UTF16StringBuf pathString;
-            pathString.reserve(fileSystemPath.length() + 4);
+            StringBuilder pathString;
 
             // drive path
-            wchar_t drivePath[3] = { (wchar_t)letter, ':', 0 };
-            pathString += drivePath;
+            char drivePath[3] = { letter, ':', 0 };
+            pathString.append(drivePath);
 
             // rest of the path (automatic conversion from UTF-8 to UTF-16 will occur)
-            pathString += parser.currentView();
+            pathString.append(parser.currentView());
 
-            // replace path separators
-            for (auto& ch : pathString)
-                if (ch == io::AbsolutePath::WRONG_SYSTEM_PATH_SEPARATOR)
-                    ch = io::AbsolutePath::SYSTEM_PATH_SEPARATOR;
+            // fixup
+            {
+                auto* ch = pathString.c_str();
+                while (*ch)
+                {
+                    if (*ch == io::WRONG_SYSTEM_PATH_SEPARATOR)
+                        *ch = io::SYSTEM_PATH_SEPARATOR;
+                    ++ch;
+                }
+            }
 
-            // TODO: any more validation ?
-
-            outAbsolutePath = io::AbsolutePath::Build(pathString);
+            // export
+            outAbsolutePath = pathString.toString();
             return true;
         }
 

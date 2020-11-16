@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "absolutePath.h"
 #include "base/containers/include/stringBuf.h"
 
 #include <Windows.h>
@@ -45,8 +44,11 @@ namespace base
                 //! Is the current file valid ?
                 operator bool() const;
 
-                //! Get current file name ( name and extension only )
-                const wchar_t* fileName() const;
+                //! Get current file name (name and extension only)
+                const wchar_t* fileNameRaw() const;
+
+                //! Get current file name (name and extension only) - UTF8 encoded
+                const char* fileName() const;
 
             private:
                 //! Do we have a valid entry ?
@@ -59,6 +61,8 @@ namespace base
                 HANDLE              m_findHandle;
                 bool                m_allowDirs;
                 bool                m_allowFiles;
+
+                mutable char m_fileName[MAX_PATH];
             };
 
         } // prv

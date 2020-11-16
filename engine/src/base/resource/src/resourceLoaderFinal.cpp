@@ -32,17 +32,15 @@ namespace base
         {
             if (cmdLine.hasParam("cookedDir"))
             {
-                m_looseFileDir = io::AbsolutePath::BuildAsDir(cmdLine.singleValueUTF16("cookedDir"));
-                TRACE_INFO("Cooked files directory: '{}'", m_looseFileDir);
+                m_looseFileDir = cmdLine.singleValue("cookedDir");
             }
             else
             {
-                m_looseFileDir = base::io::SystemPath(io::PathCategory::ExecutableDir).addDir("cooked");
-
-                // LOAD packages
-                //TRACE_ERROR("No cooked packages found");
-                //return false;
+                const auto& executableDir = base::io::SystemPath(io::PathCategory::ExecutableDir);
+                m_looseFileDir = TempString("{}cooked/", executableDir);
             }
+
+            TRACE_INFO("Cooked files directory: '{}'", m_looseFileDir);
 
             if (!buildLoadingExtensionMap())
                 return false;
@@ -106,13 +104,19 @@ namespace base
             return "";
         }
 
-        bool ResourceLoaderFinal::assembleCookedFilePath(const ResourceKey& key, io::AbsolutePath& outPath) const
+        bool ResourceLoaderFinal::assembleCookedFilePath(const ResourceKey& key, StringBuf& outPath) const
         {
             const auto ext = findCookedExtension(key);
             if (!ext)
                 return false;
 
-            outPath = m_looseFileDir.addFile(key.path()).addExtension(ext);
+            StringBuilder txt;
+            txt << m_looseFileDir;
+            txt << key.path();
+            txt << ".";
+            txt << ext;
+
+            outPath = txt.toString();
             return true;
         }
 
@@ -121,7 +125,7 @@ namespace base
             // try to load a loose file first
             if (!m_looseFileDir.empty())
             {
-                io::AbsolutePath filePath;
+                StringBuf filePath;
                 if (assembleCookedFilePath(key, filePath))
                 {
                     if (auto reader = base::io::OpenForAsyncReading(filePath))

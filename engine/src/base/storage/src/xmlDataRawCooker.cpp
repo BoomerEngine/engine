@@ -10,7 +10,6 @@
 #include "xmlDataDocument.h"
 
 #include "base/io/include/ioFileHandle.h"
-#include "base/io/include/absolutePath.h"
 #include "base/memory/include/buffer.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"

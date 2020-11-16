@@ -11,7 +11,6 @@
 #include "managedItem.h"
 #include "managedFile.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/system/include/spinLock.h"
 #include "base/io/include/ioDirectoryWatcher.h"
 

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/containers/include/hashMap.h"
 #include "base/containers/include/hashSet.h"
 #include "base/containers/include/queue.h"
@@ -287,7 +286,7 @@ namespace rendering
             bool m_dumpInputShaders; // dump the input flattened shader content
             bool m_dumpOutputShaders; // dump the generated SPIRV shader content
 
-            base::io::AbsolutePath m_dumpDirectory; // where are the shaders dumped
+            base::StringBuf m_dumpDirectory; // where are the shaders dumped
         };
 
     } // glsl

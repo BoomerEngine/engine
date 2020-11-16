@@ -645,6 +645,85 @@ namespace base
     }
 
     template< typename T >
+    INLINE StringView<T> StringView<T>::fileName() const
+    {
+        const T* fileNameStart = m_start;
+
+        const T* ptr = m_start;
+        while (ptr < m_end)
+        {
+            if (*ptr == '\\' || *ptr == '/')
+                fileNameStart = ptr + 1;
+            ++ptr;
+        }
+
+        return StringView<T>(fileNameStart, m_end);
+    }
+
+    template< typename T >
+    INLINE StringView<T> StringView<T>::fileStem() const
+    {
+        const T dot[2] = { '.', 0 };
+        return fileName().beforeFirst(dot);
+    }
+
+    template< typename T >
+    INLINE StringView<T> StringView<T>::extensions() const
+    {
+        const T dot[2] = { '.', 0 };
+        return fileName().beforeFirst(dot);
+    }
+
+    template< typename T >
+    INLINE StringView<T> StringView<T>::lastExtension() const
+    {
+        const T dot[2] = { '.', 0 };
+        return fileName().afterLast(dot);
+    }
+
+    template< typename T >
+    INLINE StringView<T> StringView<T>::baseDirectory() const
+    {
+        const T* pathEnd = nullptr;
+
+        const T* ptr = m_start;
+        while (ptr < m_end)
+        {
+            if (*ptr == '\\' || *ptr == '/')
+                pathEnd = ptr + 1;
+            ++ptr;
+        }
+
+        if (pathEnd)
+            return StringView<T>(m_start, pathEnd);
+        else
+            return StringView<T>();
+    }
+
+    template< typename T >
+    INLINE StringView<T> StringView<T>::parentDirectory() const
+    {
+        const T* pathEnd = nullptr;
+        const T* prevPathEnd = nullptr;
+
+        const T* ptr = m_start;
+        while (ptr < m_end)
+        {
+            if (*ptr == '\\' || *ptr == '/')
+            {
+                prevPathEnd = pathEnd;
+                pathEnd = ptr + 1;
+            }
+            ++ptr;
+        }
+
+        if (prevPathEnd)
+            return StringView<T>(m_start, prevPathEnd);
+        else
+            return StringView<T>();
+    }
+
+    template< typename T >
     INLINE bool StringView<T>::matchString(const StringView<T>& pattern) const
     {
         return prv::Helper<T>::MatchString(*this, pattern);

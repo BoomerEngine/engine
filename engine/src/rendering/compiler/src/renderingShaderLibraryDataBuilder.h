@@ -9,7 +9,6 @@
 #pragma once
 
 #include "rendering/driver/include/renderingShaderLibrary.h"
-#include "base/io/include/absolutePath.h"
 #include "base/containers/include/pagedBuffer.h"
 #include "renderingShaderTypeLibrary.h"
 

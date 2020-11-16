@@ -10,7 +10,6 @@
 #include "font.h"
 
 #include "base/io/include/ioFileHandle.h"
-#include "base/io/include/absolutePath.h"
 #include "base/memory/include/buffer.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"

@@ -25,7 +25,7 @@ namespace base
             class WinDirectoryWatcher : public IDirectoryWatcher
             {
             public:
-                WinDirectoryWatcher(StringView<wchar_t> rootPath);
+                WinDirectoryWatcher(Array<wchar_t> rootPath);
                 virtual ~WinDirectoryWatcher();
 
                 //! attach listener
@@ -33,7 +33,7 @@ namespace base
                 virtual void dettachListener(IDirectoryWatcherListener* listener) override;
 
             private:
-                AbsolutePath m_watchedPath;
+                Array<wchar_t> m_watchedPath;
 
                 Mutex m_listenersLock;
                 Array<IDirectoryWatcherListener*> m_listeners;
@@ -52,7 +52,7 @@ namespace base
 
                 struct PendingModification
                 {
-                    AbsolutePath path;
+                    StringBuf path;
                     NativeTimePoint time;
                     NativeTimePoint expires;
                 };

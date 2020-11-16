@@ -11,8 +11,7 @@
 
 #include "launcherPlatformCommon.h"
 #include "base/app/include/commandline.h"
-#include "base/io/include/absolutePathBuilder.h"
-#include "base/io/include/absolutePath.h"
+#include "base/io/include/pathBuilder.h"
 
 #include <Windows.h>
 #include "winPlatform.h"

@@ -187,10 +187,10 @@ namespace rendering
 
         if (cvPrintShaderCompilationErrors.get())
         {
-            base::io::AbsolutePath absolutePath;
+            base::StringBuf absolutePath;
             if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
             {
-                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.ansi_str().c_str(), loc.line(), "", message.data());
+                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.c_str(), loc.line(), "", message.data());
 
                 if (!m_firstErrorPrinted)
                     TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
@@ -213,9 +213,9 @@ namespace rendering
         {
             if (!loc.contextName().empty())
             {
-                base::io::AbsolutePath absolutePath;
+                base::StringBuf absolutePath;
                 if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.ansi_str().c_str(), loc.line(), "", message.data());
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.c_str(), loc.line(), "", message.data());
                 else
                     base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", message.data());
             }

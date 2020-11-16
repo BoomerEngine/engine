@@ -163,7 +163,7 @@ namespace hl2
             return offset;
         }
 
-        uint32_t mapPhysicalFile(const base::io::AbsolutePath& filePath, const base::StringBuf& virtualDirectoryPath)
+        uint32_t mapPhysicalFile(const base::StringBuf& filePath, const base::StringBuf& virtualDirectoryPath)
         {
             // get timestamp
             base::io::TimeStamp timeStamp;
@@ -179,7 +179,7 @@ namespace hl2
             uint64_t crc = 0;
 
             // create virtual path
-            auto fileName = base::StringBuf(filePath.fileNameWithExtensions());
+            auto fileName = base::StringBuf(filePath.view().fileName());
             auto virtualFilePath = base::TempString("{}/{}", virtualDirectoryPath, fileName);
 
             // create package entry
@@ -197,20 +197,20 @@ namespace hl2
             return packageIndex;
         }
 
-        uint32_t mapArchive(const base::io::AbsolutePath& dirPath, int archiveIndex)
+        uint32_t mapArchive(const base::StringBuf& dirPath, int archiveIndex)
         {
             // get timestamp
             base::io::TimeStamp timeStamp;
 
             // format package name
-            const auto packageName = dirPath.fileNameWithExtensions();
+            const auto packageName = dirPath.view().fileName();
             if (archiveIndex >= 0)
             {
                 char archiveIndexStr[32];
                 sprintf(archiveIndexStr, "%03d", archiveIndex);
 
-                auto coreName = packageName.beforeLast(L"_dir");
-                auto packageFilePath = dirPath.basePath().addFile(base::TempString("{}_{}.vpk", coreName, (char*)archiveIndexStr).c_str());
+                auto coreName = packageName.beforeLast("_dir");
+                base::StringBuf packageFilePath = base::TempString("{}{}_{}.vpk", dirPath.view().baseDirectory(), coreName, (char*)archiveIndexStr);
                 if (!base::io::FileTimeStamp(packageFilePath, timeStamp))
                 {
                     TRACE_WARNING("Referenced package '{}' does not exist", packageFilePath);
@@ -401,7 +401,7 @@ namespace hl2
             return ptr;
         }
 
-        uint32_t mapLocalPackage(const base::io::AbsolutePath& path, base::Array<int>& localMap, uint16_t packageIndex)
+        uint32_t mapLocalPackage(const base::StringBuf& path, base::Array<int>& localMap, uint16_t packageIndex)
         {
             if (packageIndex == 0x7fff)
             {
@@ -419,7 +419,7 @@ namespace hl2
             }
         }
 
-        bool processDirectoryVPK(const base::io::AbsolutePath& packageFilePath)
+        bool processDirectoryVPK(const base::StringBuf& packageFilePath)
         {
             // open the archive file
             auto file = base::io::OpenForReading(packageFilePath);
@@ -556,7 +556,7 @@ namespace hl2
             return true;
         }
 
-        bool processBSPMapFile(uint32_t packageIndex, const base::io::AbsolutePath& packageFilePath)
+        bool processBSPMapFile(uint32_t packageIndex, const base::StringBuf& packageFilePath)
         {
             // open the archive file
             auto file = base::io::OpenForReading(packageFilePath);
@@ -769,12 +769,12 @@ namespace hl2
         }
     }
 
-    base::UniquePtr<FileSystemIndex> FileSystemIndex::Load(const base::io::AbsolutePath& contentPath)
+    base::UniquePtr<FileSystemIndex> FileSystemIndex::Load(const base::StringBuf& contentPath)
     {
         auto ret = base::CreateUniquePtr<FileSystemIndex>();
 
         // try to load directly
-        auto indexFilePath = contentPath.addFile("boomer.fscache");
+        base::StringBuf indexFilePath = base::TempString("{}boomer.fscache", contentPath);
         {
             auto indexFileHandle = base::io::OpenForReading(indexFilePath);
             if (indexFileHandle)
@@ -792,14 +792,14 @@ namespace hl2
 
             // look for the pack files
             {
-                base::Array<base::UTF16StringBuf> packFileNames;
-                base::io::FindLocalFiles(contentPath, L"*_dir.vpk", packFileNames);
+                base::Array<base::StringBuf> packFileNames;
+                base::io::FindLocalFiles(contentPath, "*_dir.vpk", packFileNames);
                 TRACE_INFO("Found {} dir VPKs", packFileNames.size());
 
                 // process each VPK
                 for (auto &name : packFileNames)
                 {
-                    auto fullPath = contentPath.addFile(name);
+                    base::StringBuf fullPath = base::TempString("{}{}", contentPath, name);
                     if (!dataBuilder.processDirectoryVPK(fullPath))
                     {
                         TRACE_WARNING("Failed to process package '{}', some content will not be avaiable", fullPath);
@@ -810,15 +810,15 @@ namespace hl2
 
             // look for BSP files
             {
-                auto mapContentPath = contentPath.addDir("maps");
+                base::StringBuf mapContentPath = base::TempString("{}maps/", contentPath);
 
-                base::Array<base::UTF16StringBuf> bspFileNames;
-                base::io::FindLocalFiles(mapContentPath, L"*.bsp", bspFileNames);
+                base::Array<base::StringBuf> bspFileNames;
+                base::io::FindLocalFiles(mapContentPath, "*.bsp", bspFileNames);
                 TRACE_INFO("Found {} BSP files in '{}'", bspFileNames.size(), mapContentPath);
 
                 for (auto &name : bspFileNames)
                 {
-                    auto fullPath = mapContentPath.addFile(name);
+                    base::StringBuf fullPath = base::TempString("{}{}", mapContentPath, name);
 
                     // allow to load the BSP file directly for map loading
                     auto packageIndex = dataBuilder.mapPhysicalFile(fullPath, "maps");
@@ -844,7 +844,7 @@ namespace hl2
             base::StringBuilder builder;
             ret->dumpTables(builder);
 
-            auto indexDumpFilePath = contentPath.addFile("boomer.fscache.dump");
+            base::StringBuf indexDumpFilePath = base::TempString("{}boomer.fscache.dump", contentPath);
             base::io::SaveFileFromString(indexDumpFilePath, builder.toString());
         }
 

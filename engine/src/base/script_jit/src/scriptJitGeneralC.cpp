@@ -12,8 +12,8 @@
 
 #include "base/script/include/scriptCompiledProject.h"
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
+#include "base/system/include/timing.h"
 
 namespace base
 {
@@ -39,7 +39,7 @@ namespace base
         {
         }
 
-        bool JITGeneralC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, const io::AbsolutePath& outputModulePath, const Settings& settings)
+        bool JITGeneralC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView<char> outputModulePath, const Settings& settings)
         {
             // setup settings
             m_emitExceptions = settings.emitExceptions;
@@ -162,18 +162,16 @@ namespace base
 
         //---
 
-        static io::AbsolutePath GetTempFilePath()
+        static StringBuf GetTempFilePath()
         {
-            auto filePath  = base::io::SystemPath(io::PathCategory::TempDir).addDir("jit");
-            //auto randomFileName  = StringBuf(TempString("jit_{}.c", io::TimeStamp::GetNow().toSafeString()));
-            auto randomFileName  = StringBuf(TempString("jit_temp.c", io::TimeStamp::GetNow().toSafeString()));
-            filePath.appendFile(randomFileName.c_str());
-            return filePath;
+            const auto& tempDir = base::io::SystemPath(io::PathCategory::TempDir);
+            return TempString("{}jit/it_temp_{}.c", tempDir, NativeTimePoint::Now().rawValue()) ;
         }
 
-        static io::AbsolutePath GetPrologCodeFile()
+        static StringBuf GetPrologCodeFile()
         {
-            return base::io::SystemPath(io::PathCategory::ExecutableDir).addFile("jit.h");
+            const auto& exeDir = base::io::SystemPath(io::PathCategory::ExecutableDir);
+            return TempString("{}jit.h", exeDir);
         }
 
         void JITGeneralC::printFunctionSignature(IFormatStream& f, const StubFunction* func)  const
@@ -301,7 +299,7 @@ namespace base
             }
         }
 
-        io::AbsolutePath JITGeneralC::writeTempSourceFile()  const
+        StringBuf JITGeneralC::writeTempSourceFile()  const
         {
             StringBuilder f;
 
@@ -334,10 +332,11 @@ namespace base
             f << "}\n";
 
             // save the file
-            auto tempFilePath  = GetTempFilePath();
-            if (!io::SaveFileFromString(tempFilePath, f.toString()))
-                return io::AbsolutePath();
-            return tempFilePath;
+            auto tempFilePath = GetTempFilePath();
+            if (io::SaveFileFromString(tempFilePath, f.toString()))
+                return tempFilePath;
+            else
+                return StringBuf::EMPTY();
         }
 
         //--

@@ -13,7 +13,6 @@
 
 #include "rendering/driver/include/renderingDriver.h"
 #include "rendering/driver/include/renderingCommandWriter.h"
-#include "base/io/include/absolutePath.h"
 
 namespace rendering
 {

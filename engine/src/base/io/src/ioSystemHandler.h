@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/containers/include/array.h"
-#include "absolutePath.h"
 #include "ioSystem.h"
 
 namespace base
@@ -28,78 +27,78 @@ namespace base
                 //----
 
                 // open physical file for reading
-                virtual ReadFileHandlePtr openForReading(AbsolutePathView absoluteFilePath) = 0;
+                virtual ReadFileHandlePtr openForReading(StringView<char> absoluteFilePath) = 0;
 
                 // open physical file for writing
-                virtual WriteFileHandlePtr openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) = 0;
+                virtual WriteFileHandlePtr openForWriting(StringView<char> absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) = 0;
 
                 // open physical file for async reading
-                virtual AsyncFileHandlePtr openForAsyncReading(AbsolutePathView absoluteFilePath) = 0;
+                virtual AsyncFileHandlePtr openForAsyncReading(StringView<char> absoluteFilePath) = 0;
 
                 // load file content into a buffer
-                virtual Buffer loadIntoMemoryForReading(AbsolutePathView absoluteFilePath) = 0;
+                virtual Buffer loadIntoMemoryForReading(StringView<char> absoluteFilePath) = 0;
 
                 // open a read only memory mapped access to file
-                virtual Buffer openMemoryMappedForReading(AbsolutePathView absoluteFilePath) = 0;
+                virtual Buffer openMemoryMappedForReading(StringView<char> absoluteFilePath) = 0;
 
                 //! Get file size, returns 0 if file does not exist (we are not interested in empty file either)
-                virtual bool fileSize(AbsolutePathView absoluteFilePath, uint64_t& outFileSize) = 0;
+                virtual bool fileSize(StringView<char> absoluteFilePath, uint64_t& outFileSize) = 0;
 
                 //! Get file timestamp
-                virtual bool fileTimeStamp(AbsolutePathView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize) = 0;
+                virtual bool fileTimeStamp(StringView<char> absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize) = 0;
 
                 //! Make sure all directories along the way exist
-                virtual bool createPath(AbsolutePathView absoluteFilePath) = 0;
+                virtual bool createPath(StringView<char> absoluteFilePath) = 0;
 
                 //! Move file
-                virtual bool moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) = 0;
+                virtual bool moveFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath) = 0;
 
                 //! Copy file
-                virtual bool copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath) = 0;
+                virtual bool copyFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath) = 0;
 
                 //! Delete file from disk
-                virtual bool deleteFile(AbsolutePathView absoluteFilePath) = 0;
+                virtual bool deleteFile(StringView<char> absoluteFilePath) = 0;
 
                 //! Delete folder from disk
-                virtual bool deleteDir(AbsolutePathView absoluteDirPath) = 0;
+                virtual bool deleteDir(StringView<char> absoluteDirPath) = 0;
 
                 //! Update modification date on the file
-                virtual bool touchFile(AbsolutePathView absoluteFilePath) = 0;
+                virtual bool touchFile(StringView<char> absoluteFilePath) = 0;
 
                 //! Check if file exists
-                virtual bool fileExists(AbsolutePathView absoluteFilePath) = 0;
+                virtual bool fileExists(StringView<char> absoluteFilePath) = 0;
 
                 //! Check if file is read only
-                virtual bool isFileReadOnly(AbsolutePathView absoluteFilePath) = 0;
+                virtual bool isFileReadOnly(StringView<char> absoluteFilePath) = 0;
 
                 //! Change read only attribute on file
-                virtual bool readOnlyFlag(AbsolutePathView absoluteFilePath, bool flag) = 0;
+                virtual bool readOnlyFlag(StringView<char> absoluteFilePath, bool flag) = 0;
 
                 //! Enumerate files in given directory, NOTE: slow as fuck
-                virtual bool findFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(StringView<wchar_t> fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse) = 0;
+                virtual bool findFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> fullPath, StringView<char> fileName)>& enumFunc, bool recurse) = 0;
 
                 //! Enumerate directories in given directory, NOTE: slow as fuck
-                virtual bool findSubDirs(AbsolutePathView absoluteFilePath, const std::function<bool(StringView<wchar_t> name)>& enumFunc) = 0;
+                virtual bool findSubDirs(StringView<char> absoluteFilePath, const std::function<bool(StringView<char> name)>& enumFunc) = 0;
 
                 //! Enumerate file in given directory, not recursive version, NOTE: slow as fuck
-                virtual bool findLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(StringView<wchar_t> name)>& enumFunc) = 0;
+                virtual bool findLocalFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> name)>& enumFunc) = 0;
 
                 //! Get a path to some specific shit
-                virtual AbsolutePath systemPath(PathCategory category) = 0;
+                virtual void systemPath(PathCategory category, IFormatStream& f) = 0;
 
                 //! Create asynchronous directory watcher
-                virtual DirectoryWatcherPtr createDirectoryWatcher(AbsolutePathView path) = 0;
+                virtual DirectoryWatcherPtr createDirectoryWatcher(StringView<char> path) = 0;
 
                 //! Show the given file in the file explorer
-                virtual void showFileExplorer(AbsolutePathView path) = 0;
+                virtual void showFileExplorer(StringView<char> path) = 0;
 
                 //! Show the system "Open File" dialog
                 //! This pops up the native system window in which user can select a file(s) to be opened
-                virtual bool showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData) = 0;
+                virtual bool showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData) = 0;
 
                 //! Show the system "Save File" dialog
                 //! This pops up the native system window in which user can select a file(s) to be opened
-                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData) = 0;
+                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData) = 0;
             };
 
         } // prv

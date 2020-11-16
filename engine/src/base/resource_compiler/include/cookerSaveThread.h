@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/app/include/localService.h"
 #include "base/socket/include/tcpServer.h"
 #include "base/resource/include/resourceLoader.h"
@@ -31,13 +30,13 @@ namespace base
             void waitUntilDone();
 
             /// schedule new content for saving
-            bool scheduleSave(const ResourcePtr& data, const io::AbsolutePath& path);
+            bool scheduleSave(const ResourcePtr& data, StringView<char> path);
 
         private:
             struct SaveJob : public NoCopy
             {
                 ResourcePtr unsavedResource;
-                io::AbsolutePath absoultePath;
+                StringBuf absoultePath;
             };
 
             Queue<SaveJob*> m_saveJobQueue;
@@ -52,7 +51,7 @@ namespace base
             ///--
 
             void processSavingThread();
-            bool saveSingleFile(const ResourcePtr& data, const io::AbsolutePath& path);
+            bool saveSingleFile(const ResourcePtr& data, StringView<char> path);
         };
 
         //--

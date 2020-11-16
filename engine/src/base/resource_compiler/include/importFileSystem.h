@@ -36,7 +36,7 @@ namespace base
             virtual bool enumFilesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const = 0;
 
             // does this file system covers given absolute path on disk ? if so translate the path to local path
-            virtual bool translateAbsolutePath(io::AbsolutePathView absolutePath, StringBuf& outFileSystemPath) const = 0;
+            virtual bool translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const = 0;
 
             // get a full context path (usually absolute path) for a given import path
             virtual bool resolveContextPath(StringView<char> fileSystemPath, StringBuf& outContextPath) const = 0;

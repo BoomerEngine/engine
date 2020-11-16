@@ -10,7 +10,6 @@
 
 #include "versionControl.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceMountPoint.h"
 
 namespace ed
@@ -47,7 +46,7 @@ namespace ed
         virtual res::ResourceMountPoint mountPoint() const;
 
         /// resolve absolute file path for this file, valid only for files coming from disk
-        virtual io::AbsolutePath absolutePath() const;
+        virtual StringBuf absolutePath() const;
 
         /// get the per-type thumbnail, does not depend on the content of the item
         virtual const image::ImageRef& typeThumbnail() const = 0;

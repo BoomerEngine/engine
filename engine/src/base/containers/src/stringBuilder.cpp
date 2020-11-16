@@ -40,21 +40,22 @@ namespace base
 
     IFormatStream& StringBuilder::append(StringView<char> view)
     {
-        if (view.empty())
-            return *this;
+        if (!view.empty())
+        {
+            auto requiredCapacity = m_length + view.length() + 1;
+            if (ensureCapacity(range_cast<uint32_t>(requiredCapacity)))
+            {
+                memcpy(m_buf + m_length, view.data(), view.length());
+                m_length = range_cast<uint32_t>(m_length + view.length());
 
-        auto requiredCapacity  = m_length + view.length() + 1;
-        if (!ensureCapacity(range_cast<uint32_t>(requiredCapacity)))
-            return *this;
+                writeNullTerminator();
+            }
+        }
 
-        memcpy(m_buf + m_length, view.data(), view.length());
-		m_length = range_cast<uint32_t>(m_length + view.length());
-
-        writeNullTerminator();
         return *this;
     }
 
-    IFormatStream& StringBuilder::append(const StringView<wchar_t>& view)
+    /*IFormatStream& StringBuilder::append(const StringView<wchar_t>& view)
     {
         if (view.empty())
             return *this;
@@ -78,11 +79,33 @@ namespace base
 
         writeNullTerminator();
         return *this;
-    }
+    }*/
 
     IFormatStream& StringBuilder::append(const wchar_t* str, uint32_t len /*= INDEX_MAX*/)
     {
-        return append(StringView<wchar_t>(str, len));
+        if (str && *str)
+        {
+            if (len == INDEX_MAX)
+                len = wcslen(str);
+
+            uint32_t convertedLength = 0;
+            for (uint32_t i = 0; i < len; ++i)
+            {
+                char data[6];
+                convertedLength += utf8::ConvertChar(data, str[i]);
+            }
+
+            // allocate
+            auto requiredCapacity = m_length + convertedLength + 1;
+            if (ensureCapacity(requiredCapacity))
+            {
+                for (uint32_t i = 0; i < len; ++i)
+                    m_length += utf8::ConvertChar(m_buf + m_length, str[i]);
+                writeNullTerminator();
+            }
+        }
+
+        return *this;
     }
 
     IFormatStream& StringBuilder::append(const char* str, uint32_t len /*= INDEX_MAX*/)

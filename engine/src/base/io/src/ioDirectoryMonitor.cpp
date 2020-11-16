@@ -40,7 +40,7 @@ namespace base
 
         //--
 
-        DirectoryMonitor::DirectoryMonitor(const AbsolutePath& path, bool recursive)
+        DirectoryMonitor::DirectoryMonitor(const StringBuf& path, bool recursive)
             : m_path(path)
             , m_isRecursive(recursive)
             , m_modified(0)

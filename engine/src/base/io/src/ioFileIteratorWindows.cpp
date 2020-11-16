@@ -9,6 +9,7 @@
 
 #include "build.h"
 #include "ioFileIteratorWindows.h"
+#include "base/containers/include/utf8StringFunctions.h"
 
 
 namespace base
@@ -46,22 +47,23 @@ namespace base
                 }
             }
 
-            const wchar_t* WinFileIterator::fileName() const
+            const wchar_t* WinFileIterator::fileNameRaw() const
             {
-                if (m_findHandle == INVALID_HANDLE_VALUE)
-                    return nullptr;
+                if (m_findHandle != INVALID_HANDLE_VALUE)
+                    return m_findData.cFileName;
 
-                return m_findData.cFileName;
+                return nullptr;
             }
 
-            /*AbsolutePath WinFileIterator::filePath() const
+            const char* WinFileIterator::fileName() const
             {
-                if (m_findHandle == INVALID_HANDLE_VALUE)
-                    return AbsolutePath();
+                if (m_findHandle != INVALID_HANDLE_VALUE) {
+                    utf8::FromUniChar(m_fileName, MAX_PATH-1, m_findData.cFileName, wcslen(m_findData.cFileName));
+                    return m_fileName;
+                }
 
-                AbsolutePath ret(m_searchPath);
-                return ret.appendFile(UTF16StringBuf(m_findData.cFileName));
-            }*/
+                return nullptr;
+            }
 
             bool WinFileIterator::validateEntry() const
             {

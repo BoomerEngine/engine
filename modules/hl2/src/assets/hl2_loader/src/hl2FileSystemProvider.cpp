@@ -9,7 +9,6 @@
 #include "hl2FileSystem.h"
 #include "hl2FileSystemIndex.h"
 #include "hl2FileSystemProvider.h"
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioSystem.h"
 
 namespace hl2
@@ -20,7 +19,7 @@ namespace hl2
     FileSystemProviderVPK::FileSystemProviderVPK()
     {}
 
-    static base::io::AbsolutePath FindSteamGameDirectory()
+    static base::StringBuf FindSteamGameDirectory()
     {
         char steamDirectoryTxt[512];
         memset(steamDirectoryTxt, 0, sizeof(steamDirectoryTxt));
@@ -29,36 +28,33 @@ namespace hl2
         if (!base::GetRegistryKey("SOFTWARE\\Wow6432Node\\Valve\\Steam", "InstallPath", steamDirectoryTxt, steamDirectoryLength))
         {
             TRACE_ERROR("Steam not installed");
-            return base::io::AbsolutePath();
+            return base::StringBuf();
         }
 
-        auto steamDirectory = base::io::AbsolutePath::BuildAsDir(base::UTF16StringBuf(steamDirectoryTxt));
-        TRACE_INFO("Found Steam installation at '{}'", steamDirectory);
+        TRACE_INFO("Found Steam installation at '{}'", steamDirectoryTxt);
 
-        auto libFoldersPath = steamDirectory.appendFile("steamapps\\libraryfolders.vdf");
+        StringBuf libFoldersPath = TempString("{}/steamapps/libraryfolders.vdf", steamDirectoryTxt);
         auto libFolderData = base::io::LoadFileToBuffer(libFoldersPath);
         auto libFolder = base::StringView<char>(libFolderData);
         if (libFolder.empty())
         {
             TRACE_ERROR("Missing steamapps\\libraryfolders.vdf in Steam installation");
-            return base::io::AbsolutePath();
+            return StringBuf();
         }
 
         auto gameFolderTxt = libFolder.afterFirst("\"1\"").afterFirst("\"").beforeFirst("\"");
         if (gameFolderTxt.empty())
         {
             TRACE_ERROR("Game library folder not found in 'steamapps\\libraryfolders.vdf'");
-            return base::io::AbsolutePath();
+            return StringBuf();
         }
 
-        auto gameFolderPath = base::io::AbsolutePath::BuildAsDir(base::UTF16StringBuf(gameFolderTxt));
-        gameFolderPath.appendDir("steamapps");
-        gameFolderPath.appendDir("common");
+        StringBuf gameFolderPath = base::TempString("{}/steamapps/common/", gameFolderTxt);
         TRACE_INFO("Found Steam game library at '{}'", gameFolderPath);
         return gameFolderPath;
     }
 
-    static base::io::AbsolutePath FindHL2InstallDirectory()
+    static StringBuf FindHL2InstallDirectory()
     {
         // user specified directory
         if (auto installDirStr = base::GetEnv("HL2_INSTALL_DIR"))
@@ -66,22 +62,19 @@ namespace hl2
             if (*installDirStr)
             {
                 TRACE_INFO("Found setup for HL2_INSTALL_DIR = '{}'", installDirStr);
-                return base::io::AbsolutePath::BuildAsDir(base::UTF16StringBuf(installDirStr));
+                return StringBuf(installDirStr);
             }
         }
 
         // find steam game dir
         if (auto steamGameDir = FindSteamGameDirectory())
         {
-            {
-                auto testFolder = steamGameDir.addDir("Half-Life 2");
-                auto testFile = testFolder.addFile("hl2.exe");
-                if (base::io::FileExists(testFile))
-                    return testFolder;
-            }
+            base::StringBuf testFolder = base::TempString("{}Half-Life 2/", steamGameDir);
+            if (base::io::FileExists(base::TempString("{}hl2.exe")))
+                return testFolder;
         }
 
-        return base::io::AbsolutePath();
+        return base::StringBuf();
     }
 
     base::UniquePtr<base::depot::IFileSystem> FileSystemProviderVPK::createFileSystem(base::depot::DepotStructure* owner) const
@@ -95,7 +88,7 @@ namespace hl2
         }
 
         // build path to packages
-        auto packagePath = installPath.addDir("hl2");
+        base::StringBuf packagePath = base::TempString("{}hl2/", installPath);
         TRACE_INFO("Found installed 'Half Life 2' type game, looking for packages at '{}'", packagePath);
 
         // load/build the index

@@ -17,7 +17,6 @@
 #include "base/app/include/launcherPlatform.h"
 #include "base/app/include/commandline.h"
 #include "base/app/include/localServiceContainer.h"
-#include "base/io/include/absolutePath.h"
 #include "base/app/include/application.h"
 #include "base/io/include/ioSystem.h"
 #include "base/input/include/inputContext.h"
@@ -46,7 +45,7 @@ namespace rendering
         private:
             base::RefPtr<IRenderingTest> initializeTest(uint32_t testIndex);
 
-            base::io::AbsolutePath m_assetsPath;
+            base::StringBuf m_assetsPath;
 
             // current test case
             int m_currentTestCaseIndex;

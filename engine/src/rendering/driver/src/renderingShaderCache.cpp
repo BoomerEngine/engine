@@ -22,13 +22,13 @@ namespace rendering
         m_entryMap.clearPtr();
     }
 
-    bool ShaderCache::load(const base::io::AbsolutePath& path)
+    bool ShaderCache::load(base::StringView<char> path)
     {
         // TODO
         return false;
     }
 
-    bool ShaderCache::save(const base::io::AbsolutePath& path, bool updatesOnly /*= false*/)
+    bool ShaderCache::save(base::StringView<char> path, bool updatesOnly /*= false*/)
     {
         return true;
     }

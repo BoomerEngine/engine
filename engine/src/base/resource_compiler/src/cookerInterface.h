@@ -9,7 +9,6 @@
 #pragma once
 
 #include <base/resource/include/resourceMountPoint.h>
-#include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceMetadata.h"
 

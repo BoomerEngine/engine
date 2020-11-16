@@ -10,7 +10,6 @@
 
 #include "localService.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/system/include/timing.h"
 
@@ -47,7 +46,7 @@ namespace base
             virtual void onShutdownService() override final;
             virtual void onSyncUpdate() override final;
 
-            io::AbsolutePath m_userConfigFile;
+            StringBuf m_userConfigFile;
 
             io::DirectoryWatcherPtr m_engineConfigWatcher;
             io::DirectoryWatcherPtr m_projectConfigWatcher;
@@ -63,8 +62,8 @@ namespace base
             void dumpConfig();
 
             bool loadBaseConfig(config::Storage& outStorage) const;
-            bool loadDirConfig(const io::AbsolutePath& path, config::Storage& outStorage) const;
-            bool loadFileConfig(const io::AbsolutePath& path, config::Storage& outStorage) const;
+            bool loadDirConfig(StringView<char> path, config::Storage& outStorage) const;
+            bool loadFileConfig(StringView<char> path, config::Storage& outStorage) const;
 
             virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override final;
         };

@@ -110,7 +110,7 @@ namespace viewer
     //--
 
     // load OBJ model from given absolute path
-    extern RefPtr<LoadedModel> LoadModel(const io::AbsolutePath& path);
+    extern RefPtr<LoadedModel> LoadModel(const StringBuf& path);
 
     //--
 

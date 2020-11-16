@@ -21,7 +21,7 @@ namespace base
     {
         //--
 
-        static RefPtr<ImportFingerprintCache> LoadCache(io::AbsolutePathView path)
+        static RefPtr<ImportFingerprintCache> LoadCache(StringView<char> path)
         {
             if (auto file = base::io::OpenForAsyncReading(path))
             {
@@ -41,7 +41,7 @@ namespace base
             return CreateSharedPtr<ImportFingerprintCache>();
         }
 
-        static bool SaveCache(io::AbsolutePathView path, const RefPtr<ImportFingerprintCache>& cache)
+        static bool SaveCache(StringView<char> path, const RefPtr<ImportFingerprintCache>& cache)
         {
             if (auto file = base::io::OpenForWriting(path))
             {
@@ -72,7 +72,7 @@ namespace base
         app::ServiceInitializationResult ImportFileFingerprintService::onInitializeService(const app::CommandLine& cmdLine)
         {
             // determine the fingerprint cache file
-            m_cacheFilePath = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("fingerprint.cache");
+            m_cacheFilePath = TempString("{}fingerprint.cache", base::io::SystemPath(io::PathCategory::UserConfigDir));
             TRACE_INFO("Fingerprint: Cache located at '{}'", m_cacheFilePath);
 
             // load/cache the cache
@@ -111,10 +111,8 @@ namespace base
 
         //--
 
-        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView<wchar_t> absolutePathStr, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
+        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView<char> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
         {
-            const auto absolutePath = io::AbsolutePath::Build(absolutePathStr);
-
             // first, check the file timestamp, maybe we have the data in cache
             io::TimeStamp timestamp;
             if (!base::io::FileTimeStamp(absolutePath, timestamp))
@@ -153,7 +151,7 @@ namespace base
 
             // create a cache job entry
             auto validCacheJob = base::CreateSharedPtr<CacheJob>();
-            validCacheJob->path = absolutePath;
+            validCacheJob->path = StringBuf(absolutePath);
             validCacheJob->timestamp = timestamp;
             validCacheJob->signal = Fibers::GetInstance().createCounter("ImportFileFingerprintServiceCalcJob");
             m_activeJobMap[validCacheJob->path] = validCacheJob;

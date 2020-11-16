@@ -10,7 +10,6 @@
 
 #include "base/system/include/registration.h"
 #include "base/io/include/timestamp.h"
-#include "base/io/include/absolutePath.h"
 
 namespace ed
 {
@@ -115,7 +114,7 @@ namespace ed
         };
 
         /// All version control is done on absolute files
-        using FilePath = io::AbsolutePath;
+        using FilePath = StringBuf;
         using FilePaths = Array<FilePath>;
 
         /// ID of the version control change
@@ -154,8 +153,7 @@ namespace ed
         {
             Settings();
 
-            io::AbsolutePath m_root; // root of the physical depot
-
+            StringBuf m_root; // root of the physical depot
             StringBuf m_userName;
             StringBuf m_password;
             StringBuf m_host;

@@ -21,7 +21,7 @@ namespace base
         namespace prv
         {
 
-            POSIXFileIterator::POSIXFileIterator(const AbsolutePath& path, const wchar_t* pattern, bool allowFiles, bool allowDirs)
+            POSIXFileIterator::POSIXFileIterator(const StringBuf& path, const wchar_t* pattern, bool allowFiles, bool allowDirs)
                 : m_allowDirs(allowDirs)
                 , m_allowFiles(allowFiles)
                 , m_searchPath(path)
@@ -52,23 +52,21 @@ namespace base
                 }
             }
 
-            const wchar_t* POSIXFileIterator::fileName() const
+            const char* POSIXFileIterator::fileName() const
             {
                 if (m_entry == 0)
                     return nullptr;
 
-                auto fileName  = ((struct dirent*)m_entry)->d_name;
-                m_localBuf = UTF16StringBuf(fileName);
-                return m_localBuf.c_str();
+                return ((struct dirent*)m_entry)->d_name;
             }
 
-            AbsolutePath POSIXFileIterator::filePath() const
+            StringBuf POSIXFileIterator::filePath() const
             {
                 if (m_entry == 0)
-                    return AbsolutePath();
+                    return StringBuf();
 
-                AbsolutePath ret(m_searchPath);
-                return ret.appendFile(UTF16StringBuf(((struct dirent*)m_entry)->d_name));
+                const auto* fileName = (const char*) ((struct dirent*)m_entry)->d_name;
+                return TempString("{}{}", m_searchPath, fileName);
             }
 
             bool POSIXFileIterator::validateEntry() const

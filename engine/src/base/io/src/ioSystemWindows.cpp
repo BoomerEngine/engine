@@ -9,12 +9,12 @@
 
 #include "build.h"
 
-#include "absolutePath.h"
-#include "absolutePathBuilder.h"
+#include "pathBuilder.h"
 #include "timestamp.h"
 #include "fileFormat.h"
 
 #include "base/containers/include/stringBuilder.h"
+#include "base/containers/include/utf8StringFunctions.h"
 
 #include "ioSystem.h"
 #include "ioSystemWindows.h"
@@ -42,56 +42,108 @@ namespace base
             class TempPathStringBuffer
             {
             public:
-                TempPathStringBuffer(const AbsolutePathView& view, bool forceCopy = false)
+                TempPathStringBuffer()
                 {
                     m_writePos = m_buffer;
-                    m_writeEnd = m_buffer + MAX_PATH - 1;
+                    m_writeEnd = m_buffer + MAX_SIZE - 1;
+                    *m_writePos = 0;
+                }
 
-                    if (!view.empty())
-                    {
-                        if (!forceCopy && view.data()[view.length()] == 0) // zero terminated
-                        {
-                            m_ret = view.data();
-                        }
-                        else
-                        {
-                            DEBUG_CHECK_EX(view.length() < MAX_PATH, "Absolute path length is longer than the system maximum");
-                            const auto maxCopy = std::min<uint32_t>(MAX_PATH - 1, view.length());
+                TempPathStringBuffer(StringView<char> view)
+                {
+                    m_writePos = m_buffer;
+                    m_writeEnd = m_buffer + MAX_SIZE - 1;
+                    *m_writePos = 0;
 
-                            memcpy(m_buffer, view.data(), maxCopy * sizeof(wchar_t));
-                            m_buffer[maxCopy] = 0;
-                            m_ret = m_buffer;
-                            m_writePos = m_buffer + maxCopy;
-                        }
-                    }
+                    append(view);
+                }
+
+                void clear()
+                {
+                    m_writePos = m_buffer;
+                    *m_writePos = 0;
                 }
 
                 operator const wchar_t* () const
                 {
-                    return m_ret;
-                }
-
-                StringView<wchar_t> view() const
-                {
-                    if (m_ret != m_buffer)
-                        return StringView<wchar_t>(m_ret);
-                    else
-                        return StringView<wchar_t>(m_buffer, m_writePos);
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+                    return m_buffer;
                 }
 
                 wchar_t* pos() const
                 {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
                     return m_writePos;
                 }
 
-                bool append(StringView<wchar_t> txt)
+                Array<wchar_t> buffer() const
                 {
-                    if (m_writePos + txt.length() >= m_writeEnd)
-                        return false;
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+                    auto count = (m_writePos - m_buffer) + 1;
+                    return Array<wchar_t>(m_buffer, count);
+                }
 
-                    memcpy(m_writePos, txt.data(), txt.length() * sizeof(wchar_t));
-                    m_writePos += txt.length();
-                    *m_writePos = 0;
+                bool append(StringView<char> txt)
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+
+                    auto start = m_writePos;
+
+                    auto ptr = txt.data();
+                    auto endPtr = txt.data() + txt.length();
+                    while (ptr < endPtr)
+                    {
+                        auto ch = utf8::NextChar(ptr, endPtr);
+                        if (m_writePos < m_writeEnd)
+                        {
+                            if (ch == '/')
+                                ch = '\\';
+
+                            *m_writePos++ = (wchar_t)ch;
+                            *m_writePos = 0;
+                        }
+                        else
+                        {
+                            m_writePos = start;
+                            m_writePos[1] = 0;
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+
+                bool append(const wchar_t* txt)
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+
+                    if (txt && *txt)
+                    {
+                        const auto len = wcslen(txt);
+                        if (m_writePos + len < m_writeEnd)
+                        {
+                            while (*txt)
+                            {
+                                auto ch = *txt++;
+                                if (ch == '/')
+                                    ch = '\\';
+
+                                *m_writePos++ = ch;
+                            }
+
+                            *m_writePos = 0;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+
                     return true;
                 }
 
@@ -99,19 +151,157 @@ namespace base
                 {
                     DEBUG_CHECK(oldWritePos >= m_buffer && oldWritePos <= m_writeEnd);
                     m_writePos = oldWritePos;
+                    *m_writePos = 0;
                 }
 
                 void print(IFormatStream& f) const
                 {
-                    f.append(m_ret);
+                    f.append((const wchar_t*)m_buffer);
                 }
 
             private:
-                wchar_t m_buffer[MAX_PATH];
+                static const auto MAX_SIZE = MAX_PATH * 4;
+
+                wchar_t m_buffer[MAX_SIZE];
                 wchar_t* m_writePos;
                 wchar_t* m_writeEnd;
+            };
 
-                const wchar_t* m_ret = L"";
+            //--
+
+            class TempPathStringBufferAnsi
+            {
+            public:
+                TempPathStringBufferAnsi()
+                {
+                    m_writePos = m_buffer;
+                    m_writeEnd = m_buffer + MAX_SIZE - 1;
+                    *m_writePos = 0;
+                }
+
+                TempPathStringBufferAnsi(StringView<char> view)
+                {
+                    m_writePos = m_buffer;
+                    m_writeEnd = m_buffer + MAX_SIZE - 1;
+                    *m_writePos = 0;
+
+                    append(view);
+                }
+
+                void clear()
+                {
+                    m_writePos = m_buffer;
+                    *m_writePos = 0;
+                }
+
+                operator const char* () const
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+                    return m_buffer;
+                }
+
+                char* pos() const
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+                    return m_writePos;
+                }
+
+                Array<char> buffer() const
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+                    auto count = (m_writePos - m_buffer) + 1;
+                    return Array<char>(m_buffer, count);
+                }
+
+                bool append(StringView<char> txt)
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+
+                    auto start = m_writePos;
+
+                    auto ptr = txt.data();
+                    auto endPtr = txt.data() + txt.length();
+                    while (ptr < endPtr)
+                    {
+                        auto ch = *ptr++;
+
+                        if (ch == '/')
+                            ch = '\\';
+
+                        if (m_writePos < m_writeEnd)
+                        {
+                            *m_writePos++ = ch;
+                            *m_writePos = 0;
+                        }
+                        else
+                        {
+                            m_writePos = start;
+                            m_writePos[1] = 0;
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+
+                bool append(const wchar_t* txt)
+                {
+                    DEBUG_CHECK(m_writePos <= m_writeEnd);
+                    DEBUG_CHECK(*m_writePos == 0);
+
+                    if (txt && *txt)
+                    {
+                        auto* org = m_writePos;
+                        while (*txt)
+                        {
+                            auto ch = *txt++;
+                            if (ch == '/')
+                                ch = '\\';
+
+                            char data[8];
+                            auto size = utf8::ConvertChar(data, ch);
+
+                            if (m_writePos + size < m_writeEnd)
+                            {
+                                memcpy(m_writePos, data, size);
+                                m_writePos += size;
+                            }
+                            else
+                            {
+                                m_writePos = org;
+                                *m_writePos = 0;
+                                return false;
+                            }
+                        }
+
+                        *m_writePos = 0;
+                    }
+
+                    return true;
+                }
+
+                void pop(char* oldWritePos)
+                {
+                    DEBUG_CHECK(oldWritePos >= m_buffer && oldWritePos <= m_writeEnd);
+                    m_writePos = oldWritePos;
+                    *m_writePos = 0;
+                }
+
+                void print(IFormatStream& f) const
+                {
+                    f.append((const char*)m_buffer);
+                }
+
+            private:
+                static const auto MAX_SIZE = MAX_PATH * 4;
+
+                char m_buffer[MAX_SIZE];
+                char* m_writePos;
+                char* m_writeEnd;
             };
 
             //--
@@ -128,12 +318,12 @@ namespace base
                 m_asyncDispatcher = nullptr;
             }
 
-            ReadFileHandlePtr WinIOSystem::openForReading(AbsolutePathView absoluteFilePath)
+            ReadFileHandlePtr WinIOSystem::openForReading(StringView<char> absoluteFilePath)
             {
-                UTF16StringBuf cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Open file
-                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE handle = CreateFileW(str, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (handle == INVALID_HANDLE_VALUE)
                 {
                     TRACE_WARNING("WinIO: Failed to create reading handle for '{}', error 0x{}", absoluteFilePath, Hex(GetLastError()));
@@ -141,33 +331,58 @@ namespace base
                 }
 
                 // Return file reader
-                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for reading", cstr);
-                return CreateSharedPtr<WinReadFileHandle>(handle, std::move(cstr));
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for reading", str);
+                return CreateSharedPtr<WinReadFileHandle>(handle, absoluteFilePath);
             }
 
-            static UTF16StringBuf GenerateTempFilePath(AbsolutePathView absoluteFilePath)
+            static void GenerateTempFilePath(StringView<char> absoluteFilePath, TempPathStringBuffer& outStr)
             {
-                UTF16StringBuf cstr(absoluteFilePath.beforeLast(L"\\"));
+                // dir path
+                outStr.append(absoluteFilePath.beforeLast("\\"));
 
+                // file name
                 static std::atomic<uint32_t> GLocalAppUniqueFile = 1;
-                WCHAR tempFileName[MAX_PATH + 1];
-                if (GetTempFileName(cstr.c_str(), L"__BoomerTemp", GLocalAppUniqueFile++, tempFileName))
+                wchar_t tempFileName[MAX_PATH + 1];
+                if (GetTempFileNameW(outStr, L"__BoomerTemp", GLocalAppUniqueFile++, tempFileName))
                 {
                     TRACE_INFO("WinIO: Generated temp file name: '{}'", (const wchar_t*)tempFileName);
-                    return UTF16StringBuf(tempFileName);
+                    outStr.clear();
+                    outStr.append(tempFileName);
                 }
                 else
                 {
-                    UTF16StringBuf cstr(absoluteFilePath);
-                    cstr += L".tmp";
-                    return cstr;
+                    outStr.clear();
+                    outStr.append(absoluteFilePath);
+                    outStr.append(L".tmp");
                 }
             }
 
-
-            WriteFileHandlePtr WinIOSystem::openForWriting(AbsolutePathView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
+            WriteFileHandlePtr WinIOSystem::openForWriting(const wchar_t* str, bool append)
             {
-                UTF16StringBuf cstr(absoluteFilePath);
+                // setup flags
+                uint32_t winFlags = 0; // no sharing while writing
+                uint32_t createFlags = append ? OPEN_ALWAYS : CREATE_ALWAYS;
+
+                // Open file
+                HANDLE handle = CreateFileW(str, GENERIC_WRITE, winFlags, NULL, createFlags, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (handle == INVALID_HANDLE_VALUE)
+                {
+                    TRACE_WARNING("WinIO: Failed to create writing handle for '{}', error: 0x{}", str, Hex(GetLastError()));
+                    return nullptr;
+                }
+
+                // Move file pointer to the end in case of append
+                if (append)
+                    SetFilePointer(handle, 0, 0, FILE_END);
+
+                // Create the wrapper
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for writing", str);
+                return CreateSharedPtr<WinWriteFileHandle>(handle, "");
+            }
+
+            WriteFileHandlePtr WinIOSystem::openForWriting(StringView<char> absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
+            {
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Create path
                 if (!createPath(absoluteFilePath))
@@ -187,8 +402,11 @@ namespace base
                 if (mode == FileWriteMode::StagedWrite)
                 {
                     // generate temp file path and open it
-                    auto tempFilePath = GenerateTempFilePath(absoluteFilePath);
-                    auto tempFileWriter = openForWriting(tempFilePath, FileWriteMode::DirectWrite);
+                    TempPathStringBuffer tempFilePath;
+                    GenerateTempFilePath(absoluteFilePath, tempFilePath);
+
+                    // create temp file writer
+                    auto tempFileWriter = openForWriting(tempFilePath, false);
                     if (!tempFileWriter)
                     {
                         TRACE_WARNING("WinIO: Unable to create temp writing file for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
@@ -196,37 +414,20 @@ namespace base
                     }
 
                     // create wrapper
-                    if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for staged writing", cstr);
-                    return CreateSharedPtr<WinWriteTempFileHandle>(std::move(cstr), std::move(tempFilePath), tempFileWriter);
+                    if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for staged writing", str);
+                    return CreateSharedPtr<WinWriteTempFileHandle>(str.buffer(), tempFilePath.buffer(), tempFileWriter);
                 }
 
-                // setup flags
-                uint32_t winFlags = 0; // no sharing while writing
-                uint32_t createFlags = (mode == FileWriteMode::DirectAppend) ? OPEN_ALWAYS : CREATE_ALWAYS;
-
-                // Open file
-                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_WRITE, winFlags, NULL, createFlags, FILE_ATTRIBUTE_NORMAL, NULL);
-                if (handle == INVALID_HANDLE_VALUE)
-                {
-                    TRACE_WARNING("WinIO: Failed to create writing handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
-                    return nullptr;
-                }
-
-                // Move file pointer to the end in case of append
-                if (mode == FileWriteMode::DirectAppend)
-                    SetFilePointer(handle, 0, 0, FILE_END);
-
-                // Create the wrapper
-                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for writing", cstr);
-                return CreateSharedPtr<WinWriteFileHandle>(handle, std::move(cstr));
+                // open file
+                return openForWriting(str, mode == FileWriteMode::DirectAppend);
             }
 
-            AsyncFileHandlePtr WinIOSystem::openForAsyncReading(AbsolutePathView absoluteFilePath)
+            AsyncFileHandlePtr WinIOSystem::openForAsyncReading(StringView<char> absoluteFilePath)
             {
-                UTF16StringBuf cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Open file
-                HANDLE handle = CreateFileW(cstr.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+                HANDLE handle = CreateFileW(str, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
                 if (handle == INVALID_HANDLE_VALUE)
                 {
                     TRACE_WARNING("WinIO: Failed to create async reading handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
@@ -236,29 +437,29 @@ namespace base
                 LARGE_INTEGER size;
                 if (!::GetFileSizeEx(handle, &size))
                 {
-                    TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", cstr, Hex(GetLastError()));
+                    TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", str, Hex(GetLastError()));
                     CloseHandle(handle);
                     return 0;
                 }
 
                 // Return file reader
-                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for async reading ({})", cstr, MemSize(size.QuadPart));
-                return CreateSharedPtr<WinAsyncFileHandle>(handle, std::move(cstr), size.QuadPart, m_asyncDispatcher);
+                if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for async reading ({})", str, MemSize(size.QuadPart));
+                return CreateSharedPtr<WinAsyncFileHandle>(handle, absoluteFilePath, size.QuadPart, m_asyncDispatcher);
             }
 
             //--
 
-            Buffer WinIOSystem::openMemoryMappedForReading(AbsolutePathView absoluteFilePath)
+            Buffer WinIOSystem::openMemoryMappedForReading(StringView<char> absoluteFilePath)
             {
                 // TODO: right now just read into memory buffer
                 return loadIntoMemoryForReading(absoluteFilePath);
             }
 
-            Buffer WinIOSystem::loadIntoMemoryForReading(AbsolutePathView absoluteFilePath)
+            Buffer WinIOSystem::loadIntoMemoryForReading(StringView<char> absoluteFilePath)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
-                HANDLE hHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE hHandle = CreateFileW(str, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hHandle == INVALID_HANDLE_VALUE)
                 {
                     TRACE_WARNING("WinIO: Failed to create reading handle for '{}', error: 0x{}", absoluteFilePath, Hex(GetLastError()));
@@ -300,17 +501,17 @@ namespace base
                     writeOffset += numRead;
                 }
 
-                if (GTraceIO) TRACE_INFO("WinIO: Loaded '{}' into memory ({})", cstr, MemSize(size));
+                if (GTraceIO) TRACE_INFO("WinIO: Loaded '{}' into memory ({})", absoluteFilePath, MemSize(size));
                 CloseHandle(hHandle);
                 return ret;
             }
 
-            bool WinIOSystem::fileSize(AbsolutePathView absoluteFilePath, uint64_t& outFileSize)
+            bool WinIOSystem::fileSize(StringView<char> absoluteFilePath, uint64_t& outFileSize)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Open file
-                HANDLE hHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE hHandle = CreateFileW(str, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hHandle == INVALID_HANDLE_VALUE)
                     return false;
 
@@ -322,7 +523,7 @@ namespace base
                     return false;
                 }
 
-                if (GTraceIO) TRACE_INFO("WinIO: FileSize '{}': {}", cstr, size.QuadPart);
+                if (GTraceIO) TRACE_INFO("WinIO: FileSize '{}': {}", absoluteFilePath, size.QuadPart);
 
                 // Return size
                 outFileSize = size.QuadPart;
@@ -330,12 +531,12 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::fileTimeStamp(AbsolutePathView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize)
+            bool WinIOSystem::fileTimeStamp(StringView<char> absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Open file
-                HANDLE hHandle = CreateFileW(cstr, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE hHandle = CreateFileW(str, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
                 // Get file timestamp
                 if (hHandle != INVALID_HANDLE_VALUE)
@@ -349,7 +550,7 @@ namespace base
                     ::CloseHandle(hHandle);
                     outTimeStamp = TimeStamp(*(const uint64_t*)&fileTime);
 
-                    if (GTraceIO) TRACE_INFO("WinIO: FileTimeStamp '{}': {}", cstr, outTimeStamp);
+                    if (GTraceIO) TRACE_INFO("WinIO: FileTimeStamp '{}': {}", absoluteFilePath, outTimeStamp);
                     return true;
                 }
 
@@ -357,17 +558,17 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::touchFile(AbsolutePathView absoluteFilePath)
+            bool WinIOSystem::touchFile(StringView<char> absoluteFilePath)
             {
                 return true; // TODO
             }
 
-            bool WinIOSystem::createPath(AbsolutePathView absoluteFilePath)
+            bool WinIOSystem::createPath(StringView<char> absoluteFilePath)
             {
-                TempPathStringBuffer cstr(absoluteFilePath);
+                TempPathStringBuffer str(absoluteFilePath);
 
                 // Create path
-                const wchar_t* path = cstr;
+                const wchar_t* path = str;
                 for (const wchar_t *pos = path; *pos; pos++)
                 {
                     if (*pos == '\\' || *pos == '/')
@@ -387,7 +588,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::copyFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+            bool WinIOSystem::copyFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath)
             {
                 ScopeTimer timer;
 
@@ -419,7 +620,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::moveFile(AbsolutePathView srcAbsolutePath, AbsolutePathView destAbsolutePath)
+            bool WinIOSystem::moveFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath)
             {
                 ScopeTimer timer;
 
@@ -451,7 +652,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::deleteFile(AbsolutePathView absoluteFilePath)
+            bool WinIOSystem::deleteFile(StringView<char> absoluteFilePath)
             {
                 if (!readOnlyFlag(absoluteFilePath, false))
                     return false;
@@ -467,7 +668,7 @@ namespace base
                 return true;
             }
 
-			bool WinIOSystem::deleteDir(AbsolutePathView absoluteDirPath)
+			bool WinIOSystem::deleteDir(StringView<char> absoluteDirPath)
 			{
                 TempPathStringBuffer cstr(absoluteDirPath);
                 if (!::RemoveDirectoryW(cstr))
@@ -480,7 +681,7 @@ namespace base
                 return true;
 			}
 
-            bool WinIOSystem::fileExists(AbsolutePathView absoluteFilePath)
+            bool WinIOSystem::fileExists(StringView<char> absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
                 DWORD dwAttrib = GetFileAttributes(cstr);
@@ -491,7 +692,7 @@ namespace base
                 return exists;
             }
 
-            bool WinIOSystem::isFileReadOnly(AbsolutePathView absoluteFilePath)
+            bool WinIOSystem::isFileReadOnly(StringView<char> absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
 
@@ -505,7 +706,7 @@ namespace base
                 return readOnly;
             }
 
-            bool WinIOSystem::readOnlyFlag(AbsolutePathView absoluteFilePath, bool flag)
+            bool WinIOSystem::readOnlyFlag(StringView<char> absoluteFilePath, bool flag)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
 
@@ -532,17 +733,27 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::findFilesInternal(TempPathStringBuffer& dirPath, StringView<wchar_t> searchPattern, const std::function<bool(AbsolutePathView fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse)
+            bool WinIOSystem::findFilesInternal(TempPathStringBuffer& dirPath, TempPathStringBufferAnsi& dirPathUTF, StringView<char> searchPattern, const std::function<bool(StringView<char> fullPath, StringView<char> fileName)>& enumFunc, bool recurse)
             {
                 auto* org = dirPath.pos();
+                auto* org2 = dirPathUTF.pos();
                 if (!dirPath.append(searchPattern))
                     return false;
+                if (!dirPathUTF.append(searchPattern))
+                {
+                    dirPath.pop(org);
+                    return false;
+                }
 
                 for (WinFileIterator it(dirPath, true, false); it; ++it)
                 {
                     dirPath.pop(org);
-                    if (dirPath.append(it.fileName()))
-                        if (enumFunc(dirPath.view(), it.fileName()))
+                    dirPathUTF.pop(org2);
+
+                    const auto* fileName = it.fileName();
+
+                    if (dirPath.append(fileName) && dirPathUTF.append(fileName))
+                        if (enumFunc((const char*)dirPathUTF, fileName))
                             return true;
                 }
 
@@ -551,10 +762,15 @@ namespace base
                     for (WinFileIterator it(dirPath, false, true); it; ++it)
                     {
                         dirPath.pop(org);
-                        if (dirPath.append(L"\\") && dirPath.append(it.fileName()))
+                        dirPathUTF.pop(org2);
+
+                        if (dirPath.append("\\") && dirPath.append(it.fileNameRaw()))
                         {
-                            if (findFilesInternal(dirPath, searchPattern, enumFunc, recurse))
-                                return true;
+                            if (dirPathUTF.append("\\") && dirPathUTF.append(it.fileNameRaw()))
+                            {
+                                if (findFilesInternal(dirPath, dirPathUTF, searchPattern, enumFunc, recurse))
+                                    return true;
+                            }
                         }
                     }
                 }
@@ -562,18 +778,19 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::findFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(AbsolutePathView fullPath, StringView<wchar_t> fileName)>& enumFunc, bool recurse)
+            bool WinIOSystem::findFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> fullPath, StringView<char> fileName)>& enumFunc, bool recurse)
             {
                 if (absoluteFilePath.empty())
                     return false;
 
-                TempPathStringBuffer dirPath(absoluteFilePath, true);
-                return findFilesInternal(dirPath, searchPattern, enumFunc, recurse);
+                TempPathStringBuffer dirPath(absoluteFilePath);
+                TempPathStringBufferAnsi dirPath2(absoluteFilePath);
+                return findFilesInternal(dirPath, dirPath2, searchPattern, enumFunc, recurse);
             }
 
-            bool WinIOSystem::findSubDirs(AbsolutePathView absoluteFilePath, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
+            bool WinIOSystem::findSubDirs(StringView<char> absoluteFilePath, const std::function<bool(StringView<char> name)>& enumFunc)
             {
-                TempPathStringBuffer dirPath(absoluteFilePath, true);
+                TempPathStringBuffer dirPath(absoluteFilePath);
                 if (dirPath.append(L"*."))
                 {
                     for (WinFileIterator it(dirPath, false, true); it; ++it)
@@ -584,9 +801,9 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::findLocalFiles(AbsolutePathView absoluteFilePath, StringView<wchar_t> searchPattern, const std::function<bool(StringView<wchar_t> name)>& enumFunc)
+            bool WinIOSystem::findLocalFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> name)>& enumFunc)
             {
-                TempPathStringBuffer dirPath(absoluteFilePath, true);
+                TempPathStringBuffer dirPath(absoluteFilePath);
                 if (dirPath.append(searchPattern))
                 {
                     for (WinFileIterator it(dirPath, true, false); it; ++it)
@@ -597,7 +814,7 @@ namespace base
                 return false;
             }
 
-            AbsolutePath WinIOSystem::systemPath(PathCategory category)
+            void WinIOSystem::systemPath(PathCategory category, IFormatStream& f)
             {
                 wchar_t path[MAX_PATH+1];
 
@@ -606,13 +823,19 @@ namespace base
                     case PathCategory::ExecutableFile:
                     {
                         GetModuleFileNameW(NULL, path, MAX_PATH);
-                        return AbsolutePath::Build(path);
+                        f.append(path);
+                        break;
                     }
 
                     case PathCategory::ExecutableDir:
                     {
                         GetModuleFileNameW(NULL, path, MAX_PATH);
-                        return AbsolutePath::Build(path).basePath();
+
+                        if (auto* ch = wcsrchr(path, '\\'))
+                            ch[1] = 0;
+
+                        f.append(path);
+                        break;
                     }
 
                     case PathCategory::TempDir:
@@ -622,15 +845,20 @@ namespace base
 
                         if (length > 0)
                         {
-                            AbsolutePathBuilder builder(path);
-                            builder.pushDirectory(UTF16StringBuf("Boomer"));
-                            return builder.toAbsolutePath();
+                            wcscat(path, L"Boomer");
                         }
                         else
                         {
                             GetModuleFileNameW(NULL, path, MAX_PATH);
-                            return AbsolutePath::Build(path).basePath().addDir(".temp").addDir("local");
+
+                            if (auto* ch = wcsrchr(path, '\\'))
+                                ch[1] = 0;
+
+                            wcscat(path, L".temp\\local");
                         }
+
+                        f << path;
+                        break;
                     }
 
                     case PathCategory::UserConfigDir:
@@ -639,13 +867,10 @@ namespace base
 
                         HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, path);
                         ASSERT(result == S_OK);
-                        wcscat_s(path, MAX_PATH, L"\\");
+                        wcscat_s(path, MAX_PATH, L"\\Boomer\\config\\");
 
-                        AbsolutePathBuilder builder(path);
-                        builder.pushDirectory(UTF16StringBuf("Boomer"));
-                        builder.pushDirectory(UTF16StringBuf("config"));
-
-                        return builder.toAbsolutePath();
+                        f << path;
+                        break;
                     }
 
                     case PathCategory::UserDocumentsDir:
@@ -656,20 +881,19 @@ namespace base
                         ASSERT(result == S_OK);
                         wcscat_s(path, MAX_PATH, L"\\");
 
-                        AbsolutePathBuilder builder(path);
-                        return builder.toAbsolutePath();
+                        f << path;
+                        break;
                     }
                 }
-
-                return AbsolutePath();
             }
 
-            DirectoryWatcherPtr WinIOSystem::createDirectoryWatcher(AbsolutePathView path)
-            {                                      
-                return base::CreateSharedPtr<prv::WinDirectoryWatcher>(path);
+            DirectoryWatcherPtr WinIOSystem::createDirectoryWatcher(StringView<char> path)
+            {
+                TempPathStringBuffer str(path);
+                return base::CreateSharedPtr<prv::WinDirectoryWatcher>(str.buffer());
             }
 
-            void WinIOSystem::showFileExplorer(AbsolutePathView path)
+            void WinIOSystem::showFileExplorer(StringView<char> path)
             {
                 TempPathStringBuffer cstr(path);
 
@@ -686,7 +910,7 @@ namespace base
                 class PreserveCurrentDirectory
                 {
                 public:
-                    PreserveCurrentDirectory(AbsolutePathView dirToSet)
+                    PreserveCurrentDirectory(StringView<char> dirToSet)
                     {
                         TempPathStringBuffer cstr(dirToSet);
                         GetCurrentDirectoryW(MAX_STRING, m_currentDirectory);
@@ -794,7 +1018,7 @@ namespace base
                     outFormatString.pushBack(0);
                 }
 
-                static void ExtractFilePaths(const WCHAR* resultBuffer, Array<AbsolutePath>& outPaths)
+                static void ExtractFilePaths(const WCHAR* resultBuffer, Array<StringBuf>& outPaths)
                 {
                     base::Array<const WCHAR*> parts;
 
@@ -821,20 +1045,25 @@ namespace base
                     if (parts.size() == 1)
                     {
                         // single path case
-                        outPaths.pushBack(AbsolutePath::Build(parts[0]));
+                        outPaths.emplaceBack(parts[0]);
                     }
                     else if (parts.size() > 1)
                     {
                         // in multiple paths case the first entry is the directory path and the rest are the file names
-                        auto basePath = AbsolutePath::BuildAsDir(parts[0]);
                         for (uint32_t i = 1; i < parts.size(); ++i)
-                            outPaths.emplaceBack(basePath.addFile(parts[i]));
+                        {
+                            StringBuilder txt;
+                            txt << parts[0];
+                            txt << "\\";
+                            txt << parts[1];
+                            outPaths.emplaceBack(txt.toString());
+                        }
                     }
                 }
 
             } // helper
 
-            bool WinIOSystem::showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData)
+            bool WinIOSystem::showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData)
             {
                 // build filter string
                 base::Array<wchar_t> formatString;
@@ -852,6 +1081,7 @@ namespace base
 
                 // preserve directory (hack)
                 helper::PreserveCurrentDirectory dirHelper(persistentData.directory);
+                TempPathStringBuffer initialDirPath(persistentData.directory.c_str());
 
                 OPENFILENAMEW info;
                 memset(&info, 0, sizeof(info));
@@ -863,7 +1093,7 @@ namespace base
                 info.nFilterIndex = formatFilterIndex;
                 info.lpstrFile = fileNamesBuffer.typedData();
                 info.nMaxFile = fileNamesBuffer.size() - 1;
-                info.lpstrInitialDir = persistentData.directory.c_str();
+                info.lpstrInitialDir = initialDirPath;
                 info.Flags = (allowMultiple ? OFN_ALLOWMULTISELECT : 0) | OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_NONETWORKBUTTON;
                 if (!GetOpenFileNameW(&info))
                 {
@@ -881,19 +1111,19 @@ namespace base
                     persistentData.filterExtension = base::StringBuf();
 
                 // update selected path
-                persistentData.directory = outPaths[0].basePath();
+                //persistentData.directory = outPaths[0];
                 
                 // update custom filter
-                persistentData.userPattern = info.lpstrCustomFilter;
+                persistentData.userPattern = StringBuf(info.lpstrCustomFilter);
                 return true;
             }
 
-            bool WinIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData)
+            bool WinIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData)
             {
                 // use the file extension as default filter in fallback conditions
                 auto filterName = persistentData.filterExtension;
                 if (filterName.empty())
-                    filterName = StringBuf(currentFileName.stringAfterFirst(L".").c_str());
+                    filterName = StringBuf(currentFileName.stringAfterFirst(".").c_str());
 
                 // build filter string
                 base::Array<wchar_t> formatString;
@@ -903,14 +1133,22 @@ namespace base
 
                 // buffer for user pattern
                 wchar_t userFilterPattern[128];
-                wcscpy_s(userFilterPattern, ARRAY_COUNT(userFilterPattern), persistentData.userPattern.c_str());
+                {
+                    TempPathStringBuffer temp(persistentData.userPattern.c_str());
+                    wcscpy_s(userFilterPattern, ARRAY_COUNT(userFilterPattern), (const wchar_t*)temp);
+                }
 
                 // buffer for selected files
                 base::Array<wchar_t> fileNamesBuffer;
                 fileNamesBuffer.resizeWith(65536, 0);
                 
                 // setup current file name
-				wcscpy_s(fileNamesBuffer.typedData(), fileNamesBuffer.size(), currentFileName.c_str());
+                {
+                    TempPathStringBuffer temp(persistentData.userPattern.c_str());
+                    wcscpy_s(fileNamesBuffer.typedData(), fileNamesBuffer.size(), (const wchar_t*)temp);
+                }
+
+                TempPathStringBuffer initialDirectoryPath(persistentData.directory.c_str());
 
                 // preserve directory (hack)
                 helper::PreserveCurrentDirectory dirHelper(persistentData.directory);
@@ -925,7 +1163,7 @@ namespace base
                 info.nFilterIndex = formatFilterIndex;
                 info.lpstrFile = fileNamesBuffer.typedData();
                 info.nMaxFile = fileNamesBuffer.size() - 1;
-                info.lpstrInitialDir = persistentData.directory.c_str();
+                info.lpstrInitialDir = initialDirectoryPath;
                 info.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_NONETWORKBUTTON;
                 if (!GetSaveFileNameW(&info))
                 {
@@ -934,7 +1172,7 @@ namespace base
                 }
 
                 // extract file paths
-                auto path = AbsolutePath::Build(info.lpstrFile);
+                auto path = StringBuf(info.lpstrFile);
                 if (path.empty())
                 {
                     TRACE_WARNING("GetOpenFileName returned invalid path '{}'", info.lpstrFile);
@@ -948,11 +1186,11 @@ namespace base
                     persistentData.filterExtension = base::StringBuf();
 
                 // update selected path
-                persistentData.directory = path.basePath();
+                persistentData.directory = path.stringBeforeLast("\\");
                 outPath = path;
 
                 // update custom filter
-                persistentData.userPattern = info.lpstrCustomFilter;
+                persistentData.userPattern = StringBuf(info.lpstrCustomFilter);
                 return true;
             }
 

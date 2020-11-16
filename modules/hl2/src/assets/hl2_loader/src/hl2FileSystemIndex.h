@@ -82,7 +82,7 @@ namespace hl2
         //--
 
         /// load the file system index from given directory, builds a new one if the current one is not up to date or does not exist
-        static base::UniquePtr<FileSystemIndex> Load(const base::io::AbsolutePath& contentPath);
+        static base::UniquePtr<FileSystemIndex> Load(const base::StringBuf& contentPath);
 
     private:
         base::Array<char> m_stringTable;

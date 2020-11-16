@@ -10,7 +10,6 @@
 
 #include "base/test/include/gtest/gtest.h"
 
-#include "absolutePath.h"
 #include "ioFileHandle.h"
 #include "ioSystem.h"
 
@@ -32,8 +31,10 @@ TEST(FileAccess, FileExistsTest)
 
 TEST(FileAccess, FileExistsTestFalse)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::ExecutableFile).addExtension("test");
-    ASSERT_FALSE(base::io::FileExists(path));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::ExecutableFile);
+    path << ".text";
+    ASSERT_FALSE(base::io::FileExists(path.view()));
 }
 
 TEST(FileAccess, CachePathValid)
@@ -44,21 +45,27 @@ TEST(FileAccess, CachePathValid)
 
 TEST(FileAccess, CreateCacheFile)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(L"cache.txt");
-    auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
+
+    auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
     f.reset();
-    ASSERT_TRUE(base::io::FileExists(path));
-    ASSERT_TRUE(base::io::DeleteFile(path));
-    ASSERT_FALSE(base::io::FileExists(path));
+    ASSERT_TRUE(base::io::FileExists(path.view()));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
+    ASSERT_FALSE(base::io::FileExists(path.view()));
 }
 
 TEST(FileAccess, WriteFile)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(L"cache.txt");
-    base::io::DeleteFile(path);
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
-    auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    base::io::DeleteFile(path.view());
+
+    auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
     ASSERT_TRUE(f->pos() == 0);
 
@@ -68,127 +75,140 @@ TEST(FileAccess, WriteFile)
     ASSERT_TRUE(f->pos() == toWrite);
     f.reset();
 
-    ASSERT_TRUE(base::io::FileExists(path));
+    ASSERT_TRUE(base::io::FileExists(path.view()));
 
     uint64_t fileSize = 0;
-    base::io::FileSize(path, fileSize);
+    base::io::FileSize(path.view(), fileSize);
     ASSERT_EQ(toWrite, fileSize);
-    ASSERT_TRUE(base::io::DeleteFile(path));
-    ASSERT_FALSE(base::io::FileExists(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
+    ASSERT_FALSE(base::io::FileExists(path.view()));
 }
 
 #ifdef PLATFORM_WINDOWS
 
 TEST(FileAccess, WriteFileExclusiveForWrite)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
-    auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f2 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f2.get() == nullptr);
 
     f.reset();
 
-    auto f3 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f3 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f3.get() != nullptr);
 
     f3.reset();
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
 }
 
 TEST(FileAccess, WriteFileExclusiveForRead)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
-    auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = base::io::OpenForReading(path);
+    auto f2 = base::io::OpenForReading(path.view());
     ASSERT_TRUE(f2.get() == nullptr);
 
     f.reset();
 
-    auto f3 = base::io::OpenForReading(path);
+    auto f3 = base::io::OpenForReading(path.view());
     ASSERT_TRUE(f3.get() != nullptr);
 
     f3.reset();
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
 }
 
 TEST(FileAccess, WriteFileExclusiveForDelete)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
-    auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f.get() != nullptr);
 
-    ASSERT_FALSE(base::io::DeleteFile(path));
+    ASSERT_FALSE(base::io::DeleteFile(path.view()));
 
     f.reset();
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
 }
 
 TEST(FileAccess, ReadFileExclusiveForWrite)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
     {
-        auto f3 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+        auto f3 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
         f3.reset();
     }
 
-    auto f = base::io::OpenForReading(path);
+    auto f = base::io::OpenForReading(path.view());
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f2 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f2.get() == nullptr);
 
     f.reset();
 
-    auto f3 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+    auto f3 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
     ASSERT_TRUE(f3.get() != nullptr);
 
     f3.reset();
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
 }
 
 #endif
 
 TEST(FileAccess, ReadFileNonExclusiveForRead)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
 
     {
-        auto f3 = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+        auto f3 = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
         f3.reset();
     }
 
-    auto f = base::io::OpenForReading(path);
+    auto f = base::io::OpenForReading(path.view());
     ASSERT_TRUE(f.get() != nullptr);
 
-    auto f2 = base::io::OpenForReading(path);
+    auto f2 = base::io::OpenForReading(path.view());
     ASSERT_TRUE(f2.get() != nullptr);
 
     f.reset();
     f2.reset();
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
 }
 
 
 TEST(FileAccess, ReadFile)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
-    base::io::DeleteFile(path);
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
+
+    base::io::DeleteFile(path.view());
 
     {
-        auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+        auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_TRUE(f->pos() == 0);
 
@@ -201,7 +221,7 @@ TEST(FileAccess, ReadFile)
     }
 
     {
-        auto f = base::io::OpenForReading(path);
+        auto f = base::io::OpenForReading(path.view());
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(11, f->size());
         ASSERT_EQ(0, f->pos());
@@ -215,17 +235,20 @@ TEST(FileAccess, ReadFile)
         f.reset();
     }
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
-    ASSERT_FALSE(base::io::FileExists(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
+    ASSERT_FALSE(base::io::FileExists(path.view()));
 }
 
 TEST(FileAccess, AppendFile)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir).addFile(UTF16StringBuf(L"cache.txt"));
-    base::io::DeleteFile(path);
+    StringBuilder path;
+    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << "cache.txt";
+
+    base::io::DeleteFile(path.view());
 
     {
-        auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectWrite);
+        auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(0, f->pos());
 
@@ -238,7 +261,7 @@ TEST(FileAccess, AppendFile)
     }
 
     {
-        auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectAppend);
+        auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectAppend);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(4, f->pos());
 
@@ -251,7 +274,7 @@ TEST(FileAccess, AppendFile)
     }
 
     {
-        auto f = base::io::OpenForWriting(path, base::io::FileWriteMode::DirectAppend);
+        auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectAppend);
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(7, f->pos());
 
@@ -265,7 +288,7 @@ TEST(FileAccess, AppendFile)
     }
 
     {
-        auto f = base::io::OpenForReading(path);
+        auto f = base::io::OpenForReading(path.view());
         ASSERT_TRUE(f.get() != nullptr);
         ASSERT_EQ(11, f->size());
         ASSERT_EQ(0, f->pos());
@@ -279,6 +302,6 @@ TEST(FileAccess, AppendFile)
         f.reset();
     }
 
-    ASSERT_TRUE(base::io::DeleteFile(path));
-    ASSERT_FALSE(base::io::FileExists(path));
+    ASSERT_TRUE(base::io::DeleteFile(path.view()));
+    ASSERT_FALSE(base::io::FileExists(path.view()));
 }

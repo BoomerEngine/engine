@@ -14,7 +14,6 @@
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/imageView.h"
-#include "base/io/include/absolutePath.h"
 
 namespace base
 {

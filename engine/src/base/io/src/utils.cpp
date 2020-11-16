@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "absolutePath.h"
 
 #include "ioFileHandle.h"
 #include "ioSystem.h"
@@ -34,7 +33,7 @@ namespace base
 
         //--
 
-        bool LoadFileToString(AbsolutePathView absoluteFilePath, StringBuf &outString)
+        bool LoadFileToString(StringView<char> absoluteFilePath, StringBuf &outString)
         {
             // load content to memory buffer
             auto buffer = LoadFileToBuffer(absoluteFilePath);
@@ -46,7 +45,7 @@ namespace base
             return true;
         }
 
-        bool LoadFileToArray(AbsolutePathView absoluteFilePath, Array<uint8_t>& outArray)
+        bool LoadFileToArray(StringView<char> absoluteFilePath, Array<uint8_t>& outArray)
         {
             auto file  = OpenForReading(absoluteFilePath);
             if (!file)
@@ -71,7 +70,7 @@ namespace base
             return true;
         }
 
-        bool SaveFileFromString(AbsolutePathView absoluteFilePath, StringView<char> str, StringEncoding encoding /*= StringEncoding::UTF8*/)
+        bool SaveFileFromString(StringView<char> absoluteFilePath, StringView<char> str, StringEncoding encoding /*= StringEncoding::UTF8*/)
         {
             // open file
             auto file  = OpenForWriting(absoluteFilePath);
@@ -91,7 +90,7 @@ namespace base
             return true;
         }
 
-        bool SaveFileFromBuffer(AbsolutePathView absoluteFilePath, const void* buffer, size_t size)
+        bool SaveFileFromBuffer(StringView<char> absoluteFilePath, const void* buffer, size_t size)
         {
             // open file
             auto file  = OpenForWriting(absoluteFilePath);
@@ -109,7 +108,7 @@ namespace base
             return true;
         }
 
-        bool SaveFileFromBuffer(AbsolutePathView absoluteFilePath, const Buffer& buffer)
+        bool SaveFileFromBuffer(StringView<char> absoluteFilePath, const Buffer& buffer)
         {
             return SaveFileFromBuffer(absoluteFilePath, buffer.data(), buffer.size());
         }

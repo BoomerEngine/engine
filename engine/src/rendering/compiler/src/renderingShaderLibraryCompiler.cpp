@@ -21,7 +21,6 @@
 #include "renderingShaderFileParser.h"
 #include "renderingShaderLibraryCompiler.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"

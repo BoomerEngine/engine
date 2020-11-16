@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "absolutePath.h"
 #include "base/containers/include/stringBuf.h"
 
 #include "ioFileHandle.h"
@@ -29,7 +28,7 @@ namespace base
             class WinReadFileHandle : public IReadFileHandle
             {
             public:
-                WinReadFileHandle(HANDLE hSyncFile, UTF16StringBuf&& origin);
+                WinReadFileHandle(HANDLE hSyncFile, const StringView<char> path);
                 virtual ~WinReadFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }
@@ -42,7 +41,7 @@ namespace base
 
             protected:
                 HANDLE m_hHandle; // always there
-                UTF16StringBuf m_origin;
+                StringBuf m_origin;
             };
 
             ///--
@@ -51,7 +50,7 @@ namespace base
             class WinWriteFileHandle : public IWriteFileHandle
             {
             public:
-                WinWriteFileHandle(HANDLE hSyncFile, const UTF16StringBuf& origin);
+                WinWriteFileHandle(HANDLE hSyncFile, StringView<char> path);
                 virtual ~WinWriteFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }
@@ -65,7 +64,7 @@ namespace base
 
             protected:
                 HANDLE m_hHandle; // always there
-                UTF16StringBuf m_origin;
+                StringBuf m_origin;
             };
 
             ///--
@@ -74,7 +73,7 @@ namespace base
             class WinWriteTempFileHandle : public IWriteFileHandle
             {
             public:
-                WinWriteTempFileHandle(const UTF16StringBuf& targetPath, const UTF16StringBuf& tempFilePath, const WriteFileHandlePtr& tempFileWriter);
+                WinWriteTempFileHandle(Array<wchar_t> targetPath, Array<wchar_t> tempFilePath, const WriteFileHandlePtr& tempFileWriter);
                 virtual ~WinWriteTempFileHandle();
 
                 // IFileHandle implementation
@@ -85,8 +84,8 @@ namespace base
                 virtual void discardContent() override final;
 
             protected:
-                UTF16StringBuf m_tempFilePath;
-                UTF16StringBuf m_targetFilePath;
+                Array<wchar_t> m_tempFilePath;
+                Array<wchar_t> m_targetFilePath;
                 WriteFileHandlePtr m_tempFileWriter;
             };
 
@@ -98,7 +97,7 @@ namespace base
             class WinAsyncFileHandle : public IAsyncFileHandle
             {
             public:
-                WinAsyncFileHandle(HANDLE hAsyncFile, const UTF16StringBuf& origin, uint64_t size, WinAsyncReadDispatcher* dispatcher);
+                WinAsyncFileHandle(HANDLE hAsyncFile, StringView<char> origin, uint64_t size, WinAsyncReadDispatcher* dispatcher);
                 virtual ~WinAsyncFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }
@@ -114,7 +113,7 @@ namespace base
 
                 WinAsyncReadDispatcher* m_dispatcher;
 
-                UTF16StringBuf m_origin;
+                StringBuf m_origin;
             };
 
 

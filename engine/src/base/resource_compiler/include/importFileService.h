@@ -37,7 +37,7 @@ namespace base
             // translate absolute path to a asset import path
             // NOTE: if multiple file systems cover the same path we choose the shortest representation
             // NOTE: returned path is in the "assetImportPath" format: "LOCAL:/z/assets/test.fbx", etc.
-            bool translateAbsolutePath(io::AbsolutePathView absolutePath, StringBuf& outFileSystemPath) const;
+            bool translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const;
 
             // translate import path to a context path (mostly for printing errors)
             bool resolveContextPath(StringView<char> assetImportPath, StringBuf& outContextPath) const;

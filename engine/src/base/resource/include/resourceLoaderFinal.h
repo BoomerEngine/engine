@@ -44,11 +44,11 @@ namespace base
                 StringBuf extension;
             };
 
-            io::AbsolutePath m_looseFileDir; // in case of loose cooked files
+            StringBuf m_looseFileDir; // in case of loose cooked files
             HashMap<SpecificClassType<IResource>, Array<LoadingEntry>> m_loadingExtensionsMap;
 
             bool buildLoadingExtensionMap();
-            bool assembleCookedFilePath(const ResourceKey& key, io::AbsolutePath& outPath) const;
+            bool assembleCookedFilePath(const ResourceKey& key, StringBuf& outPath) const;
 
             StringView<char> findCookedExtension(const ResourceKey& key) const;
         };

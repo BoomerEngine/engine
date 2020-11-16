@@ -322,17 +322,6 @@ namespace base
             return defaultValue;
         }
 
-        UTF16StringBuf CommandLine::singleValueUTF16(StringView<char> paramName) const
-        {
-            // Linear search
-            for (auto& param : m_params)
-                if (param.name == paramName)
-                    return UTF16StringBuf(param.value.c_str());
-
-            // No value
-            return UTF16StringBuf();
-        }
-
         Array< StringBuf > CommandLine::allValues(StringView<char> paramName) const
         {
             Array< StringBuf > ret;
@@ -529,10 +518,7 @@ namespace base
             // copy program path
             uint32_t paramIndex = 0;
             if (!executablePath.empty())
-            {
-                auto ansiPath = executablePath.ansi_str();
-                m_argv[paramIndex++] = m_mem.strcpy(ansiPath.c_str());
-            }
+                m_argv[paramIndex++] = m_mem.strcpy(executablePath.c_str());
 
             // copy commands
             for (auto& command : cmdLine.commands())

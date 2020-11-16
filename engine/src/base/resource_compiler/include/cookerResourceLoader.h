@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource/include/resourceLoaderCached.h"
 #include "base/resource/include/resourceMetadata.h"

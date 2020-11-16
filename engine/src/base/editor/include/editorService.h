@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/app/include/application.h"
-#include "base/io/include/absolutePath.h"
 #include "base/system/include/task.h"
 #include "base/io/include/ioSystem.h"
 
@@ -61,10 +60,10 @@ namespace ed
         ///---
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, UTF16StringBuf* currentFileName = nullptr);
+        bool saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileName = nullptr);
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, UTF16StringBuf* currentFileName=nullptr);
+        bool saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, StringBuf* currentFileName=nullptr);
 
         /// helper function to load object from XML on user's disk 
         ObjectPtr loadFromXML(ui::IElement* owner, StringView<char> category, SpecificClassType<IObject> expectedObjectClass);
@@ -93,7 +92,7 @@ namespace ed
         NativeTimePoint m_nextConfigSave;
         NativeTimePoint m_nextAutoSave;
 
-        io::AbsolutePath m_configPath;
+        StringBuf m_configPath;
 
         //--
 

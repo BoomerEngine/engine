@@ -10,8 +10,6 @@
 #include "renderingTest.h"
 #include "renderingTestShared.h"
 
-#include "base/io/include/absolutePath.h"
-
 #include "rendering/driver/include/renderingDriver.h"
 #include "rendering/driver/include/renderingCommandWriter.h"
 

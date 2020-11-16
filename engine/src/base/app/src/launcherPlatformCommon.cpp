@@ -48,9 +48,9 @@ namespace base
             TRACE_INFO("Started at {}", currentTime.toDisplayString());
 
             // system information
-            TRACE_INFO("User name: {}", base::GetUserName());
-            TRACE_INFO("Host name: {}", base::GetHostName());
-            TRACE_INFO("System name: {}", base::GetSystemName());
+            TRACE_INFO("User name: {}", GetUserName());
+            TRACE_INFO("Host name: {}", GetHostName());
+            TRACE_INFO("System name: {}", GetSystemName());
 
             // reset random number generator
             srand((uint32_t)currentTime.value());
@@ -63,7 +63,8 @@ namespace base
             {
                 // prepare the special file name
                 // we want the commandline.txt file to be related to the app
-                auto commandlinePath = base::io::SystemPath(base::io::PathCategory::ExecutableFile).changeExtension(UTF16StringBuf(L"commandline.txt"));
+                auto executablePath = io::SystemPath(io::PathCategory::ExecutableFile);
+                auto commandlinePath = StringBuf(TempString("{}.commandline.txt", executablePath));
                 TRACE_WARNING("Command line not specified, loading stuff from '{}'", commandlinePath);
 
                 // open the file using most basic function
@@ -86,7 +87,7 @@ namespace base
                 return false;
 
 			// initialize network
-			base::socket::Initialize();
+			socket::Initialize();
 
             // initialize all services
             if (!app::LocalServiceContainer::GetInstance().init(*cmdLine))
@@ -104,12 +105,12 @@ namespace base
             if (level > 0)
             {
                 TRACE_INFO("Profiling ENABLED at LEVEL {}", level);
-                base::profiler::Block::Initialize((uint8_t)level);
+                profiler::Block::Initialize((uint8_t)level);
             }
             else
             {
                 TRACE_INFO("Profiling DISABLED", level);
-                base::profiler::Block::InitializeDisabled();
+                profiler::Block::InitializeDisabled();
 
             }
 #endif
@@ -159,15 +160,15 @@ namespace base
             // deinitialize any global singletons and free any non-persistent content acquired by them
             // NOTE: this step is mostly so we can report actual leaks more accurately
             TRACE_INFO("Deinitializing singletons...");
-            base::ISingleton::DeinitializeAll();
+            ISingleton::DeinitializeAll();
             TRACE_INFO("Singletons deinitialized");
 
             // dump high-level shared pointer leaks
-            //base::prv::SharedHolder::DumpLeaks();
-            base::DumpLiveRefCountedObjects();
+            //prv::SharedHolder::DumpLeaks();
+            DumpLiveRefCountedObjects();
 
             // dump list of all unreleased memory blocks (leaks)
-            base::mem::DumpMemoryLeaks();
+            mem::DumpMemoryLeaks();
         }
 
     } // platform

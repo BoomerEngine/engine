@@ -11,7 +11,6 @@
 #include "localService.h"
 
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/absolutePathBuilder.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/system/include/thread.h"
 #include "base/memory/include/poolStats.h"
@@ -22,13 +21,6 @@ namespace base
 {
     namespace app
     {
-
-        //-----
-
-        /*ConfigProperty<float> cvMinTimeDelta("Engine", "MinTimeDelta", 0.002f);
-        ConfigProperty<float> cvMaxTimeDelta("Engine", "MaxTimeDelta", 0.1f);
-        ConfigProperty<float> cvForceTimeDelta("Engine", "ForceTimeDelta", 0.0f);
-        ConfigProperty<float> cvMaxFPS("Engine", "MaxFPS", 0.0f);*/
 
         //-----
 

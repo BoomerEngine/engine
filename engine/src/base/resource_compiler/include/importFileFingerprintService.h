@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
 #include "base/containers/include/hashMap.h"
 #include "base/fibers/include/fiberSystem.h"
@@ -37,7 +36,7 @@ namespace base
 
             /// compute file fingerprint of given file
             /// NOTE: this fill yield current fiber until results are available
-            CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView<wchar_t> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
+            CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView<char> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
 
             //---
 
@@ -49,7 +48,7 @@ namespace base
             Mutex m_cacheLock;
             RefPtr<ImportFingerprintCache> m_cache;
 
-            io::AbsolutePath m_cacheFilePath;
+            StringBuf m_cacheFilePath;
             NativeTimePoint m_nextCacheWriteCheck;
             std::atomic<uint32_t> m_hasNewCacheEntries = 0;
 
@@ -58,7 +57,7 @@ namespace base
             // a job, either loading or baking
             struct CacheJob : public IReferencable
             {
-                io::AbsolutePath path;
+                StringBuf path;
                 io::TimeStamp timestamp;
                 ImportFileFingerprint fingerprint;
                 FingerpintCalculationStatus status = FingerpintCalculationStatus::OK;
@@ -67,7 +66,7 @@ namespace base
 
             // synchronization for blobs being loaded/saved
             SpinLock m_activeJobMapLock;
-            HashMap<io::AbsolutePath, RefWeakPtr<CacheJob>> m_activeJobMap;
+            HashMap<StringBuf, RefWeakPtr<CacheJob>> m_activeJobMap;
 
             //--
 

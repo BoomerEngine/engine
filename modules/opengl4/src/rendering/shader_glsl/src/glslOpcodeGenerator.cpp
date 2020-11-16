@@ -19,7 +19,6 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/bitSet.h"
 
-#include "base/io/include/absolutePathBuilder.h"
 #include "base/io/include/ioSystem.h"
 
 #include <functional>
@@ -45,7 +44,8 @@ namespace rendering
             , m_dumpInputShaders(false)
             , m_dumpOutputShaders(false)
         {
-            m_dumpDirectory = base::io::SystemPath(base::io::PathCategory::TempDir).addDir("glsl_out");
+            const auto& tempDir = base::io::SystemPath(base::io::PathCategory::TempDir);
+            m_dumpDirectory = base::TempString("{}glsl_out/", tempDir);
         }
 
         GLSLOpcodeGenerator::~GLSLOpcodeGenerator()
@@ -113,7 +113,7 @@ namespace rendering
             // export generated code
             if (cvExportGeneratedShaders.get())
             {
-                auto filePath = m_dumpDirectory.addFile(base::TempString("{}.dump.txt", context.shaderName).c_str());
+                //auto filePath = m_dumpDirectory.addFile(base::TempString("{}.dump.txt", context.shaderName).c_str());
                 //base::io::SaveFileFromBuffer(filePath, outData.data(), outData.size(), false);
             }
 

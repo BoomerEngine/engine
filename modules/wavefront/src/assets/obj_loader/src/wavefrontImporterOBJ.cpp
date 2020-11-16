@@ -570,6 +570,49 @@ namespace wavefront
         auto uvs = data.uvs();
         auto colors = data.colors();
 
+        // validate
+        {
+            const auto* f = data.faces();
+            const auto* fi = data.faceIndices();
+            const auto numFaces = data.numFaces();
+            for (uint32_t i=0; i<numFaces; ++f, ++i)
+            { 
+                uint8_t numAttributes = 0;
+
+                if (f->attributeMask & 1) numAttributes += 1;
+                if (f->attributeMask & 2) numAttributes += 1;
+                if (f->attributeMask & 4) numAttributes += 1;
+                if (f->attributeMask & 8) numAttributes += 1;
+
+                for (uint32_t j = 0; j < f->numVertices; ++j)
+                {
+                    if (f->attributeMask & 1)
+                    {
+                        const auto index = *fi++;
+                        DEBUG_CHECK(index < data.numPosition());
+                    }
+
+                    if (f->attributeMask & 2)
+                    {
+                        const auto index = *fi++;
+                        DEBUG_CHECK(index < data.numUVS());
+                    }
+
+                    if (f->attributeMask & 4)
+                    {
+                        const auto index = *fi++;
+                        DEBUG_CHECK(index < data.numNormals());
+                    }
+
+                    if (f->attributeMask & 8)
+                    {
+                        const auto index = *fi++;
+                        DEBUG_CHECK(index < data.numColors());
+                    }
+                }
+            }
+        }
+
         // count total needed vertices
         auto numVertices = CountVerticesNeeded(top, data, sourceChunks);
 

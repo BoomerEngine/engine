@@ -22,11 +22,11 @@ namespace base
         public:
             JITTCC();
 
-            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, const io::AbsolutePath& outputModulePath, const Settings& settings) override final;
+            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView<char> outputModulePath, const Settings& settings) override final;
 
         private:
-            static io::AbsolutePath FindTCCCompiler();
-            static io::AbsolutePath FindGCCCompiler();
+            static StringBuf FindTCCCompiler();
+            static StringBuf FindGCCCompiler();
         };
 
         //--

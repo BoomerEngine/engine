@@ -23,7 +23,6 @@
 
 #include "base/resource/include/resourceFactory.h"
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/absolutePath.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/image/include/image.h"
 #include "base/ui/include/uiListView.h"
@@ -663,7 +662,7 @@ namespace ed
 
             // ask for files
             auto nativeHandle = GetService<Editor>()->windowNativeHandle(owner);
-            Array<io::AbsolutePath> importPaths;
+            Array<StringBuf> importPaths;
             if (!base::io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
                 return false;
 

@@ -29,37 +29,37 @@ namespace base
                 POSIXIOSystem();
                 virtual ~POSIXIOSystem();
 
-                virtual bool servicesPath(const AbsolutePath& absoluteFilePath) override final;
+                virtual bool servicesPath(const StringBuf& absoluteFilePath) override final;
 
-                virtual FileHandlePtr openForReading(const AbsolutePath& absoluteFilePath) override final;
-                virtual FileHandlePtr openForWriting(const AbsolutePath& absoluteFilePath, bool append) override final;
-                virtual FileHandlePtr openForReadingAndWriting(const AbsolutePath& absoluteFilePath, bool resetContent = false) override final;
+                virtual FileHandlePtr openForReading(const StringBuf& absoluteFilePath) override final;
+                virtual FileHandlePtr openForWriting(const StringBuf& absoluteFilePath, bool append) override final;
+                virtual FileHandlePtr openForReadingAndWriting(const StringBuf& absoluteFilePath, bool resetContent = false) override final;
 
-                virtual bool fileSize(const AbsolutePath& absoluteFilePath, uint64_t& outFileSize) override final;
-                virtual bool fileTimeStamp(const AbsolutePath& absoluteFilePath, class TimeStamp& outTimeStamp) override final;
-                virtual bool createPath(const AbsolutePath& absoluteFilePath) override final;
-                virtual bool moveFile(const AbsolutePath& srcAbsolutePath, const AbsolutePath& destAbsolutePath) override final;
-                virtual bool deleteFile(const AbsolutePath& absoluteFilePath) override final;
-                virtual bool deleteDir(const AbsolutePath& absoluteDirPath) override final;
-                virtual bool touchFile(const AbsolutePath& absoluteFilePath) override final;
-                virtual bool fileExists(const AbsolutePath& absoluteFilePath) override final;
-                virtual bool isFileReadOnly(const AbsolutePath& absoluteFilePath) override final;
-                virtual bool readOnlyFlag(const AbsolutePath& absoluteFilePath, bool flag) override final;
-                virtual void findFiles(const AbsolutePath& absoluteFilePath, const wchar_t* searchPattern, Array< AbsolutePath >& absoluteFiles, bool recurse) override final;
-                virtual void findSubDirs(const AbsolutePath& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames) override final;
-                virtual void findLocalFiles(const AbsolutePath& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames) override final;
+                virtual bool fileSize(const StringBuf& absoluteFilePath, uint64_t& outFileSize) override final;
+                virtual bool fileTimeStamp(const StringBuf& absoluteFilePath, class TimeStamp& outTimeStamp) override final;
+                virtual bool createPath(const StringBuf& absoluteFilePath) override final;
+                virtual bool moveFile(const StringBuf& srcStringBuf, const StringBuf& destStringBuf) override final;
+                virtual bool deleteFile(const StringBuf& absoluteFilePath) override final;
+                virtual bool deleteDir(const StringBuf& absoluteDirPath) override final;
+                virtual bool touchFile(const StringBuf& absoluteFilePath) override final;
+                virtual bool fileExists(const StringBuf& absoluteFilePath) override final;
+                virtual bool isFileReadOnly(const StringBuf& absoluteFilePath) override final;
+                virtual bool readOnlyFlag(const StringBuf& absoluteFilePath, bool flag) override final;
+                virtual void findFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< StringBuf >& absoluteFiles, bool recurse) override final;
+                virtual void findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames) override final;
+                virtual void findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames) override final;
 
                 virtual void rootPaths(Array<BrowsableRoot>& outRoots) override final;
-                virtual AbsolutePath systemPath(PathCategory category) override final;
-                virtual DirectoryWatcherPtr createDirectoryWatcher(const AbsolutePath& path) override final;
+                virtual StringBuf systemPath(PathCategory category) override final;
+                virtual DirectoryWatcherPtr createDirectoryWatcher(const StringBuf& path) override final;
 
-                virtual void showFileExplorer(const AbsolutePath& path) override final;
-                virtual bool showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData) override final;
-                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData) override final;
+                virtual void showFileExplorer(const StringBuf& path) override final;
+                virtual bool showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData) override final;
+                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData) override final;
 
             private:
                 UniquePtr<POSIXAsyncReadDispatcher> m_asyncDispatcher;
-                AbsolutePath m_rootPath;
+                StringBuf m_rootPath;
             };
 
         } // prv

@@ -72,14 +72,14 @@ namespace ed
         }
         else
         {
-            data = CreateSharedPtr<FileData>();
+            auto data = CreateSharedPtr<FileData>();
             data->index = ui::ModelIndex(this, data);
             data->depotPath = depotFileName;
             data->status = status;
             data->time = time;
 
             m_fileMap[depotFileName] = data;
-            m_files.pushBack(AddRef(data));
+            m_files.pushBack(data);
 
             notifyItemAdded(ui::ModelIndex(), data->index);
         }

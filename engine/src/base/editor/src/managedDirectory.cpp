@@ -213,8 +213,7 @@ namespace ed
             {
                 curDir->deleted(false);
 
-                auto dirPath = absolutePath().addDir(StringBuf(name).c_str());
-                base::io::CreatePath(dirPath);
+                base::io::CreatePath(TempString("{}name/", absolutePath()));
 
                 curDir->populate(); // just in case it was not really deleted
             }
@@ -237,16 +236,14 @@ namespace ed
         }
 
         // create the physical path in file system
-        auto dirPath = absolutePath().addDir(StringBuf(name).c_str());
-        if (!base::io::CreatePath(dirPath))
+        if (!base::io::CreatePath(TempString("{}name/", absolutePath(), name)))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': failed to create physical directory on disk", name, depotPath());
             return nullptr;
         }
 
         // create wrapper
-        auto childDepotPath = TempString("{}{}/", m_depotPath, name);
-        auto newDir = CreateSharedPtr<ManagedDirectory>(depot(), this, StringBuf(name), childDepotPath);
+        auto newDir = CreateSharedPtr<ManagedDirectory>(depot(), this, StringBuf(name), TempString("{}{}/", m_depotPath, name));
         m_directories.add(newDir);
         curDir = newDir;
 
@@ -344,8 +341,7 @@ namespace ed
         }
 
         // file already exists, do not overwrite
-        auto absFilePath = absolutePath().addFile(StringBuf(fileName).c_str());
-        if (base::io::FileExists(absFilePath))
+        if (base::io::FileExists(TempString("{}{}", absolutePath(), fileName)))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
             return file(fileName, true);
@@ -445,8 +441,7 @@ namespace ed
         }
 
         // file already exists, do not overwrite
-        auto absFilePath = absolutePath().addFile(StringBuf(fileName).c_str());
-        if (base::io::FileExists(absFilePath))
+        if (base::io::FileExists(TempString("{}{}", absolutePath(), fileName)))
         {
             TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
             return file(fileName, true);

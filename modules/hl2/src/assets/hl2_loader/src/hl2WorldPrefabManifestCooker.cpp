@@ -119,7 +119,7 @@ namespace hl2
             // setup parser
             base::parser::TextParser parser("Entities", base::parser::IErrorReporter::GetDefault(), base::parser::ICommentEater::StandardComments());
             parser.reset(base::StringView<char>(txt));
-            base::io::SaveFileFromString(base::io::AbsolutePath::Build(L"/home/rexdex/entities.txt"), txt);
+            //base::io::SaveFileFromString(L"/home/rexdex/entities.txt", txt);
 
             // typed parameter lists
             base::HashSet<base::StringID> floatParams, intParams, colorParams, vectorParams, angleParams;

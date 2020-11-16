@@ -8,12 +8,10 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
 #include "base/resource/include/resourceLoader.h"
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
 
 namespace ed

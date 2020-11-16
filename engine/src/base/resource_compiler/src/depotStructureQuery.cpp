@@ -105,7 +105,7 @@ namespace base
             return localFileSystem->timestamp(localFileSystemPath, outTimestamp);
         }
 
-        bool DepotStructure::queryFileAbsolutePath(StringView<char> fileSystemPath, io::AbsolutePath& outAbsolutePath) const
+        bool DepotStructure::queryFileAbsolutePath(StringView<char> fileSystemPath, StringBuf& outAbsolutePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath), false);
 
@@ -119,7 +119,7 @@ namespace base
             return localFileSystem->absolutePath(localFileSystemPath, outAbsolutePath);
         }
 
-        bool DepotStructure::queryFileDepotPath(const io::AbsolutePath& absolutePath, StringBuf& outFileSystemPath) const
+        bool DepotStructure::queryFileDepotPath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const
         {
             StringBuf bestFileSystemPath;
 
@@ -128,11 +128,11 @@ namespace base
             {
                 // get the absolute path for the mount point
                 // NOTE: this works only if we are based on physical data
-                io::AbsolutePath mountPointAbsolutePath;
+                StringBuf mountPointAbsolutePath;
                 if (dep->fileSystem().absolutePath(StringBuf::EMPTY(), mountPointAbsolutePath))
                 {
                     // get relative path
-                    auto relativePath = absolutePath.relativeTo(mountPointAbsolutePath).ansi_str();
+                    auto relativePath = absolutePath.afterFirst(mountPointAbsolutePath);
                     TRACE_INFO("Path '{}' resolved to '{}' relative to '{}'", absolutePath, relativePath, mountPointAbsolutePath);
                     if (!relativePath.empty() && (INDEX_NONE == relativePath.findStr("..")))
                     {
@@ -217,13 +217,13 @@ namespace base
             return false;
         }
 
-        void DepotStructure::enumAbsolutePathRoots(Array<io::AbsolutePath>& outAbsolutePathRoots) const
+        void DepotStructure::enumAbsolutePathRoots(Array<StringBuf>& outAbsolutePathRoots) const
         {
             for (auto dep  : m_fileSystemsPtrs)
             {
                 // get the absolute path for the mount point
                 // NOTE: this works only if we are based on physical data
-                io::AbsolutePath mountPointAbsolutePath;
+                StringBuf mountPointAbsolutePath;
                 if (dep->fileSystem().absolutePath(StringBuf::EMPTY(), mountPointAbsolutePath))
                 {
                     outAbsolutePathRoots.pushBack(mountPointAbsolutePath);

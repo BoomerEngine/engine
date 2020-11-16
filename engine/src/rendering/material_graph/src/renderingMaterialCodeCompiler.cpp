@@ -436,6 +436,7 @@ namespace rendering
         }
 
         // DEBUG DUMP
+        if (0)
         {
             base::StringBuilder path;
             path.append("Z:/.materialDump/");
@@ -443,8 +444,7 @@ namespace rendering
             path << m_ps.context();
             path.append(".txt");
 
-            const auto truePath = base::io::AbsolutePath::Build(base::UTF16StringBuf(path.view()));
-            base::io::SaveFileFromString(truePath, outStr.view());
+            base::io::SaveFileFromString(path.view(), outStr.view());
         }
     }
 

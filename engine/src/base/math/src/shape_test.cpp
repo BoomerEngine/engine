@@ -16,7 +16,6 @@
 #include "triMesh.h"
 #include "voxels.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/test/include/gtest/gtest.h"
 
 //--

@@ -42,7 +42,7 @@ namespace base
         //---
 
         IFormatStream& append(StringView<char> view);
-        IFormatStream& append(const StringView<wchar_t>& view);
+        //IFormatStream& append(const StringView<wchar_t>& view);
         IFormatStream& append(const StringBuf& str);
         IFormatStream& append(StringID str);
 

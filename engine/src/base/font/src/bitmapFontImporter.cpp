@@ -22,7 +22,6 @@
 #include "base/font/include/font.h"
 #include "base/font/include/fontGlyph.h"
 #include "base/containers/include/rectAllocator.h"
-#include "base/io/include/absolutePath.h"
 
 namespace base
 {

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/system/include/atomic.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource/include/resource.h"
@@ -75,7 +74,7 @@ namespace base
             //---
 
             /// initialize from given depot manifest (mapping file)
-            bool populateFromManifest(const io::AbsolutePath& depotManifestPath);
+            bool populateFromManifest(StringView<char> depotManifestPath);
 
             //---
 
@@ -107,11 +106,11 @@ namespace base
 
             /// if the file is loaded from a physical file query it's path
             /// NOTE: is present only for files physically on disk, not in archives or over the network
-            bool queryFileAbsolutePath(StringView<char> fileSystemPath, io::AbsolutePath& outAbsolutePath) const;
+            bool queryFileAbsolutePath(StringView<char> fileSystemPath, StringBuf& outAbsolutePath) const;
 
             /// if the given absolute file is loadable via the depot path than find it
             /// NOTE: is present only for files physically on disk, not in archives or over the network
-            bool queryFileDepotPath(const io::AbsolutePath& absolutePath, StringBuf& outFileSystemPath) const;
+            bool queryFileDepotPath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const;
 
             /// create a reader for the file's content
             /// NOTE: creating a reader may take some time
@@ -160,7 +159,7 @@ namespace base
             //--
 
             /// enumerate all physical file system roots we have (so we know what to observe)
-            void enumAbsolutePathRoots(Array<io::AbsolutePath>& outAbsolutePathRoots) const;
+            void enumAbsolutePathRoots(Array<StringBuf>& outAbsolutePathRoots) const;
 
             //--
 

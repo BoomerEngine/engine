@@ -87,7 +87,7 @@ namespace base
                 TRACE_INFO("Saving finished in extra {}", timer);
         }
 
-        bool CookerSaveThread::scheduleSave(const ResourcePtr& data, const io::AbsolutePath& path)
+        bool CookerSaveThread::scheduleSave(const ResourcePtr& data, StringView<char> path)
         {
             DEBUG_CHECK_EX(!path.empty(), "Invalid path");
             DEBUG_CHECK_EX(data, "Invalid data to save");
@@ -97,7 +97,7 @@ namespace base
                 auto saveLock = CreateLock(m_saveQueueLock);
 
                 auto job = MemNew(SaveJob);
-                job->absoultePath = path;
+                job->absoultePath = StringBuf(path);
                 job->unsavedResource = data;
                 m_saveJobQueue.push(job);
             }
@@ -107,7 +107,7 @@ namespace base
             return true;
         }
 
-        bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, const io::AbsolutePath& path)
+        bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, StringView<char> path)
         {
             // create staged writer for the file
             if (auto file = base::io::OpenForWriting(path, base::io::FileWriteMode::StagedWrite))
@@ -138,7 +138,7 @@ namespace base
                 m_saveThreadSemaphore.wait(100);
 
                 // get a file from list
-                io::AbsolutePath path;
+                StringBuf path;
                 ResourcePtr ptr;
                 {
                     auto lock = CreateLock(m_saveQueueLock);

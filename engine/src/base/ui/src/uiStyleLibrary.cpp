@@ -12,8 +12,7 @@
 #include "uiStyleValue.h"
 #include "uiWindow.h"
 
-#include "base/io/include/absolutePath.h"
-#include "base/io/include/absolutePathBuilder.h"
+#include "base/io/include/pathBuilder.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/system/include/scopeLock.h"
 #include "base/canvas/include/canvasGlyphCache.h"

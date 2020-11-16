@@ -10,7 +10,6 @@
 
 #include "versionControl.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/resource/include/resourceMountPoint.h"
 
 namespace ed

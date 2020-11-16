@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
-
 namespace base
 {
     namespace process
@@ -34,7 +32,7 @@ namespace base
         {
             // path to process to run (copied out of the pointer)
             // NOTE: if no process specified we will run ourselves
-            io::AbsolutePath m_processPath;
+            StringBuf m_processPath;
 
             // optional arguments to pass to process
             Array<StringBuf> m_arguments;

@@ -9,8 +9,8 @@
 
 #include "build.h"
 
-#include "absolutePath.h"
-#include "absolutePathBuilder.h"
+#include "StringBuf.h"
+#include "StringBufBuilder.h"
 #include "timestamp.h"
 #include "fileFormat.h"
 #include "utils.h"
@@ -53,13 +53,13 @@ namespace base
                 m_asyncDispatcher.reset();
             }
 
-            bool POSIXIOSystem::servicesPath(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::servicesPath(const StringBuf& absoluteFilePath)
             {
                 // TODO: path should start with proper drive name
                 return true;
             }
 
-            FileHandlePtr POSIXIOSystem::openForReading(const AbsolutePath& absoluteFilePath)
+            FileHandlePtr POSIXIOSystem::openForReading(const StringBuf& absoluteFilePath)
             {
                 // convert file path
                 char filePath[512];
@@ -77,7 +77,7 @@ namespace base
                 return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, false, m_asyncDispatcher.get());
             }
 
-            FileHandlePtr POSIXIOSystem::openForWriting(const AbsolutePath& absoluteFilePath, bool append)
+            FileHandlePtr POSIXIOSystem::openForWriting(const StringBuf& absoluteFilePath, bool append)
             {
                 // Create path
                 if (!createPath(absoluteFilePath))
@@ -111,7 +111,7 @@ namespace base
                 return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), false, true, m_asyncDispatcher.get());
             }
 
-            FileHandlePtr POSIXIOSystem::openForReadingAndWriting(const AbsolutePath& absoluteFilePath, bool resetContent /*= false*/)
+            FileHandlePtr POSIXIOSystem::openForReadingAndWriting(const StringBuf& absoluteFilePath, bool resetContent /*= false*/)
             {
                 // Create path
                 if (!createPath(absoluteFilePath))
@@ -139,7 +139,7 @@ namespace base
                 return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, true, m_asyncDispatcher.get());
             }
 
-            bool POSIXIOSystem::fileSize(const AbsolutePath& absoluteFilePath, uint64_t& outFileSize)
+            bool POSIXIOSystem::fileSize(const StringBuf& absoluteFilePath, uint64_t& outFileSize)
             {
                 // convert file path
                 char filePath[512];
@@ -154,7 +154,7 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::fileTimeStamp(const AbsolutePath& absoluteFilePath, class TimeStamp& outTimeStamp)
+            bool POSIXIOSystem::fileTimeStamp(const StringBuf& absoluteFilePath, class TimeStamp& outTimeStamp)
             {
                 // convert file path
                 char filePath[512];
@@ -169,7 +169,7 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::createPath(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::createPath(const StringBuf& absoluteFilePath)
             {
                 char filePath[512];
                 utf8::FromUniChar(filePath, sizeof(filePath), absoluteFilePath.c_str(), absoluteFilePath.view().length());
@@ -204,15 +204,15 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::moveFile(const AbsolutePath& srcAbsolutePath, const AbsolutePath& destAbsolutePath)
+            bool POSIXIOSystem::moveFile(const StringBuf& srcStringBuf, const StringBuf& destStringBuf)
             {
                 // convert source path
                 char srcFilePath[512];
-                utf8::FromUniChar(srcFilePath, sizeof(srcFilePath), srcAbsolutePath.c_str(), srcAbsolutePath.view().length());
+                utf8::FromUniChar(srcFilePath, sizeof(srcFilePath), srcStringBuf.c_str(), srcStringBuf.view().length());
 
                 // convert destination path
                 char destFilePath[512];
-                utf8::FromUniChar(destFilePath, sizeof(destFilePath), destAbsolutePath.c_str(), destAbsolutePath.view().length());
+                utf8::FromUniChar(destFilePath, sizeof(destFilePath), destStringBuf.c_str(), destStringBuf.view().length());
 
                 // Delete destination file
                 if (-1 != access(destFilePath, F_OK))
@@ -220,15 +220,15 @@ namespace base
                     if (0 != remove(destFilePath))
                     {
                         auto err  = errno;
-                        TRACE_ERROR("Unable to move file \"{}\" to \"{}\". Destination file cannot be removed. Error: {}", srcAbsolutePath, destAbsolutePath, err);
+                        TRACE_ERROR("Unable to move file \"{}\" to \"{}\". Destination file cannot be removed. Error: {}", srcStringBuf, destStringBuf, err);
                         return false;
                     }
                 }
 
                 // create target path
-                if (!createPath(destAbsolutePath))
+                if (!createPath(destStringBuf))
                 {
-                    TRACE_ERROR("Unable to move file \"{}\" to \"{}\", Unable to create target path", srcAbsolutePath, destAbsolutePath);
+                    TRACE_ERROR("Unable to move file \"{}\" to \"{}\", Unable to create target path", srcStringBuf, destStringBuf);
                     return false;
                 }
 
@@ -236,7 +236,7 @@ namespace base
                 if (0 != rename(srcFilePath, destFilePath))
                 {
                     auto err  = errno;
-                    TRACE_ERROR("Unable to move file \"{}\" to \"{}\", Error: {}", srcAbsolutePath, destAbsolutePath, err);
+                    TRACE_ERROR("Unable to move file \"{}\" to \"{}\", Error: {}", srcStringBuf, destStringBuf, err);
                     return false;
                 }
 
@@ -244,7 +244,7 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::deleteFile(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::deleteFile(const StringBuf& absoluteFilePath)
             {
                 if (!readOnlyFlag(absoluteFilePath, false))
                     return false;
@@ -277,7 +277,7 @@ namespace base
                 return rv;
             }
 
-            bool POSIXIOSystem::deleteDir(const AbsolutePath& abosluteDirPath)
+            bool POSIXIOSystem::deleteDir(const StringBuf& abosluteDirPath)
             {
                 char filePath[512];
                 utf8::FromUniChar(filePath, sizeof(filePath), abosluteDirPath.c_str(), abosluteDirPath.view().length());
@@ -290,7 +290,7 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::touchFile(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::touchFile(const StringBuf& absoluteFilePath)
             {
                 char filePath[512];
                 utf8::FromUniChar(filePath, sizeof(filePath), absoluteFilePath.c_str(), absoluteFilePath.view().length());
@@ -306,14 +306,14 @@ namespace base
                 return true;
             }
 
-            bool POSIXIOSystem::fileExists(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::fileExists(const StringBuf& absoluteFilePath)
             {
                 char filePath[512];
                 utf8::FromUniChar(filePath, sizeof(filePath), absoluteFilePath.c_str(), absoluteFilePath.view().length());
                 return (-1 != access(filePath, F_OK));
             }
 
-            bool POSIXIOSystem::isFileReadOnly(const AbsolutePath& absoluteFilePath)
+            bool POSIXIOSystem::isFileReadOnly(const StringBuf& absoluteFilePath)
             {
                 /*auto attr = ::GetFileAttributesW(absoluteFilePath.c_str());
                 if (attr == INVALID_FILE_ATTRIBUTES)
@@ -324,7 +324,7 @@ namespace base
                 return false;
             }
 
-            bool POSIXIOSystem::readOnlyFlag(const AbsolutePath& absoluteFilePath, bool flag)
+            bool POSIXIOSystem::readOnlyFlag(const StringBuf& absoluteFilePath, bool flag)
             {
                 /*auto attr = ::GetFileAttributesW(absoluteFilePath.c_str());
                 auto srcAttr = attr;
@@ -348,7 +348,7 @@ namespace base
                 return true;
             }
 
-            void POSIXIOSystem::findFiles(const AbsolutePath& absoluteFilePath, const wchar_t* searchPattern, Array< AbsolutePath >& absoluteFiles, bool recurse)
+            void POSIXIOSystem::findFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< StringBuf >& absoluteFiles, bool recurse)
             {
                 for (POSIXFileIterator it(absoluteFilePath, searchPattern, true, false); it; ++it)
                     absoluteFiles.pushBack(it.filePath());
@@ -364,13 +364,13 @@ namespace base
                 }
             }
 
-            void POSIXIOSystem::findSubDirs(const AbsolutePath& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames)
+            void POSIXIOSystem::findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames)
             {
                 for (POSIXFileIterator it(absoluteFilePath, L"*.", false, true); it; ++it)
                     outDirectoryNames.emplaceBack(it.fileName());
             }
 
-            void POSIXIOSystem::findLocalFiles(const AbsolutePath& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames)
+            void POSIXIOSystem::findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames)
             {
                 for (POSIXFileIterator it(absoluteFilePath, searchPattern, true, false); it; ++it)
                     outFileNames.emplaceBack(it.fileName());
@@ -387,7 +387,7 @@ namespace base
                 return ret;
             }
 
-            AbsolutePath POSIXIOSystem::systemPath(PathCategory category)
+            StringBuf POSIXIOSystem::systemPath(PathCategory category)
             {
                 char buffer[512];
 
@@ -397,7 +397,7 @@ namespace base
                     {
                         auto length = readlink("/proc/self/exe", buffer, 512);
                         buffer[length] = 0;
-                        return io::AbsolutePath::Build(UTF16StringBuf(buffer));
+                        return io::StringBuf::Build(UTF16StringBuf(buffer));
                     }
 
                     case PathCategory::ExecutableDir:
@@ -407,27 +407,27 @@ namespace base
 
                     case PathCategory::TempDir:
                     {
-                        auto path = AbsolutePath::Build("/var/tmp/BoomerEngine/");
+                        auto path = StringBuf::Build("/var/tmp/BoomerEngine/");
                         createPath(path);
                         return path;
                     }
 
                     case PathCategory::UserConfigDir:
                     {
-                        auto path = AbsolutePath::Build(GetHomeDirectory());
+                        auto path = StringBuf::Build(GetHomeDirectory());
                         return path.addDir(L"BoomerEngine").addDir(L"config");
                     }
                 }
 
-                return AbsolutePath();
+                return StringBuf();
             }
 
-            DirectoryWatcherPtr POSIXIOSystem::createDirectoryWatcher(const AbsolutePath& path)
+            DirectoryWatcherPtr POSIXIOSystem::createDirectoryWatcher(const StringBuf& path)
             {
                 return base::CreateSharedPtr<POSIXDirectoryWatcher>(path);
             }
 
-            void POSIXIOSystem::showFileExplorer(const AbsolutePath& path)
+            void POSIXIOSystem::showFileExplorer(const StringBuf& path)
             {
                 // TODO: add support for soemthing more than Ubuntu :(
 
@@ -499,7 +499,7 @@ namespace base
                 }
             }
 
-            bool POSIXIOSystem::showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<AbsolutePath>& outPaths, OpenSavePersistentData& persistentData)
+            bool POSIXIOSystem::showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData)
             {
                 //zenity --file-selection --filename=dupa --multiple --file-filter="Portable Network Graphics [*.png] | *.png" --file-filter="Zip [*.zip] | *.zip"
 
@@ -557,7 +557,7 @@ namespace base
                 // emit paths
                 for (auto& path : paths)
                 {
-                    auto finalPath = AbsolutePath::Build(path);
+                    auto finalPath = StringBuf::Build(path);
                     if (!finalPath.empty())
                         outPaths.pushBack(finalPath);
                 }
@@ -573,7 +573,7 @@ namespace base
                 return !outPaths.empty();
             }
 
-            bool POSIXIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, AbsolutePath& outPath, OpenSavePersistentData& persistentData)
+            bool POSIXIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData)
             {
                 // change directory
                 if (!persistentData.m_directory.empty())
@@ -620,7 +620,7 @@ namespace base
                 }
 
                 // convert to path
-                auto path = AbsolutePath::Build(UTF16StringBuf(data));
+                auto path = StringBuf::Build(UTF16StringBuf(data));
                 if (path.empty())
                     return false;
 

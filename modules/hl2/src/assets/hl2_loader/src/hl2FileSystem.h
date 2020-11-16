@@ -8,7 +8,6 @@
 #pragma once
 
 #include "base/resource_compiler/include/depotFileSystem.h"
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioFileHandle.h"
 
 namespace hl2
@@ -20,7 +19,7 @@ namespace hl2
     class ASSETS_HL2_LOADER_API PackedFileSystem : public base::depot::IFileSystem
     {
     public:
-        PackedFileSystem(const base::io::AbsolutePath& rootPath, base::UniquePtr<FileSystemIndex>&& indexData);
+        PackedFileSystem(const base::StringBuf& rootPath, base::UniquePtr<FileSystemIndex>&& indexData);
         virtual ~PackedFileSystem();
 
         /// base::depot::IFileSystem interface
@@ -29,7 +28,7 @@ namespace hl2
         virtual bool ownsFile(StringView<char> rawFilePath) const override final;
         virtual bool contextName(StringView<char> rawFilePath, base::StringBuf& outContextName) const override final;
         virtual bool timestamp(StringView<char> rawFilePath, base::io::TimeStamp& outTimestamp) const override final;
-        virtual bool absolutePath(StringView<char> rawFilePath, base::io::AbsolutePath& outAbsolutePath) const override final;
+        virtual bool absolutePath(StringView<char> rawFilePath, base::StringBuf& outAbsolutePath) const override final;
         virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
         virtual bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
         //virtual base::io::FileHandlePtr createReader(StringView<char> rawFilePath) const override final;
@@ -38,12 +37,12 @@ namespace hl2
         virtual void enableFileSystemObservers() override final;
 
     private:
-        base::io::AbsolutePath m_rootPath;
+        base::StringBuf m_rootPath;
         base::UniquePtr<FileSystemIndex> m_indexData;
 
         struct OpenPackage
         {
-            base::io::AbsolutePath m_fullPath;
+            base::StringBuf m_fullPath;
             base::io::ReadFileHandlePtr m_fileHandle;
             mutable base::Mutex m_lock;
         };

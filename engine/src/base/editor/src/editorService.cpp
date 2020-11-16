@@ -19,7 +19,6 @@
 #include "versionControl.h"
 #include "resourceEditor.h"
 
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/commandline.h"
 #include "base/resource_compiler/include/depotStructure.h"
@@ -98,7 +97,7 @@ namespace ed
         ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
         // load config data (does not apply the config)
-        m_configPath = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("editor.ini");
+        m_configPath = TempString("{}editor.ini", base::io::SystemPath(io::PathCategory::UserConfigDir));
         m_configStorage->loadFromFile(m_configPath);
         
         // load open/save settings
@@ -412,7 +411,7 @@ namespace ed
 
     //--
 
-    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, UTF16StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileNamePtr)
     {
         // use main window when nothing was provided
         if (!owner)
@@ -426,23 +425,23 @@ namespace ed
         formatList.emplaceBack("xml", "Extensible Markup Language file");
 
         // current file name
-        UTF16StringBuf currentFileName;
+        StringBuf currentFileName;
         if (currentFileNamePtr)
             currentFileName = *currentFileNamePtr;
         else if (!dialogSettings.lastSaveFileName.empty())
             currentFileName = dialogSettings.lastSaveFileName;
 
         // ask for file path
-        io::AbsolutePath selectedPath;
+        StringBuf selectedPath;
         const auto nativeHandle = windowNativeHandle(owner);
         if (!base::io::ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
             return false;
 
         // extract file name
         if (currentFileNamePtr)
-            *currentFileNamePtr = selectedPath.fileNameWithExtensions();
+            *currentFileNamePtr = StringBuf(selectedPath.view().fileName());
         else
-            dialogSettings.lastSaveFileName = selectedPath.fileNameWithExtensions();
+            dialogSettings.lastSaveFileName = StringBuf(selectedPath.view().fileName());
 
         // get the object to save
         const auto object = makeXMLFunc();
@@ -473,7 +472,7 @@ namespace ed
 
     }
 
-    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, UTF16StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, StringBuf* currentFileNamePtr)
     {
         return saveToXML(owner, category, [objectPtr]() { return objectPtr;  });
     }
@@ -492,7 +491,7 @@ namespace ed
         formatList.emplaceBack("xml", "Extensible Markup Language file");
 
         // ask for file path
-        Array<io::AbsolutePath> selectedPaths;
+        Array<StringBuf> selectedPaths;
         const auto nativeHandle = windowNativeHandle(owner);
         if (!base::io::ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
             return false;

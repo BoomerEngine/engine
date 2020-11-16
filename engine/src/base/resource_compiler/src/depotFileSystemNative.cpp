@@ -13,7 +13,6 @@
 
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/io/include/absolutePath.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/containers/include/utf8StringFunctions.h"
 #include "base/resource/include/resourcePath.h"
@@ -25,79 +24,7 @@ namespace base
 
         //--
 
-        struct LocalAbsolutePathBuilder
-        {
-            static const uint32_t MAX_LENGTH = 256;
-
-            wchar_t m_path[MAX_LENGTH];
-            wchar_t* m_writePtr = nullptr;
-            wchar_t* m_writeEnd = nullptr;
-
-            LocalAbsolutePathBuilder(StringView<wchar_t> rootPath)
-            {
-                ASSERT(rootPath.length() < MAX_LENGTH);
-
-                memcpy(m_path, rootPath.data(), rootPath.length() * sizeof(wchar_t));
-                m_path[rootPath.length()] = 0;
-
-                /*ASSERT(m_path[rootPath.length() - 1] == io::AbsolutePath::SYSTEM_PATH_SEPARATOR);
-                m_path[rootPath.length() - 1] = 0;*/
-
-                m_writePtr = m_path + rootPath.length();
-                m_writeEnd = m_path + MAX_LENGTH;
-            }
-
-            StringView<wchar_t> view() const
-            {
-                return StringView<wchar_t>(m_path, m_writePtr);
-            }
-
-            const wchar_t* c_str() const
-            {
-                return m_path;
-            }
-
-            bool append(StringView<char> path)
-            {
-                if (m_writePtr + path.length() >= m_writeEnd)
-                    return false;
-
-                for (auto ch : path)
-                {
-                    if (ch == io::AbsolutePath::WRONG_SYSTEM_PATH_SEPARATOR)
-                        ch = io::AbsolutePath::SYSTEM_PATH_SEPARATOR;
-                    *m_writePtr++ = ch;
-                }
-                *m_writePtr = 0;
-
-                return true;
-            }
-
-            bool appendAsDirName(StringView<char> path)
-            {
-                if (m_writePtr + path.length() >= m_writeEnd)
-                    return false;
-
-                for (auto ch : path)
-                {
-                    if (ch == io::AbsolutePath::WRONG_SYSTEM_PATH_SEPARATOR)
-                        ch = io::AbsolutePath::SYSTEM_PATH_SEPARATOR;
-                    *m_writePtr++ = ch;
-                }
-
-                const char pathSeparatorTxt[2] = { io::AbsolutePath::SYSTEM_PATH_SEPARATOR , 0 };
-                if (!path.endsWith(pathSeparatorTxt))
-                    *m_writePtr++ = io::AbsolutePath::SYSTEM_PATH_SEPARATOR;
-
-                *m_writePtr = 0;
-                return true;
-            }
-        };
-
-            //--
-
-
-        FileSystemNative::FileSystemNative(const io::AbsolutePath& rootPath, bool allowWrites, DepotStructure* owner)
+        FileSystemNative::FileSystemNative(StringView<char> rootPath, bool allowWrites, DepotStructure* owner)
             : m_rootPath(rootPath)
             , m_writable(allowWrites)
             , m_depot(owner)
@@ -133,11 +60,11 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-                return false;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
-            outContextName = StringBuf(path.c_str());
+            outContextName = path.toString();
             return true;
         }
 
@@ -145,39 +72,39 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-                return false;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
             return base::io::FileTimeStamp(path.view(), outTimestamp);
         }
 
-        bool FileSystemNative::absolutePath(StringView<char> rawFilePath, io::AbsolutePath& outAbsolutePath) const
+        bool FileSystemNative::absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::AnyRelativePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (path.append(rawFilePath))
-            {
-                outAbsolutePath = io::AbsolutePath::Build(path.view());
-                return true;
-            }
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
-            return false;
+            outAbsolutePath = path.toString();
+            return true;
         }
 
         bool FileSystemNative::enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.appendAsDirName(rawDirectoryPath))
-                return false;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawDirectoryPath;
+            path << "/";
 
-            return base::io::FindSubDirs(path.view(), [&enumFunc](StringView<wchar_t> name) {
-                    if (name == L".boomer")
+            return base::io::FindSubDirs(path.view(), [&enumFunc](StringView<char> name) {
+                    if (name != ".boomer")
+                        return enumFunc(name);
+                    else
                         return false;
-                    return enumFunc(TempString("{}", name));
                 });
         }
 
@@ -185,11 +112,12 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.appendAsDirName(rawDirectoryPath))
-                return false;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawDirectoryPath;
+            path << "/";
 
-            return base::io::FindLocalFiles(path.view(), L"*.*", [&enumFunc](StringView<wchar_t> name) {
+            return base::io::FindLocalFiles(path.view(), "*.*", [&enumFunc](StringView<char> name) {
                 return enumFunc(TempString("{}", name));
                 });
         }
@@ -198,9 +126,9 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-                return nullptr;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
             // do not open if file does not exist
             if (!base::io::FileExists(path.view()))
@@ -214,9 +142,9 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-                return nullptr;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
             // do not open if file does not exist
             if (!base::io::FileExists(path.view()))
@@ -230,9 +158,9 @@ namespace base
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
-            LocalAbsolutePathBuilder path(m_rootPath);
-            if (!path.append(rawFilePath))
-                return nullptr;
+            StringBuilder path;
+            path << m_rootPath;
+            path << rawFilePath;
 
             // create a STAGED writer
             const auto writeMode = io::FileWriteMode::StagedWrite;
@@ -259,31 +187,23 @@ namespace base
 
         //--
 
-        static void NormalizeFilePath(UTF16StringBuf& path)
+        static void NormalizeFilePath(StringBuf& path)
         {
-            for (auto& ch : path)
-            {
-                if (ch == '\\')
-                    ch = '/';
-            }
+            path.replaceChar('\\', '/');
         }
 
-        static void NormalizeDirPath(UTF16StringBuf& path)
+        static void NormalizeDirPath(StringBuf& path)
         {
-            for (auto& ch : path)
-            {
-                if (ch == '\\')
-                    ch = '/';
-            }
+            path.replaceChar('\\', '/');
 
-            if (!path.endsWith(L"/"))
-                path += "/";
+            if (!path.endsWith("/"))
+                path = TempString("{}/", path);
         }
 
         void FileSystemNative::handleEvent(const io::DirectoryWatcherEvent& evt)
         {
             // ignore shit with backup files
-            if (evt.path.view().endsWith(L".bak"))
+            if (evt.path.view().endsWith(".bak"))
                 return;
 
             if (m_depot)
@@ -291,47 +211,62 @@ namespace base
                 if (evt.type == io::DirectoryWatcherEventType::FileContentChanged ||
                     evt.type == io::DirectoryWatcherEventType::FileMetadataChanged)
                 {
-                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    if (ValidateDepotPath(evt.path, DepotPathClass::AbsoluteFilePath))
                     {
-                        auto localPath = evt.path.relativeTo(m_rootPath);
-                        NormalizeFilePath(localPath);
-                        m_depot->notifyFileChanged(this, StringBuf(localPath.view()));
+                        auto localPath = evt.path.stringAfterFirst(m_rootPath);
+                        if (!localPath.empty())
+                        {
+                            NormalizeFilePath(localPath);
+                            m_depot->notifyFileChanged(this, localPath);
+                        }
                     }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::FileAdded)
                 {
-                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    if (ValidateDepotPath(evt.path, DepotPathClass::AbsoluteFilePath))
                     {
-                        auto localPath = evt.path.relativeTo(m_rootPath);
-                        NormalizeFilePath(localPath);
-                        m_depot->notifyFileAdded(this, StringBuf(localPath.view()));
+                        auto localPath = evt.path.stringAfterFirst(m_rootPath);
+                        if (!localPath.empty())
+                        {
+                            NormalizeFilePath(localPath);
+                            m_depot->notifyFileAdded(this, localPath);
+                        }
                     }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::FileRemoved)
                 {
-                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteFilePath))
+                    if (ValidateDepotPath(evt.path, DepotPathClass::AbsoluteFilePath))
                     {
-                        auto localPath = evt.path.relativeTo(m_rootPath);
-                        NormalizeFilePath(localPath);
-                        m_depot->notifyFileRemoved(this, StringBuf(localPath.view()));
+                        auto localPath = evt.path.stringAfterFirst(m_rootPath);
+                        if (!localPath.empty())
+                        {
+                            NormalizeFilePath(localPath);
+                            m_depot->notifyFileRemoved(this, localPath);
+                        }
                     }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::DirectoryAdded)
                 {
-                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteDirectoryPath))
+                    if (ValidateDepotPath(evt.path, DepotPathClass::AbsoluteDirectoryPath))
                     {
-                        auto localPath = evt.path.relativeTo(m_rootPath);
-                        NormalizeDirPath(localPath);
-                        m_depot->notifyDirAdded(this, StringBuf(localPath.view()));
+                        auto localPath = evt.path.stringAfterFirst(m_rootPath);
+                        if (!localPath.empty())
+                        {
+                            NormalizeDirPath(localPath);
+                            m_depot->notifyDirAdded(this, localPath);
+                        }
                     }
                 }
                 else if (evt.type == io::DirectoryWatcherEventType::DirectoryRemoved)
                 {
-                    if (ValidateDepotPath(evt.path.ansi_str(), DepotPathClass::AbsoluteDirectoryPath))
+                    if (ValidateDepotPath(evt.path, DepotPathClass::AbsoluteDirectoryPath))
                     {
-                        auto localPath = evt.path.relativeTo(m_rootPath);
-                        NormalizeDirPath(localPath);
-                        m_depot->notifyDirRemoved(this, StringBuf(localPath.view()));
+                        auto localPath = evt.path.stringAfterFirst(m_rootPath);
+                        if (!localPath.empty())
+                        {
+                            NormalizeDirPath(localPath);
+                            m_depot->notifyDirRemoved(this, localPath);
+                        }
                     }
                 }
             }

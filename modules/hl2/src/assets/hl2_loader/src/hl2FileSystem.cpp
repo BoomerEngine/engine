@@ -16,7 +16,7 @@
 namespace hl2
 {
 
-    PackedFileSystem::PackedFileSystem(const base::io::AbsolutePath& rootPath, base::UniquePtr<FileSystemIndex>&& indexData)
+    PackedFileSystem::PackedFileSystem(const base::StringBuf& rootPath, base::UniquePtr<FileSystemIndex>&& indexData)
         : m_indexData(std::move(indexData))
         , m_rootPath(rootPath)
     {
@@ -39,7 +39,7 @@ namespace hl2
 
             // create file path
             auto& entry = m_openedPackages.emplaceBack();
-            entry.m_fullPath = m_rootPath.addFile(srcPackageName);
+            entry.m_fullPath = base::TempString("{}/{}", m_rootPath, srcPackageName);
             entry.m_fileHandle = base::io::OpenForReading(entry.m_fullPath);
             if (!entry.m_fileHandle)
             {
@@ -82,7 +82,7 @@ namespace hl2
         return true;
     }
     
-    bool PackedFileSystem::absolutePath(StringView<char> rawFilePath, base::io::AbsolutePath& outAbsolutePath) const
+    bool PackedFileSystem::absolutePath(StringView<char> rawFilePath, base::StringBuf& outAbsolutePath) const
     {
         return false;
     }

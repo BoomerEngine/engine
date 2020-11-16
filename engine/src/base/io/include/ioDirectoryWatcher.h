@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "absolutePath.h"
-
 namespace base
 {
     namespace io
@@ -28,7 +26,7 @@ namespace base
         struct DirectoryWatcherEvent
         {
             DirectoryWatcherEventType type;
-            AbsolutePath path;
+            StringBuf path;
         };
 
         // directory watcher callback

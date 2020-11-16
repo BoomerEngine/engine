@@ -9,8 +9,7 @@
 #include "scriptJitTCC.h"
 
 #include "base/io/include/ioSystem.h"
-#include "base/io/include/absolutePath.h"
-#include "base/io/include/absolutePathBuilder.h"
+#include "base/io/include/pathBuilder.h"
 #include "base/process/include/process.h"
 #include "base/system/include/thread.h"
 
@@ -27,17 +26,17 @@ namespace base
         JITTCC::JITTCC()
         {}
 
-        io::AbsolutePath JITTCC::FindTCCCompiler()
+        StringBuf JITTCC::FindTCCCompiler()
         {
-            auto basePath  = base::io::SystemPath(base::io::PathCategory::ExecutableFile);
-            base::io::AbsolutePathBuilder builder(basePath);
-            builder.fileName(base::UTF16StringBuf(L"tcc"));
-            return builder.toAbsolutePath();
+            const auto& basePath = base::io::SystemPath(base::io::PathCategory::ExecutableFile);
+            io::PathBuilder builder(basePath);
+            builder.fileName("tcc");
+            return builder.toString();
         }
 
-        io::AbsolutePath JITTCC::FindGCCCompiler()
+        StringBuf JITTCC::FindGCCCompiler()
         {
-            return io::AbsolutePath::Build(L"/usr/bin/gcc");
+            return "/usr/bin/gcc";
         }
 
         class CompilerErrorPrinter : public base::process::IOutputCallback
@@ -50,7 +49,7 @@ namespace base
             }
         };
 
-        bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, const io::AbsolutePath& outputModulePath, const Settings& settings)
+        bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView<char> outputModulePath, const Settings& settings)
         {
             static bool useGCC = false;
 
@@ -62,7 +61,7 @@ namespace base
                 return false;
 
             // write the temp file
-            auto tempFile  = writeTempSourceFile();
+            auto tempFile = writeTempSourceFile();
             if (tempFile.empty())
             {
                 TRACE_ERROR("JIT: Unable to export generated source code");
@@ -97,7 +96,7 @@ namespace base
             }
 
             processSetup.m_arguments.pushBack(TempString("-o {}", outputModulePath));
-            processSetup.m_arguments.pushBack(tempFile.toString().ansi_str());
+            processSetup.m_arguments.pushBack(tempFile);
 
             // delete output
             if (base::io::FileExists(outputModulePath))

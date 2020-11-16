@@ -11,8 +11,7 @@
 #include "uiStyleLibraryPacker.h"
 
 #include "uiStyleLibrary.h"
-#include "base/io/include/absolutePath.h"
-#include "base/io/include/absolutePathBuilder.h"
+#include "base/io/include/pathBuilder.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/image.h"

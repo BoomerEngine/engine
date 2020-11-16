@@ -13,7 +13,7 @@ namespace viewer
 {
     //--
 
-    base::RefPtr<LoadedModel> LoadModel(const base::io::AbsolutePath& path)
+    base::RefPtr<LoadedModel> LoadModel(const base::StringBuf& path)
     {
         base::ScopeTimer timer;
 

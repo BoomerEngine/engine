@@ -23,8 +23,7 @@
 #include "base/system/include/thread.h"
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
-#include "base/io/include/absolutePathBuilder.h"
-#include "base/containers/include/utf8StringFunctions.h"
+#include "base/io/include/pathBuilder.h"
 
 namespace base
 {
@@ -71,7 +70,7 @@ namespace base
             m_eventKey = MakeUniqueEventKey("DepotStructure");
         }
 
-        bool DepotStructure::populateFromManifest(const io::AbsolutePath& depotManifestPath)
+        bool DepotStructure::populateFromManifest(StringView<char> depotManifestPath)
         {
             // load manifest
             auto settings = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), depotManifestPath);
@@ -82,7 +81,7 @@ namespace base
             }
 
             // manifest base path
-            const auto manifestBasePath = depotManifestPath.basePath();
+            const auto manifestBasePath = depotManifestPath.baseDirectory();
 
             // look for the depot entries
             auto node = settings->nodeFirstChild(settings->root(), "module");
@@ -116,12 +115,12 @@ namespace base
                                 modulePath = TempString("{}/", modulePath);
 
                             // format the path to the depot data folder
-                            io::AbsolutePathBuilder moduleDepothPathBuilder(depotManifestPath.basePath());
-                            moduleDepothPathBuilder.pushDirectories(UTF16StringBuf(modulePath));
-                            moduleDepothPathBuilder.pushDirectory(L"data");
+                            io::PathBuilder moduleDepothPathBuilder(manifestBasePath);
+                            moduleDepothPathBuilder.pushDirectories(modulePath);
+                            moduleDepothPathBuilder.pushDirectory("data");
 
                             // create the absolute path to the project's depot
-                            const auto moduleDepotPath = moduleDepothPathBuilder.toAbsolutePath(false);
+                            const auto moduleDepotPath = moduleDepothPathBuilder.toString(false);
                             TRACE_INFO("Depot path for module '{}' resolved to '{}'", modulePath, moduleDepotPath);
 
                             // parse the mount point path

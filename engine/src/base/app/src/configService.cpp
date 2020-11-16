@@ -52,7 +52,7 @@ namespace base
                     m_projectConfigWatcher->attachListener(this);
             }*/
 
-            m_userConfigFile = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("user.ini");
+            m_userConfigFile = TempString("{}user.ini", base::io::SystemPath(io::PathCategory::UserConfigDir));
             TRACE_INFO("User config file: '{}'", m_userConfigFile);
 
             if (!reloadConfig())
@@ -67,7 +67,7 @@ namespace base
             return app::ServiceInitializationResult::Finished;
         }
 
-        bool ConfigService::loadFileConfig(const io::AbsolutePath& path, config::Storage& outStorage) const
+        bool ConfigService::loadFileConfig(StringView<char> path, config::Storage& outStorage) const
         {
             if (base::io::FileExists(path))
             {
@@ -92,12 +92,12 @@ namespace base
             return true;
         }
 
-        bool ConfigService::loadDirConfig(const io::AbsolutePath& path, config::Storage& outStorage) const
+        bool ConfigService::loadDirConfig(StringView<char> path, config::Storage& outStorage) const
         {
             bool ret = true;
 
-            InplaceArray<io::AbsolutePath, 20> configPaths;
-            base::io::FindFiles(path, L"*.ini", configPaths, false);
+            InplaceArray<StringBuf, 20> configPaths;
+            base::io::FindFiles(path, "*.ini", configPaths, false);
             if (!configPaths.empty())
             {
                 TRACE_INFO("Found {} config file(s) at '{}'", configPaths.size(), path);
@@ -144,8 +144,8 @@ namespace base
             StringBuilder txt;
             ConfigPropertyBase::PrintAll(txt);
 
-            auto path = base::io::SystemPath(io::PathCategory::UserConfigDir).addFile("dump.ini");
-            io::SaveFileFromString(path, txt.toString());
+            const auto& configPath = base::io::SystemPath(io::PathCategory::UserConfigDir);
+            io::SaveFileFromString(TempString("{}dump.ini", configPath), txt.toString());
         }
 
         bool ConfigService::reloadConfig()
@@ -200,7 +200,7 @@ namespace base
 
         void ConfigService::handleEvent(const io::DirectoryWatcherEvent& evt)
         {
-            if (evt.path.toString().endsWith(L".ini"))
+            if (evt.path.endsWith(".ini"))
             {
                 TRACE_INFO("Config file '{}' changed", evt.path.c_str());
                 requestReload();

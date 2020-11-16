@@ -13,7 +13,6 @@
 #include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/resource/include/resourceMetadata.h"
-#include "base/io/include/absolutePathBuilder.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/stringBuilder.h"
@@ -41,7 +40,7 @@ namespace base
 
         bool CommandCook::run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline)
         {
-            m_outputDir = io::AbsolutePath::BuildAsDir(commandline.singleValueUTF16("outDir"));
+            m_outputDir = commandline.singleValue("outDir");
             if (m_outputDir.empty())
             {
                 TRACE_ERROR("Missing required argument -outDir");
@@ -228,7 +227,7 @@ namespace base
                 }
 
                 // assemble cooked output path - cooked file will be stored there
-                io::AbsolutePath cookedFilePath;
+                StringBuf cookedFilePath;
                 if (!assembleCookedOutputPath(topEntry.key, cookedClass, cookedFilePath))
                 {
                     TRACE_WARNING("Resource '{}' is not cookable (no valid cooked extension)");
@@ -313,7 +312,7 @@ namespace base
             return true;
         }
 
-        MetadataPtr CommandCook::loadFileMetadata(const io::AbsolutePath& cookedOutputPath) const
+        MetadataPtr CommandCook::loadFileMetadata(StringView<char> cookedOutputPath) const
         {
             if (auto fileReader = base::io::OpenForAsyncReading(cookedOutputPath))
             {
@@ -324,7 +323,7 @@ namespace base
             return nullptr;
         }
 
-        bool CommandCook::assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath) const
+        bool CommandCook::assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
         {
             const auto loadExtension = IResource::GetResourceExtensionForClass(cookedClass);
             if (!loadExtension)
@@ -334,12 +333,13 @@ namespace base
             }
 
             StringBuilder localPath;
+            localPath << m_outputDir;
             localPath << "cooked/";
             localPath << key.directories();
             localPath << key.fileName();
             localPath << "." << loadExtension;
 
-            outPath = m_outputDir.addFile(localPath.view());
+            outPath = localPath.toString();
             return true;
         }
 
@@ -372,7 +372,7 @@ namespace base
             }
         }
 
-        void CommandCook::queueDependencies(const io::AbsolutePath& cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
+        void CommandCook::queueDependencies(StringView<char> cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
         {
             if (auto fileReader = base::io::OpenForAsyncReading(cookedFilePath))
             {
@@ -394,10 +394,10 @@ namespace base
         class CookingLogCapture : public logging::LocalLogSink
         {
         public:
-            CookingLogCapture(const io::AbsolutePath& outPath, bool captureFully)
+            CookingLogCapture(StringView<char> outPath, bool captureFully)
                 : m_fullyCaptured(captureFully)
             {
-                m_logFilePath = outPath.addExtension(".log");
+                m_logFilePath = TempString("{}.log", outPath);
                 m_logOutput = base::io::OpenForWriting(m_logFilePath);
             }
 
@@ -438,11 +438,11 @@ namespace base
 
         private:
             io::WriteFileHandlePtr m_logOutput;
-            io::AbsolutePath m_logFilePath;
+            StringBuf m_logFilePath;
             bool m_fullyCaptured;
         };
 
-        bool CommandCook::cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath, Array<PendingCookingEntry>& outCookingQueue)
+        bool CommandCook::cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue)
         {
             // do not cook files more than once, also promote the resource key to it's true class, ie ITexture:lena.png -> StaticTexture:lena.png
             const auto cookKey = ResourceKey(key.path(), cookedClass);

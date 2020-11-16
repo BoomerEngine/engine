@@ -38,7 +38,7 @@ namespace base
 
         //---
 
-        JITProject::JITProject(void* handle, const io::AbsolutePath& path)
+        JITProject::JITProject(void* handle, StringView<char> path)
             : m_path(path)
             , m_handle(handle)
             , m_bound(false)
@@ -370,7 +370,7 @@ namespace base
             return true;
         }
 
-        JITProjectPtr JITProject::Load(const io::AbsolutePath& path)
+        JITProjectPtr JITProject::Load(StringView<char> path)
         {
 #if defined(PLATFORM_POSIX)
             auto utf8Path = path.ansi_str();
@@ -383,10 +383,11 @@ namespace base
 
             return CreateSharedPtr<JITProject>(handle, path);
 #elif defined(PLATFORM_WINDOWS)
-            HANDLE hLib = LoadLibraryW(path.c_str());
+            UTF16StringBuf utf16Path(path);
+            HANDLE hLib = LoadLibraryW(utf16Path.c_str());
             if (NULL == hLib)
             {
-                TRACE_ERROR("Failed to load dynamic library from '{}'", path.c_str());
+                TRACE_ERROR("Failed to load dynamic library from '{}'", path);
                 return nullptr;
             }
 
@@ -413,17 +414,15 @@ namespace base
             return builder.toString();
         }
 
-        static io::AbsolutePath GetJITModulePath(StringView<char> path)
+        static StringBuf GetJITModulePath(StringView<char> path)
         {
             auto coreProjectModuleName = GetCoreScriptModuleName(path.beforeLast("."));
 
             auto nonce = io::TimeStamp::GetNow().toSafeString();
             auto compiledModuleFileName = StringBuf(TempString("{}_{}.jit", coreProjectModuleName, nonce));
 
-            auto filePath = base::io::SystemPath(io::PathCategory::TempDir).addDir("jit");
-            filePath.appendFile(compiledModuleFileName.uni_str());
-
-            return filePath;
+            const auto& tempDir = base::io::SystemPath(io::PathCategory::TempDir);
+            return TempString("{}jit/{}", tempDir, compiledModuleFileName);
         }
 
         JITProjectPtr JITProject::Compile(const CompiledProjectPtr& project)

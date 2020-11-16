@@ -22,7 +22,7 @@ namespace base
             virtual bool run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline) override final;
 
         private:
-            io::AbsolutePath m_outputDir;
+            StringBuf m_outputDir;
 
             //--
 
@@ -41,15 +41,15 @@ namespace base
             bool processSeedFiles();
             void processSingleSeedFile(const ResourceKey& key);
 
-            bool assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath) const;
+            bool assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
 
-            MetadataPtr loadFileMetadata(const io::AbsolutePath& cookedOutputPath) const;
+            MetadataPtr loadFileMetadata(StringView<char> cookedOutputPath) const;
 
             bool checkDependenciesUpToDate(const Metadata& deps) const;
 
-            bool cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, io::AbsolutePath& outPath, Array<PendingCookingEntry>& outCookingQueue);
+            bool cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
             void queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue);
-            void queueDependencies(const io::AbsolutePath& cookedFile, Array<PendingCookingEntry>& outCookingQueue);
+            void queueDependencies(StringView<char> cookedFile, Array<PendingCookingEntry>& outCookingQueue);
 
             HashSet<ResourceKey> m_allCollectedFiles;
             HashSet<ResourceKey> m_allCookedFiles;

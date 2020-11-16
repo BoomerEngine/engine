@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/io/include/absolutePath.h"
 #include "base/io/include/timestamp.h"
 #include "base/containers/include/hashMap.h"
 #include "importFileFingerprint.h"
@@ -57,10 +56,10 @@ namespace base
             void clear();
 
             /// find entry for given path and timestamp
-            bool findEntry(io::AbsolutePathView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
+            bool findEntry(StringView<char> path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
 
             /// store entry for given path and timestamp
-            void storeEntry(io::AbsolutePathView path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
+            void storeEntry(StringView<char> path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
 
         private:
             HashMap<StringBuf, uint32_t> m_entriesMap;
@@ -70,7 +69,7 @@ namespace base
 
             void rebuildMap();
 
-            void conformPath(io::AbsolutePathView path, StringBuf& outPath) const;
+            void conformPath(StringView<char> path, StringBuf& outPath) const;
 
             virtual void onPostLoad() override;
         };

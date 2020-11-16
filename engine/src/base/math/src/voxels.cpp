@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "voxels.h"
-#include "base/io/include/absolutePath.h"
 
 namespace base
 {
@@ -203,7 +202,7 @@ namespace base
 #endif
 
 #if 0
-    void VoxelizedShape::debugSave(const VoxelizedGridSettings& grid, const io::AbsolutePath& debugFile) const
+    void VoxelizedShape::debugSave(const VoxelizedGridSettings& grid, StringView<char> debugFile) const
     {
         FILE* f = fopen(debugFile.ansi_str().c_str(), "w");
         if (f != NULL)

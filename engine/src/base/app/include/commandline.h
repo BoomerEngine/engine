@@ -116,9 +116,6 @@ namespace base
             //! get single value (last defined value) of parameter and parse it as a floating point value
             float singleValueFloat(StringView<char> param, float defaultValue = 0.0f) const;
 
-            //! get single value (last defined value) of parameter and parse it as an UTF16 string (converts UTF8 to UTF16)
-            UTF16StringBuf singleValueUTF16(StringView<char> param) const;
-
             //--
 
             //! add command word

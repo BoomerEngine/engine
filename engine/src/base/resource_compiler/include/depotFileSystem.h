@@ -40,7 +40,7 @@ namespace base
 
             /// get the absolute path to the file content, can be used to write new content
             /// NOTE: is present only for files physically on disk, not in archives or over the network
-            virtual bool absolutePath(StringView<char> rawFilePath, io::AbsolutePath& outAbsolutePath) const = 0;
+            virtual bool absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const = 0;
 
             /// get child directories at given path
             virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const = 0;

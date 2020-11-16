@@ -12,11 +12,8 @@
 
 namespace base
 {
-
     namespace io
     {
-
-        class AbsolutePath;
 
         class IReadFileHandle;
         typedef RefPtr<IReadFileHandle> ReadFileHandlePtr;
@@ -43,8 +40,16 @@ namespace base
 
         class CRCCache;
 
-        class AbsolutePath;
-        typedef StringView<wchar_t> AbsolutePathView;
+        static const char WINDOWS_PATH_SEPARATOR = '\\';
+        static const char UNIX_PATH_SEPARATOR = '/';
+
+#if defined(PLATFORM_WINDOWS)
+        static const char SYSTEM_PATH_SEPARATOR = WINDOWS_PATH_SEPARATOR;
+        static const char WRONG_SYSTEM_PATH_SEPARATOR = UNIX_PATH_SEPARATOR;
+#else
+        static const char SYSTEM_PATH_SEPARATOR = UNIX_PATH_SEPARATOR;
+        static const char WRONG_SYSTEM_PATH_SEPARATOR = WINDOWS_PATH_SEPARATOR;
+#endif
 
     } // io
 } // base

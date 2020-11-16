@@ -45,7 +45,7 @@ namespace base
             return false;
         }
 
-        bool ImportFileService::translateAbsolutePath(io::AbsolutePathView absolutePath, StringBuf& outFileSystemPath) const
+        bool ImportFileService::translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const
         {
             StringBuf bestShortPath;
             StringBuf bestPrefix;

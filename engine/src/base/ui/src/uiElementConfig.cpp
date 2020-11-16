@@ -111,7 +111,7 @@ namespace ui
         m_storage = nullptr;
     }
 
-    bool ConfigFileStorageDataInterface::loadFromFile(base::io::AbsolutePathView path)
+    bool ConfigFileStorageDataInterface::loadFromFile(base::StringView<char> path)
     {
         base::StringBuf content;
         if (!base::io::LoadFileToString(path, content))
@@ -120,7 +120,7 @@ namespace ui
         return base::config::Storage::Load(content, *m_storage);
     }
 
-    bool ConfigFileStorageDataInterface::saveToFile(base::io::AbsolutePathView path) const
+    bool ConfigFileStorageDataInterface::saveToFile(base::StringView<char> path) const
     {
         base::StringBuilder txt;
 

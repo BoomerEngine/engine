@@ -607,6 +607,13 @@ namespace wavefront
                 totalColorDataSize += job->parsedColors.dataSize();
                 totalFaceDataSize += job->parsedFaces.dataSize();
                 totalFaceIndicesDataSize += job->parsedFaceIndices.dataSize();
+                /*TRACE_INFO("OBJ WorkGroup, pos {}@{}, uv {}@{}, normals {}@{}, color {}@{}, fi {}@{}, faces {}@{}",
+                    job->parsedPositionsOffset, job->parsedPositions.dataSize(),
+                    job->parsedUVOffset, job->parsedUVs.dataSize(),
+                    job->parsedNormalsOffset, job->parsedNormals.dataSize(),
+                    job->parsedColors, job->parsedColors.dataSize(),
+                    job->totalFaceIndicesDataSize, job->parsedFaceIndices.dataSize(),
+                    job->totalFaceDataSize, job->parsedFaces.dataSize());*/
             }            
 
             // allocate final data

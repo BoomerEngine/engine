@@ -10,7 +10,6 @@
 #include "renderingTest.h"
 #include "renderingTestShared.h"
 
-#include "base/io/include/absolutePath.h"
 #include "rendering/driver/include/renderingDriver.h"
 
 namespace rendering
