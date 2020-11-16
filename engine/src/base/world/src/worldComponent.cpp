@@ -288,6 +288,14 @@ namespace base
 
         //--
 
+        Box Component::calcBounds() const
+        {
+            const auto center = absoluteTransform().position().approximate();
+            return Box(center, 0.1f);
+        }
+
+        //--
+
         void Component::recalculateTransform(const AbsoluteTransform& parentTransform, const Matrix& parentToWorld)
         {
             if (auto* link = transformLink())

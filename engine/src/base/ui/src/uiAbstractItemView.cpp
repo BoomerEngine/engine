@@ -216,7 +216,7 @@ namespace ui
         }
 
         // focus inner widget if required
-        if (m_current)
+        if (mode.test(ItemSelectionModeBit::FocusCurrent) && m_current)
             focusElement(m_current);
 
         // notify interested parties

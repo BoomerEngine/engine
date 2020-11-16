@@ -90,8 +90,17 @@ namespace ed
 
     void ScenePreviewContainer::gizmoSettings(const SceneGizmoSettings& settings)
     {
+        bool needsGizmoRecreation = false;
+        if (settings.mode != m_gizmoSettings.mode)
+            needsGizmoRecreation = true;
+        if (settings.enableX != m_gizmoSettings.enableX || settings.enableY != m_gizmoSettings.enableY || settings.enableZ != m_gizmoSettings.enableZ)
+            needsGizmoRecreation = true;
+
         m_gizmoSettings = settings;
         recreatePanelBottomToolbars();
+
+        if (needsGizmoRecreation)
+            requestRecreatePanelGizmos();
     }
 
     static bool IsDevivedNode(const SceneContentNode* node)
@@ -303,6 +312,34 @@ namespace ed
     {
         for (auto& panel : m_panels)
             panel->requestRecreateGizmo();
+    }
+
+    void ScenePreviewContainer::fillViewConfigMenu(ui::MenuButtonContainer* menu)
+    {}
+
+    void ScenePreviewContainer::focusNodes(const Array<SceneContentNodePtr>& nodes)
+    {
+        Box bounds;
+
+        for (const auto& node : nodes)
+        {
+            Box nodeBounds;
+            if (m_visualization->retrieveBoundsForProxy(node, nodeBounds))
+            {
+                bounds.merge(nodeBounds);
+            }
+        }
+
+        focusBounds(bounds);
+    }
+
+    void ScenePreviewContainer::focusBounds(const Box& box)
+    {
+        if (!box.empty())
+        {
+            for (auto& panel : m_panels)
+                panel->setupCameraAroundBounds(box);
+        }
     }
 
     //--

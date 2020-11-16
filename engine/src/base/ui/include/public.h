@@ -281,8 +281,10 @@ namespace ui
         Deselect = FLAG(2),
         Toggle = FLAG(3),
         UpdateCurrent = FLAG(4),
+        FocusCurrent = FLAG(5),
 
-        Default = Clear | Select | UpdateCurrent,
+        Default = Clear | Select | UpdateCurrent | FocusCurrent,
+        DefaultNoFocus = Clear | Select | UpdateCurrent,
         DefaultToggle = Toggle | UpdateCurrent,
     };
 

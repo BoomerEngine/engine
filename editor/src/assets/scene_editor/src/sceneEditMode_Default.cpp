@@ -68,6 +68,22 @@ namespace ed
         }
     }
 
+    void SceneEditMode_Default::focusNode(SceneContentNode* node)
+    {
+        if (node)
+        {
+            InplaceArray<SceneContentNodePtr, 1> nodes;
+            nodes.emplaceBack(AddRef(node));
+            focusNodes(nodes);
+        }
+    }
+
+    void SceneEditMode_Default::focusNodes(const Array<SceneContentNodePtr>& nodes)
+    {
+        if (container())
+            container()->focusNodes(nodes);
+    }
+
     void SceneEditMode_Default::handleSelectionChanged()
     {
         m_panel->bind(m_selection.keys());
@@ -173,6 +189,98 @@ namespace ed
         CreateDefaultGridButtons(container, toolbar);
         CreateDefaultSelectionButtons(container, toolbar);
         CreateDefaultGizmoButtons(container, toolbar);
+    }
+
+    void SceneEditMode_Default::changeGizmo(SceneGizmoMode mode)
+    {
+        if (container())
+        {
+            auto config = container()->gizmoSettings();
+            if (mode != config.mode)
+            {
+                config.mode = mode;
+                container()->gizmoSettings(config);
+            }
+        }
+    }
+
+    void SceneEditMode_Default::changeGizmoNext()
+    {
+        if (container())
+        {
+            auto config = container()->gizmoSettings();
+
+            if (config.mode == SceneGizmoMode::Translation)
+                config.mode = SceneGizmoMode::Rotation;
+            else if (config.mode == SceneGizmoMode::Rotation)
+                config.mode = SceneGizmoMode::Scale;
+            else if (config.mode == SceneGizmoMode::Scale)
+                config.mode = SceneGizmoMode::Translation;
+
+            container()->gizmoSettings(config);
+        }
+    }
+
+    void SceneEditMode_Default::changePositionGridSize(int delta)
+    {
+
+    }
+
+    void SceneEditMode_Default::configureEditMenu(ui::MenuButtonContainer* menu)
+    {
+        menu->createCallback("Translation", "[img:gizmo_translate16]", "W") = [this]()
+        {
+            changeGizmo(SceneGizmoMode::Translation);
+        };
+
+        menu->createCallback("Rotation", "[img:gizmo_rotate16]", "E") = [this]()
+        {
+            changeGizmo(SceneGizmoMode::Rotation);
+        };
+
+        menu->createCallback("Scale", "[img:gizmo_scale16]", "R") = [this]()
+        {
+            changeGizmo(SceneGizmoMode::Scale);
+        };
+
+        menu->createSeparator();
+
+        menu->createCallback("Next gizmo", "", "Space") = [this]()
+        {
+            changeGizmoNext();
+        };
+
+        menu->createSeparator();
+    }
+
+    void SceneEditMode_Default::configureViewMenu(ui::MenuButtonContainer* menu)
+    {
+        menu->createCallback("Focus on selection", "[img:zoom]", "F", !m_selection.empty()) = [this]()
+        {
+            focusNodes(m_selection.keys());
+        };
+
+        menu->createSeparator();
+
+        menu->createCallback("Hide selected", "[color:#888][img:eye][/color]", "H", !m_selection.empty()) = [this]()
+        {
+            processObjectHide(m_selection.keys());
+        };
+
+        menu->createCallback("Show selected", "[img:eye]", "Ctrl+H", !m_selection.empty()) = [this]()
+        {
+            processObjectShow(m_selection.keys());
+        };
+
+        menu->createSeparator();
+
+        menu->createCallback("Unhide all", "[img:eye_cross]", "Shift+H") = [this]()
+        {
+            processUnhideAll();
+        };
+
+        menu->createSeparator();
+
     }
 
     GizmoGroupPtr SceneEditMode_Default::configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel)
@@ -293,6 +401,38 @@ namespace ed
         }
     }
 
+    void SceneEditMode_Default::ExtractSelectionRoots(const Array<SceneContentNodePtr>& nodes, Array<SceneContentNodePtr>& outRoots)
+    {
+        HashSet<SceneContentNode*> selectedNodes;
+        selectedNodes.reserve(nodes.size());
+        outRoots.reserve(nodes.size());
+
+        for (const auto& node : nodes)
+            selectedNodes.insert(node);
+
+        for (auto* node : selectedNodes.keys())
+        {
+            bool parentSelected = false;
+
+            if (auto parent = rtti_cast<SceneContentNode>(node->parent()))
+            {
+                while (parent)
+                {
+                    if (selectedNodes.contains(parent))
+                    {
+                        parentSelected = true;
+                        break;
+                    }
+
+                    parent = parent->parent();
+                }
+            }
+
+            if (!parentSelected)
+                outRoots.pushBack(AddRef(node));
+        }
+    }
+
     void SceneEditMode_Default::ExtractSelectionHierarchy(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes)
     {
         outNodes.pushBack(AddRef(node));
@@ -367,6 +507,14 @@ namespace ed
 
     bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const base::input::KeyEvent& evt)
     {
+        if (evt.pressed())
+        {
+            const auto buttonAlt = evt.keyMask().isAltDown();
+            const auto buttonCtrl = evt.keyMask().isCtrlDown();
+            const auto buttonShift = evt.keyMask().isShiftDown();
+            return handleInternalKeyAction(evt.keyCode(), buttonShift, buttonAlt, buttonCtrl);
+        }
+
         return false;
     }
 

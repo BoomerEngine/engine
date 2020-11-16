@@ -54,6 +54,12 @@ namespace ed
         // create toolbar content 
         virtual void configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar);
 
+        // configure parent editor edit menu
+        virtual void configureEditMenu(ui::MenuButtonContainer* menu);
+
+        // configure parent editor view menu
+        virtual void configureViewMenu(ui::MenuButtonContainer* menu);
+
         //--
 
         // create gizmos for viewport

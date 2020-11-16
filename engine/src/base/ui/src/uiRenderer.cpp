@@ -1617,6 +1617,19 @@ namespace ui
         return false;
     }
 
+    bool Renderer::checkClipboardHasText() const
+    {
+        return m_native->checkClipboardHasData("TEXT") || m_native->checkClipboardHasData("UNITEXT");
+    }
+
+    bool Renderer::checkClipboardHasData(base::ClassType expectedClass) const
+    {
+        if (!expectedClass)
+            return false;
+
+        return m_native->checkClipboardHasData(expectedClass.name().view());
+    }
+
     //--
 
     void Renderer::playSound(MessageType type)

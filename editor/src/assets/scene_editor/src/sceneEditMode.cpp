@@ -75,6 +75,12 @@ namespace ed
         return nullptr;
     }
 
+    void ISceneEditMode::configureEditMenu(ui::MenuButtonContainer* menu)
+    {}
+
+    void ISceneEditMode::configureViewMenu(ui::MenuButtonContainer* menu)
+    {}
+
     void ISceneEditMode::configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar)
     {
     }

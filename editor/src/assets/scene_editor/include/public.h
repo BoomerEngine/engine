@@ -41,6 +41,12 @@ namespace ed
     class SceneContentComponentNode; // component node
     typedef RefPtr<SceneContentComponentNode> SceneContentComponentNodePtr;
 
+    class SceneContentClipboardNode;
+    typedef RefPtr<SceneContentClipboardNode> SceneContentClipboardNodePtr;
+
+    class SceneContentClipboardData;
+    typedef RefPtr<SceneContentClipboardData> SceneContentClipboardDataPtr;
+
     //--
 
     // events emitted by structure
@@ -58,6 +64,23 @@ namespace ed
     DECLARE_GLOBAL_EVENT(EVENT_CONTENT_NODE_VISIBILITY_CHANGED, SceneContentNodePtr)
     DECLARE_GLOBAL_EVENT(EVENT_CONTENT_NODE_VISUAL_FLAG_CHANGED, SceneContentNodePtr)
     DECLARE_GLOBAL_EVENT(EVENT_CONTENT_NODE_MODIFIED_FLAG_CHANGED, SceneContentNodePtr)
+
+    //--
+
+    enum class SceneGizmoMode : uint8_t
+    {
+        Translation,
+        Rotation,
+        Scale,
+    };
+
+    //---
+
+    enum class SceneGizmoTarget : uint8_t
+    {
+        WholeHierarchy,
+        SelectionOnly,
+    };
 
     //--
 
@@ -86,9 +109,10 @@ namespace ed
     /// dirty visualization flags
     enum class SceneContentNodeDirtyBit : uint32_t
     {
-        Selection = FLAG(0), // selection state is dirty and requires syncing
-        Transform = FLAG(1), // transform state has changed
-        Content = FLAG(2), // whole content is dirty
+        Visibility = FLAG(0), // node visibility
+        Selection = FLAG(1), // selection state is dirty and requires syncing
+        Transform = FLAG(2), // transform state has changed
+        Content = FLAG(3), // whole content is dirty
     };
 
     typedef DirectFlags<SceneContentNodeDirtyBit> SceneContentNodeDirtyFlags;

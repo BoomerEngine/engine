@@ -37,6 +37,8 @@ namespace ed
         virtual GizmoGroupPtr configurePanelGizmos(ScenePreviewContainer* container, const ScenePreviewPanel* panel) override;
         virtual GizmoReferenceSpace calculateGizmoReferenceSpace() const override;
         virtual GizmoActionContextPtr createGizmoAction(ScenePreviewContainer* container, const ScenePreviewPanel* panel) const override;
+        virtual void configureEditMenu(ui::MenuButtonContainer* menu) override;
+        virtual void configureViewMenu(ui::MenuButtonContainer* menu) override;
 
         virtual void handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame) override;
         virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
@@ -78,6 +80,10 @@ namespace ed
 
         void activeNode(SceneContentNode* node);
 
+        void focusNode(SceneContentNode* node);
+
+        void focusNodes(const Array<SceneContentNodePtr>& nodes);
+
         void buildTransformNodeListFromSelection(Array<SceneContentDataNodePtr>& outTransformList) const;
 
         void reset();
@@ -86,12 +92,21 @@ namespace ed
 
         static void EnsureParentsFirst(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outTransformList);
         static void ExtractSelectionRoots(const Array<SceneContentNodePtr>& nodes, Array<SceneContentDataNodePtr>& outRoots);
+        static void ExtractSelectionRoots(const Array<SceneContentNodePtr>& nodes, Array<SceneContentNodePtr>& outRoots);
         static void ExtractSelectionHierarchy(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes);
         static void ExtractSelectionHierarchyWithFilter(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashSet<SceneContentDataNode*>& coreSet, int depth = 0);
         static void ExtractSelectionHierarchyWithFilter2(const SceneContentDataNode* node, Array<SceneContentDataNodePtr>& outNodes, const HashMap<SceneContentNode*, int>& coreSet);
 
     protected:
         void processObjectDeletion(const Array<SceneContentNodePtr>& selection);
+        void processObjectCopy(const Array<SceneContentNodePtr>& selection);
+        void processObjectCut(const Array<SceneContentNodePtr>& selection);
+        void processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data);
+        void processObjectDuplicate(const Array<SceneContentNodePtr>& selection);
+        void processObjectHide(const Array<SceneContentNodePtr>& selection);
+        void processObjectShow(const Array<SceneContentNodePtr>& selection);
+        void processObjectToggleVis(const Array<SceneContentNodePtr>& selection);
+        void processUnhideAll();
 
         RefPtr<SceneDefaultPropertyInspectorPanel> m_panel;
 
@@ -116,6 +131,12 @@ namespace ed
 
         void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass);
         void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass);
+
+        void changeGizmo(SceneGizmoMode mode);
+        void changeGizmoNext();
+        void changePositionGridSize(int delta);
+
+        bool handleInternalKeyAction(input::KeyCode key, bool shift, bool alt, bool ctrl);
     };
     
     //--

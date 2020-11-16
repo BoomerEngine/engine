@@ -52,6 +52,9 @@ namespace ed
         // is the node visible ?
         INLINE bool visible() const { return m_visible; }
 
+        // local visiblity flag
+        INLINE bool localVisibilityFlag() const { return m_localVisibilityFlag; }
+
         // child nodes
         INLINE const Array<SceneContentNodePtr>& children() const { return m_children; }
 
@@ -72,6 +75,17 @@ namespace ed
 
         // dirty flags - what has changed since last sync
         INLINE SceneContentNodeDirtyFlags dirtyFlags() const { return m_dirtyFlags; }
+
+        //--
+
+        // can we attach children of given type
+        virtual bool canAttach(SceneContentNodeType type) const = 0;
+
+        // can we delete this node
+        virtual bool canDelete() const = 0;
+
+        // can we copy this node
+        virtual bool canCopy() const = 0;
 
         //--
 
@@ -110,6 +124,7 @@ namespace ed
         virtual void handleChildAdded(SceneContentNode* child);
         virtual void handleChildRemoved(SceneContentNode* child);
         virtual void handleParentChanged();
+        virtual void handleLocalVisibilityChanged();
         virtual void handleVisibilityChanged();
         virtual void handleDebugRender(rendering::scene::FrameParams& frame) const;
 
@@ -168,6 +183,10 @@ namespace ed
 
     public:
         SceneContentWorldRoot();
+
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
     };
 
     //--
@@ -179,6 +198,10 @@ namespace ed
 
     public:
         SceneContentWorldLayer(const StringBuf& name);
+
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
     };
 
     //--
@@ -190,6 +213,10 @@ namespace ed
 
     public:
         SceneContentWorldDir(const StringBuf& name);
+
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
     };
 
     //--
@@ -201,6 +228,10 @@ namespace ed
 
     public:
         SceneContentPrefabRoot();
+
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
     };
 
     //--
@@ -306,6 +337,12 @@ namespace ed
 
         void invalidateData();
 
+        //--
+
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
+
     private:
         Array<RefPtr<SceneContentEntityNodePrefabSource>> m_prefabAssets;
 
@@ -315,6 +352,7 @@ namespace ed
         virtual void handleDataPropertyChanged(const StringBuf& data) override;
         virtual void handleChildAdded(SceneContentNode* child) override;
         virtual void handleChildRemoved(SceneContentNode* child) override;
+        virtual void handleVisibilityChanged() override;
     };
 
     //--
@@ -331,9 +369,14 @@ namespace ed
 
         base::world::ComponentTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
 
+        virtual bool canAttach(SceneContentNodeType type) const override final;
+        virtual bool canDelete() const override final;
+        virtual bool canCopy() const override final;
+
     protected:
         virtual void handleDataPropertyChanged(const StringBuf& data) override;
         virtual void handleTransformUpdated() override;
+        virtual void handleLocalVisibilityChanged() override;
     };
 
     //--

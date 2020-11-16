@@ -60,6 +60,7 @@ namespace rendering
 
         virtual bool stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size) override final;
         virtual base::Buffer loadClipboardData(base::StringView<char> format) override final;
+        virtual bool checkClipboardHasData(base::StringView<char> format) override final;
 
         /// IDriverNativeWindowCallback
         virtual void onOutputWindowStateChanged(ObjectID output, bool active) override;

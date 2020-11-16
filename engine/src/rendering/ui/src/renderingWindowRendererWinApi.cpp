@@ -104,6 +104,18 @@ namespace rendering
         return hMem;
     }
 
+    bool NativeWindowRenderer::checkClipboardHasData(base::StringView<char> format)
+    {
+        const auto formatId = GetClipboardFormatID(format);
+        if (!formatId)
+        {
+            TRACE_ERROR("Invalid clipboard data format '{}'", format);
+            return false;
+        }
+
+        return ::IsClipboardFormatAvailable(formatId);
+    }
+
     bool NativeWindowRenderer::stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size)
     {
         const auto formatId = GetClipboardFormatID(format);

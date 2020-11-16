@@ -249,6 +249,11 @@ namespace base
 
             //---
 
+            /// calculate component bounds, usually using the visuals
+            virtual Box calcBounds() const;
+
+            //---
+
             /// get a world system, returns NULL if component has no entity or is not attached
             template< typename T >
             INLINE T* system()

@@ -90,10 +90,28 @@ namespace ed
         // toolbar
         {
             m_toolbar = createChild<ui::ToolBar>();
-            m_toolbar->createButton("Editor.Save"_id, ui::ToolbarButtonSetup().icon("save").caption("Save").tooltip("Save changed to all modified files"));
-            m_toolbar->createSeparator();
-            m_toolbar->createButton("Editor.Undo"_id, ui::ToolbarButtonSetup().icon("undo").caption("Undo").tooltip("Undo last action"));
-            m_toolbar->createButton("Editor.Redo"_id, ui::ToolbarButtonSetup().icon("redo").caption("Redo").tooltip("Redo last action"));
+
+            if (m_features.test(ResourceEditorFeatureBit::Save))
+            {
+                m_toolbar->createButton("Editor.Save"_id, ui::ToolbarButtonSetup().icon("save").caption("Save").tooltip("Save changed to all modified files"));
+                m_toolbar->createSeparator();
+            }
+
+            if (m_features.test(ResourceEditorFeatureBit::UndoRedo))
+            {
+                m_toolbar->createButton("Editor.Undo"_id, ui::ToolbarButtonSetup().icon("undo").caption("Undo").tooltip("Undo last action"));
+                m_toolbar->createButton("Editor.Redo"_id, ui::ToolbarButtonSetup().icon("redo").caption("Redo").tooltip("Redo last action"));
+                m_toolbar->createSeparator();
+            }
+
+            if (m_features.test(ResourceEditorFeatureBit::CopyPaste))
+            {
+                m_toolbar->createButton("Editor.Copy"_id, ui::ToolbarButtonSetup().icon("copy").caption("Copy").tooltip("Copy selected objects to clipboard"));
+                m_toolbar->createButton("Editor.Cut"_id, ui::ToolbarButtonSetup().icon("cut").caption("Cut").tooltip("Cut selected objects to clipboard"));
+                m_toolbar->createButton("Editor.Paste"_id, ui::ToolbarButtonSetup().icon("paste").caption("Paste").tooltip("Paste object from clipboard"));
+                m_toolbar->createButton("Editor.Delete"_id, ui::ToolbarButtonSetup().icon("delete").caption("Delete").tooltip("Delete selected objects"));
+                m_toolbar->createSeparator();
+            }
         }
 
         m_dock = createChild<ui::DockContainer>();

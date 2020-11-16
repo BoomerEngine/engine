@@ -75,6 +75,8 @@ namespace rendering
 
         ///--
 
+        virtual base::Box calcBounds() const override;
+
     protected:
         MeshRef m_mesh;
         

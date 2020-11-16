@@ -11,23 +11,6 @@
 namespace ed
 {
 
-    ///---
-
-    enum class SceneGizmoMode : uint8_t
-    {
-        Translation,
-        Rotation,
-        Scale,
-    };
-
-    //---
-
-    enum class SceneGizmoTarget : uint8_t
-    {
-        WholeHierarchy,
-        SelectionOnly,
-    };
-
     //---
 
     /// grid settings
@@ -150,6 +133,19 @@ namespace ed
 
         // request gizmos to be recreated based on current selection
         void requestRecreatePanelGizmos();
+
+        //--
+
+        // fill the parent editor view menu with options to configure this panel
+        void fillViewConfigMenu(ui::MenuButtonContainer* menu);
+
+        //-
+
+        // focus on given nodes
+        void focusNodes(const Array<SceneContentNodePtr>& nodes);
+
+        // focus on given bounds 
+        void focusBounds(const Box& box);
 
     private:
         Array<ScenePreviewPanelPtr> m_panels;

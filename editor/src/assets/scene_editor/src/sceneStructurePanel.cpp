@@ -150,7 +150,10 @@ namespace ed
 
                     case 1:
                     {
-                        return node->visible() ? "[img:eye]" : "[color:#888][img:eye][/color]";
+                        if (node->visible())
+                            return node->localVisibilityFlag() ? "[img:eye]" : "[img:eye_cross]";
+                        else
+                            return node->localVisibilityFlag() ? "[color:#888][img:eye][/color]" : "[color:#888][img:eye_cross][/color]";
                     }
 
                     case 2:
@@ -339,7 +342,7 @@ namespace ed
             if (!indices.empty())
                 m_tree->ensureVisible(indices.back());
 
-            m_tree->select(indices, ui::ItemSelectionModeBit::Default, false);
+            m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
         }
     }
 

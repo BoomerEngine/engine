@@ -107,10 +107,22 @@ namespace ed
         }
     }
 
+    void ScenePrefabEditor::fillEditMenu(ui::MenuButtonContainer* menu)
+    {
+        TBaseClass::fillEditMenu(menu);
+
+        if (auto mode = m_previewContainer->mode())
+            mode->configureEditMenu(menu);
+    }
+
     void ScenePrefabEditor::fillViewMenu(ui::MenuButtonContainer* menu)
     {
         TBaseClass::fillViewMenu(menu);
-        //menu->createAction("ScenePreview.ShowBounds"_id, "Show bounds", "cube");
+
+        m_previewContainer->fillViewConfigMenu(menu);
+        
+        if (auto mode = m_previewContainer->mode())
+            mode->configureViewMenu(menu);
     }
 
     bool ScenePrefabEditor::initialize()
@@ -137,6 +149,7 @@ namespace ed
                             rootNode->attachChildNode(editableNode);
 
                 rootNode->resetModifiedStatus();
+                m_defaultEditMode->activeNode(rootNode);
             }
 
             actionHistory()->clear();

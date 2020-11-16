@@ -28,6 +28,7 @@ namespace ed
         std::atomic<uint32_t> version = 0;
         world::EntityPtr entity;
 
+        bool visible = true;
         bool effectSelection = false;
         Array<StringID> selectedComponents;
     };
@@ -47,6 +48,8 @@ namespace ed
         void createProxy(const SceneContentNode* node);
         void removeProxy(const SceneContentNode* node);
         void updateProxy(const SceneContentNode* node, SceneContentNodeDirtyFlags& flags);
+
+        bool retrieveBoundsForProxy(const SceneContentNode* node, Box& outBounds) const;
 
         SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable) const;
 
@@ -78,6 +81,7 @@ namespace ed
 
         void updateProxySelection(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
         void updateProxyData(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
+        void updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
         void reattachProxies();
 
         static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);

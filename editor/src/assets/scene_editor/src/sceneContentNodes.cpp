@@ -26,6 +26,16 @@ namespace ed
     
     //---
 
+    RTTI_BEGIN_TYPE_ENUM(SceneContentNodeType);
+        RTTI_ENUM_OPTION(None);
+        RTTI_ENUM_OPTION(LayerFile);
+        RTTI_ENUM_OPTION(LayerDir);
+        RTTI_ENUM_OPTION(WorldRoot);
+        RTTI_ENUM_OPTION(PrefabRoot);
+        RTTI_ENUM_OPTION(Entity);
+        RTTI_ENUM_OPTION(Component);
+    RTTI_END_TYPE();
+
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentNode);
     RTTI_END_TYPE();
 
@@ -208,6 +218,7 @@ namespace ed
         DEBUG_CHECK_RETURN(child != this); // common mistake
         DEBUG_CHECK_RETURN(!child->contains(this));
         DEBUG_CHECK_RETURN(!contains(child));
+        DEBUG_CHECK_RETURN(canAttach(child->type()));
 
         child->IObject::parent(this);
         child->handleParentChanged();
@@ -295,6 +306,7 @@ namespace ed
         {
             m_localVisibilityFlag = flag;
             propagateMergedVisibilityStateFromThis();
+            handleLocalVisibilityChanged();
         }
     }
 
@@ -398,11 +410,24 @@ namespace ed
         m_structure = nullptr;
     }
    
+    void SceneContentNode::handleLocalVisibilityChanged()
+    {
+        SceneContentNodePtr selfRef(AddRef(this));
 
+        if (m_structure)
+            m_structure->postEvent(EVENT_CONTENT_STRUCTURE_NODE_VISIBILITY_CHANGED, selfRef);
+
+        postEvent(EVENT_CONTENT_NODE_VISIBILITY_CHANGED, selfRef);
+    }
 
     void SceneContentNode::handleVisibilityChanged()
     {
-        // TODO
+        SceneContentNodePtr selfRef(AddRef(this));
+
+        if (m_structure)
+            m_structure->postEvent(EVENT_CONTENT_STRUCTURE_NODE_VISIBILITY_CHANGED, selfRef);
+
+        postEvent(EVENT_CONTENT_NODE_VISIBILITY_CHANGED, selfRef);
     }
 
     void SceneContentNode::handleDebugRender(rendering::scene::FrameParams& frame) const
@@ -419,6 +444,21 @@ namespace ed
         : SceneContentNode(SceneContentNodeType::WorldRoot, "World")
     {}
 
+    bool SceneContentWorldRoot::canAttach(SceneContentNodeType type) const
+    {
+        return type == SceneContentNodeType::LayerDir || type == SceneContentNodeType::LayerFile;
+    }
+
+    bool SceneContentWorldRoot::canDelete() const
+    {
+        return false;
+    }
+
+    bool SceneContentWorldRoot::canCopy() const
+    {
+        return false;
+    }
+
     //---
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentWorldLayer);
@@ -427,6 +467,21 @@ namespace ed
     SceneContentWorldLayer::SceneContentWorldLayer(const StringBuf& name)
         : SceneContentNode(SceneContentNodeType::LayerFile, name)
     {}
+
+    bool SceneContentWorldLayer::canAttach(SceneContentNodeType type) const
+    {
+        return type == SceneContentNodeType::Entity;
+    }
+
+    bool SceneContentWorldLayer::canDelete() const
+    {
+        return true;
+    }
+
+    bool SceneContentWorldLayer::canCopy() const
+    {
+        return true;
+    }
 
     //---
 
@@ -437,6 +492,21 @@ namespace ed
         : SceneContentNode(SceneContentNodeType::LayerDir, name)
     {}
 
+    bool SceneContentWorldDir::canAttach(SceneContentNodeType type) const
+    {
+        return type == SceneContentNodeType::LayerDir || type == SceneContentNodeType::LayerFile;
+    }
+
+    bool SceneContentWorldDir::canDelete() const
+    {
+        return true;
+    }
+
+    bool SceneContentWorldDir::canCopy() const
+    {
+        return true;
+    }
+
     //---
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentPrefabRoot);
@@ -445,6 +515,21 @@ namespace ed
     SceneContentPrefabRoot::SceneContentPrefabRoot()
         : SceneContentNode(SceneContentNodeType::PrefabRoot, StringBuf("Prefab"))
     {} 
+
+    bool SceneContentPrefabRoot::canAttach(SceneContentNodeType type) const
+    {
+        return type == SceneContentNodeType::Entity;
+    }
+
+    bool SceneContentPrefabRoot::canDelete() const
+    {
+        return false;
+    }
+
+    bool SceneContentPrefabRoot::canCopy() const
+    {
+        return false;
+    }
 
     //---
 
@@ -614,6 +699,21 @@ namespace ed
     {
     }
 
+    bool SceneContentEntityNode::canAttach(SceneContentNodeType type) const
+    {
+        return type == SceneContentNodeType::Entity || type == SceneContentNodeType::Component;
+    }
+
+    bool SceneContentEntityNode::canDelete() const
+    {
+        return baseData() == nullptr;
+    }
+
+    bool SceneContentEntityNode::canCopy() const
+    {
+        return true;
+    }
+
     void SceneContentEntityNode::handleChildAdded(SceneContentNode* child)
     {
         TBaseClass::handleChildAdded(child);
@@ -681,6 +781,12 @@ namespace ed
         invalidateData();
     }
 
+    void SceneContentEntityNode::handleVisibilityChanged()
+    {
+        TBaseClass::handleVisibilityChanged();
+        markDirty(SceneContentNodeDirtyBit::Visibility);
+    }
+
     base::world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
     {
         auto ret = CreateSharedPtr<world::NodeTemplate>();
@@ -697,15 +803,18 @@ namespace ed
         // capture component templates
         for (const auto& componentNode : components())
         {
-            if (!componentNode->name().empty())
+            if (componentNode->localVisibilityFlag())
             {
-                bool componentHasData = false;
-                if (const auto componentData = componentNode->compileData())
+                if (!componentNode->name().empty())
                 {
-                    auto& entry = ret->m_componentTemplates.emplaceBack();
-                    entry.name = StringID(componentNode->name());
-                    entry.data = componentData;
-                    componentData->parent(ret);
+                    bool componentHasData = false;
+                    if (const auto componentData = componentNode->compileData())
+                    {
+                        auto& entry = ret->m_componentTemplates.emplaceBack();
+                        entry.name = StringID(componentNode->name());
+                        entry.data = componentData;
+                        componentData->parent(ret);
+                    }
                 }
             }
         }
@@ -781,6 +890,21 @@ namespace ed
     {
     }
 
+    bool SceneContentComponentNode::canAttach(SceneContentNodeType type) const
+    {
+        return false;
+    }
+
+    bool SceneContentComponentNode::canDelete() const
+    {
+        return baseData() == nullptr;
+    }
+
+    bool SceneContentComponentNode::canCopy() const
+    {
+        return true;
+    }
+
     base::world::ComponentTemplatePtr SceneContentComponentNode::compileData() const
     {
         if (auto cur = rtti_cast<base::world::ComponentTemplate>(editableData()))
@@ -823,6 +947,14 @@ namespace ed
     }
 
     void SceneContentComponentNode::handleTransformUpdated()
+    {
+        TBaseClass::handleTransformUpdated();
+
+        if (auto entity = rtti_cast<SceneContentEntityNode>(parent()))
+            entity->markDirty(SceneContentNodeDirtyBit::Content); // yeah, content, we need to recompile whole entity
+    }
+
+    void SceneContentComponentNode::handleLocalVisibilityChanged()
     {
         TBaseClass::handleTransformUpdated();
 

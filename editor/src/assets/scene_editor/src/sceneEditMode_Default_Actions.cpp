@@ -9,11 +9,15 @@
 #include "build.h"
 #include "sceneEditMode_Default.h"
 #include "sceneEditMode_Default_UI.h"
+#include "sceneEditMode_Default_Clipboard.h"
+
 #include "sceneContentNodes.h"
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
+
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
+#include "base/ui/include/uiRenderer.h"
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
 #include "base/world/include/worldEntityTemplate.h"
@@ -135,67 +139,6 @@ namespace ed
 
     //--
 
-    static const bool CanAddEmptyEntity(const SceneContentNode* node)
-    {
-        if (!node)
-            return false;
-
-        if (node->type() == SceneContentNodeType::PrefabRoot)
-            return true;
-
-        if (node->type() == SceneContentNodeType::Entity)
-            return true;
-
-        return false;
-    }
-
-    static const bool CanAddEntity(const SceneContentNode* node)
-    {
-        if (!node)
-            return false;
-
-        if (node->type() == SceneContentNodeType::PrefabRoot || node->type() == SceneContentNodeType::LayerFile)
-            return true;
-
-        if (node->type() == SceneContentNodeType::Entity)
-            return true;
-
-        return false;
-    }
-
-    static const bool CanAddComponent(const SceneContentNode* node)
-    {
-        return (node && node->type() == SceneContentNodeType::Entity);
-    }
-
-    static const bool CanDeleteNode(const SceneContentNode* node)
-    {
-        if (!node)
-            return false;
-
-        if (!node->parent())
-            return false;
-
-        if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
-        {
-            auto dataNode = rtti_cast<SceneContentDataNode>(node);
-            return dataNode->baseData() == nullptr;
-        }
-
-        return false;
-    }
-
-    static const bool CanCopyNode(const SceneContentNode* node)
-    {
-        if (!node)
-            return false;
-
-        if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
-            return true;
-
-        return false;
-    }
-
     void SceneEditMode_Default::processObjectDeletion(const Array<SceneContentNodePtr>& selection)
     {
         struct DeleteInfo
@@ -208,7 +151,7 @@ namespace ed
         deleteInfo.reserve(selection.size());
         for (const auto& node : selection)
         {
-            if (CanDeleteNode(node))
+            if (node->canDelete())
             {
                 DeleteInfo info;
                 info.node = node;
@@ -247,6 +190,247 @@ namespace ed
         actionHistory()->execute(action);
     }
 
+    static StringView<char> NodeTypeName(SceneContentNodeType type)
+    {
+        switch (type)
+        {
+        case SceneContentNodeType::Component: return "component";
+        case SceneContentNodeType::Entity: return "entity";
+        case SceneContentNodeType::LayerFile: return "layer";
+        case SceneContentNodeType::LayerDir: return "group";
+        }
+
+        return "Unknown";
+    }
+
+    void SceneEditMode_Default::processObjectCopy(const Array<SceneContentNodePtr>& selection)
+    {
+        if (!m_panel->renderer())
+            return;
+
+        if (selection.empty())
+            return;
+
+        const auto clipBoardData = BuildClipboardDataFromNodes(selection);
+        if (clipBoardData)
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
+                TempString("Copied {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
+                    clipBoardData->data.size() == 1 ? "" : "s"));
+
+            m_panel->renderer()->storeObjectToClipboard(clipBoardData);
+        }
+        else
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
+        }
+    }
+
+    void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data)
+    {
+
+    }
+
+    void SceneEditMode_Default::processObjectDuplicate(const Array<SceneContentNodePtr>& selection)
+    {
+
+    }
+
+    //---
+
+    struct ShowHideNodeData
+    {
+        SceneContentNodePtr node;
+        bool oldVisState = false;
+        bool newVisState = true;
+    };
+
+    struct ActionShowHideNodes : public IAction
+    {
+    public:
+        ActionShowHideNodes(Array<ShowHideNodeData>&& nodes, SceneEditMode_Default* mode)
+            : m_nodes(std::move(nodes))
+            , m_mode(mode)
+        {
+        }
+
+        virtual StringID id() const override
+        {
+            return "ShowHideNode"_id;
+        }
+
+        StringBuf description() const override
+        {
+            if (m_nodes.size() == 1)
+                return TempString("Change node visiblity");
+            else
+                return TempString("Change visiblity of {} nodes", m_nodes.size());
+        }
+
+        virtual bool execute() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->visibility(info.newVisState);
+
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->visibility(info.oldVisState);
+
+            return true;
+        }
+
+    private:
+        Array<ShowHideNodeData> m_nodes;
+        SceneEditMode_Default* m_mode = nullptr;
+    };
+
+    static void CollectHiddenNodes(const SceneContentNode* node, Array<SceneContentNodePtr>& outNodes)
+    {
+        if (!node->localVisibilityFlag())
+        {
+            if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
+            {
+                outNodes.pushBack(AddRef(node));
+            }
+        }
+
+        for (const auto& child : node->children())
+            CollectHiddenNodes(child, outNodes);
+    }
+
+    static bool HasHiddenNodes(const SceneContentNode* node)
+    {
+        if (!node->localVisibilityFlag())
+            return true;
+
+        for (const auto& child : node->children())
+            if (HasHiddenNodes(child))
+                return true;
+
+        return false;
+    }
+
+    static bool HasShownNodes(const SceneContentNode* node)
+    {
+        if (node->localVisibilityFlag())
+            return true;
+
+        for (const auto& child : node->children())
+            if (HasShownNodes(child))
+                return true;
+
+        return false;
+    }
+
+    void SceneEditMode_Default::processUnhideAll()
+    {
+        if (container())
+        {
+            Array<SceneContentNodePtr> allNodes;
+            CollectHiddenNodes(container()->content()->root(), allNodes);
+
+            processObjectShow(allNodes);
+        }
+    }
+
+    void SceneEditMode_Default::processObjectHide(const Array<SceneContentNodePtr>& selection)
+    {
+        Array< ShowHideNodeData> data;
+        data.reserve(selection.size());
+
+        for (const auto& node : selection)
+        {
+            if (node->localVisibilityFlag())
+            {
+                auto& entry = data.emplaceBack();
+                entry.node = node;
+                entry.oldVisState = true;
+                entry.newVisState = false;
+            }
+        }
+
+        if (!data.empty())
+        {
+            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            actionHistory()->execute(action);
+        }
+    }
+
+    void SceneEditMode_Default::processObjectShow(const Array<SceneContentNodePtr>& selection)
+    {
+        Array< ShowHideNodeData> data;
+        data.reserve(selection.size());
+
+        for (const auto& node : selection)
+        {
+            if (!node->localVisibilityFlag())
+            {
+                auto& entry = data.emplaceBack();
+                entry.node = node;
+                entry.oldVisState = false;
+                entry.newVisState = true;
+            }
+        }
+
+        if (!data.empty())
+        {
+            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            actionHistory()->execute(action);
+        }
+    }
+
+    void SceneEditMode_Default::processObjectToggleVis(const Array<SceneContentNodePtr>& selection)
+    {
+        Array< ShowHideNodeData> data;
+        data.reserve(selection.size());
+
+        for (const auto& node : selection)
+        {
+            auto& entry = data.emplaceBack();
+            entry.node = node;
+            entry.oldVisState = node->localVisibilityFlag();
+            entry.newVisState = !entry.oldVisState;
+        }
+
+        if (!data.empty())
+        {
+            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            actionHistory()->execute(action);
+        }
+    }
+
+    //--
+
+    void SceneEditMode_Default::processObjectCut(const Array<SceneContentNodePtr>& selection)
+    {
+        if (!m_panel->renderer())
+            return;
+
+        if (selection.empty())
+            return;
+
+        const auto clipBoardData = BuildClipboardDataFromNodes(selection);
+        if (clipBoardData)
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
+                TempString("Cut {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
+                    clipBoardData->data.size() == 1 ? "" : "s"));
+
+            m_panel->renderer()->storeObjectToClipboard(clipBoardData);
+        }
+        else
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
+            return;
+        }
+
+        processObjectDeletion(selection);
+    }
+
     //--
 
     void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass)
@@ -264,7 +448,7 @@ namespace ed
         Array<AddedNodeData> createdNodes;
         for (const auto& node : selection)
         {
-            if (CanAddEntity(node))
+            if (node->canAttach(SceneContentNodeType::Entity))
             {
                 const auto safeName = node->buildUniqueName(coreName);
                 const auto entityData = entityClass->create<base::world::EntityTemplate>();
@@ -297,7 +481,7 @@ namespace ed
         Array<AddedNodeData> createdNodes;
         for (const auto& node : selection)
         {
-            if (CanAddComponent(node))
+            if (node->canAttach(SceneContentNodeType::Component))
             {
                 const auto safeName = node->buildUniqueName(coreName);
                 const auto entityData = componentClass->create<base::world::ComponentTemplate>();
@@ -337,15 +521,15 @@ namespace ed
             bool canAddComponent = false;
             for (const auto& node : selection)
             {
-                if (CanAddEntity(node))
+                if (node->canAttach(SceneContentNodeType::Entity))
                 {
                     canAddEntity = true;
 
-                    if (CanAddEmptyEntity(node))
+                    if (node->type() == SceneContentNodeType::Entity)
                         canAddEmptyEntity = true;
                 }
                 
-                if (CanAddComponent(node))
+                if (node->canAttach(SceneContentNodeType::Component))
                     canAddComponent = true;
             }
 
@@ -372,33 +556,73 @@ namespace ed
 
         //--
         {
-            bool canDelete = false;
-            bool canCopy = false;
+            bool canShow = false;
+            bool canHide = false;
+
             for (const auto& node : selection)
             {
-                if (CanDeleteNode(node))
-                {
-                    canDelete = true;
-                    break;
-                }
+                if (node->localVisibilityFlag())
+                    canHide = true;
+                else
+                    canShow = true;
+            }
 
-                if (CanCopyNode(node))
-                {
-                    canCopy = true;
-                    break;
-                }
+            menu->createCallback("Show", "[img:eye]", "", canShow) = [this, selection]()
+            {
+                processObjectShow(selection);
+            };
+
+            menu->createCallback("Hide", "[img:eye_cross]", "", canHide) = [this, selection]()
+            {
+                processObjectHide(selection);
+            };
+
+            menu->createSeparator();
+        }
+
+        //--
+        {
+            bool canDelete = !selection.empty();
+            bool canCopy = !selection.empty();
+            for (const auto& node : selection)
+            {
+                canDelete &= node->canDelete();
+                canCopy &= node->canCopy();
             }
 
             // copy
+            menu->createCallback("Copy", "[img:copy]", "Ctrl+C", canCopy) = [this, selection]()
             {
+                processObjectCopy(selection);
+            };
 
-            }
+            // cut
+            menu->createCallback("Cut", "[img:cut]", "Ctrl+X", canCopy && canDelete) = [this, selection]()
+            {
+                processObjectCut(selection);
+            };
 
             // delete
             menu->createCallback("Delete", "[img:delete]", "Del", canDelete) = [this, selection]()
             {
                 processObjectDeletion(selection);
             };
+
+            // data to paste ?
+            if (m_panel->renderer() && context)
+            {
+                SceneContentClipboardDataPtr data;
+                if (m_panel->renderer()->loadObjectFromClipboard(data))
+                {
+                    if (!data->data.empty() && context->canAttach(data->type))
+                    {
+                        menu->createCallback(TempString("Paste ({} {}(s))", data->data.size(), NodeTypeName(data->type)), "[img:paste]", "Ctrl+V") = [this, context, data]()
+                        {
+                            processObjectPaste(context, data);
+                        };
+                    }
+                }
+            }
         }
     }
 
@@ -409,17 +633,28 @@ namespace ed
 
     void SceneEditMode_Default::handleTreeCutNodes(const Array<SceneContentNodePtr>& selection)
     {
-
+        processObjectCut(selection);
     }
 
     void SceneEditMode_Default::handleTreeCopyNodes(const Array<SceneContentNodePtr>& selection)
     {
-
+        processObjectCopy(selection);
     }
 
     void SceneEditMode_Default::handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode)
     {
+        if (!m_panel->renderer() || !target)
+            return;
 
+        SceneContentClipboardDataPtr data;
+        m_panel->renderer()->loadObjectFromClipboard(data);
+        if (!data || data->data.empty())
+            return;
+
+        if (!target->canAttach(data->type))
+            return;
+
+        processObjectPaste(target, data);
     }
 
     //--
@@ -475,17 +710,26 @@ namespace ed
 
     void SceneEditMode_Default::handleGeneralCopy()
     {
-
+        processObjectCopy(selection().keys());
     }
 
     void SceneEditMode_Default::handleGeneralCut()
     {
-
+        processObjectCut(selection().keys());
     }
 
     void SceneEditMode_Default::handleGeneralPaste()
     {
+        auto context = m_activeNode.lock();
+        if (!context)
+            return;
 
+        SceneContentClipboardDataPtr data;
+        m_panel->renderer()->loadObjectFromClipboard(data);
+        if (!data || data->data.empty() || !context->canAttach(data->type))
+            return;
+
+        processObjectPaste(context, data);
     }
 
     void SceneEditMode_Default::handleGeneralDelete()
@@ -505,7 +749,11 @@ namespace ed
 
     bool SceneEditMode_Default::checkGeneralPaste() const
     {
-        return m_activeNode.lock();
+        if (!m_panel->renderer())
+            return false;
+
+        const auto hasData = m_panel->renderer()->checkClipboardHasData(SceneContentClipboardData::GetStaticClass());
+        return m_activeNode.lock() && hasData;
     }
 
     bool SceneEditMode_Default::checkGeneralDelete() const
@@ -581,6 +829,71 @@ namespace ed
         DEBUG_CHECK_RETURN_V(mode, nullptr);
         DEBUG_CHECK_RETURN_V(!nodes.empty(), nullptr);
         return CreateSharedPtr<ActionMoveSceneNodes>(std::move(nodes), mode, fullRefresh);
+    }
+
+    //--
+
+    bool SceneEditMode_Default::handleInternalKeyAction(input::KeyCode key, bool shift, bool alt, bool ctrl)
+    {
+        if (!shift && !alt && !ctrl)
+        {
+            if (key == input::KeyCode::KEY_F)
+            {
+                focusNodes(m_selection.keys());
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_W)
+            {
+                changeGizmo(SceneGizmoMode::Translation);
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_E)
+            {
+                changeGizmo(SceneGizmoMode::Rotation);
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_R)
+            {
+                changeGizmo(SceneGizmoMode::Scale);
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_SPACE)
+            {
+                changeGizmoNext();
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_LBRACKET)
+            {
+                changePositionGridSize(-1);
+                return true;
+            }
+            else if (key == input::KeyCode::KEY_RBRACKET)
+            {
+                changePositionGridSize(1);
+                return true;
+            }
+        }
+
+        if (key == input::KeyCode::KEY_H && !alt)
+        {
+            if (shift && !ctrl)
+            {
+                processUnhideAll();
+                return true;
+            }
+            else if (ctrl && !shift)
+            {
+                processObjectShow(m_selection.keys());
+                return true;
+            }
+            else if (!ctrl && !shift)
+            {
+                processObjectHide(m_selection.keys());
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //--

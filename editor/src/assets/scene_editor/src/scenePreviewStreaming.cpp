@@ -72,16 +72,27 @@ namespace ed
             {
                 if (auto* proxy = m_proxies[entry.index])
                 {
-                    DEBUG_CHECK(proxy->index == entry.index);
-                    if (proxy->generation == entry.generation)
+                    if (!proxy->visible)
                     {
                         if (proxy->entity)
+                        {
                             m_world->detachEntity(proxy->entity);
+                            proxy->entity.reset();
+                        }
+                    }
+                    else
+                    {
+                        DEBUG_CHECK(proxy->index == entry.index);
+                        if (proxy->generation == entry.generation)
+                        {
+                            if (proxy->entity)
+                                m_world->detachEntity(proxy->entity);
 
-                        proxy->entity = entry.newEntity;
+                            proxy->entity = entry.newEntity;
 
-                        if (proxy->entity)
-                            m_world->attachEntity(proxy->entity);
+                            if (proxy->entity)
+                                m_world->attachEntity(proxy->entity);
+                        }
                     }
                 }
             }
@@ -271,8 +282,57 @@ namespace ed
         return false;
     }
    
+    bool SceneNodeVisualizationHandler::retrieveBoundsForProxy(const SceneContentNode* node, Box& outBounds) const
+    {
+        auto lock = CreateLock(m_proxyLock);
+
+        if (auto* entity = rtti_cast<SceneContentEntityNode>(node))
+        {
+            if (auto* proxy = m_nodeToProxyMap.findSafe(entity, nullptr))
+            {
+                if (proxy->entity)
+                {
+                    auto bounds = proxy->entity->calcBounds();
+                    if (!bounds.empty())
+                    {
+                        outBounds = bounds;
+                        return true;
+                    }
+                }
+            }
+        }
+        else if (auto* component = rtti_cast<SceneContentComponentNode>(node))
+        {
+            if (auto* entity = rtti_cast<SceneContentEntityNode>(component->parent()))
+            {
+                if (auto* proxy = m_nodeToProxyMap.findSafe(entity, nullptr))
+                {
+                    if (proxy->entity)
+                    {
+                        for (const auto& entityComponent : proxy->entity->components())
+                        {
+                            if (entityComponent->name() == component->name().view())
+                            {
+                                auto bounds = entityComponent->calcBounds();
+                                if (!bounds.empty())
+                                {
+                                    outBounds = bounds;
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return  false;
+    }
+
     SceneContentNodePtr SceneNodeVisualizationHandler::resolveSelectable(const rendering::scene::Selectable& selectable) const
     {
+        auto lock = CreateLock(m_proxyLock);
+
         if (auto object = IObject::FindUniqueObjectById(selectable.objectID()))
         {
             if (auto node = rtti_cast<SceneContentEntityNode>(object))
@@ -325,6 +385,35 @@ namespace ed
             ApplySelectionFlagToEntity(proxy->entity, useSelectionEffect, proxy->selectedComponents);
 
     }
+    
+    void SceneNodeVisualizationHandler::updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* entityNode)
+    {
+        DEBUG_CHECK_RETURN(entityNode);
+
+        auto visible = entityNode->visible();
+        if (proxy->visible != visible)
+        {
+            proxy->visible = visible;
+
+            if (!visible)
+            {
+                if (proxy->entity)
+                {
+                    m_world->detachEntity(proxy->entity);
+                    proxy->entity.reset();
+
+                    ++proxy->version; // if we have pending update don't accept it
+                }
+            }
+            else
+            {
+                if (proxy->entity)
+                    m_world->attachEntity(proxy->entity);
+                else
+                    updateProxyData(proxy, entityNode);
+            }
+        }
+    }
 
     void SceneNodeVisualizationHandler::updateProxyData(SceneNodeVisualization* proxy, const SceneContentEntityNode* entityNode)
     {
@@ -351,6 +440,12 @@ namespace ed
         if (const auto* dataNode = rtti_cast<SceneContentEntityNode>(node))
         {
             auto lock = CreateLock(m_proxyLock);
+
+            if (flags.test(SceneContentNodeDirtyBit::Visibility))
+            {
+                updateProxyVisibility(proxy, dataNode);
+                flags -= SceneContentNodeDirtyBit::Visibility;
+            }
 
             if (flags.test(SceneContentNodeDirtyBit::Transform))
             {

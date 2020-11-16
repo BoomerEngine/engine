@@ -139,6 +139,11 @@ namespace base
                 return (T*)systemPtr(userIndex);
             }
 
+            //---
+
+            /// calculate entity bounds using visible components
+            Box calcBounds(bool includeEntityCenter=false) const;
+
         private:
             World* m_world = nullptr;
             EntityFlags m_flags;

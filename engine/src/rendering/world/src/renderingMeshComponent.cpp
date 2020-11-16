@@ -110,6 +110,20 @@ namespace rendering
 
         return scene::ProxyHandle();
     }
+
+    base::Box MeshComponent::calcBounds() const
+    {
+        if (auto mesh = m_mesh.acquire())
+        {
+            if (!mesh->bounds().empty())
+            {
+                return localToWorld().transformBox(mesh->bounds());
+            }
+        }
+
+        return TBaseClass::calcBounds();
+    }
+
     void MeshComponent::mesh(const rendering::MeshPtr& mesh)
     {
         if (m_mesh != mesh)

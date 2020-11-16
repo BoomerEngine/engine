@@ -149,6 +149,9 @@ namespace ui
 
         ///--
 
+        /// check if clipboard has data of specific format
+        virtual bool checkClipboardHasData(base::StringView<char> format) = 0;
+
         /// store data in clipboard
         virtual bool stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size) = 0;
 
@@ -237,6 +240,19 @@ namespace ui
 
         /// load object from clipboard
         bool loadObjectFromClipboard(base::ClassType expectedClass, base::ObjectPtr& outObject) const;
+
+        /// load object from clipboard
+        template< typename T >
+        INLINE bool loadObjectFromClipboard(base::RefPtr<T>& outObject) const
+        {
+            return loadObjectFromClipboard(T::GetStaticClass(), *(base::ObjectPtr*) & outObject);
+        }
+
+        /// check if clipboard has text data
+        bool checkClipboardHasText() const;
+
+        /// check if clipboard has data of given class
+        bool checkClipboardHasData(base::ClassType expectedClass) const;
 
         //--
 

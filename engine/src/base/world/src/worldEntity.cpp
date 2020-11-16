@@ -42,6 +42,22 @@ namespace base
             DEBUG_CHECK_EX(!attached(), "Destroying attached entity");
         }
 
+        Box Entity::calcBounds(bool includeEntityCenter/* = false*/) const
+        {
+            Box ret;
+
+            if (includeEntityCenter)
+            {
+                const auto center = absoluteTransform().position().approximate();
+                ret.merge(center);
+            }
+
+            for (const auto& comp : m_components)
+                ret.merge(comp->calcBounds());
+
+            return ret;
+        }
+
         void Entity::attachComponent(Component* comp)
         {
             ASSERT(comp);
