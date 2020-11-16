@@ -470,7 +470,7 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
 
     // save to memory
     base::Buffer data;
-    for (;;)
+    //for (;;)
     {
         ScopeTimer timer;
         HelperSave(roots, data, false);
@@ -480,10 +480,10 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
     }
 
     // loaded object
-    /*{
+    {
         ScopeTimer timer;
         base::Array<base::ObjectPtr> loaded;
         HelperLoad(data, loaded);
         TRACE_WARNING("Load protected took {}", timer);
-    }*/
+    }
 }

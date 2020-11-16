@@ -127,10 +127,8 @@ namespace base
             if (keepAlive)
                 f << "Connection: keep-alive" << "\r\n";
 
-            params.forEach([&f](StringID key, const StringBuf& val)
-                {
-                    f << key << ": " << val << "\r\n";
-                });
+            for (auto param : params.pairs())
+                f << param.key << ": " << param.value << "\r\n";
 
             if (!contentType.empty())
                 f << "Content-Type: " << contentType << "\r\n";

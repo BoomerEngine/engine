@@ -426,12 +426,12 @@ namespace base
                     }
                     else
                     {
-                        continuations.forEach([&str](ParsingNode *node, Array<char> &chars)
-                                              {
-                                                    std::sort(chars.begin(), chars.end());
-                                                    AppendCharRanges(str, chars);
-                                                    str.appendf("->{} ", node->m_index);
-                                              });
+                        for (auto con : continuations.pairs())
+                        {
+                            std::sort(con.value.begin(), con.value.end());
+                            AppendCharRanges(str, con.value);
+                            str.appendf("->{} ", con.key->m_index);
+                        }
                     }
 
                     // do we emit something ?

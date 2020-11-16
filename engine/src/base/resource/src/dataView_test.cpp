@@ -760,7 +760,7 @@ TEST(EditView, PointerDoesReportMembersWhenAsked)
     rtti::DataViewInfo info;
     info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_EQ(25, info.members.size());
+    EXPECT_EQ(24, info.members.size());
 }
 
 TEST(EditView, PointerReadWholeValueReadsAPointer)

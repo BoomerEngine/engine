@@ -745,11 +745,11 @@ TEST(Array, RemoveMultiple)
 	Array<uint32_t> a(data, ARRAY_COUNT(data));
 	ASSERT_EQ(6, a.size());
 
-	auto ret = a.remove(1);
+	auto ret = a.removeAll(1);
 	EXPECT_TRUE(ret);
 	ASSERT_EQ(3, a.size());
 
-	ret = a.remove(2);
+	ret = a.removeAll(2);
 	EXPECT_TRUE(ret);
 	ASSERT_EQ(0, a.size());
 }

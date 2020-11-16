@@ -48,4 +48,28 @@ namespace base
         uint64_t m_startTime;
     };
 
+    /// statistics timing collector
+    class BASE_SYSTEM_API TimingStatistics : public NoCopy
+    {
+    public:
+        TimingStatistics();
+
+        void clear();
+
+        void update(double value);
+
+        double mean() const;
+        double variance() const;
+
+    private:
+        double bestValue = DBL_MAX;
+        double worstValue = -DBL_MAX;
+
+        double currentMean = 0.0;
+        double currentVariance = 0.0;
+        double currentSum = 0.0;
+
+        uint32_t count = 0;
+    };
+
 }  // base

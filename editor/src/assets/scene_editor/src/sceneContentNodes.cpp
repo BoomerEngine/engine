@@ -1008,7 +1008,7 @@ namespace ed
         return ret;
     }
 
-    typedef HashMap<StringID, InplaceArray<const base::world::ComponentTemplate*, 4>>ComponentTemplateList;
+    typedef HashMap<StringID, Array<const base::world::ComponentTemplate*>>ComponentTemplateList;
 
     static void CollectComponentTemplates(const Array<const ::world::NodeTemplate*>& templates, ComponentTemplateList& outTemplates)
     {
@@ -1138,20 +1138,20 @@ namespace ed
         CollectComponentTemplates(templates, namedComponentTemplates);
 
         // create all named components and attach them to entity
-        namedComponentTemplates.forEach([&entityNode, rootNode](StringID name, const Array<const base::world::ComponentTemplate*>& templates)
+        for (auto pair : namedComponentTemplates.pairs())
+        {
+            // extract data
+            base::world::ComponentTemplatePtr baseComponentData, editableComponentData;
+            if (SplitAndMergeTemplates(pair.value, rootNode, baseComponentData, editableComponentData))
             {
-                // extract data
-                base::world::ComponentTemplatePtr baseComponentData, editableComponentData;
-                if (SplitAndMergeTemplates(templates, rootNode, baseComponentData, editableComponentData))
-                {
-                    // calculate component placement
-                    auto componentLocalToWorld = entityNode->localToWorldTransform() * editableComponentData->placement();
+                // calculate component placement
+                auto componentLocalToWorld = entityNode->localToWorldTransform() * editableComponentData->placement();
 
-                    // create editable node
-                    auto componentNode = base::CreateSharedPtr<SceneContentComponentNode>(StringBuf(name.view()), componentLocalToWorld, editableComponentData, baseComponentData);
-                    entityNode->attachChildNode(componentNode);
-                }
-            });
+                // create editable node
+                auto componentNode = base::CreateSharedPtr<SceneContentComponentNode>(StringBuf(pair.key.view()), componentLocalToWorld, editableComponentData, baseComponentData);
+                entityNode->attachChildNode(componentNode);
+            }
+        }
 
         return entityNode;
     }

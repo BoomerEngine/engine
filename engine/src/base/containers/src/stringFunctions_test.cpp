@@ -386,12 +386,12 @@ TEST(MatchInteger, MatchFloat_InvalidChars)
 
 TEST(StringMatch, WildcardMatches)
 {
-    EXPECT_TRUE(base::StringView<char>("geeks").matchString("g*ks"));
-    EXPECT_TRUE(base::StringView<char>("geeksforgeeks").matchString("ge?ks*"));
-    EXPECT_FALSE(base::StringView<char>("gee").matchString("g*k"));
-    EXPECT_FALSE(base::StringView<char>("pqrst").matchString("*pqrs"));
-    EXPECT_TRUE(base::StringView<char>("abcdhghgbcd").matchString("abc*bcd"));
-    EXPECT_FALSE(base::StringView<char>("abc*c?d").matchString("abcd"));
-    EXPECT_TRUE(base::StringView<char>("abcd").matchString("*c*d"));
-    EXPECT_TRUE(base::StringView<char>("abcd").matchString("*?c*d"));
+    EXPECT_TRUE(base::StringView<char>("geeks").matchPattern("g*ks"));
+    EXPECT_TRUE(base::StringView<char>("geeksforgeeks").matchPattern("ge?ks*"));
+    EXPECT_FALSE(base::StringView<char>("gee").matchPattern("g*k"));
+    EXPECT_FALSE(base::StringView<char>("pqrst").matchPattern("*pqrs"));
+    EXPECT_TRUE(base::StringView<char>("abcdhghgbcd").matchPattern("abc*bcd"));
+    EXPECT_FALSE(base::StringView<char>("abc*c?d").matchPattern("abcd"));
+    EXPECT_TRUE(base::StringView<char>("abcd").matchPattern("*c*d"));
+    EXPECT_TRUE(base::StringView<char>("abcd").matchPattern("*?c*d"));
 }

@@ -228,20 +228,19 @@ namespace base
             CollectComponentTemplates(templates, namedComponentTemplates);
 
             // create all named components and attach them to entity
-            namedComponentTemplates.forEach([&entity](StringID name, const Array<const ComponentTemplate*>& templates)
+            for (auto pair : namedComponentTemplates.pairs())
+            {
+                if (const auto componentTemplate = MergeTemplates(pair.value))
                 {
-                    if (const auto componentTemplate = MergeTemplates(templates))
+                    if (auto component = componentTemplate->createComponent())
                     {
-                        if (auto component = componentTemplate->createComponent())
-                        {
-                            const auto componentTransform = MergeTransform(templates);
-                            component->bindName(name);
-                            component->relativeTransform(componentTransform);
-                            entity->attachComponent(component);
-                        }
+                        const auto componentTransform = MergeTransform(pair.value);
+                        component->bindName(pair.key);
+                        component->relativeTransform(componentTransform);
+                        entity->attachComponent(component);
                     }
-                });
-
+                }
+            }
 
             // TODO: create the initial links between components
 

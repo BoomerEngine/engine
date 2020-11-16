@@ -50,11 +50,9 @@ namespace base
             uint32_t cutoff = relativeGeneration >= m_generationIndex ? m_generationIndex - relativeGeneration : 0;
 
             auto oldGlyphs = std::move(m_glyphs);
-            oldGlyphs.forEach([this, cutoff](const GlyphKey& key, const GlyphEntry& entry)
-            {
-                if (entry.lastGeneration >= cutoff)
-                    m_glyphs.set(key, entry);
-            });
+            for (auto pair : oldGlyphs.pairs())
+                if (pair.value.lastGeneration >= cutoff)
+                    m_glyphs.set(pair.key, pair.value);
         }
 
         GlyphCache::GlyphKey GlyphCache::ComputeKey(FontID fontId, FontGlyphID glyphId, FontStyleHash styleHash)

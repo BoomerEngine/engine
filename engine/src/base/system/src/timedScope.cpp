@@ -63,4 +63,77 @@ namespace base
 
     //--
 
+    TimingStatistics::TimingStatistics()
+    {
+    }
+
+    void TimingStatistics::clear()
+    {
+        bestValue = DBL_MAX;
+        worstValue = -DBL_MAX;
+        currentMean = 0.0;
+        currentVariance = 0.0;
+        currentSum = 0.0;
+        count = 0;
+    }
+
+    void TimingStatistics::update(double value)
+    {
+        if (count == 0)
+        {
+            bestValue = value;
+            worstValue = value;
+            count = 1;
+        }
+        else if (count == 1)
+        {
+            bestValue = std::min(value, bestValue);
+            worstValue = std::max(value, worstValue);
+            count = 2;
+        }
+        else
+        {
+            if (value > bestValue)
+                std::swap(value, bestValue);
+            else if (value < worstValue)
+                std::swap(value, worstValue);
+
+            if (count == 2)
+            {
+                currentMean = value;
+                currentVariance = 0.0;
+                currentSum = 0.0;
+            }
+            else
+            {
+                auto termCount = count - 2;
+                auto prevMean = currentMean;
+                currentMean += (value - currentMean) / (double)termCount;
+                currentSum += (value - currentMean) * (value - prevMean);
+                currentVariance = std::sqrt(currentSum / (double)termCount);
+            }
+
+            count += 1;
+        }
+    }
+
+    double TimingStatistics::mean() const
+    {
+        if (count == 0)
+            return 0.0;
+        else if (count == 1)
+            return bestValue;
+        else if (count == 2)
+            return (bestValue + worstValue) * 0.5;
+        else
+            return currentMean;
+    }
+
+    double TimingStatistics::variance() const
+    {
+        return currentVariance;
+    }
+
+    //--
+
 }

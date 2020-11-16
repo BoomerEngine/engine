@@ -54,11 +54,11 @@ namespace hl2
 
             void dump(uint32_t depth, base::StringBuilder& buf) const
             {
-                m_values.forEach([depth, &buf](const base::StringBuf& key, const base::StringBuf& value)
-                                 {
-                                    buf.appendPadding(' ', depth*2);
-                                    buf.appendf("\"{}\" \"{}\"\n", key, value);
-                                 });
+                for (auto pair : m_values.pairs())
+                {
+                    buf.appendPadding(' ', depth*2);
+                    buf.appendf("\"{}\" \"{}\"\n", pair.key, pair.value);
+                }
             }
 
         private:

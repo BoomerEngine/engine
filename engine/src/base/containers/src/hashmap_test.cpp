@@ -91,10 +91,10 @@ TEST(HashMap, Foreach)
 {
     TestIntMap x;
 
-    x.forEach([](int a, int b)
-              {
-                 EXPECT_EQ(b, a*a);
-              });
+    for (const auto& pair : x.pairs())
+    {
+        EXPECT_EQ(pair.value, pair.key * pair.key);
+    }
 }
 
 TEST(HashMap, LinearRegimeFind)
@@ -186,4 +186,153 @@ TEST(HashMap, LinearRegimeValueReplace)
     *val = 666;
 
     EXPECT_EQ(666, x.findSafe(9));
+}
+
+static const auto HASHMAP_PERF_ITERATIONS = 20;
+
+TEST(HashMap, Perf_Build10k)
+{
+    Array<int> keys;
+
+    static const auto size = 100000;
+
+    {
+        srand(0);
+        keys.resize(size);
+        for (int i = 0; i < size; ++i)
+            keys[i] = rand();
+    }
+
+    TimingStatistics stats;
+    for (uint32_t run = 0; run < HASHMAP_PERF_ITERATIONS; ++run)
+    {
+        HashMap<int, int> x;
+        x.reserve(size);
+
+        {
+            ScopeTimer timer;
+            for (uint32_t i = 0; i < size; ++i)
+                x.set(keys[i], i);
+
+            stats.update(timer.timeElapsed());
+        }
+    }
+
+    TRACE_WARNING("HashMap Build10k: {} avg, {} dev", TimeInterval(stats.mean()), TimeInterval(stats.variance()));
+}
+
+TEST(HashMap, Perf_StdBuild10k)
+{
+    Array<int> keys;
+
+    static const auto size = 100000;
+
+    {
+        srand(0);
+        keys.resize(size);
+        for (int i = 0; i < size; ++i)
+            keys[i] = rand();
+    }
+
+    TimingStatistics stats;
+    for (uint32_t run = 0; run < HASHMAP_PERF_ITERATIONS; ++run)
+    {
+        std::unordered_map<int, int> x;
+        x.reserve(size);
+
+        {
+            ScopeTimer timer;
+            for (uint32_t i = 0; i < size; ++i)
+                x[keys[i]] = i;
+
+            stats.update(timer.timeElapsed());
+        }
+    }
+
+    TRACE_WARNING("StdHashMap Build10k: {} avg, {} dev", TimeInterval(stats.mean()), TimeInterval(stats.variance()));
+}
+
+
+TEST(HashMap, Perf_Find10k)
+{
+    Array<int> keys;
+
+    static const auto size = 100000;
+
+    {
+        srand(0);
+        keys.resize(size);
+        for (int i = 0; i < size; ++i)
+            keys[i] = rand();
+    }
+
+    HashMap<int, int> x;
+
+    {
+        x.reserve(size);
+        for (uint32_t i = 0; i < size; ++i)
+            x.set(keys[i], i);
+    }
+
+    TimingStatistics stats;
+    uint32_t totalFound = 0;
+    for (uint32_t run = 0; run < HASHMAP_PERF_ITERATIONS; ++run)
+    {
+        totalFound = 0;
+
+        {
+            ScopeTimer timer;
+
+            for (uint32_t i = 0; i < size; ++i)
+                totalFound += x.find(i) != nullptr;
+
+            stats.update(timer.timeElapsed());
+        }
+    }
+
+    TRACE_WARNING("HashMap Find10k: {} avg, {} dev ({}, {})", TimeInterval(stats.mean()), TimeInterval(stats.variance()), x.size(), totalFound);
+}
+
+TEST(HashMap, Perf_StdFind10k)
+{
+    Array<int> keys;
+
+    static const auto size = 100000;
+
+    {
+        srand(0);
+        keys.resize(size);
+        for (int i = 0; i < size; ++i)
+            keys[i] = rand();
+    }
+
+    std::unordered_map<int, int> x;
+
+    {
+        x.reserve(size);
+        for (uint32_t i = 0; i < size; ++i)
+            x[keys[i]] = i;
+    }
+
+    TimingStatistics stats;
+    uint32_t totalFound = 0;
+    for (uint32_t run = 0; run < HASHMAP_PERF_ITERATIONS; ++run)
+    {
+        totalFound = 0;
+
+        {
+            ScopeTimer timer;
+
+            for (uint32_t i = 0; i < size; ++i)
+            {
+                auto it = x.find(i);
+                if (it != x.end())
+                    totalFound += 1;
+            }
+
+            stats.update(timer.timeElapsed());
+        }
+    }
+
+    TRACE_WARNING("StdHashMap Find10k: {} avg, {} dev ({}, {})", TimeInterval(stats.mean()), TimeInterval(stats.variance()), x.size(), totalFound);
 }

@@ -28,7 +28,7 @@ TEST(AbsolutePath, FiltersInvalidWindows)
 {
     {
         auto path  = io::AbsolutePath::Build(L"Z:");
-        EXPECT_TRUE(path.empty());
+        EXPECT_FALSE(path.empty());
     }
 
     {
@@ -53,7 +53,7 @@ TEST(AbsolutePath, FiltersInvalidWindows)
 
     {
         auto path  = io::AbsolutePath::Build(L"Z:\\crap\\file.test.");
-        EXPECT_TRUE(path.empty());
+        EXPECT_FALSE(path.empty());
     }
 
     {
@@ -171,10 +171,13 @@ TEST(AbsolutePath, ComplexPathBuild)
 
 TEST(AbsolutePath, ComplexPathAutoNormalizes)
 {
-    auto pathTest  = io::AbsolutePath::Build(L"Z:\\test\\crap\\..\\test.txt");
-    auto pathTest2 = io::AbsolutePath::Build(L"Z:\\test\\test.txt");
+    io::AbsolutePathBuilder test(L"Z:\\test\\crap\\..\\test.txt");
+    io::AbsolutePathBuilder test2(L"Z:\\test\\test.txt");
 
-    EXPECT_EQ(std::wstring(pathTest.c_str()), std::wstring(pathTest2.c_str()));
+    auto pathTest  = std::wstring(test.toAbsolutePath().c_str());
+    auto pathTest2 = std::wstring(test2.toAbsolutePath().c_str());
+
+    EXPECT_EQ(pathTest, pathTest2);
 }
 
 TEST(AbsolutePath, PushingDirOnFileFails)
@@ -228,12 +231,12 @@ TEST(AbsolutePath, FiltersInvalidLinux)
 {
     {
         auto path = io::AbsolutePath::Build(L"~");
-        EXPECT_TRUE(path.empty());
+        EXPECT_FALSE(path.empty());
     }
 
     {
         auto path = io::AbsolutePath::Build(L"~/");
-        EXPECT_TRUE(path.empty());
+        EXPECT_FALSE(path.empty());
     }
 
     {
@@ -263,7 +266,7 @@ TEST(AbsolutePath, FiltersInvalidLinux)
 
     {
         auto path = io::AbsolutePath::Build(L"/crap/file.test.");
-        EXPECT_TRUE(path.empty());
+        EXPECT_FALSE(path.empty());
     }
 
     {

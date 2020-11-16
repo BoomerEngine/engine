@@ -430,7 +430,7 @@ namespace base
         c = IObject::GetStaticClass();
 
         PrintToString(txt, c);
-        EXPECT_STREQ("base::IObject", txt.c_str());
+        EXPECT_STREQ("IObject", txt.c_str());
     }
 
     TEST(RttiToString, ClassRefEmpty)

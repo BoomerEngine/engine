@@ -10,6 +10,7 @@
 
 #include "array.h"
 #include "arrayIterator.h"
+#include "hashBuckets.h"
 
 namespace base
 {
@@ -24,11 +25,13 @@ namespace base
     {
     public:
         HashSet() = default;
-        HashSet(const HashSet<K> &other) = default;
-        HashSet(HashSet<K> &&other) = default;
-        HashSet& operator=(const HashSet<K> &other) = default;
-        HashSet& operator=(HashSet<K> &&other) = default;
-        ~HashSet() = default;
+        HashSet(const HashSet<K> &other);
+        HashSet(HashSet<K> &&other);
+        HashSet& operator=(const HashSet<K> &other);
+        HashSet& operator=(HashSet<K> &&other);
+        ~HashSet();
+
+        //--
 
         //! Clear the whole hash set
         void clear();
@@ -39,11 +42,11 @@ namespace base
         // Is the hash set empty ?
         bool empty() const;
 
-        // Get number of elements in the hash set
-        uint32_t size() const;
-
         // Reserve space in the hash set
         void reserve(uint32_t size);
+
+        // Get number of elements in the hash set
+        uint32_t size() const;
 
         //---
 
@@ -74,33 +77,8 @@ namespace base
         //----
 
     protected:
-        void removeKey(int keyIndex, uint32_t hashIndex);
-        void changeIndex(int oldIndex, int newIndex, uint32_t oldHashIndex, uint32_t newHashIndex);
-        void removeIndex(int oldIndex, uint32_t hashIndex);
-
-        void validate();
-        void rehash();
-
-        //--
-
-        static const uint32_t kMinKeysForHashing = 32; // until we get that many keys we are using the linear array
-
-        static uint32_t CalcOptimalBucketCount(uint32_t numKeys);
-
-        struct Entry
-        {
-            int next = INDEX_NONE;
-            int prev = INDEX_NONE;
-        };
-
-        typedef Array<K> TKeyList;
-        TKeyList m_keys;
-
-        typedef Array<Entry> TLinkList;
-        TLinkList m_links;
-
-        typedef Array<int> THashBuckets;
-        THashBuckets m_buckets;
+        Array<K> m_keys;
+        HashBuckets* m_buckets = nullptr;
     };
 
 } // base

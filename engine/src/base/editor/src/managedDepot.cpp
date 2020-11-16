@@ -269,11 +269,9 @@ namespace ed
     {
         InplaceArray<StringBuf, 20> finishedDirs;
 
-        m_modifiedDirectories.forEach([&finishedDirs](const StringBuf& key, const NativeTimePoint& data)
-            {
-                if (data.reached())
-                    finishedDirs.emplaceBack(key);
-            });
+        for (auto pair : m_modifiedDirectories.pairs())
+            if (pair.value.reached())
+                finishedDirs.emplaceBack(pair.key);
 
         for (const auto& dirPath : finishedDirs)
         {
