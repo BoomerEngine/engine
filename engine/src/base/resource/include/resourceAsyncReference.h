@@ -50,7 +50,7 @@ namespace base
             void reset();
 
             // setup reference to a given resource key
-            void set(StringView<char> path, SpecificClassType<IResource> cls);
+            void set(StringView path, SpecificClassType<IResource> cls);
 
             // setup reference to a given resource key
             void set(const ResourceKey& key);
@@ -81,7 +81,7 @@ namespace base
             void print(IFormatStream& f) const;
 
             // parse from text representation, will fail if the referenced class name does not match constrained class
-            static bool Parse(StringView<char> txt, BaseAsyncReference& outReference, ClassType constrainedClass = nullptr);
+            static bool Parse(StringView txt, BaseAsyncReference& outReference, ClassType constrainedClass = nullptr);
 
             //--
 
@@ -110,7 +110,7 @@ namespace base
                     set(key);
             }
 
-            INLINE AsyncRef(StringView<char> path)
+            INLINE AsyncRef(StringView path)
                 : BaseAsyncReference(MakePath<T>(path))
             {}
 

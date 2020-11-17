@@ -159,21 +159,21 @@ namespace base
 
             INLINE ResourceSourceFormatMetadata& addSourceExtensions(const char* extList)
             {
-                InplaceArray<StringView<char>, 50> list;
-                StringView<char>(extList).slice(";,", false, list);
+                InplaceArray<StringView, 50> list;
+                StringView(extList).slice(";,", false, list);
 
                 for (const auto& ext : list)
                     m_extensions.pushBackUnique(ext);
                 return *this;
             }
 
-            INLINE const Array<StringView<char>>& extensions() const
+            INLINE const Array<StringView>& extensions() const
             {
                 return m_extensions;
             }
 
         private:
-            Array<StringView<char>> m_extensions;
+            Array<StringView> m_extensions;
             Array<ClassType> m_classes;
         };
 

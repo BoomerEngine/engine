@@ -50,12 +50,12 @@ namespace base
             virtual ~ISourceAssetLoader();
 
             /// load source asset from memory buffer
-            virtual SourceAssetPtr loadFromMemory(StringView<char> importPath, StringView<char> contextPath, Buffer data) const = 0;
+            virtual SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const = 0;
 
             ///---
 
             /// load source asset from buffer
-            static SourceAssetPtr LoadFromMemory(StringView<char> importPath, StringView<char> contextPath, Buffer data);
+            static SourceAssetPtr LoadFromMemory(StringView importPath, StringView contextPath, Buffer data);
 
             ///---
         };

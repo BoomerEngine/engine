@@ -50,7 +50,7 @@ namespace rendering
             }
         }
 
-        bool IRenderingTest::reportError(base::StringView<char> txt)
+        bool IRenderingTest::reportError(base::StringView txt)
         {
             TRACE_ERROR("Rendering test error: {}", txt);
             m_hasErrors = true;
@@ -65,7 +65,7 @@ namespace rendering
             return !m_hasErrors;
         }
 
-        const ShaderLibrary* IRenderingTest::loadShader(base::StringView<char> partialPath)
+        const ShaderLibrary* IRenderingTest::loadShader(base::StringView partialPath)
         {
             if (auto res = base::LoadResource<ShaderLibrary>(base::TempString("/engine/tests/shaders/{}", partialPath)))
             {
@@ -518,7 +518,7 @@ namespace rendering
                 }
                 else if (str.parseKeyword("g"))
                 {
-                    base::StringView<char> name;
+                    base::StringView name;
                     str.parseString(name);
 
                     auto curNumVertices = ret->m_allVertices.size();

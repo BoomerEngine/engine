@@ -36,16 +36,16 @@ namespace base
         ImportFileService::~ImportFileService()
         {}
 
-        bool ImportFileService::fileExists(StringView<char> assetImportPath) const
+        bool ImportFileService::fileExists(StringView assetImportPath) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->fileExists(fileSystemPath);
 
             return false;
         }
 
-        bool ImportFileService::translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const
+        bool ImportFileService::translateAbsolutePath(StringView absolutePath, StringBuf& outFileSystemPath) const
         {
             StringBuf bestShortPath;
             StringBuf bestPrefix;
@@ -70,43 +70,43 @@ namespace base
             return true;
         }
 
-        bool ImportFileService::resolveContextPath(StringView<char> assetImportPath, StringBuf& outContextPath) const
+        bool ImportFileService::resolveContextPath(StringView assetImportPath, StringBuf& outContextPath) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->resolveContextPath(fileSystemPath, outContextPath);
 
             return Buffer();
         }
 
-        Buffer ImportFileService::loadFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
+        Buffer ImportFileService::loadFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->loadFileContent(fileSystemPath, outTimestamp, outFingerprint);
 
             return Buffer();
         }
 
-        bool ImportFileService::enumDirectoriesAtPath(StringView<char> assetImportPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool ImportFileService::enumDirectoriesAtPath(StringView assetImportPath, const std::function<bool(StringView)>& enumFunc) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->enumDirectoriesAtPath(fileSystemPath, enumFunc);
 
             return false;
         }
 
-        bool ImportFileService::enumFilesAtPath(StringView<char> assetImportPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool ImportFileService::enumFilesAtPath(StringView assetImportPath, const std::function<bool(StringView)>& enumFunc) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->enumFilesAtPath(fileSystemPath, enumFunc);
 
             return false;
         }
 
-        bool ImportFileService::enumRoots(const std::function<bool(StringView<char>)>& enumFunc) const
+        bool ImportFileService::enumRoots(const std::function<bool(StringView)>& enumFunc) const
         {
             for (const auto& fs : m_fileSystems)
                 if (enumFunc(fs.prefix))
@@ -116,9 +116,9 @@ namespace base
 
         //--
 
-        SourceAssetStatus ImportFileService::checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
+        SourceAssetStatus ImportFileService::checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
         {
-            StringView<char> fileSystemPath;
+            StringView fileSystemPath;
             if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
                 return fs->checkFileStatus(fileSystemPath, lastKnownTimestamp, lastKnownCRC, progress);
 
@@ -127,7 +127,7 @@ namespace base
 
         //--
 
-        ResourceConfigurationPtr ImportFileService::compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configClass) const
+        ResourceConfigurationPtr ImportFileService::compileBaseResourceConfiguration(StringView assetImportPath, SpecificClassType<ResourceConfiguration> configClass) const
         {
             if (!configClass || configClass->isAbstract())
                 return nullptr;
@@ -187,7 +187,7 @@ namespace base
 
         //--
 
-        const ISourceAssetFileSystem* ImportFileService::resolveFileSystem(StringView<char> assetImportPath, StringView<char>& outFileSystemPath) const
+        const ISourceAssetFileSystem* ImportFileService::resolveFileSystem(StringView assetImportPath, StringView& outFileSystemPath) const
         {
             for (const auto& fs : m_fileSystems)
             {

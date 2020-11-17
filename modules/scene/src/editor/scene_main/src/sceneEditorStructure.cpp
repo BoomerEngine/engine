@@ -319,7 +319,7 @@ namespace ed
             }
         }        
 
-        base::StringBuf IContentElement::generateSafeName(base::StringView<char> coreName) const
+        base::StringBuf IContentElement::generateSafeName(base::StringView coreName) const
         {
             base::HashSet<base::StringView<char>> activeNames; // NOTE: make sure we don't put temp strings here!
 
@@ -873,7 +873,7 @@ namespace ed
             return itemFirst->name() < itemSecond->name();
         }
 
-        bool ContentStructure::filter(const ui::ModelIndex& id, base::StringView<char> filter, int colIndex) const
+        bool ContentStructure::filter(const ui::ModelIndex& id, base::StringView filter, int colIndex) const
         {
             if (auto item = id.unsafe<IContentElement>())
                 return item->name().view().matchStringOrPatter(filter);

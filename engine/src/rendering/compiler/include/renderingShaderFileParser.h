@@ -64,19 +64,19 @@ namespace rendering
             struct RENDERING_COMPILER_API TypeReference
             {
                 base::parser::Location location;
-                base::StringView<char> name;
-                base::StringView<char> innerType;
+                base::StringView name;
+                base::StringView innerType;
                 base::InplaceArray<int, 4> arraySizes;
 
                 TypeReference();
-                TypeReference(const base::parser::Location& loc, base::StringView<char> name);
+                TypeReference(const base::parser::Location& loc, base::StringView name);
             };
 
             struct RENDERING_COMPILER_API Element
             {
                 ElementType type = ElementType::Invalid;
                 base::parser::Location location;
-                base::StringView<char> name;
+                base::StringView name;
                 base::Array<Element*> children;
                 base::Array<Element*> attributes;
                 base::Array<base::parser::Token*> tokens; // inner content
@@ -84,17 +84,17 @@ namespace rendering
                 TypeReference* typeRef = nullptr; // type reference
                 ElementFlags flags = ElementFlags();
 
-                base::StringView<char> stringData;
+                base::StringView stringData;
                 int64_t intData = 0;
                 double floatData = 0.0;
 
                 //---
 
-                Element(const base::parser::Location& loc, ElementType type, base::StringView<char> name = base::StringView<char>(), ElementFlags flags=ElementFlags());
+                Element(const base::parser::Location& loc, ElementType type, base::StringView name = base::StringView(), ElementFlags flags=ElementFlags());
 
                 //--
 
-                const Element* findAttribute(base::StringView<char> name) const;
+                const Element* findAttribute(base::StringView name) const;
 
                 AttributeList gatherAttributes() const;
             };

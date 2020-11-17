@@ -155,14 +155,14 @@ namespace rendering
 
     //---
 
-    /*bool MaterialGraph::readDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    /*bool MaterialGraph::readDataView(const base::IDataView* rootView, base::StringView rootViewPath, base::StringView viewPath, void* targetData, base::Type targetType) const
     {
         if (TBaseClass::readDataView(rootView, rootViewPath, viewPath, targetData, targetType))
             return true;
 
         if (!viewPath.empty())
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
             {
                 if (const auto* paramBlock = m_graph->findParamBlock(propertyName))
@@ -175,14 +175,14 @@ namespace rendering
         return false;
     }
 
-    bool MaterialGraph::writeDataView(const base::IDataView* rootView, base::StringView<char> rootViewPath, base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
+    bool MaterialGraph::writeDataView(const base::IDataView* rootView, base::StringView rootViewPath, base::StringView viewPath, const void* sourceData, base::Type sourceType)
     {
         if (TBaseClass::writeDataView(rootView, rootViewPath, viewPath, sourceData, sourceType))
             return true;
 
         if (!viewPath.empty())
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
             {
                 if (auto* paramBlock = m_graph->findParamBlock(propertyName))
@@ -195,9 +195,9 @@ namespace rendering
         return false;
     }
 
-    bool MaterialGraph::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    bool MaterialGraph::describeDataView(base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const
     {
-        base::StringView<char> propertyName;
+        base::StringView propertyName;
         if (viewPath.empty())
         {
             if (!TBaseClass::describeDataView(viewPath, outInfo))

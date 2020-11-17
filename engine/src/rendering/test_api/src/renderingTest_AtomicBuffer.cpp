@@ -72,7 +72,7 @@ namespace rendering
 
         void RenderingTest_AtomicBasicOps::initialize()
         {
-            base::StringView<char> name = "AtomicBufferIncrement.csl";
+            base::StringView name = "AtomicBufferIncrement.csl";
                         
             switch (subTestIndex())
             {

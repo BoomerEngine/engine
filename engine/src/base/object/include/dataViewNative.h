@@ -31,25 +31,25 @@ namespace base
         INLINE const ObjectPtr& object() const { return m_object; }
 
         // IDataView
-        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const override;
-        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const override;
-        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const override;
+        virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
+        virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
+        virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const override;
 
         // IDataView - actions
-        virtual DataViewActionResult actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const override;
-        virtual DataViewActionResult actionValueReset(StringView<char> viewPath) const override;
-        virtual DataViewActionResult actionArrayClear(StringView<char> viewPath) const override;
-        virtual DataViewActionResult actionArrayInsertElement(StringView<char> viewPath, uint32_t index) const override;
-        virtual DataViewActionResult actionArrayRemoveElement(StringView<char> viewPath, uint32_t index) const override;
-        virtual DataViewActionResult actionArrayNewElement(StringView<char> viewPath) const override;
-        virtual DataViewActionResult actionObjectClear(StringView<char> viewPath) const  override;
-        virtual DataViewActionResult actionObjectNew(StringView<char> viewPath, ClassType objectClass) const override;
+        virtual DataViewActionResult actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const override;
+        virtual DataViewActionResult actionValueReset(StringView viewPath) const override;
+        virtual DataViewActionResult actionArrayClear(StringView viewPath) const override;
+        virtual DataViewActionResult actionArrayInsertElement(StringView viewPath, uint32_t index) const override;
+        virtual DataViewActionResult actionArrayRemoveElement(StringView viewPath, uint32_t index) const override;
+        virtual DataViewActionResult actionArrayNewElement(StringView viewPath) const override;
+        virtual DataViewActionResult actionObjectClear(StringView viewPath) const  override;
+        virtual DataViewActionResult actionObjectNew(StringView viewPath, ClassType objectClass) const override;
 
         //--
 
-        virtual DataViewResult readDefaultDataView(StringView<char> viewPath, void* targetData, Type targetType) const;
-        virtual DataViewResult resetToDefaultValue(StringView<char> viewPath, void* targetData, Type targetType) const; // called instead of write value if the value is "default value"
-        virtual bool checkIfCurrentlyADefaultValue(StringView<char> viewPath) const;
+        virtual DataViewResult readDefaultDataView(StringView viewPath, void* targetData, Type targetType) const;
+        virtual DataViewResult resetToDefaultValue(StringView viewPath, void* targetData, Type targetType) const; // called instead of write value if the value is "default value"
+        virtual bool checkIfCurrentlyADefaultValue(StringView viewPath) const;
 
     private:
         ObjectPtr m_object;

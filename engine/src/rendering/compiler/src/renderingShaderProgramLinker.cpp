@@ -123,7 +123,7 @@ namespace rendering
                 }
             }
 
-            base::HashMap<base::StringView<char>, const ResourceTable*> usedDescriptors;
+            base::HashMap<base::StringView, const ResourceTable*> usedDescriptors;
 
             // extract names of descriptors from the params, yes this is not 100% safe :)
             for (auto& paramName : usedShaderParameters.keys())
@@ -369,7 +369,7 @@ namespace rendering
             const CodeLibrary& readOnlyLib,
             LinkerCache& linkerCache,
             const opcodes::IShaderOpcodeGenerator* generator,
-            base::StringView<char> contextPath,
+            base::StringView contextPath,
             const ShaderBunderSetup& programInfo,
             base::parser::IErrorReporter& err)
         {

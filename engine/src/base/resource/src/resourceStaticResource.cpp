@@ -84,7 +84,7 @@ namespace base
                     }
                 }
 
-                INLINE ResourceHandle load(ClassType resourceClass, StringView<char> path)
+                INLINE ResourceHandle load(ClassType resourceClass, StringView path)
                 {
                     ASSERT(!path.empty());
 

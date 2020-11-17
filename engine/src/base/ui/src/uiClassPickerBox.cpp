@@ -138,7 +138,7 @@ namespace ui
 
     //---
 
-    ClassPickerBox::ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView<char> caption, bool showButtons)
+    ClassPickerBox::ClassPickerBox(base::ClassType rootClass, base::ClassType initialType, bool allowAbstract, bool allowNull, base::StringView caption, bool showButtons)
         : PopupWindow(showButtons ? ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG : ui::WindowFeatureFlagBit::DEFAULT_TOOLTIP, "Select class")
         , m_allowAbstract(allowAbstract)
         , m_allowNull(allowNull)

@@ -24,7 +24,7 @@ namespace base
         {
             int tokenID = -1;
             base::parser::Location location;
-            base::StringView<char> stringValue;
+            base::StringView stringValue;
             base::Array<base::parser::Token*> tokens;
             StubTypeDecl* typeDecl = nullptr;
             StubTypeRef* typeRef = nullptr;
@@ -40,7 +40,7 @@ namespace base
             INLINE FileParsingNode()
             {}
 
-            INLINE FileParsingNode(const base::parser::Location& loc, base::StringView<char> txt)
+            INLINE FileParsingNode(const base::parser::Location& loc, base::StringView txt)
             {
                 stringValue = txt;
                 location = loc;
@@ -82,12 +82,12 @@ namespace base
             //--
 
             INLINE const parser::Location& location() const { return m_lastTokenLocation; }
-            INLINE StringView<char> text() const { return m_lastTokenText; }
+            INLINE StringView text() const { return m_lastTokenText; }
 
         private:
             parser::TokenList m_tokens;
 
-            StringView<char> m_lastTokenText;
+            StringView m_lastTokenText;
             parser::Location m_lastTokenLocation;
         };
 
@@ -136,14 +136,14 @@ namespace base
             StubConstantValue* createConstValueUint(const parser::Location& location, uint64_t value);
             StubConstantValue* createConstValueFloat(const parser::Location& location, double value);
             StubConstantValue* createConstValueBool(const parser::Location& location, bool value);
-            StubConstantValue* createConstValueString(const parser::Location& location, StringView<char> view);
+            StubConstantValue* createConstValueString(const parser::Location& location, StringView view);
             StubConstantValue* createConstValueName(const parser::Location& location, StringID name);
             StubConstantValue* createConstValueCompound(const parser::Location& location, const StubTypeDecl* typeRef);
 
             Stub* contextObject();
 
-            void reportError(const parser::Location& location, StringView<char> message);
-            void reportWarning(const parser::Location& location, StringView<char> message);
+            void reportError(const parser::Location& location, StringView message);
+            void reportWarning(const parser::Location& location, StringView message);
 
         private:
             FileParser& m_parser;

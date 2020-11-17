@@ -44,16 +44,16 @@ namespace base
             bool clear();
 
             /// get entry for given name, does not create one if not found
-            const Entry* findEntry(StringView<char> name) const;
+            const Entry* findEntry(StringView name) const;
 
             /// remove entry from group (clears all data for the entry)
-            bool removeEntry(StringView<char> name);
+            bool removeEntry(StringView name);
 
             /// get entry for given name, creates and empty entry if not found
-            Entry& entry(StringView<char> name);
+            Entry& entry(StringView name);
 
             /// get value of entry
-            StringBuf entryValue(StringView<char> name, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
+            StringBuf entryValue(StringView name, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
 
             //--
 
@@ -66,7 +66,7 @@ namespace base
         private:
             friend class Entry;
 
-            const Entry* findEntry_NoLock(StringView<char> name) const;
+            const Entry* findEntry_NoLock(StringView name) const;
 
             Storage* m_storage;
             StringBuf m_name;

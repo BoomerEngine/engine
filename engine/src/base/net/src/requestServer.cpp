@@ -25,7 +25,7 @@ namespace base
 
         //---
 
-        Connection::Connection(StringView<char> address, StringView<char> protocol)
+        Connection::Connection(StringView address, StringView protocol)
             : m_address(address)
             , m_protocol(protocol)
         {}
@@ -33,7 +33,7 @@ namespace base
         Connection::~Connection()
         {}
 
-        RequestResult Connection::wait(StringView<char> url, const RequestArgs& params, Method method, uint32_t timeOut) CAN_YIELD
+        RequestResult Connection::wait(StringView url, const RequestArgs& params, Method method, uint32_t timeOut) CAN_YIELD
         {
             RequestResult res;
 
@@ -70,7 +70,7 @@ namespace base
             {
                 if (header->contentBuffer)
                 {
-                    auto extraArguments  = StringView<char>((char*)header->contentBuffer.data(), header->contentBuffer.size());
+                    auto extraArguments  = StringView((char*)header->contentBuffer.data(), header->contentBuffer.size());
                     TRACE_INFO("URL POST arguments: '{}'", extraArguments);
                     if (!RequestArgs::Parse(extraArguments, m_args))
                     {
@@ -87,12 +87,12 @@ namespace base
         IncomingRequest::~IncomingRequest()
         {}
 
-        void IncomingRequest::finishText(uint32_t code, StringView<char> txt)
+        void IncomingRequest::finishText(uint32_t code, StringView txt)
         {
             finish(code, txt.toBuffer(), "text/html; charset=UTF-8");
         }
 
-        void IncomingRequest::finishXML(uint32_t code, StringView<char> txt)
+        void IncomingRequest::finishXML(uint32_t code, StringView txt)
         {
             finish(code, txt.toBuffer(), "text/xml, application/xml");
         }
@@ -121,7 +121,7 @@ namespace base
             return true;
         }
 
-        static StringView<char> SanitizeURL(StringView<char> path)
+        static StringView SanitizeURL(StringView path)
         {
             auto sanitizedPath  = path;
             if (sanitizedPath.beginsWith("/"))
@@ -131,7 +131,7 @@ namespace base
             return sanitizedPath;
         }
 
-        void RequestServer::registerHandler(StringView<char> path, const TRequestHandlerFunc& handler)
+        void RequestServer::registerHandler(StringView path, const TRequestHandlerFunc& handler)
         {
             if (!path.empty() && handler)
             {
@@ -143,7 +143,7 @@ namespace base
             }
         }
 
-        void RequestServer::unregisterHandler(StringView<char> path)
+        void RequestServer::unregisterHandler(StringView path)
         {
             if (!path.empty())
             {
@@ -166,7 +166,7 @@ namespace base
                 , m_tcpConnection(connection)
             {}
 
-            virtual void finish(uint32_t code, const Buffer& data, StringView<char> contentType) override final
+            virtual void finish(uint32_t code, const Buffer& data, StringView contentType) override final
             {
                 if (auto server  = m_owner.lock())
                 {

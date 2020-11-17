@@ -56,7 +56,7 @@ namespace rendering
         /// register a layout ID form a string description, this allows to specify the layouts at compile time
         /// NOTE: this may return existing one if it matches the layout
         /// NOTE: layout format is very simple: a letter for each resource type "I" "B" "C", etc
-        static ParametersLayoutID Register(base::StringView<char> layoutDesc);
+        static ParametersLayoutID Register(base::StringView layoutDesc);
 
         /// get a layout from a structure in the memory
         /// NOTE: it must be tightly packed structure of Views (ConstantView, BufferView, ImageView, etc)

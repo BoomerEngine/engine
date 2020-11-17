@@ -45,7 +45,7 @@ namespace ui
             m_color = elem.evalStyleValue<base::Color>("color"_id);
         }
 
-        base::Rect measureText(base::StringView<char> text) const
+        base::Rect measureText(base::StringView text) const
         {
            base::font::FontStyleParams params;
            params.size = m_size;
@@ -62,7 +62,7 @@ namespace ui
            return rect;
        }
 
-        void print(base::canvas::GeometryBuilder& builder, base::StringView<char> text) const
+        void print(base::canvas::GeometryBuilder& builder, base::StringView text) const
         {
             base::font::FontStyleParams params;
             params.size = m_size;

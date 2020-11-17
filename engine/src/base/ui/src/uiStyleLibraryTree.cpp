@@ -264,7 +264,7 @@ namespace ui
                 }
             }
 
-            const char* RawLibraryData::allocString(base::StringView<char> str)
+            const char* RawLibraryData::allocString(base::StringView str)
             {
                 if (!str)
                     return "";

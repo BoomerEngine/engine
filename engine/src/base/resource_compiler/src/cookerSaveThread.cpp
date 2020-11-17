@@ -87,7 +87,7 @@ namespace base
                 TRACE_INFO("Saving finished in extra {}", timer);
         }
 
-        bool CookerSaveThread::scheduleSave(const ResourcePtr& data, StringView<char> path)
+        bool CookerSaveThread::scheduleSave(const ResourcePtr& data, StringView path)
         {
             DEBUG_CHECK_EX(!path.empty(), "Invalid path");
             DEBUG_CHECK_EX(data, "Invalid data to save");
@@ -107,7 +107,7 @@ namespace base
             return true;
         }
 
-        bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, StringView<char> path)
+        bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, StringView path)
         {
             // create staged writer for the file
             if (auto file = base::io::OpenForWriting(path, base::io::FileWriteMode::StagedWrite))

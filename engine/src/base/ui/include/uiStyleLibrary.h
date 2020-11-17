@@ -80,14 +80,14 @@ namespace ui
             virtual ~IStyleLibraryContentLoader();
 
             /// find and load image, by name
-            virtual base::image::ImagePtr loadImage(base::StringView<char> context, base::StringView<char> imageFileName) = 0;
+            virtual base::image::ImagePtr loadImage(base::StringView context, base::StringView imageFileName) = 0;
 
             /// find and load font, by name
-            virtual base::FontPtr loadFont(base::StringView<char> context, base::StringView<char> fontFileName) = 0;
+            virtual base::FontPtr loadFont(base::StringView context, base::StringView fontFileName) = 0;
         };
 
         /// process the CSS file to extract the data and put it into the style library
-        extern BASE_UI_API StyleLibraryPtr ParseStyleLibrary(base::StringView<char> context, base::StringView<char> data, IStyleLibraryContentLoader& loader, base::parser::IIncludeHandler& inc, base::parser::IErrorReporter& err);
+        extern BASE_UI_API StyleLibraryPtr ParseStyleLibrary(base::StringView context, base::StringView data, IStyleLibraryContentLoader& loader, base::parser::IIncludeHandler& inc, base::parser::IErrorReporter& err);
 
         //---
 

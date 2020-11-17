@@ -14,46 +14,46 @@ namespace base
     //-----------------------------------------------------------------------------
 
     template< typename T >
-    INLINE StringVector<T>::StringVector()
+    INLINE BaseStringVector<T>::BaseStringVector()
     {
     }
 
     template< typename T >
-    INLINE StringVector<T>::StringVector(const StringVector<T>& other)
+    INLINE BaseStringVector<T>::BaseStringVector(const BaseStringVector<T>& other)
         : m_buf(other.m_buf)
     {
         zeroCheck();
     }
     template< typename T >
-    INLINE StringVector<T>::StringVector(StringVector<T>&& other)
+    INLINE BaseStringVector<T>::BaseStringVector(BaseStringVector<T>&& other)
         : m_buf(std::move(other.m_buf))
     {
         zeroCheck();
     }
 
     template< typename T >
-    INLINE StringVector<T>::StringVector(const char* str, uint32_t length)
+    INLINE BaseStringVector<T>::BaseStringVector(const char* str, uint32_t length)
     {
-        prv::Helper<T>::Append(m_buf, StringView<char>(str, length));
+        prv::Helper<T>::Append(m_buf, BaseStringView<char>(str, length));
         zeroCheck();
     }
 
     template< typename T >
-    INLINE StringVector<T>::StringVector(const wchar_t* str, uint32_t length)
+    INLINE BaseStringVector<T>::BaseStringVector(const wchar_t* str, uint32_t length)
     {
-        prv::Helper<T>::Append(m_buf, StringView<wchar_t>(str, length));
+        prv::Helper<T>::Append(m_buf, BaseStringView<wchar_t>(str, length));
         zeroCheck();
     }
 
     template< typename T >
-    INLINE StringVector<T>::StringVector(StringView<char> view)
+    INLINE BaseStringVector<T>::BaseStringVector(BaseStringView<char> view)
     {
         prv::Helper<T>::Append(m_buf, view);
         zeroCheck();
     }
 
     template< typename T >
-    INLINE StringVector<T>::StringVector(const StringView<wchar_t>& view)
+    INLINE BaseStringVector<T>::BaseStringVector(const BaseStringView<wchar_t>& view)
     {
         prv::Helper<T>::Append(m_buf, view);
         zeroCheck();
@@ -62,56 +62,56 @@ namespace base
     ///---
 
     template< typename T >
-    INLINE bool StringVector<T>::empty() const
+    INLINE bool BaseStringVector<T>::empty() const
     {
         return m_buf.size() <= 1;
     }
 
     template< typename T >
-    INLINE uint32_t StringVector<T>::length() const
+    INLINE uint32_t BaseStringVector<T>::length() const
     {
         return m_buf.size() ? m_buf.size() - 1 : 0;
     }
 
     template< typename T >
-    INLINE StringView<T> StringVector<T>::view() const
+    INLINE BaseStringView<T> BaseStringVector<T>::view() const
     {
-        return empty() ? StringView<T>() : StringView<T>(m_buf.typedData(), m_buf.typedData() + length());
+        return empty() ? BaseStringView<T>() : BaseStringView<T>(m_buf.typedData(), m_buf.typedData() + length());
     }
 
     template< typename T >
-    INLINE StringVector<T>::operator StringView<T>() const
+    INLINE BaseStringVector<T>::operator BaseStringView<T>() const
     {
-        return empty() ? StringView<T>() : StringView<T>(m_buf.typedData(), m_buf.typedData() + length());
+        return empty() ? BaseStringView<T>() : BaseStringView<T>(m_buf.typedData(), m_buf.typedData() + length());
     }
 
     template< typename T >
-    INLINE const T* StringVector<T>::c_str() const
+    INLINE const T* BaseStringVector<T>::c_str() const
     {
         static T emptyTable[] = {0};
         return empty() ? emptyTable : m_buf.typedData();
     }
 
     template< typename T >
-    INLINE T* StringVector<T>::c_str_writable()
+    INLINE T* BaseStringVector<T>::c_str_writable()
     {
         return empty() ? nullptr : m_buf.typedData();
     }
 
     template< typename T >
-    INLINE void StringVector<T>::print(IFormatStream& f) const
+    INLINE void BaseStringVector<T>::print(IFormatStream& f) const
     {
         f.append(c_str(), length());
     }
 
     template< typename T >
-    INLINE StringBuf StringVector<T>::ansi_str() const
+    INLINE StringBuf BaseStringVector<T>::ansi_str() const
     {
         return StringBuf(view());
     }
 
     template< typename T >
-    INLINE StringVector<T>& StringVector<T>::reserve(uint32_t size)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::reserve(uint32_t size)
     {
         m_buf.reserve(size);
         return *this;
@@ -120,30 +120,30 @@ namespace base
     ///---
 
     template< typename T >
-    INLINE StringVector<T>& StringVector<T>::clear()
+    INLINE BaseStringVector<T>& BaseStringVector<T>::clear()
     {
         m_buf.clear();
         return *this;
     }
 
     template< typename T >
-    INLINE StringVector<T>& StringVector<T>::append(const StringVector<T>& str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::append(const BaseStringVector<T>& str)
     {
         return append(str.view());
     }
 
     template< typename T >
-    INLINE StringVector<T>& StringVector<T>::append(StringView<char> str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::append(BaseStringView<char> str)
     {
-        prv::Helper<T>::Append(m_buf, StringView<char>(str));
+        prv::Helper<T>::Append(m_buf, BaseStringView<char>(str));
         zeroCheck();
         return *this;
     }
 
     template< typename T >
-    INLINE StringVector<T>& StringVector<T>::append(const StringView<wchar_t>& str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::append(const BaseStringView<wchar_t>& str)
     {
-        prv::Helper<T>::Append(m_buf, StringView<wchar_t>(str));
+        prv::Helper<T>::Append(m_buf, BaseStringView<wchar_t>(str));
         zeroCheck();
         return *this;
     }
@@ -151,7 +151,7 @@ namespace base
     ///---
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(const StringVector<T>& other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(const BaseStringVector<T>& other)
     {
         if (this != &other)
             m_buf = other.m_buf;
@@ -160,7 +160,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(StringVector<T>&& other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(BaseStringVector<T>&& other)
     {
         if (this != &other)
             m_buf = std::move(other.m_buf);
@@ -169,7 +169,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(StringView<char> str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(BaseStringView<char> str)
     {
         clear();
         append(str);
@@ -177,7 +177,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(const StringView<wchar_t>& str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(const BaseStringView<wchar_t>& str)
     {
         clear();
         append(str);
@@ -185,7 +185,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(const char* str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(const char* str)
     {
         clear();
         append(str);
@@ -193,7 +193,7 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator=(const wchar_t* str)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator=(const wchar_t* str)
     {
         clear();
         append(str);
@@ -203,37 +203,37 @@ namespace base
     ///---
 
     template<typename T>
-    INLINE bool StringVector<T>::operator==(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator==(const BaseStringView<T>& other) const
     {
         return view() == other;
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::operator!=(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator!=(const BaseStringView<T>& other) const
     {
         return view() != other;
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::operator<(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator<(const BaseStringView<T>& other) const
     {
         return view() < other;
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::operator<=(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator<=(const BaseStringView<T>& other) const
     {
         return view() <= other;
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::operator>(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator>(const BaseStringView<T>& other) const
     {
         return view() > other;
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::operator>=(const StringView<T>& other) const
+    INLINE bool BaseStringVector<T>::operator>=(const BaseStringView<T>& other) const
     {
         return view() >= other;
     }
@@ -241,31 +241,31 @@ namespace base
     ///---
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator+=(const StringVector<T>& other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator+=(const BaseStringVector<T>& other)
     {
         return append(other);
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator+=(const char* other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator+=(const char* other)
     {
         return append(other);
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator+=(const wchar_t* other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator+=(const wchar_t* other)
     {
         return append(other);
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator+=(StringView<char> other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator+=(BaseStringView<char> other)
     {
         return append(other);
     }
 
     template<typename T>
-    INLINE StringVector<T>& StringVector<T>::operator+=(const StringView<wchar_t>& other)
+    INLINE BaseStringVector<T>& BaseStringVector<T>::operator+=(const BaseStringView<wchar_t>& other)
     {
         return append(other);
     }
@@ -273,41 +273,41 @@ namespace base
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::operator+(const StringVector<T>& other) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::operator+(const BaseStringVector<T>& other) const
     {
-        return StringVector<T>(*this) += other;
+        return BaseStringVector<T>(*this) += other;
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::operator+(const char* other) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::operator+(const char* other) const
     {
-        return StringVector<T>(*this) += other;
+        return BaseStringVector<T>(*this) += other;
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::operator+(const wchar_t* other) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::operator+(const wchar_t* other) const
     {
-        return StringVector<T>(*this) += other;
+        return BaseStringVector<T>(*this) += other;
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::operator+(StringView<char> other) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::operator+(BaseStringView<char> other) const
     {
-        return StringVector<T>(*this) += other;
+        return BaseStringVector<T>(*this) += other;
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::operator+(const StringView<wchar_t>& other) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::operator+(const BaseStringView<wchar_t>& other) const
     {
-        return StringVector<T>(*this) += other;
+        return BaseStringVector<T>(*this) += other;
     }
 
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::toLower() const
+    INLINE BaseStringVector<T> BaseStringVector<T>::toLower() const
     {
-        StringVector<T> ret(*this);
+        BaseStringVector<T> ret(*this);
 
         for (auto& ch : ret.m_buf)
             if (ch >= 'A' && ch <= 'Z')
@@ -317,9 +317,9 @@ namespace base
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::toUpper() const
+    INLINE BaseStringVector<T> BaseStringVector<T>::toUpper() const
     {
-        StringVector<T> ret(*this);
+        BaseStringVector<T> ret(*this);
 
         for (auto& ch : ret.m_buf)
             if (ch >= 'a' && ch <= 'z')
@@ -331,13 +331,13 @@ namespace base
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE int StringVector<T>::compareWith(const StringView<T>& other) const
+    INLINE int BaseStringVector<T>::compareWith(const BaseStringView<T>& other) const
     {
         return view().cmp(other);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::compareWithNoCase(const StringView<T>& other) const
+    INLINE int BaseStringVector<T>::compareWithNoCase(const BaseStringView<T>& other) const
     {
         return view().caseCmp(other);
     }
@@ -345,158 +345,158 @@ namespace base
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::leftPart(uint32_t count) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::leftPart(uint32_t count) const
     {
-        return StringVector<T>(view().leftPart(count));
+        return BaseStringVector<T>(view().leftPart(count));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::rightPart(uint32_t count) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::rightPart(uint32_t count) const
     {
-        return StringVector<T>(view().rightPart(count));
+        return BaseStringVector<T>(view().rightPart(count));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::subString(uint32_t first, uint32_t count) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::subString(uint32_t first, uint32_t count) const
     {
-        return StringVector<T>(view().subString(count));
+        return BaseStringVector<T>(view().subString(count));
     }
 
     template<typename T>
-    INLINE void StringVector<T>::split(uint32_t index, StringVector<T>& outLeft, StringVector<T>& outRight) const
+    INLINE void BaseStringVector<T>::split(uint32_t index, BaseStringVector<T>& outLeft, BaseStringVector<T>& outRight) const
     {
-        StringView<T> leftPart, rightPart;
+        BaseStringView<T> leftPart, rightPart;
         view().split(index, leftPart, rightPart);
-        outLeft = StringVector<T>(leftPart);
-        outRight = StringVector<T>(rightPart);
+        outLeft = BaseStringVector<T>(leftPart);
+        outRight = BaseStringVector<T>(rightPart);
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::splitAt(const StringView<T>& str, StringVector<T>& outLeft, StringVector<T>& outRight) const
+    INLINE bool BaseStringVector<T>::splitAt(const BaseStringView<T>& str, BaseStringVector<T>& outLeft, BaseStringVector<T>& outRight) const
     {
-        StringView<T> leftPart, rightPart;
+        BaseStringView<T> leftPart, rightPart;
         if (!view().splitAt(str, leftPart, rightPart))
             return false;
 
-        outLeft = StringVector<T>(leftPart);
-        outRight = StringVector<T>(rightPart);
+        outLeft = BaseStringVector<T>(leftPart);
+        outRight = BaseStringVector<T>(rightPart);
         return true;
     }
 
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE int StringVector<T>::findStr(const StringView<T>& pattern, int firstPosition) const
+    INLINE int BaseStringVector<T>::findStr(const BaseStringView<T>& pattern, int firstPosition) const
     {
         return view().findStr(pattern, firstPosition);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::findStrRev(const StringView<T>& pattern, int firstPosition) const
+    INLINE int BaseStringVector<T>::findStrRev(const BaseStringView<T>& pattern, int firstPosition) const
     {
         return view().findRevStr(pattern, firstPosition);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::findStrNoCase(const StringView<T>& pattern, int firstPosition) const
+    INLINE int BaseStringVector<T>::findStrNoCase(const BaseStringView<T>& pattern, int firstPosition) const
     {
         return view().findStrNoCase(pattern, firstPosition);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::findStrRevNoCase(const StringView<T>& pattern, int firstPosition) const
+    INLINE int BaseStringVector<T>::findStrRevNoCase(const BaseStringView<T>& pattern, int firstPosition) const
     {
         return view().findRevStrNoCase(pattern, firstPosition);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::findFirstChar(T ch) const
+    INLINE int BaseStringVector<T>::findFirstChar(T ch) const
     {
         return view().findFirstChar(ch);
     }
 
     template<typename T>
-    INLINE int StringVector<T>::findLastChar(T ch) const
+    INLINE int BaseStringVector<T>::findLastChar(T ch) const
     {
         return view().findLastChar(ch);
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::beginsWith(const StringView<T>& pattern) const
+    INLINE bool BaseStringVector<T>::beginsWith(const BaseStringView<T>& pattern) const
     {
         return view().beginsWith(pattern);
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::beginsWithNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringVector<T>::beginsWithNoCase(const BaseStringView<T>& pattern) const
     {
         return view().beginsWithNoCase(pattern);
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::endsWith(const StringView<T>& pattern) const
+    INLINE bool BaseStringVector<T>::endsWith(const BaseStringView<T>& pattern) const
     {
         return view().endsWith(pattern);
     }
 
     template<typename T>
-    INLINE bool StringVector<T>::endsWithNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringVector<T>::endsWithNoCase(const BaseStringView<T>& pattern) const
     {
         return view().endsWithNoCase(pattern);
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringAfterFirst(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringAfterFirst(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().afterFirst(pattern));
+        return BaseStringVector<T>(view().afterFirst(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringBeforeFirst(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringBeforeFirst(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().beforeFirst(pattern));
+        return BaseStringVector<T>(view().beforeFirst(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringAfterLast(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringAfterLast(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().afterLast(pattern));
+        return BaseStringVector<T>(view().afterLast(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringBeforeLast(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringBeforeLast(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().beforeLast(pattern));
+        return BaseStringVector<T>(view().beforeLast(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringAfterFirstNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringAfterFirstNoCase(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().afterFirstNoCase(pattern));
+        return BaseStringVector<T>(view().afterFirstNoCase(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringBeforeFirstNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringBeforeFirstNoCase(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().beforeFirstNoCase(pattern));
+        return BaseStringVector<T>(view().beforeFirstNoCase(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringAfterLastNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringAfterLastNoCase(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().afterLastNoCase(pattern));
+        return BaseStringVector<T>(view().afterLastNoCase(pattern));
     }
 
     template<typename T>
-    INLINE StringVector<T> StringVector<T>::stringBeforeLastNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringVector<T> BaseStringVector<T>::stringBeforeLastNoCase(const BaseStringView<T>& pattern) const
     {
-        return StringVector<T>(view().beforeLastNoCase(pattern));
+        return BaseStringVector<T>(view().beforeLastNoCase(pattern));
     }
 
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE void StringVector<T>::zeroCheck()
+    INLINE void BaseStringVector<T>::zeroCheck()
     {
         ASSERT(m_buf.empty() || m_buf.back() == 0);
     }
@@ -504,25 +504,25 @@ namespace base
     //-----------------------------------------------------------------------------
 
     template<typename T>
-    INLINE ArrayIterator<T> StringVector<T>::begin()
+    INLINE ArrayIterator<T> BaseStringVector<T>::begin()
     {
         return m_buf.begin();
     }
 
     template<typename T>
-    INLINE ArrayIterator<T> StringVector<T>::end()
+    INLINE ArrayIterator<T> BaseStringVector<T>::end()
     {
         return m_buf.end();
     }
 
     template<typename T>
-    INLINE ConstArrayIterator<T> StringVector<T>::begin() const
+    INLINE ConstArrayIterator<T> BaseStringVector<T>::begin() const
     {
         return m_buf.begin();
     }
 
     template<typename T>
-    INLINE ConstArrayIterator<T> StringVector<T>::end() const
+    INLINE ConstArrayIterator<T> BaseStringVector<T>::end() const
     {
         return m_buf.end();
     }

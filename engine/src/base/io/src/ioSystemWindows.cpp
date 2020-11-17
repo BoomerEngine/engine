@@ -49,7 +49,7 @@ namespace base
                     *m_writePos = 0;
                 }
 
-                TempPathStringBuffer(StringView<char> view)
+                TempPathStringBuffer(StringView view)
                 {
                     m_writePos = m_buffer;
                     m_writeEnd = m_buffer + MAX_SIZE - 1;
@@ -86,7 +86,7 @@ namespace base
                     return Array<wchar_t>(m_buffer, count);
                 }
 
-                bool append(StringView<char> txt)
+                bool append(StringView txt)
                 {
                     DEBUG_CHECK(m_writePos <= m_writeEnd);
                     DEBUG_CHECK(*m_writePos == 0);
@@ -179,7 +179,7 @@ namespace base
                     *m_writePos = 0;
                 }
 
-                TempPathStringBufferAnsi(StringView<char> view)
+                TempPathStringBufferAnsi(StringView view)
                 {
                     m_writePos = m_buffer;
                     m_writeEnd = m_buffer + MAX_SIZE - 1;
@@ -216,7 +216,7 @@ namespace base
                     return Array<char>(m_buffer, count);
                 }
 
-                bool append(StringView<char> txt)
+                bool append(StringView txt)
                 {
                     DEBUG_CHECK(m_writePos <= m_writeEnd);
                     DEBUG_CHECK(*m_writePos == 0);
@@ -318,7 +318,7 @@ namespace base
                 m_asyncDispatcher = nullptr;
             }
 
-            ReadFileHandlePtr WinIOSystem::openForReading(StringView<char> absoluteFilePath)
+            ReadFileHandlePtr WinIOSystem::openForReading(StringView absoluteFilePath)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -335,7 +335,7 @@ namespace base
                 return CreateSharedPtr<WinReadFileHandle>(handle, absoluteFilePath);
             }
 
-            static void GenerateTempFilePath(StringView<char> absoluteFilePath, TempPathStringBuffer& outStr)
+            static void GenerateTempFilePath(StringView absoluteFilePath, TempPathStringBuffer& outStr)
             {
                 // dir path
                 outStr.append(absoluteFilePath.beforeLast("\\"));
@@ -380,7 +380,7 @@ namespace base
                 return CreateSharedPtr<WinWriteFileHandle>(handle, "");
             }
 
-            WriteFileHandlePtr WinIOSystem::openForWriting(StringView<char> absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
+            WriteFileHandlePtr WinIOSystem::openForWriting(StringView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -422,7 +422,7 @@ namespace base
                 return openForWriting(str, mode == FileWriteMode::DirectAppend);
             }
 
-            AsyncFileHandlePtr WinIOSystem::openForAsyncReading(StringView<char> absoluteFilePath)
+            AsyncFileHandlePtr WinIOSystem::openForAsyncReading(StringView absoluteFilePath)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -449,13 +449,13 @@ namespace base
 
             //--
 
-            Buffer WinIOSystem::openMemoryMappedForReading(StringView<char> absoluteFilePath)
+            Buffer WinIOSystem::openMemoryMappedForReading(StringView absoluteFilePath)
             {
                 // TODO: right now just read into memory buffer
                 return loadIntoMemoryForReading(absoluteFilePath);
             }
 
-            Buffer WinIOSystem::loadIntoMemoryForReading(StringView<char> absoluteFilePath)
+            Buffer WinIOSystem::loadIntoMemoryForReading(StringView absoluteFilePath)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -506,7 +506,7 @@ namespace base
                 return ret;
             }
 
-            bool WinIOSystem::fileSize(StringView<char> absoluteFilePath, uint64_t& outFileSize)
+            bool WinIOSystem::fileSize(StringView absoluteFilePath, uint64_t& outFileSize)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -531,7 +531,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::fileTimeStamp(StringView<char> absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize)
+            bool WinIOSystem::fileTimeStamp(StringView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -558,12 +558,12 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::touchFile(StringView<char> absoluteFilePath)
+            bool WinIOSystem::touchFile(StringView absoluteFilePath)
             {
                 return true; // TODO
             }
 
-            bool WinIOSystem::createPath(StringView<char> absoluteFilePath)
+            bool WinIOSystem::createPath(StringView absoluteFilePath)
             {
                 TempPathStringBuffer str(absoluteFilePath);
 
@@ -588,7 +588,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::copyFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath)
+            bool WinIOSystem::copyFile(StringView srcAbsolutePath, StringView destAbsolutePath)
             {
                 ScopeTimer timer;
 
@@ -620,7 +620,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::moveFile(StringView<char> srcAbsolutePath, StringView<char> destAbsolutePath)
+            bool WinIOSystem::moveFile(StringView srcAbsolutePath, StringView destAbsolutePath)
             {
                 ScopeTimer timer;
 
@@ -652,7 +652,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::deleteFile(StringView<char> absoluteFilePath)
+            bool WinIOSystem::deleteFile(StringView absoluteFilePath)
             {
                 if (!readOnlyFlag(absoluteFilePath, false))
                     return false;
@@ -668,7 +668,7 @@ namespace base
                 return true;
             }
 
-			bool WinIOSystem::deleteDir(StringView<char> absoluteDirPath)
+			bool WinIOSystem::deleteDir(StringView absoluteDirPath)
 			{
                 TempPathStringBuffer cstr(absoluteDirPath);
                 if (!::RemoveDirectoryW(cstr))
@@ -681,7 +681,7 @@ namespace base
                 return true;
 			}
 
-            bool WinIOSystem::fileExists(StringView<char> absoluteFilePath)
+            bool WinIOSystem::fileExists(StringView absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
                 DWORD dwAttrib = GetFileAttributes(cstr);
@@ -692,7 +692,7 @@ namespace base
                 return exists;
             }
 
-            bool WinIOSystem::isFileReadOnly(StringView<char> absoluteFilePath)
+            bool WinIOSystem::isFileReadOnly(StringView absoluteFilePath)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
 
@@ -706,7 +706,7 @@ namespace base
                 return readOnly;
             }
 
-            bool WinIOSystem::readOnlyFlag(StringView<char> absoluteFilePath, bool flag)
+            bool WinIOSystem::readOnlyFlag(StringView absoluteFilePath, bool flag)
             {
                 TempPathStringBuffer cstr(absoluteFilePath);
 
@@ -733,7 +733,7 @@ namespace base
                 return true;
             }
 
-            bool WinIOSystem::findFilesInternal(TempPathStringBuffer& dirPath, TempPathStringBufferAnsi& dirPathUTF, StringView<char> searchPattern, const std::function<bool(StringView<char> fullPath, StringView<char> fileName)>& enumFunc, bool recurse)
+            bool WinIOSystem::findFilesInternal(TempPathStringBuffer& dirPath, TempPathStringBufferAnsi& dirPathUTF, StringView searchPattern, const std::function<bool(StringView fullPath, StringView fileName)>& enumFunc, bool recurse)
             {
                 auto* org = dirPath.pos();
                 auto* org2 = dirPathUTF.pos();
@@ -778,7 +778,7 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::findFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> fullPath, StringView<char> fileName)>& enumFunc, bool recurse)
+            bool WinIOSystem::findFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView fullPath, StringView fileName)>& enumFunc, bool recurse)
             {
                 if (absoluteFilePath.empty())
                     return false;
@@ -788,7 +788,7 @@ namespace base
                 return findFilesInternal(dirPath, dirPath2, searchPattern, enumFunc, recurse);
             }
 
-            bool WinIOSystem::findSubDirs(StringView<char> absoluteFilePath, const std::function<bool(StringView<char> name)>& enumFunc)
+            bool WinIOSystem::findSubDirs(StringView absoluteFilePath, const std::function<bool(StringView name)>& enumFunc)
             {
                 TempPathStringBuffer dirPath(absoluteFilePath);
                 if (dirPath.append(L"*."))
@@ -801,7 +801,7 @@ namespace base
                 return false;
             }
 
-            bool WinIOSystem::findLocalFiles(StringView<char> absoluteFilePath, StringView<char> searchPattern, const std::function<bool(StringView<char> name)>& enumFunc)
+            bool WinIOSystem::findLocalFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView name)>& enumFunc)
             {
                 TempPathStringBuffer dirPath(absoluteFilePath);
                 if (dirPath.append(searchPattern))
@@ -887,13 +887,13 @@ namespace base
                 }
             }
 
-            DirectoryWatcherPtr WinIOSystem::createDirectoryWatcher(StringView<char> path)
+            DirectoryWatcherPtr WinIOSystem::createDirectoryWatcher(StringView path)
             {
                 TempPathStringBuffer str(path);
                 return base::CreateSharedPtr<prv::WinDirectoryWatcher>(str.buffer());
             }
 
-            void WinIOSystem::showFileExplorer(StringView<char> path)
+            void WinIOSystem::showFileExplorer(StringView path)
             {
                 TempPathStringBuffer cstr(path);
 
@@ -910,7 +910,7 @@ namespace base
                 class PreserveCurrentDirectory
                 {
                 public:
-                    PreserveCurrentDirectory(StringView<char> dirToSet)
+                    PreserveCurrentDirectory(StringView dirToSet)
                     {
                         TempPathStringBuffer cstr(dirToSet);
                         GetCurrentDirectoryW(MAX_STRING, m_currentDirectory);
@@ -973,7 +973,7 @@ namespace base
                             AppendUni(outFormatString, L"]");
                             outFormatString.pushBack(0);
 
-                            AppendUni(outFormatString, UTF16StringBuf(formatFilterString.c_str()).c_str());
+                            AppendUni(outFormatString, UTF16StringVector(formatFilterString.c_str()).c_str());
                             outFormatString.pushBack(0);
 
                             outFormatNames.pushBack(StringBuf("AllSupported"));

@@ -44,12 +44,12 @@ namespace base
         public:
             virtual void processData(const void* data, uint32_t dataSize) override final
             {
-                auto line  = StringView<char>((const char*)data, dataSize);
+                auto line  = StringView((const char*)data, dataSize);
                 TRACE_INFO("JIT: {}", line);
             }
         };
 
-        bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView<char> outputModulePath, const Settings& settings)
+        bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView outputModulePath, const Settings& settings)
         {
             static bool useGCC = false;
 

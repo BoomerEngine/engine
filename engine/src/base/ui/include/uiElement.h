@@ -425,7 +425,7 @@ namespace ui
         void ignoredInAutomaticLayout(bool flag);
 
         /// set custom, simple tooltip text
-        void tooltip(base::StringView<char> tooltip);
+        void tooltip(base::StringView tooltip);
 
         /// enable dynamic column sizing
         void dynamicSizingData(bool flag);
@@ -719,10 +719,10 @@ namespace ui
         virtual void handleEnableStateChange(bool isEnabled);
 
         /// handle setting a property from a template
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value);
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value);
 
         /// handle a child property from a template
-        virtual bool handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id);
+        virtual bool handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id);
 
         /// called after all template's children were inserted
         virtual bool handleTemplateFinalize();
@@ -936,7 +936,7 @@ namespace ui
         void callPostTemplateInitialization();
 
         /// bind named properties by finding child object
-        bool bindNamedProperties(const base::HashMap<base::StringView<char>, IElement*>& namedElements);
+        bool bindNamedProperties(const base::HashMap<base::StringView, IElement*>& namedElements);
 
         //---
 

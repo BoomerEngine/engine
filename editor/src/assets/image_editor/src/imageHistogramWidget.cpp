@@ -100,7 +100,7 @@ namespace ed
         customMinSize(0, 250);
     }
 
-    void ImageHistogramWidget::addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView<char> caption)
+    void ImageHistogramWidget::addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView caption)
     {
         if (data)
         {

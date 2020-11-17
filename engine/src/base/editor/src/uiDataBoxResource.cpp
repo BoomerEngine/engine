@@ -120,8 +120,8 @@ namespace ui
 
         virtual void handleValueChange() override
         {
-            StringView<char> fileName = "Invalid";
-            StringView<char> filePath = "";
+            StringView fileName = "Invalid";
+            StringView filePath = "";
             bool fileFound = false;
 
             res::ResourceKey key;

@@ -131,7 +131,7 @@ namespace wavefront
         return true;
     }
 
-    static bool TryApplyTexture(base::res::IResourceImporterInterface& importer, const MTLMaterialImportConfig& config, base::StringView<char> mappingParams, const rendering::MaterialTemplate* knownTemplate, const MaterialMap& mtlMap, base::Array<rendering::MaterialInstanceParam>& outParams)
+    static bool TryApplyTexture(base::res::IResourceImporterInterface& importer, const MTLMaterialImportConfig& config, base::StringView mappingParams, const rendering::MaterialTemplate* knownTemplate, const MaterialMap& mtlMap, base::Array<rendering::MaterialInstanceParam>& outParams)
     {
         if (mtlMap.m_path)
         {
@@ -141,7 +141,7 @@ namespace wavefront
                 // bind to first matching param, NOTE: we only take into considerations parameters from the template
                 if (knownTemplate)
                 {
-                    base::InplaceArray<base::StringView<char>, 10> possibleParamNames;
+                    base::InplaceArray<base::StringView, 10> possibleParamNames;
                     mappingParams.slice(";", false, possibleParamNames);
 
                     for (const auto paramNameStr : possibleParamNames)

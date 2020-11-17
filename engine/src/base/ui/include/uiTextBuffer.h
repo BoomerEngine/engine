@@ -130,15 +130,15 @@ namespace ui
         ///---
 
         /// reset to contain text content
-        void text(base::StringView<char> txt);
+        void text(base::StringView txt);
 
         /// set the additional text to print AT THE END (usually units)
         /// NOTE: this text is not editable but will be displayed normally
-        void postfixText(base::StringView<char> txt);
+        void postfixText(base::StringView txt);
 
         /// set the additional text to print BEFORE (usually some form of console prompt)
         /// NOTE: this text is not editable but will be displayed normally
-        void prefixText(base::StringView<char> txt);
+        void prefixText(base::StringView txt);
 
         /// setup styles
         void style(const IElement* styleOwner);
@@ -278,7 +278,7 @@ namespace ui
 
         Size m_totalSize;
 
-        void generateChars(base::StringView<char> txt, TChars& outChars) const;
+        void generateChars(base::StringView txt, TChars& outChars) const;
         void generateLayout();
 
         void generateRangeBlock(const ElementArea& drawArea, int start, int end, base::Color color, base::canvas::Geometry& outGeometry) const;

@@ -110,7 +110,7 @@ namespace base
         , m_line(1)
     {}
 
-    StringParser::StringParser(StringView<char> view)
+    StringParser::StringParser(StringView view)
         : m_start(view.data())
         , m_cur(view.data())
         , m_end(view.data() + view.length())
@@ -186,7 +186,7 @@ namespace base
         return false;
     }
 
-    bool StringParser::parseTillTheEndOfTheLine(StringView<char>* outIdent /*= nullptr*/)
+    bool StringParser::parseTillTheEndOfTheLine(StringView* outIdent /*= nullptr*/)
     {
         const char* firstNonEmptyChar = nullptr;
         const char* lastNonEmptyChar = nullptr;
@@ -208,15 +208,15 @@ namespace base
         if (outIdent)
         {
             if (lastNonEmptyChar != nullptr && m_cur < m_end)
-                *outIdent = StringView<char>(firstNonEmptyChar, lastNonEmptyChar+1);
+                *outIdent = StringView(firstNonEmptyChar, lastNonEmptyChar+1);
             else
-                *outIdent = StringView<char>();
+                *outIdent = StringView();
         }
 
         return m_cur < m_end;
     }
 
-    bool StringParser::parseLine(StringView<char>& outValue, const char* additionalDelims/* = ""*/, bool eatLeadingWhitespaces/*=true*/)
+    bool StringParser::parseLine(StringView& outValue, const char* additionalDelims/* = ""*/, bool eatLeadingWhitespaces/*=true*/)
     {
         // eat initial whitespaces on teh line
         while (m_cur < m_end)
@@ -241,7 +241,7 @@ namespace base
         {
             if (*m_cur == '\n')
             {
-                outValue = base::StringView<char>(startPos, m_cur);
+                outValue = base::StringView(startPos, m_cur);
                 m_line += 1;
                 m_cur++;
                 return true;
@@ -249,7 +249,7 @@ namespace base
 
             if (strchr(additionalDelims, *m_cur))
             {
-                outValue = base::StringView<char>(startPos, m_cur);
+                outValue = base::StringView(startPos, m_cur);
                 m_cur++;
                 return true;
             }
@@ -260,11 +260,11 @@ namespace base
         if (startPos == m_cur)
             return false;
 
-        outValue = base::StringView<char>(startPos, m_cur);
+        outValue = base::StringView(startPos, m_cur);
         return true;
     }
 
-    bool StringParser::parseString(StringView<char>& outValue, const char* additionalDelims)
+    bool StringParser::parseString(StringView& outValue, const char* additionalDelims)
     {
         if (!parseWhitespaces())
             return false;
@@ -287,7 +287,7 @@ namespace base
                 return false;
             }
 
-            outValue = StringView<char>(stringStart, m_cur);
+            outValue = StringView(stringStart, m_cur);
             m_cur += 1;
 
             return true;
@@ -297,12 +297,12 @@ namespace base
             while (m_cur < m_end && prv::IsStringChar(*m_cur, additionalDelims))
                 m_cur += 1;
 
-            outValue = StringView<char>(startPos, m_cur);
+            outValue = StringView(startPos, m_cur);
             return true;
         }
     }
 
-    bool StringParser::parseIdentifier(StringView<char>& outIdent)
+    bool StringParser::parseIdentifier(StringView& outIdent)
     {
         if (!parseWhitespaces())
             return false;
@@ -315,13 +315,13 @@ namespace base
             m_cur += 1;
 
         ASSERT(m_cur > identStart);
-        outIdent = StringView<char>(identStart, m_cur);
+        outIdent = StringView(identStart, m_cur);
         return true;
     }
 
     bool StringParser::parseIdentifier(StringID& outName)
     {
-        StringView<char> ident;
+        StringView ident;
         if (!parseIdentifier(ident))
             return false;
 
@@ -329,7 +329,7 @@ namespace base
         return true;
     }
 
-    bool StringParser::testKeyword(StringView<char> keyword) const
+    bool StringParser::testKeyword(StringView keyword) const
     {
         auto cur  = m_cur;
         while (cur < m_end && *cur <= ' ')
@@ -347,7 +347,7 @@ namespace base
         return true;
     }
 
-    bool StringParser::parseKeyword(StringView<char> keyword)
+    bool StringParser::parseKeyword(StringView keyword)
     {
         if (!parseWhitespaces())
             return false;
@@ -446,7 +446,7 @@ namespace base
 
         if (numChars)
         {
-            if (MatchResult::OK == StringView<char>(originalPos, m_cur).match(value))
+            if (MatchResult::OK == StringView(originalPos, m_cur).match(value))
                 return true;
         }
 
@@ -526,7 +526,7 @@ namespace base
 
         if (numChars)
         {
-            if (MatchResult::OK == StringView<char>(originalPos, m_cur).match(value))
+            if (MatchResult::OK == StringView(originalPos, m_cur).match(value))
                 return true;
         }
 
@@ -603,7 +603,7 @@ namespace base
 
         if (numChars)
         {
-            if (MatchResult::OK == StringView<char>(originalPos, m_cur).match(value))
+            if (MatchResult::OK == StringView(originalPos, m_cur).match(value))
                 return true;
         }
 
@@ -662,7 +662,7 @@ namespace base
         if (numTypeBracket || numNumBracket)
             return false;
 
-        typeName = StringID(StringView<char>(m_cur, cur));
+        typeName = StringID(StringView(m_cur, cur));
         m_cur = cur;
         return true;
     }

@@ -21,7 +21,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(IBackgroundCommand, IObject);
 
     public:
-        IBackgroundCommand(StringView<char> name);
+        IBackgroundCommand(StringView name);
         virtual ~IBackgroundCommand();
 
         //---
@@ -63,7 +63,7 @@ namespace ed
     class BASE_EDITOR_API IBackgroundJob : public IReferencable
     {
     public:
-        IBackgroundJob(StringView<char> name);
+        IBackgroundJob(StringView name);
         virtual ~IBackgroundJob();
 
         //---

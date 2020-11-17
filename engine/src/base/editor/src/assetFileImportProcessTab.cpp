@@ -85,7 +85,7 @@ namespace ed
         }
     }
 
-    void AssetProcessingListModel::setFileProgress(const StringBuf& depotFileName, uint64_t count, uint64_t total, StringView<char> message)
+    void AssetProcessingListModel::setFileProgress(const StringBuf& depotFileName, uint64_t count, uint64_t total, StringView message)
     {
 
     }
@@ -120,14 +120,14 @@ namespace ed
         }
     }
 
-    static StringView<char> GetClassDisplayName(ClassType currentClass)
+    static StringView GetClassDisplayName(ClassType currentClass)
     {
         auto name = currentClass.name().view();
         name = name.afterLastOrFull("::");
         return name;
     }
 
-    StringView<char> ImportStatusToDisplayText(res::ImportStatus status, bool withIcon=false)
+    StringView ImportStatusToDisplayText(res::ImportStatus status, bool withIcon=false)
     {
         switch (status)
         {

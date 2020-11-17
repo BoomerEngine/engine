@@ -25,8 +25,8 @@ namespace rendering
 
             void translateContextPath(const base::parser::Location& loc, base::parser::Location& outAbsoluteLocation);
 
-            virtual void reportError(const base::parser::Location& loc, base::StringView<char> message) override;
-            virtual void reportWarning(const base::parser::Location& loc, base::StringView<char> message) override;
+            virtual void reportError(const base::parser::Location& loc, base::StringView message) override;
+            virtual void reportWarning(const base::parser::Location& loc, base::StringView message) override;
 
         private:
             base::res::IResourceCookerInterface& m_cooker;
@@ -45,9 +45,9 @@ namespace rendering
             void addGlobalIncludePath(const base::StringBuf& path);
 
             bool checkFileExists(const base::StringBuf& path) const;
-            bool resolveIncludeFile(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::StringBuf& outPath) const;
+            bool resolveIncludeFile(bool global, base::StringView path, base::StringView referencePath, base::StringBuf& outPath) const;
 
-            virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::Buffer& outContent, base::StringBuf& outPath) override;
+            virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath) override;
 
         private:
             base::res::IResourceCookerInterface& m_cooker;
@@ -60,8 +60,8 @@ namespace rendering
 
         // compile a shader library file (and a bunch of shaders) from given token stream
         extern RENDERING_COMPILER_API ShaderLibraryPtr CompileShaderLibrary(
-            base::StringView<char> code, // code to compile
-            base::StringView<char> contextPath, // context path to print with errors 
+            base::StringView code, // code to compile
+            base::StringView contextPath, // context path to print with errors
             base::parser::IIncludeHandler* includeHandler, // handler for any files we want to include
             base::parser::IErrorReporter& err, // where to report any errors
             base::StringID nativeGeneratorName, // GLSL, HLSL, NULL etc

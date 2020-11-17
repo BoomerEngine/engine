@@ -98,12 +98,12 @@ namespace ed
         reset();
     }
 
-    static StringView<char> ExtractFileExtension(StringView<char> assetPath)
+    static StringView ExtractFileExtension(StringView assetPath)
     {
         return assetPath.afterLastOrFull("/").afterLastOrFull("\\").afterFirst(".");
     }
 
-    static StringView<char> ExtractFileName(StringView<char> assetPath)
+    static StringView ExtractFileName(StringView assetPath)
     {
         return assetPath.afterLastOrFull("/").afterLastOrFull("\\").beforeFirstOrFull(".");
     }
@@ -371,14 +371,14 @@ namespace ed
         }
     }
 
-    static StringView<char> GetClassDisplayName(ClassType currentClass)
+    static StringView GetClassDisplayName(ClassType currentClass)
     {
         auto name = currentClass.name().view();
         name = name.afterLastOrFull("::");
         return name;
     }
 
-    static StringView<char> StaticText(AssetImportCheckStatus status)
+    static StringView StaticText(AssetImportCheckStatus status)
     {
         switch (status)
         {
@@ -468,7 +468,7 @@ namespace ed
 
                 if (auto elem = content->findChildByName<ui::TextLabel>("Status"_id))
                 {
-                    StringView<char> statusString;
+                    StringView statusString;
 
                     if (!ManagedItem::ValidateFileName(file->targetFileName))
                     {
@@ -589,7 +589,7 @@ namespace ed
         return false;
     }
 
-    const Array<SpecificClassType<res::IResource>>& AssetImportListModel::getClassesForSourceExtension(StringView<char> sourcePath) const
+    const Array<SpecificClassType<res::IResource>>& AssetImportListModel::getClassesForSourceExtension(StringView sourcePath) const
     {
         const auto ext = sourcePath.afterLast(".");
         if (const auto* list = m_classPerExtensionMap.find(ext))
@@ -686,7 +686,7 @@ namespace ed
     AssetImportPrepareTab::~AssetImportPrepareTab()
     {}
     
-    static const TImportClassRegistry& ExtractResourceForExtension(StringView<char> ext, TImportClassRegistryMap& registry)
+    static const TImportClassRegistry& ExtractResourceForExtension(StringView ext, TImportClassRegistryMap& registry)
     {
         if (const auto* classList = registry.find(ext))
             return *classList;

@@ -52,7 +52,7 @@ namespace rendering
 
     protected:
         virtual base::StringBuf chooseTitle() const override;
-        virtual void onPropertyChanged(base::StringView<char> path) override;
+        virtual void onPropertyChanged(base::StringView path) override;
 
     private:
         base::StringID m_name;

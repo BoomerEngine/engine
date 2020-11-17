@@ -60,7 +60,7 @@ namespace base
         BitmapFont::~BitmapFont()
         {}
 
-        base::Point BitmapFont::measure(base::StringView<char> txt) const
+        base::Point BitmapFont::measure(base::StringView txt) const
         {
             auto pos  = txt.data();
             auto end  = pos + txt.length();
@@ -111,7 +111,7 @@ namespace base
             return base::Point(maxX, y + m_lineHeight);
         }
 
-        base::Point BitmapFont::render(base::StringView<char> txt, base::Color initialColor, base::Array<BitmapFontPrintableGlyph>& outGlyphs) const
+        base::Point BitmapFont::render(base::StringView txt, base::Color initialColor, base::Array<BitmapFontPrintableGlyph>& outGlyphs) const
         {
             int x = 0;
             int y = 0;

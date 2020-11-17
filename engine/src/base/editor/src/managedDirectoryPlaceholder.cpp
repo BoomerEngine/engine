@@ -26,7 +26,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectoryPlaceholder);
     RTTI_END_TYPE();
 
-    ManagedDirectoryPlaceholder::ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> initialName)
+    ManagedDirectoryPlaceholder::ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName)
         : ManagedItem(depot, parentDir, initialName)
     {
         m_eventKey = MakeUniqueEventKey();
@@ -37,7 +37,7 @@ namespace ed
     {
     }
 
-    void ManagedDirectoryPlaceholder::rename(StringView<char> name)
+    void ManagedDirectoryPlaceholder::rename(StringView name)
     {
         if (ValidateFileName(name))
         {

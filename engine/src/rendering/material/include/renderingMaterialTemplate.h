@@ -45,7 +45,7 @@ namespace rendering
         virtual ~IMaterialTemplateDynamicCompiler();
 
         /// compile shaders for given material technique, when compiled the technique will be updated with new "compiled state"
-        virtual void requestTechniqueComplation(base::StringView<char> contextName, MaterialTechnique* technique) = 0;
+        virtual void requestTechniqueComplation(base::StringView contextName, MaterialTechnique* technique) = 0;
     };
 
     ///---
@@ -105,8 +105,8 @@ namespace rendering
         virtual const void* findBaseParameterDataInternal(base::StringID name, base::Type& outType) const override final;
 
         // IObject - extension of object property model that allows to see the template parameters
-        virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
-        virtual base::DataViewResult describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
+        virtual base::DataViewResult readDataView(base::StringView viewPath, void* targetData, base::Type targetType) const override;
+        virtual base::DataViewResult describeDataView(base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const override;
 
         ///---
 
@@ -117,7 +117,7 @@ namespace rendering
         void listParameters(base::rtti::DataViewInfo & outInfo) const;
 
         // describe parameter data
-        base::DataViewResult describeParameterView(base::StringView<char> paramName, base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const;
+        base::DataViewResult describeParameterView(base::StringView paramName, base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const;
 
         ///---
 

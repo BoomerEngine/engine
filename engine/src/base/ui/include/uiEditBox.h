@@ -45,7 +45,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(EditBox, ScrollArea);
 
     public:
-        EditBox(EditBoxFeatureFlags flags = EditBoxFeatureFlags(), base::StringView<char> initialText = "");
+        EditBox(EditBoxFeatureFlags flags = EditBoxFeatureFlags(), base::StringView initialText = "");
         virtual ~EditBox();
 
         ///----
@@ -65,7 +65,7 @@ namespace ui
         base::StringBuf text() const;
 
         // set text, forces regeneration of the glyph buffer and resets selection (UTF8)
-        void text(base::StringView<char> txt);
+        void text(base::StringView txt);
 
         // set validation function
         void validation(const TInputValidationFunction& func);
@@ -84,13 +84,13 @@ namespace ui
         ///----
 
         // set the non-editable postfix text (usually used for units)
-        void postfixText(base::StringView<char> txt);
+        void postfixText(base::StringView txt);
 
         // set the non-editable prefix text (usually used for simple prompt)
-        void prefixText(base::StringView<char> txt);
+        void prefixText(base::StringView txt);
 
         // set the non-editable background "hint" text that is only shown if there's no content
-        void hintText(base::StringView<char> txt);
+        void hintText(base::StringView txt);
 
         ///---
 

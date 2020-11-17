@@ -91,9 +91,9 @@ namespace base
                 }
             }
 
-            extern bool ReadArrayValue(const char*& ptr, const char* endPtr, StringView<char>& outValue);
+            extern bool ReadArrayValue(const char*& ptr, const char* endPtr, StringView& outValue);
 
-            bool NativeArrayType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+            bool NativeArrayType::parseFromString(StringView txt, void* data, uint32_t flags) const
             {
                 if (innerType()->name() == "char"_id || innerType()->name() == "char"_id)
                 {
@@ -133,7 +133,7 @@ namespace base
                             if (ch != '[')
                                 return false;
 
-                            StringView<char> value;
+                            StringView value;
                             if (!ReadArrayValue(readPtr, endPtr, value))
                                 return false;
                             itemCount += 1;
@@ -157,7 +157,7 @@ namespace base
                         if (ch != '[')
                             return false;
 
-                        StringView<char> value;
+                        StringView value;
                         if (!ReadArrayValue(readPtr, endPtr, value))
                             return false;
 

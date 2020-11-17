@@ -91,7 +91,7 @@ namespace ui
         base::ActionHistoryPtr m_actionHistory;
 
     protected:
-        virtual void handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification) override;
+        virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
 
         base::DataViewResult executeAction(const base::ActionPtr& action);
         base::DataViewResult executeAction(const base::DataViewActionResult& action);

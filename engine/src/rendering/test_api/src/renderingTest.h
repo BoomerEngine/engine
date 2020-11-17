@@ -187,7 +187,7 @@ namespace rendering
             //--
 
             // load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
-            const ShaderLibrary* loadShader(base::StringView<char> partialPath);
+            const ShaderLibrary* loadShader(base::StringView partialPath);
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
             ImageView loadImage2D(const base::StringBuf& assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
@@ -227,7 +227,7 @@ namespace rendering
             //--
 
             // report loading error
-            bool reportError(base::StringView<char> txt);
+            bool reportError(base::StringView txt);
 
         private:
             base::SpinLock m_allLoadedResourcesLock;

@@ -282,7 +282,7 @@ namespace rendering
         return false;
     }
 
-    void NativeWindowRenderer::windowSetTitle(ui::NativeWindowID id, base::StringView<char> txt)
+    void NativeWindowRenderer::windowSetTitle(ui::NativeWindowID id, base::StringView txt)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
             window->window->windowSetTitle(base::StringBuf(txt));

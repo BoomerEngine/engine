@@ -430,12 +430,12 @@ namespace ui
                                 content += 2;
 
                                 uint64_t newCode = 0;
-                                base::StringParser parser(base::StringView<char>(content, contentEnd));
+                                base::StringParser parser(base::StringView(content, contentEnd));
                                 if (parser.parseHex(newCode))
                                 {
                                     char buf[6];
                                     const auto size = base::utf8::ConvertChar(buf, (uint32_t)newCode);
-                                    builder.append(base::StringView<char>(buf, size));
+                                    builder.append(base::StringView(buf, size));
                                     content += parser.fullView().length() - parser.currentView().length();
                                 }
 

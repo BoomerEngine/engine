@@ -29,7 +29,7 @@ namespace hl2
             while (!p.parseKeyword("}"))
             {
                 // get the name
-                base::StringView<char> nameToken;
+                base::StringView nameToken;
                 if (!p.parseString(nameToken, false, true))
                     return false;
 
@@ -54,7 +54,7 @@ namespace hl2
                 }
 
                 // get value for the parameter
-                base::StringView<char> value;
+                base::StringView value;
                 if (p.parseString(value, true, false))
                 {
                     param(base::StringBuf(name), base::StringBuf(value));
@@ -108,7 +108,7 @@ namespace hl2
         bool MaterialDocument::parseDocument(base::parser::TextParser& p)
         {
             // get the name
-            base::StringView<char> name;
+            base::StringView name;
             if (!p.parseString(name, false, true))
                 return false;
 
@@ -175,7 +175,7 @@ namespace hl2
             // get path for the param
             auto textValue  = param(name).c_str();
             if (textValue && *textValue)
-                base::StringView<char>(textValue).match(value);
+                base::StringView(textValue).match(value);
 
             outParamInfos.setValue<float>(base::StringID(name), value);
             return true;

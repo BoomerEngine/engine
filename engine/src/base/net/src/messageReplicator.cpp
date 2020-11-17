@@ -128,7 +128,7 @@ namespace base
                 : m_sink(sink)
             {}
 
-            virtual void reportNewString(const replication::DataMappedID id, StringView<char> txt) override final
+            virtual void reportNewString(const replication::DataMappedID id, StringView txt) override final
             {
                 socket::BlockBuilder msg;
 
@@ -219,7 +219,7 @@ namespace base
             }
         }
 
-        bool MessageReplicator::reportDataError(StringView<char> txt)
+        bool MessageReplicator::reportDataError(StringView txt)
         {
             // TODO: silent ?
             TRACE_ERROR("MessageReplicator: error: {}", txt);
@@ -250,7 +250,7 @@ namespace base
                     if (stringLength == 0)
                         return reportDataError("String update packet with no string");
 
-                    auto text  = StringView<char>((const char*)data + sizeof(StringUpdateHeader), stringLength);
+                    auto text  = StringView((const char*)data + sizeof(StringUpdateHeader), stringLength);
                     if (!m_incomingKnowledge->rememberString(header->m_id, text))
                         return reportDataError("String update packet data collision");
 

@@ -38,13 +38,13 @@ namespace rendering
             return !m_hasErrors;
         }
 
-        void ISceneTest::reportError(base::StringView<char> msg)
+        void ISceneTest::reportError(base::StringView msg)
         {
             TRACE_ERROR("SceneTest initialization error: {}", msg);
             m_hasErrors = true;
         }
 
-        base::image::ImagePtr ISceneTest::loadImage(base::StringView<char> assetFile)
+        base::image::ImagePtr ISceneTest::loadImage(base::StringView assetFile)
         {
             auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
@@ -56,7 +56,7 @@ namespace rendering
             return imagePtr.acquire();
         }
 
-        base::FontPtr ISceneTest::loadFont(base::StringView<char> assetFile)
+        base::FontPtr ISceneTest::loadFont(base::StringView assetFile)
         {
             auto imagePtr = base::LoadResource<base::font::Font>(base::TempString("/engine/tests/fonts/{}", assetFile));
             if (!imagePtr)

@@ -18,8 +18,8 @@ namespace ui
 
     struct CompInfo
     {
-        base::StringView<char> path;
-        base::StringView<char> caption;
+        base::StringView path;
+        base::StringView caption;
     };
 
     static CompInfo VECTOR_COMPS[4] = { {"x", " X "}, {"y", " Y "}, {"z", " Z "}, {"w", " W "} };
@@ -31,7 +31,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxVector, IDataBox);
 
     public:
-        DataBoxVector(base::Type type, int numComps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView<char> units, const CompInfo* comps, bool vertical)
+        DataBoxVector(base::Type type, int numComps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView units, const CompInfo* comps, bool vertical)
             : m_comps(comps)
         {
             if (vertical)

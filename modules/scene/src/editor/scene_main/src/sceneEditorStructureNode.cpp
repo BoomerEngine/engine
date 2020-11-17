@@ -58,7 +58,7 @@ namespace ed
             return base::StringBuf::EMPTY();// m_nodeTemplate->name().view();
         }
 
-        void ContentNode::propertyChanged(base::StringView<char> path)
+        void ContentNode::propertyChanged(base::StringView path)
         {
             if (path.beginsWith("name"))
             {

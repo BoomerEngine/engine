@@ -40,7 +40,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(TypePickerBox, PopupWindow);
 
     public:
-        TypePickerBox(base::Type initialType, bool allowNullType, base::StringView<char> caption="Select type");
+        TypePickerBox(base::Type initialType, bool allowNullType, base::StringView caption="Select type");
 
         // generated OnTypeSelected when selected and general OnClosed when window itself is closed
 

@@ -80,9 +80,9 @@ namespace rendering
 
         // IObject
         virtual base::DataViewPtr createDataView() const;
-        virtual base::DataViewResult readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const override;
-        virtual base::DataViewResult writeDataView(base::StringView<char> viewPath, const void* sourceData, base::Type sourceType) override;
-        virtual base::DataViewResult describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const override;
+        virtual base::DataViewResult readDataView(base::StringView viewPath, void* targetData, base::Type targetType) const override;
+        virtual base::DataViewResult writeDataView(base::StringView viewPath, const void* sourceData, base::Type sourceType) override;
+        virtual base::DataViewResult describeDataView(base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const override;
 
         virtual bool onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource) override;
         virtual void onResourceReloadFinished(base::res::IResource* currentResource, base::res::IResource* newResource) override;
@@ -91,7 +91,7 @@ namespace rendering
 
     protected:
         virtual void onPostLoad() override;
-        virtual void onPropertyChanged(base::StringView<char> path) override;
+        virtual void onPropertyChanged(base::StringView path) override;
 
         virtual void notifyDataChanged() override;
         virtual void notifyBaseMaterialChanged() override;

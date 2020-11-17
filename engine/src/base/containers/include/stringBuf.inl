@@ -34,17 +34,17 @@ namespace base
 
     INLINE uint32_t StringBuf::CalcHash(const StringBuf& txt)
     {
-        return StringView<char>::CalcHash(txt.view());
+        return StringView::CalcHash(txt.view());
     }
 
-    INLINE uint32_t StringBuf::CalcHash(StringView<char> txt)
+    INLINE uint32_t StringBuf::CalcHash(StringView txt)
     {
-        return StringView<char>::CalcHash(txt);
+        return StringView::CalcHash(txt);
     }
 
     INLINE uint32_t StringBuf::CalcHash(const char* txt)
     {
-        return StringView<char>::CalcHash(txt);
+        return StringView::CalcHash(txt);
     }
 
     INLINE uint32_t StringBuf::cRC32() const
@@ -62,19 +62,19 @@ namespace base
         return m_data ? m_data->c_str() : "";
     }
 
-    INLINE StringView<char> StringBuf::view() const
+    INLINE StringView StringBuf::view() const
     {
-        return StringView<char>(c_str(), length());
+        return StringView(c_str(), length());
     }
 
-    INLINE StringBuf::operator StringView<char>() const
+    INLINE StringBuf::operator StringView() const
     {
         return view();
     }
 
-    INLINE UTF16StringBuf StringBuf::uni_str() const
+    INLINE UTF16StringVector StringBuf::uni_str() const
     {
-        return UTF16StringBuf(c_str());
+        return UTF16StringVector(c_str());
     }
 
     INLINE StringBuf::operator bool() const

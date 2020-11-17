@@ -30,7 +30,7 @@ namespace rendering
 
         //---
 
-        static bool ExtractVectorTypeSizes(base::StringView<char> view, uint32_t& numCols, uint32_t& numRows)
+        static bool ExtractVectorTypeSizes(base::StringView view, uint32_t& numCols, uint32_t& numRows)
         {
             base::StringParser parser(view);
 

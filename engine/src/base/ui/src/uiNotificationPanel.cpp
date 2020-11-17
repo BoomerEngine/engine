@@ -114,7 +114,7 @@ namespace ui
         }
     }
 
-    void NotificationPanel::postTextNotification(base::StringID group, base::StringView<char> txt, MessageType type /*= MessageType::Info*/, float visibleFor /*= 0.0f*/)
+    void NotificationPanel::postTextNotification(base::StringID group, base::StringView txt, MessageType type /*= MessageType::Info*/, float visibleFor /*= 0.0f*/)
     {
         if (txt)
         {
@@ -129,14 +129,14 @@ namespace ui
         }
     }
 
-    void NotificationPanel::postLargeTextNotification(base::StringID group, base::StringView<char> txt, MessageType type /*= MessageType::Info*/, float visibleFor /*= 0.0f*/)
+    void NotificationPanel::postLargeTextNotification(base::StringID group, base::StringView txt, MessageType type /*= MessageType::Info*/, float visibleFor /*= 0.0f*/)
     {
 
     }
 
     //--
 
-    void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView<char> txt)
+    void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt)
     {
         auto safeOwner = base::RefWeakPtr<IElement>(owner);
         auto safeText = base::StringBuf(txt);
@@ -163,7 +163,7 @@ namespace ui
         };
     }
 
-    void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView<char> txt)
+    void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt)
     {
         auto safeOwner = base::RefWeakPtr<IElement>(owner);
         auto safeText = base::StringBuf(txt);

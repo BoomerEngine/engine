@@ -549,7 +549,7 @@ namespace ui
         base::Array<GraphConnection> m_oldConnections;
     };
 
-    bool GraphEditor::actionRemoveBlocks(const base::Array<base::graph::BlockPtr>& blocks, base::StringView<char> desc)
+    bool GraphEditor::actionRemoveBlocks(const base::Array<base::graph::BlockPtr>& blocks, base::StringView desc)
     {
         if (blocks.empty())
             return true;
@@ -581,7 +581,7 @@ namespace ui
         return actionHistory()->execute(action);
     }
 
-    bool GraphEditor::actionRemoveBlocks(const base::Array<base::graph::Block*>& blocks, base::StringView<char> desc)
+    bool GraphEditor::actionRemoveBlocks(const base::Array<base::graph::Block*>& blocks, base::StringView desc)
     {
         if (blocks.empty())
             return true;

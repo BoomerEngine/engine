@@ -69,7 +69,7 @@ namespace ed
         virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
         virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
 
-        virtual void onPropertyChanged(base::StringView<char> path) override;
+        virtual void onPropertyChanged(base::StringView path) override;
     };
     
     //--

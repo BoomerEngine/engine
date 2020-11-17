@@ -44,7 +44,7 @@ namespace hl2
 
         typedef base::Array<base::RefPtr<Entity>> Entities;
 
-        bool parseType(base::StringView<char> txt, base::Vector3& outVector) const
+        bool parseType(base::StringView txt, base::Vector3& outVector) const
         {
             base::StringParser parser(txt);
             if (!parser.parseFloat(outVector.x)) return false;
@@ -79,7 +79,7 @@ namespace hl2
             outQuat.z = -outQuat.z;
         }
 
-        bool parseType(base::StringView<char> txt, base::Quat& outQuaternion) const
+        bool parseType(base::StringView txt, base::Quat& outQuaternion) const
         {
             base::StringParser parser(txt);
             base::Vector3 rot;
@@ -91,7 +91,7 @@ namespace hl2
             return true;
         }
 
-        bool parseType(base::StringView<char> txt, base::Color& outColor) const
+        bool parseType(base::StringView txt, base::Color& outColor) const
         {
             base::StringParser parser(txt);
             if (!parser.parseUint8(outColor.r)) return false;
@@ -100,25 +100,25 @@ namespace hl2
             return true;
         }
 
-        bool parseType(base::StringView<char> txt, float& outFloat) const
+        bool parseType(base::StringView txt, float& outFloat) const
         {
             base::StringParser parser(txt);
             if (!parser.parseFloat(outFloat)) return false;
             return true;
         }
 
-        bool parseType(base::StringView<char> txt, int& outInt) const
+        bool parseType(base::StringView txt, int& outInt) const
         {
             base::StringParser parser(txt);
             if (!parser.parseInt32(outInt)) return false;
             return true;
         }
 
-        bool parseEntities(base::StringView<char> txt, Entities& outEntities) const
+        bool parseEntities(base::StringView txt, Entities& outEntities) const
         {
             // setup parser
             base::parser::TextParser parser("Entities", base::parser::IErrorReporter::GetDefault(), base::parser::ICommentEater::StandardComments());
-            parser.reset(base::StringView<char>(txt));
+            parser.reset(base::StringView(txt));
             //base::io::SaveFileFromString(L"/home/rexdex/entities.txt", txt);
 
             // typed parameter lists
@@ -142,14 +142,14 @@ namespace hl2
                         break;
                     }
 
-                    base::StringView<char> name;
+                    base::StringView name;
                     if (!parser.parseString(name, false, true))
                     {
                         parser.error(base::TempString("Missing entity parameter name"));
                         return false;
                     }
 
-                    base::StringView<char> valueStr;
+                    base::StringView valueStr;
                     if (!parser.parseString(valueStr, false, true))
                     {
                         parser.error(base::TempString("Missing entity parameter value"));

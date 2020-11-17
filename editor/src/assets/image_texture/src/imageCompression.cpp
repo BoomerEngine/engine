@@ -362,7 +362,7 @@ namespace rendering
         return ImageContentColorSpace::SRGB;
     }
 
-    ImageContentType ChooseAutoContentType(base::StringView<char> suffix, base::image::PixelFormat format, uint32_t channels)
+    ImageContentType ChooseAutoContentType(base::StringView suffix, base::image::PixelFormat format, uint32_t channels)
     {
         if (!suffix.empty())
         {

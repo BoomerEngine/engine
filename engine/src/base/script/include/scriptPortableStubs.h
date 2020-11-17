@@ -371,7 +371,7 @@ namespace base
                 int64_t i;
             } value;
 
-            StringView<char> text; // name and string, NOTE: it's alocated from linear allocator
+            StringView text; // name and string, NOTE: it's alocated from linear allocator
 
             const StubTypeDecl* compoundType = nullptr; // compound only
             Array<const StubConstantValue*> compoundVals;
@@ -540,7 +540,7 @@ namespace base
             virtual void writeUint64(uint64_t val) = 0;
             virtual void writeFloat(float val) = 0;
             virtual void writeDouble(double val) = 0;
-            virtual void writeString(StringView<char> str) = 0;
+            virtual void writeString(StringView str) = 0;
             virtual void writeName(StringID name) = 0;
             virtual void writeRef(const Stub* otherStub) = 0;
 

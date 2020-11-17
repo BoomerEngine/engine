@@ -119,7 +119,7 @@ namespace rendering
 
     //---
 
-    void MaterialTechniqueCacheService::requestTechniqueCompilation(base::StringView<char> contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique)
+    void MaterialTechniqueCacheService::requestTechniqueCompilation(base::StringView contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique)
     {
         auto* info = MemNew(TechniqueInfo).ptr;
         info->contextName = base::StringBuf(contextName);
@@ -181,7 +181,7 @@ namespace rendering
 
     //---
 
-    uint64_t MaterialTechniqueCacheService::CalcMergedKey(base::StringView<char> contextName, uint64_t graphKey, const MaterialCompilationSetup& setup)
+    uint64_t MaterialTechniqueCacheService::CalcMergedKey(base::StringView contextName, uint64_t graphKey, const MaterialCompilationSetup& setup)
     {
         base::CRC64 crc;
         crc << contextName;
@@ -192,7 +192,7 @@ namespace rendering
 
     //--
 
-    MaterialTechniqueCacheService::FileInfo* MaterialTechniqueCacheService::getFileInfo(const base::StringView<char> depotPath)
+    MaterialTechniqueCacheService::FileInfo* MaterialTechniqueCacheService::getFileInfo(const base::StringView depotPath)
     {
         auto lock = base::CreateLock(m_sourceFileMapLock);
 

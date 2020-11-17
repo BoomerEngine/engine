@@ -55,7 +55,7 @@ namespace base
             return MakeSharedEventKey(tempString.view());
         }
 
-        bool ResourceKey::Parse(StringView<char> path, ResourceKey& outKey)
+        bool ResourceKey::Parse(StringView path, ResourceKey& outKey)
         {
             if (path.empty() || path == "null")
             {
@@ -124,7 +124,7 @@ namespace base
         return true;
     }
 
-    static bool IsValidName(StringView<char> name)
+    static bool IsValidName(StringView name)
     {
         for (const auto testName : InvalidFileNames)
             if (name.caseCmp(testName) == 0)
@@ -133,7 +133,7 @@ namespace base
         return true;
     }
 
-    bool MakeSafeFileName(StringView<char> fileName, StringBuf& outFixedFileName)
+    bool MakeSafeFileName(StringView fileName, StringBuf& outFixedFileName)
     {
         if (ValidateFileName(fileName))
         {
@@ -161,7 +161,7 @@ namespace base
         return true;
     }
 
-    bool ValidateFileName(StringView<char> txt)
+    bool ValidateFileName(StringView txt)
     {
         if (txt.empty())
             return false;
@@ -176,9 +176,9 @@ namespace base
         return true;
     }
 
-    bool ValidateFileNameWithExtension(StringView<char> text)
+    bool ValidateFileNameWithExtension(StringView text)
     {
-        StringView<char> mainPart, rest;
+        StringView mainPart, rest;
         text.splitAt(".", mainPart, rest);
 
         if (rest.empty())
@@ -193,7 +193,7 @@ namespace base
         return true;
     }
 
-    bool ValidateDepotPath(StringView<char> text, bool expectFileNameAtTheEnd)
+    bool ValidateDepotPath(StringView text, bool expectFileNameAtTheEnd)
     {
         bool absolute = text.beginsWith("/");
 
@@ -202,7 +202,7 @@ namespace base
         if (text.endsWith("/"))
             text = text.leftPart(text.length() - 1);
 
-        InplaceArray<StringView<char>, 20> parts;
+        InplaceArray<StringView, 20> parts;
         text.slice("/", true, parts);
 
         bool hadFileName = false;
@@ -240,7 +240,7 @@ namespace base
         return true;
     }
 
-    bool ValidateDepotPath(StringView<char> text, DepotPathClass pathClass)
+    bool ValidateDepotPath(StringView text, DepotPathClass pathClass)
     {
         if (pathClass == DepotPathClass::AbsoluteDirectoryPath || pathClass == DepotPathClass::AbsoluteFilePath || pathClass == DepotPathClass::AnyAbsolutePath)
         {
@@ -281,7 +281,7 @@ namespace base
         return ValidateDepotPath(text, expectFileNameAtTheEnd);
     }
 
-    DepotPathClass ClassifyDepotPath(StringView<char> path)
+    DepotPathClass ClassifyDepotPath(StringView path)
     {
         if (path.empty())
             return DepotPathClass::Invalid;
@@ -301,13 +301,13 @@ namespace base
 
     //---
 
-    bool ApplyRelativePath(StringView<char> contextPath, StringView<char> relativePath, StringBuf& outPath)
+    bool ApplyRelativePath(StringView contextPath, StringView relativePath, StringBuf& outPath)
     {
         DEBUG_CHECK_RETURN_V(ValidateDepotPath(relativePath, DepotPathClass::Any), false);
         DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
 
         // split path into parts
-        InplaceArray<StringView<char>, 20> referencePathParts;
+        InplaceArray<StringView, 20> referencePathParts;
         contextPath.slice("/", false, referencePathParts);
 
         // remove the last path that's usually the file name
@@ -319,7 +319,7 @@ namespace base
             referencePathParts.reset();
 
         // split control path
-        InplaceArray<StringView<char>, 20> pathParts;
+        InplaceArray<StringView, 20> pathParts;
         relativePath.slice("/", false, pathParts);
 
         // append
@@ -366,18 +366,18 @@ namespace base
 
     //--
 
-    bool ScanRelativePaths(StringView<char> contextPath, StringView<char> pathPartsStr, uint32_t maxScanDepth, StringBuf& outPath, const std::function<bool(StringView<char>)>& testFunc)
+    bool ScanRelativePaths(StringView contextPath, StringView pathPartsStr, uint32_t maxScanDepth, StringBuf& outPath, const std::function<bool(StringView)>& testFunc)
     {
         //DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
 
         // slice the path parts that are given, we don't assume much about their structure
-        InplaceArray<StringView<char>, 20> pathParts;
+        InplaceArray<StringView, 20> pathParts;
         pathPartsStr.slice("\\/", false, pathParts);
         if (pathParts.empty())
             return false; // nothing was given
 
         // slice the context path
-        InplaceArray<StringView<char>, 20> contextParts;
+        InplaceArray<StringView, 20> contextParts;
         contextPath.slice("/", false, contextParts);
 
         // remove the file name of the reference pat

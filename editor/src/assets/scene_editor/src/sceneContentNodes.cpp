@@ -66,7 +66,7 @@ namespace ed
         }
     }
 
-    StringBuf SceneContentNode::buildUniqueName(StringView<char> coreName, bool userGiven, const HashSet<StringBuf>* additionalTakenName) const
+    StringBuf SceneContentNode::buildUniqueName(StringView coreName, bool userGiven, const HashSet<StringBuf>* additionalTakenName) const
     {
         if (m_childrenNames.empty() && !m_children.empty())
         {

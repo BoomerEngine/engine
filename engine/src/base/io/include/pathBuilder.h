@@ -21,7 +21,7 @@ namespace base
         {
         public:
             PathBuilder();
-            PathBuilder(StringView<char> path); // may contain ../../ -> they are collapsed
+            PathBuilder(StringView path); // may contain ../../ -> they are collapsed
 
             /// get the drive name (C:\, D:\ or / under linux )
             INLINE const StringBuf& drive() const { return m_drive; }
@@ -50,7 +50,7 @@ namespace base
             PathBuilder& clear();
 
             // set new content
-            PathBuilder& reset(StringView<char> path);
+            PathBuilder& reset(StringView path);
 
 
             //--
@@ -59,10 +59,10 @@ namespace base
             PathBuilder& removeFileNameAndExtension();
 
             // set new file name
-            PathBuilder& fileName(StringView<char> fileName);
+            PathBuilder& fileName(StringView fileName);
 
             // append part to file name
-            PathBuilder& appendFileName(StringView<char> partialName);
+            PathBuilder& appendFileName(StringView partialName);
 
             //--
 
@@ -74,10 +74,10 @@ namespace base
 
             // set file main extension (the last one)
             // NOTE: empty extension is not valid and will assert (non fatal)
-            PathBuilder& extension(StringView<char> extension);
+            PathBuilder& extension(StringView extension);
 
             // add file extensions (at the end)
-            PathBuilder& addExtension(StringView<char> extension);
+            PathBuilder& addExtension(StringView extension);
 
             //--
             
@@ -85,18 +85,18 @@ namespace base
             PathBuilder& removeDirectories();
 
             // push new directory, empty directory names are ignored, pushing .. equals popping
-            PathBuilder& pushDirectory(StringView<char> directoryName);
+            PathBuilder& pushDirectory(StringView directoryName);
 
             // pop last directory, poping when path has no directories will assert (non fatal)
             PathBuilder& popDirectory();
 
             // append relative directory path
-            PathBuilder& pushDirectories(StringView<char> relativeDirectoryPath);
+            PathBuilder& pushDirectories(StringView relativeDirectoryPath);
 
             //--
 
             // set drive part
-            PathBuilder& drive(StringView<char> driverPart);
+            PathBuilder& drive(StringView driverPart);
 
             //--
 

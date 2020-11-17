@@ -33,7 +33,7 @@ namespace base
 
             void print(IFormatStream& f) const;
 
-            StringView<char> view() const;
+            StringView view() const;
 
         protected:
             const RequestArgs& m_readArgs;
@@ -62,7 +62,7 @@ namespace base
             }
 
             template<>
-            INLINE RequestArgsSetterProxy& operator=(const StringView<char>& val)
+            INLINE RequestArgsSetterProxy& operator=(const StringView& val)
             {
                 set(val);
                 return *this;
@@ -76,7 +76,7 @@ namespace base
             }
 
         private:
-            void set(StringView<char> val);
+            void set(StringView val);
 
             RequestArgs& m_writeArgs;
         };
@@ -98,7 +98,7 @@ namespace base
             struct BASE_NET_API Param
             {
                 StringID name;
-                StringView<char> value;
+                StringView value;
             };
 
             // request parameters
@@ -132,7 +132,7 @@ namespace base
 
             // add param to the request, supports adding multiple parameters
             template<>
-            INLINE RequestArgs& add(StringID key, const StringView<char>& val)
+            INLINE RequestArgs& add(StringID key, const StringView& val)
             {
                 addRaw(key, val);
                 return *this;
@@ -155,7 +155,7 @@ namespace base
             }
 
             // add param to the request, supports adding multiple parameters
-            void addRaw(StringID key, StringView<char> val);
+            void addRaw(StringID key, StringView val);
 
             //--
 
@@ -163,7 +163,7 @@ namespace base
             bool has(StringID key) const;
 
             // get value, since empty strings are NOT sent this also returns empty string when value is missing
-            StringView<char> raw(StringID key) const;
+            StringView raw(StringID key) const;
 
             template< typename T >
             INLINE T get(StringID key, const T& defaultValue = T()) const
@@ -185,7 +185,7 @@ namespace base
 
             // parse from URL string, decodes URL encoding
             // NOTE: we can have the initial & or not
-            static bool Parse(StringView<char> txt, RequestArgs& outArgs);
+            static bool Parse(StringView txt, RequestArgs& outArgs);
 
         private:
             Array<char> storage;

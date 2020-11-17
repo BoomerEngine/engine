@@ -35,7 +35,7 @@ TEST(CompileTimeCRC, CompileTimeCRCEqualsRuntimeCRC)
 TEST(MatchInteger, Match_InvalidChars)
 {
     char val = 0;
-    auto ret = base::StringView<char>("100.00").match(val);
+    auto ret = base::StringView("100.00").match(val);
     EXPECT_EQ(base::MatchResult::InvalidCharacter, ret);
     EXPECT_EQ(val, 0);
 }
@@ -43,7 +43,7 @@ TEST(MatchInteger, Match_InvalidChars)
 TEST(MatchInteger, Match_PlusConsumed)
 {
     char val = 0;
-    auto ret = base::StringView<char>("+5").match(val);
+    auto ret = base::StringView("+5").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 5);
 }
@@ -51,7 +51,7 @@ TEST(MatchInteger, Match_PlusConsumed)
 TEST(MatchInteger, Match_DoublePlusNotConsumed)
 {
     char val = 0;
-    auto ret = base::StringView<char>("++5").match(val);
+    auto ret = base::StringView("++5").match(val);
     EXPECT_EQ(base::MatchResult::InvalidCharacter, ret);
     EXPECT_EQ(val, 0);
 }
@@ -59,7 +59,7 @@ TEST(MatchInteger, Match_DoublePlusNotConsumed)
 TEST(MatchInteger, Match_DoubleMinusNotConsumed)
 {
     char val = 0;
-    auto ret = base::StringView<char>("--5").match(val);
+    auto ret = base::StringView("--5").match(val);
     EXPECT_EQ(base::MatchResult::InvalidCharacter, ret);
     EXPECT_EQ(val, 0);
 }
@@ -67,7 +67,7 @@ TEST(MatchInteger, Match_DoubleMinusNotConsumed)
 TEST(MatchInteger, Match_MinusNotConsumedForUnsigned)
 {
     uint8_t val = 0;
-    auto ret = base::StringView<char>("-5").match(val);
+    auto ret = base::StringView("-5").match(val);
     EXPECT_EQ(base::MatchResult::InvalidCharacter, ret);
     EXPECT_EQ(val, 0);
 }
@@ -77,7 +77,7 @@ TEST(MatchInteger, Match_MinusNotConsumedForUnsigned)
 TEST(MatchInteger, MatchInt8_Pos)
 {
     char val = 0;
-    auto ret = base::StringView<char>("42").match(val);
+    auto ret = base::StringView("42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42);
 }
@@ -85,7 +85,7 @@ TEST(MatchInteger, MatchInt8_Pos)
 TEST(MatchInteger, MatchInt8_Neg)
 {
     char val = 0;
-    auto ret = base::StringView<char>("-42").match(val);
+    auto ret = base::StringView("-42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -42);
 }
@@ -93,7 +93,7 @@ TEST(MatchInteger, MatchInt8_Neg)
 TEST(MatchInteger, MatchInt8_Max)
 {
     char val = 0;
-    auto ret = base::StringView<char>("127").match(val);
+    auto ret = base::StringView("127").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 127);
 }
@@ -101,7 +101,7 @@ TEST(MatchInteger, MatchInt8_Max)
 TEST(MatchInteger, MatchInt8_Min)
 {
     char val = 0;
-    auto ret = base::StringView<char>("-128").match(val);
+    auto ret = base::StringView("-128").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -128);
 }
@@ -109,7 +109,7 @@ TEST(MatchInteger, MatchInt8_Min)
 TEST(MatchInteger, MatchInt8_Overflow)
 {
     char val = 0;
-    auto ret = base::StringView<char>("128").match(val);
+    auto ret = base::StringView("128").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -117,7 +117,7 @@ TEST(MatchInteger, MatchInt8_Overflow)
 TEST(MatchInteger, MatchInt8_OverflowMin)
 {
     char val = 0;
-    auto ret = base::StringView<char>("-129").match(val);
+    auto ret = base::StringView("-129").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -125,7 +125,7 @@ TEST(MatchInteger, MatchInt8_OverflowMin)
 TEST(MatchInteger, MatchInt8_OverflowLargeNubmerWithZeros)
 {
     char val = 0;
-    auto ret = base::StringView<char>("10000").match(val);
+    auto ret = base::StringView("10000").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -134,7 +134,7 @@ TEST(MatchInteger, MatchInt8_OverflowLargeNubmerWithZeros)
 TEST(MatchInteger, MatchInt8_LeadingZerosNoOverlow)
 {
     char val = 0;
-    auto ret = base::StringView<char>("0000042").match(val);
+    auto ret = base::StringView("0000042").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42);
 }
@@ -144,7 +144,7 @@ TEST(MatchInteger, MatchInt8_LeadingZerosNoOverlow)
 TEST(MatchInteger, MatchInt16_Pos)
 {
     short val = 0;
-    auto ret = base::StringView<char>("42").match(val);
+    auto ret = base::StringView("42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42);
 }
@@ -152,7 +152,7 @@ TEST(MatchInteger, MatchInt16_Pos)
 TEST(MatchInteger, MatchInt16_Neg)
 {
     short val = 0;
-    auto ret = base::StringView<char>("-42").match(val);
+    auto ret = base::StringView("-42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -42);
 }
@@ -160,7 +160,7 @@ TEST(MatchInteger, MatchInt16_Neg)
 TEST(MatchInteger, MatchInt16_Max)
 {
     short val = 0;
-    auto ret = base::StringView<char>("32767").match(val);
+    auto ret = base::StringView("32767").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 32767);
 }
@@ -168,7 +168,7 @@ TEST(MatchInteger, MatchInt16_Max)
 TEST(MatchInteger, MatchInt16_Min)
 {
     short val = 0;
-    auto ret = base::StringView<char>("-32768").match(val);
+    auto ret = base::StringView("-32768").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -32768);
 }
@@ -176,7 +176,7 @@ TEST(MatchInteger, MatchInt16_Min)
 TEST(MatchInteger, MatchInt16_Overflow)
 {
     short val = 0;
-    auto ret = base::StringView<char>("32768").match(val);
+    auto ret = base::StringView("32768").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -184,7 +184,7 @@ TEST(MatchInteger, MatchInt16_Overflow)
 TEST(MatchInteger, MatchInt16_OverflowMin)
 {
     short val = 0;
-    auto ret = base::StringView<char>("-32769").match(val);
+    auto ret = base::StringView("-32769").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -192,7 +192,7 @@ TEST(MatchInteger, MatchInt16_OverflowMin)
 TEST(MatchInteger, MatchInt16_OverflowLargeNubmerWithZeros)
 {
     short val = 0;
-    auto ret = base::StringView<char>("100000000").match(val);
+    auto ret = base::StringView("100000000").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -201,7 +201,7 @@ TEST(MatchInteger, MatchInt16_OverflowLargeNubmerWithZeros)
 TEST(MatchInteger, MatchInt16_LeadingZerosNoOverlow)
 {
     short val = 0;
-    auto ret = base::StringView<char>("00000235").match(val);
+    auto ret = base::StringView("00000235").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 235);
 }
@@ -211,7 +211,7 @@ TEST(MatchInteger, MatchInt16_LeadingZerosNoOverlow)
 TEST(MatchInteger, MatchInt32_Pos)
 {
     int val = 0;
-    auto ret = base::StringView<char>("42").match(val);
+    auto ret = base::StringView("42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42);
 }
@@ -219,7 +219,7 @@ TEST(MatchInteger, MatchInt32_Pos)
 TEST(MatchInteger, MatchInt32_Neg)
 {
     int val = 0;
-    auto ret = base::StringView<char>("-42").match(val);
+    auto ret = base::StringView("-42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -42);
 }
@@ -227,7 +227,7 @@ TEST(MatchInteger, MatchInt32_Neg)
 TEST(MatchInteger, MatchInt32_Max)
 {
     int val = 0;
-    auto ret = base::StringView<char>("2147483647").match(val);
+    auto ret = base::StringView("2147483647").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 2147483647);
 }
@@ -235,7 +235,7 @@ TEST(MatchInteger, MatchInt32_Max)
 TEST(MatchInteger, MatchInt32_Min)
 {
     int val = 0;
-    auto ret = base::StringView<char>("-2147483648").match(val);
+    auto ret = base::StringView("-2147483648").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -(int64_t)2147483648);
 }
@@ -243,7 +243,7 @@ TEST(MatchInteger, MatchInt32_Min)
 TEST(MatchInteger, MatchInt32_Overflow)
 {
     int val = 0;
-    auto ret = base::StringView<char>("2147483648").match(val);
+    auto ret = base::StringView("2147483648").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -251,7 +251,7 @@ TEST(MatchInteger, MatchInt32_Overflow)
 TEST(MatchInteger, MatchInt32_OverflowMin)
 {
     int val = 0;
-    auto ret = base::StringView<char>("-2147483649").match(val);
+    auto ret = base::StringView("-2147483649").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -259,7 +259,7 @@ TEST(MatchInteger, MatchInt32_OverflowMin)
 TEST(MatchInteger, MatchInt32_OverflowLargeNubmerWithZeros)
 {
     int val = 0;
-    auto ret = base::StringView<char>("100000000000").match(val);
+    auto ret = base::StringView("100000000000").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -268,7 +268,7 @@ TEST(MatchInteger, MatchInt32_OverflowLargeNubmerWithZeros)
 TEST(MatchInteger, MatchInt32_LeadingZerosNoOverlow)
 {
     int val = 0;
-    auto ret = base::StringView<char>("0000234234").match(val);
+    auto ret = base::StringView("0000234234").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 234234);
 }
@@ -278,7 +278,7 @@ TEST(MatchInteger, MatchInt32_LeadingZerosNoOverlow)
 TEST(MatchInteger, MatchInt64_Pos)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("42").match(val);
+    auto ret = base::StringView("42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42);
 }
@@ -286,7 +286,7 @@ TEST(MatchInteger, MatchInt64_Pos)
 TEST(MatchInteger, MatchInt64_Neg)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("-42").match(val);
+    auto ret = base::StringView("-42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -42);
 }
@@ -294,7 +294,7 @@ TEST(MatchInteger, MatchInt64_Neg)
 TEST(MatchInteger, MatchInt64_Max)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("9223372036854775807").match(val);
+    auto ret = base::StringView("9223372036854775807").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 9223372036854775807);
 }
@@ -302,7 +302,7 @@ TEST(MatchInteger, MatchInt64_Max)
 TEST(MatchInteger, MatchInt64_Min)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("-9223372036854775808").match(val);
+    auto ret = base::StringView("-9223372036854775808").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, std::numeric_limits<int64_t>::min());
 }
@@ -310,7 +310,7 @@ TEST(MatchInteger, MatchInt64_Min)
 TEST(MatchInteger, MatchInt64_Overflow)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("9223372036854775808").match(val);
+    auto ret = base::StringView("9223372036854775808").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -318,7 +318,7 @@ TEST(MatchInteger, MatchInt64_Overflow)
 TEST(MatchInteger, MatchInt64_OverflowMin)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("-9223372036854775809").match(val);
+    auto ret = base::StringView("-9223372036854775809").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -326,7 +326,7 @@ TEST(MatchInteger, MatchInt64_OverflowMin)
 TEST(MatchInteger, MatchInt64_OverflowLargeNubmerWithZeros)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("1000000000000000000000").match(val);
+    auto ret = base::StringView("1000000000000000000000").match(val);
     EXPECT_EQ(base::MatchResult::Overflow, ret);
     EXPECT_EQ(val, 0);
 }
@@ -335,7 +335,7 @@ TEST(MatchInteger, MatchInt64_OverflowLargeNubmerWithZeros)
 TEST(MatchInteger, MatchInt64_LeadingZerosNoOverlow)
 {
     int64_t val = 0;
-    auto ret = base::StringView<char>("0000234234").match(val);
+    auto ret = base::StringView("0000234234").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 234234);
 }
@@ -345,7 +345,7 @@ TEST(MatchInteger, MatchInt64_LeadingZerosNoOverlow)
 TEST(MatchInteger, MatchFloat_Pos)
 {
     double val = 0;
-    auto ret = base::StringView<char>("42").match(val);
+    auto ret = base::StringView("42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, 42.0);
 }
@@ -353,7 +353,7 @@ TEST(MatchInteger, MatchFloat_Pos)
 TEST(MatchInteger, MatchFloat_Neg)
 {
     double val = 0;
-    auto ret = base::StringView<char>("-42").match(val);
+    auto ret = base::StringView("-42").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_EQ(val, -42.0);
 }
@@ -361,7 +361,7 @@ TEST(MatchInteger, MatchFloat_Neg)
 TEST(MatchInteger, MatchFloat_SimpleFrac)
 {
     double val = 0;
-    auto ret = base::StringView<char>("3.14").match(val);
+    auto ret = base::StringView("3.14").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_NEAR(val, 3.14, 0.001);
 }
@@ -369,7 +369,7 @@ TEST(MatchInteger, MatchFloat_SimpleFrac)
 TEST(MatchInteger, MatchFloat_OnlyFrac)
 {
     double val = 0;
-    auto ret = base::StringView<char>(".14").match(val);
+    auto ret = base::StringView(".14").match(val);
     EXPECT_EQ(base::MatchResult::OK, ret);
     EXPECT_NEAR(val, 0.14, 0.001);
 }
@@ -377,7 +377,7 @@ TEST(MatchInteger, MatchFloat_OnlyFrac)
 TEST(MatchInteger, MatchFloat_InvalidChars)
 {
     double val = 0;
-    auto ret = base::StringView<char>("124x").match(val);
+    auto ret = base::StringView("124x").match(val);
     EXPECT_EQ(base::MatchResult::InvalidCharacter, ret);
     EXPECT_EQ(val, 0);
 }
@@ -386,12 +386,12 @@ TEST(MatchInteger, MatchFloat_InvalidChars)
 
 TEST(StringMatch, WildcardMatches)
 {
-    EXPECT_TRUE(base::StringView<char>("geeks").matchPattern("g*ks"));
-    EXPECT_TRUE(base::StringView<char>("geeksforgeeks").matchPattern("ge?ks*"));
-    EXPECT_FALSE(base::StringView<char>("gee").matchPattern("g*k"));
-    EXPECT_FALSE(base::StringView<char>("pqrst").matchPattern("*pqrs"));
-    EXPECT_TRUE(base::StringView<char>("abcdhghgbcd").matchPattern("abc*bcd"));
-    EXPECT_FALSE(base::StringView<char>("abc*c?d").matchPattern("abcd"));
-    EXPECT_TRUE(base::StringView<char>("abcd").matchPattern("*c*d"));
-    EXPECT_TRUE(base::StringView<char>("abcd").matchPattern("*?c*d"));
+    EXPECT_TRUE(base::StringView("geeks").matchPattern("g*ks"));
+    EXPECT_TRUE(base::StringView("geeksforgeeks").matchPattern("ge?ks*"));
+    EXPECT_FALSE(base::StringView("gee").matchPattern("g*k"));
+    EXPECT_FALSE(base::StringView("pqrst").matchPattern("*pqrs"));
+    EXPECT_TRUE(base::StringView("abcdhghgbcd").matchPattern("abc*bcd"));
+    EXPECT_FALSE(base::StringView("abc*c?d").matchPattern("abcd"));
+    EXPECT_TRUE(base::StringView("abcd").matchPattern("*c*d"));
+    EXPECT_TRUE(base::StringView("abcd").matchPattern("*?c*d"));
 }

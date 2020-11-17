@@ -185,7 +185,7 @@ namespace wavefront
         RTTI_DECLARE_VIRTUAL_CLASS(FormatOBJAssetLoader, base::res::ISourceAssetLoader);
 
     public:
-        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView<char> importPath, base::StringView<char> contextPath, base::Buffer data) const override
+        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView importPath, base::StringView contextPath, base::Buffer data) const override
         {
             return LoadObjectFile(contextPath, data.data(), data.size(), true);
         }

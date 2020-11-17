@@ -97,7 +97,7 @@ namespace base
             /// post status update, will replace the previous status update
             /// this status will be sent next time somebody asks us about it
             /// NOTE: on windows the last status is also displayed on the Console Window title bar
-            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text);
+            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text);
 
             //--
 
@@ -126,12 +126,12 @@ namespace base
         public:
             CommandNameMetadata();
 
-            INLINE base::StringView<char> name() const { return m_name; }
+            INLINE base::StringView name() const { return m_name; }
 
-            INLINE void name(base::StringView<char> name) { m_name = name; }
+            INLINE void name(base::StringView name) { m_name = name; }
 
         private:
-            base::StringView<char> m_name;
+            base::StringView m_name;
         };
 
         //--

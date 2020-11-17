@@ -78,7 +78,7 @@ namespace base
         //--
 
         // try to parse value from text into this variant (will override current data)
-        bool setFromString(StringView<char> txt);
+        bool setFromString(StringView txt);
 
         // write text representation of the value (no debug info, pure value)
         void getAsString(IFormatStream& f) const;

@@ -17,7 +17,7 @@ namespace base
         PathBuilder::PathBuilder()
         {}
 
-        PathBuilder::PathBuilder(StringView<char> path)
+        PathBuilder::PathBuilder(StringView path)
         {
             reset(path);
         }
@@ -131,7 +131,7 @@ namespace base
 
         } // helper
 
-        PathBuilder& PathBuilder::reset(StringView<char> view)
+        PathBuilder& PathBuilder::reset(StringView view)
         {
             clear();
 
@@ -173,13 +173,13 @@ namespace base
             return *this;
         }
 
-        PathBuilder& PathBuilder::fileName(StringView<char> fileName)
+        PathBuilder& PathBuilder::fileName(StringView fileName)
         {
             m_fileName = StringBuf(fileName);
             return *this;
         }
 
-        PathBuilder& PathBuilder::appendFileName(StringView<char> partialName)
+        PathBuilder& PathBuilder::appendFileName(StringView partialName)
         {
             m_fileName = TempString("{}{}", m_fileName, partialName);
             return *this;
@@ -199,14 +199,14 @@ namespace base
             return *this;
         }
 
-        PathBuilder& PathBuilder::extension(StringView<char> extension)
+        PathBuilder& PathBuilder::extension(StringView extension)
         {
             m_extensions.clear();
             m_extensions.emplaceBack(extension);
             return *this;
         }
 
-        PathBuilder& PathBuilder::addExtension(StringView<char> extension)
+        PathBuilder& PathBuilder::addExtension(StringView extension)
         {
             m_extensions.emplaceBack(extension);
             return *this;
@@ -219,7 +219,7 @@ namespace base
             return *this;
         }
 
-        PathBuilder& PathBuilder::pushDirectory(StringView<char> directoryName)
+        PathBuilder& PathBuilder::pushDirectory(StringView directoryName)
         {
             if (directoryName == "." || directoryName.empty())
                 return *this;
@@ -240,7 +240,7 @@ namespace base
             return *this;
         }
 
-        PathBuilder& PathBuilder::pushDirectories(StringView<char> relativeDirectoryPath)
+        PathBuilder& PathBuilder::pushDirectories(StringView relativeDirectoryPath)
         {
             auto cur  = relativeDirectoryPath.data(); // TODO!
 
@@ -251,7 +251,7 @@ namespace base
             return *this;
         }
 
-        PathBuilder& PathBuilder::drive(StringView<char> driverPart)
+        PathBuilder& PathBuilder::drive(StringView driverPart)
         {
             m_drive = StringBuf(driverPart);
             return *this;

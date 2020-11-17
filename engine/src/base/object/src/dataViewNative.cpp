@@ -44,7 +44,7 @@ namespace base
     {
     }
 
-    DataViewResult DataViewNative::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
+    DataViewResult DataViewNative::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (m_object)
         {
@@ -57,7 +57,7 @@ namespace base
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult DataViewNative::readDataView(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult DataViewNative::readDataView(StringView viewPath, void* targetData, Type targetType) const
     {
         if (m_object)
             return m_object->readDataView(viewPath, targetData, targetType);
@@ -65,7 +65,7 @@ namespace base
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult DataViewNative::readDefaultDataView(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult DataViewNative::readDefaultDataView(StringView viewPath, void* targetData, Type targetType) const
     {
         if (m_object && m_object->cls())
         {
@@ -79,7 +79,7 @@ namespace base
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult DataViewNative::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const
+    DataViewResult DataViewNative::writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const
     {
         // TODO: prevalidate ?
 
@@ -92,7 +92,7 @@ namespace base
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult DataViewNative::resetToDefaultValue(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult DataViewNative::resetToDefaultValue(StringView viewPath, void* targetData, Type targetType) const
     {
         return writeDataView(viewPath, targetData, targetType);
     }
@@ -102,7 +102,7 @@ namespace base
     struct ActionWriteProperty : public IAction
     {
     public:
-        ActionWriteProperty(const DataViewNative* view, StringView<char> viewPath, rtti::DataHolder&& oldValue, rtti::DataHolder&& newValue, bool oldValueIdDefault=false, bool newValueIsDefault=false)
+        ActionWriteProperty(const DataViewNative* view, StringView viewPath, rtti::DataHolder&& oldValue, rtti::DataHolder&& newValue, bool oldValueIdDefault=false, bool newValueIsDefault=false)
             : m_newValue(std::move(newValue))
             , m_oldValue(std::move(oldValue))
             , m_newValueIsDefaultValue(newValueIsDefault)
@@ -166,12 +166,12 @@ namespace base
         StringBuf m_path;
     };
 
-    bool DataViewNative::checkIfCurrentlyADefaultValue(StringView<char> viewPath) const
+    bool DataViewNative::checkIfCurrentlyADefaultValue(StringView viewPath) const
     {
         return false;
     }
 
-    DataViewActionResult DataViewNative::actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const
+    DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const
     {
         // protect read only objects
         if (m_readOnly)
@@ -203,7 +203,7 @@ namespace base
 
     //--
 
-    DataViewActionResult DataViewNative::actionValueReset(StringView<char> viewPath) const
+    DataViewActionResult DataViewNative::actionValueReset(StringView viewPath) const
     {
         // protect read only objects
         if (m_readOnly)
@@ -239,7 +239,7 @@ namespace base
         return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(defaultValue), currentValueIsDefaultValue, true);
     }
 
-    DataViewActionResult DataViewNative::actionArrayClear(StringView<char> viewPath) const
+    DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
     {
         // protect read only objects
         if (m_readOnly)
@@ -268,24 +268,24 @@ namespace base
         return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
     }
 
-    DataViewActionResult DataViewNative::actionArrayInsertElement(StringView<char> viewPath, uint32_t index) const
+    DataViewActionResult DataViewNative::actionArrayInsertElement(StringView viewPath, uint32_t index) const
     {
         return DataViewResultCode::ErrorIllegalOperation;
     }
 
-    DataViewActionResult DataViewNative::actionArrayRemoveElement(StringView<char> viewPath, uint32_t index) const
+    DataViewActionResult DataViewNative::actionArrayRemoveElement(StringView viewPath, uint32_t index) const
     {
         return DataViewResultCode::ErrorIllegalOperation;
     }
 
-    DataViewActionResult DataViewNative::actionArrayNewElement(StringView<char> viewPath) const
+    DataViewActionResult DataViewNative::actionArrayNewElement(StringView viewPath) const
     {
         return DataViewResultCode::ErrorIllegalOperation;
     }
     
     //---
 
-    DataViewActionResult DataViewNative::actionObjectClear(StringView<char> viewPath) const
+    DataViewActionResult DataViewNative::actionObjectClear(StringView viewPath) const
     {
         // describe the data view to know the type and if it even can be reset
         rtti::DataViewInfo info;
@@ -329,7 +329,7 @@ namespace base
         return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
     }
 
-    DataViewActionResult DataViewNative::actionObjectNew(StringView<char> viewPath, ClassType objectClass) const
+    DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassType objectClass) const
     {
         // describe the data view to know the type and if it even can be reset
         rtti::DataViewInfo info;

@@ -19,7 +19,7 @@ namespace base
     public:
         ClipboardData();
         ClipboardData(const StringBuf& txt);
-        ClipboardData(const UTF16StringBuf& txt);
+        ClipboardData(const UTF16StringVector& txt);
         ClipboardData(const Buffer& buffer, StringID type);
         INLINE ClipboardData(const ClipboardData& other) = default;
         INLINE ClipboardData(ClipboardData&& other) = default;
@@ -44,7 +44,7 @@ namespace base
         StringBuf stringDataUTF8() const;
 
         // extract as string
-        UTF16StringBuf stringDataUTF16() const;
+        UTF16StringVector stringDataUTF16() const;
 
     private:
         StringID m_type;

@@ -16,12 +16,12 @@
 namespace base
 {
 
-    bool ParseFromString(StringView<char> txt, Type expectedType, void* outData)
+    bool ParseFromString(StringView txt, Type expectedType, void* outData)
     {
         return expectedType->parseFromString(txt, outData);
     }
 
-    bool ParseFromString(StringView<char> txt, Type expectedType, Variant& outVariant)
+    bool ParseFromString(StringView txt, Type expectedType, Variant& outVariant)
     {
         Variant holden(expectedType); // Remember the Cant!
         if (!expectedType->parseFromString(txt, holden.data()))

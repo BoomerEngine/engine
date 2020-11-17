@@ -24,7 +24,7 @@ namespace base
             other.m_class = nullptr;
         }
 
-        INLINE ResourceKey::ResourceKey(StringView<char> path, SpecificClassType<IResource> classType)
+        INLINE ResourceKey::ResourceKey(StringView path, SpecificClassType<IResource> classType)
             : m_class(classType)
             , m_path(path)
         {
@@ -78,7 +78,7 @@ namespace base
             return m_class;
         }
 
-        INLINE StringView<char> ResourceKey::view() const
+        INLINE StringView ResourceKey::view() const
         {
             return m_path.view();
         }
@@ -90,22 +90,22 @@ namespace base
 
         //--
 
-        INLINE StringView<char> ResourceKey::fileName() const
+        INLINE StringView ResourceKey::fileName() const
         {
             return m_path.view().afterLastOrFull("/");
         }
 
-        INLINE StringView<char> ResourceKey::fileStem() const
+        INLINE StringView ResourceKey::fileStem() const
         {
             return fileName().beforeFirstOrFull(".");
         }
 
-        INLINE StringView<char> ResourceKey::extension() const
+        INLINE StringView ResourceKey::extension() const
         {
             return fileName().afterFirst(".");
         }
 
-        INLINE StringView<char> ResourceKey::directories() const
+        INLINE StringView ResourceKey::directories() const
         {
             return m_path.view().beforeLast("/");
         }

@@ -38,7 +38,7 @@ namespace example
         GeometryPtr m_geometry[2];
         StringBuf m_name;
 
-        virtual void onPropertyChanged(StringView<char> path) override;
+        virtual void onPropertyChanged(StringView path) override;
 
         void buildGeometry();
         void buildGeometry(GeometryBuilder& outBuilder, bool flip) const;
@@ -54,7 +54,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GameSpriteSequenceAsset, base::IObject);
 
     public:
-        GameSpriteSequenceAsset(StringView<char> baseDepotPath, uint32_t numFrames, float fps, int downsample=0);
+        GameSpriteSequenceAsset(StringView baseDepotPath, uint32_t numFrames, float fps, int downsample=0);
 
         INLINE const Vector2& size() const { return m_size; }
 
@@ -119,7 +119,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GameTerrianAsset, base::IObject);
 
     public:
-        GameTerrianAsset(float tileSize, StringView<char> baseDepotPath, uint32_t numTiles);
+        GameTerrianAsset(float tileSize, StringView baseDepotPath, uint32_t numTiles);
 
         INLINE float tileSize() const { return m_tileSize; }
 

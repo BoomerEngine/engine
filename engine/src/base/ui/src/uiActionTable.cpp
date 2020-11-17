@@ -111,7 +111,7 @@ namespace ui
             m_keys.emplaceBack(base::input::KeyCode::KEY_LBRACKET, "LBracket");
         }
 
-        base::input::KeyCode code(base::StringView<char> name) const
+        base::input::KeyCode code(base::StringView name) const
         {
             for (const auto& key : m_keys)
                 if (0 == key.m_name.compareWithNoCase(name))
@@ -166,16 +166,16 @@ namespace ui
     {}
 
     KeyShortcut::KeyShortcut(const char* txt)
-        : KeyShortcut(base::StringView<char>(txt))
+        : KeyShortcut(base::StringView(txt))
     {}
 
-    KeyShortcut::KeyShortcut(base::StringView<char> txt)
+    KeyShortcut::KeyShortcut(base::StringView txt)
     {
         bool shift = false, ctrl = false, alt = false;
         base::StringParser parser(txt);
         for (;;)
         {
-            base::StringView<char> part;
+            base::StringView part;
             if (!parser.parseString(part, "+"))
                 break;
 

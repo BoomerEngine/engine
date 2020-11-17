@@ -178,12 +178,12 @@ namespace base
                 : m_err(err)
             {}
 
-            virtual void reportError(const parser::Location& loc, StringView<char> message) override final
+            virtual void reportError(const parser::Location& loc, StringView message) override final
             {
                 m_err.reportError(loc.contextName(), loc.line(), message);
             }
 
-            virtual void reportWarning(const parser::Location& loc, StringView<char> message) override final
+            virtual void reportWarning(const parser::Location& loc, StringView message) override final
             {
                 m_err.reportWarning(loc.contextName(), loc.line(), message);
             }

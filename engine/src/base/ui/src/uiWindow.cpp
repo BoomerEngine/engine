@@ -29,7 +29,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("Window");
     RTTI_END_TYPE();
 
-    Window::Window(WindowFeatureFlags flags, base::StringView<char> title)
+    Window::Window(WindowFeatureFlags flags, base::StringView title)
         : m_title(title)
         , m_flags(flags)
     {
@@ -128,7 +128,7 @@ namespace ui
         requests->requestedSize = screenSize;
     }
 
-    void Window::requestTitleChange(base::StringView<char> newTitle)
+    void Window::requestTitleChange(base::StringView newTitle)
     {
         if (m_title != newTitle)
         {

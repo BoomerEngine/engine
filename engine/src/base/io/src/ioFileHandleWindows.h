@@ -28,7 +28,7 @@ namespace base
             class WinReadFileHandle : public IReadFileHandle
             {
             public:
-                WinReadFileHandle(HANDLE hSyncFile, const StringView<char> path);
+                WinReadFileHandle(HANDLE hSyncFile, const StringView path);
                 virtual ~WinReadFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }
@@ -50,7 +50,7 @@ namespace base
             class WinWriteFileHandle : public IWriteFileHandle
             {
             public:
-                WinWriteFileHandle(HANDLE hSyncFile, StringView<char> path);
+                WinWriteFileHandle(HANDLE hSyncFile, StringView path);
                 virtual ~WinWriteFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }
@@ -97,7 +97,7 @@ namespace base
             class WinAsyncFileHandle : public IAsyncFileHandle
             {
             public:
-                WinAsyncFileHandle(HANDLE hAsyncFile, StringView<char> origin, uint64_t size, WinAsyncReadDispatcher* dispatcher);
+                WinAsyncFileHandle(HANDLE hAsyncFile, StringView origin, uint64_t size, WinAsyncReadDispatcher* dispatcher);
                 virtual ~WinAsyncFileHandle();
 
                 INLINE HANDLE handle() const { return m_hHandle; }

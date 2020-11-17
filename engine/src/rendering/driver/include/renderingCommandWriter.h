@@ -31,8 +31,8 @@ namespace rendering
         class RENDERING_DRIVER_API CommandWriter : public base::NoCopy
         {
         public:
-            CommandWriter(CommandBuffer* buffer, base::StringView<char> scopeName = base::StringView<char>()); // NOTE: buffer is reset, that's the only legal way we can write to it
-            CommandWriter(base::StringView<char> scopeName = base::StringView<char>()); // NOTE: buffer is reset, that's the only legal way we can write to it
+            CommandWriter(CommandBuffer* buffer, base::StringView scopeName = base::StringView()); // NOTE: buffer is reset, that's the only legal way we can write to it
+            CommandWriter(base::StringView scopeName = base::StringView()); // NOTE: buffer is reset, that's the only legal way we can write to it
             ~CommandWriter();
 
             //--
@@ -72,7 +72,7 @@ namespace rendering
             //---
 
             /// begin a debug block
-            void opBeginBlock(base::StringView<char> name, base::StringView<char> file="", uint32_t line=0);
+            void opBeginBlock(base::StringView name, base::StringView file="", uint32_t line=0);
 
             /// end debug block
             void opEndBlock();
@@ -353,7 +353,7 @@ namespace rendering
         struct CommandWriterBlock : public base::NoCopy
         {
         public:
-            INLINE CommandWriterBlock(CommandWriter& cmd, base::StringView<char> name)
+            INLINE CommandWriterBlock(CommandWriter& cmd, base::StringView name)
             {
                 if (name)
                 {

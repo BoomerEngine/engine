@@ -202,7 +202,7 @@ namespace base
 #endif
 
 #if 0
-    void VoxelizedShape::debugSave(const VoxelizedGridSettings& grid, StringView<char> debugFile) const
+    void VoxelizedShape::debugSave(const VoxelizedGridSettings& grid, StringView debugFile) const
     {
         FILE* f = fopen(debugFile.ansi_str().c_str(), "w");
         if (f != NULL)

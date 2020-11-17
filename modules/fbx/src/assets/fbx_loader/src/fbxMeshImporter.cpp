@@ -120,7 +120,7 @@ namespace fbx
         return false;
     }
     
-    static base::StringID ConformMaterialName(base::StringView<char> name)
+    static base::StringID ConformMaterialName(base::StringView name)
     {
         base::StringBuilder txt;
 
@@ -135,7 +135,7 @@ namespace fbx
 
     }
 
-    /*static void ExportMaterial(base::StringView<char> name, const FbxSurfaceMaterial* material, base::mesh::MeshMaterial& outMaterial)
+    /*static void ExportMaterial(base::StringView name, const FbxSurfaceMaterial* material, base::mesh::MeshMaterial& outMaterial)
     {
         // we are always FBX material
         outMaterial.name = ConformMaterialName(name);

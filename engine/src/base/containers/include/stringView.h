@@ -32,24 +32,24 @@ namespace base
 
     /// View of a string buffer
     template< typename T = char >
-    class StringView
+    class BaseStringView
     {
     public:
-        INLINE StringView();
-        INLINE StringView(const T* start, uint32_t length = INDEX_MAX); // computes the length automatically if not provided
-        INLINE StringView(const T* start, const T* end);
-        INLINE StringView(const ConstArrayIterator<T>& start, const ConstArrayIterator<T>& end);
-        INLINE StringView(const StringView<T>& other);
-        INLINE StringView(StringView<T>&& other);
-        INLINE StringView(const Buffer& rawData);
+        INLINE BaseStringView();
+        INLINE BaseStringView(const T* start, uint32_t length = INDEX_MAX); // computes the length automatically if not provided
+        INLINE BaseStringView(const T* start, const T* end);
+        INLINE BaseStringView(const ConstArrayIterator<T>& start, const ConstArrayIterator<T>& end);
+        INLINE BaseStringView(const BaseStringView<T>& other);
+        INLINE BaseStringView(BaseStringView<T>&& other);
+        INLINE BaseStringView(const Buffer& rawData);
 
         template< uint32_t N >
-        INLINE StringView(const BaseTempString<N>& tempString);
+        INLINE BaseStringView(const BaseTempString<N>& tempString);
 
-        INLINE StringView& operator=(const StringView<T>& other);
-        INLINE StringView& operator=(StringView<T>&& other);
+        INLINE BaseStringView& operator=(const BaseStringView<T>& other);
+        INLINE BaseStringView& operator=(BaseStringView<T>&& other);
 
-        INLINE ~StringView();
+        INLINE ~BaseStringView();
 
         //--------------------------
 
@@ -65,12 +65,12 @@ namespace base
 
         //--------------------------
 
-        INLINE bool operator==(const StringView<T>& other) const;
-        INLINE bool operator!=(const StringView<T>& other) const;
-        INLINE bool operator<(const StringView<T>& other) const;
-        INLINE bool operator<=(const StringView<T>& other) const;
-        INLINE bool operator>(const StringView<T>& other) const;
-        INLINE bool operator>=(const StringView<T>& other) const;
+        INLINE bool operator==(const BaseStringView<T>& other) const;
+        INLINE bool operator!=(const BaseStringView<T>& other) const;
+        INLINE bool operator<(const BaseStringView<T>& other) const;
+        INLINE bool operator<=(const BaseStringView<T>& other) const;
+        INLINE bool operator>(const BaseStringView<T>& other) const;
+        INLINE bool operator>=(const BaseStringView<T>& other) const;
 
         //-----------------------------------------------------------------------------
 
@@ -78,96 +78,96 @@ namespace base
 
         //-----------------------------------------------------------------------------
 
-        INLINE int cmp(const StringView<T>& other, uint64_t count = INDEX_MAX) const;
+        INLINE int cmp(const BaseStringView<T>& other, uint64_t count = INDEX_MAX) const;
 
-        INLINE int caseCmp(const StringView<T>& other, uint32_t count = INDEX_MAX) const;
+        INLINE int caseCmp(const BaseStringView<T>& other, uint32_t count = INDEX_MAX) const;
 
         //-----------------------------------------------------------------------------
 
         // get N left characters, at most to the length of the string
-        INLINE StringView<T> leftPart(uint32_t count) const;
+        INLINE BaseStringView<T> leftPart(uint32_t count) const;
 
         // get N right characters, at most to the length of the string
-        INLINE StringView<T> rightPart(uint32_t count) const;
+        INLINE BaseStringView<T> rightPart(uint32_t count) const;
 
         // get N characters starting at given position, at most till the end of the string
-        INLINE StringView<T> subString(uint32_t first, uint32_t count = INDEX_MAX) const;
+        INLINE BaseStringView<T> subString(uint32_t first, uint32_t count = INDEX_MAX) const;
 
         // split string into left and right part
-        INLINE void split(uint32_t index, StringView<T>& outLeft, StringView<T>& outRight) const;
+        INLINE void split(uint32_t index, BaseStringView<T>& outLeft, BaseStringView<T>& outRight) const;
 
         // split string at the occurrence of the pattern into left and right part
-        INLINE bool splitAt(const StringView<T>& str, StringView<T>& outLeft, StringView<T>& outRight) const;
+        INLINE bool splitAt(const BaseStringView<T>& str, BaseStringView<T>& outLeft, BaseStringView<T>& outRight) const;
 
         /// slice string into parts using the chars from the set
-        INLINE void slice(const char* splitChars, bool keepEmpty, Array< StringView >& outTokens) const;
+        INLINE void slice(const char* splitChars, bool keepEmpty, Array< BaseStringView >& outTokens) const;
 
         //-----------------------------------------------------------------------------
 
         /// trim whitespaces at the start of the string, may return empty string
-        INLINE StringView<T> trimLeft() const;
+        INLINE BaseStringView<T> trimLeft() const;
 
         /// trim whitespaces at the end of the string, may return empty string
-        INLINE StringView<T> trimRight() const;
+        INLINE BaseStringView<T> trimRight() const;
 
         /// trim whitespaces at both ends
-        INLINE StringView<T> trim() const;
+        INLINE BaseStringView<T> trim() const;
 
         /// trim tailing numbers (Mesh01 -> Mesh), may return an empty string
-        INLINE StringView<T> trimTailNumbers(uint32_t* outNumber=nullptr) const;
+        INLINE BaseStringView<T> trimTailNumbers(uint32_t* outNumber=nullptr) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE int findStr(const StringView& pattern, int firstPosition = 0) const;
-        INLINE int findRevStr(const StringView& pattern, int firstPosition = std::numeric_limits<int>::max()) const;
-        INLINE int findStrNoCase(const StringView& pattern, int firstPosition = 0) const;
-        INLINE int findRevStrNoCase(const StringView& pattern, int firstPosition = std::numeric_limits<int>::max()) const;
+        INLINE int findStr(const BaseStringView& pattern, int firstPosition = 0) const;
+        INLINE int findRevStr(const BaseStringView& pattern, int firstPosition = std::numeric_limits<int>::max()) const;
+        INLINE int findStrNoCase(const BaseStringView& pattern, int firstPosition = 0) const;
+        INLINE int findRevStrNoCase(const BaseStringView& pattern, int firstPosition = std::numeric_limits<int>::max()) const;
 
         INLINE int findFirstChar(T ch) const;
         INLINE int findLastChar(T ch) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE bool beginsWith(const StringView& pattern) const;
-        INLINE bool beginsWithNoCase(const StringView& pattern) const;
+        INLINE bool beginsWith(const BaseStringView& pattern) const;
+        INLINE bool beginsWithNoCase(const BaseStringView& pattern) const;
 
-        INLINE bool endsWith(const StringView& pattern) const;
-        INLINE bool endsWithNoCase(const StringView& pattern) const;
-
-        //-----------------------------------------------------------------------------
-
-        INLINE StringView<T> afterFirst(const StringView<T>& pattern) const;
-        INLINE StringView<T> afterFirstNoCase(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> beforeFirst(const StringView<T>& pattern) const;
-        INLINE StringView<T> beforeFirstNoCase(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> afterLast(const StringView<T>& pattern) const;
-        INLINE StringView<T> afterLastNoCase(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> beforeLast(const StringView<T>& pattern) const;
-        INLINE StringView<T> beforeLastNoCase(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> afterFirstOrFull(const StringView<T>& pattern) const;
-        INLINE StringView<T> afterFirstNoCaseOrFull(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> beforeFirstOrFull(const StringView<T>& pattern) const;
-        INLINE StringView<T> beforeFirstNoCaseOrFull(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> afterLastOrFull(const StringView<T>& pattern) const;
-        INLINE StringView<T> afterLastNoCaseOrFull(const StringView<T>& pattern) const;
-
-        INLINE StringView<T> beforeLastOrFull(const StringView<T>& pattern) const;
-        INLINE StringView<T> beforeLastNoCaseOrFull(const StringView<T>& pattern) const;
+        INLINE bool endsWith(const BaseStringView& pattern) const;
+        INLINE bool endsWithNoCase(const BaseStringView& pattern) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE StringView<T> fileName() const; // lena.png.bak (empty for directories)
-        INLINE StringView<T> fileStem() const; // lena (not empty for directories)
-        INLINE StringView<T> extensions() const; // .png.bak
-        INLINE StringView<T> lastExtension() const; // .bak
-        INLINE StringView<T> baseDirectory() const; // Z:\test\files\lena.png -> "Z:\test\files\"
-        INLINE StringView<T> parentDirectory() const; // Z:\test\files\ -> "Z:\test\"
+        INLINE BaseStringView<T> afterFirst(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> afterFirstNoCase(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> beforeFirst(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> beforeFirstNoCase(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> afterLast(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> afterLastNoCase(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> beforeLast(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> beforeLastNoCase(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> afterFirstOrFull(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> afterFirstNoCaseOrFull(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> beforeFirstOrFull(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> beforeFirstNoCaseOrFull(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> afterLastOrFull(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> afterLastNoCaseOrFull(const BaseStringView<T>& pattern) const;
+
+        INLINE BaseStringView<T> beforeLastOrFull(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringView<T> beforeLastNoCaseOrFull(const BaseStringView<T>& pattern) const;
+
+        //-----------------------------------------------------------------------------
+
+        INLINE BaseStringView<T> fileName() const; // lena.png.bak (empty for directories)
+        INLINE BaseStringView<T> fileStem() const; // lena (not empty for directories)
+        INLINE BaseStringView<T> extensions() const; // .png.bak
+        INLINE BaseStringView<T> lastExtension() const; // .bak
+        INLINE BaseStringView<T> baseDirectory() const; // Z:\test\files\lena.png -> "Z:\test\files\"
+        INLINE BaseStringView<T> parentDirectory() const; // Z:\test\files\ -> "Z:\test\"
 
         //-----------------------------------------------------------------------------
 
@@ -188,17 +188,17 @@ namespace base
         //-----------------------------------------------------------------------------
 
         // match string to pattern
-        INLINE bool matchString(const StringView<T>& pattern) const;
-        INLINE bool matchStringNoCase(const StringView<T>& pattern) const;
+        INLINE bool matchString(const BaseStringView<T>& pattern) const;
+        INLINE bool matchStringNoCase(const BaseStringView<T>& pattern) const;
 
         // match a pattern or sub string
-        INLINE bool matchPattern(const StringView<T>& pattern) const;
-        INLINE bool matchPatternNoCase(const StringView<T>& pattern) const;
+        INLINE bool matchPattern(const BaseStringView<T>& pattern) const;
+        INLINE bool matchPatternNoCase(const BaseStringView<T>& pattern) const;
 
         //-----------------------------------------------------------------------------
 
         // compute hash of the string
-        INLINE static uint32_t CalcHash(StringView<T> txt);
+        INLINE static uint32_t CalcHash(BaseStringView<T> txt);
 
         // compute 32-bit crc
         INLINE uint32_t calcCRC32(uint32_t crc = CRC32Init) const;
@@ -236,7 +236,7 @@ namespace base
     class PathEater
     {
     public:
-        INLINE PathEater(StringView<T> str, bool pureDirPath = false)
+        INLINE PathEater(BaseStringView<T> str, bool pureDirPath = false)
         {
             m_pureDirPath = pureDirPath;
             m_begin = str.data();
@@ -251,9 +251,9 @@ namespace base
         }
 
         /// get rest of the path
-        INLINE StringView<char> restOfThePath() const
+        INLINE BaseStringView<char> restOfThePath() const
         {
-            return StringView<char>(m_cur, m_end);
+            return BaseStringView<char>(m_cur, m_end);
         }
 
         /// reset parsing
@@ -263,7 +263,7 @@ namespace base
         }
 
         /// eat next part
-        INLINE StringView<char> eatDirectoryName()
+        INLINE BaseStringView<char> eatDirectoryName()
         {
             // try to extract stuff
             auto start  = m_cur;
@@ -274,7 +274,7 @@ namespace base
                 {
                     auto length = m_cur - start;
                     m_cur += 1;
-                    return StringView<char>(start, length);
+                    return BaseStringView<char>(start, length);
                 }
 
                 // go to next char
@@ -283,11 +283,11 @@ namespace base
 
             // in the pure path the last entry is a dir as well even without the "/"
             if (m_pureDirPath && m_cur > start && !*m_cur)
-                return StringView<char>(start, m_end);
+                return BaseStringView<char>(start, m_end);
 
             // not a directory
             m_cur = start;
-            return StringView<char>();
+            return BaseStringView<char>();
         }
 
     private:
@@ -300,6 +300,11 @@ namespace base
 
         T m_temp[MAX_PART_SIZE];
     };
+
+    //-----------------------------------------------------------------------------
+
+    using StringView = BaseStringView<char>;
+    using UTF16StringView = BaseStringView<wchar_t>;
 
     //-----------------------------------------------------------------------------
 

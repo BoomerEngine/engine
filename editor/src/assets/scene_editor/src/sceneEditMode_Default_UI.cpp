@@ -38,7 +38,7 @@ namespace ed
 {
     //--
 
-    static bool ValidNodeName(StringView<char> name)
+    static bool ValidNodeName(StringView name)
     {
         if (name.empty())
             return false;
@@ -774,7 +774,7 @@ namespace ed
         }
     }
 
-    SceneNodeTransformValuesBox::Elem SceneNodeTransformValuesBox::createElem(ui::IElement* row, StringID style, StringView<char> caption, SceneNodeTransformValueFieldType field)
+    SceneNodeTransformValuesBox::Elem SceneNodeTransformValuesBox::createElem(ui::IElement* row, StringID style, StringView caption, SceneNodeTransformValueFieldType field)
     {
         SceneNodeTransformValuesBox::Elem ret;
 

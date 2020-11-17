@@ -255,7 +255,7 @@ namespace base
 
     //--
 
-    DataViewResult IObject::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
+    DataViewResult IObject::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (viewPath.empty())
         {
@@ -272,7 +272,7 @@ namespace base
         return cls()->describeDataView(viewPath, this, outInfo);
     }
 
-    DataViewResult IObject::readDataView(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult IObject::readDataView(StringView viewPath, void* targetData, Type targetType) const
     {
         if (viewPath == "__cls")
         {
@@ -282,7 +282,7 @@ namespace base
         return cls()->readDataView(viewPath, this, targetData, targetType.ptr());
     }
 
-    DataViewResult IObject::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType)
+    DataViewResult IObject::writeDataView(StringView viewPath, const void* sourceData, Type sourceType)
     {
         if (!onPropertyChanging(viewPath, sourceData, sourceType))
             return DataViewResultCode::ErrorIllegalOperation;
@@ -303,12 +303,12 @@ namespace base
 
     //--
 
-    bool IObject::onPropertyChanging(StringView<char> path, const void* newData, Type newDataType) const
+    bool IObject::onPropertyChanging(StringView path, const void* newData, Type newDataType) const
     {
         return true;
     }
 
-    void IObject::onPropertyChanged(StringView<char> path)
+    void IObject::onPropertyChanged(StringView path)
     {
         markModified();
         TRACE_INFO("OnPropertyChanged prop '{}', this 0x{}", path, Hex((uint64_t)this));
@@ -375,7 +375,7 @@ namespace base
 
     //--
 
-    xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView<char> rootNodeName /*= "object"*/)
+    xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView rootNodeName /*= "object"*/)
     {
         auto ret = xml::CreateDocument(rootNodeName);
         if (ret && object)

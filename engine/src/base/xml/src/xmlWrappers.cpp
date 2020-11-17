@@ -54,14 +54,14 @@ namespace base
             }
         }
 
-        Node Node::firstChild(StringView<char> childName /*= nullptr*/) const
+        Node Node::firstChild(StringView childName /*= nullptr*/) const
         {
             if (m_document)
                 return Node(m_document, m_document->nodeFirstChild(m_id, childName));
             return Node();
         }
 
-        Node Node::sibling(StringView<char> siblingName /*= nullptr*/) const
+        Node Node::sibling(StringView siblingName /*= nullptr*/) const
         {
             if (m_document)
                 return Node(m_document, m_document->nodeSibling(m_id, siblingName));
@@ -75,14 +75,14 @@ namespace base
             return Node();
         }
 
-        StringView<char> Node::name() const
+        StringView Node::name() const
         {
             if (m_document)
                 return m_document->nodeName(m_id);
             return "";
         }
 
-        StringView<char> Node::value() const
+        StringView Node::value() const
         {
             if (m_document)
                 return m_document->nodeValue(m_id);
@@ -117,13 +117,13 @@ namespace base
 
         //--
 
-        void Node::writeValue(StringView<char> txt)
+        void Node::writeValue(StringView txt)
         {
             if (m_document && m_id)
                 m_document->nodeValue(m_id, txt);
         }
 
-        void Node::writeAttribute(StringView<char> name, StringView<char> value)
+        void Node::writeAttribute(StringView name, StringView value)
         {
             DEBUG_CHECK_EX(name, "Attribute name should be specified");
 
@@ -131,7 +131,7 @@ namespace base
                 m_document->nodeAttribute(m_id, name, value);
         }
         
-        Node Node::writeChild(StringView<char> childName)
+        Node Node::writeChild(StringView childName)
         {
             DEBUG_CHECK_EX(childName, "Child name should be specified");
 
@@ -144,7 +144,7 @@ namespace base
 
         //--
 
-        StringView<char> Node::attribute(StringView<char> name, StringView<char> defaultVal) const
+        StringView Node::attribute(StringView name, StringView defaultVal) const
         {
             if (m_document)
             {
@@ -157,7 +157,7 @@ namespace base
             return defaultVal;
         }
 
-        int Node::attributeInt(StringView<char> name, int defaultValue) const
+        int Node::attributeInt(StringView name, int defaultValue) const
         {
             int ret = defaultValue;
 
@@ -171,7 +171,7 @@ namespace base
             return ret;
         }
 
-        float Node::attributeFloat(StringView<char> name, float defaultValue) const
+        float Node::attributeFloat(StringView name, float defaultValue) const
         {
             float ret = defaultValue;
 
@@ -185,7 +185,7 @@ namespace base
             return ret;
         }
 
-        bool Node::attributeBool(StringView<char> name, bool defaultValue) const
+        bool Node::attributeBool(StringView name, bool defaultValue) const
         {
             bool ret = defaultValue;
 
@@ -199,7 +199,7 @@ namespace base
             return ret;
         }
 
-        StringBuf Node::attributeString(StringView<char> name, StringView<char> defaultValue) const
+        StringBuf Node::attributeString(StringView name, StringView defaultValue) const
         {
             if (m_document)
             {
@@ -213,13 +213,13 @@ namespace base
 
         //--
 
-        NodeIterator::NodeIterator(const IDocument* doc, StringView<char> name)
+        NodeIterator::NodeIterator(const IDocument* doc, StringView name)
         {
             if (doc)
                 m_current = Node(doc, doc->nodeFirstChild(doc->root(), name));
         }
 
-        NodeIterator::NodeIterator(Node node, StringView<char> name)
+        NodeIterator::NodeIterator(Node node, StringView name)
         {
             if (node)
                 m_current = node.firstChild(name);

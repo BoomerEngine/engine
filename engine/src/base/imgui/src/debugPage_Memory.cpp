@@ -236,7 +236,7 @@ namespace base
 
         float m_secondTimeout;
 
-        int createPool(int parentID, base::StringView<char> name)
+        int createPool(int parentID, base::StringView name)
         {
             auto nameStr = base::StringID(name);
 
@@ -258,9 +258,9 @@ namespace base
             return id;
         }
 
-        int createPoolPath(base::StringView<char> fullName)
+        int createPoolPath(base::StringView fullName)
         {
-            base::InplaceArray<base::StringView<char>, 4> parts;
+            base::InplaceArray<base::StringView, 4> parts;
             fullName.slice(".", false, parts);
 
             int id = createPool(INDEX_NONE, "Root");

@@ -90,7 +90,7 @@ namespace base
                     m_pages.pushBack(page);
     }
 
-    DebugPageService::MenuEntry* DebugPageService::GetOrCreateEntry(Array<MenuEntry>& entries, StringView<char> name)
+    DebugPageService::MenuEntry* DebugPageService::GetOrCreateEntry(Array<MenuEntry>& entries, StringView name)
     {
         for (auto& entry : entries)
             if (entry.name == name)
@@ -118,7 +118,7 @@ namespace base
             const auto groupName = prop->group().view();
             if (prop->name() == "IsVisible" && groupName.beginsWith("DebugPage.") && prop->type() == reflection::GetTypeObject<bool>())
             {
-                InplaceArray<StringView<char>, 4> nameParts;
+                InplaceArray<StringView, 4> nameParts;
                 groupName.afterFirst("DebugPage.").slice(".", false, nameParts);
 
                 auto* cur = &m_menu;

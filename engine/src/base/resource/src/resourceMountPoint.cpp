@@ -23,7 +23,7 @@ namespace base
             return TheRootMountPoint;
         }
 
-        ResourceMountPoint::ResourceMountPoint(StringView<char> stringPath)
+        ResourceMountPoint::ResourceMountPoint(StringView stringPath)
         {
             if (!stringPath.empty())
             {
@@ -40,14 +40,14 @@ namespace base
             }
         }
 
-        bool ResourceMountPoint::containsPath(StringView<char> path) const
+        bool ResourceMountPoint::containsPath(StringView path) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AnyAbsolutePath), false);
 
             return path.beginsWith(m_path);
         }
 
-        bool ResourceMountPoint::translatePathToRelative(StringView<char> path, StringBuf& outRelativePath) const
+        bool ResourceMountPoint::translatePathToRelative(StringView path, StringBuf& outRelativePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AnyAbsolutePath), false);
 
@@ -60,7 +60,7 @@ namespace base
             return true;
         }
 
-        void ResourceMountPoint::expandPathFromRelative(StringView<char> relativePath, StringBuf& fullPath) const
+        void ResourceMountPoint::expandPathFromRelative(StringView relativePath, StringBuf& fullPath) const
         {
             if (!relativePath.empty())
             {

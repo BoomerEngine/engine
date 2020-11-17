@@ -75,7 +75,7 @@ namespace ed
         TRACE_WARNING("Depot populated in {}", timer);
     }        
 
-    ManagedDirectory* ManagedDepot::createPath(StringView<char> depotPath, const char** leftOver)
+    ManagedDirectory* ManagedDepot::createPath(StringView depotPath, const char** leftOver)
     {
         // get the root path
         auto curDir = root();
@@ -93,7 +93,7 @@ namespace ed
                 // extract directory name
                 if (path > start)
                 {
-                    auto dirName = StringView<char>(start, path);
+                    auto dirName = StringView(start, path);
 
                     // use existing directory or create a new one
                     auto childDir = curDir->directory(dirName);
@@ -126,7 +126,7 @@ namespace ed
         return curDir;
     }
 
-    ManagedDirectory* ManagedDepot::findPath(StringView<char> depotPath, const char** leftOver /*= nullptr*/) const
+    ManagedDirectory* ManagedDepot::findPath(StringView depotPath, const char** leftOver /*= nullptr*/) const
     {
         auto curDir = root();
         if (!curDir)
@@ -143,7 +143,7 @@ namespace ed
                 // extract directory name
                 if (path > start)
                 {
-                    auto dirName = StringView<char>(start, path);
+                    auto dirName = StringView(start, path);
                     if (dirName == ".boomer")
                         return nullptr;
 
@@ -170,7 +170,7 @@ namespace ed
         return curDir;
     }
 
-    ManagedFile* ManagedDepot::findManagedFile(StringView<char> depotPath) const
+    ManagedFile* ManagedDepot::findManagedFile(StringView depotPath) const
     {
         if (depotPath)
         {
@@ -182,7 +182,7 @@ namespace ed
         return nullptr;
     }
 
-    static bool InterestedInFile(StringView<char> txt)
+    static bool InterestedInFile(StringView txt)
     {
         auto ext = txt.afterLast(".");
         if (0 == ext.caseCmp("bak")) return false;
@@ -258,7 +258,7 @@ namespace ed
 
     base::ConfigProperty<double> cvManagedDepotDirectoryRefreshTimeout("Editor.ManagedDepot", "DirectoryRefreshTimeout", 0.5);
 
-    void ManagedDepot::handleDepotFileNotificataion(StringView<char> path)
+    void ManagedDepot::handleDepotFileNotificataion(StringView path)
     {
         auto parentDirPath = StringBuf(path.beforeLast("/"));
         TRACE_INFO("ManagedDepot: Reported changes in directory '{}'", parentDirPath);

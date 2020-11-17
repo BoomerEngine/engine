@@ -29,7 +29,7 @@ namespace base
 
             //--
 
-            static bool Parse(StringView<char> txt, DateTime& out);
+            static bool Parse(StringView txt, DateTime& out);
             static DateTime Now();
 
             //--
@@ -88,10 +88,10 @@ namespace base
 
             // parsing helpers
             static void SkipWhitespaces(const char*& txt, const char* endTxt);
-            static bool ParseText(const char*& txt, const char* endTxt, StringView<char>& outText, char aditionalDelimiter = 0);
+            static bool ParseText(const char*& txt, const char* endTxt, StringView& outText, char aditionalDelimiter = 0);
             static bool ParseText(const char*& txt, const char* endTxt, StringBuf& outText, char aditionalDelimiter = 0);
             static bool ParseLineEnd(const char*& txt, const char* endTxt);
-            static bool ProcessHeaderParam(StringView<char> name, StringView<char> value, RequestHeader& outHeader);
+            static bool ProcessHeaderParam(StringView name, StringView value, RequestHeader& outHeader);
         };
 
         //----
@@ -125,7 +125,7 @@ namespace base
 
             RefPtr<RequestHeader> m_currentHeader;
 
-            void reportError(const StringView<char> txt);
+            void reportError(const StringView txt);
         };
 
         //---

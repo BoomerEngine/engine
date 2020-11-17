@@ -36,7 +36,7 @@ namespace base
 
     //--
 
-    GlobalEventKey MakeUniqueEventKey(StringView<char> debugInfo)
+    GlobalEventKey MakeUniqueEventKey(StringView debugInfo)
     {
         GlobalEventKey ret;
         ret.m_key = GGlobalEventKeyCounter++;
@@ -51,7 +51,7 @@ namespace base
         DECLARE_SINGLETON(SharedEventKeyRepository);
 
     public:
-        GlobalEventKey mapPathToKey(StringView<char> path)
+        GlobalEventKey mapPathToKey(StringView path)
         {
             auto lock = CreateLock(m_keysMapLock);
 
@@ -76,7 +76,7 @@ namespace base
         }
     };
 
-    GlobalEventKey MakeSharedEventKey(StringView<char> path)
+    GlobalEventKey MakeSharedEventKey(StringView path)
     {
         return SharedEventKeyRepository::GetInstance().mapPathToKey(path);
     }

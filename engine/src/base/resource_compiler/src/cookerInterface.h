@@ -20,28 +20,28 @@ namespace base
         class CookerInterface : public IResourceCookerInterface
         {
         public:
-            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView<char> referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
+            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
             virtual ~CookerInterface();
 
             virtual bool checkCancelation() const override final;
-            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
+            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
             virtual const StringBuf& queryResourcePath() const override final;
             virtual const ResourceMountPoint& queryResourceMountPoint() const override final;
             virtual const StringBuf& queryResourceContextName() const override final;
-            virtual bool queryResolvedPath(StringView<char> relativePath, StringView<char> contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) override final;
-            virtual bool queryContextName(StringView<char> fileSystemPath, StringBuf& contextName) override final;
-            virtual bool queryFileExists(StringView<char> fileSystemPath) const override final;
+            virtual bool queryResolvedPath(StringView relativePath, StringView contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) override final;
+            virtual bool queryContextName(StringView fileSystemPath, StringBuf& contextName) override final;
+            virtual bool queryFileExists(StringView fileSystemPath) const override final;
 
-            virtual bool discoverResolvedPaths(StringView<char> relativeDirPath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths) override final;
+            virtual bool discoverResolvedPaths(StringView relativeDirPath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths) override final;
 
-            virtual io::ReadFileHandlePtr createReader(StringView<char> fileSystemPath) override final;
-            virtual Buffer loadToBuffer(StringView<char> fileSystemPath) override final;
-            virtual bool loadToString(StringView<char> fileSystemPath, StringBuf& outContent) override final;
+            virtual io::ReadFileHandlePtr createReader(StringView fileSystemPath) override final;
+            virtual Buffer loadToBuffer(StringView fileSystemPath) override final;
+            virtual bool loadToString(StringView fileSystemPath, StringBuf& outContent) override final;
 
             virtual ResourceHandle loadDependencyResource(const ResourceKey& key) override final;
 
-            virtual bool findFile(StringView<char> contextPath, StringView<char> inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth = 2) override final;
+            virtual bool findFile(StringView contextPath, StringView inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth = 2) override final;
 
             virtual bool finalCooker() const override final;
 
@@ -65,9 +65,9 @@ namespace base
 
             IProgressTracker* m_externalProgressTracker = nullptr;
 
-            bool touchFile(StringView<char> systemPath);
+            bool touchFile(StringView systemPath);
 
-            void enumFiles(StringView<char> systemPath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp);
+            void enumFiles(StringView systemPath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp);
         };
 
     } // depot

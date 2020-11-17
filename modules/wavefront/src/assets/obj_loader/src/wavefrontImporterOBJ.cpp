@@ -205,7 +205,7 @@ namespace wavefront
         return key;
     }
     
-    static GroupBuildModelType DetermineModelType(StringView<char> name, uint8_t& outLodIndex)
+    static GroupBuildModelType DetermineModelType(StringView name, uint8_t& outLodIndex)
     {
         if (name.endsWithNoCase("_LOD0"))
         {
@@ -801,7 +801,7 @@ namespace wavefront
 
     //--
 
-    static base::StringBuf BuildMaterialFileName(base::StringView<char> name, uint32_t materialIndex)
+    static base::StringBuf BuildMaterialFileName(base::StringView name, uint32_t materialIndex)
     {
         static const auto ext = base::res::IResource::GetResourceExtensionForClass(rendering::MaterialInstance::GetStaticClass());
 
@@ -814,7 +814,7 @@ namespace wavefront
         return TempString("{}.{}", fileName, ext);
     }
 
-    static void EmitDepotPath(const base::Array<base::StringView<char>>& pathParts, base::IFormatStream& f)
+    static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
     {
         f << "/";
 
@@ -825,9 +825,9 @@ namespace wavefront
         }
     }
 
-    static void GlueDepotPath(base::StringView<char> path, bool isFileName, base::Array<base::StringView<char>>& outPathParts)
+    static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
     {
-        base::InplaceArray<base::StringView<char>, 10> pathParts;
+        base::InplaceArray<base::StringView, 10> pathParts;
         path.slice("/\\", false, pathParts);
 
         // skip the file name itself
@@ -857,9 +857,9 @@ namespace wavefront
         }
     }
 
-    static base::StringBuf BuildMaterialDepotPath(base::StringView<char> referenceDepotPath, base::StringView<char> materialImportPath, base::StringView<char> materialFileName)
+    static base::StringBuf BuildMaterialDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
     {
-        base::InplaceArray<base::StringView<char>, 20> pathParts;
+        base::InplaceArray<base::StringView, 20> pathParts;
         GlueDepotPath(referenceDepotPath, true, pathParts);
         GlueDepotPath(materialImportPath, false, pathParts);
 
@@ -871,7 +871,7 @@ namespace wavefront
         return txt.toString();
     }
 
-    rendering::MaterialInstancePtr BuildSingleMaterial(base::res::IResourceImporterInterface& importer, const OBJMeshImportConfig& cfg, base::StringView<char> name, const rendering::MaterialInstance* existingMaterial, base::StringView<char> materialLibraryName, uint32_t materialIndex)
+    rendering::MaterialInstancePtr BuildSingleMaterial(base::res::IResourceImporterInterface& importer, const OBJMeshImportConfig& cfg, base::StringView name, const rendering::MaterialInstance* existingMaterial, base::StringView materialLibraryName, uint32_t materialIndex)
     {
         // find the material file
         const auto materialFileName = BuildMaterialFileName(name, materialIndex);

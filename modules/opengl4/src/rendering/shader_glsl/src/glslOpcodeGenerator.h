@@ -37,8 +37,8 @@ namespace rendering
             base::parser::IErrorReporter& m_err;
             bool m_hasErrors;
 
-            void reportError(const base::parser::Location& loc, base::StringView<char> message);
-            void reportWarning(const base::parser::Location& loc, base::StringView<char> message);
+            void reportError(const base::parser::Location& loc, base::StringView message);
+            void reportWarning(const base::parser::Location& loc, base::StringView message);
 
             base::HashSet<base::StringID> m_allowedBuiltInInputs;
             base::HashSet<base::StringID> m_allowedBuiltInOutputs;
@@ -148,9 +148,9 @@ namespace rendering
             base::StringBuilder m_blockTypes; // type declarations, mostly structures
             base::StringBuilder m_blockConstants; // constant values that were moved outside due to size (mostly arrays)
 
-            base::HashMap<base::StringID, base::StringView<char>> m_nativeFunctionMapping;
-            base::HashMap<base::StringID, base::StringView<char>> m_binaryFunctionMapping;
-            base::HashMap<base::StringID, base::StringView<char>> m_unaryFunctionMapping;
+            base::HashMap<base::StringID, base::StringView> m_nativeFunctionMapping;
+            base::HashMap<base::StringID, base::StringView> m_binaryFunctionMapping;
+            base::HashMap<base::StringID, base::StringView> m_unaryFunctionMapping;
 
             typedef void (*TCustomPrintFunction)(GLSL_FUNCTION);
             base::HashMap<base::StringID, TCustomPrintFunction> m_customFunctionPrinters;
@@ -188,7 +188,7 @@ namespace rendering
             void printCompoundName(const compiler::CompositeType& compound, base::IFormatStream& f);
             void printCompoundDeclaration(const compiler::CompositeType& compound, base::IFormatStream& f);
             void printCompoundMembers(const compiler::CompositeType& compound, base::IFormatStream& f);
-            void printDataType(const base::parser::Location& location, const compiler::DataType& dataType, base::StringView<char> varName, base::IFormatStream& f);
+            void printDataType(const base::parser::Location& location, const compiler::DataType& dataType, base::StringView varName, base::IFormatStream& f);
             void printDataParam(const base::parser::Location& location, Function& func, const compiler::DataParameter* param, base::IFormatStream& f);
             void printDataConstant(const base::parser::Location& location, const compiler::DataValue& param, const compiler::DataType& type, base::IFormatStream& f);
             void printNativeCall(Function& function, const compiler::CodeNode* node, const compiler::INativeFunction* nativeFunc, base::IFormatStream& f);
@@ -222,7 +222,7 @@ namespace rendering
             //static void PrintFuncBufferLoad(GLSL_FUNCTION);
             //static void PrintFuncBufferStore(GLSL_FUNCTION);
 
-            void printAtomicFunctionCore(Function& function, base::StringView<char> functionStem, const compiler::CodeNode* node, base::IFormatStream& f);
+            void printAtomicFunctionCore(Function& function, base::StringView functionStem, const compiler::CodeNode* node, base::IFormatStream& f);
 
             static void PrintFuncAtomicIncrement(GLSL_FUNCTION);
             static void PrintFuncAtomicDecrement(GLSL_FUNCTION);

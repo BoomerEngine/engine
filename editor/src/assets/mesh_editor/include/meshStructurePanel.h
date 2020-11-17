@@ -33,7 +33,7 @@ namespace ed
             {}
         };
 
-        MeshStructureNode(base::StringView<char> txt, base::StringID type, Data data = Data());
+        MeshStructureNode(base::StringView txt, base::StringID type, Data data = Data());
         virtual ~MeshStructureNode();
 
         INLINE const base::StringBuf& caption() const { return m_caption; }

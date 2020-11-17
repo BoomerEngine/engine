@@ -358,31 +358,31 @@ namespace base
                 {
                     for (POSIXFileIterator it(absoluteFilePath, L"*.", false, true); it; ++it)
                     {
-                        auto newAbsoluteFilePath = absoluteFilePath.addDir(UTF16StringBuf(it.fileName()));
+                        auto newAbsoluteFilePath = absoluteFilePath.addDir(UTF16StringVector(it.fileName()));
                         findFiles(newAbsoluteFilePath, searchPattern, absoluteFiles, recurse);
                     }
                 }
             }
 
-            void POSIXIOSystem::findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames)
+            void POSIXIOSystem::findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringVector >& outDirectoryNames)
             {
                 for (POSIXFileIterator it(absoluteFilePath, L"*.", false, true); it; ++it)
                     outDirectoryNames.emplaceBack(it.fileName());
             }
 
-            void POSIXIOSystem::findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames)
+            void POSIXIOSystem::findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringVector >& outFileNames)
             {
                 for (POSIXFileIterator it(absoluteFilePath, searchPattern, true, false); it; ++it)
                     outFileNames.emplaceBack(it.fileName());
             }
 
-            static UTF16StringBuf GetHomeDirectory()
+            static UTF16StringVector GetHomeDirectory()
             {
                 const char *homedir;
                 if ((homedir = getenv("HOME")) == NULL)
                     homedir = getpwuid(getuid())->pw_dir;
 
-                UTF16StringBuf ret(homedir);
+                UTF16StringVector ret(homedir);
                 ret += "/";
                 return ret;
             }
@@ -397,7 +397,7 @@ namespace base
                     {
                         auto length = readlink("/proc/self/exe", buffer, 512);
                         buffer[length] = 0;
-                        return io::StringBuf::Build(UTF16StringBuf(buffer));
+                        return io::StringBuf::Build(UTF16StringVector(buffer));
                     }
 
                     case PathCategory::ExecutableDir:
@@ -466,7 +466,7 @@ namespace base
                 }
             }
 
-            static void SliceString(const wchar_t* str, wchar_t breakCh, Array< UTF16StringBuf >& outTokens)
+            static void SliceString(const wchar_t* str, wchar_t breakCh, Array< UTF16StringVector >& outTokens)
             {
                 const wchar_t* start = str;
                 for (;; )
@@ -550,8 +550,8 @@ namespace base
                 buffer.pushBack(0);
 
                 // convert to unicode
-                auto uniString = UTF16StringBuf(buffer.typedData());
-                base::Array<UTF16StringBuf> paths;
+                auto uniString = UTF16StringVector(buffer.typedData());
+                base::Array<UTF16StringVector> paths;
                 SliceString(uniString.c_str(), '|', paths);
 
                 // emit paths
@@ -573,7 +573,7 @@ namespace base
                 return !outPaths.empty();
             }
 
-            bool POSIXIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData)
+            bool POSIXIOSystem::showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringVector& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData)
             {
                 // change directory
                 if (!persistentData.m_directory.empty())
@@ -620,7 +620,7 @@ namespace base
                 }
 
                 // convert to path
-                auto path = StringBuf::Build(UTF16StringBuf(data));
+                auto path = StringBuf::Build(UTF16StringVector(data));
                 if (path.empty())
                     return false;
 

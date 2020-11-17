@@ -56,20 +56,20 @@ namespace base
 
             //--
 
-            uint32_t mapString(StringView<char> txt);
+            uint32_t mapString(StringView txt);
             uint16_t mapName(StringID name);
 
             uint16_t mapType(StringID typeName);
             uint16_t mapType(Type type);
 
-            uint16_t mapPath(StringView<char> path);
-            uint16_t mapPath(uint16_t parent, StringView<char> elem);
+            uint16_t mapPath(StringView path);
+            uint16_t mapPath(uint16_t parent, StringView elem);
 
             uint16_t mapProperty(StringID classType, StringID propName);
             uint16_t mapProperty(const FileTables::Property& prop);
             uint16_t mapProperty(const rtti::Property* prop);
 
-            uint16_t mapImport(StringID classType, StringView<char> importPath, bool async);
+            uint16_t mapImport(StringID classType, StringView importPath, bool async);
             uint16_t mapImport(const FileTables::Import& importInfo);
         };
 

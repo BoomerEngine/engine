@@ -20,7 +20,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedItem);
     RTTI_END_TYPE();
 
-    ManagedItem::ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName)
+    ManagedItem::ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
         : m_directory(parentDir)
         , m_name(fileName)
         , m_depot(depot)
@@ -85,7 +85,7 @@ namespace ed
         L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9", L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9"
     };
 
-    static bool IsValidName(StringView<wchar_t> name)
+    static bool IsValidName(BaseStringView<wchar_t> name)
     {
         for (const auto testName : InvalidFileNames)
             if (name == testName)
@@ -94,9 +94,9 @@ namespace ed
         return true;
     }
 
-    bool ManagedItem::ValidateFileName(StringView<char> txt)
+    bool ManagedItem::ValidateFileName(StringView txt)
     {
-        UTF16StringBuf wide(txt);
+        UTF16StringVector wide(txt);
 
         if (txt.empty())
             return false;
@@ -110,7 +110,7 @@ namespace ed
         return true;
     }
 
-    bool ManagedItem::ValidateDirectoryName(StringView<char> txt)
+    bool ManagedItem::ValidateDirectoryName(StringView txt)
     {
         return ValidateFileName(txt);
     }

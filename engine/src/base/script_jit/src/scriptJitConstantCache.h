@@ -33,13 +33,13 @@ namespace base
             //--
 
             /// map a string constant
-            StringView<char> mapStringConst(const char* stringConst);
+            StringView mapStringConst(const char* stringConst);
 
             /// map a name constant
-            StringView<char> mapNameConst(const char* nameConst);
+            StringView mapNameConst(const char* nameConst);
 
             /// map a type constant
-            StringView<char> mapTypeConst(const char* typeConst);
+            StringView mapTypeConst(const char* typeConst);
 
         private:
             mem::LinearAllocator& m_mem;
@@ -51,7 +51,7 @@ namespace base
 
             struct Constant
             {
-                StringView<char> m_varName;
+                StringView m_varName;
                 const char* m_string;
             };
 

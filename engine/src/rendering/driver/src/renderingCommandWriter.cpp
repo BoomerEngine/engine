@@ -34,7 +34,7 @@ namespace rendering
 
         //--
 
-        CommandWriter::CommandWriter(CommandBuffer* buffer, base::StringView<char> scopeName /*= base::StringView<char>()*/)
+        CommandWriter::CommandWriter(CommandBuffer* buffer, base::StringView scopeName /*= base::StringView()*/)
         {
             attachBuffer(buffer);
             
@@ -42,7 +42,7 @@ namespace rendering
                 opBeginBlock(scopeName);
         }
 
-        CommandWriter::CommandWriter(base::StringView<char> scopeName /*= base::StringView<char>()*/)
+        CommandWriter::CommandWriter(base::StringView scopeName /*= base::StringView()*/)
         {
             attachBuffer(CommandBuffer::Alloc());
 
@@ -273,7 +273,7 @@ namespace rendering
 
         //--
 
-        void CommandWriter::opBeginBlock(base::StringView<char> name, base::StringView<char> file, uint32_t line)
+        void CommandWriter::opBeginBlock(base::StringView name, base::StringView file, uint32_t line)
         {
             auto op = allocCommand<OpBeginBlock>(name.length() + 1);
 

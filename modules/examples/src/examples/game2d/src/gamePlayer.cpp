@@ -16,7 +16,7 @@ namespace example
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GamePlayerAssets);
     RTTI_END_TYPE();
 
-    GamePlayerAssets::GamePlayerAssets(StringView<char> baseDepotFolder)
+    GamePlayerAssets::GamePlayerAssets(StringView baseDepotFolder)
     {
         idle = CreateSharedPtr<GameSpriteSequenceAsset>(TempString("{}/Idle", baseDepotFolder), 10, 15.0f, 2);
         walk = CreateSharedPtr<GameSpriteSequenceAsset>(TempString("{}/Walk", baseDepotFolder), 10, 15.0f, 2);

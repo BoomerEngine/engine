@@ -26,13 +26,13 @@ namespace base
             INLINE ResourceMountPoint& operator=(const ResourceMountPoint& other) = default;
             INLINE ResourceMountPoint& operator=(ResourceMountPoint&& other) = default;
             INLINE ~ResourceMountPoint() = default;
-            ResourceMountPoint(StringView<char> stringPath);
+            ResourceMountPoint(StringView stringPath);
 
             /// Convert to chars
             INLINE const char* c_str() const { return m_path.c_str(); }
 
             /// Convert to char view
-            INLINE StringView<char> view() const { return m_path.view(); }
+            INLINE StringView view() const { return m_path.view(); }
 
             /// Get the inner string
             INLINE const StringBuf& path() const { return m_path; }
@@ -52,18 +52,18 @@ namespace base
             //--
 
             // can we service this absolute path
-            bool containsPath(StringView<char> path) const;
+            bool containsPath(StringView path) const;
 
             //--
 
             // translate resource path to a path relative to this mount point
             // NOTE: will fail if the path is outside the mount point
-            bool translatePathToRelative(StringView<char> path, StringBuf& outRelativePath) const;
+            bool translatePathToRelative(StringView path, StringBuf& outRelativePath) const;
 
             //--
 
             // expand relative path to a full path using this mount point as a base
-            void expandPathFromRelative(StringView<char> relativePath, StringBuf& fullPath) const;
+            void expandPathFromRelative(StringView relativePath, StringBuf& fullPath) const;
 
             //--
 

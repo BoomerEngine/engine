@@ -13,18 +13,6 @@ namespace base
 
     //---
 
-    /*INLINE CRC64& operator<<(CRC64& crc, StringView<char> str)
-    {
-        crc.append(str.data(), str.length() * sizeof(char));
-        return crc;
-    }
-
-    INLINE CRC64& operator<<(CRC64& crc, const StringView<wchar_t>& str)
-    {
-        crc.append(str.data(), str.length() * sizeof(char));
-        return crc;
-    }*/
-
     INLINE CRC64& operator<<(CRC64& crc, const char* str)
     {
         return crc.append(str, strlen(str));

@@ -34,7 +34,7 @@ namespace ui
             m_displayData = MemNew(prv::LayoutDisplayData);
     }
 
-    TextLabel::TextLabel(base::StringView<char> txt)
+    TextLabel::TextLabel(base::StringView txt)
         : m_text(txt)
     {
         if (!base::IsDefaultObjectCreation())
@@ -47,7 +47,7 @@ namespace ui
         MemDelete(m_displayData);
     }
 
-    void TextLabel::text(base::StringView<char> text)
+    void TextLabel::text(base::StringView text)
     {
         if (m_text != text)
         {
@@ -72,7 +72,7 @@ namespace ui
         // TODO
     }
 
-    bool TextLabel::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool TextLabel::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "text")
         {

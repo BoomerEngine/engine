@@ -47,7 +47,7 @@ namespace ed
         ui::ElementWeakPtr m_owner;
 
         virtual bool checkCancelation() const override final;
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
+        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
         void postStatusChange(res::ImportStatus status);
 
@@ -90,7 +90,7 @@ namespace ed
         std::atomic<uint32_t> m_cancelFlag = 0;
 
         virtual bool checkCancelation() const override final;
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
+        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
         void postStatusChange(res::SourceAssetStatus status);
 

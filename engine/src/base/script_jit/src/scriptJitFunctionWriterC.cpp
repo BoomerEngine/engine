@@ -77,7 +77,7 @@ namespace base
             return true;
         }
 
-        void JITFunctionWriterC::reportError(const Stub* op, StringView<char> txt)
+        void JITFunctionWriterC::reportError(const Stub* op, StringView txt)
         {
             if (op && op->location.file)
             {
@@ -93,13 +93,13 @@ namespace base
 
         //--
 
-        StringView<char> JITFunctionWriterC::copyString(const StringView<char> str)
+        StringView JITFunctionWriterC::copyString(const StringView str)
         {
             auto copiedString  = m_mem.strcpy(str.data(), str.length());
-            return StringView<char>(copiedString, str.length());
+            return StringView(copiedString, str.length());
         }
 
-        JITCodeChunkC JITFunctionWriterC::makeChunk(const StubOpcode* op, const JITType* type, StringView<char> str)
+        JITCodeChunkC JITFunctionWriterC::makeChunk(const StubOpcode* op, const JITType* type, StringView str)
         {
             JITCodeChunkC ret;
             ret.jitType = type;
@@ -109,9 +109,9 @@ namespace base
             return ret;
         }
 
-        StringView<char> JITFunctionWriterC::makeLabel(const StubOpcode* label)
+        StringView JITFunctionWriterC::makeLabel(const StubOpcode* label)
         {
-            StringView<char> ret;
+            StringView ret;
             if (m_labelMap.find(label, ret))
                 return ret;
 
@@ -180,7 +180,7 @@ namespace base
             if (m_localsMap.find(localIndex, ret))
                 return ret;
 
-            StringView<char> name;
+            StringView name;
             if (knownName)
                 name = copyString(TempString("___local_{}_{}", knownName, localIndex));
             else
@@ -198,7 +198,7 @@ namespace base
             return ret;
         }
 
-        void JITFunctionWriterC::makeCtor(const JITType* type, bool isMemoryZeroed, StringView<char> str, bool fromPointer)
+        void JITFunctionWriterC::makeCtor(const JITType* type, bool isMemoryZeroed, StringView str, bool fromPointer)
         {
             if (isMemoryZeroed && type->zeroInitializedConstructor)
                 return;
@@ -224,7 +224,7 @@ namespace base
             }
         }
 
-        void JITFunctionWriterC::makeDtor(const JITType* type, StringView<char> str, bool fromPointer)
+        void JITFunctionWriterC::makeDtor(const JITType* type, StringView str, bool fromPointer)
         {
             if (!type->requiresDestructor)
                 return;
@@ -263,7 +263,7 @@ namespace base
             makeCopy(to.jitType, to.text, to.pointer, from.text, from.pointer);
         }
 
-        void JITFunctionWriterC::makeCopy(const JITType* type, StringView<char> to, bool targetPointer, StringView<char> from, bool fromPointer)
+        void JITFunctionWriterC::makeCopy(const JITType* type, StringView to, bool targetPointer, StringView from, bool fromPointer)
         {
             if (type->simpleCopyCompare)
             {
@@ -292,7 +292,7 @@ namespace base
             }
         }
 
-        StringView<char> JITFunctionWriterC::makeStatementExitLabel()
+        StringView JITFunctionWriterC::makeStatementExitLabel()
         {
             m_exitLabelNeeded = true;
             return m_mem.strcpy(TempString("ExitStatement{}", m_exitLabelCounter).c_str());
@@ -356,7 +356,7 @@ namespace base
             return true;
         }
 
-        bool JITFunctionWriterC::processStatement(StringView<char> contextStr, const StubOpcode* op, JITOpcodeStream& stream)
+        bool JITFunctionWriterC::processStatement(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream)
         {
             // statement header
             /*if (op->location.file && m_lastLine != op->location.line)
@@ -596,7 +596,7 @@ namespace base
             return ret;
         }
 
-        JITCodeChunkC JITFunctionWriterC::processOpcode(StringView<char> contextStr, const StubOpcode* op, JITOpcodeStream& stream)
+        JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream)
         {
             if (!op)
             {

@@ -29,7 +29,7 @@ namespace base
 
         //---
 
-        MultiConnection::MultiConnection(RequestQueue* queue, StringView<char> address, StringView<char> protocol)
+        MultiConnection::MultiConnection(RequestQueue* queue, StringView address, StringView protocol)
             : Connection(address, protocol)
             , m_totalSentRequests(0)
             , m_numActiveRequests(0)
@@ -100,7 +100,7 @@ namespace base
             }
         }
 
-        void MultiConnection::send(StringView<char> url, const http::RequestArgs& params, const http::TRequestResponseFunc& callback, http::Method method, uint32_t timeOut)
+        void MultiConnection::send(StringView url, const http::RequestArgs& params, const http::TRequestResponseFunc& callback, http::Method method, uint32_t timeOut)
         {
             auto handle  = allocRequestObject();
             if (!handle)

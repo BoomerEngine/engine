@@ -119,14 +119,14 @@ namespace base
                 funcPrintToText(f, data, flags);
         }
 
-        bool CustomType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+        bool CustomType::parseFromString(StringView txt, void* data, uint32_t flags) const
         {
             if (funcParseFromText)
                 funcParseFromText(txt, data, flags);
             return false;
         }
 
-        DataViewResult CustomType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult CustomType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (funcDescribeView)
                 return funcDescribeView(viewPath, viewData, outInfo);
@@ -134,7 +134,7 @@ namespace base
             return IType::describeDataView(viewPath, viewData, outInfo);
         }
 
-        DataViewResult CustomType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult CustomType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (funcReadDataView)
                 return funcReadDataView(viewPath, viewData, targetData, targetType);
@@ -142,7 +142,7 @@ namespace base
             return IType::readDataView(viewPath, viewData, targetData, targetType);
         }
 
-        DataViewResult CustomType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult CustomType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (funcWriteDataView)
                 return funcWriteDataView(viewPath, viewData, sourceData, sourceType);

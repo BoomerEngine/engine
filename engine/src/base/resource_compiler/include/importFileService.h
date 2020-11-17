@@ -32,38 +32,38 @@ namespace base
             //--
 
             // check if file exists
-            bool fileExists(StringView<char> assetImportPath) const;
+            bool fileExists(StringView assetImportPath) const;
 
             // translate absolute path to a asset import path
             // NOTE: if multiple file systems cover the same path we choose the shortest representation
             // NOTE: returned path is in the "assetImportPath" format: "LOCAL:/z/assets/test.fbx", etc.
-            bool translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const;
+            bool translateAbsolutePath(StringView absolutePath, StringBuf& outFileSystemPath) const;
 
             // translate import path to a context path (mostly for printing errors)
-            bool resolveContextPath(StringView<char> assetImportPath, StringBuf& outContextPath) const;
+            bool resolveContextPath(StringView assetImportPath, StringBuf& outContextPath) const;
 
             // load content of a file, returns the CRC of the data as well
-            Buffer loadFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outCRC) const;
+            Buffer loadFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outCRC) const;
 
             /// get child directories at given path
-            bool enumDirectoriesAtPath(StringView<char> assetImportPath, const std::function<bool(StringView<char>)>& enumFunc) const;
+            bool enumDirectoriesAtPath(StringView assetImportPath, const std::function<bool(StringView)>& enumFunc) const;
 
             /// get files at given path
-            bool enumFilesAtPath(StringView<char> assetImportPath, const std::function<bool(StringView<char>)>& enumFunc) const;
+            bool enumFilesAtPath(StringView assetImportPath, const std::function<bool(StringView)>& enumFunc) const;
 
             /// enumerate file system "roots" (ie. LOCAL, HL2, etc)
-            bool enumRoots(const std::function<bool(StringView<char>)>& enumFunc) const;
+            bool enumRoots(const std::function<bool(StringView)>& enumFunc) const;
 
             //--
 
             /// validate source file 
             /// NOTE: this may take long time, run on fiber
-            CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress = nullptr) const;
+            CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress = nullptr) const;
 
             //--
 
             /// compile a base resource import configuration for asset of given type imported from given source folder
-            ResourceConfigurationPtr compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configClass) const;
+            ResourceConfigurationPtr compileBaseResourceConfiguration(StringView assetImportPath, SpecificClassType<ResourceConfiguration> configClass) const;
 
             //--
 
@@ -83,7 +83,7 @@ namespace base
             void createFileSystems();
             void destroyFileSystems();
 
-            const ISourceAssetFileSystem* resolveFileSystem(StringView<char> assetImportPath, StringView<char>& outFileSystemPath) const;
+            const ISourceAssetFileSystem* resolveFileSystem(StringView assetImportPath, StringView& outFileSystemPath) const;
 
             NativeTimePoint m_nextSystemUpdate;
         };

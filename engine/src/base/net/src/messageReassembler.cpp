@@ -46,7 +46,7 @@ namespace base
             }
         }
 
-        void MessageReassembler::fatalError(StringView<char> reason)
+        void MessageReassembler::fatalError(StringView reason)
         {
             if (!m_corrupted)
             {

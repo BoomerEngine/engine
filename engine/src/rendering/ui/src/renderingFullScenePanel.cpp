@@ -95,7 +95,7 @@ namespace ui
         // TODO: material debug
     }
 
-    void RenderingFullScenePanel::createFilterItem(base::StringView<char> prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu)
+    void RenderingFullScenePanel::createFilterItem(base::StringView prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu)
     {
         base::StringBuf name = prefix ? base::StringBuf(base::TempString("{}.{}", prefix, bitInfo->name)) : base::StringBuf(bitInfo->name.view());
 

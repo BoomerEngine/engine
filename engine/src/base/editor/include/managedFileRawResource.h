@@ -22,7 +22,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ManagedFileRawResource, ManagedFile);
 
     public:
-        ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName);
+        ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
         virtual ~ManagedFileRawResource();
 
         //--

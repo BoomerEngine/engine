@@ -18,19 +18,19 @@ namespace base
     /// Simple string buffer based on container
     /// NOTE: it's either Ansi or Unicode
     template< typename T >
-    class StringVector
+    class BaseStringVector
 	{
     public:
-        INLINE StringVector();
-        INLINE StringVector(const StringVector& other);
-        INLINE StringVector(StringVector&& other);
+        INLINE BaseStringVector();
+        INLINE BaseStringVector(const BaseStringVector& other);
+        INLINE BaseStringVector(BaseStringVector&& other);
 
-        INLINE explicit StringVector(const char* str, uint32_t length = INDEX_MAX); // when converting to wide char we assume it's UTF8
-        INLINE explicit StringVector(const wchar_t* str, uint32_t length = INDEX_MAX);
-        INLINE explicit StringVector(StringView<char> view); // when converting to wide char we assume it's UTF8
-        INLINE explicit StringVector(const StringView<wchar_t>& view);
+        INLINE explicit BaseStringVector(const char* str, uint32_t length = INDEX_MAX); // when converting to wide char we assume it's UTF8
+        INLINE explicit BaseStringVector(const wchar_t* str, uint32_t length = INDEX_MAX);
+        INLINE explicit BaseStringVector(BaseStringView<char> view); // when converting to wide char we assume it's UTF8
+        INLINE explicit BaseStringVector(const BaseStringView<wchar_t>& view);
 
-        INLINE ~StringVector() = default;
+        INLINE ~BaseStringVector() = default;
 
         //--------------------------
 
@@ -38,9 +38,9 @@ namespace base
 
         INLINE uint32_t length() const;
 
-        INLINE StringView<T> view() const;
+        INLINE BaseStringView<T> view() const;
 
-        INLINE operator StringView<T>() const;
+        INLINE operator BaseStringView<T>() const;
 
         INLINE const T* c_str() const;
 
@@ -52,92 +52,92 @@ namespace base
 
         //--------------------------
 
-        INLINE StringVector<T>& reserve(uint32_t size);
+        INLINE BaseStringVector<T>& reserve(uint32_t size);
 
-        INLINE StringVector<T>& clear();
+        INLINE BaseStringVector<T>& clear();
 
-        INLINE StringVector<T>& append(const StringVector<T>& str);
+        INLINE BaseStringVector<T>& append(const BaseStringVector<T>& str);
 
-        INLINE StringVector<T>& append(StringView<char> str);
+        INLINE BaseStringVector<T>& append(BaseStringView<char> str);
 
-        INLINE StringVector<T>& append(const StringView<wchar_t>& str);
+        INLINE BaseStringVector<T>& append(const BaseStringView<wchar_t>& str);
 
         //--------------------------
 
-        INLINE StringVector<T>& operator=(const StringVector<T>& other);
-        INLINE StringVector<T>& operator=(StringVector<T>&& other);
-        INLINE StringVector<T>& operator=(StringView<char> str);
-        INLINE StringVector<T>& operator=(const StringView<wchar_t>& str);
-        INLINE StringVector<T>& operator=(const char* str);
-        INLINE StringVector<T>& operator=(const wchar_t* str);
+        INLINE BaseStringVector<T>& operator=(const BaseStringVector<T>& other);
+        INLINE BaseStringVector<T>& operator=(BaseStringVector<T>&& other);
+        INLINE BaseStringVector<T>& operator=(BaseStringView<char> str);
+        INLINE BaseStringVector<T>& operator=(const BaseStringView<wchar_t>& str);
+        INLINE BaseStringVector<T>& operator=(const char* str);
+        INLINE BaseStringVector<T>& operator=(const wchar_t* str);
 
-        INLINE bool operator==(const StringView<T>& str) const;
-        INLINE bool operator!=(const StringView<T>& other) const;
-        INLINE bool operator<(const StringView<T>& other) const;
-        INLINE bool operator<=(const StringView<T>& other) const;
-        INLINE bool operator>(const StringView<T>& other) const;
-        INLINE bool operator>=(const StringView<T>& other) const;
-
-        //-----------------------------------------------------------------------------
-
-        INLINE StringVector<T>& operator+=(const StringVector<T>& other);
-        INLINE StringVector<T>& operator+=(const char* other);
-        INLINE StringVector<T>& operator+=(const wchar_t* other);
-        INLINE StringVector<T>& operator+=(StringView<char> other);
-        INLINE StringVector<T>& operator+=(const StringView<wchar_t>& other);
+        INLINE bool operator==(const BaseStringView<T>& str) const;
+        INLINE bool operator!=(const BaseStringView<T>& other) const;
+        INLINE bool operator<(const BaseStringView<T>& other) const;
+        INLINE bool operator<=(const BaseStringView<T>& other) const;
+        INLINE bool operator>(const BaseStringView<T>& other) const;
+        INLINE bool operator>=(const BaseStringView<T>& other) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE StringVector<T> operator+(const StringVector<T>& other) const;
-        INLINE StringVector<T> operator+(const char* other) const;
-        INLINE StringVector<T> operator+(const wchar_t* other) const;
-        INLINE StringVector<T> operator+(StringView<char> other) const;
-        INLINE StringVector<T> operator+(const StringView<wchar_t>& other) const;
+        INLINE BaseStringVector<T>& operator+=(const BaseStringVector<T>& other);
+        INLINE BaseStringVector<T>& operator+=(const char* other);
+        INLINE BaseStringVector<T>& operator+=(const wchar_t* other);
+        INLINE BaseStringVector<T>& operator+=(BaseStringView<char> other);
+        INLINE BaseStringVector<T>& operator+=(const BaseStringView<wchar_t>& other);
 
         //-----------------------------------------------------------------------------
 
-        INLINE int compareWith(const StringView<T>& other) const;
-        INLINE int compareWithNoCase(const StringView<T>& other) const;
+        INLINE BaseStringVector<T> operator+(const BaseStringVector<T>& other) const;
+        INLINE BaseStringVector<T> operator+(const char* other) const;
+        INLINE BaseStringVector<T> operator+(const wchar_t* other) const;
+        INLINE BaseStringVector<T> operator+(BaseStringView<char> other) const;
+        INLINE BaseStringVector<T> operator+(const BaseStringView<wchar_t>& other) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE StringVector<T> leftPart(uint32_t count) const;
-        INLINE StringVector<T> rightPart(uint32_t count) const;
-        INLINE StringVector<T> subString(uint32_t first, uint32_t count = (uint32_t)-1) const;
-
-        INLINE void split(uint32_t index, StringVector<T>& outLeft, StringVector<T>& outRight) const;
-        INLINE bool splitAt(const StringView<T>& str, StringVector<T>& outLeft, StringVector<T>& outRight) const;
+        INLINE int compareWith(const BaseStringView<T>& other) const;
+        INLINE int compareWithNoCase(const BaseStringView<T>& other) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE int findStr(const StringView<T>& pattern, int firstPosition = 0) const;
-        INLINE int findStrRev(const StringView<T>& pattern, int firstPosition = 0) const;
-        INLINE int findStrNoCase(const StringView<T>& pattern, int firstPosition = 0) const;
-        INLINE int findStrRevNoCase(const StringView<T>& pattern, int firstPosition = 0) const;
+        INLINE BaseStringVector<T> leftPart(uint32_t count) const;
+        INLINE BaseStringVector<T> rightPart(uint32_t count) const;
+        INLINE BaseStringVector<T> subString(uint32_t first, uint32_t count = (uint32_t)-1) const;
+
+        INLINE void split(uint32_t index, BaseStringVector<T>& outLeft, BaseStringVector<T>& outRight) const;
+        INLINE bool splitAt(const BaseStringView<T>& str, BaseStringVector<T>& outLeft, BaseStringVector<T>& outRight) const;
+
+        //-----------------------------------------------------------------------------
+
+        INLINE int findStr(const BaseStringView<T>& pattern, int firstPosition = 0) const;
+        INLINE int findStrRev(const BaseStringView<T>& pattern, int firstPosition = 0) const;
+        INLINE int findStrNoCase(const BaseStringView<T>& pattern, int firstPosition = 0) const;
+        INLINE int findStrRevNoCase(const BaseStringView<T>& pattern, int firstPosition = 0) const;
 
         INLINE int findFirstChar(T ch) const;
         INLINE int findLastChar(T ch) const;
 
-        INLINE bool beginsWith(const StringView<T>& pattern) const;
-        INLINE bool beginsWithNoCase(const StringView<T>& pattern) const;
+        INLINE bool beginsWith(const BaseStringView<T>& pattern) const;
+        INLINE bool beginsWithNoCase(const BaseStringView<T>& pattern) const;
 
-        INLINE bool endsWith(const StringView<T>& pattern) const;
-        INLINE bool endsWithNoCase(const StringView<T>& pattern) const;
+        INLINE bool endsWith(const BaseStringView<T>& pattern) const;
+        INLINE bool endsWithNoCase(const BaseStringView<T>& pattern) const;
 
-        INLINE StringVector<T> stringAfterFirst(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringBeforeFirst(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringAfterLast(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringBeforeLast(const StringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringAfterFirst(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringBeforeFirst(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringAfterLast(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringBeforeLast(const BaseStringView<T>& pattern) const;
 
-        INLINE StringVector<T> stringAfterFirstNoCase(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringBeforeFirstNoCase(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringAfterLastNoCase(const StringView<T>& pattern) const;
-        INLINE StringVector<T> stringBeforeLastNoCase(const StringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringAfterFirstNoCase(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringBeforeFirstNoCase(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringAfterLastNoCase(const BaseStringView<T>& pattern) const;
+        INLINE BaseStringVector<T> stringBeforeLastNoCase(const BaseStringView<T>& pattern) const;
 
         //-----------------------------------------------------------------------------
 
-        INLINE StringVector<T> toLower() const;
-        INLINE StringVector<T> toUpper() const;
+        INLINE BaseStringVector<T> toLower() const;
+        INLINE BaseStringVector<T> toUpper() const;
 
         //-----------------------------------------------------------------------------
 
@@ -157,6 +157,9 @@ namespace base
 
     //--
 
-    using UTF16StringBuf = StringVector<wchar_t>;
+    using StringVector = BaseStringVector<char>;
+    using UTF16StringVector = BaseStringVector<wchar_t>;
+
+    //--
 
 } // base

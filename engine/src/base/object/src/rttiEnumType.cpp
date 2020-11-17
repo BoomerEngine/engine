@@ -178,7 +178,7 @@ namespace base
                 f << val;
         }
 
-        bool EnumType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+        bool EnumType::parseFromString(StringView txt, void* data, uint32_t flags) const
         {
             if (auto name = StringID::Find(txt))
             {
@@ -317,7 +317,7 @@ namespace base
 
         //--
 
-        DataViewResult EnumType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult EnumType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -341,13 +341,13 @@ namespace base
             return IType::describeDataView(viewPath, viewData, outInfo);
         }
 
-        DataViewResult EnumType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult EnumType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             // NOTE: type conversion enum -> string are supported natively, no more work needed
             return IType::readDataView(viewPath, viewData, targetData, targetType);
         }
 
-        DataViewResult EnumType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult EnumType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             // NOTE: type conversion string -> enum are supported natively, no more work needed
             return IType::writeDataView(viewPath, viewData, sourceData, sourceType);

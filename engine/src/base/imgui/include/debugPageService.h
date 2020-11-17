@@ -55,7 +55,7 @@ namespace base
         virtual void onShutdownService() override final;
         virtual void onSyncUpdate() override final;
 
-        static MenuEntry* GetOrCreateEntry(Array<MenuEntry>& entries, StringView<char> name);
+        static MenuEntry* GetOrCreateEntry(Array<MenuEntry>& entries, StringView name);
         static void RenderEntry(const MenuEntry& entry);
 
         void createDebugPages();

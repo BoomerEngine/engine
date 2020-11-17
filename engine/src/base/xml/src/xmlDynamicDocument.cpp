@@ -17,7 +17,7 @@ namespace base
 {
     namespace xml
     {
-        DynamicDocument::DynamicDocument(StringView<char> rootNodeName)
+        DynamicDocument::DynamicDocument(StringView rootNodeName)
             : m_pool(POOL_XML)
             , m_nodes(POOL_XML)
             , m_attributes(POOL_XML)
@@ -44,14 +44,14 @@ namespace base
             return 1;
         }
 
-        StringView<char> DynamicDocument::mapString(StringView<char> sourceString)
+        StringView DynamicDocument::mapString(StringView sourceString)
         {
             if (sourceString.empty())
-                return StringView<char>();
+                return StringView();
 
             auto crc  = sourceString.calcCRC64();
 
-            StringView<char> mappedString;
+            StringView mappedString;
             if (m_stringMap.find(crc, mappedString))
             {
                 ASSERT(mappedString == sourceString);
@@ -59,12 +59,12 @@ namespace base
             }
 
             auto ptr  = m_pool.strcpy(sourceString.data(), sourceString.length());
-            auto view  = StringView<char>(ptr, ptr + sourceString.length());
+            auto view  = StringView(ptr, ptr + sourceString.length());
             m_stringMap[crc] = view;
             return view;
         }
 
-        NodeID DynamicDocument::nodeFirstChild(NodeID id, StringView<char> childName /*= nullptr*/) const
+        NodeID DynamicDocument::nodeFirstChild(NodeID id, StringView childName /*= nullptr*/) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -85,7 +85,7 @@ namespace base
             return 0; // invalid node
         }
 
-        NodeID DynamicDocument::nodeSibling(NodeID id, StringView<char> siblingName /*= nullptr*/) const
+        NodeID DynamicDocument::nodeSibling(NodeID id, StringView siblingName /*= nullptr*/) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -128,7 +128,7 @@ namespace base
 
         //---
 
-        StringView<char> DynamicDocument::nodeValue(NodeID id) const
+        StringView DynamicDocument::nodeValue(NodeID id) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -138,7 +138,7 @@ namespace base
             return node.value;
         }
 
-        StringView<char> DynamicDocument::nodeName(NodeID id) const
+        StringView DynamicDocument::nodeName(NodeID id) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -148,7 +148,7 @@ namespace base
             return node.name;
         }
 
-        StringView<char> DynamicDocument::nodeAttributeOfDefault(NodeID id, StringView<char> name, StringView<char> defaultVal /*= StringBuf::EMPTY()*/) const
+        StringView DynamicDocument::nodeAttributeOfDefault(NodeID id, StringView name, StringView defaultVal /*= StringBuf::EMPTY()*/) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -168,7 +168,7 @@ namespace base
             return defaultVal;
         }
 
-        AttributeID DynamicDocument::nodeFirstAttribute(NodeID id, StringView<char> name /*= nullptr*/) const
+        AttributeID DynamicDocument::nodeFirstAttribute(NodeID id, StringView name /*= nullptr*/) const
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 
@@ -190,7 +190,7 @@ namespace base
 
         //---
 
-        StringView<char> DynamicDocument::attributeName(AttributeID id) const
+        StringView DynamicDocument::attributeName(AttributeID id) const
         {
             ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
@@ -200,7 +200,7 @@ namespace base
             return attr.name;
         }
 
-        StringView<char> DynamicDocument::attributeValue(AttributeID id) const
+        StringView DynamicDocument::attributeValue(AttributeID id) const
         {
             ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
@@ -210,7 +210,7 @@ namespace base
             return attr.value;
         }
 
-        AttributeID DynamicDocument::nextAttribute(AttributeID id, StringView<char> name /*= nullptr*/) const
+        AttributeID DynamicDocument::nextAttribute(AttributeID id, StringView name /*= nullptr*/) const
         {
             ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
@@ -231,7 +231,7 @@ namespace base
             return 0;
         }
 
-        void DynamicDocument::attributeName(AttributeID id, StringView<char> name)
+        void DynamicDocument::attributeName(AttributeID id, StringView name)
         {
             ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
@@ -243,7 +243,7 @@ namespace base
             attr.name = mapString(name);
         }
 
-        void DynamicDocument::attributeValue(AttributeID id, StringView<char> value)
+        void DynamicDocument::attributeValue(AttributeID id, StringView value)
         {
             ASSERT_EX(id < m_attributes.capacity(), "Attribute ID is out of range");
 
@@ -302,7 +302,7 @@ namespace base
 
         //---
 
-        NodeID DynamicDocument::createNode(NodeID parentNodeID, StringView<char> name)
+        NodeID DynamicDocument::createNode(NodeID parentNodeID, StringView name)
         {
             ASSERT_EX(parentNodeID < m_nodes.capacity(), "Node ID is out of range");
 
@@ -385,7 +385,7 @@ namespace base
             ASSERT_EX(found, "Child not found in it's parent node");
         }
 
-        void DynamicDocument::nodeValue(NodeID id, StringView<char> value)
+        void DynamicDocument::nodeValue(NodeID id, StringView value)
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
             ASSERT_EX(id > 1, "Cannot set name of the root node");
@@ -396,7 +396,7 @@ namespace base
             node.value = mapString(value);
         }
 
-        void DynamicDocument::nodeName(NodeID id, StringView<char> name)
+        void DynamicDocument::nodeName(NodeID id, StringView name)
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
             ASSERT_EX(id > 1, "Cannot set name of the root node");
@@ -408,7 +408,7 @@ namespace base
             node.name = mapString(name);
         }
 
-        void DynamicDocument::nodeAttribute(NodeID nodeID, StringView<char> name, StringView<char> value)
+        void DynamicDocument::nodeAttribute(NodeID nodeID, StringView name, StringView value)
         {
             ASSERT_EX(nodeID < m_nodes.capacity(), "Node ID is out of range");
             //ASSERT_EX(nodeID > 1, "Cannot set name of the root node");
@@ -464,7 +464,7 @@ namespace base
             }
         }
 
-        void DynamicDocument::deleteNodeAttribute(NodeID id, StringView<char> name)
+        void DynamicDocument::deleteNodeAttribute(NodeID id, StringView name)
         {
             ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
 

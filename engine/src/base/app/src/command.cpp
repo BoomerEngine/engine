@@ -96,7 +96,7 @@ namespace base
             return m_cancelRequest.load() != 0;
         }
 
-        void ICommand::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text)
+        void ICommand::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
         {
             auto lock = CreateLock(m_lastStatusLock);
             m_lastStatus.timeStamp = NativeTimePoint::Now().rawValue();

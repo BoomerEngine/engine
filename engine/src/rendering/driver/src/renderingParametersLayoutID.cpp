@@ -238,7 +238,7 @@ namespace rendering
         return helper::LayoutRegistry::GetInstance().registerEntry(info);
     }
 
-    ParametersLayoutID ParametersLayoutID::Register(base::StringView<char> layoutDesc)
+    ParametersLayoutID ParametersLayoutID::Register(base::StringView layoutDesc)
     {
         // empty
         if (!layoutDesc)

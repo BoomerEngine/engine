@@ -30,7 +30,7 @@ namespace base
         ResourceConfiguration::~ResourceConfiguration()
         {}
 
-        void ResourceConfiguration::changeImportMetadata(StringView<char> by, StringView<char> at, io::TimeStamp time)
+        void ResourceConfiguration::changeImportMetadata(StringView by, StringView at, io::TimeStamp time)
         {
             if (m_sourceImportedBy != by)
             {

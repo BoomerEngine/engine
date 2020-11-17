@@ -87,7 +87,7 @@ namespace base
 
         //--
 
-        void CommandCook::scanDepotDirectoryForSeedFiles(StringView<char> depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const
+        void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const
         {
             static const auto seedFileExtension = IResource::GetResourceExtensionForClass(SeedFile::GetStaticClass());
 
@@ -312,7 +312,7 @@ namespace base
             return true;
         }
 
-        MetadataPtr CommandCook::loadFileMetadata(StringView<char> cookedOutputPath) const
+        MetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) const
         {
             if (auto fileReader = base::io::OpenForAsyncReading(cookedOutputPath))
             {
@@ -372,7 +372,7 @@ namespace base
             }
         }
 
-        void CommandCook::queueDependencies(StringView<char> cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
+        void CommandCook::queueDependencies(StringView cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
         {
             if (auto fileReader = base::io::OpenForAsyncReading(cookedFilePath))
             {
@@ -394,7 +394,7 @@ namespace base
         class CookingLogCapture : public logging::LocalLogSink
         {
         public:
-            CookingLogCapture(StringView<char> outPath, bool captureFully)
+            CookingLogCapture(StringView outPath, bool captureFully)
                 : m_fullyCaptured(captureFully)
             {
                 m_logFilePath = TempString("{}.log", outPath);

@@ -54,7 +54,7 @@ namespace rendering
 
         //--
 
-        IDriver* createAndInitializeDevice(base::StringView<char> name, const base::app::CommandLine& cmdLine) const;
+        IDriver* createAndInitializeDevice(base::StringView name, const base::app::CommandLine& cmdLine) const;
     };
 
     //---

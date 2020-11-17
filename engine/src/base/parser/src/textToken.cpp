@@ -62,12 +62,12 @@ namespace base
             return "Unknown";
         }
 
-        StringView<char> Token::view() const
+        StringView Token::view() const
         {
             if (m_end == m_str)
-                return StringView<char>();
+                return StringView();
 
-            return StringView<char>(m_str, m_end);
+            return StringView(m_str, m_end);
         }
 
         double Token::floatNumber() const

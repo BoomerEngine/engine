@@ -27,7 +27,7 @@ namespace rendering
         virtual ~MaterialTechniqueCacheService();
 
         /// request compilation of given material technique
-        void requestTechniqueCompilation(base::StringView<char> contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique);
+        void requestTechniqueCompilation(base::StringView contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique);
 
     protected:
         // ILocalService
@@ -37,7 +37,7 @@ namespace rendering
 
         //---
 
-        static uint64_t CalcMergedKey(base::StringView<char> contextName, uint64_t graphKey, const MaterialCompilationSetup& setup);
+        static uint64_t CalcMergedKey(base::StringView contextName, uint64_t graphKey, const MaterialCompilationSetup& setup);
 
         //---
 
@@ -81,7 +81,7 @@ namespace rendering
         base::HashSet<FileInfo*> m_changedFiles;
         base::Mutex m_changedFilesLock;
 
-        FileInfo* getFileInfo(base::StringView<char> depotPath);
+        FileInfo* getFileInfo(base::StringView depotPath);
 
         //--
 

@@ -32,7 +32,7 @@ namespace ui
         //----
 
         // add search path for icons
-        void addIconSearchPath(base::StringView<char> path);
+        void addIconSearchPath(base::StringView path);
 
         //---
 
@@ -46,7 +46,7 @@ namespace ui
         base::HashMap<base::StringID, base::image::ImageRef> m_imageMap;
         base::Array<base::StringBuf> m_imageSearchPaths;
 
-        virtual void onPropertyChanged(base::StringView<char> path) override;
+        virtual void onPropertyChanged(base::StringView path) override;
     };
 
     //---

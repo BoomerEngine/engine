@@ -290,7 +290,7 @@ namespace base
             void print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride);
 
             // print from font
-            void print(const font::Font* font, int fontSize, StringView<char> txt, int hcenter=-1, int vcenter=-1, bool bold = false);
+            void print(const font::Font* font, int fontSize, StringView txt, int hcenter=-1, int vcenter=-1, bool bold = false);
 
             //---
 

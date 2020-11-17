@@ -41,7 +41,7 @@ namespace ed
         void setFileStatus(const StringBuf& depotFileName, res::ImportStatus status, float time = 0.0);
 
         // set file progress information
-        void setFileProgress(const StringBuf& depotFileName, uint64_t count, uint64_t total, StringView<char> message);
+        void setFileProgress(const StringBuf& depotFileName, uint64_t count, uint64_t total, StringView message);
 
         //--
 

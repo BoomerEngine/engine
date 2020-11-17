@@ -838,7 +838,7 @@ namespace ui
         return TBaseClass::handleDragDropGenericCompletion(data, entryPosition);
     }
 
-    bool ItemView::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool ItemView::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "columns")
         {

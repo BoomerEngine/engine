@@ -67,10 +67,10 @@ namespace rendering
             virtual void update(float dt) {};
             virtual void processInput(const base::input::BaseEvent& evt) {};
 
-            void reportError(base::StringView<char> msg);
+            void reportError(base::StringView msg);
 
-            base::image::ImagePtr loadImage(base::StringView<char> imageName);
-            base::FontPtr loadFont(base::StringView<char> fontName);
+            base::image::ImagePtr loadImage(base::StringView imageName);
+            base::FontPtr loadFont(base::StringView fontName);
 
         protected:
             bool m_hasErrors;

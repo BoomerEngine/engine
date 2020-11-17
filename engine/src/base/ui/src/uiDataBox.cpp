@@ -50,7 +50,7 @@ namespace ui
             m_data->detachObserver(m_path, this);
     }
 
-    void IDataBox::handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification)
+    void IDataBox::handlePropertyChanged(base::StringView fullPath, bool parentNotification)
     {
         if (m_path == fullPath)
             handleValueChange();

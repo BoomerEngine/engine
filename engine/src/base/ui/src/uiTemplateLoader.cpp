@@ -35,7 +35,7 @@ namespace ui
             }
         }
 
-        base::SpecificClassType<IElement> findClass(base::StringView<char> className) const
+        base::SpecificClassType<IElement> findClass(base::StringView className) const
         {
             base::SpecificClassType<IElement> ret = nullptr;
             m_classMap.find(base::StringBuf(className), ret);
@@ -54,7 +54,7 @@ namespace ui
 
     //--
 
-    TemplateLoader::TemplateLoader(base::StringView<char> contextName, const base::xml::IDocument& xml)
+    TemplateLoader::TemplateLoader(base::StringView contextName, const base::xml::IDocument& xml)
         : m_xml(xml)
         , m_contextName(contextName)
     {}
@@ -73,7 +73,7 @@ namespace ui
         return valid;
     }
 
-    bool TemplateLoader::createElement(const base::xml::NodeID id, ElementPtr& outElem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements)
+    bool TemplateLoader::createElement(const base::xml::NodeID id, ElementPtr& outElem, base::HashMap<base::StringView, IElement*>& outNamedElements)
     {
         // validate the class
         auto className = m_xml.nodeName(id);
@@ -94,7 +94,7 @@ namespace ui
         return true;
     }
 
-    bool TemplateLoader::loadElement(const base::xml::NodeID id, IElement*  elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements)
+    bool TemplateLoader::loadElement(const base::xml::NodeID id, IElement*  elem, base::HashMap<base::StringView, IElement*>& outNamedElements)
     {
         // validate the class
         auto className = m_xml.nodeName(id);
@@ -111,7 +111,7 @@ namespace ui
             return false;
 
         // load child items
-        base::HashMap<base::StringView<char>, IElement*> childNamedElements;
+        base::HashMap<base::StringView, IElement*> childNamedElements;
         if (!loadChildren(id, elem, childNamedElements))
             return false;
 
@@ -138,7 +138,7 @@ namespace ui
         return true;
     }
 
-    bool TemplateLoader::loadChildren(const base::xml::NodeID id, IElement*  elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements)
+    bool TemplateLoader::loadChildren(const base::xml::NodeID id, IElement*  elem, base::HashMap<base::StringView, IElement*>& outNamedElements)
     {
         auto childId = m_xml.nodeFirstChild(id);
         while (childId != 0)
@@ -151,7 +151,7 @@ namespace ui
         return true;
     }
 
-    bool TemplateLoader::loadChild(const base::xml::NodeID id, const base::xml::NodeID childId, IElement*  elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements)
+    bool TemplateLoader::loadChild(const base::xml::NodeID id, const base::xml::NodeID childId, IElement*  elem, base::HashMap<base::StringView, IElement*>& outNamedElements)
     {
         auto childName = m_xml.nodeName(childId);
 
@@ -188,7 +188,7 @@ namespace ui
         return true;
     }
 
-    bool TemplateLoader::reportError(const base::xml::NodeID id, base::StringView<char> f)
+    bool TemplateLoader::reportError(const base::xml::NodeID id, base::StringView f)
     {
         uint32_t line = 0, pos = 0;
         m_xml.nodeLocationInfo(id, line, pos);
@@ -199,12 +199,12 @@ namespace ui
 
     //--
 
-    bool ApplyTemplate(ui::IElement* ptr, base::StringView<char> contextName, const base::xml::IDocument& doc)
+    bool ApplyTemplate(ui::IElement* ptr, base::StringView contextName, const base::xml::IDocument& doc)
     {
         if (!ptr)
             return false;
 
-        base::HashMap<base::StringView<char>, IElement*> namedElements;
+        base::HashMap<base::StringView, IElement*> namedElements;
 
         TemplateLoader loader(contextName, doc);
         if (!loader.loadElement(doc.root(), ptr, namedElements))
@@ -222,11 +222,11 @@ namespace ui
         return ApplyTemplate(ptr, data->path(), data->document());
     }
 
-    ElementPtr LoadTemplate(base::StringView<char> contextName, const base::xml::IDocument& doc)
+    ElementPtr LoadTemplate(base::StringView contextName, const base::xml::IDocument& doc)
     {
         TemplateLoader loader(contextName, doc);
 
-        base::HashMap<base::StringView<char>, IElement*> namedElements;
+        base::HashMap<base::StringView, IElement*> namedElements;
 
         ElementPtr ret;
         if (!loader.createElement(doc.root(), ret, namedElements))

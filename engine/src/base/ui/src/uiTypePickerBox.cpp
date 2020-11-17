@@ -74,7 +74,7 @@ namespace ui
 
     //---
 
-    TypePickerBox::TypePickerBox(base::Type initialType, bool allowNullType, base::StringView<char> caption)
+    TypePickerBox::TypePickerBox(base::Type initialType, bool allowNullType, base::StringView caption)
         : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, caption)
         , m_allowNullType(allowNullType)
     {

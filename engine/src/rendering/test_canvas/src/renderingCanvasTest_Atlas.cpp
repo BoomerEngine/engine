@@ -181,6 +181,7 @@ namespace rendering
 
                 base::canvas::GeometryBuilder b;
 
+                if (style.image)
                 {
                     b.resetTransform();
                     b.translatei(-(int)(style.image->width() / 2), -(int)(style.image->height()));
@@ -357,10 +358,15 @@ namespace rendering
             {
                 const auto* entry = m_atlas.findEntry(name);
 
-                const auto image = base::CreateSharedPtr<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, entry->rect.width(), entry->rect.height());
-                Copy(m_image->view().subView(entry->rect.left(), entry->rect.top(), entry->rect.width(), entry->rect.height()), image->view());
+                if (!entry->rect.empty())
+                {
+                    const auto image = base::CreateSharedPtr<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, entry->rect.width(), entry->rect.height());
+                    Copy(m_image->view().subView(entry->rect.left(), entry->rect.top(), entry->rect.width(), entry->rect.height()), image->view());
 
-                return ImagePattern(image, base::canvas::ImagePatternSettings().wrapU(wrap).wrapV(wrap));
+                    return ImagePattern(image, base::canvas::ImagePatternSettings().wrapU(wrap).wrapV(wrap));
+                }
+
+                return base::canvas::RenderStyle();
             }
 
 

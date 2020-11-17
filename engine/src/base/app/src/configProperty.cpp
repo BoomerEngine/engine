@@ -24,7 +24,7 @@ namespace base
     {
         namespace helper
         {
-            static bool ShouldEscapeString(StringView<char> txt)
+            static bool ShouldEscapeString(StringView txt)
             {
                 if (txt.empty())
                     return true; // escape empty strings
@@ -41,7 +41,7 @@ namespace base
                 return false;
             }
 
-            static void WriteEscapedString(IFormatStream& builder, StringView<char> txt)
+            static void WriteEscapedString(IFormatStream& builder, StringView txt)
             {
                 builder.append("\"");
 
@@ -133,7 +133,7 @@ namespace base
 
     //---
 
-    ConfigPropertyBase::ConfigPropertyBase(StringView<char> groupName, StringView<char> name, ConfigPropertyFlags flags)
+    ConfigPropertyBase::ConfigPropertyBase(StringView groupName, StringView name, ConfigPropertyFlags flags)
         : m_group(groupName)
         , m_name(name)
         , m_flags(flags)
@@ -296,7 +296,7 @@ namespace base
         helper::ConfigPropertyRegistry::GetInstance().all(outProperties);
     }
 
-    void ConfigPropertyBase::RefreshPropertyValue(StringView<char> group, StringView<char> name)
+    void ConfigPropertyBase::RefreshPropertyValue(StringView group, StringView name)
     {
         helper::ConfigPropertyRegistry::GetInstance().run([group, name](ConfigPropertyBase* prop) {
             if (prop->group() == group && prop->name() == name)

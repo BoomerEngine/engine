@@ -29,7 +29,7 @@ namespace base
 
         // load and parse XML document from file on disk (may be text or binary XML)
         // NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
-        extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView<char> absoluteFilePath);
+        extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView absoluteFilePath);
 
         // parse XML document from text, the input buffer will be copied
         // NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
@@ -40,10 +40,10 @@ namespace base
         extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const Buffer& mem);
 
         // save document to file on disk, document can be saved both in binary or text format
-        extern BASE_XML_API bool SaveDocument(const IDocument& ptr, StringView<char> absoluteFilePath, bool binaryFormat = false);
+        extern BASE_XML_API bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat = false);
 
         // create an empty document that can be filled with data
-        extern BASE_XML_API DocumentPtr CreateDocument(StringView<char> rootNodeName);
+        extern BASE_XML_API DocumentPtr CreateDocument(StringView rootNodeName);
 
         //---
 

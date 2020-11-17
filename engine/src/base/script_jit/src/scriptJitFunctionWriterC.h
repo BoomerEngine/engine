@@ -22,7 +22,7 @@ namespace base
         {
             const JITType* jitType = nullptr;
             bool pointer = false;
-            StringView<char> text;
+            StringView text;
             const StubOpcode* op = nullptr;
 
             INLINE void print(IFormatStream& f) const
@@ -81,27 +81,27 @@ namespace base
 
             uint32_t m_lastLine;
 
-            void reportError(const Stub* op, StringView<char> txt);
+            void reportError(const Stub* op, StringView txt);
 
             //--
 
-            StringView<char> copyString(const StringView<char> str);
-            JITCodeChunkC makeChunk(const StubOpcode* op, const JITType* type, StringView<char> str);
+            StringView copyString(const StringView str);
+            JITCodeChunkC makeChunk(const StubOpcode* op, const JITType* type, StringView str);
 
-            JITCodeChunkC processOpcode(StringView<char> contextStr, const StubOpcode* op, JITOpcodeStream& stream);
-            bool processStatement(StringView<char> contextStr, const StubOpcode* op, JITOpcodeStream& stream);
+            JITCodeChunkC processOpcode(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
+            bool processStatement(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
             bool finishStatement(const StubOpcode* op);
 
             //--
 
-            HashMap<const StubOpcode*, StringView<char>> m_labelMap;
-            StringView<char> makeLabel(const StubOpcode* label);
+            HashMap<const StubOpcode*, StringView> m_labelMap;
+            StringView makeLabel(const StubOpcode* label);
 
             //--
 
             struct NewTemps
             {
-                StringView<char> varName;
+                StringView varName;
                 const JITType* jitType = nullptr;
             };
 
@@ -123,11 +123,11 @@ namespace base
             JITCodeChunkC makeLocalVar(const StubOpcode* context, int localIndex, const Stub* type, StringID knownName = StringID());
             JITCodeChunkC makeTempVar(const StubOpcode* context, const JITType* requiredType);
 
-            StringView<char> makeStatementExitLabel();
+            StringView makeStatementExitLabel();
 
-            void makeCtor(const JITType* type, bool isMemoryZeroed, StringView<char> str, bool fromPointer);
-            void makeDtor(const JITType* type, StringView<char> str, bool fromPointer);
-            void makeCopy(const JITType* type, StringView<char> to, bool targetPointer, StringView<char> from, bool fromPointer);
+            void makeCtor(const JITType* type, bool isMemoryZeroed, StringView str, bool fromPointer);
+            void makeDtor(const JITType* type, StringView str, bool fromPointer);
+            void makeCopy(const JITType* type, StringView to, bool targetPointer, StringView from, bool fromPointer);
 
             void makeCopy(const JITCodeChunkC& to, const JITCodeChunkC& from);
             void makeCtor(const JITCodeChunkC& var, bool isMemoryZeroed);

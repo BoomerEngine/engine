@@ -44,7 +44,7 @@ namespace ui
         void value(double value, bool callEvent=false);
 
         // units text (displayed after the number)
-        void units(base::StringView<char> txt);
+        void units(base::StringView txt);
 
         // allow/disallow edit box
         void allowEditBox(bool isEditBoxAllowed);
@@ -85,7 +85,7 @@ namespace ui
     protected:
         virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent &evt) override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const base::input::MouseClickEvent &evt) override;
         virtual void handleFocusLost() override;

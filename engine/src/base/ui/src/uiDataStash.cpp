@@ -37,7 +37,7 @@ namespace ui
     {
     }
 
-    void DataStash::onPropertyChanged(base::StringView<char> path)
+    void DataStash::onPropertyChanged(base::StringView path)
     {
         TBaseClass::onPropertyChanged(path);
 
@@ -49,7 +49,7 @@ namespace ui
         }
     }
     
-    void DataStash::addIconSearchPath(base::StringView<char> path)
+    void DataStash::addIconSearchPath(base::StringView path)
     {
         DEBUG_CHECK_RETURN(base::ValidateDepotPath(path, base::DepotPathClass::AbsoluteDirectoryPath));
 

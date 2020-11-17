@@ -24,9 +24,9 @@ namespace ui
         TInputValidationFunction m_validation;
         bool m_multiline = false;
 
-        INLINE InputBoxSetup& title(base::StringView<char> txt) { m_title = base::StringBuf(txt); return *this; }
-        INLINE InputBoxSetup& message(base::StringView<char> txt) { m_message = base::StringBuf(txt); return *this; }
-        INLINE InputBoxSetup& hint(base::StringView<char> txt) { m_hint = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& title(base::StringView txt) { m_title = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& message(base::StringView txt) { m_message = base::StringBuf(txt); return *this; }
+        INLINE InputBoxSetup& hint(base::StringView txt) { m_hint = base::StringBuf(txt); return *this; }
         INLINE InputBoxSetup& multiline(bool flag = true) { m_multiline = flag; return *this; }
     };
 

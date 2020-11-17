@@ -95,7 +95,7 @@ namespace base
             INLINE void writeProperty(const rtti::Property* rttiProperty);
             INLINE void writePointer(const IObject* object);
 
-            void writeResourceReference(StringView<char> path, ClassType resourceClass, bool async);
+            void writeResourceReference(StringView path, ClassType resourceClass, bool async);
             void writeBuffer(const Buffer& buffer);
 
             //--

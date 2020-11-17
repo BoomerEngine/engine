@@ -152,27 +152,27 @@ namespace base
         return *this;
     }
 
-    bool StringBuf::operator==(StringView<char> other) const
+    bool StringBuf::operator==(StringView other) const
     {
         return 0 == view().cmp(other);
     }
 
-    bool StringBuf::operator!=(StringView<char> other) const
+    bool StringBuf::operator!=(StringView other) const
     {
         return 0 != view().cmp(other);
     }
 
-    bool StringBuf::operator<(StringView<char> other) const
+    bool StringBuf::operator<(StringView other) const
     {
         return 0 > view().cmp(other);
     }
 
-    int StringBuf::compareWith(StringView<char> other) const
+    int StringBuf::compareWith(StringView other) const
     {
         return view().cmp(other);
     }
 
-    int StringBuf::compareWithNoCase(StringView<char> other) const
+    int StringBuf::compareWithNoCase(StringView other) const
     {
         return view().caseCmp(other);
     }
@@ -198,7 +198,7 @@ namespace base
         outRight = subString(index);
     }
 
-    bool StringBuf::splitAt(StringView<char> str, StringBuf& outLeft, StringBuf& outRight) const
+    bool StringBuf::splitAt(StringView str, StringBuf& outLeft, StringBuf& outRight) const
     {
         int pos = findStr(str);
         if (pos != INDEX_NONE)
@@ -211,22 +211,22 @@ namespace base
         return false;
     }
 
-    int StringBuf::findStr(StringView<char> pattern, int firstPosition) const
+    int StringBuf::findStr(StringView pattern, int firstPosition) const
     {
         return (int)view().findStr(pattern, firstPosition);
     }
 
-    int StringBuf::findStrRev(StringView<char> pattern, int firstPosition) const
+    int StringBuf::findStrRev(StringView pattern, int firstPosition) const
     {
         return (int)view().findRevStr(pattern, firstPosition);
     }
 
-    int StringBuf::findStrNoCase(StringView<char> pattern, int firstPosition) const
+    int StringBuf::findStrNoCase(StringView pattern, int firstPosition) const
     {
         return (int)view().findStrNoCase(pattern, firstPosition);
     }
 
-    int StringBuf::findStrRevNoCase(StringView<char> pattern, int firstPosition) const
+    int StringBuf::findStrRevNoCase(StringView pattern, int firstPosition) const
     {
         return (int)view().findRevStrNoCase(pattern, firstPosition);
     }
@@ -264,29 +264,29 @@ namespace base
         }
     }
 
-    bool StringBuf::beginsWith(StringView<char> pattern) const
+    bool StringBuf::beginsWith(StringView pattern) const
     {
         return view().beginsWith(pattern);
     }
 
-    bool StringBuf::beginsWithNoCase(StringView<char> pattern) const
+    bool StringBuf::beginsWithNoCase(StringView pattern) const
     {
         return view().beginsWithNoCase(pattern);
     }
 
-    bool StringBuf::endsWith(StringView<char> pattern) const
+    bool StringBuf::endsWith(StringView pattern) const
     {
         return view().endsWith(pattern);
     }
 
-    bool StringBuf::endsWithNoCase(StringView<char> pattern) const
+    bool StringBuf::endsWithNoCase(StringView pattern) const
     {
         return view().endsWithNoCase(pattern);
     }
 
     //--
 
-    StringBuf StringBuf::stringAfterFirst(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringAfterFirst(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().afterFirstOrFull(pattern));
@@ -294,7 +294,7 @@ namespace base
             return StringBuf(view().afterFirst(pattern));
     }
 
-    StringBuf StringBuf::stringBeforeFirst(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringBeforeFirst(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().beforeFirstOrFull(pattern));
@@ -303,7 +303,7 @@ namespace base
     }
 
 
-    StringBuf StringBuf::stringAfterLast(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringAfterLast(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().afterLastOrFull(pattern));
@@ -311,7 +311,7 @@ namespace base
             return StringBuf(view().afterLast(pattern));
     }
 
-    StringBuf StringBuf::stringBeforeLast(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringBeforeLast(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().beforeLastOrFull(pattern));
@@ -321,7 +321,7 @@ namespace base
     
     //--
 
-    StringBuf StringBuf::stringAfterFirstNoCase(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringAfterFirstNoCase(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().afterFirstNoCaseOrFull(pattern));
@@ -329,7 +329,7 @@ namespace base
             return StringBuf(view().afterFirstNoCase(pattern));
     }
 
-    StringBuf StringBuf::stringBeforeFirstNoCase(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringBeforeFirstNoCase(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().beforeFirstNoCaseOrFull(pattern));
@@ -338,7 +338,7 @@ namespace base
     }
 
 
-    StringBuf StringBuf::stringAfterLastNoCase(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringAfterLastNoCase(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().afterLastNoCaseOrFull(pattern));
@@ -346,7 +346,7 @@ namespace base
             return StringBuf(view().afterLastNoCase(pattern));
     }
 
-    StringBuf StringBuf::stringBeforeLastNoCase(StringView<char> pattern, bool returnFullStringIfNotFound/*=false*/) const
+    StringBuf StringBuf::stringBeforeLastNoCase(StringView pattern, bool returnFullStringIfNotFound/*=false*/) const
     {
         if (returnFullStringIfNotFound)
             return StringBuf(view().beforeLastNoCaseOrFull(pattern));
@@ -386,7 +386,7 @@ namespace base
 
     void StringBuf::slice(const char* splitChars, bool keepEmpty, Array< StringBuf >& outTokens) const
     {
-        InplaceArray<StringView<char>, 16> tokenViews;
+        InplaceArray<StringView, 16> tokenViews;
         view().slice(splitChars, keepEmpty, tokenViews);
 
         outTokens.reserve(tokenViews.size());

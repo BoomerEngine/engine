@@ -69,7 +69,7 @@ namespace base
 
         //--
 
-        FieldPacking::FieldPacking(StringView<char> txt)
+        FieldPacking::FieldPacking(StringView txt)
         {
             if (!Parse(txt, *this))
             {
@@ -77,7 +77,7 @@ namespace base
             }
         }
 
-        bool FieldPacking::Parse(StringView<char> txt, FieldPacking& outFieldPacking)
+        bool FieldPacking::Parse(StringView txt, FieldPacking& outFieldPacking)
         {
             StringParser p(txt);
 
@@ -92,7 +92,7 @@ namespace base
             {
                 p.parseKeyword(",");
 
-                StringView<char> key;
+                StringView key;
                 if (!p.parseString(key, ":,"))
                 {
                     TRACE_ERROR("Expected identifier");

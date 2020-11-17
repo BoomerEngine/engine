@@ -26,7 +26,7 @@ namespace rendering
 
         //---
 
-        PassBracket::PassBracket(command::CommandWriter& cmd, const FrameView& view, base::StringView<char> name)
+        PassBracket::PassBracket(command::CommandWriter& cmd, const FrameView& view, base::StringView name)
             : m_cmd(cmd)
             , m_view(view)
         {

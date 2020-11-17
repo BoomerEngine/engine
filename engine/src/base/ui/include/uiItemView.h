@@ -324,7 +324,7 @@ namespace ui
         virtual void handleDragDropGenericCompletion(const DragDropDataPtr& data, const Position& entryPosition) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         virtual bool handleCharEvent(const base::input::CharEvent& evt) override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         // IAbstractItemModelObserver
         virtual void modelItemUpdate(const ModelIndex& index, ItemUpdateMode mode) override;

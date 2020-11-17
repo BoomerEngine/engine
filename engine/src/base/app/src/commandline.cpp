@@ -84,14 +84,14 @@ namespace base
 
         //--
 
-        bool CommandLine::parse(StringView<char> commandline, bool skipProgramPath)
+        bool CommandLine::parse(StringView commandline, bool skipProgramPath)
         {
             StringParser parser(commandline);
 
             // skip the program path
             if (skipProgramPath)
             {
-                StringView<char> programPath;
+                StringView programPath;
                 if (!parser.parseString(programPath))
                 {
                     TRACE_WARNING("No program path in passed commandline");
@@ -111,7 +111,7 @@ namespace base
                 }
 
                 // get the command
-                StringView<char> commandName;
+                StringView commandName;
                 if (!parser.parseIdentifier(commandName))
                 {
                     TRACE_ERROR("Commandline parsing error: expecting command name. Application may not work as expected.");
@@ -130,7 +130,7 @@ namespace base
                 parseInitialChar = true;
 
                 // Get the name of the parameter
-                StringView<char> paramName;
+                StringView paramName;
                 if (!parser.parseIdentifier(paramName))
                 {
                     TRACE_ERROR("Commandline parsing error: expecting param name after '-'. Application may not work as expected.");
@@ -138,7 +138,7 @@ namespace base
                 }
 
                 // Do we have a value ?
-                StringView<char> paramValue;
+                StringView paramValue;
                 if (parser.parseKeyword("="))
                 {
                     // Read value
@@ -157,7 +157,7 @@ namespace base
             return true;
         }
 
-        bool CommandLine::parse(const StringView<wchar_t>& commandline, bool skipProgramPath)
+        bool CommandLine::parse(const BaseStringView<wchar_t>& commandline, bool skipProgramPath)
         {
             StringBuf ansiCommandline(commandline);
             return parse(ansiCommandline.c_str(), skipProgramPath);
@@ -191,13 +191,13 @@ namespace base
             return parse(str.c_str(), false);
         }
 
-        void CommandLine::addCommand(StringView<char> command)
+        void CommandLine::addCommand(StringView command)
         {
             if (!hasCommand(command))
                 m_commands.pushBack(StringBuf(command));
         }
 
-        void CommandLine::removeCommand(StringView<char> command)
+        void CommandLine::removeCommand(StringView command)
         {
             for (uint32_t i=0; i<m_commands.size(); ++i)
             {
@@ -208,7 +208,7 @@ namespace base
             }
         }
 
-        bool CommandLine::hasCommand(StringView<char> command) const
+        bool CommandLine::hasCommand(StringView command) const
         {
             for (auto& ptr : m_commands)
                 if (ptr.compareWithNoCase(command))
@@ -217,7 +217,7 @@ namespace base
             return false;
         }
 
-        void CommandLine::param(StringView<char> name, StringView<char> value)
+        void CommandLine::param(StringView name, StringView value)
         {
             for (auto& param : m_params)
             {
@@ -231,7 +231,7 @@ namespace base
             m_params.emplaceBack(CommandLineParam{ StringBuf(name), StringBuf(value) });
         }
 
-        void CommandLine::removeParam(StringView<char> name)
+        void CommandLine::removeParam(StringView name)
         {
             for (int i = (int)m_params.size() - 1; i >= 0; --i)
             {
@@ -242,7 +242,7 @@ namespace base
             }
         }
 
-        bool CommandLine::hasParam(StringView<char> paramName) const
+        bool CommandLine::hasParam(StringView paramName) const
         {
             // Linear search
             for (auto& param : m_params)
@@ -253,7 +253,7 @@ namespace base
             return false;
         }
 
-        const StringBuf& CommandLine::singleValue(StringView<char> paramName) const
+        const StringBuf& CommandLine::singleValue(StringView paramName) const
         {
             // Linear search
             for (auto& param : m_params)
@@ -264,7 +264,7 @@ namespace base
             return StringBuf::EMPTY();
         }
 
-        int CommandLine::singleValueInt(StringView<char> paramName, int defaultValue /*= 0*/) const
+        int CommandLine::singleValueInt(StringView paramName, int defaultValue /*= 0*/) const
         {
             // Linear search
             for (auto& param : m_params)
@@ -281,7 +281,7 @@ namespace base
             return defaultValue;
         }
 
-        float CommandLine::singleValueFloat(StringView<char> paramName, float defaultValue /*= 0*/) const
+        float CommandLine::singleValueFloat(StringView paramName, float defaultValue /*= 0*/) const
         {
             // Linear search
             for (auto& param : m_params)
@@ -300,7 +300,7 @@ namespace base
             return defaultValue;
         }
 
-        bool CommandLine::singleValueBool(StringView<char> paramName, bool defaultValue /*= 0*/) const
+        bool CommandLine::singleValueBool(StringView paramName, bool defaultValue /*= 0*/) const
         {
             // Linear search
             for (auto& param : m_params)
@@ -322,7 +322,7 @@ namespace base
             return defaultValue;
         }
 
-        Array< StringBuf > CommandLine::allValues(StringView<char> paramName) const
+        Array< StringBuf > CommandLine::allValues(StringView paramName) const
         {
             Array< StringBuf > ret;
 
@@ -346,7 +346,7 @@ namespace base
 
         //--
 
-        static bool ShouldWrapPram(StringView<char> str)
+        static bool ShouldWrapPram(StringView str)
         {
             for (auto ch : str)
             {
@@ -390,14 +390,14 @@ namespace base
             return ret.toString();
         }
 
-        UTF16StringBuf CommandLine::toUTF16String() const
+        UTF16StringVector CommandLine::toUTF16String() const
         {
-            return UTF16StringBuf(toString());
+            return UTF16StringVector(toString());
         }
 
-        Array<UTF16StringBuf> CommandLine::toUTF16StringArray() const
+        Array<UTF16StringVector> CommandLine::toUTF16StringArray() const
         {
-            Array<UTF16StringBuf> ret;
+            Array<UTF16StringVector> ret;
 
             for (auto& cmd : m_commands)
                 ret.emplaceBack(cmd.uni_str());
@@ -474,27 +474,27 @@ namespace base
 
         bool CommandLine::hasParam(const char* param) const
         {
-            return hasParam(StringView<char>(param));
+            return hasParam(StringView(param));
         }
 
         const char* CommandLine::singleValueAnsiStr(const char *param) const
         {
-            return singleValue(StringView<char>(param)).c_str();
+            return singleValue(StringView(param)).c_str();
         }
 
         int CommandLine::singleValueInt(const char* param, int defaultValue /*= 0*/) const
         {
-            return singleValueInt(StringView<char>(param), defaultValue);
+            return singleValueInt(StringView(param), defaultValue);
         }
 
         bool CommandLine::singleValueBool(const char* param, bool defaultValue /*= false*/) const
         {
-            return singleValueBool(StringView<char>(param), defaultValue);
+            return singleValueBool(StringView(param), defaultValue);
         }
 
         float CommandLine::singleValueFloat(const char* param, float defaultValue /*= 0.0f*/) const
         {
-            return singleValueFloat(StringView<char>(param), defaultValue);
+            return singleValueFloat(StringView(param), defaultValue);
         }
 
         //--

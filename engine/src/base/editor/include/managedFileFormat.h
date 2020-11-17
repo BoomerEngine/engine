@@ -34,7 +34,7 @@ namespace ed
     class BASE_EDITOR_API ManagedFileFormat : public NoCopy
     {
     public:
-        ManagedFileFormat(StringView<char> extension);
+        ManagedFileFormat(StringView extension);
         ~ManagedFileFormat();
 
         /// should we show this format in asset browser
@@ -131,7 +131,7 @@ namespace ed
 
         /// get file format description for given extension
         /// NOTE: we always return a valid object here (except for empty extension)
-        const ManagedFileFormat* format(StringView<char> extension);
+        const ManagedFileFormat* format(StringView extension);
 
     private:
         SpinLock m_lock;

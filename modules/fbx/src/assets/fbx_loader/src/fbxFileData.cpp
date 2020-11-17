@@ -38,7 +38,7 @@ namespace fbx
             materialName = "DefaultMaterial";
 
         uint32_t ret = 0;
-        if (materialsMapping.find(base::StringView<char>(materialName), ret))
+        if (materialsMapping.find(base::StringView(materialName), ret))
             return ret;
 
         auto& entry = materials.emplaceBack();
@@ -899,7 +899,7 @@ namespace fbx
         localNode->m_localToWorld = localToWorld;
         localNode->m_meshToWorld = meshToWorld;
         //localNode->m_localToParent = localNode->m_localToWorld * worldToParent;
-        localNode->m_name = base::StringView<char>(node->GetName());
+        localNode->m_name = base::StringView(node->GetName());
         localNode->m_parent = parentDataNode;
         if (parentDataNode)
             parentDataNode->m_children.pushBack(localNode);

@@ -1549,18 +1549,18 @@ namespace ui
 
     //--
 
-    bool Renderer::storeDataToClipboard(base::StringView<char> format, const void* data, uint32_t size)
+    bool Renderer::storeDataToClipboard(base::StringView format, const void* data, uint32_t size)
     {
         return m_native->stroreClipboardData(format, data, size);
     }
 
-    bool Renderer::storeTextToClipboard(base::StringView<char> text)
+    bool Renderer::storeTextToClipboard(base::StringView text)
     {
         auto data = text.toBufferWithZero();
         return storeDataToClipboard("TEXT", data.data(), data.size());
     }
 
-    bool Renderer::storeTextToClipboard(base::StringView<wchar_t> text)
+    bool Renderer::storeTextToClipboard(base::BaseStringView<wchar_t> text)
     {
         auto data = text.toBufferWithZero();
         return storeDataToClipboard("UNITEXT", data.data(), data.size());
@@ -1582,7 +1582,7 @@ namespace ui
         // try unicode text first, most common
         if (auto uniTextData = m_native->loadClipboardData("UNITEXT"))
         {
-            auto textView = base::StringView<wchar_t>((const wchar_t*)uniTextData.data());
+            auto textView = base::BaseStringView<wchar_t>((const wchar_t*)uniTextData.data());
             outText = base::StringBuf(textView);
             return true;
         }
@@ -1590,7 +1590,7 @@ namespace ui
         // try ANSI text first, some cases
         if (auto ansiTextData = m_native->loadClipboardData("TEXT"))
         {
-            auto textView = base::StringView<char>((const char*)ansiTextData.data());
+            auto textView = base::StringView((const char*)ansiTextData.data());
             outText = base::StringBuf(textView);
             return true;
         }

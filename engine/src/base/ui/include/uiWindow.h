@@ -131,7 +131,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(Window, IElement);
 
     public:
-        Window(WindowFeatureFlags flags, base::StringView<char> title = "Boomer Engine");
+        Window(WindowFeatureFlags flags, base::StringView title = "Boomer Engine");
         virtual ~Window();
 
         //--
@@ -168,7 +168,7 @@ namespace ui
         void requestSize(const Size& screenSize);
 
         // request change of a title
-        void requestTitleChange(base::StringView<char> newTitle);
+        void requestTitleChange(base::StringView newTitle);
 
         // request window visibility change
         void requestShow(bool activate = false);

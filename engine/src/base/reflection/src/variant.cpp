@@ -232,7 +232,7 @@ namespace base
         return rtti::ConvertData(data(), type(), destData, destType);
     }
 
-    bool Variant::setFromString(StringView<char> txt)
+    bool Variant::setFromString(StringView txt)
     {
 #ifdef BUILD_DEBUG
         validate();

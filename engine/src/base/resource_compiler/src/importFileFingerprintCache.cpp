@@ -49,14 +49,14 @@ namespace base
             markModified();
         }
 
-        void ImportFingerprintCache::conformPath(StringView<char> path, StringBuf& outPath) const
+        void ImportFingerprintCache::conformPath(StringView path, StringBuf& outPath) const
         {
             outPath = StringBuf(path);
             //outPath = outPath.toLower();
             //outPath.replaceChar('\\', '/');
         }
 
-        bool ImportFingerprintCache::findEntry(StringView<char> path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint)
+        bool ImportFingerprintCache::findEntry(StringView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint)
         {
             DEBUG_CHECK_EX(path, "Invalid path");
             DEBUG_CHECK_EX(!timestamp.empty(), "Invalid timestamp");
@@ -87,7 +87,7 @@ namespace base
             return false;
         }
 
-        void ImportFingerprintCache::storeEntry(StringView<char> path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint)
+        void ImportFingerprintCache::storeEntry(StringView path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint)
         {
             DEBUG_CHECK_EX(path, "Invalid path");
             DEBUG_CHECK_EX(!timestamp.empty(), "Invalid timestamp");

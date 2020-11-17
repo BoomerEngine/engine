@@ -196,7 +196,7 @@ namespace base
 
             /// TRY to parse value from a provided StringView, NOTE that we must parse EVERY character of that string view, ie. "5 cats" will not parse as integer "5".
             /// NOTE: in a similar fassion, if the partOfLargerStream is set we may expect to have for example escaped string, etc
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const;
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const;
 
             //----
             // XML save/load (simple serialization)
@@ -211,13 +211,13 @@ namespace base
             // Data view
 
             /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const;
+            virtual DataViewResult describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const;
 
             /// Read data from memory
-            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const;
+            virtual DataViewResult readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const;
 
             /// Write data to memory
-            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const;
+            virtual DataViewResult writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const;
 
             //----
             // Type traits

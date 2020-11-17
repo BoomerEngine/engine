@@ -25,14 +25,14 @@ namespace hl2
         /// base::depot::IFileSystem interface
         virtual bool isPhysical() const override final;
         virtual bool isWritable() const override final;
-        virtual bool ownsFile(StringView<char> rawFilePath) const override final;
-        virtual bool contextName(StringView<char> rawFilePath, base::StringBuf& outContextName) const override final;
-        virtual bool timestamp(StringView<char> rawFilePath, base::io::TimeStamp& outTimestamp) const override final;
-        virtual bool absolutePath(StringView<char> rawFilePath, base::StringBuf& outAbsolutePath) const override final;
-        virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
-        virtual bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
-        //virtual base::io::FileHandlePtr createReader(StringView<char> rawFilePath) const override final;
-        //virtual bool writeFile(StringView<char> awFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp=nullptr, uint64_t overrideCRC=0) override final;
+        virtual bool ownsFile(StringView rawFilePath) const override final;
+        virtual bool contextName(StringView rawFilePath, base::StringBuf& outContextName) const override final;
+        virtual bool timestamp(StringView rawFilePath, base::io::TimeStamp& outTimestamp) const override final;
+        virtual bool absolutePath(StringView rawFilePath, base::StringBuf& outAbsolutePath) const override final;
+        virtual bool enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const override final;
+        virtual bool enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const override final;
+        //virtual base::io::FileHandlePtr createReader(StringView rawFilePath) const override final;
+        //virtual bool writeFile(StringView awFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp=nullptr, uint64_t overrideCRC=0) override final;
         //virtual bool enableWriteOperations() override final;
         virtual void enableFileSystemObservers() override final;
 

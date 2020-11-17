@@ -20,7 +20,7 @@ namespace base
     {
         //--
 
-        StubLibrary::StubLibrary(mem::LinearAllocator& mem, StringView<char> primaryModuleName)
+        StubLibrary::StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName)
             : m_mem(mem)
             , m_primaryModuleName(primaryModuleName)
         {
@@ -101,7 +101,7 @@ namespace base
         const Stub* StubLibrary::findStubInContext(StringID name, const Stub* context) const
         {
             // split the complex type name
-            InplaceArray<StringView<char>, 6> nameParts;
+            InplaceArray<StringView, 6> nameParts;
             name.view().slice(".", false, nameParts);
 
             // empty name
@@ -522,7 +522,7 @@ namespace base
             return ret;
         }
 
-        StubConstantValue* StubLibrary::createConstValueString(const StubLocation& location, StringView<char> value)
+        StubConstantValue* StubLibrary::createConstValueString(const StubLocation& location, StringView value)
         {
             auto lock = base::CreateLock(m_lock);
 
@@ -992,18 +992,18 @@ namespace base
             return true;
         }
 
-        void StubLibrary::reportWarning(IErrorHandler& err, const StubLocation& loc, StringView<char> txt)
+        void StubLibrary::reportWarning(IErrorHandler& err, const StubLocation& loc, StringView txt)
         {
             if (loc.file)
                 err.reportWarning(loc.file->absolutePath, loc.line, txt);
         }
 
-        void StubLibrary::reportWarning(IErrorHandler& err, const Stub* stub, StringView<char> txt)
+        void StubLibrary::reportWarning(IErrorHandler& err, const Stub* stub, StringView txt)
         {
             reportWarning(err, stub ? stub->location : StubLocation(), txt);
         }
 
-        void StubLibrary::reportError(IErrorHandler& err, const StubLocation& loc, StringView<char> txt)
+        void StubLibrary::reportError(IErrorHandler& err, const StubLocation& loc, StringView txt)
         {
             if (loc.file)
                 err.reportError(loc.file->absolutePath, loc.line, txt);
@@ -1011,7 +1011,7 @@ namespace base
                 err.reportError(StringBuf(), 0, txt);
         }
 
-        void StubLibrary::reportError(IErrorHandler& err, const Stub* stub, StringView<char> txt)
+        void StubLibrary::reportError(IErrorHandler& err, const Stub* stub, StringView txt)
         {
             reportError(err, stub ? stub->location : StubLocation(), txt);
         }

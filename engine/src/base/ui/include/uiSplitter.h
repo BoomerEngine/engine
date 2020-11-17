@@ -62,7 +62,7 @@ namespace ui
         void collectChildren(IElement*& outFirst, IElement*& outSecond) const;
 
     protected:
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
     };
 
     //--

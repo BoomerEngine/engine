@@ -364,7 +364,7 @@ namespace rendering
         TBaseClass::notifyBaseMaterialChanged();
     }
 
-    void MaterialInstance::onPropertyChanged(base::StringView<char> path)
+    void MaterialInstance::onPropertyChanged(base::StringView path)
     {
         auto orgPropName = path;
 
@@ -376,7 +376,7 @@ namespace rendering
         }
         else
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(path, propertyName) && !propertyName.empty())
             {
                 if (const auto* baseTemplate = resolveTemplate())
@@ -471,11 +471,11 @@ namespace rendering
         return false;
     }
 
-    base::DataViewResult MaterialInstance::readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    base::DataViewResult MaterialInstance::readDataView(base::StringView viewPath, void* targetData, base::Type targetType) const
     {
-        base::StringView<char> originalViewPath = viewPath;
+        base::StringView originalViewPath = viewPath;
 
-        base::StringView<char> propertyName;
+        base::StringView propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
             // try to read as a parameter name
@@ -488,11 +488,11 @@ namespace rendering
         return TBaseClass::readDataView(originalViewPath, targetData, targetType);
     }
 
-    base::DataViewResult MaterialInstance::writeDataView(base::StringView<char> viewPath, const void* sourceData, base::Type sourceType)
+    base::DataViewResult MaterialInstance::writeDataView(base::StringView viewPath, const void* sourceData, base::Type sourceType)
     {
         const auto originalPath = viewPath;
 
-        base::StringView<char> propertyName;
+        base::StringView propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
             // we can only write/create parameters that exist in the material TEMPLATE
@@ -518,9 +518,9 @@ namespace rendering
         return TBaseClass::writeDataView(originalPath, sourceData, sourceType);
     }
 
-    base::DataViewResult MaterialInstance::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    base::DataViewResult MaterialInstance::describeDataView(base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const
     {
-        base::StringView<char> originalViewPath = viewPath;
+        base::StringView originalViewPath = viewPath;
 
         if (viewPath.empty())
         {
@@ -532,7 +532,7 @@ namespace rendering
         }
         else
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
             {
                 if (const auto* materialTemplate = resolveTemplate())
@@ -602,14 +602,14 @@ namespace rendering
             , m_material(mi)
         {}
 
-        virtual base::DataViewResult readDefaultDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        virtual base::DataViewResult readDefaultDataView(base::StringView viewPath, void* targetData, base::Type targetType) const
         {
             const auto originalPath = viewPath;
 
             if (!m_material)
                 return base::DataViewResultCode::ErrorNullObject;
 
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
             {
                 const auto paramName = base::StringID::Find(propertyName); // avoid allocating BS names
@@ -622,12 +622,12 @@ namespace rendering
             return DataViewNative::readDefaultDataView(originalPath, targetData, targetType);
         }
 
-        virtual base::DataViewResult resetToDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        virtual base::DataViewResult resetToDefaultValue(base::StringView viewPath, void* targetData, base::Type targetType) const
         {
             if (!m_material)
                 return base::DataViewResultCode::ErrorNullObject;
 
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
             {
                 if (viewPath.empty())
@@ -641,12 +641,12 @@ namespace rendering
             return base::DataViewNative::resetToDefaultValue(viewPath, targetData, targetType);
         }
 
-        virtual bool checkIfCurrentlyADefaultValue(base::StringView<char> viewPath) const
+        virtual bool checkIfCurrentlyADefaultValue(base::StringView viewPath) const
         {
             if (!m_material)
                 return false;
 
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
                 if (viewPath.empty())
                     return !m_material->checkParameterOverride(base::StringID::Find(propertyName));

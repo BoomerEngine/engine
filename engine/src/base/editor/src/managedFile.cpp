@@ -41,7 +41,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFile);
     RTTI_END_TYPE();
 
-    ManagedFile::ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName)
+    ManagedFile::ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
         : ManagedItem(depot, parentDir, fileName)
         , m_isModified(false)
         , m_fileFormat(nullptr)

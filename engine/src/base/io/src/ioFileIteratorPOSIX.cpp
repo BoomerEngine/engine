@@ -90,7 +90,7 @@ namespace base
                 // check pattern
                 if (m_searchPattern != "*.*" && m_searchPattern != "*.")
                 {
-                    if (!base::StringView<char>(fileName).matchString(m_searchPattern.view()))
+                    if (!base::StringView(fileName).matchString(m_searchPattern.view()))
                         return false;
                 }
 

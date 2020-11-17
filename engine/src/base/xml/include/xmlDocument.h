@@ -40,10 +40,10 @@ namespace base
             virtual NodeID root() const = 0;
 
             // get first node child
-            virtual NodeID nodeFirstChild(NodeID id, StringView<char> childName = nullptr) const = 0;
+            virtual NodeID nodeFirstChild(NodeID id, StringView childName = nullptr) const = 0;
 
             // get next node sibling
-            virtual NodeID nodeSibling(NodeID id, StringView<char> siblingName = nullptr) const = 0;
+            virtual NodeID nodeSibling(NodeID id, StringView siblingName = nullptr) const = 0;
 
             // get parent node
             virtual NodeID nodeParent(NodeID id) const = 0;
@@ -59,33 +59,33 @@ namespace base
             //---
 
             // get node value
-            virtual StringView<char> nodeValue(NodeID id) const = 0;
+            virtual StringView nodeValue(NodeID id) const = 0;
 
             // get node name
-            virtual StringView<char> nodeName(NodeID id) const = 0;
+            virtual StringView nodeName(NodeID id) const = 0;
 
             // get value for attribute
-            virtual StringView<char> nodeAttributeOfDefault(NodeID id, StringView<char> name, StringView<char> defaultVal = StringView<char>()) const = 0;
+            virtual StringView nodeAttributeOfDefault(NodeID id, StringView name, StringView defaultVal = StringView()) const = 0;
 
             // get first attribute
-            virtual AttributeID nodeFirstAttribute(NodeID id, StringView<char> name = nullptr) const = 0;
+            virtual AttributeID nodeFirstAttribute(NodeID id, StringView name = nullptr) const = 0;
 
             //---
 
             // get name of the node attribute
-            virtual StringView<char> attributeName(AttributeID id) const = 0;
+            virtual StringView attributeName(AttributeID id) const = 0;
 
             // get value of the node attribute
-            virtual StringView<char> attributeValue(AttributeID id) const = 0;
+            virtual StringView attributeValue(AttributeID id) const = 0;
 
             // get next attribute
-            virtual AttributeID nextAttribute(AttributeID id, StringView<char> name = StringView<char>()) const = 0;
+            virtual AttributeID nextAttribute(AttributeID id, StringView name = StringView()) const = 0;
 
             // set new attribute name
-            virtual void attributeName(AttributeID id, StringView<char> name) = 0;
+            virtual void attributeName(AttributeID id, StringView name) = 0;
 
             // set new attribute value
-            virtual void attributeValue(AttributeID id, StringView<char> value) = 0;
+            virtual void attributeValue(AttributeID id, StringView value) = 0;
 
             // delete node attribute
             virtual void deleteAttibute(AttributeID id) = 0;
@@ -93,22 +93,22 @@ namespace base
             //---
 
             // create child node
-            virtual NodeID createNode(NodeID parentNodeID, StringView<char> name) = 0;
+            virtual NodeID createNode(NodeID parentNodeID, StringView name) = 0;
 
             // delete node (and all it's children)
             virtual void deleteNode(NodeID id) = 0;
 
             // set node value
-            virtual void nodeValue(NodeID id, StringView<char> value) = 0;
+            virtual void nodeValue(NodeID id, StringView value) = 0;
 
             // set node name
-            virtual void nodeName(NodeID id, StringView<char> name) = 0;
+            virtual void nodeName(NodeID id, StringView name) = 0;
 
             // set node attribute
-            virtual void nodeAttribute(NodeID id, StringView<char> name, StringView<char> value) = 0;
+            virtual void nodeAttribute(NodeID id, StringView name, StringView value) = 0;
 
             // delete node attribute by name
-            virtual void deleteNodeAttribute(NodeID id, StringView<char> name) = 0;
+            virtual void deleteNodeAttribute(NodeID id, StringView name) = 0;
 
             //--
 

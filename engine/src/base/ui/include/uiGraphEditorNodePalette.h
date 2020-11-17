@@ -44,7 +44,7 @@ namespace ui
 
         base::HashMap<base::StringBuf, ModelIndex> m_groups;
 
-        ModelIndex findOrCreateRootGroup(base::StringView<char> name);
+        ModelIndex findOrCreateRootGroup(base::StringView name);
     };
 
     ///----

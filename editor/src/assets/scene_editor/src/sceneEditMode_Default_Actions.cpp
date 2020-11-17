@@ -190,7 +190,7 @@ namespace ed
         actionHistory()->execute(action);
     }
 
-    static StringView<char> NodeTypeName(SceneContentNodeType type)
+    static StringView NodeTypeName(SceneContentNodeType type)
     {
         switch (type)
         {

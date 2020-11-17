@@ -89,12 +89,12 @@ namespace base
             m_data = prv::StringDataHolder::CreateUnicode(str, length);
         }
 
-        INLINE explicit StringBuf(StringView<char> view)
+        INLINE explicit StringBuf(BaseStringView<char> view)
         {
             m_data = prv::StringDataHolder::CreateAnsi(view.data(), view.length());
         }
 
-        INLINE explicit StringBuf(StringView<wchar_t> view)
+        INLINE explicit StringBuf(BaseStringView<wchar_t> view)
         {
             m_data = prv::StringDataHolder::CreateUnicode(view.data(), view.length());
         }
@@ -136,14 +136,14 @@ namespace base
         StringBuf& operator=(const StringBuf& other);
         StringBuf& operator=(StringBuf&& other);
 
-        bool operator==(StringView<char> other) const;
-        bool operator!=(StringView<char> other) const;
-        bool operator<(StringView<char> other) const;
+        bool operator==(StringView other) const;
+        bool operator!=(StringView other) const;
+        bool operator<(StringView other) const;
 
         //---
 
-        int compareWith(StringView<char> other) const;
-        int compareWithNoCase(StringView<char> other) const;
+        int compareWith(StringView other) const;
+        int compareWithNoCase(StringView other) const;
 
         //---
 
@@ -154,16 +154,16 @@ namespace base
         //---
 
         void split(uint32_t index, StringBuf& outLeft, StringBuf& outRight) const;
-        bool splitAt(StringView<char> str, StringBuf& outLeft, StringBuf& outRight) const;
+        bool splitAt(StringView str, StringBuf& outLeft, StringBuf& outRight) const;
 
         void slice(const char* splitChars, bool keepEmpty, Array< StringBuf >& outTokens) const;
 
         //---
 
-        int findStr(StringView<char> pattern, int firstPosition = 0) const;
-        int findStrRev(StringView<char> pattern, int firstPosition = std::numeric_limits<int>::max()) const;
-        int findStrNoCase(StringView<char> pattern, int firstPosition = 0) const;
-        int findStrRevNoCase(StringView<char> pattern, int firstPosition = std::numeric_limits<int>::max()) const;
+        int findStr(StringView pattern, int firstPosition = 0) const;
+        int findStrRev(StringView pattern, int firstPosition = std::numeric_limits<int>::max()) const;
+        int findStrNoCase(StringView pattern, int firstPosition = 0) const;
+        int findStrRevNoCase(StringView pattern, int firstPosition = std::numeric_limits<int>::max()) const;
 
         int findFirstChar(char ch) const;
         int findLastChar(char ch) const;
@@ -174,24 +174,24 @@ namespace base
 
         //---
 
-        bool beginsWith(StringView<char> pattern) const;
-        bool beginsWithNoCase(StringView<char> pattern) const;
-        bool endsWith(StringView<char> pattern) const;
-        bool endsWithNoCase(StringView<char> pattern) const;
+        bool beginsWith(StringView pattern) const;
+        bool beginsWithNoCase(StringView pattern) const;
+        bool endsWith(StringView pattern) const;
+        bool endsWithNoCase(StringView pattern) const;
 
         //---
 
-        StringBuf stringAfterFirst(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
-        StringBuf stringBeforeFirst(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
-        StringBuf stringAfterLast(StringView<char> pattern, bool returnFullStringIfNotFound=false) const;
-        StringBuf stringBeforeLast(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringAfterFirst(StringView pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringBeforeFirst(StringView pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringAfterLast(StringView pattern, bool returnFullStringIfNotFound=false) const;
+        StringBuf stringBeforeLast(StringView pattern, bool returnFullStringIfNotFound = false) const;
 
         //---
 
-        StringBuf stringAfterFirstNoCase(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
-        StringBuf stringBeforeFirstNoCase(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
-        StringBuf stringAfterLastNoCase(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
-        StringBuf stringBeforeLastNoCase(StringView<char> pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringAfterFirstNoCase(StringView pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringBeforeFirstNoCase(StringView pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringAfterLastNoCase(StringView pattern, bool returnFullStringIfNotFound = false) const;
+        StringBuf stringBeforeLastNoCase(StringView pattern, bool returnFullStringIfNotFound = false) const;
 
         //---
 
@@ -208,11 +208,11 @@ namespace base
 
         INLINE const char* c_str() const;
 
-        INLINE UTF16StringBuf uni_str() const;
+        INLINE UTF16StringVector uni_str() const;
 
-        INLINE StringView<char> view() const;
+        INLINE StringView view() const;
 
-        INLINE operator StringView<char>() const;
+        INLINE operator StringView() const;
 
         INLINE uint32_t cRC32() const;
 
@@ -223,7 +223,7 @@ namespace base
         //---
 
         INLINE static uint32_t CalcHash(const StringBuf& txt);
-        INLINE static uint32_t CalcHash(StringView<char> txt);
+        INLINE static uint32_t CalcHash(StringView txt);
         INLINE static uint32_t CalcHash(const char* txt);
 
         //---
@@ -242,12 +242,12 @@ namespace base
     /// entry for the text template replacement
     struct ReplaceTextPattern
     {
-        StringView<char> name;
-        StringView<char> data;
+        StringView name;
+        StringView data;
     };
 
     /// print template into the output replacing ${X} markers with proper content
-    extern BASE_CONTAINERS_API void ReplaceText(IFormatStream& f, StringView<char> templateText, const ReplaceTextPattern* patterns, uint32_t numPatterns);
+    extern BASE_CONTAINERS_API void ReplaceText(IFormatStream& f, StringView templateText, const ReplaceTextPattern* patterns, uint32_t numPatterns);
 
     //--
 

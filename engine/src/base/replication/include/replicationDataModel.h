@@ -65,10 +65,10 @@ namespace base
             virtual ~IDataModelMapper();
 
             /// map a string to a unique number (type ref as well)
-            virtual DataMappedID mapString(StringView<char> txt) = 0;
+            virtual DataMappedID mapString(StringView txt) = 0;
 
             /// map path (a/b/c/d) to a unique number (type ref as well)
-            virtual DataMappedID mapPath(StringView<char> path, const char* pathSeparators) = 0;
+            virtual DataMappedID mapPath(StringView path, const char* pathSeparators) = 0;
 
             /// map reference to object
             virtual DataMappedID mapObject(const IObject* obj) = 0;
@@ -182,7 +182,7 @@ namespace base
             bool decodeArrayFieldData(const DataModelField& field, void* fieldData, IDataModelResolver& mapper, BitReader& r) const;
             bool decodeFieldData(const DataModelField& field, void* fieldData, IDataModelResolver& mapper, BitReader& r) const;
 
-            bool decodingError(const DataModelField& field, StringView<char> message) const;
+            bool decodingError(const DataModelField& field, StringView message) const;
         };
 
     } // replication

@@ -33,7 +33,7 @@ namespace base
 
         }
 
-        bool SourceAssetFileSystem_LocalComputer::resolveContextPath(StringView<char> fileSystemPath, StringBuf& outContextPath) const
+        bool SourceAssetFileSystem_LocalComputer::resolveContextPath(StringView fileSystemPath, StringBuf& outContextPath) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
@@ -43,7 +43,7 @@ namespace base
             return true;
         }
 
-        bool SourceAssetFileSystem_LocalComputer::fileExists(StringView<char> fileSystemPath) const
+        bool SourceAssetFileSystem_LocalComputer::fileExists(StringView fileSystemPath) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
@@ -52,7 +52,7 @@ namespace base
             return base::io::FileExists(path);
         }
 
-        SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView<char> fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
+        SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
@@ -86,7 +86,7 @@ namespace base
                 return SourceAssetStatus::ContentChanged;
         }
 
-        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView<char> fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
+        Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
@@ -106,13 +106,13 @@ namespace base
             return ret;
         }
 
-        bool SourceAssetFileSystem_LocalComputer::enumDirectoriesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool SourceAssetFileSystem_LocalComputer::enumDirectoriesAtPath(StringView fileSystemPath, const std::function<bool(StringView)>& enumFunc) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return base::io::FindSubDirs(path, [enumFunc](StringView<char> view)
+            return base::io::FindSubDirs(path, [enumFunc](StringView view)
                 {
                     if (!view.beginsWith("."))
                     {
@@ -124,13 +124,13 @@ namespace base
                 });
         }
 
-        bool SourceAssetFileSystem_LocalComputer::enumFilesAtPath(StringView<char> fileSystemPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool SourceAssetFileSystem_LocalComputer::enumFilesAtPath(StringView fileSystemPath, const std::function<bool(StringView)>& enumFunc) const
         {
             StringBuf path;
             if (!convertToAbsolutePath(fileSystemPath, path))
                 return false;
 
-            return base::io::FindLocalFiles(path, "*.*", [enumFunc](StringView<char> view)
+            return base::io::FindLocalFiles(path, "*.*", [enumFunc](StringView view)
                 {
                     if (!view.beginsWith("."))
                     {
@@ -142,7 +142,7 @@ namespace base
                 });
         }
 
-        bool SourceAssetFileSystem_LocalComputer::translateAbsolutePath(StringView<char> absolutePath, StringBuf& outFileSystemPath) const
+        bool SourceAssetFileSystem_LocalComputer::translateAbsolutePath(StringView absolutePath, StringBuf& outFileSystemPath) const
         {
             // non-file path
             if (absolutePath.empty() || absolutePath.endsWith("/") || absolutePath.endsWith("\\"))
@@ -186,7 +186,7 @@ namespace base
 
         //--
 
-        bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView<char> fileSystemPath, StringBuf& outAbsolutePath) const
+        bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView fileSystemPath, StringBuf& outAbsolutePath) const
         {
             StringParser parser(fileSystemPath);
 

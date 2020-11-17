@@ -66,7 +66,7 @@ namespace base
             m_key = ResourceKey();
         }
 
-        void BaseAsyncReference::set(StringView<char> path, SpecificClassType<IResource> cls)
+        void BaseAsyncReference::set(StringView path, SpecificClassType<IResource> cls)
         {
             set(ResourceKey(path, cls));
         }
@@ -149,7 +149,7 @@ namespace base
                 f << "null";
         }
 
-        bool BaseAsyncReference::Parse(StringView<char> txt, BaseAsyncReference& outReference, ClassType constrainedClass /*= nullptr*/)
+        bool BaseAsyncReference::Parse(StringView txt, BaseAsyncReference& outReference, ClassType constrainedClass /*= nullptr*/)
         {
             ResourceKey key;
             if (!ResourceKey::Parse(txt, key))

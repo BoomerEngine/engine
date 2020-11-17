@@ -58,19 +58,19 @@ namespace hl2
         return false;
     }
 
-    bool PackedFileSystem::ownsFile(StringView<char> rawFilePath) const
+    bool PackedFileSystem::ownsFile(StringView rawFilePath) const
     {
         auto fileIndex = m_indexData->findFileEntry(rawFilePath);
         return fileIndex != -1;
     }
 
-    bool PackedFileSystem::contextName(StringView<char> rawFilePath, base::StringBuf& outContextName) const
+    bool PackedFileSystem::contextName(StringView rawFilePath, base::StringBuf& outContextName) const
     {
         outContextName = base::TempString("HL2:{}", rawFilePath);
         return true;
     }
 
-    bool PackedFileSystem::timestamp(StringView<char> rawFilePath, base::io::TimeStamp& outTimestamp) const
+    bool PackedFileSystem::timestamp(StringView rawFilePath, base::io::TimeStamp& outTimestamp) const
     {
         auto fileIndex = m_indexData->findFileEntry(rawFilePath);
         if (fileIndex == -1)
@@ -82,12 +82,12 @@ namespace hl2
         return true;
     }
     
-    bool PackedFileSystem::absolutePath(StringView<char> rawFilePath, base::StringBuf& outAbsolutePath) const
+    bool PackedFileSystem::absolutePath(StringView rawFilePath, base::StringBuf& outAbsolutePath) const
     {
         return false;
     }
 
-    bool PackedFileSystem::enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
+    bool PackedFileSystem::enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const
     {
         ASSERT(rawDirectoryPath.empty() || rawDirectoryPath.endsWith("/"));
 
@@ -109,7 +109,7 @@ namespace hl2
         return false;
     }
 
-    bool PackedFileSystem::enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
+    bool PackedFileSystem::enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const
     {
         ASSERT(rawDirectoryPath.empty() || rawDirectoryPath.endsWith("/"));
 
@@ -132,7 +132,7 @@ namespace hl2
         return false;
     }
 
-    /*base::io::FileHandlePtr PackedFileSystem::createReader(base::StringView<char> rawFilePath) const
+    /*base::io::FileHandlePtr PackedFileSystem::createReader(base::StringView rawFilePath) const
     {
         // find file
         auto fileIndex = m_indexData->findFileEntry(rawFilePath);
@@ -169,7 +169,7 @@ namespace hl2
         return base::CreateSharedPtr<base::io::MemoryReaderFileHandle>(buffer, base::StringBuf(rawFilePath));
     }
 
-    bool PackedFileSystem::writeFile(base::StringView<char> rawFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp, uint64_t overrideCRC)
+    bool PackedFileSystem::writeFile(base::StringView rawFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp, uint64_t overrideCRC)
     {
         return false;
     }

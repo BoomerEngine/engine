@@ -111,12 +111,12 @@ namespace base
             currentObjects.pushBack(const_cast<StubFile*>(file));
         }
 
-        void FileParsingContext::reportError(const parser::Location& location, StringView<char> message)
+        void FileParsingContext::reportError(const parser::Location& location, StringView message)
         {
             m_parser.errorHandler().reportError(mapLocation(location).file->absolutePath, location.line(), message);
         }
 
-        void FileParsingContext::reportWarning(const parser::Location& location, StringView<char> message)
+        void FileParsingContext::reportWarning(const parser::Location& location, StringView message)
         {
             m_parser.errorHandler().reportWarning(mapLocation(location).file->absolutePath, location.line(), message);
         }
@@ -341,7 +341,7 @@ namespace base
             return  m_parser.stubs().createConstValueBool(mapLocation(location), value);
         }
 
-        StubConstantValue* FileParsingContext::createConstValueString(const parser::Location& location, StringView<char> view)
+        StubConstantValue* FileParsingContext::createConstValueString(const parser::Location& location, StringView view)
         {
             return  m_parser.stubs().createConstValueString(mapLocation(location), view);
         }

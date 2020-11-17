@@ -378,7 +378,7 @@ namespace base
             return *(T*)fieldData;
         }
 
-        bool DataModel::decodingError(const DataModelField& field, StringView<char> message) const
+        bool DataModel::decodingError(const DataModelField& field, StringView message) const
         {
             TRACE_SPAM("DataModel: Failed decoding of field '{}' in model '{}': {}", field.m_nativeName, m_name, message);
             return false;

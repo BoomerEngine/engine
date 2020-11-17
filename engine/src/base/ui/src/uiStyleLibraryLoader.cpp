@@ -72,7 +72,7 @@ namespace ui
 
             const RawValue* ParseValue(base::parser::TextParser& p, ParsingContext& pc)
             {
-                base::StringView<char> token;
+                base::StringView token;
 
                 // try a number first
                 double value = 0.0f;
@@ -641,7 +641,7 @@ namespace ui
                 }
                 else
                 {
-                    base::StringView<char> ident;
+                    base::StringView ident;
                     while (p.parseIdentifier(ident, true, false))
                     {
                         auto typeName = base::StringID(ident);
@@ -652,7 +652,7 @@ namespace ui
                 // parse the pseudo classes
                 for (;;)
                 {
-                    base::StringView<char> ident;
+                    base::StringView ident;
                     if (p.parseKeyword("."))
                     {
                         if (!p.parseIdentifier(ident, true, false))
@@ -802,7 +802,7 @@ namespace ui
                     }
 
                     // parse the property ID
-                    base::StringView<char> propertyId;
+                    base::StringView propertyId;
                     if (!p.parseIdentifier(propertyId, false, false, "-"))
                     {
                         p.error("Expecting property ID");
@@ -866,7 +866,7 @@ namespace ui
                 return true;
             }
 
-            bool ParserFile(base::StringView<char> context, base::StringView<char> data, ParsingContext& pc)
+            bool ParserFile(base::StringView context, base::StringView data, ParsingContext& pc)
             {
                 bool valid = true;
 
@@ -880,7 +880,7 @@ namespace ui
                     // import
                     if (parser.parseKeyword("@import"))
                     {
-                        base::StringView<char> path;
+                        base::StringView path;
                         if (parser.parseString(path))
                         {
                             parser.parseKeyword(";", true);
@@ -909,7 +909,7 @@ namespace ui
                     // variable
                     else if (parser.parseKeyword("$"))
                     {
-                        base::StringView<char> path;
+                        base::StringView path;
                         if (parser.parseIdentifier(path, true, false, "-"))
                         {
                             auto varName = base::StringID(path);
@@ -973,7 +973,7 @@ namespace ui
         IStyleLibraryContentLoader::~IStyleLibraryContentLoader()
         {}
 
-        StyleLibraryPtr ParseStyleLibrary(base::StringView<char> context, base::StringView<char> data, IStyleLibraryContentLoader& loader, base::parser::IIncludeHandler& inc, base::parser::IErrorReporter& err)
+        StyleLibraryPtr ParseStyleLibrary(base::StringView context, base::StringView data, IStyleLibraryContentLoader& loader, base::parser::IIncludeHandler& inc, base::parser::IErrorReporter& err)
         {
             base::ScopeTimer timer;
 

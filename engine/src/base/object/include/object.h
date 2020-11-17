@@ -19,7 +19,7 @@
     protected: _class() {};
 
 // Event function
-#define OBJECT_EVENT_FUNC base::StringID eventID, const base::IObject* object, base::StringView<char> eventPath, const base::rtti::DataHolder& eventData
+#define OBJECT_EVENT_FUNC base::StringID eventID, const base::IObject* object, base::StringView eventPath, const base::rtti::DataHolder& eventData
 
 namespace base
 {
@@ -108,13 +108,13 @@ namespace base
         //---
 
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const;
+        virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const;
 
         /// Read data from memory
-        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const;
+        virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const;
 
         /// Write data to memory
-        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType);
+        virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType);
 
         //---
 
@@ -128,10 +128,10 @@ namespace base
 
         // Notification about property change in progress, can be denied if the value is not ok
         // Object should return true to accept the change or false to reject it
-        virtual bool onPropertyChanging(StringView<char> path, const void* newData, Type newDataType) const;
+        virtual bool onPropertyChanging(StringView path, const void* newData, Type newDataType) const;
 
         // Notification about property change that occurred
-        virtual void onPropertyChanged(StringView<char> path);
+        virtual void onPropertyChanged(StringView path);
 
         // Filter visibility of given property in the data view of this object
         // Can be used to conditionally mask/unmask properties based on some part of object configuration

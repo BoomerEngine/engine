@@ -86,7 +86,7 @@ namespace base
                 f << *(const T*)data;
             }
 
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags) const override
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags) const override
             {
                 if (txt.empty())
                     return false;
@@ -94,7 +94,7 @@ namespace base
             }
         };
 
-        static bool NeedsQuotes(StringView<char> txt, uint32_t flags)
+        static bool NeedsQuotes(StringView txt, uint32_t flags)
         {
             // we never need quotes for the editor
             if (flags & PrintToFlag_Editor)
@@ -114,7 +114,7 @@ namespace base
             return false;
         }
 
-        static StringView<char> EatQuotes(StringView<char> txt)
+        static StringView EatQuotes(StringView txt)
         {
             txt = txt.trim();
 
@@ -149,7 +149,7 @@ namespace base
                     f << "\"";
             }
 
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags) const override
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags) const override
             {
                 txt = EatQuotes(txt);
 
@@ -159,7 +159,7 @@ namespace base
                     return false;
 
                 auto& str = *(StringBuf*)data;
-                str = StringBuf(StringView<char>(textData, textData + textDataLength));
+                str = StringBuf(StringView(textData, textData + textDataLength));
                 MemFree(textData);
 
                 return  true;
@@ -186,7 +186,7 @@ namespace base
                 if (length)
                 {
                     const auto* chr = (const char*)file.pointer(length);
-                    str = StringBuf(StringView<char>(chr, chr + length));
+                    str = StringBuf(StringView(chr, chr + length));
                 }
                 else
                 {
@@ -233,7 +233,7 @@ namespace base
                     f << "\"";
             }
 
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags) const override
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags) const override
             {
                 uint32_t textDataLength = 0;
                 auto textData  = DecodeCString(txt.data(), txt.data() + txt.length(), textDataLength, POOL_TEMP);
@@ -241,7 +241,7 @@ namespace base
                     return false;
 
                 auto& str = *(StringID*)data;
-                str = StringID(StringView<char>(textData, textData + textDataLength));
+                str = StringID(StringView(textData, textData + textDataLength));
                 MemFree(textData);
 
                 return true;

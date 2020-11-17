@@ -113,7 +113,7 @@ namespace ed
             ui::DraggerPtr drag;
         };
 
-        Elem createElem(ui::IElement* parent, StringID style, StringView<char> caption, SceneNodeTransformValueFieldType field);
+        Elem createElem(ui::IElement* parent, StringID style, StringView caption, SceneNodeTransformValueFieldType field);
 
         Elem m_elems[SceneNodeTransformEntry::NUM_ENTRIES];
 

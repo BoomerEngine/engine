@@ -176,7 +176,7 @@ namespace ui
         }
     }
 
-    bool Image::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool Image::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "src")
         {

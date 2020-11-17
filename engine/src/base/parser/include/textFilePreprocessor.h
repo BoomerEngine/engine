@@ -39,10 +39,10 @@ namespace base
             //--
 
             /// add a global define
-            bool defineSymbol(base::StringView<char> name, base::StringView<char> value);
+            bool defineSymbol(base::StringView name, base::StringView value);
 
             /// process provided text content
-            bool processContent(base::StringView<char> content, base::StringView<char> contextPath);
+            bool processContent(base::StringView content, base::StringView contextPath);
 
         protected:
             mem::LinearAllocator& m_allocator;
@@ -53,7 +53,7 @@ namespace base
 
             const ILanguageDefinition& m_parentLanguage;
 
-            bool processFileContent(StringView<char> content, StringView<char> contextPath, TokenList& outTokenList);
+            bool processFileContent(StringView content, StringView contextPath, TokenList& outTokenList);
 
             bool processPreprocessorDeclaration(TokenList& line, bool& keepProcessing);
             bool processDefine(const Token* head, TokenList& line);
@@ -135,12 +135,12 @@ namespace base
 
             //--
 
-            MacroDefinition* define(StringView<char> name) const;
-            MacroDefinition* createDefine(StringView<char> name);
+            MacroDefinition* define(StringView name) const;
+            MacroDefinition* createDefine(StringView name);
 
             Token* copyToken(const Token* source, const Token* baseLocataion = nullptr);
             void copyTokens(const TokenList& list, TokenList& outList, const Token* baseLocataion = nullptr, bool isMacroArgument = false);
-            bool createTokens(const Token* baseLocataion, StringView<char> text, TokenList& outList);
+            bool createTokens(const Token* baseLocataion, StringView text, TokenList& outList);
 
             //--
         };

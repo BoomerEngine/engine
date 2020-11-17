@@ -34,15 +34,14 @@ namespace base
         INLINE StringBuf toString() const { checkNullTerminator(); return StringBuf(m_buf); }
 
         // make a view
-        INLINE StringView<char> view() const { checkNullTerminator(); return StringView<char>(m_buf, m_length); }
+        INLINE StringView view() const { checkNullTerminator(); return StringView(m_buf, m_length); }
 
         // get data
         INLINE char* c_str() const { checkNullTerminator(); return m_buf; }
 
         //---
 
-        IFormatStream& append(StringView<char> view);
-        //IFormatStream& append(const StringView<wchar_t>& view);
+        IFormatStream& append(StringView view);
         IFormatStream& append(const StringBuf& str);
         IFormatStream& append(StringID str);
 

@@ -27,7 +27,7 @@ namespace ed
     public:
         ImageHistogramWidget();
 
-        void addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView<char> caption);
+        void addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView caption);
         void removeHistograms();
 
     protected:
@@ -48,7 +48,7 @@ namespace ed
         {
             base::RefPtr<ImageHistogramData> data;
             base::Color color;
-            base::StringView<char> caption;
+            base::StringView caption;
             base::Array<CollapsedBucket> collapsedBuckets;
             uint32_t collapsedBucketsMaxValue = 0;
             base::RefPtr<base::canvas::Geometry> geometry;

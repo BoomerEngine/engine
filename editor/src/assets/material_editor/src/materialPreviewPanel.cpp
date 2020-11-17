@@ -78,7 +78,7 @@ namespace ed
         }
     }
 
-    void MaterialPreviewPanel::onPropertyChanged(base::StringView<char> path)
+    void MaterialPreviewPanel::onPropertyChanged(base::StringView path)
     {
         TBaseClass::onPropertyChanged(path);
 

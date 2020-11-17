@@ -20,7 +20,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxNumberText, IDataBox);
 
     public:
-        DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView<char> units);
+        DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView units);
 
     protected:
         void write();

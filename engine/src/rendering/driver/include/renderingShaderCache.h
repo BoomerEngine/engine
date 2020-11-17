@@ -14,13 +14,13 @@ namespace rendering
 
     struct ShaderCacheEntryKeyRef
     {
-        base::StringView<char> path;
+        base::StringView path;
         uint64_t key = 0;
 
         INLINE ShaderCacheEntryKeyRef()
         {}
 
-        INLINE ShaderCacheEntryKeyRef(base::StringView<char> path_, uint64_t key_)
+        INLINE ShaderCacheEntryKeyRef(base::StringView path_, uint64_t key_)
             : path(path_)
             , key(key_)
         {}
@@ -92,18 +92,18 @@ namespace rendering
         //---
 
         /// load shader cache from file
-        bool load(base::StringView<char> path);
+        bool load(base::StringView path);
 
         /// save shader cache to a file (optionally we can only add new entries)
-        bool save(base::StringView<char> path, bool updatesOnly=false);
+        bool save(base::StringView path, bool updatesOnly=false);
 
         //---
 
         /// get shader cache entry
-        bool fetchEntry(base::StringView<char> path, uint64_t key, ShaderLibraryPtr& outEntry) const;
+        bool fetchEntry(base::StringView path, uint64_t key, ShaderLibraryPtr& outEntry) const;
 
         /// store shader cache entry
-        void storeEntry(base::StringView<char> path, uint64_t key, const ShaderLibraryPtr& entry);
+        void storeEntry(base::StringView path, uint64_t key, const ShaderLibraryPtr& entry);
 
     private:
         base::Mutex m_lock;

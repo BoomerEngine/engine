@@ -44,7 +44,7 @@ namespace base
                 , m_numWarnings(0)
             {}
 
-            virtual void reportError(const StringBuf& fullPath, uint32_t line, StringView<char> message) override final
+            virtual void reportError(const StringBuf& fullPath, uint32_t line, StringView message) override final
             {
 #ifdef BUILD_RELEASE
                 fprintf(stderr, "%s(%d): error: %s\n", fullPath.c_str(), line, StringBuf(message).c_str());
@@ -54,7 +54,7 @@ namespace base
                 ++m_numErrors;
             }
 
-            virtual void reportWarning(const StringBuf& fullPath, uint32_t line, StringView<char> message) override final
+            virtual void reportWarning(const StringBuf& fullPath, uint32_t line, StringView message) override final
             {
                 TRACE_WARNING("{}({}): warrning: {}", fullPath, line, message);
                 ++m_numWarnings;
@@ -74,7 +74,7 @@ namespace base
             RTTI_DECLARE_VIRTUAL_CLASS(ScriptProjectCooker, base::res::IResourceCooker);
 
         public:
-            base::res::ResourceHandle exitWithMessage(StringView<char> moduleName, LogErrorHandler& errHandler, bool valid = true) const
+            base::res::ResourceHandle exitWithMessage(StringView moduleName, LogErrorHandler& errHandler, bool valid = true) const
             {
                 if (errHandler.m_numErrors.load() || !valid)
                 {

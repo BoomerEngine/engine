@@ -90,13 +90,13 @@ namespace base
         //--
 
         // eat property name from view path, will modify the path to the remainder if successful
-        extern BASE_OBJECT_API bool ParsePropertyName(StringView<char>& view, StringView<char>& outPropertyName);
+        extern BASE_OBJECT_API bool ParsePropertyName(StringView& view, StringView& outPropertyName);
 
         // eat array count from view path, will modify the path to the remainder if successful
-        extern BASE_OBJECT_API bool ParseArrayIndex(StringView<char>& view, uint32_t& outArrayCount);
+        extern BASE_OBJECT_API bool ParseArrayIndex(StringView& view, uint32_t& outArrayCount);
 
         // get parent path for given path
-        extern BASE_OBJECT_API bool ExtractParentPath(StringView<char>& view, StringView<char>& outChild);
+        extern BASE_OBJECT_API bool ExtractParentPath(StringView& view, StringView& outChild);
 
         //--
 

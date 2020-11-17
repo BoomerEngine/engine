@@ -168,7 +168,7 @@ namespace ed
 
     //--
 
-    extern StringView<char> ImportStatusToDisplayText(res::ImportStatus status, bool withIcon);
+    extern StringView ImportStatusToDisplayText(res::ImportStatus status, bool withIcon);
 
     void AssetFileImportWidget::updateStatus()
     {

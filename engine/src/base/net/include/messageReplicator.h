@@ -85,7 +85,7 @@ namespace base
 
             //--
 
-            bool reportDataError(StringView<char> txt);
+            bool reportDataError(StringView txt);
             bool processCall(const CallHeader* call, const void* data, uint32_t dataSize, IMessageReplicatorDispatcher* dispatcher);
         };
 

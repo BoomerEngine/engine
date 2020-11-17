@@ -121,7 +121,7 @@ namespace ui
         virtual bool windowGetMovable(NativeWindowID id) = 0;
 
         /// set window title bar
-        virtual void windowSetTitle(NativeWindowID id, base::StringView<char> txt) = 0;
+        virtual void windowSetTitle(NativeWindowID id, base::StringView txt) = 0;
 
         /// set window opacity
         virtual void windowSetOpacity(NativeWindowID id, float opacity) = 0;
@@ -150,13 +150,13 @@ namespace ui
         ///--
 
         /// check if clipboard has data of specific format
-        virtual bool checkClipboardHasData(base::StringView<char> format) = 0;
+        virtual bool checkClipboardHasData(base::StringView format) = 0;
 
         /// store data in clipboard
-        virtual bool stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size) = 0;
+        virtual bool stroreClipboardData(base::StringView format, const void* data, uint32_t size) = 0;
 
         /// load data from clipboard
-        virtual base::Buffer loadClipboardData(base::StringView<char> format) = 0;
+        virtual base::Buffer loadClipboardData(base::StringView format) = 0;
     };
 
     /// UI renderer, responsible for managing all created windows and rendering them into "viewports" that are created on demand
@@ -224,13 +224,13 @@ namespace ui
         //---
 
         /// store clipboard data
-        bool storeDataToClipboard(base::StringView<char> format, const void* data, uint32_t size);
+        bool storeDataToClipboard(base::StringView format, const void* data, uint32_t size);
 
         /// store text (UTF8)
-        bool storeTextToClipboard(base::StringView<char> text); // format: Text
+        bool storeTextToClipboard(base::StringView text); // format: Text
 
         /// store text (UTF16)
-        bool storeTextToClipboard(base::StringView<wchar_t> text); // format: UniText
+        bool storeTextToClipboard(base::BaseStringView<wchar_t> text); // format: UniText
 
         /// store (serialize) object into the clipboard, the object's class is the format
         bool storeObjectToClipboard(const base::ObjectPtr& data);

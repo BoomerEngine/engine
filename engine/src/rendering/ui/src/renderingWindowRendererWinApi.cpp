@@ -67,7 +67,7 @@ namespace rendering
         return 0;
     }
 
-    static DWORD GetClipboardFormatID(base::StringView<char> format)
+    static DWORD GetClipboardFormatID(base::StringView format)
     {
         if (format.empty())
             return 0;
@@ -104,7 +104,7 @@ namespace rendering
         return hMem;
     }
 
-    bool NativeWindowRenderer::checkClipboardHasData(base::StringView<char> format)
+    bool NativeWindowRenderer::checkClipboardHasData(base::StringView format)
     {
         const auto formatId = GetClipboardFormatID(format);
         if (!formatId)
@@ -116,7 +116,7 @@ namespace rendering
         return ::IsClipboardFormatAvailable(formatId);
     }
 
-    bool NativeWindowRenderer::stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size)
+    bool NativeWindowRenderer::stroreClipboardData(base::StringView format, const void* data, uint32_t size)
     {
         const auto formatId = GetClipboardFormatID(format);
         if (!formatId)
@@ -154,7 +154,7 @@ namespace rendering
         return saved;
     }
 
-    base::Buffer NativeWindowRenderer::loadClipboardData(base::StringView<char> format)
+    base::Buffer NativeWindowRenderer::loadClipboardData(base::StringView format)
     {
         const auto formatId = GetClipboardFormatID(format);
         if (!formatId)

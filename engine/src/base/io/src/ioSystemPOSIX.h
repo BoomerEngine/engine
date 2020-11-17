@@ -46,8 +46,8 @@ namespace base
                 virtual bool isFileReadOnly(const StringBuf& absoluteFilePath) override final;
                 virtual bool readOnlyFlag(const StringBuf& absoluteFilePath, bool flag) override final;
                 virtual void findFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< StringBuf >& absoluteFiles, bool recurse) override final;
-                virtual void findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringBuf >& outDirectoryNames) override final;
-                virtual void findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringBuf >& outFileNames) override final;
+                virtual void findSubDirs(const StringBuf& absoluteFilePath, Array< UTF16StringVector >& outDirectoryNames) override final;
+                virtual void findLocalFiles(const StringBuf& absoluteFilePath, const wchar_t* searchPattern, Array< UTF16StringVector >& outFileNames) override final;
 
                 virtual void rootPaths(Array<BrowsableRoot>& outRoots) override final;
                 virtual StringBuf systemPath(PathCategory category) override final;
@@ -55,7 +55,7 @@ namespace base
 
                 virtual void showFileExplorer(const StringBuf& path) override final;
                 virtual bool showFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData) override final;
-                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData) override final;
+                virtual bool showFileSaveDialog(uint64_t nativeWindowHandle, const UTF16StringVector& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData) override final;
 
             private:
                 UniquePtr<POSIXAsyncReadDispatcher> m_asyncDispatcher;

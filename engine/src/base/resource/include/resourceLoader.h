@@ -58,7 +58,7 @@ namespace base
             /// Load a resource from specified path, may return NULL resource
             /// NOTE: this function can wait for other jobs and thus yield the active fiber
             template<typename T>
-            INLINE CAN_YIELD base::RefPtr<T> loadResource(StringView<char> path)
+            INLINE CAN_YIELD base::RefPtr<T> loadResource(StringView path)
             {
                 ResourceKey key(path, T::GetStaticClass());
                 return rtti_cast<T>(loadResource(key));

@@ -28,7 +28,7 @@ namespace ui
 
     public:
         TextLabel();
-        TextLabel(base::StringView<char> txt);
+        TextLabel(base::StringView txt);
         virtual ~TextLabel();
 
         // get current text
@@ -37,7 +37,7 @@ namespace ui
         //--
 
         // set text
-        void text(base::StringView<char> txt);
+        void text(base::StringView txt);
 
         // set the highlight range
         void highlight(int startPos, int endPos);
@@ -50,7 +50,7 @@ namespace ui
         virtual void computeSize(Size& outSize) const override;
         virtual void prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
         virtual void prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         //--
 

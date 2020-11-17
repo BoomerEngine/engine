@@ -39,7 +39,7 @@ namespace example
         }
     }
 
-    void GameSpriteAsset::onPropertyChanged(StringView<char> path)
+    void GameSpriteAsset::onPropertyChanged(StringView path)
     {
         if (path == "image")
             buildGeometry();
@@ -128,7 +128,7 @@ namespace example
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GameSpriteSequenceAsset);
     RTTI_END_TYPE();
 
-    GameSpriteSequenceAsset::GameSpriteSequenceAsset(StringView<char> baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
+    GameSpriteSequenceAsset::GameSpriteSequenceAsset(StringView baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
         : m_fps(fps)
     {
         for (uint32_t i = 1; i < numFrames; ++i)
@@ -235,7 +235,7 @@ namespace example
         RTTI_PROPERTY(m_tileImages);
     RTTI_END_TYPE();
 
-    GameTerrianAsset::GameTerrianAsset(float tileSize, StringView<char> baseDepotPath, uint32_t numTiles)
+    GameTerrianAsset::GameTerrianAsset(float tileSize, StringView baseDepotPath, uint32_t numTiles)
         : m_tileSize(tileSize)
     {
         m_tileImages.resize(numTiles);

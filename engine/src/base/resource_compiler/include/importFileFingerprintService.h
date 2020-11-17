@@ -36,7 +36,7 @@ namespace base
 
             /// compute file fingerprint of given file
             /// NOTE: this fill yield current fiber until results are available
-            CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView<char> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
+            CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
 
             //---
 

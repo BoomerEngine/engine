@@ -30,7 +30,7 @@ namespace ed
         }    
     }
 
-    DataViewResult SceneContentNodeDataView::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
+    DataViewResult SceneContentNodeDataView::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (m_tempView)
             return m_tempView->describeDataView(viewPath, outInfo);
@@ -38,7 +38,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult SceneContentNodeDataView::readDataView(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult SceneContentNodeDataView::readDataView(StringView viewPath, void* targetData, Type targetType) const
     {
         if (m_tempView)
             return m_tempView->readDataView(viewPath, targetData, targetType);
@@ -46,7 +46,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewResult SceneContentNodeDataView::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const
+    DataViewResult SceneContentNodeDataView::writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const
     {
         if (m_tempView)
             return m_tempView->writeDataView(viewPath, sourceData, sourceType);
@@ -59,13 +59,13 @@ namespace ed
         dispatchFullStructureChanged();
     }
 
-    void SceneContentNodeDataView::handlePropertyChanged(StringView<char> fullPath, bool parentNotification)
+    void SceneContentNodeDataView::handlePropertyChanged(StringView fullPath, bool parentNotification)
     {
         if (!parentNotification)
             dispatchPropertyChanged(fullPath);
     }
 
-    void SceneContentNodeDataView::attachObserver(StringView<char> path, IDataViewObserver* observer)
+    void SceneContentNodeDataView::attachObserver(StringView path, IDataViewObserver* observer)
     {
         IDataView::attachObserver(path, observer);
 
@@ -74,7 +74,7 @@ namespace ed
                 obj.view->attachObserver(path, this);
     }
 
-    void SceneContentNodeDataView::detachObserver(StringView<char> path, IDataViewObserver* observer)
+    void SceneContentNodeDataView::detachObserver(StringView path, IDataViewObserver* observer)
     {
         IDataView::detachObserver(path, observer);
 
@@ -83,7 +83,7 @@ namespace ed
                 obj.view->detachObserver(path, this);
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const
+    DataViewActionResult SceneContentNodeDataView::actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const
     {
         if (m_tempView)
             return m_tempView->actionValueWrite(viewPath, sourceData, sourceType);
@@ -91,7 +91,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionValueReset(StringView<char> viewPath) const
+    DataViewActionResult SceneContentNodeDataView::actionValueReset(StringView viewPath) const
     {
         if (m_tempView)
             return m_tempView->actionValueReset(viewPath);
@@ -99,7 +99,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionArrayClear(StringView<char> viewPath) const
+    DataViewActionResult SceneContentNodeDataView::actionArrayClear(StringView viewPath) const
     {
         if (m_tempView)
             return m_tempView->actionArrayClear(viewPath);
@@ -107,7 +107,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionArrayInsertElement(StringView<char> viewPath, uint32_t index) const
+    DataViewActionResult SceneContentNodeDataView::actionArrayInsertElement(StringView viewPath, uint32_t index) const
     {
         if (m_tempView)
             return m_tempView->actionArrayInsertElement(viewPath, index);
@@ -115,7 +115,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionArrayRemoveElement(StringView<char> viewPath, uint32_t index) const
+    DataViewActionResult SceneContentNodeDataView::actionArrayRemoveElement(StringView viewPath, uint32_t index) const
     {
         if (m_tempView)
             return m_tempView->actionArrayRemoveElement(viewPath, index);
@@ -123,7 +123,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionArrayNewElement(StringView<char> viewPath) const
+    DataViewActionResult SceneContentNodeDataView::actionArrayNewElement(StringView viewPath) const
     {
         if (m_tempView)
             return m_tempView->actionArrayNewElement(viewPath);
@@ -131,7 +131,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionObjectClear(StringView<char> viewPath) const
+    DataViewActionResult SceneContentNodeDataView::actionObjectClear(StringView viewPath) const
     {
         if (m_tempView)
             return m_tempView->actionObjectClear(viewPath);
@@ -139,7 +139,7 @@ namespace ed
         return DataViewResultCode::ErrorNullObject;
     }
 
-    DataViewActionResult SceneContentNodeDataView::actionObjectNew(StringView<char> viewPath, ClassType objectClass) const
+    DataViewActionResult SceneContentNodeDataView::actionObjectNew(StringView viewPath, ClassType objectClass) const
     {
         if (m_tempView)
             return m_tempView->actionObjectNew(viewPath, objectClass);

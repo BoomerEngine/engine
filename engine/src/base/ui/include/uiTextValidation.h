@@ -13,10 +13,10 @@ namespace ui
     ///--
 
     /// make a simple validation function that accepts only range of chars
-    extern BASE_UI_API TInputValidationFunction MakeCustomValidationFunction(base::StringView<char> validChars);
+    extern BASE_UI_API TInputValidationFunction MakeCustomValidationFunction(base::StringView validChars);
 
     /// make a alpha numerical identifier validation function (A-Za-z0-9_), we can't start from number, typical GOOD identifier
-    extern BASE_UI_API TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView<char> additionalChars = "");
+    extern BASE_UI_API TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView additionalChars = "");
 
     /// make a filename validation function (allows only valid filename characters + tests for invalid names)
     extern BASE_UI_API TInputValidationFunction MakeFilenameValidationFunction(bool withExtension = false);

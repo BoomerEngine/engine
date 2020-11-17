@@ -120,7 +120,7 @@ namespace base
             return toNodeID(m_root);
         }
 
-        NodeID StaticRapidXMLDocument::nodeFirstChild(NodeID id, StringView<char> childName /*= nullptr*/) const
+        NodeID StaticRapidXMLDocument::nodeFirstChild(NodeID id, StringView childName /*= nullptr*/) const
         {
             auto node  = fromNodeId(id);
             if (!node)
@@ -137,7 +137,7 @@ namespace base
             return toNodeID(childNode);
         }
 
-        NodeID StaticRapidXMLDocument::nodeSibling(NodeID id, StringView<char> siblingName /*= nullptr*/) const
+        NodeID StaticRapidXMLDocument::nodeSibling(NodeID id, StringView siblingName /*= nullptr*/) const
         {
             auto node  = fromNodeId(id);
             if (!node)
@@ -188,25 +188,25 @@ namespace base
 
         //---
 
-        StringView<char> StaticRapidXMLDocument::nodeValue(NodeID id) const
+        StringView StaticRapidXMLDocument::nodeValue(NodeID id) const
         {
             auto node  = fromNodeId(id);
             if (!node)
                 return StringBuf::EMPTY();
 
-            return StringView<char>((const char*)node->value(), (uint32_t)node->value_size());
+            return StringView((const char*)node->value(), (uint32_t)node->value_size());
         }
 
-        StringView<char> StaticRapidXMLDocument::nodeName(NodeID id) const
+        StringView StaticRapidXMLDocument::nodeName(NodeID id) const
         {
             auto node  = fromNodeId(id);
             if (!node)
                 return StringBuf::EMPTY();
 
-            return StringView<char>(node->name(), (uint32_t)node->name_size());
+            return StringView(node->name(), (uint32_t)node->name_size());
         }
 
-        StringView<char> StaticRapidXMLDocument::nodeAttributeOfDefault(NodeID id, StringView<char> name, StringView<char> defaultVal /*= StringBuf::EMPTY()*/) const
+        StringView StaticRapidXMLDocument::nodeAttributeOfDefault(NodeID id, StringView name, StringView defaultVal /*= StringBuf::EMPTY()*/) const
         {
             auto node  = fromNodeId(id);
             if (!node)
@@ -216,10 +216,10 @@ namespace base
             if (!attr)
                 return defaultVal;
 
-            return StringView<char>(attr->value(), (uint32_t)attr->value_size());
+            return StringView(attr->value(), (uint32_t)attr->value_size());
         }
 
-        AttributeID StaticRapidXMLDocument::nodeFirstAttribute(NodeID id, StringView<char> name /*= nullptr*/) const
+        AttributeID StaticRapidXMLDocument::nodeFirstAttribute(NodeID id, StringView name /*= nullptr*/) const
         {
             auto node  = fromNodeId(id);
             if (!node)
@@ -230,25 +230,25 @@ namespace base
 
         //---
 
-        StringView<char> StaticRapidXMLDocument::attributeName(AttributeID id) const
+        StringView StaticRapidXMLDocument::attributeName(AttributeID id) const
         {
             auto attr  = fromAttributeID(id);
             if (!attr)
-                return StringView<char>();
+                return StringView();
 
-            return StringView<char>(attr->name(), (uint32_t)attr->name_size());
+            return StringView(attr->name(), (uint32_t)attr->name_size());
         }
 
-        StringView<char> StaticRapidXMLDocument::attributeValue(AttributeID id) const
+        StringView StaticRapidXMLDocument::attributeValue(AttributeID id) const
         {
             auto attr  = fromAttributeID(id);
             if (!attr)
-                return StringView<char>();
+                return StringView();
 
-            return StringView<char>(attr->value(), (uint32_t)attr->value_size());
+            return StringView(attr->value(), (uint32_t)attr->value_size());
         }
 
-        AttributeID StaticRapidXMLDocument::nextAttribute(AttributeID id, StringView<char> name /*= nullptr*/) const
+        AttributeID StaticRapidXMLDocument::nextAttribute(AttributeID id, StringView name /*= nullptr*/) const
         {
             auto attr  = fromAttributeID(id);
             if (!attr)
@@ -257,12 +257,12 @@ namespace base
             return toAttributeID(name.empty() ? attr->next_attribute() : attr->next_attribute(name.data(), name.length()));
         }
 
-        void StaticRapidXMLDocument::attributeName(AttributeID id, StringView<char> name)
+        void StaticRapidXMLDocument::attributeName(AttributeID id, StringView name)
         {
             readonlyError();
         }
 
-        void StaticRapidXMLDocument::attributeValue(AttributeID id, StringView<char> value)
+        void StaticRapidXMLDocument::attributeValue(AttributeID id, StringView value)
         {
             readonlyError();
         }
@@ -274,7 +274,7 @@ namespace base
 
         //---
 
-        NodeID StaticRapidXMLDocument::createNode(NodeID parentNode, StringView<char> name)
+        NodeID StaticRapidXMLDocument::createNode(NodeID parentNode, StringView name)
         {
             readonlyError();
             return 0;
@@ -285,22 +285,22 @@ namespace base
             readonlyError();
         }
 
-        void StaticRapidXMLDocument::nodeValue(NodeID id, StringView<char> value)
+        void StaticRapidXMLDocument::nodeValue(NodeID id, StringView value)
         {
             readonlyError();
         }
 
-        void StaticRapidXMLDocument::nodeName(NodeID id, StringView<char> value)
+        void StaticRapidXMLDocument::nodeName(NodeID id, StringView value)
         {
             readonlyError();
         }
 
-        void StaticRapidXMLDocument::nodeAttribute(NodeID id, StringView<char> name, StringView<char> value)
+        void StaticRapidXMLDocument::nodeAttribute(NodeID id, StringView name, StringView value)
         {
             readonlyError();
         }
 
-        void StaticRapidXMLDocument::deleteNodeAttribute(NodeID id, StringView<char> name)
+        void StaticRapidXMLDocument::deleteNodeAttribute(NodeID id, StringView name)
         {
             readonlyError();
         }

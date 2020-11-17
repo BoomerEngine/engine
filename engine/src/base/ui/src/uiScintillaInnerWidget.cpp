@@ -566,7 +566,7 @@ namespace Scintilla
         //auto *windowRenderer = this->windowRenderer();
         //if (windowRenderer)
         {
-            auto data = base::StringView<char>(selectedText.Data()).toBuffer();
+            auto data = base::StringView(selectedText.Data()).toBuffer();
             auto format = "Text"_id;
             //windowRenderer->storeClipboardData(&format, &data, 1);
         }

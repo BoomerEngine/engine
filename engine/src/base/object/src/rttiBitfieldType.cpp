@@ -231,7 +231,7 @@ namespace base
 
         //--
 
-        DataViewResult BitfieldType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult BitfieldType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             const auto orgViewPath = viewPath;
 
@@ -256,7 +256,7 @@ namespace base
                 return IType::describeDataView(viewPath, viewData, outInfo);
             }
 
-            StringView<char> propertyName;
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
             {
                 if (viewPath.empty())
@@ -285,13 +285,13 @@ namespace base
             return IType::describeDataView(orgViewPath, viewData, outInfo);
         }
 
-        DataViewResult BitfieldType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult BitfieldType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             const auto orgViewPath = viewPath;
 
             if (!viewPath.empty())
             {
-                StringView<char> propertyName;
+                StringView propertyName;
                 if (ParsePropertyName(viewPath, propertyName))
                 {
                     uint32_t bitIndex = 0;
@@ -326,13 +326,13 @@ namespace base
             return IType::readDataView(orgViewPath, viewData, targetData, targetType);
         }
 
-        DataViewResult BitfieldType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult BitfieldType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             const auto orgViewPath = viewPath;
 
             if (!viewPath.empty())
             {
-                StringView<char> propertyName;
+                StringView propertyName;
                 if (ParsePropertyName(viewPath, propertyName))
                 {
                     uint32_t bitIndex = 0;

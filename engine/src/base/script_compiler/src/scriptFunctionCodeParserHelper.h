@@ -27,7 +27,7 @@ namespace base
         {
             int tokenID = -1;
             base::parser::Location location;
-            base::StringView<char> stringValue;
+            base::StringView stringValue;
             StringID name;
             double floatValue = 0.0f;
             int64_t intValue = 0;
@@ -49,13 +49,13 @@ namespace base
             int readToken(FunctionParsingNode& outNode);
 
             INLINE const parser::Location& location() const { return m_lastTokenLocation; }
-            INLINE StringView<char> text() const { return m_lastTokenText; }
+            INLINE StringView text() const { return m_lastTokenText; }
 
         private:
             parser::TokenList m_tokens;
             FunctionParsingContext& m_ctx;
 
-            StringView<char> m_lastTokenText;
+            StringView m_lastTokenText;
             parser::Location m_lastTokenLocation;
 
             uint32_t matchTypeName(StringID& outTypeName, FunctionTypeInfo& outTypeInfo) const;
@@ -90,7 +90,7 @@ namespace base
             FunctionNode* createUintConst(const parser::Location& location, uint64_t val);
             FunctionNode* createFloatConst(const parser::Location& location, double val);
             FunctionNode* createBoolConst(const parser::Location& location, bool val);
-            FunctionNode* createStringConst(const parser::Location& location, StringView<char> val);
+            FunctionNode* createStringConst(const parser::Location& location, StringView val);
             FunctionNode* createNameConst(const parser::Location& location, StringID val);
             FunctionNode* createNullConst(const parser::Location& location);
             FunctionNode* createClassTypeConst(const parser::Location& location, StringID className);
@@ -104,7 +104,7 @@ namespace base
             FunctionNode* findBreakContextNode();
             FunctionNode* findContinueContextNode();
 
-            void reportError(const parser::Location& location, StringView<char> message);
+            void reportError(const parser::Location& location, StringView message);
 
             FunctionTypeInfo currentType;
 

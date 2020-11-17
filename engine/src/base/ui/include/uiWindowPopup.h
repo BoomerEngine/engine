@@ -52,7 +52,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(PopupWindow, Window);
 
     public:
-        PopupWindow(WindowFeatureFlags flags = WindowFeatureFlagBit::DEFAULT_POPUP, base::StringView<char> title="");
+        PopupWindow(WindowFeatureFlags flags = WindowFeatureFlagBit::DEFAULT_POPUP, base::StringView title="");
 
         /// get owner of this popup, this is needed only so we restore the focus to the right place
         INLINE const WindowWeakPtr& owner() const { return m_setup.m_popupOwner; }

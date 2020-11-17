@@ -40,25 +40,25 @@ namespace base
             return wasModified;
         }
 
-        StringBuf Group::entryValue(StringView<char> name, const StringBuf& defaultValue/*= ""*/) const
+        StringBuf Group::entryValue(StringView name, const StringBuf& defaultValue/*= ""*/) const
         {
             if (auto entry  = findEntry(name))
                 return entry->value();
             return defaultValue;
         }
 
-        const Entry* Group::findEntry(StringView<char> name) const
+        const Entry* Group::findEntry(StringView name) const
         {
             auto lock  = CreateLock(m_lock);
             return findEntry_NoLock(name);
         }
 
-        const Entry* Group::findEntry_NoLock(StringView<char> name) const
+        const Entry* Group::findEntry_NoLock(StringView name) const
         {
             return m_entries.findSafe(name, nullptr);
         }
 
-        Entry& Group::entry(StringView<char> name)
+        Entry& Group::entry(StringView name)
         {
             auto lock  = CreateLock(m_lock);
 
@@ -76,7 +76,7 @@ namespace base
             return *entry;
         }
 
-        bool Group::removeEntry(StringView<char> name)
+        bool Group::removeEntry(StringView name)
         {
             auto lock  = CreateLock(m_lock);
 

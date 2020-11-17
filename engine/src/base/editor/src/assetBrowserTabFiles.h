@@ -62,7 +62,7 @@ namespace ed
         void filterFormat(const ManagedFileFormat* filterFormat, bool toggle);
 
         /// change the name filter
-        void filterName(StringView<char> txt);
+        void filterName(StringView txt);
 
         /// set active directory
         void directory(ManagedDirectory* dir, ManagedItem* autoSelectItem = nullptr);

@@ -395,7 +395,7 @@ namespace test
             m_paths.pushBack("");
         }
 
-        virtual DataMappedID mapString(StringView<char> txt) override final
+        virtual DataMappedID mapString(StringView txt) override final
         {
             if (txt.empty())
                 return 0;
@@ -411,7 +411,7 @@ namespace test
             return id;
         }
 
-        virtual DataMappedID mapPath(StringView<char> path, const char* pathSeparators) override final
+        virtual DataMappedID mapPath(StringView path, const char* pathSeparators) override final
         {
             if (path.empty())
                 return 0;

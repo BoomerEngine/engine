@@ -203,7 +203,7 @@ namespace base
 
         struct FunctionNodeData
         {
-            StringView<char> text;
+            StringView text;
             StringID name;
             FunctionTypeInfo type;
             FunctionNumber number;
@@ -337,11 +337,11 @@ namespace base
             bool generateClassConstructor(IErrorHandler& err, OpcodeGenerator& gen, OpcodeList& opcodes);
             bool generateClassDestructor(IErrorHandler& err, OpcodeGenerator& gen, OpcodeList& opcodes);
 
-            bool reportError(IErrorHandler& err, const StubLocation& location, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const StubLocation& location, StringView<char> txt);
+            bool reportError(IErrorHandler& err, const StubLocation& location, StringView txt);
+            void reportWarning(IErrorHandler& err, const StubLocation& location, StringView txt);
 
-            bool reportError(IErrorHandler& err, const FunctionNode* node, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const FunctionNode* node, StringView<char> txt);
+            bool reportError(IErrorHandler& err, const FunctionNode* node, StringView txt);
+            void reportWarning(IErrorHandler& err, const FunctionNode* node, StringView txt);
         };
 
 

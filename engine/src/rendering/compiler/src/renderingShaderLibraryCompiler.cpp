@@ -47,12 +47,12 @@ namespace rendering
                 , m_errorHandler(err)
             {}
 
-            virtual void reportError(const base::parser::Location& loc, base::StringView<char> message) override
+            virtual void reportError(const base::parser::Location& loc, base::StringView message) override
             {
                 m_errorHandler.reportError(loc, message);
             }
 
-            virtual void reportWarning(const base::parser::Location& loc, base::StringView<char> message) override
+            virtual void reportWarning(const base::parser::Location& loc, base::StringView message) override
             {
                 m_errorHandler.reportWarning(loc, message);
             }
@@ -107,8 +107,8 @@ namespace rendering
         //--
 
         ShaderLibraryPtr CompileShaderLibrary(
-            base::StringView<char> code, // code to compile
-            base::StringView<char> contextPath, // name of the shader, 
+            base::StringView code, // code to compile
+            base::StringView contextPath, // name of the shader,
             base::parser::IIncludeHandler* includeHandler, // handler for any files we want to include
             base::parser::IErrorReporter& err, // where to report any errors
             base::StringID nativeGeneratorName,
@@ -192,8 +192,8 @@ namespace rendering
 
         public:
             virtual ShaderLibraryPtr compile(
-                base::StringView<char> code, // code to compile
-                base::StringView<char> contextPath, // context path to print with errors 
+                base::StringView code, // code to compile
+                base::StringView contextPath, // context path to print with errors
                 base::parser::IIncludeHandler* includeHandler, // handler for any files we want to include
                 base::parser::IErrorReporter& err, // where to report any errors
                 base::StringID nativeGeneratorName, // GLSL, HLSL, NULL etc

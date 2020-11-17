@@ -27,7 +27,7 @@ namespace base
             class POSIXDirectoryWatcher : public IDirectoryWatcher
             {
             public:
-                POSIXDirectoryWatcher(StringView<char> rootPath);
+                POSIXDirectoryWatcher(StringView rootPath);
                 virtual ~POSIXDirectoryWatcher();
 
                 //! attach listener
@@ -57,8 +57,8 @@ namespace base
 
                 uint8_t m_buffer[BUF_LEN];
 
-                void monitorPath(base::StringView<char> path);
-                void unmonitorPath(base::StringView<char> path);
+                void monitorPath(base::StringView path);
+                void unmonitorPath(base::StringView path);
 
                 void watch();
             };

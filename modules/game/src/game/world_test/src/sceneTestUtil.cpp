@@ -14,8 +14,8 @@
 #include "base/world/include/worldEntity.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/world/include/meshComponent.h"
-#include "rendering/world/include/meshComponentTemplate.h"
+#include "rendering/world/include/renderingMeshComponent.h"
+#include "rendering/world/include/renderingMeshComponentTemplate.h"
 #include "../../../../../../engine/src/base/world/include/worldEntityTemplate.h"
 
 namespace game
@@ -91,7 +91,7 @@ namespace game
 
             {
                 node->m_entityTemplate = base::CreateSharedPtr<base::world::EntityTemplate>();
-                node->m_entityTemplate->placement(placement);
+                node->m_entityTemplate->placement(placement.toTransform());
             }
 
             {
@@ -120,7 +120,9 @@ namespace game
 
         base::world::PrefabPtr PrefabBuilder::extractPrefab()
         {
-            return base::CreateSharedPtr<base::world::Prefab>(m_roots);
+            auto ret = base::CreateSharedPtr<base::world::Prefab>();
+            ret->setup(m_roots);
+            return ret;
         }
 
         //--

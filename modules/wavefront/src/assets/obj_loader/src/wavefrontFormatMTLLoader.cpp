@@ -22,7 +22,7 @@ namespace wavefront
     namespace parser
     {
 
-        static bool ParseColor(base::StringView<char> contextName, base::StringParser& str, base::Color& outColor)
+        static bool ParseColor(base::StringView contextName, base::StringParser& str, base::Color& outColor)
         {
             base::Vector4 ret;
             if (!str.parseFloat(ret.x))
@@ -47,9 +47,9 @@ namespace wavefront
             return true;
         }
 
-        static bool ParseMaterialMap(base::StringView<char> contextName, base::StringParser& str, MaterialMap& outMap)
+        static bool ParseMaterialMap(base::StringView contextName, base::StringParser& str, MaterialMap& outMap)
         {
-            base::StringView<char> txt;
+            base::StringView txt;
             if (!str.parseString(txt))
                 return false;
 
@@ -57,7 +57,7 @@ namespace wavefront
             return true;
         }
 
-        static bool ParseMaterial(base::StringView<char> contextName, base::StringParser& str, Material& outMat)
+        static bool ParseMaterial(base::StringView contextName, base::StringParser& str, Material& outMat)
         {
             while (str.parseWhitespaces())
             {
@@ -250,7 +250,7 @@ namespace wavefront
             return true;
         }
 
-        bool LoadFromBuffer(base::StringView<char> contextName, const void* data, uint64_t dataSize, base::Array<Material>& outMaterials)
+        bool LoadFromBuffer(base::StringView contextName, const void* data, uint64_t dataSize, base::Array<Material>& outMaterials)
         {
             base::StringParser parser(data, dataSize);
 
@@ -258,7 +258,7 @@ namespace wavefront
             {
                 if (parser.parseKeyword("newmtl"))
                 {
-                    base::StringView<char> name;
+                    base::StringView name;
                     parser.parseString(name);
 
                     Material mat;
@@ -276,7 +276,7 @@ namespace wavefront
             return true;
         }
 
-        FormatMTLPtr LoadFromBuffer(base::StringView<char> contextName, const void* data, uint64_t dataSize)
+        FormatMTLPtr LoadFromBuffer(base::StringView contextName, const void* data, uint64_t dataSize)
         {
             base::InplaceArray<Material, 128> materials;
             if (!LoadFromBuffer(contextName, data, dataSize, materials))
@@ -289,7 +289,7 @@ namespace wavefront
 
     //--
 
-    FormatMTLPtr LoadMaterials(base::StringView<char> contextName, const void* data, uint64_t dataSize)
+    FormatMTLPtr LoadMaterials(base::StringView contextName, const void* data, uint64_t dataSize)
     {
         return parser::LoadFromBuffer(contextName, data, dataSize);
     }

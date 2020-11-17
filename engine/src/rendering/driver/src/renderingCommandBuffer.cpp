@@ -61,7 +61,7 @@ namespace rendering
         //--
 
 #if 0
-        CommandBuffer::CommandBuffer(base::mem::PageCollection* pages, base::StringView<char> name, uint8_t* firstPagePtr, uint8_t* firstPageEndPtr)
+        CommandBuffer::CommandBuffer(base::mem::PageCollection* pages, base::StringView name, uint8_t* firstPagePtr, uint8_t* firstPageEndPtr)
             : m_pages(pages)
             , m_currentWritePtr(firstPagePtr)
             , m_currentWriteEndPtr(firstPageEndPtr)

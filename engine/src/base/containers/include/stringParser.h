@@ -17,7 +17,7 @@ namespace base
     {
     public:
         StringParser();
-        StringParser(StringView<char> view);
+        StringParser(StringView view);
         StringParser(const void* data, uint32_t size);
         StringParser(const StringParser& other);
         StringParser& operator=(const StringParser& other);
@@ -32,10 +32,10 @@ namespace base
         //--
 
         // get the view of whole text
-        INLINE StringView<char> fullView() const { return StringView<char>(m_start, m_end); }
+        INLINE StringView fullView() const { return StringView(m_start, m_end); }
 
         // get the view of remaining text
-        INLINE StringView<char> currentView() const { return StringView<char>(m_cur, m_end); }
+        INLINE StringView currentView() const { return StringView(m_cur, m_end); }
 
         // get the current line
         INLINE uint32_t line() const { return m_line; }
@@ -46,27 +46,27 @@ namespace base
         bool parseWhitespaces();
 
         // parse till the end of the line
-        bool parseTillTheEndOfTheLine(StringView<char>* outIdent = nullptr);
+        bool parseTillTheEndOfTheLine(StringView* outIdent = nullptr);
 
         //--
 
         // parse the standard identifier
-        bool parseIdentifier(StringView<char>& outIdent);
+        bool parseIdentifier(StringView& outIdent);
 
         // parse a string from the stream, may be in quotes
         // NOTE: if the string contains escaped characters they are de-escaped
         // NOTE: additional delimiting characters may be passed to break on them (good example is ';' in CSV)
-        bool parseString(StringView<char>& outValue, const char* additionalDelims = "");
+        bool parseString(StringView& outValue, const char* additionalDelims = "");
 
         // parse a text till the end of the line or till one of the additional delims is found
         // NOTE: additional delimiting characters may be passed to break on them (good example is ';' in CSV)
-        bool parseLine(StringView<char>& outValue, const char* additionalDelims = "", bool eatLeadingWhitespaces=true);
+        bool parseLine(StringView& outValue, const char* additionalDelims = "", bool eatLeadingWhitespaces=true);
 
         // parse the standard identifier
         bool parseIdentifier(StringID& outIdent);
 
         // parse matching keyword, if the exact text is found in the stream it's advanced, if not a false is returned
-        bool parseKeyword(StringView<char> keyword);
+        bool parseKeyword(StringView keyword);
 
         // parse single character (supports UTF-8)
         bool parseChar(uint32_t& outChar);
@@ -113,7 +113,7 @@ namespace base
         //--
 
         // peak at the next keyword, does not advance the state
-        bool testKeyword(StringView<char> keyword) const;
+        bool testKeyword(StringView keyword) const;
 
         //--
 

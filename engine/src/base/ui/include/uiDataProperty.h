@@ -62,7 +62,7 @@ namespace ui
         virtual void handleSelectionGain(bool focus) override;
         virtual void createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren) override;
 
-        virtual void handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification) override;
+        virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
 
         void notifyDataChanged(bool recurseToChildren);
 

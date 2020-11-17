@@ -112,7 +112,7 @@ namespace base
             return false;
         }
 
-        DataViewResult IHandleType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IHandleType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -151,7 +151,7 @@ namespace base
             return DataViewResultCode::OK;
         }
 
-        DataViewResult IHandleType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IHandleType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (viewPath.empty())
                 return IType::readDataView(viewPath, viewData, targetData, targetType);
@@ -165,7 +165,7 @@ namespace base
             return object->readDataView(viewPath, targetData, targetType);
         }
 
-        DataViewResult IHandleType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IHandleType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (viewPath.empty())
                 return IType::writeDataView(viewPath, viewData, sourceData, sourceType);

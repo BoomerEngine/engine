@@ -35,7 +35,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectory);
     RTTI_END_TYPE();
 
-    ManagedDirectory::ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath)
+    ManagedDirectory::ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView name, StringView depotPath)
         : ManagedItem(dep, parentDirectory, name)
         , m_depotPath(depotPath)
         , m_fileCount(0)
@@ -96,7 +96,7 @@ namespace ed
         refreshContent();
     }
 
-    static ManagedFilePtr CreateManagedFile(ManagedDepot* depot, ManagedDirectory* dir, StringView<char> name)
+    static ManagedFilePtr CreateManagedFile(ManagedDepot* depot, ManagedDirectory* dir, StringView name)
     {
         const auto fileExt = name.afterFirst(".");
         if (fileExt)
@@ -185,7 +185,7 @@ namespace ed
         updateModifiedContentCount(false);
     }
 
-    ManagedDirectory* ManagedDirectory::directory(StringView<char> dirName, bool allowDeleted /*= false*/) const
+    ManagedDirectory* ManagedDirectory::directory(StringView dirName, bool allowDeleted /*= false*/) const
     {
         if (auto ret = m_directories.find(dirName))
             if (allowDeleted || !ret->isDeleted())
@@ -194,7 +194,7 @@ namespace ed
         return nullptr;
     }
 
-    ManagedFile* ManagedDirectory::file(StringView<char> fileName, bool allowDeleted /*= false*/) const
+    ManagedFile* ManagedDirectory::file(StringView fileName, bool allowDeleted /*= false*/) const
     {
         if (auto ret = m_files.find(fileName))
             if (allowDeleted || !ret->isDeleted())
@@ -202,7 +202,7 @@ namespace ed
         return nullptr;
     }
 
-    ManagedDirectory* ManagedDirectory::createDirectory(StringView<char> name)
+    ManagedDirectory* ManagedDirectory::createDirectory(StringView name)
     {
         // return existing sub-directory
         auto curDir = directory(name, true);
@@ -258,7 +258,7 @@ namespace ed
         return curDir;
     }
 
-    StringBuf ManagedDirectory::adjustFileName(StringView<char> fileName) const
+    StringBuf ManagedDirectory::adjustFileName(StringView fileName) const
     {
         HashSet<StringBuf> names;
         for (const auto& file : m_files.list())
@@ -289,7 +289,7 @@ namespace ed
         return StringBuf(TempString("{}{}.{}", coreName, startCounter, extPart));
     }
 
-    ManagedFile* ManagedDirectory::createFile(StringView<char> fileName, const res::ResourceHandle& initialContent)
+    ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::ResourceHandle& initialContent)
     {
         // no name
         DEBUG_CHECK_EX(fileName, "File name should be provided");
@@ -400,7 +400,7 @@ namespace ed
 
     }
 
-    ManagedFile* ManagedDirectory::createFile(StringView<char> fileName, const ManagedFileFormat& format)
+    ManagedFile* ManagedDirectory::createFile(StringView fileName, const ManagedFileFormat& format)
     {
         // no name
         DEBUG_CHECK_EX(fileName, "File name should be provided");
@@ -426,7 +426,7 @@ namespace ed
         return createFile(fileName, resourceObject);
     }
 
-    ManagedFile* ManagedDirectory::createFile(StringView<char> fileName, Buffer initialContent)
+    ManagedFile* ManagedDirectory::createFile(StringView fileName, Buffer initialContent)
     {
         // no name
         DEBUG_CHECK_EX(fileName, "File name should be provided");
@@ -546,7 +546,7 @@ namespace ed
         }
     }
 
-    bool ManagedDirectory::visitFiles(bool recursive, StringView<char> fileNamePattern, const std::function<bool(ManagedFile*)>& enumFunc)
+    bool ManagedDirectory::visitFiles(bool recursive, StringView fileNamePattern, const std::function<bool(ManagedFile*)>& enumFunc)
     {
         for (auto& file : m_files.list())
             if (!file->isDeleted())

@@ -133,7 +133,7 @@ namespace ed
         virtual void displayText(IFormatStream& f) const;
         virtual void markModified() override;
 
-        StringBuf buildUniqueName(StringView<char> coreName, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
+        StringBuf buildUniqueName(StringView coreName, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
 
         void name(const StringBuf& name);
 

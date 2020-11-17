@@ -35,7 +35,7 @@ namespace ed
         INLINE bool isDeleted() const { return m_isDeleted; }
 
     public:
-        ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> name);
+        ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView name);
 
         /// get depot file path of this file
         /// NOTE: file path is constructed on demand (not a cheap call)
@@ -54,10 +54,10 @@ namespace ed
         //--
 
         // validate directory name
-        static bool ValidateDirectoryName(StringView<char> txt);
+        static bool ValidateDirectoryName(StringView txt);
 
         // validate file name (without extensions)
-        static bool ValidateFileName(StringView<char> txt);
+        static bool ValidateFileName(StringView txt);
 
     private:
         ManagedDepot* m_depot; // depot

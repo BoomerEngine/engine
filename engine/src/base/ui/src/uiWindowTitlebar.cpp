@@ -21,7 +21,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("WindowTitleBar");
     RTTI_END_TYPE();
 
-    WindowTitleBar::WindowTitleBar(WindowFeatureFlags flags, base::StringView<char> title)
+    WindowTitleBar::WindowTitleBar(WindowFeatureFlags flags, base::StringView title)
     {
         hitTest(HitTestState::Enabled);
         layoutMode(LayoutMode::Horizontal);

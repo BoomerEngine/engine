@@ -136,7 +136,7 @@ namespace ui
         }
     }
 
-    void TextBuffer::text(base::StringView<char> txt)
+    void TextBuffer::text(base::StringView txt)
     {
         // extract chars from the string
         m_chars.reset();
@@ -153,7 +153,7 @@ namespace ui
         generateLayout();
     }
 
-    void TextBuffer::postfixText(base::StringView<char> txt)
+    void TextBuffer::postfixText(base::StringView txt)
     {
         // generate the chars
         m_postfixChars.clear();
@@ -163,7 +163,7 @@ namespace ui
         generateLayout();
     }
 
-    void TextBuffer::prefixText(base::StringView<char> txt)
+    void TextBuffer::prefixText(base::StringView txt)
     {
         // generate the chars
         m_prefixChars.clear();
@@ -628,7 +628,7 @@ namespace ui
         return true;
     }
 
-    void TextBuffer::generateChars(base::StringView<char> txt, TChars& outChars) const
+    void TextBuffer::generateChars(base::StringView txt, TChars& outChars) const
     {
         auto* cur = txt.data();
         auto* end = cur + txt.length();

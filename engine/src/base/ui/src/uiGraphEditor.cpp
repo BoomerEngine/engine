@@ -631,11 +631,11 @@ namespace ui
         {
             if (const auto* groupInfo = blockClass->findMetadata<base::graph::BlockInfoMetadata>())
             {
-                base::StringView<char> groupName = "Generic";
+                base::StringView groupName = "Generic";
                 if (!groupInfo->groupString.empty())
                     groupName = groupInfo->groupString;
 
-                base::StringView<char> blockName = groupInfo->nameString;
+                base::StringView blockName = groupInfo->nameString;
                 if (blockName.empty())
                     blockName = groupInfo->titleString;
 

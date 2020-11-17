@@ -45,7 +45,7 @@ namespace game
     InputDefinitions::InputDefinitions()
     {}
 
-    static InputActionTablePtr FindChildren(const InputActionTable* table, base::StringView<char> name)
+    static InputActionTablePtr FindChildren(const InputActionTable* table, base::StringView name)
     {
         for (const auto& child : table->children())
             if (child->name() == name)
@@ -54,12 +54,12 @@ namespace game
         return nullptr;
     }
 
-    InputActionTablePtr InputDefinitions::findTable(base::StringView<char> name) const
+    InputActionTablePtr InputDefinitions::findTable(base::StringView name) const
     {
         auto table = m_root;
         if (table)
         {
-            base::InplaceArray<base::StringView<char>, 5> nameParts;
+            base::InplaceArray<base::StringView, 5> nameParts;
             name.slice(".", false, nameParts);
 
             for (const auto& partName : nameParts)

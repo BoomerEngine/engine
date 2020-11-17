@@ -82,10 +82,10 @@ namespace base
             /// load content of a file to a buffer (can also open a memory mapped file for actual disk files, but it's going to be transparent any way)
             /// NOTE: we can open ANY source file here but usually we open the one we want to import ie. the queryImportPath()
             /// Good example of importer that may open another file is the .obj importer that can read materials from .mtl
-            virtual Buffer loadSourceFileContent(StringView<char> assetImportPath) const = 0;
+            virtual Buffer loadSourceFileContent(StringView assetImportPath) const = 0;
 
             /// load source asset of given type
-            virtual SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath) const = 0;
+            virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath) const = 0;
 
             //--
 
@@ -103,15 +103,15 @@ namespace base
             ///  "rendering/Textures/wood.jpg"
             ///  "rendering/Box/Textures/wood.jpg"
             ///  etc, up to the maxScanDepth
-            virtual bool findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const = 0;
+            virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const = 0;
 
             // same as findSourceFile but finds files in depot
-            virtual bool findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const = 0;
+            virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const = 0;
 
             //--
 
             /// report a follow up import (other asset that we should import automatically)
-            virtual void followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config = nullptr) = 0;
+            virtual void followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr) = 0;
 
             //--
 
@@ -164,13 +164,13 @@ namespace base
             static void ListImportableResourceClasses(Array<SpecificClassType<IResource>>& outResourceClasses);
 
             /// find all resource classes that given file extension can be imported into, returns false if list is empty
-            static bool ListImportableResourceClassesForExtension(StringView<char> fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses);
+            static bool ListImportableResourceClassesForExtension(StringView fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses);
 
             /// find all configuration classes for importing a given file extension to given class, returns false is resource is not importable
-            static bool ListImportConfigurationForExtension(StringView<char> fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass);
+            static bool ListImportConfigurationForExtension(StringView fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass);
 
             /// list all importable file extensions for given resource class
-            static bool ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView<char>>& outExtensions);
+            static bool ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView>& outExtensions);
 
             ///--
         };

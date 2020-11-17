@@ -37,10 +37,10 @@ namespace base
             virtual ~IImportDepotChecker();
 
             // check if file exists
-            virtual bool depotFileExists(StringView<char> depotPath) const = 0;
+            virtual bool depotFileExists(StringView depotPath) const = 0;
 
             // given a depot root path and file name find existing depot file
-            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
+            virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
         };
 
         //--
@@ -74,7 +74,7 @@ namespace base
 
             void buildClassMap();
 
-            bool findBestImporter(StringView<char> assetFilePath, SpecificClassType<IResource>, SpecificClassType<IResourceImporter>& outImporterClass) const;
+            bool findBestImporter(StringView assetFilePath, SpecificClassType<IResource>, SpecificClassType<IResourceImporter>& outImporterClass) const;
 
             ResourceConfigurationPtr compileFinalImportConfiguration(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration) const;
 

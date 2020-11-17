@@ -18,7 +18,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("DockPanel");
     RTTI_END_TYPE();
 
-    DockPanel::DockPanel(base::StringView<char> title /*= ""*/, base::StringView<char> id /*= ""*/)
+    DockPanel::DockPanel(base::StringView title /*= ""*/, base::StringView id /*= ""*/)
         : m_title(title)
         , m_hasCloseButton(!id.empty())
         , m_id(id)
@@ -64,7 +64,7 @@ namespace ui
         close();
     }
 
-    bool DockPanel::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool DockPanel::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "title")
         {

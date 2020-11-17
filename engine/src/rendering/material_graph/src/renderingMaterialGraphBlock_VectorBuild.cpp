@@ -59,7 +59,7 @@ namespace rendering
             return 0.0f;
         }
 
-        virtual void onPropertyChanged(base::StringView<char> path) override
+        virtual void onPropertyChanged(base::StringView path) override
         {
             TBaseClass::onPropertyChanged(path);
             rebuildLayout();

@@ -77,7 +77,7 @@ namespace base
             const uint32_t m_maxHeaderSize;
 
             // put us in the error state
-            void fatalError(StringView<char> reason);
+            void fatalError(StringView reason);
         };
 
     } // net

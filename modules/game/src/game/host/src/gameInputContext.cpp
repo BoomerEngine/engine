@@ -78,7 +78,7 @@ namespace game
         }
     }
 
-    void InputContext::switchContext(base::StringView<char> name)
+    void InputContext::switchContext(base::StringView name)
     {
         // TODO:
     }

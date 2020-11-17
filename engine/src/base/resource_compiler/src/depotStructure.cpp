@@ -35,7 +35,7 @@ namespace base
         namespace helper
         {
 
-            static StringBuf CombineMountPaths(StringView<char> basePath, StringView<char> relativeMountPath)
+            static StringBuf CombineMountPaths(StringView basePath, StringView relativeMountPath)
             {
                 ASSERT_EX(basePath.empty() || basePath.endsWith("/"), "Invalid base path");
 
@@ -70,7 +70,7 @@ namespace base
             m_eventKey = MakeUniqueEventKey("DepotStructure");
         }
 
-        bool DepotStructure::populateFromManifest(StringView<char> depotManifestPath)
+        bool DepotStructure::populateFromManifest(StringView depotManifestPath)
         {
             // load manifest
             auto settings = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), depotManifestPath);
@@ -230,7 +230,7 @@ namespace base
             }
         }
 
-        io::ReadFileHandlePtr DepotStructure::createFileReader(StringView<char> filePath) const
+        io::ReadFileHandlePtr DepotStructure::createFileReader(StringView filePath) const
         {
             // resolve location
             StringBuf localFileSystemPath;
@@ -256,7 +256,7 @@ namespace base
             return nullptr;
         }
 
-        io::AsyncFileHandlePtr DepotStructure::createFileAsyncReader(StringView<char> filePath) const
+        io::AsyncFileHandlePtr DepotStructure::createFileAsyncReader(StringView filePath) const
         {
             // resolve location
             StringBuf localFileSystemPath;
@@ -282,7 +282,7 @@ namespace base
             return nullptr;
         }
 
-        io::WriteFileHandlePtr DepotStructure::createFileWriter(StringView<char> filePath) const
+        io::WriteFileHandlePtr DepotStructure::createFileWriter(StringView filePath) const
         {
             StringBuf localFileSystemPath;
             const IFileSystem* localFileSystem = nullptr;
@@ -312,7 +312,7 @@ namespace base
 
         ///---
 
-        void DepotStructure::notifyFileChanged(IFileSystem* fs, StringView<char> rawFilePath)
+        void DepotStructure::notifyFileChanged(IFileSystem* fs, StringView rawFilePath)
         {
             for (auto ptr  : m_fileSystemsPtrs)
             {
@@ -329,7 +329,7 @@ namespace base
             }
         }
 
-        void DepotStructure::notifyFileAdded(IFileSystem* fs, StringView<char> rawFilePath)
+        void DepotStructure::notifyFileAdded(IFileSystem* fs, StringView rawFilePath)
         {
             for (auto ptr : m_fileSystemsPtrs)
             {
@@ -346,7 +346,7 @@ namespace base
             }
         }
 
-        void DepotStructure::notifyFileRemoved(IFileSystem* fs, StringView<char> rawFilePath)
+        void DepotStructure::notifyFileRemoved(IFileSystem* fs, StringView rawFilePath)
         {
             for (auto ptr  : m_fileSystemsPtrs)
             {
@@ -363,7 +363,7 @@ namespace base
             }
         }
 
-        void DepotStructure::notifyDirAdded(IFileSystem* fs, StringView<char> rawFilePath)
+        void DepotStructure::notifyDirAdded(IFileSystem* fs, StringView rawFilePath)
         {
             for (auto ptr  : m_fileSystemsPtrs)
             {
@@ -380,7 +380,7 @@ namespace base
             }
         }
 
-        void DepotStructure::notifyDirRemoved(IFileSystem* fs, StringView<char> rawFilePath)
+        void DepotStructure::notifyDirRemoved(IFileSystem* fs, StringView rawFilePath)
         {
             for (auto ptr  : m_fileSystemsPtrs)
             {

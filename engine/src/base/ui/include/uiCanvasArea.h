@@ -108,7 +108,7 @@ namespace ui
         //--
 
         // add a general status message to be printed
-        void statusMessage(base::StringID id, base::StringView<char> txt, base::Color color = base::Color::WHITE, float decayTime = 3.0f);
+        void statusMessage(base::StringID id, base::StringView txt, base::Color color = base::Color::WHITE, float decayTime = 3.0f);
 
     protected:
         struct ElementProxy

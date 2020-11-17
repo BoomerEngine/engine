@@ -43,7 +43,7 @@ namespace rendering
             ParsingFileContext::~ParsingFileContext()
             {}
 
-            void ParsingFileContext::reportError(const base::parser::Location& loc, base::StringView<char> err)
+            void ParsingFileContext::reportError(const base::parser::Location& loc, base::StringView err)
             {
                 m_errHandler.reportError(loc, err);
             }
@@ -138,7 +138,7 @@ namespace rendering
                 , m_code(nullptr)
             {}
 
-            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, base::StringView<char> txt)
+            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, base::StringView txt)
                 : m_tokenID(-1)
                 , m_float(0.0)
                 , m_int(0)
@@ -220,7 +220,7 @@ namespace rendering
             ParsingCodeContext::~ParsingCodeContext()
             {}
 
-            void ParsingCodeContext::reportError(const base::parser::Location& loc, base::StringView<char> err)
+            void ParsingCodeContext::reportError(const base::parser::Location& loc, base::StringView err)
             {
                 m_errHandler.reportError(loc, err);
             }
@@ -282,7 +282,7 @@ namespace rendering
                 return ret;
             }
 
-            CodeNode* ParsingCodeContext::createFunctionCall(const base::parser::Location& loc, const base::StringView<char> name, CodeNode* a, CodeNode* b, CodeNode* c)
+            CodeNode* ParsingCodeContext::createFunctionCall(const base::parser::Location& loc, const base::StringView name, CodeNode* a, CodeNode* b, CodeNode* c)
             {
                 if (name.empty())
                     return a;

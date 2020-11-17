@@ -185,21 +185,21 @@ TEST(StringBuf, RawNonEqualTestFails)
 
 TEST(StringBuf, AppendTest)
 {
-    base::StringVector<char> x("Ala");
+    base::StringVector x("Ala");
     x.append(" ma ");
     x.append("kota");
 
-    base::StringVector<char> y("Ala ma kota");
+    base::StringVector y("Ala ma kota");
     EXPECT_EQ(x, y);
 }
 
 TEST(StringBuf, AppendTestRaw)
 {
-    base::StringVector<char> x("Hello");
-    base::StringVector<char> y("World");
+    base::StringVector x("Hello");
+    base::StringVector y("World");
     x.append(y);
 
-    base::StringVector<char> z("HelloWorld");
+    base::StringVector z("HelloWorld");
     EXPECT_EQ(z, x);
 }
 
@@ -219,8 +219,8 @@ TEST(StringBuf, EmptyStringBeforeAnyString)
 
 TEST(StringBuf, AppendOperator)
 {
-    base::StringVector<char> x("Hello");
-    base::StringVector<char> y("World");
+    base::StringVector x("Hello");
+    base::StringVector y("World");
     x += y;
     
     EXPECT_TRUE(x == "HelloWorld");
@@ -228,7 +228,7 @@ TEST(StringBuf, AppendOperator)
 
 TEST(StringBuf, AppendOperatorRaw)
 {
-    base::StringVector<char> x("Hello");
+    base::StringVector x("Hello");
     x += "World";
 
     EXPECT_TRUE(x == "HelloWorld");
@@ -236,8 +236,8 @@ TEST(StringBuf, AppendOperatorRaw)
 
 TEST(StringBuf, ConcatenateOperator)
 {
-    base::StringVector<char> x("Hello");
-    base::StringVector<char> y("World");
+    base::StringVector x("Hello");
+    base::StringVector y("World");
     auto z = x + y;
 
     EXPECT_TRUE(x == "Hello");
@@ -247,7 +247,7 @@ TEST(StringBuf, ConcatenateOperator)
 
 TEST(StringBuf, ConcatenateOperatorRaw)
 {
-    base::StringVector<char> x("Hello");
+    base::StringVector x("Hello");
     auto z = x + "World";
 
     EXPECT_TRUE(x == "Hello");
@@ -302,8 +302,8 @@ TEST(StringBuf, CompareN)
     base::StringBuf x("testX");
 
     EXPECT_NE(0, x.compareWith("testY"));
-    EXPECT_NE(0, x.compareWith(base::StringView<char>("TESTY", 4)));
-    EXPECT_EQ(0, x.leftPart(4).compareWith(base::StringView<char>("testY", 4)));
+    EXPECT_NE(0, x.compareWith(base::StringView("TESTY", 4)));
+    EXPECT_EQ(0, x.leftPart(4).compareWith(base::StringView("testY", 4)));
 }
 
 TEST(StringBuf, CompareNoCaseN)
@@ -311,8 +311,8 @@ TEST(StringBuf, CompareNoCaseN)
     base::StringBuf x("testX");
 
     EXPECT_NE(0, x.compareWithNoCase("testY"));
-    EXPECT_EQ(0, x.leftPart(4).compareWithNoCase(base::StringView<char>("TESTY", 4)));
-    EXPECT_EQ(0, x.leftPart(4).compareWithNoCase(base::StringView<char>("testY", 4)));
+    EXPECT_EQ(0, x.leftPart(4).compareWithNoCase(base::StringView("TESTY", 4)));
+    EXPECT_EQ(0, x.leftPart(4).compareWithNoCase(base::StringView("testY", 4)));
 }
 
 TEST(StringBuf, LeftPartOfEmptyStringIsAlwaysEmpty)

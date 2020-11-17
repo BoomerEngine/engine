@@ -59,7 +59,7 @@ namespace ui
         return TBaseClass::handleMouseWheel(evt, delta);
     }
 
-    bool ScrollArea::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool ScrollArea::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "verticalScroll")
         {

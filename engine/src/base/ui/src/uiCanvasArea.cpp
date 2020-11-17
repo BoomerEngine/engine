@@ -380,7 +380,7 @@ namespace ui
 
     //--
 
-    void CanvasArea::statusMessage(base::StringID id, base::StringView<char> txt, base::Color color /*= base::Color::WHITE*/, float decayTime /*= 3.0f*/)
+    void CanvasArea::statusMessage(base::StringID id, base::StringView txt, base::Color color /*= base::Color::WHITE*/, float decayTime /*= 3.0f*/)
     {
         auto lock = CreateLock(m_statusMessagesLock);
 

@@ -159,7 +159,7 @@ namespace base
             const char* typeName() const;
 
             /// get the string view
-            StringView<char> view() const;
+            StringView view() const;
 
             /// get the numerical value
             double floatNumber() const;

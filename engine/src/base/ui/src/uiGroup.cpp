@@ -20,7 +20,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("Group");
     RTTI_END_TYPE();
 
-    Group::Group(base::StringView<char> caption, bool expanded)
+    Group::Group(base::StringView caption, bool expanded)
     {
         layoutMode(LayoutMode::Vertical);
 
@@ -78,7 +78,7 @@ namespace ui
 
     //---
 
-    bool Group::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool Group::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "text")
         {

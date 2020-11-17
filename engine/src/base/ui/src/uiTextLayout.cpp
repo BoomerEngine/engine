@@ -29,7 +29,7 @@ namespace ui
         class LayutDataParser : public base::NoCopy
         {
         public:
-            LayutDataParser(base::StringView<char> txt)
+            LayutDataParser(base::StringView txt)
             {
                 curPtr = txt.data();
                 endPtr = txt.data() + txt.length();
@@ -48,7 +48,7 @@ namespace ui
                 return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
             }
 
-            INLINE static const char* ParseMarkup(const char* cur, const char* endPtr, base::StringView<char>& outMarkup, base::StringView<char>& outArg)
+            INLINE static const char* ParseMarkup(const char* cur, const char* endPtr, base::StringView& outMarkup, base::StringView& outArg)
             {
                 if (*cur == '[')
                 {
@@ -68,7 +68,7 @@ namespace ui
 
                     if (cur < endPtr)
                     {
-                        outMarkup = base::StringView<char>(start, cur);
+                        outMarkup = base::StringView(start, cur);
 
                         if (*cur == ':')
                         {
@@ -84,7 +84,7 @@ namespace ui
 
                             if (cur < endPtr)
                             {
-                                outArg = base::StringView<char>(start, cur);
+                                outArg = base::StringView(start, cur);
                                 return cur + 1;
                             }
                         }
@@ -157,19 +157,19 @@ namespace ui
                 outRegions.codes = std::move(codes);
             }
 
-            bool parseColor(base::StringView<char> txt, base::Color& outColor) const
+            bool parseColor(base::StringView txt, base::Color& outColor) const
             {
                 return base::Color::Parse(txt, outColor);
             }
 
-            void pushColor(base::StringView<char> txt)
+            void pushColor(base::StringView txt)
             {
                 base::Color color;
                 if (parseColor(txt, color))
                     colorStack.pushBack(color);
             }
 
-            void pushTagColor(base::StringView<char> txt)
+            void pushTagColor(base::StringView txt)
             {
                 base::Color color;
                 if (parseColor(txt, color))
@@ -179,7 +179,7 @@ namespace ui
 
             const float SIZE_MULT = 1.25f;
 
-            bool processMarkup(base::StringView<char> markup, base::StringView<char> arg)
+            bool processMarkup(base::StringView markup, base::StringView arg)
             {
                 if (markup == "b")
                 {
@@ -323,7 +323,7 @@ namespace ui
                 return false;
             }
 
-            void pushCodes(base::StringView<char> txt)
+            void pushCodes(base::StringView txt)
             {
                 for (const char ch : txt)
                     codes.pushBack(ch);
@@ -335,7 +335,7 @@ namespace ui
                 while (curPtr < endPtr)
                 {
                     // try to parse as markup
-                    base::StringView<char> markup, arg;
+                    base::StringView markup, arg;
                     if (auto newCurPtr = ParseMarkup(curPtr, endPtr, markup, arg))
                     {
                         if (processMarkup(markup, arg))

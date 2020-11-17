@@ -59,7 +59,7 @@ namespace base
 
     IDataView::IDataView()
     {
-        const auto rootPathHash = StringView<char>("").calcCRC64();
+        const auto rootPathHash = StringView("").calcCRC64();
         m_rootPath = MemNew(Path).ptr;
         m_rootPath->parent = nullptr;
         m_paths[rootPathHash] = m_rootPath;
@@ -71,7 +71,7 @@ namespace base
         m_rootPath = nullptr;
     }
 
-    void IDataView::attachObserver(StringView<char> path, IDataViewObserver* observer)
+    void IDataView::attachObserver(StringView path, IDataViewObserver* observer)
     {
         if (auto* pathEntry = createPathEntry(path))
         {
@@ -81,7 +81,7 @@ namespace base
         }
     }
 
-    void IDataView::detachObserver(StringView<char> path, IDataViewObserver* observer)
+    void IDataView::detachObserver(StringView path, IDataViewObserver* observer)
     {
         if (auto* pathEntry = findPathEntry(path))
         {
@@ -98,12 +98,12 @@ namespace base
 
     //--
 
-    void IDataView::dispatchPropertyChanged(StringView<char> eventPath)
+    void IDataView::dispatchPropertyChanged(StringView eventPath)
     {
         ++m_callbackDepth;
 
         bool parentEvent = false;
-        StringView<char> childPath;
+        StringView childPath;
         do
         {
             if (auto* ret = findPathEntry(eventPath))
@@ -140,7 +140,7 @@ namespace base
 
     //----
 
-    IDataView::Path* IDataView::createPathEntryInternal(Path* parent, StringView<char> fullPath)
+    IDataView::Path* IDataView::createPathEntryInternal(Path* parent, StringView fullPath)
     {
         const auto pathCode = fullPath.calcCRC64();
 
@@ -159,7 +159,7 @@ namespace base
         return ret;
     }
 
-    IDataView::Path* IDataView::findPathEntry(StringView<char> path)
+    IDataView::Path* IDataView::findPathEntry(StringView path)
     {
         const auto pathCode = path.calcCRC64();
 
@@ -168,7 +168,7 @@ namespace base
         return ret;
     }
 
-    IDataView::Path* IDataView::createPathEntry(StringView<char> path)
+    IDataView::Path* IDataView::createPathEntry(StringView path)
     {
         // path will most likely exists
         if (auto* ret = findPathEntry(path))
@@ -180,15 +180,15 @@ namespace base
         while (!curPathString.empty())
         {
             uint32_t arrayIndex = 0;
-            StringView<char> propName;
+            StringView propName;
             if (rtti::ParsePropertyName(curPathString, propName))
             {
-                auto fullPathString = StringView<char>(path.data(), curPathString.data());
+                auto fullPathString = StringView(path.data(), curPathString.data());
                 curPath = createPathEntryInternal(curPath, fullPathString);
             }
             else if (rtti::ParseArrayIndex(curPathString, arrayIndex))
             {
-                auto fullPathString = StringView<char>(path.data(), curPathString.data());
+                auto fullPathString = StringView(path.data(), curPathString.data());
                 curPath = createPathEntryInternal(curPath, fullPathString);
             }
             else

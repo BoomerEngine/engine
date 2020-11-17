@@ -66,7 +66,7 @@ namespace base
                 m_connection->send(msg);
             }
 
-            virtual void queueJobStarted(StringView<char> depotPath) override
+            virtual void queueJobStarted(StringView depotPath) override
             {
                 ImportQueueFileStatusChangeMessage msg;
                 msg.depotPath = StringBuf(depotPath);
@@ -74,7 +74,7 @@ namespace base
                 m_connection->send(msg);
             }
 
-            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status, double timeTaken) override
+            virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) override
             {
                 ImportQueueFileStatusChangeMessage msg;
                 msg.depotPath = StringBuf(depotPath);
@@ -83,7 +83,7 @@ namespace base
                 m_connection->send(msg);
             }
 
-            virtual void queueJobProgressUpdate(StringView<char> depotPath, uint64_t currentCount, uint64_t totalCount, StringView<char> text) override
+            virtual void queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override
             {
                 // TODO
             }
@@ -99,7 +99,7 @@ namespace base
                 : m_depot(depot)
             {}
 
-            virtual MetadataPtr loadExistingMetadata(StringView<char> depotPath) const override final
+            virtual MetadataPtr loadExistingMetadata(StringView depotPath) const override final
             {
                 if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
@@ -114,7 +114,7 @@ namespace base
                 return nullptr;
             }
 
-            virtual ResourcePtr loadExistingResource(StringView<char> depotPath) const override final
+            virtual ResourcePtr loadExistingResource(StringView depotPath) const override final
             {
                 if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
@@ -133,13 +133,13 @@ namespace base
                 return nullptr;
             }
 
-            virtual bool depotFileExists(StringView<char> depotPath) const override final
+            virtual bool depotFileExists(StringView depotPath) const override final
             {
                 io::TimeStamp timestamp;
                 return m_depot.queryFileTimestamp(depotPath, timestamp);
             }
 
-            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+            virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
             {
                 return m_depot.findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
             }

@@ -21,7 +21,7 @@ namespace base
     public:
         INLINE StringID();
         INLINE StringID(const StringID& other);
-        INLINE StringID(StringView<char> other);
+        INLINE StringID(StringView other);
         INLINE ~StringID() = default;
 
         INLINE explicit StringID(const char* other);
@@ -53,7 +53,7 @@ namespace base
         INLINE const char* c_str() const;
 
         //! get the view of the string
-        INLINE StringView<char> view() const;
+        INLINE StringView view() const;
 
         //---
 
@@ -66,23 +66,23 @@ namespace base
         static StringID EMPTY();
 
         //! find name without allocating string
-        static StringID Find(StringView<char> txt);
+        static StringID Find(StringView txt);
 
         //---
 
         INLINE static uint32_t CalcHash(StringID id);
-        INLINE static uint32_t CalcHash(StringView<char> txt);
+        INLINE static uint32_t CalcHash(StringView txt);
         INLINE static uint32_t CalcHash(const char* txt);
 
     private:
         StringIDIndex indexValue;
 
-        void set(StringView<char> txt);
+        void set(StringView txt);
 
         const char* debugString() const;
 
         static const char* DebugString(StringIDIndex id);
-        static StringView<char> View(StringIDIndex id);
+        static StringView View(StringIDIndex id);
     };
 
 } // base

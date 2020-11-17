@@ -52,27 +52,27 @@ namespace base
 
         //--
 
-        Group& MakeGroup(StringView<char> name)
+        Group& MakeGroup(StringView name)
         {
             return prv::ConfigStorage::GetInstance().m_storage->group(name);
         }
 
-        const Group* FindGroup(StringView<char> name)
+        const Group* FindGroup(StringView name)
         {
             return prv::ConfigStorage::GetInstance().m_storage->findGroup(name);
         }
 
-        Array<const Group*> FindAllGroups(StringView<char> groupNameSubString)
+        Array<const Group*> FindAllGroups(StringView groupNameSubString)
         {
             return prv::ConfigStorage::GetInstance().m_storage->findAllGroups(groupNameSubString);
         }
 
-        Entry& MakeEntry(StringView<char> groupName, StringView<char> entryName)
+        Entry& MakeEntry(StringView groupName, StringView entryName)
         {
             return MakeGroup(groupName).entry(entryName);
         }
 
-        const Entry* FindEntry(StringView<char> groupName, StringView<char> entryName)
+        const Entry* FindEntry(StringView groupName, StringView entryName)
         {
             if (auto group = FindGroup(groupName))
                 return group->findEntry(entryName);
@@ -80,7 +80,7 @@ namespace base
             return nullptr;
         }
 
-        const Array<StringBuf> Values(StringView<char> groupName, StringView<char> entryName)
+        const Array<StringBuf> Values(StringView groupName, StringView entryName)
         {
             if (auto entry = FindEntry(groupName, entryName))
                 return entry->values();
@@ -88,7 +88,7 @@ namespace base
             return Array<StringBuf>();
         }
 
-        StringBuf Value(StringView<char> groupName, StringView<char> entryName, const StringBuf& defaultValue)
+        StringBuf Value(StringView groupName, StringView entryName, const StringBuf& defaultValue)
         {
             if (auto entry = FindEntry(groupName, entryName))
                 return entry->value();
@@ -96,7 +96,7 @@ namespace base
             return defaultValue;
         }
 
-        int ValueInt(StringView<char> groupName, StringView<char> entryName, int defaultValue/* = 0*/)
+        int ValueInt(StringView groupName, StringView entryName, int defaultValue/* = 0*/)
         {
             if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueInt(defaultValue);
@@ -104,7 +104,7 @@ namespace base
             return defaultValue;
         }
 
-        float ValueFloat(StringView<char> groupName, StringView<char> entryName, float defaultValue/* = 0*/)
+        float ValueFloat(StringView groupName, StringView entryName, float defaultValue/* = 0*/)
         {
             if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueInt(defaultValue);
@@ -112,7 +112,7 @@ namespace base
             return defaultValue;
         }
 
-        bool ValueBool(StringView<char> groupName, StringView<char> entryName, bool defaultValue/*= 0*/)
+        bool ValueBool(StringView groupName, StringView entryName, bool defaultValue/*= 0*/)
         {
             if (auto entry = FindEntry(groupName, entryName))
                 return entry->valueBool(defaultValue);
@@ -120,7 +120,7 @@ namespace base
             return defaultValue;
         }
 
-        void Write(StringView<char> groupName, StringView<char> entryName, StringView<char> value)
+        void Write(StringView groupName, StringView entryName, StringView value)
         {
             if (groupName && entryName)
             {
@@ -129,7 +129,7 @@ namespace base
             }
         }
 
-        void WriteInt(StringView<char> groupName, StringView<char> entryName, bool value)
+        void WriteInt(StringView groupName, StringView entryName, bool value)
         {
             if (groupName && entryName)
             {
@@ -138,7 +138,7 @@ namespace base
             }
         }
 
-        void WriteBool(StringView<char> groupName, StringView<char> entryName, bool value)
+        void WriteBool(StringView groupName, StringView entryName, bool value)
         {
             if (groupName && entryName)
             {

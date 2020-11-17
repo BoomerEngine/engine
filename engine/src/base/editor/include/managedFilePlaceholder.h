@@ -22,7 +22,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ManagedFilePlaceholder, ManagedItem);
 
     public:
-        ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> initialFileName, const ManagedFileFormat* format);
+        ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialFileName, const ManagedFileFormat* format);
         virtual ~ManagedFilePlaceholder();
 
         //--
@@ -38,7 +38,7 @@ namespace ed
         //---
 
         /// set name of the placeholder file
-        void rename(StringView<char> name);
+        void rename(StringView name);
 
     protected:
         const ManagedFileFormat* m_fileFormat; // file format description

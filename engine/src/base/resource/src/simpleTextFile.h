@@ -35,11 +35,11 @@ namespace base
                 INLINE T read(const T& defaultValue = T()) const
                 {
                     T ret = defaultValue;
-                    StringView<char>(value).match(ret);
+                    StringView(value).match(ret);
                     return ret;
                 }
 
-                StringView<char> value;
+                StringView value;
                 const ParameterToken* next = nullptr;
 
                 friend class ParameterFileParser;
@@ -259,7 +259,7 @@ namespace base
                     return ParameterNodeIterator(m_children);
                 }
 
-                INLINE StringView<char> keyValue(const char* key) const
+                INLINE StringView keyValue(const char* key) const
                 {
                     for (auto cur  = m_children; cur; cur = cur->m_next)
                         if (cur->m_numTokens == 2 && cur->m_tokens->value == key)
@@ -300,16 +300,16 @@ namespace base
                     return ret;
                 }
 
-                INLINE StringView<char> tokenValue(uint32_t index = 0) const
+                INLINE StringView tokenValue(uint32_t index = 0) const
                 {
                     auto cur  = token(index);
                     return cur ? cur->value : nullptr;
                 }
 
-                INLINE StringView<char> tokenValueStr(uint32_t index = 0) const
+                INLINE StringView tokenValueStr(uint32_t index = 0) const
                 {
                     auto cur  = token(index);
-                    return cur ? StringView<char>(cur->value) : StringView<char>();
+                    return cur ? StringView(cur->value) : StringView();
                 }
 
                 template< typename T >
@@ -319,7 +319,7 @@ namespace base
 
                     auto cur  = token(index);
                     if (cur)
-                        base::StringView<char>(cur->value).match(ret);
+                        base::StringView(cur->value).match(ret);
 
                     return ret;
                 }
@@ -334,7 +334,7 @@ namespace base
                     return m_numChildren;
                 }
 
-                INLINE StringView<char> fileName() const
+                INLINE StringView fileName() const
                 {
                     return m_fileName;
                 }
@@ -352,7 +352,7 @@ namespace base
                 const ParameterToken* m_tokens;
                 uint32_t m_numTokens;
                 uint32_t m_numChildren;
-                StringView<char> m_fileName;
+                StringView m_fileName;
                 uint32_t m_line;
 
                 friend class ParameterFileParser;
@@ -394,7 +394,7 @@ namespace base
             {
             public:
                 virtual ~IParameterFileParserErrorReporter();
-                virtual void reportError(StringView<char> context, uint32_t line, StringView<char> txt) = 0;
+                virtual void reportError(StringView context, uint32_t line, StringView txt) = 0;
 
                 ///
 
@@ -404,7 +404,7 @@ namespace base
 
             /// parse file content, parameter buffer is not modified
             /// NOTE: the buffer MUST be kept alive as long as the results are in use
-            extern bool ParseParameters(StringView<char> data, ParameterFile& outFile, StringView<char> context = nullptr, IParameterFileParserErrorReporter* errorReporter = nullptr);
+            extern bool ParseParameters(StringView data, ParameterFile& outFile, StringView context = nullptr, IParameterFileParserErrorReporter* errorReporter = nullptr);
 
             //---
 

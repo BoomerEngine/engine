@@ -91,7 +91,7 @@ namespace base
             return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_';
         }
 
-        static bool ReadPropertyName(const char*& ptr, const char* endPtr, StringView<char>& outName)
+        static bool ReadPropertyName(const char*& ptr, const char* endPtr, StringView& outName)
         {
             auto start  = ptr;
             while (ptr < endPtr)
@@ -99,7 +99,7 @@ namespace base
                 auto ch = *ptr++;
                 if (ch == '=')
                 {
-                    outName = StringView<char>(start, ptr-1);
+                    outName = StringView(start, ptr-1);
                     return true;
                 }
                 else if (!IsValidPropertyNameChar(ch))
@@ -138,7 +138,7 @@ namespace base
             return false;
         }
 
-        static bool ReadPropertyValue(const char*& ptr, const char* endPtr, StringView<char>& outValue)
+        static bool ReadPropertyValue(const char*& ptr, const char* endPtr, StringView& outValue)
         {
             int innerDepth = 0;
             int arrayDepth = 0;
@@ -159,7 +159,7 @@ namespace base
                 {
                     if (innerDepth == 0 && arrayDepth == 0)
                     {
-                        outValue = StringView<char>(start, ptr-1);
+                        outValue = StringView(start, ptr-1);
                         return true;
                     }
                     else
@@ -190,7 +190,7 @@ namespace base
             return false;
         }
 
-        bool IClassType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+        bool IClassType::parseFromString(StringView txt, void* data, uint32_t flags) const
         {
             auto readPtr  = txt.data();
             auto endPtr  = txt.data() + txt.length();
@@ -203,11 +203,11 @@ namespace base
                 if (ch != '(')
                     return false;
 
-                StringView<char> propName;
+                StringView propName;
                 if (!ReadPropertyName(readPtr, endPtr, propName))
                     return false;
 
-                StringView<char> propValue;
+                StringView propValue;
                 if (!ReadPropertyValue(readPtr, endPtr, propValue))
                     return false;
 
@@ -472,9 +472,9 @@ namespace base
 
         //--
 
-        DataViewResult IClassType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IClassType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
-            StringView<char> propertyName;
+            StringView propertyName;
 
             if (viewPath.empty())
             {
@@ -545,14 +545,14 @@ namespace base
             return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        DataViewResult IClassType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IClassType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             const auto orgDataView = viewPath;
 
             if (viewPath.empty())
                 return IType::readDataView(viewPath, viewData, targetData, targetType);
 
-            StringView<char> propertyName; 
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
             {
                 if (auto prop  = findProperty(StringID::Find(propertyName)))
@@ -565,14 +565,14 @@ namespace base
             return IType::readDataView(orgDataView, viewData, targetData, targetType);
         }
 
-        DataViewResult IClassType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IClassType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             const auto orgDataView = viewPath;
 
             if (viewPath.empty())
                 return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
 
-            StringView<char> propertyName;
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
             {
                 if (auto prop  = findProperty(StringID::Find(propertyName)))

@@ -60,7 +60,7 @@ namespace ui
         ///
 
         virtual bool handleMouseWheel(const base::input::MouseMovementEvent& evt, float delta) override;
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
         virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
     };
 

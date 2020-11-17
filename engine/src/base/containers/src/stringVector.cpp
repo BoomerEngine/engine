@@ -38,7 +38,7 @@ namespace base
 
         //---
 
-        void BaseHelper::Append(Array<char>& table, StringView<char> view)
+        void BaseHelper::Append(Array<char>& table, StringView view)
         {
             ZeroGuard<char> zg(table);
 
@@ -46,7 +46,7 @@ namespace base
                 table.pushBack(ch);
         }
 
-        void BaseHelper::Append(Array<wchar_t>& table, StringView<char> view)
+        void BaseHelper::Append(Array<wchar_t>& table, StringView view)
         {
             ZeroGuard<wchar_t> zg(table);
 
@@ -62,7 +62,7 @@ namespace base
             }
         }
 
-        void BaseHelper::Append(Array<char>& table, const StringView<wchar_t>& view)
+        void BaseHelper::Append(Array<char>& table, const BaseStringView<wchar_t>& view)
         {
             ZeroGuard<char> zg(table);
 
@@ -78,7 +78,7 @@ namespace base
             }
         }
 
-        void BaseHelper::Append(Array<wchar_t>& table, const StringView<wchar_t>& view)
+        void BaseHelper::Append(Array<wchar_t>& table, const BaseStringView<wchar_t>& view)
         {
             ZeroGuard<wchar_t> zg(table);
 

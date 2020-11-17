@@ -194,7 +194,7 @@ namespace ed
             ///--
 
             /// generate a safe (unique) name for a new object in this container, usually tries to get append numbers at the end until we don't have a name collision
-            base::StringBuf generateSafeName(base::StringView<char> coreName) const;
+            base::StringBuf generateSafeName(base::StringView coreName) const;
 
             //--
 
@@ -375,7 +375,7 @@ namespace ed
             virtual ui::ModelIndex parent(const ui::ModelIndex& item) const override final;
             virtual ui::ModelIndex index(int row, int column, const ui::ModelIndex& parent) const override final;
             virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
-            virtual bool filter(const ui::ModelIndex& id, base::StringView<char> filter, int colIndex = 0) const override final;
+            virtual bool filter(const ui::ModelIndex& id, base::StringView filter, int colIndex = 0) const override final;
             virtual void visualize(const ui::ModelIndex& item, const ui::ItemVisiualizationMode mode, ui::ElementPtr& content) const override final;
             virtual base::RefPtr<ui::PopupMenu> contextMenu(const base::Array<ui::ModelIndex>& indices) const override final;
 

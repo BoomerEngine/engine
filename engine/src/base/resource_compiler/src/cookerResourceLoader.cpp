@@ -309,7 +309,7 @@ namespace base
             }    
         }
 
-        void ResourceLoaderCooker::updateEmptyFileDependencies(ResourceKey key, StringView<char> depotPath)
+        void ResourceLoaderCooker::updateEmptyFileDependencies(ResourceKey key, StringView depotPath)
         {
             InplaceArray<SourceDependency, 1> dependencies;
 
@@ -319,7 +319,7 @@ namespace base
             m_depTracker->notifyDependenciesChanged(key, dependencies);
         }
 
-        void ResourceLoaderCooker::updateDirectFileDependencies(ResourceKey key, StringView<char> depotPath)
+        void ResourceLoaderCooker::updateDirectFileDependencies(ResourceKey key, StringView depotPath)
         {
             io::TimeStamp fileTimeStamp;
             if (m_depot->queryFileTimestamp(depotPath, fileTimeStamp))
@@ -334,7 +334,7 @@ namespace base
             }
         }
 
-        ResourcePtr ResourceLoaderCooker::loadInternalDirectly(ClassType resClass, StringView<char> filePath)
+        ResourcePtr ResourceLoaderCooker::loadInternalDirectly(ClassType resClass, StringView filePath)
         {
             // load file content
             if (auto file = m_depot->createFileAsyncReader(filePath))

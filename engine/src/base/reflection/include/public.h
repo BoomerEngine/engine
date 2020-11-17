@@ -43,14 +43,14 @@ namespace base
 
     // try to read data from a data view into a provided typed container
     template< typename T >
-    INLINE bool ReadViewData(StringView<char> viewPath, const void* viewData, T& targetData)
+    INLINE bool ReadViewData(StringView viewPath, const void* viewData, T& targetData)
     {
         return base::ReadViewData(viewPath, viewData, &targetData, GetTypeObject<T>());
     }
 
     // try to write data into a data view from a provided typed container
     template< typename T >
-    INLINE bool WriteViewData(StringView<char> viewPath, void* viewData, const T& sourceData)
+    INLINE bool WriteViewData(StringView viewPath, void* viewData, const T& sourceData)
     {
         return base::WriteViewData(viewPath, viewData, &sourceData, GetTypeObject<T>());
     }
@@ -62,14 +62,14 @@ namespace base
     // try to parse a data of given type from a string
     // NOTE: we try to parse all content provided, ie. we want cut just "5" from "5 cats" and think it's a number
     // NOTE: obviously the outData must point a memory that contains a valid (constructed) object of type
-    extern BASE_REFLECTION_API bool ParseFromString(StringView<char> txt, Type xpectedType, void* outData);
+    extern BASE_REFLECTION_API bool ParseFromString(StringView txt, Type xpectedType, void* outData);
 
     // try to parse a data of given type from a string into a variant data holder
-    extern BASE_REFLECTION_API bool ParseFromString(StringView<char> txt, Type expectedType, Variant& outVariant);
+    extern BASE_REFLECTION_API bool ParseFromString(StringView txt, Type expectedType, Variant& outVariant);
 
     // try to parse a data of given type from a string
     template< typename T >
-    INLINE bool ParseFromString(StringView<char> txt, T& outData)
+    INLINE bool ParseFromString(StringView txt, T& outData)
     {
         return ParseFromString(txt, reflection::GetTypeObject<T>(), &outData);
     }

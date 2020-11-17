@@ -23,7 +23,7 @@ namespace base
 
     //---
 
-    Color::Color(StringView<char> txt)
+    Color::Color(StringView txt)
         : r(255), g(255), b(255), a(255)
     {
         Parse(txt, *this);
@@ -317,7 +317,7 @@ namespace base
 
     ///---
 
-    bool Color::Parse(base::StringView<char> txt, Color& outColor)
+    bool Color::Parse(base::StringView txt, Color& outColor)
     {
         base::StringParser p(txt);
 

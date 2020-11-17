@@ -35,10 +35,10 @@ namespace ed
         void removeItem(ManagedItem* item);
 
         // add item to the list with initial checked flag and comment stirng
-        void addItem(ManagedItem* item, bool checked = true, StringView<char> comment = "");
+        void addItem(ManagedItem* item, bool checked = true, StringView comment = "");
 
         // change item comment
-        void comment(ManagedItem* item, StringView<char> comment);
+        void comment(ManagedItem* item, StringView comment);
 
         //--
 

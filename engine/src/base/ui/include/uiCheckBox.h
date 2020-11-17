@@ -43,7 +43,7 @@ namespace ui
     private:
         CheckBoxState m_state;
 
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         static CheckBoxState NextState(CheckBoxState state);
 
@@ -51,6 +51,6 @@ namespace ui
     };
 
     // make a checkbox with a label
-    extern BASE_UI_API CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView<char> txt, bool initialState = false);
+    extern BASE_UI_API CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState = false);
 
 } // ui

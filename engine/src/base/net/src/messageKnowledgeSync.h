@@ -26,7 +26,7 @@ namespace base
             virtual ~IKnowledgeUpdaterSink();
 
             /// a new string was given ID was added to the DB
-            virtual void reportNewString(const replication::DataMappedID id, StringView<char> txt) = 0;
+            virtual void reportNewString(const replication::DataMappedID id, StringView txt) = 0;
 
             /// a new path was given ID and added to the DB
             virtual void reportNewPath(const replication::DataMappedID id, const replication::DataMappedID textId, const replication::DataMappedID parentPathId) = 0;
@@ -41,8 +41,8 @@ namespace base
         public:
             KnowledgeUpdater(MessageKnowledgeBase& base, IKnowledgeUpdaterSink* sink);
 
-            virtual replication::DataMappedID mapString(StringView<char> txt) override final;
-            virtual replication::DataMappedID mapPath(StringView<char> path, const char* pathSeparators) override final;
+            virtual replication::DataMappedID mapString(StringView txt) override final;
+            virtual replication::DataMappedID mapPath(StringView path, const char* pathSeparators) override final;
             virtual replication::DataMappedID mapObject(const IObject* obj) override final;
 
         private:

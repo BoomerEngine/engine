@@ -25,7 +25,7 @@ namespace base
 
         //--
 
-        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView<char> referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker)
+        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker)
             : m_referencePath(referenceFilePath)
             , m_referenceMountingPoint(referenceMountingPoint)
             , m_externalProgressTracker(externalProgressTracker)
@@ -50,7 +50,7 @@ namespace base
             return false;
         }
 
-        void CookerInterface::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text)
+        void CookerInterface::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
         {
             if (m_externalProgressTracker)
                 m_externalProgressTracker->reportProgress(currentCount, totalCount, text);
@@ -71,7 +71,7 @@ namespace base
             return m_referenceMountingPoint;
         }       
 
-        void CookerInterface::enumFiles(StringView<char> systemPath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp)
+        void CookerInterface::enumFiles(StringView systemPath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp)
         {
             ASSERT(systemPath.endsWith("/"));
 
@@ -84,7 +84,7 @@ namespace base
             io::TimeStamp newestFileTimestamp;
 
             // split extensions
-            InplaceArray<StringView<char>, 20> extensions;
+            InplaceArray<StringView, 20> extensions;
             extension.slice(";", false, extensions);
 
             // check directories
@@ -174,7 +174,7 @@ namespace base
             outNewestTimeStamp = newestFileTimestamp;
         }
 
-        bool CookerInterface::discoverResolvedPaths(StringView<char> relativePath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths)
+        bool CookerInterface::discoverResolvedPaths(StringView relativePath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths)
         {
             // not a directory :)
             if (!relativePath.endsWith("/"))
@@ -200,7 +200,7 @@ namespace base
             return true;
         }
 
-        bool CookerInterface::queryResolvedPath(StringView<char> relativePath, StringView<char> contextFileSystemPath, bool isLocal, StringBuf& outResourcePath)
+        bool CookerInterface::queryResolvedPath(StringView relativePath, StringView contextFileSystemPath, bool isLocal, StringBuf& outResourcePath)
         {
             if (isLocal)
             {
@@ -228,18 +228,18 @@ namespace base
             return false;
         }
 
-        bool CookerInterface::queryContextName(StringView<char> fileSystemPath, StringBuf& contextName)
+        bool CookerInterface::queryContextName(StringView fileSystemPath, StringBuf& contextName)
         {
             return m_depot.queryContextName(fileSystemPath, contextName);
         }
 
-        bool CookerInterface::queryFileExists(StringView<char> fileSystemPath) const
+        bool CookerInterface::queryFileExists(StringView fileSystemPath) const
         {
             io::TimeStamp unused;
             return m_depot.queryFileTimestamp(fileSystemPath, unused);
         }
 
-        bool CookerInterface::touchFile(StringView<char> fileSystemPath)
+        bool CookerInterface::touchFile(StringView fileSystemPath)
         {
             for (auto& dep : m_dependencies)
                 if (dep.sourcePath == fileSystemPath)
@@ -263,21 +263,21 @@ namespace base
             return m_finalCooker;
         }
 
-        bool CookerInterface::findFile(StringView<char> contextPath, StringView<char> inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth /*= 2*/)
+        bool CookerInterface::findFile(StringView contextPath, StringView inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth /*= 2*/)
         {
-            return ScanRelativePaths(contextPath, inputPath, maxScanDepth, outFileSystemPath, [this](StringView<char> testPath)
+            return ScanRelativePaths(contextPath, inputPath, maxScanDepth, outFileSystemPath, [this](StringView testPath)
                 {
                     return touchFile(testPath);
                 });
         }
 
-        io::ReadFileHandlePtr CookerInterface::createReader(StringView<char> fileSystemPath)
+        io::ReadFileHandlePtr CookerInterface::createReader(StringView fileSystemPath)
         {
             touchFile(fileSystemPath);
             return m_depot.createFileReader(fileSystemPath);
         }
 
-        Buffer CookerInterface::loadToBuffer(StringView<char> fileSystemPath)
+        Buffer CookerInterface::loadToBuffer(StringView fileSystemPath)
         {
             auto loader = createReader(fileSystemPath);
             if (!loader)
@@ -294,7 +294,7 @@ namespace base
             return nullptr;
         }
 
-        bool CookerInterface::loadToString(StringView<char> fileSystemPath, StringBuf& outContent)
+        bool CookerInterface::loadToString(StringView fileSystemPath, StringBuf& outContent)
         {
             auto loader = createReader(fileSystemPath);
             if (!loader)

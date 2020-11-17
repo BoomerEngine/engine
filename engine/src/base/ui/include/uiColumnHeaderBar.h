@@ -42,7 +42,7 @@ namespace ui
         //--
 
         // add column
-        void addColumn(base::StringView<char> caption, float width, bool center = false, bool allowSort = true, bool allowResize = true);
+        void addColumn(base::StringView caption, float width, bool center = false, bool allowSort = true, bool allowResize = true);
 
 
     private:
@@ -52,8 +52,8 @@ namespace ui
 
         //---
 
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
-        virtual bool handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
+        virtual bool handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
         virtual bool handleTemplateNewChild(const base::xml::IDocument& doc, const base::xml::NodeID& id, const base::xml::NodeID& childId, const ElementPtr& childElement) override;
         virtual bool handleTemplateFinalize() override;
 

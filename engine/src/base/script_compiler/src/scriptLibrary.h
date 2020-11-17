@@ -26,7 +26,7 @@ namespace base
         class StubLibrary : public base::NoCopy
         {
         public:
-            StubLibrary(mem::LinearAllocator& mem, StringView<char> primaryModuleName);
+            StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName);
             ~StubLibrary();
 
             //--
@@ -108,7 +108,7 @@ namespace base
             StubConstantValue* createConstValueBool(const StubLocation& location, bool value);
 
             // create string constant value
-            StubConstantValue* createConstValueString(const StubLocation& location, StringView<char> value);
+            StubConstantValue* createConstValueString(const StubLocation& location, StringView value);
 
             // create name constant value
             StubConstantValue* createConstValueName(const StubLocation& location, StringID value);
@@ -211,10 +211,10 @@ namespace base
             bool linkFunction(IErrorHandler& err, StubFunction* funcStub);
             bool checkClassProperties(IErrorHandler& err, StubClass* classStub);
 
-            void reportError(IErrorHandler& err, const StubLocation& loc, StringView<char> txt);
-            void reportError(IErrorHandler& err, const Stub* stub, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const StubLocation& loc, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const Stub* stub, StringView<char> txt);
+            void reportError(IErrorHandler& err, const StubLocation& loc, StringView txt);
+            void reportError(IErrorHandler& err, const Stub* stub, StringView txt);
+            void reportWarning(IErrorHandler& err, const StubLocation& loc, StringView txt);
+            void reportWarning(IErrorHandler& err, const Stub* stub, StringView txt);
 
             Stub* createImportStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);
             Stub* importStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);

@@ -38,7 +38,7 @@ namespace base
 
         //---
 
-        JITProject::JITProject(void* handle, StringView<char> path)
+        JITProject::JITProject(void* handle, StringView path)
             : m_path(path)
             , m_handle(handle)
             , m_bound(false)
@@ -370,7 +370,7 @@ namespace base
             return true;
         }
 
-        JITProjectPtr JITProject::Load(StringView<char> path)
+        JITProjectPtr JITProject::Load(StringView path)
         {
 #if defined(PLATFORM_POSIX)
             auto utf8Path = path.ansi_str();
@@ -383,7 +383,7 @@ namespace base
 
             return CreateSharedPtr<JITProject>(handle, path);
 #elif defined(PLATFORM_WINDOWS)
-            UTF16StringBuf utf16Path(path);
+            UTF16StringVector utf16Path(path);
             HANDLE hLib = LoadLibraryW(utf16Path.c_str());
             if (NULL == hLib)
             {
@@ -398,9 +398,9 @@ namespace base
 #endif
         }
 
-        static StringBuf GetCoreScriptModuleName(StringView<char> path)
+        static StringBuf GetCoreScriptModuleName(StringView path)
         {
-            InplaceArray<StringView<char>, 10> parts;
+            InplaceArray<StringView, 10> parts;
             path.beforeLast(".").slice("/", false, parts);
 
             StringBuilder builder;
@@ -414,7 +414,7 @@ namespace base
             return builder.toString();
         }
 
-        static StringBuf GetJITModulePath(StringView<char> path)
+        static StringBuf GetJITModulePath(StringView path)
         {
             auto coreProjectModuleName = GetCoreScriptModuleName(path.beforeLast("."));
 

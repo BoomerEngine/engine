@@ -434,7 +434,7 @@ namespace base
             }
         }
 
-        void JITTypeLib::reportError(const Stub* owner, StringView<char> txt)
+        void JITTypeLib::reportError(const Stub* owner, StringView txt)
         {
             if (owner && owner->location.file)
             {
@@ -545,7 +545,7 @@ namespace base
             }
             else if (typeInfo.metaType == rtti::MetaType::Class || typeInfo.metaType == rtti::MetaType::Simple)
             {
-                InplaceArray<StringView<char>, 10> parts;
+                InplaceArray<StringView, 10> parts;
                 engineTypeName.view().slice(":", false, parts);
 
                 StringBuilder jitName;
@@ -903,7 +903,7 @@ namespace base
             return ret;
         }
 
-        void JITTypeLib::reportLocalFunctionBody(const StubFunction* func,  StringView<char> localBodyName, bool fastCall)
+        void JITTypeLib::reportLocalFunctionBody(const StubFunction* func,  StringView localBodyName, bool fastCall)
         {
             LocalFuncInfo info;
             info.m_bodyName = localBodyName;

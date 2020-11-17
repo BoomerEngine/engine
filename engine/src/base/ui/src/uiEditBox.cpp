@@ -26,7 +26,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("EditBox");
     RTTI_END_TYPE();
     
-    EditBox::EditBox(EditBoxFeatureFlags features, base::StringView<char> initialText)
+    EditBox::EditBox(EditBoxFeatureFlags features, base::StringView initialText)
         : ScrollArea(ScrollMode::None, ScrollMode::Hidden)
         , m_features(features)
         , m_cursorToggleInterval(0.5)
@@ -58,7 +58,7 @@ namespace ui
         m_textBuffer.reset();
     }
 
-    void EditBox::text(base::StringView<char> txt)
+    void EditBox::text(base::StringView txt)
     {
         m_textBuffer->text(txt);
 
@@ -94,21 +94,21 @@ namespace ui
         recheckValidation();
     }
 
-    void EditBox::postfixText(base::StringView<char> txt)
+    void EditBox::postfixText(base::StringView txt)
     {
         m_textBuffer->postfixText(txt);
         invalidateLayout();
         invalidateGeometry();
     }
 
-    void EditBox::prefixText(base::StringView<char> txt)
+    void EditBox::prefixText(base::StringView txt)
     {
         m_textBuffer->prefixText(txt);
         invalidateLayout();
         invalidateGeometry();
     }
 
-    void EditBox::hintText(base::StringView<char> txt)
+    void EditBox::hintText(base::StringView txt)
     {
         // TODO
     }
@@ -527,7 +527,7 @@ namespace ui
                 else
                 {
                     wchar_t uniChars[] = {evt.scanCode(), 0};
-                    textToInsert = base::StringBuf(base::StringView<wchar_t>(uniChars));
+                    textToInsert = base::StringBuf(base::BaseStringView<wchar_t>(uniChars));
                 }
 
                 // check if text will validate after insertion

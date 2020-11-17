@@ -75,9 +75,9 @@ namespace game
             virtual void update(float dt);
             virtual bool processInput(const base::input::BaseEvent& evt);
 
-            void reportError(base::StringView<char> msg);
+            void reportError(base::StringView msg);
 
-            rendering::MeshPtr loadMesh(base::StringView<char> meshName);
+            rendering::MeshPtr loadMesh(base::StringView meshName);
 
         protected:
             base::world::WorldPtr m_world;

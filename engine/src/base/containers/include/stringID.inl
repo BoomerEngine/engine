@@ -26,7 +26,7 @@ namespace base
         set(other);
     }
 
-    INLINE StringID::StringID(StringView<char> other)
+    INLINE StringID::StringID(StringView other)
         : indexValue(0)
     {
         set(other);
@@ -92,17 +92,17 @@ namespace base
 
     INLINE uint32_t StringID::CalcHash(StringID id)
     {
-        return StringView<char>::CalcHash(id.view());
+        return StringView::CalcHash(id.view());
     }
 
-    INLINE uint32_t StringID::CalcHash(StringView<char> txt)
+    INLINE uint32_t StringID::CalcHash(StringView txt)
     {
-        return StringView<char>::CalcHash(txt);
+        return StringView::CalcHash(txt);
     }
 
     INLINE uint32_t StringID::CalcHash(const char* txt)
     {
-        return StringView<char>::CalcHash(txt);
+        return StringView::CalcHash(txt);
     }
         
     INLINE const char* StringID::c_str() const
@@ -110,7 +110,7 @@ namespace base
         return View(indexValue).data();
     }
 
-    INLINE StringView<char> StringID::view() const
+    INLINE StringView StringID::view() const
     {
         return View(indexValue);
     }

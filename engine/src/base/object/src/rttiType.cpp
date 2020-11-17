@@ -41,7 +41,7 @@ namespace base
             // nothing
         }
 
-        bool IType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+        bool IType::parseFromString(StringView txt, void* data, uint32_t flags) const
         {
             // unparsable
             return false;
@@ -49,7 +49,7 @@ namespace base
 
         //--
 
-        DataViewResult IType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             if (viewPath.empty())
             {
@@ -63,14 +63,14 @@ namespace base
                 return DataViewResultCode::OK;
             }
 
-            StringView<char> propertyName;
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
                 return DataViewResultCode::ErrorUnknownProperty;
 
             return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        DataViewResult IType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             if (viewPath.empty())
             {
@@ -79,7 +79,7 @@ namespace base
                 return DataViewResultCode::OK;
             }
 
-            StringView<char> propertyName;
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
             {
                 if (propertyName == "__type")
@@ -110,7 +110,7 @@ namespace base
             return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        DataViewResult IType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             if (viewPath.empty())
             {
@@ -119,7 +119,7 @@ namespace base
                 return DataViewResultCode::OK;
             }
 
-            StringView<char> propertyName;
+            StringView propertyName;
             if (ParsePropertyName(viewPath, propertyName))
             {
                 return DataViewResultCode::ErrorUnknownProperty;

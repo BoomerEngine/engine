@@ -69,7 +69,7 @@ namespace ed
 
     void AssetFileSmallImportIndicator::updateStatus()
     {
-        StringView<char> statusText = "[img:question_red]";
+        StringView statusText = "[img:question_red]";
 
         bool visible = true;
 

@@ -38,7 +38,7 @@ namespace base
             virtual void writeFloat(float val) override final {};
             virtual void writeDouble(double val) override final {};
 
-            virtual void writeString(StringView<char> str) override final;
+            virtual void writeString(StringView str) override final;
             virtual void writeName(StringID name) override final;
             virtual void writeRef(const Stub* otherStub) override final;
 
@@ -80,11 +80,11 @@ namespace base
             virtual void writeFloat(float val) override final;
             virtual void writeDouble(double val) override final;
 
-            virtual void writeString(StringView<char> str) override final;
+            virtual void writeString(StringView str) override final;
             virtual void writeName(StringID name) override final;
             virtual void writeRef(const Stub* otherStub) override final;
 
-            void writeRawString(StringView<char> txt);
+            void writeRawString(StringView txt);
 
             void writeContainers();
 
@@ -116,7 +116,7 @@ namespace base
             virtual StringID readName() override final;
             virtual const Stub* readRef() override final;
 
-            StringView<char> readRawString();
+            StringView readRawString();
 
             bool readContainers();
 

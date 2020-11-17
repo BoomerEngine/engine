@@ -131,7 +131,7 @@ namespace base
                     ((const T*)data)->print(f);
                 }
 
-                static bool ParseFromStringFunc(StringView<char> txt, void* data, bool partOfLargerStream)
+                static bool ParseFromStringFunc(StringView txt, void* data, bool partOfLargerStream)
                 {
                     return T::Parse(txt, *(T*)data);
                 }
@@ -140,17 +140,17 @@ namespace base
             template< typename T >
             struct DataViewHelper
             {
-                static bool DescribeDataViewFunc(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo)
+                static bool DescribeDataViewFunc(StringView viewPath, const void* viewData, DataViewInfo& outInfo)
                 {
                     return (*(const T*)viewData)->describeDataView(viewPath, outInfo);
                 }
 
-                static bool ReadDataViewFunc(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType)
+                static bool ReadDataViewFunc(StringView viewPath, const void* viewData, void* targetData, Type targetType)
                 {
                     return (*(const T*)viewData)->readDataView(viewPath, targetData, targetType);
                 }
 
-                static bool WriteDataViewFunc(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType)
+                static bool WriteDataViewFunc(StringView viewPath, void* viewData, const void* sourceData, Type sourceType)
                 {
                     return (*(T*)viewData)->writeDataView(viewPath, targetData, targetType);
                 }
@@ -194,11 +194,11 @@ namespace base
             typedef void (*TReadXMLFunc)(TypeSerializationContext& typeContext, const xml::Node& node, void* data);
 
             typedef void (*TPrintToTextFunc)(IFormatStream& f, const void* data, uint32_t flags);
-            typedef bool (*TParseFromStringFunc)(StringView<char> txt, void* data, uint32_t flags);
+            typedef bool (*TParseFromStringFunc)(StringView txt, void* data, uint32_t flags);
 
-            typedef DataViewResult (*TDescribeDataViewFunc)(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo);
-            typedef DataViewResult(*TReadDataViewFunc)(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType);
-            typedef DataViewResult(*TWriteDataViewFunc)(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType);
+            typedef DataViewResult (*TDescribeDataViewFunc)(StringView viewPath, const void* viewData, DataViewInfo& outInfo);
+            typedef DataViewResult(*TReadDataViewFunc)(StringView viewPath, const void* viewData, void* targetData, Type targetType);
+            typedef DataViewResult(*TWriteDataViewFunc)(StringView viewPath, void* viewData, const void* sourceData, Type sourceType);
 
             //--
 
@@ -315,11 +315,11 @@ namespace base
             virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override;
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override;
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override;
 
-            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override;
-            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override;
-            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override;
+            virtual DataViewResult describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const override;
+            virtual DataViewResult readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const override;
+            virtual DataViewResult writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const override;
         };
 
         //--

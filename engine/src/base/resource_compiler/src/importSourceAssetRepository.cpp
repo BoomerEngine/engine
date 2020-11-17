@@ -47,27 +47,27 @@ namespace base
             m_totalMemorySize = 0;
         }
 
-        bool SourceAssetRepository::fileExists(StringView<char> assetImportPath) const
+        bool SourceAssetRepository::fileExists(StringView assetImportPath) const
         {
             return m_fileService->fileExists(assetImportPath);
         }
 
-        Buffer SourceAssetRepository::loadSourceFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
+        Buffer SourceAssetRepository::loadSourceFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
         {
             return m_fileService->loadFileContent(assetImportPath, outTimestamp, outFingerprint);
         }
 
-        CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
+        CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
         {
             return m_fileService->checkFileStatus(assetImportPath, lastKnownTimestamp, lastKnownFingerprint, progress);
         }
 
-        ResourceConfigurationPtr SourceAssetRepository::compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass)
+        ResourceConfigurationPtr SourceAssetRepository::compileBaseResourceConfiguration(StringView assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass)
         {
             return m_fileService->compileBaseResourceConfiguration(assetImportPath, configurationClass);
         }
 
-        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
+        SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
         {
             auto lock = CreateLock(m_lock);
 

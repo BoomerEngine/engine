@@ -97,11 +97,11 @@ namespace base
             OpcodeList generateInnerOpcodes(IErrorHandler& err, const FunctionNode* node, Array<const FunctionScope*>& activeScopes);
             OpcodeList generateScopeVariableDestructors(IErrorHandler& err, const FunctionNode* node, const Array<const FunctionScope*>& activeScopes, FunctionScope* targetScope);
 
-            bool reportError(IErrorHandler& err, const StubLocation& location, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const StubLocation& location, StringView<char> txt);
+            bool reportError(IErrorHandler& err, const StubLocation& location, StringView txt);
+            void reportWarning(IErrorHandler& err, const StubLocation& location, StringView txt);
 
-            bool reportError(IErrorHandler& err, const FunctionNode* node, StringView<char> txt);
-            void reportWarning(IErrorHandler& err, const FunctionNode* node, StringView<char> txt);
+            bool reportError(IErrorHandler& err, const FunctionNode* node, StringView txt);
+            void reportWarning(IErrorHandler& err, const FunctionNode* node, StringView txt);
         };
 
 

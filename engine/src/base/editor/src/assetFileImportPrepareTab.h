@@ -137,7 +137,7 @@ namespace ed
 
         mutable HashMap<StringBuf, Array<SpecificClassType<res::IResource>>> m_classPerExtensionMap;
 
-        const Array<SpecificClassType<res::IResource>>& getClassesForSourceExtension(StringView<char> sourcePath) const;
+        const Array<SpecificClassType<res::IResource>>& getClassesForSourceExtension(StringView sourcePath) const;
     };
 
     //--

@@ -25,7 +25,7 @@ namespace base
         RTTI_DECLARE_VIRTUAL_CLASS(PropertyCustomEditorMetadata, rtti::IMetadata);
 
     public:
-        PropertyCustomEditorMetadata(StringView<char> editorName="");
+        PropertyCustomEditorMetadata(StringView editorName="");
 
         StringID customEditorName;
     };
@@ -38,7 +38,7 @@ namespace base
         RTTI_DECLARE_VIRTUAL_CLASS(PropertyCommentMetadata, rtti::IMetadata);
 
     public:
-        PropertyCommentMetadata(StringView<char> txt = "");
+        PropertyCommentMetadata(StringView txt = "");
 
         StringBuf text;
     };
@@ -51,7 +51,7 @@ namespace base
         RTTI_DECLARE_VIRTUAL_CLASS(PropertyUnitsMetadata, rtti::IMetadata);
 
     public:
-        PropertyUnitsMetadata(StringView<char> txt = "");
+        PropertyUnitsMetadata(StringView txt = "");
 
         StringBuf text;
     };

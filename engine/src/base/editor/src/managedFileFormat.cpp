@@ -31,7 +31,7 @@ namespace ed
         {
             if (const auto* descData = resourceClass->findMetadata<res::ResourceDescriptionMetadata>())
             {
-                const auto desc = StringView<char>(descData->description());
+                const auto desc = StringView(descData->description());
                 if (tagData->color().a > 0 && !desc.empty())
                 {
                     auto& tag = outTags.emplaceBack();
@@ -47,7 +47,7 @@ namespace ed
 
     static res::StaticResource<image::Image> resFileIcon("/engine/thumbnails/file.png");
 
-    ManagedFileFormat::ManagedFileFormat(StringView<char> extension)
+    ManagedFileFormat::ManagedFileFormat(StringView extension)
         : m_extension(extension)
         , m_description("Unknown Format")
         , m_nativeResourceClass(nullptr)
@@ -86,7 +86,7 @@ namespace ed
 
             // find formats (extensions) we can import this file form
             {
-                InplaceArray<StringView<char>, 20> importExtensions;
+                InplaceArray<StringView, 20> importExtensions;
                 res::IResourceImporter::ListImportableExtensionsForClass(m_nativeResourceClass, importExtensions);
 
                 for (const auto& view : importExtensions)
@@ -204,7 +204,7 @@ namespace ed
         }
     }
 
-    const ManagedFileFormat* ManagedFileFormatRegistry::format(StringView<char> extension)
+    const ManagedFileFormat* ManagedFileFormatRegistry::format(StringView extension)
     {
         //auto lock = CreateLock(m_lock);
 

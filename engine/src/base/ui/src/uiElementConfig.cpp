@@ -27,7 +27,7 @@ namespace ui
         return false;
     }
 
-    static bool IsValidTag(base::StringView<char> tag)
+    static bool IsValidTag(base::StringView tag)
     {
         if (tag.empty())
             return false;
@@ -45,7 +45,7 @@ namespace ui
 
     //---
 
-    ConfigBlock::ConfigBlock(IConfigDataInterface* data, base::StringView<char> rootTag)
+    ConfigBlock::ConfigBlock(IConfigDataInterface* data, base::StringView rootTag)
         : m_data(data)
         , m_path(rootTag)
     {}
@@ -54,7 +54,7 @@ namespace ui
     {}
 
 
-    ConfigBlock ConfigBlock::tag(base::StringView<char> tag) const
+    ConfigBlock ConfigBlock::tag(base::StringView tag) const
     {
         base::StringBuilder txt;
 
@@ -71,7 +71,7 @@ namespace ui
         return ConfigBlock(m_data, txt.view());
     }
 
-    ConfigBlock ConfigBlock::path(base::StringView<char> path) const
+    ConfigBlock ConfigBlock::path(base::StringView path) const
     {
         base::StringBuilder txt;
 
@@ -111,7 +111,7 @@ namespace ui
         m_storage = nullptr;
     }
 
-    bool ConfigFileStorageDataInterface::loadFromFile(base::StringView<char> path)
+    bool ConfigFileStorageDataInterface::loadFromFile(base::StringView path)
     {
         base::StringBuf content;
         if (!base::io::LoadFileToString(path, content))
@@ -120,7 +120,7 @@ namespace ui
         return base::config::Storage::Load(content, *m_storage);
     }
 
-    bool ConfigFileStorageDataInterface::saveToFile(base::StringView<char> path) const
+    bool ConfigFileStorageDataInterface::saveToFile(base::StringView path) const
     {
         base::StringBuilder txt;
 
@@ -130,7 +130,7 @@ namespace ui
         return base::io::SaveFileFromString(path, txt.view());
     }
 
-    void ConfigFileStorageDataInterface::writeRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, const void* data)
+    void ConfigFileStorageDataInterface::writeRaw(base::StringView path, base::StringView key, base::Type type, const void* data)
     {
         DEBUG_CHECK_RETURN(type);
         DEBUG_CHECK_RETURN(data);
@@ -143,7 +143,7 @@ namespace ui
         base::ConfigPropertyBase::SaveToEntry(type, data, nullptr, entry);
     }
 
-    bool ConfigFileStorageDataInterface::readRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, void* data) const
+    bool ConfigFileStorageDataInterface::readRaw(base::StringView path, base::StringView key, base::Type type, void* data) const
     {
         DEBUG_CHECK_RETURN_V(type, false);
         DEBUG_CHECK_RETURN_V(data, false);

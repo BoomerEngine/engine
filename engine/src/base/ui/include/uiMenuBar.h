@@ -27,12 +27,12 @@ namespace ui
     public:
         MenuBar();
 
-        void createMenu(base::StringView<char> caption, const TPopupFunc& menuFunc);
-        void createMenu(base::StringView<char> caption, const PopupPtr& menu);
+        void createMenu(base::StringView caption, const TPopupFunc& menuFunc);
+        void createMenu(base::StringView caption, const PopupPtr& menu);
 
     private:
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
-        virtual bool handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
+        virtual bool handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
         virtual bool handleTemplateNewChild(const base::xml::IDocument& doc, const base::xml::NodeID& id, const base::xml::NodeID& childId, const ElementPtr& childElement) override;
         virtual bool handleTemplateFinalize() override;
     };
@@ -46,10 +46,10 @@ namespace ui
 
     public:
         MenuBarItem();
-        MenuBarItem(const TPopupFunc& func, base::StringView<char> text);
+        MenuBarItem(const TPopupFunc& func, base::StringView text);
 
     private:
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
         virtual void handleHoverEnter(const Position& absolutePosition) override;
         virtual void clicked() override;
 
@@ -73,12 +73,12 @@ namespace ui
     public:
         MenuButtonContainer();
 
-        void createAction(base::StringID action, base::StringView<char> text, base::StringView<char> icon = "");
-        void createSubMenu(const TPopupFunc& func, base::StringView<char> text, base::StringView<char> icon = "");
-        void createSubMenu(const PopupPtr& popup, base::StringView<char> text, base::StringView<char> icon = "");
+        void createAction(base::StringID action, base::StringView text, base::StringView icon = "");
+        void createSubMenu(const TPopupFunc& func, base::StringView text, base::StringView icon = "");
+        void createSubMenu(const PopupPtr& popup, base::StringView text, base::StringView icon = "");
         void createSeparator();
 
-        EventFunctionBinder createCallback(base::StringView<char> text, base::StringView<char> icon = "", base::StringView<char> shortcut="", bool enabled=true);
+        EventFunctionBinder createCallback(base::StringView text, base::StringView icon = "", base::StringView shortcut="", bool enabled=true);
 
         void show(IElement* owner);
         void showAsDropdown(IElement* owner);
@@ -90,8 +90,8 @@ namespace ui
 
         void updateButtonState();
 
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
-        virtual bool handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
+        virtual bool handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id) override;
         virtual bool handleTemplateNewChild(const base::xml::IDocument& doc, const base::xml::NodeID& id, const base::xml::NodeID& childId, const ElementPtr& childElement) override;
         virtual bool handleTemplateFinalize() override;
     };
@@ -105,11 +105,11 @@ namespace ui
 
     public:
         MenuButton();
-        MenuButton(base::StringID, base::StringView<char> text, base::StringView<char> icon, base::StringView<char> shortcut="");
-        MenuButton(const TPopupFunc& func, base::StringView<char> text, base::StringView<char> icon);
+        MenuButton(base::StringID, base::StringView text, base::StringView icon, base::StringView shortcut="");
+        MenuButton(const TPopupFunc& func, base::StringView text, base::StringView icon);
 
     private:
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
         virtual bool handleHoverDuration(const Position& absolutePosition) override;
 
         TPopupFunc m_func;

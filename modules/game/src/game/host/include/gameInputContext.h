@@ -46,7 +46,7 @@ namespace game
         void leaveSubContext(base::StringID name);
 
         // switch context to a totally different one, removes everything from the stack
-        void switchContext(base::StringView<char> name);
+        void switchContext(base::StringView name);
 
         //--
 

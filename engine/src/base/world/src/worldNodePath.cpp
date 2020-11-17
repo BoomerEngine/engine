@@ -16,7 +16,7 @@ namespace base
     namespace world
     {
 
-        NodePath NodePath::operator[](const StringView<char> name) const
+        NodePath NodePath::operator[](const StringView name) const
         {
             return operator[](StringID(name));
         }
@@ -88,7 +88,7 @@ namespace base
                 {
                     // extract directory name
                     if (path > start)
-                        curPath = curPath[StringView<char>(start, path)];
+                        curPath = curPath[StringView(start, path)];
 
                     // advance
                     start = path + 1;
@@ -99,7 +99,7 @@ namespace base
 
             // last part
             if (path > start)
-                curPath = curPath[StringView<char>(start, path)];
+                curPath = curPath[StringView(start, path)];
 
             // return final path element
             TRACE_INFO("'{}' '{}'", curPath, str);

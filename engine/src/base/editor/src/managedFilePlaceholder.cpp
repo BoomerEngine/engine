@@ -22,7 +22,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFilePlaceholder);
     RTTI_END_TYPE();
 
-    static StringBuf FormatFileName(StringView<char> initialName, const ManagedFileFormat* format)
+    static StringBuf FormatFileName(StringView initialName, const ManagedFileFormat* format)
     {
         if (initialName.empty())
             initialName = "file";
@@ -30,7 +30,7 @@ namespace ed
         return TempString("{}.{}", initialName, format->extension());
     }
 
-    ManagedFilePlaceholder::ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> initialName, const ManagedFileFormat* format)
+    ManagedFilePlaceholder::ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName, const ManagedFileFormat* format)
         : ManagedItem(depot, parentDir, FormatFileName(initialName, format))
         , m_fileFormat(format)
         , m_shortName(initialName)
@@ -47,7 +47,7 @@ namespace ed
         return m_fileFormat->thumbnail();
     }
 
-    void ManagedFilePlaceholder::rename(StringView<char> name)
+    void ManagedFilePlaceholder::rename(StringView name)
     {
         if (ValidateFileName(name))
         {

@@ -255,9 +255,9 @@ namespace base
             INLINE BlockInfoMetadata& group(const char* group) { groupString = group; return *this; }
             INLINE BlockInfoMetadata& name(const char* name) { nameString = name; return *this; }
 
-            StringView<char> titleString;
-            StringView<char> groupString;
-            StringView<char> nameString;
+            StringView titleString;
+            StringView groupString;
+            StringView nameString;
         };
         
         //---
@@ -282,9 +282,9 @@ namespace base
             RTTI_DECLARE_VIRTUAL_CLASS(BlockStyleNameMetadata, rtti::IMetadata);
 
         public:
-            INLINE void style(StringView<char> txt) { name = txt; }
+            INLINE void style(StringView txt) { name = txt; }
 
-            StringView<char> name;
+            StringView name;
         };
 
         //---
@@ -311,7 +311,7 @@ namespace base
         public:
             INLINE BlockHelpMetadata& help(const char* text) { helpString = text; return *this; }
 
-            StringView<char> helpString;
+            StringView helpString;
         };
 
         //--

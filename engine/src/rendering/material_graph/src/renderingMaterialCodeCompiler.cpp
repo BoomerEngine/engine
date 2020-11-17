@@ -32,7 +32,7 @@ namespace rendering
 
     //--
 
-    MaterialPixelStageCompiler::MaterialPixelStageCompiler(const MaterialDataLayout* dataLayout, base::StringView<char> materialPath, const MaterialCompilationSetup& context)
+    MaterialPixelStageCompiler::MaterialPixelStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context)
         : MaterialStageCompiler(dataLayout, ShaderType::Pixel, materialPath, context)
     {}
 
@@ -137,7 +137,7 @@ namespace rendering
 
     //--
 
-    MaterialVertexStageCompiler::MaterialVertexStageCompiler(const MaterialDataLayout* dataLayout, base::StringView<char> materialPath, const MaterialCompilationSetup& context, const MaterialPixelStageCompiler& ps)
+    MaterialVertexStageCompiler::MaterialVertexStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context, const MaterialPixelStageCompiler& ps)
         : MaterialStageCompiler(dataLayout, ShaderType::Vertex, materialPath, context)
         , m_ps(ps)
     {
@@ -247,7 +247,7 @@ namespace rendering
                     {
                         if (isStreamRequested)
                         {
-                            const base::StringView<char> compNames[] = { "x","y","z","w" };
+                            const base::StringView compNames[] = { "x","y","z","w" };
                             outStr.appendf("    {}.{} = uintBitsToFloat(MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, compNames[j], dataWordIndex);
                         }
                         dataWordIndex += 1;
@@ -333,7 +333,7 @@ namespace rendering
 
     //--
 
-    MaterialMeshGeometryCompiler::MaterialMeshGeometryCompiler(const MaterialDataLayout* layout, base::StringView<char> materialPath, const MaterialCompilationSetup& context)
+    MaterialMeshGeometryCompiler::MaterialMeshGeometryCompiler(const MaterialDataLayout* layout, base::StringView materialPath, const MaterialCompilationSetup& context)
         : m_ps(layout, materialPath, context)
         , m_vs(layout, materialPath, context, m_ps)
         , m_dataLayout(layout)

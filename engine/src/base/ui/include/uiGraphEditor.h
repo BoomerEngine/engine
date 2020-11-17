@@ -180,10 +180,10 @@ namespace ui
         bool actionCreateBlock(base::ClassType blockClass, const VirtualPosition& virtualPos);
 
         // delete given block(s)
-        bool actionRemoveBlocks(const base::Array<base::graph::Block*>& blocks, base::StringView<char> desc = "");
+        bool actionRemoveBlocks(const base::Array<base::graph::Block*>& blocks, base::StringView desc = "");
 
         // delete given block(s)
-        bool actionRemoveBlocks(const base::Array<base::graph::BlockPtr>& blocks, base::StringView<char> desc = "");
+        bool actionRemoveBlocks(const base::Array<base::graph::BlockPtr>& blocks, base::StringView desc = "");
 
         // delete selection
         bool actionDeleteSelection();

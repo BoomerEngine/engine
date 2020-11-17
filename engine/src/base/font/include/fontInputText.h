@@ -26,7 +26,7 @@ namespace base
             FontInputText(const char* str, uint32_t length = ~(uint32_t)0);
             FontInputText(const wchar_t* str, uint32_t length = ~(uint32_t)0);
             FontInputText(const StringBuf& str, uint32_t offset = 0, uint32_t length = ~(uint32_t)0);
-            FontInputText(const UTF16StringBuf& str, uint32_t offset = 0, uint32_t length = ~(uint32_t)0);
+            FontInputText(const UTF16StringVector& str, uint32_t offset = 0, uint32_t length = ~(uint32_t)0);
 
             /// is the text buffer empty ?
             INLINE bool empty() const { return m_chars.empty(); }

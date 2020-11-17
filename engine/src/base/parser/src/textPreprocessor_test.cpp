@@ -169,13 +169,13 @@ public:
     uint32_t m_numErrors = 0;
     uint32_t m_numWarnings = 0;
 
-    virtual void reportError(const Location& loc, StringView<char> message) override final
+    virtual void reportError(const Location& loc, StringView message) override final
     {
         TRACE_ERROR("{}: {}", loc, message);
         m_numErrors += 1;
     }
 
-    virtual void reportWarning(const Location& loc, StringView<char> message) override final
+    virtual void reportWarning(const Location& loc, StringView message) override final
     {
         TRACE_WARNING("{}: {}", loc, message);
         m_numWarnings += 1;
@@ -804,7 +804,7 @@ TEST(Preprocessor, UltimateTest3)
 class TestIncluder1 : public IIncludeHandler
 {
 public:
-    virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override
+    virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, Buffer& outContent, StringBuf& outPath) override
     {
         m_path = StringBuf(path);
         m_called = true;
@@ -832,7 +832,7 @@ TEST(Preprocessor, IncludeForwardPath)
 class TestIncluder2 : public IIncludeHandler
 {
 public:
-    virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override
+    virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, Buffer& outContent, StringBuf& outPath) override
     {
         m_path = StringBuf(path);
         m_called = true;
@@ -861,7 +861,7 @@ TEST(Preprocessor, IncludeCanFail)
 class TestIncluder3 : public IIncludeHandler
 {
 public:
-    virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override
+    virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, Buffer& outContent, StringBuf& outPath) override
     {
         outContent = Buffer::Create(POOL_TEMP, 5, 1, "dupa");
         outPath = StringBuf("OtherFile");
@@ -944,7 +944,7 @@ TEST(Preprocessor, IncludeTwice)
 class TestIncluder4 : public IIncludeHandler
 {
 public:
-    virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override
+    virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, Buffer& outContent, StringBuf& outPath) override
     {
         auto txt  = "#include \"other\"";
         outContent = Buffer::Create(POOL_TEMP, strlen(txt) + 1, 1, txt);
@@ -972,7 +972,7 @@ TEST(Preprocessor, IncludeRecursiveProtected)
 class TestIncluder5 : public IIncludeHandler
 {
 public:
-    virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override
+    virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, Buffer& outContent, StringBuf& outPath) override
     {
         auto txt  = "#pragma once\n#include \"other\"\ntest";
         outContent = Buffer::Create(POOL_TEMP, strlen(txt) + 1, 1, txt);

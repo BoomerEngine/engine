@@ -55,17 +55,17 @@ namespace base
         StringBuf m_debugInfo;
 #endif
 
-        friend BASE_OBJECT_API GlobalEventKey MakeUniqueEventKey(StringView<char>);
-        friend BASE_OBJECT_API GlobalEventKey MakeSharedEventKey(StringView<char>);
+        friend BASE_OBJECT_API GlobalEventKey MakeUniqueEventKey(StringView);
+        friend BASE_OBJECT_API GlobalEventKey MakeSharedEventKey(StringView);
     };
 
     //--
 
     // allocate unique event key, good for tracking object instances, etc
-    extern BASE_OBJECT_API GlobalEventKey MakeUniqueEventKey(StringView<char> debugInfo = "");
+    extern BASE_OBJECT_API GlobalEventKey MakeUniqueEventKey(StringView debugInfo = "");
 
     // allocate shared event key - will return same value for the same path, great for files
-    extern BASE_OBJECT_API GlobalEventKey MakeSharedEventKey(StringView<char> path);
+    extern BASE_OBJECT_API GlobalEventKey MakeSharedEventKey(StringView path);
 
     //--
 

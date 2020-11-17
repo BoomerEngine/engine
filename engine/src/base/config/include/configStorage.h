@@ -33,24 +33,24 @@ namespace base
             //--
 
             // get group, creates an empty new one if not found
-            Group& group(StringView<char> name);
+            Group& group(StringView name);
 
             // find group, does not create a new one
-            const Group* findGroup(StringView<char> name) const;
+            const Group* findGroup(StringView name) const;
 
             // remove group and all stored entries from the storage
-            bool removeGroup(StringView<char> name);
+            bool removeGroup(StringView name);
 
             // remove entry in group
-            bool removeEntry(StringView<char> groupName, StringView<char> varName);
+            bool removeEntry(StringView groupName, StringView varName);
 
             // find all groups starting with given start string
-            Array<const Group*> findAllGroups(StringView<char> groupNameSubString) const;
+            Array<const Group*> findAllGroups(StringView groupNameSubString) const;
 
             //---
 
             // load from a text content
-            static bool Load(StringView<char> txt, Storage& ret);
+            static bool Load(StringView txt, Storage& ret);
 
             // save settings to string, filter out settings that are the same as in base
             static void Save(IFormatStream& f, const Storage& cur, const Storage& base);
@@ -71,9 +71,9 @@ namespace base
 
             SpinLock m_lock;
 
-            Group* group_NoLock(StringView<char> name);
-            const Group* findGroup_NoLock(StringView<char> name) const;
-            Array<const Group*> findAllGroups_NoLock(StringView<char> groupNameSubString) const;
+            Group* group_NoLock(StringView name);
+            const Group* findGroup_NoLock(StringView name) const;
+            Array<const Group*> findAllGroups_NoLock(StringView groupNameSubString) const;
 
             void modified();
         };

@@ -58,7 +58,7 @@ namespace rendering
             return &m_value;
         }
 
-        virtual void onPropertyChanged(base::StringView<char> path) override
+        virtual void onPropertyChanged(base::StringView path) override
         {
             TBaseClass::onPropertyChanged(path);
         }

@@ -47,7 +47,7 @@ namespace ui
 
     public:
         Button(ButtonMode mode = ButtonModeBit::EventOnClickRelease);
-        Button(base::StringView<char> text, ButtonMode mode = ButtonModeBit::EventOnClickRelease);
+        Button(base::StringView text, ButtonMode mode = ButtonModeBit::EventOnClickRelease);
 
         ///---
 

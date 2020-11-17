@@ -298,7 +298,7 @@ namespace ed
         }
     }
 
-    void AssetBrowserTabFiles::filterName(StringView<char> txt)
+    void AssetBrowserTabFiles::filterName(StringView txt)
     {
         if (m_filterName != txt)
         {
@@ -641,7 +641,7 @@ namespace ed
         auto nativeClass = format ? format->nativeResourceClass() : res::IResource::GetStaticClass();
 
         // get all extensions we support
-        InplaceArray<StringView<char>, 20> extensions;
+        InplaceArray<StringView, 20> extensions;
         res::IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
 
         // nothing to import

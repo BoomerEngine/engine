@@ -22,7 +22,7 @@ namespace wavefront
 
     namespace parser
     {
-        extern FormatOBJPtr LoadFromBuffer(base::StringView<char> contextName, const void* data, uint64_t dataSize, bool allowThreads);
+        extern FormatOBJPtr LoadFromBuffer(base::StringView contextName, const void* data, uint64_t dataSize, bool allowThreads);
     } // parser
 
     //--
@@ -183,13 +183,13 @@ namespace wavefront
 
         void copy(const FormatOBJ& other);
 
-        friend FormatOBJPtr parser::LoadFromBuffer(base::StringView<char> contextName, const void* data, uint64_t dataSize, bool allowThreads);
+        friend FormatOBJPtr parser::LoadFromBuffer(base::StringView contextName, const void* data, uint64_t dataSize, bool allowThreads);
     };
 
     //--
 
     /// parse OBJ file structure
-    extern ASSETS_OBJ_LOADER_API FormatOBJPtr LoadObjectFile(base::StringView<char> contextName, const void* data, uint64_t dataSize, bool allowThreads=true);
+    extern ASSETS_OBJ_LOADER_API FormatOBJPtr LoadObjectFile(base::StringView contextName, const void* data, uint64_t dataSize, bool allowThreads=true);
 
     //--
 

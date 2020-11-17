@@ -29,7 +29,7 @@ namespace base
             , m_updateSink(sink)
         {}
 
-        replication::DataMappedID KnowledgeUpdater::mapString(StringView<char> txt)
+        replication::DataMappedID KnowledgeUpdater::mapString(StringView txt)
         {
             bool addedNewEntry = false;
             auto id  = m_knowledge.mapString(txt, addedNewEntry);
@@ -40,10 +40,10 @@ namespace base
             return id;
         }
 
-        replication::DataMappedID KnowledgeUpdater::mapPath(StringView<char> path, const char* pathSeparators)
+        replication::DataMappedID KnowledgeUpdater::mapPath(StringView path, const char* pathSeparators)
         {
             // split path into parts, according to split chars
-            InplaceArray<StringView<char>, 10> pathParts;
+            InplaceArray<StringView, 10> pathParts;
             path.slice(pathSeparators, false, pathParts);
 
             // map each part

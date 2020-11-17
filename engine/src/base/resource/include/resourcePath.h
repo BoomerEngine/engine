@@ -26,7 +26,7 @@ namespace base
             INLINE ResourceKey() {};
             INLINE ResourceKey(const ResourceKey& other) = default;
             INLINE ResourceKey(ResourceKey&& other);
-            INLINE ResourceKey(StringView<char> path, SpecificClassType<IResource> classType);
+            INLINE ResourceKey(StringView path, SpecificClassType<IResource> classType);
             INLINE ResourceKey& operator=(const ResourceKey& other) = default;
             INLINE ResourceKey& operator=(ResourceKey&& other);
 
@@ -41,17 +41,17 @@ namespace base
             INLINE bool empty() const;
             INLINE bool valid() const; // only non empty paths are valid
 
-            INLINE StringView<char> view() const;
+            INLINE StringView view() const;
 
             INLINE operator bool() const;
 
             INLINE static uint32_t CalcHash(const ResourceKey& key);
 
             // NOTE: all path parts are just string views into the path string!
-            INLINE StringView<char> fileName() const; // lena.png
-            INLINE StringView<char> fileStem() const; // lena
-            INLINE StringView<char> extension() const; // png
-            INLINE StringView<char> directories() const; // engine/textures/
+            INLINE StringView fileName() const; // lena.png
+            INLINE StringView fileStem() const; // lena
+            INLINE StringView extension() const; // png
+            INLINE StringView directories() const; // engine/textures/
 
             //--
 
@@ -61,7 +61,7 @@ namespace base
             //--
 
             // parse from a string, usually does a split near ":" to extract class name vs path
-            static bool Parse(StringView<char> path, ResourceKey& outKey);
+            static bool Parse(StringView path, ResourceKey& outKey);
 
             //--
 
@@ -85,14 +85,14 @@ namespace base
     //--
 
     // make resource path
-    INLINE res::ResourceKey MakePath(StringView<char> path, SpecificClassType<res::IResource> classType)
+    INLINE res::ResourceKey MakePath(StringView path, SpecificClassType<res::IResource> classType)
     {
         return res::ResourceKey(path, classType);
     }
 
     // make resource path
     template< typename T >
-    INLINE extern res::ResourceKey MakePath(StringView<char> path)
+    INLINE extern res::ResourceKey MakePath(StringView path)
     {
         return res::ResourceKey(path, T::GetStaticClass());
     }
@@ -102,7 +102,7 @@ namespace base
     // given a path as a context and a relative path (that can contain .. and .) builds a new path
     // NOTE: if the relative path is given in absolute format (starting with "/" then the context path is not used)
     // NOTE: if context path is a file path (ie. contains the file name) then that file name is ignored
-    extern BASE_RESOURCE_API bool ApplyRelativePath(StringView<char> contextPath, StringView<char> relativePath, StringBuf& outPath);
+    extern BASE_RESOURCE_API bool ApplyRelativePath(StringView contextPath, StringView relativePath, StringBuf& outPath);
 
     // Scan path combinations up to given depth
     // For example, assuming context path = "/rendering/assets/meshes/box.fbx"
@@ -118,7 +118,7 @@ namespace base
     //  "/rendering/Textures/wood.jpg"
     //  "/rendering/Box/Textures/wood.jpg"
     //  etc, up to the maxScanDepth
-    extern BASE_RESOURCE_API bool ScanRelativePaths(StringView<char> contextPath, StringView<char> pathParts, uint32_t scanDepth, StringBuf& outPath, const std::function<bool(StringView<char>)>& testFunc);
+    extern BASE_RESOURCE_API bool ScanRelativePaths(StringView contextPath, StringView pathParts, uint32_t scanDepth, StringBuf& outPath, const std::function<bool(StringView)>& testFunc);
 
     //--
 
@@ -142,19 +142,19 @@ namespace base
     extern BASE_RESOURCE_API bool IsValidPathChar(uint32_t ch);
 
     // given a wanted name of something return file name that is safe to use in the file system
-    extern BASE_RESOURCE_API bool MakeSafeFileName(StringView<char> text, StringBuf& outFixedFileName);
+    extern BASE_RESOURCE_API bool MakeSafeFileName(StringView text, StringBuf& outFixedFileName);
 
     // check if given file name is a valid depot file name (just name, no extension) - follows Windows guidelines + does NOT allow dot in the file name
-    extern BASE_RESOURCE_API bool ValidateFileName(StringView<char> fileName);
+    extern BASE_RESOURCE_API bool ValidateFileName(StringView fileName);
 
     // check if given file name is a valid depot file name with extension
-    extern BASE_RESOURCE_API bool ValidateFileNameWithExtension(StringView<char> fileName);
+    extern BASE_RESOURCE_API bool ValidateFileNameWithExtension(StringView fileName);
 
     // check if given depot path is valid
-    extern BASE_RESOURCE_API bool ValidateDepotPath(StringView<char> path, DepotPathClass pathClass = DepotPathClass::AbsoluteFilePath);
+    extern BASE_RESOURCE_API bool ValidateDepotPath(StringView path, DepotPathClass pathClass = DepotPathClass::AbsoluteFilePath);
 
     // classify path based on content
-    extern BASE_RESOURCE_API DepotPathClass ClassifyDepotPath(StringView<char> path);
+    extern BASE_RESOURCE_API DepotPathClass ClassifyDepotPath(StringView path);
 
     //--
 

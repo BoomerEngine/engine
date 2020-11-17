@@ -124,7 +124,7 @@ public:
         m_failPropertyChanging = false;
     }
 
-    virtual bool onPropertyChanging(StringView<char> path, const void* data, Type dataType) const override
+    virtual bool onPropertyChanging(StringView path, const void* data, Type dataType) const override
     {
         m_lastPropertyChangingPath = StringBuf(path);
         m_lastPropertyChangingValue = rtti::DataHolder(dataType, data);
@@ -138,7 +138,7 @@ public:
         return true;
     }
 
-    virtual void onPropertyChanged(StringView<char> path) override
+    virtual void onPropertyChanged(StringView path) override
     {
         m_lastPropertyChangedPath = StringBuf(path);
     }
@@ -173,19 +173,19 @@ RTTI_BEGIN_TYPE_CLASS(DataViewTestObject);
 RTTI_END_TYPE();
 
 template< typename T >
-INLINE bool DescribeView(StringView<char> viewPath, const T& data, rtti::DataViewInfo& outInfo)
+INLINE bool DescribeView(StringView viewPath, const T& data, rtti::DataViewInfo& outInfo)
 {
     return reflection::GetTypeObject<T>()->describeDataView(viewPath, &data, outInfo).valid();
 }
 
 template< typename T, typename U >
-INLINE bool ReadView(StringView<char> viewPath, const T& data, U& outData)
+INLINE bool ReadView(StringView viewPath, const T& data, U& outData)
 {
     return reflection::GetTypeObject<T>()->readDataView(viewPath, &data, &outData, reflection::GetTypeObject<U>()).valid();
 }
 
 template< typename T, typename U >
-INLINE bool WriteView(StringView<char> viewPath, T& data, const U& inputData)
+INLINE bool WriteView(StringView viewPath, T& data, const U& inputData)
 {
     return reflection::GetTypeObject<T>()->writeDataView(viewPath, &data, &inputData, reflection::GetTypeObject<U>()).valid();
 }

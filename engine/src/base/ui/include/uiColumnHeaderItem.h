@@ -21,7 +21,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(ColumnHeader, Button);
 
     public:
-        ColumnHeader(base::StringView<char> text, bool canResize=true, bool canSort=true);
+        ColumnHeader(base::StringView text, bool canResize=true, bool canSort=true);
 
         void refreshSortingVisualization(bool active, bool desc);
 

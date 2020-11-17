@@ -40,7 +40,7 @@ namespace rendering
                 outAbsoluteLocation = loc;
         }
 
-        void ShaderLibraryCookerErrorReporter::reportError(const base::parser::Location& loc, base::StringView<char> message)
+        void ShaderLibraryCookerErrorReporter::reportError(const base::parser::Location& loc, base::StringView message)
         {
             base::parser::Location absoluteLoc;
             translateContextPath(loc, absoluteLoc);
@@ -51,7 +51,7 @@ namespace rendering
             base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "shader", base::TempString("{}", message));
         }
 
-        void ShaderLibraryCookerErrorReporter::reportWarning(const base::parser::Location& loc, base::StringView<char> message)
+        void ShaderLibraryCookerErrorReporter::reportWarning(const base::parser::Location& loc, base::StringView message)
         {
 
             base::parser::Location absoluteLoc;
@@ -92,7 +92,7 @@ namespace rendering
             return m_cooker.queryFileExists(path);
         }
 
-        bool ShaderLibraryCookerIncludeHandler::resolveIncludeFile(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::StringBuf& outPath) const
+        bool ShaderLibraryCookerIncludeHandler::resolveIncludeFile(bool global, base::StringView path, base::StringView referencePath, base::StringBuf& outPath) const
         {
             if (global)
             {
@@ -113,7 +113,7 @@ namespace rendering
             return false;
         }
 
-        bool ShaderLibraryCookerIncludeHandler::loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::Buffer& outContent, base::StringBuf& outPath)
+        bool ShaderLibraryCookerIncludeHandler::loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath)
         {
             if (!resolveIncludeFile(global, path, referencePath, outPath))
                 return false;
@@ -137,7 +137,7 @@ namespace rendering
 
                 // load the root file content
                 auto rootCodeBuffer = cooker.loadToBuffer(mainFilePath);
-                base::StringView<char> rootCode((char*)rootCodeBuffer.data(), rootCodeBuffer.size());
+                base::StringView rootCode((char*)rootCodeBuffer.data(), rootCodeBuffer.size());
                 if (!rootCode)
                 {
                     TRACE_ERROR("Unable to compile shaders '{}' because the main shader file can't be loaded", mainFilePath);

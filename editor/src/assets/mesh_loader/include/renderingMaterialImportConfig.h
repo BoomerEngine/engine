@@ -66,7 +66,7 @@ namespace rendering
     //---
 
     /// find/load texture
-    extern ASSETS_MESH_LOADER_API rendering::TextureRef ImportTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& csg, base::StringView<char> assetPathToTexture);
+    extern ASSETS_MESH_LOADER_API rendering::TextureRef ImportTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& csg, base::StringView assetPathToTexture);
 
     //---
 

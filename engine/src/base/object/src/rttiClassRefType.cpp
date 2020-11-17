@@ -85,7 +85,7 @@ namespace base
             f << classType;
         }
 
-        bool ClassRefType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+        bool ClassRefType::parseFromString(StringView txt, void* data, uint32_t flags) const
         {
             ClassType classType = nullptr;
             if (txt != "null")

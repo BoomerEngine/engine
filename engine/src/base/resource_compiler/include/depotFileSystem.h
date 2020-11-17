@@ -30,37 +30,37 @@ namespace base
             virtual bool isWritable() const = 0;
 
             /// can this file system handle given raw file, if not will usually try the one above, this allows for fallback placement of manifest files outside read only sub-file systems
-            virtual bool ownsFile(StringView<char> rawFilePath) const = 0;
+            virtual bool ownsFile(StringView rawFilePath) const = 0;
 
             /// get a printable context name for the given file
-            virtual bool contextName(StringView<char> rawFilePath, StringBuf& outContextName) const = 0;
+            virtual bool contextName(StringView rawFilePath, StringBuf& outContextName) const = 0;
 
             /// get the file timestamp
-            virtual bool timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const = 0;
+            virtual bool timestamp(StringView rawFilePath, io::TimeStamp& outTimestamp) const = 0;
 
             /// get the absolute path to the file content, can be used to write new content
             /// NOTE: is present only for files physically on disk, not in archives or over the network
-            virtual bool absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const = 0;
+            virtual bool absolutePath(StringView rawFilePath, StringBuf& outAbsolutePath) const = 0;
 
             /// get child directories at given path
-            virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const = 0;
+            virtual bool enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const = 0;
 
             /// get files at given path
-            virtual bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const = 0;
+            virtual bool enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const = 0;
 
             /// create a reader for the file's content
             /// NOTE: creating a reader may take some time
-            virtual io::ReadFileHandlePtr createReader(StringView<char> rawFilePath) const = 0;
+            virtual io::ReadFileHandlePtr createReader(StringView rawFilePath) const = 0;
 
             /// create an ASYNC reader for the file's content
             /// NOTE: creating a reader may take some time
-            virtual io::AsyncFileHandlePtr createAsyncReader(StringView<char> rawFilePath) const = 0;
+            virtual io::AsyncFileHandlePtr createAsyncReader(StringView rawFilePath) const = 0;
 
             /// create a writer for new content of file
             /// NOTE: can be denied if the file system or file is not writable or for any other reason
             /// NOTE: this will block any read request to the same file
             /// NOTE: this will update the timestamp and CRC of the file
-            virtual io::WriteFileHandlePtr createWriter(StringView<char> rawFilePath) const = 0;
+            virtual io::WriteFileHandlePtr createWriter(StringView rawFilePath) const = 0;
 
             //--
 

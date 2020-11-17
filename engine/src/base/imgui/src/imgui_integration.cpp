@@ -35,7 +35,7 @@ namespace ImGui
             m_imageList.pushBack(m_defaultImage); // ID 0
         }
 
-        void addSearchPath(base::StringView<char> path)
+        void addSearchPath(base::StringView path)
         {
             if (path && !m_searchPaths.contains(path))
             {
@@ -70,7 +70,7 @@ namespace ImGui
             return ret;
         }
 
-        ImTextureID loadIcon(base::StringView<char> name)
+        ImTextureID loadIcon(base::StringView name)
         {
             ImTextureID ret = 0;
             if (!m_iconMap.find(name, ret))
@@ -340,7 +340,7 @@ namespace ImGui
 
 
 
-    void AddIconSearchPath(base::StringView<char> path)
+    void AddIconSearchPath(base::StringView path)
     {
         IconRegistry::GetInstance().addSearchPath(path);
     }
@@ -350,7 +350,7 @@ namespace ImGui
         return IconRegistry::GetInstance().registerImage(image);
     }
 
-    ImTextureID LoadIcon(base::StringView<char> name)
+    ImTextureID LoadIcon(base::StringView name)
     {
         return IconRegistry::GetInstance().loadIcon(name);
     }

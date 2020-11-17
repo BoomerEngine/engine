@@ -50,7 +50,7 @@ namespace base
             // IRTTI TYPE INTERFACE IMPLEMENTATION
             virtual bool compare(const void* data1, const void* data2) const override;
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override final;
             virtual void copy(void* dest, const void* src) const override;
 
             // TYPE SERIALIZATON
@@ -60,9 +60,9 @@ namespace base
             virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
 
             // DATA VIEW
-            virtual DataViewResult describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
-            virtual DataViewResult readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const override final;
-            virtual DataViewResult writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
+            virtual DataViewResult describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const override final;
+            virtual DataViewResult readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const override final;
+            virtual DataViewResult writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const override final;
 
 
             //--

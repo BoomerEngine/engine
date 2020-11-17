@@ -509,7 +509,7 @@ namespace base
 		StringBuf CharEvent::text() const
 		{
 			const wchar_t str[2] = { m_scanCode, 0 };
-			return UTF16StringBuf(str).ansi_str();
+			return UTF16StringVector(str).ansi_str();
 		}
 
         //---

@@ -33,12 +33,12 @@ namespace base
                 m_entries.pushBack(nullptr);
             }
 
-            StringIDIndex allocString(StringView<char> buf)
+            StringIDIndex allocString(StringView buf)
             {
                 if (!buf)
                     return 0;
 
-                auto hash = StringView<char>::CalcHash(buf);
+                auto hash = StringView::CalcHash(buf);
                 auto bucketIndex = hash % HASH_SIZE;
 
                 auto lock = CreateLock(m_lock);
@@ -67,12 +67,12 @@ namespace base
                 return entry->index;
             }
 
-            StringIDIndex findString(StringView<char> buf) const
+            StringIDIndex findString(StringView buf) const
             {
                 if (!buf)
                     return 0;
 
-                auto hash = StringView<char>::CalcHash(buf);
+                auto hash = StringView::CalcHash(buf);
                 auto bucketIndex = hash % HASH_SIZE;
 
                 auto lock = CreateLock(m_lock);
@@ -90,16 +90,16 @@ namespace base
                 return 0;
             }
 
-            StringView<char> view(StringIDIndex id) const
+            StringView view(StringIDIndex id) const
             {
                 if (!id)
-                    return StringView<char>();
+                    return StringView();
 
                 //auto lock = CreateLock(m_lock);
                 if (id >= m_entries.size())
-                    return StringView<char>();
+                    return StringView();
 
-                return StringView<char>(m_entries[id]->txt, m_entries[id]->length);
+                return StringView(m_entries[id]->txt, m_entries[id]->length);
             }
 
         private:
@@ -139,7 +139,7 @@ namespace base
 
     //---
 
-    void StringID::set(StringView<char> txt)
+    void StringID::set(StringView txt)
     {
         indexValue = prv::StringDataMgr::GetInstance().allocString(txt);
     }
@@ -154,7 +154,7 @@ namespace base
         return prv::StringDataMgr::GetInstance().view(id).data();
     }
 
-    StringView<char> StringID::View(StringIDIndex id)
+    StringView StringID::View(StringIDIndex id)
     {
         return prv::StringDataMgr::GetInstance().view(id);
     }
@@ -166,7 +166,7 @@ namespace base
         return GEmptyStringID;
     }
 
-    StringID StringID::Find(StringView<char> txt)
+    StringID StringID::Find(StringView txt)
     {
         StringID ret;
         ret.indexValue = prv::StringDataMgr::GetInstance().findString(txt);

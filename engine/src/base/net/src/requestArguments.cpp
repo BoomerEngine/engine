@@ -25,7 +25,7 @@ namespace base
             f << view();
         }
 
-        StringView<char> RequestArgsGetterProxy::view() const
+        StringView RequestArgsGetterProxy::view() const
         {
             return m_readArgs.raw(m_name);
         }
@@ -37,7 +37,7 @@ namespace base
             , m_writeArgs(args)
         {}
 
-        void RequestArgsSetterProxy::set(StringView<char> val)
+        void RequestArgsSetterProxy::set(StringView val)
         {
             m_writeArgs.addRaw(m_name, val);
         }
@@ -113,11 +113,11 @@ namespace base
                 auto length = params[i].value.length();
                 std::ptrdiff_t startOffset = params[i].value.data() - oldStorage.typedData();
                 ASSERT((startOffset >= 0) && (startOffset + length <= oldStorage.size()));
-                params[i].value = StringView<char>(newStorage.typedData() + startOffset, length);
+                params[i].value = StringView(newStorage.typedData() + startOffset, length);
             }
         }
 
-        void RequestArgs::addRaw(StringID key, StringView<char> val)
+        void RequestArgs::addRaw(StringID key, StringView val)
         {
             if (key && val)
             {
@@ -129,7 +129,7 @@ namespace base
 
                 auto& info = params.emplaceBack();
                 info.name = key;
-                info.value = StringView<char>(ptr, val.length());
+                info.value = StringView(ptr, val.length());
             }
         }
 
@@ -160,12 +160,12 @@ namespace base
             return false;
         }
 
-        StringView<char> RequestArgs::raw(StringID key) const
+        StringView RequestArgs::raw(StringID key) const
         {
             for (auto& param : params)
                 if (param.name == key)
                     return param.value;
-            return StringView<char>();
+            return StringView();
         }
 
         //--
@@ -252,7 +252,7 @@ namespace base
             return (GetHexValue(ch[0]) << 4) | GetHexValue(ch[1]);
         }
 
-        bool RequestArgs::Parse(StringView<char> txt, RequestArgs& outArgs)
+        bool RequestArgs::Parse(StringView txt, RequestArgs& outArgs)
         {
             StringBuilder value;
             RequestArgs ret(txt.length() + 60);
@@ -281,7 +281,7 @@ namespace base
                     return false;
 
                 // we have the ident
-                auto ident = StringView<char>(identStart, str);
+                auto ident = StringView(identStart, str);
                 str += 1;
 
                 // now parse the value

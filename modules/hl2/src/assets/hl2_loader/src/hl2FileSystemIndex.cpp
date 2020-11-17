@@ -894,7 +894,7 @@ namespace hl2
         TRACE_INFO("Map building took {}", TimeInterval(timer.timeElapsed()));
     }
 
-    int FileSystemIndex::findDirectoryEntry(StringView<char> path) const
+    int FileSystemIndex::findDirectoryEntry(StringView path) const
     {
         if (m_directories.empty())
             return -1;
@@ -909,7 +909,7 @@ namespace hl2
         return -1;
     }
 
-    int FileSystemIndex::findFileEntry(StringView<char> path) const
+    int FileSystemIndex::findFileEntry(StringView path) const
     {
         if (m_files.empty())
             return -1;

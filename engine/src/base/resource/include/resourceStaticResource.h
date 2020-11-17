@@ -29,7 +29,7 @@ namespace base
             virtual ~IStaticResource();
 
             /// get the resource path
-            INLINE StringView<char> path() const { return m_path; }
+            INLINE StringView path() const { return m_path; }
 
             /// get the resource class
             virtual ClassType resourceClass() const = 0;

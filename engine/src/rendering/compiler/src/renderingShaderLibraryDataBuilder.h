@@ -33,10 +33,10 @@ namespace rendering
             //--
 
             /// map a raw string
-            PipelineStringIndex mapString(base::StringView<char> txt);
+            PipelineStringIndex mapString(base::StringView txt);
 
             /// map a name
-            PipelineIndex mapName(base::StringView<char> txt);
+            PipelineIndex mapName(base::StringView txt);
 
             /// map structure for use with rendering, scans the elements and builds similar layout
             /// reuses previously mapped one if found

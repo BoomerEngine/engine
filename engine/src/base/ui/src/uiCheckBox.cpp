@@ -67,7 +67,7 @@ namespace ui
         }   
     }
 
-    bool CheckBox::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool CheckBox::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "checked" || name == "check")
         {
@@ -104,7 +104,7 @@ namespace ui
 
     //--
 
-    CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView<char> txt, bool initialState)
+    CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState)
     {
         auto container = parent->createChild();
         container->layoutHorizontal();

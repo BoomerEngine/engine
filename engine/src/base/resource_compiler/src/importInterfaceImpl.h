@@ -35,15 +35,15 @@ namespace base
             virtual const ResourceMountPoint& queryResourceMountPoint() const  override final;
             virtual const StringBuf& queryImportPath() const  override final;
             virtual const ResourceConfiguration* queryConfigrationTypeless() const  override final;
-            virtual Buffer loadSourceFileContent(StringView<char> assetImportPath) const override final;
-            virtual SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath) const override final;
-            virtual bool findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const override final;
-            virtual bool findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const override final;
-            virtual void followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config = nullptr)  override final;
+            virtual Buffer loadSourceFileContent(StringView assetImportPath) const override final;
+            virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath) const override final;
+            virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const override final;
+            virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const override final;
+            virtual void followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)  override final;
 
             // IProgressTracker
             virtual bool checkCancelation() const override final;
-            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final;
+            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
             // build import metadata from all gathered stuff
             MetadataPtr buildMetadata() const;
@@ -91,7 +91,7 @@ namespace base
             Array<ImportDependencies> m_importDependencies;
             HashSet<StringBuf> m_importDependenciesSet;
 
-            void reportImportDependency(StringView<char> assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
+            void reportImportDependency(StringView assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
         };
 
         //--

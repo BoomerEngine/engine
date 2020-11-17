@@ -159,7 +159,7 @@ namespace base
             return true;
         }
 
-        static bool HasCharsThatNeedEscaping(StringView<char> str)
+        static bool HasCharsThatNeedEscaping(StringView str)
         {
             for (auto ch  : str)
             {
@@ -179,7 +179,7 @@ namespace base
             return false;
         }
 
-        static void WriteEscapedConfigString(IFormatStream& f, StringView<char> str)
+        static void WriteEscapedConfigString(IFormatStream& f, StringView str)
         {
             if (HasCharsThatNeedEscaping(str))
             {

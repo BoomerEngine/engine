@@ -181,7 +181,7 @@ namespace base
 
         //--
 
-        DataHolder DataHolder::Parse(StringView<char> txt, Type type)
+        DataHolder DataHolder::Parse(StringView txt, Type type)
         {
             DataHolder ret(type);
 

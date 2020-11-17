@@ -22,7 +22,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(WindowTitleBar, IElement);
 
     public:
-        WindowTitleBar(WindowFeatureFlags flags, base::StringView<char> title);
+        WindowTitleBar(WindowFeatureFlags flags, base::StringView title);
 
     private:
         virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const override final;

@@ -114,7 +114,7 @@ namespace rendering
 
     //--
     
-    IDriver* DeviceService::createAndInitializeDevice(base::StringView<char> deviceName, const base::app::CommandLine& cmdLine) const
+    IDriver* DeviceService::createAndInitializeDevice(base::StringView deviceName, const base::app::CommandLine& cmdLine) const
     {
         base::Array<base::SpecificClassType<IDriver>> deviceClasses;
         RTTI::GetInstance().enumClasses(deviceClasses);

@@ -136,7 +136,7 @@ namespace ui
     //--
 
     /// validation function for text input
-    typedef std::function<bool(base::StringView<char>)> TInputValidationFunction;
+    typedef std::function<bool(base::StringView)> TInputValidationFunction;
 
     //--
 
@@ -310,7 +310,7 @@ namespace ui
 
         void print(base::IFormatStream& f) const;
 
-        bool testString(base::StringView<char> txt) const;
+        bool testString(base::StringView txt) const;
     };
 
     //--
@@ -456,9 +456,9 @@ namespace ui
 
     //--
 
-    extern BASE_UI_API void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView<char> txt);
+    extern BASE_UI_API void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
 
-    extern BASE_UI_API void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView<char> txt);
+    extern BASE_UI_API void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
 
     //--
 

@@ -17,11 +17,11 @@ namespace ui
     // TODO: make sure all UTF32 chars are supported
 
     /// make a simple validation function that accepts only range of chars
-    TInputValidationFunction MakeCustomValidationFunction(base::StringView<char> validChars)
+    TInputValidationFunction MakeCustomValidationFunction(base::StringView validChars)
     {
-        auto validCharCodes = base::UTF16StringBuf(validChars);
+        auto validCharCodes = base::UTF16StringVector(validChars);
 
-        return [validCharCodes](base::StringView<char> text)
+        return [validCharCodes](base::StringView text)
         {
             for (base::utf8::CharIterator it(text); it; ++it)
                 if (validCharCodes.view().findFirstChar(*it) == -1)
@@ -32,14 +32,14 @@ namespace ui
 
     //--
 
-    TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView<char> additionalChars /*= ""*/)
+    TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView additionalChars /*= ""*/)
     {
-        auto validCharCodes = base::UTF16StringBuf("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
+        auto validCharCodes = base::UTF16StringVector("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
 
         if (additionalChars)
-            validCharCodes += base::UTF16StringBuf(additionalChars);
+            validCharCodes += base::UTF16StringVector(additionalChars);
 
-        return [validCharCodes](base::StringView<char> text)
+        return [validCharCodes](base::StringView text)
         {
             for (base::utf8::CharIterator it(text); it; ++it)
                 if (validCharCodes.view().findFirstChar(*it) == -1)
@@ -50,7 +50,7 @@ namespace ui
 
     TInputValidationFunction MakeFilenameValidationFunction(bool withExtension /*= false*/)
     {
-        return [withExtension](base::StringView<char> text)
+        return [withExtension](base::StringView text)
         {
             return withExtension
                 ? base::ValidateFileNameWithExtension(text)
@@ -62,7 +62,7 @@ namespace ui
 
     TInputValidationFunction MakeDirectoryValidationFunction(bool allowRelative)
     {
-        return [allowRelative](base::StringView<char> text)
+        return [allowRelative](base::StringView text)
         {
             return base::ValidateDepotPath(text, allowRelative ? base::DepotPathClass::AnyDirectoryPath : base::DepotPathClass::AbsoluteDirectoryPath);
         };
@@ -72,7 +72,7 @@ namespace ui
 
     TInputValidationFunction MakePathValidationFunction(bool allowRelative)
     {
-        return [allowRelative](base::StringView<char> text)
+        return [allowRelative](base::StringView text)
         {
             return base::ValidateDepotPath(text, allowRelative ? base::DepotPathClass::AnyFilePath : base::DepotPathClass::AbsoluteFilePath);
         };
@@ -82,7 +82,7 @@ namespace ui
 
     TInputValidationFunction MakeIntegerNumbersValidationFunction(bool allowNegative, bool allowZero)
     {
-        return [allowNegative, allowZero](base::StringView<char> text)
+        return [allowNegative, allowZero](base::StringView text)
         {
             text = text.trim();
 
@@ -116,7 +116,7 @@ namespace ui
 
     TInputValidationFunction MakeIntegerNumbersInRangeValidationFunction(int64_t minValue, int64_t maxValue)
     {
-        return [minValue, maxValue](base::StringView<char> text)
+        return [minValue, maxValue](base::StringView text)
         {
             text = text.trim();
 
@@ -132,7 +132,7 @@ namespace ui
 
     TInputValidationFunction MakeRealNumbersValidationFunction(bool allowNegative)
     {
-        return [allowNegative](base::StringView<char> text)
+        return [allowNegative](base::StringView text)
         {
             text = text.trim();
 
@@ -152,7 +152,7 @@ namespace ui
     /// make a function to validate real numbers
     TInputValidationFunction MakeRealNumbersInRangeValidationFunction(double minValue, double maxValue)
     {
-        return [minValue, maxValue](base::StringView<char> text)
+        return [minValue, maxValue](base::StringView text)
         {
             text = text.trim();
 

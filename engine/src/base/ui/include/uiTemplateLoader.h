@@ -17,28 +17,28 @@ namespace ui
     class BASE_UI_API TemplateLoader : public base::NoCopy
     {
     public:
-        TemplateLoader(base::StringView<char> contextName, const base::xml::IDocument& xml);
+        TemplateLoader(base::StringView contextName, const base::xml::IDocument& xml);
         ~TemplateLoader();
 
         bool finalize();
 
-        bool createElement(const base::xml::NodeID id, ElementPtr& outElem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements);
+        bool createElement(const base::xml::NodeID id, ElementPtr& outElem, base::HashMap<base::StringView, IElement*>& outNamedElements);
 
-        bool loadElement(const base::xml::NodeID id, IElement* elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements);
+        bool loadElement(const base::xml::NodeID id, IElement* elem, base::HashMap<base::StringView, IElement*>& outNamedElements);
 
         bool loadAttributes(const base::xml::NodeID id, IElement* elem);
         bool loadAttribute(const base::xml::NodeID id, const base::xml::AttributeID attrId, IElement* elem);
 
-        bool loadChildren(const base::xml::NodeID id, IElement* elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements);
-        bool loadChild(const base::xml::NodeID id, const base::xml::NodeID childId, IElement* elem, base::HashMap<base::StringView<char>, IElement*>& outNamedElements);
+        bool loadChildren(const base::xml::NodeID id, IElement* elem, base::HashMap<base::StringView, IElement*>& outNamedElements);
+        bool loadChild(const base::xml::NodeID id, const base::xml::NodeID childId, IElement* elem, base::HashMap<base::StringView, IElement*>& outNamedElements);
 
     private:
         const base::xml::IDocument& m_xml;
-        base::StringView<char> m_contextName;
+        base::StringView m_contextName;
 
         base::Array<ElementPtr> m_createdElements;
 
-        bool reportError(const base::xml::NodeID id, base::StringView<char> f);
+        bool reportError(const base::xml::NodeID id, base::StringView f);
     };
 
 } // ui

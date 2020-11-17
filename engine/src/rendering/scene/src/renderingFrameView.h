@@ -86,7 +86,7 @@ namespace rendering
         struct PassBracket
         {
         public:
-            PassBracket(command::CommandWriter& cmd, const FrameView& view, base::StringView<char> name);
+            PassBracket(command::CommandWriter& cmd, const FrameView& view, base::StringView name);
             ~PassBracket();
 
             // bind a depth buffer and clear it

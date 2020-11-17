@@ -69,7 +69,7 @@ namespace base
 
         //--
 
-        bool DateTime::Parse(StringView<char> txt, DateTime& out)
+        bool DateTime::Parse(StringView txt, DateTime& out)
         {
             return true;
         }
@@ -149,7 +149,7 @@ namespace base
 
         bool RequestHeader::ParseText(const char*& txt, const char* endTxt, StringBuf& outText, char aditionalDelimiter /*= 0*/)
         {
-            StringView<char> ret;
+            StringView ret;
             if (!ParseText(txt, endTxt, ret, aditionalDelimiter))
                 return false;
 
@@ -157,7 +157,7 @@ namespace base
             return true;
         }
 
-        bool RequestHeader::ParseText(const char*& txt, const char* endTxt, StringView<char>& outText, char aditionalDelimiter /*= 0*/)
+        bool RequestHeader::ParseText(const char*& txt, const char* endTxt, StringView& outText, char aditionalDelimiter /*= 0*/)
         {
             const char* cur = txt;
 
@@ -178,7 +178,7 @@ namespace base
             if (!textStart)
                 return false;
 
-            outText = StringView<char>(textStart, cur).trim();
+            outText = StringView(textStart, cur).trim();
             txt = cur;
             return true;
         }
@@ -202,7 +202,7 @@ namespace base
             return false;
         }
 
-        bool RequestHeader::ProcessHeaderParam(StringView<char> name, StringView<char> value, RequestHeader& outHeader)
+        bool RequestHeader::ProcessHeaderParam(StringView name, StringView value, RequestHeader& outHeader)
         {
             if (0 == name.caseCmp("host"))
             {
@@ -250,7 +250,7 @@ namespace base
                 const char* stream = value.data();
                 const char* streamEnd = value.data() + value.length();
 
-                StringView<char> txt;
+                StringView txt;
                 while (ParseText(stream, streamEnd, txt, ','))
                     outHeader.secWebSocketProtocols.pushBack(StringBuf(txt));
             }
@@ -259,7 +259,7 @@ namespace base
                 const char* stream = value.data();
                 const char* streamEnd = value.data() + value.length();
 
-                StringView<char> txt;
+                StringView txt;
                 while (ParseText(stream, streamEnd, txt, ','))
                     outHeader.secWebSocketExtensions.pushBack(StringBuf(txt));
             }
@@ -315,7 +315,7 @@ namespace base
                 }
 
                 // content name
-                StringView<char> key;
+                StringView key;
                 if (!ParseText(cur, end, key, SYMBOL_KEY))
                 {
                     TRACE_WARNING("HttpHeader: Failed to parse argument name");
@@ -330,7 +330,7 @@ namespace base
                 }
                 cur += 1;
 
-                StringView<char> value;
+                StringView value;
                 if (ParseText(cur, end, value, SYMBOL_LF))
                 {
                     if (!ProcessHeaderParam(key, value, outHeader))
@@ -365,7 +365,7 @@ namespace base
             memset(m_headerBytes, 0xCC, sizeof(m_headerBytes));
         }
 
-        void RequestHeaderParser::reportError(const StringView<char> txt)
+        void RequestHeaderParser::reportError(const StringView txt)
         {
             if (m_state != State::Error)
             {

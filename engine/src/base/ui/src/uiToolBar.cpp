@@ -129,12 +129,12 @@ namespace ui
         }
     }
 
-    bool ToolBar::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool ToolBar::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }
 
-    bool ToolBar::handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
+    bool ToolBar::handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
     {
         if (name == "Tool")
         {

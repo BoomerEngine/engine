@@ -170,7 +170,7 @@ namespace rendering
             base::Array<FilterBitInfo*> m_infos;
             FilterBitInfo* m_root = nullptr;
 
-            FilterBitInfo* create(FilterBitInfo* parent, base::StringView<char> name, FilterBit bit = FilterBit::MAX)
+            FilterBitInfo* create(FilterBitInfo* parent, base::StringView name, FilterBit bit = FilterBit::MAX)
             {
                 auto* ret = MemNew(FilterBitInfo).ptr;
                 ret->name = base::StringID(name);

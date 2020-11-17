@@ -42,12 +42,12 @@ namespace base
                 : m_loader(loader)
             {}
 
-            virtual bool depotFileExists(StringView<char> depotPath) const override final
+            virtual bool depotFileExists(StringView depotPath) const override final
             {
                 return m_loader->depotFileExists(depotPath);
             }
 
-            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+            virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
             {
                 return m_loader->depotFindFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
             }
@@ -122,7 +122,7 @@ namespace base
                 return m_parentTracker->checkCancelation();
             }
 
-            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final
+            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final
             {
                 m_callbacks->queueJobProgressUpdate(m_depotPath, currentCount, totalCount, text);
             }

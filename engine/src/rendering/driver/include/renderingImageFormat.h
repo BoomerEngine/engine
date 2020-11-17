@@ -159,8 +159,8 @@ namespace rendering
     };
 
     extern RENDERING_DRIVER_API const ImageFormatInfo& GetImageFormatInfo(ImageFormat format);
-    extern RENDERING_DRIVER_API bool GetImageFormatByDisplayName(base::StringView<char> name, ImageFormat& outFormat);
-    extern RENDERING_DRIVER_API bool GetImageFormatByShaderName(base::StringView<char> name, ImageFormat& outFormat);
+    extern RENDERING_DRIVER_API bool GetImageFormatByDisplayName(base::StringView name, ImageFormat& outFormat);
+    extern RENDERING_DRIVER_API bool GetImageFormatByShaderName(base::StringView name, ImageFormat& outFormat);
 
     //---
 

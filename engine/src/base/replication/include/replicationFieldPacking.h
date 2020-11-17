@@ -51,10 +51,10 @@ namespace base
             //--
 
             // parse from string directly, NOTE: asserts if invalid packing is specified
-            FieldPacking(StringView<char> txt);
+            FieldPacking(StringView txt);
 
             // parse from string directly, NOTE: asserts if invalid packing is specified
-            static bool Parse(StringView<char> txt, FieldPacking& outSettings);
+            static bool Parse(StringView txt, FieldPacking& outSettings);
 
             //--
 

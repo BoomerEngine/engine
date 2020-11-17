@@ -241,7 +241,7 @@ namespace base
 
     // save object to standalone xml document, the root node will contain the "class" 
     // NOTE: to save object into existing XML use the object->writeXML()
-    extern BASE_OBJECT_API xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView<char> rootNodeName = "object");
+    extern BASE_OBJECT_API xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView rootNodeName = "object");
 
     // load object from standalone XML document
     extern BASE_OBJECT_API ObjectPtr LoadObjectFromXML(const xml::IDocument* doc, SpecificClassType<IObject> expectedClass = nullptr);

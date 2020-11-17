@@ -62,7 +62,7 @@ namespace base
             return m_configuration;
         }
 
-        Buffer LocalImporterInterface::loadSourceFileContent(StringView<char> assetImportPath) const
+        Buffer LocalImporterInterface::loadSourceFileContent(StringView assetImportPath) const
         {
             io::TimeStamp timestamp;
             ImportFileFingerprint fingerprint;
@@ -75,7 +75,7 @@ namespace base
             return Buffer();
         }
 
-        SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView<char> assetImportPath) const
+        SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView assetImportPath) const
         {
             io::TimeStamp timestamp;
             ImportFileFingerprint fingerprint;
@@ -88,7 +88,7 @@ namespace base
             return nullptr;
         }
 
-        void LocalImporterInterface::reportImportDependency(StringView<char> assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
+        void LocalImporterInterface::reportImportDependency(StringView assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
         {
             auto lock = CreateLock(m_importDependenciesLock);
 
@@ -105,15 +105,15 @@ namespace base
 
         //--
 
-        bool LocalImporterInterface::findSourceFile(StringView<char> assetImportPath, StringView<char> inputPath, StringBuf& outImportPath, uint32_t maxScanDepth /*= 2*/) const
+        bool LocalImporterInterface::findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth /*= 2*/) const
         {
-            return ScanRelativePaths(assetImportPath, inputPath, maxScanDepth, outImportPath, [this](StringView<char> testPath)
+            return ScanRelativePaths(assetImportPath, inputPath, maxScanDepth, outImportPath, [this](StringView testPath)
                 {
                     return m_assetRepository->fileExists(testPath);
                 });
         }
 
-        void LocalImporterInterface::followupImport(StringView<char> assetImportPath, StringView<char> depotPath, const ResourceConfiguration* config)
+        void LocalImporterInterface::followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config)
         {
             if (assetImportPath && depotPath)
             {
@@ -135,7 +135,7 @@ namespace base
 
         //--
 
-        bool LocalImporterInterface::findDepotFile(StringView<char> depotReferencePath, StringView<char> depotSearchPath, StringView<char> searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth) const
+        bool LocalImporterInterface::findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth) const
         {
             StringBuf depotFinalSearchPath;
             if (!ApplyRelativePath(depotReferencePath, depotSearchPath, depotFinalSearchPath))
@@ -180,7 +180,7 @@ namespace base
             return false;
         }
 
-        void LocalImporterInterface::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text)
+        void LocalImporterInterface::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
         {
             if (m_externalProgressTracker)
                 m_externalProgressTracker->reportProgress(currentCount, totalCount, text);

@@ -470,7 +470,7 @@ namespace ui
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ColorPickerBox);
     RTTI_END_TYPE();
 
-    ColorPickerBox::ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView<char> caption /*= ""*/)
+    ColorPickerBox::ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView caption /*= ""*/)
         : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Select color")
         , m_initialColor(initialColor)
         , m_currentColor(initialColor)

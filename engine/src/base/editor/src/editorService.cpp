@@ -394,7 +394,7 @@ namespace ed
 
     }
 
-    io::OpenSavePersistentData& Editor::openSavePersistentData(StringView<char> category)
+    io::OpenSavePersistentData& Editor::openSavePersistentData(StringView category)
     {
         if (!category)
             category = "Generic";
@@ -411,7 +411,7 @@ namespace ed
 
     //--
 
-    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileNamePtr)
     {
         // use main window when nothing was provided
         if (!owner)
@@ -472,12 +472,12 @@ namespace ed
 
     }
 
-    bool Editor::saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, StringBuf* currentFileNamePtr)
+    bool Editor::saveToXML(ui::IElement* owner, StringView category, const ObjectPtr& objectPtr, StringBuf* currentFileNamePtr)
     {
         return saveToXML(owner, category, [objectPtr]() { return objectPtr;  });
     }
 
-    ObjectPtr Editor::loadFromXML(ui::IElement* owner, StringView<char> category, SpecificClassType<IObject> expectedObjectClass)
+    ObjectPtr Editor::loadFromXML(ui::IElement* owner, StringView category, SpecificClassType<IObject> expectedObjectClass)
     {
         // use main window when nothing was provided
         if (!owner)

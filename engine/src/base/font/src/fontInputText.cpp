@@ -37,7 +37,7 @@ namespace base
             build(str.c_str(), str.c_str() + actualLength);
         }
 
-        FontInputText::FontInputText(const UTF16StringBuf& str, uint32_t offset /*= 0*/, uint32_t length /*= ~(uint32_t)0*/)
+        FontInputText::FontInputText(const UTF16StringVector& str, uint32_t offset /*= 0*/, uint32_t length /*= ~(uint32_t)0*/)
         {
             auto actualLength = std::min<uint32_t>(length, std::max<int>(0, (int)str.length() - (int)offset));
             build(str.c_str(), str.c_str() + actualLength);

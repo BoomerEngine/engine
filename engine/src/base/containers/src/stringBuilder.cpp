@@ -38,7 +38,7 @@ namespace base
         m_length = 0;
     }
 
-    IFormatStream& StringBuilder::append(StringView<char> view)
+    IFormatStream& StringBuilder::append(StringView view)
     {
         if (!view.empty())
         {
@@ -54,32 +54,6 @@ namespace base
 
         return *this;
     }
-
-    /*IFormatStream& StringBuilder::append(const StringView<wchar_t>& view)
-    {
-        if (view.empty())
-            return *this;
-
-        // calculate size of the buffer needed
-        uint32_t length = 0;
-        for (auto ch  : view)
-        {
-            char data[6];
-            length += utf8::ConvertChar(data, ch);
-        }
-
-        // allocate
-        auto requiredCapacity  = m_length + length + 1;
-        if (!ensureCapacity(requiredCapacity))
-            return *this;
-
-        // write
-        for (auto ch  : view)
-            m_length += utf8::ConvertChar(m_buf + m_length, ch);
-
-        writeNullTerminator();
-        return *this;
-    }*/
 
     IFormatStream& StringBuilder::append(const wchar_t* str, uint32_t len /*= INDEX_MAX*/)
     {
@@ -110,7 +84,7 @@ namespace base
 
     IFormatStream& StringBuilder::append(const char* str, uint32_t len /*= INDEX_MAX*/)
     {
-        return append(StringView<char>(str, len));
+        return append(StringView(str, len));
     }
 
     IFormatStream& StringBuilder::append(const StringBuf& str)

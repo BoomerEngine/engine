@@ -70,16 +70,16 @@ namespace rendering
         //--
 
         // IErrorReporter
-        virtual void reportError(const base::parser::Location& loc, base::StringView<char> message) override final;
-        virtual void reportWarning(const base::parser::Location& loc, base::StringView<char> message) override final;
+        virtual void reportError(const base::parser::Location& loc, base::StringView message) override final;
+        virtual void reportWarning(const base::parser::Location& loc, base::StringView message) override final;
 
         // IIncludeHandler
-        virtual bool loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::Buffer& outContent, base::StringBuf& outPath) override final;
+        virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath) override final;
 
-        bool queryResolvedPath(base::StringView<char> relativePath, base::StringView<char> contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const;
-        bool checkFileExists(base::StringView<char> depotPath) const;
+        bool queryResolvedPath(base::StringView relativePath, base::StringView contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const;
+        bool checkFileExists(base::StringView depotPath) const;
 
-        base::Buffer loadFileContent(base::StringView<char> depotPath);
+        base::Buffer loadFileContent(base::StringView depotPath);
     };
 
     //---

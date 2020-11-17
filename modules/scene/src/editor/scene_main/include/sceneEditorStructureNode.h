@@ -125,7 +125,7 @@ namespace ed
             base::StringBuf captionText() const;
             base::StringBuf captionStyle() const;
 
-            void propertyChanged(base::StringView<char> path);
+            void propertyChanged(base::StringView path);
 
             void syncNodes();
             void syncTransfromFromNode();

@@ -48,7 +48,7 @@ namespace base
         INLINE CRC32& operator<<(bool data) { return appendStatic1(data); }
 
         // string types
-        INLINE CRC32& operator<<(StringView<char> data) { return append(data.data(), data.length()); }
+        INLINE CRC32& operator<<(StringView data) { return append(data.data(), data.length()); }
         INLINE CRC32& operator<<(const StringBuf& data) { return append(data.c_str(), data.length()); }
         INLINE CRC32& operator<<(StringID data) { return append(data.view().data(), data.view().length()); }
 
@@ -92,7 +92,7 @@ namespace base
         INLINE CRC64& operator<<(bool data) { return appendStatic1(data); }
 
         // string types
-        INLINE CRC64& operator<<(StringView<char> data) { return append(data.data(), data.length()); }
+        INLINE CRC64& operator<<(StringView data) { return append(data.data(), data.length()); }
         INLINE CRC64& operator<<(const StringBuf& data) { return append(data.c_str(), data.length()); }
         INLINE CRC64& operator<<(StringID data) { return append(data.view().data(), data.view().length()); }
 

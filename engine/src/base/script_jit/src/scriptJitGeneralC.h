@@ -25,7 +25,7 @@ namespace base
             JITGeneralC();
             virtual ~JITGeneralC();
 
-            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView<char> outputModulePath, const Settings& settings) override;
+            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) override;
 
         protected:
             mem::LinearAllocator m_mem;
@@ -43,9 +43,9 @@ namespace base
             {
                 uint64_t codeHash = 0;
                 const JITType* jitClass = nullptr;
-                StringView<char> functionName;
-                StringView<char> jitName; // general wrapper
-                StringView<char> jitLocalName; // fast wrapper
+                StringView functionName;
+                StringView jitName; // general wrapper
+                StringView jitLocalName; // fast wrapper
                 const StubFunction* stub = nullptr;
                 StringBuf code; // non empty only if valid JIT was generated
             };

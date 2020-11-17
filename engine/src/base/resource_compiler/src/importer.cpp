@@ -379,7 +379,7 @@ namespace base
             }
         }
 
-        bool Importer::findBestImporter(StringView<char> assetFilePath, SpecificClassType<IResource> targetResourceClass, SpecificClassType<IResourceImporter>& outImporterClass) const
+        bool Importer::findBestImporter(StringView assetFilePath, SpecificClassType<IResource> targetResourceClass, SpecificClassType<IResourceImporter>& outImporterClass) const
         {
             // find the asset extensions
             const auto ext = StringBuf(assetFilePath.afterLast(".")).toLower();

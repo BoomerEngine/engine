@@ -171,7 +171,7 @@ namespace base
 
         //--
 
-        DataViewResult IArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+        DataViewResult IArrayType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
         {
             const auto orgViewPath = viewPath;
 
@@ -195,7 +195,7 @@ namespace base
                 return m_innerType->describeDataView(viewPath, elementViewData, outInfo);
             }
 
-            StringView<char> propName;
+            StringView propName;
             if (ParsePropertyName(viewPath, propName))
             {
                 static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);
@@ -207,7 +207,7 @@ namespace base
             return IType::describeDataView(orgViewPath, viewData, outInfo);
         }
 
-        DataViewResult IArrayType::readDataView(StringView<char> viewPath, const void* viewData, void* targetData, Type targetType) const
+        DataViewResult IArrayType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
         {
             const auto orgViewPath = viewPath;
 
@@ -221,7 +221,7 @@ namespace base
                 return m_innerType->readDataView(viewPath, elementViewData, targetData, targetType);
             }
 
-            StringView<char> propName;
+            StringView propName;
             if (ParsePropertyName(viewPath, propName))
             {
                 static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);
@@ -246,7 +246,7 @@ namespace base
             return IType::readDataView(orgViewPath, viewData, targetData, targetType);
         }
 
-        DataViewResult IArrayType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+        DataViewResult IArrayType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
         {
             const auto orgViewPath = viewPath;
 
@@ -260,7 +260,7 @@ namespace base
                 return m_innerType->writeDataView(viewPath, elementViewData, sourceData, sourceType);
             }
 
-            StringView<char> propName;
+            StringView propName;
             if (ParsePropertyName(viewPath, propName))
             {
                 static const auto uintType = RTTI::GetInstance().findType("uint32_t"_id);

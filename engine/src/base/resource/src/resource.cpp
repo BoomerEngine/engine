@@ -110,12 +110,12 @@ namespace base
             return prv::ResourceClassLookup::GetInstance().resolveResourceClassHash(hash);
         }
 
-        SpecificClassType<IResource> IResource::FindResourceClassByExtension(StringView<char> extension)
+        SpecificClassType<IResource> IResource::FindResourceClassByExtension(StringView extension)
         {
             return prv::ResourceClassLookup::GetInstance().resolveResourceExtension(extension);
         }
 
-        SpecificClassType<IResource> IResource::FindResourceClassByPath(StringView<char> path)
+        SpecificClassType<IResource> IResource::FindResourceClassByPath(StringView path)
         {
             if (path.empty())
                 return nullptr;

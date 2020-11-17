@@ -29,7 +29,7 @@ namespace base
             //---
 
             /// check if given file exists
-            virtual bool queryFileExists(StringView<char> fileSystemPath) const = 0;
+            virtual bool queryFileExists(StringView fileSystemPath) const = 0;
 
             /// get the path to the resource being processed, this is an absolute depot path
             virtual const StringBuf& queryResourcePath() const = 0;
@@ -41,23 +41,23 @@ namespace base
             virtual const ResourceMountPoint& queryResourceMountPoint() const = 0;
 
             /// discover paths in directory, makes a complex dependency on the
-            virtual bool discoverResolvedPaths(StringView<char> relativePath, bool recurse, StringView<char> extension, Array<StringBuf>& outFileSystemPaths) = 0;
+            virtual bool discoverResolvedPaths(StringView relativePath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths) = 0;
 
             /// resolve a resolvable path to a relative depot path
             /// very useful for resources that have relative entries
-            virtual bool queryResolvedPath(StringView<char> relativePath, StringView<char> contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) = 0;
+            virtual bool queryResolvedPath(StringView relativePath, StringView contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) = 0;
 
             /// query a source absolute file path path so it can be nicely printed in case of errors
-            virtual bool queryContextName(StringView<char> fileSystemPath, StringBuf& contextName) = 0;
+            virtual bool queryContextName(StringView fileSystemPath, StringBuf& contextName) = 0;
 
             /// create a content reader
-            virtual io::ReadFileHandlePtr createReader(StringView<char> fileSystemPath) = 0;
+            virtual io::ReadFileHandlePtr createReader(StringView fileSystemPath) = 0;
 
             /// load file into a buffer
-            virtual Buffer loadToBuffer(StringView<char> fileSystemPath) = 0;
+            virtual Buffer loadToBuffer(StringView fileSystemPath) = 0;
 
             /// load file into a string
-            virtual bool loadToString(StringView<char> fileSystemPath, StringBuf& outString) = 0;
+            virtual bool loadToString(StringView fileSystemPath, StringBuf& outString) = 0;
 
             /// Is this a final cooker ?
             virtual bool finalCooker() const = 0;
@@ -80,7 +80,7 @@ namespace base
             ///  etc, up to the maxScanDepth
             /// Once a file is found it's automatically marked as dependency
             /// NOTE: this function only marks the found file as the dependency so the dependency system will properly recognize changes if files found via this function are being moved
-            virtual bool findFile(StringView<char> contextPath, StringView<char> inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth = 2) = 0;
+            virtual bool findFile(StringView contextPath, StringView inputPath, StringBuf& outFileSystemPath, uint32_t maxScanDepth = 2) = 0;
 
             //--
 
@@ -89,7 +89,7 @@ namespace base
             virtual ResourceHandle loadDependencyResource(const ResourceKey& key) = 0;
 
             template< typename T >
-            CAN_YIELD INLINE RefPtr<T> loadDependencyResource(StringView<char> resourcePath)
+            CAN_YIELD INLINE RefPtr<T> loadDependencyResource(StringView resourcePath)
             {
                 return rtti_cast<T>(loadDependencyResource(MakePath<T>(resourcePath)));
             }
@@ -108,8 +108,8 @@ namespace base
 
             void translateContextPath(const parser::Location& loc, parser::Location& outAbsoluteLocation);
 
-            virtual void reportError(const parser::Location& loc, StringView<char> message) override;
-            virtual void reportWarning(const parser::Location& loc, StringView<char> message) override;
+            virtual void reportError(const parser::Location& loc, StringView message) override;
+            virtual void reportWarning(const parser::Location& loc, StringView message) override;
 
         private:
             IResourceCookerInterface& m_cooker;
@@ -125,12 +125,12 @@ namespace base
         public:
             CookerIncludeHandler(IResourceCookerInterface& cooker);
 
-            void addIncludePath(StringView<char> includePath);
+            void addIncludePath(StringView includePath);
 
-            bool checkFileExists(StringView<char> path) const;
-            bool resolveIncludeFile(bool global, StringView<char> path, StringView<char> referencePath, StringBuf& outPath) const;
+            bool checkFileExists(StringView path) const;
+            bool resolveIncludeFile(bool global, StringView path, StringView referencePath, StringBuf& outPath) const;
 
-            virtual bool loadInclude(bool global, StringView<char> path, StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override;
+            virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override;
 
         private:
             IResourceCookerInterface& m_cooker;
@@ -143,7 +143,7 @@ namespace base
 
         // load raw XML data from a file in depot
         // NOTE: in function is intended for use during resource cooking, for general purpose XML loading see xmlUtils.h
-        extern BASE_RESOURCE_API xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView<char> path = "");
+        extern BASE_RESOURCE_API xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView path = "");
 
         //---
 

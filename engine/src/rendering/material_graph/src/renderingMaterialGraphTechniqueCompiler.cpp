@@ -131,7 +131,7 @@ namespace rendering
 
     //--
 
-    base::Buffer MaterialTechniqueCompiler::loadFileContent(base::StringView<char> depotPath)
+    base::Buffer MaterialTechniqueCompiler::loadFileContent(base::StringView depotPath)
     {
         DEBUG_CHECK_EX(!depotPath.empty(), "No shader file to load");
 
@@ -177,7 +177,7 @@ namespace rendering
         return entry.content;
     }
 
-    void MaterialTechniqueCompiler::reportError(const base::parser::Location& loc, base::StringView<char> message)
+    void MaterialTechniqueCompiler::reportError(const base::parser::Location& loc, base::StringView message)
     {
         auto& errorMessage = m_errors.emplaceBack();
         errorMessage.filePath = loc.contextName();
@@ -207,7 +207,7 @@ namespace rendering
         }
     }
 
-    void MaterialTechniqueCompiler::reportWarning(const base::parser::Location& loc, base::StringView<char> message)
+    void MaterialTechniqueCompiler::reportWarning(const base::parser::Location& loc, base::StringView message)
     {
         if (cvPrintShaderCompilationWarnings.get())
         {
@@ -226,13 +226,13 @@ namespace rendering
         }
     }
 
-    bool MaterialTechniqueCompiler::checkFileExists(base::StringView<char> path) const
+    bool MaterialTechniqueCompiler::checkFileExists(base::StringView path) const
     {
         base::io::TimeStamp unused;
         return m_depot.queryFileTimestamp(path, unused);
     }
 
-    bool MaterialTechniqueCompiler::queryResolvedPath(base::StringView<char> relativePath, base::StringView<char> contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const
+    bool MaterialTechniqueCompiler::queryResolvedPath(base::StringView relativePath, base::StringView contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const
     {
         if (global)
         {
@@ -257,7 +257,7 @@ namespace rendering
         return false;
     }
 
-    bool MaterialTechniqueCompiler::loadInclude(bool global, base::StringView<char> path, base::StringView<char> referencePath, base::Buffer& outContent, base::StringBuf& outPath)
+    bool MaterialTechniqueCompiler::loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath)
     {
         // resolve the full depot path to the include
         base::StringBuf fullFilePath;

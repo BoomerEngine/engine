@@ -55,8 +55,8 @@ namespace base
             bool imported = false; // type was declared as imported in the script (ie. must exist before, NOTE: does not imply native)
             int assignedID = -1;
             StringID name;
-            StringView<char> jitName;
-            StringView<char> jitExtraName; // scripted classes "scripted" part
+            StringView jitName;
+            StringView jitExtraName; // scripted classes "scripted" part
             uint32_t runtimeSize = 0;
             uint32_t runtimeAlign = 1;
             uint32_t runtimeExtraSize = 0;  // scripted classes "scripted" part
@@ -71,8 +71,8 @@ namespace base
 
             const JITType* baseClass = nullptr; // classes
 
-            mutable StringView<char> ctorFuncName;
-            mutable StringView<char> dtorFuncName;
+            mutable StringView ctorFuncName;
+            mutable StringView dtorFuncName;
 
             Array<JITClassMember> fields; // struct and classes
             HashMap<StringID, int64_t> enumOptions; // enums
@@ -92,8 +92,8 @@ namespace base
         {
             int assignedID = -1;
             const JITType* jitClass = nullptr;
-            StringView<char> functionName;
-            StringView<char> jitName; // name of the call forwarder
+            StringView functionName;
+            StringView jitName; // name of the call forwarder
             const StubFunction* stub = nullptr;
 
             const JITType* returnType;
@@ -101,7 +101,7 @@ namespace base
 
             bool canReturnDirectly = false; // if type is simple enough we can return it directly instead of the void* resultPtr shit
 
-            StringView<char> jitDirectCallName; // if we determined that we can call this function directly this is the name of the variable holding the pointer to it
+            StringView jitDirectCallName; // if we determined that we can call this function directly this is the name of the variable holding the pointer to it
         };
 
         /// JIT type library
@@ -134,7 +134,7 @@ namespace base
             //--
 
             /// report local body of a function (so we may call it directly)
-            void reportLocalFunctionBody(const StubFunction* func, StringView<char> localJitBodyName, bool fastCall);
+            void reportLocalFunctionBody(const StubFunction* func, StringView localJitBodyName, bool fastCall);
 
             //--
 
@@ -167,7 +167,7 @@ namespace base
 
             struct LocalFuncInfo
             {
-                StringView<char> m_bodyName;
+                StringView m_bodyName;
                 bool m_isFastCall;
             };
 
@@ -188,7 +188,7 @@ namespace base
             bool updateMemberLayout(JITType* type);
             bool updateScriptedMemberLayout(JITType* type);
 
-            void reportError(const Stub* owner, StringView<char> txt);
+            void reportError(const Stub* owner, StringView txt);
 
             void collectFields(const JITType* type, bool extendedBuffer, Array<const JITClassMember*>& outMembers) const;
         };

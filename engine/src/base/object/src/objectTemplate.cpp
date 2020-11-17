@@ -230,14 +230,14 @@ namespace base
             m_overridenProperties.insert(name);
     }
 
-    void IObjectTemplate::onPropertyChanged(StringView<char> path)
+    void IObjectTemplate::onPropertyChanged(StringView path)
     {
         IObject::onPropertyChanged(path);
 
         // store information that we've changed this property
         if (0 == m_localSuppressOverridenPropertyCapture)
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(path, propertyName))
             {
                 if (auto propertyStringID = StringID::Find(propertyName))
@@ -267,7 +267,7 @@ namespace base
 
     //---
 
-    DataViewResult IObjectTemplate::describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const
+    DataViewResult IObjectTemplate::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
     {
         if (auto ret = HasError(IObject::describeDataView(viewPath, outInfo)))
             return ret;
@@ -308,7 +308,7 @@ namespace base
             }
         }
 
-        base::StringView<char> propertyName;
+        base::StringView propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
         {
             if (outInfo.requestFlags.test(base::rtti::DataViewRequestFlagBit::CheckIfResetable))
@@ -329,12 +329,12 @@ namespace base
         return DataViewResultCode::OK;
     }
 
-    DataViewResult IObjectTemplate::readDataView(StringView<char> viewPath, void* targetData, Type targetType) const
+    DataViewResult IObjectTemplate::readDataView(StringView viewPath, void* targetData, Type targetType) const
     {
         return IObject::readDataView(viewPath, targetData, targetType);
     }
 
-    DataViewResult IObjectTemplate::writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType)
+    DataViewResult IObjectTemplate::writeDataView(StringView viewPath, const void* sourceData, Type sourceType)
     {
         return IObject::writeDataView(viewPath, sourceData, sourceType);
     }
@@ -359,7 +359,7 @@ namespace base
             , m_objectTemplate(ot)
         {}
 
-        virtual base::DataViewResult readDefaultDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        virtual base::DataViewResult readDefaultDataView(base::StringView viewPath, void* targetData, base::Type targetType) const
         {
             if (!m_objectTemplate)
                 return base::DataViewResultCode::ErrorNullObject;
@@ -370,12 +370,12 @@ namespace base
             return DataViewNative::readDataView(viewPath, targetData, targetType);
         }
 
-        virtual base::DataViewResult resetToDefaultValue(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+        virtual base::DataViewResult resetToDefaultValue(base::StringView viewPath, void* targetData, base::Type targetType) const
         {
             if (!m_objectTemplate)
                 return base::DataViewResultCode::ErrorNullObject;
 
-            base::StringView<char> propertyNameStr;
+            base::StringView propertyNameStr;
             if (base::rtti::ParsePropertyName(viewPath, propertyNameStr))
             {
                 if (viewPath.empty())
@@ -391,14 +391,14 @@ namespace base
             return base::DataViewNative::resetToDefaultValue(viewPath, targetData, targetType);
         }
 
-        virtual bool checkIfCurrentlyADefaultValue(base::StringView<char> viewPath) const
+        virtual bool checkIfCurrentlyADefaultValue(base::StringView viewPath) const
         {
             auto originalPath = viewPath;
 
             if (!m_objectTemplate)
                 return false;
 
-            base::StringView<char> propertyNameStr;
+            base::StringView propertyNameStr;
             if (base::rtti::ParsePropertyName(viewPath, propertyNameStr))
             {
                 if (viewPath.empty())

@@ -25,7 +25,7 @@ namespace base
         namespace prv
         {
 
-            POSIXDirectoryWatcher::POSIXDirectoryWatcher(StringView<char> rootPath)
+            POSIXDirectoryWatcher::POSIXDirectoryWatcher(StringView rootPath)
             {
                 // create the notify interface
                 m_masterHandle = inotify_init1(IN_NONBLOCK);
@@ -88,7 +88,7 @@ namespace base
                     m_listeners[index] = nullptr;
             }
 
-            void POSIXDirectoryWatcher::monitorPath(base::StringView<char> path)
+            void POSIXDirectoryWatcher::monitorPath(base::StringView path)
             {
                 // we can create the watch only if we are initialized properly
                 if (m_masterHandle >= 0)
@@ -116,7 +116,7 @@ namespace base
                 }
             }
 
-            void POSIXDirectoryWatcher::unmonitorPath(base::StringView<char> path)
+            void POSIXDirectoryWatcher::unmonitorPath(base::StringView path)
             {
                 // un monitor the existing sub directories as well
                 for (POSIXFileIterator it(path, L"*.", false, true); it; ++it)

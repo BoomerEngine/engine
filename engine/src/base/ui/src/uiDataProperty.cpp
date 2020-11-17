@@ -411,12 +411,12 @@ namespace ui
             m_valueBox->enterEdit();
     }
 
-    base::StringBuf MakeArrayElementPath(base::StringView<char> path, uint32_t index)
+    base::StringBuf MakeArrayElementPath(base::StringView path, uint32_t index)
     {
         return base::TempString("{}[{}]", path, index);
     }
 
-    base::StringBuf MakeStructureElementPath(base::StringView<char> path, base::StringView<char> name)
+    base::StringBuf MakeStructureElementPath(base::StringView path, base::StringView name)
     {
         if (path)
             return base::TempString("{}.{}", path, name);
@@ -491,7 +491,7 @@ namespace ui
         }
     }
 
-    void DataProperty::handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification)
+    void DataProperty::handlePropertyChanged(base::StringView fullPath, bool parentNotification)
     {
         if (!parentNotification && fullPath == path())
         {

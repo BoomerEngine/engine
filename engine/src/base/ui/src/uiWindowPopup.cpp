@@ -19,7 +19,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("PopupWindow");
     RTTI_END_TYPE();
 
-    PopupWindow::PopupWindow(WindowFeatureFlags flags, base::StringView<char> title)
+    PopupWindow::PopupWindow(WindowFeatureFlags flags, base::StringView title)
         : Window(flags, title)
     {        
     }

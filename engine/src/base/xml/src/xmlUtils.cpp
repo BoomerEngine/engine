@@ -40,7 +40,7 @@ namespace base
 
         //--
 
-        DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView<char> absoluteFilePath)
+        DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView absoluteFilePath)
         {
             auto buffer  = io::LoadFileToBuffer(absoluteFilePath);
             return LoadDocument(ctx, buffer);
@@ -86,7 +86,7 @@ namespace base
             }
         }
 
-        bool SaveDocument(const IDocument& ptr, StringView<char> absoluteFilePath, bool binaryFormat/*= false*/)
+        bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat/*= false*/)
         {
             if (binaryFormat)
             {
@@ -101,7 +101,7 @@ namespace base
             }
         }
 
-        DocumentPtr CreateDocument(StringView<char> rootNodeName)
+        DocumentPtr CreateDocument(StringView rootNodeName)
         {
             return CreateSharedPtr<DynamicDocument>(rootNodeName);
         }

@@ -50,7 +50,7 @@ namespace base
             bool buildLoadingExtensionMap();
             bool assembleCookedFilePath(const ResourceKey& key, StringBuf& outPath) const;
 
-            StringView<char> findCookedExtension(const ResourceKey& key) const;
+            StringView findCookedExtension(const ResourceKey& key) const;
         };
 
         //-----

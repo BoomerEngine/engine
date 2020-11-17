@@ -96,7 +96,7 @@ namespace base
 
         //--
 
-        uint32_t FileTablesBuilder::mapString(StringView<char> txt)
+        uint32_t FileTablesBuilder::mapString(StringView txt)
         {
             if (txt.empty())
                 return 0;
@@ -140,7 +140,7 @@ namespace base
 
         //--
 
-        uint16_t FileTablesBuilder::mapPath(uint16_t parent, StringView<char> elem)
+        uint16_t FileTablesBuilder::mapPath(uint16_t parent, StringView elem)
         {
             FileTables::Path entry;
             entry.parentIndex = parent;
@@ -156,7 +156,7 @@ namespace base
             return ret;
         }
 
-        uint16_t FileTablesBuilder::mapPath(StringView<char> path)
+        uint16_t FileTablesBuilder::mapPath(StringView path)
         {
             if (!path)
                 return 0;
@@ -167,7 +167,7 @@ namespace base
             if (pathRawMap.find(path, ret))
                 return ret;
 
-            InplaceArray<StringView<char>, 20> pathParts;
+            InplaceArray<StringView, 20> pathParts;
             path.slice("/\\", false, pathParts);
 
             uint16_t parentPath = 0;
@@ -247,7 +247,7 @@ namespace base
             return ret;
         }
 
-        uint16_t FileTablesBuilder::mapImport(StringID classType, StringView<char> importPath, bool async)
+        uint16_t FileTablesBuilder::mapImport(StringID classType, StringView importPath, bool async)
         {
             if (!classType || !importPath)
                 return 0;

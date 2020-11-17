@@ -44,7 +44,7 @@ namespace base
             //--
 
             // change the imported source settings
-            void changeImportMetadata(StringView<char> by, StringView<char> at, io::TimeStamp time);
+            void changeImportMetadata(StringView by, StringView at, io::TimeStamp time);
 
             // set the default "imported" settings - computer name, host, and time
             void setupDefaultImportMetadata();

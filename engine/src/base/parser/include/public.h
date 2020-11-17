@@ -52,8 +52,8 @@ namespace base
         {
         public:
             virtual ~IErrorReporter();
-            virtual void reportError(const Location& loc, StringView<char> message) = 0;
-            virtual void reportWarning(const Location& loc, StringView<char> message) = 0;
+            virtual void reportError(const Location& loc, StringView message) = 0;
+            virtual void reportWarning(const Location& loc, StringView message) = 0;
 
             //--
 
@@ -77,7 +77,7 @@ namespace base
             // referencePath - path of the file we are calling the #include from 
             // outContent - produced content of the file
             // outPath - reference path for extracted text
-            virtual bool loadInclude(bool global, StringView<char> path, StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) = 0;
+            virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) = 0;
 
 
             //--

@@ -82,7 +82,7 @@ namespace ed
         }
     }
 
-    void AssetItemsSimpleListModel::addItem(ManagedItem* item, bool checked /*= true*/, StringView<char> comment /*= ""*/)
+    void AssetItemsSimpleListModel::addItem(ManagedItem* item, bool checked /*= true*/, StringView comment /*= ""*/)
     {
         if (item)
         {
@@ -115,7 +115,7 @@ namespace ed
         }
     }
 
-    void AssetItemsSimpleListModel::comment(ManagedItem* item, StringView<char> comment)
+    void AssetItemsSimpleListModel::comment(ManagedItem* item, StringView comment)
     {
         Item* localItem = nullptr;
         if (m_itemMap.find(item, localItem))

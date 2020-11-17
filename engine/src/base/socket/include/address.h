@@ -45,7 +45,7 @@ namespace base
             Address(AddressType type, uint16_t port, const uint8_t* address);
             void set(AddressType type, uint16_t port, const uint8_t* address);
 
-            Address(StringView<char> txt, uint16_t portOverride = 0, AddressType type = AddressType::AddressIPv4);
+            Address(StringView txt, uint16_t portOverride = 0, AddressType type = AddressType::AddressIPv4);
 
             INLINE AddressType type() const { return m_type; }
 
@@ -61,7 +61,7 @@ namespace base
             ///---
 
             /// parse from string, safer form
-            static bool Parse(StringView<char> txt, Address& outAddress, uint16_t portOverride = 0, AddressType type = AddressType::AddressIPv4);
+            static bool Parse(StringView txt, Address& outAddress, uint16_t portOverride = 0, AddressType type = AddressType::AddressIPv4);
 
             ///---
 

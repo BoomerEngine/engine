@@ -20,28 +20,28 @@ namespace base
         class BASE_RESOURCE_COMPILER_API FileSystemNative : public IFileSystem, public io::IDirectoryWatcherListener
         {
         public:
-            FileSystemNative(StringView<char> rootPath, bool allowWrites, DepotStructure* owner);
+            FileSystemNative(StringView rootPath, bool allowWrites, DepotStructure* owner);
             virtual ~FileSystemNative();
 
             /// get the file path
-            INLINE StringView<char> rootPath() const { return m_rootPath; }
+            INLINE StringView rootPath() const { return m_rootPath; }
 
             /// IRawFileSystem
             virtual bool isPhysical() const override final;
             virtual bool isWritable() const override final;
-            virtual bool ownsFile(StringView<char> rawFilePath) const override final;
-            virtual bool contextName(StringView<char> rawFilePath, StringBuf& outContextName) const override final;
-            virtual bool timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const override final;
-            virtual bool absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const override final;
+            virtual bool ownsFile(StringView rawFilePath) const override final;
+            virtual bool contextName(StringView rawFilePath, StringBuf& outContextName) const override final;
+            virtual bool timestamp(StringView rawFilePath, io::TimeStamp& outTimestamp) const override final;
+            virtual bool absolutePath(StringView rawFilePath, StringBuf& outAbsolutePath) const override final;
 
             // Enum
-            virtual bool enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
-            virtual bool enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const override final;
+            virtual bool enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const override final;
+            virtual bool enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const override final;
 
             // IO
-            virtual io::ReadFileHandlePtr createReader(StringView<char> rawFilePath) const override final;
-            virtual io::WriteFileHandlePtr createWriter(StringView<char> rawFilePath) const override final;
-            virtual io::AsyncFileHandlePtr createAsyncReader(StringView<char> rawFilePath) const override final;
+            virtual io::ReadFileHandlePtr createReader(StringView rawFilePath) const override final;
+            virtual io::WriteFileHandlePtr createWriter(StringView rawFilePath) const override final;
+            virtual io::AsyncFileHandlePtr createAsyncReader(StringView rawFilePath) const override final;
 
             // Editor support
             virtual void enableFileSystemObservers() override final;

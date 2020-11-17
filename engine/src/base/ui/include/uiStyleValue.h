@@ -51,7 +51,7 @@ namespace ui
             INLINE base::Color color() const { return m_color; }
 
             /// get the string value
-            INLINE base::StringView<char> string() const { return base::StringView<char>(m_text); }
+            INLINE base::StringView string() const { return base::StringView(m_text); }
 
             /// get name of function/variable
             INLINE base::StringID name() const { return m_name; }

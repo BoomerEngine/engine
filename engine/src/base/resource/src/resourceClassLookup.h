@@ -28,10 +28,10 @@ namespace base
                 SpecificClassType<IResource> resolveResourceClassHash(ResourceClassHash classHash) const;
 
                 /// find an engine class that matches given extension
-                SpecificClassType<IResource> resolveResourceExtension(StringView<char> extension) const;
+                SpecificClassType<IResource> resolveResourceExtension(StringView extension) const;
 
                 /// find an engine class that matches given short name (ie. Texture, Mesh) used to decode paths
-                SpecificClassType<IResource> resolveResourceShortName(StringView<char> shortName) const;
+                SpecificClassType<IResource> resolveResourceShortName(StringView shortName) const;
 
                 //---
 

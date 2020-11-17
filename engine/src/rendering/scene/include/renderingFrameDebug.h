@@ -318,10 +318,10 @@ namespace rendering
             //--
 
             // measure size
-            base::Point textSize(base::StringView<char> txt, DebugFont font = DebugFont::Normal);
+            base::Point textSize(base::StringView txt, DebugFont font = DebugFont::Normal);
 
             // draw simple debug text
-            base::Point text(int x, int y, base::StringView<char> txt, const DebugTextParams& params = DebugTextParams());
+            base::Point text(int x, int y, base::StringView txt, const DebugTextParams& params = DebugTextParams());
 
             //--
         };

@@ -21,7 +21,7 @@ namespace base
 
             //--
 
-            WinReadFileHandle::WinReadFileHandle(HANDLE hSyncFile, const StringView<char> path)
+            WinReadFileHandle::WinReadFileHandle(HANDLE hSyncFile, const StringView path)
                 : m_hHandle(hSyncFile)
                 , m_origin(path)
             {
@@ -109,7 +109,7 @@ namespace base
 
             //--
 
-            WinWriteFileHandle::WinWriteFileHandle(HANDLE hSyncFile, StringView<char> path)
+            WinWriteFileHandle::WinWriteFileHandle(HANDLE hSyncFile, StringView path)
                 : m_hHandle(hSyncFile)
                 , m_origin(path)
             {
@@ -272,7 +272,7 @@ namespace base
 
             //--
 
-            WinAsyncFileHandle::WinAsyncFileHandle(HANDLE hAsyncFile, StringView<char> origin, uint64_t size, WinAsyncReadDispatcher* dispatcher)
+            WinAsyncFileHandle::WinAsyncFileHandle(HANDLE hAsyncFile, StringView origin, uint64_t size, WinAsyncReadDispatcher* dispatcher)
                 : m_hHandle(hAsyncFile)
                 , m_origin(origin)
                 , m_size(size)

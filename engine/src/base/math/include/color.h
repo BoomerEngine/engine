@@ -34,7 +34,7 @@ namespace base
         INLINE Color(uint8_t cr, uint8_t cg, uint8_t cb, uint8_t ca = 255);
         INLINE Color(ColorVal argb);
 
-        Color(StringView<char> txt);
+        Color(StringView txt);
 
         INLINE bool operator==(const Color &other) const;
         INLINE bool operator!=(const Color &other) const;
@@ -153,7 +153,7 @@ namespace base
         //---
 
         // Parse color from HTM #FF00FF encoding, supports length 3,4,6 and 8, the "#" is dropped if present
-        static bool Parse(base::StringView<char> txt, Color& outColor);
+        static bool Parse(base::StringView txt, Color& outColor);
 
         //---
 

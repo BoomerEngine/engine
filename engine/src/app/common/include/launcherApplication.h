@@ -15,7 +15,7 @@ namespace application
     class APP_COMMON_API LauncherApp : public base::app::IApplication
     {
     public:
-        LauncherApp(base::StringView<char> title = "");
+        LauncherApp(base::StringView title = "");
 
         virtual bool initialize(const base::app::CommandLine& commandline) override final;
         virtual void cleanup() override final;

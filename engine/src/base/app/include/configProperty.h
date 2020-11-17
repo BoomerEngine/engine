@@ -31,7 +31,7 @@ namespace base
     class BASE_APP_API ConfigPropertyBase : public base::NoCopy
     {
     public:
-        ConfigPropertyBase(StringView<char> groupName, StringView<char> name, ConfigPropertyFlags flags);
+        ConfigPropertyBase(StringView groupName, StringView name, ConfigPropertyFlags flags);
         virtual ~ConfigPropertyBase();
 
         /// get the group name (config group)
@@ -80,7 +80,7 @@ namespace base
         ///--
 
         /// refresh property value from entry
-        static void RefreshPropertyValue(StringView<char> group, StringView<char> name);
+        static void RefreshPropertyValue(StringView group, StringView name);
 
     protected:
         StringBuf m_group;
@@ -100,7 +100,7 @@ namespace base
     class ConfigProperty : public ConfigPropertyBase
     {
     public:
-        INLINE ConfigProperty(StringView<char> groupName, StringView<char> name, const T& value, ConfigPropertyFlags flags = ConfigPropertyFlags())
+        INLINE ConfigProperty(StringView groupName, StringView name, const T& value, ConfigPropertyFlags flags = ConfigPropertyFlags())
             : ConfigPropertyBase(groupName, name, flags)
             , m_defaultValue(value)
             , m_value(value)

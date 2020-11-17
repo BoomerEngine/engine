@@ -1491,7 +1491,7 @@ namespace rendering
                 TextPage m_pageData[MAX_PAGES];
                 uint32_t m_pageCount = 0;
 
-                void buildGeometry(float ox, float oy, float s, base::StringView<char> txt, const base::Array<base::font::BitmapFontPrintableGlyph>& glyphs)
+                void buildGeometry(float ox, float oy, float s, base::StringView txt, const base::Array<base::font::BitmapFontPrintableGlyph>& glyphs)
                 {
                     /*for (auto& g : glyphs)
                     {
@@ -1545,7 +1545,7 @@ namespace rendering
         }
 
 
-        base::Point DebugSolidDrawer::textSize(base::StringView<char> txt, DebugFont font /*= DebugFont::Normal*/)
+        base::Point DebugSolidDrawer::textSize(base::StringView txt, DebugFont font /*= DebugFont::Normal*/)
         {
             if (auto fontPtr = helper::GetFont(font))
                 return fontPtr->measure(txt);
@@ -1553,7 +1553,7 @@ namespace rendering
                 return base::Point::ZERO();
         }
 
-        base::Point DebugSolidDrawer::text(int x, int y, base::StringView<char> txt, const DebugTextParams& params /*= DebugTextParams()*/)
+        base::Point DebugSolidDrawer::text(int x, int y, base::StringView txt, const DebugTextParams& params /*= DebugTextParams()*/)
         {
             if (auto fontPtr = helper::GetFont(params._font))
             {

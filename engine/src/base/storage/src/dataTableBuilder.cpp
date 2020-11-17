@@ -43,7 +43,7 @@ namespace base
             if (!str || !*str)
                 return nullptr;
 
-            auto strHash = StringView<char>(str).calcCRC64();
+            auto strHash = StringView(str).calcCRC64();
             const TempString* ptr = nullptr;
             if (m_stringMap.find(strHash, ptr))
                 return ptr;
@@ -87,13 +87,13 @@ namespace base
             if (nameIfGiven)
             {
                 if (top != m_root)
-                    node->m_pathHash = StringView<char>(base::TempString(".{}", nameIfGiven)).calcCRC64();
+                    node->m_pathHash = StringView(base::TempString(".{}", nameIfGiven)).calcCRC64();
                 else
-                    node->m_pathHash = StringView<char>(base::TempString("{}", nameIfGiven)).calcCRC64();
+                    node->m_pathHash = StringView(base::TempString("{}", nameIfGiven)).calcCRC64();
             }
             else
             {
-                node->m_pathHash = StringView<char>(base::TempString("[{}]", node->m_numChildren - 1)).calcCRC64();
+                node->m_pathHash = StringView(base::TempString("[{}]", node->m_numChildren - 1)).calcCRC64();
             }
 
             // create node link

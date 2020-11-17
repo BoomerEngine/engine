@@ -72,7 +72,7 @@ namespace example
         const auto TERRAIN_WIDTH = 100;
         const auto TERRAIN_HEIGHT = 14;
 
-        auto terrainAssets = CreateSharedPtr<GameTerrianAsset>(128.0f, "examples/canvas/tiles", 18);
+        auto terrainAssets = CreateSharedPtr<GameTerrianAsset>(128.0f, "/examples/canvas/tiles", 18);
         auto terrain = CreateSharedPtr<GameTerrain>(TERRAIN_WIDTH, TERRAIN_HEIGHT, terrainAssets);
         m_terrain = terrain;
         m_scene->m_layer[0].addObject(terrain);
@@ -99,13 +99,13 @@ namespace example
             base::Array<GameSpriteAssetPtr> assets;
 
             assets.pushBack(nullptr);
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Tree_2.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Tree_3.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Mushroom_1.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Mushroom_2.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Mushroom_2.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Sign_1.png")));
-            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/object/Sign_2.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Tree_2.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Tree_3.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Mushroom_1.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Mushroom_2.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Mushroom_2.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Sign_1.png")));
+            assets.pushBack(CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/object/Sign_2.png")));
 
             for (uint32_t x = 0; x < TERRAIN_WIDTH; ++x)
             {
@@ -134,7 +134,7 @@ namespace example
 
         // Cloud near
         {
-            const auto asset = CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/cloud/cloud2.png"));
+            const auto asset = CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/cloud/cloud2.png"));
             for (int i = 0; i < 20; ++i)
             {
                 float x = (TERRAIN_WIDTH * (rand() / (float)RAND_MAX)) * terrainAssets->tileSize();
@@ -147,7 +147,7 @@ namespace example
 
         // Cloud far
         /*{
-            const auto asset = CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("examples/canvas/cloud/cloud3.png"));
+            const auto asset = CreateSharedPtr<GameSpriteAsset>(LoadResource<Image>("/examples/canvas/cloud/cloud3.png"));
             for (int i = 0; i < 10; ++i)
             {
                 float x = (TERRAIN_WIDTH * (rand() / (float)RAND_MAX)) * terrainAssets->tileSize();
@@ -161,7 +161,7 @@ namespace example
 
     void Game::createPlayer(Vector2 pos)
     {
-        auto asset = CreateSharedPtr<GamePlayerAssets>("examples/canvas/dino");
+        auto asset = CreateSharedPtr<GamePlayerAssets>("/examples/canvas/dino");
         m_player = CreateSharedPtr<GamePlayer>(pos, asset);
         m_player->m_collisionTerrain = m_terrain; // HACK
         m_scene->m_layer[0].addObject(m_player);

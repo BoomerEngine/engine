@@ -82,7 +82,7 @@ namespace base
             INLINE CharIterator() {};
             INLINE CharIterator(const char* start, uint32_t length=UINT_MAX);
             INLINE CharIterator(const char* start, const char* end);
-            INLINE CharIterator(StringView<char> txt);
+            INLINE CharIterator(StringView txt);
             INLINE CharIterator(const CharIterator& other) = default;
             INLINE CharIterator& operator=(const CharIterator& other) = default;
             INLINE ~CharIterator() = default;

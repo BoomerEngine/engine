@@ -92,12 +92,12 @@ namespace ui
         hitTest(true);
     }
 
-    bool ColumnHeaderBar::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool ColumnHeaderBar::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }
 
-    void ColumnHeaderBar::addColumn(base::StringView<char> caption, float width, bool center /*= false*/, bool allowSort /*= true*/, bool allowResize /*= true*/)
+    void ColumnHeaderBar::addColumn(base::StringView caption, float width, bool center /*= false*/, bool allowSort /*= true*/, bool allowResize /*= true*/)
     {
         auto& entry = m_columns.emplaceBack();
         entry.m_currentWidth = width;
@@ -122,7 +122,7 @@ namespace ui
         attachChild(entry.m_header);
     }
 
-    bool ColumnHeaderBar::handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
+    bool ColumnHeaderBar::handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
     {
         if (name == "Column" || name == "ColumnHeader")
         {

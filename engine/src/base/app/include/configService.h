@@ -62,8 +62,8 @@ namespace base
             void dumpConfig();
 
             bool loadBaseConfig(config::Storage& outStorage) const;
-            bool loadDirConfig(StringView<char> path, config::Storage& outStorage) const;
-            bool loadFileConfig(StringView<char> path, config::Storage& outStorage) const;
+            bool loadDirConfig(StringView path, config::Storage& outStorage) const;
+            bool loadFileConfig(StringView path, config::Storage& outStorage) const;
 
             virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override final;
         };

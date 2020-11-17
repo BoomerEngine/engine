@@ -75,7 +75,7 @@ namespace base
                 } m_resolved;
             };
 
-            Symbol* createSymbol(StringView<char> name, const Stub* stub, bool import);
+            Symbol* createSymbol(StringView name, const Stub* stub, bool import);
 
             HashMap<StringID, Symbol*> m_symbolNamedMap;
             HashMap<const Stub*, Symbol*> m_symbolStubMap;

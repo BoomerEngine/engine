@@ -17,7 +17,7 @@ namespace base
         RTTI_PROPERTY(customEditorName);
     RTTI_END_TYPE();
 
-    PropertyCustomEditorMetadata::PropertyCustomEditorMetadata(StringView<char> editorName)
+    PropertyCustomEditorMetadata::PropertyCustomEditorMetadata(StringView editorName)
         : customEditorName(editorName)
     {}
     
@@ -27,7 +27,7 @@ namespace base
         RTTI_PROPERTY(text);
     RTTI_END_TYPE();
 
-    PropertyCommentMetadata::PropertyCommentMetadata(StringView<char> txt)
+    PropertyCommentMetadata::PropertyCommentMetadata(StringView txt)
         : text(txt)
     {}
 
@@ -37,7 +37,7 @@ namespace base
         RTTI_PROPERTY(text);
     RTTI_END_TYPE();
 
-    PropertyUnitsMetadata::PropertyUnitsMetadata(StringView<char> txt)
+    PropertyUnitsMetadata::PropertyUnitsMetadata(StringView txt)
         : text(txt)
     {}
 

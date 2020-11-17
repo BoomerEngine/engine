@@ -85,7 +85,7 @@ namespace base
             //--
 
             // try to parse data of given type from a string, if successful data is put into data holder
-            DataHolder Parse(StringView<char> txt, Type type);
+            DataHolder Parse(StringView txt, Type type);
 
         private:
             Type m_type;

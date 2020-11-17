@@ -83,9 +83,9 @@ namespace base
             f << "\n";
         }
 
-        StringView<char> JITConstCache::mapStringConst(const char* stringConst)
+        StringView JITConstCache::mapStringConst(const char* stringConst)
         {
-            auto hash  = StringView<char>(stringConst).calcCRC64();
+            auto hash  = StringView(stringConst).calcCRC64();
 
             uint32_t index = 0;
             if (m_stringConstantMap.find(hash, index))
@@ -103,9 +103,9 @@ namespace base
             return entry.m_varName;
         }
 
-        StringView<char> JITConstCache::mapNameConst(const char* nameConst)
+        StringView JITConstCache::mapNameConst(const char* nameConst)
         {
-            auto hash  = StringView<char>(nameConst).calcCRC64();
+            auto hash  = StringView(nameConst).calcCRC64();
 
             if (!m_nameType)
                 m_nameType = m_typeLib.resolveEngineType("StringID"_id);
@@ -123,9 +123,9 @@ namespace base
             return entry.m_varName;
         }
 
-        StringView<char> JITConstCache::mapTypeConst(const char* nameConst)
+        StringView JITConstCache::mapTypeConst(const char* nameConst)
         {
-            auto hash  = StringView<char>(nameConst).calcCRC64();
+            auto hash  = StringView(nameConst).calcCRC64();
 
             if (!m_nameType)
                 m_typeType = m_typeLib.resolveEngineType(reflection::GetTypeName<SpecificClassType<IObject>>());

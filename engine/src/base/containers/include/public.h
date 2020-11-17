@@ -79,10 +79,10 @@ namespace base
         virtual bool checkCancelation() const = 0;
 
         /// post status update, will replace the previous status update
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) = 0;
+        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) = 0;
 
         /// post status update without any numerical information (just a sliding bar)
-        INLINE void reportProgress(StringView<char> text) { reportProgress(0, 0, text); }
+        INLINE void reportProgress(StringView text) { reportProgress(0, 0, text); }
 
         //--
 

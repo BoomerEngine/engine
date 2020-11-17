@@ -346,7 +346,7 @@ namespace base
             return ret;
         }
 
-        FunctionNode* FunctionParsingContext::createStringConst(const parser::Location& location, StringView<char> val)
+        FunctionNode* FunctionParsingContext::createStringConst(const parser::Location& location, StringView val)
         {
             auto ret  = createNode(location, FunctionNodeOp::Const);
             ret->data.text = val;
@@ -426,7 +426,7 @@ namespace base
             return nullptr;
         }
 
-        void FunctionParsingContext::reportError(const parser::Location& location, StringView<char> message)
+        void FunctionParsingContext::reportError(const parser::Location& location, StringView message)
         {
             m_parser.errorHandler().reportError(mapLocation(location).file->absolutePath, location.line(), message);
         }

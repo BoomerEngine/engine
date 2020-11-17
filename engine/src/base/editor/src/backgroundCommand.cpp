@@ -23,7 +23,7 @@ namespace ed
     static const char* KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     static const uint32_t KEY_LENGTH = 20;
 
-    IBackgroundCommand::IBackgroundCommand(StringView<char> name)
+    IBackgroundCommand::IBackgroundCommand(StringView name)
         : m_name(name)
     {
         StringBuilder txt;
@@ -68,7 +68,7 @@ namespace ed
 
     //--
 
-    IBackgroundJob::IBackgroundJob(StringView<char> name)
+    IBackgroundJob::IBackgroundJob(StringView name)
         : m_description(name)
     {
         m_startTime.resetToNow();

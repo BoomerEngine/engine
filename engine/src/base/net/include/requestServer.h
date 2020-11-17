@@ -23,7 +23,7 @@ namespace base
         class BASE_NET_API Connection : public IReferencable
         {
         public:
-            Connection(StringView<char> address, StringView<char> protocol = "http");
+            Connection(StringView address, StringView protocol = "http");
             virtual ~Connection();
 
             // address we are connected to
@@ -36,12 +36,12 @@ namespace base
 
             /// process a request and call a callback function once it's completed
             /// NOTE: this function is safe to call from multiple threads/fibers
-            virtual void send(StringView<char> url, const RequestArgs& params, const TRequestResponseFunc& service, Method method = Method::POST, uint32_t timeOut = INDEX_MAX) = 0;
+            virtual void send(StringView url, const RequestArgs& params, const TRequestResponseFunc& service, Method method = Method::POST, uint32_t timeOut = INDEX_MAX) = 0;
 
             //--
 
             /// helper function: create a request and wait for it on current fiber
-            RequestResult wait(StringView<char> url, const RequestArgs& params, Method method = Method::POST, uint32_t timeOut = INDEX_MAX) CAN_YIELD;
+            RequestResult wait(StringView url, const RequestArgs& params, Method method = Method::POST, uint32_t timeOut = INDEX_MAX) CAN_YIELD;
 
         protected:
             StringBuf m_address;
@@ -68,13 +68,13 @@ namespace base
             /// finish request with a response, use 200 for OK, 500 for server error
             /// NOTE: this can be called only once
             /// NOTE: the request may die on it's own first with "TimeOut" so be quick!
-            virtual void finish(uint32_t code, const Buffer& data, StringView<char> contentType) = 0;
+            virtual void finish(uint32_t code, const Buffer& data, StringView contentType) = 0;
 
             /// finish with text response
-            void finishText(uint32_t code, StringView<char> txt = "");
+            void finishText(uint32_t code, StringView txt = "");
 
             /// finish with text response
-            void finishXML(uint32_t code, StringView<char> txt = "");
+            void finishXML(uint32_t code, StringView txt = "");
 
         private:
             RefPtr<RequestHeader> m_header;
@@ -103,10 +103,10 @@ namespace base
             //--
 
             /// register a request handler at a specific "path" in local server
-            void registerHandler(StringView<char> path, const TRequestHandlerFunc& handler);
+            void registerHandler(StringView path, const TRequestHandlerFunc& handler);
 
             /// unregister previously registered handler
-            void unregisterHandler(StringView<char> path);
+            void unregisterHandler(StringView path);
 
             //--
 

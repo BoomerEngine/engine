@@ -74,10 +74,10 @@ namespace hl2
         INLINE const char* stringTable() const { return m_stringTable.typedData(); }
 
         /// get directory entry for given directory path
-        int findDirectoryEntry(StringView<char> path) const;
+        int findDirectoryEntry(StringView path) const;
 
         /// get file entry for given path
-        int findFileEntry(StringView<char> path) const;
+        int findFileEntry(StringView path) const;
 
         //--
 

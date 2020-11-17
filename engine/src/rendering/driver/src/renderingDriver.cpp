@@ -132,7 +132,7 @@ namespace rendering
         return GImageFormatInfos[index];
     }
 
-    bool GetImageFormatByDisplayName(base::StringView<char> name, ImageFormat& outFormat)
+    bool GetImageFormatByDisplayName(base::StringView name, ImageFormat& outFormat)
     {
         for (uint32_t i = 1; i < (uint8_t)ImageFormat::MAX; ++i)
         {
@@ -146,7 +146,7 @@ namespace rendering
         return false;
     }
 
-    bool GetImageFormatByShaderName(base::StringView<char> name, ImageFormat& outFormat)
+    bool GetImageFormatByShaderName(base::StringView name, ImageFormat& outFormat)
     {
         for (uint32_t i = 1; i < (uint8_t)ImageFormat::MAX; ++i)
         {

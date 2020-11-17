@@ -18,7 +18,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshStructureNode);
     RTTI_END_TYPE();
 
-    MeshStructureNode::MeshStructureNode(base::StringView<char> txt, base::StringID type, Data data)
+    MeshStructureNode::MeshStructureNode(base::StringView txt, base::StringID type, Data data)
         : m_caption(txt)
         , m_type(type)
         , m_data(data)
@@ -110,7 +110,7 @@ namespace ed
                     continue;
 
                 // material name
-                base::StringView<char> materialName = "Unknown Material";
+                base::StringView materialName = "Unknown Material";
                 if (chunk.materialIndex < meshPtr->materials().size())
                     materialName = meshPtr->materials()[chunk.materialIndex].name.view();
 

@@ -105,7 +105,7 @@ namespace rendering
             const CodeLibrary& readOnlyLib, 
             LinkerCache& linkerCache,
             const opcodes::IShaderOpcodeGenerator* generator,
-            base::StringView<char> contextPath,
+            base::StringView contextPath,
             const ShaderBunderSetup& bundleInfo,
             base::parser::IErrorReporter& err);
 

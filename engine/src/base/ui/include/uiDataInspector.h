@@ -117,7 +117,7 @@ namespace ui
         virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
 
         virtual void handleFullObjectChange() override;
-        virtual void handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification) override;
+        virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
 
         void navigateItem(int delta);
 

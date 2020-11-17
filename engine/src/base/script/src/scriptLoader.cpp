@@ -66,7 +66,7 @@ namespace base
             }
         }
 
-        Loader::Symbol* Loader::createSymbol(StringView<char> name, const Stub* stub, bool import)
+        Loader::Symbol* Loader::createSymbol(StringView name, const Stub* stub, bool import)
         {
             ASSERT(!name.empty());
 

@@ -47,20 +47,20 @@ namespace wavefront
 
         };
 
-        static const char* EatName(const char* readPtr, const char* endPtr, base::StringView<char>& outName)
+        static const char* EatName(const char* readPtr, const char* endPtr, base::StringView& outName)
         {
             auto start = readPtr;
             while (readPtr < endPtr && *readPtr != '\n')
                 ++readPtr;
-            outName = base::StringView<char>(start, readPtr).trim();
+            outName = base::StringView(start, readPtr).trim();
             return readPtr;
         }
 
         struct WorkGroupState : public base::IReferencable
         {
-            base::StringView<char> objectName = "object";
-            base::StringView<char> groupName = "group";
-            base::StringView<char> materialName = "material";
+            base::StringView objectName = "object";
+            base::StringView groupName = "group";
+            base::StringView materialName = "material";
             const char* startPtr = nullptr;
             const char* endPtr = nullptr;
             uint32_t lineCount = 0;
@@ -153,7 +153,7 @@ namespace wavefront
             }
         }
 
-        static void SafeMatch(float& ret, StringView<char> txt)
+        static void SafeMatch(float& ret, StringView txt)
         {
             if (txt.match(ret) != MatchResult::OK)
             {
@@ -162,7 +162,7 @@ namespace wavefront
             }
         }
 
-        void ParseWorkGroup(StringView<char> contextName, WorkGroup& group)
+        void ParseWorkGroup(StringView contextName, WorkGroup& group)
         {
             const auto dataSize = group.endPtr - group.startPtr;
 
@@ -199,7 +199,7 @@ namespace wavefront
                 }
 
                 // get the line
-                auto line = base::StringView<char>(lineStart, readPtr);
+                auto line = base::StringView(lineStart, readPtr);
                 if (readPtr < endPtr)
                     readPtr += 1;
 
@@ -213,7 +213,7 @@ namespace wavefront
                 // process the line
                 if (line.data()[0] == 'v')
                 {
-                    base::InplaceArray<base::StringView<char>, 10> parts;
+                    base::InplaceArray<base::StringView, 10> parts;
                     line.slice(" ", false, parts);
 
                     if (parts.size() >= 1)
@@ -259,7 +259,7 @@ namespace wavefront
                 }
                 else if (line.data()[0] == 'f')
                 {
-                    base::InplaceArray<base::StringView<char>, 10> vertices;
+                    base::InplaceArray<base::StringView, 10> vertices;
                     line.subString(2).slice(" ", false, vertices);
 
                     if (vertices.size() >= 3)
@@ -272,7 +272,7 @@ namespace wavefront
                             if (vert == "f")
                                 continue;
 
-                            base::InplaceArray<base::StringView<char>, 10> indices;
+                            base::InplaceArray<base::StringView, 10> indices;
                             vert.slice("/", false, indices);
 
                             uint8_t indexIndex = 0;
@@ -338,7 +338,7 @@ namespace wavefront
                 group.parsedFaces.size(), group.parsedFaceIndices.size());
         }
 
-        void ProcessParsingJob(StringView<char> contextName, WorkGroupQueue& queue, const base::fibers::WaitCounter& counter)
+        void ProcessParsingJob(StringView contextName, WorkGroupQueue& queue, const base::fibers::WaitCounter& counter)
         {
             if (auto work = queue.popJob())
             {
@@ -367,7 +367,7 @@ namespace wavefront
             base::HashMap<base::StringBuf, TempGroup*> groups;
             base::Array<TempGroup*> groupList;
 
-            TempGroup* group(base::StringView<char> name)
+            TempGroup* group(base::StringView name)
             {
                 DEBUG_CHECK(!name.empty());
 
@@ -396,7 +396,7 @@ namespace wavefront
             base::HashMap<base::StringBuf, uint16_t> materials;
             base::Array<base::StringBuf> materialList;
 
-            uint16_t material(base::StringView<char> name)
+            uint16_t material(base::StringView name)
             {
                 uint16_t ret = 0;
                 if (!materials.find(name, ret))
@@ -408,7 +408,7 @@ namespace wavefront
                 return ret;
             }
 
-            TempObject* object(base::StringView<char> name)
+            TempObject* object(base::StringView name)
             {
                 DEBUG_CHECK(!name.empty());
 
@@ -430,12 +430,12 @@ namespace wavefront
             }
         };
 
-        FormatOBJPtr LoadFromBuffer(base::StringView<char> contextName, const void* data, uint64_t dataSize, bool allowThreads/* = true*/)
+        FormatOBJPtr LoadFromBuffer(base::StringView contextName, const void* data, uint64_t dataSize, bool allowThreads/* = true*/)
         {
             auto readPtr  = (const char*)data;
             auto endPtr  = readPtr + dataSize;
 
-            base::StringView<char> materialLibraryName;
+            base::StringView materialLibraryName;
             WorkGroupQueue exportedWorkStates;
             auto workGroup = base::CreateSharedPtr<WorkGroupState>();
             base::ScopeTimer totalTime;
@@ -483,7 +483,7 @@ namespace wavefront
                     // control words
                     else if (*readPtr == 'g')
                     {
-                        base::StringView<char> newName;
+                        base::StringView newName;
                         readPtr = EatName(readPtr + 2, endPtr, newName);
 
                         if (newName != workGroup->groupName)
@@ -497,7 +497,7 @@ namespace wavefront
                     }
                     else if (*readPtr == 'o')
                     {
-                        base::StringView<char> newName;
+                        base::StringView newName;
                         readPtr = EatName(readPtr + 2, endPtr, newName);
 
                         if (newName != workGroup->objectName)
@@ -511,7 +511,7 @@ namespace wavefront
                     }
                     else if (*readPtr == 'u')
                     {
-                        base::StringView<char> newName;
+                        base::StringView newName;
                         readPtr = EatName(readPtr + 7, endPtr, newName);
 
                         if (newName != workGroup->materialName)
@@ -530,7 +530,7 @@ namespace wavefront
                     }
                     else
                     {
-                        base::StringView<char> word;
+                        base::StringView word;
                         EatName(readPtr, endPtr, word);
 
                         while (readPtr < endPtr && *readPtr <= ' ')
@@ -612,7 +612,8 @@ namespace wavefront
                     job->parsedUVOffset, job->parsedUVs.dataSize(),
                     job->parsedNormalsOffset, job->parsedNormals.dataSize(),
                     job->parsedColors, job->parsedColors.dataSize(),
-                    job->totalFaceIndicesDataSize, job->parsedFaceIndices.dataSize(),
+                    job->totalFaceIndicesDataSize, job->parsedFaceIndices.d
+                    ataSize(),
                     job->totalFaceDataSize, job->parsedFaces.dataSize());*/
             }            
 
@@ -764,7 +765,7 @@ namespace wavefront
 
     } // parser
 
-    FormatOBJPtr LoadObjectFile(base::StringView<char> contextName, const void* data, uint64_t dataSize, bool allowThreads/* = true*/)
+    FormatOBJPtr LoadObjectFile(base::StringView contextName, const void* data, uint64_t dataSize, bool allowThreads/* = true*/)
     {
         return parser::LoadFromBuffer(contextName, data, dataSize, allowThreads);
     }

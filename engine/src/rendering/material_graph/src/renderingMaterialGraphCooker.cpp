@@ -44,7 +44,7 @@ namespace rendering
             TRACE_INFO("Releasing template compiler");
         }
 
-        virtual void requestTechniqueComplation(base::StringView<char> contextName, MaterialTechnique* technique) override final
+        virtual void requestTechniqueComplation(base::StringView contextName, MaterialTechnique* technique) override final
         {
             base::GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_graph, technique);
         }

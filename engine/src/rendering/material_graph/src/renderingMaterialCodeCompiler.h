@@ -18,7 +18,7 @@ namespace rendering
     class RENDERING_MATERIAL_GRAPH_API MaterialPixelStageCompiler : public MaterialStageCompiler
     {
     public:
-        MaterialPixelStageCompiler(const MaterialDataLayout* dataLayout, base::StringView<char> materialPath, const MaterialCompilationSetup& context);
+        MaterialPixelStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context);
 
         //--
 
@@ -45,7 +45,7 @@ namespace rendering
     class RENDERING_MATERIAL_GRAPH_API MaterialVertexStageCompiler : public MaterialStageCompiler
     {
     public:
-        MaterialVertexStageCompiler(const MaterialDataLayout* dataLayout, base::StringView<char> materialPath, const MaterialCompilationSetup& context, const MaterialPixelStageCompiler& ps);
+        MaterialVertexStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context, const MaterialPixelStageCompiler& ps);
 
         //--
 
@@ -68,7 +68,7 @@ namespace rendering
     class RENDERING_MATERIAL_GRAPH_API MaterialMeshGeometryCompiler : public base::NoCopy
     {
     public:
-        MaterialMeshGeometryCompiler(const MaterialDataLayout* layout, base::StringView<char> materialPath, const MaterialCompilationSetup& context);
+        MaterialMeshGeometryCompiler(const MaterialDataLayout* layout, base::StringView materialPath, const MaterialCompilationSetup& context);
 
         MaterialPixelStageCompiler m_ps;
         MaterialVertexStageCompiler m_vs;

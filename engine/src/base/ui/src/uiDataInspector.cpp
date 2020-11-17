@@ -357,7 +357,7 @@ namespace ui
         createItems();
     }
 
-    void DataInspector::handlePropertyChanged(base::StringView<char> fullPath, bool parentNotification)
+    void DataInspector::handlePropertyChanged(base::StringView fullPath, bool parentNotification)
     {
     }
 

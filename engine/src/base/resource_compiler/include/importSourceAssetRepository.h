@@ -31,19 +31,19 @@ namespace base
             void clearCache();
 
             /// check if file exists
-            bool fileExists(StringView<char> assetImportPath) const;
+            bool fileExists(StringView assetImportPath) const;
 
             /// load raw data for an asset, usually not cached
-            Buffer loadSourceFileContent(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
+            Buffer loadSourceFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
             /// load source asset
-            SourceAssetPtr loadSourceAsset(StringView<char> assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
+            SourceAssetPtr loadSourceAsset(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
             /// load/create base resource configuration
-            ResourceConfigurationPtr compileBaseResourceConfiguration(StringView<char> assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass);
+            ResourceConfigurationPtr compileBaseResourceConfiguration(StringView assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass);
 
             // check status of a file
-            CAN_YIELD SourceAssetStatus checkFileStatus(StringView<char> assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
+            CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
             
             ///---
 

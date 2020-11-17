@@ -92,10 +92,10 @@ namespace base
             static SpecificClassType<IResource> FindResourceClassByHash(ResourceClassHash hash);
 
             // Find resource class based on resource extension
-            static SpecificClassType<IResource> FindResourceClassByExtension(StringView<char> extension);
+            static SpecificClassType<IResource> FindResourceClassByExtension(StringView extension);
 
             // Find resource class based on resource path
-            static SpecificClassType<IResource> FindResourceClassByPath(StringView<char> path);
+            static SpecificClassType<IResource> FindResourceClassByPath(StringView path);
 
             // Get resource description for given class
             static StringBuf GetResourceDescriptionForClass(ClassType resourceClass);

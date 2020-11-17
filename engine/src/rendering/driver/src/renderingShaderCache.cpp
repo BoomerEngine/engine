@@ -22,18 +22,18 @@ namespace rendering
         m_entryMap.clearPtr();
     }
 
-    bool ShaderCache::load(base::StringView<char> path)
+    bool ShaderCache::load(base::StringView path)
     {
         // TODO
         return false;
     }
 
-    bool ShaderCache::save(base::StringView<char> path, bool updatesOnly /*= false*/)
+    bool ShaderCache::save(base::StringView path, bool updatesOnly /*= false*/)
     {
         return true;
     }
 
-    bool ShaderCache::fetchEntry(base::StringView<char> path, uint64_t key, ShaderLibraryPtr& outEntry) const
+    bool ShaderCache::fetchEntry(base::StringView path, uint64_t key, ShaderLibraryPtr& outEntry) const
     {
         auto lock = CreateLock(m_lock);
 
@@ -58,7 +58,7 @@ namespace rendering
         return false;
     }
 
-    void ShaderCache::storeEntry(base::StringView<char> path, uint64_t key, const ShaderLibraryPtr& data)
+    void ShaderCache::storeEntry(base::StringView path, uint64_t key, const ShaderLibraryPtr& data)
     {
         auto lock = CreateLock(m_lock);
 

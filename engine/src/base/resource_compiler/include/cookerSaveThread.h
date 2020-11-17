@@ -30,7 +30,7 @@ namespace base
             void waitUntilDone();
 
             /// schedule new content for saving
-            bool scheduleSave(const ResourcePtr& data, StringView<char> path);
+            bool scheduleSave(const ResourcePtr& data, StringView path);
 
         private:
             struct SaveJob : public NoCopy
@@ -51,7 +51,7 @@ namespace base
             ///--
 
             void processSavingThread();
-            bool saveSingleFile(const ResourcePtr& data, StringView<char> path);
+            bool saveSingleFile(const ResourcePtr& data, StringView path);
         };
 
         //--

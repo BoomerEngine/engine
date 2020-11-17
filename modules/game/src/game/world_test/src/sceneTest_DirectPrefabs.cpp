@@ -12,7 +12,7 @@
 
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/world.h"
-#include "rendering/world/include/meshComponent.h"
+#include "rendering/world/include/renderingMeshComponent.h"
 
 namespace game
 {

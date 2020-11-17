@@ -35,7 +35,7 @@ namespace hl2
 
         StringBuf libFoldersPath = TempString("{}/steamapps/libraryfolders.vdf", steamDirectoryTxt);
         auto libFolderData = base::io::LoadFileToBuffer(libFoldersPath);
-        auto libFolder = base::StringView<char>(libFolderData);
+        auto libFolder = base::StringView(libFolderData);
         if (libFolder.empty())
         {
             TRACE_ERROR("Missing steamapps\\libraryfolders.vdf in Steam installation");

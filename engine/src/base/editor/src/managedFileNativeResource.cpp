@@ -26,7 +26,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFileNativeResource);
     RTTI_END_TYPE();
 
-    ManagedFileNativeResource::ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName)
+    ManagedFileNativeResource::ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
         : ManagedFile(depot, parentDir, fileName)
         , m_fileEvents(this)
     {

@@ -25,7 +25,7 @@ namespace base
                 virtual void construct(void *object) const override final;
                 virtual void destruct(void *object) const override final;
                 virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
-                virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
+                virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override final;
 
                 virtual ArrayMetaType arrayMetaType() const override final;
                 virtual uint32_t arraySize(const void* data) const override final;

@@ -21,10 +21,10 @@ namespace ui
         virtual ~IConfigDataInterface();
 
         // write data to config
-        virtual void writeRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, const void* data) = 0;
+        virtual void writeRaw(base::StringView path, base::StringView key, base::Type type, const void* data) = 0;
 
         // read data from config
-        virtual bool readRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, void* data) const = 0;
+        virtual bool readRaw(base::StringView path, base::StringView key, base::Type type, void* data) const = 0;
     };
 
     //------
@@ -33,21 +33,21 @@ namespace ui
     class BASE_UI_API ConfigBlock
     {
     public:
-        ConfigBlock(IConfigDataInterface* data, base::StringView<char> rootTag);
+        ConfigBlock(IConfigDataInterface* data, base::StringView rootTag);
         ConfigBlock(const ConfigBlock& other) = default;
         ConfigBlock& operator=(const ConfigBlock& other) = default;
         ~ConfigBlock();
 
         // read config value to current group 
         template< typename T >
-        INLINE bool read(base::StringView<char> key, T& data) const
+        INLINE bool read(base::StringView key, T& data) const
         {
             return m_data->readRaw(m_path, key, base::reflection::GetTypeObject<T>(), &data);
         }
 
         // read config value from current group or return the default
         template< typename T >
-        INLINE T readOrDefault(base::StringView<char> key, T defaultValue = T()) const
+        INLINE T readOrDefault(base::StringView key, T defaultValue = T()) const
         {
             T ret;
             if (m_data->readRaw(m_path, key, base::reflection::GetTypeObject<T>(), &ret))
@@ -58,7 +58,7 @@ namespace ui
 
         // write config value to current group 
         template< typename T >
-        INLINE void write(base::StringView<char> key, const T& data) const
+        INLINE void write(base::StringView key, const T& data) const
         {
             m_data->writeRaw(m_path, key, base::reflection::GetTypeObject<T>(), &data);
         }
@@ -66,10 +66,10 @@ namespace ui
         //--
 
         // get a child block for given tag
-        ConfigBlock tag(base::StringView<char> tag) const;
+        ConfigBlock tag(base::StringView tag) const;
 
         // get a child block for given resource path
-        ConfigBlock path(base::StringView<char> path) const;
+        ConfigBlock path(base::StringView path) const;
 
         //--
 
@@ -88,16 +88,16 @@ namespace ui
         ~ConfigFileStorageDataInterface();
 
         /// load data from file
-        bool loadFromFile(base::StringView<char> path);
+        bool loadFromFile(base::StringView path);
 
         /// save data to file
-        bool saveToFile(base::StringView<char> path) const;
+        bool saveToFile(base::StringView path) const;
 
         //--
 
         // IConfigDataInterface
-        virtual void writeRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, const void* data) override;
-        virtual bool readRaw(base::StringView<char> path, base::StringView<char> key, base::Type type, void* data) const override;
+        virtual void writeRaw(base::StringView path, base::StringView key, base::Type type, const void* data) override;
+        virtual bool readRaw(base::StringView path, base::StringView key, base::Type type, void* data) const override;
 
         //--
 

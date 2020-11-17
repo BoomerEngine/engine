@@ -62,7 +62,7 @@ namespace base
                 define->~MacroDefinition();
         }
 
-        bool TextFilePreprocessor::defineSymbol(base::StringView<char> name, base::StringView<char> value)
+        bool TextFilePreprocessor::defineSymbol(base::StringView name, base::StringView value)
         {
             if (name.empty())
             {
@@ -116,7 +116,7 @@ namespace base
             }
         }
 
-        bool TextFilePreprocessor::createTokens(const Token* baseLocataion, StringView<char> text, TokenList& outList)
+        bool TextFilePreprocessor::createTokens(const Token* baseLocataion, StringView text, TokenList& outList)
         {
             auto ptr  = text.data();
             auto end  = ptr + text.length();
@@ -148,7 +148,7 @@ namespace base
             return true;
         }
 
-        bool TextFilePreprocessor::processFileContent(StringView<char> content, StringView<char> contextPath, TokenList& outTokenList)
+        bool TextFilePreprocessor::processFileContent(StringView content, StringView contextPath, TokenList& outTokenList)
         {
             static auto lang  = BuildPreprocessorLanguageDefinition();
 
@@ -377,11 +377,11 @@ namespace base
 
                 auto contextName  = m_allocator.strcpy(loadedContentContextPath.c_str());
 
-                StringView<char> includedContent;
+                StringView includedContent;
                 if (loadedContent)
                 {
                     m_loadedIncludeBuffers.pushBack(loadedContent);
-                    includedContent = StringView<char>((const char*)loadedContent.data(), (const char*)loadedContent.data() + loadedContent.size());
+                    includedContent = StringView((const char*)loadedContent.data(), (const char*)loadedContent.data() + loadedContent.size());
                 }
 
                 if (!processContent(includedContent, loadedContentContextPath.view()))
@@ -602,7 +602,7 @@ namespace base
             }
         }
 
-        bool TextFilePreprocessor::processContent(base::StringView<char> content, base::StringView<char> contextPath)
+        bool TextFilePreprocessor::processContent(base::StringView content, base::StringView contextPath)
         {
             bool status = true;
 
@@ -654,14 +654,14 @@ namespace base
 
         //---
 
-        TextFilePreprocessor::MacroDefinition* TextFilePreprocessor::define(StringView<char> name) const
+        TextFilePreprocessor::MacroDefinition* TextFilePreprocessor::define(StringView name) const
         {
             MacroDefinition* ret = nullptr;
             m_defineMap.find(name, ret);
             return ret;
         }
 
-        TextFilePreprocessor::MacroDefinition* TextFilePreprocessor::createDefine(StringView<char> name)
+        TextFilePreprocessor::MacroDefinition* TextFilePreprocessor::createDefine(StringView name)
         {
             MacroDefinition* ret = nullptr;
             if (!m_defineMap.find(name, ret))

@@ -59,7 +59,7 @@ namespace base
             m_firstUnprocessedObjects = 0;
         }
 
-        void StubMapper::writeString(StringView<char> str)
+        void StubMapper::writeString(StringView str)
         {
             if (!str.empty())
             {
@@ -184,13 +184,13 @@ namespace base
             //m_outMemory.write(val);
         }
 
-        void StubDataWriter::writeRawString(StringView<char> txt)
+        void StubDataWriter::writeRawString(StringView txt)
         {
             writeUint16(txt.length());
             m_outMemory.write((const uint8_t*)txt.data(), txt.length());
         }
 
-        void StubDataWriter::writeString(StringView<char> str)
+        void StubDataWriter::writeString(StringView str)
         {
             uint16_t stringId = 0;
             if (!str.empty())
@@ -417,21 +417,21 @@ namespace base
             return m_stubs[id ];
         }
 
-        StringView<char> StubDataReader::readRawString()
+        StringView StubDataReader::readRawString()
         {
             auto len = readUint16();
             if (len == 0)
-                return StringView<char>();
+                return StringView();
 
             if (!validateRead(len))
-                return StringView<char>();
+                return StringView();
 
             auto chars  = (char*)m_mem.alloc(len+1, 1);
             memcpy(chars, m_readPtr, len);
             chars[len] = 0;
             m_readPtr += len;
 
-            return StringView<char>(chars, len);
+            return StringView(chars, len);
         }
 
         const StubModule* StubDataReader::exportedModule() const

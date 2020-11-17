@@ -24,7 +24,7 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFileRawResource);
     RTTI_END_TYPE();
 
-    ManagedFileRawResource::ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName)
+    ManagedFileRawResource::ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
         : ManagedFile(depot, parentDir, fileName)
     {
     }

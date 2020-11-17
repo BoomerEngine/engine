@@ -82,7 +82,7 @@ namespace base
             return true;
         }
 
-        StringView<char> ResourceLoaderFinal::findCookedExtension(const ResourceKey& key) const
+        StringView ResourceLoaderFinal::findCookedExtension(const ResourceKey& key) const
         {
             const auto* entryTable = m_loadingExtensionsMap.find(key.cls());
             if (!entryTable || entryTable->empty())

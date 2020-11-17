@@ -47,7 +47,7 @@ namespace base
             return m_pathRevMap.contains(id);
         }
 
-        replication::DataMappedID MessageKnowledgeBase::mapString(StringView<char> txt, bool& outNew)
+        replication::DataMappedID MessageKnowledgeBase::mapString(StringView txt, bool& outNew)
         {
             if (!txt)
                 return 0;
@@ -96,9 +96,9 @@ namespace base
 
         //---
 
-        bool MessageKnowledgeBase::rememberString(const replication::DataMappedID id, StringView<char> txt)
+        bool MessageKnowledgeBase::rememberString(const replication::DataMappedID id, StringView txt)
         {
-            StringView<char> existingString;
+            StringView existingString;
             if (m_stringRevMap.find(id, existingString))
             {
                 if (0 != existingString.cmp(txt))
@@ -111,7 +111,7 @@ namespace base
             }
 
             // copy string
-            auto txtCopy  = StringView<char>(m_mem.strcpy(txt.data(), txt.length()));
+            auto txtCopy  = StringView(m_mem.strcpy(txt.data(), txt.length()));
 
             // create new entry
             m_stringRevMap[id] = txtCopy;
@@ -154,7 +154,7 @@ namespace base
                 return true;
 
             // get the text
-            StringView<char> txt;
+            StringView txt;
             if (!m_stringRevMap.find(id, txt))
                 return false;
 

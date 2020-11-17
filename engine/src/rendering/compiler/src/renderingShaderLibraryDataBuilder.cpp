@@ -62,7 +62,7 @@ namespace rendering
             m_indirectIndices.reserve(1024);
         }
 
-        PipelineStringIndex ShaderLibraryBuilder::mapString(base::StringView<char> txt)
+        PipelineStringIndex ShaderLibraryBuilder::mapString(base::StringView txt)
         {
             if (!txt)
                 return 0;
@@ -80,7 +80,7 @@ namespace rendering
             return stringIndex;
         }
 
-        PipelineIndex ShaderLibraryBuilder::mapName(base::StringView<char> txt)
+        PipelineIndex ShaderLibraryBuilder::mapName(base::StringView txt)
         {
             if (!txt)
                 return 0;

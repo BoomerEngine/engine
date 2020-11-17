@@ -88,9 +88,9 @@ namespace base
 
             SpinLock m_sourceAssetsLock;
 
-            TrackedDepotFile* fileEntry(StringView<char> filePath, bool createIfMissing);
-            TrackedDepotDir* childDirectory_NoLock(TrackedDepotDir* parentDir, StringView<char>dirName, bool createIfMissing);
-            TrackedDepotFile* fileEntry_NoLock(TrackedDepotDir* parentDir, StringView<char>fileName, bool createIfMissing);
+            TrackedDepotFile* fileEntry(StringView filePath, bool createIfMissing);
+            TrackedDepotDir* childDirectory_NoLock(TrackedDepotDir* parentDir, StringView dirName, bool createIfMissing);
+            TrackedDepotFile* fileEntry_NoLock(TrackedDepotDir* parentDir, StringView fileName, bool createIfMissing);
 
             //---
 

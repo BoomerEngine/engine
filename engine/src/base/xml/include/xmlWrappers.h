@@ -46,10 +46,10 @@ namespace base
             //--
 
             // get first node child
-            Node firstChild(StringView<char> childName = nullptr) const;
+            Node firstChild(StringView childName = nullptr) const;
 
             // get next node sibling
-            Node sibling(StringView<char> siblingName = nullptr) const;
+            Node sibling(StringView siblingName = nullptr) const;
 
             // get parent node
             Node parent() const;
@@ -58,13 +58,13 @@ namespace base
 
             // get node name
             // NOTE: returned string data is owned by the XML document, make a copy before destroying the document
-            StringView<char> name() const;
+            StringView name() const;
 
             //--
 
             // get node value
             // NOTE: returned string data is owned by the XML document, make a copy before destroying the document
-            StringView<char> value() const;
+            StringView value() const;
 
             // parse node value as int
             int valueInt(int defaultValue = 0) const;
@@ -81,30 +81,30 @@ namespace base
             //--
 
             // get value for given attribute
-            StringView<char> attribute(StringView<char> name, StringView<char> defaultVal = "") const;
+            StringView attribute(StringView name, StringView defaultVal = "") const;
 
             // parse integer value of given attribute
-            int attributeInt(StringView<char> name, int defaultValue = 0) const;
+            int attributeInt(StringView name, int defaultValue = 0) const;
 
             // parse float value of given attribute
-            float attributeFloat(StringView<char> name, float defaultValue = 0.0) const;
+            float attributeFloat(StringView name, float defaultValue = 0.0) const;
 
             // parse boolean value of given attribute
-            bool attributeBool(StringView<char> name, bool defaultValue = false) const;
+            bool attributeBool(StringView name, bool defaultValue = false) const;
 
             // parse string value of given attribute
-            StringBuf attributeString(StringView<char> name, StringView<char> defaultValue = "") const;
+            StringBuf attributeString(StringView name, StringView defaultValue = "") const;
 
             //--
 
             // write node value
-            void writeValue(StringView<char> txt);
+            void writeValue(StringView txt);
 
             // add node attribute
-            void writeAttribute(StringView<char> name, StringView<char> value);
+            void writeAttribute(StringView name, StringView value);
 
             // create child node
-            Node writeChild(StringView<char> childName);
+            Node writeChild(StringView childName);
 
             //--
 
@@ -119,8 +119,8 @@ namespace base
         struct BASE_XML_API NodeIterator : public NoCopy
         {
         public:
-            NodeIterator(const IDocument* doc, StringView<char> name);
-            NodeIterator(Node node, StringView<char> name);
+            NodeIterator(const IDocument* doc, StringView name);
+            NodeIterator(Node node, StringView name);
             ~NodeIterator();
 
             // get current node

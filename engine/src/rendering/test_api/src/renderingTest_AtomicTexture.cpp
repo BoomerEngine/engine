@@ -73,7 +73,7 @@ namespace rendering
 
         void RenderingTest_AtomicTexture::initialize()
         {
-            base::StringView<char> name = "AtomicTextureIncrement.csl";
+            base::StringView name = "AtomicTextureIncrement.csl";
 
             switch (subTestIndex())
             {

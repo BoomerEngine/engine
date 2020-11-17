@@ -53,15 +53,15 @@ namespace ui
         INLINE MessageBoxSetup& no() { button(MessageButton::No); return *this; }
         INLINE MessageBoxSetup& ok() { button(MessageButton::OK); return *this; }
         INLINE MessageBoxSetup& cancel() { button(MessageButton::Cancel); return *this; }
-        INLINE MessageBoxSetup& caption(MessageButton button, base::StringView<char> txt) { m_captions[(int)button] = base::StringBuf(txt); return *this; }
+        INLINE MessageBoxSetup& caption(MessageButton button, base::StringView txt) { m_captions[(int)button] = base::StringBuf(txt); return *this; }
 
         INLINE MessageBoxSetup& defaultYes() { m_defaultButton = MessageButton::Yes; return *this; }
         INLINE MessageBoxSetup& defaultNo() { m_defaultButton = MessageButton::No; return *this; }
         INLINE MessageBoxSetup& defaultOK() { m_defaultButton = MessageButton::OK; return *this; }
         INLINE MessageBoxSetup& defaultCancel() { m_defaultButton = MessageButton::Cancel; return *this; }
 
-        INLINE MessageBoxSetup& title(base::StringView<char> txt) { m_title = base::StringBuf(txt); return *this; }
-        INLINE MessageBoxSetup& message(base::StringView<char> txt) { m_message = base::StringBuf(txt); return *this; }
+        INLINE MessageBoxSetup& title(base::StringView txt) { m_title = base::StringBuf(txt); return *this; }
+        INLINE MessageBoxSetup& message(base::StringView txt) { m_message = base::StringBuf(txt); return *this; }
 
         INLINE bool hasButton(MessageButton button) const { return 0 != (m_buttons & (1 << (uint8_t)button)); }
     };

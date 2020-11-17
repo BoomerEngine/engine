@@ -62,7 +62,7 @@ namespace tests
             return true;
         }
 
-        void addBufferResource(StringView<char> path, const Buffer& buf, ClassType classPtr)
+        void addBufferResource(StringView path, const Buffer& buf, ClassType classPtr)
         {
             // create entry
             auto entry  = MemNew(FakeResource);
@@ -71,7 +71,7 @@ namespace tests
             m_resources.set(entry->key, entry);
         }
 
-        void addObjectResource(StringView<char> path, const res::ResourceHandle& resource)
+        void addObjectResource(StringView path, const res::ResourceHandle& resource)
         {
             base::io::MemoryWriterFileHandle writer;
 

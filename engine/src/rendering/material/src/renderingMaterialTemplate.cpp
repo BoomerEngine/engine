@@ -312,11 +312,11 @@ namespace rendering
         }
     }
 
-    base::DataViewResult MaterialTemplate::readDataView(base::StringView<char> viewPath, void* targetData, base::Type targetType) const
+    base::DataViewResult MaterialTemplate::readDataView(base::StringView viewPath, void* targetData, base::Type targetType) const
     {
         const auto originalPath = viewPath;
 
-        base::StringView<char> propertyName;
+        base::StringView propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
             if (const auto* paramBlock = findParameterInfo(propertyName))
                 return paramBlock->type->readDataView(viewPath, paramBlock->defaultValue.data(), targetData, targetType);
@@ -324,7 +324,7 @@ namespace rendering
         return TBaseClass::readDataView(originalPath, targetData, targetType);
     }
 
-    base::DataViewResult MaterialTemplate::describeDataView(base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    base::DataViewResult MaterialTemplate::describeDataView(base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const
     {
         const auto orgViewPath = viewPath;
 
@@ -335,7 +335,7 @@ namespace rendering
         }
         else
         {
-            base::StringView<char> propertyName;
+            base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
                 if (auto* paramBlock = findParameterInfo(propertyName))
                     return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);
@@ -344,7 +344,7 @@ namespace rendering
         return TBaseClass::describeDataView(orgViewPath, outInfo);
     }
 
-    base::DataViewResult MaterialTemplate::describeParameterView(base::StringView<char> paramName, base::StringView<char> viewPath, base::rtti::DataViewInfo& outInfo) const
+    base::DataViewResult MaterialTemplate::describeParameterView(base::StringView paramName, base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const
     {
         if (auto* paramBlock = findParameterInfo(paramName))
             return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);

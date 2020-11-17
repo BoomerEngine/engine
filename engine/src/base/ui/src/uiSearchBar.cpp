@@ -56,7 +56,7 @@ namespace ui
         }
     }
 
-    bool SearchPattern::testString(base::StringView<char> txt) const
+    bool SearchPattern::testString(base::StringView txt) const
     {
         if (pattern.empty())
             return true;
@@ -178,7 +178,7 @@ namespace ui
         //updateSearchPattern();
     }
 
-    static bool IsWidcardPattern(base::StringView<char> txt)
+    static bool IsWidcardPattern(base::StringView txt)
     {
         for (const auto ch : txt)
             if (ch == '*' || ch == '?')

@@ -36,7 +36,7 @@ namespace rendering
                 int tokenID = -1;
                 ElementFlags flags = ElementFlags();
                 base::parser::Location location;
-                base::StringView<char> stringData;
+                base::StringView stringData;
                 base::Array<base::parser::Token*> tokens;
                 double floatData = 0.0;
                 int64_t intData = 0;
@@ -47,7 +47,7 @@ namespace rendering
                 INLINE explicit ParsingNode()
                 {}
 
-                INLINE explicit ParsingNode(const base::parser::Location& loc, base::StringView<char> txt)
+                INLINE explicit ParsingNode(const base::parser::Location& loc, base::StringView txt)
                     : stringData(txt), location(loc)
                 {}
 
@@ -101,12 +101,12 @@ namespace rendering
                 //--
 
                 INLINE const base::parser::Location& location() const { return m_lastTokenLocation; }
-                INLINE base::StringView<char> text() const { return m_lastTokenText; }
+                INLINE base::StringView text() const { return m_lastTokenText; }
 
             private:
                 base::parser::TokenList m_tokens;
                 
-                base::StringView<char> m_lastTokenText;
+                base::StringView m_lastTokenText;
                 base::parser::Location m_lastTokenLocation;
             };
 
@@ -128,10 +128,10 @@ namespace rendering
                 }
 
                 /// allocate string into persistent memory
-                INLINE base::StringView<char> strcpy(base::StringView<char> txt)
+                INLINE base::StringView strcpy(base::StringView txt)
                 {
                     auto copy  = m_mem.strcpy(txt.data(), txt.length());
-                    return base::StringView<char>(copy, copy+txt.length());
+                    return base::StringView(copy, copy+txt.length());
                 }
 
                 /// get result node
@@ -141,7 +141,7 @@ namespace rendering
                 }
 
                 /// report error
-                void reportError(const base::parser::Location& loc, base::StringView<char> err);
+                void reportError(const base::parser::Location& loc, base::StringView err);
 
             private:
                 base::mem::LinearAllocator& m_mem;
@@ -156,7 +156,7 @@ namespace rendering
             {
                 int m_tokenID;
                 base::parser::Location m_location;
-                base::StringView<char> m_string;
+                base::StringView m_string;
                 double m_float;
                 int64_t m_int;
                 CodeNode* m_code;
@@ -164,7 +164,7 @@ namespace rendering
                 base::Array<CodeNode*> m_nodes;
 
                 CodeParsingNode();
-                explicit CodeParsingNode(const base::parser::Location& loc, base::StringView<char> txt);
+                explicit CodeParsingNode(const base::parser::Location& loc, base::StringView txt);
                 explicit CodeParsingNode(const base::parser::Location& loc, double val);
                 explicit CodeParsingNode(const base::parser::Location& loc, int64_t val);
                 explicit CodeParsingNode(const base::parser::Location& loc, const DataType& knownType);
@@ -186,13 +186,13 @@ namespace rendering
                 //--
 
                 INLINE const base::parser::Location& location() const { return m_lastTokenLocation; }
-                INLINE base::StringView<char> text() const { return m_lastTokenText; }
+                INLINE base::StringView text() const { return m_lastTokenText; }
 
             private:
                 base::Array<CodeParsingNode> m_tokens;
                 int m_currentIndex;
 
-                base::StringView<char> m_lastTokenText;
+                base::StringView m_lastTokenText;
                 base::parser::Location m_lastTokenLocation;
             };
 
@@ -214,10 +214,10 @@ namespace rendering
                 }
 
                 /// allocate string into persistent memory
-                INLINE base::StringView<char> strcpy(base::StringView<char> txt)
+                INLINE base::StringView strcpy(base::StringView txt)
                 {
                     auto copy  = m_mem.strcpy(txt.data(), txt.length());
-                    return base::StringView<char>(copy, copy+txt.length());
+                    return base::StringView(copy, copy+txt.length());
                 }
 
                 /// get result node
@@ -233,7 +233,7 @@ namespace rendering
                 CodeNode* mergeStatementList(CodeNode* a, CodeNode* b);
 
                 /// report error
-                void reportError(const base::parser::Location& loc, base::StringView<char> err);
+                void reportError(const base::parser::Location& loc, base::StringView err);
 
                 ///---
 
@@ -251,7 +251,7 @@ namespace rendering
                 ///---
 
                 /// create a function class node
-                CodeNode* createFunctionCall(const base::parser::Location& loc, const base::StringView<char> name, CodeNode* a = nullptr, CodeNode* b=nullptr, CodeNode* c=nullptr);
+                CodeNode* createFunctionCall(const base::parser::Location& loc, const base::StringView name, CodeNode* a = nullptr, CodeNode* b=nullptr, CodeNode* c=nullptr);
 
             private:
                 base::mem::LinearAllocator& m_mem;

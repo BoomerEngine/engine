@@ -808,7 +808,7 @@ namespace ui
         invalidateLayout();
     }
 
-    void IElement::tooltip(base::StringView<char> txt)
+    void IElement::tooltip(base::StringView txt)
     {
         customStyle("tooltip"_id, base::StringBuf(txt));
     }
@@ -872,9 +872,9 @@ namespace ui
     //--
 
     template< typename T >
-    static bool ParseNumberArray(base::StringView<char> str, base::Array<T>& outList)
+    static bool ParseNumberArray(base::StringView str, base::Array<T>& outList)
     {
-        base::InplaceArray<base::StringView<char>, 20> parts;
+        base::InplaceArray<base::StringView, 20> parts;
         str.slice(";", false, parts);
 
         for (const auto& part : parts)
@@ -889,7 +889,7 @@ namespace ui
         return true;
     }
 
-    static bool ParseOffsets(base::StringView<char> str, Offsets& outOffsets)
+    static bool ParseOffsets(base::StringView str, Offsets& outOffsets)
     {
         base::InplaceArray<float, 8> values;
         if (!ParseNumberArray(str, values))
@@ -909,7 +909,7 @@ namespace ui
         return false;
     }
 
-    static bool ParseSize(base::StringView<char> str, Size& outSize)
+    static bool ParseSize(base::StringView str, Size& outSize)
     {
         base::InplaceArray<float, 8> values;
         if (!ParseNumberArray(str, values))
@@ -929,7 +929,7 @@ namespace ui
         return false;
     }
 
-    bool IElement::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool IElement::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "tooltip")
         {
@@ -1099,7 +1099,7 @@ namespace ui
         }
         else if (name == "class" || name == "style" || name == "styles")
         {
-            base::InplaceArray<base::StringView<char>, 10> styleNames;
+            base::InplaceArray<base::StringView, 10> styleNames;
             value.slice(";", false, styleNames);
 
             for (const auto& styleName : styleNames)
@@ -1174,7 +1174,7 @@ namespace ui
         return false;
     }
 
-    bool IElement::handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
+    bool IElement::handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
     {
         return false;
     }
@@ -1291,7 +1291,7 @@ namespace ui
         }
     }
 
-    bool IElement::bindNamedProperties(const base::HashMap<base::StringView<char>, IElement*>& namedElements)
+    bool IElement::bindNamedProperties(const base::HashMap<base::StringView, IElement*>& namedElements)
     {
         // resolve bindings
         bool valid = true;

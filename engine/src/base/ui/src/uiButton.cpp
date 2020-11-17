@@ -75,7 +75,7 @@ namespace ui
         mode(m);
     }
 
-    Button::Button(base::StringView<char> txt, ButtonMode m)
+    Button::Button(base::StringView txt, ButtonMode m)
         : m_mode(m)
     {
         hitTest(HitTestState::Enabled);

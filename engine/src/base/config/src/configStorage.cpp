@@ -39,7 +39,7 @@ namespace base
             ++m_version;
         }
 
-        Group& Storage::group(StringView<char> name)
+        Group& Storage::group(StringView name)
         {
             ASSERT_EX(!name.empty(), "Group name cannot be empty");
 
@@ -47,7 +47,7 @@ namespace base
             return *group_NoLock(name);
         }
 
-        Group* Storage::group_NoLock(StringView<char> name)
+        Group* Storage::group_NoLock(StringView name)
         {
             auto group  = m_groups.findSafe(name, nullptr);
             if (!group)
@@ -60,24 +60,24 @@ namespace base
             return group;
         }
 
-        const Group* Storage::findGroup(StringView<char> name) const
+        const Group* Storage::findGroup(StringView name) const
         {
             auto lock  = CreateLock(m_lock);
             return findGroup_NoLock(name);
         }
 
-        const Group* Storage::findGroup_NoLock(StringView<char> name) const
+        const Group* Storage::findGroup_NoLock(StringView name) const
         {
             return m_groups.findSafe(name, nullptr);
         }
 
-        Array<const Group*> Storage::findAllGroups(StringView<char> groupNameSubString) const
+        Array<const Group*> Storage::findAllGroups(StringView groupNameSubString) const
         {
             auto lock  = CreateLock(m_lock);
             return findAllGroups_NoLock(groupNameSubString);
         }
 
-        Array<const Group*> Storage::findAllGroups_NoLock(StringView<char> groupNameSubString) const
+        Array<const Group*> Storage::findAllGroups_NoLock(StringView groupNameSubString) const
         {
             Array<const Group*> ret;
             for (auto group  : m_groups.values())
@@ -87,7 +87,7 @@ namespace base
             return ret;
         }
 
-        bool Storage::removeGroup(StringView<char> name)
+        bool Storage::removeGroup(StringView name)
         {
             auto lock  = CreateLock(m_lock);
 
@@ -98,7 +98,7 @@ namespace base
             return false;
         }
 
-        bool Storage::removeEntry(StringView<char> groupName, StringView<char> varName)
+        bool Storage::removeEntry(StringView groupName, StringView varName)
         {
             auto lock  = CreateLock(m_lock);
 
@@ -111,10 +111,10 @@ namespace base
 
         //--
 
-        bool Storage::Load(StringView<char> txt, Storage& ret)
+        bool Storage::Load(StringView txt, Storage& ret)
         {
             StringParser f(txt);
-            StringView<char> lastGroup;
+            StringView lastGroup;
 
             while (f.parseWhitespaces())
             {
@@ -128,7 +128,7 @@ namespace base
                 // group name
                 if (f.parseKeyword("["))
                 {
-                    StringView<char> groupName;
+                    StringView groupName;
                     if (!f.parseString(groupName, "]"))
                     {
                         TRACE_ERROR("Failed to parse config group name at line {}, just after group '{}'", f.line(), lastGroup);
@@ -173,7 +173,7 @@ namespace base
                         f.pop();
 
                         // parse identifier
-                        StringView<char> entryName;
+                        StringView entryName;
                         if (!f.parseString(entryName, "=+-"))
                         {
                             TRACE_ERROR("Failed to parse value name at line {} in group {}", f.line(), groupName);
@@ -192,7 +192,7 @@ namespace base
                         }
 
                         // get the value
-                        StringView<char> entryValue;
+                        StringView entryValue;
                         f.parseTillTheEndOfTheLine(&entryValue);
 
                         // set value

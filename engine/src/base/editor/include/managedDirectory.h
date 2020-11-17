@@ -21,7 +21,7 @@ namespace ed
     /// a special lower-case only key
     struct ManagedDirectoryLowerCaseKey
     {
-        ManagedDirectoryLowerCaseKey(StringView<char> view)
+        ManagedDirectoryLowerCaseKey(StringView view)
         {
             m_data = StringBuf(view).toLower();
         }
@@ -37,7 +37,7 @@ namespace ed
             return prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
 
-        static uint32_t CalcHash(StringView<char> txt)
+        static uint32_t CalcHash(StringView txt)
         {
             return prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
@@ -47,7 +47,7 @@ namespace ed
             return m_data == key.m_data;
         }
 
-        INLINE bool operator==(StringView<char> txt) const
+        INLINE bool operator==(StringView txt) const
         {
             return 0 == m_data.view().caseCmp(txt);
         }
@@ -68,7 +68,7 @@ namespace ed
             elemMap[ptr->name()] = ptr;
         }
 
-        T* find(StringView<char> name) const
+        T* find(StringView name) const
         {
             T* ret = nullptr;
             elemMap.find(name, ret);
@@ -119,7 +119,7 @@ namespace ed
 
         //--
 
-        ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView<char> name, StringView<char> depotPath);
+        ManagedDirectory(ManagedDepot* dep, ManagedDirectory* parentDirectory, StringView name, StringView depotPath);
         virtual ~ManagedDirectory();
 
         /// fill directory with content by scanning actual depot
@@ -132,10 +132,10 @@ namespace ed
         ///---
 
         // find child directory by name, returns null if not found
-        ManagedDirectory* directory(StringView<char> dirName, bool allowDeleted=false) const;
+        ManagedDirectory* directory(StringView dirName, bool allowDeleted=false) const;
 
         // find file by name with extension, returns null if not found
-        ManagedFile* file(StringView<char> fileName, bool allowDeleted = false) const;
+        ManagedFile* file(StringView fileName, bool allowDeleted = false) const;
 
         ///---
 
@@ -148,7 +148,7 @@ namespace ed
         ///---
 
         /// Adjust file name not to be duplicated
-        StringBuf adjustFileName(StringView<char> fileName) const;
+        StringBuf adjustFileName(StringView fileName) const;
 
         /// Get list of directory names (ie- from meshes\test\crap\dupa.file gets array with strings: "meshes", "test", "crap")
         void directoryNames(Array<StringBuf>& outDirectoryNames) const;
@@ -162,7 +162,7 @@ namespace ed
         ///---
 
         // visit all files
-        bool visitFiles(bool recursive, StringView<char> fileNamePattern, const std::function<bool(ManagedFile*)>& enumFunc);
+        bool visitFiles(bool recursive, StringView fileNamePattern, const std::function<bool(ManagedFile*)>& enumFunc);
 
         // visit all directories
         bool visitDirectories(bool recursive, const std::function<bool(ManagedDirectory*)>& enumFunc);
@@ -182,16 +182,16 @@ namespace ed
         ///---
 
         /// create a directory in the file system, if it worked we return the created directory
-        ManagedDirectory* createDirectory(StringView<char> name);
+        ManagedDirectory* createDirectory(StringView name);
 
         /// create a file in the file system, we must store some content for this to work
-        ManagedFile* createFile(StringView<char> name, Buffer initialContent);
+        ManagedFile* createFile(StringView name, Buffer initialContent);
 
         /// create an file of given type in the file system, use provided resource as initial content
-        ManagedFile* createFile(StringView<char> name, const res::ResourceHandle& initialContent);
+        ManagedFile* createFile(StringView name, const res::ResourceHandle& initialContent);
 
         /// create an empty file of given type in the file system
-        ManagedFile* createFile(StringView<char> name, const ManagedFileFormat& format);
+        ManagedFile* createFile(StringView name, const ManagedFileFormat& format);
             
         ///---
 

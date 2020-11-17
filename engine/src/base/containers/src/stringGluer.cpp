@@ -21,7 +21,7 @@ namespace base
         {
             const char* m_start;
             const char* m_end;
-            StringView<char> m_name;
+            StringView m_name;
             uint64_t m_hash;
         };
 
@@ -35,14 +35,14 @@ namespace base
             return (str[0] == '}');
         }
 
-        static bool ExtractInsertionPointName(const char*& str, StringView<char>& outName)
+        static bool ExtractInsertionPointName(const char*& str, StringView& outName)
         {
             auto start  = str;
             while (*str)
             {
                 if (IsInsertionPointMarkerEnd(str))
                 {
-                    outName = StringView<char>(start, str);
+                    outName = StringView(start, str);
                     str += 3;
                     return true;
                 }
@@ -53,7 +53,7 @@ namespace base
             return false;
         }
 
-        static void SplitIntoInsertionRegions(StringView<char> templateText, Array<Region>& outRegions)
+        static void SplitIntoInsertionRegions(StringView templateText, Array<Region>& outRegions)
         {
             auto str  = templateText.data();
             auto endStr  = str + templateText.length();
@@ -63,7 +63,7 @@ namespace base
                 // find the insertion point
                 auto start  = str;
                 auto end  = str;
-                StringView<char> name;
+                StringView name;
                 while (*str)
                 {
                     if (IsInsertionPointMarkerStart(str))
@@ -90,7 +90,7 @@ namespace base
 
     } // helper
 
-    void ReplaceText(IFormatStream& f, StringView<char> templateText, const ReplaceTextPattern* patterns, uint32_t numPatterns)
+    void ReplaceText(IFormatStream& f, StringView templateText, const ReplaceTextPattern* patterns, uint32_t numPatterns)
     {
         // split into regions
         InplaceArray<helper::Region, 100> regions;

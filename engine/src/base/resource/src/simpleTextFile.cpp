@@ -56,7 +56,7 @@ namespace base
             class DefaultParameterFileParserErrorReporter : public IParameterFileParserErrorReporter
             {
             public:
-                virtual void reportError(StringView<char> context, uint32_t line, StringView<char> txt) override final
+                virtual void reportError(StringView context, uint32_t line, StringView txt) override final
                 {
                     if (context)
                     {
@@ -80,7 +80,7 @@ namespace base
             class ParameterFileParser : public base::NoCopy
             {
             public:
-                ParameterFileParser(ParameterFile& outFile, IParameterFileParserErrorReporter* errorReporter, StringView<char> data, StringView<char> contextName)
+                ParameterFileParser(ParameterFile& outFile, IParameterFileParserErrorReporter* errorReporter, StringView data, StringView contextName)
                     : m_file(outFile)
                     , m_error(errorReporter)
                     , m_cur(data.data())
@@ -94,7 +94,7 @@ namespace base
                     m_lastTopNode = nullptr;
                 }
 
-                bool eatLine(int& outIdent, StringView<char>& outLine)
+                bool eatLine(int& outIdent, StringView& outLine)
                 {
                     int indent = 0;
                     while (m_cur < m_end)
@@ -153,7 +153,7 @@ namespace base
                             if (lineEnd == nullptr)
                                 lineEnd = m_end;
 
-                            outLine = StringView<char>(lineStart, lineEnd);
+                            outLine = StringView(lineStart, lineEnd);
                             return true;
                         }
 
@@ -267,7 +267,7 @@ namespace base
                     }
                 }*/
 
-                StringView<char> eatToken(const char*& cur, const char* end) const
+                StringView eatToken(const char*& cur, const char* end) const
                 {
                     // eat initial white spaces
                     if (!eatWhitespaces(cur, end))
@@ -285,7 +285,7 @@ namespace base
                             if (*cur == '\"')
                             {
                                 cur += 1;
-                                return StringView<char>(start + 1, cur - 1);
+                                return StringView(start + 1, cur - 1);
                             }
                             ++cur;
                         }
@@ -304,16 +304,16 @@ namespace base
                         if (*cur != 0 && *cur <= ' ')
                         {
                             cur += 1;
-                            return StringView<char>(start, cur - 1);
+                            return StringView(start, cur - 1);
                         }
                         else
                         {
-                            return StringView<char>(start, cur);
+                            return StringView(start, cur);
                         }
                     }
                 }
 
-                void appendToken(StringView<char> str)
+                void appendToken(StringView str)
                 {
                     auto& currentNode = m_stack.back();
 
@@ -329,7 +329,7 @@ namespace base
                     currentNode.m_node->m_numTokens += 1;
                 }
 
-                void appendKeyValuePair(StringView<char> key, StringView<char> value)
+                void appendKeyValuePair(StringView key, StringView value)
                 {
                     auto& currentNode = m_stack.back();
 
@@ -366,7 +366,7 @@ namespace base
 
                         // determine current indentation
                         int indent = -1;
-                        StringView<char> fullLine;
+                        StringView fullLine;
                         if (!eatLine(indent, fullLine))
                             continue;
 
@@ -415,7 +415,7 @@ namespace base
                     return true;
                 }
 
-                StringView<char> copyString(StringView<char> txt)
+                StringView copyString(StringView txt)
                 {
                     if (txt == nullptr)
                         return nullptr;
@@ -424,10 +424,10 @@ namespace base
                     auto mem  = (char*)m_file.m_mem.alloc(length + 1, 1);
                     memcpy(mem, txt.data(), length);
                     mem[length] = 0; // since we are making a copy make it zero terminated for good measure and easier debugging
-                    return StringView<char>(mem, txt.length());
+                    return StringView(mem, txt.length());
                 }
 
-                void reportError(StringView<char> txt) const
+                void reportError(StringView txt) const
                 {
                     if (m_error)
                         m_error->reportError(m_contextName, m_currentLine, txt);
@@ -435,7 +435,7 @@ namespace base
 
             private:
                 ParameterFile& m_file;
-                StringView<char> m_contextName;
+                StringView m_contextName;
                 IParameterFileParserErrorReporter* m_error;
                 const char* m_cur;
                 const char* m_end;
@@ -453,7 +453,7 @@ namespace base
                 ParameterNode* m_lastTopNode;
             };
 
-            bool ParseParameters(StringView<char> data, ParameterFile& outFile, StringView<char> context, IParameterFileParserErrorReporter* errorReporter)
+            bool ParseParameters(StringView data, ParameterFile& outFile, StringView context, IParameterFileParserErrorReporter* errorReporter)
             {
                 // use the default error reporter if not specified
                 if (!errorReporter)

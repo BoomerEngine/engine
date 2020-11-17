@@ -20,10 +20,10 @@ namespace base
             virtual ~IErrorHandler();
 
             /// report error
-            virtual void reportError(const StringBuf& fullPath, uint32_t line, StringView<char> message) = 0;
+            virtual void reportError(const StringBuf& fullPath, uint32_t line, StringView message) = 0;
 
             /// report warning
-            virtual void reportWarning(const StringBuf& fullPath, uint32_t line, StringView<char> message) = 0;
+            virtual void reportWarning(const StringBuf& fullPath, uint32_t line, StringView message) = 0;
         };
 
     } // script

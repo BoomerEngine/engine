@@ -39,7 +39,7 @@ namespace base
         {
         }
 
-        bool JITGeneralC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView<char> outputModulePath, const Settings& settings)
+        bool JITGeneralC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& project, StringView outputModulePath, const Settings& settings)
         {
             // setup settings
             m_emitExceptions = settings.emitExceptions;

@@ -25,12 +25,12 @@ namespace application
 
     struct CommandInfo
     {
-        base::StringView<char> name;
-        base::StringView<char> desc;
+        base::StringView name;
+        base::StringView desc;
         base::SpecificClassType<base::app::ICommand> cls;
     };
 
-    base::SpecificClassType<base::app::ICommand> FindCommandClass(base::StringView<char> name)
+    base::SpecificClassType<base::app::ICommand> FindCommandClass(base::StringView name)
     {
         // list all command classes
         base::InplaceArray<base::SpecificClassType<base::app::ICommand>, 100> commandClasses;

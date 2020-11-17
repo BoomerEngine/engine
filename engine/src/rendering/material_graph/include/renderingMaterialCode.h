@@ -57,8 +57,8 @@ namespace rendering
     {
         CodeChunkType type;
         ImageFormat format;
-        base::StringView<char> shaderType;
-        base::StringView<char> name;
+        base::StringView shaderType;
+        base::StringView name;
         bool vertexStream = false;
         bool renotmalize = false;
     };
@@ -84,7 +84,7 @@ namespace rendering
 
         static const CodeChunk& EMPTY();
 
-        INLINE base::StringView<char> view() const { return m_text; }        
+        INLINE base::StringView view() const { return m_text; }
 
         INLINE CodeChunkType type() const { return m_type; }
         INLINE const base::StringBuf& text() const { return m_text; }
@@ -103,15 +103,15 @@ namespace rendering
         CodeChunk(const base::Vector2& val, CodeChunkType type = CodeChunkType::Numerical2);
         CodeChunk(const base::Vector3& val, CodeChunkType type = CodeChunkType::Numerical3);
         CodeChunk(const base::Vector4& val, CodeChunkType type = CodeChunkType::Numerical4);
-        CodeChunk(CodeChunkType type, base::StringView<char> txt, bool isConstant = false);
+        CodeChunk(CodeChunkType type, base::StringView txt, bool isConstant = false);
 
         //--
 
         // swizzle the code chunk's data
-        CodeChunk swizzle(base::StringView<char> mask) const;
+        CodeChunk swizzle(base::StringView mask) const;
 
         // swizzle the code chunk's data
-        CodeChunk swizzle(uint8_t inCount, uint8_t outCount, base::StringView<char> mask) const;
+        CodeChunk swizzle(uint8_t inCount, uint8_t outCount, base::StringView mask) const;
 
         // force to given number of numerical components
         CodeChunk conform(uint32_t componentCount);
@@ -162,13 +162,13 @@ namespace rendering
         CodeChunkType resolveBinaryOpType(const CodeChunk& other) const;
 
         // create a binary operation
-        CodeChunk binaryOp(const CodeChunk& other, base::StringView<char> op) const;
+        CodeChunk binaryOp(const CodeChunk& other, base::StringView op) const;
 
         // create a binary operation with direct float value
-        CodeChunk binaryOpF(base::StringView<char> op, float value) const;
+        CodeChunk binaryOpF(base::StringView op, float value) const;
 
         // create a binary operation with direct float value
-        CodeChunk binaryOpF(float value, base::StringView<char> op) const;
+        CodeChunk binaryOpF(float value, base::StringView op) const;
 
         // simple math operators
         INLINE CodeChunk operator+(const CodeChunk& other) const { return binaryOp(other, "+"); }
@@ -191,7 +191,7 @@ namespace rendering
         //--
 
         // create a unary operation
-        CodeChunk unaryOp(base::StringView<char> op) const;
+        CodeChunk unaryOp(base::StringView op) const;
 
         // unary
         INLINE CodeChunk operator-() const { return unaryOp("-"); }
@@ -325,13 +325,13 @@ namespace rendering
     class RENDERING_MATERIAL_GRAPH_API MaterialStageCompiler : public base::StringBuilder
     {
     public:
-        MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView<char> materialPath, const MaterialCompilationSetup& context);
+        MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView materialPath, const MaterialCompilationSetup& context);
 
         // get compilation context
         INLINE const MaterialCompilationSetup& context() const { return m_context; }
 
         // name of the material being compiled (for errors)
-        INLINE base::StringView<char> path() const { return m_materialPath; }
+        INLINE base::StringView path() const { return m_materialPath; }
 
         // get the shader stage
         INLINE ShaderType stage() const { return m_stage; }
@@ -366,7 +366,7 @@ namespace rendering
         //--
 
         // request global include to be added to the file
-        void includeHeader(base::StringView<char> name);
+        void includeHeader(base::StringView name);
 
         //--
 

@@ -99,7 +99,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerBox, PopupWindow);
 
     public:
-        ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView<char> caption="");
+        ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView caption="");
         virtual ~ColorPickerBox();
 
         inline base::Color color() const { return m_currentColor; }

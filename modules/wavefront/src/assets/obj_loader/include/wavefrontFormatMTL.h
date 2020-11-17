@@ -85,7 +85,7 @@ namespace wavefront
 
         //--
 
-        const Material* findMaterial(base::StringView<char> name) const;
+        const Material* findMaterial(base::StringView name) const;
 
         //--
 
@@ -108,7 +108,7 @@ namespace wavefront
     //--
 
     /// load from object file
-    extern ASSETS_OBJ_LOADER_API FormatMTLPtr LoadMaterials(base::StringView<char> contextName, const void* data, uint64_t dataSize);
+    extern ASSETS_OBJ_LOADER_API FormatMTLPtr LoadMaterials(base::StringView contextName, const void* data, uint64_t dataSize);
 
     //--
 

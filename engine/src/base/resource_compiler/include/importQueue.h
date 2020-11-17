@@ -35,9 +35,9 @@ namespace base
             virtual ~IImportQueueCallbacks();
 
             virtual void queueJobAdded(const ImportJobInfo& info) {};
-            virtual void queueJobStarted(StringView<char> depotPath) {};
-            virtual void queueJobFinished(StringView<char> depotPath, ImportStatus status, double timeTaken) {};
-            virtual void queueJobProgressUpdate(StringView<char> depotPath, uint64_t currentCount, uint64_t totalCount, StringView<char> text) {};
+            virtual void queueJobStarted(StringView depotPath) {};
+            virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) {};
+            virtual void queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) {};
         };
 
         //--
@@ -49,16 +49,16 @@ namespace base
             virtual ~IImportDepotLoader();
 
             // load metadata of existing resource, should not be cached or reused
-            virtual MetadataPtr loadExistingMetadata(StringView<char> depotPath) const = 0;
+            virtual MetadataPtr loadExistingMetadata(StringView depotPath) const = 0;
 
             // load existing content of a resource, should not be cached or reused
-            virtual ResourcePtr loadExistingResource(StringView<char> depotPath) const = 0;
+            virtual ResourcePtr loadExistingResource(StringView depotPath) const = 0;
 
             // check if file exists
-            virtual bool depotFileExists(StringView<char> depotPath) const = 0;
+            virtual bool depotFileExists(StringView depotPath) const = 0;
 
             // find depot file
-            virtual bool depotFindFile(StringView<char> depotPath, StringView<char> fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
+            virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
         };
 
         //--

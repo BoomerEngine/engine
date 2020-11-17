@@ -143,7 +143,7 @@ namespace base
 
 
         template< typename T>
-        static void DoSlice(const T* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< StringView<T> >& outTokens)
+        static void DoSlice(const T* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< BaseStringView<T> >& outTokens)
         {
             const T* str = data;
             const T* end = data + length;
@@ -169,12 +169,12 @@ namespace base
             }
         }
 
-        void BaseHelper::Slice(const char* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< StringView<char> >& outTokens)
+        void BaseHelper::Slice(const char* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< BaseStringView<char> >& outTokens)
         {
             DoSlice<char>(data, length, splitChars, keepEmpty, outTokens);
         }
 
-        void BaseHelper::Slice(const wchar_t* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< StringView<wchar_t> >& outTokens)
+        void BaseHelper::Slice(const wchar_t* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< BaseStringView<wchar_t> >& outTokens)
         {
             DoSlice<wchar_t>(data, length, splitChars, keepEmpty, outTokens);
         }
@@ -383,44 +383,44 @@ namespace base
 
         ///--
 
-        bool BaseHelper::MatchPattern(StringView<char> str, StringView<char> pattern)
+        bool BaseHelper::MatchPattern(BaseStringView<char> str, BaseStringView<char> pattern)
         {
             return MatchWildcardPattern(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
-        bool BaseHelper::MatchPattern(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        bool BaseHelper::MatchPattern(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern)
         {
             return MatchWildcardPattern(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
-        bool BaseHelper::MatchPatternNoCase(StringView<char> str, StringView<char> pattern)
+        bool BaseHelper::MatchPatternNoCase(BaseStringView<char> str, BaseStringView<char> pattern)
         {
             return MatchWildcardPatternNoCase(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
-        bool BaseHelper::MatchPatternNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        bool BaseHelper::MatchPatternNoCase(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern)
         {
             return MatchWildcardPatternNoCase(str.data(), str.data() + str.length(), pattern.data(), pattern.data() + pattern.length());
         }
 
         //--
 
-        bool BaseHelper::MatchString(StringView<char> str, StringView<char> pattern)
+        bool BaseHelper::MatchString(BaseStringView<char> str, BaseStringView<char> pattern)
         {
             return str.findStr(pattern) != INDEX_NONE;
         }
 
-        bool BaseHelper::MatchString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        bool BaseHelper::MatchString(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern)
         {
             return str.findStr(pattern) != INDEX_NONE;
         }
 
-        bool BaseHelper::MatchStringNoCase(StringView<char> str, StringView<char> pattern)
+        bool BaseHelper::MatchStringNoCase(BaseStringView<char> str, BaseStringView<char> pattern)
         {
             return str.findStrNoCase(pattern) != INDEX_NONE;
         }
 
-        bool BaseHelper::MatchStringNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern)
+        bool BaseHelper::MatchStringNoCase(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern)
         {
             return str.findStrNoCase(pattern) != INDEX_NONE;
         }

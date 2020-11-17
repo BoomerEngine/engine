@@ -37,7 +37,7 @@ namespace base
                 outAbsoluteLocation = loc;
         }
 
-        void CookerErrorReporter::reportError(const parser::Location& loc, StringView<char> message)
+        void CookerErrorReporter::reportError(const parser::Location& loc, StringView message)
         {
             parser::Location absoluteLoc;
             translateContextPath(loc, absoluteLoc);
@@ -47,7 +47,7 @@ namespace base
             base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", TempString("{}", message).c_str());
         }
 
-        void CookerErrorReporter::reportWarning(const parser::Location& loc, StringView<char> message)
+        void CookerErrorReporter::reportWarning(const parser::Location& loc, StringView message)
         {
             parser::Location absoluteLoc;
             translateContextPath(loc, absoluteLoc);
@@ -64,12 +64,12 @@ namespace base
         {
         }
 
-        bool CookerIncludeHandler::checkFileExists(StringView<char> path) const
+        bool CookerIncludeHandler::checkFileExists(StringView path) const
         {
             return m_cooker.queryFileExists(path);
         }
 
-        bool CookerIncludeHandler::resolveIncludeFile(bool global, StringView<char> path, StringView<char> referencePath, StringBuf& outPath) const
+        bool CookerIncludeHandler::resolveIncludeFile(bool global, StringView path, StringView referencePath, StringBuf& outPath) const
         {
             if (m_cooker.queryResolvedPath(path, referencePath, !global, outPath))
                 if (checkFileExists(outPath))
@@ -85,7 +85,7 @@ namespace base
             return false;
         }
 
-        bool CookerIncludeHandler::loadInclude(bool global, StringView<char> path, StringView<char> referencePath, Buffer& outContent, StringBuf& outPath)
+        bool CookerIncludeHandler::loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath)
         {
             if (!resolveIncludeFile(global, path, referencePath, outPath))
                 return false;
@@ -121,7 +121,7 @@ namespace base
             uint32_t m_numErrors = 0;
         };
 
-        xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView<char> path /*= ""*/)
+        xml::DocumentPtr LoadXML(IResourceCookerInterface& cooker, StringView path /*= ""*/)
         {
             // load the xml content
             const auto& xmlFilePath = cooker.queryResourcePath();

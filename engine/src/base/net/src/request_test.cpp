@@ -67,7 +67,7 @@ namespace base
             ASSERT_GT(20, res.data.size());
             ASSERT_LT(10, res.data.size());
 
-            auto data = StringView<char>((const char*)res.data.data(), res.data.size());
+            auto data = StringView((const char*)res.data.data(), res.data.size());
             TRACE_INFO("Returned IP: '{}'", data);
         }
 
@@ -84,7 +84,7 @@ namespace base
                 ASSERT_GT(20, res.data.size());
                 ASSERT_LT(10, res.data.size());
 
-                auto data = StringView<char>((const char*)res.data.data(), res.data.size());
+                auto data = StringView((const char*)res.data.data(), res.data.size());
                 TRACE_INFO("Returned IP: '{}'", data);
             }
         }
@@ -106,7 +106,7 @@ namespace base
                     ASSERT_GT(20, res.data.size());
                     ASSERT_LT(10, res.data.size());
 
-                    auto data = StringView<char>((const char*)res.data.data(), res.data.size());
+                    auto data = StringView((const char*)res.data.data(), res.data.size());
                     TRACE_INFO("Returned IP: '{}'", data);
 
                     Fibers::GetInstance().signalCounter(wait);

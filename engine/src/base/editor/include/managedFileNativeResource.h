@@ -26,7 +26,7 @@ namespace ed
         INLINE const SpecificClassType<res::IResource>& resourceClass() const { return m_resourceNativeClass; }
 
     public:
-        ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName);
+        ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
         virtual ~ManagedFileNativeResource();
 
         //---

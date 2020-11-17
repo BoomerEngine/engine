@@ -67,7 +67,7 @@ namespace base
             return app::ServiceInitializationResult::Finished;
         }
 
-        bool ConfigService::loadFileConfig(StringView<char> path, config::Storage& outStorage) const
+        bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage) const
         {
             if (base::io::FileExists(path))
             {
@@ -92,7 +92,7 @@ namespace base
             return true;
         }
 
-        bool ConfigService::loadDirConfig(StringView<char> path, config::Storage& outStorage) const
+        bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) const
         {
             bool ret = true;
 

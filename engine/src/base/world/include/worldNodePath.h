@@ -46,7 +46,7 @@ namespace base
             NodePath operator[](const NodePathPart& childName) const;
 
             /// get sub path
-            NodePath operator[](const StringView<char> childName) const;
+            NodePath operator[](const StringView childName) const;
 
             /// get a full text representation for the whole path
             void print(IFormatStream& f) const;

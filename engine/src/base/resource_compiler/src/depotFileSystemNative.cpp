@@ -24,7 +24,7 @@ namespace base
 
         //--
 
-        FileSystemNative::FileSystemNative(StringView<char> rootPath, bool allowWrites, DepotStructure* owner)
+        FileSystemNative::FileSystemNative(StringView rootPath, bool allowWrites, DepotStructure* owner)
             : m_rootPath(rootPath)
             , m_writable(allowWrites)
             , m_depot(owner)
@@ -50,13 +50,13 @@ namespace base
             return m_writable;
         }
 
-        bool FileSystemNative::ownsFile(StringView<char> rawFilePath) const
+        bool FileSystemNative::ownsFile(StringView rawFilePath) const
         {
             // native file system owns all files in the directory, no exceptions
             return true;
         }
 
-        bool FileSystemNative::contextName(StringView<char> rawFilePath, StringBuf& outContextName) const
+        bool FileSystemNative::contextName(StringView rawFilePath, StringBuf& outContextName) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
@@ -68,7 +68,7 @@ namespace base
             return true;
         }
 
-        bool FileSystemNative::timestamp(StringView<char> rawFilePath, io::TimeStamp& outTimestamp) const
+        bool FileSystemNative::timestamp(StringView rawFilePath, io::TimeStamp& outTimestamp) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
@@ -79,7 +79,7 @@ namespace base
             return base::io::FileTimeStamp(path.view(), outTimestamp);
         }
 
-        bool FileSystemNative::absolutePath(StringView<char> rawFilePath, StringBuf& outAbsolutePath) const
+        bool FileSystemNative::absolutePath(StringView rawFilePath, StringBuf& outAbsolutePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::AnyRelativePath), false);
 
@@ -91,7 +91,7 @@ namespace base
             return true;
         }
 
-        bool FileSystemNative::enumDirectoriesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool FileSystemNative::enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
 
@@ -100,7 +100,7 @@ namespace base
             path << rawDirectoryPath;
             path << "/";
 
-            return base::io::FindSubDirs(path.view(), [&enumFunc](StringView<char> name) {
+            return base::io::FindSubDirs(path.view(), [&enumFunc](StringView name) {
                     if (name != ".boomer")
                         return enumFunc(name);
                     else
@@ -108,7 +108,7 @@ namespace base
                 });
         }
 
-        bool FileSystemNative::enumFilesAtPath(StringView<char> rawDirectoryPath, const std::function<bool(StringView<char>)>& enumFunc) const
+        bool FileSystemNative::enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(StringView)>& enumFunc) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::RelativeDirectoryPath), false);
 
@@ -117,12 +117,12 @@ namespace base
             path << rawDirectoryPath;
             path << "/";
 
-            return base::io::FindLocalFiles(path.view(), "*.*", [&enumFunc](StringView<char> name) {
+            return base::io::FindLocalFiles(path.view(), "*.*", [&enumFunc](StringView name) {
                 return enumFunc(TempString("{}", name));
                 });
         }
 
-        io::ReadFileHandlePtr FileSystemNative::createReader(StringView<char> rawFilePath) const
+        io::ReadFileHandlePtr FileSystemNative::createReader(StringView rawFilePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
@@ -138,7 +138,7 @@ namespace base
             return base::io::OpenForReading(path.view());
         }
 
-        io::AsyncFileHandlePtr FileSystemNative::createAsyncReader(StringView<char> rawFilePath) const
+        io::AsyncFileHandlePtr FileSystemNative::createAsyncReader(StringView rawFilePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 
@@ -154,7 +154,7 @@ namespace base
             return base::io::OpenForAsyncReading(path.view());
         }
 
-        io::WriteFileHandlePtr FileSystemNative::createWriter(StringView<char> rawFilePath) const
+        io::WriteFileHandlePtr FileSystemNative::createWriter(StringView rawFilePath) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(rawFilePath, DepotPathClass::RelativeFilePath), false);
 

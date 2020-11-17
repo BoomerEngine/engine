@@ -68,7 +68,7 @@ namespace ui
             return position;
     }
 
-    bool Splitter::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool Splitter::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "fraction")
         {

@@ -68,12 +68,12 @@ namespace base
             //--
 
             /// measure width of text
-            base::Point measure(base::StringView<char> txt) const;
+            base::Point measure(base::StringView txt) const;
 
             //--
 
             // generate glyphs
-            base::Point render(base::StringView<char> txt, base::Color initialColor, base::Array<BitmapFontPrintableGlyph>& outGlyphs) const;
+            base::Point render(base::StringView txt, base::Color initialColor, base::Array<BitmapFontPrintableGlyph>& outGlyphs) const;
 
         private:
             // image with all font glyphs

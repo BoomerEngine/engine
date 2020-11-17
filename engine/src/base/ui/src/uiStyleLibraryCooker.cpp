@@ -52,7 +52,7 @@ namespace ui
                 : m_cooker(cooker)
             {}
 
-            virtual base::image::ImagePtr loadImage(base::StringView<char> context, base::StringView<char> imageFileName) override final
+            virtual base::image::ImagePtr loadImage(base::StringView context, base::StringView imageFileName) override final
             {
                 base::StringBuf fullResourcePath;
                 if (!m_cooker.findFile(context, imageFileName, fullResourcePath, 4))
@@ -74,7 +74,7 @@ namespace ui
                 return retImage;
             }
 
-            virtual base::FontPtr loadFont(base::StringView<char> context, base::StringView<char> fontFileName) override final
+            virtual base::FontPtr loadFont(base::StringView context, base::StringView fontFileName) override final
             {
                 base::StringBuf fullResourcePath;
                 if (!m_cooker.findFile(context, fontFileName, fullResourcePath, 4))

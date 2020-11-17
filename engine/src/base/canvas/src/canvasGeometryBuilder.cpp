@@ -1567,7 +1567,7 @@ namespace base
             m_outGroups.back().vertexBoundsMax = vertexWriter.boundsMax();
         }
 
-        void GeometryBuilder::print(const font::Font* font, int fontSize, StringView<char> txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
+        void GeometryBuilder::print(const font::Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
         {
             if (font)
             {

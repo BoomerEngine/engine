@@ -40,7 +40,7 @@ namespace base
             virtual void copy(void* dest, const void* src) const override final;
 
             virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
-            virtual bool parseFromString(StringView<char> txt, void* data, uint32_t flags = 0) const override final;
+            virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override final;
 
             virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
             virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;

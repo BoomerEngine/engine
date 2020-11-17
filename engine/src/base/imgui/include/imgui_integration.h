@@ -48,11 +48,11 @@ namespace ImGui
     //--
 
     // Add a folder to the ImGui icon search path, default is "engine/data/icons/"
-    IMGUI_API void AddIconSearchPath(base::StringView<char> path);
+    IMGUI_API void AddIconSearchPath(base::StringView path);
 
     // Load ImGui icon by name, cached
     #undef LoadIcon // Window
-    IMGUI_API ImTextureID LoadIcon(base::StringView<char> name);
+    IMGUI_API ImTextureID LoadIcon(base::StringView name);
 
     // Register image
     IMGUI_API ImTextureID RegisterImage(const base::image::ImagePtr& image);

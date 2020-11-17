@@ -28,7 +28,7 @@ namespace base
             //--
 
             // map string to ID
-            replication::DataMappedID mapString(StringView<char> txt, bool& outNew);
+            replication::DataMappedID mapString(StringView txt, bool& outNew);
 
             // map path part
             replication::DataMappedID mapPathPart(const replication::DataMappedID text, const replication::DataMappedID parent, bool& outNew);
@@ -36,7 +36,7 @@ namespace base
             //--
 
             // remember string
-            bool rememberString(const replication::DataMappedID id, StringView<char> txt);
+            bool rememberString(const replication::DataMappedID id, StringView txt);
 
             // remember path part
             bool rememberPathPart(const replication::DataMappedID id, const replication::DataMappedID text, const replication::DataMappedID parent);
@@ -60,8 +60,8 @@ namespace base
         private:
             mem::LinearAllocator m_mem; // to hold string memory
 
-            HashMap<StringView<char>, replication::DataMappedID> m_stringMap;
-            HashMap<replication::DataMappedID, StringView<char>> m_stringRevMap;
+            HashMap<StringView, replication::DataMappedID> m_stringMap;
+            HashMap<replication::DataMappedID, StringView> m_stringRevMap;
             replication::DataMappedID m_nextStringId;
 
             struct PathPart

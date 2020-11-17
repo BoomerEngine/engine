@@ -29,7 +29,7 @@ namespace base
                 return ret;
             }
 
-            SpecificClassType<IResource> ResourceClassLookup::resolveResourceExtension(StringView<char> extension) const
+            SpecificClassType<IResource> ResourceClassLookup::resolveResourceExtension(StringView extension) const
             {
                 SpecificClassType<IResource> ret = nullptr;
                 m_classesByExtension.find(extension.calcCRC64(), ret);
@@ -76,7 +76,7 @@ namespace base
                     // add to map by native extension - only text resources
                     {
                         auto metadata  = static_cast<const ResourceExtensionMetadata*>(classPtr->MetadataContainer::metadata(ResourceExtensionMetadata::GetStaticClass()));
-                        const StringView<char> ext = metadata ? metadata->extension() : "";
+                        const StringView ext = metadata ? metadata->extension() : "";
                         if (ext.empty())
                             continue;
 

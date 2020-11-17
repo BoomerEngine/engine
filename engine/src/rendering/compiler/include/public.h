@@ -43,11 +43,11 @@ namespace rendering
             INLINE operator bool() const { return !attributes.empty(); }
 
             AttributeList& clear();
-            AttributeList& add(base::StringID key, base::StringView<char> txt = "");
+            AttributeList& add(base::StringID key, base::StringView txt = "");
 
             bool has(base::StringID key) const;
-            base::StringView<char> value(base::StringID key) const;
-            base::StringView<char> valueOrDefault(base::StringID key, base::StringView<char> defaultValue = "") const;
+            base::StringView value(base::StringID key) const;
+            base::StringView valueOrDefault(base::StringID key, base::StringView defaultValue = "") const;
             int valueAsIntOrDefault(base::StringID key, int defaultValue = 0) const;
 
             void print(base::IFormatStream& f) const;

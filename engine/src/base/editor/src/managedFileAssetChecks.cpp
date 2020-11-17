@@ -60,7 +60,7 @@ namespace ed
         return m_cancelFlag.load();
     }
 
-    void ManagedFileImportStatusCheck::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text)
+    void ManagedFileImportStatusCheck::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
     {
         // TODO: we can utilize this somehow
     }
@@ -160,7 +160,7 @@ namespace ed
         return m_cancelFlag.load();
     }
 
-    void ManagedFileSourceAssetCheck::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text)
+    void ManagedFileSourceAssetCheck::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
     {
         double progress = (double)currentCount / (double)(totalCount ? totalCount : 1);
 

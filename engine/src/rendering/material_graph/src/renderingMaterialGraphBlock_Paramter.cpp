@@ -70,7 +70,7 @@ namespace rendering
             return TBaseClass::chooseTitle();
     }
 
-    void MaterialGraphBlockParameter::onPropertyChanged(base::StringView<char> path)
+    void MaterialGraphBlockParameter::onPropertyChanged(base::StringView path)
     {
         if (path == "name" || path == "category")
         {

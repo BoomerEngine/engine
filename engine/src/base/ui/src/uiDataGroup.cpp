@@ -215,7 +215,7 @@ namespace ui
     }
 
     extern base::Array<base::StringID> GatherPropertyNames(bool sortNames, const base::rtti::DataViewInfo& info, base::StringID category);
-    extern base::StringBuf MakeStructureElementPath(base::StringView<char> path, base::StringView<char> name);
+    extern base::StringBuf MakeStructureElementPath(base::StringView path, base::StringView name);
 
     void DataInspectorObjectCategoryGroup::createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren)
     {

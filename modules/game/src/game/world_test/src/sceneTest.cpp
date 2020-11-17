@@ -180,13 +180,13 @@ namespace game
             return false;
         }
 
-        void ISceneTest::reportError(base::StringView<char> msg)
+        void ISceneTest::reportError(base::StringView msg)
         {
             TRACE_ERROR("SceneTest initialization error: {}", msg);
             m_failed = true;
         }
 
-        rendering::MeshPtr ISceneTest::loadMesh(base::StringView<char> assetFile)
+        rendering::MeshPtr ISceneTest::loadMesh(base::StringView assetFile)
         {
             auto meshPtr = base::LoadResource<rendering::Mesh>(assetFile);
             if (!meshPtr)

@@ -114,7 +114,7 @@ namespace base
 
         //
 
-        DependencyTracker::TrackedDepotFile* DependencyTracker::fileEntry_NoLock(TrackedDepotDir* parentDir, StringView<char> fileName, bool createIfMissing)
+        DependencyTracker::TrackedDepotFile* DependencyTracker::fileEntry_NoLock(TrackedDepotDir* parentDir, StringView fileName, bool createIfMissing)
         {
             if (fileName.empty())
                 return nullptr;
@@ -136,7 +136,7 @@ namespace base
             return file;
         }
 
-        DependencyTracker::TrackedDepotDir* DependencyTracker::childDirectory_NoLock(TrackedDepotDir* parentDir, StringView<char> dirName, bool createIfMissing)
+        DependencyTracker::TrackedDepotDir* DependencyTracker::childDirectory_NoLock(TrackedDepotDir* parentDir, StringView dirName, bool createIfMissing)
         {
             if (dirName.empty())
                 return nullptr;
@@ -157,7 +157,7 @@ namespace base
             return dir;
         }
 
-        DependencyTracker::TrackedDepotFile* DependencyTracker::fileEntry(StringView<char> filePath, bool createIfMissing)
+        DependencyTracker::TrackedDepotFile* DependencyTracker::fileEntry(StringView filePath, bool createIfMissing)
         {
             auto lock = CreateLock(m_sourceAssetsLock);
 

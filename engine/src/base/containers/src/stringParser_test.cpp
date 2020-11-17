@@ -24,7 +24,7 @@ namespace testing
     }
 
     template<>
-    INLINE ::std::string PrintToString<base::StringView<char>>(const base::StringView<char>& value)
+    INLINE ::std::string PrintToString<base::StringView>(const base::StringView& value)
     {
         return std::string(value.data(), value.length());
     }
@@ -39,7 +39,7 @@ namespace testing
 
 struct Result
 {
-    base::StringView<char> view;
+    base::StringView view;
     float f;
     double d;
     uint64_t u64;
@@ -86,11 +86,11 @@ TEST(StringParser, ParseStringSingle)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("Ala"), r.view);
+    EXPECT_EQ(base::StringView("Ala"), r.view);
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("ma"), r.view);
+    EXPECT_EQ(base::StringView("ma"), r.view);
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("kota"), r.view);
+    EXPECT_EQ(base::StringView("kota"), r.view);
     EXPECT_FALSE(p.parseString(r.view));
 }
 
@@ -100,7 +100,7 @@ TEST(StringParser, ParseStringWithSpecialChars)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("Ala/ma/kota.png"), r.view);
+    EXPECT_EQ(base::StringView("Ala/ma/kota.png"), r.view);
     EXPECT_FALSE(p.parseString(r.view));
 }
 
@@ -110,7 +110,7 @@ TEST(StringParser, ParseStringQuotes)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("Ala ma kota"), r.view);
+    EXPECT_EQ(base::StringView("Ala ma kota"), r.view);
     EXPECT_FALSE(p.parseString(r.view));
 }
 
@@ -120,11 +120,11 @@ TEST(StringParser, ParseStringStopsOnQuotes)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("Ala"), r.view);
+    EXPECT_EQ(base::StringView("Ala"), r.view);
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("ma"), r.view);
+    EXPECT_EQ(base::StringView("ma"), r.view);
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("kota"), r.view);
+    EXPECT_EQ(base::StringView("kota"), r.view);
     EXPECT_FALSE(p.parseString(r.view));
 }
 
@@ -134,7 +134,7 @@ TEST(StringParser, ParseStringNoDelims)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("Ala;ma;kota"), r.view);
+    EXPECT_EQ(base::StringView("Ala;ma;kota"), r.view);
     EXPECT_FALSE(p.parseString(r.view));
 }
 
@@ -144,15 +144,15 @@ TEST(StringParser, ParseStringWithDelims)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("Ala"), r.view);
+    EXPECT_EQ(base::StringView("Ala"), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("ma"), r.view);
+    EXPECT_EQ(base::StringView("ma"), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("kota"), r.view);
+    EXPECT_EQ(base::StringView("kota"), r.view);
 
     EXPECT_FALSE(p.parseKeyword(";"));
     EXPECT_FALSE(p.parseString(r.view, ";"));
@@ -164,19 +164,19 @@ TEST(StringParser, ParseStringWithEmptyDelims)
     Result r;
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("Ala"), r.view);
+    EXPECT_EQ(base::StringView("Ala"), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("ma"), r.view);
+    EXPECT_EQ(base::StringView("ma"), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>(), r.view);
+    EXPECT_EQ(base::StringView(), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_TRUE(p.parseString(r.view, ";"));
-    EXPECT_EQ(base::StringView<char>("kota"), r.view);
+    EXPECT_EQ(base::StringView("kota"), r.view);
     EXPECT_TRUE(p.parseKeyword(";"));
 
     EXPECT_FALSE(p.parseString(r.view, ";"));
@@ -251,7 +251,7 @@ TEST(StringParser, ParseInt64StringAdj)
     EXPECT_TRUE(p.parseInt64(r.i64));
     EXPECT_EQ(100, r.i64);
     EXPECT_TRUE(p.parseString(r.view));
-    EXPECT_EQ(base::StringView<char>("a"), r.view);
+    EXPECT_EQ(base::StringView("a"), r.view);
 }
 
 TEST(StringParser, ParseInt8Range)

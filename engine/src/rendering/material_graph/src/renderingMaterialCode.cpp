@@ -89,7 +89,7 @@ namespace rendering
     {
     }
 
-    CodeChunk::CodeChunk(CodeChunkType type_, base::StringView<char> text_, bool isConstant /*= false*/)
+    CodeChunk::CodeChunk(CodeChunkType type_, base::StringView text_, bool isConstant /*= false*/)
         : m_type(type_)
         , m_constant(isConstant)
         , m_text(text_)
@@ -117,7 +117,7 @@ namespace rendering
         return CodeChunkType::Void;
     }
 
-    CodeChunk CodeChunk::swizzle(base::StringView<char> mask) const
+    CodeChunk CodeChunk::swizzle(base::StringView mask) const
     {
         const auto outCount = mask.length();
         DEBUG_CHECK_EX(outCount >= 1 && outCount <= 4, "Invalid mask length");
@@ -177,7 +177,7 @@ namespace rendering
         return CodeChunk();
     }
 
-    CodeChunk CodeChunk::swizzle(uint8_t inCount, uint8_t outCount, base::StringView<char> mask) const
+    CodeChunk CodeChunk::swizzle(uint8_t inCount, uint8_t outCount, base::StringView mask) const
     {
         DEBUG_CHECK_EX(inCount <= components(), "Invalid swizzle for current code chunk type");
         return CodeChunk(TypeForComponentCount(outCount), base::TempString("({}).{}", *this, mask), m_constant);
@@ -200,13 +200,13 @@ namespace rendering
         return TypeForComponentCount(std::max<uint8_t>(thisComps, otherComps));
     }
 
-    CodeChunk CodeChunk::binaryOp(const CodeChunk& other, base::StringView<char> op) const
+    CodeChunk CodeChunk::binaryOp(const CodeChunk& other, base::StringView op) const
     {
         const auto outType = resolveBinaryOpType(other);
         return CodeChunk(outType, base::TempString("({} {} {})", *this, op, other), m_constant && other.m_constant);
     }
 
-    CodeChunk CodeChunk::binaryOpF(base::StringView<char> op, float value) const
+    CodeChunk CodeChunk::binaryOpF(base::StringView op, float value) const
     {
         const auto thisComps = components();
         DEBUG_CHECK_EX(0 != thisComps, "Non numerical type cannot participate in binary operation");
@@ -214,7 +214,7 @@ namespace rendering
         return CodeChunk(m_type, base::TempString("({} {} {})", *this, op, value), m_constant);
     }
 
-    CodeChunk CodeChunk::binaryOpF(float value, base::StringView<char> op) const
+    CodeChunk CodeChunk::binaryOpF(float value, base::StringView op) const
     {
         const auto thisComps = components();
         DEBUG_CHECK_EX(0 != thisComps, "Non numerical type cannot participate in binary operation");
@@ -222,7 +222,7 @@ namespace rendering
         return CodeChunk(m_type, base::TempString("({} {} {})", value, op, *this), m_constant);
     }
 
-    CodeChunk CodeChunk::unaryOp(base::StringView<char> op) const
+    CodeChunk CodeChunk::unaryOp(base::StringView op) const
     {
         const auto thisComps = components();
         DEBUG_CHECK_EX(0 != thisComps, "Non numerical type cannot participate in unary operation");
@@ -700,7 +700,7 @@ namespace rendering
 
     //--
 
-    MaterialStageCompiler::MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView<char> materialPath, const MaterialCompilationSetup& context)
+    MaterialStageCompiler::MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView materialPath, const MaterialCompilationSetup& context)
         : m_stage(stage)
         , m_materialPath(materialPath)
         , m_dataLayout(dataLayout)
@@ -721,7 +721,7 @@ namespace rendering
         return base::TempString("temp{}", m_autoNameCounter++);
     }
 
-    /*static CodeChunkType VarTypeToCodeChunkType(base::StringView<char> type)
+    /*static CodeChunkType VarTypeToCodeChunkType(base::StringView type)
     {
         if (type == "float" || type == "bool" || type == "int" || type == "uint")
             return CodeChunkType::Numerical1;
@@ -814,7 +814,7 @@ namespace rendering
         return defaultValue;
     }
 
-    void MaterialStageCompiler::includeHeader(base::StringView<char> name)
+    void MaterialStageCompiler::includeHeader(base::StringView name)
     {
         if (!name.empty())
             m_includes.pushBackUnique(base::StringBuf(name));

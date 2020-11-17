@@ -28,23 +28,23 @@ namespace ui
         layoutHorizontal();
     }
 
-    void MenuBar::createMenu(base::StringView<char> caption, const PopupPtr& menu)
+    void MenuBar::createMenu(base::StringView caption, const PopupPtr& menu)
     {
         auto func = [menu]() { return menu; };
         createMenu(caption, func);
     }
 
-    void MenuBar::createMenu(base::StringView<char> caption, const TPopupFunc& menuFunc)
+    void MenuBar::createMenu(base::StringView caption, const TPopupFunc& menuFunc)
     {
         createChild<MenuBarItem>(menuFunc, caption);
     }
 
-    bool MenuBar::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool MenuBar::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }
 
-    bool MenuBar::handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
+    bool MenuBar::handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
     {
         return TBaseClass::handleTemplateChild(name, doc, id);
     }
@@ -65,13 +65,13 @@ namespace ui
         : Button({ ButtonModeBit::EventOnClick, ButtonModeBit::NoFocus })
     {}
 
-    MenuBarItem::MenuBarItem(const TPopupFunc& func, base::StringView<char> text)
+    MenuBarItem::MenuBarItem(const TPopupFunc& func, base::StringView text)
         : Button(text, { ButtonModeBit::EventOnClick, ButtonModeBit::NoFocus })
         , m_func(func)
     {
     }
 
-    bool MenuBarItem::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool MenuBarItem::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }
@@ -218,24 +218,24 @@ namespace ui
             popup->show(owner, ui::PopupWindowSetup().autoClose().bottomLeft());
     }
 
-    void MenuButtonContainer::createAction(base::StringID action, base::StringView<char> text, base::StringView<char> icon /*= ""*/)
+    void MenuButtonContainer::createAction(base::StringID action, base::StringView text, base::StringView icon /*= ""*/)
     {
         createChild<MenuButton>(action, text, icon);
     }
 
-    EventFunctionBinder MenuButtonContainer::createCallback(base::StringView<char> text, base::StringView<char> icon /*= ""*/, base::StringView<char> shortcut /*= ""*/, bool enabled /*= true*/)
+    EventFunctionBinder MenuButtonContainer::createCallback(base::StringView text, base::StringView icon /*= ""*/, base::StringView shortcut /*= ""*/, bool enabled /*= true*/)
     {
         auto button = createChild<MenuButton>(base::StringID(), text, icon, shortcut);
         button->enable(enabled);
         return button->bind(EVENT_MENU_ITEM_CLICKED);
     }
 
-    void MenuButtonContainer::createSubMenu(const TPopupFunc& func, base::StringView<char> text, base::StringView<char> icon /*= ""*/)
+    void MenuButtonContainer::createSubMenu(const TPopupFunc& func, base::StringView text, base::StringView icon /*= ""*/)
     {
         createChild<MenuButton>(func, text, icon);
     }
 
-    void MenuButtonContainer::createSubMenu(const PopupPtr& popup, base::StringView<char> text, base::StringView<char> icon /*= ""*/)
+    void MenuButtonContainer::createSubMenu(const PopupPtr& popup, base::StringView text, base::StringView icon /*= ""*/)
     {
         const auto func = [popup]() { return popup; };
         createChild<MenuButton>(func, text, icon);
@@ -292,12 +292,12 @@ namespace ui
         }
     }
 
-    bool MenuButtonContainer::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool MenuButtonContainer::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }
 
-    bool MenuButtonContainer::handleTemplateChild(base::StringView<char> name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
+    bool MenuButtonContainer::handleTemplateChild(base::StringView name, const base::xml::IDocument& doc, const base::xml::NodeID& id)
     {
         return TBaseClass::handleTemplateChild(name, doc, id);
     }
@@ -359,7 +359,7 @@ namespace ui
         : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
     {}
 
-    MenuButton::MenuButton(base::StringID action /*= base::StringID()*/, base::StringView<char> text /*= ""*/, base::StringView<char> icon /*= ""*/, base::StringView<char> shortcut /*= ""*/)
+    MenuButton::MenuButton(base::StringID action /*= base::StringID()*/, base::StringView text /*= ""*/, base::StringView icon /*= ""*/, base::StringView shortcut /*= ""*/)
         : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
     {
         createInternalNamedChild<TextLabel>("MenuIcon"_id, icon);
@@ -415,7 +415,7 @@ namespace ui
         }
     }
 
-    MenuButton::MenuButton(const TPopupFunc& func, base::StringView<char> text, base::StringView<char> icon)
+    MenuButton::MenuButton(const TPopupFunc& func, base::StringView text, base::StringView icon)
         : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
         , m_func(func)
     {
@@ -424,7 +424,7 @@ namespace ui
         createInternalNamedChild<TextLabel>("MenuSubMenuIcon"_id);
     }
 
-    bool MenuButton::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool MenuButton::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         return TBaseClass::handleTemplateProperty(name, value);
     }

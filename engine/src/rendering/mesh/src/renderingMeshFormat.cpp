@@ -118,7 +118,7 @@ namespace rendering
             return m_formats[(uint8_t)format];
         }
 
-        bool findFormat(base::StringView<char> name, MeshVertexFormat& outFormat)
+        bool findFormat(base::StringView name, MeshVertexFormat& outFormat)
         {
             return false;
         }
@@ -187,7 +187,7 @@ namespace rendering
         return MeshVertexFormatRegistry::GetInstance().format(format);
     }
 
-    bool GetVertexFormatByName(base::StringView<char> name, MeshVertexFormat& outFormat)
+    bool GetVertexFormatByName(base::StringView name, MeshVertexFormat& outFormat)
     {
         return MeshVertexFormatRegistry::GetInstance().findFormat(name, outFormat);
     }

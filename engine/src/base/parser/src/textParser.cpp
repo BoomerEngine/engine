@@ -30,12 +30,12 @@ namespace base
                 LogTextParserErrorReporter()
                 {}
 
-                virtual void reportError(const Location& loc, StringView<char> message) override
+                virtual void reportError(const Location& loc, StringView message) override
                 {
                     TRACE_ERROR("{}: error: {}", loc, message);
                 }
 
-                virtual void reportWarning(const Location& loc, StringView<char> message) override
+                virtual void reportWarning(const Location& loc, StringView message) override
                 {
                     TRACE_WARNING("{}: warning: {}", loc, message);
                 }
@@ -48,11 +48,11 @@ namespace base
                 DevNullErrorReporter()
                 {}
 
-                virtual void reportError(const Location& loc, StringView<char> message) override
+                virtual void reportError(const Location& loc, StringView message) override
                 {
                 }
 
-                virtual void reportWarning(const Location& loc, StringView<char> message) override
+                virtual void reportWarning(const Location& loc, StringView message) override
                 {
                 }
             };
@@ -60,7 +60,7 @@ namespace base
             class NoIncludesHandler : public IIncludeHandler
             {
             private:
-                virtual bool loadInclude(bool global, StringView<char> path, StringView<char> referencePath, Buffer& outContent, StringBuf& outPath) override final
+                virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override final
                 {
                     return false;
                 }
@@ -98,7 +98,7 @@ namespace base
 
         //--
 
-        TextParser::TextParser(StringView<char> context /*= StringBuf::EMPTY()*/, IErrorReporter& errorReporter /*= IErrorReporter::GetDefault()*/, ICommentEater& commentEater /*= ICommentEater::NoComments()*/)
+        TextParser::TextParser(StringView context /*= StringBuf::EMPTY()*/, IErrorReporter& errorReporter /*= IErrorReporter::GetDefault()*/, ICommentEater& commentEater /*= ICommentEater::NoComments()*/)
             : m_start(nullptr)
             , m_end(nullptr)
             , m_lineEnd(nullptr)
@@ -140,7 +140,7 @@ namespace base
         TextParser::~TextParser()
         {}
 
-        void TextParser::reset(StringView<char> data)
+        void TextParser::reset(StringView data)
         {
             m_start = data.data();
             m_end = data.data() + data.length();
@@ -170,14 +170,14 @@ namespace base
             m_numWarnings = 0;
         }
 
-        bool TextParser::error(StringView<char> txt)
+        bool TextParser::error(StringView txt)
         {
             Location location(m_context, m_lineIndex);
             m_errorReporter.reportError(location, txt);
             return false;
         }
 
-        void TextParser::warning(StringView<char> txt)
+        void TextParser::warning(StringView txt)
         {
             Location location(m_context, m_lineIndex);
             m_errorReporter.reportWarning(location, txt);
@@ -269,7 +269,7 @@ namespace base
             return false;
         }
 
-        bool TextParser::parseIdentifier(StringView<char>& outIdent, bool thisLine/*=true*/, bool isRequired/*=true*/, const char* additionalChars /*""*/)
+        bool TextParser::parseIdentifier(StringView& outIdent, bool thisLine/*=true*/, bool isRequired/*=true*/, const char* additionalChars /*""*/)
         {
             // go to content
             if (!findNextContent(thisLine))
@@ -287,7 +287,7 @@ namespace base
             // parsed anything ?
             if (cur > m_pos)
             {
-                outIdent = StringView<char>(m_pos, cur - m_pos);
+                outIdent = StringView(m_pos, cur - m_pos);
                 m_pos = cur;
                 return true;
             }
@@ -296,7 +296,7 @@ namespace base
             return isRequired ? error("Missing required identifier") : false;
         }
 
-        bool TextParser::parseString(StringView<char>& outText, bool thisLine/*=true*/, bool isRequired/*=true*/)
+        bool TextParser::parseString(StringView& outText, bool thisLine/*=true*/, bool isRequired/*=true*/)
         {
             // go to content
             if (!findNextContent(thisLine))
@@ -312,7 +312,7 @@ namespace base
                 {
                     if (*cur++ == '\"')
                     {
-                        outText = StringView<char>(start, cur - start - 1);
+                        outText = StringView(start, cur - start - 1);
                         m_pos = cur;
                         return true;
                     }
@@ -323,7 +323,7 @@ namespace base
             return isRequired ? error("Missing required string") : false;
         }
 
-        bool TextParser::parseName(StringView<char>& outText, bool thisLine/*=true*/, bool isRequired/*=true*/)
+        bool TextParser::parseName(StringView& outText, bool thisLine/*=true*/, bool isRequired/*=true*/)
         {
             // go to content
             if (!findNextContent(thisLine))
@@ -339,7 +339,7 @@ namespace base
                 {
                     if (*cur++ == '\'')
                     {
-                        outText = StringView<char>(start, cur - start - 1);
+                        outText = StringView(start, cur - start - 1);
                         m_pos = cur;
                         return true;
                     }
@@ -352,7 +352,7 @@ namespace base
 
         bool TextParser::parseHex(uint64_t& outValue, uint32_t maxLength /*= 0*/, uint32_t* outValueLength/*= nullptr*/, bool thisLine/*=true*/, bool isRequired/*=true*/)
         {
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseHex(outValue, maxLength, outValueLength))
             {
                 m_pos = parser.currentView().data();
@@ -369,7 +369,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseUint8(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -386,7 +386,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseUint16(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -403,7 +403,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseUint32(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -420,7 +420,7 @@ namespace base
            if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseUint64(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -437,7 +437,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseInt8(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -454,7 +454,7 @@ namespace base
              if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseInt16(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -471,7 +471,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseInt32(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -488,7 +488,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseInt64(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -505,7 +505,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseFloat(outValue))
             {
                 m_pos = parser.currentView().data();
@@ -522,7 +522,7 @@ namespace base
             if (!findNextContent(thisLine))
                 return false;
 
-            StringParser parser(StringView<char>(m_pos, m_end));
+            StringParser parser(StringView(m_pos, m_end));
             if (parser.parseDouble(outValue))
             {
                 m_pos = parser.currentView().data();

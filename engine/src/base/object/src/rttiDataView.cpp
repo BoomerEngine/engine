@@ -27,7 +27,7 @@ namespace base
             return (ch >= '0' && ch <= '9');
         }
 
-        bool ParsePropertyName(StringView<char>& view, StringView<char>& outPropertyName)
+        bool ParsePropertyName(StringView& view, StringView& outPropertyName)
         {
             auto cur  = view.data();
             auto end  = cur + view.length();
@@ -50,12 +50,12 @@ namespace base
                 ++cur;
             }
 
-            outPropertyName = StringView<char>(identStart, cur);
-            view = StringView<char>(cur, end);
+            outPropertyName = StringView(identStart, cur);
+            view = StringView(cur, end);
             return !outPropertyName.empty();
         }
 
-        bool ParseArrayIndex(StringView<char>& view, uint32_t& outArrayCount)
+        bool ParseArrayIndex(StringView& view, uint32_t& outArrayCount)
         {
             auto cur  = view.data();
             auto end  = cur + view.length();
@@ -70,10 +70,10 @@ namespace base
             {
                 if (*cur == ']')
                 {
-                    auto numberView = StringView<char>(numberStart, cur);
+                    auto numberView = StringView(numberStart, cur);
                     if (MatchResult::OK == numberView.match(outArrayCount))
                     {
-                        view = StringView<char>(cur+1, end);
+                        view = StringView(cur+1, end);
                         return true;
                     }
 
@@ -89,7 +89,7 @@ namespace base
             return false;
         }
 
-        bool ExtractParentPath(StringView<char>& view, StringView<char>& outChild)
+        bool ExtractParentPath(StringView& view, StringView& outChild)
         {
             if (view.empty())
                 return false;
@@ -116,7 +116,7 @@ namespace base
                 else
                 {
                     outChild = view;
-                    view = StringView<char>();
+                    view = StringView();
                     return true;
                 }
             }

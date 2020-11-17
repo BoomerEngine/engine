@@ -67,7 +67,7 @@ namespace rendering
     /// visibility group info
     struct MeshVisibilityGroupInfo
     {
-        base::StringView<char> name;
+        base::StringView name;
         float referenceVisibilityDistance = 100.0f; // distance at which this kind of mesh should be visible
         float referenceStreamingDistance = 0.0f; // distance at which this kind of mesh should stream
     };

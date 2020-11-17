@@ -112,7 +112,7 @@ namespace ui
         }
     }
 
-    void TrackBar::units(base::StringView<char> txt)
+    void TrackBar::units(base::StringView txt)
     {
         if (m_units != txt)
         { 
@@ -305,7 +305,7 @@ namespace ui
         return TBaseClass::handleKeyEvent(evt);
     }
 
-    bool TrackBar::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool TrackBar::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "min")
         {

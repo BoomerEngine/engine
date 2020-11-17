@@ -59,7 +59,7 @@ namespace base
         {
         }
 
-        Address::Address(StringView<char> txt, uint16_t portOverride /*= 0*/, AddressType type /*= AddressType::AddressIPv4*/)
+        Address::Address(StringView txt, uint16_t portOverride /*= 0*/, AddressType type /*= AddressType::AddressIPv4*/)
             : m_type(type)
             , m_port(0)
         {
@@ -71,7 +71,7 @@ namespace base
             }
         }
 
-        bool Address::Parse(StringView<char> txt, Address& outAddress, uint16_t portOverride /*= 0*/, AddressType type /*= AddressType::AddressIPv4*/)
+        bool Address::Parse(StringView txt, Address& outAddress, uint16_t portOverride /*= 0*/, AddressType type /*= AddressType::AddressIPv4*/)
         {
             uint32_t port = portOverride;
             auto mainPart = txt;

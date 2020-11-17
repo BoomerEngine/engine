@@ -84,7 +84,7 @@ namespace base
                 }
             }
 
-            bool ReadArrayValue(const char*& ptr, const char* endPtr, StringView<char>& outValue)
+            bool ReadArrayValue(const char*& ptr, const char* endPtr, StringView& outValue)
             {
                 int innerDepth = 0;
                 int propertyDepth = 0;
@@ -105,7 +105,7 @@ namespace base
                     {
                         if (innerDepth == 0 && propertyDepth == 0)
                         {
-                            outValue = StringView<char>(start, ptr - 1);
+                            outValue = StringView(start, ptr - 1);
                             return true;
                         }
                         else
@@ -136,7 +136,7 @@ namespace base
                 return false;
             }
 
-            DataViewResult DynamicArrayType::describeDataView(StringView<char> viewPath, const void* viewData, DataViewInfo& outInfo) const
+            DataViewResult DynamicArrayType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
             {
                 if (viewPath.empty())
                     outInfo.flags |= DataViewInfoFlagBit::DynamicArray;
@@ -144,12 +144,12 @@ namespace base
                 return IArrayType::describeDataView(viewPath, viewData, outInfo);
             }
 
-            DataViewResult DynamicArrayType::writeDataView(StringView<char> viewPath, void* viewData, const void* sourceData, Type sourceType) const
+            DataViewResult DynamicArrayType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
             {
                 return IArrayType::writeDataView(viewPath, viewData, sourceData, sourceType);
             }
 
-            bool DynamicArrayType::parseFromString(StringView<char> txt, void* data, uint32_t flags) const
+            bool DynamicArrayType::parseFromString(StringView txt, void* data, uint32_t flags) const
             {
                 auto arr  = (BaseArray*)data;
                 if (innerType()->name() == "char"_id || innerType()->name() == "char"_id)
@@ -193,7 +193,7 @@ namespace base
                             if (ch != '[')
                                 return false;
 
-                            StringView<char> value;
+                            StringView value;
                             if (!ReadArrayValue(readPtr, endPtr, value))
                                 return false;
                             itemCount += 1;
@@ -219,7 +219,7 @@ namespace base
                         if (ch != '[')
                             return false;
 
-                        StringView<char> value;
+                        StringView value;
                         if (!ReadArrayValue(readPtr, endPtr, value))
                             return false;
 

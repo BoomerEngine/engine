@@ -26,7 +26,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(Group, IElement);
 
     public:
-        Group(base::StringView<char> caption = "Group", bool expanded = true);
+        Group(base::StringView caption = "Group", bool expanded = true);
 
         //--
 
@@ -49,7 +49,7 @@ namespace ui
 
         //---
 
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
     };
 
     //--

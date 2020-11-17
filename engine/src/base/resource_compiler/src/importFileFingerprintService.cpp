@@ -21,7 +21,7 @@ namespace base
     {
         //--
 
-        static RefPtr<ImportFingerprintCache> LoadCache(StringView<char> path)
+        static RefPtr<ImportFingerprintCache> LoadCache(StringView path)
         {
             if (auto file = base::io::OpenForAsyncReading(path))
             {
@@ -41,7 +41,7 @@ namespace base
             return CreateSharedPtr<ImportFingerprintCache>();
         }
 
-        static bool SaveCache(StringView<char> path, const RefPtr<ImportFingerprintCache>& cache)
+        static bool SaveCache(StringView path, const RefPtr<ImportFingerprintCache>& cache)
         {
             if (auto file = base::io::OpenForWriting(path))
             {
@@ -111,7 +111,7 @@ namespace base
 
         //--
 
-        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView<char> absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
+        CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
         {
             // first, check the file timestamp, maybe we have the data in cache
             io::TimeStamp timestamp;

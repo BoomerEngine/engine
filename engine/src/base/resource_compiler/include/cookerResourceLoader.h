@@ -84,10 +84,10 @@ namespace base
             void applyReloading(ResourcePtr currentResource, ResourcePtr newResource);
 
             ResourcePtr loadInternal(ResourceKey key, bool normalLoading=true);
-            ResourcePtr loadInternalDirectly(ClassType resClass, StringView<char> depothPath);
+            ResourcePtr loadInternalDirectly(ClassType resClass, StringView depothPath);
 
-            void updateDirectFileDependencies(ResourceKey key, StringView<char> depothPath);
-            void updateEmptyFileDependencies(ResourceKey key, StringView<char> depothPath);
+            void updateDirectFileDependencies(ResourceKey key, StringView depothPath);
+            void updateEmptyFileDependencies(ResourceKey key, StringView depothPath);
         };
 
         //--

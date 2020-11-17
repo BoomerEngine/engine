@@ -59,7 +59,7 @@ namespace ui
         }
     }
 
-    bool ProgressBar::handleTemplateProperty(base::StringView<char> name, base::StringView<char> value)
+    bool ProgressBar::handleTemplateProperty(base::StringView name, base::StringView value)
     {
         if (name == "showPercents" || name == "text" || name == "showPercent")
         {

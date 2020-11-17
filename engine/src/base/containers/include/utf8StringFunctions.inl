@@ -40,7 +40,7 @@ namespace base
         {
         }
             
-        INLINE CharIterator::CharIterator(StringView<char> txt)
+        INLINE CharIterator::CharIterator(StringView txt)
             : m_pos(txt.data())
             , m_end(txt.data() + txt.length())
         {}

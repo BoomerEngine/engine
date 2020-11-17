@@ -42,7 +42,7 @@ namespace rendering
             return *this;
         }
 
-        AttributeList& AttributeList::add(base::StringID key, base::StringView<char> txt)
+        AttributeList& AttributeList::add(base::StringID key, base::StringView txt)
         {
             attributes[key] = base::StringBuf(txt);
             return *this;
@@ -53,14 +53,14 @@ namespace rendering
             return attributes.contains(key);
         }
 
-        base::StringView<char> AttributeList::value(base::StringID key) const
+        base::StringView AttributeList::value(base::StringID key) const
         {
             if (const auto* val = attributes.find(key))
                 return val->view();
             return "";
         }
 
-        base::StringView<char> AttributeList::valueOrDefault(base::StringID key, base::StringView<char> defaultValue/*=""*/) const
+        base::StringView AttributeList::valueOrDefault(base::StringID key, base::StringView defaultValue/*=""*/) const
         {
             if (const auto* val = attributes.find(key))
                 return val->view();
@@ -231,14 +231,14 @@ namespace rendering
             TypeReference::TypeReference()
             {}
 
-            TypeReference::TypeReference(const base::parser::Location& loc, base::StringView<char> name)
+            TypeReference::TypeReference(const base::parser::Location& loc, base::StringView name)
                 : location(loc)
                 , name(name)
             {}
 
             //----------
 
-            Element::Element(const base::parser::Location& loc, ElementType type, base::StringView<char> name, ElementFlags flags)
+            Element::Element(const base::parser::Location& loc, ElementType type, base::StringView name, ElementFlags flags)
                 : type(type)
                 , location(loc)
                 , name(name)
@@ -258,7 +258,7 @@ namespace rendering
                 return ret;
             }
 
-            const Element* Element::findAttribute(base::StringView<char> name) const
+            const Element* Element::findAttribute(base::StringView name) const
             {
                 for (auto attr  : attributes)
                     if (attr->name == name)

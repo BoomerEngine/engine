@@ -49,7 +49,7 @@ namespace base
                 initClassMap();
             }
 
-            const ISourceAssetLoader* findLoader(StringView<char> importPath) const
+            const ISourceAssetLoader* findLoader(StringView importPath) const
             {
                 const auto ext = importPath.afterLast(".");
 
@@ -95,7 +95,7 @@ namespace base
             }
         };
 
-        SourceAssetPtr ISourceAssetLoader::LoadFromMemory(StringView<char> importPath, StringView<char> contextPath, Buffer data)
+        SourceAssetPtr ISourceAssetLoader::LoadFromMemory(StringView importPath, StringView contextPath, Buffer data)
         {
             if (const auto* loader = SoruceAssetLoaderRegistry::GetInstance().findLoader(importPath))
                 return loader->loadFromMemory(importPath, contextPath, data);

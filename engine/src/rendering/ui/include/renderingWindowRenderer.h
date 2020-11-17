@@ -46,7 +46,7 @@ namespace rendering
         virtual bool windowGetFocus(ui::NativeWindowID id) override;
         virtual bool windowGetMinimized(ui::NativeWindowID id) override;
         virtual bool windowGetMaximized(ui::NativeWindowID id) override;
-        virtual void windowSetTitle(ui::NativeWindowID id, base::StringView<char> txt) override;
+        virtual void windowSetTitle(ui::NativeWindowID id, base::StringView txt) override;
         virtual void windowSetOpacity(ui::NativeWindowID id, float opacity) override;
         virtual void windowUpdate(ui::NativeWindowID id) override;
         virtual void windowRenderContent(ui::NativeWindowID id, const ui::Size& size, bool forcedPaint, const base::canvas::Canvas& canvas) override;
@@ -58,9 +58,9 @@ namespace rendering
         virtual void windowMinimize(ui::NativeWindowID id) override;
         virtual void windowMaximize(ui::NativeWindowID id) override;
 
-        virtual bool stroreClipboardData(base::StringView<char> format, const void* data, uint32_t size) override final;
-        virtual base::Buffer loadClipboardData(base::StringView<char> format) override final;
-        virtual bool checkClipboardHasData(base::StringView<char> format) override final;
+        virtual bool stroreClipboardData(base::StringView format, const void* data, uint32_t size) override final;
+        virtual base::Buffer loadClipboardData(base::StringView format) override final;
+        virtual bool checkClipboardHasData(base::StringView format) override final;
 
         /// IDriverNativeWindowCallback
         virtual void onOutputWindowStateChanged(ObjectID output, bool active) override;

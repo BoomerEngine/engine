@@ -53,13 +53,13 @@ namespace ed
         ///---
 
         /// create path (all directories along the way)
-        ManagedDirectory* createPath(StringView<char> depotPath, const char** leftOver = nullptr);
+        ManagedDirectory* createPath(StringView depotPath, const char** leftOver = nullptr);
 
         /// find directory in depot, optionally returns the part of the path that is a file name
-        ManagedDirectory* findPath(StringView<char> depotPath, const char** leftOver = nullptr) const;
+        ManagedDirectory* findPath(StringView depotPath, const char** leftOver = nullptr) const;
 
         /// find managed file for given depot path
-        ManagedFile* findManagedFile(StringView<char> depotPath) const;
+        ManagedFile* findManagedFile(StringView depotPath) const;
 
         ///---
 
@@ -94,7 +94,7 @@ namespace ed
         // directories has changed
         HashMap<StringBuf, NativeTimePoint> m_modifiedDirectories;
 
-        void handleDepotFileNotificataion(StringView<char> path);
+        void handleDepotFileNotificataion(StringView path);
         void processDepotFileNotificataion();
 
         //--

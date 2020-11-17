@@ -32,10 +32,10 @@ namespace ui
         void postNotification(base::StringID group, IElement* notification, float visibleFor = 0.0f, base::StringID additionalFrameStyle = base::StringID::EMPTY());
 
         // post a small text notification
-        void postTextNotification(base::StringID group, base::StringView<char> txt, MessageType type = MessageType::Info, float visibleFor = 0.0f);
+        void postTextNotification(base::StringID group, base::StringView txt, MessageType type = MessageType::Info, float visibleFor = 0.0f);
 
         // post a large text notification (use message icons)
-        void postLargeTextNotification(base::StringID group, base::StringView<char> txt, MessageType type = MessageType::Info, float visibleFor = 0.0f);
+        void postLargeTextNotification(base::StringID group, base::StringView txt, MessageType type = MessageType::Info, float visibleFor = 0.0f);
 
         //--
 

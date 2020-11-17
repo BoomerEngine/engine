@@ -26,7 +26,7 @@ namespace base
         virtual void handleFullObjectChange() {};
 
         /// observed value (or parent or child) changed, passes full path to changed
-        virtual void handlePropertyChanged(StringView<char> fullPath, bool parentNotification) {};
+        virtual void handlePropertyChanged(StringView fullPath, bool parentNotification) {};
     };
 
     //---
@@ -64,55 +64,55 @@ namespace base
         //---
 
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const = 0;
+        virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const = 0;
 
         /// Read data from memory
-        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const = 0;
+        virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const = 0;
 
         /// Write data to memory
-        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) const = 0;
+        virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const = 0;
 
         //--
 
         /// Read data from memory - easier version using DataHolder (NOTE: it must be initialized :P)
-        INLINE DataViewResult readDataViewSimple(StringView<char> viewPath, rtti::DataHolder& outData) const { return readDataView(viewPath, outData.data(), outData.type()); }
+        INLINE DataViewResult readDataViewSimple(StringView viewPath, rtti::DataHolder& outData) const { return readDataView(viewPath, outData.data(), outData.type()); }
 
         /// Write data to memory
-        INLINE DataViewResult writeDataViewSimple(StringView<char> viewPath, const rtti::DataHolder& newData) const { return writeDataView(viewPath, newData.data(), newData.type()); }
+        INLINE DataViewResult writeDataViewSimple(StringView viewPath, const rtti::DataHolder& newData) const { return writeDataView(viewPath, newData.data(), newData.type()); }
 
         //--
 
         /// Attach observer of particular place (property) in this view
-        virtual void attachObserver(StringView<char> path, IDataViewObserver* observer);
+        virtual void attachObserver(StringView path, IDataViewObserver* observer);
 
         /// Detach observer previously attached with attachObserver()
-        virtual void detachObserver(StringView<char> path, IDataViewObserver* observer);
+        virtual void detachObserver(StringView path, IDataViewObserver* observer);
 
         //---
 
         // create action that writes new value to this view
-        virtual DataViewActionResult actionValueWrite(StringView<char> viewPath, const void* sourceData, Type sourceType) const = 0;
+        virtual DataViewActionResult actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const = 0;
 
         // create action that resets current value to base value
-        virtual DataViewActionResult actionValueReset(StringView<char> viewPath) const = 0;
+        virtual DataViewActionResult actionValueReset(StringView viewPath) const = 0;
 
         // create action that clear array
-        virtual DataViewActionResult actionArrayClear(StringView<char> viewPath) const = 0;
+        virtual DataViewActionResult actionArrayClear(StringView viewPath) const = 0;
 
         // create action that adds one element to array
-        virtual DataViewActionResult actionArrayInsertElement(StringView<char> viewPath, uint32_t index) const = 0;
+        virtual DataViewActionResult actionArrayInsertElement(StringView viewPath, uint32_t index) const = 0;
 
         // create action that removes one element from array
-        virtual DataViewActionResult actionArrayRemoveElement(StringView<char> viewPath, uint32_t index) const = 0;
+        virtual DataViewActionResult actionArrayRemoveElement(StringView viewPath, uint32_t index) const = 0;
 
         // create action that adds one new element to the array at the end of the array
-        virtual DataViewActionResult actionArrayNewElement(StringView<char> viewPath) const = 0;
+        virtual DataViewActionResult actionArrayNewElement(StringView viewPath) const = 0;
 
         // create action that clears inlined object
-        virtual DataViewActionResult actionObjectClear(StringView<char> viewPath) const = 0;
+        virtual DataViewActionResult actionObjectClear(StringView viewPath) const = 0;
 
         // create action that creates/replaces inlined object with an object of different class
-        virtual DataViewActionResult actionObjectNew(StringView<char> viewPath, ClassType objectClass) const = 0;
+        virtual DataViewActionResult actionObjectNew(StringView viewPath, ClassType objectClass) const = 0;
 
         //--
 
@@ -132,13 +132,13 @@ namespace base
 
         //--
 
-        void dispatchPropertyChanged(StringView<char> eventPath);
+        void dispatchPropertyChanged(StringView eventPath);
         void dispatchFullStructureChanged();
 
-        Path* findPathEntry(StringView<char> path);
+        Path* findPathEntry(StringView path);
 
-        Path* createPathEntry(StringView<char> path);
-        Path* createPathEntryInternal(Path* parent, StringView<char> fullPath);
+        Path* createPathEntry(StringView path);
+        Path* createPathEntryInternal(Path* parent, StringView fullPath);
     };
     
     ///---

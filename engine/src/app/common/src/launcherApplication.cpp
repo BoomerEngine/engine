@@ -29,7 +29,7 @@ namespace application
 
     //--
 
-    LauncherApp::LauncherApp(base::StringView<char> title)
+    LauncherApp::LauncherApp(base::StringView title)
         : m_title(title)
     {}
     

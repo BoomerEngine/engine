@@ -42,7 +42,7 @@ namespace ui
 
         void configure(rendering::scene::FrameRenderMode mode, base::StringID materialChannelName = base::StringID::EMPTY());
 
-        void createFilterItem(base::StringView<char> prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu);
+        void createFilterItem(base::StringView prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu);
         void createToolbarItems();
     };
 

@@ -25,7 +25,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DockPanel, IElement);
 
     public:
-        DockPanel(base::StringView<char> title = "", base::StringView<char> id = "");
+        DockPanel(base::StringView title = "", base::StringView id = "");
         virtual ~DockPanel();
 
         // get panel ID (for saving layout, panels without ID are not saved)
@@ -63,7 +63,7 @@ namespace ui
         friend class DockNotebook;
         friend class DockLayoutNode;
 
-        virtual bool handleTemplateProperty(base::StringView<char> name, base::StringView<char> value) override;
+        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
     };
     
     //---

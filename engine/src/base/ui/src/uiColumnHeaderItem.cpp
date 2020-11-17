@@ -24,7 +24,7 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("ColumnHeader");
     RTTI_END_TYPE();
 
-    ColumnHeader::ColumnHeader(base::StringView<char> text, bool canResize, bool canSort)
+    ColumnHeader::ColumnHeader(base::StringView text, bool canResize, bool canSort)
         : m_canResize(canResize)
         , m_canSort(canSort)
     {

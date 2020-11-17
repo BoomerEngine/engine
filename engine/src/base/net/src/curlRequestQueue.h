@@ -29,14 +29,14 @@ namespace base
         class MultiConnection : public http::Connection
         {
         public:
-            MultiConnection(RequestQueue* queue, StringView<char> address, StringView<char> protocol);
+            MultiConnection(RequestQueue* queue, StringView address, StringView protocol);
             virtual ~MultiConnection();
 
             // return CURL object after it's finished
             void returnRequestObject(CURL* handle);
 
             /// process a request and call a callback function once it's completed
-            virtual void send(StringView<char> url, const http::RequestArgs& params, const http::TRequestResponseFunc& service, http::Method method, uint32_t timeOut) override final;
+            virtual void send(StringView url, const http::RequestArgs& params, const http::TRequestResponseFunc& service, http::Method method, uint32_t timeOut) override final;
 
         private:
             Array<CURL*> m_freeHandles;

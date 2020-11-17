@@ -1274,23 +1274,23 @@ namespace base
             return OpcodeList();
         }
 
-        bool OpcodeGenerator::reportError(IErrorHandler& err, const StubLocation& location, StringView<char> txt)
+        bool OpcodeGenerator::reportError(IErrorHandler& err, const StubLocation& location, StringView txt)
         {
             err.reportError(location.file->absolutePath, location.line, txt);
             return false;
         }
 
-        void OpcodeGenerator::reportWarning(IErrorHandler& err, const StubLocation& location, StringView<char> txt)
+        void OpcodeGenerator::reportWarning(IErrorHandler& err, const StubLocation& location, StringView txt)
         {
             err.reportWarning(location.file->absolutePath, location.line, txt);
         }
 
-        bool OpcodeGenerator::reportError(IErrorHandler& err, const FunctionNode* node, StringView<char> txt)
+        bool OpcodeGenerator::reportError(IErrorHandler& err, const FunctionNode* node, StringView txt)
         {
             return reportError(err, node->location, txt);
         }
 
-        void OpcodeGenerator::reportWarning(IErrorHandler& err, const FunctionNode* node, StringView<char> txt)
+        void OpcodeGenerator::reportWarning(IErrorHandler& err, const FunctionNode* node, StringView txt)
         {
             reportWarning(err, node->location, txt);
         }

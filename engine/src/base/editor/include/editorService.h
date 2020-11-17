@@ -55,22 +55,22 @@ namespace ed
         ///--
 
         // get the semi persistent data for the open/save file dialog - mainly the active directory, selected file filter, etc
-        io::OpenSavePersistentData& openSavePersistentData(StringView<char> category);
+        io::OpenSavePersistentData& openSavePersistentData(StringView category);
 
         ///---
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, StringView<char> category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileName = nullptr);
+        bool saveToXML(ui::IElement* owner, StringView category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileName = nullptr);
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
-        bool saveToXML(ui::IElement* owner, StringView<char> category, const ObjectPtr& objectPtr, StringBuf* currentFileName=nullptr);
+        bool saveToXML(ui::IElement* owner, StringView category, const ObjectPtr& objectPtr, StringBuf* currentFileName=nullptr);
 
         /// helper function to load object from XML on user's disk 
-        ObjectPtr loadFromXML(ui::IElement* owner, StringView<char> category, SpecificClassType<IObject> expectedObjectClass);
+        ObjectPtr loadFromXML(ui::IElement* owner, StringView category, SpecificClassType<IObject> expectedObjectClass);
 
         /// helper function to load object from XML on user's disk 
         template< typename T >
-        INLINE RefPtr<T> loadFromXML(ui::IElement* owner, StringView<char> category) { return rtti_cast<T>(loadFromXML(owner, category, T::GetStaticClass())); }
+        INLINE RefPtr<T> loadFromXML(ui::IElement* owner, StringView category) { return rtti_cast<T>(loadFromXML(owner, category, T::GetStaticClass())); }
 
         ///---
 

@@ -79,7 +79,7 @@ namespace wavefront
         buildMaterialMap();
     }
 
-    const Material* FormatMTL::findMaterial(base::StringView<char> name) const
+    const Material* FormatMTL::findMaterial(base::StringView name) const
     {
         uint32_t index = 0;
         if (m_materialMap.find(name, index))
@@ -118,7 +118,7 @@ namespace wavefront
         RTTI_DECLARE_VIRTUAL_CLASS(FormatMTLAssetLoader, base::res::ISourceAssetLoader);
 
     public:
-        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView<char> importPath, base::StringView<char> contextPath, base::Buffer data) const override
+        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView importPath, base::StringView contextPath, base::Buffer data) const override
         {
             return LoadMaterials(contextPath, data.data(), data.size());
         }

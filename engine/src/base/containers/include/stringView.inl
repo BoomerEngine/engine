@@ -15,8 +15,8 @@ namespace base
 
         struct BASE_CONTAINERS_API BaseHelper
         {
-            static void Slice(const char* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< StringView<char> >& outTokens);
-            static void Slice(const wchar_t* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< StringView<wchar_t> >& outTokens);
+            static void Slice(const char* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< BaseStringView<char> >& outTokens);
+            static void Slice(const wchar_t* data, uint64_t length, const char* splitChars, bool keepEmpty, Array< BaseStringView<wchar_t> >& outTokens);
 
             static int64_t Find(const char* haystack, uint64_t length, const char* key, uint64_t keyLength);
             static int64_t Find(const wchar_t* haystack, uint64_t length, const wchar_t* key, uint64_t keyLength);
@@ -39,20 +39,20 @@ namespace base
             static uint32_t StringCRC32(const wchar_t* str, const wchar_t* end, uint32_t crc);
             static uint64_t StringCRC64(const wchar_t* str, const wchar_t* end, uint64_t crc);
 
-            static void Append(Array<char>& table, StringView<char> view);
-            static void Append(Array<wchar_t>& table, StringView<char> view);
-            static void Append(Array<char>& table, const StringView<wchar_t>& view);
-            static void Append(Array<wchar_t>& table, const StringView<wchar_t>& view);
+            static void Append(Array<char>& table, BaseStringView<char> view);
+            static void Append(Array<wchar_t>& table, BaseStringView<char> view);
+            static void Append(Array<char>& table, const BaseStringView<wchar_t>& view);
+            static void Append(Array<wchar_t>& table, const BaseStringView<wchar_t>& view);
 
-            static bool MatchPattern(StringView<char> str, StringView<char> pattern);
-            static bool MatchPattern(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
-            static bool MatchPatternNoCase(StringView<char> str, StringView<char> pattern);
-            static bool MatchPatternNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
+            static bool MatchPattern(BaseStringView<char> str, BaseStringView<char> pattern);
+            static bool MatchPattern(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern);
+            static bool MatchPatternNoCase(BaseStringView<char> str, BaseStringView<char> pattern);
+            static bool MatchPatternNoCase(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern);
 
-            static bool MatchString(StringView<char> str, StringView<char> pattern);
-            static bool MatchString(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
-            static bool MatchStringNoCase(StringView<char> str, StringView<char> pattern);
-            static bool MatchStringNoCase(const StringView<wchar_t>& str, const StringView<wchar_t>& pattern);
+            static bool MatchString(BaseStringView<char> str, BaseStringView<char> pattern);
+            static bool MatchString(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern);
+            static bool MatchStringNoCase(BaseStringView<char> str, BaseStringView<char> pattern);
+            static bool MatchStringNoCase(const BaseStringView<wchar_t>& str, const BaseStringView<wchar_t>& pattern);
 
             static MatchResult MatchInteger(const char* str, uint8_t& outValue, size_t strLength = MAX_SIZE_T, uint32_t base = 10);
             static MatchResult MatchInteger(const char* str, uint16_t& outValue, size_t strLength = MAX_SIZE_T, uint32_t base = 10);
@@ -139,13 +139,13 @@ namespace base
     } // prv
 
     template< typename T >
-    INLINE StringView<T>::StringView()
+    INLINE BaseStringView<T>::BaseStringView()
         : m_start(nullptr)
         , m_end(nullptr)
     {}
 
     template< typename T >
-    INLINE StringView<T>::StringView(const T* start, uint32_t length/* = INDEX_MAX*/)
+    INLINE BaseStringView<T>::BaseStringView(const T* start, uint32_t length/* = INDEX_MAX*/)
         : m_start(start)
         , m_end(start)
     {
@@ -157,25 +157,25 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T>::StringView(const ConstArrayIterator<T>& start, const ConstArrayIterator<T>& end)
+    INLINE BaseStringView<T>::BaseStringView(const ConstArrayIterator<T>& start, const ConstArrayIterator<T>& end)
         : m_start(start.ptr())
         , m_end(end.ptr())
     {}
 
     template< typename T >
-    INLINE StringView<T>::StringView(const T* start, const T* end)
+    INLINE BaseStringView<T>::BaseStringView(const T* start, const T* end)
         : m_start(start)
         , m_end(end)
     {}
 
     template< typename T >
-    INLINE StringView<T>::StringView(const StringView<T>& other)
+    INLINE BaseStringView<T>::BaseStringView(const BaseStringView<T>& other)
         : m_start(other.m_start)
         , m_end(other.m_end)
     {}
 
     template< typename T >
-    INLINE StringView<T>::StringView(StringView&& other)
+    INLINE BaseStringView<T>::BaseStringView(BaseStringView&& other)
     {
         m_start = other.m_start;
         m_end = other.m_end;
@@ -185,14 +185,14 @@ namespace base
 
     template< typename T >
     template< uint32_t N >
-    INLINE StringView<T>::StringView(const BaseTempString<N>& tempString)
+    INLINE BaseStringView<T>::BaseStringView(const BaseTempString<N>& tempString)
     {
         m_start = tempString.c_str();
         m_end = m_start + prv::Helper<T>::Length(m_start);
     }
 
     template< typename T >
-    INLINE StringView<T>::StringView(const Buffer& rawData)
+    INLINE BaseStringView<T>::BaseStringView(const Buffer& rawData)
         : m_start(nullptr)
         , m_end(nullptr)
     {
@@ -204,7 +204,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T>& StringView<T>::operator=(const StringView& other)
+    INLINE BaseStringView<T>& BaseStringView<T>::operator=(const BaseStringView& other)
     {
         m_start = other.m_start;
         m_end = other.m_end;
@@ -212,7 +212,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T>& StringView<T>::operator=(StringView&& other)
+    INLINE BaseStringView<T>& BaseStringView<T>::operator=(BaseStringView&& other)
     {
         m_start = other.m_start;
         m_end = other.m_end;
@@ -222,87 +222,87 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T>::~StringView()
+    INLINE BaseStringView<T>::~BaseStringView()
     {
         m_start = nullptr;
         m_end = nullptr;
     }
 
     template< typename T >
-    INLINE bool StringView<T>::empty() const
+    INLINE bool BaseStringView<T>::empty() const
     {
         return (m_start == m_end);
     }
 
     template< typename T >
-    INLINE StringView<T>::operator bool() const
+    INLINE BaseStringView<T>::operator bool() const
     {
         return m_end > m_start;
     }
 
     template< typename T >
-    INLINE uint32_t StringView<T>::length() const
+    INLINE uint32_t BaseStringView<T>::length() const
     {
         return range_cast<uint32_t>(m_end - m_start);
     }
 
     template< typename T >
-    INLINE const T* StringView<T>::data() const
+    INLINE const T* BaseStringView<T>::data() const
     {
         return m_start;
     }
 
     template< typename T >
-    INLINE void StringView<T>::clear()
+    INLINE void BaseStringView<T>::clear()
     {
         m_start = nullptr;
         m_end = nullptr;
     }
 
     template< typename T >
-    INLINE void StringView<T>::print(IFormatStream& p) const
+    INLINE void BaseStringView<T>::print(IFormatStream& p) const
     {
         p.append(m_start, length());
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator==(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator==(const BaseStringView<T>& other) const
     {
         return 0 == cmp(other);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator!=(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator!=(const BaseStringView<T>& other) const
     {
         return 0 != cmp(other);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator<(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator<(const BaseStringView<T>& other) const
     {
         return cmp(other) < 0;
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator<=(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator<=(const BaseStringView<T>& other) const
     {
         return cmp(other) <= 0;
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator>(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator>(const BaseStringView<T>& other) const
     {
         return cmp(other) > 0;
     }
 
     template< typename T >
-    INLINE bool StringView<T>::operator>=(const StringView<T>& other) const
+    INLINE bool BaseStringView<T>::operator>=(const BaseStringView<T>& other) const
     {
         return cmp(other) >= 0;
     }
 
     template< typename T >
-    INLINE int StringView<T>::cmp(const StringView<T>& other, uint64_t count /*= INDEX_MAX*/) const
+    INLINE int BaseStringView<T>::cmp(const BaseStringView<T>& other, uint64_t count /*= INDEX_MAX*/) const
     {
         if (count == INDEX_MAX)
             count = std::max<uint64_t>(length(), other.length());
@@ -321,7 +321,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE int StringView<T>::caseCmp(const StringView<T>& other, uint32_t count /*= INDEX_MAX*/) const
+    INLINE int BaseStringView<T>::caseCmp(const BaseStringView<T>& other, uint32_t count /*= INDEX_MAX*/) const
     {
         if (count == INDEX_MAX)
             count = std::max<uint32_t>(length(), other.length());
@@ -340,36 +340,36 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::leftPart(uint32_t count /*= INDEX_MAX*/) const
+    INLINE BaseStringView<T> BaseStringView<T>::leftPart(uint32_t count /*= INDEX_MAX*/) const
     {
         auto max = std::min<uint32_t>(count, length());
-		return StringView<T>(m_start, m_start + max);
+		return BaseStringView<T>(m_start, m_start + max);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::rightPart(uint32_t count /*= INDEX_MAX*/) const
+    INLINE BaseStringView<T> BaseStringView<T>::rightPart(uint32_t count /*= INDEX_MAX*/) const
     {
         auto max = std::min<uint32_t>(count, length());
-        return StringView<T>(m_end - max, m_end);
+        return BaseStringView<T>(m_end - max, m_end);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::subString(uint32_t first, uint32_t count /*= INDEX_MAX*/) const
+    INLINE BaseStringView<T> BaseStringView<T>::subString(uint32_t first, uint32_t count /*= INDEX_MAX*/) const
     {
         if (first > length()) first = length();
         auto max = std::min(count, length() - first);
-        return StringView<T>(m_start + first, m_start + first + max);
+        return BaseStringView<T>(m_start + first, m_start + first + max);
     }
 
     template< typename T >
-    INLINE void StringView<T>::split(uint32_t index, StringView<T>& outLeft, StringView<T>& outRight) const
+    INLINE void BaseStringView<T>::split(uint32_t index, BaseStringView<T>& outLeft, BaseStringView<T>& outRight) const
     {
         outLeft = leftPart(index);
         outRight = subString(index);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::splitAt(const StringView<T>& str, StringView<T>& outLeft, StringView<T>& outRight) const
+    INLINE bool BaseStringView<T>::splitAt(const BaseStringView<T>& str, BaseStringView<T>& outLeft, BaseStringView<T>& outRight) const
     {
         auto pos = findStr(str);
         if (pos == INDEX_NONE)
@@ -381,13 +381,13 @@ namespace base
     }
 
     template< typename T >
-    INLINE void StringView<T>::slice(const char* splitChars, bool keepEmpty, Array< StringView<T> >& outTokens) const
+    INLINE void BaseStringView<T>::slice(const char* splitChars, bool keepEmpty, Array< BaseStringView<T> >& outTokens) const
     {
         prv::Helper<T>::Slice(data(), length(), splitChars, keepEmpty, outTokens);
     }
 
     template< typename T >
-    INLINE int StringView<T>::findStr(const StringView& pattern, int firstPosition /*= 0*/) const
+    INLINE int BaseStringView<T>::findStr(const BaseStringView& pattern, int firstPosition /*= 0*/) const
     {
         if (firstPosition + (int)pattern.length() >= (int)length())
             return -1;
@@ -400,14 +400,14 @@ namespace base
     }
 
     template< typename T >
-    INLINE int StringView<T>::findRevStr(const StringView& pattern, int firstPosition /*= 0*/) const
+    INLINE int BaseStringView<T>::findRevStr(const BaseStringView& pattern, int firstPosition /*= 0*/) const
     {
         auto searchLimit = std::min<int64_t>(firstPosition, length());
 		return range_cast<int>(prv::Helper<T>::FindRev(data(), searchLimit, pattern.data(), pattern.length()));
     }
 
     template< typename T >
-    INLINE int StringView<T>::findStrNoCase(const StringView& pattern, int firstPosition /*= 0*/) const
+    INLINE int BaseStringView<T>::findStrNoCase(const BaseStringView& pattern, int firstPosition /*= 0*/) const
     {
         if (firstPosition + pattern.length() >= (int)length())
         return -1;
@@ -420,14 +420,14 @@ namespace base
     }
 
     template< typename T >
-    INLINE int StringView<T>::findRevStrNoCase(const StringView& pattern, int firstPosition /*= 0*/) const
+    INLINE int BaseStringView<T>::findRevStrNoCase(const BaseStringView& pattern, int firstPosition /*= 0*/) const
     {
         auto searchLimit = std::min<int64_t>(firstPosition, length());
 		return range_cast<int>(prv::Helper<T>::FindRevNoCase(data(), searchLimit, pattern.data(), pattern.length()));
     }
 
     template< typename T >
-    INLINE int StringView<T>::findFirstChar(T ch) const
+    INLINE int BaseStringView<T>::findFirstChar(T ch) const
     {
         auto pos  = m_start;
         while (pos < m_end)
@@ -441,7 +441,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE int StringView<T>::findLastChar(T ch) const
+    INLINE int BaseStringView<T>::findLastChar(T ch) const
     {
         auto pos  = m_end - 1;
         while (pos >= m_start)
@@ -455,7 +455,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::trimLeft() const
+    INLINE BaseStringView<T> BaseStringView<T>::trimLeft() const
     {
         auto pos  = m_start;
         while (pos < m_end)
@@ -465,11 +465,11 @@ namespace base
             pos += 1;
         }
 
-        return StringView<T>(pos, m_end);
+        return BaseStringView<T>(pos, m_end);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::trimRight() const
+    INLINE BaseStringView<T> BaseStringView<T>::trimRight() const
     {
         auto pos  = m_end;
         while (pos > m_start)
@@ -479,17 +479,17 @@ namespace base
             pos -= 1;
         }
 
-        return StringView<T>(m_start, pos);
+        return BaseStringView<T>(m_start, pos);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::trim() const
+    INLINE BaseStringView<T> BaseStringView<T>::trim() const
     {
         return trimLeft().trimRight();
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::trimTailNumbers(uint32_t* outNumber) const
+    INLINE BaseStringView<T> BaseStringView<T>::trimTailNumbers(uint32_t* outNumber) const
     {
         auto pos  = m_end;
         while (pos > m_start)
@@ -500,152 +500,152 @@ namespace base
         }
 
         if (pos < m_end && outNumber)
-            StringView<T>(pos, m_end).match(*outNumber);
+            BaseStringView<T>(pos, m_end).match(*outNumber);
 
-        return StringView<T>(m_start, pos);
+        return BaseStringView<T>(m_start, pos);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::beginsWith(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::beginsWith(const BaseStringView<T>& pattern) const
     {
         return 0 == leftPart(pattern.length()).cmp(pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::beginsWithNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::beginsWithNoCase(const BaseStringView<T>& pattern) const
     {
         return 0 == leftPart(pattern.length()).caseCmp(pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::endsWith(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::endsWith(const BaseStringView<T>& pattern) const
     {
         return 0 == rightPart(pattern.length()).cmp(pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::endsWithNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::endsWithNoCase(const BaseStringView<T>& pattern) const
     {
         return 0 == rightPart(pattern.length()).caseCmp(pattern);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterFirst(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterFirst(const BaseStringView<T>& pattern) const
     {
         auto index = findStr(pattern);
-        return (index == -1) ? StringView<T>() : subString(index + pattern.length());
+        return (index == -1) ? BaseStringView<T>() : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterFirstNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterFirstNoCase(const BaseStringView<T>& pattern) const
     {
         auto index = findStrNoCase(pattern);
-        return (index == -1) ? StringView<T>() : subString(index + pattern.length());
+        return (index == -1) ? BaseStringView<T>() : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeFirst(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeFirst(const BaseStringView<T>& pattern) const
     {
         auto index = findStr(pattern);
-        return (index == -1) ? StringView<T>() : leftPart(index);
+        return (index == -1) ? BaseStringView<T>() : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeFirstNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeFirstNoCase(const BaseStringView<T>& pattern) const
     {
         auto index = findStrNoCase(pattern);
-        return (index == -1) ? StringView<T>() : leftPart(index);
+        return (index == -1) ? BaseStringView<T>() : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterLast(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterLast(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStr(pattern);
-        return (index == -1) ? StringView<T>() : subString(index + pattern.length());
+        return (index == -1) ? BaseStringView<T>() : subString(index + pattern.length());
 
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterLastNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterLastNoCase(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStrNoCase(pattern);
-        return (index == -1) ? StringView<T>() : subString(index + pattern.length());
+        return (index == -1) ? BaseStringView<T>() : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeLast(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeLast(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStr(pattern);
-        return (index == -1) ? StringView<T>() : leftPart(index);
+        return (index == -1) ? BaseStringView<T>() : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeLastNoCase(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeLastNoCase(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStrNoCase(pattern);
-        return (index == -1) ? StringView<T>() : leftPart(index);
+        return (index == -1) ? BaseStringView<T>() : leftPart(index);
     }
     
     //--
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterFirstOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterFirstOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findStr(pattern);
         return (index == -1) ? *this : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterFirstNoCaseOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterFirstNoCaseOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findStrNoCase(pattern);
         return (index == -1) ? *this : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeFirstOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeFirstOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findStr(pattern);
         return (index == -1) ? *this : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeFirstNoCaseOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeFirstNoCaseOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findStrNoCase(pattern);
         return (index == -1) ? *this : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterLastOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterLastOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStr(pattern);
         return (index == -1) ? *this : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::afterLastNoCaseOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::afterLastNoCaseOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStrNoCase(pattern);
         return (index == -1) ? *this : subString(index + pattern.length());
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeLastOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeLastOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStr(pattern);
         return (index == -1) ? *this : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::beforeLastNoCaseOrFull(const StringView<T>& pattern) const
+    INLINE BaseStringView<T> BaseStringView<T>::beforeLastNoCaseOrFull(const BaseStringView<T>& pattern) const
     {
         auto index = findRevStrNoCase(pattern);
         return (index == -1) ? *this : leftPart(index);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::fileName() const
+    INLINE BaseStringView<T> BaseStringView<T>::fileName() const
     {
         const T* fileNameStart = m_start;
 
@@ -657,32 +657,32 @@ namespace base
             ++ptr;
         }
 
-        return StringView<T>(fileNameStart, m_end);
+        return BaseStringView<T>(fileNameStart, m_end);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::fileStem() const
+    INLINE BaseStringView<T> BaseStringView<T>::fileStem() const
     {
         const T dot[2] = { '.', 0 };
         return fileName().beforeFirst(dot);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::extensions() const
+    INLINE BaseStringView<T> BaseStringView<T>::extensions() const
     {
         const T dot[2] = { '.', 0 };
         return fileName().beforeFirst(dot);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::lastExtension() const
+    INLINE BaseStringView<T> BaseStringView<T>::lastExtension() const
     {
         const T dot[2] = { '.', 0 };
         return fileName().afterLast(dot);
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::baseDirectory() const
+    INLINE BaseStringView<T> BaseStringView<T>::baseDirectory() const
     {
         const T* pathEnd = nullptr;
 
@@ -695,13 +695,13 @@ namespace base
         }
 
         if (pathEnd)
-            return StringView<T>(m_start, pathEnd);
+            return BaseStringView<T>(m_start, pathEnd);
         else
-            return StringView<T>();
+            return BaseStringView<T>();
     }
 
     template< typename T >
-    INLINE StringView<T> StringView<T>::parentDirectory() const
+    INLINE BaseStringView<T> BaseStringView<T>::parentDirectory() const
     {
         const T* pathEnd = nullptr;
         const T* prevPathEnd = nullptr;
@@ -718,37 +718,37 @@ namespace base
         }
 
         if (prevPathEnd)
-            return StringView<T>(m_start, prevPathEnd);
+            return BaseStringView<T>(m_start, prevPathEnd);
         else
-            return StringView<T>();
+            return BaseStringView<T>();
     }
 
     template< typename T >
-    INLINE bool StringView<T>::matchString(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::matchString(const BaseStringView<T>& pattern) const
     {
         return prv::Helper<T>::MatchString(*this, pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::matchStringNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::matchStringNoCase(const BaseStringView<T>& pattern) const
     {
         return prv::Helper<T>::MatchStringNoCase(*this, pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::matchPattern(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::matchPattern(const BaseStringView<T>& pattern) const
     {
         return prv::Helper<T>::MatchPattern(*this, pattern);
     }
 
     template< typename T >
-    INLINE bool StringView<T>::matchPatternNoCase(const StringView<T>& pattern) const
+    INLINE bool BaseStringView<T>::matchPatternNoCase(const BaseStringView<T>& pattern) const
     {
         return prv::Helper<T>::MatchPatternNoCase(*this, pattern);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(bool& outValue) const
+    INLINE MatchResult BaseStringView<T>::match(bool& outValue) const
     {
         if (*this == "true")
         {
@@ -765,55 +765,55 @@ namespace base
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(uint8_t& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(uint8_t& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(uint16_t& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(uint16_t& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(uint32_t& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(uint32_t& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(uint64_t& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(uint64_t& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(char& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(char& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(short& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(short& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(int& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(int& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(int64_t& outValue, uint32_t base) const
+    INLINE MatchResult BaseStringView<T>::match(int64_t& outValue, uint32_t base) const
     {
         return prv::Helper<T>::MatchInteger(data(), outValue, length(), base);
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(float& outValue) const
+    INLINE MatchResult BaseStringView<T>::match(float& outValue) const
     {
         double result = 0.0f;
         auto ret = prv::Helper<T>::MatchFloat(data(), result, length());
@@ -823,45 +823,45 @@ namespace base
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(double& outValue) const
+    INLINE MatchResult BaseStringView<T>::match(double& outValue) const
     {
         return prv::Helper<T>::MatchFloat(data(), outValue, length());
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(StringID& outValue) const
+    INLINE MatchResult BaseStringView<T>::match(StringID& outValue) const
     {
         outValue = StringID(*this);
         return MatchResult::OK;
     }
 
     template< typename T >
-    INLINE MatchResult StringView<T>::match(StringBuf& outValue) const
+    INLINE MatchResult BaseStringView<T>::match(StringBuf& outValue) const
     {
         outValue = StringBuf(*this);
         return MatchResult::OK;
     }
 
     template< typename T >
-    INLINE uint32_t StringView<T>::CalcHash(StringView<T> txt)
+    INLINE uint32_t BaseStringView<T>::CalcHash(BaseStringView<T> txt)
     {
         return prv::Helper<T>::StringHash(txt.m_start, txt.m_end);
     }
 
     template< typename T >
-    INLINE uint32_t StringView<T>::calcCRC32(const uint32_t crc/*= CRC32Init*/) const
+    INLINE uint32_t BaseStringView<T>::calcCRC32(const uint32_t crc/*= CRC32Init*/) const
     {
         return prv::Helper<T>::StringCRC32(m_start, m_end, crc);
     }
 
     template< typename T >
-    INLINE uint64_t StringView<T>::calcCRC64(const uint64_t crc/*= CRC64Init*/) const
+    INLINE uint64_t BaseStringView<T>::calcCRC64(const uint64_t crc/*= CRC64Init*/) const
     {
         return prv::Helper<T>::StringCRC64(m_start, m_end, crc);
     }
 
     template< typename T >
-    INLINE Buffer StringView<T>::toBuffer() const
+    INLINE Buffer BaseStringView<T>::toBuffer() const
     {
         if (empty())
             return nullptr;
@@ -870,7 +870,7 @@ namespace base
     }
 
     template< typename T >
-    INLINE Buffer StringView<T>::toBufferWithZero() const
+    INLINE Buffer BaseStringView<T>::toBufferWithZero() const
     {
         auto size = sizeof(T) * (length() + 1);
 		if (size >= INDEX_MAX)
@@ -888,13 +888,13 @@ namespace base
     //--
 
     template< typename T >
-    INLINE ConstArrayIterator<T> StringView<T>::begin() const
+    INLINE ConstArrayIterator<T> BaseStringView<T>::begin() const
     {
         return ConstArrayIterator<T>(m_start);
     }
 
     template< typename T >
-    INLINE ConstArrayIterator<T> StringView<T>::end() const
+    INLINE ConstArrayIterator<T> BaseStringView<T>::end() const
     {
         return ConstArrayIterator<T>(m_end);
     }
@@ -904,7 +904,7 @@ namespace base
     /// a special lower-case only key for hash maps
     struct CaseInsensitiveKey
     {
-        CaseInsensitiveKey(base::StringView<char> view)
+        CaseInsensitiveKey(base::BaseStringView<char> view)
         {
             m_data = base::StringBuf(view).toLower();
         }
@@ -920,7 +920,7 @@ namespace base
             return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
 
-        static uint32_t CalcHash(base::StringView<char> txt)
+        static uint32_t CalcHash(base::BaseStringView<char> txt)
         {
             return base::prv::BaseHelper::StringHashNoCase(txt.data(), txt.data() + txt.length());
         }
@@ -930,7 +930,7 @@ namespace base
             return m_data == key.m_data;
         }
 
-        INLINE bool operator==(base::StringView<char> txt) const
+        INLINE bool operator==(base::BaseStringView<char> txt) const
         {
             return 0 == m_data.view().caseCmp(txt);
         }

@@ -68,13 +68,13 @@ namespace rendering
     //--
 
 
-    static base::StringView<char> ExtractRootFileName(base::StringView<char> assetFileName)
+    static base::StringView ExtractRootFileName(base::StringView assetFileName)
     {
         auto name = assetFileName.afterLastOrFull("/").afterLastOrFull("\\");
         return name.beforeFirstOrFull(".");
     }
 
-    static base::StringBuf ConvertPathToTextureSearchPath(base::StringView<char> assetPathToTexture)
+    static base::StringBuf ConvertPathToTextureSearchPath(base::StringView assetPathToTexture)
     {
         base::StringBuf safeCoreName;
         const auto coreName = ExtractRootFileName(assetPathToTexture);
@@ -85,9 +85,9 @@ namespace rendering
         return base::TempString("{}.{}", safeCoreName, textureExtension);
     }
 
-    static void GlueDepotPath(base::StringView<char> path, bool isFileName, base::Array<base::StringView<char>>& outPathParts)
+    static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
     {
-        base::InplaceArray<base::StringView<char>, 10> pathParts;
+        base::InplaceArray<base::StringView, 10> pathParts;
         path.slice("/\\", false, pathParts);
 
         // skip the file name itself
@@ -117,7 +117,7 @@ namespace rendering
         }
     }
 
-    static void EmitDepotPath(const base::Array<base::StringView<char>>& pathParts, base::IFormatStream& f)
+    static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
     {
         f << "/";
 
@@ -128,9 +128,9 @@ namespace rendering
         }
     }
 
-    static base::StringBuf BuildTextureDepotPath(base::StringView<char> referenceDepotPath, base::StringView<char> textureImportPath, base::StringView<char> assetFileName)
+    static base::StringBuf BuildTextureDepotPath(base::StringView referenceDepotPath, base::StringView textureImportPath, base::StringView assetFileName)
     {
-        base::InplaceArray<base::StringView<char>, 20> pathParts;
+        base::InplaceArray<base::StringView, 20> pathParts;
         GlueDepotPath(referenceDepotPath, true, pathParts);
         GlueDepotPath(textureImportPath, false, pathParts);
 
@@ -142,7 +142,7 @@ namespace rendering
         return txt.toString();
     }
 
-    rendering::TextureRef ImportTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& cfg, base::StringView<char> assetPathToTexture)
+    rendering::TextureRef ImportTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& cfg, base::StringView assetPathToTexture)
     {
         // no path
         if (assetPathToTexture.empty())

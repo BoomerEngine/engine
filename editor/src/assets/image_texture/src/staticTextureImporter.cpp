@@ -81,7 +81,7 @@ namespace rendering
     StaticTextureFromImageImporter::StaticTextureFromImageImporter()
     {}
 
-    static base::StringView<char> GetTextureSuffix(base::StringView<char> path)
+    static base::StringView GetTextureSuffix(base::StringView path)
     {
         auto fileName = path.afterLastOrFull("/").beforeFirstOrFull(".");
         if (fileName.empty())

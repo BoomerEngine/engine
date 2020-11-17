@@ -31,19 +31,19 @@ namespace rendering
 
     struct MeshVertexStreamInfo
     {
-        base::StringView<char> name; // binding name
+        base::StringView name; // binding name
         MeshStreamType sourceStream; // source stream 
         ImageFormat dataFormat; // format of the data
         uint16_t dataOffset; // offset in the vertex
         uint16_t dataSize; // size of the data in the vertex
 
         ImageFormat readFormat; // format to read as in the shader, usually R32F or R32_UINT or similar
-        base::StringView<char> readFunction; // unpacking shader function (from vertex.h)
+        base::StringView readFunction; // unpacking shader function (from vertex.h)
     };
 
     struct MeshVertexFormatInfo
     {
-        base::StringView<char> name; // binding name
+        base::StringView name; // binding name
         uint16_t stride; // total vertex stride
         uint8_t numStreams; // number of data streams
         bool quantizedPosition = false;
@@ -98,7 +98,7 @@ namespace rendering
     extern RENDERING_MESH_API const MeshVertexFormatInfo& GetMeshVertexFormatInfo(MeshVertexFormat format);
 
     // find vertex format by name
-    extern RENDERING_MESH_API bool GetVertexFormatByName(base::StringView<char> name, MeshVertexFormat& outFormat);
+    extern RENDERING_MESH_API bool GetVertexFormatByName(base::StringView name, MeshVertexFormat& outFormat);
  
     //--
 

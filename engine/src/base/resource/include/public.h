@@ -90,14 +90,14 @@ namespace base
     /// load resource from the default depot directory
      /// NOTE: this will yield the current job until the resource is loaded
     template< typename T >
-    INLINE res::Ref<T> LoadResource(StringView<char> path)
+    INLINE res::Ref<T> LoadResource(StringView path)
     {
         return rtti_cast<T>(LoadResource(res::ResourceKey(path, T::GetStaticClass())));
     }
 
     /// typed wrapper for loadResourceAsync
     template< typename T >
-    INLINE void LoadResourceAsync(StringView<char> path, const std::function<void(const res::Ref<T>&)>& funcLoaded)
+    INLINE void LoadResourceAsync(StringView path, const std::function<void(const res::Ref<T>&)>& funcLoaded)
     {
         auto funcWrapper = [funcLoaded](const res::BaseReference& loaded)
         {

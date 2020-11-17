@@ -71,13 +71,13 @@ namespace base
         class BASE_SCRIPT_API JITProject : public IReferencable
         {
         public:
-            JITProject(void* handle, StringView<char> path);
+            JITProject(void* handle, StringView path);
             ~JITProject();
 
             //--
 
             // get path to file on disk
-            INLINE StringView<char> absolutePath() const { return m_path; }
+            INLINE StringView absolutePath() const { return m_path; }
 
             // get the system module handle
             INLINE void* handle() const { return m_handle; }
@@ -93,7 +93,7 @@ namespace base
             //--
 
             // load module from file, may file
-            static JITProjectPtr Load(StringView<char> path);
+            static JITProjectPtr Load(StringView path);
 
             // assemble a JIT project from compiled scripted module
             static JITProjectPtr Compile(const CompiledProjectPtr& project);
@@ -209,7 +209,7 @@ namespace base
             };
 
             /// compile a JITed (or AOT, depends on how you look) version of the script code
-            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView<char> outputModulePath, const Settings& settings) = 0;
+            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) = 0;
         };
 
         //----

@@ -220,7 +220,7 @@ namespace base
     public:
         DevNullProgressTracker() {};
         virtual bool checkCancelation() const override final { return false; }
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView<char> text) override final { };
+        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final { };
     };
 
     //--

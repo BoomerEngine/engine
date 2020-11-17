@@ -24,7 +24,7 @@ namespace ui
     public:
         KeyShortcut();
         KeyShortcut(base::input::KeyCode key, bool shift = false, bool ctrl = false, bool alt=false);
-        explicit KeyShortcut(base::StringView<char> txt); // will remain empty if passed string is not valid
+        explicit KeyShortcut(base::StringView txt); // will remain empty if passed string is not valid
         KeyShortcut(const char* txt); // will remain empty if passed string is not valid
 
         //--

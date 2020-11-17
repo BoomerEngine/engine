@@ -76,7 +76,7 @@ namespace base
             }
         }
 
-        bool IResourceImporter::ListImportableResourceClassesForExtension(StringView<char> fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses)
+        bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses)
         {
             bool somethingAdded = false;
             for (const auto& cls : AllImporterClasses())
@@ -110,7 +110,7 @@ namespace base
             return somethingAdded;
         }
 
-        bool IResourceImporter::ListImportConfigurationForExtension(StringView<char> fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass)
+        bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass)
         {
             bool somethingAdded = false;
             for (const auto& cls : AllImporterClasses())
@@ -153,7 +153,7 @@ namespace base
             return somethingAdded;
         }
 
-        bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView<char>>& outExtensions)
+        bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView>& outExtensions)
         {
             bool somethingAdded = false;
             for (const auto& cls : AllImporterClasses())

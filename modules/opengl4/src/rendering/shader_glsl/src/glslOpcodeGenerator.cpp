@@ -381,13 +381,13 @@ namespace rendering
             m_exportedFunctions.clearPtr();
         }
 
-        void GLSLCodeGenerator::reportError(const base::parser::Location& loc, base::StringView<char> message)
+        void GLSLCodeGenerator::reportError(const base::parser::Location& loc, base::StringView message)
         {
             m_err.reportError(loc, message);
             m_hasErrors = true;
         }
 
-        void GLSLCodeGenerator::reportWarning(const base::parser::Location& loc, base::StringView<char> message)
+        void GLSLCodeGenerator::reportWarning(const base::parser::Location& loc, base::StringView message)
         {
             m_err.reportWarning(loc, message);
             m_hasErrors = true;
@@ -1116,7 +1116,7 @@ namespace rendering
             }
         }
 
-        void GLSLCodeGenerator::printDataType(const base::parser::Location& location, const compiler::DataType& dataType, base::StringView<char> varName, base::IFormatStream& f)
+        void GLSLCodeGenerator::printDataType(const base::parser::Location& location, const compiler::DataType& dataType, base::StringView varName, base::IFormatStream& f)
         {
             if (!dataType.valid())
             {
@@ -1548,7 +1548,7 @@ namespace rendering
             }
         }
 
-        static base::StringID BuildMergedVertexAttributeName(base::StringView<char> bindingName, base::StringView<char> memberName)
+        static base::StringID BuildMergedVertexAttributeName(base::StringView bindingName, base::StringView memberName)
         {
             return base::StringID(base::TempString("_{}_{}", bindingName, memberName));
         }
@@ -2829,10 +2829,10 @@ namespace rendering
 
         //--
 
-        void GLSLCodeGenerator::printAtomicFunctionCore(Function& function, base::StringView<char> baseFunctionStem, const compiler::CodeNode* node, base::IFormatStream& f)
+        void GLSLCodeGenerator::printAtomicFunctionCore(Function& function, base::StringView baseFunctionStem, const compiler::CodeNode* node, base::IFormatStream& f)
         {
             // printable stem
-            base::StringView<char> functionStem = baseFunctionStem;
+            base::StringView functionStem = baseFunctionStem;
             if (functionStem == "tomicIncrement")
                 functionStem = "tomicAdd";
             else if (functionStem == "tomicDecrement")

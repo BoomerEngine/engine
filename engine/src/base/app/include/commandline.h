@@ -80,10 +80,10 @@ namespace base
             //--
 
             //! parse the commandline from specified text (UTF8) that conforms to the commandline formatting, returns false if the commandline is invalid
-            bool parse(StringView<char> txt, bool skipProgramPath);
+            bool parse(StringView txt, bool skipProgramPath);
 
             //! parse the commandline from specified text (UTF16) that conforms to the commandline formatting, returns false if the commandline is invalid
-            bool parse(const StringView<wchar_t>& txt, bool skipProgramPath);
+            bool parse(const BaseStringView<wchar_t>& txt, bool skipProgramPath);
 
             //! parse the command line from a "classic" C argc/argv combo
             bool parse(int argc, wchar_t **argv);
@@ -94,43 +94,43 @@ namespace base
             //--
 
             //! set value of a parameter
-            void param(StringView<char> name, StringView<char> value);
+            void param(StringView name, StringView value);
 
             //! remove parameter
-            void removeParam(StringView<char> name);
+            void removeParam(StringView name);
 
             //-----
 
             //! check if params is defined
-            bool hasParam(StringView<char> param) const;
+            bool hasParam(StringView param) const;
 
             //! get single value (last defined value) of a parameter
-            const StringBuf& singleValue(StringView<char> param) const;
+            const StringBuf& singleValue(StringView param) const;
 
             //! get single value (last defined value) of parameter and parse it as an integer
-            int singleValueInt(StringView<char> param, int defaultValue = 0) const;
+            int singleValueInt(StringView param, int defaultValue = 0) const;
 
             //! get single value (last defined value) of parameter and parse it as a boolean
-            bool singleValueBool(StringView<char> param, bool defaultValue = false) const;
+            bool singleValueBool(StringView param, bool defaultValue = false) const;
 
             //! get single value (last defined value) of parameter and parse it as a floating point value
-            float singleValueFloat(StringView<char> param, float defaultValue = 0.0f) const;
+            float singleValueFloat(StringView param, float defaultValue = 0.0f) const;
 
             //--
 
             //! add command word
-            void addCommand(StringView<char> command);
+            void addCommand(StringView command);
 
             //! remove command word
-            void removeCommand(StringView<char> command);
+            void removeCommand(StringView command);
 
             //! do we have command word ?
-            bool hasCommand(StringView<char> command) const;
+            bool hasCommand(StringView command) const;
 
             //---
 
             //! gets all values for given parameter
-            Array<StringBuf> allValues(StringView<char> param) const;
+            Array<StringBuf> allValues(StringView param) const;
 
             //---
 
@@ -144,10 +144,10 @@ namespace base
             StringBuf toString() const;
 
             //! convert commandline to an UTF16 string that can be passed forward
-            UTF16StringBuf toUTF16String() const;
+            UTF16StringVector toUTF16String() const;
 
             //! unpack as a list of arguments
-            Array<UTF16StringBuf> toUTF16StringArray() const;
+            Array<UTF16StringVector> toUTF16StringArray() const;
 
             //--
 

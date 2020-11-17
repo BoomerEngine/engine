@@ -28,7 +28,7 @@ namespace game
         //--
 
         // find input table by name
-        InputActionTablePtr findTable(base::StringView<char> name) const;
+        InputActionTablePtr findTable(base::StringView name) const;
 
     public:
         InputActionTablePtr m_root; // root context

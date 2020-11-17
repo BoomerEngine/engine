@@ -22,7 +22,7 @@ namespace base
         public:
             JITTCC();
 
-            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView<char> outputModulePath, const Settings& settings) override final;
+            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) override final;
 
         private:
             static StringBuf FindTCCCompiler();

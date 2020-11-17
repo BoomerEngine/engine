@@ -255,7 +255,7 @@ namespace ui
                 }
 
                 // allocate string (copy) from internal allocator
-                const char* allocString(base::StringView<char> str);
+                const char* allocString(base::StringView str);
 
                 //--
 

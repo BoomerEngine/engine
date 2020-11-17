@@ -20,7 +20,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ManagedDirectoryPlaceholder, ManagedItem);
 
     public:
-        ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> initialFileName);
+        ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialFileName);
         virtual ~ManagedDirectoryPlaceholder();
 
         //--
@@ -31,7 +31,7 @@ namespace ed
         //---
 
         /// set name of the placeholder file
-        void rename(StringView<char> name);
+        void rename(StringView name);
 
     private:
         image::ImageRef m_directoryIcon;

@@ -116,7 +116,7 @@ namespace ui
         return true;
     }
 
-    static bool ValueFromString(base::StringView<char> txt, base::rtti::DataHolder& data)
+    static bool ValueFromString(base::StringView txt, base::rtti::DataHolder& data)
     {
         if (data.type() == base::reflection::GetTypeObject<float>())
             return base::MatchResult::OK == txt.match(*(float*)data.data());
@@ -227,7 +227,7 @@ namespace ui
             CalcDragValueT(*(const uint64_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint64_t*)result.data());
     }
 
-    DataBoxNumberText::DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView<char> units)
+    DataBoxNumberText::DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView units)
         : m_type(type)
         , m_rangeEnabled(rangeEnabled)
         , m_typeInteger(!IsFloatingPointType(type))

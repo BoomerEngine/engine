@@ -71,13 +71,13 @@ namespace base
         //--
 
         /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-        virtual DataViewResult describeDataView(StringView<char> viewPath, rtti::DataViewInfo& outInfo) const override;
+        virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
 
         /// Read data from memory
-        virtual DataViewResult readDataView(StringView<char> viewPath, void* targetData, Type targetType) const override;
+        virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
 
         /// Write data to memory
-        virtual DataViewResult writeDataView(StringView<char> viewPath, const void* sourceData, Type sourceType) override;
+        virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) override;
 
         //--
 
@@ -90,7 +90,7 @@ namespace base
         static void RegisterType(rtti::TypeSystem& typeSystem);
 
     protected:
-        virtual void onPropertyChanged(StringView<char> path) override;
+        virtual void onPropertyChanged(StringView path) override;
 
         virtual bool onPropertyShouldLoad(const rtti::Property* prop) override;
         virtual bool onPropertyShouldSave(const rtti::Property* prop) const override;

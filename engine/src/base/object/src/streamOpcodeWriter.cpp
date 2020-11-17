@@ -40,7 +40,7 @@ namespace base
         }       
     
 
-        void OpcodeWriter::writeResourceReference(StringView<char> path, ClassType resourceClass, bool async)
+        void OpcodeWriter::writeResourceReference(StringView path, ClassType resourceClass, bool async)
         {
             if (path && resourceClass)
             {

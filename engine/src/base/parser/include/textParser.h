@@ -28,7 +28,7 @@ namespace base
         class BASE_PARSER_API TextParser : public NoCopy
         {
         public:
-            TextParser(StringView<char> context = StringView<char>(), IErrorReporter& errorReporter = IErrorReporter::GetDefault(), ICommentEater& commentEater = ICommentEater::NoComments());
+            TextParser(StringView context = StringView(), IErrorReporter& errorReporter = IErrorReporter::GetDefault(), ICommentEater& commentEater = ICommentEater::NoComments());
             ~TextParser();
 
             //--
@@ -49,13 +49,13 @@ namespace base
             INLINE uint32_t numWarnings() const { return m_numWarnings; }
 
             // get view on current parsing position
-            INLINE StringView<char> view() const { return StringView<char>(m_pos, m_end); }
+            INLINE StringView view() const { return StringView(m_pos, m_end); }
 
             //--
 
             // reset content and rewind
             // NOTE: we can parse a NON ZERO TERMINATED DATA directly
-            void reset(StringView<char> data);
+            void reset(StringView data);
 
             // reset content and rewind
             // NOTE: we can parse a NON ZERO TERMINATED DATA directly
@@ -68,10 +68,10 @@ namespace base
 
             // report an error to attached error reporter at current location
             // NOTE: this function returns false so it can be chained in one-liner return ctx.error(..)
-            bool error(StringView<char> msg);
+            bool error(StringView msg);
 
             // report a warning to attached error reporter at current location
-            void warning(StringView<char> msg);
+            void warning(StringView msg);
 
             //--
 
@@ -85,13 +85,13 @@ namespace base
             bool parseKeyword(const char* str, bool thisLine=false, bool isRequired=false);
 
             // parse an identifier name, only a-z, A-Z, _ and numbers are allowed, typical identifier name
-            bool parseIdentifier(StringView<char>& outIdent, bool thisLine=true, bool isRequired=true, const char* additionalChars = "");
+            bool parseIdentifier(StringView& outIdent, bool thisLine=true, bool isRequired=true, const char* additionalChars = "");
 
             // parse a double quoted string
-            bool parseString(StringView<char>& outText, bool thisLine=true, bool isRequired=true);
+            bool parseString(StringView& outText, bool thisLine=true, bool isRequired=true);
 
             // parse a single quoted string
-            bool parseName(StringView<char>& outText, bool thisLine=true, bool isRequired=true);
+            bool parseName(StringView& outText, bool thisLine=true, bool isRequired=true);
 
             // parse a 8 bit unsigned value, out of range numbers are not parsed
             bool parseUint8(uint8_t& outValue, bool thisLine=true, bool isRequired=true);

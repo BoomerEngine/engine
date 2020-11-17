@@ -37,7 +37,7 @@ namespace ed
         INLINE bool isModified() const { return m_isModified; }
 
     public:
-        ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView<char> fileName);
+        ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
         virtual ~ManagedFile();
 
         //--

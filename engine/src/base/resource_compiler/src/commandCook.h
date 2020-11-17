@@ -28,7 +28,7 @@ namespace base
 
             HashSet<ResourceKey> m_seedFiles;
             bool collectSeedFiles();
-            void scanDepotDirectoryForSeedFiles(StringView<char> depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const;
+            void scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const;
 
             //--
 
@@ -43,13 +43,13 @@ namespace base
 
             bool assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
 
-            MetadataPtr loadFileMetadata(StringView<char> cookedOutputPath) const;
+            MetadataPtr loadFileMetadata(StringView cookedOutputPath) const;
 
             bool checkDependenciesUpToDate(const Metadata& deps) const;
 
             bool cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
             void queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue);
-            void queueDependencies(StringView<char> cookedFile, Array<PendingCookingEntry>& outCookingQueue);
+            void queueDependencies(StringView cookedFile, Array<PendingCookingEntry>& outCookingQueue);
 
             HashSet<ResourceKey> m_allCollectedFiles;
             HashSet<ResourceKey> m_allCookedFiles;

@@ -23,7 +23,7 @@ namespace base
         m_data = txt.uni_str().view().toBufferWithZero();
     }
 
-    ClipboardData::ClipboardData(const UTF16StringBuf& txt)
+    ClipboardData::ClipboardData(const UTF16StringVector& txt)
             : m_type("Text")
     {
         m_data = txt.view().toBufferWithZero();
@@ -39,12 +39,12 @@ namespace base
         return stringDataUTF16().ansi_str();
     }
 
-    UTF16StringBuf ClipboardData::stringDataUTF16() const
+    UTF16StringVector ClipboardData::stringDataUTF16() const
     {
         if (!m_data || !isText())
-            return UTF16StringBuf();
+            return UTF16StringVector();
 
-        return UTF16StringBuf((const wchar_t*)m_data.data(), (uint32_t)m_data.size() / sizeof(wchar_t));
+        return UTF16StringVector((const wchar_t*)m_data.data(), (uint32_t)m_data.size() / sizeof(wchar_t));
     }
 
     //---
