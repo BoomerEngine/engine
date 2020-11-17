@@ -160,7 +160,7 @@ namespace viewer
         if (auto frameOutput = m_renderingOutput->prepareForFrameRendering())
         {
             // create canvas payload to render gui into
-            auto canvasPayload = base::CreateSharedPtr<rendering::canvas::CanvasFramePayload>(frameOutput->outputSize().x, frameOutput->outputSize().y);
+            auto canvasPayload = base::RefNew<rendering::canvas::CanvasFramePayload>(frameOutput->outputSize().x, frameOutput->outputSize().y);
             canvasPayload->canvasCollector().clearColor(Color(40, 40, 40, 255));
             renderGui(canvasPayload->canvasCollector());
 

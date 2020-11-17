@@ -81,7 +81,7 @@ namespace base
             }
 
             // there's no loading job, create one, this will gate all other threads to wait for us to finish
-            auto loadingJob = CreateSharedPtr<LoadingJob>();
+            auto loadingJob = RefNew<LoadingJob>();
             loadingJob->m_key = key;
             loadingJob->m_signal = Fibers::GetInstance().createCounter("LoadingJob", 1);
             m_loadingJobs[key] = loadingJob;

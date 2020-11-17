@@ -452,7 +452,7 @@ namespace rendering
             auto job = [this, masterCommandBuffer, frame]()
             {
                 // execute frame
-                auto stats = base::CreateSharedPtr<DriverPerformanceStats>();
+                auto stats = base::RefNew<DriverPerformanceStats>();
                 ExecuteCommands(m_driver, this, frame, stats, masterCommandBuffer);
 
                 // create a pending frame fence and add it to the current sequence

@@ -120,7 +120,7 @@ namespace ui
         if (evt.leftClicked())
         {
             call(EVENT_VALUE_DRAG_STARTED);
-            return base::CreateSharedPtr<DraggerInputAction>(this, evt.absolutePosition());
+            return base::RefNew<DraggerInputAction>(this, evt.absolutePosition());
         }
 
         return nullptr;

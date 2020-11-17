@@ -55,7 +55,7 @@ namespace ed
 
         if (view.format() == base::image::PixelFormat::Uint8_Norm)
         {
-            auto ret = base::CreateSharedPtr<ImageHistogramData>();
+            auto ret = base::RefNew<ImageHistogramData>();
             ret->minValue = 0.0f;
             ret->maxValue = 255.0f;
             ret->totalPixelCount = view.width() * view.height() * view.depth();
@@ -70,7 +70,7 @@ namespace ed
         }
         else if (view.format() == base::image::PixelFormat::Uint16_Norm)
         {
-            auto ret = base::CreateSharedPtr<ImageHistogramData>();
+            auto ret = base::RefNew<ImageHistogramData>();
             ret->minValue = 0.0f;
             ret->maxValue = 65535.0f;
             ret->totalPixelCount = view.width() * view.height() * view.depth();
@@ -226,7 +226,7 @@ namespace ed
                 b.fillColor(hist.color);
                 b.fill();
 
-                hist.geometry = base::CreateSharedPtr<base::canvas::Geometry>();
+                hist.geometry = base::RefNew<base::canvas::Geometry>();
                 b.extract(*hist.geometry);
             }
         }
@@ -255,7 +255,7 @@ namespace ed
         if (m_histograms.empty())
             return nullptr;
 
-        auto text = base::CreateSharedPtr<ui::TextLabel>();
+        auto text = base::RefNew<ui::TextLabel>();
         m_activeTooltip = text.weak();
 
         updateTooltip();

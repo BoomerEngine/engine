@@ -35,7 +35,7 @@ namespace base
     {
         void* ptr = MemAlloc(m_poolID, m_size, m_layout->alignment());
         m_layout->copyBufer(ptr, m_data);
-        return CreateSharedPtr<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
+        return RefNew<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
     }
 
     void* InstanceBuffer::GetInstanceVarData(const InstanceVarBase& v)

@@ -221,7 +221,7 @@ namespace base
 
             // always create a default entity if the template fails here
             if (!entity)
-                entity = CreateSharedPtr<Entity>();
+                entity = RefNew<Entity>();
 
             // gather list of all components to create
             ComponentTemplateList namedComponentTemplates;

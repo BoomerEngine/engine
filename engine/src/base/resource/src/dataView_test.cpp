@@ -659,7 +659,7 @@ TEST(EditView, StaticArrayOverflowWriteStringDoesNotFail)
 
 TEST(EditView, PointerDescribedPropertlyWhenAsHandle)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
@@ -683,7 +683,7 @@ TEST(EditView, PointerEmptyDescribedAsNonStruct)
 
 TEST(EditView, PointerDoesNotReportMembersWhenNotAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
@@ -692,7 +692,7 @@ TEST(EditView, PointerDoesNotReportMembersWhenNotAsked)
 
 TEST(EditView, PointerDoesNotSetObjectDataWhenNotAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
@@ -702,7 +702,7 @@ TEST(EditView, PointerDoesNotSetObjectDataWhenNotAsked)
 
 TEST(EditView, PointerDescribedPointerValid)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
@@ -712,7 +712,7 @@ TEST(EditView, PointerDescribedPointerValid)
 
 TEST(EditView, PointerDescribedTypeIsHandleType)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
@@ -721,7 +721,7 @@ TEST(EditView, PointerDescribedTypeIsHandleType)
 
 TEST(EditView, PointerDescribedAsObjectWhenAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
@@ -734,7 +734,7 @@ TEST(EditView, PointerDescribedAsObjectWhenAsked)
 
 TEST(EditView, PointerTypeStillResportedAsHandleEvenWhenObjectDataAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
@@ -744,7 +744,7 @@ TEST(EditView, PointerTypeStillResportedAsHandleEvenWhenObjectDataAsked)
 
 TEST(EditView, PointerDescribedObjectDataWhenAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
@@ -755,7 +755,7 @@ TEST(EditView, PointerDescribedObjectDataWhenAsked)
 
 TEST(EditView, PointerDoesReportMembersWhenAsked)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
@@ -765,7 +765,7 @@ TEST(EditView, PointerDoesReportMembersWhenAsked)
 
 TEST(EditView, PointerReadWholeValueReadsAPointer)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
     RefPtr<DataViewTestObject> ptr2;
 
     rtti::DataViewInfo info;
@@ -775,8 +775,8 @@ TEST(EditView, PointerReadWholeValueReadsAPointer)
 
 TEST(EditView, PointerReadWholeValueWriteWorks)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
 
     rtti::DataViewInfo info;
     EXPECT_TRUE(WriteView("", ptr, ptr2));
@@ -785,7 +785,7 @@ TEST(EditView, PointerReadWholeValueWriteWorks)
 
 TEST(EditView, PointerReadMember)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
     ptr->m_uint32 = 1234;
 
     uint32_t temp = 0;
@@ -800,9 +800,9 @@ TEST(EditView, PointerReadMember)
 
 TEST(EditView, PointerReadFollowsInlined)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
-    auto ptr3 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
+    auto ptr3 = RefNew<DataViewTestObject>();
     ptr->m_inlined = ptr2;
     ptr2->m_uint32 = 666;
     ptr2->m_inlined = ptr3;
@@ -823,8 +823,8 @@ TEST(EditView, PointerReadFollowsInlined)
 
 TEST(EditView, PointerReadReturnsPointer)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
     ptr->m_inlined = ptr2;
 
     RefPtr<DataViewTestObject> temp;
@@ -834,9 +834,9 @@ TEST(EditView, PointerReadReturnsPointer)
 
 TEST(EditView, PointerWriteChnagesPointer)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
-    auto ptr3 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
+    auto ptr3 = RefNew<DataViewTestObject>();
     ptr->m_inlined = ptr2;
 
     RefPtr<DataViewTestObject> temp;
@@ -850,7 +850,7 @@ TEST(EditView, PointerWriteChnagesPointer)
 
 TEST(EditView, PointerNullPtrReadFails)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
 
     uint32_t temp = 0;
     EXPECT_TRUE(ReadView("uint32", ptr, temp));
@@ -863,8 +863,8 @@ TEST(EditView, PointerNullPtrReadFails)
 
 /*TEST(EditView, PointerCantFollowNonInlined)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
     ptr->m_ptr = ptr2;
 
     uint32_t temp = 0;
@@ -874,8 +874,8 @@ TEST(EditView, PointerNullPtrReadFails)
 
 TEST(EditView, PointerCantStillReadNonInlined)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
     ptr->m_ptr = ptr2;
 
     RefPtr<DataViewTestObject> temp;
@@ -885,9 +885,9 @@ TEST(EditView, PointerCantStillReadNonInlined)
 
 TEST(EditView, PointerCantStillWriteNonInlined)
 {
-    auto ptr = CreateSharedPtr<DataViewTestObject>();
-    auto ptr2 = CreateSharedPtr<DataViewTestObject>();
-    auto ptr3 = CreateSharedPtr<DataViewTestObject>();
+    auto ptr = RefNew<DataViewTestObject>();
+    auto ptr2 = RefNew<DataViewTestObject>();
+    auto ptr3 = RefNew<DataViewTestObject>();
     ptr->m_ptr = ptr2;
 
     RefPtr<DataViewTestObject> temp;

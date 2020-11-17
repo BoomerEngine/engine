@@ -70,12 +70,12 @@ namespace ed
         {
             ui::ApplyTemplate(this, resMainWindow.loadAndGet());
 
-            m_content = base::CreateSharedPtr<ContentStructure>(file);
+            m_content = base::RefNew<ContentStructure>(file);
 
-            m_scene = base::CreateSharedPtr<scene::Scene>(scene::SceneType::Editor);
+            m_scene = base::RefNew<scene::Scene>(scene::SceneType::Editor);
             m_content->attachScene(m_scene);
 
-            m_tempObjects = base::CreateSharedPtr<SceneTempObjectSystem>(m_scene);
+            m_tempObjects = base::RefNew<SceneTempObjectSystem>(m_scene);
 
             m_gizmoSettings.load(m_fileConfigPath);
             m_gridSettings.load(m_fileConfigPath);
@@ -304,7 +304,7 @@ namespace ed
 
         ui::TooltipPtr SceneEditorTab::tabTooltip() const
         {
-            return base::CreateSharedPtr<ui::TooltipString>(m_content->rootFile()->depotPath());
+            return base::RefNew<ui::TooltipString>(m_content->rootFile()->depotPath());
         }
 
         bool SceneEditorTab::canCloseTab() const
@@ -502,7 +502,7 @@ namespace ed
             }
 
             // tabs
-            m_editModePanel = base::CreateSharedPtr<ui::DockPanel>("EditMode", false, false);
+            m_editModePanel = base::RefNew<ui::DockPanel>("EditMode", false, false);
             m_editModePanel->icon(resEditMode.loadAndGet());
 
             if (auto tabs = findChildByName<ui::DockNotebook>("SideTab"))
@@ -544,7 +544,7 @@ namespace ed
         {
             if (auto tabs = findChildByName<ui::DockNotebook>("CenterTab"))
             {
-                auto previewTab = base::CreateSharedPtr<SceneRenderingContainer>(this, m_fileConfigPath["preview"]);
+                auto previewTab = base::RefNew<SceneRenderingContainer>(this, m_fileConfigPath["preview"]);
                 tabs->addPanel(previewTab);
             }
         }
@@ -1108,7 +1108,7 @@ namespace ed
 
             virtual bool openResourceEditor(const resources::BrowserNotebookPtr& tabs, const depot::ManagedFilePtr& file) const override final
             {
-                auto tab = base::CreateSharedPtr<SceneEditorTab>(file);
+                auto tab = base::RefNew<SceneEditorTab>(file);
                 tabs->attachTab(tab, true);
                 return true;
             }

@@ -182,9 +182,9 @@ namespace ui
 
         closePopupList();
 
-        m_popup = base::CreateSharedPtr<PopupWindow>();
+        m_popup = base::RefNew<PopupWindow>();
 
-        auto options = base::CreateSharedPtr<ComboBoxOptions>();
+        auto options = base::RefNew<ComboBoxOptions>();
 
         m_popup->attachChild(options);
 

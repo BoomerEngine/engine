@@ -98,7 +98,7 @@ namespace rendering
 
         SimpleScenePtr CreatePlatonicScene(IRenderingTest& owner)
         {
-            auto ret = base::CreateSharedPtr<SimpleScene>();
+            auto ret = base::RefNew<SimpleScene>();
 
             // plane as a base
             {
@@ -231,7 +231,7 @@ namespace rendering
 
         SimpleScenePtr CreateTeapotScene(IRenderingTest& owner)
         {
-            auto ret = base::CreateSharedPtr<SimpleScene>();
+            auto ret = base::RefNew<SimpleScene>();
 
             // plane as a base
             {

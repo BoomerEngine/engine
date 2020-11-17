@@ -57,8 +57,8 @@ namespace rendering
 
         // TODO: load global and local shader cache
         // TODO: when active device changes change the shader cache
-        //m_globalCache = base::CreateSharedPtr<ShaderCache>();
-        //m_localCache = base::CreateSharedPtr<ShaderCache>();
+        //m_globalCache = base::RefNew<ShaderCache>();
+        //m_localCache = base::RefNew<ShaderCache>();
 
         return base::app::ServiceInitializationResult::Finished;
     }

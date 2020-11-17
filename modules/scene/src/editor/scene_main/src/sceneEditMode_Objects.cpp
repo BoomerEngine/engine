@@ -77,13 +77,13 @@ namespace ed
             if (!TBaseClass::initialize(owner))
                 return false;
 
-            m_panel = base::CreateSharedPtr<ui::IElement>();
+            m_panel = base::RefNew<ui::IElement>();
             m_panel->layoutMode(ui::LayoutMode::Vertical);
             m_panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_panel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
             m_panel->customProportion(1.0f);
 
-            m_propertiesBrowser = base::CreateSharedPtr<ui::DataInspector>();
+            m_propertiesBrowser = base::RefNew<ui::DataInspector>();
             m_propertiesBrowser->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_propertiesBrowser->customVerticalAligment(ui::ElementVerticalLayout::Expand);
             m_propertiesBrowser->customProportion(1.0f);
@@ -225,7 +225,7 @@ namespace ed
         ui::gizmo::GizmoTransformTransactionPtr SceneEditMode_Objects::createTransformTransaction() const
         {
             // TODO: pivot mode ?
-            return base::CreateSharedPtr<ObjectsGizmoTransaction>(calcReferenceSpace(), m_gizmoSettings, m_gridSettings, editor(), m_selectedNodes);
+            return base::RefNew<ObjectsGizmoTransaction>(calcReferenceSpace(), m_gizmoSettings, m_gridSettings, editor(), m_selectedNodes);
         }
 
         //--
@@ -370,7 +370,7 @@ namespace ed
                         // create node template
                         if (auto nodeTemplate = m_initData.createNode())
                         {
-                            auto nodeWrapper = base::CreateSharedPtr<ContentNode>(nodeTemplate);
+                            auto nodeWrapper = base::RefNew<ContentNode>(nodeTemplate);
 
                             if (!activeTarget->addContent(nodeWrapper))
                             {
@@ -413,7 +413,7 @@ namespace ed
                     // create preview object
                     if (auto nodeTemplate = m_initData.createNode())
                     {
-                        m_previewObject = base::CreateSharedPtr<SceneTempObjectNode>(nodeTemplate);
+                        m_previewObject = base::RefNew<SceneTempObjectNode>(nodeTemplate);
                         m_previewObject->attachToScene(m_editor->tempObjects());
                     }
                 }
@@ -538,7 +538,7 @@ namespace ed
                     if (sceneDepth)
                     {
                         // create a drag and drop handler that will move the object around
-                        return base::CreateSharedPtr<SceneRenderingPanelDragDropPreviewHandler>(editor(), viewport, nodePaletteTemplate->setup(), data, entryPosition, sceneDepth, active);
+                        return base::RefNew<SceneRenderingPanelDragDropPreviewHandler>(editor(), viewport, nodePaletteTemplate->setup(), data, entryPosition, sceneDepth, active);
                     }
                 }
 
@@ -563,7 +563,7 @@ namespace ed
                             initData.m_resourcePath = nodeTemplates[0].m_predefinedResource.path();
 
                             // create a drag and drop handler that will move the object around
-                            return base::CreateSharedPtr<SceneRenderingPanelDragDropPreviewHandler>(editor(), viewport, initData, data, entryPosition, sceneDepth, active);
+                            return base::RefNew<SceneRenderingPanelDragDropPreviewHandler>(editor(), viewport, initData, data, entryPosition, sceneDepth, active);
                         }
                     }*/
                 }
@@ -659,7 +659,7 @@ namespace ed
             }
 
             // create a container with the nodes, the container will be stored in the clipboard
-            auto container = base::CreateSharedPtr<scene::NodeTemplateContainer>();
+            auto container = base::RefNew<scene::NodeTemplateContainer>();
             base::HashMap<ContentNode*, int> assignedNodeIndices;
             for (auto& node : nodesToCopy)
             {
@@ -697,7 +697,7 @@ namespace ed
             }
 
             // create a container with the nodes, the container will be stored in the clipboard
-            auto container = base::CreateSharedPtr<scene::NodeTemplateContainer>();
+            auto container = base::RefNew<scene::NodeTemplateContainer>();
             base::HashMap<ContentNode*, int> assignedNodeIndices;
             for (auto& node : nodesToCut)
             {
@@ -777,7 +777,7 @@ namespace ed
                 }
 
                 // create a node
-                auto node = base::CreateSharedPtr<ContentNode>(nodeInfo.m_data);
+                auto node = base::RefNew<ContentNode>(nodeInfo.m_data);
                 if (parentNode->addContent(node))
                 {
                     resolvedParents[nodeId] = node;
@@ -1219,7 +1219,7 @@ namespace ed
 
         base::RefPtr<HelperObject_Test> HelperObject_Test::CreateFromNode(const base::RefPtr<ContentNode>& node)
         {
-            return base::CreateSharedPtr<HelperObject_Test>(node);
+            return base::RefNew<HelperObject_Test>(node);
         }
 
         bool HelperObject_Test::placement(const base::edit::DocumentObjectID& id, base::AbsoluteTransform& outTransform)
@@ -1314,7 +1314,7 @@ namespace ed
 
         const base::RefPtr<IHelperObject> HelperObjectHandler_Test::createHelperObject(const base::RefPtr<ContentNode>& node) const
         {
-            return base::CreateSharedPtr<HelperObject_Test>(node);
+            return base::RefNew<HelperObject_Test>(node);
         }
 
         //--

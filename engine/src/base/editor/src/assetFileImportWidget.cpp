@@ -143,7 +143,7 @@ namespace ed
             m_fileNameText->text(m_file->depotPath());
             m_statusText->text("[img:hourglass] Checking...");
 
-            m_checker = base::CreateSharedPtr<ManagedFileImportStatusCheck>(m_file, this);
+            m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
         }
     }
 

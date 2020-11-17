@@ -891,7 +891,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createChild(Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             attachChild(child);
             return child;
         }
@@ -900,7 +900,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createNamedChild(base::StringID name, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->name(name);
             attachChild(child);
             return child;
@@ -910,7 +910,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createChildWithType(base::StringID typeName, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->styleType(typeName);
             attachChild(child);
             return child;
@@ -920,7 +920,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createNamedChildWithType(base::StringID name, base::StringID typeName, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->name(name);
             child->styleType(typeName);
             attachChild(child);
@@ -1045,7 +1045,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createInternalChild(Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             attachElementToChildList(child);
             return child;
         }
@@ -1054,7 +1054,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createInternalNamedChild(base::StringID name, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->name(name);
             attachElementToChildList(child);
             return child;
@@ -1064,7 +1064,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createInternalNamedChildWithType(base::StringID name, base::StringID typeName, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->name(name);
             child->styleType(typeName);
             attachElementToChildList(child);
@@ -1075,7 +1075,7 @@ namespace ui
         template< typename T = IElement, typename... Args >
         INLINE base::RefPtr<T> createInternalChildWithType(base::StringID typeName, Args&& ... args)
         {
-            auto child = base::CreateSharedPtr<T>(std::forward< Args >(args)...);
+            auto child = base::RefNew<T>(std::forward< Args >(args)...);
             child->styleType(typeName);
             attachElementToChildList(child);
             return child;

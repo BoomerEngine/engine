@@ -39,9 +39,9 @@ namespace game
             {
                 if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.v4mesh"))
                 {
-                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(mesh);
+                    auto mc = base::RefNew<rendering::MeshComponent>(mesh);
 
-                    auto entity = base::CreateSharedPtr<base::world::Entity>();
+                    auto entity = base::RefNew<base::world::Entity>();
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);
@@ -49,11 +49,11 @@ namespace game
 
                 if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
                 {
-                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(mesh);
+                    auto mc = base::RefNew<rendering::MeshComponent>(mesh);
                     mc->relativePosition(base::Vector3(0, 0, 0.5f));
                     m_mesh = mc;
 
-                    auto entity = base::CreateSharedPtr<base::world::Entity>();
+                    auto entity = base::RefNew<base::world::Entity>();
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);

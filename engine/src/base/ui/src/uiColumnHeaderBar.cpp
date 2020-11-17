@@ -106,7 +106,7 @@ namespace ui
         entry.m_canSort = allowSort;
         entry.m_canResize = allowResize;
         entry.m_center = center;
-        entry.m_header = base::CreateSharedPtr<ColumnHeader>(caption, entry.m_canResize, entry.m_canSort);
+        entry.m_header = base::RefNew<ColumnHeader>(caption, entry.m_canResize, entry.m_canSort);
 
         if (entry.m_canSort)
         {
@@ -134,7 +134,7 @@ namespace ui
             /*if (icon)
             {
                 auto iconFile = base::LoadResource<base::image::Image>(base::res::ResourcePath(icon));
-                entry.m_header = base::CreateSharedPtr<ColumnHeader>("[icon]");// iconFile);
+                entry.m_header = base::RefNew<ColumnHeader>("[icon]");// iconFile);
                 entry.m_currentWidth = 0.0f;
                 entry.m_canSort = false;
                 entry.m_canResize = false;
@@ -148,7 +148,7 @@ namespace ui
                 doc.nodeAttributeOfDefault(id, "sort").match(entry.m_canSort);
                 doc.nodeAttributeOfDefault(id, "resize").match(entry.m_canResize);
                 doc.nodeAttributeOfDefault(id, "center").match(entry.m_center);
-                entry.m_header = base::CreateSharedPtr<ColumnHeader>(caption, entry.m_canResize, entry.m_canSort);
+                entry.m_header = base::RefNew<ColumnHeader>(caption, entry.m_canResize, entry.m_canSort);
 
                 if (entry.m_canSort)
                 {
@@ -215,7 +215,7 @@ namespace ui
                     auto columnBase = info.m_header->cachedDrawArea().left();
                     auto columnSplitter = info.m_header->cachedDrawArea().right();
 
-                    auto action = base::CreateSharedPtr<ColumnSizeChangeInputAction>(this, columnIndex, columnBase, Position((float)evt.absolutePosition().x - columnSplitter, 0));
+                    auto action = base::RefNew<ColumnSizeChangeInputAction>(this, columnIndex, columnBase, Position((float)evt.absolutePosition().x - columnSplitter, 0));
                     return action;
                 }
             }

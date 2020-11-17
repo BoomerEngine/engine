@@ -46,9 +46,9 @@ namespace base
     //----
 
     template< typename T, typename... Args >
-    INLINE base::RefPtr<T> CreateSharedPtr(Args&& ... args)
+    INLINE base::RefPtr<T> RefNew(Args&& ... args)
     {
-        static_assert(std::is_base_of<IReferencable, T>::value, "CreateSharedPtr can only be used with IReferencables");
+        static_assert(std::is_base_of<IReferencable, T>::value, "RefNew can only be used with IReferencables");
         return MemNew(T, std::forward< Args >(args)...);
     }
 

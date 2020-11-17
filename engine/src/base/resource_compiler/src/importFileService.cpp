@@ -175,7 +175,7 @@ namespace base
             if (cvAllowLocalPCImports.get())
             {
                 auto& entry = m_fileSystems.emplaceBack();
-                entry.fileSystem = CreateSharedPtr<SourceAssetFileSystem_LocalComputer>();
+                entry.fileSystem = RefNew<SourceAssetFileSystem_LocalComputer>();
                 entry.prefix = StringBuf("LOCAL:");
             }
         }

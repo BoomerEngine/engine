@@ -38,7 +38,7 @@ namespace ed
     void MaterialInstanceEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
             tab->layoutVertical();
 
             m_previewPanel = tab->createChild<MaterialPreviewPanel>();
@@ -48,7 +48,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
             tab->layoutVertical();
 
             m_properties = tab->createChild<ui::DataInspector>();
@@ -88,7 +88,7 @@ namespace ed
             {
                 if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<MaterialInstanceEditor>(nativeFile);
+                    auto ret = base::RefNew<MaterialInstanceEditor>(nativeFile);
                     ret->bindResource(loadedGraph);
                     return ret;
                 }

@@ -52,7 +52,7 @@ namespace ed
 
         if (const auto* dataNode = rtti_cast<SceneContentDataNode>(node))
         {
-            ret = CreateSharedPtr<SceneContentClipboardNode>();
+            ret = RefNew<SceneContentClipboardNode>();
             ret->worldPlacement = dataNode->localToWorldTransform();
             ret->localPlacement = dataNode->calcLocalToParent();
             ret->overrideData = CloneObject(dataNode->editableData(), ret);
@@ -101,7 +101,7 @@ namespace ed
         }
 
         // extract clipboard nodes from matching roots
-        auto ret = CreateSharedPtr<SceneContentClipboardData>();
+        auto ret = RefNew<SceneContentClipboardData>();
         ret->type = commonType;
 
         for (const auto& node : roots)

@@ -75,7 +75,7 @@ namespace ed
             }
         }
 
-        return CreateSharedPtr<res::ImportList>(std::move(fileEntries));
+        return RefNew<res::ImportList>(std::move(fileEntries));
     }
 
     bool AssetImportListModel::hasFiles() const
@@ -198,7 +198,7 @@ namespace ed
                 return ui::ModelIndex();
 
             // create new entry
-            auto fileEntry = CreateSharedPtr<FileData>();
+            auto fileEntry = RefNew<FileData>();
             fileEntry->index = ui::ModelIndex(this, fileEntry);
             fileEntry->existingFile = nullptr;
             fileEntry->importFlag = true;
@@ -280,7 +280,7 @@ namespace ed
         }
 
         // create new entry
-        auto fileEntry = CreateSharedPtr<FileData>();
+        auto fileEntry = RefNew<FileData>();
         fileEntry->index = ui::ModelIndex(this, fileEntry);
         fileEntry->existingFile = file;
         fileEntry->importFlag = true;
@@ -402,7 +402,7 @@ namespace ed
             {
                 if (!content)
                 {
-                    content = CreateSharedPtr<ui::IElement>();
+                    content = RefNew<ui::IElement>();
                     content->layoutMode(ui::LayoutMode::Columns);
 
                     {
@@ -534,7 +534,7 @@ namespace ed
 
     ui::PopupPtr AssetImportListModel::contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const
     {
-        auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+        auto menu = RefNew<ui::MenuButtonContainer>();
 
         if (indices.size() == 1)
         {
@@ -657,7 +657,7 @@ namespace ed
             m_fileList->expand();
             m_fileList->columnCount(5);
 
-            m_filesListModel = CreateSharedPtr<AssetImportListModel>();
+            m_filesListModel = RefNew<AssetImportListModel>();
             m_fileList->model(m_filesListModel);
             filter->bindItemView(m_fileList);
 
@@ -675,7 +675,7 @@ namespace ed
             m_configTabs = rightPanel->createChild<ui::Notebook>();
             m_configTabs->expand();
 
-            m_configProperties = CreateSharedPtr<ui::DataInspector>();
+            m_configProperties = RefNew<ui::DataInspector>();
             m_configProperties->customStyle<StringBuf>("title"_id, "[img:properties] Config");
             m_configProperties->expand();
 

@@ -20,9 +20,9 @@ namespace ed
     SceneContentStructure::SceneContentStructure(bool prefab)
     { 
         if (prefab)
-            m_root = CreateSharedPtr<SceneContentPrefabRoot>();
+            m_root = RefNew<SceneContentPrefabRoot>();
         else
-            m_root = CreateSharedPtr<SceneContentWorldRoot>();
+            m_root = RefNew<SceneContentWorldRoot>();
 
         m_root->bindRootStructure(this);
     }

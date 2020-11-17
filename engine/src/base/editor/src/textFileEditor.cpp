@@ -37,7 +37,7 @@ namespace ed
         actions().bindShortcut("TextEditor.PrevFind"_id, "Shift+F3");
 
         {
-            auto panel = CreateSharedPtr<ui::DockPanel>("[img:text] Text", "TextPanel");
+            auto panel = RefNew<ui::DockPanel>("[img:text] Text", "TextPanel");
             m_editor = panel->createChild<ui::ScintillaTextEditor>();
             dockLayout().attachPanel(panel);
         }
@@ -122,7 +122,7 @@ namespace ed
         virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto* rawFile = rtti_cast<ManagedFileRawResource>(file))
-                return CreateSharedPtr<TextFileResourceEditor>(rawFile);
+                return RefNew<TextFileResourceEditor>(rawFile);
             return nullptr;
         }        
     };

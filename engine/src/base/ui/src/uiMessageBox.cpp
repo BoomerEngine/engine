@@ -86,7 +86,7 @@ namespace ui
         DEBUG_CHECK_RETURN_V(owner, setup.m_defaultButton);
         DEBUG_CHECK_RETURN_V(owner->renderer(), setup.m_defaultButton);
 
-        auto window = base::CreateSharedPtr<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
+        auto window = base::RefNew<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
         auto windowRef = window.get();
 
         // close with Escape

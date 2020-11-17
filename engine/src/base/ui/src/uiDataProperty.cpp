@@ -330,7 +330,7 @@ namespace ui
 
                 auto selfRef = base::RefWeakPtr<DataProperty>(this);
 
-                m_classPicker = base::CreateSharedPtr<ClassPickerBox>(baseClass, currentClass, false, false, "Select class for inlined object");
+                m_classPicker = base::RefNew<ClassPickerBox>(baseClass, currentClass, false, false, "Select class for inlined object");
 
                 m_classPicker->bind(EVENT_CLASS_SELECTED) = [selfRef](base::ClassType type)
                 {
@@ -443,7 +443,7 @@ namespace ui
                 if (inspector()->describeDataView(childPath, childInfo).valid())
                 {
                     const auto caption = base::StringBuf(base::TempString("[{}]", i));
-                    const auto item = base::CreateSharedPtr<DataProperty>(inspector(), this, m_indent + 1, childPath, caption, childInfo, localReadOnly, i);
+                    const auto item = base::RefNew<DataProperty>(inspector(), this, m_indent + 1, childPath, caption, childInfo, localReadOnly, i);
                     outCreatedChildren.pushBack(item);
                 }
             }
@@ -469,7 +469,7 @@ namespace ui
 
                 if (inspector()->describeDataView(childPath, childInfo).valid())
                 {
-                    const auto item = base::CreateSharedPtr<DataProperty>(inspector(), this, m_indent + 1, childPath, base::StringBuf(childName.view()), childInfo, localReadOnly);
+                    const auto item = base::RefNew<DataProperty>(inspector(), this, m_indent + 1, childPath, base::StringBuf(childName.view()), childInfo, localReadOnly);
                     outCreatedChildren.pushBack(item);
                 }
             }

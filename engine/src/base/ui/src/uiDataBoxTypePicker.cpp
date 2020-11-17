@@ -73,7 +73,7 @@ namespace ui
                 {
                     bool allowNullType = false;
 
-                    m_picker = base::CreateSharedPtr<TypePickerBox>(data, allowNullType);
+                    m_picker = base::RefNew<TypePickerBox>(data, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
                     auto selfRef = base::RefWeakPtr<DataBoxTypePicker>(this);
@@ -126,7 +126,7 @@ namespace ui
         virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
         {
             if (info.dataType == base::reflection::GetTypeObject<base::Type>())
-                return base::CreateSharedPtr<DataBoxTypePicker>();
+                return base::RefNew<DataBoxTypePicker>();
             return nullptr;
         }
     };

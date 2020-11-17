@@ -74,7 +74,7 @@ namespace base
                 }
 
                 // Return file reader
-                return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, false, m_asyncDispatcher.get());
+                return RefNew<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, false, m_asyncDispatcher.get());
             }
 
             FileHandlePtr POSIXIOSystem::openForWriting(const StringBuf& absoluteFilePath, bool append)
@@ -108,7 +108,7 @@ namespace base
                     pos = lseek64(handle, 0, SEEK_END);
 
                 // Create the wrapper
-                return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), false, true, m_asyncDispatcher.get());
+                return RefNew<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), false, true, m_asyncDispatcher.get());
             }
 
             FileHandlePtr POSIXIOSystem::openForReadingAndWriting(const StringBuf& absoluteFilePath, bool resetContent /*= false*/)
@@ -136,7 +136,7 @@ namespace base
                 }
 
                 // Create the wrapper
-                return CreateSharedPtr<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, true, m_asyncDispatcher.get());
+                return RefNew<POSIXFileHandle>(handle, absoluteFilePath.ansi_str().c_str(), true, true, m_asyncDispatcher.get());
             }
 
             bool POSIXIOSystem::fileSize(const StringBuf& absoluteFilePath, uint64_t& outFileSize)
@@ -424,7 +424,7 @@ namespace base
 
             DirectoryWatcherPtr POSIXIOSystem::createDirectoryWatcher(const StringBuf& path)
             {
-                return base::CreateSharedPtr<POSIXDirectoryWatcher>(path);
+                return base::RefNew<POSIXDirectoryWatcher>(path);
             }
 
             void POSIXIOSystem::showFileExplorer(const StringBuf& path)

@@ -180,8 +180,8 @@ namespace rendering
                 MemSize(structureData.size()), MemSize(shaderData.size()));
 
             // save the library
-            auto data = base::CreateSharedPtr<ShaderLibraryData>(structureData, shaderData);
-            return base::CreateSharedPtr<ShaderLibrary>(data);
+            auto data = base::RefNew<ShaderLibraryData>(structureData, shaderData);
+            return base::RefNew<ShaderLibrary>(data);
         }
 
         //--

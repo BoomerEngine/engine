@@ -46,12 +46,12 @@ namespace rendering
                 return false;
 
             m_nativeRenderer.create();
-            m_dataStash = base::CreateSharedPtr<ui::DataStash>(styles);
+            m_dataStash = base::RefNew<ui::DataStash>(styles);
             m_dataStash->addIconSearchPath("/engine/icons/");
             m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
             m_lastUpdateTime.resetToNow();
 
-            auto window = base::CreateSharedPtr<TestWindow>();
+            auto window = base::RefNew<TestWindow>();
             m_renderer->attachWindow(window.get());
 
             return true;

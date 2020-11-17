@@ -235,7 +235,7 @@ namespace base
                 if (!data)
                     return false;
 
-                return base::CreateSharedPtr<CompiledProject>(data);
+                return base::RefNew<CompiledProject>(data);
             }
 
             StringBuf FindScriptImportPath(StringID name) const

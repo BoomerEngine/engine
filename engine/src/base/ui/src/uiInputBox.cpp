@@ -27,7 +27,7 @@ namespace ui
 
     bool ShowInputBox(IElement* owner, const InputBoxSetup& setup, base::StringBuf& inOutText)
     {
-        auto window = base::CreateSharedPtr<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
+        auto window = base::RefNew<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
         window->layoutVertical();
 
         auto windowRef = window.get();

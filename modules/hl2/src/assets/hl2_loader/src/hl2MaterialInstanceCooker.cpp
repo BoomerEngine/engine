@@ -71,7 +71,7 @@ namespace hl2
                 return false;
 
             // return resource
-            auto ret = nullptr;// base::CreateSharedPtr<rendering::runtime::MaterialInstance>();
+            auto ret = nullptr;// base::RefNew<rendering::runtime::MaterialInstance>();
 
             // get the name of the material template
             /*rendering::content::MaterialInstanceParamInfoSet materialParams;

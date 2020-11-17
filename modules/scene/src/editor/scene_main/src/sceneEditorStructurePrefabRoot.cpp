@@ -96,18 +96,18 @@ namespace ed
 
         void ContentPrefabRoot::buildViewContent(ui::ElementPtr& content)
         {
-            auto image = base::CreateSharedPtr<ui::StaticContent>();
+            auto image = base::RefNew<ui::StaticContent>();
             image->customImage(resBricks.loadAndGet());
             image->name("NodeIcon");
 
-            auto caption = base::CreateSharedPtr<ui::StaticContent>();
+            auto caption = base::RefNew<ui::StaticContent>();
             caption->text(name());
             caption->name("NodeName");
             caption->customMargins(ui::Offsets(5, 0, 0, 0));
 
             auto leftSide = ui::LayoutHorizontally({ image, caption });
 
-            auto klass = base::CreateSharedPtr<ui::StaticContent>();
+            auto klass = base::RefNew<ui::StaticContent>();
             klass->text("Prefab");
             klass->name("NodeClass");
             klass->styleClasses("italic");

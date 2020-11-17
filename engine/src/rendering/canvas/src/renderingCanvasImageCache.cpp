@@ -227,7 +227,7 @@ namespace rendering
             auto fw = w + m * 2;
             auto fh = h + m * 2;
             
-            auto ret = base::CreateSharedPtr<base::image::Image>(src.format(), src.channels(), fw, fh);
+            auto ret = base::RefNew<base::image::Image>(src.format(), src.channels(), fw, fh);
             base::image::Fill(ret->view(), &base::Color::PURPLE);
 
             // center
@@ -301,7 +301,7 @@ namespace rendering
                     {
                         if (entry->m_image->channels() == 4)
                         {
-                            auto tempImage = base::CreateSharedPtr<base::image::Image>(entry->m_image->view());
+                            auto tempImage = base::RefNew<base::image::Image>(entry->m_image->view());
                             base::image::PremultiplyAlpha(tempImage->view());
                             cmd.opUpdateDynamicImage(layerView, tempImage->view(), entry->m_placement.x, entry->m_placement.y);
                         }

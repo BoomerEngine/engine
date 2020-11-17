@@ -101,8 +101,8 @@ namespace example
 
     void GameSpriteAsset::buildGeometry()
     {
-        m_geometry[0] = CreateSharedPtr<Geometry>();
-        m_geometry[1] = CreateSharedPtr<Geometry>();
+        m_geometry[0] = RefNew<Geometry>();
+        m_geometry[1] = RefNew<Geometry>();
 
         if (auto image = m_image.acquire())
         {
@@ -138,7 +138,7 @@ namespace example
             for (int j=0; j<downsample; ++j)
                 image = Downsampled(image->view(), DownsampleMode::AverageWithAlphaWeight, ColorSpace::SRGB);
 
-            auto frameAsset = CreateSharedPtr<GameSpriteAsset>(image);
+            auto frameAsset = RefNew<GameSpriteAsset>(image);
             frameAsset->setupSnapBottom(); // HACK
 
             m_frameAssets.pushBack(frameAsset);
@@ -427,7 +427,7 @@ namespace example
             }
         }
 
-        m_geometry = CreateSharedPtr<Geometry>();
+        m_geometry = RefNew<Geometry>();
         builder.extract(*m_geometry);
     }
 

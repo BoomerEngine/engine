@@ -41,8 +41,8 @@ namespace ed
     ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
         : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste })
     {
-        m_content = CreateSharedPtr<SceneContentStructure>(true);
-        m_defaultEditMode = CreateSharedPtr<SceneEditMode_Default>(actionHistory());
+        m_content = RefNew<SceneContentStructure>(true);
+        m_defaultEditMode = RefNew<SceneEditMode_Default>(actionHistory());
 
         createInterface();
     }
@@ -57,7 +57,7 @@ namespace ed
     void ScenePrefabEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
             tab->layoutVertical();
 
             m_previewContainer = tab->createChild<ScenePreviewContainer>(m_content, m_defaultEditMode);
@@ -84,7 +84,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
             tab->layoutVertical();
 
             m_structurePanel = tab->createChild<SceneStructurePanel>(m_content, m_previewContainer);
@@ -95,7 +95,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Inspector", "InspectorPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:color] Inspector", "InspectorPanel");
             tab->expand();
             tab->layoutVertical();
 
@@ -290,7 +290,7 @@ namespace ed
             {
                 if (auto mesh = base::rtti_cast<base::world::Prefab>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<ScenePrefabEditor>(nativeFile);
+                    auto ret = base::RefNew<ScenePrefabEditor>(nativeFile);
                     ret->bindResource(mesh);
                     return ret;
                 }

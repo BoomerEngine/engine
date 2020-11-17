@@ -383,7 +383,7 @@ namespace ui
         if (evt.leftClicked() && m_scrollbar->isEnabled())
         {
             dragging(true);
-            return base::CreateSharedPtr<ScrollbarThumbInputAction>(this, area, evt.absolutePosition().toVector());
+            return base::RefNew<ScrollbarThumbInputAction>(this, area, evt.absolutePosition().toVector());
         }
 
         return InputActionPtr();

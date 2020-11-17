@@ -75,7 +75,7 @@ namespace ui
 
         if (socket->hasConnections())
         {
-            auto subMenu = base::CreateSharedPtr<MenuButtonContainer>();
+            auto subMenu = base::RefNew<MenuButtonContainer>();
 
             for (const auto& con : socket->connections())
             {
@@ -118,7 +118,7 @@ namespace ui
         auto blockRef = socket ? socket->block() : nullptr;
         auto socketName = socket ? socket->name() : base::StringID();
 
-        auto window = base::CreateSharedPtr<BlockClassPickerBox>(*m_graph, socket);
+        auto window = base::RefNew<BlockClassPickerBox>(*m_graph, socket);
         window->bind(EVENT_GRAPH_BLOCK_CLASS_SELECTED) = [selfRef, virtualPosition, blockRef, socketName](BlockClassPickResult result)
         {
             if (auto editor = selfRef.lock())

@@ -27,7 +27,7 @@ namespace ui
 
         ModelIndex add(RefT data)
         {
-            auto holder = base::CreateSharedPtr<ElemHolder>();
+            auto holder = base::RefNew<ElemHolder>();
             holder->data = data;
             holder->displayIndex = m_displayIndex++;
             holder->index = ModelIndex(this, holder);

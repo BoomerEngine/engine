@@ -2057,7 +2057,7 @@ namespace ui
         {
             auto tooltipText = *tooltipStringPtr;
             if (!tooltipText.empty())
-                return base::CreateSharedPtr<TextLabel>(tooltipText);
+                return base::RefNew<TextLabel>(tooltipText);
         }
 
         return nullptr;

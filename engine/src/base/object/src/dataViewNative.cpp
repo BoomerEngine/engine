@@ -198,7 +198,7 @@ namespace base
 
         // create final write action
         rtti::DataHolder newValue(sourceType, sourceData);
-        return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue), currentValueIsDefaultValue, false);
+        return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue), currentValueIsDefaultValue, false);
     }
 
     //--
@@ -236,7 +236,7 @@ namespace base
 
         // if the current value is the "default
         const auto currentValueIsDefaultValue = checkIfCurrentlyADefaultValue(viewPath);
-        return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(defaultValue), currentValueIsDefaultValue, true);
+        return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(defaultValue), currentValueIsDefaultValue, true);
     }
 
     DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
@@ -265,7 +265,7 @@ namespace base
 
         // write empty data (empty array)
         rtti::DataHolder newValue(info.dataType);
-        return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
+        return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
     }
 
     DataViewActionResult DataViewNative::actionArrayInsertElement(StringView viewPath, uint32_t index) const
@@ -326,7 +326,7 @@ namespace base
 
         // write empty data (empty pointer)
         rtti::DataHolder newValue(info.dataType);
-        return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
+        return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
     }
 
     DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassType objectClass) const
@@ -379,7 +379,7 @@ namespace base
         handleType->writePointedObject(newValue.data(), objectPtr);
 
         // switch to new pointer
-        return CreateSharedPtr<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
+        return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
     }
 
     //----

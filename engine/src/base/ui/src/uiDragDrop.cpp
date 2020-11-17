@@ -51,7 +51,7 @@ namespace ui
 
     ElementPtr DragDropData_String::createPreview() const
     {
-        return base::CreateSharedPtr<ui::TextLabel>(m_data);
+        return base::RefNew<ui::TextLabel>(m_data);
     }
 
 

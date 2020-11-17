@@ -173,7 +173,7 @@ namespace base
                 auto height = range_cast<uint16_t>(faceData->glyph->bitmap.rows + imagePadding * 2);
 
                 // create the image for the glyph, note: it has border
-                ptr = CreateSharedPtr<image::Image>(image::PixelFormat::Uint8_Norm, 1, width, height);
+                ptr = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 1, width, height);
 
                 // fill to black
                 memset(ptr->data(), 0, ptr->view().dataSize());

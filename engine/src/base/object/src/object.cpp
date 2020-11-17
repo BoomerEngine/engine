@@ -298,7 +298,7 @@ namespace base
 
     DataViewPtr IObject::createDataView(bool forceReadOnly) const
     {
-        return CreateSharedPtr<DataViewNative>(const_cast<IObject*>(this), forceReadOnly);
+        return RefNew<DataViewNative>(const_cast<IObject*>(this), forceReadOnly);
     }
 
     //--

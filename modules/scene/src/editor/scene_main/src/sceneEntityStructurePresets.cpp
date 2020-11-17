@@ -106,7 +106,7 @@ namespace ed
             {
                 auto presetSection = m_config[presetName.c_str()];
 
-                auto presetData = base::CreateSharedPtr<SceneStructurePreset>();
+                auto presetData = base::RefNew<SceneStructurePreset>();
                 if (presetData->load(presetSection))
                 {
                     m_presetMap[presetName] = presetData;
@@ -116,7 +116,7 @@ namespace ed
             // if there's no default preset, create it
             if (!m_presetMap.contains("Default"))
             {
-                auto defaultPreset = base::CreateSharedPtr<SceneStructurePreset>();
+                auto defaultPreset = base::RefNew<SceneStructurePreset>();
                 m_presetMap["Default"] = defaultPreset;
             }
         }
@@ -209,7 +209,7 @@ namespace ed
         void ScenePresetController::captureState(SceneStructurePresetPtr& outCapturedState)
         {
             // reset state
-            outCapturedState = base::CreateSharedPtr<SceneStructurePreset>();
+            outCapturedState = base::RefNew<SceneStructurePreset>();
             outCapturedState->m_expandedElements.clear();
             outCapturedState->m_hiddenElements.clear();
 

@@ -100,7 +100,7 @@ namespace ui
             {
                 if (m_resourceClass != nullptr)
                 {
-                    auto picker = CreateSharedPtr<AssetMiniPicker>(m_resourceClass);
+                    auto picker = RefNew<AssetMiniPicker>(m_resourceClass);
                     if (m_currentFile)
                         picker->currentFile(m_currentFile);
                     else
@@ -222,7 +222,7 @@ namespace ui
             if (fileData && fileData->file())
             {
                 if (fileData->file()->fileFormat().loadableAsType(m_resourceClass))
-                    return CreateSharedPtr<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+                    return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
             }
 
             // not handled
@@ -335,13 +335,13 @@ namespace ui
             {
                 const auto* refType = static_cast<const res::ResourceRefType*>(info.dataType.ptr());
                 if (const auto refClass = refType->resourceClass())
-                    return CreateSharedPtr<DataBoxResource>(refClass, false, info.dataType);
+                    return RefNew<DataBoxResource>(refClass, false, info.dataType);
             }
             else if (info.dataType->metaType() == rtti::MetaType::AsyncResourceRef)
             {
                 const auto* refType = static_cast<const res::ResourceAsyncRefType*>(info.dataType.ptr());
                 if (const auto refClass = refType->resourceClass())
-                    return CreateSharedPtr<DataBoxResource>(refClass, true, info.dataType);
+                    return RefNew<DataBoxResource>(refClass, true, info.dataType);
             }
 
             return nullptr;

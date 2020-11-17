@@ -175,7 +175,7 @@ namespace Scintilla
 
         if (evt.leftClicked())
         {
-            auto action = base::CreateSharedPtr<ScintillaInnerWidgetMouseDragAction>(this);
+            auto action = base::RefNew<ScintillaInnerWidgetMouseDragAction>(this);
             m_inputAction = action;
             return action;
         }

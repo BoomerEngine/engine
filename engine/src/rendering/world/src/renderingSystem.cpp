@@ -32,7 +32,7 @@ namespace rendering
         setup.name = "World";
         setup.type = rendering::scene::SceneType::Game; // TODO!
 
-        m_scene = base::CreateSharedPtr<rendering::scene::Scene>(setup);
+        m_scene = base::RefNew<rendering::scene::Scene>(setup);
         return true;
     }
 

@@ -85,7 +85,7 @@ namespace ui
         virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
         {
             if (info.dataType == base::reflection::GetTypeObject<bool>())
-                return base::CreateSharedPtr<DataBoxBool>();
+                return base::RefNew<DataBoxBool>();
             return nullptr;
         }
     };

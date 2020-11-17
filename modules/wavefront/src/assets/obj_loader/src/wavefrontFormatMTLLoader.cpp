@@ -282,7 +282,7 @@ namespace wavefront
             if (!LoadFromBuffer(contextName, data, dataSize, materials))
                 return nullptr;
 
-            return base::CreateSharedPtr<FormatMTL>(materials);
+            return base::RefNew<FormatMTL>(materials);
         }
 
     } // parser

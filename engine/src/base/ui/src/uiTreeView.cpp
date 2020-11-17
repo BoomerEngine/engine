@@ -185,7 +185,7 @@ namespace ui
 
         if (!item->m_content)
         {
-            auto itemContainer = base::CreateSharedPtr<TreeViewItem>(item->m_depth);
+            auto itemContainer = base::RefNew<TreeViewItem>(item->m_depth);
             itemContainer->m_expandButton->bind(EVENT_CLICKED, this) = [item, this]()
             {                
                 changeExpandState(item, !item->m_expanded);

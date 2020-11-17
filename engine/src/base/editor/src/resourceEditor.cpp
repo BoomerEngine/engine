@@ -50,7 +50,7 @@ namespace ed
         createActions();
 
         // action history
-        m_actionHistory = CreateSharedPtr<ActionHistory>();
+        m_actionHistory = RefNew<ActionHistory>();
        
         // set title
         {
@@ -63,25 +63,25 @@ namespace ed
             m_menubar = createChild<ui::MenuBar>();
             m_menubar->createMenu("File", [this]()
                 {
-                    auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+                    auto menu = RefNew<ui::MenuButtonContainer>();
                     fillFileMenu(menu);
                     return menu->convertToPopup();
                 });
             m_menubar->createMenu("Edit", [this]()
                 {
-                    auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+                    auto menu = RefNew<ui::MenuButtonContainer>();
                     fillEditMenu(menu);
                     return menu->convertToPopup();
                 });
             m_menubar->createMenu("View", [this]()
                 {
-                    auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+                    auto menu = RefNew<ui::MenuButtonContainer>();
                     fillViewMenu(menu);
                     return menu->convertToPopup();
                 });
             m_menubar->createMenu("Tools", [this]()
                 {
-                    auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+                    auto menu = RefNew<ui::MenuButtonContainer>();
                     fillToolMenu(menu);
                     return menu->convertToPopup();
                 });
@@ -297,7 +297,7 @@ namespace ed
         InplaceArray<ManagedItem*, 1> depotItems;
         depotItems.pushBack(m_file);
 
-        auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+        auto menu = RefNew<ui::MenuButtonContainer>();
         {
             // editor crap
             menu->createCallback("Close", "[img:cross]") = [this]() { m_file->close(); };
@@ -308,7 +308,7 @@ namespace ed
             BuildDepotContextMenu(this, *menu, context, depotItems);
         }
 
-        auto ret = CreateSharedPtr<ui::PopupWindow>();
+        auto ret = RefNew<ui::PopupWindow>();
         ret->attachChild(menu);
         ret->show(this, ui::PopupWindowSetup().autoClose().relativeToCursor().bottomLeft());
 

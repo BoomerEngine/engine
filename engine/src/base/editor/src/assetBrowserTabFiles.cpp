@@ -163,7 +163,7 @@ namespace ed
 
         actions().bindCommand("AssetBrowserTab.Import"_id) = [this]() { importNewFile(nullptr); };
         actions().bindCommand("AssetBrowserTab.New"_id) = [this]() {
-            auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             buildNewAssetMenu(menu);
             menu->show(this);
         };
@@ -328,7 +328,7 @@ namespace ed
 
     void AssetBrowserTabFiles::refreshFileList()
     {
-        m_filesModel = CreateSharedPtr<AssetBrowserDirContentModel>(m_depot);
+        m_filesModel = RefNew<AssetBrowserDirContentModel>(m_depot);
         m_filesModel->initializeFromDir(m_dir, m_flat);
         
         m_files->sort(0);
@@ -337,7 +337,7 @@ namespace ed
 
     void AssetBrowserTabFiles::duplicateTab()
     {
-        auto copyTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, m_context);
+        auto copyTab = RefNew<AssetBrowserTabFiles>(m_depot, m_context);
         if (m_dir)
         {
             copyTab->flat(flat());
@@ -492,21 +492,21 @@ namespace ed
 
     bool AssetBrowserTabFiles::showGenericContextMenu()
     {
-        auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+        auto menu = RefNew<ui::MenuButtonContainer>();
 
         // new directory
         if (m_dir)
         {
             // new asset sub menu
             {
-                auto newAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
+                auto newAssetSubMenu = RefNew<ui::MenuButtonContainer>();
                 buildNewAssetMenu(newAssetSubMenu);
                 menu->createSubMenu(newAssetSubMenu->convertToPopup(), "New", "[img:file_add]");
             }
 
             // create asset sub menu
             {
-                auto createAssetSubMenu = CreateSharedPtr<ui::MenuButtonContainer>();
+                auto createAssetSubMenu = RefNew<ui::MenuButtonContainer>();
                 buildImportAssetMenu(createAssetSubMenu);
                 menu->createSubMenu(createAssetSubMenu->convertToPopup(), "Import", "[img:file_go]");
             }
@@ -536,7 +536,7 @@ namespace ed
     {
         if (m_dir)
         {
-            if (const auto addHocDir = base::CreateSharedPtr<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
+            if (const auto addHocDir = base::RefNew<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
             {
                 if (auto index = m_filesModel->addAdHocElement(addHocDir))
                 {
@@ -565,7 +565,7 @@ namespace ed
         if (m_dir)
         {
             const auto initialFileName = m_dir->adjustFileName(TempString("New{}", format->description()));
-            if (const auto addHocFile = base::CreateSharedPtr<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
+            if (const auto addHocFile = base::RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
             {
                 if (auto index = m_filesModel->addAdHocElement(addHocFile))
                 {

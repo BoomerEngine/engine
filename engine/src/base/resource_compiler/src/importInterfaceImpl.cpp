@@ -148,7 +148,7 @@ namespace base
 
         MetadataPtr LocalImporterInterface::buildMetadata() const
         {
-            auto ret = CreateSharedPtr<Metadata>();
+            auto ret = RefNew<Metadata>();
 
             ret->importDependencies.reserve(m_importDependencies.size());
             for (const auto& dep : m_importDependencies)

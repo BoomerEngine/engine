@@ -113,7 +113,7 @@ namespace ed
             base::rtti::ITypeSystem::GetInstance().enumClasses(m_rootClass, templateClasses);
 
             // create elements
-            auto model = base::CreateSharedPtr<NodeClassListModel>(templateClasses);
+            auto model = base::RefNew<NodeClassListModel>(templateClasses);
             m_classList->bind(model);
         }
 

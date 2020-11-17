@@ -35,7 +35,7 @@ namespace hl2
 
         virtual CAN_YIELD base::RefPtr<rendering::runtime::MaterialRenderingTechnique> compileTechniqueSet(const base::VariantTable& params) const override
         {
-            auto techniqueSet = base::CreateSharedPtr<rendering::runtime::MaterialRenderingTechnique>();
+            auto techniqueSet = base::RefNew<rendering::runtime::MaterialRenderingTechnique>();
 
             // create a default rendering technique
             techniqueSet->m_isTwoSided = params.get<bool>("TwoSidedRendering"_id, false);
@@ -121,7 +121,7 @@ namespace hl2
             doc->createFloatParam("AllowAlphaToCoverage", cooker, params, 1.0f);
 
             // create a compiler around the function
-            auto runtimeCompiler = base::CreateSharedPtr<MaterialCompilerVMT>(params, selfShaders);
+            auto runtimeCompiler = base::RefNew<MaterialCompilerVMT>(params, selfShaders);
 
             // setup material template content
             materialTemplate->content(base::Array<rendering::content::MaterialTemplateParamInfo>(), runtimeCompiler);

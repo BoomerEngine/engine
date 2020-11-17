@@ -208,7 +208,7 @@ namespace ui
 
     ElementPtr Layout(LayoutMode mode, const std::initializer_list<ElementPtr>& elements)
     {
-        auto ret = base::CreateSharedPtr<IElement>();
+        auto ret = base::RefNew<IElement>();
         ret->layoutMode(mode);
 
         for (const auto& child : elements)

@@ -394,7 +394,7 @@ namespace base
                 if (m_state == State::BuildingHeader)
                 {
                     if (!m_currentHeader)
-                        m_currentHeader = CreateSharedPtr<RequestHeader>();
+                        m_currentHeader = RefNew<RequestHeader>();
 
                     auto maxCopy  = std::min<uint32_t>(MAX_HEADER_SIZE - m_numHeaderBytes, readEndPtr - readPtr);
                     memcpy(m_headerBytes + m_numHeaderBytes, readPtr, maxCopy);

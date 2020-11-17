@@ -31,7 +31,7 @@ namespace ed
             layoutMode(ui::LayoutMode::Vertical);
 
             // create the static layout elements
-            m_panelContainer = base::CreateSharedPtr<ui::IElement>();
+            m_panelContainer = base::RefNew<ui::IElement>();
             m_panelContainer->layoutMode(ui::LayoutMode::Vertical);
             m_panelContainer->customProportion(1.0f);
             m_panelContainer->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
@@ -87,7 +87,7 @@ namespace ed
             // create new panels
             // TODO: 2x2 splitter
             {
-                auto wrapper = base::CreateSharedPtr<SceneRenderingPanelWrapper>(m_editor, this, m_config["ScenePanel0"]);
+                auto wrapper = base::RefNew<SceneRenderingPanelWrapper>(m_editor, this, m_config["ScenePanel0"]);
                 wrapper->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                 wrapper->customVerticalAligment(ui::ElementVerticalLayout::Expand);
                 wrapper->customProportion(1.0f);

@@ -16,6 +16,8 @@ namespace base
     {
         typedef uint8_t PoolIDValue;
 
+        //---
+
         /// ID of the memory pool
         /// In general it's just a compile time string but we can query the memory system for all of the PoolIDs for stats
         /// Since we store the ID as byte there's a limit of 256 pools in the system, ID 0 is the generic pool
@@ -63,6 +65,8 @@ namespace base
         private:
             PoolIDValue m_value;
         };
+
+        //---
 
     } // mem
 } // base

@@ -178,7 +178,7 @@ namespace rendering
 
         // create 
         auto id = m_dataLayouts.size();
-        auto layout = base::CreateSharedPtr<MaterialDataLayout>(id, key, std::move(entries));
+        auto layout = base::RefNew<MaterialDataLayout>(id, key, std::move(entries));
         m_dataLayouts.pushBack(layout);
         m_dataLayoutsMap[key] = layout;
         TRACE_SPAM("Registred material layout ID {}:\n", id, *layout);

@@ -151,7 +151,7 @@ namespace ui
                 }
                 else if (m_mode.test(ButtonModeBit::EventOnClickRelease) || m_mode.test(ButtonModeBit::EventOnClickReleaseAnywhere))
                 {
-                    return base::CreateSharedPtr<ButtonInputAction>(this, area);
+                    return base::RefNew<ButtonInputAction>(this, area);
                 }
             }
         }

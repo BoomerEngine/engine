@@ -34,7 +34,7 @@ namespace ed
     BackgroundJobPtr BackgroundCommandRunnerLocal::Run(const app::CommandLine& cmdline, IBackgroundCommand* command)
     {
         // create command running host
-        auto host = CreateSharedPtr<app::CommandHost>();
+        auto host = RefNew<app::CommandHost>();
         if (!host->start(cmdline))
         {
             TRACE_WARNING("Editor: Background command '{}' failed to start properly", command->name());
@@ -42,7 +42,7 @@ namespace ed
         }
 
         // ok, we started, created the wrapper
-        return CreateSharedPtr<BackgroundCommandRunnerLocal>(host, command);
+        return RefNew<BackgroundCommandRunnerLocal>(host, command);
     }
 
     bool BackgroundCommandRunnerLocal::update()

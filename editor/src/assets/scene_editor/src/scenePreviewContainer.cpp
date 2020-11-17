@@ -242,10 +242,10 @@ namespace ed
 
     void ScenePreviewContainer::createWorld()
     {
-        m_world = CreateSharedPtr<world::World>();
+        m_world = RefNew<world::World>();
         m_lastWorldTick.resetToNow();
 
-        m_visualization = CreateSharedPtr<SceneNodeVisualizationHandler>(m_world);
+        m_visualization = RefNew<SceneNodeVisualizationHandler>(m_world);
     }
 
     //--
@@ -268,7 +268,7 @@ namespace ed
         // TODO: different panel modes
 
         {
-            auto panel = CreateSharedPtr<ScenePreviewPanel>(this);
+            auto panel = RefNew<ScenePreviewPanel>(this);
             panel->expand();
             attachChild(panel);
             m_panels.pushBack(panel);

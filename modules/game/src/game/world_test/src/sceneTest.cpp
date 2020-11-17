@@ -108,7 +108,7 @@ namespace game
 
         bool ISceneTest::processInitialization()
         {
-            m_camera = base::CreateSharedPtr<rendering::scene::FlyCamera>();
+            m_camera = base::RefNew<rendering::scene::FlyCamera>();
 
             const auto angles = base::Angles(30.0f, -15.0f, 0.0f);
             m_camera->place(base::Vector3(0, 0, 0.5f) - angles.forward() * 3.0f, angles);
@@ -355,7 +355,7 @@ namespace game
         void ISceneTestEmptyWorld::recreateWorld()
         {
             m_world.reset();
-            m_world = base::CreateSharedPtr<base::world::World>();
+            m_world = base::RefNew<base::world::World>();
 
             createWorldContent();
         }

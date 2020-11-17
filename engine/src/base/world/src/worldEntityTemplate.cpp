@@ -41,7 +41,7 @@ namespace base
 
         EntityPtr EntityTemplate::createEntity() const
         {
-            auto entity = base::CreateSharedPtr<Entity>();
+            auto entity = base::RefNew<Entity>();
             return entity;
         }
 

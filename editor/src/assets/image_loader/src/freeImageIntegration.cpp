@@ -53,7 +53,7 @@ namespace base
                 }
 
                 // create the wrapper for sources
-                return base::CreateSharedPtr<base::image::Image>(loadedImage->view());
+                return base::RefNew<base::image::Image>(loadedImage->view());
             }
         };
 

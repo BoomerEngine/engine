@@ -45,9 +45,9 @@ namespace ed
         }
 
         {
-            auto treePanel = CreateSharedPtr<ui::DockPanel>("[img:database] Depot");// , "DepotTree");
+            auto treePanel = RefNew<ui::DockPanel>("[img:database] Depot");// , "DepotTree");
 
-            m_depotTreeModel = CreateSharedPtr<AssetDepotTreeModel>(depot);
+            m_depotTreeModel = RefNew<AssetDepotTreeModel>(depot);
 
             auto filter = treePanel->createChild<ui::SearchBar>();
 
@@ -86,7 +86,7 @@ namespace ed
                 if (auto tabDirectory = m_depot->findPath(tabPath))
                 {
                     // create new tab
-                    auto newTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
+                    auto newTab = RefNew<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
                     newTab->directory(tabDirectory);
                     newTab->configLoad(tabConfig);
 
@@ -293,7 +293,7 @@ namespace ed
         }
 
         // create new tab
-        auto newTab = CreateSharedPtr<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
+        auto newTab = RefNew<AssetBrowserTabFiles>(m_depot, AssetBrowserContext::DirectoryTab);
         newTab->directory(dir);
         
         // attach it to the main area

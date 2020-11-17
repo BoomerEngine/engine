@@ -100,7 +100,7 @@ namespace ed
             {
                 int localItemIndex = m_items.size();
 
-                auto localItem = CreateSharedPtr<Item>();
+                auto localItem = RefNew<Item>();
                 localItem->index = ui::ModelIndex(this, localItem);
                 localItem->checked = checked;// && (localItemIndex & 1);
                 localItem->item = item;
@@ -220,7 +220,7 @@ namespace ed
             {
                 if (!content)
                 {
-                    content = CreateSharedPtr<ui::IElement>();
+                    content = RefNew<ui::IElement>();
                     content->customPadding(2);
                     content->layoutHorizontal();
 

@@ -656,13 +656,13 @@ TEST(TypeConversion, HandleToBool)
     ObjectPtr nullHandle;
     TestConvert<ObjectPtr, bool>(nullHandle, false);
 
-    ObjectPtr validHandle = CreateSharedPtr<tests::BaseClassA>();
+    ObjectPtr validHandle = RefNew<tests::BaseClassA>();
     TestConvert<ObjectPtr, bool>(validHandle, true);
 }
 
 TEST(TypeConversion, HandleUpCast)
 {
-    RefPtr<tests::DevClassB> handleB = CreateSharedPtr<tests::DevClassB>();
+    RefPtr<tests::DevClassB> handleB = RefNew<tests::DevClassB>();
     RefPtr<tests::BaseClassA> handleBase(handleB);
 
     TestConvert(handleB, handleBase);
@@ -670,7 +670,7 @@ TEST(TypeConversion, HandleUpCast)
 
 TEST(TypeConversion, HandleDownCast)
 {
-    RefPtr<tests::BaseClassA> handleBase = CreateSharedPtr<tests::DevClassB>();
+    RefPtr<tests::BaseClassA> handleBase = RefNew<tests::DevClassB>();
     RefPtr<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleBase);
 
     TestConvert(handleBase, handleB);
@@ -678,7 +678,7 @@ TEST(TypeConversion, HandleDownCast)
 
 TEST(TypeConversion, HandleUnrelatedDownCast)
 {
-    RefPtr<tests::BaseClassA> handleBase = CreateSharedPtr<tests::DevClassB>();
+    RefPtr<tests::BaseClassA> handleBase = RefNew<tests::DevClassB>();
     RefPtr<tests::DevClassC> handleC = rtti_cast<tests::DevClassC>(handleBase);
 
     TestConvert(handleBase, handleC, false);
@@ -686,7 +686,7 @@ TEST(TypeConversion, HandleUnrelatedDownCast)
 
 TEST(TypeConversion, HandleUnrelatedClasses)
 {
-    RefPtr<tests::DevClassB> handleB = CreateSharedPtr<tests::DevClassB>();
+    RefPtr<tests::DevClassB> handleB = RefNew<tests::DevClassB>();
     TestNotConvert< RefPtr<tests::DevClassB>, RefPtr<tests::DevClassC> >(handleB);
 }
 

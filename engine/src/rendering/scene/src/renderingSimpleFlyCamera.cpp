@@ -20,7 +20,7 @@ namespace rendering
 
         FlyCamera::FlyCamera()
         {
-            m_context = base::CreateSharedPtr<CameraContext>();
+            m_context = base::RefNew<CameraContext>();
         }
 
         FlyCamera::~FlyCamera()

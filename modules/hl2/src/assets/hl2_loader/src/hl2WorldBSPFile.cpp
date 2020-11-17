@@ -57,7 +57,7 @@ namespace hl2
             TRACE_INFO("BSP file version: {}", header->version);
 
             // setup object
-            auto ret = base::CreateSharedPtr<File>();
+            auto ret = base::RefNew<File>();
             ret->m_buffer = data;
             ret->m_header = (const dheader_t*)ret->m_buffer.data();
             return ret;

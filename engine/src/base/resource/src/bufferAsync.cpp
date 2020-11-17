@@ -73,7 +73,7 @@ namespace base
                 crc.append(data, dataSize);
 
                 //auto buffer = Buffer::Create(POOL_ASYNC_BUFFER, dataSize, 16, data);
-                //m_access = CreateSharedPtr<stream::PreloadedBufferLatentLoader>(buffer, crc.crc());
+                //m_access = RefNew<stream::PreloadedBufferLatentLoader>(buffer, crc.crc());
             }
             else
             {
@@ -192,7 +192,7 @@ namespace base
                         }
 #endif
 
-                        asyncBuffer.bind(base::CreateSharedPtr<stream::PreloadedBufferLatentLoader>(buffer, crc));
+                        asyncBuffer.bind(base::RefNew<stream::PreloadedBufferLatentLoader>(buffer, crc));
                     }
                 }
 

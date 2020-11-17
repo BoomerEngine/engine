@@ -86,7 +86,7 @@ namespace rendering
             DEBUG_CHECK(material.material);
 
             if (!material.material)
-                material.material = base::CreateSharedPtr<MaterialInstance>();
+                material.material = base::RefNew<MaterialInstance>();
 
             DEBUG_CHECK(material.material->parent() == nullptr);
             material.material->parent(this);

@@ -76,7 +76,7 @@ namespace base
                 }
 
                 // pack data into the font
-                return base::CreateSharedPtr<XMLData>(document);
+                return base::RefNew<XMLData>(document);
             }
         };
 

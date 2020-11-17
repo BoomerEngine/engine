@@ -256,14 +256,14 @@ namespace tests
 
 TEST(VariantTest, CreateVariantSharedPtr)
 {
-    auto ptr = CreateSharedPtr<tests::VariantTestClass>();
+    auto ptr = RefNew<tests::VariantTestClass>();
     Variant a = CreateVariant(ptr);
     ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<tests::VariantTestClass>>());
 }
 
 TEST(VariantTest, SharedPtrVariantPointsToTheSameObject)
 {
-    auto ptr = CreateSharedPtr<tests::VariantTestClass>();
+    auto ptr = RefNew<tests::VariantTestClass>();
     Variant a = CreateVariant(ptr);
     ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<tests::VariantTestClass>>());
 
@@ -275,7 +275,7 @@ TEST(VariantTest, SharedPtrVariantKeepsObjectAlive)
 {
     bool destroyFlag = false;
 
-    auto ptr = CreateSharedPtr<tests::VariantTestClass>();
+    auto ptr = RefNew<tests::VariantTestClass>();
     ptr->destroyFlag = &destroyFlag;
 
     Variant a = CreateVariant(ptr);

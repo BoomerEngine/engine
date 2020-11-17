@@ -34,7 +34,7 @@ namespace ed
 
         bind(EVENT_IMPORT_STATUS_CHANGED) = [this]() { updateStatus(); };
 
-        m_checker = base::CreateSharedPtr<ManagedFileImportStatusCheck>(m_file, this);
+        m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
 
         m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]()
         {
@@ -50,7 +50,7 @@ namespace ed
             m_checker.reset();
         }
 
-        m_checker = base::CreateSharedPtr<ManagedFileImportStatusCheck>(m_file, this);
+        m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
     }
 
     AssetFileSmallImportIndicator::~AssetFileSmallImportIndicator()

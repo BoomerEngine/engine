@@ -175,7 +175,7 @@ namespace rendering
                 if (!validTechniques)
                     return nullptr;
 
-                return base::CreateSharedPtr<MaterialTemplate>(std::move(parameters), sortGroup, std::move(precompiledTechniques));
+                return base::RefNew<MaterialTemplate>(std::move(parameters), sortGroup, std::move(precompiledTechniques));
             }
             else
             {
@@ -189,8 +189,8 @@ namespace rendering
                 }
 
                 // create a version of material template that supports runtime compilation from the source graph
-                auto compiler = base::CreateSharedPtr<MaterialTemplateGraphTechniqueCompiler>(graphCopy);
-                return base::CreateSharedPtr<MaterialTemplate>(std::move(parameters), sortGroup, compiler);
+                auto compiler = base::RefNew<MaterialTemplateGraphTechniqueCompiler>(graphCopy);
+                return base::RefNew<MaterialTemplate>(std::move(parameters), sortGroup, compiler);
             }
         }
     };

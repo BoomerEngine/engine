@@ -30,7 +30,7 @@ namespace base
             if (data)
                 data->extract(std::move(tableToConsume));
             else
-                data = base::CreateSharedPtr<Table>(std::move(tableToConsume));
+                data = base::RefNew<Table>(std::move(tableToConsume));
         }*/
 
     } // table

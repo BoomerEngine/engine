@@ -85,7 +85,7 @@ namespace rendering
                     return cacheEntry;
 
             // create new one
-            auto entry = base::CreateSharedPtr<MaterialCachedTemplate>(materialTemplate, format);
+            auto entry = base::RefNew<MaterialCachedTemplate>(materialTemplate, format);
             m_entryMap[key] = entry;
             return entry;
         }

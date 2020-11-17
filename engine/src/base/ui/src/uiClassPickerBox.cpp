@@ -182,7 +182,7 @@ namespace ui
         }
 
         // attach model
-        m_treeModel = base::CreateSharedPtr<ClassTreeModel>(rootClass);
+        m_treeModel = base::RefNew<ClassTreeModel>(rootClass);
         m_tree->model(m_treeModel);
 
         if (rootClass)

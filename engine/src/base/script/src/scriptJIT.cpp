@@ -381,7 +381,7 @@ namespace base
                 return nullptr;
             }
 
-            return CreateSharedPtr<JITProject>(handle, path);
+            return RefNew<JITProject>(handle, path);
 #elif defined(PLATFORM_WINDOWS)
             UTF16StringVector utf16Path(path);
             HANDLE hLib = LoadLibraryW(utf16Path.c_str());
@@ -391,7 +391,7 @@ namespace base
                 return nullptr;
             }
 
-            return CreateSharedPtr<JITProject>((void*)hLib, path);
+            return RefNew<JITProject>((void*)hLib, path);
 #else
             TRACE_ERROR("Platform does not support loading dynamic library '{}'", path.c_str());
             return nullptr;

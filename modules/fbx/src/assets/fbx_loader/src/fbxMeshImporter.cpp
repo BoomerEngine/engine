@@ -242,7 +242,7 @@ namespace fbx
 
         // create output mesh
         auto existingMesh = importer.existingData<base::mesh::Mesh>();
-        auto ret = base::CreateSharedPtr<base::mesh::Mesh>(existingMesh);
+        auto ret = base::RefNew<base::mesh::Mesh>(existingMesh);
 
         //---
 

@@ -426,7 +426,7 @@ namespace base
 
     DataViewPtr IObjectTemplate::createDataView(bool forceReadOnly) const
     {
-        return base::CreateSharedPtr<ObjectTemplateDataView>(const_cast<IObjectTemplate*>(this), forceReadOnly);
+        return base::RefNew<ObjectTemplateDataView>(const_cast<IObjectTemplate*>(this), forceReadOnly);
     }
 
     //---

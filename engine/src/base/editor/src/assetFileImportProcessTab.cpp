@@ -72,7 +72,7 @@ namespace ed
         }
         else
         {
-            auto data = CreateSharedPtr<FileData>();
+            auto data = RefNew<FileData>();
             data->index = ui::ModelIndex(this, data);
             data->depotPath = depotFileName;
             data->status = status;
@@ -185,7 +185,7 @@ namespace ed
             {
                 if (!content)
                 {
-                    content = CreateSharedPtr<ui::IElement>();
+                    content = RefNew<ui::IElement>();
                     content->layoutMode(ui::LayoutMode::Columns);
 
                     {
@@ -308,7 +308,7 @@ namespace ed
             m_fileList->expand();
             m_fileList->columnCount(5);
 
-            m_filesListModel = CreateSharedPtr<AssetProcessingListModel>();
+            m_filesListModel = RefNew<AssetProcessingListModel>();
             m_fileList->model(m_filesListModel);
             filter->bindItemView(m_fileList);
 
@@ -368,7 +368,7 @@ namespace ed
 
         m_filesListModel->clear();
 
-        auto command = CreateSharedPtr<AssetImportCommand>(files, m_filesListModel);
+        auto command = RefNew<AssetImportCommand>(files, m_filesListModel);
         auto job = GetService<Editor>()->runBackgroundCommand(command);
         if (!job)
         {
@@ -430,7 +430,7 @@ namespace ed
             if (auto depotPath = m_filesListModel->fileDepotPath(index))
                 depotPaths.emplaceBack(depotPath);
 
-        auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+        auto menu = RefNew<ui::MenuButtonContainer>();
 
         if (depotPaths.size() == 1)
         {

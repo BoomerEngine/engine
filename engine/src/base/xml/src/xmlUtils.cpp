@@ -103,7 +103,7 @@ namespace base
 
         DocumentPtr CreateDocument(StringView rootNodeName)
         {
-            return CreateSharedPtr<DynamicDocument>(rootNodeName);
+            return RefNew<DynamicDocument>(rootNodeName);
         }
 
         void CopyNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeParentId)

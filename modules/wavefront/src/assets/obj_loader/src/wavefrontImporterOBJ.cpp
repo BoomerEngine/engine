@@ -884,7 +884,7 @@ namespace wavefront
             {
                 TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
 
-                auto ret = base::CreateSharedPtr<rendering::MaterialInstance>();
+                auto ret = base::RefNew<rendering::MaterialInstance>();
 
                 base::res::BaseReference baseMaterialRef(base::MakePath<rendering::MaterialInstance>(materialDepotPath));
                 ret->baseMaterial(baseMaterialRef.cast<rendering::MaterialInstance>());
@@ -896,7 +896,7 @@ namespace wavefront
         // resolve the path to the material library
         if (cfg.m_materialImportMode != rendering::MeshMaterialImportMode::DontImport)
         {
-            const auto materialImportConfig = base::CreateSharedPtr<MTLMaterialImportConfig>();
+            const auto materialImportConfig = base::RefNew<MTLMaterialImportConfig>();
             materialImportConfig->m_materialName = base::StringBuf(name);
             materialImportConfig->m_textureImportMode = cfg.m_textureImportMode;
             materialImportConfig->m_depotSearchDepth = cfg.m_depotSearchDepth;
@@ -935,7 +935,7 @@ namespace wavefront
                     importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
 
                     // build a unloaded material reference (so it can be saved)
-                    auto ret = base::CreateSharedPtr<rendering::MaterialInstance>();
+                    auto ret = base::RefNew<rendering::MaterialInstance>();
                     base::res::BaseReference materialRef(base::MakePath<rendering::MaterialInstance>(depotPath));
                     ret->baseMaterial(materialRef.cast<rendering::MaterialInstance>());
                     return ret;
@@ -967,7 +967,7 @@ namespace wavefront
         }
 
         // return empty material
-        return base::CreateSharedPtr<rendering::MaterialInstance>();
+        return base::RefNew<rendering::MaterialInstance>();
     }
 
     void BuildMaterials(const FormatOBJ& data, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int> &outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials)
@@ -1169,7 +1169,7 @@ namespace wavefront
         //base::Array<rendering::MeshBone> bones;
 
         // return mesh
-        return base::CreateSharedPtr<rendering::Mesh>(std::move(exportData));
+        return base::RefNew<rendering::Mesh>(std::move(exportData));
     }
 
 #if 0
@@ -1200,7 +1200,7 @@ namespace wavefront
             if (!physicsData)
                 return nullptr;
 
-            auto physicsContainer = base::CreateSharedPtr<rendering::content::PhysicsDataCachedContent>();
+            auto physicsContainer = base::RefNew<rendering::content::PhysicsDataCachedContent>();
             physicsContainer->data = physicsData;
             physicsData->parent(physicsContainer);
             return physicsContainer;

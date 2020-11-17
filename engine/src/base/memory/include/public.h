@@ -54,6 +54,7 @@ namespace base
 {
     namespace mem
     {
+        //--
 
         // print memory leaks
         extern BASE_MEMORY_API void DumpMemoryLeaks();
@@ -61,10 +62,23 @@ namespace base
         // validate heap state
         extern BASE_MEMORY_API void ValidateHeap();
 
+        //--
+
         // allocate memory from global persistent pool
         // NOTE: only one-time initialization stuff should go here (singletons, global maps, etc)
         // NOTE: this pool has limited size (few MBs)
         extern BASE_MEMORY_API void* PersistentAlloc(size_t size, size_t alignment = 8);
+
+        //--
+
+        //! Allocate page of memory directly from the system
+        //! NOTE: this memory is not tracked
+        extern BASE_MEMORY_API void* AllocSystemMemory(size_t size, bool largePages);
+
+        //! Free page of memory directly to the system
+        extern BASE_MEMORY_API void FreeSystemMemory(void* page, size_t size);
+
+        //--
 
         //! Allocate memory
         extern BASE_MEMORY_API void* AllocateBlock(PoolID id, size_t size, size_t alignment = 8, const char* debugFileName = nullptr, uint32_t debugLine = 0, const char* debugTypeName = nullptr);
@@ -75,13 +89,6 @@ namespace base
         //! Resize allocated memory block
         extern BASE_MEMORY_API void* ResizeBlock(PoolID id, void* mem, size_t size, size_t alignment = 8, const char* debugFileName = nullptr, uint32_t debugLine = 0, const char* debugTypeName = nullptr);
 
-        //! Allocate page of memory directly from the system
-        //! NOTE: this memory is not tracked
-        extern BASE_MEMORY_API void* AAllocSystemMemory(size_t size, bool largePages);
-
-        //! Free page of memory directly to the system
-        extern BASE_MEMORY_API void AFreeSystemMemory(void* page, size_t size);
-
         //---
 
         //! Start tracking allocations happening on this thread
@@ -89,14 +96,6 @@ namespace base
 
         //! Finish tracking allocation happening on this thread, report all unfreed allocations
         extern BASE_MEMORY_API void FinishThreadAllocTracking();
-
-        //---
-
-        //! Check overlap between two memory regions
-        INLINE static bool CheckOverlap(const uint8_t* startA, const uint8_t* endA, const uint8_t* startB, const uint8_t* endB)
-        {
-            return !(startA >= endB || startB >= endA);
-        }
 
         //--        
 

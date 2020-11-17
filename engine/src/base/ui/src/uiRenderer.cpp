@@ -982,7 +982,7 @@ namespace ui
                         m_currentTooltipOwner = it.ptr();
                         m_currentTooltipOwnerArea = it->cachedDrawArea();
 
-                        m_currentTooltip = base::CreateSharedPtr<PopupWindow>();
+                        m_currentTooltip = base::RefNew<PopupWindow>();
                         m_currentTooltip->styleType("Tooltip"_id);
                         m_currentTooltip->attachChild(tooltip);
                         m_currentTooltip->show(*it, PopupWindowSetup().relativeToCursor().offset(10, 10).bottomLeft().autoClose(false).interactive(false));
@@ -1054,7 +1054,7 @@ namespace ui
             {
                 if (auto source = m_currentDragDropSource.lock())
                 {
-                    m_currentDragDropPreviewPopup = base::CreateSharedPtr<PopupWindow>();
+                    m_currentDragDropPreviewPopup = base::RefNew<PopupWindow>();
                     m_currentDragDropPreviewPopup->styleType("DragDropPopupWindow"_id);
                     m_currentDragDropPreviewPopup->attachChild(m_currentDragDropPreview);
                     m_currentDragDropPreviewPopup->show(source, ui::PopupWindowSetup().offset(10, 10).relativeToCursor().bottomLeft().interactive(false).autoClose(false));

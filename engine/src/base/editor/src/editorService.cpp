@@ -86,7 +86,7 @@ namespace ed
         m_configRootBlock.create(m_configStorage.get(), "");
 
         // start the message service 
-        m_messageServer = CreateSharedPtr<net::TcpMessageServer>();
+        m_messageServer = RefNew<net::TcpMessageServer>();
         if (!m_messageServer->startListening(0))
         {
             TRACE_ERROR("Unable to start TCP server for communication with background processes");
@@ -132,7 +132,7 @@ namespace ed
 
         if (!m_mainWindow)
         {
-            m_mainWindow = CreateSharedPtr<MainWindow>();
+            m_mainWindow = RefNew<MainWindow>();
             m_mainWindow->configLoad(m_configRootBlock->tag("Editor"));
             renderer->attachWindow(m_mainWindow);
         }
@@ -321,7 +321,7 @@ namespace ed
         {
             TRACE_INFO("Editor: Got new connection to message server from '{}'", newConnection->remoteAddress());
 
-            auto unclaimedWrapper = base::CreateSharedPtr<BackgroundJobUnclaimedConnection>(newConnection);
+            auto unclaimedWrapper = base::RefNew<BackgroundJobUnclaimedConnection>(newConnection);
             m_backgroundJobsUnclaimedConnections.pushBack(unclaimedWrapper);
         }
 

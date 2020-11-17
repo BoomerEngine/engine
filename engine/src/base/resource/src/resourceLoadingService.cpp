@@ -170,7 +170,7 @@ namespace base
             }
 
             // start new async loading job
-            auto newAsyncLoadingJob = base::CreateSharedPtr<AsyncLoadingJob>();
+            auto newAsyncLoadingJob = base::RefNew<AsyncLoadingJob>();
             newAsyncLoadingJob->m_signal = Fibers::GetInstance().createCounter("AsyncResourceLoadSignal");
             m_asyncLoadingJobsMap[key] = newAsyncLoadingJob;
 

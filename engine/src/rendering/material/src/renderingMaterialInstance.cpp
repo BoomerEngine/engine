@@ -46,7 +46,7 @@ namespace rendering
     public:
         virtual base::res::ResourceHandle createResource() const override final
         {
-            return base::CreateSharedPtr<MaterialInstance>();
+            return base::RefNew<MaterialInstance>();
         }
     };
 
@@ -660,7 +660,7 @@ namespace rendering
 
     base::DataViewPtr MaterialInstance::createDataView() const
     {
-        return base::CreateSharedPtr<MaterialInstanceDataView>(const_cast<MaterialInstance*>(this));
+        return base::RefNew<MaterialInstanceDataView>(const_cast<MaterialInstance*>(this));
     }
 
     //---

@@ -35,7 +35,7 @@ namespace rendering
 
         for (const auto& sourceChunk : sourceMesh)
         {
-            auto importChunk = base::CreateSharedPtr<ImportChunk>(sourceChunk);
+            auto importChunk = base::RefNew<ImportChunk>(sourceChunk);
             outImportChunks.importChunks.pushBack(importChunk);
             outImportChunks.bounds.merge(sourceChunk.bounds);
         }
@@ -264,7 +264,7 @@ namespace rendering
             auto& exportInfo = outExportMaterials.emplaceBack();
             exportInfo.name = sourceMaterial.name;
 
-            exportInfo.baseMaterial = base::CreateSharedPtr<MaterialInstance>();
+            exportInfo.baseMaterial = base::RefNew<MaterialInstance>();
 
             if (sourceMaterial.flags.test(MeshMaterialFlagBit::Unlit))
             {

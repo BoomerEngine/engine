@@ -33,7 +33,7 @@ namespace base
         public:
             virtual res::ResourceHandle createResource() const override final
             {
-                return CreateSharedPtr<Prefab>();
+                return RefNew<Prefab>();
             }
         };
 

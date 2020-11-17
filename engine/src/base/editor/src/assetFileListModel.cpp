@@ -70,7 +70,7 @@ namespace ed
             index = this->index(item);
             if (!index && canDisplayItem(item))
             {
-                auto entry = CreateSharedPtr<Entry>();
+                auto entry = RefNew<Entry>();
                 entry->item = item;
                 entry->itemType = TypeFromItem(item);
                 entry->index = ui::ModelIndex(this, entry);
@@ -161,7 +161,7 @@ namespace ed
 
             if (dir->parentDirectory())
             {
-                auto entry = CreateSharedPtr<Entry>();
+                auto entry = RefNew<Entry>();
                 entry->index = ui::ModelIndex(this, entry);
                 entry->item = dir->parentDirectory();
                 entry->itemType = TYPE_PARENT_DIRECTORY;
@@ -173,7 +173,7 @@ namespace ed
             {
                 if (!dir->isDeleted())
                 {
-                    auto entry = CreateSharedPtr<Entry>();
+                    auto entry = RefNew<Entry>();
                     entry->index = ui::ModelIndex(this, entry);
                     entry->item = dir;
                     entry->itemType = TYPE_DIRECTORY;
@@ -187,7 +187,7 @@ namespace ed
                 {
                     if (canDisplayFile(file))
                     {
-                        auto entry = CreateSharedPtr<Entry>();
+                        auto entry = RefNew<Entry>();
                         entry->index = ui::ModelIndex(this, entry);
                         entry->item = file;
                         entry->itemType = TYPE_FILE;
@@ -308,14 +308,14 @@ namespace ed
 
         if (auto files = view->findParent<AssetBrowserTabFiles>())
         {
-            auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             DepotMenuContext context;
             context.contextDirectory = files->directory();
             BuildDepotContextMenu(view, *menu, context, depotItems);
 
             if (menu->childrenList())
             {
-                auto ret = CreateSharedPtr<ui::PopupWindow>();
+                auto ret = RefNew<ui::PopupWindow>();
                 ret->attachChild(menu);
                 return ret;
             }
@@ -368,11 +368,11 @@ namespace ed
 
         if (auto file = rtti_cast<ManagedFile>(entry->item))
         {
-            return CreateSharedPtr<AssetBrowserFileDragDrop>(file);
+            return RefNew<AssetBrowserFileDragDrop>(file);
         }
         else if (auto dir = rtti_cast<ManagedDirectory>(entry->item))
         {
-            return CreateSharedPtr<AssetBrowserDirectoryDragDrop>(dir);
+            return RefNew<AssetBrowserDirectoryDragDrop>(dir);
         }
 
         return nullptr;
@@ -387,24 +387,24 @@ namespace ed
                 if (auto* file = rtti_cast<ManagedFilePlaceholder>(depotItem))
                 {
                     if (!content)
-                        content = CreateSharedPtr<AssetBrowserPlaceholderFileVis>(file, m_iconSize);
+                        content = RefNew<AssetBrowserPlaceholderFileVis>(file, m_iconSize);
                 }
                 else if (auto* dir = rtti_cast<ManagedDirectoryPlaceholder>(depotItem))
                 {
                     if (!content)
-                        content = CreateSharedPtr<AssetBrowserPlaceholderDirectoryVis>(dir, m_iconSize);
+                        content = RefNew<AssetBrowserPlaceholderDirectoryVis>(dir, m_iconSize);
                 }
                 else if (auto* file = rtti_cast<ManagedFile>(depotItem))
                 {
                     if (!content)
-                        content = CreateSharedPtr<AssetBrowserFileVis>(file, m_iconSize);
+                        content = RefNew<AssetBrowserFileVis>(file, m_iconSize);
                 }
                 else if (auto* dir = rtti_cast<ManagedDirectory>(depotItem))
                 {
                     if (!content)
                     {
                         auto parentDir = m_rootDir && (dir == m_rootDir->parentDirectory());
-                        content = CreateSharedPtr<AssetBrowserDirectoryVis>(dir, m_iconSize, parentDir);
+                        content = RefNew<AssetBrowserDirectoryVis>(dir, m_iconSize, parentDir);
                     }
                 }
             }

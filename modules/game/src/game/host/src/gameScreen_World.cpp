@@ -20,7 +20,7 @@ namespace game
 
     Screen_World::Screen_World()
     {
-        m_world = base::CreateSharedPtr<base::world::World>();
+        m_world = base::RefNew<base::world::World>();
 
         // TODO: inject interop system so the world knows about the game ?
         //m_world

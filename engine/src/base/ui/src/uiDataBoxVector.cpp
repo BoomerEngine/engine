@@ -231,7 +231,7 @@ namespace ui
                     }
                 }
 
-                return base::CreateSharedPtr<DataBoxVector>(base::reflection::GetTypeObject<float>(), numComps, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), numComps, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
             }
             else if (info.dataType == base::reflection::GetTypeObject<base::Point>())
             {
@@ -261,7 +261,7 @@ namespace ui
                     }
                 }
 
-                return base::CreateSharedPtr<DataBoxVector>(base::reflection::GetTypeObject<int>(), 2, 0, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<int>(), 2, 0, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
             }
             else if (info.dataType == base::reflection::GetTypeObject<base::Angles>())
             {
@@ -296,7 +296,7 @@ namespace ui
                     }
                 }
 
-                return base::CreateSharedPtr<DataBoxVector>(base::reflection::GetTypeObject<float>(), 3, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, ANGLE_COMPS, verticalLayout);
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), 3, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, ANGLE_COMPS, verticalLayout);
             }
 
             return nullptr;

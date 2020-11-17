@@ -26,7 +26,7 @@ namespace game
     public:
         virtual base::res::ResourceHandle createResource() const override final
         {
-            return base::CreateSharedPtr<InputDefinitions>();
+            return base::RefNew<InputDefinitions>();
         }
     };
 

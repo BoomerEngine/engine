@@ -180,7 +180,7 @@ namespace base
                 // create new socket
                 if (!alreadyExists)
                 {
-                    auto newSocket = base::CreateSharedPtr<Socket>(it.name, it.info);
+                    auto newSocket = base::RefNew<Socket>(it.name, it.info);
                     newSocket->parent(this);
                     m_sockets.pushBack(newSocket);
                 }

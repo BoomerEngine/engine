@@ -272,7 +272,7 @@ namespace ed
                     base::AbsoluteTransform parentTransform;
                     m_selection->m_handler.gizmoGetObjectAbsoluteTransform(parentID, parentTransform);
 
-                    auto classSelector = base::CreateSharedPtr<NodeClassSelector>();
+                    auto classSelector = base::RefNew<NodeClassSelector>();
                     auto selection = m_selection;
 
                     classSelector->OnClassSelected = [selection, parentID, parentTransform, callingElement](const base::rtti::IClassType *newClass)
@@ -401,7 +401,7 @@ namespace ed
 
         ui::PopupMenuPtr BuildPopupMenu(const base::RefPtr<SelectionContext>& selection)
         {
-            return base::CreateSharedPtr<ScenePopupMenu>(selection);
+            return base::RefNew<ScenePopupMenu>(selection);
         }
 
         //--

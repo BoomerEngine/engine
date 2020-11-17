@@ -18,9 +18,9 @@ namespace example
 
     GamePlayerAssets::GamePlayerAssets(StringView baseDepotFolder)
     {
-        idle = CreateSharedPtr<GameSpriteSequenceAsset>(TempString("{}/Idle", baseDepotFolder), 10, 15.0f, 2);
-        walk = CreateSharedPtr<GameSpriteSequenceAsset>(TempString("{}/Walk", baseDepotFolder), 10, 15.0f, 2);
-        run = CreateSharedPtr<GameSpriteSequenceAsset>(TempString("{}/Run", baseDepotFolder), 8, 15.0f, 2);
+        idle = RefNew<GameSpriteSequenceAsset>(TempString("{}/Idle", baseDepotFolder), 10, 15.0f, 2);
+        walk = RefNew<GameSpriteSequenceAsset>(TempString("{}/Walk", baseDepotFolder), 10, 15.0f, 2);
+        run = RefNew<GameSpriteSequenceAsset>(TempString("{}/Run", baseDepotFolder), 8, 15.0f, 2);
     }
 
     //---

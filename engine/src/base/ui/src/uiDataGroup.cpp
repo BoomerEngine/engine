@@ -171,7 +171,7 @@ namespace ui
     {
         if (!m_expandButton)
         {
-            m_expandButton = base::CreateSharedPtr<Button>();
+            m_expandButton = base::RefNew<Button>();
             m_expandButton->styleType("DataInspectorExpandButton"_id);
             m_expandButton->createChild<TextLabel>();
             m_expandButton->bind(EVENT_CLICKED) = [this]()
@@ -238,7 +238,7 @@ namespace ui
 
                 if (inspector()->data()->describeDataView(childPath, childInfo).valid())
                 {
-                    auto prop = base::CreateSharedPtr<DataProperty>(inspector(), this, 0, childPath, childPath, childInfo, false);
+                    auto prop = base::RefNew<DataProperty>(inspector(), this, 0, childPath, childPath, childInfo, false);
                     outCreatedChildren.pushBack(prop);
                 }
             }

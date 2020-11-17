@@ -155,11 +155,11 @@ namespace ui
         {
             if (info.dataType == base::reflection::GetTypeObject<base::StringID>())
             {
-                return base::CreateSharedPtr<DataBoxStringID>();
+                return base::RefNew<DataBoxStringID>();
             }
             else if (info.dataType == base::reflection::GetTypeObject<base::StringBuf>())
             {
-                return base::CreateSharedPtr<DataBoxStringBuf>();
+                return base::RefNew<DataBoxStringBuf>();
             }
 
             return nullptr;

@@ -1102,7 +1102,7 @@ namespace ui
     InputActionPtr VirtualArea::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
         if (evt.rightClicked())
-            return base::CreateSharedPtr<VirtualAreaBackgroundScroll>(this);
+            return base::RefNew<VirtualAreaBackgroundScroll>(this);
 
         if (evt.leftClicked())
         {
@@ -1110,12 +1110,12 @@ namespace ui
             if (proxyUnderCursor)
             {
                 if (beginBlockMove())
-                    return base::CreateSharedPtr<VirtualAreaMoveSelectedBlocks>(this, evt.absolutePosition());
+                    return base::RefNew<VirtualAreaMoveSelectedBlocks>(this, evt.absolutePosition());
             }
             else
             {
                 const auto selectionColor = evalStyleValue<base::Color>("selection"_id, base::Color(0, 0, 255));
-                return base::CreateSharedPtr<VirtualAreaRectSelector>(this, evt.absolutePosition(), evt.keyMask().isShiftDown(), evt.keyMask().isCtrlDown(), selectionColor);
+                return base::RefNew<VirtualAreaRectSelector>(this, evt.absolutePosition(), evt.keyMask().isShiftDown(), evt.keyMask().isCtrlDown(), selectionColor);
             }
         }
 

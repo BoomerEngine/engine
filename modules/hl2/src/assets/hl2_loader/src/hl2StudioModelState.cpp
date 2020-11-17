@@ -178,7 +178,7 @@ namespace hl2
 
     base::RefPtr<ModelState> ModelState::Load(base::res::IResourceCookerInterface& cooker, const base::StringBuf& pathOverride/*= base::StringBuf::EMPTY()*/)
     {
-        auto ret = base::CreateSharedPtr<ModelState>();
+        auto ret = base::RefNew<ModelState>();
 
         // load the main model
         ret->m_modelDataBuffer = LoadModelData(cooker, pathOverride);

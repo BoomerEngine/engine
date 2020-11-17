@@ -141,11 +141,11 @@ namespace ed
             {
                 layoutMode(ui::LayoutMode::Horizontal);
 
-                auto iconNode = base::CreateSharedPtr<ui::StaticContent>();
+                auto iconNode = base::RefNew<ui::StaticContent>();
                 iconNode->customImage(icon);
                 attachChild(iconNode);
 
-                auto textNode = base::CreateSharedPtr<ui::StaticContent>();
+                auto textNode = base::RefNew<ui::StaticContent>();
                 textNode->text(templateInfo.m_template->m_name);
                 textNode->customMargins(ui::Offsets(5,0,5,0));
                 attachChild(textNode);
@@ -170,7 +170,7 @@ namespace ed
 
         ui::DragDropPreviewPtr NodePaletteTemplateDragData::createPreview() const
         {
-            return base::CreateSharedPtr<NodePaletteTemplateDragDropPreview>(m_setup, m_icon);
+            return base::RefNew<NodePaletteTemplateDragDropPreview>(m_setup, m_icon);
         }
 
         RTTI_BEGIN_TYPE_CLASS(NodePaletteTemplateDragData);
@@ -209,7 +209,7 @@ namespace ed
                 setup.m_template = &m_templates[item.row()];
                 
                 auto icon = this->icon(item.row());
-                return base::CreateSharedPtr<NodePaletteTemplateDragData>(setup, icon);
+                return base::RefNew<NodePaletteTemplateDragData>(setup, icon);
             }
 
         private:
@@ -227,17 +227,17 @@ namespace ed
         {
             if (!nodes.empty())
             {
-                auto listView = base::CreateSharedPtr<ui::ListView>();
+                auto listView = base::RefNew<ui::ListView>();
                 listView->customProportion(1.0f);
                 listView->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                 listView->customVerticalAligment(ui::ElementVerticalLayout::Expand);
                 listView->layoutMode(ui::LayoutMode::Icons);
                 listView->visualizationMode(ui::ItemVisiualizationMode::ListIcon);
 
-                auto model = base::CreateSharedPtr<NodePaletteListModel>(nodes);
+                auto model = base::RefNew<NodePaletteListModel>(nodes);
                 listView->bind(model);
 
-                auto panel = base::CreateSharedPtr<ui::DockPanel>(nodes.front().m_tab.c_str(), false, false);
+                auto panel = base::RefNew<ui::DockPanel>(nodes.front().m_tab.c_str(), false, false);
                 panel->icon(resClass.loadAndGet());
                 panel->attachChild(listView);
                 panel->layoutMode(ui::LayoutMode::Vertical);

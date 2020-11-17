@@ -150,7 +150,7 @@ namespace base
                 }
 
                 // connect to target
-                m_connection = base::CreateSharedPtr<base::net::TcpMessageClient>();
+                m_connection = base::RefNew<base::net::TcpMessageClient>();
                 if (!m_connection->connect(remoteAddress))
                 {
                     TRACE_ERROR("Command: Failed to connect to message server at '{}' ", remoteAddressStr);

@@ -1011,7 +1011,7 @@ namespace ui
             TRACE_INFO("Compiled {} style variables and {} style selectors", selectorNodes.size(), values.values().size());
 
             // set the output content
-            return base::CreateSharedPtr<ui::style::Library>(std::move(selectorNodes), std::move(values.values()));
+            return base::RefNew<ui::style::Library>(std::move(selectorNodes), std::move(values.values()));
 
         }
 

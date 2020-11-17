@@ -191,7 +191,7 @@ namespace base
         {
             const auto prev = unlinkTransform(preserveWorldPosition);
 
-            auto link = CreateSharedPtr<ComponentTransformLink>(transformSource, this);
+            auto link = RefNew<ComponentTransformLink>(transformSource, this);
             if (link->link())
                 return link;
 

@@ -151,7 +151,7 @@ namespace rendering
         {
             if (source->channels() != 4)
             {
-                auto biggerImage = base::CreateSharedPtr<base::image::Image>(source->format(), 4, source->width(), source->height());
+                auto biggerImage = base::RefNew<base::image::Image>(source->format(), 4, source->width(), source->height());
                 base::image::ConvertChannels(source->view(), biggerImage->view(), &base::Color::WHITE);
                 return biggerImage;
             }
@@ -173,7 +173,7 @@ namespace rendering
                 height = std::max<uint16_t>(1, height / 2);
                 depth = std::max<uint16_t>(1, depth / 2);
 
-                auto newImage = base::CreateSharedPtr<base::image::Image>(curImg->format(), curImg->channels(), width, height, depth);
+                auto newImage = base::RefNew<base::image::Image>(curImg->format(), curImg->channels(), width, height, depth);
                 base::image::Downsample(curImg->view(), newImage->view(), base::image::DownsampleMode::Average, base::image::ColorSpace::Linear);
 
                 m_mipmaps.pushBack(curImg);
@@ -291,7 +291,7 @@ namespace rendering
             uint16_t level = 0;
             while (size > 0)
             {
-                auto mipImage = base::CreateSharedPtr<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
+                auto mipImage = base::RefNew<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
                 base::image::Fill(mipImage->view(), &colors[level % ARRAY_COUNT(colors)]);
                 slices.back().m_mipmaps.pushBack(mipImage);
 
@@ -304,7 +304,7 @@ namespace rendering
 
         ImageView IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps /*= true*/, base::Color colorA /*= base::Color::WHITE*/, base::Color colorB /*= base::Color::BLACK*/)
         {
-            auto mipImage = base::CreateSharedPtr<base::image::Image>(PixelFormat::Uint8_Norm, 4, initialSize, initialSize);
+            auto mipImage = base::RefNew<base::image::Image>(PixelFormat::Uint8_Norm, 4, initialSize, initialSize);
             base::image::Fill(mipImage->view(), &colorA);
 
             // create checker
@@ -332,7 +332,7 @@ namespace rendering
 
         static base::image::ImagePtr CreateFilledImage(uint16_t size, base::Color color)
         {
-            auto mipImage = base::CreateSharedPtr<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
+            auto mipImage = base::RefNew<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
             base::image::Fill(mipImage->view(), &color);
             return mipImage;
         }
@@ -352,7 +352,7 @@ namespace rendering
 
         static base::image::ImagePtr CreateCubeSide(uint16_t size, const base::Vector3& n, const base::Vector3& u, const base::Vector3& v)
         {
-            auto mipImage = base::CreateSharedPtr<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
+            auto mipImage = base::RefNew<base::image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
 
             // fill image
             /*CreateCubeKernel::Params params;
@@ -468,7 +468,7 @@ namespace rendering
             // load asset to buffer
             const auto assetData = loadedAsset->data();
 
-            auto ret = base::CreateSharedPtr<SimpleMesh>();
+            auto ret = base::RefNew<SimpleMesh>();
 
             base::Array<base::Vector2> uvVertices;
             base::Array<base::Vector3> posVertices;

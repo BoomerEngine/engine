@@ -106,13 +106,13 @@ namespace ui
             if (auto label = base::rtti_cast<TextLabel>(content))
                 label->text(txt);
             else
-                content = base::CreateSharedPtr<TextLabel>(txt);
+                content = base::RefNew<TextLabel>(txt);
         }
         else
         {
             if (!content || content->cls() != IElement::GetStaticClass() || content->layoutMode() != LayoutMode::Columns)
             {
-                content = base::CreateSharedPtr<IElement>();
+                content = base::RefNew<IElement>();
                 content->layoutMode(LayoutMode::Columns);
             }
 
@@ -126,7 +126,7 @@ namespace ui
 
             while (columnIndex < columnCount)
             {
-                auto txt = base::CreateSharedPtr<TextLabel>(displayContent(item, columnIndex));
+                auto txt = base::RefNew<TextLabel>(displayContent(item, columnIndex));
                 content->attachChild(txt);
                 columnIndex += 1;
             }

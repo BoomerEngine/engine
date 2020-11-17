@@ -100,7 +100,7 @@ namespace game
                     entityTransform.position(center.xyz(0.5f));
                     groundPlane.ensureGroundUnder(center.x, center.y);
 
-                    auto entity = base::CreateSharedPtr<base::world::Entity>();
+                    auto entity = base::RefNew<base::world::Entity>();
                     entity->requestTransform(entityTransform);
 
                     base::world::ComponentPtr prevComponent;
@@ -108,7 +108,7 @@ namespace game
                     {
                         auto meshIndex = SelectMesh(rng, ARRAY_COUNT(meshes));
 
-                        auto mc = base::CreateSharedPtr<rendering::MeshComponent>(meshes[meshIndex]);
+                        auto mc = base::RefNew<rendering::MeshComponent>(meshes[meshIndex]);
                         if (prevComponent)
                         {
                             mc->relativePosition(base::Vector3(0, 0, 1.0f));

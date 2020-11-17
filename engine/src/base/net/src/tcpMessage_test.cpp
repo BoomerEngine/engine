@@ -110,12 +110,12 @@ namespace test
 TEST(TcpMessage,ClientServerPassing)
 {
     // create server, on any port
-    auto server  = CreateSharedPtr<TcpMessageServer>();
+    auto server  = RefNew<TcpMessageServer>();
     ASSERT_TRUE(server->startListening(0));
     ASSERT_TRUE(server->isListening());
 
     // create client and connect it
-    auto client = CreateSharedPtr<TcpMessageClient>();
+    auto client = RefNew<TcpMessageClient>();
     ASSERT_TRUE(client->connect(socket::Address::Local4(server->listeningAddress().port())));
     ASSERT_TRUE(client->isConnected());
 
@@ -154,7 +154,7 @@ TEST(TcpMessage,ClientServerPassing)
 
     // dispatch the message to the object, it should be parsed correctly
     {
-        auto serverObject = CreateSharedPtr<test::HelloReply>();
+        auto serverObject = RefNew<test::HelloReply>();
         ASSERT_TRUE(receivedMessage->dispatch(serverObject, connectionOnServerSide));
         ASSERT_TRUE(serverObject->m_helloReceived);
         ASSERT_STREQ("Hello, network!", serverObject->m_text.c_str());
@@ -175,7 +175,7 @@ TEST(TcpMessage,ClientServerPassing)
 
     // dispatch answer
     {
-        auto clientObject = CreateSharedPtr<test::AnswerCapture>();
+        auto clientObject = RefNew<test::AnswerCapture>();
         ASSERT_TRUE(receivedMessage->dispatch(clientObject));
         ASSERT_TRUE(clientObject->m_answerReceived);
         ASSERT_EQ(42, clientObject->m_answer);

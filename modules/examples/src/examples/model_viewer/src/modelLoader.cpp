@@ -51,7 +51,7 @@ namespace viewer
 
         // create a rendering data for each chunk
 
-        auto ret = base::CreateSharedPtr<LoadedModel>();
+        auto ret = base::RefNew<LoadedModel>();
 
         return ret;
     }

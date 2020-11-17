@@ -169,7 +169,7 @@ namespace rendering
                     b.fill();
                 }
 
-                auto ret = base::CreateSharedPtr<base::canvas::Geometry>();
+                auto ret = base::RefNew<base::canvas::Geometry>();
                 b.compositeOperation(base::canvas::CompositeOperation::SourceOver);
                 b.extract(*ret);
                 return ret;
@@ -191,7 +191,7 @@ namespace rendering
                     b.fill();
                 }
 
-                auto ret = base::CreateSharedPtr<base::canvas::Geometry>();
+                auto ret = base::RefNew<base::canvas::Geometry>();
                 b.compositeOperation(base::canvas::CompositeOperation::SourceOver);
                 b.extract(*ret);
                 return ret;
@@ -227,7 +227,7 @@ namespace rendering
                     }
                 }
 
-                auto ret = base::CreateSharedPtr<base::canvas::Geometry>();
+                auto ret = base::RefNew<base::canvas::Geometry>();
                 b.extract(*ret);
                 return ret;
             }
@@ -349,7 +349,7 @@ namespace rendering
                     }
                 }
 
-                auto ret = base::CreateSharedPtr<base::canvas::Geometry>();
+                auto ret = base::RefNew<base::canvas::Geometry>();
                 b.extract(*ret);
                 return ret;
             }
@@ -360,7 +360,7 @@ namespace rendering
 
                 if (!entry->rect.empty())
                 {
-                    const auto image = base::CreateSharedPtr<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, entry->rect.width(), entry->rect.height());
+                    const auto image = base::RefNew<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, entry->rect.width(), entry->rect.height());
                     Copy(m_image->view().subView(entry->rect.left(), entry->rect.top(), entry->rect.width(), entry->rect.height()), image->view());
 
                     return ImagePattern(image, base::canvas::ImagePatternSettings().wrapU(wrap).wrapV(wrap));

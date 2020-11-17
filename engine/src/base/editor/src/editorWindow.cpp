@@ -83,14 +83,14 @@ namespace ed
 
         // create asset browser
         {
-            m_assetBrowserTab = CreateSharedPtr<AssetBrowser>(&depot);
+            m_assetBrowserTab = RefNew<AssetBrowser>(&depot);
             m_assetBrowserTab->configLoad(block.tag("AssetBrowser"));
             m_dockArea->layout().bottom().attachPanel(m_assetBrowserTab);
         }
 
         // create asset import list
         {
-            m_assetImportPrepareTab = CreateSharedPtr<AssetImportPrepareTab>();
+            m_assetImportPrepareTab = RefNew<AssetImportPrepareTab>();
             m_assetImportPrepareTab->configLoad(block.tag("AssetImportPrepare"));
             m_assetImportPrepareTab->expand();
 
@@ -108,7 +108,7 @@ namespace ed
 
         // create asset processing tab (import queue)
         {
-            m_assetImportProcessTab = CreateSharedPtr<AssetImportMainTab>();
+            m_assetImportProcessTab = RefNew<AssetImportMainTab>();
             m_assetImportProcessTab->configLoad(block.tag("AssetImportProcess"));
             m_assetImportProcessTab->expand();
 
@@ -267,7 +267,7 @@ namespace ed
                     entry.depotPath = file->depotPath();
                     entry.userConfiguration = reimportConfiguration;
 
-                    if (auto fileList = CreateSharedPtr<res::ImportList>(entry))
+                    if (auto fileList = RefNew<res::ImportList>(entry))
                     {
                         if (m_assetImportProcessTab->startAssetImport(fileList))
                         {

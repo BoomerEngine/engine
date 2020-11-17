@@ -184,7 +184,7 @@ namespace base
             TRACE_INFO("Max size of atlas page: [{},{}]", page.maxWidth, page.maxHeight);
 
             // create target image to copy all the glyphs into, the image is alpha only
-            auto image = CreateSharedPtr<image::Image>(image::PixelFormat::Uint8_Norm, 1, page.maxWidth, page.maxHeight);
+            auto image = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 1, page.maxWidth, page.maxHeight);
 
             // copy glyphs
             base::Array<BitmapFontGlyph> finalGlyphs;
@@ -226,7 +226,7 @@ namespace base
             auto lineHeight = (int)(baseFont->relativeLineHeight() * fontSize);
 
             // we should cook a texture
-            return CreateSharedPtr<BitmapFont>(image, ascender, descenter, lineHeight, std::move(finalGlyphs));
+            return RefNew<BitmapFont>(image, ascender, descenter, lineHeight, std::move(finalGlyphs));
         }
         */
         //---

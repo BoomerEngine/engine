@@ -16,7 +16,7 @@ namespace base
 
     InstanceBufferLayoutBuilder::InstanceBufferLayoutBuilder()
     {
-        m_layout = CreateSharedPtr<InstanceBufferLayout>();
+        m_layout = RefNew<InstanceBufferLayout>();
         startGroup("main"_id);
     }
 
@@ -39,7 +39,7 @@ namespace base
         }
 
         // start new layout
-        m_layout = CreateSharedPtr<InstanceBufferLayout>();
+        m_layout = RefNew<InstanceBufferLayout>();
         startGroup("main"_id);
         return ret;
     }

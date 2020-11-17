@@ -179,7 +179,7 @@ namespace application
         m_startedTime.resetToNow();
 
         // create the host for the command to run
-        auto host = base::CreateSharedPtr<base::app::CommandHost>();
+        auto host = base::RefNew<base::app::CommandHost>();
         if (!host->start(commandline))
             return false;
 

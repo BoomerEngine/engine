@@ -169,7 +169,7 @@ namespace ui
             if (tracker->socket() == socket)
                 return tracker;
 
-        auto tracker = base::CreateSharedPtr<GraphEditorBlockSocketTracker>(socket);
+        auto tracker = base::RefNew<GraphEditorBlockSocketTracker>(socket);
         m_trackers.pushBack(tracker);
         return nullptr;
     }
@@ -187,7 +187,7 @@ namespace ui
 
     ElementPtr CreateGraphBlockTooltip(base::SpecificClassType<base::graph::Block> block)
     {
-        ElementPtr ret = base::CreateSharedPtr<IElement>();
+        ElementPtr ret = base::RefNew<IElement>();
         ret->layoutVertical();
         ret->customPadding(5, 5, 5, 5);
 

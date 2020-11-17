@@ -126,7 +126,7 @@ namespace ui
         DEBUG_CHECK_EX(!m_nodesMap.contains(block), "Block already seen");
         if (!m_nodesMap.contains(block))
         {
-            auto node = base::CreateSharedPtr<GraphEditorBlockNode>(block);
+            auto node = base::RefNew<GraphEditorBlockNode>(block);
             //node->parent(this);
             node->refreshBlockStyle();
 
@@ -409,7 +409,7 @@ namespace ui
     {
         if (evt.leftClicked())
             if (m_hoverBlock && m_hoverSocket)
-                return base::CreateSharedPtr<prv::GraphCreateConnectionInputAction>(this, m_hoverSocket, evt.absolutePosition());
+                return base::RefNew<prv::GraphCreateConnectionInputAction>(this, m_hoverSocket, evt.absolutePosition());
 
         return TBaseClass::handleMouseClick(area, evt);
     }
@@ -438,7 +438,7 @@ namespace ui
 
     bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
     {
-        auto buttons = base::CreateSharedPtr<MenuButtonContainer>();
+        auto buttons = base::RefNew<MenuButtonContainer>();
 
         const auto margin = 20.0f * cachedStyleParams().pixelScale;
         if (auto* contextBlock = base::rtti_cast<GraphEditorBlockNode>(findElementAtAbsolutePos(absolutePosition, margin)))
@@ -484,7 +484,7 @@ namespace ui
             tempBlock->rebuildLayout();
 
             // create node visualization
-            auto node = base::CreateSharedPtr<GraphEditorBlockNode>(tempBlock);
+            auto node = base::RefNew<GraphEditorBlockNode>(tempBlock);
             node->hitTest(false);
             node->opacity(0.5f);
             node->refreshBlockStyle();
@@ -594,7 +594,7 @@ namespace ui
 
         // create a preview node
         if (createPreviewNode(entryPosition, blockClassData->blockClass()))
-            return base::CreateSharedPtr<GraphEditorDragDropPreviewHandler>(this, data, entryPosition, blockClassData->blockClass());
+            return base::RefNew<GraphEditorDragDropPreviewHandler>(this, data, entryPosition, blockClassData->blockClass());
 
         // no valid drag&drop
         return nullptr;

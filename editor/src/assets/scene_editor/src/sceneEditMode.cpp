@@ -181,11 +181,11 @@ namespace ed
         if (size < 1.0f)
             f.appendf("{}'", (int)(size * 60.0f));
         else if (std::trunc(size) < 0.001f)
-            f.appendf("{}°", (int)size);
+            f.appendf("{}ï¿½", (int)size);
         else if (std::trunc(size*10) < 0.001f)
-            f.appendf("{}°", Prec(size, 1)); 
+            f.appendf("{}ï¿½", Prec(size, 1)); 
         else
-            f.appendf("{}°", Prec(size, 2));
+            f.appendf("{}ï¿½", Prec(size, 2));
     }
 
     void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar)
@@ -209,7 +209,7 @@ namespace ed
             {
                 static const float GridSizes[] = { 0.01f, 0.02f, 0.05f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 25.0f, 50.0f, 100.0f };
 
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
                 auto gridSettings = container->gridSettings();
 
                 menu->createCallback("Enable", gridSettings.positionGridEnabled ? "[img:tick]" : "") = [container]() {
@@ -253,7 +253,7 @@ namespace ed
             {
                 static const float GridSizes[] = { 1.0f, 3.0f, 4.5f, 6.0f, 7.5f, 10.0f, 12.25f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
 
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
                 auto gridSettings = container->gridSettings();
 
                 menu->createCallback("Enable", gridSettings.rotationGridEnabled ? "[img:tick]" : "") = [container]() {
@@ -286,7 +286,7 @@ namespace ed
         {
             toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:snap] Snap")) = [container](ui::Button* button)
             {
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
 
                 auto gridSettings = container->gridSettings();
 
@@ -319,7 +319,7 @@ namespace ed
         {
             toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:selection_point] Selection")) = [container](ui::Button* button)
             {
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
 
                 auto selectionSettings = container->selectionSettings();
 
@@ -418,7 +418,7 @@ namespace ed
             {
                 static const GizmoSpace GizmoSpaces[] = { GizmoSpace::World, GizmoSpace::Local, GizmoSpace::Parent, GizmoSpace::View };
 
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
                 auto data = container->gizmoSettings();
 
                 for (auto space : GizmoSpaces)
@@ -449,7 +449,7 @@ namespace ed
             {
                 static const SceneGizmoTarget GizmoSpaces[] = { SceneGizmoTarget::WholeHierarchy, SceneGizmoTarget::SelectionOnly };
 
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
                 auto data = container->gizmoSettings();
 
                 for (auto space : GizmoSpaces)

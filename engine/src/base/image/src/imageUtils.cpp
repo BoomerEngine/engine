@@ -1005,7 +1005,7 @@ namespace base
             const auto height = std::max<uint32_t>(1, src.height() / 2);
             const auto depth = std::max<uint32_t>(1, src.depth() / 2);
 
-            auto ret = base::CreateSharedPtr<Image>(src.format(), src.channels(), width, height, depth);
+            auto ret = base::RefNew<Image>(src.format(), src.channels(), width, height, depth);
             Downsample(src, ret->view(), mode, space);
 
             return ret;

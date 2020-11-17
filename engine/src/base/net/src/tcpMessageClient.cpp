@@ -32,7 +32,7 @@ namespace base
             , m_client(this)
             , m_fatalError(false)
         {
-            m_models = CreateSharedPtr<replication::DataModelRepository>();
+            m_models = RefNew<replication::DataModelRepository>();
 
             m_replicator.create(m_models);
             m_reassembler.create(&TcpMessageReassemblerHandler::GetInstance());

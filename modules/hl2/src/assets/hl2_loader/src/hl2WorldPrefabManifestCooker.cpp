@@ -133,7 +133,7 @@ namespace hl2
             // process the entities
             while (parser.parseKeyword("{", false))
             {
-                auto entity = base::CreateSharedPtr<Entity>();
+                auto entity = base::RefNew<Entity>();
                 for (;;)
                 {
                     if (parser.parseKeyword("}", false))
@@ -268,7 +268,7 @@ namespace hl2
             // logic
             if (className == "worldspawn")
             {
-                auto node = base::CreateSharedPtr<scene::MeshNodeTemplate>();
+                auto node = base::RefNew<scene::MeshNodeTemplate>();
 
                 auto meshPath = base::res::ResourcePath(base::TempString("{}:Model=0", sourceFilePath).c_str());
                 auto meshRef = rendering::MeshAsyncRef(meshPath, rendering::content::Mesh::GetStaticClass());
@@ -284,7 +284,7 @@ namespace hl2
                 if (modelPath.empty())
                     return nullptr;
 
-                auto node = base::CreateSharedPtr<scene::MeshNodeTemplate>();
+                auto node = base::RefNew<scene::MeshNodeTemplate>();
 
                 auto meshPath = base::res::ResourcePath(base::TempString("{}/{}", rootPathToDepot, modelPath).c_str());
                 auto meshRef = rendering::MeshAsyncRef(meshPath, rendering::content::Mesh::GetStaticClass());
@@ -301,7 +301,7 @@ namespace hl2
                 uint32_t modelIndex = 0;
                 if (base::MatchResult::OK == modelIndexStr.view().match(modelIndex))
                 {
-                    auto node = base::CreateSharedPtr<scene::MeshNodeTemplate>();
+                    auto node = base::RefNew<scene::MeshNodeTemplate>();
 
                     auto meshPath = base::res::ResourcePath(base::TempString("{}:Model={}", sourceFilePath, modelIndex).c_str());
                     auto meshRef = rendering::MeshAsyncRef(meshPath);
@@ -322,7 +322,7 @@ namespace hl2
                 if (modelPath.empty())
                     return nullptr;
 
-                auto node = base::CreateSharedPtr<scene::MeshNodeTemplate>();
+                auto node = base::RefNew<scene::MeshNodeTemplate>();
 
                 auto meshPath = base::res::ResourcePath(base::TempString("{}/{}", rootPathToDepot, modelPath).c_str());
                 auto meshRef = rendering::MeshAsyncRef(meshPath, rendering::content::Mesh::GetStaticClass());
@@ -452,7 +452,7 @@ namespace hl2
 
                 if (data.PropType < meshes.size())
                 {
-                    auto node = base::CreateSharedPtr<scene::MeshNodeTemplate>();
+                    auto node = base::RefNew<scene::MeshNodeTemplate>();
                     node->meshRef(meshes[data.PropType]);
 
                     // convert rotation

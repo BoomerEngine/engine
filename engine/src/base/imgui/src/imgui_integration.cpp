@@ -30,7 +30,7 @@ namespace ImGui
         IconRegistry()
         {
             m_searchPaths.emplaceBack("/engine/icons");
-            m_defaultImage = base::CreateSharedPtr<base::image::Image>(16, 16, base::Color::GRAY);
+            m_defaultImage = base::RefNew<base::image::Image>(16, 16, base::Color::GRAY);
             m_imageList.reserve(1024);
             m_imageList.pushBack(m_defaultImage); // ID 0
         }
@@ -534,7 +534,7 @@ namespace ImGui
             io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
 
             base::image::ImageView sourceView(base::image::NATIVE_LAYOUT, base::image::PixelFormat::Uint8_Norm, bytes_per_pixel, pixels, width, height);
-            auto canvasImage = base::CreateSharedPtr<base::image::Image>(sourceView);
+            auto canvasImage = base::RefNew<base::image::Image>(sourceView);
 
             auto canvasImageId = IconRegistry::GetInstance().registerImage(canvasImage);
             io.Fonts->SetTexID(canvasImageId);

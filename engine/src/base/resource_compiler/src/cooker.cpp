@@ -253,7 +253,7 @@ namespace base
             auto cooker = recipe.cookerClass->create<IResourceCooker>();
             if (auto cookedResource = cooker->cook(helperInterface))
             {
-                auto metadata = CreateSharedPtr<Metadata>();
+                auto metadata = RefNew<Metadata>();
                 metadata->sourceDependencies = helperInterface.generatedDependencies();
                 //metadata->blackboard = helperInterface.generatedBlackboard();
                 metadata->cookerClassVersion = recipe.cookerClass->findMetadataRef<ResourceCookerVersionMetadata>().version();

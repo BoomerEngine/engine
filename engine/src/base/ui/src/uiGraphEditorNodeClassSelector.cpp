@@ -130,7 +130,7 @@ namespace ui
         }
 
         // bind model
-        m_listModel = base::CreateSharedPtr<BlockClassListModel>(filter, compatibleSocket);
+        m_listModel = base::RefNew<BlockClassListModel>(filter, compatibleSocket);
         m_list->model(m_listModel);
         m_list->bind(EVENT_ITEM_ACTIVATED) = [this]()
         {

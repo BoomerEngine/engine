@@ -1038,7 +1038,7 @@ namespace hl2
             }
 
             base::res::AsyncBuffer streamingData;
-            return base::CreateSharedPtr<rendering::StaticTexture>(std::move(finalBuffer), std::move(streamingData), std::move(mips), texInfo);
+            return base::RefNew<rendering::StaticTexture>(std::move(finalBuffer), std::move(streamingData), std::move(mips), texInfo);
         }
     };
 

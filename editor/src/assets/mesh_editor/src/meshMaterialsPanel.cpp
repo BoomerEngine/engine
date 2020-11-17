@@ -156,7 +156,7 @@ namespace ed
             if (fileData && fileData->file())
             {
                 if (fileData->file()->fileFormat().loadableAsType(rendering::IMaterial::GetStaticClass()))
-                    return base::CreateSharedPtr<ui::DragDropHandlerGeneric>(dragData, view, pos);
+                    return base::RefNew<ui::DragDropHandlerGeneric>(dragData, view, pos);
             }
         }
 
@@ -225,7 +225,7 @@ namespace ed
 
             searchBar->bindItemView(m_list);
 
-            m_listModel = base::CreateSharedPtr<MeshMaterialListModel>();
+            m_listModel = base::RefNew<MeshMaterialListModel>();
             m_list->model(m_listModel);
         }
 
@@ -303,7 +303,7 @@ namespace ed
         {
             for (const auto& mat : m_mesh->materials())
             {
-                auto entry = base::CreateSharedPtr<MeshMaterialParameters>(mat.material, mat.name);
+                auto entry = base::RefNew<MeshMaterialParameters>(mat.material, mat.name);
                 m_listModel->add(entry);
 
                 if (entry->name() == selectedMaterialName)

@@ -186,7 +186,7 @@ namespace ed
         if (nodesToDelete.empty())
             return;
 
-        auto action = CreateSharedPtr<ActionDeleteNode>(std::move(nodesToDelete), this);
+        auto action = RefNew<ActionDeleteNode>(std::move(nodesToDelete), this);
         actionHistory()->execute(action);
     }
 
@@ -355,7 +355,7 @@ namespace ed
 
         if (!data.empty())
         {
-            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            auto action = RefNew<ActionShowHideNodes>(std::move(data), this);
             actionHistory()->execute(action);
         }
     }
@@ -378,7 +378,7 @@ namespace ed
 
         if (!data.empty())
         {
-            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            auto action = RefNew<ActionShowHideNodes>(std::move(data), this);
             actionHistory()->execute(action);
         }
     }
@@ -398,7 +398,7 @@ namespace ed
 
         if (!data.empty())
         {
-            auto action = CreateSharedPtr<ActionShowHideNodes>(std::move(data), this);
+            auto action = RefNew<ActionShowHideNodes>(std::move(data), this);
             actionHistory()->execute(action);
         }
     }
@@ -461,11 +461,11 @@ namespace ed
 
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = CreateSharedPtr<SceneContentEntityNode>(safeName, std::move(prefabs), *placement, entityData, nullptr);
+                info.child = RefNew<SceneContentEntityNode>(safeName, std::move(prefabs), *placement, entityData, nullptr);
             }
         }
 
-        auto action = CreateSharedPtr<ActionCreateNode>(std::move(createdNodes), this);
+        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
         actionHistory()->execute(action);
     }
 
@@ -492,11 +492,11 @@ namespace ed
 
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = CreateSharedPtr<SceneContentComponentNode>(safeName, *placement, entityData, nullptr);
+                info.child = RefNew<SceneContentComponentNode>(safeName, *placement, entityData, nullptr);
             }
         }
 
-        auto action = CreateSharedPtr<ActionCreateNode>(std::move(createdNodes), this);
+        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
         actionHistory()->execute(action);
     }
 
@@ -702,7 +702,7 @@ namespace ed
 
     void SceneEditMode_Default::actionChangeSelection(const Array<SceneContentNodePtr>& selection)
     {
-        auto action = base::CreateSharedPtr<ActionSelectNodes>(selection, this);
+        auto action = base::RefNew<ActionSelectNodes>(selection, this);
         actionHistory()->execute(action);
     }
 
@@ -828,7 +828,7 @@ namespace ed
     {
         DEBUG_CHECK_RETURN_V(mode, nullptr);
         DEBUG_CHECK_RETURN_V(!nodes.empty(), nullptr);
-        return CreateSharedPtr<ActionMoveSceneNodes>(std::move(nodes), mode, fullRefresh);
+        return RefNew<ActionMoveSceneNodes>(std::move(nodes), mode, fullRefresh);
     }
 
     //--

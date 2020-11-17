@@ -68,7 +68,7 @@ namespace base
         
         RefPtr<StaticRapidXMLDocument> StaticRapidXMLDocument::Load(ILoadingReporter& ctx, const Buffer& ptr, bool canStealBuffer /*= false*/)
         {
-            auto ret  = CreateSharedPtr<StaticRapidXMLDocument>();
+            auto ret  = RefNew<StaticRapidXMLDocument>();
 
             // buffer is to small
             if (ptr.size() < 10)

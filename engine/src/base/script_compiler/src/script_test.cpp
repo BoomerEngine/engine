@@ -245,7 +245,7 @@ class ScriptFixture : public ::testing::Test
         ASSERT_TRUE(ctx);
 
         // create object
-        auto ptr = base::CreateSharedPtr<NativeScriptObject>();
+        auto ptr = base::RefNew<NativeScriptObject>();
 
         // prepare
         r = ctx->Prepare(func);

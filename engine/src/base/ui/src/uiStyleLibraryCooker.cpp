@@ -65,7 +65,7 @@ namespace ui
                 base::image::ImagePtr retImage;
                 if (!m_localImages.find(image, retImage))
                 {
-                    retImage = base::CreateSharedPtr<base::image::Image>(image->view());
+                    retImage = base::RefNew<base::image::Image>(image->view());
                     if (retImage->view().channels() == 4)
                         base::image::PremultiplyAlpha(retImage->view());
                     m_localImages[image] = retImage;
@@ -87,7 +87,7 @@ namespace ui
                 base::FontPtr retFont;
                 if (!m_localFonts.find(font, retFont))
                 {
-                    retFont = base::CreateSharedPtr<base::font::Font>(font->data());
+                    retFont = base::RefNew<base::font::Font>(font->data());
                     m_localFonts[font] = retFont;
                 }
 

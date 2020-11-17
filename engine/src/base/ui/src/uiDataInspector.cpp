@@ -165,7 +165,7 @@ namespace ui
                             const auto names = GatherCategoryNames(m_settings.sortAlphabetically, info);
                             for (auto name : names)
                             {
-                                auto group = base::CreateSharedPtr<DataInspectorObjectCategoryGroup>(this, nullptr, m_rootPath, name);
+                                auto group = base::RefNew<DataInspectorObjectCategoryGroup>(this, nullptr, m_rootPath, name);
                                 attachChild(group);
                                 m_items.pushBack(group);
 
@@ -187,7 +187,7 @@ namespace ui
 
                                 if (data()->describeDataView(childPath, childInfo).valid())
                                 {
-                                    auto prop = base::CreateSharedPtr<DataProperty>(this, nullptr, 0, childPath, childPath, childInfo, false);
+                                    auto prop = base::RefNew<DataProperty>(this, nullptr, 0, childPath, childPath, childInfo, false);
                                     attachChild(prop);
                                     m_items.pushBack(prop);
                                 }

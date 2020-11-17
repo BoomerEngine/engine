@@ -243,11 +243,11 @@ namespace ed
 
         void ContentNode::buildViewContent(ui::ElementPtr& content)
         {
-            auto image = base::CreateSharedPtr<ui::StaticContent>();
+            auto image = base::RefNew<ui::StaticContent>();
             image->customImage(resNode.loadAndGet());
             image->name("NodeIcon");
 
-            auto caption = base::CreateSharedPtr<ui::StaticContent>();
+            auto caption = base::RefNew<ui::StaticContent>();
             caption->text(captionText());
             caption->name("NodeName");
             caption->styleClasses(captionStyle().c_str());
@@ -258,7 +258,7 @@ namespace ed
             auto node = static_cast<ContentNode*>(this);
             auto className = node->nodeTemplate()->cls()->name();
 
-            auto klass = base::CreateSharedPtr<ui::StaticContent>();
+            auto klass = base::RefNew<ui::StaticContent>();
             //klass->text(className.buffer().stringAfterLast("::"));
             klass->name("NodeClass");
             klass->styleClasses("italic");
@@ -408,17 +408,17 @@ namespace ed
                 }
                 else
                 {
-                    auto image = base::CreateSharedPtr<ui::StaticContent>();
+                    auto image = base::RefNew<ui::StaticContent>();
                     image->customImage(GetNodeIcon(*this));
                     image->name("NodeIcon");
 
-                    auto caption = base::CreateSharedPtr<ui::StaticContent>();
+                    auto caption = base::RefNew<ui::StaticContent>();
                     caption->text(captionText());
                     caption->name("NodeName");
                     caption->styleClasses(captionStyle().c_str());
                     caption->customMargins(ui::Offsets(5,0,0,0));
 
-                    auto klass = base::CreateSharedPtr<ui::StaticContent>();
+                    auto klass = base::RefNew<ui::StaticContent>();
                     klass->text(GetNodeClassName(*this));
                     klass->name("NodeClass");
                     klass->styleClasses("italic");

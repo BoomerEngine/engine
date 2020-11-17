@@ -457,7 +457,7 @@ namespace base
 
                 TRACE_INFO("Mouse capture disabled");
 
-                inject(CreateSharedPtr<MouseCaptureLostEvent>(0));
+                inject(RefNew<MouseCaptureLostEvent>(0));
             }
         }
 

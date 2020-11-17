@@ -59,7 +59,7 @@ namespace base
             if (!keyState)
             {
                 auto keyMask  = currentKeyMask();
-                auto evt  = base::CreateSharedPtr<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, true, false, keyMask);
+                auto evt  = base::RefNew<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, true, false, keyMask);
                 m_context->inject(evt);
 
                 // insert the pressed key to the repeat list
@@ -74,7 +74,7 @@ namespace base
             auto& keyState = m_pressedKeys[(uint16_t)keyCode];
             if (keyState)
             {
-                auto evt  = base::CreateSharedPtr<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, false, false, currentKeyMask());
+                auto evt  = base::RefNew<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, false, false, currentKeyMask());
                 m_context->inject(evt);
 
                 m_repeatKey.reset();
@@ -84,7 +84,7 @@ namespace base
 
         void GenericKeyboard::charDown(KeyScanCode scanCode)
         {
-            auto evt  = base::CreateSharedPtr<CharEvent>(m_id, scanCode, false, currentKeyMask());
+            auto evt  = base::RefNew<CharEvent>(m_id, scanCode, false, currentKeyMask());
             m_context->inject(evt);
         }
 
@@ -96,7 +96,7 @@ namespace base
                 auto owningWindowId = m_pressedKeys[i];
                 if (0 != owningWindowId)
                 {
-                    auto evt = base::CreateSharedPtr<KeyEvent>(DeviceType::Keyboard, m_id, (KeyCode)i, false, false, KeyMask());
+                    auto evt = base::RefNew<KeyEvent>(DeviceType::Keyboard, m_id, (KeyCode)i, false, false, KeyMask());
                     m_context->inject(evt);
 
                     m_pressedKeys[i] = false;
@@ -120,7 +120,7 @@ namespace base
                         m_repeatKey.m_nextRepeatTime = m_repeatKey.m_nextRepeatTime + m_keyRepeatPeriod;
                         m_repeatKey.m_maxRepeat += 1;
 
-                        auto evt = base::CreateSharedPtr<KeyEvent>(DeviceType::Keyboard, m_id, m_repeatKey.m_keyCode, true, true, m_repeatKey.m_keyMask);
+                        auto evt = base::RefNew<KeyEvent>(DeviceType::Keyboard, m_id, m_repeatKey.m_keyCode, true, true, m_repeatKey.m_keyMask);
                         m_context->inject(evt);
                     }
 

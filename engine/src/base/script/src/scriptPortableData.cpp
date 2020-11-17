@@ -81,7 +81,7 @@ namespace base
             TRACE_INFO("Packed script data size: {}", MemSize(memoryWriter.size()));
 
             // create output object
-            auto ret = CreateSharedPtr<PortableData>();
+            auto ret = RefNew<PortableData>();
             ret->m_packedData = memoryWriter.toBuffer();
 
             // load data again (makes copy)

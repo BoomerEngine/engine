@@ -199,7 +199,7 @@ namespace base
     {
         if (key && eventName)
         {
-            auto entry = CreateSharedPtr<SyncDispatcher>(key, eventName, m_context, m_strictOrdering );
+            auto entry = RefNew<SyncDispatcher>(key, eventName, m_context, m_strictOrdering );
             IGlobalEventTable::bind(entry);
             return GlobalEventFunctionBinder(&entry->func(), entry);
         }

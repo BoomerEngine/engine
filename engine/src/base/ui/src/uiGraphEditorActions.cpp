@@ -70,7 +70,7 @@ namespace ui
 
     bool GraphEditor::actionChangeSelection(const base::Array<const base::graph::Block*>& oldSelection, const base::Array<const base::graph::Block*>& newSelection)
     {
-        auto action = base::CreateSharedPtr<GraphEditorChangeSelectionAction>(this, oldSelection, newSelection);
+        auto action = base::RefNew<GraphEditorChangeSelectionAction>(this, oldSelection, newSelection);
         return m_actionHistory->execute(action);
     }
 
@@ -203,7 +203,7 @@ namespace ui
         newConnections.emplaceBack(source, target);
 
         auto desc = base::StringBuf(base::TempString("Connect '{}' with '{}'", source->name(), target->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -220,7 +220,7 @@ namespace ui
         base::InplaceArray<GraphConnection, 1> newConnections; // nothing
 
         auto desc = base::StringBuf(base::TempString("Remove all connection of block '{}'", block->chooseTitle()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -241,7 +241,7 @@ namespace ui
             return true;
 
         auto desc = base::StringBuf(base::TempString("Remove socket connection to '{}'", target->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -257,7 +257,7 @@ namespace ui
         base::InplaceArray<GraphConnection, 1> newConnections; // nothing
 
         auto desc = base::StringBuf(base::TempString("Remove all connection of socket '{}'", socket->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -288,7 +288,7 @@ namespace ui
         base::InplaceArray<GraphConnection, 1> newConnections; // nothing
 
         auto desc = base::StringBuf(base::TempString("Cut all connection of socket '{}'", socket->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -333,7 +333,7 @@ namespace ui
                     newConnections.emplaceBack(socket, target);
 
         auto desc = base::StringBuf(base::TempString("Paste connections to socket '{}'", socket->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -376,7 +376,7 @@ namespace ui
             return true; // nothing new added
 
         auto desc = base::StringBuf(base::TempString("Merge connections into socket '{}'", socket->name()));
-        auto action = base::CreateSharedPtr<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
+        auto action = base::RefNew<GraphEditorChangeConnectionsAction>(this, oldConnections, newConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -465,7 +465,7 @@ namespace ui
         auto block = blockClass->create<base::graph::Block>();
         block->position(virtualPos);
 
-        auto action = base::CreateSharedPtr<GraphEditorCreateBlock>(this, currentSelection(), block);
+        auto action = base::RefNew<GraphEditorCreateBlock>(this, currentSelection(), block);
         return actionHistory()->execute(action);
     }
 
@@ -477,7 +477,7 @@ namespace ui
         auto block = blockClass->create<base::graph::Block>();
         block->position(virtualPos);
 
-        auto action = base::CreateSharedPtr<GraphEditorCreateBlock>(this, currentSelection(), block);
+        auto action = base::RefNew<GraphEditorCreateBlock>(this, currentSelection(), block);
         if (!actionHistory()->execute(action))
             return false;
 
@@ -577,7 +577,7 @@ namespace ui
             }
         }
 
-        auto action = base::CreateSharedPtr<GraphEditorDeleteBlocks>(this, oldSelection, newSelection, blocks, oldConnections, base::StringBuf(desc));
+        auto action = base::RefNew<GraphEditorDeleteBlocks>(this, oldSelection, newSelection, blocks, oldConnections, base::StringBuf(desc));
         return actionHistory()->execute(action);
     }
 
@@ -729,7 +729,7 @@ namespace ui
         auto oldSelection = currentSelection();
 
         auto desc = base::StringBuf(base::TempString("Paste {} block(s)", pastedBlocks.size()));
-        auto action = base::CreateSharedPtr<GraphEditorPasteBlocks>(this, oldSelection, pastedBlocks, pastedConnections, desc);
+        auto action = base::RefNew<GraphEditorPasteBlocks>(this, oldSelection, pastedBlocks, pastedConnections, desc);
         return actionHistory()->execute(action);
     }
 
@@ -843,7 +843,7 @@ namespace ui
             }
         }
 
-        auto action = base::CreateSharedPtr<GraphEditorMoveBlocks>(this, oldPlacement, newPlacement);
+        auto action = base::RefNew<GraphEditorMoveBlocks>(this, oldPlacement, newPlacement);
         return m_actionHistory->execute(action);
     }
 

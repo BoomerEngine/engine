@@ -73,7 +73,7 @@ void HelperSave(const base::ObjectPtr& obj, Buffer& outData)
     context.rootObject.pushBack(obj);
     context.protectedStream = false;
 
-    auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
+    auto writer = base::RefNew<base::io::MemoryWriterFileHandle>();
 
     ASSERT_TRUE(base::res::SaveFile(writer, context)) << "Serialization failed";
 
@@ -88,7 +88,7 @@ void HelperSave(const Array<base::ObjectPtr>& roots, Buffer& outData, bool prote
     context.rootObject = roots;
     context.protectedStream = protectedStream;
 
-    auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
+    auto writer = base::RefNew<base::io::MemoryWriterFileHandle>();
 
     ASSERT_TRUE(base::res::SaveFile(writer, context)) << "Serialization failed";
 
@@ -101,7 +101,7 @@ void HelperLoad(const Buffer& data, base::ObjectPtr& outRet)
 {
     base::res::FileLoadingContext context;
 
-    auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(data);
+    auto reader = base::RefNew<base::io::MemoryAsyncReaderFileHandle>(data);
 
     ASSERT_TRUE(base::res::LoadFile(reader, context)) << "Deserialization failed";
 
@@ -114,7 +114,7 @@ void HelperLoad(const Buffer& data, base::Array<ObjectPtr>& outRoots)
 {
     base::res::FileLoadingContext context;
 
-    auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(data);
+    auto reader = base::RefNew<base::io::MemoryAsyncReaderFileHandle>(data);
 
     ASSERT_TRUE(base::res::LoadFile(reader, context)) << "Deserialization failed";
 
@@ -167,7 +167,7 @@ const char* HelperGetPropertyClassType(const base::res::FileTables& tables, uint
 TEST(Serialization, SaveSimple)
 {
     // create objects for testings
-    auto object = CreateSharedPtr<tests::TestObject>();
+    auto object = RefNew<tests::TestObject>();
 
     // save to memory
     base::Buffer data;
@@ -199,7 +199,7 @@ TEST(Serialization, SaveSimple)
 TEST(Serialization, SaveSimpleWithSimpleData)
 {
     // create objects for testings
-    auto object = CreateSharedPtr<tests::TestObject>();
+    auto object = RefNew<tests::TestObject>();
     object->m_bool = true;
     object->m_float = 42.0f;
     object->m_name = "TEST"_id;
@@ -254,10 +254,10 @@ TEST(Serialization, SaveSimpleWithSimpleData)
 TEST(Serialization, ObjectChain)
 {
     // create objects for testings
-    auto object = CreateSharedPtr<tests::TestObject>();
-    object->m_child = CreateSharedPtr<tests::TestObject>();
+    auto object = RefNew<tests::TestObject>();
+    object->m_child = RefNew<tests::TestObject>();
     object->m_child->parent(object);
-    object->m_child->m_child = CreateSharedPtr<tests::TestObject>();
+    object->m_child->m_child = RefNew<tests::TestObject>();
     object->m_child->m_child->parent(object->m_child);
 
     // save to memory
@@ -283,8 +283,8 @@ TEST(Serialization, ObjectChain)
 TEST(Serialization, ObjectChainBrokenLink)
 {
     // create objects for testings
-    auto object = CreateSharedPtr<tests::TestObject>();
-    object->m_child = CreateSharedPtr<tests::TestObject>();
+    auto object = RefNew<tests::TestObject>();
+    object->m_child = RefNew<tests::TestObject>();
 
     // save to memory
     base::Buffer data;
@@ -305,13 +305,13 @@ TEST(Serialization, ObjectChainBrokenLink)
 TEST(Serialization, SaveLoadSimple)
 {
     // create objects for testings
-    RefPtr<tests::TestObject> object = CreateSharedPtr<tests::TestObject>();
+    RefPtr<tests::TestObject> object = RefNew<tests::TestObject>();
     object->m_bool = true;
     object->m_int = 123;
     object->m_float = 666.0f;
     object->m_text = "I want to belive";
 
-    RefPtr<tests::TestObject> objectChild = CreateSharedPtr<tests::TestObject>();
+    RefPtr<tests::TestObject> objectChild = RefNew<tests::TestObject>();
     objectChild->parent(object);
     objectChild->m_bool = false;
     objectChild->m_int = 456;
@@ -350,7 +350,7 @@ static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Arra
 
     for (uint32_t i = 0; i < objectCount; ++i)
     {
-        auto ptr = base::CreateSharedPtr<tests::MassTestObject>();
+        auto ptr = base::RefNew<tests::MassTestObject>();
 
         auto parentIndex = (int)RandMax(rand, outTestObjects.size()) - 1;
         if (parentIndex == -1)

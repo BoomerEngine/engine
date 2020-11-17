@@ -513,7 +513,7 @@ namespace base
             FreeImage_FlipVertical(dib);
 
             // create a wrapper
-            return base::CreateSharedPtr<FreeImageLoadedData>(dib);
+            return base::RefNew<FreeImageLoadedData>(dib);
         }
 
         ImageView FreeImageLoadedData::view() const

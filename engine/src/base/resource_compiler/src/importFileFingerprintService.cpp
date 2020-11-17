@@ -38,7 +38,7 @@ namespace base
             }
 
             TRACE_INFO("Fingerprint: Created new cache");
-            return CreateSharedPtr<ImportFingerprintCache>();
+            return RefNew<ImportFingerprintCache>();
         }
 
         static bool SaveCache(StringView path, const RefPtr<ImportFingerprintCache>& cache)
@@ -150,7 +150,7 @@ namespace base
             }
 
             // create a cache job entry
-            auto validCacheJob = base::CreateSharedPtr<CacheJob>();
+            auto validCacheJob = base::RefNew<CacheJob>();
             validCacheJob->path = StringBuf(absolutePath);
             validCacheJob->timestamp = timestamp;
             validCacheJob->signal = Fibers::GetInstance().createCounter("ImportFileFingerprintServiceCalcJob");

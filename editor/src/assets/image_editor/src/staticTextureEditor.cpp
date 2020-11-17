@@ -53,7 +53,7 @@ namespace ed
     void StaticTextureEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
             m_previewTab = tab;
             m_previewTab->layoutVertical();
 
@@ -65,7 +65,7 @@ namespace ed
         }
 
         {
-            auto panel = base::CreateSharedPtr<ui::DockPanel>("[img:table] Image", "ImageInfoPanel");
+            auto panel = base::RefNew<ui::DockPanel>("[img:table] Image", "ImageInfoPanel");
             panel->layoutVertical();
 
             auto splitter = panel->createChild<ui::Splitter>(ui::Direction::Horizontal, 0.33f);
@@ -73,12 +73,12 @@ namespace ed
             {
                 auto notebook = splitter->createChild<ui::Notebook>();
 
-                auto colorHistogram = base::CreateSharedPtr<ImageHistogramWidget>();
+                auto colorHistogram = base::RefNew<ImageHistogramWidget>();
                 m_colorHistogram = colorHistogram;
                 m_colorHistogram->customStyle<base::StringBuf>("title"_id, "[img:color_wheel]RGB");
                 notebook->attachTab(m_colorHistogram, nullptr, true);
 
-                auto lumHistogram = base::CreateSharedPtr<ImageHistogramWidget>();
+                auto lumHistogram = base::RefNew<ImageHistogramWidget>();
                 m_lumHistogram = lumHistogram;
                 m_lumHistogram->customStyle<base::StringBuf>("title"_id, "[img:lightbulb]Luminance");
                 notebook->attachTab(m_lumHistogram, nullptr, false);
@@ -266,7 +266,7 @@ namespace ed
             {
                 if (auto loadedTexture = rtti_cast<rendering::StaticTexture>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<StaticTextureEditor>(nativeFile);
+                    auto ret = base::RefNew<StaticTextureEditor>(nativeFile);
                     ret->bindResource(loadedTexture);
                     return ret;
                 }

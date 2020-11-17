@@ -183,13 +183,13 @@ namespace ed
             layoutMode(ui::LayoutMode::Vertical);
 
             // create toolbar holder
-            auto toolbars = base::CreateSharedPtr<ui::IElement>();
+            auto toolbars = base::RefNew<ui::IElement>();
             toolbars->layoutMode(ui::LayoutMode::Horizontal);
             toolbars->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             attachBuildChild(toolbars);
 
             // create preview panel
-            m_panel = base::CreateSharedPtr<SceneRenderingPanel>(editor, sceneContainer, configPath);
+            m_panel = base::RefNew<SceneRenderingPanel>(editor, sceneContainer, configPath);
             m_panel->customProportion(1.0f);
             m_panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             m_panel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
@@ -198,20 +198,20 @@ namespace ed
             //--
 
             // create general toolbar
-            auto toolbar1 = base::CreateSharedPtr<RenderingPanelViewModeToolbar>(m_panel);
+            auto toolbar1 = base::RefNew<RenderingPanelViewModeToolbar>(m_panel);
             toolbars->attachBuildChild(toolbar1);
             toolbar1->realize();
 
             // TODO: create scene specific toolbar
 
             // create camera specific toolbar
-            auto separator = base::CreateSharedPtr<ui::IElement>();
+            auto separator = base::RefNew<ui::IElement>();
             separator->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             separator->customProportion(1.0f);
             toolbars->attachBuildChild(separator);
 
             // camera speed control 
-            auto toolbar2 = base::CreateSharedPtr<RenderingPanelViewModeToolbarCameraSpeedToolbar>(m_panel);
+            auto toolbar2 = base::RefNew<RenderingPanelViewModeToolbarCameraSpeedToolbar>(m_panel);
             toolbars->attachBuildChild(toolbar2);
             toolbar2->realize();
 

@@ -196,7 +196,7 @@ namespace ed
                     if (auto node = nodeForIndex(id))
                         selectedNodes.pushBack(node);
 
-                auto menu = CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = RefNew<ui::MenuButtonContainer>();
                 mode->handleTreeContextMenu(menu, currentNode, selectedNodes);
                 return menu->convertToPopup();
             }
@@ -314,7 +314,7 @@ namespace ed
 
         //--
 
-        m_treeModel = CreateSharedPtr<SceneContentTreeModel>(scene, preview);
+        m_treeModel = RefNew<SceneContentTreeModel>(scene, preview);
         m_tree->model(m_treeModel);
 
         //--

@@ -29,7 +29,7 @@ namespace rendering
         ISceneTest::ISceneTest()
             : m_hasErrors(false)
         {
-            m_defaultImage = base::CreateSharedPtr<base::image::Image>(16, 16, base::Color::WHITE);
+            m_defaultImage = base::RefNew<base::image::Image>(16, 16, base::Color::WHITE);
         }
 
         bool ISceneTest::processInitialization()
@@ -62,7 +62,7 @@ namespace rendering
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load font '{}'", assetFile));
-                return base::CreateSharedPtr<base::font::Font>();
+                return base::RefNew<base::font::Font>();
             }
 
             return imagePtr.acquire();

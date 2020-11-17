@@ -76,7 +76,7 @@ namespace ui
                     // if we have some children to navigate to create the menu
                     if (!childrenNames.empty())
                     {
-                        auto popup = base::CreateSharedPtr<PopupWindow>();
+                        auto popup = base::RefNew<PopupWindow>();
 
                         /*for (const auto& childName : childrenNames)
                         {
@@ -172,7 +172,7 @@ namespace ui
         // add new wrapper
         for (const auto& newBreadCrumb : newBreadcrumbs)
         {
-            auto ptr = base::CreateSharedPtr<BreadcrumbContainer>(this, newBreadCrumb, m_breadcrumbs.size());
+            auto ptr = base::RefNew<BreadcrumbContainer>(this, newBreadCrumb, m_breadcrumbs.size());
             m_breadcrumbs.pushBack(ptr);
             attachChild(ptr);
         }
@@ -188,7 +188,7 @@ namespace ui
         // create wrapper
         if (breadcrumb)
         {
-            auto ptr = base::CreateSharedPtr<BreadcrumbContainer>(this, breadcrumb, 0);
+            auto ptr = base::RefNew<BreadcrumbContainer>(this, breadcrumb, 0);
             m_breadcrumbs.pushBack(ptr);
             attachChild(ptr);
         }

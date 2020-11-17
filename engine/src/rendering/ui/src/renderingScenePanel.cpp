@@ -197,7 +197,7 @@ namespace ui
     RenderingScenePanel::RenderingScenePanel()
         : m_updateTimer(this, "Update"_id)
     {
-        m_cameraContext = base::CreateSharedPtr<rendering::scene::CameraContext>("PreviewPanelCamera");
+        m_cameraContext = base::RefNew<rendering::scene::CameraContext>("PreviewPanelCamera");
 
         m_lastUpdateTime.resetToNow();
         m_updateTimer = [this]() {
@@ -442,7 +442,7 @@ namespace ui
         if (evt.keyMask().isCtrlDown() && evt.rightClicked())
         {
             auto rotateFunc = [this](float dp, float dy) { rotateGlobalLight(dp, dy); };
-            return base::CreateSharedPtr<helper::MouseLightRotation>(this, rotateFunc);
+            return base::RefNew<helper::MouseLightRotation>(this, rotateFunc);
         }
         else  if (evt.leftClicked() && !evt.keyMask().isAltDown())
         {
@@ -461,14 +461,14 @@ namespace ui
                 {
                     // create an area selection mode
                     auto selectionFunc = [this](bool ctrl, bool shift, const base::Rect& rect) { handleAreaSelection(ctrl, shift, rect); };
-                    return base::CreateSharedPtr<helper::SelectionAreaInputHandler>(this, evt.absolutePosition(), selectionFunc);
+                    return base::RefNew<helper::SelectionAreaInputHandler>(this, evt.absolutePosition(), selectionFunc);
                 }
                 else
                 {
                     // create a point selection mode
                     // NOTE: this can mutate into the camera movement
                     auto selectionFunc = [this](bool ctrl, bool shift, const base::Point& point) { handlePointSelection(ctrl, shift, point); };
-                    return base::CreateSharedPtr<helper::SelectionClickInputHandler>(this, &m_cameraController, evt.absolutePosition(), selectionFunc);
+                    return base::RefNew<helper::SelectionClickInputHandler>(this, &m_cameraController, evt.absolutePosition(), selectionFunc);
                 }
             }
         }
@@ -840,7 +840,7 @@ namespace ui
             return nullptr;
 
         // prepare capture context for frame rendering
-        auto captureBuffer = base::CreateSharedPtr<rendering::DownloadBuffer>();
+        auto captureBuffer = base::RefNew<rendering::DownloadBuffer>();
 
         // prepare capture settings
         rendering::scene::FrameParams_Capture capture;
@@ -893,7 +893,7 @@ namespace ui
             return nullptr;
 
         // create wrapper
-        return base::CreateSharedPtr<RenderingPanelSelectionQuery>(capture.area, std::move(allSelectables));
+        return base::RefNew<RenderingPanelSelectionQuery>(capture.area, std::move(allSelectables));
     }
 
     bool RenderingScenePanel::queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition)
@@ -915,7 +915,7 @@ namespace ui
         auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
         // prepare capture context for frame rendering
-        auto captureImage = base::CreateSharedPtr<rendering::DownloadImage>();
+        auto captureImage = base::RefNew<rendering::DownloadImage>();
 
         // prepare capture settings
         rendering::scene::FrameParams_Capture capture;
@@ -948,7 +948,7 @@ namespace ui
         camera.setup(cameraSetup);
 
         // create wrapper
-        return base::CreateSharedPtr<RenderingPanelDepthBufferQuery>(renderAreaWidth, renderAreaHeight, camera, depthImage);
+        return base::RefNew<RenderingPanelDepthBufferQuery>(renderAreaWidth, renderAreaHeight, camera, depthImage);
     }
 
     //--

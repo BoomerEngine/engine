@@ -198,7 +198,7 @@ namespace ui
 
         if (hasValidChildren)
         {
-            auto ret = base::CreateSharedPtr<PopupWindow>();
+            auto ret = base::RefNew<PopupWindow>();
             ret->attachChild(this);
             return ret;
         }

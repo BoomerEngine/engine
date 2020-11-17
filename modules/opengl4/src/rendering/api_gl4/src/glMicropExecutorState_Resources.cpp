@@ -139,7 +139,7 @@ namespace rendering
             }
 
             // create the image to receive the data
-            auto targetImage = base::CreateSharedPtr<base::image::Image>(pixelFormat, numChannels, texWidth, texHeight, texDepth);
+            auto targetImage = base::RefNew<base::image::Image>(pixelFormat, numChannels, texWidth, texHeight, texDepth);
             if (!targetImage)
             {
                 target->publish(nullptr);

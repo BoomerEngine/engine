@@ -74,7 +74,7 @@ namespace tests
 
         void addObjectResource(StringView path, const res::ResourceHandle& resource)
         {
-            auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
+            auto writer = base::RefNew<base::io::MemoryWriterFileHandle>();
 
             base::res::FileSavingContext context;
             context.rootObject.pushBack(resource);
@@ -103,7 +103,7 @@ namespace tests
                     return false;
             }
 
-            auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(entry->data);
+            auto reader = base::RefNew<base::io::MemoryAsyncReaderFileHandle>(entry->data);
 
             base::res::FileLoadingContext context;
             base::res::LoadFile(reader, context);
@@ -150,18 +150,18 @@ public:
 
     virtual void SetUp() override final
     {
-        m_loader = CreateSharedPtr<tests::SimpleRawLoader>();
+        m_loader = RefNew<tests::SimpleRawLoader>();
 
         // simple valid resource
         {
-            auto obj = CreateSharedPtr<tests::TestResource>();
+            auto obj = RefNew<tests::TestResource>();
             obj->m_data = "This is a resource test";
             m_loader->addObjectResource(RES_A, obj);
         }
 
         // resource with connection to A
         {
-            auto obj = CreateSharedPtr<tests::TestResource>();
+            auto obj = RefNew<tests::TestResource>();
             obj->m_data = "This is another resource";
             ((res::BaseReference&)obj->m_ref) = res::BaseReference(res::ResourceKey(RES_A, tests::TestResource::GetStaticClass()));
             m_loader->addObjectResource(RES_B, obj);

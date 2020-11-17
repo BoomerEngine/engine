@@ -166,7 +166,7 @@ namespace hl2
         }
 
         // create wrapper
-        return base::CreateSharedPtr<base::io::MemoryReaderFileHandle>(buffer, base::StringBuf(rawFilePath));
+        return base::RefNew<base::io::MemoryReaderFileHandle>(buffer, base::StringBuf(rawFilePath));
     }
 
     bool PackedFileSystem::writeFile(base::StringView rawFilePath, const base::Buffer& data, const base::io::TimeStamp* overrideTimeStamp, uint64_t overrideCRC)

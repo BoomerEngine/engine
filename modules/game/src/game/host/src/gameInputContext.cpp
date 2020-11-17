@@ -142,7 +142,7 @@ namespace game
                         if (m_consumedPresses.insert(keyCode))
                             m_buttonValues[action->name] += value;
 
-                        outEvent = base::CreateSharedPtr<InputEvent>();
+                        outEvent = base::RefNew<InputEvent>();
                         outEvent->m_name = action->name;
                         outEvent->m_deltaValue = value;
                         outEvent->m_absoluteValue = m_buttonValues[action->name];
@@ -159,7 +159,7 @@ namespace game
                         if (m_consumedPresses.remove(keyCode))
                             m_buttonValues[action->name] += value;
 
-                        outEvent = base::CreateSharedPtr<InputEvent>();
+                        outEvent = base::RefNew<InputEvent>();
                         outEvent->m_name = action->name;
                         outEvent->m_deltaValue = value;
                         outEvent->m_absoluteValue = m_buttonValues[action->name];
@@ -184,7 +184,7 @@ namespace game
 
                         m_axisValues[action->name] += delta;
 
-                        outEvent = base::CreateSharedPtr<InputEvent>();
+                        outEvent = base::RefNew<InputEvent>();
                         outEvent->m_name = action->name;
                         outEvent->m_deltaValue = delta;
                         outEvent->m_absoluteValue = m_axisValues[action->name];
@@ -196,7 +196,7 @@ namespace game
 
                         const auto delta = action->invert ? -axisEvent->displacement() : axisEvent->displacement();
 
-                        outEvent = base::CreateSharedPtr<InputEvent>();
+                        outEvent = base::RefNew<InputEvent>();
                         outEvent->m_name = action->name;
                         outEvent->m_deltaValue = prev - axisEvent->displacement();
                         outEvent->m_absoluteValue = axisEvent->displacement();

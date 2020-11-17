@@ -332,7 +332,7 @@ namespace base
 
                 // Return file reader
                 if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for reading", str);
-                return CreateSharedPtr<WinReadFileHandle>(handle, absoluteFilePath);
+                return RefNew<WinReadFileHandle>(handle, absoluteFilePath);
             }
 
             static void GenerateTempFilePath(StringView absoluteFilePath, TempPathStringBuffer& outStr)
@@ -377,7 +377,7 @@ namespace base
 
                 // Create the wrapper
                 if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for writing", str);
-                return CreateSharedPtr<WinWriteFileHandle>(handle, "");
+                return RefNew<WinWriteFileHandle>(handle, "");
             }
 
             WriteFileHandlePtr WinIOSystem::openForWriting(StringView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
@@ -415,7 +415,7 @@ namespace base
 
                     // create wrapper
                     if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for staged writing", str);
-                    return CreateSharedPtr<WinWriteTempFileHandle>(str.buffer(), tempFilePath.buffer(), tempFileWriter);
+                    return RefNew<WinWriteTempFileHandle>(str.buffer(), tempFilePath.buffer(), tempFileWriter);
                 }
 
                 // open file
@@ -444,7 +444,7 @@ namespace base
 
                 // Return file reader
                 if (GTraceIO) TRACE_INFO("WinIO: Opened '{}' for async reading ({})", str, MemSize(size.QuadPart));
-                return CreateSharedPtr<WinAsyncFileHandle>(handle, absoluteFilePath, size.QuadPart, m_asyncDispatcher);
+                return RefNew<WinAsyncFileHandle>(handle, absoluteFilePath, size.QuadPart, m_asyncDispatcher);
             }
 
             //--
@@ -890,7 +890,7 @@ namespace base
             DirectoryWatcherPtr WinIOSystem::createDirectoryWatcher(StringView path)
             {
                 TempPathStringBuffer str(path);
-                return base::CreateSharedPtr<prv::WinDirectoryWatcher>(str.buffer());
+                return base::RefNew<prv::WinDirectoryWatcher>(str.buffer());
             }
 
             void WinIOSystem::showFileExplorer(StringView path)

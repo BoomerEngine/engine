@@ -81,7 +81,7 @@ namespace ed
 
                         if (auto nodeTemplateCopy = base::CloneObject<scene::NodeTemplate>(rootNodeTemplate))
                         {
-                            if (auto nodeContent = base::CreateSharedPtr<ContentNode>(nodeTemplateCopy))
+                            if (auto nodeContent = base::RefNew<ContentNode>(nodeTemplateCopy))
                             {
                                 m_nodes.pushBack(nodeContent);
                                 nodeContent->attachToParent(this);
@@ -205,11 +205,11 @@ namespace ed
 
         void ContentLayer::buildViewContent(ui::ElementPtr& content)
         {
-            auto image = base::CreateSharedPtr<ui::StaticContent>();
+            auto image = base::RefNew<ui::StaticContent>();
             image->customImage(layerIcon());
             image->name("NodeIcon");
 
-            auto caption = base::CreateSharedPtr<ui::StaticContent>();
+            auto caption = base::RefNew<ui::StaticContent>();
             caption->text(captionText());
             caption->name("NodeName");
             caption->styleClasses(captionStyle().c_str());
@@ -217,7 +217,7 @@ namespace ed
 
             auto leftSide = ui::LayoutHorizontally({ image, caption });
 
-            auto klass = base::CreateSharedPtr<ui::StaticContent>();
+            auto klass = base::RefNew<ui::StaticContent>();
             klass->text("Layer");
             klass->name("NodeClass");
             klass->styleClasses("italic");
@@ -270,11 +270,11 @@ namespace ed
                 }
                 else
                 {
-                    auto image = base::CreateSharedPtr<ui::StaticContent>();
+                    auto image = base::RefNew<ui::StaticContent>();
                     image->customImage(layerIcon());
                     image->name("LayerIcon");
 
-                    auto caption = base::CreateSharedPtr<ui::StaticContent>();
+                    auto caption = base::RefNew<ui::StaticContent>();
                     caption->text(captionText());
                     caption->name("LayerName");
                     caption->customMargins(ui::Offsets(5,0,0,0));

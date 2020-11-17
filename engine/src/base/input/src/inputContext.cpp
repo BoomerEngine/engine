@@ -64,7 +64,7 @@ namespace base
 
         ContextPtr IContext::CreateNativeContext(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode)
         {
-            return base::CreateSharedPtr<InputSystemClass>(nativeWindow, nativeDisplay, gameMode);
+            return base::RefNew<InputSystemClass>(nativeWindow, nativeDisplay, gameMode);
         }
 
         //---

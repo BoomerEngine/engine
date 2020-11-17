@@ -69,7 +69,7 @@ namespace rendering
 
         if (channelCount != sourceView.channels())
         {
-            tempImagePtr = base::CreateSharedPtr<base::image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
+            tempImagePtr = base::RefNew<base::image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
             base::image::ConvertChannels(sourceView, tempImagePtr->view());
             view = tempImagePtr->view();
         }

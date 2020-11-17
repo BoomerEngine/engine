@@ -289,7 +289,7 @@ namespace rendering
 
                     // create fake buffer
                     auto freeFunc = [ddsData](void* ptr, uint32_t size) { crn_free_block(ddsData); };
-                    auto dataBuffer = base::CreateSharedPtr<base::mem::Buffer>((char*)ddsData + 128, ddsDataSize - 128, freeFunc);
+                    auto dataBuffer = base::RefNew<base::mem::Buffer>((char*)ddsData + 128, ddsDataSize - 128, freeFunc);
                     sourceMip.offset = 0;
                     sourceMip.data = dataBuffer;
                     sourceMip.size = ddsDataSize - 128;

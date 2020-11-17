@@ -121,7 +121,7 @@ namespace ui
 
             if (!m_verticalScrollBar)
             {
-                m_verticalScrollBar = base::CreateSharedPtr<Scrollbar>(Direction::Vertical, true);
+                m_verticalScrollBar = base::RefNew<Scrollbar>(Direction::Vertical, true);
                 m_verticalScrollBar->persistentElementFlag(true);
                 m_verticalScrollBar->ignoredInAutomaticLayout(true);
                 m_verticalScrollBar->bind(EVENT_SCROLL) = [this](float pos) { m_scrollOffset.y = pos; };
@@ -140,7 +140,7 @@ namespace ui
 
             if (!m_horizontalScrollBar)
             {
-                m_horizontalScrollBar = base::CreateSharedPtr<Scrollbar>(Direction::Horizontal, true);
+                m_horizontalScrollBar = base::RefNew<Scrollbar>(Direction::Horizontal, true);
                 m_horizontalScrollBar->persistentElementFlag(true);
                 m_horizontalScrollBar->ignoredInAutomaticLayout(true);
                 m_horizontalScrollBar->bind(EVENT_SCROLL) = [this](float pos) { m_scrollOffset.x = pos; };

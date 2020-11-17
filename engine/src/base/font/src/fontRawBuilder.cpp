@@ -38,7 +38,7 @@ namespace base
                 // TODO: validate font
 
                 // pack data into the font
-                return CreateSharedPtr<Font>(rawContent);
+                return RefNew<Font>(rawContent);
             }
         };
 

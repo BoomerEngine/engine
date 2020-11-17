@@ -63,7 +63,7 @@ namespace ed
 
             LocalVersionControl::LocalVersionControl()
             {
-                m_default = CreateSharedPtr<LocalChangelist>();
+                m_default = RefNew<LocalChangelist>();
             }
 
             bool LocalVersionControl::isReady() const

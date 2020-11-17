@@ -220,7 +220,7 @@ namespace base
 
         void RequestServer::handleConnectionAccepted(socket::tcp::Server* server, const socket::Address& address, socket::ConnectionID connection)
         {
-            auto ret  = CreateSharedPtr<ActiveConnectionState>();
+            auto ret  = RefNew<ActiveConnectionState>();
             ret->m_id = connection;
             ret->m_address = address;
 
@@ -266,7 +266,7 @@ namespace base
 
             if (handler)
             {
-                auto incomingRequest  = CreateSharedPtr<RequestIncomingConnection>(&m_server, AddRef(this), connection, header);
+                auto incomingRequest  = RefNew<RequestIncomingConnection>(&m_server, AddRef(this), connection, header);
                 (*handler)(incomingRequest);
             }
             else

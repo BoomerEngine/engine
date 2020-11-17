@@ -54,7 +54,7 @@ namespace ed
                     {
                         auto* dataPtr = (const uint32_t*)data.data();
 
-                        m_data = base::CreateSharedPtr<ImageHistogramData>();
+                        m_data = base::RefNew<ImageHistogramData>();
                         m_data->channel = m_channel;
                         m_data->totalPixelCount = m_totalPixelCount;
                         m_data->minValue = reinterpret_cast<const float&>(dataPtr[0]);
@@ -115,7 +115,7 @@ namespace ed
         const auto bucketCount = 256;
 
         auto downloadDataSize = (2 + bucketCount) * sizeof(uint32_t);
-        auto downloadBuffer = base::CreateSharedPtr<rendering::DownloadBuffer>();
+        auto downloadBuffer = base::RefNew<rendering::DownloadBuffer>();
 
         {
             rendering::command::CommandWriter cmd("ComputeHistogram");
@@ -134,7 +134,7 @@ namespace ed
 
         // create wrapper
         const auto totalPixels = view.width() * view.height();
-        return base::CreateSharedPtr<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);
+        return base::RefNew<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);
     }
 
     //--

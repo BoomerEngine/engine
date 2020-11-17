@@ -131,7 +131,7 @@ namespace rendering
 
         // create the static texture
         base::res::AsyncBuffer streamingData;
-        return base::CreateSharedPtr<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
+        return base::RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
     }
 
     //---

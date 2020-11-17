@@ -323,7 +323,7 @@ namespace ui
 
             auto mousePos = evt.absolutePosition().toVector();
             auto delta = mousePos - cachedDrawArea().absolutePosition();
-            return base::CreateSharedPtr<SpliterSashInputAction>(this, area, delta);
+            return base::RefNew<SpliterSashInputAction>(this, area, delta);
         }
 
         return InputActionPtr();

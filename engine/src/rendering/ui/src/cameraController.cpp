@@ -362,12 +362,12 @@ namespace ui
 
     InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float speed)
     {
-        return base::CreateSharedPtr<helper::MouseCameraControlFreeFly>(ptr, this, button, speed);
+        return base::RefNew<helper::MouseCameraControlFreeFly>(ptr, this, button, speed);
     }
 
     InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button)
     {
-        return base::CreateSharedPtr<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button);
+        return base::RefNew<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button);
     }
 
     void CameraController::moveTo(const base::AbsolutePosition& position, const base::Angles& rotation)

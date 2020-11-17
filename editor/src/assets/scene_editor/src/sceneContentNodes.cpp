@@ -789,7 +789,7 @@ namespace ed
 
     base::world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
     {
-        auto ret = CreateSharedPtr<world::NodeTemplate>();
+        auto ret = RefNew<world::NodeTemplate>();
         ret->m_name = StringID(name());
 
         // clone entity template data
@@ -824,7 +824,7 @@ namespace ed
 
     world::NodeTemplatePtr SceneContentEntityNode::compileDifferentialData(bool& outAnyMeaningfulData) const
     {
-        auto ret = CreateSharedPtr<world::NodeTemplate>();
+        auto ret = RefNew<world::NodeTemplate>();
         ret->m_name = StringID(name());
 
         // clone entity template data
@@ -1131,7 +1131,7 @@ namespace ed
             entityLocalToWorld = *rootPlacement * editableEntityData->placement();
 
         // create the content node
-        auto entityNode = base::CreateSharedPtr<SceneContentEntityNode>(name, std::move(prefabs), entityLocalToWorld, editableEntityData, baseEntityData);
+        auto entityNode = base::RefNew<SceneContentEntityNode>(name, std::move(prefabs), entityLocalToWorld, editableEntityData, baseEntityData);
 
         // gather list of all components to create
         ComponentTemplateList namedComponentTemplates;
@@ -1148,7 +1148,7 @@ namespace ed
                 auto componentLocalToWorld = entityNode->localToWorldTransform() * editableComponentData->placement();
 
                 // create editable node
-                auto componentNode = base::CreateSharedPtr<SceneContentComponentNode>(StringBuf(pair.key.view()), componentLocalToWorld, editableComponentData, baseComponentData);
+                auto componentNode = base::RefNew<SceneContentComponentNode>(StringBuf(pair.key.view()), componentLocalToWorld, editableComponentData, baseComponentData);
                 entityNode->attachChildNode(componentNode);
             }
         }

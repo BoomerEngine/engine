@@ -411,7 +411,7 @@ namespace rendering
 
     base::image::ImagePtr ChangeChannelCount(const base::image::ImageView& data, uint8_t targetChannelCount)
     {
-        auto ret = base::CreateSharedPtr<base::image::Image>(data.format(), targetChannelCount, data.width(), data.height(), data.depth());
+        auto ret = base::RefNew<base::image::Image>(data.format(), targetChannelCount, data.width(), data.height(), data.depth());
         if (!ret)
             return nullptr;
 
@@ -448,7 +448,7 @@ namespace rendering
         if (mips.empty())
             return nullptr;
 
-        auto ret = base::CreateSharedPtr<ImageCompressedResult>();
+        auto ret = base::RefNew<ImageCompressedResult>();
         ret->mips.reserve(mips.size());
 
         uint64_t totalDataSize = 0;
@@ -886,7 +886,7 @@ namespace rendering
         }
 
         // create a compatible image with half the size
-        if (auto mipImage = base::CreateSharedPtr<base::image::Image>(sourceView.format(), sourceView.channels(), mipW, mipH, mipD))
+        if (auto mipImage = base::RefNew<base::image::Image>(sourceView.format(), sourceView.channels(), mipW, mipH, mipD))
         {
             // downsample the image
             base::image::Downsample(sourceView, mipImage->view(), downsampleMode, downsampleColorSpace);
@@ -1002,7 +1002,7 @@ namespace rendering
             {
                 if (!tempImage)
                 {
-                    tempImage = base::CreateSharedPtr<base::image::Image>(data.format(), 4, data.width(), data.height(), data.depth());
+                    tempImage = base::RefNew<base::image::Image>(data.format(), 4, data.width(), data.height(), data.depth());
                     base::image::Copy(uncomressedImageView, tempImage->view());
                     uncomressedImageView = tempImage->view();
                 }

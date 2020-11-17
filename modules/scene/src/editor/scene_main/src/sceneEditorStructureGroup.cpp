@@ -44,7 +44,7 @@ namespace ed
             {
                 if (!layerFile->isDeleted())
                 {
-                    auto contentLayer = base::CreateSharedPtr<ContentLayer>(layerFile->depotPath());
+                    auto contentLayer = base::RefNew<ContentLayer>(layerFile->depotPath());
                     m_layers.pushBack(contentLayer);
                     contentLayer->attachToParent(this);
                     contentLayer->syncNodes(layerFile);
@@ -56,7 +56,7 @@ namespace ed
             {
                 if (!groupDir->isDeleted())
                 {
-                    auto newGroup = base::CreateSharedPtr<ContentGroup>(groupDir->depotPath(), groupDir->name());
+                    auto newGroup = base::RefNew<ContentGroup>(groupDir->depotPath(), groupDir->name());
                     m_groups.pushBack(newGroup);
                     newGroup->attachToParent(this);
 
@@ -153,7 +153,7 @@ namespace ed
 
             // create new group
             auto newGroupDirectoryPath = base::StringBuf(base::TempString("{}{}/", m_directoryPath, name));
-            auto group = base::CreateSharedPtr<ContentGroup>(newGroupDirectoryPath, base::StringBuf(name.view()));
+            auto group = base::RefNew<ContentGroup>(newGroupDirectoryPath, base::StringBuf(name.view()));
 
             // add to tree
             m_groups.pushBack(group);
@@ -180,7 +180,7 @@ namespace ed
             base::StringBuf fullLayerPath = base::TempString("{}{}.{}", m_directoryPath, name, extension);
 
             // create wrapper
-            auto layer = base::CreateSharedPtr<ContentLayer>(fullLayerPath);
+            auto layer = base::RefNew<ContentLayer>(fullLayerPath);
             m_layers.pushBack(layer);
             layer->attachToParent(this);
 
@@ -273,18 +273,18 @@ namespace ed
 
         void ContentGroup::buildViewContent(ui::ElementPtr& content)
         {
-            auto image = base::CreateSharedPtr<ui::StaticContent>();
+            auto image = base::RefNew<ui::StaticContent>();
             image->customImage(resFolder.loadAndGet());
             image->name("NodeIcon");
 
-            auto caption = base::CreateSharedPtr<ui::StaticContent>();
+            auto caption = base::RefNew<ui::StaticContent>();
             caption->text(name());
             caption->name("NodeName");
             caption->customMargins(ui::Offsets(5, 0, 0, 0));
 
             auto leftSide = ui::LayoutHorizontally({ image, caption });
 
-            auto klass = base::CreateSharedPtr<ui::StaticContent>();
+            auto klass = base::RefNew<ui::StaticContent>();
             klass->text("Group");
             klass->name("NodeClass");
             klass->styleClasses("italic");

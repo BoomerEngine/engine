@@ -104,9 +104,9 @@ namespace ed
             if (const auto format = ManagedFileFormatRegistry::GetInstance().format(fileExt))
             {
                 if (format->nativeResourceClass())
-                    return CreateSharedPtr<ManagedFileNativeResource>(depot, dir, name);
+                    return RefNew<ManagedFileNativeResource>(depot, dir, name);
                 else
-                    return CreateSharedPtr<ManagedFileRawResource>(depot, dir, name);
+                    return RefNew<ManagedFileRawResource>(depot, dir, name);
             }
         }
 
@@ -159,7 +159,7 @@ namespace ed
                     }
                     else
                     {
-                        if (auto dirWrapper = CreateSharedPtr<ManagedDirectory>(depot(), this, info.name, TempString("{}{}/", depotPath(), info.name)))
+                        if (auto dirWrapper = RefNew<ManagedDirectory>(depot(), this, info.name, TempString("{}{}/", depotPath(), info.name)))
                         {
                             m_directories.add(dirWrapper);
                             newDirectories.pushBack(dirWrapper);
@@ -243,7 +243,7 @@ namespace ed
         }
 
         // create wrapper
-        auto newDir = CreateSharedPtr<ManagedDirectory>(depot(), this, StringBuf(name), TempString("{}{}/", m_depotPath, name));
+        auto newDir = RefNew<ManagedDirectory>(depot(), this, StringBuf(name), TempString("{}{}/", m_depotPath, name));
         m_directories.add(newDir);
         curDir = newDir;
 

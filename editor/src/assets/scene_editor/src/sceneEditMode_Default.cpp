@@ -35,10 +35,10 @@ namespace ed
     SceneEditMode_Default::SceneEditMode_Default(ActionHistory* actionHistory)
         : ISceneEditMode(actionHistory)
     {
-        m_panel = CreateSharedPtr<SceneDefaultPropertyInspectorPanel>(this);
+        m_panel = RefNew<SceneDefaultPropertyInspectorPanel>(this);
 
-        m_entityClassSelector = CreateSharedPtr<ui::ClassPickerBox>(base::world::EntityTemplate::GetStaticClass(), nullptr, false, false, "", false);
-        m_componentClassSelector = CreateSharedPtr<ui::ClassPickerBox>(base::world::ComponentTemplate::GetStaticClass(), nullptr, false, false, "", false);
+        m_entityClassSelector = RefNew<ui::ClassPickerBox>(base::world::EntityTemplate::GetStaticClass(), nullptr, false, false, "", false);
+        m_componentClassSelector = RefNew<ui::ClassPickerBox>(base::world::ComponentTemplate::GetStaticClass(), nullptr, false, false, "", false);
 
         m_entityClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType type)
         {
@@ -492,7 +492,7 @@ namespace ed
         Array<SceneContentDataNodePtr> transformNodes;
         buildTransformNodeListFromSelection(transformNodes);
 
-        return CreateSharedPtr<SceneEditModeDefaultTransformAction>(const_cast<SceneEditMode_Default*>(this), panel, transformNodes, container->gridSettings(), container->gizmoSettings());
+        return RefNew<SceneEditModeDefaultTransformAction>(const_cast<SceneEditMode_Default*>(this), panel, transformNodes, container->gridSettings(), container->gizmoSettings());
     }
 
     void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)

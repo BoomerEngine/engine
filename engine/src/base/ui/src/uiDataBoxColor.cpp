@@ -75,7 +75,7 @@ namespace ui
 
                 if (ret.code == base::DataViewResultCode::OK || ret.code == base::DataViewResultCode::ErrorManyValues)
                 {
-                    m_picker = base::CreateSharedPtr<ColorPickerBox>(data, m_allowAlpha);
+                    m_picker = base::RefNew<ColorPickerBox>(data, m_allowAlpha);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
                     auto selfRef = base::RefWeakPtr<DataBoxColorPicker>(this);
@@ -129,7 +129,7 @@ namespace ui
         virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
         {
             if (info.dataType == base::reflection::GetTypeObject<base::Color>())
-                return base::CreateSharedPtr<DataBoxColorPicker>(true);
+                return base::RefNew<DataBoxColorPicker>(true);
             return nullptr;
         }
     };

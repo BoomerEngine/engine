@@ -183,7 +183,7 @@ namespace ui
         if (evt.leftClicked())
         {
             updateFromPosition(evt.absolutePosition().toVector());
-            return base::CreateSharedPtr<ColorPickerLSBoxInputAction>(AddRef(this));
+            return base::RefNew<ColorPickerLSBoxInputAction>(AddRef(this));
         }
 
         return nullptr;
@@ -376,7 +376,7 @@ namespace ui
         if (evt.leftClicked())
         {
             updateFromPosition(evt.absolutePosition().toVector());
-            return base::CreateSharedPtr<ColorPickerHueBarInputAction>(AddRef(this));
+            return base::RefNew<ColorPickerHueBarInputAction>(AddRef(this));
         }
 
         return nullptr;
@@ -482,7 +482,7 @@ namespace ui
         notebook->expand();
         {
             // HLS tab
-            auto tab = base::CreateSharedPtr<IElement>();
+            auto tab = base::RefNew<IElement>();
             tab->layoutHorizontal();
             tab->customStyle("title"_id, base::StringBuf("[img:color_wheel] HLS"));
             notebook->attachTab(tab);

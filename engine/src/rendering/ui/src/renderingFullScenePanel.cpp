@@ -54,7 +54,7 @@ namespace ui
         {
             if (button)
             {
-                auto menu = base::CreateSharedPtr<MenuButtonContainer>();
+                auto menu = base::RefNew<MenuButtonContainer>();
                 buildRenderModePopup(menu);
                 menu->showAsDropdown(button);
             }
@@ -64,7 +64,7 @@ namespace ui
         {
             if (button)
             {
-                auto menu = base::CreateSharedPtr<MenuButtonContainer>();
+                auto menu = base::RefNew<MenuButtonContainer>();
                 buildFilterPopup(menu);
                 menu->showAsDropdown(button);
             }

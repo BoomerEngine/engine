@@ -100,7 +100,7 @@ namespace ui
 
             auto n = MemNew(Notificaton);
             n->group = group;
-            n->wrapper = base::CreateSharedPtr<ui::IElement>();
+            n->wrapper = base::RefNew<ui::IElement>();
             n->wrapper->layoutVertical();
             n->wrapper->styleType("NotificationFrame"_id);
             n->wrapper->attachChild(notification);
@@ -124,7 +124,7 @@ namespace ui
             else if (type == MessageType::Warning)
                 frameStyle = "warning"_id;
 
-            auto data = base::CreateSharedPtr<TextLabel>(txt);
+            auto data = base::RefNew<TextLabel>(txt);
             postNotification(group, data, visibleFor, frameStyle);
         }
     }

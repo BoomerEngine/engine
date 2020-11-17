@@ -90,7 +90,7 @@ namespace ed
         //--
 
         {
-            auto importPanel = base::CreateSharedPtr<ui::DockPanel>("[img:import] Import", "ImportSettings");
+            auto importPanel = base::RefNew<ui::DockPanel>("[img:import] Import", "ImportSettings");
             importPanel->layoutVertical();
 
             {

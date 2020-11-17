@@ -37,7 +37,7 @@ namespace ui
 
         Library::Library()
         {
-            m_emptyParams = base::CreateSharedPtr<style::ParamTable>();
+            m_emptyParams = base::RefNew<style::ParamTable>();
         }
 
         void Library::ParentValueTable(base::Array<base::Variant>& values, base::IObject* parent)
@@ -60,7 +60,7 @@ namespace ui
 
         Library::Library(base::Array<SelectorNode>&& selectorNodes, base::Array<base::Variant>&& values)
         {
-            m_emptyParams = base::CreateSharedPtr<style::ParamTable>();
+            m_emptyParams = base::RefNew<style::ParamTable>();
             m_selectors = std::move(selectorNodes);
             m_values = std::move(values);
 
@@ -152,7 +152,7 @@ namespace ui
                 return ret;
 
             // return table
-            ret = base::CreateSharedPtr<ParamTable>();
+            ret = base::RefNew<ParamTable>();
             m_paramTableCache.set(compoundHash, ret);
 
             // get the styles for the entry node

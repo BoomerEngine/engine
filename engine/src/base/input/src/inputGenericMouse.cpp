@@ -99,13 +99,13 @@ namespace base
                 // test for double clicks
                 if (buttonIndex == 0 && canEmitDoubleClick(buttonIndex, windowPoint, absolutePoint))
                 {
-                    m_context->inject(base::CreateSharedPtr<MouseClickEvent>(m_id, keyCode, MouseEventType::DoubleClick, keyMask, windowPoint, absolutePoint));
+                    m_context->inject(base::RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::DoubleClick, keyMask, windowPoint, absolutePoint));
                     m_lastClickWasDoubleClick = true;
                 }
                 else
                 {
-                    m_context->inject(base::CreateSharedPtr<MouseClickEvent>(m_id, keyCode, MouseEventType::Click, keyMask, windowPoint, absolutePoint));
-                    m_context->inject(base::CreateSharedPtr<KeyEvent>(DeviceType::Mouse, m_id, keyCode, true, false, keyMask));
+                    m_context->inject(base::RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Click, keyMask, windowPoint, absolutePoint));
+                    m_context->inject(base::RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, true, false, keyMask));
                     m_lastClickWasDoubleClick = false;
                 }
             }
@@ -133,8 +133,8 @@ namespace base
                 // release only if press was registered
                 {
                     ClearBit(&m_mouseButtonKeys, buttonIndex);
-                    m_context->inject(base::CreateSharedPtr<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, keyMask, windowPoint, absolutePoint));
-                    m_context->inject(base::CreateSharedPtr<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, keyMask));
+                    m_context->inject(base::RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, keyMask, windowPoint, absolutePoint));
+                    m_context->inject(base::RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, keyMask));
                 }
             }
         }
@@ -149,22 +149,22 @@ namespace base
             if (0.0f != delta.x)
             {
                 SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEX);
-                m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEX, delta.x));
+                m_context->inject(base::RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEX, delta.x));
             }
             if (0.0f != delta.y)
             {
 				SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEY);
-                m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEY, delta.y));
+                m_context->inject(base::RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEY, delta.y));
             }
             if (0.0f != delta.z)
             {
 				SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEZ);
-                m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEZ, delta.z));
+                m_context->inject(base::RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEZ, delta.z));
             }
 
             // send the mouse movement event
             auto keyMask = currentKeyMask();
-            m_context->inject(base::CreateSharedPtr<MouseMovementEvent>(m_id, keyMask, captured, windowPoint, absolutePoint, delta));
+            m_context->inject(base::RefNew<MouseMovementEvent>(m_id, keyMask, captured, windowPoint, absolutePoint, delta));
             m_lastEventKeyMask = keyMask;
             m_lastMouseMoveValid = true;
             m_hasMouseMovement = true;
@@ -184,8 +184,8 @@ namespace base
                         {
                             auto keyCode = m_mouseKeyMapping[i];
 
-                            m_context->inject(base::CreateSharedPtr<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, KeyMask(), m_lastEventWindowPoint, m_lastEventAbsolutePoint));
-                            m_context->inject(base::CreateSharedPtr<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, KeyMask()));
+                            m_context->inject(base::RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, KeyMask(), m_lastEventWindowPoint, m_lastEventAbsolutePoint));
+                            m_context->inject(base::RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, KeyMask()));
                         }
                     }
                 }
@@ -206,7 +206,7 @@ namespace base
                 }
                 else if (TestBit(&m_movementAxisTracked, i))
                 {
-                    m_context->inject(base::CreateSharedPtr<AxisEvent>(DeviceType::Mouse, m_id, (AxisCode)i, 0.0f));
+                    m_context->inject(base::RefNew<AxisEvent>(DeviceType::Mouse, m_id, (AxisCode)i, 0.0f));
                     ClearBit(&m_movementAxisTracked, i);
                 }
             }
@@ -219,7 +219,7 @@ namespace base
                 {
                     m_lastEventKeyMask = controlKeyMask;
 
-                    m_context->inject(base::CreateSharedPtr<MouseMovementEvent>(m_id, controlKeyMask, false, m_lastEventWindowPoint, m_lastEventAbsolutePoint, base::Vector3::ZERO()));
+                    m_context->inject(base::RefNew<MouseMovementEvent>(m_id, controlKeyMask, false, m_lastEventWindowPoint, m_lastEventAbsolutePoint, base::Vector3::ZERO()));
                 }
             }
 			m_movementAxisPerturbed = 0;

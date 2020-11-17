@@ -144,7 +144,7 @@ namespace rendering
     {
         if (!base::IsDefaultObjectCreation())
         {
-            m_graph = base::CreateSharedPtr<MaterialGraphContainer>();
+            m_graph = base::RefNew<MaterialGraphContainer>();
             m_graph->parent(this);
         }
     }
@@ -240,9 +240,9 @@ namespace rendering
     public:
         virtual base::res::ResourceHandle createResource() const override final
         {
-            auto ret = base::CreateSharedPtr<MaterialGraph>();
+            auto ret = base::RefNew<MaterialGraph>();
 
-            auto outputBlock = base::CreateSharedPtr<MaterialGraphBlockOutput_Unlit>();
+            auto outputBlock = base::RefNew<MaterialGraphBlockOutput_Unlit>();
             ret->graph()->addBlock(outputBlock);
 
             return ret;

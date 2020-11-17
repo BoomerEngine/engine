@@ -408,11 +408,11 @@ namespace ed
                 else
                 {
                     // create the button, make it single click button (Fast response)
-                    auto visibilityButton = base::CreateSharedPtr<ui::Button>();
+                    auto visibilityButton = base::RefNew<ui::Button>();
                     visibilityButton->fastMode(true);
 
                     // create the icon
-                    auto visibilityIcon = base::CreateSharedPtr<ui::StaticContent>();
+                    auto visibilityIcon = base::RefNew<ui::StaticContent>();
                     visibilityIcon->customImage(GetVisibilityIconName(*this));
                     visibilityIcon->name("VisibilityIcon");
                     visibilityButton->attachChild(visibilityIcon);
@@ -456,7 +456,7 @@ namespace ed
 
                 m_source = ContentStructureSource::World;
 
-                auto root  = base::CreateSharedPtr<ContentWorldRoot>(worldLayersDirectory, filePtr);
+                auto root  = base::RefNew<ContentWorldRoot>(worldLayersDirectory, filePtr);
                 root->attachToStructure(this);
                 root->syncInitialStructure(worldLayersDirectory);
                 m_root = root;
@@ -465,7 +465,7 @@ namespace ed
             {
                 m_source = ContentStructureSource::Prefab;
 
-                auto root = base::CreateSharedPtr<ContentPrefabRoot>(filePtr);
+                auto root = base::RefNew<ContentPrefabRoot>(filePtr);
                 root->attachToStructure(this);
                 m_root = root;
             }
@@ -673,7 +673,7 @@ namespace ed
                         if (auto layerData = file->loadEditableContent<scene::Layer>())
                         {
                             // save into data container
-                            auto layerNodeContainer = base::CreateSharedPtr<scene::NodeTemplateContainer>();
+                            auto layerNodeContainer = base::RefNew<scene::NodeTemplateContainer>();
                             if (layer->saveIntoNodeContainer(layerNodeContainer))
                             {
                                 // store data
@@ -902,7 +902,7 @@ namespace ed
                 elements.pushBack(id.unsafe<IContentElement>()->sharedFromThis());
             }
 
-            auto context = base::CreateSharedPtr<SelectionContext>(const_cast<ContentStructure&>(*this), elements);
+            auto context = base::RefNew<SelectionContext>(const_cast<ContentStructure&>(*this), elements);
             return BuildPopupMenu(context);
         }
 

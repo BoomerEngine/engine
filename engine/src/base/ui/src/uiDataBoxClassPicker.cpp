@@ -74,7 +74,7 @@ namespace ui
                     bool allowNullType = false;
                     bool allowAbstractType = true;
 
-                    m_picker = base::CreateSharedPtr<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
+                    m_picker = base::RefNew<ClassPickerBox>(nullptr, data, allowAbstractType, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
                     auto safeRef = base::RefWeakPtr<DataBoxClassPicker>(this); // NOTE: picker may linger and thus close after the data box gets destroyed
@@ -174,7 +174,7 @@ namespace ui
                     bool allowNullType = false;
                     bool allowAbstractType = true;
 
-                    m_picker = base::CreateSharedPtr<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
+                    m_picker = base::RefNew<ClassPickerBox>(m_rootClass, data, allowAbstractType, allowNullType);
                     m_picker->show(this, ui::PopupWindowSetup().areaCenter().relativeToCursor().autoClose(true).interactive(true));
 
                     auto safeRef = base::RefWeakPtr<DataBoxSpecificClassPicker>(this); // NOTE: picker may linger and thus close after the data box gets destroyed
@@ -228,12 +228,12 @@ namespace ui
         {
             if (info.dataType == base::reflection::GetTypeObject<base::ClassType>())
             {
-                return base::CreateSharedPtr<DataBoxClassPicker>();
+                return base::RefNew<DataBoxClassPicker>();
             }
             else if (info.dataType.metaType() == base::rtti::MetaType::ClassRef)
             {
                 const auto rootClass = info.dataType.innerType().toClass();
-                return base::CreateSharedPtr<DataBoxSpecificClassPicker>(rootClass, info.dataType);
+                return base::RefNew<DataBoxSpecificClassPicker>(rootClass, info.dataType);
             }
 
             return nullptr;

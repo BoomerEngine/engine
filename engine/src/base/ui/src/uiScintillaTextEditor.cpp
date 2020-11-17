@@ -33,10 +33,10 @@ namespace ui
         //bindCommands(commandBindings());
 
         // create scrollbar
-        m_verticalScrollBar = base::CreateSharedPtr<ui::Scrollbar>();
+        m_verticalScrollBar = base::RefNew<ui::Scrollbar>();
 
         // create internal editor
-        m_scintilla = base::CreateSharedPtr<Scintilla::ScintillaInnerWidget>(this, m_verticalScrollBar);
+        m_scintilla = base::RefNew<Scintilla::ScintillaInnerWidget>(this, m_verticalScrollBar);
         attachChild(m_scintilla);
         attachChild(m_verticalScrollBar);
 

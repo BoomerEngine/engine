@@ -41,7 +41,7 @@ namespace rendering
                 auto menuBar = createChild<ui::MenuBar>();
 
                 {
-                    auto wnd2 = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd2 = base::RefNew<ui::PopupWindow>();
                     auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
                     cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
                     cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
@@ -49,12 +49,12 @@ namespace rendering
                 }
 
                 {
-                    auto wnd2 = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd2 = base::RefNew<ui::PopupWindow>();
                     auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
                     cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
                     cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
 
-                    auto wnd = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd = base::RefNew<ui::PopupWindow>();
                     auto cnt = wnd->createChild<ui::MenuButtonContainer>();
                     cnt->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
                     cnt->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
@@ -90,28 +90,28 @@ namespace rendering
             actions().bindFilter("Edit.Undo"_id) = [](TestWindow* a) { return canEdit; };
 
             /*{
-                auto box = base::CreateSharedPtr<ui::TextLabel>();
+                auto box = base::RefNew<ui::TextLabel>();
                 box->customMinSize(100, 100);
                 box->customBackgroundColor(base::Color::RED);
                 attachChild(box);
             }
 
             {
-                auto box = base::CreateSharedPtr<ui::TextLabel>();
+                auto box = base::RefNew<ui::TextLabel>();
                 box->customMinSize(100, 100);
                 box->customBackgroundColor(base::Color::GREEN);
 
                 {
-                    auto vert = base::CreateSharedPtr<ui::IElement>();
+                    auto vert = base::RefNew<ui::IElement>();
                     vert->layoutMode(ui::LayoutMode::Vertical);
 
-                    auto smallBox = base::CreateSharedPtr<ui::TextLabel>();
+                    auto smallBox = base::RefNew<ui::TextLabel>();
                     smallBox->customMinSize(30, 30);
                     smallBox->customBackgroundColor(base::Color::BLUE);
                     smallBox->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
                     vert->attachChild(smallBox);
 
-                    auto txt = base::CreateSharedPtr<ui::TextLabel>("Hello world!");
+                    auto txt = base::RefNew<ui::TextLabel>("Hello world!");
                     txt->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
                     txt->customMargins(5, 5, 5, 5);
                     vert->attachChild(txt);
@@ -125,26 +125,26 @@ namespace rendering
             }*/
 
             {
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Hello world! Text example :)");
+                auto txt = base::RefNew<ui::TextLabel>("Hello world! Text example :)");
                 txt->customStyle("font-weight"_id, ui::style::FontWeight::Bold);
                 attachChild(txt);
             }
 
             {
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Hello world! Text example :)");
+                auto txt = base::RefNew<ui::TextLabel>("Hello world! Text example :)");
                 txt->customStyle("font-style"_id, ui::style::FontStyle::Italic);
                 attachChild(txt);
             }
 
             {
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Hello world! Text example :)");
+                auto txt = base::RefNew<ui::TextLabel>("Hello world! Text example :)");
                 txt->customStyle("font-style"_id, ui::style::FontStyle::Italic);
                 txt->customStyle("font-weight"_id, ui::style::FontWeight::Bold);
                 attachChild(txt);
             }
 
             {
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Hello world! Bigger text");
+                auto txt = base::RefNew<ui::TextLabel>("Hello world! Bigger text");
                 txt->customStyle("font-size"_id, 25.0f);
                 attachChild(txt);
             }
@@ -158,10 +158,10 @@ namespace rendering
             }
 
             {
-                auto but = base::CreateSharedPtr<ui::Button>();
+                auto but = base::RefNew<ui::Button>();
                 but->styleType("PushButton"_id);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Press me!");
+                auto txt = base::RefNew<ui::TextLabel>("Press me!");
                 txt->name("ButtonText"_id);
                 but->attachChild(txt);
 
@@ -169,11 +169,11 @@ namespace rendering
             }
 
             {
-                auto but = base::CreateSharedPtr<ui::Button>();
+                auto but = base::RefNew<ui::Button>();
                 but->styleType("PushButton"_id);
                 but->addStyleClass("disabled"_id);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("I'm disabled");
+                auto txt = base::RefNew<ui::TextLabel>("I'm disabled");
                 txt->name("ButtonText"_id);
                 but->attachChild(txt);
 
@@ -181,11 +181,11 @@ namespace rendering
             }
 
             {
-                auto but = base::CreateSharedPtr<ui::Button>();
+                auto but = base::RefNew<ui::Button>();
                 but->styleType("PushButton"_id);
                 but->addStyleClass("red"_id);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("[img:delete]Delete!");
+                auto txt = base::RefNew<ui::TextLabel>("[img:delete]Delete!");
                 txt->name("ButtonText"_id);
                 but->attachChild(txt);
 
@@ -193,14 +193,14 @@ namespace rendering
 
                 but->bind(ui::EVENT_CLICKED) = [this]()
                 {
-                    auto wnd = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd = base::RefNew<ui::PopupWindow>();
 
-                    auto wnd2 = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd2 = base::RefNew<ui::PopupWindow>();
                     auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
                     cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:arrow_undo]");
                     cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:arrow_redo]");
 
-                    auto wnd3 = base::CreateSharedPtr<ui::PopupWindow>();
+                    auto wnd3 = base::RefNew<ui::PopupWindow>();
                     auto cnt3 = wnd3->createChild<ui::MenuButtonContainer>();
                     cnt3->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:arrow_undo]");
                     cnt3->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:arrow_redo]");
@@ -222,11 +222,11 @@ namespace rendering
             }
 
             {
-                auto but = base::CreateSharedPtr<ui::Button>();
+                auto but = base::RefNew<ui::Button>();
                 but->styleType("PushButton"_id);
                 but->addStyleClass("green"_id);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("[img:add]Create!");
+                auto txt = base::RefNew<ui::TextLabel>("[img:add]Create!");
                 txt->name("ButtonText"_id);
                 but->attachChild(txt);
 
@@ -239,11 +239,11 @@ namespace rendering
             }
 
             {
-                auto but = base::CreateSharedPtr<ui::Button>();
+                auto but = base::RefNew<ui::Button>();
                 but->styleType("PushButton"_id);
                 but->addStyleClass("blue"_id);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("[img:page_edit]Edit!");
+                auto txt = base::RefNew<ui::TextLabel>("[img:page_edit]Edit!");
                 txt->name("ButtonText"_id);
                 but->attachChild(txt);
 
@@ -256,25 +256,25 @@ namespace rendering
             }
 
             {
-                auto box = base::CreateSharedPtr<ui::IElement>();
+                auto box = base::RefNew<ui::IElement>();
                 box->layoutMode(ui::LayoutMode::Horizontal);
 
-                auto but = base::CreateSharedPtr<ui::CheckBox>();
+                auto but = base::RefNew<ui::CheckBox>();
                 box->attachChild(but);
 
-                auto txt = base::CreateSharedPtr<ui::TextLabel>("Toggle me!");
+                auto txt = base::RefNew<ui::TextLabel>("Toggle me!");
                 box->attachChild(txt);
 
                 attachChild(box);
             }
 
             {
-                auto box = base::CreateSharedPtr<ui::IElement>();
+                auto box = base::RefNew<ui::IElement>();
                 box->layoutMode(ui::LayoutMode::Horizontal);
                 attachChild(box);
 
                 {
-                    auto image = base::CreateSharedPtr< ui::Image>();
+                    auto image = base::RefNew< ui::Image>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->tooltip("[size:+][b]H[/b][/size]ello World! [i]Text[/i] example :)\n"
@@ -285,7 +285,7 @@ namespace rendering
                 }
 
                 {
-                    auto image = base::CreateSharedPtr< ui::Image>();
+                    auto image = base::RefNew< ui::Image>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->addStyleClass("test1"_id);
@@ -293,7 +293,7 @@ namespace rendering
                 }
 
                 {
-                    auto image = base::CreateSharedPtr< ui::Image>();
+                    auto image = base::RefNew< ui::Image>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->customMaxSize(80, 80);
@@ -301,7 +301,7 @@ namespace rendering
                 }
 
                 {
-                    auto image = base::CreateSharedPtr< ui::Image>();
+                    auto image = base::RefNew< ui::Image>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->customMaxSize(80, 80);
@@ -311,14 +311,14 @@ namespace rendering
             }
 
             {
-                auto elem = base::CreateSharedPtr<ui::EditBox>();
+                auto elem = base::RefNew<ui::EditBox>();
                 elem->text("Ala ma kota!");
                 elem->selectWholeText();
                 attachChild(elem);
             }
 
             {
-                auto elem = base::CreateSharedPtr<ui::ComboBox>();
+                auto elem = base::RefNew<ui::ComboBox>();
                 elem->addOption("First");
                 elem->addOption("Second");
                 elem->addOption("Third");
@@ -329,7 +329,7 @@ namespace rendering
             }
 
             {
-                auto elem = base::CreateSharedPtr<ui::TrackBar>();
+                auto elem = base::RefNew<ui::TrackBar>();
                 elem->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                 elem->range(-50, 100);
                 elem->resolution(2);
@@ -345,7 +345,7 @@ namespace rendering
 
                 for (int i = 0; i < 4; ++i)
                 {
-                    auto elem = base::CreateSharedPtr<ui::ScrollArea>(ui::ScrollMode::Auto, ui::ScrollMode::Auto);
+                    auto elem = base::RefNew<ui::ScrollArea>(ui::ScrollMode::Auto, ui::ScrollMode::Auto);
                     elem->customStyle<base::StringBuf>("title"_id, base::TempString("[img:page] Image{}", i));
 
                     if (i == 1)

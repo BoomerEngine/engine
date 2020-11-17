@@ -497,9 +497,9 @@ namespace ui
                     numDigits = 0;
 
                 if (trackBarEnabled)
-                    return base::CreateSharedPtr<DataBoxNumberTrackBar>(info.dataType, numDigits, rangeMin, rangeMax, true);
+                    return base::RefNew<DataBoxNumberTrackBar>(info.dataType, numDigits, rangeMin, rangeMax, true);
                 else
-                    return base::CreateSharedPtr<DataBoxNumberText>(info.dataType, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units);
+                    return base::RefNew<DataBoxNumberText>(info.dataType, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units);
             }
 
             return nullptr;

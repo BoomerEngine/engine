@@ -47,7 +47,7 @@ namespace ui
             if (flags.test(WindowFeatureFlagBit::CanMinimize))
             {
                 auto minimizeButton = buttonCluster->createNamedChild<Button>("Minimize"_id);
-                minimizeButton->attachChild(base::CreateSharedPtr<TextLabel>());
+                minimizeButton->attachChild(base::RefNew<TextLabel>());
                 minimizeButton->bind(EVENT_CLICKED) = [this]()
                 {
                     if (auto window = findParentWindow())
@@ -58,7 +58,7 @@ namespace ui
             if (flags.test(WindowFeatureFlagBit::CanMaximize))
             {
                 auto maximizeButton = buttonCluster->createNamedChild<Button>("Maximize"_id);
-                maximizeButton->attachChild(base::CreateSharedPtr<TextLabel>());
+                maximizeButton->attachChild(base::RefNew<TextLabel>());
                 maximizeButton->bind(EVENT_CLICKED) = [this]()
                 {
                     if (auto window = findParentWindow())
@@ -69,7 +69,7 @@ namespace ui
             if (flags.test(WindowFeatureFlagBit::CanClose))
             {
                 auto closeButton = buttonCluster->createNamedChild<Button>("Close"_id);
-                closeButton->attachChild(base::CreateSharedPtr<TextLabel>());
+                closeButton->attachChild(base::RefNew<TextLabel>());
                 closeButton->bind(EVENT_CLICKED) = [this]()
                 {
                     if (auto window = findParentWindow())

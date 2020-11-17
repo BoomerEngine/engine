@@ -28,7 +28,7 @@ namespace base
             , m_pixelSpacing(pixelSpacing)
         {
             // create the backing image
-            m_image = CreateSharedPtr<Image>(format, numChannels, width, height);
+            m_image = RefNew<Image>(format, numChannels, width, height);
 
             // create the space allocator
             m_spaceAllocator = CreateUniquePtr<RectAllocator>();

@@ -24,7 +24,7 @@ namespace base
         context.rootObject.pushBack(AddRef(object));
         context.protectedStream = false;
 
-        auto writer = base::CreateSharedPtr<io::MemoryWriterFileHandle>();
+        auto writer = base::RefNew<io::MemoryWriterFileHandle>();
 
         if (SaveFile(writer, context))
             return writer->extract();
@@ -39,7 +39,7 @@ namespace base
         res::FileLoadingContext context;
         context.resourceLoader = loader;
 
-        auto reader = base::CreateSharedPtr<io::MemoryAsyncReaderFileHandle>(data, size);
+        auto reader = base::RefNew<io::MemoryAsyncReaderFileHandle>(data, size);
 
         if (LoadFile(reader, context))
             return context.root<IObject>();
@@ -53,10 +53,10 @@ namespace base
         saveContext.rootObject.pushBack(AddRef(object));
         saveContext.protectedStream = false;
 
-        auto writer = base::CreateSharedPtr<io::MemoryWriterFileHandle>();
+        auto writer = base::RefNew<io::MemoryWriterFileHandle>();
         if (SaveFile(writer, saveContext))
         {
-            auto reader = base::CreateSharedPtr<io::MemoryAsyncReaderFileHandle>(writer->extract());
+            auto reader = base::RefNew<io::MemoryAsyncReaderFileHandle>(writer->extract());
 
             res::FileLoadingContext loadContext;
             loadContext.resourceLoader = loader;

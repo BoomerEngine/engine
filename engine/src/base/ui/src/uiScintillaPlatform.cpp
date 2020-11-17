@@ -146,7 +146,7 @@ namespace Scintilla
         , x(0)
         , y(0)
     {
-        m_geometryData = base::CreateSharedPtr<base::canvas::Geometry>();
+        m_geometryData = base::RefNew<base::canvas::Geometry>();
         Release();
     }
 

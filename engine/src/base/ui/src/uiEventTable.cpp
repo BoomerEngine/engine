@@ -66,7 +66,7 @@ namespace ui
         }
 
         // create new entry
-        auto entry = base::CreateSharedPtr<Entry>();
+        auto entry = base::RefNew<Entry>();
         entry->owner = owner;
         m_entries[name].pushBack(entry);
 

@@ -193,7 +193,7 @@ namespace ui
 		if (!parentChildrenList)
 			return ModelIndex();
 		
-		auto entry = base::CreateSharedPtr<Entry>();
+		auto entry = base::RefNew<Entry>();
         entry->index = ModelIndex(this, entry);
 		entry->parent = parentEntry;
 		entry->data = data;

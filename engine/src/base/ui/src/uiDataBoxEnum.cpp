@@ -135,7 +135,7 @@ namespace ui
         virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const override
         {
             if (info.flags.test(base::rtti::DataViewInfoFlagBit::Constrainded))
-                return base::CreateSharedPtr<DataBoxEnum>();
+                return base::RefNew<DataBoxEnum>();
 
             return nullptr;
         }

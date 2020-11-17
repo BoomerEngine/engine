@@ -379,7 +379,7 @@ namespace ed
         virtual ui::InputActionPtr activate(base::Point point, const GizmoActionContextPtr& action) override final
         {
             if (action)
-                return CreateSharedPtr<GizmoTranslationAxisInputAction>(action, m_axis);
+                return RefNew<GizmoTranslationAxisInputAction>(action, m_axis);
 
             return nullptr;
         }
@@ -400,9 +400,9 @@ namespace ed
 
         for (uint8_t axis = 0; axis <= 2; ++axis)
             if (axisMask & (1 << axis))
-                gizmos.pushBack(CreateSharedPtr<GizmoTranslateAxis>(axis));
+                gizmos.pushBack(RefNew<GizmoTranslateAxis>(axis));
 
-        return CreateSharedPtr<GizmoGroup>(host, std::move(gizmos));
+        return RefNew<GizmoGroup>(host, std::move(gizmos));
     }
 
     //---

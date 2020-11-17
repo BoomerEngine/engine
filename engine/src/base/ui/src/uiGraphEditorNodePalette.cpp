@@ -89,7 +89,7 @@ namespace ui
         if (const auto data = dataPtrForNode(item))
         {
             if (data->blockClass)
-                return base::CreateSharedPtr<GraphBlockClassDragDropData>(data->blockClass);
+                return base::RefNew<GraphBlockClassDragDropData>(data->blockClass);
         }
 
         return nullptr;
@@ -131,7 +131,7 @@ namespace ui
 
     void GraphBlockPalette::setRootClasses(const base::Array<base::SpecificClassType<base::graph::Block>>& rootClasses)
     {
-        auto model = base::CreateSharedPtr<GraphBlockPaletteTreeModel>();
+        auto model = base::RefNew<GraphBlockPaletteTreeModel>();
 
         for (const auto blockClass : rootClasses)
             model->addRootClass(blockClass);

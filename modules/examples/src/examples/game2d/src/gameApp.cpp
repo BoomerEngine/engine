@@ -26,7 +26,7 @@ namespace example
         m_imgui = ImGui::CreateContext();
         ImGui::SetCurrentContext(m_imgui);
 
-        m_game = CreateSharedPtr<Game>();
+        m_game = RefNew<Game>();
         return true;
     }
 

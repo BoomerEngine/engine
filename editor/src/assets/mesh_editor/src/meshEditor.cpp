@@ -45,7 +45,7 @@ namespace ed
     void MeshEditor::createInterface()
     {
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
             tab->layoutVertical();
 
             m_previewPanel = tab->createChild<MeshPreviewPanel>();
@@ -61,7 +61,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
             tab->layoutVertical();
 
             m_structurePanel = tab->createChild<MeshStructurePanel>();
@@ -72,7 +72,7 @@ namespace ed
         }
 
         {
-            auto tab = base::CreateSharedPtr<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
+            auto tab = base::RefNew<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
             tab->layoutVertical();
 
             m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());
@@ -149,7 +149,7 @@ namespace ed
             {
                 if (auto mesh = base::rtti_cast<rendering::Mesh>(nativeFile->loadContent()))
                 {
-                    auto ret = base::CreateSharedPtr<MeshEditor>(nativeFile);
+                    auto ret = base::RefNew<MeshEditor>(nativeFile);
                     ret->bindResource(mesh);
                     return ret;
                 }

@@ -214,7 +214,7 @@ namespace application
             return false;
 
         // create the game host with the created game
-        m_gameHost = base::CreateSharedPtr<game::Host>(game::HostType::Standalone, game);
+        m_gameHost = base::RefNew<game::Host>(game::HostType::Standalone, game);
         return true;
     }
 

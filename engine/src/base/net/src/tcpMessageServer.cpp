@@ -28,7 +28,7 @@ namespace base
         TcpMessageServer::TcpMessageServer()
             : m_server(this)
         {
-            m_models = CreateSharedPtr<replication::DataModelRepository>();
+            m_models = RefNew<replication::DataModelRepository>();
         }
 
         TcpMessageServer::~TcpMessageServer()
@@ -143,7 +143,7 @@ namespace base
             TRACE_INFO("TcpMessage: New connection to message server from '{}'", address);
 
             auto info = MemNewPool(POOL_NET, TcpMessageServerConnectionState, connection, m_models, address);
-            info->m_handler = base::CreateSharedPtr<TcpMessageServerConnection>(this, connection, m_server.address(), address);
+            info->m_handler = base::RefNew<TcpMessageServerConnection>(this, connection, m_server.address(), address);
 
             {
                 auto lock = CreateLock(m_activeConnectionsLock);

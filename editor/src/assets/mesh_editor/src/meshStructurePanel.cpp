@@ -70,22 +70,22 @@ namespace ed
     void MeshStructurePanel::bindResource(const rendering::MeshPtr& meshPtr)
     {
         m_mesh = meshPtr;
-        m_treeModel = base::CreateSharedPtr<MeshStructureTreeModel>();
+        m_treeModel = base::RefNew<MeshStructureTreeModel>();
 
         {
-            auto boundsNode = base::CreateSharedPtr<MeshStructureNode>("[img:wireframe] Bounds", "Bounds"_id);
+            auto boundsNode = base::RefNew<MeshStructureNode>("[img:wireframe] Bounds", "Bounds"_id);
             m_treeModel->addRootNode(boundsNode);
         }
 
         {
-            auto materials = base::CreateSharedPtr<MeshStructureNode>("[img:color_swatch] Materials", "Materials"_id);
+            auto materials = base::RefNew<MeshStructureNode>("[img:color_swatch] Materials", "Materials"_id);
             auto id = m_treeModel->addRootNode(materials);
 
             for (uint32_t i=0; i<meshPtr->materials().size(); i++)
             {
                 const auto& mat = meshPtr->materials().typedData()[i];
 
-                auto matNode = base::CreateSharedPtr<MeshStructureNode>(base::TempString("[img:material] {}", mat.name), "Material"_id, i);
+                auto matNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", mat.name), "Material"_id, i);
                 m_treeModel->addChildNode(id, matNode);
 
             }
@@ -100,7 +100,7 @@ namespace ed
 
             const auto& detail = meshPtr->detailLevels()[detailIndex];
             auto caption = base::StringBuf(base::TempString("[img:house] LOD {}-{} ({} chunks)", (int)detail.rangeMin, (int)detail.rangeMax, numChunks));
-            auto geometry = base::CreateSharedPtr<MeshStructureNode>(caption, "LOD"_id, detailIndex);
+            auto geometry = base::RefNew<MeshStructureNode>(caption, "LOD"_id, detailIndex);
             auto id = m_treeModel->addRootNode(geometry);
 
             for (const auto& chunk : meshPtr->chunks())
@@ -116,20 +116,20 @@ namespace ed
 
                 // chunk node
                 auto caption = base::StringBuf(base::TempString("[img:house] Chunk '{}' ({}f, {}v, {})", materialName, chunk.indexCount / 3, chunk.vertexCount, chunk.vertexFormat));
-                auto chunkNode = base::CreateSharedPtr<MeshStructureNode>(base::TempString("[img:teapot] {}", caption), "Chunk"_id);
+                auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:teapot] {}", caption), "Chunk"_id);
                 auto id2 = m_treeModel->addChildNode(id, chunkNode);
                 
                 /*for (const auto& chunk : model.chunks)
                 {
                     {
                         auto matName = meshPtr->materials()[chunk.materialIndex].name;
-                        auto chunkMatNode = base::CreateSharedPtr<MeshStructureNode>(base::TempString("[img:material] {}", matName), "ChunkMaterial"_id);
+                        auto chunkMatNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", matName), "ChunkMaterial"_id);
                         m_treeModel->addChildNode(id3, chunkMatNode);
                     }
 
                     for (const auto& stream : chunk.streams)
                     {
-                        auto chunkNode = base::CreateSharedPtr<MeshStructureNode>(base::TempString("[img:table] Stream {}", stream.type), "ChunkStream"_id);
+                        auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:table] Stream {}", stream.type), "ChunkStream"_id);
                         auto id4 = m_treeModel->addChildNode(id3, chunkNode);
                     }
                 }*/

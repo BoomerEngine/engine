@@ -373,7 +373,7 @@ namespace ui
     InputActionPtr CanvasArea::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
         if (evt.rightClicked())
-            return base::CreateSharedPtr<CanvasAreaBackgroundScroll>(this);
+            return base::RefNew<CanvasAreaBackgroundScroll>(this);
 
         return TBaseClass::handleMouseClick(area, evt);
     }

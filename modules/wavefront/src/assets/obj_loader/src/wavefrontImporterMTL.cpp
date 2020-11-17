@@ -231,7 +231,7 @@ namespace wavefront
         //TryApplyTexture(importer, config, config.m_bindingMapAmbientOcclusion, baseTemplate, sourceMaterial->m_mapAmbient, importedParameters);
         
         // build the "imported material"
-        auto importedMaterial = base::CreateSharedPtr<rendering::MaterialInstance>(baseMaterial, std::move(importedParameters));
+        auto importedMaterial = base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(importedParameters));
 
         // get the "overlay" user parameters from existing material data
         base::Array<rendering::MaterialInstanceParam> userParameters;
@@ -244,7 +244,7 @@ namespace wavefront
         }
 
         // build final material that uses the user parameters on top of the imported base material
-        return base::CreateSharedPtr<rendering::MaterialInstance>(baseMaterial, std::move(userParameters), importedMaterial);
+        return base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(userParameters), importedMaterial);
     }
 
     base::res::ResourcePtr MTLMaterialImporter::importResource(base::res::IResourceImporterInterface& importer) const

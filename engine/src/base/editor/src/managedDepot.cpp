@@ -32,7 +32,7 @@ namespace ed
         //m_thumbnailHelper = CreateUniquePtr<ManagedThumbnailHelper>(loader);
 
         // create the root directory, it never goes away
-        m_root = CreateSharedPtr<ManagedDirectory>(this, nullptr, "root", "/");
+        m_root = RefNew<ManagedDirectory>(this, nullptr, "root", "/");
 
         // bind events
         m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path) {

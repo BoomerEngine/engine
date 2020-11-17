@@ -931,7 +931,7 @@ namespace rendering
     {
         Task task(3, "");
 
-        auto ret = CreateSharedPtr<GeometryChunkGroup>();
+        auto ret = RefNew<GeometryChunkGroup>();
 
         // compute normals on all elements that require normal computation
         {
@@ -1001,7 +1001,7 @@ namespace rendering
                 auto srcChunk = m_allChunks[i];
 
                 // create target chunk
-                auto &targetChunk = ret->m_chunks.emplaceBack(CreateSharedPtr<GeometryChunk>());
+                auto &targetChunk = ret->m_chunks.emplaceBack(RefNew<GeometryChunk>());
                 targetChunk->m_material = StringID(m_allMaterials[srcChunk->m_setup.m_material]->name.c_str());
 
                 // pack vertex data

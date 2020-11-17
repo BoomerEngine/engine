@@ -252,7 +252,7 @@ namespace ed
         if (!m_previewPixelValid)
             return nullptr;
 
-        auto list = base::CreateSharedPtr<ui::IElement>();
+        auto list = base::RefNew<ui::IElement>();
         list->layoutVertical();
 
         auto color = list->createChild<ui::IElement>();
@@ -654,13 +654,13 @@ namespace ed
             const auto& settings = previewSettings();
             if (settings.selectedMip == 0 && settings.selectedSlice == 0 && !settings.allSlices && m_sourceImage)
             {
-                auto element = base::CreateSharedPtr<ImagePreviewElement>(m_mainImage, m_sourceImage);
+                auto element = base::RefNew<ImagePreviewElement>(m_mainImage, m_sourceImage);
                 m_mainImagePreviewElements.pushBack(element);
                 m_previewPanel->addElement(element, ui::Position(0,0));
             }
             else
             {
-                auto element = base::CreateSharedPtr<ImagePreviewElement>(m_mainImage, settings.selectedMip, settings.selectedSlice);
+                auto element = base::RefNew<ImagePreviewElement>(m_mainImage, settings.selectedMip, settings.selectedSlice);
                 m_mainImagePreviewElements.pushBack(element);
                 m_previewPanel->addElement(element, ui::Position(0, 0));
             }

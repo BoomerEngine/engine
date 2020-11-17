@@ -470,7 +470,7 @@ namespace ui
 
     bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
     {
-        auto ret = base::CreateSharedPtr<MenuButtonContainer>();
+        auto ret = base::RefNew<MenuButtonContainer>();
         ret->createAction("TextEdit.Undo"_id, "Undo", "[img:undo]");
         ret->createAction("TextEdit.Redo"_id, "Redo", "[img:redo]");
         ret->createSeparator();
@@ -660,7 +660,7 @@ namespace ui
                     m_textBuffer->moveCursor(clickPos, extendSelection);
 
                     // TODO: enter drag action only if whole text is NOT yet selected
-                    return base::CreateSharedPtr<EditBoxSelectionDragInputAction>(this, m_textBuffer->selectionStartPos());
+                    return base::RefNew<EditBoxSelectionDragInputAction>(this, m_textBuffer->selectionStartPos());
                 }
             }
         }

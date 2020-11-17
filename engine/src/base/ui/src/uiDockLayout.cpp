@@ -32,7 +32,7 @@ namespace ui
         , m_container(container)
         , m_parent(parent)
     {
-        m_notebook = base::CreateSharedPtr<ui::DockNotebook>(this);
+        m_notebook = base::RefNew<ui::DockNotebook>(this);
     }
 
     DockLayoutNode& DockLayoutNode::top(float split /*= 0.0f*/)
@@ -238,7 +238,7 @@ namespace ui
                 if (ret)
                 {
                     auto splitFactor = CalcSplitFactorMax(m_rightNode->m_parentSplitFactor, 0.33f);
-                    auto splitter = base::CreateSharedPtr<Splitter>(Direction::Vertical, splitFactor);
+                    auto splitter = base::RefNew<Splitter>(Direction::Vertical, splitFactor);
                     splitter->attachChild(ret);
                     splitter->attachChild(content);
                     ret = splitter;
@@ -258,7 +258,7 @@ namespace ui
                 if (ret)
                 {
                     auto splitFactor = CalcSplitFactorMin(m_leftNode->m_parentSplitFactor, 0.33f);
-                    auto splitter = base::CreateSharedPtr<Splitter>(Direction::Vertical, splitFactor);
+                    auto splitter = base::RefNew<Splitter>(Direction::Vertical, splitFactor);
                     splitter->attachChild(content);
                     splitter->attachChild(ret);
                     ret = splitter;
@@ -278,7 +278,7 @@ namespace ui
                 if (ret)
                 {
                     auto splitFactor = CalcSplitFactorMax(m_bottomNode->m_parentSplitFactor, 0.33f);
-                    auto splitter = base::CreateSharedPtr<Splitter>(Direction::Horizontal, splitFactor);
+                    auto splitter = base::RefNew<Splitter>(Direction::Horizontal, splitFactor);
                     splitter->attachChild(ret);
                     splitter->attachChild(content);
                     ret = splitter;
@@ -298,7 +298,7 @@ namespace ui
                 if (ret)
                 {
                     auto splitFactor = CalcSplitFactorMin(m_topNode->m_parentSplitFactor, 0.33f);
-                    auto splitter = base::CreateSharedPtr<Splitter>(Direction::Horizontal, splitFactor);
+                    auto splitter = base::RefNew<Splitter>(Direction::Horizontal, splitFactor);
                     splitter->attachChild(content);
                     splitter->attachChild(ret);
                     ret = splitter;

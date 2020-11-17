@@ -102,7 +102,7 @@ namespace ui
         }
 
         // attach data model
-        m_listModel = base::CreateSharedPtr<TypeListModel>();
+        m_listModel = base::RefNew<TypeListModel>();
         m_list->model(m_listModel);
 
         if (const auto id = m_listModel->index(initialType))

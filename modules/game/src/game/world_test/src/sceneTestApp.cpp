@@ -121,7 +121,7 @@ namespace game
             m_imgui = ImGui::CreateContext();// ImGui::GetSharedFontAtlas());
             ImGui::SetCurrentContext(m_imgui);
 
-            m_cameraContext = base::CreateSharedPtr<rendering::scene::CameraContext>();
+            m_cameraContext = base::RefNew<rendering::scene::CameraContext>();
 
             m_lastUpdateTime.resetToNow();
             return true;

@@ -46,10 +46,10 @@ namespace game
                     base::AbsoluteTransform entityTransform;
                     entityTransform.position(planeX * m_planeSize, planeY * m_planeSize, 0);
 
-                    auto entity = base::CreateSharedPtr<base::world::Entity>();
+                    auto entity = base::RefNew<base::world::Entity>();
                     entity->requestTransform(entityTransform);
 
-                    auto mc = base::CreateSharedPtr<rendering::MeshComponent>(m_planeMesh);
+                    auto mc = base::RefNew<rendering::MeshComponent>(m_planeMesh);
                     entity->attachComponent(mc);
 
                     m_world->attachEntity(entity);
@@ -86,16 +86,16 @@ namespace game
         {
             DEBUG_CHECK_RETURN_V(mesh, nullptr);
 
-            auto node = base::CreateSharedPtr<base::world::NodeTemplate>();
+            auto node = base::RefNew<base::world::NodeTemplate>();
             node->m_name = "node"_id;
 
             {
-                node->m_entityTemplate = base::CreateSharedPtr<base::world::EntityTemplate>();
+                node->m_entityTemplate = base::RefNew<base::world::EntityTemplate>();
                 node->m_entityTemplate->placement(placement.toTransform());
             }
 
             {
-                auto componentTemplate = base::CreateSharedPtr<rendering::MeshComponentTemplate>();
+                auto componentTemplate = base::RefNew<rendering::MeshComponentTemplate>();
                 componentTemplate->mesh(mesh->key());
                 //componentTemplate->placement(placement);
                 componentTemplate->color(color);
@@ -112,7 +112,7 @@ namespace game
         {
             DEBUG_CHECK_RETURN_V(prefab, nullptr);
 
-            auto node = base::CreateSharedPtr<base::world::NodeTemplate>();
+            auto node = base::RefNew<base::world::NodeTemplate>();
             node->m_prefabAssets.pushBack(prefab);
 
             return node;
@@ -120,7 +120,7 @@ namespace game
 
         base::world::PrefabPtr PrefabBuilder::extractPrefab()
         {
-            auto ret = base::CreateSharedPtr<base::world::Prefab>();
+            auto ret = base::RefNew<base::world::Prefab>();
             ret->setup(m_roots);
             return ret;
         }

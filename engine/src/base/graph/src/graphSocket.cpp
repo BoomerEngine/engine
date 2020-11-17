@@ -190,7 +190,7 @@ namespace base
 
             // create the connection
             // NOTE: object is NOT parented to anything
-            auto connection = base::CreateSharedPtr<Connection>(this, to);
+            auto connection = base::RefNew<Connection>(this, to);
 
             // add connection to both lists
             m_connections.pushBack(connection);

@@ -87,7 +87,7 @@ namespace rendering
             
             m_shaders = loadShader("GenericGeometryWithTexture.csl");
 
-            m_stage = base::CreateSharedPtr<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, 512, 512);
+            m_stage = base::RefNew<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, 512, 512);
             base::image::Fill(m_stage->view(), &base::Vector4::ZERO());
         }
 

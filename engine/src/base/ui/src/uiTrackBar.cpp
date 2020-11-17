@@ -253,7 +253,7 @@ namespace ui
         {
             auto trackArea = calcTrackArea(area);
             auto deltaPos = trackArea.right() - (float)evt.absolutePosition().x;
-            return base::CreateSharedPtr<helper::TrackBarDragAction>(this, evt.absolutePosition().toVector(), deltaPos, m_min, m_max, m_resolution);
+            return base::RefNew<helper::TrackBarDragAction>(this, evt.absolutePosition().toVector(), deltaPos, m_min, m_max, m_resolution);
         }
 
         // nothing

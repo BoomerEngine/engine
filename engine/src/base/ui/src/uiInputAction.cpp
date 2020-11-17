@@ -112,7 +112,7 @@ namespace ui
     public:
         ConsumeActionRegistry()
         {
-            m_consumeAction = base::CreateSharedPtr<ConsumeInputAction>();
+            m_consumeAction = base::RefNew<ConsumeInputAction>();
         }
 
         INLINE const base::RefPtr<IInputAction>& action()

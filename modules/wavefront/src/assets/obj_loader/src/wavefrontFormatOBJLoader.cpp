@@ -141,7 +141,7 @@ namespace wavefront
         {
             if (!state->empty())
             {
-                auto group = base::CreateSharedPtr<WorkGroup>();
+                auto group = base::RefNew<WorkGroup>();
                 group->objectName = state->objectName;
                 group->groupName = state->groupName;
                 group->materialName = state->materialName;
@@ -437,7 +437,7 @@ namespace wavefront
 
             base::StringView materialLibraryName;
             WorkGroupQueue exportedWorkStates;
-            auto workGroup = base::CreateSharedPtr<WorkGroupState>();
+            auto workGroup = base::RefNew<WorkGroupState>();
             base::ScopeTimer totalTime;
 
             // scan content for work groups
@@ -618,7 +618,7 @@ namespace wavefront
             }            
 
             // allocate final data
-            auto ret = base::CreateSharedPtr<FormatOBJ>();
+            auto ret = base::RefNew<FormatOBJ>();
             ret->m_positions.init(POOL_WAVEFRONT, totalPositionsDataSize, 16);
             ret->m_numPositions = totalPositionsDataSize / sizeof(Position);
             ret->m_normals.init(POOL_WAVEFRONT, totalNormalsDataSize, 16);

@@ -81,7 +81,7 @@ namespace rendering
 
     base::world::ComponentPtr MeshComponentTemplate::createComponent() const
     {
-        auto mc = base::CreateSharedPtr<MeshComponent>();
+        auto mc = base::RefNew<MeshComponent>();
 
         // load specified mesh
         auto mesh = m_mesh.load().cast<rendering::Mesh>();

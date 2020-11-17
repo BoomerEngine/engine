@@ -70,7 +70,7 @@ namespace ui
 
     bool StyleStack::buildTable(uint64_t& outTableKey, ParamTablePtr& outTableData) const
     {
-        //static ParamTablePtr EmptyParamTable = base::CreateSharedPtr<style::ParamTable>();
+        //static ParamTablePtr EmptyParamTable = base::RefNew<style::ParamTable>();
 
         base::InplaceArray<ParamTablePtr, 4> collectedTables;
 
@@ -107,7 +107,7 @@ namespace ui
         // no table
         if (collectedTables.empty())
         {
-            outTableData = base::CreateSharedPtr<style::ParamTable>();
+            outTableData = base::RefNew<style::ParamTable>();
         }
         else if (collectedTables.size() == 1)
         {

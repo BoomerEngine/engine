@@ -32,13 +32,13 @@ namespace ed
         if (files.empty())
             return true;
 
-        auto window = CreateSharedPtr<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save files");
+        auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save files");
         auto windowRef = window.get();
 
         auto message = window->createChild<ui::TextLabel>("Following files are [b][color:#F88]modified[/color][/b] and should be saved:");
         message->customMargins(5.0f);
 
-        auto fileList = CreateSharedPtr<AssetItemsSimpleListModel>();
+        auto fileList = RefNew<AssetItemsSimpleListModel>();
         for (auto* file : files.files())
             fileList->addItem(file);
 
@@ -161,7 +161,7 @@ namespace ed
 
     void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
     {
-        auto window = CreateSharedPtr<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Delete files");
+        auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Delete files");
         auto windowRef = window.get();
 
         // get the actual list of files and directories to delete
@@ -190,7 +190,7 @@ namespace ed
             elem->text(txt.view());
         }
 
-        auto fileList = CreateSharedPtr<AssetItemsSimpleListModel>();
+        auto fileList = RefNew<AssetItemsSimpleListModel>();
         for (auto* file : filesToDelete)
         {
             auto canDelete = !file->inUse() && !file->editor();

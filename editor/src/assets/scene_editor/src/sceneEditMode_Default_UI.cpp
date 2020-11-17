@@ -134,7 +134,7 @@ namespace ed
             tabs->customMargins(4, 4, 4, 4);
 
             {
-                auto panel = CreateSharedPtr<ui::IElement>();
+                auto panel = RefNew<ui::IElement>();
                 panel->customStyle<base::StringBuf>("title"_id, "[img:axis] Local");
 
                 m_transformLocalValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::Local, this);
@@ -144,7 +144,7 @@ namespace ed
             }
 
             {
-                auto panel = CreateSharedPtr<ui::IElement>();
+                auto panel = RefNew<ui::IElement>();
                 panel->customStyle<base::StringBuf>("title"_id, "[img:world] World");
 
                 m_transformWorldValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::World, this);
@@ -335,7 +335,7 @@ namespace ed
                 }
             }
 
-            auto view = CreateSharedPtr<SceneContentNodeDataView>(std::move(editableObjects));
+            auto view = RefNew<SceneContentNodeDataView>(std::move(editableObjects));
             m_properties->bindData(view, false);
 
             if (commonClassInconsistent)
@@ -454,7 +454,7 @@ namespace ed
 
         if (!infos.empty())
         {
-            auto action = CreateSharedPtr<ActionRenameNodes>(std::move(infos), this);
+            auto action = RefNew<ActionRenameNodes>(std::move(infos), this);
             m_host->actionHistory()->execute(action);
         }
     }
@@ -538,7 +538,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(DupaEntityTemplate, base::world::EntityTemplate);
 
     public:
-        virtual world::EntityPtr createEntity() const override { return CreateSharedPtr<world::Entity>(); }
+        virtual world::EntityPtr createEntity() const override { return RefNew<world::Entity>(); }
 
         int m_value = 0;
     };
@@ -585,7 +585,7 @@ namespace ed
 
         if (!nodes.empty())
         {
-            auto action = CreateSharedPtr<ActionChangeDataClass>(std::move(nodes), this);
+            auto action = RefNew<ActionChangeDataClass>(std::move(nodes), this);
             m_host->actionHistory()->execute(action);
         }
     }
@@ -607,7 +607,7 @@ namespace ed
         {
             if (const auto rootClass = SelectRootClass(m_commonClassType))
             {
-                m_classPicker = base::CreateSharedPtr<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
+                m_classPicker = base::RefNew<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
 
                 m_classPicker->bind(ui::EVENT_WINDOW_CLOSED) = [this]() {
                     m_classPicker.reset();
@@ -1037,11 +1037,11 @@ namespace ed
             for (const auto& root : roots)
                 SceneEditMode_Default::ExtractSelectionHierarchyWithFilter(root, dragNodes, coreSelectionSet);
 
-            m_currentDragTransform = CreateSharedPtr<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, &coreSelectionSet, m_host->container()->gridSettings(), space, field, step);
+            m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, &coreSelectionSet, m_host->container()->gridSettings(), space, field, step);
         }
         else
         {
-            m_currentDragTransform = CreateSharedPtr<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, nullptr, m_host->container()->gridSettings(), space, field, step);
+            m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, nullptr, m_host->container()->gridSettings(), space, field, step);
         }
     }
 

@@ -123,7 +123,7 @@ namespace ed
         if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
             if (auto file = fileData->file())
                 if (file->fileFormat().loadableAsType(rendering::Mesh::GetStaticClass()))
-                    return base::CreateSharedPtr<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+                    return base::RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
 
         return TBaseClass::handleDragDrop(data, entryPosition);
     }
@@ -217,7 +217,7 @@ namespace ed
         {
             if (button)
             {
-                auto menu = base::CreateSharedPtr<ui::MenuButtonContainer>();
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
                 buildShapePopup(menu);
                 menu->showAsDropdown(button);
             }
