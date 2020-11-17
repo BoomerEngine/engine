@@ -263,18 +263,13 @@ namespace base
         {
             StringBuilder buf;
 
-            const char pathSeparator[] =
-            {
-                SYSTEM_PATH_SEPARATOR, 0
-            };
-
             buf.append(m_drive);
-            buf.append(pathSeparator);
+            buf.append("/");
 
             for (auto& dirName : m_directories)
             { 
                 buf.append(dirName);
-                buf.append(pathSeparator);
+                buf.append("/");
             }
 
             if (includeFilePart)

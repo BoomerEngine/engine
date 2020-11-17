@@ -300,15 +300,13 @@ namespace base
         //--
 
         // http://www.geeksforgeeks.org/wildcard-character-matching/
-        // TODO: non recursive version
-        // TODO: UTF8 FFS....
 
         template<typename Ch>
         struct MatchCase
         {
             static ALWAYS_INLINE bool Match(Ch a, Ch b)
             {
-                return a == b;
+                return a == b || a == '?';
             }
         };
 
@@ -317,6 +315,9 @@ namespace base
         {
             static ALWAYS_INLINE bool Match(Ch a, Ch b)
             {
+                if (a == '?')
+                    return true;
+
                 if (a >= 'A' && a <= 'Z') a = (a - 'A') + 'a';
                 if (b >= 'A' && b <= 'Z') b = (b - 'A') + 'a';
                 return a == b;
@@ -346,7 +347,7 @@ namespace base
                     pattern = w;
                     continue;
                 }
-                else if (Matcher::Match(*pattern, *str))
+                else if (!Matcher::Match(*pattern, *str))
                 {
                     if ('*' == *pattern)
                     {

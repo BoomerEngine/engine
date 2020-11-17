@@ -90,25 +90,11 @@ namespace base
 
             static INLINE int Compare(const char* a, const char* b, size_t length)
             {
-                if (!a || !b)
-                {
-                    if (a) return -1;
-                    else if (b) return 1;
-                    return 0;
-                }
-
                 return strncmp(a, b, length);
             }
 
             static INLINE int CaseCompare(const char* a, const char* b, size_t length)
             {
-                if (!a || !b)
-                {
-                    if (a) return -1;
-                    else if (b) return 1;
-                    return 0;
-                }
-
                 return _strnicmp(a, b, length);
             }
         };
@@ -333,7 +319,7 @@ namespace base
         // compare parts
         auto maxCompare = std::min(length(), other.length());
         if (auto ret = prv::Helper<T>::CaseCompare(data(), other.data(), maxCompare))
-         return ret;
+            return ret;
 
         // comparable parts were equal, compare sizes
         return (length() < count) ? -1 : 1;

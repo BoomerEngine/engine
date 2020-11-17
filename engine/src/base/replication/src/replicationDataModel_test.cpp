@@ -507,8 +507,8 @@ namespace test
         void transfer(const T& input, T& output)
         {
             // create data model
-            DataModelRepository rep;
-            auto model  = rep.buildModelForType(T::GetStaticClass());
+            auto rep = CreateSharedPtr<DataModelRepository>();
+            auto model  = rep->buildModelForType(T::GetStaticClass());
             ASSERT_TRUE(model);
 
             // encode
@@ -529,9 +529,9 @@ namespace test
 
 TEST(DataModel, CompiledSimple)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(4, model->fields().size());
 
@@ -543,9 +543,9 @@ TEST(DataModel, CompiledSimple)
 
 TEST(DataModel, CompileString)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringBuf, model->fields()[0].m_type);
@@ -555,9 +555,9 @@ TEST(DataModel, CompileString)
 
 TEST(DataModel, CompileStringLimited)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringBuf, model->fields()[0].m_type);
@@ -567,9 +567,9 @@ TEST(DataModel, CompileStringLimited)
 
 TEST(DataModel, CompileStringID)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringID, model->fields()[0].m_type);
@@ -579,9 +579,9 @@ TEST(DataModel, CompileStringID)
 
 TEST(DataModel, CompileTypeRef)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::TypeRef, model->fields()[0].m_type);
@@ -593,7 +593,7 @@ TEST(DataModel, CompileTypeRef)
 {
     DataModelRepository rep;
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::ResourceRef, model->fields()[0].m_type);
@@ -604,9 +604,9 @@ TEST(DataModel, CompileTypeRef)
 
 TEST(DataModel, CompileObjectPtr)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::ObjectPtr, model->fields()[0].m_type);
@@ -616,9 +616,9 @@ TEST(DataModel, CompileObjectPtr)
 
 TEST(DataModel, CompileWeakObjectPtr)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::WeakObjectPtr, model->fields()[0].m_type);
@@ -628,14 +628,14 @@ TEST(DataModel, CompileWeakObjectPtr)
 
 TEST(DataModel, CompileInnerStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_InnerStruct::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_InnerStruct::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Struct, model->fields()[0].m_type);
 
-    auto innerModel  = rep.buildModelForType(test::TestVector3::GetStaticClass());
+    auto innerModel  = rep->buildModelForType(test::TestVector3::GetStaticClass());
     ASSERT_EQ(innerModel, model->fields()[0].m_structModel);
     ASSERT_EQ(PackingMode::Default, model->fields()[0].m_packing.m_mode);
     ASSERT_EQ(0, model->fields()[0].m_packing.m_maxLength);
@@ -644,9 +644,9 @@ TEST(DataModel, CompileInnerStruct)
 
 TEST(DataModel, CompilePosStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -657,9 +657,9 @@ TEST(DataModel, CompilePosStruct)
 
 TEST(DataModel, CompileDeltaPosStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -670,9 +670,9 @@ TEST(DataModel, CompileDeltaPosStruct)
 
 TEST(DataModel, CompileNormalStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -683,9 +683,9 @@ TEST(DataModel, CompileNormalStruct)
 
 TEST(DataModel, CompileDirStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -696,9 +696,9 @@ TEST(DataModel, CompileDirStruct)
 
 TEST(DataModel, CompilePitchYawStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -709,9 +709,9 @@ TEST(DataModel, CompilePitchYawStruct)
 
 TEST(DataModel, CompileAnglesStruct)
 {
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -725,9 +725,9 @@ TEST(DataModel, CompileAnglesStruct)
 TEST(DataModel, EncodeSimple)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_Simple s;
@@ -745,9 +745,9 @@ TEST(DataModel, EncodeSimple)
 TEST(DataModel, EncodeWritesEmptyString)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_String s;
@@ -763,9 +763,9 @@ TEST(DataModel, EncodeWritesEmptyString)
 TEST(DataModel, EncodeWritesUnlimitedString)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_String s;
@@ -781,9 +781,9 @@ TEST(DataModel, EncodeWritesUnlimitedString)
 TEST(DataModel, EncodeWritesLimitedString)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_StringLimited s;
@@ -799,9 +799,9 @@ TEST(DataModel, EncodeWritesLimitedString)
 TEST(DataModel, EncodeWritesStringIDEmpty)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_StringID s;
@@ -820,9 +820,9 @@ TEST(DataModel, EncodeWritesStringIDEmpty)
 TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_StringID s;
@@ -842,9 +842,9 @@ TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase)
 TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase_OnlyOnce)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_StringID s;
@@ -867,9 +867,9 @@ TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase_OnlyOnce)
 TEST(DataModel, EncodeWritesTypeRefEmpty)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_TypeRef s;
@@ -884,9 +884,9 @@ TEST(DataModel, EncodeWritesTypeRefEmpty)
 TEST(DataModel, EncodeWritesTypeRefOnce)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_TypeRef s;
@@ -903,9 +903,9 @@ TEST(DataModel, EncodeWritesTypeRefOnce)
 TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_TypeRef s;
@@ -927,7 +927,7 @@ TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
     test::LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ResRef s;
@@ -944,7 +944,7 @@ TEST(DataModel, EncodeWritesPathWhenSet)
     test::LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ResRef s;
@@ -964,7 +964,7 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
     test::LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ResRef s;
@@ -984,9 +984,9 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
 TEST(DataModel, EncodeWritesObjectId)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ObjectPtr s;
@@ -1001,9 +1001,9 @@ TEST(DataModel, EncodeWritesObjectId)
 TEST(DataModel, EncodeWritesWeakObjectId)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_WeakObjectPtr s;
@@ -1018,9 +1018,9 @@ TEST(DataModel, EncodeWritesWeakObjectId)
 TEST(DataModel, EncodeWritesPos)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_Pos s;
@@ -1038,9 +1038,9 @@ TEST(DataModel, EncodeWritesPos)
 TEST(DataModel, EncodeWritesDeltaPos)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_DeltaPos s;
@@ -1058,9 +1058,9 @@ TEST(DataModel, EncodeWritesDeltaPos)
 TEST(DataModel, EncodeWritesNormal)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_Normal s;
@@ -1078,9 +1078,9 @@ TEST(DataModel, EncodeWritesNormal)
 TEST(DataModel, EncodeWritesDir)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_Dir s;
@@ -1098,9 +1098,9 @@ TEST(DataModel, EncodeWritesDir)
 TEST(DataModel, EncodePitchYaw)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_PitchYaw s;
@@ -1118,9 +1118,9 @@ TEST(DataModel, EncodePitchYaw)
 TEST(DataModel, EncodeAngles)
 {
     test::LocalKnowledgeBase knowledge;
-    DataModelRepository rep;
+    auto rep = CreateSharedPtr<DataModelRepository>();
 
-    auto model  = rep.buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
+    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_Angles s;

@@ -19,6 +19,7 @@
 #include "resourcePath.h"
 #include "resourceTags.h"
 #include "resourceFileSaver.h"
+#include "resourceFileLoader.h"
 
 DECLARE_TEST_FILE(Resource);
 
@@ -73,14 +74,14 @@ namespace tests
 
         void addObjectResource(StringView path, const res::ResourceHandle& resource)
         {
-            base::io::MemoryWriterFileHandle writer;
+            auto writer = base::CreateSharedPtr<base::io::MemoryWriterFileHandle>();
 
             base::res::FileSavingContext context;
             context.rootObject.pushBack(resource);
 
-            ASSERT_TRUE(base::res::SaveFile(&writer, context));
+            ASSERT_TRUE(base::res::SaveFile(writer, context));
 
-            const auto data = writer.extract();
+            const auto data = writer->extract();
 
             ASSERT_FALSE(data.empty());
 
@@ -94,7 +95,7 @@ namespace tests
 
         virtual CAN_YIELD res::ResourceHandle loadResource(const res::ResourceKey& key) override final
         {
-/*            FakeResource* entry = nullptr;
+            FakeResource* entry = nullptr;
 
             {
                 ScopeLock<> lock(m_lock);
@@ -102,29 +103,12 @@ namespace tests
                     return false;
             }
 
+            auto reader = base::CreateSharedPtr<base::io::MemoryAsyncReaderFileHandle>(entry->data);
 
-            // determine loader to use for the resource, 99% it will be the binary loader
-            auto& loaderMetaData = key.cls()->findMetadataRef<SerializationLoaderMetadata>();
-            auto loader = loaderMetaData.createLoader();
-            ASSERT_EX(loader, "Failed to create loader for resource");
+            base::res::FileLoadingContext context;
+            base::res::LoadFile(reader, context);
 
-            stream::LoadingContext loadingContext;
-            loadingContext.m_parent = nullptr; // resources from files are never parented
-            loadingContext.m_resourceLoader = this;
-            loadingContext.m_contextName = StringBuf(key.path().view());
-
-            // find a resource loader capable of loading resource
-            stream::LoadingResult loadingResults;
-            stream::MemoryReader memoryReader(entry->data);
-            if (!loader->loadObjects(memoryReader, loadingContext, loadingResults) || loadingResults.m_loadedRootObjects.empty())
-            {
-                TRACE_ERROR("Failed to deserialize cached version of '{}'", key);
-                return false;
-            }
-
-            // get the root object
-            return rtti_cast<res::IResource>(loadingResults.m_loadedRootObjects[0]);*/
-            return nullptr;
+            return context.root<res::IResource>();
         }
 
     private:
@@ -145,14 +129,14 @@ namespace tests
 
 } // tests
 
-static auto RES_A = "resa.dupa";
-static auto RES_B = "resb.dupa";
-static auto RES_C = "resc.dupa";
+static auto RES_A = "/resa.dupa";
+static auto RES_B = "/resb.dupa";
+static auto RES_C = "/resc.dupa";
 
-static auto RES_MISSING = "missing.dupa";
-static auto RES_CROPPED = "crop.dupa";
-static auto RES_INVALID = "invalid.dupa";
-static auto RES_TRICKY = "tricky.dupa";
+static auto RES_MISSING = "/missing.dupa";
+static auto RES_CROPPED = "/crop.dupa";
+static auto RES_INVALID = "/invalid.dupa";
+static auto RES_TRICKY = "/tricky.dupa";
 
 class ResourceFixture : public ::testing::Test
 {
@@ -166,7 +150,7 @@ public:
 
     virtual void SetUp() override final
     {
-        m_loader = CreateUniquePtr<tests::SimpleRawLoader>();
+        m_loader = CreateSharedPtr<tests::SimpleRawLoader>();
 
         // simple valid resource
         {
@@ -179,7 +163,7 @@ public:
         {
             auto obj = CreateSharedPtr<tests::TestResource>();
             obj->m_data = "This is another resource";
-            //((res::BaseReference&)obj->m_ref).set(res::ResourceKey(RES_A, tests::TestResource::GetStaticClass()));
+            ((res::BaseReference&)obj->m_ref) = res::BaseReference(res::ResourceKey(RES_A, tests::TestResource::GetStaticClass()));
             m_loader->addObjectResource(RES_B, obj);
         }
 
@@ -218,7 +202,7 @@ public:
 
     
 private:
-    UniquePtr<tests::SimpleRawLoader> m_loader;
+    RefPtr<tests::SimpleRawLoader> m_loader;
 };
 
 /*TEST_F(ResourceFixture, ResourceLocatedInDepot)
@@ -274,71 +258,3 @@ TEST_F(ResourceFixture, ResourceLoadsWithImports)
 
 //----
 
-class ResourceFixtureXML : public ::testing::Test
-{
-public:
-    ResourceFixtureXML()
-        : m_loader(nullptr)
-    {
-    }
-
-    virtual ~ResourceFixtureXML()
-    {
-    }
-
-    virtual void SetUp() override final
-    {
-        m_loader = base::CreateUniquePtr<tests::SimpleRawLoader>();
-
-        // simple valid resource
-        {
-            auto obj = CreateSharedPtr<tests::TestResource>();
-            obj->m_data = "This is a resource test";
-            m_loader->addObjectResource(RES_A, obj);
-        }
-
-        // resource with connection to A
-        {
-            auto obj = CreateSharedPtr<tests::TestResource>();
-            obj->m_data = "This is another resource";
-            //((res::BaseReference&)obj->m_ref).set(res::ResourceKey(RES_A, tests::TestResource::GetStaticClass()));
-            m_loader->addObjectResource(RES_B, obj);
-        }
-    }
-
-    virtual void TearDown() override final
-    {
-        m_loader.reset();
-    }
-
-    INLINE res::IResourceLoader& loader() const
-    {
-        return *m_loader;
-    }    
-
-private:
-    UniquePtr<tests::SimpleRawLoader> m_loader;
-};
-
-TEST_F(ResourceFixtureXML, ResourceLoads)
-{
-    auto resource = loader().loadResource<tests::TestResource>(RES_A);
-    ASSERT_TRUE(!!resource) << "There should be a token";
-
-    ASSERT_TRUE(resource->m_data == "This is a resource test");
-}
-
-TEST_F(ResourceFixtureXML, ResourceLoadsWithImports)
-{
-    auto resource = loader().loadResource<tests::TestResource>(RES_B);
-    ASSERT_TRUE(!!resource) << "No resource loaded";
-
-    ASSERT_TRUE(resource->m_data == "This is another resource");
-
-    ASSERT_TRUE(!resource->m_ref.empty()) << "Pointer to other object is missing";
-
-    //.auto other = resource->stub.peak();
-    //ASSERT_TRUE(!!other) << "Other object is missing";
-    //ASSERT_TRUE(other->data == "This is a resource test");
-    ASSERT_STREQ(RES_A, resource->m_ref.key().view().data());
-}

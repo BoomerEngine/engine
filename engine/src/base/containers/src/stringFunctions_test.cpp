@@ -389,7 +389,10 @@ TEST(StringMatch, WildcardMatches)
     EXPECT_TRUE(base::StringView("geeks").matchPattern("g*ks"));
     EXPECT_TRUE(base::StringView("geeksforgeeks").matchPattern("ge?ks*"));
     EXPECT_FALSE(base::StringView("gee").matchPattern("g*k"));
-    EXPECT_FALSE(base::StringView("pqrst").matchPattern("*pqrs"));
+    EXPECT_TRUE(base::StringView("pqrst").matchPattern("*pqrs"));
+    EXPECT_FALSE(base::StringView("pqrst").matchPattern("?pqrs"));
+    EXPECT_FALSE(base::StringView("pqrst").matchPattern("pqst"));
+    EXPECT_FALSE(base::StringView("pqrst").matchPattern("pq??st"));
     EXPECT_TRUE(base::StringView("abcdhghgbcd").matchPattern("abc*bcd"));
     EXPECT_FALSE(base::StringView("abc*c?d").matchPattern("abcd"));
     EXPECT_TRUE(base::StringView("abcd").matchPattern("*c*d"));
