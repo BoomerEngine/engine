@@ -33,7 +33,7 @@ namespace rendering
     //--
 
     // general "window-like" interface
-    class RENDERING_DRIVER_API IDriverNativeWindowInterface : public base::NoCopy
+    class RENDERING_DRIVER_API IDriverNativeWindowInterface : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_WINDOW>
     {
     public:
         virtual ~IDriverNativeWindowInterface();

@@ -214,7 +214,7 @@ namespace ed
         ManagedFileFormat* format = nullptr;
         if (!m_formatMap.find(extKey, format))
         {
-            format = MemNew(ManagedFileFormat, extension);
+            format = new ManagedFileFormat(extension);
             m_formatMap[extKey] = format;
 
             // gather all formats, sort by user description

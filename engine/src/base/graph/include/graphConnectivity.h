@@ -23,7 +23,7 @@ namespace base
         private:
             struct Node;
 
-            struct Edge
+            struct Edge : public mem::GlobalPoolObject<POOL_GRAPH>
             {
                 base::StringID m_sourceName;
                 base::StringID m_targetName;
@@ -34,7 +34,7 @@ namespace base
                 {}
             };
 
-            struct Node
+            struct Node : public mem::GlobalPoolObject<POOL_GRAPH>
             {
                 int m_depth;
                 int m_island;

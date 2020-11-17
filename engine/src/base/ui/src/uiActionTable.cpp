@@ -263,7 +263,7 @@ namespace ui
         if (auto* action = m_actionMap.find(name))
         {
             m_actionMap.remove(name);
-            MemDelete(action);
+            delete action;
         }
     }
 
@@ -298,7 +298,7 @@ namespace ui
         {
             if (!m_actionMap.find(name, ret))
             {
-                ret = MemNew(ActionInfo);
+                ret = new ActionInfo;
                 ret->name = name;
                 m_actionMap[name] = ret;
             }

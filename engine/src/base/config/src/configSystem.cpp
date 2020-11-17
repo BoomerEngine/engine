@@ -29,12 +29,12 @@ namespace base
             public:
                 ConfigStorage()
                 {
-                    m_storage = MemNewPool(POOL_CONFIG, Storage);
+                    m_storage = new Storage;
                 }
 
                 virtual void deinit() override
                 {
-                    MemDelete(m_storage);
+                    delete m_storage;
                 }
 
                 Storage* m_storage;

@@ -227,7 +227,7 @@ namespace ui
     //------
 
     /// generic cached geometry for the widget
-    struct ElementCachedGeometry : public base::NoCopy
+    struct ElementCachedGeometry : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_CANVAS>
     {
         base::canvas::GeometryPtr shadow = nullptr; // rendered with parent clip rect
         base::canvas::GeometryPtr background = nullptr; // rendered with widget client clip rect

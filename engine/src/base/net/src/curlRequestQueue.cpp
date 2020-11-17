@@ -137,7 +137,7 @@ namespace base
                 TRACE_INFO("CURL GET: '{}'", fullUrl);
             }
 
-            auto request = MemNew(Request, handle, fullUrl.toString(), paramsText.toString(), timeOut, this, method, callback);
+            auto request = new Request(handle, fullUrl.toString(), paramsText.toString(), timeOut, this, method, callback);
             m_queue->scheduleRequest(request);
         }
 
@@ -245,7 +245,7 @@ namespace base
             {
                 curl_multi_remove_handle(m_multi, request->handle());
                 request->signalTimeout();
-                MemDelete(request);
+                delete request;
             }
 
             // destroy the CURL handler
@@ -404,7 +404,7 @@ namespace base
 
                                     // cleanup
                                     curl_multi_remove_handle(m_multi, e);
-                                    MemDelete(request);
+                                    delete request;
                                 }
                             }
                             else

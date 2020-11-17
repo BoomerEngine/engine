@@ -77,7 +77,7 @@ namespace rendering
 
         //--
 
-        struct PendingUpload
+        struct PendingUpload : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
         {
             uint32_t offset = 0;
             uint32_t size = 0;
@@ -90,7 +90,7 @@ namespace rendering
 
         //--
 
-        struct PendingFree
+        struct PendingFree : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
         {
             MemoryBlock block;
         };

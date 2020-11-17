@@ -461,10 +461,10 @@ namespace base
         void Canvas::place(const GeometryBuilder& geometry)
         {
             // TODO: optimize!
-            auto temp = MemNew(Geometry);
+            auto temp = new Geometry;
             geometry.extractNoReset(*temp);
             place(*temp);
-            temp.ptr->releaseRef();
+            temp->releaseRef();
         }
 
         static void FindIndexRange(const uint16_t* indices, uint32_t numIndices, uint16_t& outMinVertex, uint16_t& outMaxVertex)

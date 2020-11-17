@@ -68,7 +68,7 @@ namespace base
                     {}
                 };
 
-                struct JobPayload
+                struct JobPayload : public mem::GlobalPoolObject<POOL_FIBERS>
                 {
                     TJobFunc m_funcToRun;
                     uint32_t m_invocationIndex;
@@ -78,7 +78,7 @@ namespace base
                     JobPayload();
                 };
 
-                struct JobThread : public base::NoCopy
+                struct JobThread : public base::NoCopy, public mem::GlobalPoolObject<POOL_FIBERS>
                 {
                     Thread m_thread;
                     Event m_waitForJob;

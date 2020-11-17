@@ -33,7 +33,7 @@ namespace base
             ASSERT(m_functionPtr);
             ASSERT(m_functionWrapperPtr != nullptr);
 
-            auto func  = MemNew(rtti::Function, targetClass, StringID(m_name.c_str()));
+            auto func = new rtti::Function(targetClass, StringID(m_name.c_str()));
             func->setupNative(m_returnType, m_paramTypes, m_functionPtr, m_functionWrapperPtr, m_isConst, m_isStatic);
 
             if (targetClass == nullptr)

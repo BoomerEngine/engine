@@ -44,7 +44,7 @@ namespace ed
         //---
 
         // pending loading request
-        struct LoadingRequest
+        struct LoadingRequest : public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
         {
             ManagedFile* file;
             uint32_t frameIndex;

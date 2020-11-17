@@ -16,7 +16,7 @@ namespace ui
     ///---
 
     /// table of events 
-    class BASE_UI_API EventTable : public base::NoCopy
+    class BASE_UI_API EventTable : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_EVENTS>
     {
     public:
         EventTable();

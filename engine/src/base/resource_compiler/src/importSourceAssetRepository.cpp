@@ -112,7 +112,7 @@ namespace base
                 ensureMemoryForAsset(memorySize);
 
                 // add entry to cache
-                auto* entry = MemNew(CacheEntry).ptr;
+                auto* entry = new CacheEntry;
                 entry->assetImportPath = keyPath;
                 entry->asset = assetPtr;
                 entry->timestamp = assetContentTimestamp;
@@ -164,7 +164,7 @@ namespace base
 
                 m_cacheEntriesMap.remove(lastEntry->assetImportPath);
                 m_cacheEntries.popBack();
-                MemDelete(lastEntry);
+                delete lastEntry;
             }
 
             // print stats

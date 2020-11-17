@@ -53,7 +53,7 @@ namespace base
                 {
                     auto* job = m_saveJobQueue.top();
                     m_saveJobQueue.pop();
-                    MemDelete(job);
+                    delete job;
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace base
             {
                 auto saveLock = CreateLock(m_saveQueueLock);
 
-                auto job = MemNew(SaveJob);
+                auto job = new SaveJob;
                 job->depotPath = depotPath;
                 job->unsavedResource = data;
                 m_saveJobQueue.push(job);
@@ -152,7 +152,7 @@ namespace base
                     path = job->depotPath;
                     m_saveCurrentResource = job->unsavedResource;
                     m_saveJobQueue.pop();
-                    MemDelete(job);
+                    delete job;
                 }
 
                 // save to disk directly

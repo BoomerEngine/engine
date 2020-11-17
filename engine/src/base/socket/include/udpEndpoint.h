@@ -143,7 +143,7 @@ namespace base
 
                 //--
 
-                struct Connection : public NoCopy
+                struct Connection : public NoCopy, public mem::GlobalPoolObject<POOL_NET>
                 {
                 public:
                     Address address;
@@ -169,7 +169,7 @@ namespace base
 
                 //--
 
-                struct PendingConnection : public NoCopy
+                struct PendingConnection : public mem::GlobalPoolObject<POOL_NET>
                 {
                     Connection* connection = nullptr;
                     NativeTimePoint timeoutPoint;

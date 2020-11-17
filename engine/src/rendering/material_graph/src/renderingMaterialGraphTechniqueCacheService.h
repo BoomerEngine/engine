@@ -46,7 +46,7 @@ namespace rendering
 
         //---
 
-        struct TechniqueInfo
+        struct TechniqueInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_TECHNIQUE>
         {
             uint64_t key = 0;
 
@@ -66,7 +66,7 @@ namespace rendering
 
         //--
 
-        struct FileInfo
+        struct FileInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_SHADER_CACHE>
         {
             uint64_t timestamp = 0;
             base::StringBuf depotPath;

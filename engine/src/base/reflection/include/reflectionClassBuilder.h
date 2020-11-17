@@ -73,7 +73,7 @@ namespace base
         };
 
         // helper class that can add stuff to the class type
-        class BASE_REFLECTION_API ClassBuilder : public NoCopy
+        class BASE_REFLECTION_API ClassBuilder : public NoCopy, public mem::GlobalPoolObject<POOL_RTTI>
         {
         public:
             ClassBuilder(rtti::NativeClass* classPtr);

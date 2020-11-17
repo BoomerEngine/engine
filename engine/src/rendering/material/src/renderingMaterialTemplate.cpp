@@ -175,7 +175,7 @@ namespace rendering
         auto& ret = m_techniqueMap[key];
         if (!ret)
         {
-            ret = MemNew(MaterialTechnique, setup);
+            ret = base::RefNew<MaterialTechnique>(setup);
 
             // lookup in precompiled list
             bool valid = false;
@@ -184,7 +184,7 @@ namespace rendering
                 const auto techniqueKey = techniqe.setup.key();
                 if (key == techniqueKey)
                 {
-                    auto compiledTechnique = MemNew(MaterialCompiledTechnique).ptr;
+                    auto compiledTechnique = new MaterialCompiledTechnique;
                     compiledTechnique->shader = techniqe.shader;
                     compiledTechnique->dataLayout = m_dataLayout;
                     compiledTechnique->renderStates = techniqe.renderStates;
@@ -357,7 +357,7 @@ namespace rendering
     void MaterialTemplate::createDataProxy()
     {
         DEBUG_CHECK_EX(!m_dataProxy, "Data proxy for material template should be immutable");
-        m_dataProxy = MemNew(MaterialDataProxy, this, false, *this); // NOTE: we DO NOT keep extra ref here
+        m_dataProxy = base::RefNew<MaterialDataProxy>(this, false, *this); // NOTE: we DO NOT keep extra ref here
     }
 
     ///---

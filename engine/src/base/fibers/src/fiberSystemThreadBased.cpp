@@ -111,7 +111,7 @@ namespace base
                 for (uint32_t i=0; i<numInvokations; ++i)
                 {
                     // create payload
-                    auto payload  = MemNew(JobPayload);
+                    auto payload = new JobPayload;
                     payload->m_invocationIndex = i;
                     payload->m_funcToRun = job.func;
                     payload->m_name = job.name;
@@ -326,7 +326,7 @@ namespace base
                     //TRACE_SPAM("Finished job {}, IID {}", job->m_counterToSingal.sequenceId(), job->m_invocationIndex);
 
                     // cleanup
-                    MemDelete(job);
+                    delete job;
 
                     // return thread to the pool
                     if (!returnThreadToPool(thread))
@@ -358,7 +358,7 @@ namespace base
                 }
 
                 // create new thread
-                auto thread = MemNew(JobThread, this, m_allThreads.size());
+                auto thread = new JobThread(this, m_allThreads.size());
                 m_allThreads.pushBack(thread);
 
                 // stats

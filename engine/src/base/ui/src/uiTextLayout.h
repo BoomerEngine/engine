@@ -72,7 +72,7 @@ namespace ui
             LayoutHorizontalAlign halaign = LayoutHorizontalAlign::Default;
         };
 
-        struct LayoutData
+        struct LayoutData : public base::mem::GlobalPoolObject<POOL_FONTS>
         {
             base::StringBuf text;
             base::Array<LayoutRegion> regions;
@@ -124,7 +124,7 @@ namespace ui
             LayoutHorizontalAlign alignment = LayoutHorizontalAlign::Default;
         };
 
-        struct LayoutDisplayData
+        struct LayoutDisplayData : public base::mem::GlobalPoolObject<POOL_FONTS>
         {
             base::Array<LayoutDisplayGlyph> glyphs;
             base::Array<LayoutDisplayLine> lines;

@@ -21,7 +21,7 @@ namespace base
         /// NOTE: allocated pages must be returned to the same allocator
         /// NOTE: allocator is NOT tracking all it's pages - if you don't return it then it will leak, use PageCollection for tracking
         /// NOTE: pages are ALWAYS allocated from system memory, not from allocator!
-        class BASE_MEMORY_API PageAllocator : public base::NoCopy
+        class BASE_MEMORY_API PageAllocator : public base::NoCopy, public GlobalPoolObject<>
         {
         public:
             PageAllocator();

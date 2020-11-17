@@ -41,7 +41,7 @@ namespace base
 
             // create new model
             auto dataModelType = IsObjectClass(type) ? DataModelType::Object : DataModelType::Struct;
-            model = MemNewPool(POOL_NET, DataModel, type->name(), dataModelType);
+            model = new DataModel(type->name(), dataModelType);
             m_compoundModels[type->name()] = model; // NOTE: we self-register because we may be recursive and even get to ourselves e.g. struct T { array<T> }
 
             // initialize model from type, we skip invalid properties
@@ -63,7 +63,7 @@ namespace base
                 return model;
 
             // create new model
-            model = MemNewPool(POOL_NET, DataModel, StringID(func->fullName().c_str()), DataModelType::Function);
+            model = new DataModel(StringID(func->fullName().c_str()), DataModelType::Function);
             m_functionModels[func->fullName()] = model;
 
             // initialize model from type, we skip invalid properties

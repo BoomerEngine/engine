@@ -109,7 +109,7 @@ namespace base
 
                 //--
 
-                struct Connection
+                struct Connection : public base::mem::GlobalPoolObject<POOL_NET>
                 {
                     Address address; // remote address
                     ConnectionID id = 0; // assigned ID

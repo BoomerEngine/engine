@@ -21,7 +21,7 @@ namespace rendering
         class ParameterPacker;
 
         /// cached vertex state
-        struct ResolvedVertexBindingState
+        struct ResolvedVertexBindingState : public base::mem::GlobalPoolObject<POOL_API_PIPELINES>
         {
             struct BindingInfo
             {
@@ -36,7 +36,7 @@ namespace rendering
         };
 
         /// cached binding
-        struct ResolvedParameterBindingState
+        struct ResolvedParameterBindingState : public base::mem::GlobalPoolObject<POOL_API_PIPELINES>
         {
             enum class PackingType : uint8_t
             {
@@ -82,7 +82,7 @@ namespace rendering
         };
 
         /// cache for most commonly used object
-        class ObjectCache : public base::NoCopy
+        class ObjectCache : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             ObjectCache(Driver* device);

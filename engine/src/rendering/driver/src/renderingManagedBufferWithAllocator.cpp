@@ -94,7 +94,7 @@ namespace rendering
             {
                 freedSize += m_bufferAllocator.GetBlockSize(entry->block);
                 m_bufferAllocator.freeBlock(entry->block);
-                MemDelete(entry);
+                delete entry;
             }
 
             auto curBlockCount = m_bufferAllocator.numAllocatedBlocks();
@@ -170,7 +170,7 @@ namespace rendering
         // create the upload request
         {
             auto lcok = base::CreateLock(m_pendingUploadsLock);
-            auto upload = MemNew(PendingUpload);
+            auto upload = new PendingUpload;
             upload->block = allocatedBlock;
             upload->offset = base::BlockPool::GetBlockOffset(allocatedBlock);;
             upload->size = data.size();
@@ -198,7 +198,7 @@ namespace rendering
 
         auto lock = CreateLock(m_pendingFreesLock);
 
-        auto pendingFree = MemNew(PendingFree);
+        auto pendingFree = new PendingFree;
         pendingFree->block = block.block;
         m_pendingFrees[MAX_FREE_FRAMES - 1].pushBack(pendingFree);        
     }

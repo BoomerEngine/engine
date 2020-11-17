@@ -28,13 +28,13 @@ namespace base
                 DECLARE_SINGLETON(MessageObjectExecutorTypeRegistry);
 
             public:
-                struct ClassEntry
+                struct ClassEntry : public mem::GlobalPoolObject<POOL_NET_MESSAGES>
                 {
                     ClassType m_classes;
                     HashMap<ClassType, const rtti::Function*> m_messageFunctions;
                 };
 
-                struct ContextObjectEntry
+                struct ContextObjectEntry : public mem::GlobalPoolObject<POOL_NET_MESSAGES>
                 {
                     ClassType m_contextObject;
                     SpinLock m_classMapLock;
@@ -144,7 +144,7 @@ namespace base
                     auto lock = CreateLock(m_contextObjectMapLock);
                     if (!m_contextObjectMap.find(contextObjectClass, contextEntry))
                     {
-                        contextEntry = MemNewPool(POOL_NET, ContextObjectEntry);
+                        contextEntry = new ContextObjectEntry;
                         contextEntry->m_contextObject = contextObjectClass;
                         m_contextObjectMap[contextObjectClass] = contextEntry;
                     }
@@ -156,7 +156,7 @@ namespace base
                     auto lock = CreateLock(contextEntry->m_classMapLock);
                     if (!contextEntry->m_classMap.find(classType, classEntry))
                     {
-                        classEntry = MemNewPool(POOL_NET, ClassEntry);
+                        classEntry = new ClassEntry;
                         buildSupportedMessageClassesList(contextEntry->m_contextObject, classType, classEntry->m_messageFunctions);
                         contextEntry->m_classMap[classType] = classEntry;
                     }

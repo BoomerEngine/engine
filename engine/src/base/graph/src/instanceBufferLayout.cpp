@@ -70,7 +70,7 @@ namespace base
     {
         void* ptr = mem::AllocateBlock(poolID, size(), alignment(), "InstanceBuffer");
         initializeBuffer(ptr);
-        return MemNew(InstanceBuffer, AddRef(this), ptr, size(), poolID);
+        return RefNew<InstanceBuffer>(AddRef(this), ptr, size(), poolID);
     }
 
     InstanceBufferPtr CreateBufferInstance(const InstanceBufferLayoutPtr& bufferLayout, const PoolTag poolID)

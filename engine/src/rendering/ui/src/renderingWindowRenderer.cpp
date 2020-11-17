@@ -114,7 +114,7 @@ namespace rendering
         if (!output)
             return 0;
 
-        auto wrapper = MemNew(NativeWindow);
+        auto wrapper = new NativeWindow;
         wrapper->id = m_nextNativeWindowId++;
         wrapper->ownerId = ownerWindowId;
         wrapper->output = output;
@@ -132,7 +132,7 @@ namespace rendering
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
             base::GetService<DeviceService>()->device()->releaseObject(window->output);
-            MemDelete(window);
+            delete window;
             m_nativeWindowMap.remove(id);
         }
     }

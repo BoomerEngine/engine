@@ -95,7 +95,7 @@ namespace rendering
         }
 
         // create a final data in a compiled technique and push it to the target technique we were requested to compile
-        auto compiledTechnique = MemNew(MaterialCompiledTechnique).ptr;
+        auto compiledTechnique = new MaterialCompiledTechnique;
         compiledTechnique->shader = shader;
         compiledTechnique->dataLayout = dataLayout;
         compiledTechnique->renderStates = renderStates;

@@ -116,7 +116,7 @@ namespace base
 
         namespace helper
         {
-            struct ServiceInfo
+            struct ServiceInfo : public base::mem::GlobalPoolObject<POOL_TEMP>
             {
                 ClassType m_class;
                 Array<ServiceInfo*> m_dependsOnInit;
@@ -144,7 +144,7 @@ namespace base
                     return info;
 
                 // map entry
-                info = MemNew(ServiceInfo);
+                info = new ServiceInfo;
                 info->m_class = classType;
                 table[classType] = info;
 

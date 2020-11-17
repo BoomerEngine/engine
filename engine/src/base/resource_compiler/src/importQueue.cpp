@@ -86,7 +86,7 @@ namespace base
                 auto lock = CreateLock(m_jobLock);
                 if (!m_jobsMap.contains(key))
                 {
-                    auto* jobInfo = MemNew(LocalJobInfo).ptr;
+                    auto* jobInfo = new LocalJobInfo;
                     jobInfo->info = job;
                     m_jobsList.pushBack(jobInfo);
                     m_jobQueue.push(jobInfo);

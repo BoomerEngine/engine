@@ -94,7 +94,7 @@ namespace base
                 TRACE_INFO("Created reading end of pipe '{}'", fullName);
 
                 // create pipeline
-                WinPipeReader* pipeline = MemNew(WinPipeReader);
+                WinPipeReader* pipeline = new WinPipeReader;
                 pipeline->m_hPipe = hPipe;
                 pipeline->m_asyncBuffer.resize(64 * 1024);
                 strcpy_s(pipeline->m_name, fullName);
@@ -137,7 +137,7 @@ namespace base
                 TRACE_INFO("Opened reading end of pipe '{}'", fullName);
 
                 // create pipeline
-                WinPipeReader* pipeline = MemNew(WinPipeReader);
+                WinPipeReader* pipeline = new WinPipeReader;
                 pipeline->m_hPipe = hPipe;
                 pipeline->m_asyncBuffer.resize(64 * 1024);
                 strcpy_s(pipeline->m_name, fullName);
@@ -348,7 +348,7 @@ namespace base
                 TRACE_INFO("Created writing end of named pipe '{}'", fullName);
 
                 // create pipeline
-                WinPipeWriter* pipeline = MemNew(WinPipeWriter);
+                WinPipeWriter* pipeline = new WinPipeWriter;
                 pipeline->m_hPipe = hPipe;
                 strcpy_s(pipeline->m_name, fullName);
 
@@ -375,7 +375,7 @@ namespace base
                 TRACE_INFO("Opened writing end of named pipe '{}'", fullName);
 
                 // create pipeline
-                WinPipeWriter* pipeline = MemNew(WinPipeWriter);
+                WinPipeWriter* pipeline = new WinPipeWriter;
                 pipeline->m_hPipe = hPipe;
                 strcpy_s(pipeline->m_name, fullName);
 

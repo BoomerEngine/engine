@@ -113,7 +113,7 @@ private:\
     base::SpecificClassType<_type> _type::GetStaticClass() { return *(base::SpecificClassType<_type>*) &theClass##_type; }\
     void CreateType_##_type(const char* name) {\
         DEBUG_CHECK(!theClass##_type);\
-        theClass##_type = MemNew(base::rtti::NativeClass, name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
+        theClass##_type = new base::rtti::NativeClass(name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
         RTTI::GetInstance().registerType(theClass##_type);\
     }\
     void InitType_##_type() {\
@@ -143,7 +143,7 @@ private:\
 #define RTTI_BEGIN_TYPE_ENUM(_type)\
     static base::rtti::EnumType* theEnum##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-        theEnum##_type = MemNew(base::rtti::EnumType, base::StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
+        theEnum##_type = new base::rtti::EnumType(base::StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
         RTTI::GetInstance().registerType(theEnum##_type);\
     }\
     void InitType_##_type() {\
@@ -154,7 +154,7 @@ private:\
 #define RTTI_BEGIN_TYPE_BITFIELD(_type)\
     static base::rtti::BitfieldType* theBitfield##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-        theBitfield##_type  = MemNew(base::rtti::BitfieldType, base::StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
+        theBitfield##_type  = new base::rtti::BitfieldType(base::StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
         RTTI::GetInstance().registerType(theBitfield##_type);\
     }\
     void InitType_##_type() {\
@@ -167,7 +167,7 @@ private:\
 #define RTTI_BEGIN_CUSTOM_TYPE(_type)\
     static base::rtti::CustomType* theCustomType##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-       theCustomType##_type = MemNew(base::rtti::CustomType, name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
+       theCustomType##_type = new base::rtti::CustomType(name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
        RTTI::GetInstance().registerType(theCustomType##_type);\
      }\
      void InitType_##_type() {\

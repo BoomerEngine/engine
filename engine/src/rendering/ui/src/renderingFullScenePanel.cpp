@@ -136,7 +136,7 @@ namespace ui
         setup.name = "RenderingPanelScene";
         setup.type = rendering::scene::SceneType::EditorPreview;
 
-        m_scene = MemNew(rendering::scene::Scene, setup);
+        m_scene = base::RefNew<rendering::scene::Scene>(setup);
     }
 
     RenderingFullScenePanelWithScene::~RenderingFullScenePanelWithScene()

@@ -80,7 +80,7 @@ namespace rendering
             m_device->sync();
             m_device->shutdown();
 
-            MemDelete(m_device);
+            delete m_device;
             m_device = nullptr;
         }
     }
@@ -131,7 +131,7 @@ namespace rendering
                             return device;
 
                         device->shutdown();
-                        MemDelete(device);
+                        delete device;
                     }
                 }
             }

@@ -21,7 +21,7 @@ namespace base
     namespace reflection
     {
         // helper class that can add stuff to the class type
-        class BASE_REFLECTION_API PropertyBuilder
+        class BASE_REFLECTION_API PropertyBuilder : public mem::GlobalPoolObject<POOL_RTTI>
         {
         public:
             PropertyBuilder(Type propType, const char* name, const char* category, uint32_t offset);
@@ -95,7 +95,7 @@ namespace base
             template< typename T, typename... Args >
             INLINE PropertyBuilder& metadata(Args && ... args)
             {
-                auto obj  = MemNew(T,std::forward< Args >(args)...);
+                auto obj = new T(std::forward< Args >(args)...);
                 m_metadata.pushBack(static_cast<rtti::IMetadata*>(obj));
                 return *this;
             }

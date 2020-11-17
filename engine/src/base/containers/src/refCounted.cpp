@@ -37,9 +37,7 @@ namespace base
     void RefWeakContainer::releaseRef()
     {
         if (0 == --m_refCount)
-        {
-            MemDelete(this);
-        }
+            delete this;
     }
 
     void RefWeakContainer::drop()
@@ -111,7 +109,7 @@ namespace base
 
             {
                 auto lock = CreateLock(m_lock);
-                auto* entry = MemNew(TrackingRef).ptr;
+                auto* entry = new TrackingRef;
                 entry->callstack = callstackIndex;
                 m_activeRefs[index] = entry;
             }
@@ -125,7 +123,7 @@ namespace base
 
             auto ptr = m_activeRefs.find(index);
             if (ptr != m_activeRefs.end())
-                MemDelete(ptr->second);
+                delete ptr->second;
             m_activeRefs.erase(ptr);
         }
 
@@ -138,7 +136,7 @@ namespace base
             if (it != m_activePointers.end())
                 return;
 
-            auto* entry = MemNew(TrackingPointer).ptr;
+            auto* entry = new TrackingPointer;
             entry->ptr = ptr;
             entry->creationCallstack = debug::CaptureCallstack(2);
             m_activePointers[ptr] = entry;
@@ -153,7 +151,7 @@ namespace base
             if (it != m_activePointers.end())
             {
                 DEBUG_CHECK_EX(it->second->refs.empty(), "Pointer has tracking refs");
-                MemDelete(it->second);
+                delete it->second;
                 m_activePointers.erase(it);
             }
         }
@@ -184,7 +182,7 @@ namespace base
         : m_refCount(initialRefCount)
         , m_realObject(!IsDefaultObjectCreation())
     {
-        m_weakHolder = MemNewPool(POOL_REF_HOLDER, RefWeakContainer, this);
+        m_weakHolder = new RefWeakContainer(this);
 #ifdef TRACK_REF_PTR
         if (m_realObject)
             PointerTrackingRegistry::GetInstance().TrackPointer(this);
@@ -244,7 +242,7 @@ namespace base
         m_weakHolder->releaseRef();
         m_weakHolder = nullptr;
 
-        MemDelete(this);
+        delete this;
     }
 
     ///--

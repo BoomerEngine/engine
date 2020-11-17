@@ -38,7 +38,7 @@ namespace rendering
 
         #ifdef USE_RENDER_DOC
 
-        class RenderDocCapture
+        class RenderDocCapture : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
         {
         public:
             RenderDocCapture()
@@ -222,7 +222,7 @@ namespace rendering
             // make sure the transient data is freed once the GPU stops using it
             seq->registerCompletionCallback([frame]()
                                             {
-                                                MemDelete(frame);
+                                                delete frame;
                                             });
 
             // update stats

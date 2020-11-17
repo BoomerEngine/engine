@@ -17,7 +17,7 @@ namespace base
         {
 
             /// implementation interface of fiber scheduler (job system)
-            class IFiberScheduler : public base::NoCopy
+            class IFiberScheduler : public base::NoCopy, public mem::GlobalPoolObject<POOL_FIBERS>
             {
             public:
                 IFiberScheduler();

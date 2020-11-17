@@ -75,7 +75,7 @@ namespace base
             if (!m_symbolNamedMap.find(name, symbol))
             {
                 // create symbol
-                symbol = MemNewPool(POOL_SCRIPTS, Symbol);
+                symbol = new Symbol;
                 symbol->m_fullName = name;
                 symbol->m_stubType = stub->stubType;
 
@@ -1274,7 +1274,7 @@ namespace base
                 auto rttiClass = resolveClass(propStub->owner->asClass());
                 if (propStub->owner->flags.test(StubFlag::Struct))
                 {
-                    auto scriptedProp = MemNewPool(POOL_SCRIPTS, ScriptedProperty, rttiClass, propSetup);
+                    auto scriptedProp = new ScriptedProperty(rttiClass, propSetup);
                     const_cast<rtti::IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
                     symbol->m_resolved.m_property = scriptedProp;
                 }
@@ -1282,7 +1282,7 @@ namespace base
                 {
                     propSetup.m_flags |= rtti::PropertyFlagBit::ExternalBuffer;
 
-                    auto scriptedProp = MemNewPool(POOL_SCRIPTS, ScriptedClassProperty, rttiClass, propSetup);
+                    auto scriptedProp = new ScriptedClassProperty(rttiClass, propSetup);
                     const_cast<rtti::IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
                     symbol->m_resolved.m_property = scriptedProp;
                 }

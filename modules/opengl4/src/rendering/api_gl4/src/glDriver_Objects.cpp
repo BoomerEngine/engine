@@ -98,7 +98,7 @@ namespace rendering
 
         ObjectID Driver::createSampler(const SamplerState& info)
         {
-            auto sampler = MemNew(Sampler, this, info);
+            auto sampler = new Sampler(this, info);
             return sampler->handle();
         }
 
@@ -191,7 +191,7 @@ namespace rendering
         {
             if (shaders)
             {
-                auto object = MemNew(ShaderLibraryAdapter, this, shaders);
+                auto object = new ShaderLibraryAdapter(this, shaders);
                 return object->handle();
             }
             

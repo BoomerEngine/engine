@@ -353,13 +353,13 @@ namespace wavefront
             }
         }
 
-        struct TempGroup
+        struct TempGroup : public base::mem::GlobalPoolObject<POOL_WAVEFRONT>
         {
             base::StringBuf name;
             base::Array<GroupChunk> chunks;            
         };
 
-        struct TempObject
+        struct TempObject : public base::mem::GlobalPoolObject<POOL_WAVEFRONT>
         {
             base::StringBuf name;
             base::HashMap<base::StringBuf, TempGroup*> groups;
@@ -372,7 +372,7 @@ namespace wavefront
                 TempGroup* ret = nullptr;
                 if (!groups.find(name, ret))
                 {
-                    ret = MemNew(TempGroup);
+                    ret = new TempGroup;
                     ret->name = base::StringBuf(name);
                     groups[ret->name] = ret;
                     groupList.pushBack(ret);
@@ -413,7 +413,7 @@ namespace wavefront
                 TempObject* ret = nullptr;
                 if (!objects.find(name, ret))
                 {
-                    ret = MemNew(TempObject);
+                    ret = new TempObject;
                     ret->name = base::StringBuf(name);
                     objects[ret->name] = ret;
                     objectList.pushBack(ret);

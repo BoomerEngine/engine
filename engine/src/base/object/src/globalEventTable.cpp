@@ -30,7 +30,7 @@ namespace base
         {
             for (auto& entry : m_table->entries)
                 UnregisterGlobalEventListener(entry);
-            MemDelete(m_table);
+            delete m_table;
             m_table = nullptr;
         }
     }
@@ -40,7 +40,7 @@ namespace base
         if (ptr)
         {
             if (!m_table)
-                m_table = MemNewPool(POOL_EVENTS, Table);
+                m_table = new Table;
 
             bool added = false;
             for (auto& entry : m_table->entries)
@@ -82,7 +82,7 @@ namespace base
 
             if (m_table->entries.empty())
             {
-                MemDelete(m_table);
+                delete m_table;
                 m_table = nullptr;
             }
         }
@@ -104,7 +104,7 @@ namespace base
 
             if (m_table->entries.empty())
             {
-                MemDelete(m_table);
+                delete m_table;
                 m_table = nullptr;
             }
         }
@@ -126,7 +126,7 @@ namespace base
 
             if (m_table->entries.empty())
             {
-                MemDelete(m_table);
+                delete m_table;
                 m_table = nullptr;
             }
         }

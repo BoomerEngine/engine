@@ -59,7 +59,7 @@ namespace base
             struct TrackedDepotFile;
             struct TrackedCookedFile;
 
-            struct TrackedDepotDir
+            struct TrackedDepotDir : public mem::GlobalPool<POOL_DEPOT>
             {
                 TrackedDepotDir* parent = nullptr;
                 StringBuf name;
@@ -68,7 +68,7 @@ namespace base
                 Array<TrackedDepotFile*> files;
             };
 
-            struct TrackedDepotFile
+            struct TrackedDepotFile : public mem::GlobalPool<POOL_DEPOT>
             {
                 TrackedDepotDir* parent = nullptr;
                 StringBuf depotPath;

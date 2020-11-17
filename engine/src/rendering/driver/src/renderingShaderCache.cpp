@@ -72,7 +72,7 @@ namespace rendering
         }
         else
         {
-            entry = MemNew(InMemoryEntry);
+            entry = new InMemoryEntry;
             entry->path = base::StringBuf(path);
             entry->key = key;
             entry->unpackedData = data;

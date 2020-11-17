@@ -90,7 +90,7 @@ namespace base
             }
 
             // create new object
-            ret = MemNewPool(POOL_SCRIPTS, rtti::Function, parentClass.ptr(), name, true);
+            ret = new rtti::Function(parentClass.ptr(), name, true);
 
             // register in the parent class
             if (parentClass)
@@ -122,7 +122,7 @@ namespace base
 
             // create new object
 			TRACE_INFO("Created scripted enum {}", name);
-            ret = MemNewPool(POOL_SCRIPTS, rtti::EnumType, name, enumTypeSize, 0, true);
+            ret = new rtti::EnumType(name, enumTypeSize, 0, true);
             RTTI::GetInstance().registerType(ret);
 
             // add to list of all enums
@@ -153,7 +153,7 @@ namespace base
 
             // create new object
 			TRACE_INFO("Created scripted class {}", name);
-			ret = MemNewPool(POOL_SCRIPTS, ScriptedClass, name, nativeClass);
+			ret = new ScriptedClass(name, nativeClass);
             RTTI::GetInstance().registerType(ret);
 
             // add to list of all enums
@@ -180,7 +180,7 @@ namespace base
 
             // create new object
 			TRACE_INFO("Created scripted struct {}", name);
-			ret = MemNewPool(POOL_SCRIPTS, ScriptedStruct, name);
+			ret = new ScriptedStruct(name);
             RTTI::GetInstance().registerType(ret);
 
             // add to list of all enums

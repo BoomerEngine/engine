@@ -67,7 +67,7 @@ namespace ui
                     detachChild(n->wrapper);
                     n->attached = false;
                 }
-                MemDelete(n);
+                delete n;
             }
         }
     }
@@ -77,7 +77,7 @@ namespace ui
         for (auto* n : m_notifications)
         {
             detachChild(n->wrapper);
-            MemDelete(n);
+            delete n;
         }
         m_notifications.reset();
     }
@@ -98,7 +98,7 @@ namespace ui
                 if (n->group == group)
                     n->timeLeft = 0.0f;
 
-            auto n = MemNew(Notificaton);
+            auto n = new Notificaton;
             n->group = group;
             n->wrapper = base::RefNew<ui::IElement>();
             n->wrapper->layoutVertical();

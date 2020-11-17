@@ -31,7 +31,7 @@ namespace rendering
         };
 
         // wrapper for a gl4 objects
-        TYPE_ALIGN(4, class) Object : public base::NoCopy
+        TYPE_ALIGN(4, class) Object : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_OBJECTS>
         {
         public:
             Object(Driver* drv, ObjectType type);

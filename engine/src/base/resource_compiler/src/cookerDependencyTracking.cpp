@@ -20,7 +20,7 @@ namespace base
             : m_depot(depot)
         {
             // create the root directory
-            m_sourceAssetRootDir = MemNew(TrackedDepotDir);
+            m_sourceAssetRootDir = new TrackedDepotDir;
             m_sourceAssetDirs.pushBack(m_sourceAssetRootDir);
 
             // register to depot events
@@ -78,7 +78,7 @@ namespace base
             if (!ret && createIfMissing)
             {
                 TRACE_SPAM("Created tracking entry for '{}'", key);
-                ret = MemNew(TrackedCookedFile);
+                ret = new TrackedCookedFile;
                 ret->key = key;
                 m_cookedAssetsMap[key] = ret;
                 m_cookedAssets.pushBack(ret);
@@ -126,7 +126,7 @@ namespace base
             if (!createIfMissing)
                 return nullptr;
 
-            auto file  = MemNew(TrackedDepotFile);
+            auto file = new TrackedDepotFile;
             file->parent = parentDir;
             file->name = StringBuf(fileName);
             file->depotPath = TempString("{}{}", parentDir->depotPath, fileName);
@@ -148,7 +148,7 @@ namespace base
             if (!createIfMissing)
                 return nullptr;
 
-            auto dir  = MemNew(TrackedDepotDir);
+            auto dir = new TrackedDepotDir;
             dir->parent = parentDir;
             dir->name = StringBuf(dirName);
             dir->depotPath = TempString("{}{}/", parentDir->depotPath, dirName);

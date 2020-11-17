@@ -43,7 +43,7 @@ namespace base
     {
         auto old = m_ptr;
         m_ptr = other.release();
-        MemDelete(old);
+        delete old;
         return *this;
     }
 
@@ -53,7 +53,7 @@ namespace base
     {
         auto old = m_ptr;
         m_ptr = other.release();
-        MemDelete(old);
+        delete old;
         return *this;
     }
 
@@ -98,8 +98,8 @@ namespace base
     {
         auto old = m_ptr;
         m_ptr = nullptr;
-        m_ptr = MemNew(T, std::forward< Args >(args)...);
-        MemDelete(old);
+        m_ptr = new T(std::forward< Args >(args)...);
+        delete old;
     }
 
     template< typename T >
@@ -119,7 +119,7 @@ namespace base
     {
         if (m_ptr != nullptr)
         {
-            MemDelete(m_ptr);
+            delete m_ptr;
             m_ptr = nullptr;
         }
     }

@@ -175,7 +175,7 @@ namespace base
                 return nullptr;
 
             if (auto innerType = typeSystem.findClass(innerTypeName))
-                return Type(MemNew(ClassRefType, innerType));
+                return new ClassRefType(innerType);
 
             TRACE_ERROR("Unable to parse class type from '{}'", innerTypeName);
             return nullptr;

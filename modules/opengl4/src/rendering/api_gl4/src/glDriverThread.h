@@ -28,7 +28,7 @@ namespace rendering
         class DriverThread;
 
         // a frame in progress
-        class DriverFrame
+        class DriverFrame : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             DriverFrame(DriverThread* thread);
@@ -87,7 +87,7 @@ namespace rendering
         //---
 
         // a OpenGL 4 driver thread, all things happen here
-        class DriverThread : public base::NoCopy
+        class DriverThread : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             DriverThread(Driver* drv, WindowManager* windows);
@@ -143,7 +143,7 @@ namespace rendering
 
             //--
 
-            struct Job
+            struct Job : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
             {
                 std::function<void()> m_jobFunc;
             };

@@ -38,28 +38,28 @@ namespace ui
     DockLayoutNode& DockLayoutNode::top(float split /*= 0.0f*/)
     {
         if (!m_topNode)
-            m_topNode = MemNew(DockLayoutNode, m_container, this, split);
+            m_topNode = base::RefNew<DockLayoutNode>(m_container, this, split);
         return *m_topNode;
     }
 
     DockLayoutNode& DockLayoutNode::left(float split /*= 0.0f*/)
     {
         if (!m_leftNode)
-            m_leftNode = MemNew(DockLayoutNode, m_container, this, split);
+            m_leftNode = base::RefNew<DockLayoutNode>(m_container, this, split);
         return *m_leftNode;
     }
 
     DockLayoutNode& DockLayoutNode::bottom(float split /*= 0.0f*/)
     {
         if (!m_bottomNode)
-            m_bottomNode = MemNew(DockLayoutNode, m_container, this, split);
+            m_bottomNode = base::RefNew<DockLayoutNode>(m_container, this, split);
         return *m_bottomNode;
     }
 
     DockLayoutNode& DockLayoutNode::right(float split /*= 0.0f*/)
     {
         if (!m_rightNode)
-            m_rightNode = MemNew(DockLayoutNode, m_container, this, split);
+            m_rightNode = base::RefNew<DockLayoutNode>(m_container, this, split);
         return *m_rightNode;
     }
 

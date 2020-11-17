@@ -317,7 +317,7 @@ namespace base
                 return nullptr;
 
             if (auto innerType = typeSystem.findClass(innerTypeName))
-                return Type(MemNew(WeakHandleType, innerType));
+                return new WeakHandleType(innerType);
 
             TRACE_ERROR("Unable to parse a weak handle inner type from '{}'", innerTypeName);
             return nullptr;
@@ -392,7 +392,7 @@ namespace base
                 return nullptr;
 
             if (auto innerType = typeSystem.findClass(innerTypeName))
-                return Type(MemNew(StrongHandleType, innerType));
+                return new StrongHandleType(innerType);
 
             TRACE_ERROR("Unable to parse a strong handle inner type from '{}'", innerTypeName);
             return nullptr;

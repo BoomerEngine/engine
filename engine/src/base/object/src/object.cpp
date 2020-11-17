@@ -354,7 +354,7 @@ namespace base
 
     void IObject::RegisterType(rtti::TypeSystem& typeSystem)
     {
-        base::Type ret = MemNew(rtti::NativeClass, "base::IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code());
+        base::Type ret = new rtti::NativeClass("base::IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code());
         typeSystem.registerType(ret);
     }
 

@@ -336,7 +336,7 @@ namespace base
 
         namespace WorldSystemCreator
         {
-            struct Info
+            struct Info : public base::mem::GlobalPoolObject<POOL_TEMP>
             {
                 SpecificClassType<IWorldSystem> m_class = nullptr;
                 Array<Info*> m_dependsOnInit;
@@ -360,7 +360,7 @@ namespace base
                     return info;
 
                 // map entry
-                info = MemNew(Info);
+                info = new Info;
                 info->m_class = classType;
                 table[classType] = info;
 

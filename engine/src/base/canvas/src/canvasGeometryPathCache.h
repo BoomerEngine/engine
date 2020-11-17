@@ -87,7 +87,7 @@ namespace base
                 {}
             };
 
-            struct PathCache
+            struct PathCache : public base::mem::GlobalPoolObject<POOL_CANVAS>
             {
                 float minPointDist = 0.025f;
                 float tessTol = 0.1f;

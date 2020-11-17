@@ -97,7 +97,7 @@ namespace base
         //---
 
         // function code block
-        class BASE_OBJECT_API IFunctionCodeBlock : public base::NoCopy
+        class BASE_OBJECT_API IFunctionCodeBlock : public base::NoCopy, public mem::GlobalPoolObject<POOL_SCRIPT_CODE>
         {
         public:
             virtual ~IFunctionCodeBlock();
@@ -109,7 +109,7 @@ namespace base
         //---
 
         // callable native function
-        class BASE_OBJECT_API Function : public base::NoCopy
+        class BASE_OBJECT_API Function : public base::NoCopy, public mem::GlobalPoolObject<POOL_RTTI>
         {
         public:
             Function(const IType* parent, StringID name, bool isScripted = false);

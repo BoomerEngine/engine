@@ -98,7 +98,7 @@ namespace base
             while (*rawName == '_')
                 ++rawName;
 
-            auto func = MemNew(FunctionBuilder, rawName);
+            auto func = new FunctionBuilder(rawName);
             m_functions.emplaceBack(func);
             return *func;
         }

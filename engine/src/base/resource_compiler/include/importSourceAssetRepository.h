@@ -52,7 +52,7 @@ namespace base
 
             ImportFileService* m_fileService = nullptr;
 
-            struct CacheEntry : NoCopy
+            struct CacheEntry : NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
             {
                 StringBuf assetImportPath;
                 SourceAssetPtr asset;

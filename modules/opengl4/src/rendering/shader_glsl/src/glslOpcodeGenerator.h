@@ -109,7 +109,7 @@ namespace rendering
                 base::StringBuf buildUniqueName() const;
             };
 
-            struct Function
+            struct Function : public base::mem::GlobalPoolObject<POOL_SHADER_COMPILATION>
             {
                 FunctionKey m_key;
                 base::StringBuf m_name; // build from key

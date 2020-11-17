@@ -80,7 +80,7 @@ namespace rendering
 
         Buffer *Buffer::CreateBuffer(Driver* drv, const BufferCreationInfo &setup, const SourceData* initializationData)
         {
-            return MemNew(Buffer, drv, setup, initializationData);
+            return new Buffer(drv, setup, initializationData);
         }
 
         //--

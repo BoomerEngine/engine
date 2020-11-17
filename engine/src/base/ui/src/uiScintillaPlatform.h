@@ -99,7 +99,7 @@ namespace Scintilla
 
     //--
 
-    struct FontInfo
+    struct FontInfo : public base::mem::GlobalPoolObject<POOL_FONTS>
     {
         base::font::FontStyleParams m_style;
         base::font::FontAssemblyParams m_assembly;

@@ -159,7 +159,7 @@ namespace rendering
 
         CommandBuffer* CommandBuffer::Alloc()
         {
-            return MemNew(CommandBuffer);
+            return new CommandBuffer;
 
             /*if (auto* pages = base::mem::PageCollection::CreateFromAllocator(pageAllocator))
             {

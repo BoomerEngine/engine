@@ -29,7 +29,7 @@ namespace base
     /// use the reflection::Parameter table for the extended version (with template operators)
     /// NOTE: the parameter table is a custom type in RTTI this allows the table to store another table
     /// NOTE: the table supports deep copy but it's very slow, it's better to hold on to it by pointer
-    class BASE_REFLECTION_API VariantTable
+    class BASE_REFLECTION_API VariantTable : public mem::GlobalPoolObject<POOL_VARIANT>
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(VariantTable);
 

@@ -179,7 +179,7 @@ namespace base
             auto entry  = m_fileMap[key];
             if (!entry)
             {
-                entry = MemNew(FileInfo);
+                entry = new FileInfo;
                 entry->key = key;
                 entry->lastStatus = status;
                 m_fileMap[entry->key] = entry;
@@ -191,7 +191,7 @@ namespace base
             m_fileListSortedInvalid = true;
         }
    
-        struct FileInfo
+        struct FileInfo : public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
         {
             base::res::ResourceKey key;
             FileStatusMode lastStatus;

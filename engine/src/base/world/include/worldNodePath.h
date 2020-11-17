@@ -71,7 +71,7 @@ namespace base
             //---
 
         private:
-            struct RootPathElement
+            struct RootPathElement : public base::mem::GlobalPoolObject<POOL_PATH_CACHE>
             {
                 NodePathPart m_name;
                 std::atomic<uint32_t> m_refCount;

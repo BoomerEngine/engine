@@ -205,7 +205,7 @@ namespace base
                 return nullptr;
             }*/
 
-            return Type(MemNew(ResourceAsyncRefType, (const SpecificClassType<IResource>&) classType));
+            return new ResourceAsyncRefType((const SpecificClassType<IResource>&) classType);
         }
 
         //---

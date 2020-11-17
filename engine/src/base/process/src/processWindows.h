@@ -27,7 +27,7 @@ namespace base
             }
 
             /// WinAPI based process
-            class WinProcess : public IProcess
+            class WinProcess : public IProcess, public base::mem::GlobalPoolObject<POOL_PROCESS>
             {
             public:
                 static WinProcess* Create(const ProcessSetup& setup);

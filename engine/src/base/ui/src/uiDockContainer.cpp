@@ -37,7 +37,7 @@ namespace ui
         enableAutoExpand(true, true);
 
         if (!base::IsDefaultObjectCreation())
-            m_rootLayoutNode = MemNew(DockLayoutNode, this, nullptr);
+            m_rootLayoutNode = base::RefNew<DockLayoutNode>(this, nullptr);
     }
 
     bool DockContainer::iteratePanels(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const

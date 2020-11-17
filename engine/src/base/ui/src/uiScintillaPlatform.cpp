@@ -100,7 +100,7 @@ namespace Scintilla
 
     FontInfo* FontCache::createFont(const FontParameters& fp)
     {
-        auto ret = MemNew(FontInfo);
+        auto ret = new FontInfo;
         ret->m_font = SelectFont(fp.weight >= 500, fp.italic);
         ret->m_style.size = (uint32_t)fp.size;
         ret->m_style.bold = false;

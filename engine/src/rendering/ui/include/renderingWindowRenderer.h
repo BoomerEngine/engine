@@ -69,7 +69,7 @@ namespace rendering
         virtual bool onOutputWindowHitTestNonClientArea(ObjectID output, const base::Point& absolutePosition, base::input::AreaType& outAreaType) override;
 
     private:
-        struct NativeWindow
+        struct NativeWindow : public base::mem::GlobalPoolObject<POOL_WINDOW>
         {
             ui::NativeWindowID id;
             ui::NativeWindowID ownerId;

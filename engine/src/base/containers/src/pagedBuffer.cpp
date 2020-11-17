@@ -35,7 +35,7 @@ namespace base
         : m_elementAlignment(alignment)
         , m_elementSize(size)
     {
-        m_allocator = MemNew(mem::PageAllocator);
+        m_allocator = new mem::PageAllocator();
         m_allocator->initialize(poolID, pageSize);
         m_pageSize = m_allocator->pageSize();
         m_ownsAllocator = true;
@@ -46,7 +46,7 @@ namespace base
         clear();
 
         if (m_ownsAllocator)
-            MemDelete(m_allocator);
+            delete m_allocator;
     }
 
     void PagedBufferBase::clear()

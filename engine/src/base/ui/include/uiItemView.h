@@ -145,12 +145,12 @@ namespace ui
     {
         T* alloc()
         {
-            return MemNew(T);
+            return new T;
         }
 
         void free(T* ptr)
         {
-            MemDelete(ptr);
+            delete ptr;
         }
     };
 

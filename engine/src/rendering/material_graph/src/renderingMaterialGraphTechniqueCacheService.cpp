@@ -121,7 +121,7 @@ namespace rendering
 
     void MaterialTechniqueCacheService::requestTechniqueCompilation(base::StringView contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique)
     {
-        auto* info = MemNew(TechniqueInfo).ptr;
+        auto* info = new TechniqueInfo;
         info->contextName = base::StringBuf(contextName);
         info->graph = graph;
         info->technique = technique;
@@ -139,7 +139,7 @@ namespace rendering
         if (auto technique = info->technique.lock())
         {
             // create compiler
-            auto compiler = MemNew(MaterialTechniqueCompiler, *m_depot, info->contextName, info->graph, technique->setup(), technique).ptr;
+            auto compiler = new MaterialTechniqueCompiler(*m_depot, info->contextName, info->graph, technique->setup(), technique);
 
             // keep track of compilers for the duration of compilation
             {
@@ -158,7 +158,7 @@ namespace rendering
                     m_compilationJobs.remove(compiler);
                 }
 
-                MemDelete(compiler);
+                delete compiler;
             };
         }
     }
@@ -206,7 +206,7 @@ namespace rendering
             TRACE_WARNING("File '{}' not recognized in depot", depotPath);
         }
 
-        ret = MemNew(FileInfo);
+        ret = new FileInfo;
         ret->depotPath = base::StringBuf(depotPath);
         ret->timestamp = timestamp.value();
         m_sourceFileMap[ret->depotPath] = ret;

@@ -61,7 +61,7 @@ namespace ui
     {
         if (elem)
         {
-            auto proxy = MemNew(ElementProxy);
+            auto proxy = new ElementProxy;
             proxy->element = AddRef(elem);
             proxy->virtualPlacement = initialPlacement;
             elem->prepareGeometry(this, m_viewScale.x, m_viewScale.y, proxy->sizeAtCurrentScale);
@@ -81,7 +81,7 @@ namespace ui
         {
             m_elementProxies.remove(proxy);
             m_elementProxyMap.remove(elem);
-            MemDelete(proxy);
+            delete proxy;
         }        
     }
 

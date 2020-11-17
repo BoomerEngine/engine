@@ -334,7 +334,7 @@ namespace base
                 AssignProcessToJobObject(hClosingJob, pinfo.hProcess);
 
                 // create the object
-                auto ret  = MemNew(WinProcess);
+                auto ret = new WinProcess;
                 ret->m_hProcess = pinfo.hProcess;
                 ret->m_id = pinfo.dwProcessId;
                 ret->m_stdReader = stdOutReader.release();

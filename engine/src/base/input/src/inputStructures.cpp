@@ -536,7 +536,7 @@ namespace base
 
 		RefPtr<KeyEvent> KeyEvent::makeReleaseEvent() const
 		{
-            return MemNew(KeyEvent, deviceType(), deviceID(), keyCode(), false, false, keyMask());
+            return RefNew<KeyEvent>(deviceType(), deviceID(), keyCode(), false, false, keyMask());
 		}
 
 		void KeyEvent::print(IFormatStream& f) const
@@ -579,7 +579,7 @@ namespace base
 
          RefPtr<AxisEvent> AxisEvent::makeResetEvent() const
 		{
-            return MemNew(AxisEvent, deviceType(), deviceID(), axisCode(), 0.0f);
+            return RefNew<AxisEvent>(deviceType(), deviceID(), axisCode(), 0.0f);
 		}
 
 		void AxisEvent::print(IFormatStream& f) const

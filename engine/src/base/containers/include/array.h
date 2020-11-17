@@ -13,6 +13,8 @@
 #include "pointerRange.h"
 #include "indexRange.h"
 
+#include "base/memory/include/buffer.h"
+
 namespace base
 {
 
@@ -252,7 +254,7 @@ namespace base
         //! clear array, destroy all elements, release all memory
         void clear();
 
-        //! clear pointer array, call MemDelete() on all members, release all memory
+        //! clear pointer array, call delete on all members, release all memory
         void clearPtr();
 
         //! reduce array memory buffer to fit only actual array size

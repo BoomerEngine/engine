@@ -115,19 +115,19 @@ namespace ui
         ASSERT_EX(m_firstChild == nullptr, "Element still contains children");
         ASSERT_EX(m_lastChild == nullptr, "Element still contains children");
 
-        MemDelete(m_customLocalStyles);
+        delete m_customLocalStyles;
         m_customLocalStyles = nullptr;
 
-        MemDelete(m_styleSelector);
+        delete m_styleSelector;
         m_styleSelector = nullptr;
 
-        MemDelete(m_eventTable);
+        delete m_eventTable;
         m_eventTable = nullptr;
 
-        MemDelete(m_overlayElements);
+        delete m_overlayElements;
         m_overlayElements = nullptr;
 
-        MemDelete(m_cachedGeometry);
+        delete m_cachedGeometry;
         m_cachedGeometry = nullptr;
     }
     
@@ -148,7 +148,7 @@ namespace ui
                 if (flag)
                 {
                     if (!parent->m_overlayElements)
-                        parent->m_overlayElements = MemNew(base::Array<IElement*>);
+                        parent->m_overlayElements = new base::Array<IElement*>;
 
                     DEBUG_CHECK_EX(!parent->m_overlayElements->contains(this), "Parent already has this overlay element in it's overlay list");
                     parent->m_overlayElements->pushBack(this);
@@ -163,7 +163,7 @@ namespace ui
 
                         if (parent->m_overlayElements->empty())
                         {
-                            MemDelete(parent->m_overlayElements);
+                            delete parent->m_overlayElements;
                             parent->m_overlayElements = nullptr;
                         }
                     }
@@ -222,7 +222,7 @@ namespace ui
         if (name && value)
         {
             if (nullptr == m_customLocalStyles)
-                m_customLocalStyles = MemNew(base::VariantTable);
+                m_customLocalStyles = new base::VariantTable;
 
             if (const auto* existingValue = m_customLocalStyles->findVariant(name))
             {
@@ -245,7 +245,7 @@ namespace ui
             {
                 if (m_customLocalStyles->empty())
                 {
-                    MemDelete(m_customLocalStyles);
+                    delete m_customLocalStyles;
                     m_customLocalStyles = nullptr;
                 }
 
@@ -1217,7 +1217,7 @@ namespace ui
         m_cachedGeometrySize = Size(0, 0);
 
         // do not delete the cached geometry data - we may reuse the buffers
-        /*MemDelete(m_cachedGeometry);
+        /*delete m_cachedGeometry;
         m_cachedGeometry = nullptr;*/
     }
 
@@ -1226,7 +1226,7 @@ namespace ui
         if (m_styleSelector)
             return m_styleSelector;
 
-        m_styleSelector = MemNew(style::SelectorMatchContext, name(), cls().cast<IElement>());
+        m_styleSelector = new style::SelectorMatchContext(name(), cls().cast<IElement>());
         return m_styleSelector;
     }
 
@@ -1368,7 +1368,7 @@ namespace ui
         if (childElement->m_overlay)
         {
             if (!m_overlayElements)
-                m_overlayElements = MemNew(base::Array<IElement*>);
+                m_overlayElements = new base::Array<IElement*>;
             m_overlayElements->pushBack(childElement);
         }
 
@@ -1413,7 +1413,7 @@ namespace ui
                 m_overlayElements->remove(childElement);
                 if (m_overlayElements->empty())
                 {
-                    MemDelete(m_overlayElements);
+                    delete m_overlayElements;
                     m_overlayElements = nullptr;
                 }
             }
@@ -1890,7 +1890,7 @@ namespace ui
         else
         {
             if (!outGeoemtryPtr)
-                outGeoemtryPtr = MemNew(base::canvas::Geometry);
+                outGeoemtryPtr = base::RefNew<base::canvas::Geometry>();
 
             outGeoemtryPtr->reset();
 
@@ -1926,14 +1926,14 @@ namespace ui
         if (ShadowGeometry.empty() && BackgroundGeometry.empty() && ForegroundGeometry.empty() && OverlayGeometry.empty())
         {
             // remove container
-            MemDelete(m_cachedGeometry);
+            delete m_cachedGeometry;
             m_cachedGeometry = nullptr;
         }
         else
         {
             // create new container
             if (!m_cachedGeometry)
-                m_cachedGeometry = MemNew(ElementCachedGeometry);
+                m_cachedGeometry = new ElementCachedGeometry;
 
             // extract geometries
             CacheGeometry(ShadowGeometry, m_cachedGeometry->shadow);
@@ -2222,7 +2222,7 @@ namespace ui
     EventFunctionBinder IElement::bind(base::StringID name, IElement* owner/* = nullptr*/)
     {
         if (!m_eventTable)
-            m_eventTable = MemNew(EventTable);
+            m_eventTable = new EventTable;
         return m_eventTable->bind(name, owner);
     }
 
@@ -2244,7 +2244,7 @@ namespace ui
     ActionTable& IElement::actions()
     {
         if (!m_actionTable)
-            m_actionTable = MemNew(ActionTable, this);
+            m_actionTable = new ActionTable(this);
         return *m_actionTable;
     }
 

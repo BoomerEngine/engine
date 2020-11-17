@@ -61,7 +61,7 @@ namespace ed
         }
         else
         {
-            req = MemNew(LoadingRequest);
+            req = new LoadingRequest;
             req->file = file;
             req->frameIndex = m_loadingQueueFrameIndex;
 
@@ -99,7 +99,7 @@ namespace ed
         m_loadingQueue.erase(0); // TODO: optimize
 
         auto fileToLoad = frontRequest->file;
-        MemDelete(frontRequest);
+        delete frontRequest;
 
         return fileToLoad;
     }

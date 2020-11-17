@@ -172,7 +172,7 @@ namespace rendering
 
             FilterBitInfo* create(FilterBitInfo* parent, base::StringView name, FilterBit bit = FilterBit::MAX)
             {
-                auto* ret = MemNew(FilterBitInfo).ptr;
+                auto* ret = new FilterBitInfo;
                 ret->name = base::StringID(name);
                 ret->bit = bit;
 

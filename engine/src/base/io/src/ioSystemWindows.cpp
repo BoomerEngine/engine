@@ -309,12 +309,12 @@ namespace base
             WinIOSystem::WinIOSystem()
             {
                 // create the dispatcher for async IO operations
-                m_asyncDispatcher = MemNew(WinAsyncReadDispatcher, 1024);
+                m_asyncDispatcher = new WinAsyncReadDispatcher(1024);
             }
 
             void WinIOSystem::deinit()
             {
-                MemDelete(m_asyncDispatcher);
+                delete m_asyncDispatcher;
                 m_asyncDispatcher = nullptr;
             }
 

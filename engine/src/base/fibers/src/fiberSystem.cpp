@@ -40,15 +40,15 @@ namespace base
 
             // use the platform specified scheduler
             if (0 == strcmp(fiberMode,"threads"))
-                m_scheduler = MemNew(prv::ThreadBasedScheduler);
+                m_scheduler = new prv::ThreadBasedScheduler;
             else
-                m_scheduler = MemNew(FiberSchedulerClass);
+                m_scheduler = new FiberSchedulerClass;
 
             // initialize the scheduler
             if (!m_scheduler->initialize(commandline))
             {
                 TRACE_ERROR("Low-level scheduler failed to initialize");
-                MemDelete(m_scheduler);
+                delete m_scheduler;
                 m_scheduler = nullptr;
                 return false;
             }
@@ -63,7 +63,7 @@ namespace base
         {
             if (m_scheduler)
             {
-                MemDelete(m_scheduler);
+                delete m_scheduler;
                 m_scheduler = nullptr;
             }
         }

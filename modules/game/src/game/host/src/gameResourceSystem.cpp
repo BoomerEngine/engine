@@ -56,7 +56,7 @@ namespace game
             m_tableMap.find(table.name, localTable);
             if (!localTable)
             {
-                localTable = MemNew(Table).ptr;
+                localTable = new Table;
                 localTable->name = table.name;
                 m_tableMap[table.name] = localTable;
             }
@@ -68,7 +68,7 @@ namespace game
                 localTable->entries.find(entry.name, localEntry);
                 if (nullptr == localEntry)
                 {
-                    localEntry = MemNew(Entry).ptr;
+                    localEntry = new Entry;
                     localEntry->fullName = base::StringID(base::TempString("{}.{}", table.name, entry.name));
                     localEntry->key = entry.resource.key();
                     

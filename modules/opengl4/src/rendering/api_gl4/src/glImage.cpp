@@ -354,12 +354,12 @@ namespace rendering
                 poolID = POOL_API_RENDER_TARGETS;
 
             // create the image wrapper
-            return MemNew(Image, drv, setup, sourceData, poolID);
+            return new Image(drv, setup, sourceData, poolID);
         }
 
         Image* Image::CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
         {
-            return MemNew(Image, drv, setup, id, poolID);
+            return new Image(drv, setup, id, poolID);
         }
 
         void Image::ensureInitialized()

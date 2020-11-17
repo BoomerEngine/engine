@@ -53,7 +53,7 @@ namespace base
             if (!group)
             {
                 auto nameStr = StringBuf(name);
-                group = MemNewPool(POOL_CONFIG, Group, this, nameStr);
+                group = new Group(this, nameStr);
                 m_groups[nameStr] = group;
             }
 

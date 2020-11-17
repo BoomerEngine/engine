@@ -28,7 +28,7 @@ namespace base
             class WinFileHandle;
 
             // dispatch for IO jobs
-            class WinAsyncReadDispatcher : public base::NoCopy
+            class WinAsyncReadDispatcher : public base::NoCopy, public mem::GlobalPoolObject<POOL_IO>
             {
             public:
                 WinAsyncReadDispatcher(uint32_t maxInFlightRequests);

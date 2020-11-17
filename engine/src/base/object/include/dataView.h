@@ -119,7 +119,7 @@ namespace base
     protected:
         struct Observer;
 
-        struct Path
+        struct Path : mem::GlobalPoolObject<POOL_DATA_VIEW>
         {
             Path* parent = nullptr;
             Array<IDataViewObserver*> observers;

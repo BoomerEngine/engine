@@ -49,7 +49,7 @@ namespace rendering
                 }
 
                 // add new entry
-                entry = MemNew(Entry);
+                entry = new Entry;
                 entry->id = (uint16_t)m_entries.size();
                 entry->layout = std::move(ParametersLayoutInfo(info, ParametersLayoutID(entry->id)));
                 entry->text = base::TempString("{}", info);
@@ -91,7 +91,7 @@ namespace rendering
             }
 
         private:
-            struct Entry
+            struct Entry : public base::mem::GlobalPoolObject<POOL_RENDERING_PARAM_LAYOUT>
             {
                 uint16_t id = 0;
                 ParametersLayoutInfo layout;

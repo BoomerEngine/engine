@@ -60,7 +60,7 @@ namespace base
     IDataView::IDataView()
     {
         const auto rootPathHash = StringView("").calcCRC64();
-        m_rootPath = MemNew(Path).ptr;
+        m_rootPath = new Path;
         m_rootPath->parent = nullptr;
         m_paths[rootPathHash] = m_rootPath;
     }
@@ -147,7 +147,7 @@ namespace base
         Path* ret = findPathEntry(fullPath);
         if (!m_paths.find(pathCode, ret))
         {
-            ret = MemNew(Path).ptr;
+            ret = new Path;
             ret->parent = parent;
             m_paths[pathCode] = ret;
         }

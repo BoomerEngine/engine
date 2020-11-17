@@ -344,7 +344,7 @@ namespace base
     void IObjectTemplate::RegisterType(rtti::TypeSystem& typeSystem)
     {
         const auto base = typeSystem.findClass("base::IObject"_id);
-        auto cls = MemNew(rtti::NativeClass, "base::IObjectTemplate", sizeof(IObjectTemplate), alignof(IObjectTemplate), typeid(IObjectTemplate).hash_code()).ptr;
+        auto cls = new rtti::NativeClass("base::IObjectTemplate", sizeof(IObjectTemplate), alignof(IObjectTemplate), typeid(IObjectTemplate).hash_code());
         cls->baseClass(base);
         typeSystem.registerType(cls);
     }

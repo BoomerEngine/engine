@@ -108,7 +108,7 @@ namespace base
 
             // delete all types
             for (auto ptr : m_typeList)
-                MemDelete(ptr.ptr());
+                delete ptr.ptr();
 
             // cleanup
             m_types.clear();

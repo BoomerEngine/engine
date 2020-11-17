@@ -164,7 +164,7 @@ namespace rendering
                         entry.shader = compiledTechnique->shader;
                         entry.renderStates = compiledTechnique->renderStates;
 
-                        MemDelete(compiledTechnique);
+                        delete compiledTechnique;
                     }
                     else
                     {

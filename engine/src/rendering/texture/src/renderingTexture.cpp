@@ -185,7 +185,7 @@ namespace rendering
             return nullptr;
 
         // create wrapper
-        auto ret = MemNew(Texture);
+        auto ret = new Texture;
         ret->m_memorySize = totalMemorySize;
         ret->m_mainView = imageView;
         return TRuntimeObjectPtr<Texture>(ret, false);

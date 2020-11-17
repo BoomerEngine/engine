@@ -102,12 +102,12 @@ namespace ui
 
     ConfigFileStorageDataInterface::ConfigFileStorageDataInterface()
     {
-        m_storage = MemNew(base::config::Storage);
+        m_storage = new base::config::Storage;
     }
 
     ConfigFileStorageDataInterface::~ConfigFileStorageDataInterface()
     {
-        MemDelete(m_storage);
+        delete m_storage;
         m_storage = nullptr;
     }
 

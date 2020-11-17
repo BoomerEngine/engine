@@ -148,7 +148,7 @@ namespace base
         INLINE void NodePath::RootPathElement::releaseRef()
         {
             if (0 == --m_refCount)
-                MemDelete(this);
+                delete this;
         }
 
         INLINE bool NodePath::operator==(const NodePath& other) const

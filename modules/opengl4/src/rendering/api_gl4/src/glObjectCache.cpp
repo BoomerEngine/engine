@@ -131,7 +131,7 @@ namespace rendering
                 return ret;
 
             // create the return wrapper
-            ret = MemNew(ResolvedVertexBindingState);
+            ret = new ResolvedVertexBindingState;
             ret->vertexBindPoints.reserve(srcBinding.numStreamLayouts);
 
             // create the VAO
@@ -222,7 +222,7 @@ namespace rendering
                 PC_SCOPE_LVL0(DecompressShader);
                 // decompress into temporary memory
                 const void* sourceData = shaderLib.packedShaderData() + setup.offset;
-                decompressionBuffer = base::mem::Decompress(base::mem::CompressionType::LZ4HC, sourceData, setup.packedSize, setup.unpackedSize, POOL_COMPILED_SHADER_DATA);
+                decompressionBuffer = base::Decompress(base::CompressionType::LZ4HC, sourceData, setup.packedSize, setup.unpackedSize, POOL_COMPILED_SHADER_DATA);
                 if (!decompressionBuffer)
                     return 0;
 
@@ -402,7 +402,7 @@ namespace rendering
             uint8_t numSamplers = 0;
 
             // create new state
-            ret = MemNew(ResolvedParameterBindingState);
+            ret = new ResolvedParameterBindingState;
             for (uint32_t i = 0; i < bindingSetup.numParameterLayoutIndices; ++i)
             {
                 const auto& parameterLayoutIndex = shaderLib.indirectIndices()[i + bindingSetup.firstParameterLayoutIndex];
@@ -497,23 +497,6 @@ namespace rendering
             m_paramBindingMap[bindingSetup.structureKey] = ret;
             return ret;
         }
-/*
-        ParameterPacker* ObjectCache::resolvedParameterPacker(const rendering::ShaderLibraryData& shaderLib, PipelineIndex resourceTableIndex)
-        {
-            DEBUG_CHECK(resourceTableIndex != INVALID_PIPELINE_INDEX);
-            const auto& setup = shaderLib.parameterLayouts()[resourceTableIndex];
-
-            // use cached one
-            ParameterPacker* ret = nullptr;
-            if (m_packerMap.find(setup.structureKey, ret))
-                return ret;
-
-            // create packer
-            ret = MemNew(ParameterPacker, shaderLib, resourceTableIndex);
-            m_packerMap[setup.structureKey] = ret;
-            return ret;
-        }*/
-
 
         static GLenum TranslateFilter(const FilterMode mode)
         {

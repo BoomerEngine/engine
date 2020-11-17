@@ -32,7 +32,7 @@ namespace base
             bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath);
 
         private:
-            struct SaveJob : public NoCopy
+            struct SaveJob : public NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
             {
                 res::ResourcePtr unsavedResource;
                 StringBuf depotPath;

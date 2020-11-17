@@ -24,7 +24,7 @@ namespace ui
     //---
 
     /// UI Window request for platform that renders the windows
-    struct BASE_UI_API WindowRequests
+    struct BASE_UI_API WindowRequests : public base::mem::GlobalPoolObject<POOL_UI>
     {
         Size requestedSize;
         Position requestedPosition;

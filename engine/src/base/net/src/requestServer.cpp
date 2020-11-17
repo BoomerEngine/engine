@@ -139,7 +139,7 @@ namespace base
                 TRACE_INFO("Registering URL request handler at '{}'", sanitizedPath);
 
                 auto lock  = CreateLock(m_handlerMapLock);
-                m_handlerMap[StringBuf(sanitizedPath)] = MemNew(TRequestHandlerFunc, handler);
+                m_handlerMap[StringBuf(sanitizedPath)] = new TRequestHandlerFunc(handler); // TODO: remove
             }
         }
 

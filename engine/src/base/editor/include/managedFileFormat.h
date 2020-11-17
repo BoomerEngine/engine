@@ -31,7 +31,7 @@ namespace ed
     };
 
     // format information
-    class BASE_EDITOR_API ManagedFileFormat : public NoCopy
+    class BASE_EDITOR_API ManagedFileFormat : public NoCopy, public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
     {
     public:
         ManagedFileFormat(StringView extension);

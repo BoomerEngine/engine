@@ -10,58 +10,15 @@
 
 namespace base
 {
-    namespace mem
-    {
-        /// data free function
-        typedef void (*TBufferFreeFunc)(PoolTag pool, void* memory, uint64_t size);
 
-        /// storage for buffer, can be shared
-        /// NOTE: storage is never empty
-        TYPE_ALIGN(16, class) BASE_MEMORY_API BufferStorage : public base::NoCopy
-        {
-        public:
-            // get pointer to data, read only access, should NOT be freed
-            INLINE uint8_t* data() const { return m_offsetToPayload ? ((uint8_t*)this + m_offsetToPayload) : (uint8_t*)m_externalPayload; }
+    /// data free function
+    typedef void (*TBufferFreeFunc)(PoolTag pool, void* memory, uint64_t size);
 
-            // get size of the data in the buffer
-            INLINE uint64_t size() const { return m_size; }
+    /// storage for buffer, can be shared
+    /// NOTE: storage is never empty
+    class BufferStorage;
 
-            // pool this memory was allocated from
-            INLINE PoolTag pool() const { return m_pool; }
-
-            // change size
-            INLINE void adjustSize(uint64_t size) { m_size = size; }
-
-            //--
-
-            // add a reference count
-            void addRef();
-
-            // remove reference, releasing last reference will free the memory
-            void releaseRef();
-
-            //--
-
-            // create a buffer storage with internal storage
-            static BufferStorage* CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment);
-
-            // create a buffer with external storage
-            static BufferStorage* CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void* externalPayload);
-
-        private:
-            ~BufferStorage() = delete;
-
-            uint64_t m_size = 0;
-            uint16_t m_offsetToPayload = 0;
-            void* m_externalPayload = nullptr;
-            PoolTag m_pool = POOL_TEMP;
-            TBufferFreeFunc m_freeFunc = nullptr;
-            std::atomic<uint32_t> m_refCount = 1;
-
-            void freeData();
-        };
-
-    } // mem
+    //--
 
     namespace rtti
     {
@@ -82,7 +39,7 @@ namespace base
 
         INLINE Buffer() {};
         INLINE Buffer(std::nullptr_t) {};
-        INLINE Buffer(mem::BufferStorage* storage) : m_storage(storage) {};
+        INLINE Buffer(BufferStorage* storage) : m_storage(storage) {};
         Buffer(const Buffer& other);
         Buffer(Buffer&& other);
         ~Buffer(); // frees the data
@@ -102,11 +59,13 @@ namespace base
         // cast to bool check
         INLINE operator bool() const { return m_storage != nullptr; }
 
+        //--
+
         // get pointer to data, read only access, should NOT be freed
-        INLINE uint8_t* data() const { return m_storage ? m_storage->data() : nullptr; }
+        uint8_t* data() const;
 
         // get size of the data in the buffer
-        INLINE uint64_t size() const { return m_storage ? m_storage->size() : 0; }
+        uint64_t size() const;
 
         //--
 
@@ -138,7 +97,7 @@ namespace base
         static Buffer CreateZeroInitialized(PoolTag pool, uint64_t size, uint32_t alignment = 0);
 
         // create buffer from external memory
-        static Buffer CreateExternal(PoolTag pool, uint64_t size, void* externalData, mem::TBufferFreeFunc freeFunc = nullptr);
+        static Buffer CreateExternal(PoolTag pool, uint64_t size, void* externalData, TBufferFreeFunc freeFunc = nullptr);
 
         // create buffer from system memory (bypassing allocator), do it regardless of the buffer's size
         static Buffer CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
@@ -146,10 +105,51 @@ namespace base
         //--
 
     private:
-        mem::BufferStorage* m_storage = nullptr; // refcounted
+        BufferStorage* m_storage = nullptr; // refcounted
 
-        static mem::BufferStorage* CreateBestStorageForSize(PoolTag pool, uint64_t size, uint32_t alignment);
-        static mem::BufferStorage* CreateSystemMemoryStorage(PoolTag pool, uint64_t size);
+        static BufferStorage* CreateBestStorageForSize(PoolTag pool, uint64_t size, uint32_t alignment);
+        static BufferStorage* CreateSystemMemoryStorage(PoolTag pool, uint64_t size);
     };
+
+    //--
+
+    enum class CompressionType : uint8_t
+    {
+        // no compression, the compression API will work but probably it's not the best use of the API :)
+        Uncompressed = 0,
+
+        // zlib compression with internal header to store the size of the compressed data (THIS IS MAKING THE DATA INCOMPATBILE WITH NORMAL ZLIB)
+        // NOTE: zlib is zlow
+        Zlib,
+
+        // LZ4, fast decompression, includes header
+        LZ4,
+
+        // High-compression LZ4, fast decompression, includes header
+        LZ4HC,
+
+        // Last compression type
+        MAX,
+    };
+
+    // compress a memory block, returns memory block that should be freed with FreeBlock
+    extern BASE_MEMORY_API void* Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool);
+
+    // compress a memory block to buffer
+    extern BASE_MEMORY_API Buffer Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, PoolTag pool);
+
+    // compress a memory block to buffer
+    extern BASE_MEMORY_API Buffer Compress(CompressionType ct, const Buffer& uncompressedData, PoolTag pool);
+
+    // compress a memory block in-place, output buffer must be at least as big as the input data
+    extern BASE_MEMORY_API bool Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, void* compressedDataPtr, uint64_t compressedDataMaxSize, uint64_t& outCompressedRealSize);
+
+    // decompress a memory block into a buffer
+    extern BASE_MEMORY_API bool Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, void* decompressedDataPtr, uint64_t decompressedSize);
+
+    // decompress a memory block into a buffer
+    extern BASE_MEMORY_API Buffer Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, uint64_t decompressedSize, PoolTag pool);
+
+    //--
 
 } // base

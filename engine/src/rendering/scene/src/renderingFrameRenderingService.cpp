@@ -38,13 +38,13 @@ namespace rendering
 
         base::app::ServiceInitializationResult FrameRenderingService::onInitializeService(const base::app::CommandLine& cmdLine)
         {
-            m_surfaceCache = MemNew(FrameSurfaceCache);
+            m_surfaceCache = new FrameSurfaceCache;
             return base::app::ServiceInitializationResult::Finished;
         }
 
         void FrameRenderingService::onShutdownService()
         {
-            MemDelete(m_surfaceCache);
+            delete m_surfaceCache;
             m_surfaceCache = nullptr;
         }
 

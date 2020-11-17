@@ -101,18 +101,18 @@ namespace rendering
                 return false;
 
             // create the runtime thread
-            auto thread = MemNew(DriverThreadClass, this, m_windows).ptr;
+            auto thread = new DriverThreadClass(this, m_windows);
             if (!thread->initialize(cmdLine))
             {
-                MemDelete(m_windows);
-                MemDelete(thread);
+                delete m_windows;
+                delete thread;
                 return false;
             }
 
             // create the transient allocator
             m_thread = thread;
-            m_transientAllocator = MemNew(TransientAllocator, this);
-            m_objectCache = MemNew(ObjectCache, this);
+            m_transientAllocator = new TransientAllocator(this);
+            m_objectCache = new ObjectCache(this);
 
             // create default objects - NOTE this requires running on device thread
             m_thread->run([this]()
@@ -142,14 +142,14 @@ namespace rendering
                 m_thread->run([this]()
                     {
                         for (auto* image : m_predefinedImages)
-                            MemDelete(image);
+                            delete image;
                         memset(m_predefinedImages, 0, sizeof(m_predefinedImages));
                         memset(m_predefinedSamplers, 0, sizeof(m_predefinedSamplers));
 
-                        MemDelete(m_transientAllocator);
+                        delete m_transientAllocator;
                         m_transientAllocator = nullptr;
 
-                        MemDelete(m_objectCache);
+                        delete m_objectCache;
                         m_objectCache = nullptr;
                     });
             }
@@ -158,11 +158,11 @@ namespace rendering
             sync();
 
             // close the runtime thread
-            MemDelete(m_thread);
+            delete m_thread;
             m_thread = nullptr;
 
             // close the window manager
-            MemDelete(m_windows);
+            delete m_windows;
             m_windows = nullptr;
         }
 

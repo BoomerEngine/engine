@@ -252,14 +252,14 @@ namespace rendering
             // different wrappers require different stuff
             if (info.m_class == DriverOutputClass::NativeWindow || info.m_class == DriverOutputClass::Fullscreen)
             {
-                auto* output = MemNew(DriverOutput, m_driver, info.m_class).ptr;
+                auto* output = new DriverOutput(m_driver, info.m_class);
                 outputHandle = output->handle();
 
                 // create window
                 auto window = m_windows->createWindow(outputHandle, info);
                 if (!window)
                 {
-                    MemDelete(output);
+                    delete output;
                     return ObjectID();
                 }
 
@@ -269,7 +269,7 @@ namespace rendering
                 {
                     TRACE_ERROR("Window has no valid device context");
                     m_windows->closeWindow(window);
-                    MemDelete(output);
+                    delete output;
                     return nullptr;
                 }
 
@@ -282,7 +282,7 @@ namespace rendering
                     TRACE_ERROR("Failed to find compatible pixel format for the rendering");
                     ReleaseDC((HWND)window, hDC);
                     m_windows->closeWindow(window);
-                    MemDelete(output);
+                    delete output;
                     return nullptr;
                 }
 
@@ -293,7 +293,7 @@ namespace rendering
                     TRACE_ERROR("Failed to select compatible pixel format for the rendering");
                     ReleaseDC((HWND)window, hDC);
                     m_windows->closeWindow(window);
-                    MemDelete(output);
+                    delete output;
                     return nullptr;
                 }
 

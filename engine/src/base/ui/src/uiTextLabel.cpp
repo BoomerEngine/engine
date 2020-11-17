@@ -31,20 +31,20 @@ namespace ui
     TextLabel::TextLabel()
     {
         if (!base::IsDefaultObjectCreation())
-            m_displayData = MemNew(prv::LayoutDisplayData);
+            m_displayData = new prv::LayoutDisplayData();
     }
 
     TextLabel::TextLabel(base::StringView txt)
         : m_text(txt)
     {
         if (!base::IsDefaultObjectCreation())
-            m_displayData = MemNew(prv::LayoutDisplayData);
+            m_displayData = new prv::LayoutDisplayData();
     }
 
     TextLabel::~TextLabel()
     {
-        MemDelete(m_data);
-        MemDelete(m_displayData);
+        delete m_data;
+        delete m_displayData;
     }
 
     void TextLabel::text(base::StringView text)
@@ -53,7 +53,7 @@ namespace ui
         {
             m_text = base::StringBuf(text);
 
-            MemDelete(m_data);
+            delete m_data;
             m_data = nullptr;
 
             invalidateStyle();
@@ -93,8 +93,8 @@ namespace ui
         // create the layout data
         if (!m_data || m_data->text != text)
         {
-            MemDelete(m_data);
-            m_data = MemNew(prv::LayoutData, text);
+            delete m_data;
+            m_data = new prv::LayoutData(text);
         }
 
         // render data

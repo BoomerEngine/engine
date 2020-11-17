@@ -30,7 +30,7 @@ namespace rendering
         ///--
 
         /// a frame with all allocated transient objects
-        class TransientFrame : public base::NoCopy
+        class TransientFrame : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_OBJECTS>
         {
         public:
             ~TransientFrame();
@@ -144,7 +144,7 @@ namespace rendering
 
         /// allocator of transient objects
         /// can free all related transient objects once the frame was submitted
-        class TransientAllocator : public base::NoCopy
+        class TransientAllocator : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             TransientAllocator(Driver* drv);

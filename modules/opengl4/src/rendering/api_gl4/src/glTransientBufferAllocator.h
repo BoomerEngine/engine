@@ -31,7 +31,7 @@ namespace rendering
         /// allocation context, used by single command buffer while allocating parameters
         /// each command buffers have unique buffers, destroyed when command buffer completes execution
         /// NOTE: only the storage buffer is mapped, all other buffers require a copy
-        class TransientBufferAllocator
+        class TransientBufferAllocator : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             TransientBufferAllocator(Driver* drv, uint32_t initialPageSize, uint32_t pageSizeIncrement, TransientBufferType bufferType);
@@ -77,7 +77,7 @@ namespace rendering
         };
 
         /// a buffer allocated from transient memory
-        class TransientBuffer : public base::NoCopy
+        class TransientBuffer : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
             TransientBuffer(TransientBufferAllocator* owner, uint32_t size, TransientBufferType bufferType);

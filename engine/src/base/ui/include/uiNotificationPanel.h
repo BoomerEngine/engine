@@ -40,7 +40,7 @@ namespace ui
         //--
 
     private:
-        struct Notificaton
+        struct Notificaton : public base::mem::GlobalPoolObject<POOL_UI>
         {
             base::StringID group;
             float timeLeft = 0.0f;

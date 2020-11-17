@@ -139,7 +139,7 @@ namespace rendering
             setup.m_function = [this]() { threadFunc();  };
             setup.m_stackSize = 1U << 20;
 
-            m_currentFrame = MemNew(DriverFrame, this);
+            m_currentFrame = new DriverFrame(this);
             
             if (m_useThread)
                 m_thread.init(setup);
@@ -153,7 +153,7 @@ namespace rendering
             sync();
 
             // delete unsubmitted frame
-            MemDelete(m_currentFrame);
+            delete m_currentFrame;
             m_currentFrame = nullptr;
 
             // close the rendering thread
@@ -191,7 +191,7 @@ namespace rendering
             if (obj->objectType() == ObjectType::Output)
                 releaseOutput(obj->handle());
 
-            MemDelete(obj);
+            delete obj;
         }
 
         void DriverThread::initializeDebug_Thread()
@@ -257,7 +257,7 @@ namespace rendering
 
                 if (m_currentFrame)
                     m_sequencePendingList.pushBack(m_currentFrame);
-                m_currentFrame = MemNew(DriverFrame, this);
+                m_currentFrame = new DriverFrame(this);
             }
 
             // push a cleanup job to release objects from frames that were completed
@@ -296,7 +296,7 @@ namespace rendering
             {
                 auto lock = base::CreateLock(m_sequenceLock);
                 m_sequencePendingList.pushBack(m_currentFrame);
-                m_currentFrame = MemNew(DriverFrame, this);
+                m_currentFrame = new DriverFrame(this);
             }
 
             // all frames should be finished 
@@ -326,7 +326,7 @@ namespace rendering
             //DEBUG_CHECK_EX(nullptr == m_currentFrame, "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
 
             // start new, fresh frame
-            //m_currentFrame = MemNew(DriverFrame, this);
+            //m_currentFrame = new DriverFrame(this);
 
             // notify if elapsed time is outstandingly long
             auto elapsedTime = timer.milisecondsElapsed();
@@ -351,7 +351,7 @@ namespace rendering
 
         void DriverThread::pushJob(const std::function<void()>& func)
         {
-            auto job  = MemNew(Job);
+            auto job  = new Job;
             job->m_jobFunc = func;
 
             {
@@ -523,7 +523,7 @@ namespace rendering
                         base::ScopeTimer timer;
                         PC_SCOPE_LVL0(DeviceThreadJob);
                         job->m_jobFunc();
-                        MemDelete(job);
+                        delete job;
 
                         if (cvPrintGLTimings.get())
                             TRACE_INFO("GL RenderJob: {}", TimeInterval(timer.timeElapsed()));
@@ -541,7 +541,7 @@ namespace rendering
                     base::ScopeTimer timer;
                     PC_SCOPE_LVL0(DeviceThreadJob);
                     job->m_jobFunc();
-                    MemDelete(job);
+                    delete job;
 
                     if (cvPrintGLTimings.get())
                         TRACE_INFO("GL RenderJob: {}", TimeInterval(timer.timeElapsed()));
@@ -642,7 +642,7 @@ namespace rendering
             {
                 auto lock = base::CreateLock(m_completionCallbacksLock);
 
-                auto callBackCopy  = MemNew(SequenceCompletionCallback, std::move(callback));
+                auto callBackCopy = new SequenceCompletionCallback(std::move(callback));
                 m_completionCallbacks.emplaceBack(callBackCopy);
             }
         }

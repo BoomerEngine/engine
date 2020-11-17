@@ -9,78 +9,117 @@
 #include "build.h"
 #include "buffer.h"
 
-#pragma optimize("",off)
-
 namespace base
 {
-    namespace mem
+    //--
+
+    TYPE_ALIGN(16, class) BASE_MEMORY_API BufferStorage : public base::NoCopy
     {
+    public:
+        // get pointer to data, read only access, should NOT be freed
+        INLINE uint8_t * data() const { return m_offsetToPayload ? ((uint8_t*)this + m_offsetToPayload) : (uint8_t*)m_externalPayload; }
+
+        // get size of the data in the buffer
+        INLINE uint64_t size() const { return m_size; }
+
+        // pool this memory was allocated from
+        INLINE PoolTag pool() const { return m_pool; }
+
+        // change size
+        INLINE void adjustSize(uint64_t size) { m_size = size; }
 
         //--
 
-        void BufferStorage::addRef()
-        {
-            ++m_refCount;
-        }
+        // add a reference count
+        void addRef();
 
-        void BufferStorage::releaseRef()
-        {
-            if (0 == --m_refCount)
-                freeData();
-        }
+        // remove reference, releasing last reference will free the memory
+        void releaseRef();
 
-        void BufferStorage::freeData()
-        {
-            if (m_externalPayload && m_freeFunc)
-                m_freeFunc(m_pool, m_externalPayload, m_size);
+        //--
 
-            mem::FreeBlock(this);
-        }
+        // create a buffer storage with internal storage
+        static BufferStorage* CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment);
 
-        BufferStorage* BufferStorage::CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment)
-        {
-            DEBUG_CHECK_EX(alignment <= 4096, "Alignment requirement on buffer if really big");
+        // create a buffer with external storage
+        static BufferStorage* CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void* externalPayload);
 
-            auto totalSize = size + sizeof(BufferStorage);
-            if (alignment > alignof(BufferStorage))
-                totalSize += (alignment - alignof(BufferStorage));
+    private:
+        ~BufferStorage() = delete;
 
-            auto* mem = (uint8_t*)mem::AllocateBlock(pool, totalSize, alignment, "BufferStorage");
-            auto* payloadPtr = AlignPtr(mem + sizeof(BufferStorage), alignment);
-            auto offset = payloadPtr - mem;
-            DEBUG_CHECK_EX(offset <= 65535, "Offset to payload is to big");
+        uint64_t m_size = 0;
+        uint16_t m_offsetToPayload = 0;
+        void* m_externalPayload = nullptr;
+        PoolTag m_pool = POOL_TEMP;
+        TBufferFreeFunc m_freeFunc = nullptr;
+        std::atomic<uint32_t> m_refCount = 1;
 
-            auto* ret = new (mem) BufferStorage();
-            ret->m_pool = pool;
-            ret->m_refCount = 1;
-            ret->m_offsetToPayload = (uint16_t)offset;
-            ret->m_size = size;
-            return ret;
-        }
+        void freeData();
+    };
 
-        static void DefaultMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
-        {
-            mem::FreeBlock(memory);
-        }
+    //--
 
-        BufferStorage* BufferStorage::CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void *externalPayload)
-        {
-            if (!freeFunc)
-                freeFunc = &DefaultMemoryFreeFunc;
+    void BufferStorage::addRef()
+    {
+        ++m_refCount;
+    }
 
-            DEBUG_CHECK_EX(freeFunc && externalPayload, "Invalid setup for external buffer");
+    void BufferStorage::releaseRef()
+    {
+        if (0 == --m_refCount)
+            freeData();
+    }
 
-            auto* ret = new ( mem::GlobalPool<POOL_EXTERNAL_BUFFER_TAG, BufferStorage>::AllocN(1) ) BufferStorage();
-            ret->m_pool = pool;
-            ret->m_refCount = 1;
-            ret->m_offsetToPayload = 0;
-            ret->m_externalPayload = externalPayload;
-            ret->m_freeFunc = freeFunc;
-            ret->m_size = size;
-            return ret;
-        }
+    void BufferStorage::freeData()
+    {
+        if (m_externalPayload && m_freeFunc)
+            m_freeFunc(m_pool, m_externalPayload, m_size);
 
-    } // mem
+        mem::FreeBlock(this);
+    }
+
+    BufferStorage* BufferStorage::CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment)
+    {
+        DEBUG_CHECK_EX(alignment <= 4096, "Alignment requirement on buffer if really big");
+
+        auto totalSize = size + sizeof(BufferStorage);
+        if (alignment > alignof(BufferStorage))
+            totalSize += (alignment - alignof(BufferStorage));
+
+        auto* mem = (uint8_t*)mem::AllocateBlock(pool, totalSize, alignment, "BufferStorage");
+        auto* payloadPtr = AlignPtr(mem + sizeof(BufferStorage), alignment);
+        auto offset = payloadPtr - mem;
+        DEBUG_CHECK_EX(offset <= 65535, "Offset to payload is to big");
+
+        auto* ret = new (mem) BufferStorage();
+        ret->m_pool = pool;
+        ret->m_refCount = 1;
+        ret->m_offsetToPayload = (uint16_t)offset;
+        ret->m_size = size;
+        return ret;
+    }
+
+    static void DefaultMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
+    {
+        mem::FreeBlock(memory);
+    }
+
+    BufferStorage* BufferStorage::CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void *externalPayload)
+    {
+        if (!freeFunc)
+            freeFunc = &DefaultMemoryFreeFunc;
+
+        DEBUG_CHECK_EX(freeFunc && externalPayload, "Invalid setup for external buffer");
+
+        auto* ret = new ( mem::GlobalPool<POOL_EXTERNAL_BUFFER_TAG, BufferStorage>::AllocN(1) ) BufferStorage();
+        ret->m_pool = pool;
+        ret->m_refCount = 1;
+        ret->m_offsetToPayload = 0;
+        ret->m_externalPayload = externalPayload;
+        ret->m_freeFunc = freeFunc;
+        ret->m_size = size;
+        return ret;
+    }
 
     //--
 
@@ -143,6 +182,16 @@ namespace base
         return !operator==(other);
     }
 
+    uint8_t* Buffer::data() const 
+    {
+        return m_storage ? m_storage->data() : nullptr;
+    }
+
+    uint64_t Buffer::size() const
+    {
+        return m_storage ? m_storage->size() : 0;
+    }
+
     void Buffer::reset()
     {
         if (m_storage)
@@ -162,12 +211,7 @@ namespace base
         mem::FreeSystemMemory(memory, size);
     }
 
-    static void DefaultMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
-    {
-        mem::FreeBlock(memory);
-    }
-
-    mem::BufferStorage*  Buffer::CreateSystemMemoryStorage(PoolTag pool, uint64_t size)
+    BufferStorage* Buffer::CreateSystemMemoryStorage(PoolTag pool, uint64_t size)
     {
         bool useLargePages = (size >= BUFFER_SYSTEM_MEMORY_LARGE_PAGES_SIZE);
         void* systemMemory = mem::AllocSystemMemory(size, useLargePages);
@@ -177,10 +221,10 @@ namespace base
             return nullptr;
         }
 
-        return mem::BufferStorage::CreateExternal(pool, size, &SystemMemoryFreeFunc, systemMemory);
+        return BufferStorage::CreateExternal(pool, size, &SystemMemoryFreeFunc, systemMemory);
     }
 
-    mem::BufferStorage* Buffer::CreateBestStorageForSize(PoolTag pool, uint64_t size, uint32_t alignment)
+    BufferStorage* Buffer::CreateBestStorageForSize(PoolTag pool, uint64_t size, uint32_t alignment)
     {
         if (alignment == 0)
             alignment = BUFFER_DEFAULT_ALIGNMNET;
@@ -191,7 +235,7 @@ namespace base
         }
         else
         {
-            return mem::BufferStorage::CreateInternal(pool, size, alignment);
+            return BufferStorage::CreateInternal(pool, size, alignment);
         }
     }
 
@@ -260,12 +304,12 @@ namespace base
          return ret;
      }
 
-    Buffer Buffer::CreateExternal(PoolTag pool, uint64_t size, void* externalData, mem::TBufferFreeFunc freeFunc/* = nullptr*/)
+    Buffer Buffer::CreateExternal(PoolTag pool, uint64_t size, void* externalData, TBufferFreeFunc freeFunc/* = nullptr*/)
     {
         if (!size || !externalData)
             return Buffer();
 
-        return Buffer(mem::BufferStorage::CreateExternal(pool, size, freeFunc, externalData));
+        return Buffer(BufferStorage::CreateExternal(pool, size, freeFunc, externalData));
     }
 
     Buffer Buffer::CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy /*= nullptr*/, uint64_t dataSizeToCopy /*= INDEX_MAX64*/)

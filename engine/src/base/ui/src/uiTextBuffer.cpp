@@ -34,9 +34,9 @@ namespace ui
         , m_wrapWidth(0)
         , m_finalGlyph(0)
     {
-        m_cachedCursorGeometry = MemNew(base::canvas::Geometry);
-        m_cachedSelectionGeometry = MemNew(base::canvas::Geometry);
-        m_cachedHighlightGeometry = MemNew(base::canvas::Geometry);
+        m_cachedCursorGeometry = base::RefNew<base::canvas::Geometry>();
+        m_cachedSelectionGeometry = base::RefNew<base::canvas::Geometry>();
+        m_cachedHighlightGeometry = base::RefNew<base::canvas::Geometry>();
 
         m_chars.reserve(128);
         generateLayout();

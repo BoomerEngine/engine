@@ -68,7 +68,7 @@ namespace base
             if (!entry)
             {
                 auto nameStr = StringBuf(name);
-                entry = MemNewPool(POOL_CONFIG, Entry, this, nameStr);
+                entry = new Entry(this, nameStr);
                 m_entries[nameStr] = entry;
                 // NOTE: we do not mark a group as modified since empty entry will NOT be saved any way
             }

@@ -335,7 +335,7 @@ namespace base
     template<typename T>
     void Array<T>::clearPtr()
     {
-        std::for_each(begin(), end(), [](T& val) { MemDelete(val); });
+        std::for_each(begin(), end(), [](T& val) { delete val; });
         std::destroy(begin(), end());
         BaseArray::changeSize(0);
         BaseArray::changeCapacity(0, capacity() * sizeof(T), 0, __alignof(T), typeid(typename std::remove_cv<T>::type).name());

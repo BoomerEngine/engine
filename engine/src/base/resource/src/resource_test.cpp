@@ -66,7 +66,7 @@ namespace tests
         void addBufferResource(StringView path, const Buffer& buf, ClassType classPtr)
         {
             // create entry
-            auto entry  = MemNew(FakeResource);
+            auto entry  = new FakeResource;
             entry->key = res::ResourceKey(path, classPtr.cast<res::IResource>());
             entry->data = buf;
             m_resources.set(entry->key, entry);
@@ -112,7 +112,7 @@ namespace tests
         }
 
     private:
-        struct FakeResource
+        struct FakeResource : public base::mem::GlobalPoolObject<POOL_TEMP>
         {
             res::ResourceKey key;
             Buffer data;

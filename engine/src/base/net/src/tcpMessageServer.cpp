@@ -72,7 +72,7 @@ namespace base
 
                 m_activeConnections.removeUnordered(info);
                 m_activeConnectionMap.remove(id);
-                MemDelete(info);
+                delete info;
 
                 m_server.disconnect(id);
             }            
@@ -142,7 +142,7 @@ namespace base
         {
             TRACE_INFO("TcpMessage: New connection to message server from '{}'", address);
 
-            auto info = MemNewPool(POOL_NET, TcpMessageServerConnectionState, connection, m_models, address);
+            auto info = new TcpMessageServerConnectionState(connection, m_models, address);
             info->m_handler = base::RefNew<TcpMessageServerConnection>(this, connection, m_server.address(), address);
 
             {
@@ -168,7 +168,7 @@ namespace base
 
                 m_activeConnections.removeUnordered(info);
                 m_activeConnectionMap.remove(connection);
-                MemDelete(info);
+                delete info;
             }
         }
 

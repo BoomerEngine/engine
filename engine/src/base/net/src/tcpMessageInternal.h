@@ -76,7 +76,7 @@ namespace base
 
         //--
 
-        struct TcpMessageServerConnectionState : public NoCopy
+        struct TcpMessageServerConnectionState : public NoCopy, public mem::GlobalPoolObject<POOL_NET>
         {
             socket::ConnectionID m_id;
             socket::Address m_address;

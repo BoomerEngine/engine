@@ -108,7 +108,7 @@ namespace rendering
     private:
         base::Mutex m_lock;
 
-        struct InMemoryEntry
+        struct InMemoryEntry : public base::mem::GlobalPoolObject<POOL_RENDERING_SHADER_CACHE>
         {
             base::StringBuf path;
             uint64_t key = 0;

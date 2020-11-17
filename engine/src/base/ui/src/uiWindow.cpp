@@ -47,7 +47,7 @@ namespace ui
 
     Window::~Window()
     {
-        MemDelete(m_requests);
+        delete m_requests;
         m_requests = nullptr;
 
         TRACE_INFO("Window '{}' destroyed", m_title);
@@ -56,7 +56,7 @@ namespace ui
     WindowRequests* Window::createPendingRequests()
     {
         if (!m_requests)
-            m_requests = MemNew(WindowRequests);
+            m_requests = new WindowRequests;
         return m_requests;
     }
 

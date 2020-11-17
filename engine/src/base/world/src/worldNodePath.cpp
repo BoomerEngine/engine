@@ -29,7 +29,7 @@ namespace base
             pathCRC << "/";
             pathCRC << childName;
 
-            auto parentNode  = MemNew(RootPathElement, m_parent, m_name, m_hash);
+            auto parentNode = new RootPathElement(m_parent, m_name, m_hash);
             return NodePath(parentNode, childName, pathCRC.crc());
         }
 

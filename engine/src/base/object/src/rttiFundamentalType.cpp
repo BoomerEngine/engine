@@ -272,7 +272,7 @@ namespace base
             }
         };
 
-        #define REGISTER_FUNDAMENTAL_TYPE( type )   typeSystem.registerType(Type(MemNew(SimpleValueType<type>, #type, TypeConversionClass::Type##type)));
+        #define REGISTER_FUNDAMENTAL_TYPE( type )   typeSystem.registerType(new SimpleValueType<type>(#type, TypeConversionClass::Type##type));
 
         void RegisterFundamentalTypes(TypeSystem& typeSystem)
         {
@@ -288,8 +288,8 @@ namespace base
             REGISTER_FUNDAMENTAL_TYPE(int64_t);
             REGISTER_FUNDAMENTAL_TYPE(uint64_t);
 
-            typeSystem.registerType(Type(MemNew(SimpleTypeStringBuf)));
-            typeSystem.registerType(Type(MemNew(SimpleTypeStringID)));
+            typeSystem.registerType(new SimpleTypeStringBuf);
+            typeSystem.registerType(new SimpleTypeStringID);
         }
 
     } /// rtti

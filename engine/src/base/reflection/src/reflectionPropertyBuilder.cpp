@@ -58,7 +58,7 @@ namespace base
                 setup.m_flags |= rtti::PropertyFlagBit::NoResetToDefault;
             
 
-            auto prop  = MemNew(rtti::Property, targetClass, setup);
+            auto prop = new rtti::Property(targetClass, setup);
 
             for (auto metaData  : m_metadata)
                 prop->attachMetadata(metaData);

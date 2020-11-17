@@ -90,7 +90,7 @@ namespace ui
             }
 
             // create the match wrapper
-            auto newSelector = MemNew(SelectorMatch, std::move(matchingSelectors), hash);
+            auto newSelector = new SelectorMatch(std::move(matchingSelectors), hash);
             m_selectorMap.set(hash, newSelector);
             return newSelector;
         }

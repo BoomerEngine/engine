@@ -136,7 +136,7 @@ namespace rendering
 
         ///---
 
-        struct FilterBitInfo
+        struct FilterBitInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
         {
             base::StringID name;
             base::Array<const FilterBitInfo*> children;

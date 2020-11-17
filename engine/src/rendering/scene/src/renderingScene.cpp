@@ -60,10 +60,10 @@ namespace rendering
             destroyAllProxies();
 
             for (auto* handler : m_proxyHandlers)
-                MemDelete(handler);
+                delete handler;
 
             for (auto* handler : m_fragmentHandlers)
-                MemDelete(handler);
+                delete handler;
 
             memset(m_proxyHandlers, 0, sizeof(m_proxyHandlers));
             memset(m_fragmentHandlers, 0, sizeof(m_fragmentHandlers));

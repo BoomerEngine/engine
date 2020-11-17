@@ -22,7 +22,7 @@ namespace base
         //---
 
         // helper class that can build a function
-        class BASE_REFLECTION_API FunctionBuilder
+        class BASE_REFLECTION_API FunctionBuilder : public mem::GlobalPoolObject<POOL_RTTI>
         {
         public:
             FunctionBuilder(const char* name);

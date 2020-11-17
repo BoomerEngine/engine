@@ -19,7 +19,7 @@ namespace base
 
         /// config storage contains a PERSISTENT group and entries maps
         /// NOTE: a group or entry that is once created is not deleted until the storage itself is deleted
-        class BASE_CONFIG_API Storage : public base::NoCopy
+        class BASE_CONFIG_API Storage : public base::NoCopy, public mem::GlobalPoolObject<POOL_CONFIG>
         {
         public:
             Storage();

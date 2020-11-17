@@ -405,7 +405,7 @@ namespace rendering
             else
             {
                 auto oldProxy = m_dataProxy;
-                m_dataProxy = MemNew(MaterialDataProxy, baseTemplate, true, *this); // we keep extra ref on the template
+                m_dataProxy = base::RefNew<MaterialDataProxy>(baseTemplate, true, *this); // we keep extra ref on the template
 
                 base::GetService<MaterialService>()->notifyMaterialProxyChanged(oldProxy, m_dataProxy);
             }

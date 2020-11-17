@@ -27,24 +27,43 @@ enum PoolTag
     POOL_SCRIPTS,
     POOL_SCRIPTED_OBJECT,
     POOL_SCRIPTED_DEFAULT_OBJECT,
+    POOL_SCRIPT_CODE,
+    POOL_SCRIPT_STREAM,
     POOL_NET,
     POOL_NET_MESSAGE,
+    POOL_NET_MESSAGES,
     POOL_NET_REASSEMBLER,
     POOL_NET_REPLICATION,
+    POOL_NET_MODEL,
+    POOL_COOKING,
+    POOL_IMPORT,
     POOL_IMAGE,
     POOL_STRINGS,
+    POOL_PIPES,
+    POOL_THREADS,
+    POOL_PROCESS,
+    POOL_DEPOT,
+    POOL_MANAGED_DEPOT,
+    POOL_EDITOR,
     POOL_STRING_BUILDER,
     POOL_INDEX_POOL,
     POOL_PATH_CACHE,
     POOL_REF_HOLDER,
     POOL_SCRIPT_COMPILER,
     POOL_RTTI_DATA,
+    POOL_DATA_VIEW,
     POOL_DEBUG_GEOMETRY,
     POOL_XML,
     POOL_RENDERING_FRAME,
+    POOL_RENDERING_SHADER_CACHE,
+    POOL_RENDERING_PARAM_LAYOUT,
+    POOL_RENDERING_TECHNIQUE,
     POOL_TRIMESH,
     POOL_IMGUI,
     POOL_JIT,
+    POOL_FIBERS,
+    POOL_FONTS,
+    POOL_GRAPH,
     POOL_INSTANCE_BUFFER,
     POOL_INSTANCE_LAYOUT,
     POOL_KEYS,
@@ -52,13 +71,18 @@ enum PoolTag
     POOL_EVENTS,
     POOL_PROXY,
     POOL_RENDERING_COMMANDS,
+    POOL_RENDERING_COMMAND_BUFFER,
     POOL_DEFAULT_OBJECTS,
     POOL_OBJECTS,
     POOL_SHADER_COMPILATION,
     POOL_STREAMING,
+    POOL_UI,
+    POOL_ACTIONS,
     POOL_VARIANT,
+    POOL_GAME,
     POOL_CANVAS,
     POOL_CONFIG,
+    POOL_WINDOW,
     POOL_MEM_BUFFER,
     POOL_EXTERNAL_BUFFER_TAG,
     POOL_ZLIB,
@@ -67,6 +91,7 @@ enum PoolTag
     POOL_SYSTEM_MEMORY,
     POOL_WAVEFRONT,
     POOL_MESH_BUILDER,
+    POOL_HTTP_REQUEST,
     POOL_HTTP_REQUEST_DATA,
     POOL_COMPILED_SHADER_STRUCTURES,
     POOL_COMPILED_SHADER_DATA,
@@ -99,6 +124,8 @@ enum PoolTag
     POOL_API_SHADERS,
     POOL_API_PROGRAMS,
     POOL_API_PIPELINES,
+    POOL_API_OBJECTS,
+    POOL_API_RUNTIME,
 
     POOL_MAX,
 };
@@ -192,83 +219,80 @@ namespace base
 
         //--
 
-    } // namespace mem 
-} // base
-
-//-----------------------------------------------------------------------------
-// GLOBAL MEMORY INTERFACE
-
-// alloc memory via the new operator from the new pool
-// this is the only legal way to allocate something that will be freed by the MemDelete
-#ifdef BUILD_RELEASE
-    #define MemNew(T, ...) NoAddRef<T>(new (base::mem::AllocateBlock(POOL_NEW, sizeof(T), __alignof(T))) T(__VA_ARGS__))
-    #define MemNewPool(pool, T, ...) NoAddRef<T>(new (base::mem::AllocateBlock(pool, sizeof(T), __alignof(T))) T(__VA_ARGS__))
-#else
-    #define MemNew(T, ...) NoAddRef<T>(new (base::mem::AllocateBlock(POOL_NEW, sizeof(T), __alignof(T))) T(__VA_ARGS__))
-    #define MemNewPool(pool, T, ...) NoAddRef<T>(new (base::mem::AllocateBlock(pool, sizeof(T), __alignof(T))) T(__VA_ARGS__))
-#endif
-
-
-// delete stuff previously allocated via the MemNew
-// NOTE: strictly only allocations done by the New
-template< typename T >
-INLINE void MemDelete(T* ptr)
-{
-    if (ptr != nullptr)
-    {
-        ptr->~T();
-        base::mem::FreeBlock((void*)ptr);
-    }
-}
-
-//-----------------------------------------------------------------------------
-
-// Public memory system
-#include "buffer.h"
-
-namespace base
-{
-    namespace mem
-    {
-        //--
-
-        // type of the compression
-        enum class CompressionType : uint8_t
+        /// base class for objects that we want to allocate from GlobalPool via new/delete
+        template< PoolTag TAG = POOL_NEW >
+        class GlobalPoolObject
         {
-            // no compression, the compression API will work but probably it's not the best use of the API :)
-            Uncompressed = 0,
+        public:
+            INLINE void* operator new(std::size_t count)
+            {
+                return GlobalPool<TAG>::Alloc(count, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+            }
 
-            // zlib compression with internal header to store the size of the compressed data (THIS IS MAKING THE DATA INCOMPATBILE WITH NORMAL ZLIB)
-            // NOTE: zlib is zlow
-            Zlib,
+            INLINE void* operator new[](std::size_t count)
+            {
+                return GlobalPool<TAG>::Alloc(count, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+            }
 
-            // LZ4, fast decompression, includes header
-            LZ4,
+            INLINE void* operator new(std::size_t count, std::align_val_t al)
+            {
+                return GlobalPool<TAG>::Alloc(count, (size_t)al);
+            }
 
-            // High-compression LZ4, fast decompression, includes header
-            LZ4HC,
+            INLINE void* operator new[](std::size_t count, std::align_val_t al)
+            {
+                return GlobalPool<TAG>::Alloc(count, (size_t)al);
+            }
 
-            // Last compression type
-            MAX,
+            INLINE void operator delete(void* ptr, std::size_t sz)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete[](void* ptr, std::size_t sz)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete(void* ptr, std::size_t sz, std::align_val_t al)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete[](void* ptr, std::size_t sz, std::align_val_t al)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete(void* ptr)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete(void* ptr, std::align_val_t al)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete[](void* ptr)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void operator delete[](void* ptr, std::align_val_t al)
+            {
+                GlobalPool<TAG>::Free(ptr);
+            }
+
+            INLINE void* operator new(std::size_t count, void* pt)
+            {
+                return pt;
+            }
+
+            INLINE void operator delete(void *pt, void* pt2)
+            {
+            }
         };
-
-        // compress a memory block, returns memory block that should be freed with mem::FreeBlock
-        extern BASE_MEMORY_API void* Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool);
-
-        // compress a memory block to buffer
-        extern BASE_MEMORY_API Buffer Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, PoolTag pool);
-
-        // compress a memory block to buffer
-        extern BASE_MEMORY_API Buffer Compress(CompressionType ct, const Buffer& uncompressedData, PoolTag pool);
-
-        // compress a memory block in-place, output buffer must be at least as big as the input data
-        extern BASE_MEMORY_API bool Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, void* compressedDataPtr, uint64_t compressedDataMaxSize, uint64_t& outCompressedRealSize);
-
-        // decompress a memory block into a buffer
-        extern BASE_MEMORY_API bool Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, void* decompressedDataPtr, uint64_t decompressedSize);
-
-        // decompress a memory block into a buffer
-        extern BASE_MEMORY_API Buffer Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, uint64_t decompressedSize, PoolTag pool);
 
         //--
 

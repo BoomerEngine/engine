@@ -35,7 +35,7 @@ namespace base
             auto lock = CreateLock(m_lock);
 
             for (auto& value : m_glyphs.values())
-                MemDelete(value.glyph);
+                delete value.glyph;
 
             m_glyphs.clear();
         }
@@ -203,14 +203,14 @@ namespace base
 
                 // create glyph
                 GlyphID glyphId(fontId, ch, styleParams.calcHash());
-                return MemNew(Glyph,glyphId, ptr, bitmapOffset, bitmapSize, advance, rect);
+                return new Glyph(glyphId, ptr, bitmapOffset, bitmapSize, advance, rect);
             }
             else
             {
                 // create glyph with no bitmap
                 auto advance = Vector2(faceData->glyph->advance.x / 64.0f, faceData->glyph->advance.y / 64.0f);
                 GlyphID glyphId(fontId, ch, styleParams.calcHash());
-                return MemNew(Glyph,glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0));
+                return new Glyph(glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0));
             }
         }
 

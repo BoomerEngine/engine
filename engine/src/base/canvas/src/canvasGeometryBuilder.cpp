@@ -58,13 +58,13 @@ namespace base
             , m_tessTollerance(cvTessTollerance.get())
         {
             m_distTolleranceSquared = m_distTollerance * m_distTollerance;
-            m_pathCache = MemNew(prv::PathCache, m_distTollerance, m_tessTollerance);
+            m_pathCache = new prv::PathCache(m_distTollerance, m_tessTollerance);
             reset();
         }
 
         GeometryBuilder::~GeometryBuilder()
         {
-            MemDelete(m_pathCache);
+            delete m_pathCache;
         }
 
         GeometryBuilder::RenderState::RenderState()

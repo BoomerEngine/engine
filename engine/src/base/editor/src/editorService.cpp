@@ -402,7 +402,7 @@ namespace ed
         if (const auto* data = m_openSavePersistentData.find(category))
             return **data;
 
-        auto entry = MemNew(io::OpenSavePersistentData).ptr;
+        auto entry = new io::OpenSavePersistentData;
         entry->directory = base::io::SystemPath(io::PathCategory::UserDocumentsDir);
 
         m_openSavePersistentData[StringBuf(category)] = entry;

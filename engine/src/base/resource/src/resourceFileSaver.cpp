@@ -38,7 +38,7 @@ namespace base
 
         //--
 
-        struct FileSerializedObject
+        struct FileSerializedObject : public mem::GlobalPoolObject<POOL_SERIALIZATION>
         {
             FileSerializedObject* parent = nullptr;
             ObjectPtr object;
@@ -96,7 +96,7 @@ namespace base
                 FileSerializedObject* ret = nullptr;
                 if (!m_objectMap.find(object, ret))
                 {
-                    ret = MemNew(FileSerializedObject).ptr;
+                    ret = new FileSerializedObject;
                     ret->object = AddRef(object);
                     ret->parent = nullptr;
                     m_objectMap[object] = ret;

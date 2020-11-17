@@ -207,7 +207,7 @@ namespace base
 
                     acceptedSocket.blocking(false);
 
-                    auto con  = MemNewPool(POOL_NEW, Connection);
+                    auto con = new Connection;
                     con->id = ++m_nextConnectionID;
                     con->connectedTime.resetToNow();
                     con->lastMessageTime.resetToNow();
@@ -392,7 +392,7 @@ namespace base
                 con->rawSocket.close();
 
                 // cleanup object
-                MemDelete(con);
+                delete con;
             }
 
             //--

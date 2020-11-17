@@ -281,7 +281,7 @@ namespace base
                     return nullptr;
 
                 if (auto innerType = typeSystem.findType(innerTypeName))
-                    return Type(MemNew(NativeArrayType, innerType, maxSize));
+                    return new NativeArrayType(innerType, maxSize);
 
                 TRACE_ERROR("Unable to parse a array inner type from '{}'", innerTypeName);
                 return nullptr;

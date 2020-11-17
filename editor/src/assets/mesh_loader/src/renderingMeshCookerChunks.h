@@ -78,7 +78,7 @@ namespace rendering
         uint32_t m_totalVertices = 0;
         uint32_t m_totalIndices = 0;
 
-        struct SourceChunkInfo
+        struct SourceChunkInfo : public mem::GlobalPoolObject<POOL_MESH_BUILDER>
         {
             Array<MeshRawChunkData> vertexDataStreams;
             MeshStreamMask vertexDataStreamMask;

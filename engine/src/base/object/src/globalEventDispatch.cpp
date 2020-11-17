@@ -110,7 +110,7 @@ namespace base
                     }
                 }
 
-                auto* list = MemNewPool(POOL_EVENTS, DispatchList, name).ptr;
+                auto list = new DispatchList(name);
                 m_lists.pushBack(list);
                 list->add(listener);
             }
@@ -158,7 +158,7 @@ namespace base
                     KeyEntry* key = nullptr;
                     if (!m_keyMaps.find(listener->key(), key))
                     {
-                        key = MemNewPool(POOL_EVENTS, KeyEntry, listener->key());
+                        key = new KeyEntry(listener->key());
                         m_keyMaps[listener->key()] = key;
                     }
 

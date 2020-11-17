@@ -298,7 +298,7 @@ namespace rendering
         }
 
         // create the holder object
-        auto ret = MemNew(WindowWinApi, owner);
+        auto ret = new WindowWinApi(owner);
         ret->m_hWnd = hWnd;
         ret->m_currentPixelScale = pixelScale;
         ret->m_currentTitle = creationInfo.m_windowTitle;
@@ -319,7 +319,7 @@ namespace rendering
             ret->m_inputContext = base::input::IContext::CreateNativeContext((uint64_t)hWnd, 0, creationInfo.m_windowInputContextGameMode);
 
         // bind data
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)ret.ptr);
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)ret);
         return ret;
     }
 
@@ -1094,7 +1094,7 @@ namespace rendering
                 if (wnd->handle() == (HWND)handle)
                 {
                     m_windows.remove(wnd);
-                    MemDelete(wnd);
+                    delete wnd;
                 }
             }
         }
@@ -1290,10 +1290,10 @@ namespace rendering
 
     WindowManager* WindowManager::Create(bool apiNeedsWindowForOutput)
     {
-        auto ret = MemNew(WindowManagerWinApi);
+        auto ret = new WindowManagerWinApi;
         if (ret->initialize(apiNeedsWindowForOutput))
             return ret;
-        MemDelete(ret.ptr);
+        delete ret;
         return nullptr;
     }
 

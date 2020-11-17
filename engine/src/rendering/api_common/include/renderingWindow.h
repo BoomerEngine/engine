@@ -17,7 +17,7 @@ namespace rendering
 
     // window manager for rendering
     // NOTE: all windows are strictly main thread only
-    class RENDERING_API_COMMON_API WindowManager : public base::NoCopy
+    class RENDERING_API_COMMON_API WindowManager : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_WINDOW>
     {
     public:
         virtual ~WindowManager();

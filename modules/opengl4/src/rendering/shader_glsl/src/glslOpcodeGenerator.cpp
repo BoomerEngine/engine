@@ -1011,7 +1011,7 @@ namespace rendering
             // create new entry
             if (!entry)
             {
-                entry = MemNew(Function, key);
+                entry = new Function(key);
                 m_exportedFunctionToProcess.push(entry); // we need to process this function
                 m_exportedFunctions.pushBack(entry);
                 m_exportedFunctionsMap[keyHash] = entry;

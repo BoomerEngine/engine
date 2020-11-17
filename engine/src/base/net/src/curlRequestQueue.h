@@ -59,7 +59,7 @@ namespace base
         //---
 
         /// a single pending CURL request
-        class Request : public base::NoCopy
+        class Request : public base::NoCopy, public mem::GlobalPoolObject<POOL_HTTP_REQUEST>
         {
         public:
             Request(CURL* handle, const StringBuf& url, const StringBuf& fields, uint32_t timeout, RefWeakPtr<MultiConnection> owner, http::Method method, const http::TRequestResponseFunc& callback);

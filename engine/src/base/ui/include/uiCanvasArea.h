@@ -111,7 +111,7 @@ namespace ui
         void statusMessage(base::StringID id, base::StringView txt, base::Color color = base::Color::WHITE, float decayTime = 3.0f);
 
     protected:
-        struct ElementProxy
+        struct ElementProxy : public base::mem::GlobalPoolObject<POOL_CANVAS>
         {
             CanvasAreaElementPtr element;
             Position virtualPlacement;

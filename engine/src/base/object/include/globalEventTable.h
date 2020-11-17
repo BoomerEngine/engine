@@ -35,7 +35,7 @@ namespace base
         void unbind(GlobalEventKey key, StringID name);
 
     protected:
-        struct Table
+        struct Table : public mem::GlobalPoolObject<POOL_EVENTS>
         {
             base::Array<GlobalEventListenerPtr> entries;
         };

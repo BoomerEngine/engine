@@ -92,7 +92,7 @@ namespace base
 
             //--
 
-            struct LocalJobInfo : public NoCopy
+            struct LocalJobInfo : public NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
             {
                 ImportJobInfo info;
             };

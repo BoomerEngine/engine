@@ -33,7 +33,7 @@ namespace rendering
 
         /// canvas renderer - hosts all necessary shaders and data to render canvas
         /// NOTE: this class must be externally synchronized as it's single thread only
-        class RENDERING_CANVAS_API CanvasRenderer : public IDeviceObject
+        class RENDERING_CANVAS_API CanvasRenderer : public IDeviceObject, public base::mem::GlobalPoolObject<POOL_CANVAS>
         {
         public:
             CanvasRenderer();

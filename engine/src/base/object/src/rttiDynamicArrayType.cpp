@@ -339,7 +339,7 @@ namespace base
                     return nullptr;
 
                 if (auto innerType = typeSystem.findType(innerTypeName))
-                    return Type(MemNew(DynamicArrayType, innerType));
+                    return new DynamicArrayType(innerType);
 
                 TRACE_ERROR("Unable to parse a array inner type from '{}'", innerTypeName);
                 return nullptr;

@@ -34,13 +34,13 @@ namespace rendering
 
         base::app::ServiceInitializationResult CanvasRenderingService::onInitializeService(const base::app::CommandLine& cmdLine)
         {
-            m_renderer = MemNew(CanvasRenderer);
+            m_renderer = new CanvasRenderer;
             return base::app::ServiceInitializationResult::Finished;
         }
 
         void CanvasRenderingService::onShutdownService()
         {
-            MemDelete(m_renderer);
+            delete m_renderer;
             m_renderer = nullptr;
         }
 

@@ -23,7 +23,7 @@ namespace base
 
         void IMetadata::RegisterType(rtti::TypeSystem& typeSystem)
         {
-            Type classType = MemNew(rtti::NativeClass, "base::rtti::IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code());
+            Type classType = new rtti::NativeClass("base::rtti::IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code());
             //auto baseClassType = typeSystem.findClass("base::IObject"_id);
             //classType->baseClass(baseClassType);
             typeSystem.registerType(classType);
@@ -57,7 +57,7 @@ namespace base
 
         void ShortTypeNameMetadata::RegisterType(rtti::TypeSystem& typeSystem)
         {
-            auto classType = MemNew(rtti::NativeClass, "base::rtti::ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code());
+            auto classType = new rtti::NativeClass("base::rtti::ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code());
             classType->bindCtorDtor<ShortTypeNameMetadata>();
             auto baseClassType = typeSystem.findClass("rtti::IMetadata"_id);
             classType->baseClass(baseClassType.ptr());

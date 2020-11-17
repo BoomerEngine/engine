@@ -32,7 +32,7 @@ namespace base
 
         void FunctionCodeBlock::release()
         {
-            MemDelete(this);
+            delete this;
         }
 
         void FunctionCodeBlock::disableAllBreakpoints()
@@ -1091,7 +1091,7 @@ namespace base
 
         FunctionCodeBlock* FunctionCodeBlock::Create(const StubFunction* func, const StubClass* funcClass, IFunctionCodeStubResolver& stubResolver)
         {
-            auto ret = MemNewPool(POOL_SCRIPTS, FunctionCodeBlock);
+            auto ret = new FunctionCodeBlock;
             ret->m_name = func->name;
             ret->m_codeHash = func->codeHash;
             ret->m_className = funcClass ? funcClass->name : StringID();
@@ -1116,7 +1116,7 @@ namespace base
             if (!codeWriter.finalizeJumps())
             {
                 TRACE_ERROR("{}: error: failed to fixup jumps in the function '{}'", func->location, func->name);
-                MemDelete(ret.ptr);
+                delete ret;
                 return nullptr;
             }
 

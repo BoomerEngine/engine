@@ -110,7 +110,7 @@ namespace application
                 {
                     auto lock = base::CreateLock(m_allErrorsLock);
 
-                    auto errorInfo = MemNew(ErrorInfo).ptr;
+                    auto errorInfo = new ErrorInfo;
                     errorInfo->line = line;
                     errorInfo->file = base::StringBuf(file);
                     errorInfo->text = base::StringBuf(text);
@@ -155,7 +155,7 @@ namespace application
         std::atomic<uint32_t> m_numErrors = 0;
         std::atomic<uint32_t> m_numWarnings = 0;
 
-        struct ErrorInfo
+        struct ErrorInfo : public mem::GlobalPoolObject<>
         {
             uint32_t line = 0;
             base::StringBuf file;

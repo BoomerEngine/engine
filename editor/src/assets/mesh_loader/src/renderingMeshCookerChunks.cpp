@@ -378,7 +378,7 @@ namespace rendering
 
     void BuildChunk::addChunk(const ImportChunk& sourceChunk)
     {
-        auto info = MemNew(SourceChunkInfo);
+        auto info = new SourceChunkInfo;
         info->vertexDataStreams = sourceChunk.vertexDataStreams;
         info->vertexDataStreamMask = sourceChunk.vertexDataStreamMask;
         info->numVertices = sourceChunk.numVertices;
@@ -554,8 +554,8 @@ namespace rendering
             if (chunk->m_format == format && chunk->m_material == material && chunk->m_detailMask == detailMask && chunk->m_renderMask == renderMask)
                 return chunk;
 
-        auto chunk = MemNew(BuildChunk, format, material, renderMask, detailMask);
-        m_buildChunks.pushBack(chunk);
+        auto chunk = new BuildChunk(format, material, renderMask, detailMask);
+        m_buildChunks.pushBack(NoAddRef(chunk));
         return chunk;
     }
 

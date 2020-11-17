@@ -33,7 +33,7 @@ namespace rendering
 
             // delete pooled buffers
             for (auto ptr  : m_freeBuffers)
-                MemDelete(ptr);
+                delete ptr;
             m_freeBuffers.clear();
         }
 
@@ -49,7 +49,7 @@ namespace rendering
             if (buffer->size() < m_pageSize)
             {
                 TRACE_INFO("Transient buffer discarded since it's too small now");
-                MemDelete(buffer);
+                delete buffer;
             }
             else
             {
@@ -74,7 +74,7 @@ namespace rendering
 
                 // our all current free buffers are to be discarded
                 for (auto ptr  : m_freeBuffers)
-                    MemDelete(ptr);
+                    delete ptr;
                 m_freeBuffers.clear();
             }
 
@@ -89,7 +89,7 @@ namespace rendering
             }
 
             // create a new transient buffer
-            auto buffer  = MemNew(TransientBuffer, this, m_pageSize, m_bufferType);
+            auto buffer = new TransientBuffer(this, m_pageSize, m_bufferType);
             m_numAllocatedBuffers += 1;
             return buffer;
         }

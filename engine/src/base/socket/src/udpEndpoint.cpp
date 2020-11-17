@@ -71,7 +71,7 @@ namespace base
                 }
                 else
                 {
-                    m_blockAllocator = MemNew(BlockAllocator);
+                    m_blockAllocator = new BlockAllocator;
                     m_externalBlockAllocator = false;
                 }
             }
@@ -79,7 +79,7 @@ namespace base
             Endpoint::~Endpoint()
             {
                 if (m_externalBlockAllocator)
-                    MemDelete(m_blockAllocator);
+                    delete m_blockAllocator;
 
                 m_externalBlockAllocator = false;
                 m_blockAllocator = nullptr;
@@ -166,7 +166,7 @@ namespace base
                 TRACE_INFO("Connecting to '{}' (ID {})", address, id);
 
                 // create connection object
-                auto connection = MemNew(Connection);
+                auto connection = new Connection;
                 connection->address = address;
                 connection->id = id;
                 connection->mtuSize = m_config.maxMtu;
@@ -187,7 +187,7 @@ namespace base
                 }
 
                 // create a pending connection entry
-                auto pendingConnection  = MemNew(PendingConnection);
+                auto pendingConnection = new PendingConnection;
                 pendingConnection->retriesLeft = m_config.maxConnectionRetries;
                 pendingConnection->connectionTimeout = (overrideTimeout != INDEX_MAX) ? overrideTimeout : m_config.timeoutProbeIntervalMs;
                 pendingConnection->connection = connection;
@@ -235,7 +235,7 @@ namespace base
                     if (!pending->connection)
                     {
                         m_pendingConnections.eraseUnordered(i);
-                        MemDelete(pending);
+                        delete pending;
                     }
                 }
             }
@@ -679,7 +679,7 @@ namespace base
                         {
                             if (m_pendingConnections[i]->connection == connection)
                             {
-                                MemDelete(m_pendingConnections[i]);
+                                delete m_pendingConnections[i];
                                 m_pendingConnections.eraseUnordered(i);
                             }
                         }
@@ -842,7 +842,7 @@ namespace base
                         TRACE_INFO("UDP Endpoint: Received packet from unknown endpoint '{}'", packet->address());
 
                         // crate connection entry
-                        connection = MemNew(Connection);
+                        connection = new Connection;
                         connection->timeoutPoint = NativeTimePoint::Now() + (m_config.connectionTimeoutMs / 1000.0);
                         connection->nextPingPoint = NativeTimePoint::Now() + (m_config.timeoutProbeIntervalMs / 1000.0);
                         connection->mtuSize = m_config.maxMtu;

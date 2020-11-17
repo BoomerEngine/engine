@@ -61,19 +61,19 @@ namespace rendering
             : m_driver(drv)
         {
             // create the buffer pools
-            m_constantsBufferPool = MemNew(TransientBufferAllocator, drv, cvConstantsBuffer.get().m_size << 10, cvConstantsBuffer.get().m_increment << 10, TransientBufferType::Constants);
-            m_stagingBufferPool = MemNew(TransientBufferAllocator, drv, cvStatingBuffer.get().m_size << 10, cvStatingBuffer.get().m_increment << 10, TransientBufferType::Staging);
-            m_geometryBufferPool = MemNew(TransientBufferAllocator, drv, cvGeometryBuffer.get().m_size << 10, cvGeometryBuffer.get().m_increment << 10, TransientBufferType::Geometry);
-            m_storageBufferPool = MemNew(TransientBufferAllocator, drv, cvStorageBuffer.get().m_size << 10, cvStorageBuffer.get().m_increment << 10, TransientBufferType::Storage);
+            m_constantsBufferPool = new TransientBufferAllocator(drv, cvConstantsBuffer.get().m_size << 10, cvConstantsBuffer.get().m_increment << 10, TransientBufferType::Constants);
+            m_stagingBufferPool = new TransientBufferAllocator(drv, cvStatingBuffer.get().m_size << 10, cvStatingBuffer.get().m_increment << 10, TransientBufferType::Staging);
+            m_geometryBufferPool = new TransientBufferAllocator(drv, cvGeometryBuffer.get().m_size << 10, cvGeometryBuffer.get().m_increment << 10, TransientBufferType::Geometry);
+            m_storageBufferPool = new TransientBufferAllocator(drv, cvStorageBuffer.get().m_size << 10, cvStorageBuffer.get().m_increment << 10, TransientBufferType::Storage);
         }
 
         TransientAllocator::~TransientAllocator()
         {
             // free the pools
-            MemDelete(m_geometryBufferPool);
-            MemDelete(m_stagingBufferPool);
-            MemDelete(m_storageBufferPool);
-            MemDelete(m_constantsBufferPool);
+            delete m_geometryBufferPool;
+            delete m_stagingBufferPool;
+            delete m_storageBufferPool;
+            delete m_constantsBufferPool;
         }
 
         TransientFrame* TransientAllocator::buildFrame(const TransientFrameBuilder &info)
@@ -82,7 +82,7 @@ namespace rendering
 
             // create a frame object
             // TODO: pool if this hurts
-            auto frame  = MemNew(TransientFrame);
+            auto frame  = new TransientFrame;
 
             // create buffers, NOTE: allocation of size zero still works, just there's no actual buffer inside
             {

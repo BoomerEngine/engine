@@ -20,7 +20,7 @@ namespace base
         namespace prv
         {
             /// a watcher listener that sets the atomic flag
-            class AtomicTogglerWatcher : public IDirectoryWatcherListener
+            class AtomicTogglerWatcher : public IDirectoryWatcherListener, public mem::GlobalPoolObject<POOL_IO>
             {
             public:
                 AtomicTogglerWatcher(std::atomic<uint32_t>& flag)
@@ -50,7 +50,7 @@ namespace base
             if (m_watcher)
             {
                 // create and attach listener
-                m_listener = MemNew(prv::AtomicTogglerWatcher, m_modified);
+                m_listener = new prv::AtomicTogglerWatcher(m_modified);
                 m_watcher->attachListener(m_listener);
             }
         }
@@ -64,7 +64,7 @@ namespace base
                 if (m_listener != nullptr)
                 {
                     m_watcher->dettachListener(m_listener);
-                    MemDelete(m_listener);
+                    delete m_listener;
                     m_listener = nullptr;
                 }
 

@@ -16,7 +16,7 @@ namespace base
         //--
 
         // a helper for allocating network block
-        class BASE_SOCKET_API BlockAllocator : public NoCopy
+        class BASE_SOCKET_API BlockAllocator : public NoCopy, public mem::GlobalPoolObject<POOL_NET>
         {
         public:
             BlockAllocator();

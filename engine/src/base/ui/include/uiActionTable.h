@@ -57,7 +57,7 @@ namespace ui
     };
 
     /// action info
-    struct ActionInfo
+    struct ActionInfo : public base::mem::GlobalPoolObject<POOL_ACTIONS>
     {
         base::StringID name;
         base::Variant data; // additional data for command function, passed to all callbacks
@@ -78,7 +78,7 @@ namespace ui
 
     /// bindings for commands, determines actions to be performed when command occurs
     /// also defines conditional evaluators for commands
-    class BASE_UI_API ActionTable : public base::NoCopy
+    class BASE_UI_API ActionTable : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_ACTIONS>
     {
     public:
         ActionTable(IElement* owner);

@@ -131,7 +131,7 @@ namespace base
             for (auto& block : graph.blocks())
             {
                 // create node mapping
-                auto node  = MemNew(Node, block.get());
+                auto node = new Node(block.get());
                 m_nodes.pushBack(node);
                 m_nodeMap.set(block.get(), node);
 

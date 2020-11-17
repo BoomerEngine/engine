@@ -32,9 +32,8 @@ namespace base
         /// NOTE: all memory is released, use reset() to preserve the memory
         void clear();
 
-        //! Delete (via MemDelete) the children and clear the map
+        //! Delete the children and clear the map
         //! NOTE: will not compile if V is not a pointer
-        //! NOTE: the V elements should be allocated with MemNew
         void clearPtr();
 
         //! Clear the whole hash map without freeing the memory

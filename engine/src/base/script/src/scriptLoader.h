@@ -46,7 +46,7 @@ namespace base
             void createExports();
 
         private:
-            struct Symbol
+            struct Symbol : public base::mem::GlobalPoolObject<POOL_SCRIPT_STREAM>
             {
                 StubType m_stubType;
                 StringID m_fullName; // name in the scripts, note can be engine name
