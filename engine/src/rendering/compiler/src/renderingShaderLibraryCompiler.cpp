@@ -35,10 +35,6 @@ namespace rendering
 
         //---
 
-        static base::mem::PoolID POOL_SHADER_COMPILATION("Rendering.ShaderCompilation");
-
-        //--
-
         class CommandErrorForwarder : public base::parser::IErrorReporter
         {
         public:

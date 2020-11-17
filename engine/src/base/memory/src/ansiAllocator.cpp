@@ -18,13 +18,7 @@ namespace base
     namespace mem
     {
 
-        AnsiAllocator::AnsiAllocator()
-        {
-        }
-
-        AnsiAllocator::~AnsiAllocator()
-        {
-        }
+        //--
 
         void AnsiAllocator::printLeaks()
         {
@@ -36,13 +30,12 @@ namespace base
             // nothing
         }
 
-        void* AnsiAllocator::allocate(PoolID id, size_t size, size_t alignment, const char* fileName, uint32_t fileLine, const char* typeName)
+        void* AnsiAllocator::allocate(PoolTag id, size_t size, size_t alignment, const char* typeName)
         {
     #if defined(PLATFORM_MSVC) && defined(BUILD_DEBUG)
-            return _aligned_malloc_dbg(size, alignment, fileName, fileLine);
+            return _aligned_malloc_dbg(size, alignment, typeName, 0);
     #elif defined(PLATFORM_MSVC)
-            return _aligned_malloc_dbg(size, alignment, fileName, fileLine);
-            //return _aligned_malloc(size, alignment);
+            return _aligned_malloc(size, alignment);
     #else
             return aligned_alloc(alignment, size);
     #endif
@@ -63,7 +56,7 @@ namespace base
             }
         }
 
-        void* AnsiAllocator::reallocate(PoolID id, void* mem, size_t newSize, size_t alignment, const char* fileName, uint32_t fileLine, const char* typeName)
+        void* AnsiAllocator::reallocate(PoolTag id, void* mem, size_t newSize, size_t alignment, const char* typeName)
         {
             if (newSize == 0)
             {
@@ -72,19 +65,18 @@ namespace base
             }
             else if (mem == nullptr)
             {
-                return allocate(id, newSize, alignment, fileName, fileLine, typeName);
+                return allocate(id, newSize, alignment, typeName);
             }
             else
             {
 #if defined(PLATFORM_MSVC)
     #if defined(BUILD_DEBUG)
-                void* ret = _aligned_realloc_dbg(mem, newSize, alignment, __FILE__, __LINE__);
+                void* ret = _aligned_realloc_dbg(mem, newSize, alignment, typeName, 0);
     #else
-                void* ret = _aligned_realloc_dbg(mem, newSize, alignment, __FILE__, __LINE__);
-                //void* ret = _aligned_realloc(mem, newSize, alignment);
+                void* ret = _aligned_realloc(mem, newSize, alignment);
     #endif
 #elif defined(PLATFORM_POSIX)
-                void* ret = allocate(id, newSize, alignment, fileName, fileLine, typeName);
+                void* ret = allocate(id, newSize, alignment);
                 size_t currentSize = malloc_usable_size(mem);
                 memcpy(ret, mem, std::min<size_t>(currentSize, newSize));
                 deallocate(mem);
@@ -95,6 +87,8 @@ namespace base
                 return ret;
             }
         }
+
+        //--
 
     } // mem
 } // base

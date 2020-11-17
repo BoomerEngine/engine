@@ -20,7 +20,7 @@ namespace rendering
         
         ///---
 
-        Image::Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, base::mem::PoolID poolID)
+        Image::Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID)
             : Object(drv, ObjectType::Image)
             , m_poolID(poolID)
             , m_setup(setup)
@@ -41,7 +41,7 @@ namespace rendering
             }
         }
 
-        Image::Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, base::mem::PoolID poolID)
+        Image::Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
             : Object(drv, ObjectType::Image)
             , m_poolID(poolID)
             , m_setup(setup)
@@ -349,15 +349,15 @@ namespace rendering
                 return nullptr;
 
             // determine ID of the pool
-            auto poolID = POOL_GL_STATIC_TEXTURES;
+            auto poolID = POOL_API_STATIC_TEXTURES;
             if (setup.allowRenderTarget)
-                poolID = POOL_GL_RENDER_TARGETS;
+                poolID = POOL_API_RENDER_TARGETS;
 
             // create the image wrapper
             return MemNew(Image, drv, setup, sourceData, poolID);
         }
 
-        Image* Image::CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, base::mem::PoolID poolID)
+        Image* Image::CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
         {
             return MemNew(Image, drv, setup, id, poolID);
         }

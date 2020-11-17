@@ -25,14 +25,14 @@ namespace base
         {
         public:
             PageAllocator();
-            PageAllocator(PoolID pool, uint32_t pageSize, uint32_t preallocatedPages, uint32_t freePagesToKeep);
+            PageAllocator(PoolTag pool, uint32_t pageSize, uint32_t preallocatedPages, uint32_t freePagesToKeep);
             ~PageAllocator(); // asserts if we destroy allocator while there are still pages in use
 
             //! is this allocator initialized ?
             INLINE bool initialized() const { return m_pageSize != 0; }
 
             //! get pool ID this page allocator is for
-            INLINE PoolID poolID() const { return m_poolID; }
+            INLINE PoolTag poolID() const { return m_poolID; }
 
             //! get size of single page, NOTE: this may be aligned to system page size (usually 4KB)
             INLINE uint32_t pageSize() const { return m_pageSize; }
@@ -55,7 +55,7 @@ namespace base
             //---
 
             //! initialize page allocator 
-            void initialize(PoolID pool = POOL_TEMP, uint32_t pageSize = 65536, uint32_t preallocatedPages = 0, uint32_t freePagesToKeep = INDEX_MAX); // NOTE: page size will be usually aligned to the minimal system page size, like 4KB
+            void initialize(PoolTag pool = POOL_TEMP, uint32_t pageSize = 65536, uint32_t preallocatedPages = 0, uint32_t freePagesToKeep = INDEX_MAX); // NOTE: page size will be usually aligned to the minimal system page size, like 4KB
 
             //---
 
@@ -78,7 +78,7 @@ namespace base
             //---
 
             //! get default allocator for given pool (64KB pages, small retention, good for general purpose stuff)
-            static PageAllocator& GetDefaultAllocator(PoolID pool = POOL_TEMP);
+            static PageAllocator& GetDefaultAllocator(PoolTag pool = POOL_TEMP);
 
             //--
 
@@ -94,7 +94,7 @@ namespace base
             FreePage* m_outstandingFreePageList = nullptr;
             FreePage* m_preallocatedFreePageList = nullptr;
             
-            PoolID m_poolID;
+            PoolTag m_poolID;
             uint32_t m_numPages = 0;
             uint32_t m_maxPages = 0;
             uint32_t m_numFreePages = 0;

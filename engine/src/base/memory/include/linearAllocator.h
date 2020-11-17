@@ -19,12 +19,12 @@ namespace base
         class BASE_MEMORY_API LinearAllocator : public base::NoCopy
         {
         public:
-            LinearAllocator(PoolID pool = POOL_TEMP, uint32_t tailReserve = 0); // use default page allocator for given pool, all memory will be released by OUR destructor
+            LinearAllocator(PoolTag pool = POOL_TEMP, uint32_t tailReserve = 0); // use default page allocator for given pool, all memory will be released by OUR destructor
             LinearAllocator(PageAllocator& pageAllocator, uint32_t tailReserve = 0); // use specific page allocator
             ~LinearAllocator();
 
             /// get the memory pool
-            INLINE PoolID poolID() const { return m_poolId; }
+            INLINE PoolTag poolID() const { return m_poolId; }
 
             /// get number of allocations done
             INLINE uint32_t numAllocations() const { return m_numAllocations; }
@@ -146,7 +146,7 @@ namespace base
             uint64_t m_totalWastedMemory = 0;
             uint32_t m_tailReserve = 0;
 
-            PoolID m_poolId;
+            PoolTag m_poolId;
 
             PageAllocator* m_pageAllocator = nullptr;
             PageCollection* m_pageCollection = nullptr;

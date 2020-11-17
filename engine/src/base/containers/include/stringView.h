@@ -209,10 +209,10 @@ namespace base
         //-----------------------------------------------------------------------------
 
         // create a memory buffer, NOTE: no null termination
-        INLINE Buffer toBuffer() const;
+        INLINE Buffer toBuffer(PoolTag tag = POOL_STRINGS) const;
 
         // create a memory buffer, NOTE: no null termination
-        INLINE Buffer toBufferWithZero() const;
+        INLINE Buffer toBufferWithZero(PoolTag tag = POOL_STRINGS) const;
 
         //-----------------------------------------------------------------------------
 

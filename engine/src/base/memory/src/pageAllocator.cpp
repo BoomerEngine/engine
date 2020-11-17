@@ -29,7 +29,7 @@ namespace base
         {
         }
 
-        PageAllocator::PageAllocator(PoolID pool, uint32_t pageSize, uint32_t preallocatedPages, uint32_t freePagesToKeep)
+        PageAllocator::PageAllocator(PoolTag pool, uint32_t pageSize, uint32_t preallocatedPages, uint32_t freePagesToKeep)
         {
             initialize(pool, pageSize, preallocatedPages, freePagesToKeep);
         }
@@ -43,7 +43,7 @@ namespace base
             if (m_preallocatedMemoryStart)
             {
                 const auto preallocatedMemorySize = (m_preallocatedMemoryEnd - m_preallocatedMemoryStart);
-                AFreeSystemMemory(m_preallocatedMemoryStart, preallocatedMemorySize);
+                FreeSystemMemory(m_preallocatedMemoryStart, preallocatedMemorySize);
 
                 totalFreedMemory += preallocatedMemorySize;
             }
@@ -51,14 +51,14 @@ namespace base
             while (m_outstandingFreePageList)
             {
                 auto* next = m_outstandingFreePageList;
-                AFreeSystemMemory(m_outstandingFreePageList, m_pageSize);
+                FreeSystemMemory(m_outstandingFreePageList, m_pageSize);
                 m_outstandingFreePageList = next;
             }
 
             prv::TheInternalPoolStats.notifyFree(m_poolID, totalFreedMemory);
         }
 
-        void PageAllocator::initialize(PoolID pool /*= POOL_TEMP*/, uint32_t pageSize /*= 65536*/, uint32_t preallocatedPages /*= 0*/, uint32_t freePagesToKeep /*= INDEX_MAX*/)
+        void PageAllocator::initialize(PoolTag pool /*= POOL_TEMP*/, uint32_t pageSize /*= 65536*/, uint32_t preallocatedPages /*= 0*/, uint32_t freePagesToKeep /*= INDEX_MAX*/)
         {
             ASSERT_EX(m_pageSize == 0, "Page allocator already initialized");
 
@@ -75,7 +75,7 @@ namespace base
             {
                 const auto memorySize = (uint64_t)m_pageSize * (uint64_t)preallocatedPages; // we may have > 4GB in pages...
                 const auto largePages = false;// memorySize >= (256ULL << 20); // arbitrary choice..
-                m_preallocatedMemoryStart = (uint8_t*)AAllocSystemMemory(memorySize, largePages);
+                m_preallocatedMemoryStart = (uint8_t*)AllocSystemMemory(memorySize, largePages);
                 m_preallocatedMemoryEnd = m_preallocatedMemoryStart + memorySize;
 
 #ifdef PROTECT_FREE_PAGES
@@ -157,7 +157,7 @@ namespace base
             }
 
             // no pages in free list, allocate a new one from system memory
-            void* systemPage = AAllocSystemMemory(m_pageSize, false);
+            void* systemPage = AllocSystemMemory(m_pageSize, false);
             DEBUG_CHECK_EX(nullptr != systemPage, "Out of memory");
             if (nullptr == systemPage)
             {
@@ -165,7 +165,7 @@ namespace base
                 {
                     auto lock = CreateLock(m_lock);
                     m_numPages -= 1;
-                    TRACE_ERROR("Out of memory when allocating page in page allocator, pool {}, num pages: {}, page size: {}", m_poolID.name(), m_numPages, m_pageSize);
+                    TRACE_ERROR("Out of memory when allocating page in page allocator, pool {}, num pages: {}, page size: {}", (int)m_poolID, m_numPages, m_pageSize);
                 }
 
                 return nullptr;
@@ -229,7 +229,7 @@ namespace base
 
             // release the page completely
             if (releasePageToSystem)
-                AFreeSystemMemory(page, m_pageSize);
+                FreeSystemMemory(page, m_pageSize);
         }
 
         void PageAllocator::retainCount(uint32_t retain)
@@ -266,7 +266,7 @@ namespace base
             {
                 auto* mem = pageListToFree;
                 pageListToFree = pageListToFree->next;
-                AFreeSystemMemory(mem, m_pageSize);
+                FreeSystemMemory(mem, m_pageSize);
             }
         }
 
@@ -279,18 +279,18 @@ namespace base
                 DECLARE_SINGLETON(DefaultPageAllocators);
 
             public:
-                PageAllocator& getAllocataor(PoolID pool)
+                PageAllocator& getAllocataor(PoolTag pool)
                 {
                     auto lock = CreateLock(m_lock);
 
-                    auto& allocator = m_allocators[pool.value()];
+                    auto& allocator = m_allocators[pool];
                     if (!allocator.initialized())
                     {
                         uint32_t pageSize = 64 * 1024;
                         uint32_t preallocatedPages = 0;
                         uint32_t freePagesToKeep = 64;
 
-                        if (pool.value() == POOL_TEMP)
+                        if (pool == POOL_TEMP)
                             preallocatedPages = 256;  // 16 MB of temp pages
 
                         allocator.initialize(pool, pageSize, preallocatedPages, freePagesToKeep);
@@ -311,12 +311,12 @@ namespace base
 
         } // helper
 
-        PageAllocator& PageAllocator::GetDefaultAllocator(PoolID pool /*= POOL_TEMP*/)
+        PageAllocator& PageAllocator::GetDefaultAllocator(PoolTag pool /*= POOL_TEMP*/)
         {
             return helper::DefaultPageAllocators::GetInstance().getAllocataor(pool);
         }
 
-        PageAllocator& DefaultPageAllocator(PoolID pool /*= POOL_TEMP*/)
+        PageAllocator& DefaultPageAllocator(PoolTag pool /*= POOL_TEMP*/)
         {
             return helper::DefaultPageAllocators::GetInstance().getAllocataor(pool);
         }

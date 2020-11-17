@@ -30,7 +30,7 @@ namespace base
     void StringBuilder::clear()
     {
         if (m_buf != m_inlineBuf)
-            MemFree(m_buf);
+            mem::GlobalPool<POOL_STRING_BUILDER, char>::Free(m_buf);
 
         m_buf = m_inlineBuf;
         m_inlineBuf[0] = 0;
@@ -117,12 +117,12 @@ namespace base
             if (m_buf != m_inlineBuf)
             {
                 // buffer was already allocated, use the realloc
-                m_buf = (char*) MemRealloc(POOL_STRINGS, m_buf, sizeof(char) * m_capacity, 1);
+                m_buf = mem::GlobalPool<POOL_STRING_BUILDER, char>::Resize(m_buf, m_capacity, 1);
             }
             else
             {
                 // we are moving out of the internal memory, allocate a new buffer on the heap
-                m_buf = (char*) MemAlloc(POOL_STRINGS, sizeof(char) * m_capacity, 1);
+                m_buf = mem::GlobalPool<POOL_STRING_BUILDER, char>::Alloc(m_capacity, 1);
                 memcpy( m_buf, m_inlineBuf, sizeof(char) * (m_length + 1)); // copy null terminator as well
             }
         }

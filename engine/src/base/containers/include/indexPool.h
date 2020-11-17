@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/memory/include/poolID.h"
-
 namespace base
 {
     ///--
@@ -18,7 +16,7 @@ namespace base
     struct BASE_CONTAINERS_API IndexPool : public NoCopy
     {
     public:
-        IndexPool(mem::PoolID pool);
+        IndexPool();
         ~IndexPool();
 
         // maximum capacity
@@ -64,8 +62,6 @@ namespace base
         uint64_t* m_elementBitMap = nullptr;
         uint64_t* m_elementBitMapEnd = nullptr;
         uint32_t m_freeBucketIndex = 0;
-
-        mem::PoolID m_pool;
 
         ALWAYS_INLINE bool setBit(uint32_t index)
         {

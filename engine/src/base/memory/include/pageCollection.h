@@ -24,7 +24,7 @@ namespace base
         class BASE_MEMORY_API PageCollection : public base::NoCopy
         {
         public:
-            PageCollection(PoolID pool = POOL_TEMP); // use default allocator for given pool
+            PageCollection(PoolTag pool = POOL_TEMP); // use default allocator for given pool
             PageCollection(PageAllocator& pageAllocator); // use specific page allocator
             ~PageCollection();
 

@@ -38,7 +38,7 @@ namespace base
         ///--
 
         // create instance buffer from this layout
-        InstanceBufferPtr createInstance(const mem::PoolID poolID);
+        InstanceBufferPtr createInstance(PoolTag poolID = POOL_INSTANCE_BUFFER);
 
     private:
         struct Group

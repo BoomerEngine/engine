@@ -135,6 +135,9 @@ namespace rendering
         CanvasRenderer::~CanvasRenderer()
         {
             destroyDeviceResources();
+
+            base::mem::FreeBlock(m_customHandlersFlatList);
+            m_customHandlersFlatList = nullptr;
         }
 
         //--
@@ -488,7 +491,7 @@ namespace rendering
             base::Array<base::SpecificClassType<ICanvasRendererCustomBatchHandler>> batchHandlerClasses;
             RTTI::GetInstance().enumClasses(batchHandlerClasses);
 
-            m_customHandlersFlatList = (ICanvasRendererCustomBatchHandler**)MemAlloc(POOL_TEMP, sizeof(ICanvasRendererCustomBatchHandler*) * (batchHandlerClasses.size() + 1), 8);
+            m_customHandlersFlatList = base::mem::GlobalPool<POOL_CANVAS, ICanvasRendererCustomBatchHandler*>::AllocN(batchHandlerClasses.size() + 1);
             memzero(m_customHandlersFlatList, sizeof(ICanvasRendererCustomBatchHandler*) * (batchHandlerClasses.size() + 1));
 
             short index = 1;

@@ -19,7 +19,7 @@ namespace base
 
         //--
 
-        PageCollection::PageCollection(PoolID pool /*= POOL_TEMP*/)
+        PageCollection::PageCollection(PoolTag pool /*= POOL_TEMP*/)
             : m_allocator(PageAllocator::GetDefaultAllocator(pool))
         {
             m_pageSize = m_allocator.pageSize();// -sizeof(PageInUse);
@@ -84,7 +84,7 @@ namespace base
                 if (alloc->freeFunc)
                     alloc->freeFunc(alloc->ptr, alloc->size, alloc->freeFuncUserData);
 
-                MemFree(alloc->ptr);
+                mem::FreeBlock(alloc->ptr);
 
                 m_outstandingAllocList = prev;
             }
@@ -164,7 +164,7 @@ namespace base
 
         void* PageCollection::allocateOustandingBlock(uint64_t size, uint32_t alignment, TOutstandingMemoryCleanupFunc freeFunc /*= nullptr*/, void* freeFuncUserData /*= nullptr*/)
         {
-            auto* block = MemAlloc(m_allocator.poolID(), size, alignment);
+            auto* block = AllocateBlock(m_allocator.poolID(), size, alignment, "OutstandingAlloc");
             if (nullptr == block)
                 return nullptr;
             

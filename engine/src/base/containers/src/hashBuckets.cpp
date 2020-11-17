@@ -25,7 +25,7 @@ namespace base
 
     void HashBuckets::Clear(HashBuckets*& data)
     {
-        MemFree(data);
+        mem::GlobalPool<POOL_HASH_BUCKETS>::Free(data);
         data = nullptr;
     }
 

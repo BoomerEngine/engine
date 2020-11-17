@@ -23,8 +23,6 @@ namespace ui
         namespace prv
         {
 
-            static base::mem::PoolID POOL_UI_STYLES("UI.Styles");
-
             struct ParsingContext : public base::NoCopy
             {
             public:
@@ -977,7 +975,7 @@ namespace ui
         {
             base::ScopeTimer timer;
 
-            base::mem::LinearAllocator mem(prv::POOL_UI_STYLES);
+            base::mem::LinearAllocator mem(POOL_UI_STYLES);
             prv::RawLibraryData rawData(mem);
             prv::ParsingContext pc(err, inc, rawData);
 

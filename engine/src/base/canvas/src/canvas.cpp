@@ -44,8 +44,7 @@ namespace base
 
         //--
 
-        static base::mem::PoolID POOL_RENDERING_CANVAS("Rendering.Canvas");
-        static base::mem::PageAllocator CanvasPageAllocator(POOL_RENDERING_CANVAS, 512 << 10, 32, 128);
+        static base::mem::PageAllocator CanvasPageAllocator(POOL_CANVAS, 512 << 10, 32, 128);
 
         //--
 
@@ -62,7 +61,7 @@ namespace base
             , m_alpha(1.0f)
             , m_glyphCachePageMask(0)
             , m_clearColor(0,0,0,0) // 0 alpha - not used
-            , m_customPayloadData(POOL_RENDERING_CANVAS)
+            , m_customPayloadData(POOL_CANVAS)
         {
             memset(m_imageRefBuckets, 0, sizeof(m_imageRefBuckets));
             memset(m_glyphPageToParamsIdMapping, 0xFF, sizeof(m_glyphPageToParamsIdMapping));

@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/system/include/algorithms.h"
-#include "poolID.h"
 
 namespace base
 {
@@ -25,7 +24,7 @@ namespace base
 	    class BASE_MEMORY_API StructurePoolBase : public NoCopy
         {
         public:
-            StructurePoolBase(PoolID poolId, uint32_t elementSize, uint32_t elementAlignment, uint32_t minPageCount=1, uint32_t elementsPerPage=0); // 0-auto
+            StructurePoolBase(PoolTag poolId, uint32_t elementSize, uint32_t elementAlignment, uint32_t minPageCount=1, uint32_t elementsPerPage=0); // 0-auto
 		    ~StructurePoolBase(); // asserts if all elements are not freed
 
             // elements allocated so far
@@ -72,7 +71,7 @@ namespace base
             void linkToFreeList(BlockHeader* block);
             void linkToFullList(BlockHeader* block);
 
-            PoolID m_poolId;
+            PoolTag m_poolId;
         
             uint32_t m_elementSize = 0;
             uint32_t m_elementAlignment = 0;
@@ -92,7 +91,7 @@ namespace base
         class StructurePool : public StructurePoolBase
         {
         public:
-            INLINE StructurePool(PoolID poolId = POOL_TEMP, uint32_t elementsPerPage = 0);
+            INLINE StructurePool(PoolTag poolId = POOL_TEMP, uint32_t elementsPerPage = 0);
 
             // allocate single element, will call constructor
             template<typename... Args>

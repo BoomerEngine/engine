@@ -24,7 +24,7 @@ namespace rendering
 
         m_bufferView = device()->createBuffer(m_creationInfo);
 
-        m_backingStorage = (uint8_t*)MemAlloc(POOL_TEMP, info.size, 16);
+        m_backingStorage = base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
         m_backingStorageEnd = m_backingStorage + info.size;
 
         m_structureGranularity = info.stride;
@@ -32,7 +32,7 @@ namespace rendering
 
     ManagedBuffer::~ManagedBuffer()
     {
-        MemFree(m_backingStorage);
+        base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Free(m_backingStorage);
         m_backingStorage = nullptr;
         m_backingStorageEnd = nullptr;
 

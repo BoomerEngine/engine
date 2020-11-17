@@ -16,13 +16,6 @@ namespace physics
     {
         //----
 
-        base::mem::PoolID POOL_PHYSICS_COLLISION("Physics.Collision");
-        base::mem::PoolID POOL_PHYSICS_TEMP("Physics.Temp");
-        base::mem::PoolID POOL_PHYSICS_SCENE("Physics.Scene");
-        base::mem::PoolID POOL_PHYSICS_RUNTIME("Physics.Runtime");
-
-        //----
-
         PhysicsSceneDesc::PhysicsSceneDesc()
             : m_type(PhysicsSceneType::Game)
         {}
@@ -34,12 +27,12 @@ namespace physics
         public:
             virtual void* allocate(size_t size, const char*, const char*, int) override
             {
-                return MemAlloc(POOL_PHYSICS_RUNTIME, size, 16);
+                return base::mem::GlobalPool<POOL_PHYSICS_RUNTIME>::Alloc(size, 16);
             }
 
             virtual void deallocate(void* ptr)
             {
-                MemFree(ptr);
+                base::mem::GlobalPool<POOL_PHYSICS_RUNTIME>::Free(ptr);
             }
         };
 

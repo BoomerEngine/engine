@@ -38,14 +38,6 @@ namespace base
 
         //-----------------------------------------------------------------------------
 
-        void* PersistentAlloc(size_t size, size_t alignment)
-        {
-            static auto thePersistentPool  = new LinearAllocator(POOL_PERSISTENT);
-            return thePersistentPool->alloc(size, alignment);
-        }
-
-        //-----------------------------------------------------------------------------
-
         void StartThreadAllocTracking()
         {
             //GetAllocator().startThreadTracking();
@@ -66,7 +58,7 @@ namespace base
             GetAllocator().validateHeap(nullptr);
         }
 
-        void* AllocateBlock(PoolID id, size_t size, size_t alignment, const char* debugFileName /*= nullptr*/, uint32_t debugLine /*= 0*/, const char* debugTypeName /*= nullptr*/)
+        void* AllocateBlock(PoolTag id, size_t size, size_t alignment, const char* typeName)
         {
             if (size >= MAX_MEM_SIZE)
             {
@@ -74,15 +66,15 @@ namespace base
                 return nullptr;
             }
 
-            return GetAllocator().allocate(id, size, alignment, debugFileName, debugLine, debugTypeName);
+            return GetAllocator().allocate(id, size, alignment, typeName);
         }
 
-        void FreeBlock(void* mem, const char* debugFileName /*= nullptr*/, uint32_t debugLine /*= 0*/)
+        void FreeBlock(void* mem)
         {
             return GetAllocator().deallocate(mem);
         }
 
-        void* ResizeBlock(PoolID id, void* mem, size_t size, size_t alignment, const char* debugFileName /*= nullptr*/, uint32_t debugLine /*= 0*/, const char* debugTypeName /*= nullptr*/)
+        void* ResizeBlock(PoolTag id, void* mem, size_t size, size_t alignment, const char* typeName)
         {
             if (size >= MAX_MEM_SIZE)
             {
@@ -90,7 +82,7 @@ namespace base
                 return nullptr;
             }
 
-            return GetAllocator().reallocate(id, mem, size, alignment, debugFileName, debugLine, debugTypeName);
+            return GetAllocator().reallocate(id, mem, size, alignment, typeName);
         }
 
         //-----------------------------------------------------------------------------
@@ -109,7 +101,7 @@ namespace base
         }
 #endif
 
-        void* AAllocSystemMemory(size_t size, bool largePages)
+        void* AllocSystemMemory(size_t size, bool largePages)
         {
 #ifdef PLATFORM_WINAPI
             static auto largePageSize = GetLargePageMinimum();
@@ -145,7 +137,7 @@ namespace base
             return ret;
         }
 
-        void AFreeSystemMemory(void* page, size_t size)
+        void FreeSystemMemory(void* page, size_t size)
         {
 #ifdef PLATFORM_WINAPI
             VirtualFree(page, 0, MEM_RELEASE);

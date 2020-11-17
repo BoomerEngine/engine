@@ -30,10 +30,6 @@ namespace rendering
     {
         //--
 
-        base::mem::PoolID POOL_RENDERING_FRAME("Rendeirng.Frame");
-
-        //--
-
         FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameSurfaceCache& surfaces)
             : m_frame(frame)
             , m_surfaces(surfaces)

@@ -69,7 +69,7 @@ namespace base
     template< typename T, typename... Args >
     INLINE UniquePtr< T > CreateUniquePtr(Args && ... args)
     {
-        auto mem  = base::mem::AllocateBlock(POOL_OBJECTS, sizeof(T), __alignof(T), __FILE__, __LINE__, typeid(UniquePtr<T>).name());
+        auto mem  = base::mem::AllocateBlock(POOL_OBJECTS, sizeof(T), __alignof(T), typeid(UniquePtr<T>).name());
         UniquePtr< T > ptr(new (mem) T(std::forward< Args >(args)...));
         return ptr;
     }

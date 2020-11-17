@@ -15,10 +15,6 @@ namespace base
 
         //--
 
-        extern base::mem::PoolID POOL_SCRIPTS;
-
-        //--
-
         class CompiledProject;
 
         //--

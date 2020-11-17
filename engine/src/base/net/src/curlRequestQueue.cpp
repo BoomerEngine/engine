@@ -25,8 +25,6 @@ namespace base
         static const int cvDefaultRequestTimeout = 5000;
         static const int cvDefaultLoopTimeout = 1000;
 
-        mem::PoolID POOL_REQUEST_DATA("Engine.HTTP.RequestData");
-
         //---
 
         MultiConnection::MultiConnection(RequestQueue* queue, StringView address, StringView protocol)
@@ -152,7 +150,7 @@ namespace base
             , m_fields(fields)
             , m_finished(false)
             , m_callback(callback)
-            , m_data(POOL_REQUEST_DATA)
+            , m_data(POOL_HTTP_REQUEST_DATA)
             , m_owner(owner)
             , m_method(method)
             , m_handle(handle)

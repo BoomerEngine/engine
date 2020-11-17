@@ -17,7 +17,7 @@ namespace base
 
 		/// a simple pool for structures
 		template<typename T>
-		INLINE StructurePool<T>::StructurePool(mem::PoolID pool, uint32_t elementsPerPage)
+		INLINE StructurePool<T>::StructurePool(PoolTag pool, uint32_t elementsPerPage)
 			: StructurePoolBase(pool, sizeof(T), alignof(T), elementsPerPage)
 		{}
 

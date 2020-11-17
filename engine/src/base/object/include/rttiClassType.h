@@ -144,21 +144,21 @@ namespace base
             //---------------
 
             template< typename T >
-            INLINE RefPtr<T> create(mem::PoolID pool = POOL_DEFAULT) const
+            INLINE RefPtr<T> create(PoolTag pool = POOL_DEFAULT) const
             {
                 DEBUG_CHECK_EX(is<T>(), "Unrelated types");
                 DEBUG_CHECK_EX(sizeof(T) <= size(), "Trying to allocate bigger type from smaller class");
-                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), __FILE__, __LINE__, m_name.c_str());
+                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), m_name.c_str());
                 construct(mem);
                 return NoAddRef(mem);
             }
 
             template< typename T >
-            INLINE T* createPointer(mem::PoolID pool = POOL_DEFAULT) const
+            INLINE T* createPointer(PoolTag pool = POOL_DEFAULT) const
             {
                 DEBUG_CHECK_EX(is<T>(), "Unrelated types");
                 DEBUG_CHECK_EX(sizeof(T) <= size(), "Trying to allocate bigger type from smaller class");
-                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), __FILE__, __LINE__, m_name.c_str());
+                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), m_name.c_str());
                 construct(mem);
                 return mem;
             }

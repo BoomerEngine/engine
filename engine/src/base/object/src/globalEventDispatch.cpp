@@ -29,8 +29,6 @@ namespace base
 
     namespace prv
     {
-        static mem::PoolID POOL_EVENTS("Engine.Events");
-
         struct DispatchList : public IReferencable
         {
             DispatchList(StringID name)

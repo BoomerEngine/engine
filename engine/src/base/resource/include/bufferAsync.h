@@ -62,7 +62,7 @@ namespace base
             // each call will open a new access request so you need to limit them at the higher level
             // NOTE: deleting the file OR modifying the file content while the async request is in flight has UNDEFINED behavior
             // NOTE: if the buffer is already loaded the existing content will be returned ASAP
-            CAN_YIELD Buffer load(mem::PoolID poolID = POOL_ASYNC_BUFFER) const;
+            CAN_YIELD Buffer load(PoolTag poolID = POOL_ASYNC_BUFFER) const;
 
             //---
 

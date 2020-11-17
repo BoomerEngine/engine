@@ -16,8 +16,6 @@ namespace base
 {
     //--
 
-    static mem::PoolID POOL_EVENTS("Engine.Events");
-
     IGlobalEventTable::IGlobalEventTable()
     {}
 

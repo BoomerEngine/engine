@@ -23,8 +23,6 @@ namespace wavefront
     namespace parser
     {
 
-        base::mem::PoolID POOL_WAVEFRONT("Wavefront");
-
         base::ConfigProperty<bool> cvAllowUnrecognizedControlWords("Wavefront.Parser", "AllowUnrecognizedControlWords", true);
         base::ConfigProperty<int> cvMaxWavefrontParsingThreads("Wavefront.Parser", "MaxWavefrontParsingThreads", -2); // all possible but keep 2 on side
 

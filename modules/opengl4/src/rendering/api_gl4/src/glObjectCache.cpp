@@ -222,7 +222,7 @@ namespace rendering
                 PC_SCOPE_LVL0(DecompressShader);
                 // decompress into temporary memory
                 const void* sourceData = shaderLib.packedShaderData() + setup.offset;
-                decompressionBuffer = base::mem::Decompress(base::mem::CompressionType::LZ4HC, sourceData, setup.packedSize, setup.unpackedSize);
+                decompressionBuffer = base::mem::Decompress(base::mem::CompressionType::LZ4HC, sourceData, setup.packedSize, setup.unpackedSize, POOL_COMPILED_SHADER_DATA);
                 if (!decompressionBuffer)
                     return 0;
 
@@ -234,7 +234,7 @@ namespace rendering
             PC_SCOPE_LVL0(ResolveCompiledShader);
             auto shaderID = glCreateShader(shaderType);
             GL_PROTECT(glShaderSource(shaderID, 1, (const char**)&shaderData, nullptr));
-            base::mem::PoolStats::GetInstance().notifyAllocation(POOL_GL_SHADERS, setup.unpackedSize);
+            base::mem::PoolStats::GetInstance().notifyAllocation(POOL_API_SHADERS, setup.unpackedSize);
 
             // compile the shader
             GL_PROTECT(glCompileShader(shaderID));
@@ -265,7 +265,7 @@ namespace rendering
             if (shaderID)
             {
                 GL_PROTECT(programID = glCreateProgram());
-                base::mem::PoolStats::GetInstance().notifyAllocation(POOL_GL_PROGRAMS, 1);
+                base::mem::PoolStats::GetInstance().notifyAllocation(POOL_API_PROGRAMS, 1);
 
                 // use the separable programs if possible
                // if (shaderType != GL_COMPUTE_SHADER)

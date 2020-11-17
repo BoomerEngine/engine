@@ -20,10 +20,6 @@ namespace base
     {
         //---
 
-        base::mem::PoolID POOL_SCRIPTS("Engine.Scripts");
-
-        //---
-
         RTTI_BEGIN_TYPE_CLASS(ScriptService);
             RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<config::ConfigService>();
         RTTI_END_TYPE();

@@ -18,7 +18,7 @@ namespace base
 
         //---
 
-        LinearAllocator::LinearAllocator(PoolID pool, uint32_t tailReserve)
+        LinearAllocator::LinearAllocator(PoolTag pool, uint32_t tailReserve)
             : m_poolId(pool)
             , m_tailReserve(tailReserve)
         {

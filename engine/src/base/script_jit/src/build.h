@@ -15,9 +15,5 @@ namespace base
 
         //--
 
-        extern base::mem::PoolID POOL_JIT;
-
-        //--
-
     } // script
 } // base

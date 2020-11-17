@@ -55,12 +55,12 @@ namespace base
     //----
 
     // decode Base64 data
-    extern BASE_CONTAINERS_API void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const mem::PoolID& poolID = POOL_MEM_BUFFER);
+    extern BASE_CONTAINERS_API void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
 
     // decode an escaped C string, supported escapements: \n \r \t \b \0 \x \" \' \\
     // NOTE: optionally we can automatically eat the quotes around the string
     // NOTE: returned buffer is NOT zero terminated, use a StringView to access
-    extern BASE_CONTAINERS_API char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const mem::PoolID& poolID = POOL_MEM_BUFFER);
+    extern BASE_CONTAINERS_API char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
 
     //----
 

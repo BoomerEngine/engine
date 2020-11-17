@@ -111,7 +111,7 @@ namespace base
             auto obj  = (ScriptedObject*) object;
             if (obj->m_scriptPropertiesData != nullptr)
             {
-                MemFree(obj->m_scriptPropertiesData);
+                mem::FreeBlock(obj->m_scriptPropertiesData);
                 obj->m_scriptPropertiesData = nullptr;
             }
         }
@@ -133,7 +133,7 @@ namespace base
             if (m_scriptedDataSize > 0)
             {
                 // allocate block for the script properties in the scripted pool
-                auto data = MemAlloc(POOL_SCRIPTS, m_scriptedDataSize, m_scriptedDatAlignment);
+                auto data = mem::AllocateBlock(POOL_SCRIPTED_OBJECT, m_scriptedDataSize, m_scriptedDatAlignment, name().c_str());
                 memzero(data, m_scriptedDataSize);
                 obj->m_scriptPropertiesData = data;
             }
@@ -264,7 +264,7 @@ namespace base
 
         const void* ScriptedStruct::createDefaultObject() const
         {
-            auto ret  = MemAlloc(POOL_SCRIPTS, size(), alignment());
+            auto ret = mem::AllocateBlock(POOL_SCRIPTED_DEFAULT_OBJECT, size(), alignment(), name().c_str());
             memzero(ret, size());
 
             if (m_functionCtor)

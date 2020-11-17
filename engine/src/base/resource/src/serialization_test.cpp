@@ -399,7 +399,7 @@ TEST(Serialization, SaveLoadMassiveProtected)
         ScopeTimer timer;
         HelperSave(roots, data, true);
         TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
-        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data, POOL_SERIALIZATION);
         TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
     }
 
@@ -424,7 +424,7 @@ TEST(Serialization, SaveLoadMassiveUnprotected)
         ScopeTimer timer;
         HelperSave(roots, data, false);
         TRACE_WARNING("Save unprotected took {}, content {}", timer, MemSize(data.size()));
-        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data, POOL_SERIALIZATION);
         TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
     }
 
@@ -449,7 +449,7 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsProtected)
         ScopeTimer timer;
         HelperSave(roots, data, true);
         TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
-        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data, POOL_SERIALIZATION);
         TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
     }
 

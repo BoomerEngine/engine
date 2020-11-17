@@ -96,8 +96,6 @@ namespace rendering
 
         //---
 
-        base::mem::PoolID POOL_GL_TRANSIENT_BUFFER("GL4.TransientBuffer");
-
         TransientBuffer::TransientBuffer(TransientBufferAllocator* owner, uint32_t size, TransientBufferType bufferType)
             : m_allocator(owner)
             , m_size(size)
@@ -128,7 +126,7 @@ namespace rendering
 
             // setup data with buffer
             GL_PROTECT(glNamedBufferStorage(buffer, m_size, nullptr, usageFlags));
-            base::mem::PoolStats::GetInstance().notifyAllocation(POOL_GL_TRANSIENT_BUFFER, m_size);
+            base::mem::PoolStats::GetInstance().notifyAllocation(POOL_API_TRANSIENT_BUFFER, m_size);
 
             // map the buffer
             if (bufferType == TransientBufferType::Staging)
@@ -160,7 +158,7 @@ namespace rendering
             m_typedViews.clear();
 
             // notify about buffer being freed
-            base::mem::PoolStats::GetInstance().notifyFree(POOL_GL_TRANSIENT_BUFFER, m_size);
+            base::mem::PoolStats::GetInstance().notifyFree(POOL_API_TRANSIENT_BUFFER, m_size);
         }
 
         void TransientBuffer::returnToPool()

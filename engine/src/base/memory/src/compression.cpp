@@ -28,20 +28,18 @@ namespace base
 
             static voidpf ZlibAlloc(voidpf, uInt items, uInt size)
             {
-                return MemAlloc(POOL_TEMP, size * items, 1);
+                return  mem::GlobalPool<POOL_ZLIB>::Alloc(size * items, 1);
             }
 
             static void ZlibFree(voidpf, voidpf address)
             {
-                MemFree(address);
+                mem::GlobalPool<POOL_ZLIB>::Free(address);
             }
         } // prv
 
-        PoolID POOL_COMPRESSION("Engine.Compression");
-
         //--
 
-        void* CompressZlib(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolID pool)
+        void* CompressZlib(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool)
         {
             void* ret = nullptr;
 
@@ -62,7 +60,7 @@ if (initRet == Z_OK)
     auto neededSize  = deflateBound(&zstr, uncompressedSize);
 
     // allocate the output buffer of at least equal size as the input
-    ret = MemAlloc(pool, neededSize, 16);
+    ret = mem::AllocateBlock(pool, neededSize, 16, "CompressZLib");
     DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
     if (ret)
     {
@@ -78,7 +76,7 @@ if (initRet == Z_OK)
         }
         else
         {
-            MemFree(ret);
+            mem::FreeBlock(ret);
             ret = nullptr;
         }
     }
@@ -125,13 +123,13 @@ return ret;
             return false;
         }
 
-        void* CompressLZ4(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolID pool)
+        void* CompressLZ4(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool)
         {
             // estimate required size
             auto neededSize  = LZ4_compressBound(uncompressedSize);
 
             // Allocate a buffer for writing compressed data to
-            void* ret = MemAlloc(pool, neededSize, 16);
+            void* ret = mem::AllocateBlock(pool, neededSize, 16, "CompressLZ4");
             DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
             if (ret)
             {
@@ -144,7 +142,7 @@ return ret;
                 }
                 else
                 {
-                    MemFree(ret);
+                    mem::FreeBlock(ret);
                     ret = nullptr;
                 }
             }
@@ -165,21 +163,22 @@ return ret;
             return false;
         }
 
-        void* CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolID pool)
+        void* CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool)
         {
             // estimate required size
             auto neededSize  = LZ4_compressBound(uncompressedSize);
 
             // Allocate a buffer for writing compressed data to
-            void* ret = MemAlloc(pool, neededSize, 16);
+            void* ret = mem::AllocateBlock(pool, neededSize, 16, "CompressLZ4HC");
             DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
             if (ret)
             {
-                void* lzState = MemAlloc(POOL_TEMP, LZ4_sizeofStateHC(), 16);
+                void* lzState = mem::GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
 
                 // compress the data
-                auto compressedSize  = LZ4_compress_HC_extStateHC(lzState, (const char*)uncompressedDataPtr, (char*)ret, (int)uncompressedSize, neededSize, LZ4HC_CLEVEL_OPT_MIN);
-                MemFree(lzState);
+                auto compressedSize = LZ4_compress_HC_extStateHC(lzState, (const char*)uncompressedDataPtr, (char*)ret, (int)uncompressedSize, neededSize, LZ4HC_CLEVEL_OPT_MIN);
+                mem::GlobalPool<POOL_LZ4>::Free(lzState);
+
                 DEBUG_CHECK_EX(compressedSize != 0, "Internal error in LZ4 compression");
                 if (compressedSize != 0)
                 {
@@ -187,7 +186,7 @@ return ret;
                 }
                 else
                 {
-                    MemFree(ret);
+                    mem::FreeBlock(ret);
                     ret = nullptr;
                 }
             }
@@ -197,11 +196,11 @@ return ret;
 
         bool CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, void* compressedDataPtr, uint64_t compressedDataMaxSize, uint64_t& outCompressedRealSize)
         {
-            void* lzState = MemAlloc(POOL_TEMP, LZ4_sizeofStateHC(), 16);
+            void* lzState = mem::GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
 
             // compress the data
             auto compressedSize  = LZ4_compress_HC_extStateHC(lzState, (const char*)uncompressedDataPtr, (char*)compressedDataPtr, (int)uncompressedSize, compressedDataMaxSize, LZ4HC_CLEVEL_OPT_MIN);
-            MemFree(lzState);
+            mem::GlobalPool<POOL_LZ4>::Free(lzState);
 
             if (compressedSize != 0)
             {
@@ -214,11 +213,8 @@ return ret;
 
         //--
 
-        void* Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolID pool /*= PoolID()*/)
+        void* Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, uint64_t& outCompressedSize, PoolTag pool /*= PoolTag()*/)
         {
-            if (!pool.value())
-                pool = POOL_COMPRESSION;
-
             DEBUG_CHECK_EX(uncompressedDataPtr != nullptr, "Invalid parameter");
             DEBUG_CHECK_EX(uncompressedSize != 0, "Invalid parameter");
 
@@ -248,7 +244,7 @@ return ret;
                 return false;
         }
 
-        Buffer Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, PoolID pool /*= PoolID()*/)
+        Buffer Compress(CompressionType ct, const void* uncompressedDataPtr, uint64_t uncompressedSize, PoolTag pool /*= PoolTag()*/)
         {
             uint64_t compressedSize = 0;
             void* compressedData = Compress(ct, uncompressedDataPtr, uncompressedSize, compressedSize, pool);
@@ -258,7 +254,7 @@ return ret;
             return Buffer::CreateExternal(pool, compressedSize, compressedData);
         }
 
-        Buffer Compress(CompressionType ct, const Buffer& uncompressedData, PoolID pool /*= PoolID()*/)
+        Buffer Compress(CompressionType ct, const Buffer& uncompressedData, PoolTag pool /*= PoolTag()*/)
         {
             if (!uncompressedData)
                 return Buffer();
@@ -313,7 +309,7 @@ return ret;
                 return false;
         }
 
-        Buffer Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, uint64_t decompressedSize, PoolID pool /*= PoolID()*/)
+        Buffer Decompress(CompressionType ct, const void* compressedDataPtr, uint64_t compressedSize, uint64_t decompressedSize, PoolTag pool /*= PoolTag()*/)
         {
             if (0 != decompressedSize)
             {

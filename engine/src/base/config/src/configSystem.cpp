@@ -12,8 +12,6 @@
 #include "configStorage.h"
 #include "configSystem.h"
 
-base::mem::PoolID POOL_CONFIG("Engine.Config");
-
 namespace base
 {
     namespace config

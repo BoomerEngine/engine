@@ -30,12 +30,12 @@ namespace rendering
 
         // reserve space for classical constant buffer
         m_constantDataSize = m_layout->descriptorLayout().constantDataSize;
-        m_constantData = (uint8_t*)MemAlloc(POOL_TEMP, m_constantDataSize, 16);
+        m_constantData = base::mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Alloc(m_constantDataSize, 16);
         memzero(m_constantData, m_constantDataSize);
 
         // reserve space for descriptor data
         m_descriptorDataSize = m_layout->descriptorLayout().descriptorSize;
-        m_descriptorData = (uint8_t*)MemAlloc(POOL_TEMP, m_descriptorDataSize, 16);
+        m_descriptorData = base::mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Alloc(m_descriptorDataSize, 16);
         memzero(m_descriptorData, m_descriptorDataSize);
 
         // bind default resources
@@ -59,10 +59,10 @@ namespace rendering
 
     MaterialDataProxy::~MaterialDataProxy()
     {
-        MemFree(m_constantData);
+        base::mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(m_constantData);
         m_constantData = nullptr;
 
-        MemFree(m_descriptorData);
+        base::mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(m_descriptorData);
         m_descriptorData = nullptr;
     }
 

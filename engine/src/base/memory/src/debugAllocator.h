@@ -26,13 +26,13 @@ namespace base
             static const uint32_t DEFAULT_ALIGNMNET = 8;
 
             //! Allocate memory
-            void* allocate(PoolID id, size_t size, size_t alignmemnt, const char* fileName, uint32_t fileLine, const char* typeName);
+            void* allocate(PoolTag id, size_t size, size_t alignmemnt, const char* typeName);
 
             //! Deallocate memory
             void deallocate(void* mem);
 
             //! Resize allocated memory block
-            void* reallocate(PoolID id, void* mem, size_t newSize, size_t alignmemnt, const char* fileName, uint32_t fileLine, const char* typeName);
+            void* reallocate(PoolTag id, void* mem, size_t newSize, size_t alignmemnt, const char* typeName);
 
             //---
 
@@ -58,11 +58,9 @@ namespace base
                 uint32_t m_seqId;
                 DebugHeader* m_prev;
                 DebugHeader* m_next;
-                uint32_t m_markerB;
                 const char* m_name;
-                const char* m_fileName;
-                uint32_t m_fileLine;
-
+                uint32_t m_markerB;
+                
                 INLINE DebugHeader()
                     : m_markerA(MARKER_A)
                     , m_alignmentOffset(0)
@@ -72,10 +70,8 @@ namespace base
                     , m_seqId(0)
                     , m_prev(nullptr)
                     , m_next(nullptr)
+                    , m_name(nullptr)
                     , m_markerB(MARKER_B)
-                    , m_name("Unknown")
-                    , m_fileName("unknown")
-                    , m_fileLine(0)
                 {}
 
                 INLINE void* memoryBaseFromBlock() const
@@ -120,25 +116,6 @@ namespace base
                         hval ^= (uint64_t)*ch++;
                         hval *= UINT64_C(0x100000001b3);
                     }
-
-                    return hval;
-                }
-
-                INLINE uint64_t locationHash() const
-                {
-                    if (!m_fileName)
-                        return 0;
-
-                    uint64_t hval = UINT64_C(0xcbf29ce484222325);
-                    auto ch  = m_fileName;
-                    while (*ch)
-                    {
-                        hval ^= (uint64_t)*ch++;
-                        hval *= UINT64_C(0x100000001b3);
-                    }
-
-                    hval ^= m_fileLine;
-                    hval *= UINT64_C(0x100000001b3);
 
                     return hval;
                 }

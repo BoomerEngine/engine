@@ -50,7 +50,7 @@ namespace base
             *(uint32_t*)base::OffsetPtr(mem, offset) = word;
         }
 
-        void* DebugAllocator::allocate(PoolID id, size_t size, size_t alignment, const char* fileName, uint32_t fileLine, const char* typeName)
+        void* DebugAllocator::allocate(PoolTag id, size_t size, size_t alignment, const char* typeName)
         {
             // snap the alignment
             if (alignment == 0)
@@ -92,11 +92,9 @@ namespace base
             headerData->m_size = size;
             headerData->m_systemSize = totalSize;
             headerData->m_alignmentOffset = range_cast<uint16_t>((ptrdiff_t)headerPtr - (ptrdiff_t)systemPtr);
-            headerData->m_poolID = id.value();
-            headerData->m_seqId = ++m_sequenceNumber;
+            headerData->m_poolID = id;
             headerData->m_name = typeName;
-            headerData->m_fileName = fileName;
-            headerData->m_fileLine = fileLine;
+            headerData->m_seqId = ++m_sequenceNumber;
 
             // break on allocation
             DEBUG_CHECK_EX(headerData->m_seqId != GBreakOnAlloc, "Selected allocation reached");
@@ -132,7 +130,7 @@ namespace base
             unlinkHeapBlock(headerData);
 
             // track stats
-            auto poolID  = (PredefinedPoolID)headerData->m_poolID;
+            auto poolID = (PoolTag)headerData->m_poolID;
             prv::TheInternalPoolStats.notifyFree(poolID, headerData->m_size);
 
             // get base of the block and free the original system blcok
@@ -206,7 +204,7 @@ namespace base
             block->m_next = nullptr;
         }
 
-        void* DebugAllocator::reallocate(PoolID id, void* usablePtr, size_t newSize, size_t alignmemnt, const char* fileName, uint32_t fileLine, const char* typeName)
+        void* DebugAllocator::reallocate(PoolTag id, void* usablePtr, size_t newSize, size_t alignmemnt, const char* typeName)
         {
             if (newSize == 0)
             {
@@ -215,14 +213,14 @@ namespace base
             }
             else if (usablePtr == nullptr)
             {
-                return allocate(id, newSize, alignmemnt, fileName, fileLine, typeName);
+                return allocate(id, newSize, alignmemnt, typeName);
             }
             else
             {
                 auto headerData  = GetHeaderForAddress(usablePtr);
                 auto oldSize  = headerData->m_size;
 
-                void* ret = allocate(id, newSize, alignmemnt, fileName, fileLine, typeName);
+                void* ret = allocate(id, newSize, alignmemnt, typeName);
                 memcpy(ret, usablePtr, std::min<size_t>(oldSize, newSize));
                 deallocate(usablePtr);
                 return ret;
@@ -265,7 +263,7 @@ namespace base
                 INLINE void setup(const DebugHeader* block)
                 {
                     m_block = block;
-                    m_locationHash = block->locationHash();
+                    m_locationHash = 0;// block->locationHash();
                     m_typeHash = block->typeHash();
                 }
 
@@ -296,7 +294,7 @@ namespace base
                 TRACE_INFO("Leaked {} blocks ({} bytes total):", m_numTrackedBlocks, m_trackedTotalSize);
 
                 // prepare sorting table
-                auto blockList = (ListEntry *) AAllocSystemMemory(sizeof(ListEntry) * (m_numTrackedBlocks+1), false);
+                auto blockList = (ListEntry *)AllocSystemMemory(sizeof(ListEntry) * (m_numTrackedBlocks+1), false);
                 {
                     uint32_t index = 0;
                     for (auto block = m_heapStart; block != nullptr; block = block->m_next)
@@ -339,11 +337,10 @@ namespace base
                     {
                         auto& prevEntry = blockList[i-1];
                         auto prevBlock  = prevEntry.m_block;
-                        auto pool = PoolID((PredefinedPoolID) prevBlock->m_poolID);
+                        auto pool = (PoolTag)prevBlock->m_poolID;
 
-                        TRACE_INFO("Block[{}]: Seq {}, Count {}, TotalSize {}, Pool {} @ {}: {} at {}({})",
-                                   lineIndex, firstSeqID, prevCount, prevTotalSize, pool.name(),
-                                   prevBlock + 1, prevBlock->m_name, prevBlock->m_fileName, prevBlock->m_fileLine);
+                        TRACE_INFO("Block[{}]: Seq {}, Count {}, TotalSize {}, Pool {} @ {}",
+                                   lineIndex, firstSeqID, prevCount, prevTotalSize, (int)pool, prevBlock + 1);
 
                         prevCount = 0;
                         prevLocationHash = 0;

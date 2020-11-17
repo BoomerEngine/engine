@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "poolID.h"
 #include "poolStats.h"
 #include "poolStatsInternal.h"
 
@@ -44,9 +43,9 @@ namespace base
                 }
             }
 
-            void PoolStatsInternal::stats(PoolID id, PoolStatsData& outStats) const
+            void PoolStatsInternal::stats(PoolTag id, PoolStatsData& outStats) const
             {
-                auto& src = m_stats[id.value()];
+                auto& src = m_stats[id];
 
                 outStats.m_lastFrameAllocSize = src.m_lastFrameAllocSize;
                 outStats.m_lastFrameAllocs = src.m_lastFrameAllocs;
@@ -64,10 +63,10 @@ namespace base
             void PoolStatsInternal::allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const
             {
                 // get max pool ID
-                auto maxID = PoolID::GetPoolIDRange();
+                auto maxID = (int)POOL_MAX;
                 auto maxToCopy = std::min<uint32_t>(count, maxID);
                 for (uint32_t i=0; i<maxToCopy; ++i)
-                    stats(PoolID((PredefinedPoolID)i), outStats[i]);
+                    stats((PoolTag)i, outStats[i]);
 
                 // clear reset
                 auto numLeft = count - maxToCopy;

@@ -28,7 +28,7 @@ namespace base
         class BASE_OBJECT_API NativeClass : public IClassType
         {
         public:
-            NativeClass(const char* name, uint32_t size, uint32_t alignment, uint64_t nativeHash, mem::PoolID pool = POOL_OBJECTS);
+            NativeClass(const char* name, uint32_t size, uint32_t alignment, uint64_t nativeHash, PoolTag pool = POOL_OBJECTS);
 
             typedef void (*TConstructFunc)(void* ptr);
             typedef void (*TDestructFunc)(void* ptr);

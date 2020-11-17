@@ -15,11 +15,6 @@
 
 namespace physics
 {
-    extern base::mem::PoolID POOL_PHYSICS_COLLISION;
-    extern base::mem::PoolID POOL_PHYSICS_TEMP;
-    extern base::mem::PoolID POOL_PHYSICS_SCENE;
-    extern base::mem::PoolID POOL_PHYSICS_RUNTIME;
-
     namespace runtime
     {
         class PhysicsScene;

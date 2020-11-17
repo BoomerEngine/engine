@@ -14,7 +14,7 @@
 namespace base
 {
 
-    InstanceBuffer::InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, mem::PoolID poolID)
+    InstanceBuffer::InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, PoolTag poolID)
         : m_layout(AddRef(layout))
         , m_poolID(poolID)
         , m_data(data)
@@ -26,14 +26,14 @@ namespace base
         m_layout->destroyBuffer(m_data);
         m_layout.reset();
 
-        MemFree(m_data);
+        mem::FreeBlock(m_data);
         m_data = nullptr;
         m_size = 0;
     }
 
     InstanceBufferPtr InstanceBuffer::copy() const
     {
-        void* ptr = MemAlloc(m_poolID, m_size, m_layout->alignment());
+        void* ptr = mem::AllocateBlock(m_poolID, m_size, m_layout->alignment(), "InstanceBuffer");
         m_layout->copyBufer(ptr, m_data);
         return RefNew<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
     }

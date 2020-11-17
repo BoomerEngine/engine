@@ -26,7 +26,7 @@ namespace base
             if (length == INDEX_MAX)
                 length = strlen(txt);
 
-            auto data  = (StringDataHolder*)MemAlloc(POOL_STRINGS, sizeof(StringDataHolder) + length, 1);
+            auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
             data->m_refs = 1;
             data->m_length = length;
             memcpy(data->m_txt, txt, length);
@@ -44,7 +44,7 @@ namespace base
 
             auto length  = utf8::CalcSizeRequired(txt, uniLength);
 
-            auto data  = (StringDataHolder*)MemAlloc(POOL_STRINGS, sizeof(StringDataHolder) + length, 1);
+            auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
             data->m_refs = 1;
             data->m_length = length;
             base::utf8::FromUniChar(data->m_txt, length + 1, txt, uniLength);
@@ -57,7 +57,7 @@ namespace base
             if (!length)
                 return nullptr;
 
-            auto data  = (StringDataHolder*)MemAlloc(POOL_STRINGS, sizeof(StringDataHolder) + length, 1);
+            auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
             data->m_refs = 1;
             data->m_length = length;
             memset(data->m_txt, 0, length + 1);
@@ -73,7 +73,7 @@ namespace base
 
         void StringDataHolder::ReleaseToPool(void* mem, uint32_t length)
         {
-            MemFree(mem);
+            mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Free(mem);
         }
 
         //---

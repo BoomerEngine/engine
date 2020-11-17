@@ -19,9 +19,9 @@ namespace base
     class BASE_CONTAINERS_API PagedBufferBase : public base::NoCopy
     {
     public:
-        PagedBufferBase(uint32_t size, uint32_t alignment, mem::PoolID poolID = POOL_TEMP); // use shared page allocator
+        PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID = POOL_TEMP); // use shared page allocator
         PagedBufferBase(uint32_t size, uint32_t alignment, mem::PageAllocator& pageAllocator); // use given page allocator
-        PagedBufferBase(uint32_t size, uint32_t alignment, mem::PoolID poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
+        PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
         ~PagedBufferBase();
 
         //--
@@ -65,7 +65,7 @@ namespace base
         //--
 
         // export data to buffer
-        Buffer toBuffer(mem::PoolID pool = POOL_DEFAULT) const;
+        Buffer toBuffer(PoolTag pool = POOL_DEFAULT) const;
 
     protected:
         uint8_t* m_writePtr = nullptr; // current write pointer
@@ -114,9 +114,9 @@ namespace base
     class PagedBuffer : public PagedBufferBase
     {
     public:
-        INLINE PagedBuffer(mem::PoolID poolID = POOL_TEMP); // use shared page allocator
+        INLINE PagedBuffer(PoolTag poolID = POOL_TEMP); // use shared page allocator
         INLINE PagedBuffer(mem::PageAllocator& pageAllocator); // use given page allocator
-        INLINE PagedBuffer(mem::PoolID poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
+        INLINE PagedBuffer(PoolTag poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
         INLINE ~PagedBuffer();
 
         // allocate new element

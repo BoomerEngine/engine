@@ -18,10 +18,6 @@ namespace base
 {
     //--
 
-    mem::PoolID POOL_VARIANT("Engine.Variant");
-
-    //--
-
     static bool MustAllocateVariantMemory(Type type)
     {
         if (type->traits().requiresConstructor || type->traits().requiresDestructor)
@@ -122,7 +118,7 @@ namespace base
         m_allocated = MustAllocateVariantMemory(type);
         if (m_allocated)
         {
-            targetPtr = MemAlloc(POOL_VARIANT, type->size(), type->alignment());
+            targetPtr = mem::AllocateBlock(POOL_VARIANT, type->size(), type->alignment(), type->name().c_str());
             m_data.ptr = targetPtr;
         }
         else
@@ -202,7 +198,7 @@ namespace base
             {
                 if (m_type->traits().requiresDestructor)
                     m_type->destruct(m_data.ptr);
-                MemFree(m_data.ptr);
+                mem::FreeBlock(m_data.ptr);
             }
             else
             {

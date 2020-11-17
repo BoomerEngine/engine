@@ -58,9 +58,9 @@ namespace base
 
             // compute size of the required payload, NOTE: we need to attach the payload with proper alignment
             auto dataAlignment  = std::max<uint32_t>(alignof(Message), messageClass->alignment());
-            auto dataOffset  = Align<uint32_t>(sizeof(Message), messageClass->alignment());
-            auto dataSize  = dataOffset + messageClass->size();
-            auto data  = MemAlloc(POOL_NET, dataSize, dataAlignment);
+            auto dataOffset = Align<uint32_t>(sizeof(Message), messageClass->alignment());
+            auto dataSize = dataOffset + messageClass->size();
+            auto data = mem::GlobalPool<POOL_NET_MESSAGE>::Alloc(dataSize, dataAlignment);
             if (!data)
                 return nullptr; // OOM that we can handle somehow, also prevents from sending messages of VERY large classes
 

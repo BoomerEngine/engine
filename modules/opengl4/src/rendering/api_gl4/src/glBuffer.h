@@ -123,7 +123,7 @@ namespace rendering
 
             SourceData m_initData;
 
-            base::mem::PoolID m_poolId;
+            PoolTag m_poolId;
 
             //--
 

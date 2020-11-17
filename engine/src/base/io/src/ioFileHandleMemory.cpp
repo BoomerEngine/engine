@@ -112,7 +112,7 @@ namespace base
             if (initialSize > 0)
             {
                 initialSize = std::max<uint64_t>(MIN_CAPACITY, initialSize);
-                m_base = (uint8_t*)mem::AAllocSystemMemory(initialSize, true);
+                m_base = (uint8_t*)mem::AllocSystemMemory(initialSize, true);
                 if (m_base)
                 {
                     m_pos = m_base;
@@ -132,9 +132,9 @@ namespace base
             freeBuffer();
         }
 
-        static void BufferFreeFunc(mem::PoolID pool, void* memory, uint64_t size)
+        static void BufferFreeFunc(PoolTag pool, void* memory, uint64_t size)
         {
-            mem::AFreeSystemMemory(memory, size);
+            mem::FreeSystemMemory(memory, size);
         }
 
         Buffer MemoryWriterFileHandle::extract()
@@ -159,7 +159,7 @@ namespace base
             if (m_base)
             {
                 const auto size = m_end - m_base;
-                mem::AFreeSystemMemory(m_base, size);
+                mem::FreeSystemMemory(m_base, size);
 
                 m_base = nullptr;
                 m_pos = nullptr;
@@ -203,7 +203,7 @@ namespace base
                 capcity *= 2;
 
             // allocate new data
-            void* newBuffer = mem::AAllocSystemMemory(capcity, true);
+            void* newBuffer = mem::AllocSystemMemory(capcity, true);
             if (!newBuffer)
             {
                 TRACE_WARNING("MemIO: Out of memory when resizing {}->{}", MemSize(size()), MemSize(capcity));
@@ -214,7 +214,7 @@ namespace base
             memcpy(newBuffer, m_base, size());
 
             // release old data
-            mem::AFreeSystemMemory(m_base, m_end - m_base);
+            mem::FreeSystemMemory(m_base, m_end - m_base);
 
             // setup new buffer
             m_base = (uint8_t*)newBuffer;

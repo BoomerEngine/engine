@@ -19,11 +19,6 @@ namespace base
 {
     ///--
 
-    mem::PoolID POOL_REF_HOLDER("Memory.RefHolder");
-    mem::PoolID POOL_REF_PTR("Memory.Referencable");
-
-    ///--
-
     RefWeakContainer::RefWeakContainer(IReferencable* ptr)
         : m_ptr(ptr)
     {}

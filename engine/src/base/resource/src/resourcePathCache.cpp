@@ -59,7 +59,7 @@ namespace base
                     }
 
                     // create new entry
-                    auto ptr  = MemAlloc(POOL_RESOURCES, sizeof(ResourcePathBuf) + len + 1, 1);
+                    auto ptr = mem::GlobalPool<POOL_STRINGS>::Alloc(sizeof(ResourcePathBuf) + len + 1, 1);
                     buf = new (ptr) ResourcePathBuf(path, len+1, hash);
                     m_map.set(hash, buf);
                     return hash;

@@ -34,14 +34,14 @@ namespace base
             // create initial storage
             m_storageCapacity = std::max<uint32_t>(MIN_CAPACITY, initialStorageSize);
             m_storagePos = 0;
-            m_storagePtr = (uint8_t*) MemAlloc(POOL_NEW, m_storageCapacity, 1);
+            m_storagePtr = mem::GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::AllocN(m_storageCapacity);
         }
 
         MessageReassembler::~MessageReassembler()
         {
             if (m_storagePtr)
             {
-                MemFree(m_storagePtr);
+                mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
                 m_storagePtr = nullptr;
             }
         }
@@ -55,7 +55,7 @@ namespace base
 
                 if (m_storagePtr)
                 {
-                    MemFree(m_storagePtr);
+                    mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
                     m_storagePtr = nullptr;
                 }
             }
@@ -92,12 +92,12 @@ namespace base
                     newCapacity *= 2;
 
                 // allocate new buffer, may fail (we can handle really large data here)
-                auto newBuffer  = MemRealloc(POOL_NET, m_storagePtr, newCapacity, 1);
+                auto newBuffer  = mem::GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::Resize(m_storagePtr, newCapacity);
                 if (!newBuffer)
                 {
                     fatalError(TempString("Out of memory while trying to resize storage to {}", MemSize(newCapacity)));
 
-                    MemFree(m_storagePtr);
+                    mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
                     m_storagePtr = nullptr;
 
                     m_corrupted = true;

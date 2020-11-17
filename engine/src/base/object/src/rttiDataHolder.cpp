@@ -18,10 +18,6 @@ namespace base
     {
         ///--
 
-        mem::PoolID POOL_RTTI_DATA("Engine.RTTIDataHolder");
-
-        ///--
-
         DataHolder::DataHolder(Type type, const void* copyFrom /*= nullptr*/)
         {
             init(type, copyFrom);
@@ -39,7 +35,7 @@ namespace base
             if (type != nullptr)
             {
                 m_type = type;
-                m_data = MemAlloc(POOL_RTTI_DATA, type->size(), type->alignment());
+                m_data = mem::AllocateBlock(POOL_RTTI_DATA, type->size(), type->alignment(), type.name().c_str());
 
                 if (type->traits().requiresConstructor)
                 {
@@ -145,7 +141,7 @@ namespace base
                 if (m_type->traits().requiresDestructor)
                     m_type->destruct(m_data);
 
-                MemFree(m_data);
+                mem::FreeBlock(m_data);
                 m_data = nullptr;
                 m_type = nullptr;
             }

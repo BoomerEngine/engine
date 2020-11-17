@@ -48,7 +48,7 @@ namespace rendering
                 GL_PROTECT(glDeleteFramebuffers(1, &m_pass.fbo));
                 m_pass.fbo = 0;
 
-                base::mem::PoolStats::GetInstance().notifyFree(POOL_GL_FRAMEBUFFERS, 1);
+                base::mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
             }
         }
 

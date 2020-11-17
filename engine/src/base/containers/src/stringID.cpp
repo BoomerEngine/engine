@@ -26,7 +26,7 @@ namespace base
 
         public:
             StringDataMgr()
-                : m_localAllocator(POOL_STRINGIDS)
+                : m_localAllocator(POOL_KEYS)
             {
                 memset(m_buckets, 0, sizeof(m_buckets));
                 m_entries.reserve(65536);

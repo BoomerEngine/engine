@@ -23,11 +23,6 @@ namespace rendering
     namespace scene
     {
 
-        //-- memory pools
-
-        extern base::mem::PoolID POOL_RENDERING_FRAME;
-
-        //--
 
     } // scene
 } // rendering

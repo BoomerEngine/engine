@@ -22,10 +22,6 @@ namespace base
 
         //--
 
-        base::mem::PoolID POOL_JIT("Script.JIT");
-
-        //--
-
         RTTI_BEGIN_TYPE_CLASS(JITGeneralC);
         RTTI_END_TYPE();
 

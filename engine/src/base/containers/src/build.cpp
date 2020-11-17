@@ -89,14 +89,14 @@ namespace base
 
     static HexDecodingTable GHexTable;
 
-    void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const mem::PoolID& poolID /*= POOL_MEM_BUFFER*/)
+    void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID /*= POOL_MEM_BUFFER*/)
     {
         if (!startTxt || endTxt == startTxt)
             return nullptr;
 
         auto length = endTxt - startTxt;
         auto size = (length * 6) / 8;
-        auto ret = MemAlloc(poolID, size, 1);
+        auto ret = base::mem::AllocateBlock(poolID, size, 1, "DecodeBase64");
         auto writePtr  = (uint8_t*)ret;
 
         uint32_t i = 0;
@@ -129,7 +129,7 @@ namespace base
     
     //--
 
-    char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const mem::PoolID& poolID /*= POOL_MEM_BUFFER*/)
+    char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID /*= POOL_MEM_BUFFER*/)
     {
         if (!startTxt)
             return nullptr;
@@ -137,7 +137,7 @@ namespace base
         if (endTxt == startTxt)
         {
             outDataSize = 0;
-            return (char*)MemAlloc(poolID, 0, 1); // TODO: fix!
+            return mem::GlobalPool<POOL_STRINGS, char>::Alloc(1);
         }
 
         uint32_t length = 0;
@@ -166,7 +166,7 @@ namespace base
                 return nullptr;
         }
 
-        auto ret  = (char*)MemAlloc(poolID, length, 1);
+        auto ret = (char*) mem::AllocateBlock(POOL_STRINGS, length, 1, "DecodeCString");
         auto writePtr  = ret;
         {
             auto readPtr  = startTxt;

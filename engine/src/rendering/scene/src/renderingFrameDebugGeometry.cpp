@@ -16,8 +16,6 @@ namespace rendering
     {
         //--
 
-        static base::mem::PoolID POOL_DEBUG_GEOMETRY("Rendering.DebugGeometry");
-
         static base::mem::PageAllocator GDebugGeometryPayloadAllocator(POOL_DEBUG_GEOMETRY, 256 << 20, 8, 64);
         static base::mem::PageAllocator GDebugGeometrySmallPayloadAllocator(POOL_DEBUG_GEOMETRY, 64 << 10, 16, 256);
         static base::mem::PageAllocator GDebugGeometryStructureAllocator(POOL_DEBUG_GEOMETRY, 16 << 10, 64, 64);

@@ -52,19 +52,19 @@ namespace base
         {
             if (m_buckets)
             {
-                MemFree(m_buckets);
+                mem::GlobalPool<POOL_STREAMING, GridBucket>::Free(m_buckets);
                 m_buckets = nullptr;
             }
 
             if (m_nodes)
             {
-                MemFree(m_nodes);
+                mem::GlobalPool<POOL_STREAMING, GridNode>::Free(m_nodes);
                 m_nodes = nullptr;
             }
 
             if (m_levels)
             {
-                MemFree(m_levels);
+                mem::GlobalPool<POOL_STREAMING, GridLevel>::Free(m_levels);
                 m_levels = nullptr;
             }
         }
@@ -196,7 +196,7 @@ namespace base
             {
                 TRACE_ERROR("Initial bucket array was to small, resizing the bucket table");
                 m_numBuckets *= 2;
-                m_buckets = (GridBucket*)MemRealloc(POOL_TEMP, m_buckets, sizeof(GridBucket) * m_numBuckets, 64);
+                m_buckets = mem::GlobalPool<POOL_STREAMING, GridBucket>::Resize(m_buckets, sizeof(GridBucket) * m_numBuckets, 64);
             }
 
             // Store in new bucket
@@ -581,16 +581,9 @@ namespace base
 
         void StreamingGrid::createBuckets(uint32_t numBuckets)
         {
-            // allocate buckets
-            auto dataSize = sizeof(GridBucket) * numBuckets;
             m_numBuckets = numBuckets;
-            m_buckets = (GridBucket*)MemAlloc(POOL_TEMP, dataSize, 64); // NOTE: the buckets are aligned to cache line size
-            memzero(m_buckets, dataSize);
-
-            // initialize the ID allocator for buckets
-            //m_bucketIDs.reseve(numBuckets);
-            //m_bucketIDs.allocate(); // allocate the bucket index 0 because index 0 is used to indicate empty bucket
-            //TRACE_INFO("Created {} buckets for streaming objects ({})", numBuckets, TimeInterval(dataSize));
+            m_buckets = base::mem::GlobalPool<POOL_STREAMING, GridBucket>::AllocN(numBuckets);
+            memzero(m_buckets, numBuckets * sizeof(GridBucket));
         }
 
         void StreamingGrid::createGrid(uint32_t numLevels)
@@ -605,12 +598,12 @@ namespace base
 
             // preallocate memory for nodes
             m_numNodes = numTotalCells;
-            m_nodes = (GridNode*)MemAlloc(POOL_TEMP, sizeof(GridNode) * m_numNodes, 64);
+            m_nodes = mem::GlobalPool<POOL_STREAMING, GridNode>::AllocN(m_numNodes);
             memzero(m_nodes, sizeof(GridNode) * m_numNodes);
 
             // preallocate memory for grid levels
             m_numLevels = numLevels;
-            m_levels = (GridLevel*)MemAlloc(POOL_TEMP, sizeof(GridLevel) * m_numLevels, 64);
+            m_levels = mem::GlobalPool<POOL_STREAMING, GridLevel>::AllocN(m_numLevels);
 
             // setup levels
             numTotalCells = 0;

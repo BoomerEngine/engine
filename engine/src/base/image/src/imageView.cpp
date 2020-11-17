@@ -40,7 +40,7 @@ namespace base
 
         //--
 
-        Buffer ImageView::toBuffer(mem::PoolID id) const
+        Buffer ImageView::toBuffer(PoolTag id) const
         {
             if (empty())
                 return nullptr;

@@ -16,7 +16,7 @@ namespace base
     class BASE_GRAPH_API InstanceBuffer : public IReferencable
     {
     public:     
-        InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, const mem::PoolID poolID);
+        InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, PoolTag poolID = POOL_INSTANCE_BUFFER);
         ~InstanceBuffer();
 
         /// get size of the data in the instance buffer
@@ -32,7 +32,7 @@ namespace base
         INLINE const InstanceBufferLayout* layout() const { return m_layout; }
 
         /// get the memory pool we were allocated from
-        INLINE mem::PoolID poolID() const { return m_poolID; }
+        INLINE PoolTag poolID() const { return m_poolID; }
 
         /// resolve pointer to data
         INLINE const void* resolvePointer(const InstanceVarBase& v) const { return GetInstanceVarData(v); }
@@ -66,7 +66,7 @@ namespace base
         uint32_t m_size; // size of all the data needed for the graph instance
 
         InstanceBufferLayoutPtr m_layout; // layout of the data buffer
-        mem::PoolID m_poolID;
+        PoolTag m_poolID;
 
         void* GetInstanceVarData(const InstanceVarBase& v);
         const void* GetInstanceVarData(const InstanceVarBase& v) const;

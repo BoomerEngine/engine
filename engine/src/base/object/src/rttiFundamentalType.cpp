@@ -154,13 +154,13 @@ namespace base
                 txt = EatQuotes(txt);
 
                 uint32_t textDataLength = 0;
-                auto textData  = DecodeCString(txt.data(), txt.data() + txt.length(), textDataLength, POOL_TEMP);
+                auto textData = DecodeCString(txt.data(), txt.data() + txt.length(), textDataLength, POOL_SERIALIZATION);
                 if (!textData)
                     return false;
 
                 auto& str = *(StringBuf*)data;
                 str = StringBuf(StringView(textData, textData + textDataLength));
-                MemFree(textData);
+                mem::FreeBlock(textData);
 
                 return  true;
             }
@@ -236,13 +236,13 @@ namespace base
             virtual bool parseFromString(StringView txt, void* data, uint32_t flags) const override
             {
                 uint32_t textDataLength = 0;
-                auto textData  = DecodeCString(txt.data(), txt.data() + txt.length(), textDataLength, POOL_TEMP);
+                auto textData  = DecodeCString(txt.data(), txt.data() + txt.length(), textDataLength, POOL_SERIALIZATION);
                 if (!textData)
                     return false;
 
                 auto& str = *(StringID*)data;
                 str = StringID(StringView(textData, textData + textDataLength));
-                MemFree(textData);
+                mem::FreeBlock(textData);
 
                 return true;
             }

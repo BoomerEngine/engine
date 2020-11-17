@@ -94,7 +94,7 @@ namespace base
     typedef RefPtr<InstanceBufferLayout> InstanceBufferLayoutPtr;
 
     // create instance buffer for given buffer layout
-    extern BASE_GRAPH_API InstanceBufferPtr CreateBufferInstance(const InstanceBufferLayoutPtr& bufferLayout, const mem::PoolID poolID);
+    extern BASE_GRAPH_API InstanceBufferPtr CreateBufferInstance(const InstanceBufferLayoutPtr& bufferLayout, const PoolTag poolID);
 
 } // base
 

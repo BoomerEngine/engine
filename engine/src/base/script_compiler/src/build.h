@@ -15,11 +15,5 @@ namespace base
 
         //--
 
-        extern base::mem::PoolID POOL_SCRIPT_COMPILER;
-
-        //--
-
-        //--
-
     } // script
 } // base

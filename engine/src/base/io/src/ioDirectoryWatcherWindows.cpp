@@ -209,8 +209,7 @@ namespace base
                 DWORD maxEventsAtTime = 2U;
                 DWORD bufSize = maxEventsAtTime * (sizeof(FILE_NOTIFY_EXTENDED_INFORMATION) + MAX_PATH * sizeof(wchar_t));
 
-                auto info  = (FILE_NOTIFY_EXTENDED_INFORMATION*) MemAlloc(POOL_TEMP, bufSize, sizeof(size_t));
-
+                auto info = (FILE_NOTIFY_EXTENDED_INFORMATION*)malloc(bufSize);
                 while (true)
                 {
                     DWORD bytesReturned = 0U;
@@ -300,7 +299,7 @@ namespace base
                     }
                 }
 
-                MemFree(info);
+                free(info);
             }
 
         } // prv

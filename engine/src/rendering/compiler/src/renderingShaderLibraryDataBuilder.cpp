@@ -21,11 +21,6 @@ namespace rendering
     {
         //---
 
-        base::mem::PoolID POOL_COMPILED_SHADER_STRUCTURES("Rendering.ShaderStructures");
-        base::mem::PoolID POOL_COMPILED_SHADER_DATA("Rendering.ShaderData");
-
-        //---
-
         ShaderLibraryBuilder::ShaderLibraryBuilder()
             : m_shaderData(POOL_COMPILED_SHADER_DATA)
         {
@@ -321,7 +316,7 @@ namespace rendering
 
             // compress blob data 
             const auto cutoffSize = dataSize * 9 / 10; // 90% of original size
-            auto compressedData = base::mem::Compress(base::mem::CompressionType::LZ4HC, data, dataSize);
+            auto compressedData = base::mem::Compress(base::mem::CompressionType::LZ4HC, data, dataSize, POOL_COMPILED_SHADER_DATA);
             if (compressedData && compressedData.size() <= cutoffSize)
             {
                 // store compressed data

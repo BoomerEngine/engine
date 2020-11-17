@@ -14,7 +14,7 @@ namespace base
     //---
 
     template< typename T >
-    INLINE PagedBuffer<T>::PagedBuffer(mem::PoolID poolID /*= POOL_TEMP*/)
+    INLINE PagedBuffer<T>::PagedBuffer(PoolTag poolID /*= POOL_TEMP*/)
         : PagedBufferBase(sizeof(T), alignof(T), poolID)
     {}
 
@@ -24,7 +24,7 @@ namespace base
     {}
 
     template< typename T >
-    INLINE PagedBuffer<T>::PagedBuffer(mem::PoolID poolID, uint32_t pageSize)
+    INLINE PagedBuffer<T>::PagedBuffer(PoolTag poolID, uint32_t pageSize)
         : PagedBufferBase(sizeof(T), alignof(T), poolID, pageSize)
     {}
 

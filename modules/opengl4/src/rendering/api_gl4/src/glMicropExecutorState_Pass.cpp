@@ -162,7 +162,7 @@ namespace rendering
                 GLuint frameBuffer;
                 GL_PROTECT(glGenFramebuffers(1, &frameBuffer));
                 GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer));
-                base::mem::PoolStats::GetInstance().notifyAllocation(POOL_GL_FRAMEBUFFERS, 1);
+                base::mem::PoolStats::GetInstance().notifyAllocation(POOL_API_FRAMEBUFFERS, 1);
 
                 // attach the color buffers to the frame buffer
                 for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
@@ -428,7 +428,7 @@ namespace rendering
                 GL_PROTECT(glDeleteFramebuffers(1, &m_pass.fbo));
                 m_pass.fbo = 0;
 
-                base::mem::PoolStats::GetInstance().notifyFree(POOL_GL_FRAMEBUFFERS, 1);
+                base::mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
             }
 
             // restore rendering state to defaults after pass ends

@@ -135,8 +135,6 @@ namespace base
     TriMesh::TriMesh()
     {}
 
-    static mem::PoolID POOL_TRIMESH("Engine.TriMesh");
-
     void TriMesh::build(TriMeshBuildTriangle* triangles, uint32_t numTriangles)
     {
         // compute vertex bounds

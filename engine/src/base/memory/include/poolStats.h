@@ -40,11 +40,11 @@ namespace base
 
             /// inform about allocation in the pool
             /// NOTE: this is slow frontend interface for big external allocation only
-            void notifyAllocation(PoolID id, size_t size);
+            void notifyAllocation(PoolTag id, size_t size);
 
             /// inform about deallocation in the pool
             /// NOTE: this is slow frontend interface for big external allocation only
-            void notifyFree(PoolID id, size_t size);
+            void notifyFree(PoolTag id, size_t size);
 
             /// reset global statistics (max allocations & max size)
             void resetGlobalStatistics();
@@ -55,7 +55,7 @@ namespace base
             ///--
 
             /// get stats for given pool
-            void stats(PoolID id, PoolStatsData& outStats) const;
+            void stats(PoolTag id, PoolStatsData& outStats) const;
 
             /// get stats for all pools
             void allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const;

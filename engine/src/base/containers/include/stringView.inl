@@ -847,22 +847,25 @@ namespace base
     }
 
     template< typename T >
-    INLINE Buffer BaseStringView<T>::toBuffer() const
+    INLINE Buffer BaseStringView<T>::toBuffer(PoolTag tag) const
     {
         if (empty())
             return nullptr;
 
-        return Buffer::Create(POOL_STRINGIDS, length() * sizeof(T), 1, m_start);
+        return Buffer::Create(tag, length() * sizeof(T), 1, m_start);
     }
 
     template< typename T >
-    INLINE Buffer BaseStringView<T>::toBufferWithZero() const
+    INLINE Buffer BaseStringView<T>::toBufferWithZero(PoolTag tag) const
     {
         auto size = sizeof(T) * (length() + 1);
 		if (size >= INDEX_MAX)
 			return nullptr;
 
-        if (auto ret = Buffer::Create(POOL_STRINGIDS, length() * sizeof(T) + 1, 1, m_start))
+        if (!empty() && m_end[-1] == 0)
+            return toBuffer(tag);
+
+        if (auto ret = Buffer::Create(tag, length() * sizeof(T) + 1, 1, m_start))
         {
             ((T *) ret.data())[length()] = 0;
             return ret;

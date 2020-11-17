@@ -17,11 +17,6 @@ namespace ImGui
 {
     //--
 
-    base::mem::PoolID POOL_IMGUI("Engine.IMGUI");
-    //base::mem::PoolID POOL_IMGUI_IMAGES("Engine.IMGUI.Images");
-
-    //--
-
     class IconRegistry : public base::ISingleton
     {
         DECLARE_SINGLETON(IconRegistry);
@@ -328,12 +323,12 @@ namespace ImGui
     
     void* ImGuiAlloc(size_t size)
     {
-        return MemAlloc(POOL_IMGUI, size, 4);
+        return base::mem::GlobalPool<POOL_IMGUI>::Alloc(size, 4);
     }
 
     void ImGuiFree(void* ptr)
     {
-        return MemFree(ptr);
+        return  base::mem::GlobalPool<POOL_IMGUI>::Free(ptr);
     }
 
     //--

@@ -155,7 +155,7 @@ namespace base
         if (!helper || keysCount > helper->m_capacity || requiredBucketCount > helper->m_bucketCount)
         {
             const auto neededMemorySize = sizeof(HashBuckets) + (sizeof(int) * (requiredBucketCount + keysCapacity - 1));
-            helper = (HashBuckets*)MemRealloc(POOL_CONTAINERS, helper, neededMemorySize, 4);
+            helper = mem::GlobalPool<POOL_HASH_BUCKETS, HashBuckets>::Resize(helper, neededMemorySize, 4);
 
             helper->m_bucketCount = requiredBucketCount;
             helper->m_bucketMask = requiredBucketCount - 1;

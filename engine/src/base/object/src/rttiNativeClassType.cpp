@@ -16,9 +16,7 @@ namespace base
     {
         //--
 
-        mem::PoolID POOL_DEFAULT_OBJECTS("Engine.DefaultObjects");
-
-        NativeClass::NativeClass(const char* name, uint32_t size, uint32_t alignment, uint64_t nativeHash, mem::PoolID pool)
+        NativeClass::NativeClass(const char* name, uint32_t size, uint32_t alignment, uint64_t nativeHash, PoolTag pool)
             : IClassType(StringID(name), size, alignment)
         {
             DEBUG_CHECK_EX(nativeHash != 0, "Native class with no native type hash");
@@ -56,7 +54,7 @@ namespace base
 
         const void* NativeClass::createDefaultObject() const
         {
-            void* mem = MemAlloc(POOL_DEFAULT_OBJECTS, size(), alignment());
+            void* mem = mem::AllocateBlock(POOL_DEFAULT_OBJECTS, size(), alignment(), name().c_str());
             memzero(mem, size());
 
             EnterDefaultObjectCreation();

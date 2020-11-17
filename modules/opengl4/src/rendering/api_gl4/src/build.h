@@ -60,18 +60,6 @@ namespace rendering
 
         typedef std::function<void(void)> SequenceCompletionCallback;
 
-        extern base::mem::PoolID POOL_GL_STATIC_TEXTURES;
-        extern base::mem::PoolID POOL_GL_VERTEX_BUFFER;
-        extern base::mem::PoolID POOL_GL_INDEX_BUFFER;
-        extern base::mem::PoolID POOL_GL_CONSTANT_BUFFER;
-        extern base::mem::PoolID POOL_GL_STORAGE_BUFFER;
-        extern base::mem::PoolID POOL_GL_INDIRECT_BUFFER;
-        extern base::mem::PoolID POOL_GL_RENDER_TARGETS;
-        extern base::mem::PoolID POOL_GL_FRAMEBUFFERS;
-        extern base::mem::PoolID POOL_GL_SAMPLERS;
-        extern base::mem::PoolID POOL_GL_SHADERS;
-        extern base::mem::PoolID POOL_GL_PROGRAMS;
-
     } // gl4
 } // driver
 

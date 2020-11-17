@@ -81,7 +81,7 @@ namespace base
             }
         }
 
-        Buffer AsyncBuffer::load(const mem::PoolID poolID /*= POOL_ASYNC_BUFFER*/) const
+        Buffer AsyncBuffer::load(const PoolTag poolID /*= POOL_ASYNC_BUFFER*/) const
         {
             if (!m_access)
                 return nullptr;

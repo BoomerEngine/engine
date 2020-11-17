@@ -8,4 +8,3 @@
 
 #include "public.h"
 
-extern base::mem::PoolID POOL_CONFIG;

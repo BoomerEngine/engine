@@ -29,10 +29,6 @@ namespace base
     namespace script
     {
 
-		//---
-
-		mem::PoolID POOL_SCRIPT_COMPILER("Engine.Scripts.Compiler");
-
         //---
 
         /// log based erorr handler

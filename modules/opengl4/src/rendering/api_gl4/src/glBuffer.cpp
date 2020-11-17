@@ -19,17 +19,17 @@ namespace rendering
     {
         //--
 
-        base::mem::PoolID DetermineBestMemoryPool(const BufferCreationInfo& setup)
+        PoolTag DetermineBestMemoryPool(const BufferCreationInfo& setup)
         {
             if (setup.allowVertex)
-                return POOL_GL_VERTEX_BUFFER;
+                return POOL_API_VERTEX_BUFFER;
             if (setup.allowIndex)
-                return POOL_GL_INDEX_BUFFER;
+                return POOL_API_INDEX_BUFFER;
             if (setup.allowCostantReads)
-                return POOL_GL_CONSTANT_BUFFER;
+                return POOL_API_CONSTANT_BUFFER;
             if (setup.allowIndirect)
-                return POOL_GL_INDIRECT_BUFFER;
-            return POOL_GL_STORAGE_BUFFER;
+                return POOL_API_INDIRECT_BUFFER;
+            return POOL_API_STORAGE_BUFFER;
         }
 
         //--

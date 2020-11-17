@@ -17,10 +17,6 @@ namespace rendering
     {
         //----
 
-        base::mem::PoolID POOL_PROXY("Rendering.Proxy");
-
-        //----
-
         IProxy::IProxy(ProxyType type)
             : proxyType(type)
         {}

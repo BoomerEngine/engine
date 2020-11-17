@@ -305,7 +305,7 @@ namespace base
             outTable.m_rootOffset = nodesStartOffset;
             outTable.m_contentHash = nodeList.empty() ? 0 : nodeList[0]->m_contentHash;
             outTable.m_numEntries = nodeList.size();
-            outTable.m_data = Buffer::Create(POOL_DATA_BUFFER, dataOffset);
+            outTable.m_data = Buffer::Create(POOL_TABLE_DATA, dataOffset);
 
             // clear buckets
             auto writeBuffer = outTable.m_data.data();

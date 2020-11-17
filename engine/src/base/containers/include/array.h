@@ -284,7 +284,7 @@ namespace base
         //--
 
         //! Create a buffer with copy of the data
-        Buffer createBuffer(mem::PoolID poolID = POOL_TEMP, uint64_t forcedAlignment=0) const;
+        Buffer createBuffer(PoolTag poolID = POOL_TEMP, uint64_t forcedAlignment=0) const;
 
         //! Create a special aliased buffer that will point to the same memory
         Buffer createAliasedBuffer() const;

@@ -657,7 +657,7 @@ namespace base
     }
 
     template<typename T>
-    Buffer Array<T>::createBuffer(base::mem::PoolID poolID, uint64_t forcedAlignment) const
+    Buffer Array<T>::createBuffer(PoolTag poolID, uint64_t forcedAlignment) const
     {
         if (empty())
             return Buffer();
@@ -665,7 +665,7 @@ namespace base
         return Buffer::Create(poolID, dataSize(), std::max(alignof(T), forcedAlignment), data());
     }
 
-    static void NoFreeFunc(mem::PoolID pool, void* memory, uint64_t size)
+    static void NoFreeFunc(PoolTag pool, void* memory, uint64_t size)
     {
         // nothing
     }

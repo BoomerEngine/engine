@@ -13,7 +13,7 @@ namespace base
     //--
 
     template< typename T >
-    INLINE StaticStructurePool<T>::StaticStructurePool(mem::PoolID pool)
+    INLINE StaticStructurePool<T>::StaticStructurePool(PoolTag pool)
         : StaticStructurePoolBase(pool, sizeof(T), alignof(T))
     {}
 

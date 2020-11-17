@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "poolID.h"
 #include "poolStats.h"
 #include "poolStatsInternal.h"
 
@@ -22,12 +21,12 @@ namespace base
         {
         }
 
-        void PoolStats::notifyAllocation(PoolID id, size_t size)
+        void PoolStats::notifyAllocation(PoolTag id, size_t size)
         {
             prv::TheInternalPoolStats.notifyAllocation(id, size);
         }
 
-        void PoolStats::notifyFree(PoolID id, size_t size)
+        void PoolStats::notifyFree(PoolTag id, size_t size)
         {
             prv::TheInternalPoolStats.notifyFree(id, size);
         }
@@ -42,7 +41,7 @@ namespace base
             prv::TheInternalPoolStats.resetFrameStatistics();
         }
 
-        void PoolStats::stats(PoolID id, PoolStatsData& outStats) const
+        void PoolStats::stats(PoolTag id, PoolStatsData& outStats) const
         {
             prv::TheInternalPoolStats.stats(id, outStats);
         }

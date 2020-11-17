@@ -17,10 +17,6 @@ namespace ed
 {
     //--
 
-    static mem::PoolID POOL_RAW_RESOURCE("Editor.RawResource");
-
-    //--
-
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFileRawResource);
     RTTI_END_TYPE();
 

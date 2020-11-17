@@ -22,10 +22,6 @@ namespace rendering
 
         //--
 
-        static base::mem::PoolID POOL_RENDERING_COMMANDS("Rendering.Commands");        
-
-        //--
-
         namespace helper
         {
             base::ConfigProperty<uint32_t> cvCommandBufferPageSize("Rendering.Commands", "CommandBufferPageSize", 64 * 1024);
@@ -130,7 +126,7 @@ namespace rendering
             m_pages->reset(); // this releases memory for this command buffer as well
 
             this->~CommandBuffer();
-            MemFree(this);
+            base::mem::FreeBlock(this);
         }
 
         bool CommandBuffer::enumChildren(const std::function<bool(CommandBuffer * buffer)>& enumFunc)

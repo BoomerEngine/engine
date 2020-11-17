@@ -13,10 +13,6 @@ namespace rendering
 {
     ///--
 
-    static base::mem::PoolID POOL_MESH_BUILDER("Engine.MeshBuilder");
-
-    ///--
-
     MeshRawStreamBuilder::MeshRawStreamBuilder(MeshTopologyType topology /*= MeshTopologyType::Triangles*/)
         : m_topology(topology)
     {
@@ -57,21 +53,11 @@ namespace rendering
 
     void MeshRawStreamBuilder::clear()
     {
-        /*if (m_indicesRaw != nullptr)
-        {
-            if (m_ownedIndices)
-                MemFree(m_indicesRaw);
-            m_indicesRaw = nullptr;
-            m_maxVeritces = 0;
-        }*/
-
         for (uint32_t i = 0; i < MAX_STREAMS; ++i)
         {
             auto mask = MeshStreamMaskFromType((MeshStreamType)i);
             if (m_ownedStreams & mask)
-            {
-                MemFree(m_verticesRaw[i]);
-            }
+                base::mem::GlobalPool<POOL_MESH_BUILDER>::Free(m_verticesRaw[i]);
         }
 
         memset(m_verticesRaw, 0, sizeof(m_verticesRaw));
@@ -98,13 +84,13 @@ namespace rendering
                     auto dataSize = maxVertices * stride;
                     if (m_verticesRaw[i] && 0 == (m_ownedStreams & mask))
                     {
-                        auto newData  = MemAlloc(POOL_MESH_BUILDER, dataSize, 16);
+                        auto newData = base::mem::GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
                         memcpy(newData, m_verticesRaw[i], numVeritces * stride);
                         m_verticesRaw[i] = newData;
                     }
                     else
                     {
-                        m_verticesRaw[i] = MemRealloc(POOL_MESH_BUILDER, m_verticesRaw[i], dataSize, 16);
+                        m_verticesRaw[i] = base::mem::GlobalPool<POOL_MESH_BUILDER>::Resize(m_verticesRaw[i], dataSize, 16);
                     }
 
                     // mask stream
@@ -116,28 +102,6 @@ namespace rendering
             m_maxVeritces = maxVertices;
         }
     }
-
-    /*void MeshRawStreamBuilder::reserveIndices(uint32_t maxIndices)
-    {
-        if (maxIndices > m_maxIndices || (maxIndices && !m_ownedIndices))
-        {
-            auto dataSize = sizeof(uint32_t) * maxIndices;
-            if (m_ownedIndices)
-            {
-                m_indicesRaw = (uint32_t*)MemRealloc(POOL_MESH_BUILDER, m_indicesRaw, dataSize, 16);
-                m_maxIndices = maxIndices;
-            }
-            else
-            {
-                auto newData = MemAlloc(POOL_MESH_BUILDER, dataSize, 16);
-                memcpy(newData, m_indicesRaw, numIndices * sizeof(uint32_t));
-                m_indicesRaw = (uint32_t*)newData;
-                m_ownedIndices = true;
-            }
-
-            m_maxIndices = maxIndices;
-        }
-    }*/
 
     void MeshRawStreamBuilder::bind(const MeshRawChunk& chunk, MeshStreamMask meshStreamMask)
     {
@@ -163,17 +127,6 @@ namespace rendering
         //numIndices = m_maxIndices;
     }
 
-    /*void MeshRawStreamBuilder::makeIndexBufferResident()
-    {
-        if (!m_ownedIndices)
-        {
-            auto dataSize = sizeof(uint32_t) * m_maxIndices;
-            auto newData  = MemAlloc(POOL_MESH_BUILDER, dataSize, 16);
-            memcpy(newData, m_indicesRaw, numIndices * sizeof(uint32_t));
-            m_indicesRaw = (uint32_t*)newData;
-        }
-    }*/
-
     void MeshRawStreamBuilder::makeVertexStreamResident(MeshStreamType type)
     {
         auto mask = MeshStreamMaskFromType(type);
@@ -184,7 +137,7 @@ namespace rendering
                 auto stride = GetMeshStreamStride(type);
                 auto dataSize = m_maxVeritces * stride;
 
-                auto newData  = MemAlloc(POOL_MESH_BUILDER, dataSize, 16);
+                auto newData = base::mem::GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
                 memcpy(newData, m_verticesRaw[(uint32_t)type], numVeritces * stride);
                 m_verticesRaw[(uint32_t)type] = newData;
 

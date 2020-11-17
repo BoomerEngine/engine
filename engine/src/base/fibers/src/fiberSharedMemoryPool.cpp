@@ -16,7 +16,7 @@ namespace base
     namespace fibers
     {
 
-        SharedMemoryPool::SharedMemoryPool(mem::PoolID poolID, uint64_t size)
+        SharedMemoryPool::SharedMemoryPool(PoolTag poolID, uint64_t size)
             : m_maxMemorySize(size)
             , m_statUsedSize(0)
             , m_statRequestedSize(0)
@@ -79,9 +79,9 @@ namespace base
 
         //---
 
-        static void FreeIOMemory(mem::PoolID pool, void* memory, uint64_t size)
+        static void FreeIOMemory(PoolTag pool, void* memory, uint64_t size)
         {
-            MemFree(memory);
+            mem::FreeBlock(memory);
         }
 
         Buffer SharedMemoryPool::allocExternalBuffer_NoLock(uint32_t size)
@@ -91,18 +91,11 @@ namespace base
                 return Buffer(); // empty buffer is valid result of 0 size allocation
 
             // allocate memory
-            auto memory = MemAlloc(POOL_IO, size, 1);
-
-            // prepare free function so we know where to return the shit
-            // NOTE: the free function will try to kick off some more allocation
-            auto freeFunc  = [this](void* memory, uint64_t size)
-            {
-                MemFree(memory);
-            };
+            auto memory = mem::GlobalPool<POOL_IO_OUTSTANDING>::Alloc(size, 1);
 
             // when this buffer is destroyed the pool will try to kick of next allocations
             // this way we have a nice throttling on the amount of the IO memory used
-            return Buffer::CreateExternal(POOL_IO, size, memory, &FreeIOMemory);
+            return Buffer::CreateExternal(POOL_IO_OUTSTANDING, size, memory, &FreeIOMemory);
         }
 
         Buffer SharedMemoryPool::allocBuffer_NoLock(uint32_t size)
@@ -115,7 +108,7 @@ namespace base
 
             // allocate memory
             // TODO: use actual memory pool
-            auto memory  = MemAlloc(POOL_IO, size, 1);
+            auto memory = mem::GlobalPool<POOL_IO>::Alloc(size, 1);
 
             // update stats
             ++m_statBlockCount;
@@ -204,7 +197,7 @@ namespace base
             TRACE_SPAM("Freed IO memory of size {}", size);
 
             // free the memory itself
-            MemFree(mem);
+            mem::FreeBlock(mem);
 
             // update stats
             ASSERT(size <= m_statUsedSize.load());

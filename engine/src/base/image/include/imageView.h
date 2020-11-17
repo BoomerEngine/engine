@@ -60,7 +60,7 @@ namespace base
             INLINE uint64_t dataSize() const;
 
             // extract data as buffer
-            Buffer toBuffer(mem::PoolID id = POOL_IMAGE) const;
+            Buffer toBuffer(PoolTag id = POOL_IMAGE) const;
 
             // copy out the buffer into a packed memory 
             // NOTE: memory must have at least dataSize() bytes

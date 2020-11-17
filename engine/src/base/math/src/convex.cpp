@@ -762,12 +762,12 @@ namespace ole
 
             PoolArray(int size) : size(size), next(NULL)
             {
-                array = (T*)MemAlloc(POOL_TEMP, sizeof(T) * size, 16);
+                array = base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
             }
 
             ~PoolArray()
             {
-                MemFree(array);
+                base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
             }
 
             T* init()
@@ -802,7 +802,7 @@ namespace ole
                     PoolArray<T>* p = arrays;
                     arrays = p->next;
                     p->~PoolArray<T>();
-                    MemFree(p);
+                    base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
                 }
             }
 
@@ -829,7 +829,7 @@ namespace ole
                     }
                     else
                     {
-                        p = new (MemAlloc(POOL_TEMP, sizeof(PoolArray<T>), 16)) PoolArray<T>(arraySize);
+                        p = new ( base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
                         p->next = arrays;
                         arrays = p;
                     }
@@ -3422,12 +3422,12 @@ namespace ole2
 
             PoolArray(int size): size(size), next(NULL)
             {
-                array = (T*) MemAlloc(POOL_TEMP, sizeof(T) * size, 16);
+                array = base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
             }
 
             ~PoolArray()
             {
-                MemFree(array);
+                base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
             }
 
             T* init()
@@ -3461,7 +3461,7 @@ namespace ole2
                     PoolArray<T>* p = arrays;
                     arrays = p->next;
                     p->~PoolArray<T>();
-                    MemFree(p);
+                    base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
                 }
             }
 
@@ -3488,8 +3488,7 @@ namespace ole2
                     }
                     else
                     {
-                        void* memory = MemAlloc(POOL_TEMP, sizeof(PoolArray<T>), 16);
-                        p = new( memory ) PoolArray<T>(arraySize);
+                        p = new ( base::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
                         p->next = arrays;
                         arrays = p;
                     }
@@ -5152,8 +5151,6 @@ namespace base
         ptr = base::OffsetPtr(ptr, count * sizeof(T));
         return writePtr;
     }
-
-    static mem::PoolID POOL_CONVEX_HULL("Engine.Convex");
 
     bool Convex::build(const float* points, uint32_t numPoints, uint32_t stride, float shinkBy)
     {

@@ -41,7 +41,7 @@ namespace base
         BitWriter::~BitWriter()
         {
             if (m_releaseMemory)
-                MemFree(m_blockStart);
+                mem::GlobalPool<POOL_NET_REPLICATION, WORD>::Free(m_blockStart);
         }
 
         void BitWriter::clear()
@@ -205,7 +205,7 @@ namespace base
 
                 auto oldData  = m_blockStart;
 
-                auto newData  = (WORD*) MemAlloc(POOL_NET, sizeof(WORD) * requiredWords, sizeof(WORD));
+                auto newData  = mem::GlobalPool<POOL_NET_REPLICATION, WORD>::AllocN(requiredWords);
                 memzero(newData, sizeof(WORD) * requiredWords);
                 memcpy(newData, m_blockStart, (m_blockEnd - m_blockStart) * sizeof(WORD));
 
@@ -214,7 +214,7 @@ namespace base
                 m_blockStart = newData;
 
                 if (m_releaseMemory)
-                    MemFree(oldData);
+                    mem::GlobalPool<POOL_NET_REPLICATION, WORD>::Free(oldData);
 
                 m_bitCapacity = requiredWords * WORD_SIZE;
                 m_releaseMemory = true;

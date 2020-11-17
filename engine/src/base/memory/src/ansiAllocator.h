@@ -17,25 +17,22 @@ namespace base
         class AnsiAllocator
         {
         public:
-            AnsiAllocator();
-            ~AnsiAllocator();
-
             static const uint32_t DEFAULT_ALIGNMNET = 8;
 
             // allocate memory block
-            void* allocate(PoolID id, size_t size, size_t alignmemnt, const char* fileName, uint32_t fileLine, const char* typeName);
+            static void* allocate(PoolTag id, size_t size, size_t alignmemnt, const char* typeName);
 
             // deallocate memory block
-            void deallocate(void* mem);
+            static void deallocate(void* mem);
 
             // resize allocated memory block
-            void* reallocate(PoolID id, void* mem, size_t newSize, size_t alignmemnt, const char* fileName, uint32_t fileLine, const char* typeName);
+            static void* reallocate(PoolTag id, void* mem, size_t newSize, size_t alignmemnt, const char* typeName);
 
             // print memory leaks
-            void printLeaks();
+            static void printLeaks();
 
             // validate heap status
-            void validateHeap(void* freedPtr);
+            static void validateHeap(void* freedPtr);
         };
 
     } // mem

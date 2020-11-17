@@ -66,14 +66,14 @@ namespace base
         }
     }
 
-    InstanceBufferPtr InstanceBufferLayout::createInstance(const mem::PoolID poolID)
+    InstanceBufferPtr InstanceBufferLayout::createInstance(PoolTag poolID)
     {
-        void* ptr = MemAlloc(poolID, size(), alignment());
+        void* ptr = mem::AllocateBlock(poolID, size(), alignment(), "InstanceBuffer");
         initializeBuffer(ptr);
         return MemNew(InstanceBuffer, AddRef(this), ptr, size(), poolID);
     }
 
-    InstanceBufferPtr CreateBufferInstance(const InstanceBufferLayoutPtr& bufferLayout, const mem::PoolID poolID)
+    InstanceBufferPtr CreateBufferInstance(const InstanceBufferLayoutPtr& bufferLayout, const PoolTag poolID)
     {
         if (!bufferLayout)
             return InstanceBufferPtr();

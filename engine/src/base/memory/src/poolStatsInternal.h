@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "poolID.h"
 #include "poolStats.h"
 
 #include "base/system/include/atomic.h"
@@ -26,10 +25,10 @@ namespace base
         public:
             PoolStatsInternal();
 
-            INLINE void notifyAllocation(PoolID id, size_t size)
+            INLINE void notifyAllocation(PoolTag id, size_t size)
             {
-#ifndef BUILD_RELEASE
-                auto& stats = m_stats[id.value()];
+#ifndef BUILD_FINAL
+                auto& stats = m_stats[id];
                 auto curAlloc = ++stats.m_totalAllocations;
                 AtomicMax(stats.m_maxAllocations, curAlloc);
                 auto curSize = stats.m_totalSize += size;
@@ -39,10 +38,10 @@ namespace base
 #endif
             }
 
-            INLINE void notifyFree(PoolID id, size_t size)
+            INLINE void notifyFree(PoolTag id, size_t size)
             {
-#ifndef BUILD_RELEASE
-                auto& stats = m_stats[id.value()];
+#ifndef BUILD_FINAL
+                auto& stats = m_stats[id];
                 --stats.m_totalAllocations;
                 stats.m_totalSize -= size;
                 stats.m_maxSize -= size;
@@ -60,7 +59,7 @@ namespace base
             void resetFrameStatistics();
 
             /// get stats for given pool
-            void stats(PoolID id, PoolStatsData& outStats) const;
+            void stats(PoolTag id, PoolStatsData& outStats) const;
 
             /// get stats for all pools
             void allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const;
@@ -92,7 +91,7 @@ namespace base
                 uint64_t m_maxAllowedSize = 0; // max allowed size of for this pool (from budgets)
             };
 
-            Stats m_stats[256];
+            Stats m_stats[POOL_MAX];
         };
 
         ///--

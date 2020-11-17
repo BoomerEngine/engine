@@ -16,10 +16,6 @@ namespace base
     {
         ///--
 
-        mem::PoolID POOL_XML("Engine.XML");
-
-        ///--
-
         RTTI_BEGIN_TYPE_CLASS(XMLData);
             RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4xml");
             RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Binary XML");

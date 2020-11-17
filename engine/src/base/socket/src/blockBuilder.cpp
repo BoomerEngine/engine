@@ -31,7 +31,7 @@ namespace base
         void BlockBuilder::clear()
         {
             if (m_startPos != m_internalBuffer)
-                MemFree(m_startPos);
+                mem::GlobalPool<POOL_NET, uint8_t>::Free(m_startPos);
 
             m_startPos = m_internalBuffer;
             m_curPos = m_internalBuffer;
@@ -48,11 +48,11 @@ namespace base
             while (size + additionalSizeNeeded > capacity)
                 capacity *= 2;
 
-            auto newBuffer  = (uint8_t*) MemAlloc(POOL_NET, capacity, 1);
+            auto newBuffer = mem::GlobalPool<POOL_NET, uint8_t>::Alloc(capacity, 1);
             memcpy(newBuffer, m_startPos, size);
 
             if (m_startPos != m_internalBuffer)
-                MemFree(m_startPos);
+        mem::GlobalPool<POOL_NET, uint8_t>::Free(m_startPos);
 
             m_startPos = newBuffer;
             m_endPos = newBuffer + capacity;

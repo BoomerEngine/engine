@@ -46,7 +46,7 @@ namespace base
         BASE_CONTAINERS_API void release();
 
         // resize the buffer to match new capacity, will try to reuse existing memory unless the request is smaller or we were using memory that we don't own
-        BASE_CONTAINERS_API void resize(Count newCapcity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment);
+        BASE_CONTAINERS_API void resize(Count newCapcity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment, const char* typeName);
 
         //--
 

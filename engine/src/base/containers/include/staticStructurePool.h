@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/memory/include/poolID.h"
-
 namespace base
 {
     ///--
@@ -18,7 +16,7 @@ namespace base
     struct BASE_CONTAINERS_API StaticStructurePoolBase : public NoCopy
     {
     public:
-        StaticStructurePoolBase(mem::PoolID pool, uint32_t elemSize, uint32_t elemAlign);
+        StaticStructurePoolBase(PoolTag pool, uint32_t elemSize, uint32_t elemAlign);
         ~StaticStructurePoolBase();
 
         // maximum capacity
@@ -78,7 +76,7 @@ namespace base
         uint32_t m_elemSize = 0;
         uint32_t m_elemAlign = 0;
 
-        mem::PoolID m_pool;
+        PoolTag m_pool;
 
         ALWAYS_INLINE bool setBit(uint32_t index)
         {
@@ -104,7 +102,7 @@ namespace base
     struct StaticStructurePool : protected StaticStructurePoolBase
     {
     public:
-        INLINE StaticStructurePool(mem::PoolID pool);
+        INLINE StaticStructurePool(PoolTag pool);
         INLINE ~StaticStructurePool();
 
         //--

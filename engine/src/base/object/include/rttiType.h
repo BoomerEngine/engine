@@ -135,7 +135,7 @@ namespace base
             uint64_t nativeHash = 0; // typeid().hash() of the type
             uint32_t size = 0; // size of the type in memory
             uint32_t alignment = 1; // alignment required for the type
-            mem::PoolID pool = POOL_DEFAULT; // pool to allocate memory from when creating an instance of this type
+            PoolTag pool = POOL_DEFAULT; // pool to allocate memory from when creating an instance of this type
 
             bool scripted = false; // type was defined in scripts
             bool initializedFromZeroMem = false; // type does not require construct() if initialized from zero memory

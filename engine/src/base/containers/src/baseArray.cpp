@@ -18,7 +18,7 @@ namespace base
         release();
     }
 
-    void BaseArrayBuffer::resize(Count newCapcity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment)
+    void BaseArrayBuffer::resize(Count newCapcity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment, const char* typeName)
     {
         if (newCapcity == 0)
         {
@@ -26,11 +26,11 @@ namespace base
         }
         else if (m_flagOwned)
         {
-            m_ptr = mem::ResizeBlock(POOL_CONTAINERS, m_ptr, newMemorySize, memoryAlignment);
+            m_ptr = mem::ResizeBlock(POOL_CONTAINERS, m_ptr, newMemorySize, memoryAlignment, typeName);
         }
         else
         {
-            auto* newPtr = mem::ResizeBlock(POOL_CONTAINERS, nullptr, newMemorySize, memoryAlignment);
+            auto* newPtr = mem::ResizeBlock(POOL_CONTAINERS, nullptr, newMemorySize, memoryAlignment, typeName);
             memcpy(newPtr, m_ptr, std::min<uint64_t>(currentMemorySize, newMemorySize));
             m_ptr = newPtr;
         }
@@ -42,7 +42,7 @@ namespace base
     void BaseArrayBuffer::release()
     {
         if (m_flagOwned)
-            MemFree(m_ptr);
+            mem::FreeBlock(m_ptr);
 
         m_flagOwned = true;
         m_capacity = 0;
@@ -74,7 +74,7 @@ namespace base
     Count BaseArray::changeCapacity(Count newCapacity, uint64_t currentMemorySize, uint64_t newMemorySize, uint64_t memoryAlignment, const char* typeNameInfo)
     {
         auto oldCapacity = capacity();
-        m_buffer.resize(newCapacity, currentMemorySize, newMemorySize, memoryAlignment);
+        m_buffer.resize(newCapacity, currentMemorySize, newMemorySize, memoryAlignment, typeNameInfo);
         return oldCapacity;
     }
 

@@ -157,7 +157,7 @@ namespace base
         struct PoolInfo
         {
             base::StringID name;
-            base::mem::PoolID poolID;
+            PoolTag poolID;
             bool poolIDValid = false;
             int parent = -1;
             base::Array<short> children;
@@ -334,16 +334,16 @@ namespace base
 
         void updatePoolList()
         {
-            auto range = base::mem::PoolID::GetPoolIDRange();
+            auto range = (int)POOL_MAX;
             for (uint32_t i=m_prevPoolRange; i<range; ++i)
             {
-                auto name = base::mem::PoolID::GetPoolNameForID(i);
-                if (name && *name)
+                auto name = StringBuf(TempString("Pool{}", i)); // TEMP
+                //if (name && *name)
                 {
                     auto id = createPoolPath(name);
                     if (id != INDEX_NONE)
                     {
-                        m_entries[id].poolID = *(const base::mem::PoolID*) &id;
+                        m_entries[id].poolID = *(const PoolTag*) &id;
                         m_entries[id].poolIDValid = true;
                     }
                 }

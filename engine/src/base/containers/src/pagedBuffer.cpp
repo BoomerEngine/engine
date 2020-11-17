@@ -15,7 +15,7 @@ namespace base
 {
     ///--
 
-    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, mem::PoolID poolID /*= POOL_TEMP*/)
+    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID /*= POOL_TEMP*/)
         : m_allocator(&mem::PageAllocator::GetDefaultAllocator(poolID))
         , m_elementAlignment(alignment)
         , m_elementSize(size)
@@ -31,7 +31,7 @@ namespace base
         m_pageSize = m_allocator->pageSize();
     }
 
-    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, mem::PoolID poolID, uint32_t pageSize)
+    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID, uint32_t pageSize)
         : m_elementAlignment(alignment)
         , m_elementSize(size)
     {
@@ -270,9 +270,9 @@ namespace base
         m_writeEndPtr = m_writeStartPtr + (m_elementsLeftOnPage * m_elementSize); // make sure end is the last element we can write
     }
 
-    Buffer PagedBufferBase::toBuffer(mem::PoolID pool /*= POOL_DEFAULT*/) const
+    Buffer PagedBufferBase::toBuffer(PoolTag pool /*= POOL_DEFAULT*/) const
     {
-        if (pool.value() == POOL_DEFAULT)
+        if (pool == POOL_DEFAULT)
             pool = m_allocator->poolID();
 
         auto buf = Buffer::Create(pool, dataSize(), m_elementAlignment);

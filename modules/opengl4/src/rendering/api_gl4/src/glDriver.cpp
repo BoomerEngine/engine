@@ -41,22 +41,6 @@ namespace rendering
     {
         //--
 
-        base::mem::PoolID POOL_GL_STATIC_TEXTURES("GL.StaticTextures");
-
-        base::mem::PoolID POOL_GL_VERTEX_BUFFER("GL.Buffer.Vertex");
-        base::mem::PoolID POOL_GL_INDEX_BUFFER("GL.Buffer.Index");
-        base::mem::PoolID POOL_GL_CONSTANT_BUFFER("GL.Buffer.Constant");
-        base::mem::PoolID POOL_GL_STORAGE_BUFFER("GL.Buffer.Storage");
-        base::mem::PoolID POOL_GL_INDIRECT_BUFFER("GL.Buffer.Indirect");
-
-        base::mem::PoolID POOL_GL_RENDER_TARGETS("GL.RenderTargets");
-        base::mem::PoolID POOL_GL_FRAMEBUFFERS("GL.FrameBuffers");
-        base::mem::PoolID POOL_GL_PIPELINES("GL.Pipelines");
-        base::mem::PoolID POOL_GL_SHADERS("GL.Shaders");
-        base::mem::PoolID POOL_GL_PROGRAMS("GL.Programs");
-
-        //--
-
         RTTI_BEGIN_TYPE_CLASS(Driver);
             RTTI_METADATA(DriverNameMetadata).name("GL4");
         RTTI_END_TYPE();

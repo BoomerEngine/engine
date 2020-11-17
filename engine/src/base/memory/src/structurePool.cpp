@@ -89,7 +89,7 @@ namespace base
 
         //---
 
-        StructurePoolBase::StructurePoolBase(PoolID poolId, uint32_t elementSize, uint32_t elementAlignment, uint32_t minPageCount, uint32_t elementsPerPage)
+        StructurePoolBase::StructurePoolBase(PoolTag poolId, uint32_t elementSize, uint32_t elementAlignment, uint32_t minPageCount, uint32_t elementsPerPage)
             : m_poolId(poolId)
             , m_elementSize(std::max<uint32_t>(elementSize, elementAlignment))
             , m_elementAlignment(elementAlignment)

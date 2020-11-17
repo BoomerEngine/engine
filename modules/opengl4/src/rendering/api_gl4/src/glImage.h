@@ -81,8 +81,8 @@ namespace rendering
         class Image : public Object
         {
         public:
-            Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, base::mem::PoolID poolID);
-            Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, base::mem::PoolID poolID);
+            Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID);
+            Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
             virtual ~Image();
 
             //--
@@ -126,7 +126,7 @@ namespace rendering
             static Image* CreateImage(Driver* drv, const ImageCreationInfo& setup, const SourceData *sourceData);
 
             // create an image with already existing resource (recycled)
-            static Image* CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, base::mem::PoolID poolID);
+            static Image* CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
 
         private:
             GLuint m_glImage = 0;
@@ -137,7 +137,7 @@ namespace rendering
             base::Array<SourceData> m_initData;
             base::HashMap<ImageViewKey, GLuint> m_imageViewMap;
 
-            base::mem::PoolID m_poolID;
+            PoolTag m_poolID;
 
             //--
 

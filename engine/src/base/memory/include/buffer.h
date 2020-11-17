@@ -13,7 +13,7 @@ namespace base
     namespace mem
     {
         /// data free function
-        typedef void (*TBufferFreeFunc)(PoolID pool, void* memory, uint64_t size);
+        typedef void (*TBufferFreeFunc)(PoolTag pool, void* memory, uint64_t size);
 
         /// storage for buffer, can be shared
         /// NOTE: storage is never empty
@@ -27,7 +27,7 @@ namespace base
             INLINE uint64_t size() const { return m_size; }
 
             // pool this memory was allocated from
-            INLINE PoolID pool() const { return m_pool; }
+            INLINE PoolTag pool() const { return m_pool; }
 
             // change size
             INLINE void adjustSize(uint64_t size) { m_size = size; }
@@ -43,10 +43,10 @@ namespace base
             //--
 
             // create a buffer storage with internal storage
-            static BufferStorage* CreateInternal(PoolID pool, uint64_t size, uint32_t alignment);
+            static BufferStorage* CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment);
 
             // create a buffer with external storage
-            static BufferStorage* CreateExternal(PoolID pool, uint64_t size, TBufferFreeFunc freeFunc, void* externalPayload);
+            static BufferStorage* CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void* externalPayload);
 
         private:
             ~BufferStorage() = delete;
@@ -54,7 +54,7 @@ namespace base
             uint64_t m_size = 0;
             uint16_t m_offsetToPayload = 0;
             void* m_externalPayload = nullptr;
-            PoolID m_pool = POOL_TEMP;
+            PoolTag m_pool = POOL_TEMP;
             TBufferFreeFunc m_freeFunc = nullptr;
             std::atomic<uint32_t> m_refCount = 1;
 
@@ -115,11 +115,11 @@ namespace base
 
         // reinitialize with new memory
         // NOTE: can fail if we don't have enough memory
-        bool init(mem::PoolID pool, uint64_t size, uint32_t alignment = 1, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
+        bool init(PoolTag pool, uint64_t size, uint32_t alignment = 1, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
 
         // reinitialize with zeros
         // NOTE: can fail if we don't have enough memory
-        bool initWithZeros(mem::PoolID pool, uint64_t size, uint32_t alignment = 1);
+        bool initWithZeros(PoolTag pool, uint64_t size, uint32_t alignment = 1);
 
         // change buffer size without reallocating memory (advanced shit)
         void adjustSize(uint32_t size);
@@ -132,24 +132,24 @@ namespace base
         //--
 
         // create buffer from content
-        static Buffer Create(mem::PoolID pool, uint64_t size, uint32_t alignment = 0, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
+        static Buffer Create(PoolTag pool, uint64_t size, uint32_t alignment = 0, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
 
         // create zero initialized buffer
-        static Buffer CreateZeroInitialized(mem::PoolID pool, uint64_t size, uint32_t alignment = 0);
+        static Buffer CreateZeroInitialized(PoolTag pool, uint64_t size, uint32_t alignment = 0);
 
         // create buffer from external memory
-        static Buffer CreateExternal(mem::PoolID pool, uint64_t size, void* externalData, mem::TBufferFreeFunc freeFunc = nullptr);
+        static Buffer CreateExternal(PoolTag pool, uint64_t size, void* externalData, mem::TBufferFreeFunc freeFunc = nullptr);
 
         // create buffer from system memory (bypassing allocator), do it regardless of the buffer's size
-        static Buffer CreateInSystemMemory(mem::PoolID pool, uint64_t size, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
+        static Buffer CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
 
         //--
 
     private:
         mem::BufferStorage* m_storage = nullptr; // refcounted
 
-        static mem::BufferStorage* CreateBestStorageForSize(mem::PoolID pool, uint64_t size, uint32_t alignment);
-        static mem::BufferStorage* CreateSystemMemoryStorage(mem::PoolID pool, uint64_t size);
+        static mem::BufferStorage* CreateBestStorageForSize(PoolTag pool, uint64_t size, uint32_t alignment);
+        static mem::BufferStorage* CreateSystemMemoryStorage(PoolTag pool, uint64_t size);
     };
 
 } // base

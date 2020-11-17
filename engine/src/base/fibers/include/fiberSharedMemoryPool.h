@@ -22,7 +22,7 @@ namespace base
         class BASE_FIBERS_API SharedMemoryPool : public NoCopy
         {
         public:
-            SharedMemoryPool(mem::PoolID poolID, uint64_t size);
+            SharedMemoryPool(PoolTag poolID, uint64_t size);
             ~SharedMemoryPool();
 
             //--
@@ -34,7 +34,7 @@ namespace base
             CAN_YIELD bool allocBlocksAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer);
 
         private:
-            mem::PoolID m_poolID;
+            PoolTag m_poolID;
             uint64_t m_maxMemorySize;
 
             std::atomic<uint64_t> m_statUsedSize;
