@@ -10,7 +10,7 @@
 
 #include "base/ui/include/uiElement.h"
 #include "base/ui/include/uiCanvasArea.h"
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingImageView.h"
 
 namespace ed
 {

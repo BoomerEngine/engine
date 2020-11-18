@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_system, base_memory, base_containers, base_io, base_math, base_parser #]
-* [# dependency: rendering_driver #]
+* [# dependency: rendering_device #]
 * [# privatelib: crunch #]
 * [# devonly #]
 ***/

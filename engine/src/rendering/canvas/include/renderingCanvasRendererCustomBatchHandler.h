@@ -34,10 +34,10 @@ namespace rendering
             virtual ~ICanvasRendererCustomBatchHandler();
 
             /// initialize handler, may allocate resources, load shaders, etc
-            virtual void initialize(rendering::IDriver* drv);
+            virtual void initialize(rendering::IDevice* drv);
 
             /// deinitialize handler, should free resources
-            virtual void deinitialize(rendering::IDriver* drv);
+            virtual void deinitialize(rendering::IDevice* drv);
 
             /// handle rendering of batches
             virtual void render(command::CommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) = 0;

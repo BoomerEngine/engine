@@ -11,9 +11,9 @@
 #include "renderingFrameParams.h"
 #include "renderingSceneCulling.h"
 
-#include "rendering/driver/include/renderingParametersView.h"
+#include "rendering/device/include/renderingParametersView.h"
 #include "rendering/scene/include/renderingFrameCamera.h"
-#include "rendering/driver/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingFramebuffer.h"
 
 #include "base/fibers/include/fiberWaitList.h"
 #include "base/memory/include/linearAllocator.h"

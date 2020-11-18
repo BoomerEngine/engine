@@ -10,10 +10,10 @@
 
 #include "renderingMeshFormat.h"
 #include "base/app/include/localService.h"
-#include "rendering/driver/include/renderingBufferView.h"
+#include "rendering/device/include/renderingBufferView.h"
 #include "base/containers/include/blockPool.h"
-#include "rendering/driver/include/renderingManagedBuffer.h"
-#include "rendering/driver/include/renderingManagedBufferWithAllocator.h"
+#include "rendering/device/include/renderingManagedBuffer.h"
+#include "rendering/device/include/renderingManagedBufferWithAllocator.h"
 
 namespace rendering
 {

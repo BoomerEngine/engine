@@ -44,7 +44,7 @@ namespace base
 
         //--
 
-        GUID Create(); // creates global guid
+        static GUID Create(); // creates global guid
 
         //--
 

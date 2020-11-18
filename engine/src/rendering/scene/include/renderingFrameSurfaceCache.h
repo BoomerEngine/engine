@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingDeviceObject.h"
 
 namespace rendering
 {
@@ -17,11 +17,22 @@ namespace rendering
 
         ///---
 
+        struct RENDERING_SCENE_API DebugFragmentBuffers
+        {
+            BufferObjectPtr vertexBuffer;
+            BufferObjectPtr vertexBufferEx;
+            BufferObjectPtr indexBuffer;
+
+            bool ensureSize(uint64_t vertexDataSize, uint64_t vertexExDataSize, uint64_t indicesDataSize);
+        };
+
+        ///---
+
         /// collection of surfaces to be used with frame rendering
-        class RENDERING_SCENE_API FrameSurfaceCache : public IDeviceObject, public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        class RENDERING_SCENE_API FrameSurfaceCache : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
         {
         public:
-            FrameSurfaceCache(); // initialized to the max resolution of the device
+            FrameSurfaceCache(IDevice* api); // initialized to the max resolution of the device
             virtual ~FrameSurfaceCache();
 
             //--
@@ -49,13 +60,20 @@ namespace rendering
 
             //--
 
+            INLINE DebugFragmentBuffers& debugBuffers() const { return *m_debugBuffers; }
+
         private:
-            virtual base::StringBuf describe() const override final;
-            virtual void handleDeviceReset() override final;
-            virtual void handleDeviceRelease() override final;
+            IDevice* m_device = nullptr;
 
             uint32_t m_maxSupportedWidth = 0;
             uint32_t m_maxSupportedHeight = 0;
+
+            base::Array<ImageObjectPtr> m_globalImages;
+
+            base::Array<ImageObjectPtr> m_viewportImages;
+            base::Array<BufferObjectPtr> m_viewportBuffers;
+
+            DebugFragmentBuffers* m_debugBuffers;
 
             static const auto HdrFormat = ImageFormat::RGBA16F;
             static const auto DepthFormat = ImageFormat::D24S8;

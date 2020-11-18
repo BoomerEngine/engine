@@ -12,10 +12,10 @@
     #define USE_RENDER_DOC
 #endif
 
-#include "rendering/driver/include/renderingImageView.h"
-#include "rendering/driver/include/renderingBufferView.h"
-#include "rendering/driver/include/renderingImageView.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingImageView.h"
+#include "rendering/device/include/renderingBufferView.h"
+#include "rendering/device/include/renderingImageView.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/scene/include/renderingFrameCamera.h"
 
 namespace rendering

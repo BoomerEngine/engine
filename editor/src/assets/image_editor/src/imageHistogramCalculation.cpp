@@ -9,13 +9,13 @@
 #include "build.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
-#include "rendering/driver/include/renderingConstantsView.h"
-#include "rendering/driver/include/renderingBufferView.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingBufferView.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 
 namespace ed
 {
@@ -96,7 +96,7 @@ namespace ed
 
     base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageView& view, const ImageComputationSettings& settings)
     {
-        if (view.empty())
+        /*if (view.empty())
             return nullptr;
 
         if (settings.mipIndex < 0 || settings.mipIndex >= view.numMips())
@@ -134,7 +134,8 @@ namespace ed
 
         // create wrapper
         const auto totalPixels = view.width() * view.height();
-        return base::RefNew<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);
+        return base::RefNew<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);*/
+        return nullptr;
     }
 
     //--

@@ -1841,11 +1841,11 @@ struct Scene
 
         if (depth < 3)
         {
-            auto roll = -60.0f + RandOne(rand) * 120.0f;
+            auto roll = -60.0f + rand.unit() * 120.0f;
             auto rollTransform = transform;//Matrix::BuildRotationZ(roll) * transform;
 
-            auto spread = 15.0f + RandOne(rand) * 25.0f;
-            auto bias = -40.0f + RandOne(rand) * 40.0f;
+            auto spread = 15.0f + rand.unit() * 25.0f;
+            auto bias = -40.0f + rand.unit() * 40.0f;
 
             auto rot1 = bias - spread;
             auto rot1Transform = Matrix::BuildRotationX(rot1) * rollTransform;

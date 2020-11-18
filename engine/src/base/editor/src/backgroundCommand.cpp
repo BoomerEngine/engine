@@ -12,6 +12,7 @@
 
 #include "base/net/include/messageConnection.h"
 #include "base/net/include/messagePool.h"
+#include "base/system/include/guid.h"
 
 namespace ed
 {
@@ -26,16 +27,7 @@ namespace ed
     IBackgroundCommand::IBackgroundCommand(StringView name)
         : m_name(name)
     {
-        StringBuilder txt;
-
-        FastRandState rng(NativeTimePoint::Now().rawValue()); // TODO: make LESS predictable 
-        for (uint32_t i = 0; i < KEY_LENGTH; ++i)
-        {
-            static const auto NUM_KEYS_CHARS = strlen(KEY_CHARS);
-            txt.appendch(KEY_CHARS[RandMax(rng, NUM_KEYS_CHARS)]);
-        }
-
-        m_connectionKey = txt.toString();
+        m_connectionKey = TempString("{}", base::GUID::Create());
     }
 
     IBackgroundCommand::~IBackgroundCommand()

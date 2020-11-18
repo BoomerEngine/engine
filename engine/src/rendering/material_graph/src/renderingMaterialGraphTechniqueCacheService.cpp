@@ -11,7 +11,7 @@
 #include "renderingMaterialGraphTechniqueCompiler.h"
 #include "renderingMaterialGraphTechniqueCacheService.h"
 
-#include "rendering/driver/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/system/include/thread.h"

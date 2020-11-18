@@ -3,12 +3,12 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\sampler #]
+* [# filter: api\objects\sampler #]
 ***/
 
 #include "build.h"
 #include "glSampler.h"
-#include "glDriver.h"
+#include "glDevice.h"
 #include "glObjectCache.h"
 
 namespace rendering
@@ -18,23 +18,18 @@ namespace rendering
 
         //--
 
-        Sampler::Sampler(Driver* drv, const SamplerState& info)
+        Sampler::Sampler(Device* drv, const SamplerState& info)
             : Object(drv, ObjectType::Sampler)
             , m_setup(info)
         {}
 
-        bool Sampler::CheckClassType(ObjectType type)
-        {
-            return (type == ObjectType::Sampler);
-        }
-
         void Sampler::finalizeCreation()
         {
             if (m_glSampler == 0)
-                m_glSampler = driver()->objectCache().resolveSampler(m_setup);
+                m_glSampler = device()->objectCache().resolveSampler(m_setup);
         }
 
         //--
 
     } // gl4
-} // driver
+} // rendering

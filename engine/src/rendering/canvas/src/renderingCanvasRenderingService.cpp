@@ -13,7 +13,7 @@
 
 #include "base/app/include/localServiceContainer.h"
 #include "base/resource/include/resourceLoadingService.h"
-#include "rendering/driver/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace rendering
 {

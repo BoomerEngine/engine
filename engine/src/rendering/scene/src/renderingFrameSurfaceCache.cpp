@@ -10,7 +10,7 @@
 #include "renderingFrameParams.h"
 #include "renderingFrameSurfaceCache.h"
 
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "renderingSelectable.h"
 #
 namespace rendering
@@ -26,7 +26,8 @@ namespace rendering
 
         // BIG TODO: MSAA
 
-        FrameSurfaceCache::FrameSurfaceCache()
+        FrameSurfaceCache::FrameSurfaceCache(IDevice* api)
+            : m_device(api)
         {
             // cascade shadowmap buffer
             {
@@ -43,12 +44,16 @@ namespace rendering
                 colorInfo.allowShaderReads = true;
                 colorInfo.allowUAV = true;
                 colorInfo.format = ShadowDepthFormat;
-                m_cascadesShadowDepthRT = device()->createImage(colorInfo);
+                if (auto obj = m_device->createImage(colorInfo))
+                {
+                    m_globalImages.pushBack(obj);
+                    m_cascadesShadowDepthRT = obj->view();
+                }
             }
 
             // create size dependent crap
-            const auto maxWidth = device()->maxRenderTargetSize().x;
-            const auto maxHeight = device()->maxRenderTargetSize().y;
+            const auto maxWidth = m_device->maxRenderTargetSize().x;
+            const auto maxHeight = m_device->maxRenderTargetSize().y;
             createViewportSurfaces(maxWidth, maxHeight);
 
             // create the selection capture buffer
@@ -62,26 +67,41 @@ namespace rendering
                 bufferInfo.allowShaderReads = true;
                 bufferInfo.allowUAV = true;
                 bufferInfo.allowCopies = true;
-                m_selectables = device()->createBuffer(bufferInfo);
+
+                if (auto obj = m_device->createBuffer(bufferInfo))
+                {
+                    m_viewportBuffers.pushBack(obj);
+                    m_selectables = obj->view();
+                }
             }
+
+            m_debugBuffers = new DebugFragmentBuffers();
         }
 
         FrameSurfaceCache::~FrameSurfaceCache()
         {
-            m_cascadesShadowDepthRT.destroy();
             destroyViewportSurfaces();
+            m_cascadesShadowDepthRT = ImageView();
+
+            delete m_debugBuffers;
+            m_debugBuffers = nullptr;
         }
 
         void FrameSurfaceCache::destroyViewportSurfaces()
         {
-            m_globalAOShadowMaskRT.destroy();
-            m_sceneResolvedColor.destroy();
-            m_sceneResolvedDepth.destroy();
-            m_sceneFullColorRT.destroy();
-            m_sceneFullDepthRT.destroy();
-            m_linarizedDepthRT.destroy();
-            m_velocityBufferRT.destroy();
-            m_viewNormalRT.destroy();
+            m_viewportImages.reset();
+            m_viewportBuffers.reset();
+
+            m_globalAOShadowMaskRT = ImageView();
+            m_sceneResolvedColor = ImageView();
+            m_sceneResolvedDepth = ImageView();
+            m_sceneFullColorRT = ImageView();
+            m_sceneFullDepthRT = ImageView();
+            m_linarizedDepthRT = ImageView();
+            m_velocityBufferRT = ImageView();
+            m_viewNormalRT = ImageView();
+
+            m_selectables = BufferView();
         }
 
         bool FrameSurfaceCache::createViewportSurfaces(uint32_t width, uint32_t height)
@@ -98,8 +118,12 @@ namespace rendering
             {
                 info.label = "MainViewColor";
                 info.format = HdrFormat;
-                m_sceneFullColorRT = device()->createImage(info);
-                if (!m_sceneFullColorRT)
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_sceneFullColorRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -110,8 +134,13 @@ namespace rendering
             {
                 info.label = "MainViewDepth";
                 info.format = DepthFormat;
-                m_sceneFullDepthRT = device()->createImage(info);
-                if (!m_sceneFullDepthRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_sceneFullDepthRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -122,8 +151,13 @@ namespace rendering
             {
                 info.label = "SelectionDepth";
                 info.format = DepthFormat;
-                m_sceneSelectionDepthRT = device()->createImage(info);
-                if (!m_sceneSelectionDepthRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_sceneSelectionDepthRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -134,8 +168,13 @@ namespace rendering
             {
                 info.label = "MainViewResolvedColor";
                 info.format = HdrFormat;
-                m_sceneResolvedColor = device()->createImage(info);
-                if (!m_sceneResolvedColor)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_sceneResolvedColor = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -146,8 +185,13 @@ namespace rendering
             {
                 info.label = "MainViewResolvedDepth";
                 info.format = DepthFormat;
-                m_sceneResolvedDepth = device()->createImage(info);
-                if (!m_sceneResolvedDepth)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_sceneResolvedDepth = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -158,8 +202,13 @@ namespace rendering
             {
                 info.label = "ShadowMaskAO";
                 info.format = ImageFormat::RGBA8_UNORM;
-                m_globalAOShadowMaskRT = device()->createImage(info);
-                if (!m_globalAOShadowMaskRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_globalAOShadowMaskRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -170,8 +219,13 @@ namespace rendering
             {
                 info.label = "LinearizedDepth";
                 info.format = ImageFormat::R32F;
-                m_linarizedDepthRT = device()->createImage(info);
-                if (!m_linarizedDepthRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_linarizedDepthRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -182,8 +236,13 @@ namespace rendering
             {
                 info.label = "VelocityBuffer";
                 info.format = ImageFormat::RG16F;
-                m_velocityBufferRT = device()->createImage(info);
-                if (!m_velocityBufferRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_velocityBufferRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -194,8 +253,13 @@ namespace rendering
             {
                 info.label = "ReconstructedViewNormal";
                 info.format = ImageFormat::RGBA8_UNORM;
-                m_viewNormalRT = device()->createImage(info);
-                if (!m_viewNormalRT)
+
+                if (auto obj = m_device->createImage(info))
+                {
+                    m_viewportImages.pushBack(obj);
+                    m_viewNormalRT = obj->view();
+                }
+                else
                 {
                     destroyViewportSurfaces();
                     return false;
@@ -224,27 +288,6 @@ namespace rendering
             }
 
             return true;
-        }
-
-        //--
-
-        base::StringBuf FrameSurfaceCache::describe() const
-        {
-            return base::StringBuf("FrameSurfaceCache");
-        }
-
-        void FrameSurfaceCache::handleDeviceReset()
-        {
-            m_maxSupportedWidth = 0;
-            m_maxSupportedHeight = 0;
-            //m_supportedMSAALevel = 0;
-        }
-
-        void FrameSurfaceCache::handleDeviceRelease()
-        {
-            m_sceneFullColorRT.destroy();
-            m_sceneFullDepthRT.destroy();
-            m_sceneResolvedColor.destroy();
         }
 
         ///--

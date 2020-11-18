@@ -9,13 +9,13 @@
 #include "build.h"
 #include "renderingPanel.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingObject.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingOutput.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingObject.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingOutput.h"
 #include "rendering/canvas/include/renderingCanvasRendererCustomBatchHandler.h"
 
 namespace ui
@@ -30,7 +30,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasRenderingPanelIntegrationHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
     public:
-        virtual void initialize(rendering::IDriver* drv) override final
+        virtual void initialize(rendering::IDevice* drv) override final
         {
         }
 
@@ -85,8 +85,8 @@ namespace ui
 
     void RenderingPanel::releaseSurfaces()
     {
-        m_colorSurface.destroy();
-        m_depthSurface.destroy();
+        m_colorSurface.reset();
+        m_depthSurface.reset();
     }
 
     void RenderingPanel::requestRedraw()
@@ -117,20 +117,21 @@ namespace ui
             cmd.opEndPass();
         }
 
-        device()->submitWork(cmd.release());
+        auto device = base::GetService<rendering::DeviceService>()->device();
+        device->submitWork(cmd.release());
     }
 
     bool RenderingPanel::prepareSurfaces(uint32_t minWidth, uint32_t minHeight)
     {
-        // no device
-        if (!device())
-            return false;
+        auto device = base::GetService<rendering::DeviceService>()->device();
+        DEBUG_CHECK_RETURN_V(device, false);
 
         // check if current surfaces are ok
         //if (minWidth <= m_colorSurface.width() && minHeight <= m_colorSurface.height())
             //return true;
-        if (minWidth == m_colorSurface.width() && minHeight == m_colorSurface.height())
-            return true;
+        if (m_colorSurface && m_depthSurface)
+            if (minWidth == m_colorSurface->view().width() && minHeight == m_colorSurface->view().height())
+                return true;
 
         // round up the render target size
         const auto tileSize = std::clamp<uint32_t>(cvRenderingPanelRenderTargetStep.get(), 64, 1024);
@@ -138,8 +139,8 @@ namespace ui
         const auto requestedHeight = minHeight;// ((minHeight + tileSize - 1) / tileSize)* tileSize;
 
         // release current surfaces
-        m_colorSurface.destroy();
-        m_depthSurface.destroy();
+        m_colorSurface.reset();
+        m_depthSurface.reset();
 
         // create color surface
         rendering::ImageCreationInfo initInfo;
@@ -149,20 +150,14 @@ namespace ui
         initInfo.format = rendering::ImageFormat::RGBA8_UNORM;
         initInfo.width = requestedWidth;
         initInfo.height = requestedHeight;
-        m_colorSurface = device()->createImage(initInfo);
-        if (!m_colorSurface)
-            return false;
+        m_colorSurface = device->createImage(initInfo);
 
         // create depth surface
         initInfo.format = rendering::ImageFormat::D24FS8;
-        m_depthSurface = device()->createImage(initInfo);
-        if (!m_depthSurface)
-        {
-            m_colorSurface.destroy();
-            return false;
-        }
+        m_depthSurface = device->createImage(initInfo);
 
-        return true;
+        // we should have both surfaces to continue
+        return m_colorSurface && m_depthSurface;
     }
 
     void RenderingPanel::renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
@@ -185,8 +180,8 @@ namespace ui
                 float x1 = m_renderTargetOffset.x + width * zoomScale;
                 float y1 = m_renderTargetOffset.y + height * zoomScale;
 
-                const auto invU = 1.0f / (float)m_colorSurface.width();
-                const auto invV = 1.0f / (float)m_colorSurface.height();
+                const auto invU = 1.0f / (float)m_colorSurface->view().width();
+                const auto invV = 1.0f / (float)m_colorSurface->view().height();
 
                 // render the tile into the UI canvas
                 base::canvas::Canvas::RawVertex v[4];
@@ -226,7 +221,7 @@ namespace ui
 
                 static const auto customDrawerId = rendering::canvas::GetHandlerIndex<CanvasRenderingPanelIntegrationHandler>();
 
-                rendering::ImageView colorSurface = m_colorSurface.createSampledView(rendering::ObjectID::DefaultPointSampler());
+                auto colorSurface = m_colorSurface->view().createSampledView(rendering::ObjectID::DefaultPointSampler());
 
                 const auto style = base::canvas::SolidColor(base::Color::WHITE);
                 canvas.placement(drawArea.left(), drawArea.top());
@@ -241,27 +236,10 @@ namespace ui
         const auto height = (uint32_t)std::floorf(cachedDrawArea().size().y);
         if (width && height && m_colorSurface && m_depthSurface)
         {
-            renderScene(m_colorSurface, m_depthSurface, width, height, capture);
+            renderScene(m_colorSurface->view(), m_depthSurface->view(), width, height, capture);
         }
     }
     
-    //--
-
-    base::StringBuf RenderingPanel::describe() const
-    {
-        return "RenderingPanel";
-    }
-
-    void RenderingPanel::handleDeviceReset()
-    {
-        // nothing, recreated on first use
-    }
-
-    void RenderingPanel::handleDeviceRelease()
-    {
-        releaseSurfaces();
-    }
-
     //--
 
     void RenderingPanel::handleHoverEnter(const Position& pos)

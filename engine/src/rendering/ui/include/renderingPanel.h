@@ -9,15 +9,15 @@
 #pragma once
 
 #include "base/ui/include/uiElement.h"
-#include "rendering/driver/include/renderingDeviceObject.h"
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingImageView.h"
 
 namespace ui
 {
     //--
 
     /// ui widget capable of hosting any command buffer based rendering (3D/2D etc), even full scene
-    class RENDERING_UI_API RenderingPanel : public IElement, public rendering::IDeviceObject
+    class RENDERING_UI_API RenderingPanel : public IElement
     {
         RTTI_DECLARE_VIRTUAL_CLASS(RenderingPanel, IElement);
 
@@ -60,8 +60,8 @@ namespace ui
         void renderInternal(const rendering::scene::FrameParams_Capture* capture = nullptr);
 
     private:
-        rendering::ImageView m_colorSurface; // TODO: make shared!
-        rendering::ImageView m_depthSurface; // TODO: make shared!
+        rendering::ImageObjectPtr m_colorSurface; // TODO: make shared!
+        rendering::ImageObjectPtr m_depthSurface; // TODO: make shared!
 
         base::NativeTimePoint m_lastRenderTime;
         float m_renderRate; // default render rate
@@ -81,10 +81,6 @@ namespace ui
 
         void releaseSurfaces();
         bool prepareSurfaces(uint32_t minWidth, uint32_t minHeight);
-
-        virtual base::StringBuf describe() const override;
-        virtual void handleDeviceReset() override;
-        virtual void handleDeviceRelease() override;
     };
 
     ///---

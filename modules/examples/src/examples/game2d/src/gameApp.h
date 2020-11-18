@@ -39,7 +39,7 @@ namespace example
 
         // rendering output (native window)
         rendering::ObjectID m_renderingOutput;
-        IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+        INativeWindowInterface* m_renderingWindow = nullptr;
 
         //--
 

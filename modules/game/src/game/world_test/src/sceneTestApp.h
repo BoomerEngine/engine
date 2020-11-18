@@ -57,7 +57,7 @@ namespace game
             int m_pendingTestCaseIndex;
 
             rendering::ObjectID m_renderingOutput;
-            rendering::IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+            rendering::INativeWindowInterface* m_renderingWindow = nullptr;
             bool m_exitRequested;
 
             rendering::scene::CameraContextPtr m_cameraContext;

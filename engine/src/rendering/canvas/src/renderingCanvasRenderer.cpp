@@ -17,10 +17,11 @@
 #include "base/canvas/include/canvasGlyphCache.h"
 #include "base/system/include/scopeLock.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingObject.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingObject.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace rendering
 {
@@ -35,6 +36,10 @@ namespace rendering
         base::ConfigProperty<uint32_t> cvNumInitialAlphaPages("Rendering.Canvas", "NumInitialAlphaPages", 1);
         base::ConfigProperty<uint32_t> cvColorPageSize("Rendering.Canvas", "MaxColorPageSize", 2048);
         base::ConfigProperty<uint32_t> cvAlphaPageSize("Rendering.Canvas", "MaxAlphaPageSize", 2048);
+
+        base::ConfigProperty<uint32_t> cvMaxVertices("Rendering.Canvas", "MaxVertices", 4*1024*1024);
+        base::ConfigProperty<uint32_t> cvMaxIndices("Rendering.Canvas", "MaxIndices", 6*1024*1024);
+        base::ConfigProperty<uint32_t> cvMaxParams("Rendering.Canvas", "MaxObjects", 65536);
 
         ///---
 
@@ -123,6 +128,7 @@ namespace rendering
         base::res::StaticResource<ShaderLibrary> resCanvasShaderFill("/engine/shaders/canvas/canvas_fill.fx");
         
         CanvasRenderer::CanvasRenderer()
+            : m_api(base::GetService<DeviceService>()->device())
         {
             m_colorImages.reserve(1024);
             m_alphaImages.reserve(1024);
@@ -399,24 +405,24 @@ namespace rendering
             //-- upload data to GPU
 
             // upload vertices
-            TransientBufferView tempVerticesBuffer(BufferViewFlag::Vertex, vertexDataSize);
             {
                 PC_SCOPE_LVL2(CopyVertices);
-                geometry.vertices().copy(cmd.opAllocTransientBufferWithUninitializedData(tempVerticesBuffer, vertexDataSize), vertexDataSize);
+                auto* data = cmd.opUpdateDynamicBufferPtr(m_vertexBuffer->view(), 0, vertexDataSize);
+                geometry.vertices().copy(data, vertexDataSize);
             }
 
             // upload indices
-            TransientBufferView tempIndicesBuffer(BufferViewFlag::Index, indexDataSize);
             {
                 PC_SCOPE_LVL2(CopyIndices);
-                geometry.indices().copy(cmd.opAllocTransientBufferWithUninitializedData(tempIndicesBuffer, indexDataSize), indexDataSize);
+                auto* data = cmd.opUpdateDynamicBufferPtr(m_indexBuffer->view(), 0, indexDataSize);
+                geometry.indices().copy(data, indexDataSize);
             }
 
             // rendering parameters
-            TransientBufferView tempParametersBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadOnly, m_paramDataStorage.dataSize(), sizeof(CanvasShaderParams));
             {
                 PC_SCOPE_LVL2(CopyParams);
-                cmd.opAllocTransientBufferWithData(tempParametersBuffer, m_paramDataStorage.data(), m_paramDataStorage.dataSize());
+                auto* data = cmd.opUpdateDynamicBufferPtr(m_paramBuffer->view(), 0, m_paramDataStorage.dataSize());
+                memcpy(data, m_paramDataStorage.data(), m_paramDataStorage.dataSize());
             }
 
             // bind viewport params
@@ -441,7 +447,7 @@ namespace rendering
             viewportParams.Consts = cmd.opUploadConstants(constViewportParams);
             viewportParams.ColorTextureAtlas = m_rgbaImageCache->view();
             viewportParams.AlphaTextureAtlas = m_alphaImageCache->view();
-            viewportParams.ParametersData = tempParametersBuffer;
+            viewportParams.ParametersData = m_paramBuffer->view();
             cmd.opBindParametersInline("CanvasViewportParams"_id, viewportParams);
 
             // render the canvas geometry
@@ -449,8 +455,8 @@ namespace rendering
                 PC_SCOPE_LVL2(RenderBatches);
 
                 // bind geometry buffers
-                cmd.opBindVertexBuffer("CanvasVertex"_id, tempVerticesBuffer);
-                cmd.opBindIndexBuffer(tempIndicesBuffer, ImageFormat::R32_UINT);
+                cmd.opBindVertexBuffer("CanvasVertex"_id, m_vertexBuffer->view());
+                cmd.opBindIndexBuffer(m_indexBuffer->view(), ImageFormat::R32_UINT);
 
                 // call the batches
                 for (auto& batch : batchCollector.batches())
@@ -507,43 +513,61 @@ namespace rendering
             }
         }
 
-        void CanvasRenderer::createDeviceResources()
-        {
-            if (auto dev = device())
-            {
-                m_alphaImageCache = base::CreateUniquePtr<CanvasImageCache>(dev, ImageFormat::R8_UNORM, cvAlphaPageSize.get(), cvNumInitialAlphaPages.get());
-                m_rgbaImageCache = base::CreateUniquePtr<CanvasImageCache>(dev, ImageFormat::RGBA8_UNORM, cvColorPageSize.get(), cvNumInitialColorPages.get());
-
-                for (const auto& handler : m_customHandlers)
-                    handler->initialize(dev);
-            }
-        }
-
         void CanvasRenderer::handleDeviceReset()
         {
-            createDeviceResources();
+
+        }
+
+        void CanvasRenderer::createDeviceResources()
+        {
+            m_alphaImageCache = base::CreateUniquePtr<CanvasImageCache>(ImageFormat::R8_UNORM, cvAlphaPageSize.get(), cvNumInitialAlphaPages.get());
+            m_rgbaImageCache = base::CreateUniquePtr<CanvasImageCache>(ImageFormat::RGBA8_UNORM, cvColorPageSize.get(), cvNumInitialColorPages.get());
+
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowVertex = true;
+                info.label = "CanvasVertexBuffer";
+                info.size = cvMaxVertices.get() * sizeof(CanvasVertex);
+                m_vertexBuffer = m_api->createBuffer(info);
+            }
+
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowIndex = true;
+                info.label = "CanvasIndexBuffer";
+                info.size = cvMaxIndices.get() * sizeof(uint32_t);
+                m_indexBuffer = m_api->createBuffer(info);
+            }
+
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowShaderReads = true;
+                info.allowUAV = true;
+                info.allowIndex = true;
+                info.label = "CanvasParamBuffer";
+                info.size = cvMaxParams.get() * sizeof(CanvasShaderParams);
+                info.stride = sizeof(CanvasShaderParams);
+                m_paramBuffer = m_api->createBuffer(info);
+            }
+
+            for (const auto& handler : m_customHandlers)
+                handler->initialize(m_api);
         }
 
         void CanvasRenderer::destroyDeviceResources()
         {
-            if (auto dev = device())
-            {
-                m_alphaImageCache.reset();
-                m_colorImages.reset();
+            m_alphaImageCache.reset();
+            m_colorImages.reset();
 
-                for (const auto& handler : m_customHandlers)
-                    handler->deinitialize(dev);
-            }
-        }
+            m_vertexBuffer.reset();
+            m_indexBuffer.reset();
+            m_paramBuffer.reset();
 
-        void CanvasRenderer::handleDeviceRelease()
-        {
-            destroyDeviceResources();
-        }
-
-        base::StringBuf CanvasRenderer::describe() const
-        {
-            return "CanvasRenderer";
+            for (const auto& handler : m_customHandlers)
+                handler->deinitialize(m_api);
         }
 
         //---

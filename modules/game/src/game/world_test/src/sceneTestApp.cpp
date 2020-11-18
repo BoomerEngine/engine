@@ -18,12 +18,12 @@
 #include "base/imgui/include/debugPageService.h"
 
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingOutput.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/canvas/include/renderingCanvasRenderingService.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/scene/include/renderingFrameRenderingService.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameCameraContext.h"
@@ -135,7 +135,7 @@ namespace game
             uint32_t viewportHeight = 1080;
             TRACE_INFO("Test viewport size: {}x{}", viewportWidth, viewportHeight);
 
-            rendering::DriverOutputInitInfo setup;
+            rendering::OutputInitInfo setup;
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Game Scene Tests";

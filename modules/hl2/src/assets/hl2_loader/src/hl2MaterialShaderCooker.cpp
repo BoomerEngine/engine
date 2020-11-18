@@ -11,7 +11,7 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCookingInterface.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/resource/include/resourceCooker.h"
 #include "base/resource/include/resourceTags.h"
 

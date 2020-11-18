@@ -5,7 +5,7 @@
 *
 * [# dependency: base_system, base_memory, base_containers, base_io #]
 * [# dependency: base_object, base_reflection, base_app, base_ui #]
-* [# dependency: rendering_driver #]
+* [# dependency: rendering_device #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_scene #]
 ***/

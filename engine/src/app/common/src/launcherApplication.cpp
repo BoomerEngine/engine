@@ -7,16 +7,16 @@
 #include "build.h"
 #include "launcherApplication.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingDeviceObject.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingOutput.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingOutput.h"
 #include "base/app/include/configProperty.h"
 #include "base/app/include/launcherPlatform.h"
 #include "base/input/include/inputContext.h"
 #include "game/host/include/gameScreen.h"
 #include "game/host/include/gameHost.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/mesh/include/renderingMesh.h"
 #include "game/host/include/gameDefinitionFile.h"
 #include "game/host/include/game.h"
@@ -50,12 +50,7 @@ namespace application
         m_gameHost.reset();
 
         // close rendering window
-        if (m_renderingOutput)
-        {
-            // rendering output must always be explicitly closed
-            base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-            m_renderingOutput = rendering::ObjectID();
-        }
+        m_renderingOutput.reset();
     }
 
     void LauncherApp::update()
@@ -91,7 +86,7 @@ namespace application
         }
 
         // setup rendering output as a window
-        rendering::DriverOutputInitInfo setup;
+        rendering::OutputInitInfo setup;
         setup.m_width = 1920;
         setup.m_height = 1080;
         setup.m_windowMaximized = false;
@@ -122,22 +117,14 @@ namespace application
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
-        if (!m_renderingOutput)
+        if (!m_renderingOutput || !m_renderingOutput->window())
         {
             TRACE_ERROR("Failed to acquire window factory, no window can be created");
             return false;
         }
 
-        // get window
-        m_renderingWindow = renderingService->device()->queryOutputWindow(m_renderingOutput);
-        if (!m_renderingWindow)
-        {
-            TRACE_ERROR("Rendering output has no valid window");
-            return false;
-        }
-
         // request input capture for game input
-        auto inputContext = m_renderingWindow->windowGetInputContext();
+        auto inputContext = m_renderingOutput->window()->windowGetInputContext();
         inputContext->requestCapture(2);
 
         return true;
@@ -229,19 +216,19 @@ namespace application
     void LauncherApp::updateWindow()
     {
         // if the window wants to be closed allow it and close our app as well
-        if (m_renderingWindow->windowHasCloseRequest())
+        if (m_renderingOutput->window()->windowHasCloseRequest())
             base::platform::GetLaunchPlatform().requestExit("Main window closed");
 
         // process input from the window
-        if (auto inputContext = m_renderingWindow->windowGetInputContext())
+        if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
         {
+            // process all events as they come
             while (auto inputEvent = inputContext->pull())
                 processInput(*inputEvent);
-        }
 
-        // capture input to the window if required
-        if (m_renderingWindow && m_renderingWindow->windowGetInputContext())
-            m_renderingWindow->windowGetInputContext()->requestCapture(m_gameHost->shouldCaptureInput() ? 2 : 0);
+            // capture input to the window if required
+            inputContext->requestCapture(m_gameHost->shouldCaptureInput() ? 2 : 0);
+        }
     }
 
     void LauncherApp::updateGame(double dt)
@@ -268,15 +255,13 @@ namespace application
     {
         rendering::command::CommandWriter cmd("AppFrame");
 
-        base::Rect viewport;
-        rendering::ImageView colorBackBuffer, depthBackBuffer;
-        if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+        if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
             game::HostViewport gameViewport;
-            gameViewport.width = viewport.width();
-            gameViewport.height = viewport.height();
-            gameViewport.backBufferColor = colorBackBuffer;
-            gameViewport.backBufferDepth = depthBackBuffer;
+            gameViewport.width = output.size.x;
+            gameViewport.height = output.size.y;
+            gameViewport.backBufferColor = output.color;
+            gameViewport.backBufferDepth = output.depth;
 
             renderGame(cmd, gameViewport); // game itself
             renderOverlay(cmd, gameViewport); // debug panels

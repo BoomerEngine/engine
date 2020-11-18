@@ -26,8 +26,7 @@ namespace application
         base::StringBuf m_title;
 
         // rendering output (native window)
-        rendering::ObjectID m_renderingOutput;
-        rendering::IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+        rendering::OutputObjectPtr m_renderingOutput;
 
         // timing utility used to calculate time delta
         base::NativeTimePoint m_lastTickTime;

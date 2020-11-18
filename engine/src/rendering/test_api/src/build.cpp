@@ -5,7 +5,7 @@
 *
 * [# dependency: base_* #]
 * [# dependency: rendering_compiler #]
-* [# dependency: rendering_driver #]
+* [# dependency: rendering_device #]
 * [# dependency: rendering_api_* #]
 * [# dependency: assets_image_loader #]
 * [# devonly #]

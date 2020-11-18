@@ -18,10 +18,11 @@
 #include "renderingSceneFragmentList.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "../../device/include/renderingDeviceService.h"
 
 namespace rendering
 {
@@ -41,6 +42,49 @@ namespace rendering
             EncodedSelectable Selectable;
         };
 
+        bool DebugFragmentBuffers::ensureSize(uint64_t vertexDataSize, uint64_t vertexExDataSize, uint64_t indicesDataSize)
+        {
+            if (vertexDataSize >= INDEX_MAX || vertexExDataSize >= INDEX_MAX || indicesDataSize >= INDEX_MAX)
+                return false;
+
+            auto dev = base::GetService<DeviceService>()->device();
+
+            if (!vertexBuffer || vertexBuffer->view().size() < vertexDataSize)
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowCopies = true;
+                info.allowVertex = true;
+                info.label = "DebugFragmentVertices";
+                info.size = base::Align<uint32_t>(vertexDataSize, 65536);
+                vertexBuffer = dev->createBuffer(info);
+            }
+
+            if (!vertexBufferEx || vertexBufferEx->view().size() < vertexExDataSize)
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowCopies = true;
+                info.allowVertex = true;
+                info.label = "DebugFragmentVerticesEx";
+                info.size = base::Align<uint32_t>(vertexExDataSize, 65536);
+                vertexBufferEx = dev->createBuffer(info);
+            }
+
+            if (!indexBuffer || indexBuffer->view().size() < indicesDataSize)
+            {
+                BufferCreationInfo info;
+                info.allowDynamicUpdate = true;
+                info.allowCopies = true;
+                info.allowIndex = true;
+                info.label = "DebugFragmentIndices";
+                info.size = base::Align<uint32_t>(indicesDataSize, 65536);
+                indexBuffer = dev->createBuffer(info);
+            }
+
+            return vertexBuffer && vertexBufferEx && indexBuffer;
+        }
+
         struct DebugFragmentParams
         {
             struct Constants
@@ -57,6 +101,8 @@ namespace rendering
         {
             PC_SCOPE_LVL0(RenderDebugFragments);
 
+            auto& buffers = view.renderer().surfaces().debugBuffers();
+
             if (!(view.frame().filters & FilterBit::DebugGeometry))
                 return;
 
@@ -68,20 +114,21 @@ namespace rendering
                 if (!indicesDataSize)
                     return;
 
+                if (!buffers.ensureSize(vertexDataSize, vertexExDataSize, indicesDataSize))
+                    return;
+
                 command::CommandWriterBlock block(cmd, "DebugGeometry");
 
-                // create buffers
-                auto vertexData = TransientBufferView(BufferViewFlag::Vertex, TransientBufferAccess::ShaderReadOnly, vertexDataSize);
-                auto vertexExData = TransientBufferView(BufferViewFlag::Vertex, TransientBufferAccess::ShaderReadOnly, vertexExDataSize);
-                auto indexData = TransientBufferView(BufferViewFlag::Index, TransientBufferAccess::ShaderReadOnly, indicesDataSize);
-
                 // upload buffers
-                void* vertexDataPtr = cmd.opAllocTransientBufferWithUninitializedData(vertexData, vertexDataSize);
-                geom.vertices().copy(vertexDataPtr, vertexDataSize);
-                void* vertexExDataPtr = cmd.opAllocTransientBufferWithUninitializedData(vertexExData, vertexExDataSize);
-                geom.verticesEx().copy(vertexExDataPtr, vertexExDataSize);
-                void* indexDataPtr = cmd.opAllocTransientBufferWithUninitializedData(indexData, indicesDataSize);
-                geom.indices().copy(indexDataPtr, indicesDataSize);
+                {
+                    PC_SCOPE_LVL1(DebugFragmentsCopyData);
+                    void* vertexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBuffer->view(), 0, vertexDataSize);
+                    geom.vertices().copy(vertexDataPtr, vertexDataSize);
+                    void* vertexExDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBufferEx->view(), 0, vertexExDataSize);
+                    geom.verticesEx().copy(vertexExDataPtr, vertexExDataSize);
+                    void* indexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.indexBuffer->view(), 0, indicesDataSize);
+                    geom.indices().copy(indexDataPtr, indicesDataSize);
+                }
 
                 // global params
                 {
@@ -98,9 +145,9 @@ namespace rendering
 
                 // bind geometry
 
-                cmd.opBindVertexBuffer("DebugVertex"_id, vertexData);
-                cmd.opBindVertexBuffer("DebugVertexEx"_id, vertexExData);
-                cmd.opBindIndexBuffer(indexData, ImageFormat::R32_UINT);
+                cmd.opBindVertexBuffer("DebugVertex"_id, buffers.vertexBuffer->view());
+                cmd.opBindVertexBuffer("DebugVertexEx"_id, buffers.vertexBufferEx->view());
+                cmd.opBindIndexBuffer(buffers.indexBuffer->view(), ImageFormat::R32_UINT);
 
                 // setup initial batch state
                 auto lastType = DebugGeometryType::Solid;

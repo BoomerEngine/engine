@@ -10,51 +10,78 @@
 
 namespace base
 {
+
+    //----------------------------------------
+    //-- Random number generator interface
+    //-- NOTE: some applications require abstract class
+    
+    struct BASE_MATH_API IRandom
+    {
+        virtual ~IRandom();
+
+        // reset seed
+        virtual void seed(uint32_t seed) = 0;
+
+        // get next random value, full 32bit of randomness
+        virtual uint32_t next() = 0;
+
+        //--
+
+        // single random scalar [0,1) range
+        ALWAYS_INLINE double unit();
+
+        // 2D vector [0,1)
+        ALWAYS_INLINE Vector2 unit2(); 
+
+        // 3D vector [0,1)
+        ALWAYS_INLINE Vector3 unit3();
+
+        // 3D vector [0,1)
+        ALWAYS_INLINE Vector4 unit4(); 
+
+        // [min,max>
+        ALWAYS_INLINE double range(double min, double max);
+
+        // [0, max-1], returns 0 if max is 0
+        ALWAYS_INLINE uint32_t range(uint32_t max);
+    };
+
     //----------------------------------------
     //-- Very simple random number generator
 
-    struct FastRandState
+    struct BASE_MATH_API FastRandState : public IRandom
     {
+        FastRandState(uint64_t seed = 0);
+
+        virtual void seed(uint32_t val) override final;
+        virtual uint32_t next() override final;
+
+    private:
         uint64_t state = 0;
-
-        BASE_MATH_API FastRandState(uint64_t seed = 0);
-    };
-
-    extern BASE_MATH_API void RandInit(FastRandState& state, uint32_t seed = 0);
-
-    extern BASE_MATH_API uint32_t Rand(FastRandState& state); // 0 - 0xFFFFFFFF
+    };    
 
     //----------------------------------------
     //-- Mersenne-Twister random number generator
 
-    struct MTRandState
+    struct BASE_MATH_API MTRandState : public IRandom
     {
+        MTRandState(uint32_t seed = 0);
+
+        virtual void seed(uint32_t val) override final;
+        virtual uint32_t next() override final;
+    
+    private:
         static const uint32_t SIZE = 624;
 
         uint32_t MT[SIZE];
         uint32_t MT_TEMPERED[SIZE];
         uint32_t index = SIZE;
 
-        BASE_MATH_API MTRandState(uint32_t seed = 0);
+        void generate();
     };
-
-    extern BASE_MATH_API void RandInit(MTRandState& state, uint32_t seed = 0);
-
-    extern BASE_MATH_API uint32_t Rand(MTRandState& state); //  0 - 0xFFFFFFFF
 
     //----------------------------------------
     //-- Common stuff
-
-    template< typename T >
-    ALWAYS_INLINE double RandOne(T& state); // [0,1>
-
-    template< typename T >
-    ALWAYS_INLINE double RandRange(T& state, double min, double max); // [min,max>
-
-    template< typename T >
-    ALWAYS_INLINE uint32_t RandMax(T& state, uint32_t max); // [0, max-1]
-
-    //---
 
     // convert 2 uniform random variables to a random 2D point in a rectangle with uniform distribution
     extern BASE_MATH_API Vector2 RandRectPoint(const Vector2& rand, const Vector2& min, const Vector2& max);
@@ -108,18 +135,6 @@ namespace base
     extern BASE_MATH_API Vector3 RandTrianglePoint(const Vector2& rand, const Vector3& a, const Vector3& b, const Vector3& c);
 
     //---
-
-    // get random 2D unit point
-    template< typename T >
-    INLINE Vector2 RandUnit2(T& rand);
-
-    // get random 3D unit point
-    template< typename T >
-    INLINE Vector3 RandUnit3(T& rand);
-
-    // get random 4D unit point
-    template< typename T >
-    INLINE Vector4 RandUnit4(T& rand);
 
     // get random 2D point in a rectangle with uniform distribution
     template< typename T >

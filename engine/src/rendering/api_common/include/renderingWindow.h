@@ -10,10 +10,10 @@ namespace rendering
 {
     //---
 
-    struct DriverDisplayInfo;
-    struct DriverResolutionInfo;
-    struct DriverResolutionSyncInfo;
-    struct DriverOutputInitInfo;
+    struct DisplayInfo;
+    struct ResolutionInfo;
+    struct ResolutionSyncInfo;
+    struct OutputInitInfo;
 
     // window manager for rendering
     // NOTE: all windows are strictly main thread only
@@ -31,7 +31,7 @@ namespace rendering
         virtual void updateWindows() = 0;
 
         // create output window interface
-        virtual uint64_t createWindow(ObjectID owner, const DriverOutputInitInfo& initInfo) = 0;
+        virtual uint64_t createWindow(ObjectID owner, const OutputInitInfo& initInfo) = 0;
 
         // request to close window, by handle
         virtual void closeWindow(uint64_t handle) = 0;
@@ -46,7 +46,7 @@ namespace rendering
         virtual void disconnectWindow(uint64_t handle) = 0;
 
         // get window interface
-        virtual IDriverNativeWindowInterface* windowInterface(uint64_t handle) = 0;
+        virtual INativeWindowInterface* windowInterface(uint64_t handle) = 0;
 
         //--
         
@@ -54,16 +54,16 @@ namespace rendering
         virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const = 0;
 
         // enumerate display areas
-        virtual void enumDisplays(base::Array<DriverDisplayInfo>& outDisplayInfos) const = 0;
+        virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const = 0;
 
         // enumerate resolutions available at given display index
-        virtual void enumResolutions(uint32_t displayIndex, base::Array<DriverResolutionInfo>& outResolutions) const = 0;
+        virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const = 0;
 
         // enumerate vsync modes
-        virtual void enumVSyncModes(uint32_t displayIndex, base::Array<DriverResolutionSyncInfo>& outVSyncModes) const = 0;
+        virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const = 0;
 
         // enumerate refresh rates
-        virtual void enumRefreshRates(uint32_t displayIndex, const DriverResolutionInfo& info, base::Array<int>& outRefreshRates) const = 0;
+        virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const = 0;
 
         //--
 
@@ -74,4 +74,4 @@ namespace rendering
 
     //---
 
-} // driver
+} // rendering

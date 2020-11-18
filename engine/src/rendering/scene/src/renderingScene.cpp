@@ -13,8 +13,8 @@
 #include "renderingSceneCulling.h"
 #include "renderingSceneFragment.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 
 namespace rendering
 {

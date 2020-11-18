@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "renderingMaterialRuntimeLayout.h"
-#include "rendering/driver/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingConstantsView.h"
 
 namespace rendering
 {

@@ -9,8 +9,9 @@
 #pragma once
 
 #include "renderingSceneFragment.h"
-#include "base/memory/include/linearAllocator.h"
 #include "renderingSceneStats.h"
+
+#include "base/memory/include/linearAllocator.h"
 
 namespace rendering
 {

@@ -52,6 +52,11 @@ namespace rendering
 
         private:
             const MeshService* m_meshCache = nullptr;
+
+            void innerRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const;
+
+            BufferObjectPtr m_bufferChunkData;
+            uint32_t m_bufferChunkDataCapacity = 0;
         };
 
         ///--

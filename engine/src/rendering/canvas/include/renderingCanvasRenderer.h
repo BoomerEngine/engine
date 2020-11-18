@@ -12,9 +12,9 @@
 #include "base/containers/include/inplaceArray.h"
 #include "base/system/include/mutex.h"
 
-#include "rendering/driver/include/renderingConstantsView.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceObject.h"
 
 #include "base/containers/include/rectAllocator.h"
 
@@ -33,7 +33,7 @@ namespace rendering
 
         /// canvas renderer - hosts all necessary shaders and data to render canvas
         /// NOTE: this class must be externally synchronized as it's single thread only
-        class RENDERING_CANVAS_API CanvasRenderer : public IDeviceObject, public base::mem::GlobalPoolObject<POOL_CANVAS>
+        class RENDERING_CANVAS_API CanvasRenderer : public base::mem::GlobalPoolObject<POOL_CANVAS>
         {
         public:
             CanvasRenderer();
@@ -53,6 +53,11 @@ namespace rendering
             ICanvasRendererCustomBatchHandler** m_customHandlersFlatList;
             base::Array<base::RefPtr<ICanvasRendererCustomBatchHandler>> m_customHandlers;
 
+            BufferObjectPtr m_vertexBuffer;
+            BufferObjectPtr m_indexBuffer;
+            BufferObjectPtr m_paramBuffer;
+
+            void handleDeviceReset();
             void packParameters(const base::canvas::Canvas::Params& params, CanvasShaderParams& outParams) const;
 
             //--
@@ -99,13 +104,11 @@ namespace rendering
 
             //--
 
-            virtual void handleDeviceReset() override final;
-            virtual void handleDeviceRelease() override final;
-            virtual base::StringBuf describe() const override;
-
             void createDeviceResources();
             void destroyDeviceResources();
             void createCustomHandlers();
+
+            IDevice* m_api = nullptr;
         };
 
         //--

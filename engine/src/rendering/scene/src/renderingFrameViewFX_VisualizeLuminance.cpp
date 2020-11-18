@@ -15,10 +15,10 @@
 #include "renderingFrameView.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 
 namespace rendering
 {

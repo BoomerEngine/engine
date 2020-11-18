@@ -11,9 +11,9 @@
 #include "renderingMeshFormat.h"
 #include "renderingMeshService.h"
 
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 
 namespace rendering
 {
@@ -66,8 +66,6 @@ namespace rendering
         if (!deviceService)
             base::app::ServiceInitializationResult::FatalError;
 
-        auto device = deviceService->device();
-        
         {
             BufferCreationInfo info;
             info.allowIndex = true;

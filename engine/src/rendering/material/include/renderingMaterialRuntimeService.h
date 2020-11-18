@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingBufferView.h"
-#include "rendering/driver/include/renderingImageView.h"
-#include "rendering/driver/include/renderingManagedBuffer.h"
-#include "rendering/driver/include/renderingManagedBufferWithAllocator.h"
+#include "rendering/device/include/renderingBufferView.h"
+#include "rendering/device/include/renderingImageView.h"
+#include "rendering/device/include/renderingManagedBuffer.h"
+#include "rendering/device/include/renderingManagedBufferWithAllocator.h"
 #include "base/app/include/localService.h"
 #include "base/containers/include/blockPool.h"
 #include "base/containers/include/staticStructurePool.h"

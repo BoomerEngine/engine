@@ -60,7 +60,7 @@ namespace example
         }
 
         // setup rendering output as a window
-        rendering::DriverOutputInitInfo setup;
+        rendering::OutputInitInfo setup;
         setup.m_width = 1920;
         setup.m_height = 1080;
         setup.m_windowMaximized = false;

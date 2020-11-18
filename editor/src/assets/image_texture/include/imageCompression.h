@@ -114,7 +114,7 @@ namespace rendering
         base::Array<StaticTextureMip> mips;
         TextureInfo info;
 
-        ImageView createPreviewTexture() const;
+        ImageObjectPtr createPreviewTexture() const;
     };
 
     //--

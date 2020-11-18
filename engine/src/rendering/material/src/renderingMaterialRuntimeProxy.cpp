@@ -10,8 +10,8 @@
 #include "renderingMaterialRuntimeProxy.h"
 #include "renderingMaterialRuntimeTechnique.h"
 #include "renderingMaterialTemplate.h"
-#include "rendering/driver/include/renderingConstantsView.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/texture/include/renderingTexture.h" 
 
 namespace rendering

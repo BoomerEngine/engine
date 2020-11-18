@@ -7,7 +7,7 @@
 #pragma once
 
 #include "base/app/include/application.h"
-#include "rendering/driver/include/renderingOutput.h"
+#include "rendering/device/include/renderingOutput.h"
 #include "rendering/ui/include/renderingWindowRenderer.h"
 
 namespace application

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingImageView.h"
-#include "rendering/driver/include/renderingParametersView.h"
+#include "rendering/device/include/renderingImageView.h"
+#include "rendering/device/include/renderingParametersView.h"
 
 namespace rendering
 {

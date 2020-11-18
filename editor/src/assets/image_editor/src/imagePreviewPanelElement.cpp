@@ -9,11 +9,11 @@
 #include "build.h"
 #include "imagePreviewPanelElements.h"
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "rendering/canvas/include/renderingCanvasRendererCustomBatchHandler.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/image/include/imageView.h"
 #include "base/ui/include/uiElement.h"
@@ -40,7 +40,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasCheckersHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
     public:
-        virtual void initialize(rendering::IDriver* drv) override final
+        virtual void initialize(rendering::IDevice* drv) override final
         {
         }
 
@@ -87,7 +87,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
     public:
-        virtual void initialize(rendering::IDriver* drv) override final
+        virtual void initialize(rendering::IDevice* drv) override final
         {
         }
 
@@ -147,7 +147,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasTextureCompressionPreviewHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
     public:
-        virtual void initialize(rendering::IDriver* drv) override final
+        virtual void initialize(rendering::IDevice* drv) override final
         {
         }
 
@@ -192,7 +192,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePixelGridHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
     public:
-        virtual void initialize(rendering::IDriver* drv) override final
+        virtual void initialize(rendering::IDevice* drv) override final
         {
         }
 

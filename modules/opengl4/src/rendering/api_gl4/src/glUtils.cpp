@@ -478,7 +478,7 @@ namespace rendering
         }
 
     } // gl4
-} // driver
+} // rendering
 
 #if 0
 
@@ -1100,6 +1100,6 @@ namespace rendering
             }
 
     } // gl4
-} // driver
+} // rendering
 
 #endif

@@ -3,11 +3,14 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
+
+#include "glDevice.h"
 #include "glObject.h"
+#include "glObjectRegistry.h"
 
 namespace rendering
 {
@@ -15,20 +18,20 @@ namespace rendering
     {
         //--
 
-        Object::Object(Driver* drv, ObjectType type)
-            : m_driver(drv)
+        Object::Object(Device* drv, ObjectType type)
+            : m_device(drv)
             , m_type(type)
-        {}
+        {
+            m_handle = drv->objectRegistry().registerObject(this);
+            DEBUG_CHECK(!m_handle.empty());
+        }
 
         Object::~Object()
-        {}
-
-        bool Object::markForDeletion()
         {
-            return 0 == m_markedForDeletion.exchange(1);
+            m_device->objectRegistry().unregisterObject(m_handle, this);
         }
 
         //--
 
     } // gl4
-} // driver
+} // rendering

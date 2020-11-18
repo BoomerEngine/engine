@@ -56,7 +56,7 @@ namespace example
 
         // rendering output (native window)
         rendering::ObjectID m_renderingOutput;
-        IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+        INativeWindowInterface* m_renderingWindow = nullptr;
 
         // pipeline state for rendering
         ShaderLibraryPtr m_shaders;

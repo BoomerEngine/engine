@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "renderingSceneStats.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/imgui/include/imgui.h"
 
 namespace rendering

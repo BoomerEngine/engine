@@ -22,21 +22,6 @@ namespace rendering
 		CameraContext::~CameraContext()
 		{}
 
-		base::StringBuf CameraContext::describe() const
-		{
-			return "CameraContext";
-		}
-
-		void CameraContext::handleDeviceReset()
-		{
-
-		}
-
-		void CameraContext::handleDeviceRelease()
-		{
-
-		}
-
 		//--
 
 	} // scene

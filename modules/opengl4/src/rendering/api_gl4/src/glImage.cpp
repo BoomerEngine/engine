@@ -3,13 +3,13 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\image #]
+* [# filter: api\objects\image #]
 ***/
 
 #include "build.h"
 #include "glUtils.h"
 #include "glImage.h"
-#include "glDriver.h"
+#include "glDevice.h"
 
 #include "base/image/include/imageView.h"
 
@@ -20,7 +20,7 @@ namespace rendering
         
         ///---
 
-        Image::Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID)
+        Image::Image(Device* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID)
             : Object(drv, ObjectType::Image)
             , m_poolID(poolID)
             , m_setup(setup)
@@ -41,7 +41,7 @@ namespace rendering
             }
         }
 
-        Image::Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
+        Image::Image(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
             : Object(drv, ObjectType::Image)
             , m_poolID(poolID)
             , m_setup(setup)
@@ -67,11 +67,6 @@ namespace rendering
             // update stats
             auto memoryUsage = m_setup.calcMemoryUsage();
             base::mem::PoolStats::GetInstance().notifyFree(m_poolID, memoryUsage);
-        }
-
-        bool Image::CheckClassType(ObjectType type)
-        {
-            return type == ObjectType::Image;
         }
 
         static uint32_t CalcMipSize(uint32_t x, uint32_t mipIndex)
@@ -340,7 +335,7 @@ namespace rendering
             return true;
         }
 
-        Image* Image::CreateImage(Driver* drv, const ImageCreationInfo& originalSetup, const SourceData* sourceData)
+        Image* Image::CreateImage(Device* drv, const ImageCreationInfo& originalSetup, const SourceData* sourceData)
         {
             ImageCreationInfo setup = originalSetup;
 
@@ -357,7 +352,7 @@ namespace rendering
             return new Image(drv, setup, sourceData, poolID);
         }
 
-        Image* Image::CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
+        Image* Image::CreateImage(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
         {
             return new Image(drv, setup, id, poolID);
         }
@@ -479,4 +474,4 @@ namespace rendering
         }
 
     } // gl4
-} // driver
+} // rendering

@@ -92,7 +92,7 @@ namespace rendering
         return ret;
     }
 
-    TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDriver* drv, TextureType type, const base::image::ImagePtr* images, uint8_t numMips, uint16_t numSlices)
+    TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDevice* drv, TextureType type, const base::image::ImagePtr* images, uint8_t numMips, uint16_t numSlices)
     {
         // we need to have at least one mip and slice
         uint32_t numTotalImages = numMips * numSlices;
@@ -207,7 +207,7 @@ namespace rendering
                 m_textureGroup);
     }
 
-    void Texture::releaseDriverRelatedData(IDriver* driver)
+    void Texture::releaseDriverRelatedData(IDevice* driver)
     {
         // reset view
         m_mainView = ImageView::DefaultGrayLinear();
@@ -216,7 +216,7 @@ namespace rendering
         TBaseClass::releaseDriverRelatedData(driver);
     }
 
-    bool Texture::recreateDriverRelatedData(IDriver* driver)
+    bool Texture::recreateDriverRelatedData(IDevice* driver)
     {
         // base
         if (!TBaseClass::recreateDriverRelatedData(driver))
@@ -323,7 +323,7 @@ namespace rendering
 
     //---
 
-    Sampler Texture::SelectSamplerForTextureGroup(IDriver* drv, base::StringID textureGroupName, bool hasMipmaps)
+    Sampler Texture::SelectSamplerForTextureGroup(IDevice* drv, base::StringID textureGroupName, bool hasMipmaps)
     {
         // get the texture group data
         auto& textureGroup = GetTextureGroup(textureGroupName);

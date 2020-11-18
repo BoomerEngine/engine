@@ -14,7 +14,7 @@
 #include "renderingMaterialRuntimeProxy.h"
 #include "renderingMaterialRuntimeTechnique.h"
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
 #include "base/resource/include/resourceTags.h"

@@ -8,7 +8,7 @@
 
 #include "rendering_scene_glue.inl"
 
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingImageView.h"
 
 namespace rendering
 {

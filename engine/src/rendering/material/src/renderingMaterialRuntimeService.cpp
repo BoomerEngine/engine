@@ -11,9 +11,9 @@
 #include "renderingMaterialRuntimeService.h"
 #include "renderingMaterialRuntimeLayout.h"
 
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "renderingMaterialRuntimeProxy.h"
 
 namespace rendering

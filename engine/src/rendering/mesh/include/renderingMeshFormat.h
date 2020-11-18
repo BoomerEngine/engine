@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingImageFormat.h"
+#include "rendering/device/include/renderingImageFormat.h"
 #include "renderingMeshStreamData.h"
 
 namespace rendering

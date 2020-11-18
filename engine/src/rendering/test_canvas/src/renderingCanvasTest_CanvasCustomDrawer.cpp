@@ -14,8 +14,8 @@
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/canvas/include/renderingCanvasRendererCustomBatchHandler.h"
 
 namespace rendering
@@ -33,7 +33,7 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_MandelbrotCustomRenderer, rendering::canvas::ICanvasRendererCustomBatchHandler);
 
         public:
-            virtual void initialize(IDriver* drv) override final
+            virtual void initialize(IDevice* drv) override final
             {
             }
 

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# dependency: rendering_driver #]
+* [# dependency: rendering_device #]
 ***/
 
 #include "build.h"

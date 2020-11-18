@@ -9,8 +9,8 @@
 #pragma once
 
 #include "renderingWindow.h"
-#include "rendering/driver/include/renderingOutput.h"
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 
 #include <Windows.h>
 
@@ -19,7 +19,7 @@ namespace rendering
     //--
 
     // WinAPI specific Window output (aka. swapchain)
-    class WindowWinApi : public IDriverNativeWindowInterface
+    class WindowWinApi : public INativeWindowInterface
     {
     public:
         WindowWinApi(ObjectID owner);
@@ -69,7 +69,7 @@ namespace rendering
         //--
 
         // create the window output
-        static WindowWinApi* Create(ObjectID owner, const DriverOutputInitInfo& initInfo);
+        static WindowWinApi* Create(ObjectID owner, const OutputInitInfo& initInfo);
 
     private:
         static void RegisterWindowClass();
@@ -93,7 +93,7 @@ namespace rendering
         base::StringBuf m_fullTitleString;
         void updateTitle_NoLock();
 
-        IDriverNativeWindowCallback* m_callback;
+        INativeWindowCallback* m_callback;
 
         std::atomic<uint32_t> m_windowCloseRequest = 0; // WM_CLOSE
 
@@ -131,20 +131,20 @@ namespace rendering
 
         virtual uint64_t offscreenWindow() override final;
         virtual void updateWindows() override final;
-        virtual uint64_t createWindow(ObjectID owner, const DriverOutputInitInfo& initInfo) override final;
+        virtual uint64_t createWindow(ObjectID owner, const OutputInitInfo& initInfo) override final;
         virtual void closeWindow(uint64_t handle) override final;
         virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
         virtual void finishWindowRendering(uint64_t handle) override final;
         virtual void disconnectWindow(uint64_t handle) override final;
-        virtual IDriverNativeWindowInterface* windowInterface(uint64_t handle) override final;
+        virtual INativeWindowInterface* windowInterface(uint64_t handle) override final;
 
         //--
 
         virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override final;
-        virtual void enumDisplays(base::Array<DriverDisplayInfo>& outDisplayInfos) const override final;
-        virtual void enumResolutions(uint32_t displayIndex, base::Array<DriverResolutionInfo>& outResolutions) const override final;
-        virtual void enumVSyncModes(uint32_t displayIndex, base::Array<DriverResolutionSyncInfo>& outVSyncModes) const override final;
-        virtual void enumRefreshRates(uint32_t displayIndex, const DriverResolutionInfo& info, base::Array<int>& outRefreshRates) const override final;
+        virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override final;
+        virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override final;
+        virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const override final;
+        virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const override final;
 
         //--
 
@@ -161,7 +161,7 @@ namespace rendering
 
         struct CachedDisplay
         {
-            DriverDisplayInfo m_displayInfo;
+            DisplayInfo m_displayInfo;
             base::Array<CachedDisplayMode> m_displayModes;
         };
 

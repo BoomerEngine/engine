@@ -18,9 +18,9 @@
 #include "renderingSceneFragmentList.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/mesh/include/renderingMeshService.h"
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 
@@ -108,10 +108,10 @@ namespace rendering
             params.FrameIndex = data.index;
             params.MSAASamples = view.multisampled() ? view.numSamples() : 0;
 
-            params.PseudoRandom[0] = base::Rand(GRenderingRandState);
-            params.PseudoRandom[1] = base::Rand(GRenderingRandState);
-            params.PseudoRandom[2] = base::Rand(GRenderingRandState);
-            params.PseudoRandom[3] = base::Rand(GRenderingRandState);
+            params.PseudoRandom[0] = GRenderingRandState.next();
+            params.PseudoRandom[1] = GRenderingRandState.next();
+            params.PseudoRandom[2] = GRenderingRandState.next();
+            params.PseudoRandom[3] = GRenderingRandState.next();
 
             params.MaterialFlags = 0;
             if (frame.frame().filters & FilterBit::Material_DisableColorMap)

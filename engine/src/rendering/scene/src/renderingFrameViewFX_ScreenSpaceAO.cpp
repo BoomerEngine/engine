@@ -42,10 +42,10 @@
 #include "renderingFrameView.h"
 
 #include "base/containers/include/stringBuilder.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 
 namespace rendering
 {
@@ -101,8 +101,8 @@ namespace rendering
             float numDir = 8.0f; // keep in sync to glsl
             for (int i = 0; i < HBAO_RANDOM_ELEMENTS; i++)
             {
-                float Rand1 = base::RandOne(rng);
-                float Rand2 = base::RandOne(rng);
+                float Rand1 = rng.unit();
+                float Rand2 = rng.unit();
 
                 // Use random rotation angles in [0,2PI/NUM_DIRECTIONS)
                 float angle = 2.f * PI * Rand1 / numDir;

@@ -8,7 +8,7 @@
 * [# dependency: base_editor #]
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
-* [# dependency: rendering_driver #]
+* [# dependency: rendering_device #]
 * [# dependency: rendering_api_* #]
 * [# dependency: assets_image_loader #]
 * [# dependency: assets_image_texture #]

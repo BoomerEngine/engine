@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/reflection/include/variantTable.h"
-#include "rendering/driver/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingDeviceObject.h"
 
 namespace rendering
 {
@@ -18,7 +18,7 @@ namespace rendering
         //---
 
 		// data holder for frame 2 frame stuff, cached engine side
-		class RENDERING_SCENE_API CameraContext : public base::IReferencable, public IDeviceObject
+		class RENDERING_SCENE_API CameraContext : public base::IReferencable
 		{
 		public:
 			CameraContext(const base::StringBuf& cameraName = "Camera");
@@ -35,12 +35,6 @@ namespace rendering
 			ImageView m_currentFrameLuminance;
 			ImageView m_prevFrameLuminance;
 			ImageView m_temporalColorFeedback;
-
-			//--
-
-            virtual base::StringBuf describe() const override final;
-            virtual void handleDeviceReset() override final;
-            virtual void handleDeviceRelease() override final;
 		};
 
 		//---

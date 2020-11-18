@@ -36,7 +36,7 @@ namespace rendering
         extern RENDERING_API_GL4_API void ValidateResult(const char* testExpr, uint32_t line, const char* file);
 
     } // gl4
-} // driver
+} // rendering
 
 #ifndef BUILD_RELEASE
     #define GL_PROTECT(expr) { expr; gl4::ValidateResult(#expr, __LINE__, __FILE__); }
@@ -44,30 +44,61 @@ namespace rendering
     #define GL_PROTECT(expr) { expr; }
 #endif
 
-#include "glObject.h"
-
 namespace rendering
 {
     namespace gl4
     {
 
-        class Driver;
-        class Swapchain;
+        //--
+
+        enum class ObjectType : uint8_t
+        {
+            Invalid,
+            Buffer,
+            Image,
+            Sampler,
+            Shaders,
+            Output,
+        };
+
+        enum class TempBufferType : uint8_t
+        {
+            Constants,
+            Storage,
+            Geometry,
+            Staging,
+        };
+
+        //--
+
+        class Device;
+        class DeviceThread;
+
+        class Frame;
+
+        class TempBuffer;
+        class TempBufferPool;
+
+        class Object;
+        class ObjectCache;
+        class ObjectRegistry;
+        class ObjectRegistryProxy;
 
         class Buffer;
-        class ParameterLayout;
-        class SequenceFrame;
+        class Image;
+        class Output;
+        class Shaders;
+        class Sampler;
 
-        typedef std::function<void(void)> SequenceCompletionCallback;
+        struct ResolvedImageView;
+        struct ResolvedFormatedView;
+        struct ResolvedBufferView;
+        struct ResolvedParameterBindingState;
+        struct ResolvedVertexBindingState;
+
+        typedef std::function<void(void)> FrameCompletionCallback;
+
+        //--
 
     } // gl4
-} // driver
-
-namespace base
-{
-    namespace image
-    {
-        class PixelRange;
-    } // image
-} // base
-
+} // rendering

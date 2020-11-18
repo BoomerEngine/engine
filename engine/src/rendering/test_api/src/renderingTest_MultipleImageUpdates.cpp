@@ -10,8 +10,8 @@
 #include "renderingTest.h"
 #include "renderingTestShared.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/imageView.h"

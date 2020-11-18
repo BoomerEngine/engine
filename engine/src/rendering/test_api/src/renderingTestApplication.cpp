@@ -9,10 +9,10 @@
 #include "build.h"
 #include "renderingTest.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingOutput.h"
-#include "rendering/driver/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 #include "base/app/include/launcherPlatform.h"
 #include "base/app/include/commandline.h"
@@ -61,7 +61,7 @@ namespace rendering
             // render the test case
             //base::window::WindowPtr m_window;
             //base::window::WindowFactoryPtr m_windowFactory;
-            IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+            INativeWindowInterface* m_renderingWindow = nullptr;
             ObjectID m_renderingOutput;
             bool m_exitRequested;
 
@@ -207,7 +207,7 @@ namespace rendering
             uint32_t viewportHeight = 1024;
             TRACE_INFO("Test viewport size: {}x{}", viewportWidth, viewportHeight);
 
-            rendering::DriverOutputInitInfo setup;
+            rendering::OutputInitInfo setup;
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Rendering Tests";

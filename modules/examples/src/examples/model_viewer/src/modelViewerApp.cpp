@@ -69,7 +69,7 @@ namespace viewer
         }
 
         // setup rendering output as a window
-        rendering::DriverOutputInitInfo setup;
+        rendering::OutputInitInfo setup;
         setup.m_width = cvModelViewerWindowWidth.get();
         setup.m_height = cvModelViewerWindowHeight.get();
         setup.m_windowMaximized = cvModelViewerWindowMaximized.get();

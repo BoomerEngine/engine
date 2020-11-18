@@ -58,6 +58,7 @@ enum PoolTag
     POOL_RENDERING_SHADER_CACHE,
     POOL_RENDERING_PARAM_LAYOUT,
     POOL_RENDERING_TECHNIQUE,
+    POOL_RENDERING_RUNTIME,
     POOL_TRIMESH,
     POOL_IMGUI,
     POOL_JIT,
@@ -224,72 +225,72 @@ namespace base
         class GlobalPoolObject
         {
         public:
-            INLINE void* operator new(std::size_t count)
+            ALWAYS_INLINE void* operator new(std::size_t count)
             {
                 return GlobalPool<TAG>::Alloc(count, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
             }
 
-            INLINE void* operator new[](std::size_t count)
+            ALWAYS_INLINE void* operator new[](std::size_t count)
             {
                 return GlobalPool<TAG>::Alloc(count, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
             }
 
-            INLINE void* operator new(std::size_t count, std::align_val_t al)
+            ALWAYS_INLINE void* operator new(std::size_t count, std::align_val_t al)
             {
                 return GlobalPool<TAG>::Alloc(count, (size_t)al);
             }
 
-            INLINE void* operator new[](std::size_t count, std::align_val_t al)
+            ALWAYS_INLINE void* operator new[](std::size_t count, std::align_val_t al)
             {
                 return GlobalPool<TAG>::Alloc(count, (size_t)al);
             }
 
-            INLINE void operator delete(void* ptr, std::size_t sz)
+            ALWAYS_INLINE void operator delete(void* ptr, std::size_t sz)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete[](void* ptr, std::size_t sz)
+            ALWAYS_INLINE void operator delete[](void* ptr, std::size_t sz)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete(void* ptr, std::size_t sz, std::align_val_t al)
+            ALWAYS_INLINE void operator delete(void* ptr, std::size_t sz, std::align_val_t al)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete[](void* ptr, std::size_t sz, std::align_val_t al)
+            ALWAYS_INLINE void operator delete[](void* ptr, std::size_t sz, std::align_val_t al)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete(void* ptr)
+            ALWAYS_INLINE void operator delete(void* ptr)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete(void* ptr, std::align_val_t al)
+            ALWAYS_INLINE void operator delete(void* ptr, std::align_val_t al)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete[](void* ptr)
+            ALWAYS_INLINE void operator delete[](void* ptr)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void operator delete[](void* ptr, std::align_val_t al)
+            ALWAYS_INLINE void operator delete[](void* ptr, std::align_val_t al)
             {
                 GlobalPool<TAG>::Free(ptr);
             }
 
-            INLINE void* operator new(std::size_t count, void* pt)
+            ALWAYS_INLINE void* operator new(std::size_t count, void* pt)
             {
                 return pt;
             }
 
-            INLINE void operator delete(void *pt, void* pt2)
+            ALWAYS_INLINE void operator delete(void *pt, void* pt2)
             {
             }
         };

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingImageView.h"
 #include "base/containers/include/pagedBuffer.h"
 
 namespace rendering

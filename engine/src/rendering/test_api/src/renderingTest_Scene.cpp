@@ -11,8 +11,8 @@
 #include "renderingTestShared.h"
 #include "renderingTestScene.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 
 namespace rendering
 {

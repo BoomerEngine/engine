@@ -3,14 +3,14 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\image #]
+* [# filter: api\objects\image #]
 ***/
 
 #pragma once
 
 #include "glObject.h"
 
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingImageView.h"
 #include "base/containers/include/sortedArray.h"
 
 namespace rendering
@@ -81,9 +81,11 @@ namespace rendering
         class Image : public Object
         {
         public:
-            Image(Driver* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID);
-            Image(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
+            Image(Device* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID);
+            Image(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
             virtual ~Image();
+
+            static const auto STATIC_TYPE = ObjectType::Image;
 
             //--
 
@@ -104,10 +106,6 @@ namespace rendering
 
             //---
 
-            static bool CheckClassType(ObjectType type);
-
-            //---
-
             // ensure all data for this object is created
             void ensureInitialized();
 
@@ -123,10 +121,10 @@ namespace rendering
             //---
 
             // create an image
-            static Image* CreateImage(Driver* drv, const ImageCreationInfo& setup, const SourceData *sourceData);
+            static Image* CreateImage(Device* drv, const ImageCreationInfo& setup, const SourceData *sourceData);
 
             // create an image with already existing resource (recycled)
-            static Image* CreateImage(Driver* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
+            static Image* CreateImage(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
 
         private:
             GLuint m_glImage = 0;
@@ -145,4 +143,4 @@ namespace rendering
         };
 
     } // gl4
-} // driver
+} // rendering

@@ -13,16 +13,23 @@
 #include "renderingFrameFilters.h"
 #include "renderingFrameView.h"
 
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/mesh/include/renderingMeshService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
 #include "rendering/material/include/renderingMaterialRuntimeLayout.h"
 #include "rendering/material/include/renderingMaterialRuntimeProxy.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
+#include "../../device/include/renderingDeviceService.h"
 
 namespace rendering
 {
     namespace scene
     {
+
+        //--
+
+        base::ConfigProperty<uint32_t> cvMeshHandlerChunksPerPass("Rendering.Mesh", "MeshHandlerChunksPerPass", 1024);
+
         //--
 
 #pragma pack(push)
@@ -55,6 +62,20 @@ namespace rendering
         void FragmentHandler_Mesh::handleInit(Scene* scene)
         {
             m_meshCache = base::GetService<MeshService>();
+            m_bufferChunkDataCapacity = std::max<uint32_t>(cvMeshHandlerChunksPerPass.get(), 16);
+
+            {
+                BufferCreationInfo info;
+                info.allowShaderReads = true;
+                info.allowDynamicUpdate = true;
+                info.allowUAV = true;
+                info.label = "MeshFrameHandler_ChunkInfo";
+                info.size = m_bufferChunkDataCapacity * sizeof(GPUChunkInfo);
+                info.stride = sizeof(GPUChunkInfo);
+
+                auto dev = base::GetService<DeviceService>()->device();
+                m_bufferChunkData = dev->createBuffer(info);
+            }
         }
 
         void FragmentHandler_Mesh::handleSceneLock()
@@ -68,14 +89,27 @@ namespace rendering
 
         void FragmentHandler_Mesh::handleRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const
         {
-            TransientBufferView bufferChunkData(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadOnly, sizeof(GPUChunkInfo) * numFragments, sizeof(GPUChunkInfo));
-
-            // count calls to handler
-            outStats.numBursts += 1;
-
             // skip meshes if disabled
             if (!(view.frame().filters & FilterBit::Meshes))
                 return;
+
+            // split in parts
+            while (numFragments > 0)
+            {
+                auto numBatchFragments = std::min<uint32_t>(numFragments, m_bufferChunkDataCapacity);
+                innerRender(cmd, view, context, fragments, numBatchFragments, outStats);
+
+                numFragments -= numBatchFragments;
+                fragments += numBatchFragments;
+            }
+        }
+
+        void FragmentHandler_Mesh::innerRender(command::CommandWriter& cmd, const FrameView& view, const FragmentRenderContext& context, const Fragment* const* fragments, uint32_t numFragments, FrameFragmentRenderStats& outStats) const
+        {
+            DEBUG_CHECK(numFragments < m_bufferChunkDataCapacity);
+
+            // count calls to handler
+            outStats.numBursts += 1;
 
             // sort mesh fragments
             std::sort((const Fragment**)fragments, (const Fragment**)fragments + numFragments, [](const Fragment* a, const Fragment* b)
@@ -93,7 +127,7 @@ namespace rendering
 
             // prepare data buffer
             {
-                auto* renderChunkData = cmd.opAllocTransientBufferWithUninitializedTypedData<GPUChunkInfo>(bufferChunkData, numFragments);
+                auto* renderChunkData = cmd.opUpdateDynamicBufferPtrN<GPUChunkInfo>(m_bufferChunkData->view(), 0, numFragments);
                 for (FragmentIterator<Fragment_Mesh> it(fragments, numFragments); it; ++it)
                 {
                     renderChunkData->objectId = it->objectId;
@@ -105,7 +139,7 @@ namespace rendering
 
             // bind the data
             GPUMeshDrawData params;
-            params.drawChunks = bufferChunkData;
+            params.drawChunks = m_bufferChunkData->view();
             cmd.opBindParametersInline("MeshDrawData"_id, params);
 
             // draw all fragments

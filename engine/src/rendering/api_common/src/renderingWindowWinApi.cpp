@@ -147,7 +147,7 @@ namespace rendering
         }
     }
 
-    WindowWinApi* WindowWinApi::Create(ObjectID owner, const DriverOutputInitInfo& creationInfo)
+    WindowWinApi* WindowWinApi::Create(ObjectID owner, const OutputInitInfo& creationInfo)
     {
         ASSERT_EX(Fibers::GetInstance().isMainThread(), "Windows can only be created on main thread");
 
@@ -1061,7 +1061,7 @@ namespace rendering
         m_duringUpdate = false;
     }
 
-    uint64_t WindowManagerWinApi::createWindow(ObjectID owner, const DriverOutputInitInfo& initInfo)
+    uint64_t WindowManagerWinApi::createWindow(ObjectID owner, const OutputInitInfo& initInfo)
     {
         DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be created from main thread");
         DEBUG_CHECK_EX(!m_duringUpdate, "Closing window from within a message loop");
@@ -1129,7 +1129,7 @@ namespace rendering
                 return wnd->releaseWindowFromRendering();
     }
 
-    IDriverNativeWindowInterface* WindowManagerWinApi::windowInterface(uint64_t handle)
+    INativeWindowInterface* WindowManagerWinApi::windowInterface(uint64_t handle)
     {
         auto lock = CreateLock(m_windowsLock);
 
@@ -1235,19 +1235,19 @@ namespace rendering
         outMonitorAreas = m_monitorRects;
     }
 
-    void WindowManagerWinApi::enumDisplays(base::Array<DriverDisplayInfo>& outDisplayInfos) const
+    void WindowManagerWinApi::enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const
     {
         for (auto& info : m_cachedDisplayInfos)
             outDisplayInfos.pushBack(info.m_displayInfo);
     }
 
-    void WindowManagerWinApi::enumResolutions(uint32_t displayIndex, base::Array<DriverResolutionInfo>& outResolutions) const
+    void WindowManagerWinApi::enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const
     {
         if (displayIndex < m_cachedDisplayInfos.size())
         {
             for (auto& mode : m_cachedDisplayInfos[displayIndex].m_displayModes)
             {
-                DriverResolutionInfo resInfo;
+                ResolutionInfo resInfo;
                 resInfo.width = mode.m_width;
                 resInfo.height = mode.m_height;
                 outResolutions.pushBackUnique(resInfo);
@@ -1255,9 +1255,9 @@ namespace rendering
         }
     }
 
-    void WindowManagerWinApi::enumVSyncModes(uint32_t displayIndex, base::Array<DriverResolutionSyncInfo>& outVSyncModes) const
+    void WindowManagerWinApi::enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const
     {
-        DriverResolutionSyncInfo info;
+        ResolutionSyncInfo info;
         info.value = 0;
         info.name = "No VSync";
         outVSyncModes.pushBack(info);
@@ -1267,7 +1267,7 @@ namespace rendering
         outVSyncModes.pushBack(info);
     }
 
-    void WindowManagerWinApi::enumRefreshRates(uint32_t displayIndex, const DriverResolutionInfo& info, base::Array<int>& outRefreshRates) const
+    void WindowManagerWinApi::enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const
     {
         if (displayIndex < m_cachedDisplayInfos.size())
         {

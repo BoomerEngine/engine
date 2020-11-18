@@ -9,9 +9,9 @@
 #include "build.h"
 #include "renderingScenePanel.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingSelectable.h"
@@ -983,7 +983,10 @@ namespace ui
 
         // generate command buffers
         if (auto* commandBuffer = base::GetService<rendering::scene::FrameRenderingService>()->renderFrame(frame, color))
-            device()->submitWork(commandBuffer);
+        {
+            auto device = base::GetService<rendering::DeviceService>()->device();
+            device->submitWork(commandBuffer);
+        }
     }
 
     //--

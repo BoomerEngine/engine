@@ -10,9 +10,9 @@
 #include "renderingTest.h"
 #include "renderingTestShared.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/public.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/public.h"
 
 namespace rendering
 {

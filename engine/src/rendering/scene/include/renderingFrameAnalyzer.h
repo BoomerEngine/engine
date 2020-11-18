@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingCommands.h"
+#include "rendering/device/include/renderingCommands.h"
 
 namespace rendering
 {

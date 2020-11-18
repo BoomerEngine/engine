@@ -66,5 +66,7 @@ namespace base
             NegativeZ,
         };
 
+        //--
+
     } // image
 } // base

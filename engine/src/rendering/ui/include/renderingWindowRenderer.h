@@ -12,14 +12,14 @@
 #include "base/canvas/include/canvasStyle.h"
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/ui/include/uiRenderer.h"
-#include "rendering/driver/include/renderingOutput.h"
+#include "rendering/device/include/renderingOutput.h"
 
 namespace rendering
 {
     //--
 
     /// rendering payload for rendering canvas data
-    class RENDERING_UI_API NativeWindowRenderer : public ui::IRendererNative, public IDriverNativeWindowCallback
+    class RENDERING_UI_API NativeWindowRenderer : public ui::IRendererNative, public INativeWindowCallback
     {
     public:
         NativeWindowRenderer();
@@ -62,7 +62,7 @@ namespace rendering
         virtual base::Buffer loadClipboardData(base::StringView format) override final;
         virtual bool checkClipboardHasData(base::StringView format) override final;
 
-        /// IDriverNativeWindowCallback
+        /// INativeWindowCallback
         virtual void onOutputWindowStateChanged(ObjectID output, bool active) override;
         virtual void onOutputWindowPlacementChanged(ObjectID output, const base::Rect& newSize, float pixelScale, bool duringSizeMove) override;
         virtual bool onOutputWindowSelectCursor(ObjectID output, const base::Point& absolutePosition, base::input::CursorType& outCursorType) override;
@@ -73,8 +73,7 @@ namespace rendering
         {
             ui::NativeWindowID id;
             ui::NativeWindowID ownerId;
-            ObjectID output; // window+swapchain
-            IDriverNativeWindowInterface* window = nullptr;
+            OutputObjectPtr output; // window+swapchain
             bool firstFramePending = false;
             base::Point lastPaintSize;
             base::StringBuf lastTitle;

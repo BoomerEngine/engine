@@ -11,14 +11,15 @@
 
 #include "base/image/include/image.h"
 #include "base/image/include/imageView.h"
+#include "base/image/include/imageUtils.h"
 #include "base/system/include/scopeLock.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingObject.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "base/image/include/imageUtils.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingObject.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace rendering
 {
@@ -30,12 +31,10 @@ namespace rendering
         base::ConfigProperty<uint32_t> cvMaxCanvasImageWidth("Rendering.Canvas", "MaxImageWidth", 2048);
         base::ConfigProperty<uint32_t> cvMaxCanvasImageHeight("Rendering.Canvas", "MaxImageHeight", 2048);
 
-        CanvasImageCache::CanvasImageCache(IDriver* drv, ImageFormat imageFormat, uint32_t size, uint32_t initialPageCount)
+        CanvasImageCache::CanvasImageCache(ImageFormat imageFormat, uint32_t size, uint32_t initialPageCount)
             : m_size(size)
             , m_format(imageFormat)
-            , m_device(drv)
         {
-            ASSERT(drv != nullptr);
             createImage(initialPageCount);
         }
 
@@ -58,11 +57,8 @@ namespace rendering
             m_pageAllocators.clear();
             m_imageEntries.clear();
 
-            if (m_image)
-            {
-                m_device->releaseObject(m_image.id());
-                m_image = ImageView();
-            }
+            m_object.reset();
+            m_image = ImageView();
         }
 
         bool CanvasImageCache::createImage(uint32_t pageCount)
@@ -81,14 +77,16 @@ namespace rendering
             info.numMips = 1;
             info.numSlices = pageCount;
 
-            m_image = m_device->createImage(info);
-            if (m_image.empty())
+            auto* dev = base::GetService<DeviceService>()->device();
+            m_object = dev->createImage(info);
+            if (!m_object)
             {
                 TRACE_ERROR("Failed to create canvas image cache texture {}x{} ({} slices)", info.width, info.height, info.numSlices);
                 return false;
             }
 
-            TRACE_INFO("Created canvas image cache texture {}x{} ({} slices)", info.width, info.height, info.numSlices);
+            m_image = m_object->view();
+            TRACE_INFO("Created canvas image cache texture {}x{} ({} slices)", m_image.width(), m_image.height(), m_image.numArraySlices());
 
             m_pageAllocators.clear();
             m_pageAllocators.reserve(pageCount);

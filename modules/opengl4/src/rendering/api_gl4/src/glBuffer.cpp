@@ -3,12 +3,12 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\buffers #]
+* [# filter: api\objects\buffers #]
 ***/
 
 #include "build.h"
 #include "glBuffer.h"
-#include "glDriver.h"
+#include "glDevice.h"
 #include "glUtils.h"
 
 #include "base/memory/include/buffer.h"
@@ -34,7 +34,7 @@ namespace rendering
 
         //--
 
-        Buffer::Buffer(Driver* drv, const BufferCreationInfo &setup, const SourceData* initialData)
+        Buffer::Buffer(Device* drv, const BufferCreationInfo &setup, const SourceData* initialData)
             : Object(drv, ObjectType::Buffer)
             , m_glBuffer(0)
             , m_size(setup.size)
@@ -50,35 +50,25 @@ namespace rendering
 
         Buffer::~Buffer()
         {
-            // unregister from pool
-            auto driver  = this->driver();
-            if (driver != nullptr)
-            {
-                // release views
-                for (auto typedView : m_baseTypedViews.values())
-                    GL_PROTECT(glDeleteTextures(1, &typedView));
-                m_baseTypedViews.clear();
+            // release views
+            for (auto typedView : m_baseTypedViews.values())
+                GL_PROTECT(glDeleteTextures(1, &typedView));
+            m_baseTypedViews.clear();
 
-                // release views
-                for (auto typedView : m_offsetTypedViews.values())
-                    GL_PROTECT(glDeleteTextures(1, &typedView));
-                m_offsetTypedViews.clear();
+            // release views
+            for (auto typedView : m_offsetTypedViews.values())
+                GL_PROTECT(glDeleteTextures(1, &typedView));
+            m_offsetTypedViews.clear();
 
-                // release the buffer object
-                GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
-                m_glBuffer = 0;
+            // release the buffer object
+            GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
+            m_glBuffer = 0;
 
-                // update stats
-                base::mem::PoolStats::GetInstance().notifyAllocation(m_poolId, m_size);
-            }
+            // update stats
+            base::mem::PoolStats::GetInstance().notifyAllocation(m_poolId, m_size);
         }
 
-        bool Buffer::CheckClassType(ObjectType type)
-        {
-            return (type == ObjectType::Buffer);
-        }
-
-        Buffer *Buffer::CreateBuffer(Driver* drv, const BufferCreationInfo &setup, const SourceData* initializationData)
+        Buffer *Buffer::CreateBuffer(Device* drv, const BufferCreationInfo &setup, const SourceData* initializationData)
         {
             return new Buffer(drv, setup, initializationData);
         }
@@ -175,4 +165,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

@@ -3,12 +3,12 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\transient #]
+* [# filter: api\objects #]
 ***/
 
 #pragma once
 
-#include "rendering/driver/include/renderingParametersLayoutID.h"
+#include "rendering/device/include/renderingParametersLayoutID.h"
 
 namespace rendering
 {
@@ -85,7 +85,7 @@ namespace rendering
         class ObjectCache : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
         {
         public:
-            ObjectCache(Driver* device);
+            ObjectCache(Device* device);
             ~ObjectCache();
 
             /// find a bindpoint index by name
@@ -113,7 +113,7 @@ namespace rendering
             GLuint resolveSampler(const rendering::SamplerState& sampler);
 
         private:
-            Driver* m_device;
+            Device* m_device;
 
             base::HashMap<base::StringID, uint16_t> m_vertexBindPointMap;
             base::HashMap<UniqueParamBindPointKey, uint16_t> m_paramBindPointMap;

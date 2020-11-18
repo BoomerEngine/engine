@@ -34,8 +34,7 @@ namespace rendering
             int m_currentTestCaseIndex;
             int m_pendingTestCaseIndex;
 
-            ObjectID m_renderingOutput;
-            IDriverNativeWindowInterface* m_renderingWindow = nullptr;
+            OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
 
             bool createRenderingOutput();

@@ -15,12 +15,12 @@
 #include "base/input/include/inputStructures.h"
 #include "base/canvas/include/canvas.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingOutput.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/canvas/include/renderingCanvasRenderingService.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "base/app/include/launcherPlatform.h"
 #include "../../scene/include/renderingFrameRenderingService.h"
 
@@ -128,7 +128,7 @@ namespace rendering
             uint32_t viewportHeight = 1080;
             TRACE_INFO("Test viewport size: {}x{}", viewportWidth, viewportHeight);
 
-            rendering::DriverOutputInitInfo setup;
+            rendering::OutputInitInfo setup;
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Scene Tests";

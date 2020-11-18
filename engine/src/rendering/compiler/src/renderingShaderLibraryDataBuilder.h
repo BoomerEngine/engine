@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/containers/include/pagedBuffer.h"
 #include "renderingShaderTypeLibrary.h"
 

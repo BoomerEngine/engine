@@ -22,10 +22,10 @@ namespace rendering
         ICanvasRendererCustomBatchHandler::~ICanvasRendererCustomBatchHandler()
         {}
 
-        void ICanvasRendererCustomBatchHandler::initialize(IDriver* drv)
+        void ICanvasRendererCustomBatchHandler::initialize(IDevice* drv)
         {}
 
-        void ICanvasRendererCustomBatchHandler::deinitialize(IDriver* drv)
+        void ICanvasRendererCustomBatchHandler::deinitialize(IDevice* drv)
         {}
 
         //---

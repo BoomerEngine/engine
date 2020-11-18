@@ -11,8 +11,8 @@
 #include "renderingTexture.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/bufferAsync.h"
-#include "rendering/driver/include/renderingImageView.h"
-#include "rendering/driver/include/renderingDeviceObject.h"
+#include "rendering/device/include/renderingImageView.h"
+#include "rendering/device/include/renderingDeviceObject.h"
 
 namespace rendering
 {
@@ -38,7 +38,7 @@ namespace rendering
     };
 
     /// static texture, does not change much (usually baked) but can be streamed
-    class RENDERING_TEXTURE_API StaticTexture : public ITexture, public IDeviceObject
+    class RENDERING_TEXTURE_API StaticTexture : public ITexture
     {
         RTTI_DECLARE_VIRTUAL_CLASS(StaticTexture, ITexture);
 
@@ -70,14 +70,10 @@ namespace rendering
 
         //--
 
+        rendering::ImageObjectPtr m_object;
         rendering::ImageView m_mainView;
 
         //--
-
-        // IRuntimeDeviceObject
-        virtual void handleDeviceReset() override final;
-        virtual void handleDeviceRelease() override final;
-        virtual base::StringBuf describe() const override;
 
         // IResource
         virtual void onPostLoad() override;

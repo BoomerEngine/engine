@@ -97,7 +97,7 @@ namespace rendering
         ///--
 
         /// a handler of fragments
-        class RENDERING_SCENE_API IFragmentHandler : public base::NoCopy
+        class RENDERING_SCENE_API IFragmentHandler : public IRuntimePool
         {
             RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IFragmentHandler);
 

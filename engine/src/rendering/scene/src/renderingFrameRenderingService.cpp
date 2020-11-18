@@ -12,8 +12,8 @@
 #include "renderingFrameRenderingService.h"
 #include "renderingFrameSurfaceCache.h"
 
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
 #include "renderingFrameView.h"
 #include "renderingFrameView_Main.h"
 #include "renderingFrameView_Selection.h"
@@ -38,7 +38,9 @@ namespace rendering
 
         base::app::ServiceInitializationResult FrameRenderingService::onInitializeService(const base::app::CommandLine& cmdLine)
         {
-            m_surfaceCache = new FrameSurfaceCache;
+            auto device = base::GetService<DeviceService>()->device();
+
+            m_surfaceCache = new FrameSurfaceCache(device);
             return base::app::ServiceInitializationResult::Finished;
         }
 

@@ -21,18 +21,28 @@ namespace base
 
     //--
 
+    IRandom::~IRandom()
+    {}
+
+    //--
+
     FastRandState::FastRandState(uint64_t seed /*= 0*/)
     {
         state = seed;
     }
 
-    uint32_t Rand(FastRandState& state)
+    void FastRandState::seed(uint32_t val)
     {
-        uint64_t z = (state.state + UINT64_C(0x9E3779B97F4A7C15));
+        state = val;
+    }
+
+    uint32_t FastRandState::next()
+    {
+        uint64_t z = (state + UINT64_C(0x9E3779B97F4A7C15));
         z = (z ^ (z >> 30))* UINT64_C(0xBF58476D1CE4E5B9);
         z = (z ^ (z >> 27))* UINT64_C(0x94D049BB133111EB);
-        state.state = z ^ (z >> 31);
-        return (uint32_t)state.state;
+        state = z ^ (z >> 31);
+        return (uint32_t)state;
     }
 
     //--
@@ -46,13 +56,13 @@ namespace base
 #define L31(x) (0x7FFFFFFF & x) // 31 LSBs
 
 #define UNROLL(expr) \
-        y = M32(state.MT[i]) | L31(state.MT[i+1]); \
-        state.MT[i] = state.MT[expr] ^ (y >> 1) ^ (((int(y) << 31) >> 31) & MT_MAGIC); \
+        y = M32(MT[i]) | L31(MT[i+1]); \
+        MT[i] = MT[expr] ^ (y >> 1) ^ (((int(y) << 31) >> 31) & MT_MAGIC); \
         ++i;
 
-    static void GenerateMTNumbers(MTRandState& state)
+    void MTRandState::generate()
     {
-       /* uint32_t i = 0;
+        int i = 0;
         uint32_t y;
 
         while (i < MT_DIFF)
@@ -77,38 +87,44 @@ namespace base
         }
 
         {
-            y = M32(state.MT[MT_SIZE - 1]) | L31(state.MT[0]);
-            state.MT[MT_SIZE - 1] = state.MT[MT_PERIOD - 1] ^ (y >> 1) ^ (((int32_t(y) << 31) >> 31) & MT_MAGIC);
+            y = M32(MT[MT_SIZE - 1]) | L31(MT[0]);
+            MT[MT_SIZE - 1] = MT[MT_PERIOD - 1] ^ (y >> 1) ^ (((int32_t(y) << 31) >> 31)& MT_MAGIC);
         }
 
         for (size_t i = 0; i < MT_SIZE; ++i)
         {
-            y = state.MT[i];
+            y = MT[i];
             y ^= y >> 11;
             y ^= y << 7 & 0x9d2c5680;
             y ^= y << 15 & 0xefc60000;
             y ^= y >> 18;
-            state.MT_TEMPERED[i] = y;
+            MT_TEMPERED[i] = y;
         }
-        */
-        state.index = 0;
+
+        index = 0;
     }
 
-    MTRandState::MTRandState(uint32_t seed /*= 0*/)
+
+    void MTRandState::seed(uint32_t seed)
     {
         MT[0] = seed;
-        index = MT_SIZE;
-
         for (uint32_t i = 1; i < MT_SIZE; ++i)
             MT[i] = 0x6c078965 * (MT[i - 1] ^ MT[i - 1] >> 30) + i;
+
+        index = MT_SIZE; // generate on next get
     }
 
-    uint32_t Rand(MTRandState& state)
+    uint32_t MTRandState::next()
     {
-        if (state.index == MT_SIZE)
-            GenerateMTNumbers(state);
+        if (index == MT_SIZE)
+            generate();
 
-        return state.MT_TEMPERED[state.index++];
+        return MT_TEMPERED[index++];
+    }
+
+    MTRandState::MTRandState(uint32_t val /*= 0*/)
+    {
+        seed(val);
     }
 
     //--

@@ -352,7 +352,7 @@ static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Arra
     {
         auto ptr = base::RefNew<tests::MassTestObject>();
 
-        auto parentIndex = (int)RandMax(rand, outTestObjects.size()) - 1;
+        auto parentIndex = rand.range(outTestObjects.size()) - 1;
         if (parentIndex == -1)
         {
             outRoots.pushBack(ptr);
@@ -365,23 +365,23 @@ static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Arra
 
         outTestObjects.pushBack(ptr);
 
-        auto numArrays = 1 + RandMax(rand, contentSize);
+        auto numArrays = 1 + rand.range(contentSize);
         ptr->m_crap.reserve(numArrays);
         for (uint32_t j = 0; j < numArrays; ++j)
         {
             auto& ar = ptr->m_crap.emplaceBack();
-            auto numArrays2 = 1 + RandMax(rand, contentSize);
+            auto numArrays2 = 1 + rand.range(contentSize);
             ar.reserve(numArrays2);
 
             for (uint32_t k = 0; k < numArrays2; ++k)
             {
                 auto& entry = ar.emplaceBack();
-                entry.min.x = RandRange(rand, -10.0f, 10.0f);
-                entry.min.y = RandRange(rand, -10.0f, 10.0f);
-                entry.min.z = RandRange(rand, -10.0f, 10.0f);
-                entry.max.x = RandRange(rand, -10.0f, 10.0f);
-                entry.max.y = RandRange(rand, -10.0f, 10.0f);
-                entry.max.z = RandRange(rand, -10.0f, 10.0f);
+                entry.min.x = rand.range(-10.0f, 10.0f);
+                entry.min.y = rand.range(-10.0f, 10.0f);
+                entry.min.z = rand.range(-10.0f, 10.0f);
+                entry.max.x = rand.range(-10.0f, 10.0f);
+                entry.max.y = rand.range(-10.0f, 10.0f);
+                entry.max.z = rand.range(-10.0f, 10.0f);
             }
         }
     }

@@ -8,8 +8,9 @@
 
 #include "build.h"
 #include "renderingStaticTexture.h"
-#include "rendering/driver/include/renderingDriver.h"
 #include "base/resource/include/resourceTags.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace rendering
 {
@@ -81,64 +82,56 @@ namespace rendering
     {
         DEBUG_CHECK_EX(m_info.slices * m_info.mips == m_mips.size(), "Slice/Mip count mismatch");
 
-        if (!m_mainView)
+        if (auto service = base::GetService<rendering::DeviceService>())
         {
-            rendering::ImageCreationInfo info;
-            info.width = m_info.width;
-            info.height = m_info.height;
-            info.depth = m_info.depth;
-            info.numSlices = m_info.slices;
-            info.numMips = m_info.mips;
-            info.view = m_info.type;
-            info.format = m_info.format;
-            info.allowShaderReads = true;
-            info.label = base::StringBuf(base::TempString("{}", path()));
-
-            base::InplaceArray<rendering::SourceData, 128> sourceData;
-            sourceData.resize(info.numMips * info.numSlices);
-
-            auto* writePtr = sourceData.typedData();
-            for (uint32_t i = 0; i < info.numSlices; ++i)
+            if (auto device = service->device())
             {
-                for (uint32_t j = 0; j < info.numMips; ++j, ++writePtr)
+                if (!m_mainView)
                 {
-                    auto sourceMipIndex = (i * m_info.mips) + j;
-                    if (sourceMipIndex < m_mips.size())
-                    {
-                        const auto& sourceMip = m_mips[sourceMipIndex];
-                        DEBUG_CHECK_EX(!sourceMip.streamed, "Streaming not yet supported");
+                    rendering::ImageCreationInfo info;
+                    info.width = m_info.width;
+                    info.height = m_info.height;
+                    info.depth = m_info.depth;
+                    info.numSlices = m_info.slices;
+                    info.numMips = m_info.mips;
+                    info.view = m_info.type;
+                    info.format = m_info.format;
+                    info.allowShaderReads = true;
+                    info.label = base::StringBuf(base::TempString("{}", path()));
 
-                        const auto* dataPtr = m_persistentPayload.data() + sourceMip.dataOffset;
-                        writePtr->data = m_persistentPayload;
-                        writePtr->offset = sourceMip.dataOffset;
-                        writePtr->size = sourceMip.dataSize;
+                    base::InplaceArray<rendering::SourceData, 128> sourceData;
+                    sourceData.resize(info.numMips * info.numSlices);
+
+                    auto* writePtr = sourceData.typedData();
+                    for (uint32_t i = 0; i < info.numSlices; ++i)
+                    {
+                        for (uint32_t j = 0; j < info.numMips; ++j, ++writePtr)
+                        {
+                            auto sourceMipIndex = (i * m_info.mips) + j;
+                            if (sourceMipIndex < m_mips.size())
+                            {
+                                const auto& sourceMip = m_mips[sourceMipIndex];
+                                DEBUG_CHECK_EX(!sourceMip.streamed, "Streaming not yet supported");
+
+                                const auto* dataPtr = m_persistentPayload.data() + sourceMip.dataOffset;
+                                writePtr->data = m_persistentPayload;
+                                writePtr->offset = sourceMip.dataOffset;
+                                writePtr->size = sourceMip.dataSize;
+                            }
+                        }
                     }
+
+                    if (m_object = device->createImage(info, sourceData.typedData()))
+                        m_mainView = m_object->view().createSampledView(ObjectID::DefaultTrilinearSampler(false));
                 }
             }
-
-            if (auto texture = device()->createImage(info, sourceData.typedData()))
-                m_mainView = texture.createSampledView(ObjectID::DefaultTrilinearSampler(false));
         }
     }
 
     void StaticTexture::destroyDeviceResources()
     {
-        m_mainView.destroy();
-    }
-
-    void StaticTexture::handleDeviceReset()
-    {
-        createDeviceResources();
-    }
-
-    void StaticTexture::handleDeviceRelease()
-    {
-        destroyDeviceResources();
-    }
-
-    base::StringBuf StaticTexture::describe() const
-    {
-        return base::TempString("StaticTexture '{}'", key());
+        m_object.reset();
+        m_mainView = ImageView();
     }
 
     //--

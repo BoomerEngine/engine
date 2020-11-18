@@ -3,13 +3,13 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\buffers #]
+* [# filter: api\objects\buffers #]
 ***/
 
 #pragma once
 
 #include "glObject.h"
-#include "rendering/driver/include/renderingResources.h"
+#include "rendering/device/include/renderingResources.h"
 
 namespace rendering
 {
@@ -84,8 +84,10 @@ namespace rendering
         class Buffer : public Object
         {
         public:
-            Buffer(Driver* drv, const BufferCreationInfo& setup, const SourceData* initialData);
+            Buffer(Device* drv, const BufferCreationInfo& setup, const SourceData* initialData);
             virtual ~Buffer();
+
+            static const auto STATIC_TYPE = ObjectType::Buffer;
 
             //--
 
@@ -94,10 +96,6 @@ namespace rendering
 
             // get the label
             INLINE const base::StringBuf& label() const { return m_label; }
-
-            //--
-
-            static bool CheckClassType(ObjectType type);
 
             //---
 
@@ -110,7 +108,7 @@ namespace rendering
             //---
 
             // create a vertex buffer (always in the device memory), can be updated only via the staging buffer and transfer queue
-            static Buffer* CreateBuffer(Driver* drv, const BufferCreationInfo& setup, const SourceData* initializationData);
+            static Buffer* CreateBuffer(Device* drv, const BufferCreationInfo& setup, const SourceData* initializationData);
 
         private:
             GLuint m_glBuffer;
@@ -131,4 +129,4 @@ namespace rendering
         };
 
     } // gl4
-} // driver
+} // rendering

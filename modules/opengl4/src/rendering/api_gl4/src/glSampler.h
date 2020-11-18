@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects\sampler #]
+* [# filter: api\objects\sampler #]
 ***/
 
 #pragma once
@@ -20,11 +20,11 @@ namespace rendering
         class RENDERING_API_GL4_API Sampler : public Object
         {
         public:
-            Sampler(Driver* drv, const SamplerState& info);
+            Sampler(Device* drv, const SamplerState& info);
+
+            static const auto STATIC_TYPE = ObjectType::Sampler;
 
             INLINE GLuint deviceObject() { finalizeCreation(); return m_glSampler; }
-
-            static bool CheckClassType(ObjectType type);
 
         private:
             GLuint m_glSampler = 0; // only when finalized
@@ -36,5 +36,5 @@ namespace rendering
         ///---
 
     } // gl4
-} // driver
+} // rendering
 

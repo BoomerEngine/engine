@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/resource/include/resource.h"
-#include "rendering/driver/include/renderingParametersView.h"
+#include "rendering/device/include/renderingParametersView.h"
 
 namespace rendering
 {

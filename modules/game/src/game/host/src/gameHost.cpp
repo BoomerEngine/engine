@@ -12,8 +12,8 @@
 #include "gameEvent.h"
 #include "game.h"
 
-#include "rendering/driver/include/renderingFramebuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/canvas/include/renderingCanvasRenderingService.h"
 
 #include "base/imgui/include/debugPageService.h"

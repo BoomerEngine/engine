@@ -61,7 +61,7 @@ namespace rendering
 
         HWND hWnd = ::WindowFromPoint(p);
         for (auto* window : m_nativeWindowMap.values())
-            if (window->window->windowGetNativeHandle() == (uint64_t)hWnd)
+            if (window->output->window()->windowGetNativeHandle() == (uint64_t)hWnd)
                 return window->id;
 
         return 0;

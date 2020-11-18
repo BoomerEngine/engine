@@ -9,7 +9,7 @@
 #include "build.h"
 #include "renderingTest.h"
 
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/imageView.h"
@@ -57,7 +57,7 @@ namespace rendering
             return false;
         }
 
-        bool IRenderingTest::prepareAndInitialize(IDriver* drv, uint32_t subTestIndex)
+        bool IRenderingTest::prepareAndInitialize(IDevice* drv, uint32_t subTestIndex)
         {
             m_subTestIndex = subTestIndex;
             m_device = drv;

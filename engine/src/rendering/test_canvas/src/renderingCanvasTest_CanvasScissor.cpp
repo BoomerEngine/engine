@@ -35,23 +35,23 @@ namespace rendering
 
                 for (int i = 0; i < 200; ++i)
                 {
-                    float w = base::Lerp(20.0f, 200.0f, RandOne(rng));
-                    float h = base::Lerp(20.0f, 200.0f, RandOne(rng));
-                    float x = base::Lerp(0.0f, canvasW - w, RandOne(rng));
-                    float y = base::Lerp(0.0f, canvasH - h, RandOne(rng));
-                    float r = base::Lerp(0.0f, std::min(w, h) * 0.9f, RandOne(rng));
+                    float w = base::Lerp(20.0f, 200.0f, rng.unit());
+                    float h = base::Lerp(20.0f, 200.0f, rng.unit());
+                    float x = base::Lerp(0.0f, canvasW - w, rng.unit());
+                    float y = base::Lerp(0.0f, canvasH - h, rng.unit());
+                    float r = base::Lerp(0.0f, std::min(w, h) * 0.9f, rng.unit());
 
                     b.beginPath();
                     b.roundedRect(x, y, w, h, r);
 
-                    const auto startColor = base::Color((uint8_t)Rand(rng), (uint8_t)Rand(rng), (uint8_t)Rand(rng), 255);
-                    const auto endColor = base::Color((uint8_t)Rand(rng), (uint8_t)Rand(rng), (uint8_t)Rand(rng), 255);;
+                    const auto startColor = base::Color((uint8_t)rng.next(), (uint8_t)rng.next(), (uint8_t)rng.next(), 255);
+                    const auto endColor = base::Color((uint8_t)rng.next(), (uint8_t)rng.next(), (uint8_t)rng.next(), 255);;
 
                     b.fillPaint(base::canvas::LinearGradienti(0, 0, w, h, startColor, endColor));
                     b.fill();
                 }
 
-                b.extract(outGeometry);                
+                b.extract(outGeometry);
             }
 
             virtual void render(base::canvas::Canvas& c) override

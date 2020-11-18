@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingManagedBuffer.h"
+#include "rendering/device/include/renderingManagedBuffer.h"
 #include "base/containers/include/staticStructurePool.h"
 #include "renderingSelectable.h"
 

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "base/containers/include/rectAllocator.h"
-#include "rendering/driver/include/renderingImageView.h"
+#include "rendering/device/include/renderingImageView.h"
 
 namespace rendering
 {
@@ -33,7 +33,7 @@ namespace rendering
         class RENDERING_CANVAS_API CanvasImageCache : public base::NoCopy
         {
         public:
-            CanvasImageCache(IDriver* drv, ImageFormat imageFormat, uint32_t size, uint32_t initialPageCount);
+            CanvasImageCache(ImageFormat imageFormat, uint32_t size, uint32_t initialPageCount);
             ~CanvasImageCache();
 
             //--
@@ -66,13 +66,12 @@ namespace rendering
 
             base::HashMap<uint32_t, ImagePlacement> m_imageEntries;
 
-            IDriver* m_device;
-
             uint32_t m_size;
 
             float m_invAtlasWidth;
             float m_invAtlasHeight;
 
+            ImageObjectPtr m_object;
             ImageView m_image;
 
             uint32_t m_numPages;

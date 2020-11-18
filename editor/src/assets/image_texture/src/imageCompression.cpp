@@ -13,8 +13,8 @@
 #include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
 
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingDriver.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 
 #include "squish/squish.h"
 #include "bc6h/BC6H_Encode.h"
@@ -1139,12 +1139,8 @@ namespace rendering
 
     //--
 
-    ImageView ImageCompressedResult::createPreviewTexture() const
+    ImageObjectPtr ImageCompressedResult::createPreviewTexture() const
     {
-        auto device = base::GetService<DeviceService>()->device();
-        if (!device)
-            return ImageView();
-
         rendering::ImageCreationInfo creationInfo;
         creationInfo.width = info.width;
         creationInfo.height = info.height;
@@ -1177,6 +1173,7 @@ namespace rendering
             }
         }
 
+        auto device = base::GetService<DeviceService>()->device();
         return device->createImage(creationInfo, sourceData.typedData());
     }
 

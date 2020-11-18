@@ -3,19 +3,19 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: driver\objects #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
-#include "glDriver.h"
+#include "glDevice.h"
 #include "glObjectCache.h"
 #include "glSampler.h"
 #include "glBuffer.h"
 #include "glImage.h"
 #include "glUtils.h"
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingConstantsView.h"
 
 namespace rendering
 {
@@ -27,7 +27,7 @@ namespace rendering
 
         //---
 
-        ObjectCache::ObjectCache(Driver* device)
+        ObjectCache::ObjectCache(Device* device)
             : m_device(device)
         {
             m_vertexLayoutMap.reserve(256);
@@ -630,4 +630,4 @@ namespace rendering
         //---
 
     } // gl4
-} // driver
+} // rendering

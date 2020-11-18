@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingFramebuffer.h"
 
 #include "base/object/include/rttiMetadata.h"
 
@@ -165,7 +165,7 @@ namespace rendering
             INLINE bool hasErrors() const { return m_hasErrors; }
 
             // device
-            INLINE IDriver* device() const { return m_device; }
+            INLINE IDevice* device() const { return m_device; }
 
             // sub test
             INLINE uint32_t subTestIndex() const { return m_subTestIndex; }
@@ -173,7 +173,7 @@ namespace rendering
             //--
 
             // prepare test
-            bool prepareAndInitialize(IDriver* drv, uint32_t subTestIndex);
+            bool prepareAndInitialize(IDevice* drv, uint32_t subTestIndex);
 
             // initialize test
             virtual void initialize() = 0;
@@ -235,7 +235,7 @@ namespace rendering
             base::Array<ObjectID> m_driverObjects;
             bool m_hasErrors;
             uint32_t m_subTestIndex;
-            IDriver* m_device;
+            IDevice* m_device;
 
             bool loadCubemapSide(base::Array<TextureSlice>& outSlices, const base::StringBuf& assetFile, bool createMipmaps /*= false*/);
         };

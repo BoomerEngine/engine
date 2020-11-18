@@ -14,7 +14,7 @@
 #include "base/parser/include/textToken.h"
 #include "base/parser/include/textFilePreprocessor.h"
 
-#include "rendering/driver/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/resource/include/resourceTags.h"
 #include "base/resource/include/resourceCooker.h"
 

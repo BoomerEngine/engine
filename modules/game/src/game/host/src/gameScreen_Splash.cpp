@@ -10,9 +10,9 @@
 #include "gameHost.h"
 #include "gameScreen_Splash.h"
 #include "rendering/texture/include/renderingTexture.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingFramebuffer.h"
 
 namespace game
 {

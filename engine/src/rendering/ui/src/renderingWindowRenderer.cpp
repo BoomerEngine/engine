@@ -16,13 +16,13 @@
 #include "base/system/include/scopeLock.h"
 #include "base/system/include/thread.h"
 
-#include "rendering/driver/include/renderingCommandBuffer.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
-#include "rendering/driver/include/renderingObject.h"
-#include "rendering/driver/include/renderingShaderLibrary.h"
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingOutput.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingObject.h"
+#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingOutput.h"
 #include "rendering/canvas/include/renderingCanvasRenderingService.h"
 
 namespace rendering
@@ -34,9 +34,6 @@ namespace rendering
 
     NativeWindowRenderer::~NativeWindowRenderer()
     {
-        for (auto* value : m_nativeWindowMap.values())
-            base::GetService<DeviceService>()->device()->releaseObject(value->output);
-
         m_nativeWindowMap.clearPtr();
     }
 
@@ -73,7 +70,7 @@ namespace rendering
         if (!device)
             return 0;
 
-        DriverOutputInitInfo initInfo;
+        OutputInitInfo initInfo;
         initInfo.m_class = DriverOutputClass::NativeWindow;
         initInfo.m_width = setup.size.x;
         initInfo.m_height = setup.size.y;
@@ -106,32 +103,30 @@ namespace rendering
             {
                 ownerWindowId = ownerWindow->id;
                 if (ownerWindow->output)
-                    initInfo.m_windowNativeParent = ownerWindow->window->windowGetNativeHandle();
+                    initInfo.m_windowNativeParent = ownerWindow->output->window()->windowGetNativeHandle();
             }
         }
 
-        auto output = device->createOutput(initInfo);
-        if (!output)
-            return 0;
+        if (auto output = device->createOutput(initInfo))
+        {
+            auto wrapper = new NativeWindow;
+            wrapper->id = m_nextNativeWindowId++;
+            wrapper->ownerId = ownerWindowId;
+            wrapper->output = output;
+            wrapper->lastTitle = setup.title;
+            wrapper->firstFramePending = true;
+            wrapper->callback = setup.callback;
+            m_nativeWindowMap[wrapper->id] = wrapper;
+            return wrapper->id;
+        }
 
-        auto wrapper = new NativeWindow;
-        wrapper->id = m_nextNativeWindowId++;
-        wrapper->ownerId = ownerWindowId;
-        wrapper->output = output;
-        wrapper->lastTitle = setup.title;
-        wrapper->firstFramePending = true;
-        wrapper->callback = setup.callback;
-        wrapper->window = device->queryOutputWindow(output);
-        m_nativeWindowMap[wrapper->id] = wrapper;
-
-        return wrapper->id;
+        return 0;
     }
 
     void NativeWindowRenderer::windowDestroy(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
-            base::GetService<DeviceService>()->device()->releaseObject(window->output);
             delete window;
             m_nativeWindowMap.remove(id);
         }
@@ -140,7 +135,7 @@ namespace rendering
     base::input::EventPtr NativeWindowRenderer::windowPullInputEvent(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            if (auto inputContext = window->window->windowGetInputContext())
+            if (auto inputContext = window->output->window()->windowGetInputContext())
                 return inputContext->pull();
 
         return nullptr;
@@ -150,34 +145,33 @@ namespace rendering
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
             if (visible)
-                window->window->windowShow(false);
+                window->output->window()->windowShow(false);
             else
-                window->window->windowHide();
+                window->output->window()->windowHide();
     }
 
     void NativeWindowRenderer::windowMinimize(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowMinimize();
+            window->output->window()->windowMinimize();
     }
 
     void NativeWindowRenderer::windowMaximize(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowMaximize();
+            window->output->window()->windowMaximize();
     }
 
     void NativeWindowRenderer::windowEnable(ui::NativeWindowID id, bool enabled)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowEnable(enabled);
+            window->output->window()->windowEnable(enabled);
     }
 
     uint64_t NativeWindowRenderer::windowNativeHandle(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            if (window->window)
-                return window->window->windowGetNativeHandle();
+            return window->output->window()->windowGetNativeHandle();
 
         return 0;
     }
@@ -186,14 +180,14 @@ namespace rendering
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
-            auto size = window->window->windowGetClientSize();
+            auto size = window->output->window()->windowGetClientSize();
 
             base::Rect rect;
             rect.min.x = (int)pos.x;
             rect.min.y = (int)pos.y;
             rect.max.x = rect.min.x + size.x;
             rect.max.y = rect.min.y + size.y;
-            window->window->windowAdjustClientPlacement(rect);
+            window->output->window()->windowAdjustClientPlacement(rect);
         }
     }
 
@@ -205,7 +199,7 @@ namespace rendering
     float NativeWindowRenderer::windowPixelScale(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            return window->window->windowGetPixelScale();
+            return window->output->window()->windowGetPixelScale();
 
         return 1.0f;
     }
@@ -213,7 +207,7 @@ namespace rendering
     void NativeWindowRenderer::windowSetFocus(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowActivate();
+            window->output->window()->windowActivate();
     }
 
     bool NativeWindowRenderer::windowGetFocus(ui::NativeWindowID id)
@@ -224,7 +218,7 @@ namespace rendering
 
         for (auto* window : m_nativeWindowMap.values())
         {
-            if (window->window->windowIsActive())
+            if (window->output->window()->windowIsActive())
             {
                 auto curId = window->id;
                 while (curId != 0)
@@ -247,7 +241,7 @@ namespace rendering
     bool NativeWindowRenderer::windowGetMinimized(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            return window->window->windowIsMinimized();
+            return window->output->window()->windowIsMinimized();
 
         return false;
     }
@@ -256,7 +250,7 @@ namespace rendering
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
-            if (!window->window->windowIsMaximized())
+            if (!window->output->window()->windowIsMaximized())
                 return true;
         }
 
@@ -267,7 +261,7 @@ namespace rendering
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
-            if (!window->window->windowIsMaximized())
+            if (!window->output->window()->windowIsMaximized())
                 return true;
         }
 
@@ -277,7 +271,7 @@ namespace rendering
     bool NativeWindowRenderer::windowGetMaximized(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            return window->window->windowIsMaximized();
+            return window->output->window()->windowIsMaximized();
 
         return false;
     }
@@ -285,22 +279,22 @@ namespace rendering
     void NativeWindowRenderer::windowSetTitle(ui::NativeWindowID id, base::StringView txt)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowSetTitle(base::StringBuf(txt));
+            window->output->window()->windowSetTitle(base::StringBuf(txt));
     }
 
     void NativeWindowRenderer::windowSetOpacity(ui::NativeWindowID id, float opacity)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            window->window->windowSetAlpha(opacity);
+            window->output->window()->windowSetAlpha(opacity);
     }
 
     bool NativeWindowRenderer::windowHasCloseRequest(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
-            if (window->window->windowHasCloseRequest())
+            if (window->output->window()->windowHasCloseRequest())
             {
-                window->window->windowCancelCloseRequest(); // report it only once
+                window->output->window()->windowCancelCloseRequest(); // report it only once
                 return true;
             }
         }
@@ -317,7 +311,7 @@ namespace rendering
     void NativeWindowRenderer::windowSetCapture(ui::NativeWindowID id, int mode)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
-            if (auto inputContext = window->window->windowGetInputContext())
+            if (auto inputContext = window->output->window()->windowGetInputContext())
                 inputContext->requestCapture(mode);
     }
 
@@ -326,16 +320,16 @@ namespace rendering
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         {
             // do not render if window is minimized
-            if (window->window->windowIsMinimized())
+            if (window->output->window()->windowIsMinimized())
                 return false;
 
             // do not rendering if window is not visible, unless it's that first frame...
-            if (!window->firstFramePending && !window->window->windowIsVisible())
+            if (!window->firstFramePending && !window->output->window()->windowIsVisible())
                 return false;
 
             // use the window placement
-            const auto windowPlacement = window->window->windowGetClientPlacement();
-            const auto windowSize = window->window->windowGetClientSize();
+            const auto windowPlacement = window->output->window()->windowGetClientPlacement();
+            const auto windowSize = window->output->window()->windowGetClientSize();
             outWindowDrawArea = ui::ElementArea(windowPlacement.x, windowPlacement.y, windowPlacement.x + windowSize.x, windowPlacement.y + windowSize.y);
             return true;
         }
@@ -351,13 +345,11 @@ namespace rendering
             rendering::command::CommandWriter cmd(base::TempString("NativeWindowRender {} - '{}'", window->id, window->lastTitle));
 
             // acquire back buffer
-            base::Rect viewport;
-            ImageView colorBackBuffer, depthBackBuffer;
-            if (cmd.opAcquireOutput(window->output, viewport, colorBackBuffer, &depthBackBuffer))
+            if (auto output = cmd.opAcquireOutput(window->output))
             {
-                FrameBuffer fb;
-                fb.depth.view(depthBackBuffer).clearDepth().clearStencil();
-                fb.color[0].view(colorBackBuffer);
+                rendering::FrameBuffer fb;
+                fb.depth.view(output.depth).clearDepth().clearStencil();
+                fb.color[0].view(output.color);
 
                 // if canvas requests clearing the window do it - this can be used to save initial background rect in the window
                 if (canvas.clearColor().a > 0)
@@ -368,8 +360,8 @@ namespace rendering
 
                 // render canvas to command buffer
                 canvas::CanvasRenderingParams renderingParams;
-                renderingParams.frameBufferWidth = colorBackBuffer.width();
-                renderingParams.frameBufferHeight = colorBackBuffer.height();
+                renderingParams.frameBufferWidth = output.size.x;
+                renderingParams.frameBufferHeight = output.size.y;
                 base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
 
                 // finish pass
@@ -389,7 +381,7 @@ namespace rendering
             // show the window
             if (window->firstFramePending)
             {
-                window->window->windowShow();
+                window->output->window()->windowShow();
                 window->firstFramePending = false;
             }
 
@@ -401,7 +393,7 @@ namespace rendering
     {
         for (auto* info : m_nativeWindowMap.values())
             if (info->id == id)
-                return info->window->windowGetNativeHandle();
+                return info->output->window()->windowGetNativeHandle();
 
         return 0;
     }
@@ -419,7 +411,7 @@ namespace rendering
         {
             for (auto* info : m_nativeWindowMap.values())
             {
-                if (info->output == output)
+                if (info->output->id() == output)
                 {
                     if (info->lastPaintSize != newSize.size())
                     {
@@ -437,7 +429,7 @@ namespace rendering
     {
         for (auto* info : m_nativeWindowMap.values())
         {
-            if (info->output == output)
+            if (info->output->id() == output)
             {
                 if (info->callback)
                     return info->callback->nativeWindowSelectCursor(info->id, absolutePosition.toVector(), outCursorType);
@@ -452,7 +444,7 @@ namespace rendering
     {
         for (auto* info : m_nativeWindowMap.values())
         {
-            if (info->output == output)
+            if (info->output->id() == output)
             {
                 if (info->callback)
                     return info->callback->nativeWindowHitTestNonClientArea(info->id, absolutePosition.toVector(), outAreaType);

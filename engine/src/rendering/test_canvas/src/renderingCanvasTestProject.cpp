@@ -15,12 +15,12 @@
 #include "base/input/include/inputStructures.h"
 #include "base/canvas/include/canvas.h"
 
-#include "rendering/driver/include/renderingDriver.h"
-#include "rendering/driver/include/renderingOutput.h"
-#include "rendering/driver/include/renderingCommandBuffer.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/canvas/include/renderingCanvasRenderingService.h"
-#include "rendering/driver/include/renderingDeviceService.h"
-#include "rendering/driver/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 #include "base/app/include/launcherPlatform.h"
 
 namespace rendering
@@ -39,13 +39,7 @@ namespace rendering
         void CanvasTestProject::cleanup()
         {
             m_currentTest.reset();
-
-            // release output
-            if (m_renderingOutput)
-            {
-                base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-                m_renderingOutput = ObjectID();
-            }
+            m_renderingOutput.reset();
         }
 
         bool CanvasTestProject::initialize(const base::app::CommandLine& cmdLine)
@@ -117,7 +111,7 @@ namespace rendering
             uint32_t viewportHeight = 1024;
             TRACE_INFO("Test viewport size: {}x{}", viewportWidth, viewportHeight);
 
-            rendering::DriverOutputInitInfo setup;
+            rendering::OutputInitInfo setup;
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Canvas Tests";
@@ -132,8 +126,7 @@ namespace rendering
             }
 
             // get window
-            m_renderingWindow = base::GetService<DeviceService>()->device()->queryOutputWindow(m_renderingOutput);
-            if (!m_renderingWindow)
+            if (!m_renderingOutput->window())
             {
                 TRACE_ERROR("Rendering output has no valid window");
                 return false;
@@ -160,7 +153,7 @@ namespace rendering
         void CanvasTestProject::update()
         {
             // exit when window closed
-            if (m_renderingWindow->windowHasCloseRequest())
+            if (m_renderingOutput->window()->windowHasCloseRequest())
             {
                 TRACE_INFO("Main window closed, exiting");
                 base::platform::GetLaunchPlatform().requestExit("Window closed");
@@ -181,7 +174,7 @@ namespace rendering
             //auto& inputBuffer = base::GetService<base::input::InputService>()->events();
 
             // process events
-            if (auto inputContext = m_renderingWindow->windowGetInputContext())
+            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
             {
                 while (auto evt = inputContext->pull())
                 {
@@ -228,7 +221,7 @@ namespace rendering
 
                 // set the window caption
                 auto testName = m_testClasses[m_currentTestCaseIndex].m_testName;
-                m_renderingWindow->windowSetTitle(base::TempString("Boomer Engine Canvas Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
+                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Canvas Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
             }
 
             // render canvas on GPU
@@ -236,12 +229,10 @@ namespace rendering
             {
                 command::CommandWriter cmd("Test");
 
-                base::Rect viewport;
-                ImageView colorBackBuffer, depthBackBuffer;
-                if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+                if (const auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
                     // use canvas of the same size as output window
-                    base::canvas::Canvas canvas(viewport.width(), viewport.height());
+                    base::canvas::Canvas canvas(output.size.x, output.size.y);
 
                     // render to canvas
                     if (m_currentTest)
@@ -249,14 +240,14 @@ namespace rendering
 
                     // set frame buffer
                     FrameBuffer fb;
-                    fb.color[0].view(colorBackBuffer).clear(0.2, 0.2f, 0.2f, 1.0f);
-                    fb.depth.view(depthBackBuffer).clearDepth().clearStencil();
+                    fb.color[0].view(output.color).clear(0.2, 0.2f, 0.2f, 1.0f);
+                    fb.depth.view(output.depth).clearDepth().clearStencil();
                     cmd.opBeingPass(fb);
 
                     // render canvas to command buffer
                     canvas::CanvasRenderingParams renderingParams;
-                    renderingParams.frameBufferWidth = colorBackBuffer.width();
-                    renderingParams.frameBufferHeight = colorBackBuffer.height();
+                    renderingParams.frameBufferWidth = output.size.x;
+                    renderingParams.frameBufferHeight = output.size.y;
                     base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
 
                     // finish pass

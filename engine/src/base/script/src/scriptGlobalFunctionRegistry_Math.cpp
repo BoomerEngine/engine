@@ -38,12 +38,12 @@ namespace base
 
         static float RandOne()
         {
-            return base::RandOne(GRand);
+            return GRand.unit();
         }
 
         static float RandRangeF(float a, float b)
         {
-            return a + (b-a) * base::RandOne(GRand);
+            return a + (b-a) * GRand.unit();
         }
 
         static int RandRangeI(int a, int b)
@@ -51,7 +51,7 @@ namespace base
             if (abs(a-b) <= 1)
                 return a;
 
-            return a + base::RandMax(GRand, b - a);
+            return a + GRand.range(b - a);
         }
 
         static int RandRangeUnique(int a, int b, int prev)

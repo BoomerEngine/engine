@@ -117,8 +117,6 @@ namespace rendering
             bool m_hasStartedPass = false;
         };
 
-        //---
-
 
         //---------------------------------
         // fragment drawing utilities

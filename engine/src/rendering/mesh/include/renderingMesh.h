@@ -9,7 +9,7 @@
 #pragma once
 
 #include "renderingMeshFormat.h"
-#include "rendering/driver/include/renderingParametersView.h"
+#include "rendering/device/include/renderingParametersView.h"
 
 namespace rendering
 {
