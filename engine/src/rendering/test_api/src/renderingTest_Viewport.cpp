@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -88,7 +87,7 @@ namespace rendering
                 auto width = 1024;
                 auto height = 1024;
 
-                SetQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
+                setQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
                 DrawRecursivePattern(cmd, m_shaders, 0, minX, minY, width, height);
             }
 

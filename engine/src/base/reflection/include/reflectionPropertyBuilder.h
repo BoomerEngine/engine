@@ -21,8 +21,10 @@ namespace base
     namespace reflection
     {
         // helper class that can add stuff to the class type
-        class BASE_REFLECTION_API PropertyBuilder : public mem::GlobalPoolObject<POOL_RTTI>
+        class BASE_REFLECTION_API PropertyBuilder : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RTTI)
+
         public:
             PropertyBuilder(Type propType, const char* name, const char* category, uint32_t offset);
             ~PropertyBuilder();

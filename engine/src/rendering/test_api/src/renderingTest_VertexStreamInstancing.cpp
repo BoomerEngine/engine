@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -90,33 +89,19 @@ namespace rendering
             static auto NUM_INSTANCES_PER_SIDE = 32;
 
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(vertices);
-            m_vertexCount = vertices.size();
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(vertices);
+                m_vertexCount = vertices.size();
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             // generate test instances
-            base::Array<InstanceDataTest> instances;
-            PrepareInstanceBuffer(-0.9f, -0.9f, 1.8f, 1.8f, NUM_INSTANCES_PER_SIDE, instances);
-            m_instanceCount = range_cast<uint16_t>(instances.size());
-
-            // create instance buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = instances.dataSize();
-
-                auto sourceData = CreateSourceData(instances);
-                m_instanceBuffer = createBuffer(info, &sourceData);
+                base::Array<InstanceDataTest> instances;
+                PrepareInstanceBuffer(-0.9f, -0.9f, 1.8f, 1.8f, NUM_INSTANCES_PER_SIDE, instances);
+                m_instanceCount = range_cast<uint16_t>(instances.size());
+                m_instanceBuffer = createVertexBuffer(instances);
             }
 
             m_shaders = loadShader("VertexStreamInstancing.csl");

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -82,27 +81,20 @@ namespace rendering
 
         void RenderingTest_FormatBufferPackedRead::initialize()
         {
+            m_sideCount = 64;
+
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             // generate colors
-            m_sideCount = 64;
-            base::Array<base::Color> colors;
-            PrepareTestTexels(m_sideCount, colors);
-
-            // create texel buffer
             {
+                base::Array<base::Color> colors;
+                PrepareTestTexels(m_sideCount, colors);
+
                 rendering::BufferCreationInfo info;
                 info.allowShaderReads = true;
                 info.allowUAV = true;

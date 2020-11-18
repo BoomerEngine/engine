@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -122,7 +121,7 @@ namespace rendering
                         color = base::Color::GREEN;
                     if ((i % 3) == 2)
                         color = base::Color::BLUE;
-                    DrawQuad(cmd, m_shaderGenerate, x - r * 0.5f, y - r * 0.5f, r, r, 0,0,1,1,color);
+                    drawQuad(cmd, m_shaderGenerate, x - r * 0.5f, y - r * 0.5f, r, r, 0,0,1,1,color);
                 }
 
                 {
@@ -150,14 +149,14 @@ namespace rendering
                     TestParams tempParams;
                     tempParams.TestImage = m_resolvedColorBuffer;
                     cmd.opBindParametersInline("TestParams"_id, tempParams);
-                    DrawQuad(cmd, m_shaderDraw, -1.0f, -1.0f, 2.0f, 2.0f);
+                    drawQuad(cmd, m_shaderDraw, -1.0f, -1.0f, 2.0f, 2.0f);
                 }
 
                 {
                     TestParams tempParams;
                     tempParams.TestImage = m_resolvedColorBuffer.createSampledView(ObjectID::DefaultPointSampler());
                     cmd.opBindParametersInline("TestParams"_id, tempParams);
-                    DrawQuad(cmd, m_shaderDraw2, 0.2f, 0.2f, 0.8f, 0.8f, 0.45f, 0.45f, 0.55f, 0.55f);
+                    drawQuad(cmd, m_shaderDraw2, 0.2f, 0.2f, 0.8f, 0.8f, 0.45f, 0.45f, 0.55f, 0.55f);
                 }
 
                 cmd.opEndPass();

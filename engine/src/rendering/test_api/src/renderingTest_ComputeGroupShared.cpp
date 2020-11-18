@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 #include "renderingTestScene.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -128,7 +127,7 @@ namespace rendering
             m_shaderScene = loadShader("GenericScene.csl");
             m_shaderLinearizeDepth = loadShader("ComputeLinearizeDepth.csl");
             m_shaderMinMaxDepth = loadShader("ComputeMinMaxDepth.csl");
-            m_shaderNormalReconstruction = loadShader("NormalReconstruction.csl");
+            m_shaderNormalReconstruction = loadShader("ComputeNormalReconstruction.csl");
             m_shaderSSAO = loadShader("ComputeSSAO.csl");
             m_shaderPreview = loadShader("GenericGeometryWithTexture.csl");
         }
@@ -283,7 +282,7 @@ namespace rendering
                     params = m_normals2x.createSampledView(ObjectID::DefaultPointSampler());
                 cmd.opBindParametersInline("TestParams"_id, params);
 
-                DrawQuad(cmd, m_shaderPreview, -1.0f, -1.0f, 2.0f, 2.0f);
+                drawQuad(cmd, m_shaderPreview, -1.0f, -1.0f, 2.0f, 2.0f);
                 cmd.opEndPass();
             }
         }

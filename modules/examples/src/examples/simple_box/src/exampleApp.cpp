@@ -37,24 +37,9 @@ namespace example
 
     void SimpleApp::cleanup()
     {
-        if (m_indexBuffer)
-        {
-            GetService<DeviceService>()->device()->releaseObject(m_indexBuffer.id());
-            m_indexBuffer = BufferView();
-        }
-
-        if (m_vertexBuffer)
-        {
-            GetService<DeviceService>()->device()->releaseObject(m_vertexBuffer.id());
-            m_vertexBuffer = BufferView();
-        }
-
-        if (m_renderingOutput)
-        {
-            // rendering output must always be explicitly closed
-            base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-            m_renderingOutput = rendering::ObjectID();
-        }
+        m_indexBuffer.reset();
+        m_vertexBuffer.reset();
+        m_renderingOutput.reset();
     }
 
     bool SimpleApp::createWindow()
@@ -77,17 +62,9 @@ namespace example
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
-        if (!m_renderingOutput)
+        if (!m_renderingOutput || !m_renderingOutput->window())
         {
             TRACE_ERROR("Failed to acquire window factory, no window can be created");
-            return false;
-        }
-
-        // get window
-        m_renderingWindow = renderingService->device()->queryOutputWindow(m_renderingOutput);
-        if (!m_renderingWindow)
-        {
-            TRACE_ERROR("Rendering output has no valid window");
             return false;
         }
 
@@ -114,11 +91,11 @@ namespace example
     void SimpleApp::updateWindow()
     {
         // if the window wants to be closed allow it and close our app as well
-        if (m_renderingWindow->windowHasCloseRequest())
+        if (m_renderingOutput->window()->windowHasCloseRequest())
             base::platform::GetLaunchPlatform().requestExit("Main window closed");
 
         // process input from the window
-        if (auto inputContext = m_renderingWindow->windowGetInputContext())
+        if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
         {
             while (auto inputEvent = inputContext->pull())
                 processInput(*inputEvent);
@@ -204,12 +181,11 @@ namespace example
     {
         // create a command buffer writer and tell the "scene" to render to it
         CommandWriter cmd("CommandBuffer");
-
-        base::Rect viewport;
-        rendering::ImageView colorBackBuffer, depthBackBuffer;
-        if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+        
+        // rendering to output requires that we learn about it's curent size an render target
+        if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
-            renderScene(cmd, colorBackBuffer, depthBackBuffer);
+            renderScene(cmd, output.color, output.depth);
             cmd.opSwapOutput(m_renderingOutput);
         }
 
@@ -289,8 +265,8 @@ namespace example
         cmd.opBeingPass(fb);
 
         // bind buffers
-        cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer);
-        cmd.opBindIndexBuffer(m_indexBuffer);
+        cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer->view());
+        cmd.opBindIndexBuffer(m_indexBuffer->view());
 
         // enable depth buffer
         cmd.opSetDepthState(true, true);

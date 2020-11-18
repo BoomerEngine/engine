@@ -29,8 +29,10 @@ namespace rendering
         ///---
 
         /// collection of surfaces to be used with frame rendering
-        class RENDERING_SCENE_API FrameSurfaceCache : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        class RENDERING_SCENE_API FrameSurfaceCache : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
+
         public:
             FrameSurfaceCache(IDevice* api); // initialized to the max resolution of the device
             virtual ~FrameSurfaceCache();

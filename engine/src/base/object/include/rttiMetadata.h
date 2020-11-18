@@ -21,8 +21,10 @@ namespace base
         ///--
 
         /// Type metadata base class, subclasses are used to pass extra arguments to the class construction
-        class BASE_OBJECT_API IMetadata : public mem::GlobalPoolObject<POOL_RTTI>
+        class BASE_OBJECT_API IMetadata : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RTTI)
+
         public:
             virtual ~IMetadata();
 
@@ -39,8 +41,10 @@ namespace base
         ///--
 
         /// Metadata container
-        class BASE_OBJECT_API MetadataContainer : public base::NoCopy, public mem::GlobalPoolObject<POOL_RTTI>
+        class BASE_OBJECT_API MetadataContainer : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RTTI)
+
         public:
             MetadataContainer();
             virtual ~MetadataContainer();

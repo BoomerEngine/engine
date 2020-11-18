@@ -116,8 +116,11 @@ namespace base
 
         namespace helper
         {
-            struct ServiceInfo : public base::mem::GlobalPoolObject<POOL_TEMP>
+            struct ServiceInfo
             {
+                RTTI_DECLARE_POOL(POOL_TEMP)
+
+            public:
                 ClassType m_class;
                 Array<ServiceInfo*> m_dependsOnInit;
                 Array<ServiceInfo*> m_tickBefore;

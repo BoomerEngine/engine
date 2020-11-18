@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -71,7 +70,7 @@ namespace rendering
             tempParams.TestImage = m_sampledImage;
             cmd.opBindParametersInline("TestParams"_id, tempParams);
 
-            DrawQuad(cmd, m_shaders, -0.8f, -0.8f, 1.6f, 1.6f);
+            drawQuad(cmd, m_shaders, -0.8f, -0.8f, 1.6f, 1.6f);
 
             cmd.opEndPass();
         }

@@ -20,8 +20,10 @@ namespace base
         namespace prv
         {
             /// a watcher listener that sets the atomic flag
-            class AtomicTogglerWatcher : public IDirectoryWatcherListener, public mem::GlobalPoolObject<POOL_IO>
+            class AtomicTogglerWatcher : public IDirectoryWatcherListener
             {
+                RTTI_DECLARE_POOL(POOL_IO)
+
             public:
                 AtomicTogglerWatcher(std::atomic<uint32_t>& flag)
                     : m_flag(&flag)

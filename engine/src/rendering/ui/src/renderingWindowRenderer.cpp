@@ -360,8 +360,8 @@ namespace rendering
 
                 // render canvas to command buffer
                 canvas::CanvasRenderingParams renderingParams;
-                renderingParams.frameBufferWidth = output.size.x;
-                renderingParams.frameBufferHeight = output.size.y;
+                renderingParams.frameBufferWidth = output.width;
+                renderingParams.frameBufferHeight = output.height;
                 base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
 
                 // finish pass

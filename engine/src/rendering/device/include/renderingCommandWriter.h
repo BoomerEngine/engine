@@ -15,7 +15,6 @@
 
 namespace rendering
 {
-    class TransientBufferView;
     struct FrameBufferViewportState;
 
     namespace command
@@ -28,12 +27,13 @@ namespace rendering
 
         struct AcquiredOutput
         {
-            base::Point size;
+            uint32_t width = 0;
+            uint32_t height = 0;
             ImageView color;
             ImageView depth;
 
-            INLINE AcquiredOutput() : size(0, 0) {}
-            INLINE operator bool() const { return size.x != 0 && size.y != 0; }
+            INLINE AcquiredOutput() {}
+            INLINE operator bool() const { return width != 0 && height != 0; }
         };
 
         /// helper class for writing the micro operations stream

@@ -141,8 +141,9 @@ namespace rendering
     
     // rendering device implementation
     // this is the most "low-level" API used by the rendering, can be used directly but it's more work
-    class RENDERING_DEVICE_API IDevice : public IRuntimePool
+    class RENDERING_DEVICE_API IDevice : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
         RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDevice);
 
     public:

@@ -138,62 +138,6 @@ namespace rendering
                 outOffsetInBigBuffer = m_constantsDataOffsetInStaging + offset;
             }
 
-            /*void RuntimeDataAllocations::reportBuffer(const rendering::TransientBufferView& buffer, const void* initalData, uint32_t initialUploadSize)
-            {
-                // get the main type of the temp buffer
-                auto mainBufferType = GetMainBufferType(buffer);
-
-                // allocate space in the storage
-                uint32_t uploadOffset = 0;
-                if (mainBufferType == TransientBufferType::Geometry)
-                {
-                    uploadOffset = base::Align<uint32_t>(m_requiredGeometryBuffer, 256);
-                    m_requiredGeometryBuffer = uploadOffset + buffer.size();
-                }
-                else if (mainBufferType == TransientBufferType::Constants)
-                {
-                    uploadOffset = base::Align<uint32_t>(m_requiredConstantsBuffer, 256);
-                    m_requiredConstantsBuffer = uploadOffset + buffer.size();
-                }
-                else if (mainBufferType == TransientBufferType::Storage)
-                {
-                    uploadOffset = base::Align<uint32_t>(m_requiredStorageBuffer, 256);
-                    m_requiredStorageBuffer = uploadOffset + buffer.size();
-                }
-
-                // map the transient buffer to a place
-                auto& mapping = m_mapping.emplaceBack();
-                mapping.m_id = buffer.id();
-                mapping.m_size = buffer.size();
-                mapping.m_offset = uploadOffset;
-                mapping.m_type = mainBufferType;
-                ASSERT_EX(buffer.id().isTransient(), "Only transient IDs are allowed here");
-
-                // if we need to initialize it with data prepare a proper upload place and schedule a copy operation
-                if (initalData && 0 != initialUploadSize)
-                {
-                    ASSERT(initialUploadSize <= buffer.size());
-
-                    // initialize place in the upload buffer
-                    auto stagingOffset = base::Align<uint32_t>(m_requiredStagingBuffer, 256);
-                    m_requiredStagingBuffer = stagingOffset + initialUploadSize;
-
-                    // write initial data to staging buffer
-                    auto& write = m_writes.emplaceBack();
-                    write.m_offset = stagingOffset;
-                    write.m_size = initialUploadSize;
-                    write.m_data = initalData;
-                    ASSERT((uint64_t)initalData >= 0x1000000);
-
-                    // copy data from staging buffer to final place
-                    auto& copy = m_copies.emplaceBack();
-                    copy.m_targetType = mainBufferType;
-                    copy.m_size = initialUploadSize;
-                    copy.m_sourceOffset = stagingOffset;
-                    copy.m_targetOffset = uploadOffset;
-                }
-            }*/
-
             void RuntimeDataAllocations::reportBufferUpdate(const void* updateData, uint32_t updateSize, uint32_t& outStagingOffset)
             {
                 // allocate space in the storage

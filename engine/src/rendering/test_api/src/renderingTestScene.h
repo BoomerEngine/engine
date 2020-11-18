@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "renderingTestShared.h"
-
 namespace rendering
 {
     namespace test
@@ -102,7 +100,7 @@ namespace rendering
         public:
             struct Object
             {
-                SimpleMeshPtr m_mesh;
+                SimpleRenderMeshPtr m_mesh;
 
                 struct Params
                 {

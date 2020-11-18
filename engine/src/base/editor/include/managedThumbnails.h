@@ -44,8 +44,11 @@ namespace ed
         //---
 
         // pending loading request
-        struct LoadingRequest : public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
+        struct LoadingRequest
         {
+            RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
+        public:
+
             ManagedFile* file;
             uint32_t frameIndex;
         };

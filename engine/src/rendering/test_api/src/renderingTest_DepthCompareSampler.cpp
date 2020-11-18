@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -102,18 +101,10 @@ namespace rendering
 
         void RenderingTest_DepthCompareSampler::initialize()
         {
-            // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
                 m_vertexCount = vertices.size();
             }
 
@@ -166,7 +157,7 @@ namespace rendering
                 tempParams.Constants = cmd.opUploadConstants(zRef);
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
 
-                DrawQuad(cmd, m_shaderPreview, -0.9f, -0.9f, 1.8f, 1.8f);
+                drawQuad(cmd, m_shaderPreview, -0.9f, -0.9f, 1.8f, 1.8f);
                 cmd.opEndPass();
             }
 

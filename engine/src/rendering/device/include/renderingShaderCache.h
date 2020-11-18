@@ -108,8 +108,11 @@ namespace rendering
     private:
         base::Mutex m_lock;
 
-        struct InMemoryEntry : public base::mem::GlobalPoolObject<POOL_RENDERING_SHADER_CACHE>
+        struct InMemoryEntry : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_SHADER_CACHE)
+
+        public:
             base::StringBuf path;
             uint64_t key = 0;
             uint64_t fileOffset = 0;

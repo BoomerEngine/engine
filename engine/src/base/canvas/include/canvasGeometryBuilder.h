@@ -69,6 +69,8 @@ namespace base
         /// the whole point is to minimize CPU overhead when redrawing large and mostly static GUI
         class BASE_CANVAS_API GeometryBuilder : public base::NoCopy // should be instanced on the stack
         {
+            RTTI_DECLARE_POOL(POOL_CANVAS)
+
         public:
             GeometryBuilder(bool antiAlias = false);
             ~GeometryBuilder();

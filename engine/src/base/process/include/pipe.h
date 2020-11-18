@@ -19,8 +19,10 @@ namespace base
 
         /// This is the abstraction of a simple system named pipe, the writing end
         /// NOTE: the writing end is always created first and is the "master" of the connection
-        class BASE_PROCESS_API IPipeWriter : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_PIPES>
+        class BASE_PROCESS_API IPipeWriter : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_PIPES)
+
         public:
             virtual ~IPipeWriter();
 
@@ -55,8 +57,10 @@ namespace base
 
         /// This is the abstraction of a simple system named pipe, the reading end
         /// NOTE: the reading end is always created after writing end and is the "slave" of the connection
-        class BASE_PROCESS_API IPipeReader : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_PIPES>
+        class BASE_PROCESS_API IPipeReader : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_PIPES)
+
         public:
             virtual ~IPipeReader();
 

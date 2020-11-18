@@ -76,8 +76,11 @@ namespace base
 
         //--
 
-        struct TcpMessageServerConnectionState : public NoCopy, public mem::GlobalPoolObject<POOL_NET>
+        struct TcpMessageServerConnectionState : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_NET)
+
+        public:
             socket::ConnectionID m_id;
             socket::Address m_address;
             MessageReplicator m_replicator;

@@ -102,6 +102,7 @@ namespace ui
     /// data box "factory"
     class BASE_UI_API IDataBoxFactory : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_UI_OBJECTS);
         RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDataBoxFactory);
 
     public:

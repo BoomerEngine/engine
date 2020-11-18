@@ -38,8 +38,11 @@ namespace base
 
         //--
 
-        struct FileSerializedObject : public mem::GlobalPoolObject<POOL_SERIALIZATION>
+        struct FileSerializedObject : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_SERIALIZATION)
+
+        public:
             FileSerializedObject* parent = nullptr;
             ObjectPtr object;
             stream::OpcodeWriterReferences localReferences;

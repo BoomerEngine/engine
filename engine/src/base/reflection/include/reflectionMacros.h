@@ -73,6 +73,7 @@
 #define RTTI_DECLARE_NONVIRTUAL_CLASS(className)\
 public:\
     using TBaseClass = className;\
+    using StaticClassAllocationPool = ClassAllocationPool; \
     static base::SpecificClassType<className> GetStaticClass();\
     base::ClassType nativeClass() const { return GetStaticClass(); }\
     base::ClassType cls() const { return GetStaticClass(); }\
@@ -86,6 +87,7 @@ public:
 #define RTTI_DECLARE_VIRTUAL_ROOT_CLASS(className)\
 public:\
     using TBaseClass = className;\
+    using StaticClassAllocationPool = ClassAllocationPool; \
     static base::SpecificClassType<className> GetStaticClass();\
     virtual base::ClassType nativeClass() const { return GetStaticClass(); }\
     virtual base::ClassType cls() const { return nativeClass(); }\
@@ -96,6 +98,7 @@ private:\
 #define RTTI_DECLARE_VIRTUAL_CLASS(className, baseClass)\
 public:\
     using TBaseClass = baseClass;\
+    using StaticClassAllocationPool = ClassAllocationPool; \
     static base::SpecificClassType<className> GetStaticClass();\
     virtual base::ClassType nativeClass() const { return GetStaticClass(); }\
 private:\
@@ -113,7 +116,7 @@ private:\
     base::SpecificClassType<_type> _type::GetStaticClass() { return *(base::SpecificClassType<_type>*) &theClass##_type; }\
     void CreateType_##_type(const char* name) {\
         DEBUG_CHECK(!theClass##_type);\
-        theClass##_type = new base::rtti::NativeClass(name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
+        theClass##_type = new base::rtti::NativeClass(name, sizeof(_type), alignof(_type), typeid(_type).hash_code(), _type::StaticClassAllocationPool::TAG);\
         RTTI::GetInstance().registerType(theClass##_type);\
     }\
     void InitType_##_type() {\

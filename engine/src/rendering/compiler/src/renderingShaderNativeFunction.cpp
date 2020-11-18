@@ -42,8 +42,10 @@ namespace rendering
 
         //--
 
-        class FunctionCache
+        class FunctionCache : public base::ISingleton
         {
+            DECLARE_SINGLETON(FunctionCache);
+
         public:
             FunctionCache()
             {
@@ -63,6 +65,11 @@ namespace rendering
             typedef base::HashMap<base::StringID, INativeFunction*> TFunctions;
             TFunctions m_functions;
 
+            virtual void deinit() override
+            {
+                m_functions.clearPtr();
+            }
+
             void buildCache()
             {
                 base::Array< base::ClassType > functionClasses;
@@ -80,7 +87,7 @@ namespace rendering
                         }
                         else
                         {
-                            auto functionObject  = classPtr->createPointer<INativeFunction>(POOL_PERSISTENT);
+                            auto functionObject = classPtr->createPointer<INativeFunction>();
                             m_functions.set(functionName, functionObject);
                         }
                     }
@@ -90,8 +97,7 @@ namespace rendering
 
         const INativeFunction* INativeFunction::FindFunctionByName(const char* name)
         {
-            static FunctionCache theCache;
-            return theCache.findFunctionByName(name);
+            return FunctionCache::GetInstance().findFunctionByName(name);
         }
 
 

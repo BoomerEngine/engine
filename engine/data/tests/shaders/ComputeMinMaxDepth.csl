@@ -1,0 +1,69 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        vec4 Params;
+        mat4 PixelCoordToWorld;
+    }
+
+    Texture2D PreviewTexture;
+	attribute(uav, format=rg16f) Texture2D OutTexture;
+}
+
+//--
+
+export shader MinMaxDepthCS
+{
+	const uint SideCount = 512;
+    const uint BlockSideSize = 8;
+    const uint BlockSize = 64;
+    const uint BlockSizeLog2 = 6;
+
+	shared float[64] MaxHeights;
+    shared float[64] MinHeights;
+
+    attribute(local_size_x=8, local_size_y=8)
+	void main()
+	{
+	    // load the image
+	    float depth = textureLoadLod(PreviewTexture, gl_GlobalInvocationID.xy, 0).x;
+        MaxHeights[gl_LocalInvocationIndex % BlockSize] = depth;
+        MinHeights[gl_LocalInvocationIndex % BlockSize] = depth;
+
+        // parallel prefix reduction
+        for (uint level=1; level<BlockSizeLog2; level += 1)
+        {
+            //uint level = 1;
+            uint dist = 1 << level; // 2, 4, etc
+
+            groupMemoryBarrier();
+
+            if (gl_LocalInvocationIndex < (BlockSize / dist))
+            {
+                MaxHeights[gl_LocalInvocationIndex] = max(MaxHeights[gl_LocalInvocationIndex], MaxHeights[gl_LocalInvocationIndex + dist]);
+                MinHeights[gl_LocalInvocationIndex] = min(MinHeights[gl_LocalInvocationIndex], MinHeights[gl_LocalInvocationIndex + dist]);
+            }
+        }
+
+        // write the results
+	    if ((gl_GlobalInvocationID.x & 7) == 0 && (gl_GlobalInvocationID.y & 7) == 0)
+        {
+	        //vec2 result = vec2(MinHeights[0] / 20.0f, MaxHeights[0] / 20.0f);
+            vec2 result = vec2(frac(abs(MinHeights[0] - MaxHeights[0]) * 15.0), MaxHeights[0] / 20.0f);
+            OutTexture[gl_GlobalInvocationID.xy / 8] = result.xy;
+        }
+
+        //OutTexture[gl_GlobalInvocationID.xy / 8] = (float)gl_GlobalInvocationID.y / 512.0f;
+	}
+}
+
+//--

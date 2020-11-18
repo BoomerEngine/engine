@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -47,13 +46,7 @@ namespace rendering
                 vertices[0].set(0, -1, 0.5f, 0, 0, base::Color::WHITE);
                 vertices[1].set(-1, 1, 0.5f, 0, 0, base::Color::WHITE);
                 vertices[2].set(1, 1, 0.5f, 0, 0, base::Color::WHITE);
-
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData  = CreateSourceDataRaw(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
         }
 

@@ -15,8 +15,10 @@ namespace rendering
         //---
 
         // a frame in progress
-        class Frame : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+        class Frame : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+
         public:
             Frame(DeviceThread* thread);
             ~Frame(); // calls all the callbacks

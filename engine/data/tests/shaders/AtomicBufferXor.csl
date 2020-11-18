@@ -5,36 +5,47 @@
 
 //--
 
+#include "common.h"
 
-#include "AtomicBufferIncrement.csl"
-
-//--
-
-shader DrawVS
+descriptor TestParams
 {
-	float DrawScale()
+    attribute(format=r32i, uav) Buffer BufferData;
+
+	ConstantBuffer
 	{
-		return 256.0f
+		float DrawScale;
 	}
 }
 
-shader GeneratePS
+export shader GeneratePS
 {
+	in vec4 Color;
+	attribute(flat) in uint TriangleID;
+
 	void runtAtomicOp()
 	{
 		atomicXor(BufferData[gl_FragCoord.x], TriangleID);
 	}
+	
+	void main()
+	{	
+		gl_Target0 = Color;
+		runtAtomicOp();
+	}
 }
 
-
-shader ClearCS
+export shader GenerateVS
 {
-	attribute(local_size_x=8, local_size_y=1)
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+	out uint TriangleID;
+
 	void main()
 	{
-	    BufferData[gl_GlobalInvocationID.x] = 0;
-	} 
+		gl_Position = v.pos.xyz1;
+		Color = v.color;
+		TriangleID = gl_VertexID / 3;
+	}
 }
-
-
 //--

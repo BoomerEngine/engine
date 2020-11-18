@@ -8,8 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
-
 
 namespace rendering
 {

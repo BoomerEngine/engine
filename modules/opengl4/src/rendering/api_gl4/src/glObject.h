@@ -17,8 +17,10 @@ namespace rendering
         //--
 
         // wrapper for a gl4 objects
-        class Object : public base::mem::GlobalPoolObject<POOL_API_OBJECTS>
+        class Object : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_OBJECTS)
+
         public:
             Object(Device* drv, ObjectType type);
             virtual ~Object(); // called on rendering thread once all frames this object was used are done rendering

@@ -18,6 +18,8 @@ namespace base
     /// NOTE: variant itself can be serialized (thus allowing for complex map<name, variant> structures like object templates) but be sure not to have variant with variant...
     TYPE_ALIGN(4, class) BASE_REFLECTION_API Variant
     {
+        RTTI_DECLARE_POOL(POOL_VARIANT)
+
     public:
         static const uint32_t INTERNAL_STORAGE_SIZE = 16;
 

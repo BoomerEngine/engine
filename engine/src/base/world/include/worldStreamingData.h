@@ -31,6 +31,7 @@ namespace base
         /// sector in the streaming grid
         class BASE_WORLD_API WorldSectorData : public IObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(WorldSectorData, IObject);
 
         public:

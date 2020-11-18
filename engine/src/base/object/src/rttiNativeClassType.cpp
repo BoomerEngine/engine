@@ -17,7 +17,7 @@ namespace base
         //--
 
         NativeClass::NativeClass(const char* name, uint32_t size, uint32_t alignment, uint64_t nativeHash, PoolTag pool)
-            : IClassType(StringID(name), size, alignment)
+            : IClassType(StringID(name), size, alignment, pool)
         {
             DEBUG_CHECK_EX(nativeHash != 0, "Native class with no native type hash");
             m_traits.nativeHash = nativeHash;

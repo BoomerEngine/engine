@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -51,7 +50,7 @@ namespace rendering
             const auto resolution = base::Point(backBufferView.width(), backBufferView.height());
             cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(resolution));
 
-            SetQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
+            setQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
 
             cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
             cmd.opDraw(m_shaders, 0, 4);

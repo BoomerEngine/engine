@@ -21,8 +21,11 @@ namespace rendering
         class ParameterPacker;
 
         /// cached vertex state
-        struct ResolvedVertexBindingState : public base::mem::GlobalPoolObject<POOL_API_PIPELINES>
+        struct ResolvedVertexBindingState : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_PIPELINES)
+
+        public:
             struct BindingInfo
             {
                 uint16_t bindPointIndex = 0;
@@ -36,8 +39,11 @@ namespace rendering
         };
 
         /// cached binding
-        struct ResolvedParameterBindingState : public base::mem::GlobalPoolObject<POOL_API_PIPELINES>
+        struct ResolvedParameterBindingState : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_PIPELINES)
+
+        public:
             enum class PackingType : uint8_t
             {
                 NotPacked,
@@ -82,8 +88,10 @@ namespace rendering
         };
 
         /// cache for most commonly used object
-        class ObjectCache : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+        class ObjectCache : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_PIPELINES)
+
         public:
             ObjectCache(Device* device);
             ~ObjectCache();

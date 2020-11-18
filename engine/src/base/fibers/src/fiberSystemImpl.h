@@ -17,8 +17,10 @@ namespace base
         {
 
             /// implementation interface of fiber scheduler (job system)
-            class IFiberScheduler : public base::NoCopy, public mem::GlobalPoolObject<POOL_FIBERS>
+            class IFiberScheduler : public base::NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_FIBERS)
+
             public:
                 IFiberScheduler();
                 virtual ~IFiberScheduler();

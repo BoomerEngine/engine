@@ -54,16 +54,15 @@ namespace example
 
         //--
 
-        // rendering output (native window)
-        rendering::ObjectID m_renderingOutput;
-        INativeWindowInterface* m_renderingWindow = nullptr;
-
         // pipeline state for rendering
         ShaderLibraryPtr m_shaders;
-        
+
+        // rendering output (native window)
+        OutputObjectPtr m_renderingOutput;
+
         // box vertex and index buffer
-        BufferView m_vertexBuffer;
-        BufferView m_indexBuffer;
+        BufferObjectPtr m_vertexBuffer;
+        BufferObjectPtr m_indexBuffer;
     };
 
 } // example

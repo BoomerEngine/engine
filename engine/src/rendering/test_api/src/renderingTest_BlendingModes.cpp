@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -76,7 +75,6 @@ namespace rendering
             {
                 Simple3DVertex vertices[6];
 
-                // quad with dest alpha
                 vertices[0].set(-0.9f, -0.9f, 0.5f, 0.0f, 0.0f, base::Color(128, 128, 128, 255));
                 vertices[1].set(+0.9f, -0.9f, 0.5f, 0.0f, 0.0f, base::Color(128, 128, 128, 0));
                 vertices[2].set(+0.9f, +0.9f, 0.5f, 0.0f, 0.0f, base::Color(255, 255, 255, 0));
@@ -84,12 +82,7 @@ namespace rendering
                 vertices[4].set(+0.9f, +0.9f, 0.5f, 0.0f, 0.0f, base::Color(255, 255, 255, 0));
                 vertices[5].set(-0.9f, +0.9f, 0.5f, 0.0f, 0.0f, base::Color(255, 255, 255, 255));
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData  = CreateSourceDataRaw(vertices);
-                m_backgroundBuffer = createBuffer(info, &sourceData);
+                m_backgroundBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             // allocate test
@@ -111,12 +104,7 @@ namespace rendering
                 vertices[10].set(+0.9f, +0.7f, 0.5f, 0.0f, 0.0f, base::Color(0, 255, 255, 255));
                 vertices[11].set(-0.9f, +0.7f, 0.5f, 0.0f, 0.0f, base::Color(255, 255, 0, 255));
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData  = CreateSourceDataRaw(vertices);
-                m_testBuffer = createBuffer(info, &sourceData);
+                m_testBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             // load shaders

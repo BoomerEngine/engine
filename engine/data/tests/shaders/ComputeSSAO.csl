@@ -16,116 +16,7 @@ descriptor TestParams
     }
 
     Texture2D PreviewTexture;
-	attribute(uav) Texture2D OutTexture;
-}
-
-//--
-
-shader LinearizeDepthCS
-{
-	const uint SideCount = 512;
-
-    attribute(local_size_x=8, local_size_y=8)
-	void main()
-	{
-	    float depth = textureLoadLod(PreviewTexture, gl_GlobalInvocationID.xy, 0).x;
-
-        // proZ = (z * PZ + PW) / z;
-        // proZ = PZ + PW/z;
-        // proZ - PZ = PW/z;
-        // z(proZ - PZ) = PW;
-        // z = PW / (proZ - PZ);
-
-	    float linearDepth = Params.w / (depth - Params.z);
-	    OutTexture[gl_GlobalInvocationID.xy] = linearDepth;
-	}
-}
-
-//--
-
-shader MinMaxDepthCS
-{
-	const uint SideCount = 512;
-    const uint BlockSideSize = 8;
-    const uint BlockSize = 64;
-    const uint BlockSizeLog2 = 6;
-
-	shared float[64] MaxHeights;
-    shared float[64] MinHeights;
-
-    attribute(local_size_x=8, local_size_y=8)
-	void main()
-	{
-	    // load the image
-	    float depth = textureLoadLod(PreviewTexture, gl_GlobalInvocationID.xy, 0).x;
-        MaxHeights[gl_LocalInvocationIndex % BlockSize] = depth;
-        MinHeights[gl_LocalInvocationIndex % BlockSize] = depth;
-
-        // parallel prefix reduction
-        for (uint level=1; level<BlockSizeLog2; level += 1)
-        {
-            //uint level = 1;
-            uint dist = 1 << level; // 2, 4, etc
-
-            groupMemoryBarrier();
-
-            if (gl_LocalInvocationIndex < (BlockSize / dist))
-            {
-                MaxHeights[gl_LocalInvocationIndex] = max(MaxHeights[gl_LocalInvocationIndex], MaxHeights[gl_LocalInvocationIndex + dist]);
-                MinHeights[gl_LocalInvocationIndex] = min(MinHeights[gl_LocalInvocationIndex], MinHeights[gl_LocalInvocationIndex + dist]);
-            }
-        }
-
-        // write the results
-	    if ((gl_GlobalInvocationID.x & 7) == 0 && (gl_GlobalInvocationID.y & 7) == 0)
-        {
-	        //vec2 result = vec2(MinHeights[0] / 20.0f, MaxHeights[0] / 20.0f);
-            vec2 result = vec2(frac(abs(MinHeights[0] - MaxHeights[0]) * 15.0), MaxHeights[0] / 20.0f);
-            OutTexture[gl_GlobalInvocationID.xy / 8] = result.xy00;
-        }
-	}
-}
-
-//--
-
-shader NormalReconstructionCS
-{
-	vec3 PosToWorld(ivec2 pixelCoord, float linearZ)
-    {
-        vec4 positionWS = mul(PixelCoordToWorld, vec4(pixelCoord, linearZ, 1.0f));
-        return positionWS.xyz / positionWS.w;
-    }
-
-    vec3 FetchViewPos(ivec2 pixelCoord)
-    {
-        float depth = textureLoadLod(PreviewTexture, pixelCoord, 0).x;
-        return PosToWorld(pixelCoord, depth);
-    }
-
-    vec3 MinDiff(vec3 P, vec3 Pr, vec3 Pl)
-    {
-        vec3 V1 = Pr - P;
-        vec3 V2 = P - Pl;
-        return (dot(V1,V1) < dot(V2,V2)) ? V1 : V2;
-    }
-
-    vec3 ReconstructNormal(ivec2 pixelCoord, vec3 P)
-    {
-        vec3 Pr = FetchViewPos(pixelCoord + ivec2(1, 0));
-        vec3 Pl = FetchViewPos(pixelCoord + ivec2(-1, 0));
-        vec3 Pt = FetchViewPos(pixelCoord + ivec2(0, 1));
-        vec3 Pb = FetchViewPos(pixelCoord + ivec2(0, -1));
-        return normalize(cross(MinDiff(P, Pr, Pl), MinDiff(P, Pt, Pb)));
-    }
-
-    attribute(local_size_x=8, local_size_y=8)
-	void main()
-	{
-	    vec3 pos = FetchViewPos(gl_GlobalInvocationID.xy);
-        vec3 normal = ReconstructNormal(gl_GlobalInvocationID.xy, pos);
-
-        OutTexture[gl_GlobalInvocationID.xy] = 0.5f + 0.5f*normal.xyz1;
-	}
+	attribute(uav, format=rgba8) Texture2D OutTexture;
 }
 
 //--
@@ -134,11 +25,11 @@ const int NUM_STEPS = 4;
 const int NUM_DIRECTIONS = 8;
 const float Alpha = 2.0 * PI / NUM_DIRECTIONS;
 
-shader SSAOCS
+export shader SSAOCS
 {
     vec3 PosToWorld(ivec2 pixelCoord, float linearZ)
     {
-        vec4 positionWS = mul(PixelCoordToWorld, vec4(pixelCoord, linearZ, 1.0f));
+        vec4 positionWS = vec4(pixelCoord, linearZ, 1.0f) * PixelCoordToWorld;
         return positionWS.xyz / positionWS.w;
     }
 
@@ -252,32 +143,3 @@ shader SSAOCS
 };
 
 //--
-
-program LinearizeDepth
-{
-	shader ComputeShader = shader<LinearizeDepthCS> {};
-}
-
-program MinMaxDepth
-{
-	shader ComputeShader = shader<MinMaxDepthCS> {};
-}
-
-program NormalReconstruction
-{
-	shader ComputeShader = shader<NormalReconstructionCS> {};
-}
-
-program SSAO
-{
-	shader ComputeShader = shader<SSAOCS> {};
-}
-
-export LinearizeDepth = program<LinearizeDepth> {};
-export MinMaxDepth = program<MinMaxDepth> {};
-export NormalReconstruction = program<NormalReconstruction> {};
-export SSAO = program<SSAO> {};
-
-//--
-
-

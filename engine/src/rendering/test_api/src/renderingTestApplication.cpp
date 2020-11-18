@@ -59,10 +59,7 @@ namespace rendering
             bool m_advanceTime = true;
 
             // render the test case
-            //base::window::WindowPtr m_window;
-            //base::window::WindowFactoryPtr m_windowFactory;
-            INativeWindowInterface* m_renderingWindow = nullptr;
-            ObjectID m_renderingOutput;
+            OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
 
             bool createRenderingOutput();
@@ -104,11 +101,7 @@ namespace rendering
             }
 
             // release output
-            if (m_renderingOutput)
-            {
-                base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-                m_renderingOutput = ObjectID();
-            }
+            m_renderingOutput.reset();
         }
 
         base::RefPtr<IRenderingTest> TestRenderingFramework::initializeTest(uint32_t testIndex)
@@ -215,17 +208,9 @@ namespace rendering
 
             // create rendering output
             m_renderingOutput = base::GetService<DeviceService>()->device()->createOutput(setup);
-            if (!m_renderingOutput)
+            if (!m_renderingOutput || !m_renderingOutput->window())
             {
                 TRACE_ERROR("Failed to acquire window factory, no window can be created");
-                return false;
-            }
-
-            // get window
-            m_renderingWindow = base::GetService<DeviceService>()->device()->queryOutputWindow(m_renderingOutput);
-            if (!m_renderingWindow)
-            {
-                TRACE_ERROR("Rendering output has no valid window");
                 return false;
             }
             
@@ -235,7 +220,7 @@ namespace rendering
         void TestRenderingFramework::update()
         {
             // exit when window closed
-            if (m_renderingWindow->windowHasCloseRequest())
+            if (m_renderingOutput->window()->windowHasCloseRequest())
             {
                 TRACE_INFO("Main window closed, exiting");
                 base::platform::GetLaunchPlatform().requestExit("Window closed");
@@ -256,7 +241,7 @@ namespace rendering
             //auto& inputBuffer = base::GetService<base::input::InputService>()->events();
             
             // process events
-            if (auto inputContext = m_renderingWindow->windowGetInputContext())
+            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
             {
                 while (auto evt = inputContext->pull())
                 {
@@ -331,20 +316,18 @@ namespace rendering
                 // set the window caption
                 auto testName = m_testClasses[m_currentTestCaseIndex].m_name;
                 auto testIndex = m_testClasses[m_currentTestCaseIndex].m_subTestIndex;
-                m_renderingWindow->windowSetTitle(base::TempString("Boomer Engine Rendering Tests - {} ({}) {}", testName, testIndex, m_currentTestCase ? "" : "(FAILED TO INITIALIZE)"));
+                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Rendering Tests - {} ({}) {}", testName, testIndex, m_currentTestCase ? "" : "(FAILED TO INITIALIZE)"));
             }
 
             {
                 command::CommandWriter cmd("Test");
 
                 // acquire the back buffer
-                base::Rect viewport;
-                ImageView colorBackBuffer, depthBackBuffer;
-                if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+                if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
                     // render the test
                     if (m_currentTestCase)
-                        m_currentTestCase->render(cmd, (float)m_timeCounter, colorBackBuffer, depthBackBuffer);
+                        m_currentTestCase->render(cmd, (float)m_timeCounter, output.color, output.depth);
 
                     // swap
                     cmd.opSwapOutput(m_renderingOutput);

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -61,17 +60,10 @@ namespace rendering
 
         void RenderingTest_SamplerLodBias::initialize()
         {
-            // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             m_sampledImage = createMipmapTest2D(256);
@@ -114,13 +106,11 @@ namespace rendering
                         auto sampler = device()->createSampler(info);
 
                         TestParams tempParams;
-                        tempParams.TestTexture = m_sampledImage.createSampledView(sampler);
+                        tempParams.TestTexture = m_sampledImage.createSampledView(sampler->id());
                         cmd.opBindParametersInline("TestParams"_id, tempParams);
 
                         cmd.opSetViewportRect(0, x * viewportWidth, y * viewportHeight, viewportWidth, viewportHeight);
                         cmd.opDraw(m_shaders, 0, m_vertexBuffer.size() / sizeof(Simple3DVertex));
-
-                        device()->releaseObject(sampler);
                     }
                 }
             }

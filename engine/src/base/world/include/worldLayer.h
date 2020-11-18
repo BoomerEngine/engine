@@ -20,6 +20,7 @@ namespace base
         /// Layer is composed of a list of node templates
         class BASE_WORLD_API Layer : public res::IResource
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(Layer, res::IResource);
 
         public:

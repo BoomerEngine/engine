@@ -222,12 +222,12 @@ namespace base
                     if (MoveFile(m_tempFilePath.typedData(), m_targetFilePath.typedData()))
                     {
                         TRACE_INFO("WinIO: Finished staged writing for target '{}'. Temp file '{}' will be delete.", 
-                            (const char*)m_targetFilePath.typedData(), (const char*)m_tempFilePath.typedData());
+                            m_targetFilePath.typedData(), m_tempFilePath.typedData());
                     }
                     else
                     {
                         TRACE_WARNING("WinIO: Failed to move starged file to '{}'. New content remains saved at '{}'.",
-                            (const char*)m_targetFilePath.typedData(), (const char*)m_tempFilePath.typedData());
+                            m_targetFilePath.typedData(), m_tempFilePath.typedData());
                     }
                 }
             }

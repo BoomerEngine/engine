@@ -20,6 +20,7 @@ namespace base
         /// template of a component
         class BASE_WORLD_API ComponentTemplate : public IObjectTemplate
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(ComponentTemplate, IObjectTemplate);
 
         public:

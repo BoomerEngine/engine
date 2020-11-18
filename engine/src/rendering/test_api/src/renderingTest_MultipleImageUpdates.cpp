@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -74,17 +73,10 @@ namespace rendering
             m_shaders = loadShader("MultipleImageUpdates.csl");
 
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(0.1f, 0.1f, 0.8f, 0.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(0.1f, 0.1f, 0.8f, 0.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             ImageCreationInfo info;
@@ -106,7 +98,7 @@ namespace rendering
             cmd.opBeingPass(fb);
 
             // draw the grid
-            base::MTRandState rng;
+            base::FastRandState rng;
             for (uint32_t y = 0; y < GRID_SIZE; ++y)
             {
                 for (uint32_t x = 0; x < GRID_SIZE; ++x)
@@ -128,7 +120,7 @@ namespace rendering
                     {
                         // prepare data
                         base::Color updateColors[IMAGE_SIZE*IMAGE_SIZE];
-                        base::Color randomColor = base::Color(base::Rand(rng), base::Rand(rng), base::Rand(rng));
+                        base::Color randomColor = base::Color(rng.next(), rng.next(), rng.next());
                         for (uint32_t i=0; i<ARRAY_COUNT(updateColors); ++i)
                             updateColors[i] = randomColor;
 

@@ -153,8 +153,10 @@ namespace base
         /// main use is to specify this container when using the path builder
         /// a cached geometry can be submitted to the canvas multiple times at fraction of the cost
         /// needed mainly for the UI project
-        class BASE_CANVAS_API Geometry : public base::IReferencable//, public base::mem::GlobalPoolObject<POOL_CANVAS> // it's not possible to copy this shit because we have pointers to self in the data structures
+        class BASE_CANVAS_API Geometry : public base::IReferencable
         {
+            RTTI_DECLARE_POOL(POOL_CANVAS)
+
         public:
             Geometry();
             Geometry(Geometry&& other) = default;

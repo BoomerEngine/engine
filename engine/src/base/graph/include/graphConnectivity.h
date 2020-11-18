@@ -23,8 +23,11 @@ namespace base
         private:
             struct Node;
 
-            struct Edge : public mem::GlobalPoolObject<POOL_GRAPH>
+            struct Edge
             {
+                RTTI_DECLARE_POOL(POOL_GRAPH)
+
+            public:
                 base::StringID m_sourceName;
                 base::StringID m_targetName;
                 Node* m_target;
@@ -34,8 +37,11 @@ namespace base
                 {}
             };
 
-            struct Node : public mem::GlobalPoolObject<POOL_GRAPH>
+            struct Node
             {
+                RTTI_DECLARE_POOL(POOL_GRAPH)
+
+            public:
                 int m_depth;
                 int m_island;
                 Block* m_block;

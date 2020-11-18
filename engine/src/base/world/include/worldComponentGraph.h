@@ -19,6 +19,8 @@ namespace base
         // graph of links between components
         class BASE_WORLD_API ComponentGraph : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
+
         public:
             ComponentGraph();
 

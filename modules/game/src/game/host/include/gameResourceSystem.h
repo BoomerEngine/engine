@@ -51,15 +51,21 @@ namespace game
         virtual void handlePreUpdate(IGame* game, double dt) override final;
         virtual void handleDebug(IGame* game) override final;
 
-        struct Entry : public base::mem::GlobalPoolObject<POOL_GAME>
+        struct Entry : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_GAME)
+
+        public:
             base::StringID fullName; // Weapons.Pistol, etc
             base::res::ResourceKey key; // game::Prefab, "game/weapons/fpp/prefabs/pistol.v4prefab"
             base::res::ResourceWeakPtr loadedRes; // weak pointer to loaded resource
         };
 
-        struct Table : public base::mem::GlobalPoolObject<POOL_GAME>
+        struct Table : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_GAME)
+
+        public:
             base::StringID name;
             base::HashMap<base::StringID, Entry*> entries;
         };

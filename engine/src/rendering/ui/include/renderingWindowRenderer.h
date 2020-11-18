@@ -21,6 +21,8 @@ namespace rendering
     /// rendering payload for rendering canvas data
     class RENDERING_UI_API NativeWindowRenderer : public ui::IRendererNative, public INativeWindowCallback
     {
+        RTTI_DECLARE_POOL(POOL_WINDOW)
+
     public:
         NativeWindowRenderer();
         virtual ~NativeWindowRenderer();
@@ -69,8 +71,11 @@ namespace rendering
         virtual bool onOutputWindowHitTestNonClientArea(ObjectID output, const base::Point& absolutePosition, base::input::AreaType& outAreaType) override;
 
     private:
-        struct NativeWindow : public base::mem::GlobalPoolObject<POOL_WINDOW>
+        struct NativeWindow : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_WINDOW)
+
+        public:
             ui::NativeWindowID id;
             ui::NativeWindowID ownerId;
             OutputObjectPtr output; // window+swapchain

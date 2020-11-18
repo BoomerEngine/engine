@@ -71,8 +71,11 @@ namespace base
             //---
 
         private:
-            struct RootPathElement : public base::mem::GlobalPoolObject<POOL_PATH_CACHE>
+            struct RootPathElement : public base::NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_WORLD_PATH)
+
+            public:
                 NodePathPart m_name;
                 std::atomic<uint32_t> m_refCount;
                 uint64_t m_hash;

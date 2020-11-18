@@ -35,8 +35,8 @@ namespace rendering
             bool handleInputEvent(const base::input::BaseEvent& evt);
             bool handleAppInputEvent(const base::input::BaseEvent& evt);
 
-            void prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, base::Rect& area);
-            void prepareCanvasCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, base::Rect& area);
+            void prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height);
+            void prepareCanvasCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height);
             void renderCanvas(base::canvas::Canvas& c);
             void renderGui();
 
@@ -59,8 +59,7 @@ namespace rendering
             int m_currentTestCaseIndex;
             int m_pendingTestCaseIndex;
 
-            ObjectID m_renderingOutput;
-            INativeWindowInterface* m_renderingWindow = nullptr;
+            OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
 
             bool createRenderingOutput();

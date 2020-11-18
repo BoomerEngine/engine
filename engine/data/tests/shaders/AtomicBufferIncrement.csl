@@ -11,9 +11,14 @@
 descriptor TestParams
 {
     attribute(format=r32i, uav) Buffer BufferData;
+
+	ConstantBuffer
+	{
+		float DrawScale;
+	}
 }
 
-shader GeneratePS
+export shader GeneratePS
 {
 	in vec4 Color;
 	attribute(flat) in uint TriangleID;
@@ -30,7 +35,7 @@ shader GeneratePS
 	}
 }
 
-shader GenerateVS
+export shader GenerateVS
 {
 	vertex Simple3DVertex v;
 
@@ -46,68 +51,3 @@ shader GenerateVS
 }
 
 //--
-
-shader DrawVS
-{
-	vertex Simple3DVertex v;
-
-	out vec4 Color;
-	
-	float DrawScale()
-	{
-		return 10000.0f
-	}
-
-	void main()
-	{
-	    Color = v.color.xyz1;
-
-		gl_Position = v.pos.xyz1;
-		uint pixelPosition = (uint)(1024.0f * saturate(0.5f + 0.5f * gl_Position.x));
-		gl_Position.y -= BufferData[pixelPosition] / DrawScale();
-	}
-}
-
-shader DrawPS
-{
-	in vec4 Color;
-
-	void main()
-	{
-		gl_Target0 = Color;
-	}
-}
-
-//--
-
-shader ClearCS
-{
-	attribute(local_size_x=8, local_size_y=1)
-	void main()
-	{
-	    BufferData[gl_GlobalInvocationID.x] = 0;
-	} 
-}
-
-//--
-
-program Draw
-{	
-	shader VertexShader = shader<DrawVS> {};
-	shader PixelShader = shader<DrawPS> {};
-}
-
-program Generate
-{	
-	shader VertexShader = shader<GenerateVS> {};
-	shader PixelShader = shader<GeneratePS> {};
-}
-
-program Clear
-{	
-	shader ComputeShader = shader<ClearCS> {};
-}
-
-export Draw = program<Draw>{};
-export Generate = program<Generate>{};
-export Clear = program<Clear>{};

@@ -15,13 +15,85 @@
 
 #include "base/object/include/rttiMetadata.h"
 
-#include "renderingTestShared.h"
-
-
 namespace rendering
 {
     namespace test
     {
+        //---
+
+        /// create buffer upload data from an array
+        template< typename T >
+        INLINE static SourceData CreateSourceData(const base::Array<T>& sourceData)
+        {
+            SourceData ret;
+            ret.data = base::Buffer::Create(POOL_TEMP, sourceData.dataSize(), 1, sourceData.data());
+            return ret;
+        }
+
+        /// create buffer upload data from an array
+        template< typename T >
+        INLINE static SourceData CreateSourceDataRaw(const T& sourceData)
+        {
+            SourceData ret;
+            ret.data = base::Buffer::Create(POOL_TEMP, sizeof(sourceData), 1, &sourceData);
+            return ret;
+        }
+
+        //---
+
+        struct Simple2DVertex
+        {
+            base::Vector2 VertexPosition;
+            base::Vector2 VertexUV;
+            base::Color VertexColor;
+
+            INLINE void set(float x, float y, float u, float v, base::Color _color)
+            {
+                VertexPosition = base::Vector2(x, y);
+                VertexUV = base::Vector2(u, v);
+                VertexColor = _color;
+            }
+        };
+
+        struct Simple3DVertex
+        {
+            base::Vector3 VertexPosition;
+            base::Vector2 VertexUV;
+            base::Color VertexColor;
+
+            INLINE Simple3DVertex()
+            {}
+
+            INLINE Simple3DVertex(float x, float y, float z, float u = 0.0f, float v = 0.0f, base::Color _color = base::Color::BLACK)
+            {
+                VertexPosition = base::Vector3(x, y, z);
+                VertexUV = base::Vector2(u, v);
+                VertexColor = _color;
+            }
+
+            INLINE void set(float x, float y, float z, float u = 0.0f, float v = 0.0f, base::Color _color = base::Color::BLACK)
+            {
+                VertexPosition = base::Vector3(x, y, z);
+                VertexUV = base::Vector2(u, v);
+                VertexColor = _color;
+            }
+        };
+
+        struct Mesh3DVertex
+        {
+            base::Vector3 VertexPosition;
+            base::Vector3 VertexNormal;
+            base::Vector2 VertexUV;
+            base::Color VertexColor;
+
+            INLINE Mesh3DVertex()
+                : VertexPosition(0, 0, 0)
+                , VertexNormal(0, 0, 1)
+                , VertexUV(0, 0)
+                , VertexColor(base::Color::WHITE)
+            {}
+        };
+
         //---
 
         /// test parametrization
@@ -105,47 +177,57 @@ namespace rendering
 
         //---
 
-        /// a test mesh - group of triangles
-        class SimpleMesh : public base::IReferencable
+        struct SimpleChunk
         {
-        public:
-            struct Chunk
-            {
-                base::StringID m_material;
-                uint32_t m_firstVertex;
-                uint32_t m_firstIndex;
-                uint32_t m_numVerties;
-                uint32_t m_numIndices;
-            };
+            base::StringID material;
+            uint32_t firstVertex = 0;
+            uint32_t firstIndex = 0;
+            uint32_t numVerties = 0;
+            uint32_t numIndices = 0;
+        };
 
+        /// a test mesh - group of triangles
+        class SimpleMesh : public base::res::IResource
+        {
+            RTTI_DECLARE_VIRTUAL_CLASS(SimpleMesh, base::res::IResource);
+
+        public:
             base::Array<Mesh3DVertex> m_allVertices;
             base::Array<uint16_t> m_allIndices;
-            base::Array<Chunk> m_chunks;
-
-            BufferView m_vertexBuffer;
-            BufferView m_indexBuffer;
-
-            base::Box m_bounds;
-            //
-
-            void drawChunk(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t chunkIndex) const;
-            void drawMesh(command::CommandWriter& cmd, const ShaderLibrary* func) const;
+            base::Array<SimpleChunk> m_chunks;
 
             SimpleMesh();
             ~SimpleMesh();
         };
 
-        typedef base::RefPtr<SimpleMesh> SimpleMeshPtr;
+
+        // render mesh 
+        struct SimpleRenderMesh : public base::IReferencable
+        {
+        public:
+            base::Box m_bounds;
+            base::Array<SimpleChunk> m_chunks;
+
+            BufferView m_vertexBuffer;
+            BufferView m_indexBuffer;
+
+            void drawChunk(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t chunkIndex) const;
+            void drawMesh(command::CommandWriter& cmd, const ShaderLibrary* func) const;
+        };
+
+        typedef base::RefPtr<SimpleRenderMesh> SimpleRenderMeshPtr;
 
         // mesh import setup
         struct MeshSetup
         {
             base::Matrix m_loadTransform;
-            bool m_swapYZ;
-            bool m_flipFaces;
-            bool m_computeFaceNormals;
+            bool m_swapYZ = false;
+            bool m_flipFaces = false;
+            bool m_flipNormal = false;
 
-            MeshSetup();
+            INLINE MeshSetup()
+                : m_loadTransform(base::Matrix::IDENTITY())
+            {}
         };
 
         //---
@@ -190,18 +272,35 @@ namespace rendering
             const ShaderLibrary* loadShader(base::StringView partialPath);
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
-            ImageView loadImage2D(const base::StringBuf& assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
+            ImageView loadImage2D(base::StringView assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
             
             // load a custom cubemap from 6 images
-            ImageView loadCubemap(const base::StringBuf& assetFile, bool createMipmaps = false);
+            ImageView loadCubemap(base::StringView assetFile, bool createMipmaps = false);
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
-            SimpleMeshPtr loadMesh(const base::StringBuf& assetFile, const MeshSetup& setup = MeshSetup());
+            SimpleRenderMeshPtr loadMesh(base::StringView assetFile, const MeshSetup& setup = MeshSetup());
 
             //--
 
             // create buffer
             BufferView createBuffer(const BufferCreationInfo& info, const SourceData* initializationData = nullptr);
+
+            // create vertex buffer
+            BufferView createVertexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create updatable buffer
+
+            // create index buffer
+            BufferView createIndexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create updatable buffer
+
+            // create storage buffer
+            BufferView createStorageBuffer(uint32_t size, uint32_t stride = 0, bool dynamic=false, bool allowVertex=false, bool allowIndex=false);
+
+            // create vertex buffer from array
+            template< typename T >
+            INLINE BufferView createVertexBuffer(const Array<T>& data) { return createVertexBuffer(data.dataSize(), data.data()); }
+
+            // create index buffer from array
+            template< typename T >
+            INLINE BufferView createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
 
             // create image
             ImageView createImage(const ImageCreationInfo& info, const SourceData* sourceData = nullptr, bool uavCapable = false);
@@ -226,18 +325,29 @@ namespace rendering
 
             //--
 
+            // draw a simple quad using given shaders
+            void drawQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float w, float h, float u0=0.0f, float v0 = 0.0f, float u1 = 1.0f, float v1 = 1.0f, base::Color color = base::Color::WHITE);
+
+            // configure quad params
+            void setQuadParams(command::CommandWriter& cmd, float x, float y, float w, float h);
+            void setQuadParams(command::CommandWriter& cmd, const ImageView& rt, const base::Rect& rect);
+
+            //--
+
             // report loading error
             bool reportError(base::StringView txt);
 
         private:
             base::SpinLock m_allLoadedResourcesLock;
             base::Array<base::res::BaseReference> m_allLoadedResources;
-            base::Array<ObjectID> m_driverObjects;
+            base::Array<DeviceObjectPtr> m_driverObjects;
             bool m_hasErrors;
             uint32_t m_subTestIndex;
             IDevice* m_device;
 
-            bool loadCubemapSide(base::Array<TextureSlice>& outSlices, const base::StringBuf& assetFile, bool createMipmaps /*= false*/);
+            BufferView m_quadVertices;
+
+            bool loadCubemapSide(base::Array<TextureSlice>& outSlices, base::StringView assetFile, bool createMipmaps /*= false*/);
         };
 
         ///---

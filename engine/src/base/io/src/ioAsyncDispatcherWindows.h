@@ -28,8 +28,10 @@ namespace base
             class WinFileHandle;
 
             // dispatch for IO jobs
-            class WinAsyncReadDispatcher : public base::NoCopy, public mem::GlobalPoolObject<POOL_IO>
+            class WinAsyncReadDispatcher : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_IO)
+
             public:
                 WinAsyncReadDispatcher(uint32_t maxInFlightRequests);
                 ~WinAsyncReadDispatcher();

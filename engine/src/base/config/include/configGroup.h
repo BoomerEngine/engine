@@ -20,8 +20,10 @@ namespace base
         /// storage entry for a group of configuration variables
         /// NOTE: once created exists till deletion of the ConfigStorage (but may be empty)
         /// NOTE: the ConfigGroup objects owned by the config system are ETERNAL can be held onto by a pointer
-        class BASE_CONFIG_API Group : public base::NoCopy, public mem::GlobalPoolObject<POOL_CONFIG>
+        class BASE_CONFIG_API Group : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_CONFIG)
+
         public:
             Group(Storage* storage, const StringBuf& name);
             ~Group();

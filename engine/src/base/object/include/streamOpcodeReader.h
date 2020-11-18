@@ -155,7 +155,10 @@ namespace base
             checkDataOp(sizeof(T));
 #endif
             ASSERT_EX(m_cur + sizeof(T) <= m_end, "Read past buffer end");
-            data = *(const T*)m_cur;
+            if (alignof(T) < 16)
+                data = *(const T*)m_cur;
+            else
+                memcpy(&data, m_cur, sizeof(T));
             m_cur += sizeof(T);
         }
 

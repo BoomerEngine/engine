@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -93,7 +92,7 @@ namespace rendering
 
                 cmd.opBeingPass(fb);
 
-                DrawQuad(cmd, m_shaderGenerate, -0.9f, -0.9f, 1.8f, 1.8f);
+                drawQuad(cmd, m_shaderGenerate, -0.9f, -0.9f, 1.8f, 1.8f);
 
                 cmd.opEndPass();
             }

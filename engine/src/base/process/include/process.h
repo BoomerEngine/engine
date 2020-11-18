@@ -56,6 +56,8 @@ namespace base
         /// NOTE: this interface is fully asynchronous as most of the usages are like that
         class BASE_PROCESS_API IProcess : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_PROCESS)
+
         public:
             virtual ~IProcess();
 

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -29,11 +28,19 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
 
         private:
+            static const auto NUM_LINES = 1024;
+
             const ShaderLibrary* m_shaderClear;
             const ShaderLibrary* m_shaderOccluder;
             const ShaderLibrary* m_shaderGenerateA;
             const ShaderLibrary* m_shaderGenerateB;
             const ShaderLibrary* m_shaderDraw;
+
+            BufferView m_tempLineBuffer;
+            BufferView m_tempQuadBuffer;
+
+            BufferView m_storageBufferA;
+            BufferView m_storageBufferB;
 
             void renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const;
             void renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const;
@@ -66,30 +73,31 @@ namespace rendering
             m_shaderGenerateA = loadShader("EarlyFragmentTestsGenerateNormal.csl");
             m_shaderGenerateB = loadShader("EarlyFragmentTestsGenerateEarlyTests.csl");
             m_shaderDraw = loadShader("EarlyFragmentTestsDraw.csl");
+
+            m_tempLineBuffer = createStorageBuffer(NUM_LINES * sizeof(Simple3DVertex), 0, true, true);
+            m_tempQuadBuffer = createVertexBuffer(6 * sizeof(Simple3DVertex), nullptr);
+
+            m_storageBufferA = createStorageBuffer(NUM_LINES * 4);
+            m_storageBufferB = createStorageBuffer(NUM_LINES * 4);
         }
 
         void RenderingTest_EarlyPixelTestAtomic::renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const
         {
-            base::Array<Simple3DVertex> verts;
-            verts.resize(1024);
-
-            auto writeVertex  = verts.typedData();
-            for (uint32_t i=0; i<verts.size(); ++i, ++writeVertex)
+            auto writeVertex = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempLineBuffer, 0, NUM_LINES);
+            for (uint32_t i=0; i<NUM_LINES; ++i, ++writeVertex)
             {
-                float x = i / (float)verts.size();
+                float x = i / (float)NUM_LINES;
                 writeVertex->set(-1.0f + 2.0f*x, 0.95f, 0.5f, x, 0.2f, color);
             }
 
-            TransientBufferView tempVerticesBuffer(BufferViewFlag::Vertex, TransientBufferAccess::NoShaders, verts.dataSize());
             cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
-            cmd.opAllocTransientBufferWithData(tempVerticesBuffer, verts.data(), verts.dataSize());
-            cmd.opBindVertexBuffer("Simple3DVertex"_id,  tempVerticesBuffer);
-            cmd.opDraw(func, 0, verts.size());
+            cmd.opBindVertexBuffer("Simple3DVertex"_id, m_tempLineBuffer);
+            cmd.opDraw(func, 0, NUM_LINES);
         }
 
         void RenderingTest_EarlyPixelTestAtomic::renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const
         {
-            Simple3DVertex verts[6];
+            auto* verts = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempQuadBuffer, 0, 6);
             verts[0] = Simple3DVertex(x, y, z, 0.0f, 0.0f, color);
             verts[1] = Simple3DVertex(x + w, y, z, 1.0f, 0.0f, color);
             verts[2] = Simple3DVertex(x + w, y + h, z, 1.0f, 1.0f, color);
@@ -97,16 +105,12 @@ namespace rendering
             verts[4] = Simple3DVertex(x + w, y + h, z, 1.0f, 1.0f, color);
             verts[5] = Simple3DVertex(x, y + h, z, 0.0f, 1.0f, color);
 
-            TransientBufferView tempVerticesBuffer(BufferViewFlag::Vertex, TransientBufferAccess::NoShaders, sizeof(verts));
-            cmd.opAllocTransientBufferWithData(tempVerticesBuffer, verts, sizeof(verts));
-            cmd.opBindVertexBuffer("Simple3DVertex"_id,  tempVerticesBuffer);
-            cmd.opDraw(func, 0, ARRAY_COUNT(verts));
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_tempQuadBuffer);
+            cmd.opDraw(func, 0, 6);
         }
 
         void RenderingTest_EarlyPixelTestAtomic::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
         {
-            static const uint32_t MAX_ELEMENTS = 1024;
-
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
             fb.depth.view(depth).clearDepth(1.0f).clearStencil(0);
@@ -115,18 +119,12 @@ namespace rendering
 
             cmd.opSetDepthState(true, true, CompareOp::Less);
 
-            TransientBufferView storageBufferA(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, MAX_ELEMENTS * 4);
-            TransientBufferView storageBufferB(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, MAX_ELEMENTS * 4);
-            cmd.opAllocTransientBuffer(storageBufferA);
-            cmd.opAllocTransientBuffer(storageBufferB);
-
-            // fence
             cmd.opGraphicsBarrier();
 
             // clear A
             {
                 TestParams tempParams;
-                tempParams.BufferData = storageBufferA;
+                tempParams.BufferData = m_storageBufferA;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 cmd.opDispatch(m_shaderClear, 1024/8,1,1);
             }
@@ -134,7 +132,7 @@ namespace rendering
             // clear B
             {
                 TestParams tempParams;
-                tempParams.BufferData = storageBufferB;
+                tempParams.BufferData = m_storageBufferB;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 cmd.opDispatch(m_shaderClear, 1024 / 8, 1, 1);
             }
@@ -163,7 +161,7 @@ namespace rendering
 
             {
                 TestParams tempParams;
-                tempParams.BufferData = storageBufferA;
+                tempParams.BufferData = m_storageBufferA;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 renderQuad(cmd, m_shaderGenerateA, x1, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
                 if (subTestIndex() >= 1)
@@ -174,7 +172,7 @@ namespace rendering
 
             {
                 TestParams tempParams;
-                tempParams.BufferData = storageBufferB;
+                tempParams.BufferData = m_storageBufferB;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 renderQuad(cmd, m_shaderGenerateB, x1, y2, 0.5f, w, h*1.01f, base::Color(0, 255, 0, 255));
                 if (subTestIndex() >= 1)
@@ -188,11 +186,11 @@ namespace rendering
             // draw
             {
                 TestParams tempParams;
-                tempParams.BufferData = storageBufferA;
+                tempParams.BufferData = m_storageBufferA;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 renderLine(cmd, m_shaderDraw, base::Color::RED);
 
-                tempParams.BufferData = storageBufferB;
+                tempParams.BufferData = m_storageBufferB;
                 cmd.opBindParametersInline("TestParams"_id, tempParams);
                 renderLine(cmd, m_shaderDraw, base::Color::GREEN);
             }

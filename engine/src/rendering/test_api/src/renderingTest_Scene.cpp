@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 #include "renderingTestScene.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -139,7 +138,7 @@ namespace rendering
 
                 auto biasMatrix = base::Matrix(
                     0.5f, 0.0f, 0.0f, 0.5f,
-                    0.0f, -0.5f, 0.0f, 0.5f,
+                    0.0f, 0.5f, 0.0f, 0.5f,
                     0.0f, 0.0f, 1.0f, 0.0f,
                     0.0f, 0.0f, 0.0f, 1.0f
                 );

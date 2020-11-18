@@ -21,6 +21,8 @@ namespace base
         /// importer saving thread, saves back to depot
         class BASE_RESOURCE_COMPILER_API ImportSaverThread : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_IMPORT)
+
         public:
             ImportSaverThread(depot::DepotStructure& depot);
             ~ImportSaverThread(); // note: will kill all jobs
@@ -32,8 +34,11 @@ namespace base
             bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath);
 
         private:
-            struct SaveJob : public NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
+            struct SaveJob : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_IMPORT)
+
+            public:
                 res::ResourcePtr unsavedResource;
                 StringBuf depotPath;
             };

@@ -54,8 +54,10 @@ namespace base
         /// renderable font glyph, managed by the glyph cache
         /// internally the glyph is just a simple image bitmap and sizing information
         /// NOTE: for performance reasons the glyphs are not memory managed via the SharedPtr, do not store pointers to them
-        class BASE_FONT_API Glyph : public base::NoCopy, public mem::GlobalPoolObject<POOL_FONTS>
+        class BASE_FONT_API Glyph : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_FONTS)
+
         public:
             Glyph(const GlyphID& id, const image::ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
 

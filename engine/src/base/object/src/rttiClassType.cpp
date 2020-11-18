@@ -26,9 +26,10 @@ namespace base
     {
         //--
 
-        IClassType::IClassType(StringID name, uint32_t size, uint32_t alignment)
+        IClassType::IClassType(StringID name, uint32_t size, uint32_t alignment, PoolTag pool)
             : IType(name)
             , m_baseClass(nullptr)
+            , m_memoryPool(pool)
             , m_allPropertiesCached(false)
             , m_allFunctionsCached(false)
             , m_userIndex(INDEX_NONE)
@@ -840,6 +841,16 @@ namespace base
             }
 
             return patched;
+        }
+
+        void* IClassType::allocateClassMemory(uint32_t size, uint32_t alignment) const
+        {
+            return base::mem::AllocateBlock(m_memoryPool, size, alignment, m_name.c_str());
+        }
+
+        void IClassType::freeClassMemory(void* ptr) const
+        {
+            mem::FreeBlock(ptr);
         }
 
         //--

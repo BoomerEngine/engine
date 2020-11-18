@@ -48,11 +48,7 @@ namespace rendering
                 m_imgui = nullptr;
             }
 
-            if (m_renderingOutput)
-            {
-                base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-                m_renderingOutput = ObjectID();
-            }
+            m_renderingOutput.reset();
         }
 
         bool SceneTestProject::initialize(const base::app::CommandLine& cmdLine)
@@ -136,19 +132,12 @@ namespace rendering
 
             // create rendering output
             m_renderingOutput = base::GetService<DeviceService>()->device()->createOutput(setup);
-            if (!m_renderingOutput)
+            if (!m_renderingOutput || !m_renderingOutput->window())
             {
                 TRACE_ERROR("Failed to acquire window factory, no window can be created");
                 return false;
             }
 
-            // get window
-            m_renderingWindow = base::GetService<DeviceService>()->device()->queryOutputWindow(m_renderingOutput);
-            if (!m_renderingWindow)
-            {
-                TRACE_ERROR("Rendering output has no valid window");
-                return false;
-            }
 
             return true;
         }
@@ -171,7 +160,7 @@ namespace rendering
         void SceneTestProject::update()
         {
             // exit when window closed
-            if (m_renderingWindow->windowHasCloseRequest())
+            if (m_renderingOutput->window()->windowHasCloseRequest())
             {
                 TRACE_INFO("Main window closed, exiting");
                 base::platform::GetLaunchPlatform().requestExit("Window closed");
@@ -207,7 +196,7 @@ namespace rendering
             }
 
             // process events
-            if (auto inputContext = m_renderingWindow->windowGetInputContext())
+            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
                 handleInput(*inputContext);
 
             // navigate to other test
@@ -223,20 +212,17 @@ namespace rendering
 
                 // set the window caption
                 auto testName = m_testClasses[m_currentTestCaseIndex].m_testName;
-                m_renderingWindow->windowSetTitle(base::TempString("Boomer Engine Scene Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
+                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Scene Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
             }
 
             // create output frame, this will fail if output is not valid
             {
-                base::Rect viewport;
-                ImageView colorBackBuffer, depthBackBuffer;
-
                 command::CommandWriter cmd("TestScene");
 
-                if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+                if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-                    prepareSceneCommandBuffers(cmd, colorBackBuffer, depthBackBuffer, viewport);
-                    prepareCanvasCommandBuffers(cmd, colorBackBuffer, depthBackBuffer, viewport);
+                    prepareSceneCommandBuffers(cmd, output.color, output.depth, output.width, output.height);
+                    prepareCanvasCommandBuffers(cmd, output.color, output.depth, output.width, output.height);
 
                     cmd.opSwapOutput(m_renderingOutput);
                 }
@@ -324,7 +310,7 @@ namespace rendering
                 handleInputEvent(*evt);
         }
         
-        void SceneTestProject::prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, base::Rect& area)
+        void SceneTestProject::prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height)
         {
             // use simple camera position
             scene::CameraSetup cameraSetup;
@@ -368,7 +354,7 @@ namespace rendering
             }
         }
 
-        void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& parentCmd, const ImageView& color, const ImageView& depth, base::Rect& area)
+        void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& parentCmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height)
         {
             base::canvas::Canvas canvas(color.width(), color.height());
             renderCanvas(canvas);

@@ -5,26 +5,38 @@
 
 //--
 
+#include "common.h"
 
-#include "AtomicTextureIncrement.csl"
-
-//--
-
-shader PreviewPS
+descriptor TestParams
 {
-	float DrawScale()
+    attribute(format=r32i, uav) Texture2D TextureData;
+	ConstantBuffer
 	{
-		return 3000.0f
+		float Value;
 	}
 }
 
-shader GeneratePS
+export shader GeneratePS
 {
-	void runtAtomicOp()
-	{
+	attribute(flat) in uint TriangleID;
+	
+	void main()
+	{	
 		atomicAdd(TextureData[gl_FragCoord.xy/2], TriangleID);
+		gl_Target0 = vec4(0,0,0,0);
+		discard;
 	}
 }
 
+export shader GenerateVS
+{
+	vertex Simple3DVertex v;
 
-//--
+	out uint TriangleID;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		TriangleID = gl_VertexID / 3;
+	}
+}

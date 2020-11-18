@@ -140,8 +140,11 @@ namespace base
         //---
 
         /// persistent data for Open/Save file dialogs
-        struct OpenSavePersistentData : public base::NoCopy, public mem::GlobalPoolObject<POOL_IO>
+        struct OpenSavePersistentData
         {
+            RTTI_DECLARE_POOL(POOL_IO)
+
+        public:
             StringBuf directory;
             StringBuf userPattern;
             StringBuf filterExtension;

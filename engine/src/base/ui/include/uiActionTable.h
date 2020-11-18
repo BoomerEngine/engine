@@ -57,8 +57,11 @@ namespace ui
     };
 
     /// action info
-    struct ActionInfo : public base::mem::GlobalPoolObject<POOL_ACTIONS>
+    struct ActionInfo : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_UI_ACTIONS)
+
+    public:
         base::StringID name;
         base::Variant data; // additional data for command function, passed to all callbacks
         TEventFunction runFunc;
@@ -78,8 +81,10 @@ namespace ui
 
     /// bindings for commands, determines actions to be performed when command occurs
     /// also defines conditional evaluators for commands
-    class BASE_UI_API ActionTable : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_ACTIONS>
+    class BASE_UI_API ActionTable : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_UI_ACTIONS)
+
     public:
         ActionTable(IElement* owner);
         ~ActionTable();

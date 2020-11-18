@@ -50,6 +50,7 @@ namespace base
         /// template of an entity
         class BASE_WORLD_API EntityTemplate : public IObjectTemplate
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(EntityTemplate, IObjectTemplate);
 
         public:

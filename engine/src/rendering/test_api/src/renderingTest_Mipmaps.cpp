@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -81,17 +80,10 @@ namespace rendering
         void RenderingTest_Mipmaps::initialize()
         {
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-1.0f, -1.0f, 2.0f, 2.0f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-1.0f, -1.0f, 2.0f, 2.0f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             //m_sampledImage = CreateChecker2D(1024, rs, 16);

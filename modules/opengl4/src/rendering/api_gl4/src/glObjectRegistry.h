@@ -19,8 +19,10 @@ namespace rendering
         class ObjectRegistryProxy;
 
         /// internal object registry
-        class ObjectRegistry : public base::mem::GlobalPoolObject<POOL_API_OBJECTS>
+        class ObjectRegistry : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_OBJECTS)
+
         public:
             ObjectRegistry(Device* drv, DeviceThread* drvThread);
             ~ObjectRegistry();

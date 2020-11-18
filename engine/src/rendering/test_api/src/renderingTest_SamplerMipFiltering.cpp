@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -57,17 +56,10 @@ namespace rendering
         void RenderingTest_SamplerMipMapFiltering::initialize()
         {
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             // create the test image

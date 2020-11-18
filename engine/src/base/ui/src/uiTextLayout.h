@@ -72,8 +72,11 @@ namespace ui
             LayoutHorizontalAlign halaign = LayoutHorizontalAlign::Default;
         };
 
-        struct LayoutData : public base::mem::GlobalPoolObject<POOL_FONTS>
+        struct LayoutData : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_UI_CANVAS)
+
+        public:
             base::StringBuf text;
             base::Array<LayoutRegion> regions;
             base::Array<LayoutLine> lines;
@@ -124,8 +127,11 @@ namespace ui
             LayoutHorizontalAlign alignment = LayoutHorizontalAlign::Default;
         };
 
-        struct LayoutDisplayData : public base::mem::GlobalPoolObject<POOL_FONTS>
+        struct LayoutDisplayData : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_UI_CANVAS)
+
+        public:
             base::Array<LayoutDisplayGlyph> glyphs;
             base::Array<LayoutDisplayLine> lines;
             base::Array<LayoutDisplayImage> images;

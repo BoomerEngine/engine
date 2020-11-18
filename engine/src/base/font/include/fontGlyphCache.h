@@ -18,8 +18,10 @@ namespace base
         /// NOTE: the glyphs in the cache live untill the cache is flushed
         /// NOTE: when the cache is flushed the glyphs cannot be in use anywhere (dangling pointers..)
         /// NOTE: glyph cache is NOT THREADSAFE and requires external synchronization
-        class BASE_FONT_API GlyphCache : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_FONTS>
+        class BASE_FONT_API GlyphCache : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_FONTS)
+
         public:
             GlyphCache();
             ~GlyphCache();

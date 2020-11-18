@@ -18,8 +18,10 @@ namespace base
         /// storage entry for configuration values
         /// NOTE: once created exists till deletion of the ConfigStorage (but may be empty)
         /// NOTE: the ConfigStorageEntry objects owned by the config system are ETERNAL can be held onto by a pointer
-        class BASE_CONFIG_API Entry : public base::NoCopy, public mem::GlobalPoolObject<POOL_CONFIG>
+        class BASE_CONFIG_API Entry : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_CONFIG)
+
         public:
             Entry(Group* group, const StringBuf& name);
 

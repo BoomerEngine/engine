@@ -24,8 +24,11 @@ namespace ui
     //---
 
     /// UI Window request for platform that renders the windows
-    struct BASE_UI_API WindowRequests : public base::mem::GlobalPoolObject<POOL_UI>
+    struct BASE_UI_API WindowRequests : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_UI_OBJECTS)
+
+    public:
         Size requestedSize;
         Position requestedPosition;
         base::StringBuf requestedTitle; // window title

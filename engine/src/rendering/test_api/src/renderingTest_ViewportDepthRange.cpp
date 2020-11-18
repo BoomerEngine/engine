@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -64,13 +63,7 @@ namespace rendering
                 vertices[3].set(0.0f, 0.0f, 0.0f);
                 vertices[4].set(1.0f, 1.0f, 0.0f);
                 vertices[5].set(0.0f, 1.0f, 0.0f);
-
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData = CreateSourceDataRaw(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             m_shaders = loadShader("ViewportDepthRange.csl");

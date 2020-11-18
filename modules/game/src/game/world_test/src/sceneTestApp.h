@@ -35,8 +35,8 @@ namespace game
             bool handleInputEvent(const base::input::BaseEvent& evt);
             bool handleAppInputEvent(const base::input::BaseEvent& evt);
 
-            void prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, base::Rect& area);
-            void prepareCanvasCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, base::Rect& area);
+            void prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height);
+            void prepareCanvasCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height);
             void renderCanvas(base::canvas::Canvas& c);
 
             //--
@@ -56,8 +56,7 @@ namespace game
             int m_currentTestCaseIndex;
             int m_pendingTestCaseIndex;
 
-            rendering::ObjectID m_renderingOutput;
-            rendering::INativeWindowInterface* m_renderingWindow = nullptr;
+            rendering::OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
 
             rendering::scene::CameraContextPtr m_cameraContext;

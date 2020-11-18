@@ -116,8 +116,10 @@ namespace base
         //--
 
         /// a data model for a structure
-        class BASE_REPLICATION_API DataModel : public NoCopy, public mem::GlobalPoolObject<POOL_NET_MODEL>
+        class BASE_REPLICATION_API DataModel : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_NET_MODEL)
+
         public:
             DataModel(StringID name, DataModelType modelType);
 

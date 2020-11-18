@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -31,7 +30,9 @@ namespace rendering
         private:
             static const uint32_t MAX_VERTICES = 1024;
 
+            BufferView m_vertexColorBuffer;
             BufferView m_vertexBuffer;
+
             const ShaderLibrary* m_shaders;
         };
 
@@ -72,34 +73,20 @@ namespace rendering
 
         void RenderingTest_DynamicBufferUpdate::initialize()
         {
-            // create vertex buffer
-            {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.allowDynamicUpdate = true;
-                info.size = sizeof(base::Vector2) * MAX_VERTICES;
-
-                m_vertexBuffer = createBuffer(info);
-            }
+            m_vertexBuffer = createVertexBuffer(sizeof(base::Vector2) * MAX_VERTICES, nullptr);
+            m_vertexColorBuffer = createVertexBuffer(sizeof(base::Color) * MAX_VERTICES, nullptr);
 
             m_shaders = loadShader("GenericGeometryTwoStreams.csl");
         }
 
         void RenderingTest_DynamicBufferUpdate::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView)
         {
-            // create temp buffer for color
-            BufferViewFlags flags = BufferViewFlags() | BufferViewFlag::Vertex | BufferViewFlag::ShaderReadable | BufferViewFlag::Dynamic;
-            TransientBufferView colorBuffer(flags, sizeof(base::Color) * MAX_VERTICES);
-            cmd.opAllocTransientBuffer(colorBuffer);
-
             // prepare some dynamic geometry
-            base::Vector2 dynamicVerticesData[MAX_VERTICES];
-            base::Color dynamicColorsData[MAX_VERTICES];
-            PrepareTestGeometry(MAX_VERTICES, 0.0f, 0.0f, 0.33f, time, dynamicVerticesData, dynamicColorsData);
-
-            // update vertex data
-            cmd.opUpdateDynamicBuffer(m_vertexBuffer, 0, sizeof(dynamicVerticesData), dynamicVerticesData);
-            cmd.opUpdateDynamicBuffer(colorBuffer, 0, sizeof(dynamicColorsData), dynamicColorsData);
+            {
+                auto* dynamicVerticesData = cmd.opUpdateDynamicBufferPtrN<base::Vector2>(m_vertexBuffer, 0, MAX_VERTICES);
+                auto* dynamicColorsData = cmd.opUpdateDynamicBufferPtrN<base::Color>(m_vertexColorBuffer, 0, MAX_VERTICES);
+                PrepareTestGeometry(MAX_VERTICES, 0.0f, 0.0f, 0.33f, time, dynamicVerticesData, dynamicColorsData);
+            }
 
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -107,7 +94,7 @@ namespace rendering
             cmd.opBeingPass(fb);
             cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
             cmd.opBindVertexBuffer("VertexStream0"_id,  m_vertexBuffer);
-            cmd.opBindVertexBuffer("VertexStream1"_id, colorBuffer);
+            cmd.opBindVertexBuffer("VertexStream1"_id, m_vertexColorBuffer);
             cmd.opDraw(m_shaders, 0, MAX_VERTICES); // loop
             cmd.opEndPass();
         }

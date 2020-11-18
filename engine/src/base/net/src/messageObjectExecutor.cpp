@@ -28,14 +28,20 @@ namespace base
                 DECLARE_SINGLETON(MessageObjectExecutorTypeRegistry);
 
             public:
-                struct ClassEntry : public mem::GlobalPoolObject<POOL_NET_MESSAGES>
+                struct ClassEntry
                 {
+                    RTTI_DECLARE_POOL(POOL_NET_MESSAGES)
+
+                public:
                     ClassType m_classes;
                     HashMap<ClassType, const rtti::Function*> m_messageFunctions;
                 };
 
-                struct ContextObjectEntry : public mem::GlobalPoolObject<POOL_NET_MESSAGES>
+                struct ContextObjectEntry
                 {
+                    RTTI_DECLARE_POOL(POOL_NET_MESSAGES)
+
+                public:
                     ClassType m_contextObject;
                     SpinLock m_classMapLock;
                     HashMap<ClassType, ClassEntry*> m_classMap;

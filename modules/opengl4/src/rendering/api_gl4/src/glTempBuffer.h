@@ -17,8 +17,10 @@ namespace rendering
         //---
 
         /// a buffer allocated from transient memory
-        class TempBuffer : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+        class TempBuffer : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+
         public:
             TempBuffer(TempBufferPool* owner, uint32_t size, TempBufferType bufferType);
             ~TempBuffer();
@@ -80,8 +82,10 @@ namespace rendering
         /// pool for frame-related temporary buffers
         /// each command buffers have unique buffers, destroyed when command buffer completes execution
         /// NOTE: only the storage buffer is mapped, all other buffers require a copy
-        class TempBufferPool : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+        class TempBufferPool : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+
         public:
             TempBufferPool(Device* drv, TempBufferType type);
             ~TempBufferPool();

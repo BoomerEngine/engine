@@ -119,8 +119,11 @@ namespace base
     protected:
         struct Observer;
 
-        struct Path : mem::GlobalPoolObject<POOL_DATA_VIEW>
+        struct Path : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_DATA_VIEW)
+
+        public:
             Path* parent = nullptr;
             Array<IDataViewObserver*> observers;
         };

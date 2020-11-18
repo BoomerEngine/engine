@@ -139,8 +139,10 @@ namespace rendering
 
 #ifdef USE_RENDER_DOC
 
-        class RenderDocCapture : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        class RenderDocCapture : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
+
         public:
             RenderDocCapture()
                 : m_api(nullptr)

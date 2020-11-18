@@ -51,8 +51,9 @@ namespace rendering
         ///---
 
         /// a native (implemented in c++) function for shader language
-        class RENDERING_COMPILER_API INativeFunction
+        class RENDERING_COMPILER_API INativeFunction : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_SHADER_COMPILATION)
             RTTI_DECLARE_VIRTUAL_ROOT_CLASS(INativeFunction);
 
         public:

@@ -61,7 +61,7 @@ namespace base
         //---
 
         ScriptedClass::ScriptedClass(StringID name, ClassType nativeClass)
-            : rtti::IClassType(name, nativeClass->size(), nativeClass->alignment())
+            : rtti::IClassType(name, nativeClass->size(), nativeClass->alignment(), POOL_SCRIPTED_OBJECT)
             , m_nativeClass(nativeClass)
             , m_scriptedDataSize(0)
             , m_scriptedDatAlignment(1)
@@ -254,7 +254,7 @@ namespace base
         //---
 
         ScriptedStruct::ScriptedStruct(StringID name)
-            : rtti::IClassType(name, 0, 1)
+            : rtti::IClassType(name, 0, 1, POOL_SCRIPTED_OBJECT)
             , m_defaultObject(nullptr)
             , m_functionCtor(nullptr)
             , m_functionDtor(nullptr)

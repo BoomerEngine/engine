@@ -109,8 +109,11 @@ namespace base
 
                 //--
 
-                struct Connection : public base::mem::GlobalPoolObject<POOL_NET>
+                struct Connection : public NoCopy
                 {
+                    RTTI_DECLARE_POOL(POOL_NET)
+
+                public:
                     Address address; // remote address
                     ConnectionID id = 0; // assigned ID
                     NativeTimePoint connectedTime; // to count the transfer rates/debug, etc

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -61,12 +60,7 @@ namespace rendering
                 vertices[8].set(0.7f + 0.2f, 0.5f, 0.8f, 0, 0, base::Color::BLUE);
                 vertices[6].VertexColor *= 0.5f;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData = CreateSourceDataRaw(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             m_shader = loadShader("SimpleVertexColor.csl");

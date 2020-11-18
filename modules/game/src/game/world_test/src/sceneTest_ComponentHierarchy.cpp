@@ -77,7 +77,7 @@ namespace game
                 if (st_MeshType < meshCount)
                     return st_MeshType;
 
-                return Rand(rng) % meshCount;
+                return rng.range(meshCount);
             }
 
             virtual void createWorldContent() override

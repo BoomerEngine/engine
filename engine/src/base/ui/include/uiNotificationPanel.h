@@ -40,8 +40,11 @@ namespace ui
         //--
 
     private:
-        struct Notificaton : public base::mem::GlobalPoolObject<POOL_UI>
+        struct Notificaton : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_UI_OBJECTS)
+
+        public:
             base::StringID group;
             float timeLeft = 0.0f;
             ElementPtr content;

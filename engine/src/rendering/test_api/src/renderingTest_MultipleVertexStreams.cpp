@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -136,38 +135,14 @@ namespace rendering
             base::Array<VertexStream0> vertices0;
             base::Array<VertexStream1> vertices1;
             PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, indices, vertices0, vertices1);
-            m_indexCount = indices.size();
+
             m_vertexCount = vertices0.size();
 
-            // create index buffer
-            {
-                rendering::BufferCreationInfo info;
-                info.allowIndex = true;
-                info.size = indices.dataSize();
+            m_indexCount = indices.size();
+            m_indexBuffer = createIndexBuffer(indices);
 
-                auto sourceData = CreateSourceData(indices);
-                m_indexBuffer = createBuffer(info, &sourceData);
-            }
-
-            // create first vertex buffer
-            {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices0.dataSize();
-
-                auto sourceData = CreateSourceData(vertices0);
-                m_vertexBuffer0 = createBuffer(info, &sourceData);
-            }
-
-            // create second vertex buffer
-            {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices1.dataSize();
-
-                auto sourceData = CreateSourceData(vertices1);
-                m_vertexBuffer1 = createBuffer(info, &sourceData);
-            }
+            m_vertexBuffer0 = createVertexBuffer(vertices0);
+            m_vertexBuffer1 = createVertexBuffer(vertices1);
 
             m_shaders = loadShader("MultipleVertexStreams.csl");
         }

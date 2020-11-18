@@ -232,7 +232,7 @@ namespace rendering
                 if (const auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
                     // use canvas of the same size as output window
-                    base::canvas::Canvas canvas(output.size.x, output.size.y);
+                    base::canvas::Canvas canvas(output.width, output.height);
 
                     // render to canvas
                     if (m_currentTest)
@@ -246,8 +246,8 @@ namespace rendering
 
                     // render canvas to command buffer
                     canvas::CanvasRenderingParams renderingParams;
-                    renderingParams.frameBufferWidth = output.size.x;
-                    renderingParams.frameBufferHeight = output.size.y;
+                    renderingParams.frameBufferWidth = output.width;
+                    renderingParams.frameBufferHeight = output.height;
                     base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
 
                     // finish pass

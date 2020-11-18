@@ -34,7 +34,7 @@ namespace rendering
     //--
 
     // general "window-like" interface
-    class RENDERING_DEVICE_API INativeWindowInterface : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_WINDOW>
+    class RENDERING_DEVICE_API INativeWindowInterface : public base::NoCopy
     {
     public:
         virtual ~INativeWindowInterface();

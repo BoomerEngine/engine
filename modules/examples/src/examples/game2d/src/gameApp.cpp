@@ -41,12 +41,7 @@ namespace example
             m_imgui = nullptr;
         }
 
-        if (m_renderingOutput)
-        {
-            // rendering output must always be explicitly closed
-            base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-            m_renderingOutput = rendering::ObjectID();
-        }
+        m_renderingOutput.reset();
     }
 
     bool GameApp::createWindow()
@@ -71,17 +66,9 @@ namespace example
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
-        if (!m_renderingOutput)
+        if (!m_renderingOutput || !m_renderingOutput->window())
         {
             TRACE_ERROR("Failed to acquire window factory, no window can be created");
-            return false;
-        }
-
-        // get window
-        m_renderingWindow = renderingService->device()->queryOutputWindow(m_renderingOutput);
-        if (!m_renderingWindow)
-        {
-            TRACE_ERROR("Rendering output has no valid window");
             return false;
         }
 
@@ -109,18 +96,18 @@ namespace example
         renderFrame();
 
         // capture input to the window if required
-        if (m_renderingWindow && m_renderingWindow->windowGetInputContext())
-            m_renderingWindow->windowGetInputContext()->requestCapture(shouldCaptureInput() ? 2 : 0);
+        if (auto input = m_renderingOutput->window()->windowGetInputContext())
+            input->requestCapture(shouldCaptureInput() ? 2 : 0);
     }
 
     void GameApp::updateWindow()
     {
         // if the window wants to be closed allow it and close our app as well
-        if (m_renderingWindow->windowHasCloseRequest())
+        if (m_renderingOutput->window()->windowHasCloseRequest())
             base::platform::GetLaunchPlatform().requestExit("Main window closed");
 
         // process input from the window
-        if (auto inputContext = m_renderingWindow->windowGetInputContext())
+        if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
         {
             while (auto inputEvent = inputContext->pull())
                 processInput(*inputEvent);
@@ -191,16 +178,13 @@ namespace example
 
     void GameApp::renderFrame()
     {
-        // create a command buffer writer and tell the "scene" to render to it
         CommandWriter cmd("CommandBuffer");
 
-        base::Rect viewport;
-        rendering::ImageView colorBackBuffer, depthBackBuffer;
-        if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+        if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
-            m_game->render(cmd, viewport.width(), viewport.height(), colorBackBuffer, depthBackBuffer);
+            m_game->render(cmd, output.width, output.height, output.color, output.depth);
 
-            renderNonGameOverlay(cmd, viewport.width(), viewport.height(), colorBackBuffer, depthBackBuffer);
+            renderNonGameOverlay(cmd, output.width, output.height, output.color, output.depth);
 
             cmd.opSwapOutput(m_renderingOutput);
         }

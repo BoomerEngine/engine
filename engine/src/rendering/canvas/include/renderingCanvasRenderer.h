@@ -33,8 +33,10 @@ namespace rendering
 
         /// canvas renderer - hosts all necessary shaders and data to render canvas
         /// NOTE: this class must be externally synchronized as it's single thread only
-        class RENDERING_CANVAS_API CanvasRenderer : public base::mem::GlobalPoolObject<POOL_CANVAS>
+        class RENDERING_CANVAS_API CanvasRenderer : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_CANVAS)
+
         public:
             CanvasRenderer();
             virtual ~CanvasRenderer();

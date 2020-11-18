@@ -19,8 +19,10 @@ namespace rendering
     /// a buffer that holds entries of constant size that can be updated frequently
     /// NOTE: this buffer has a backing CPU storage
     /// NOTE: this buffer does not grow
-    class RENDERING_DEVICE_API ManagedBuffer : public base::mem::GlobalPoolObject<POOL_RENDERING_RUNTIME>
+    class RENDERING_DEVICE_API ManagedBuffer : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
+
     public:
         ManagedBuffer(const BufferCreationInfo& info);
         virtual ~ManagedBuffer();

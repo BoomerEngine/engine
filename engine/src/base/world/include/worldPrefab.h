@@ -45,6 +45,7 @@ namespace base
         /// scene prefab, self contain data set from which a self contained node group may be spawned
         class BASE_WORLD_API Prefab : public res::IResource
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(Prefab, res::IResource);
 
         public:

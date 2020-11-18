@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -27,8 +26,13 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferViewDepth) override final;
 
         private:
+            static const auto SIDE_RESOLUTION = 128;
+
+            BufferView m_tempBuffer;
+
             BufferView m_vertexBuffer;
             uint32_t m_vertexCount;
+
             const ShaderLibrary* m_shaderGenerate;
             const ShaderLibrary* m_shaderDraw;
         };
@@ -77,33 +81,22 @@ namespace rendering
             base::Array<Simple3DVertex> vertices;
             PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
 
-            // create vertex buffer
-            {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData  = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
-            }
+            m_vertexBuffer = createVertexBuffer(vertices.dataSize(), vertices.data());
 
             m_shaderGenerate = loadShader("FormatBufferPackedWriteGenerate.csl");
             m_shaderDraw = loadShader("FormatBufferPackedWriteTest.csl");
+
+            m_tempBuffer = createStorageBuffer(4 * SIDE_RESOLUTION * SIDE_RESOLUTION);
         }
 
         void RenderingTest_FormatBufferPackedWrite::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferViewDepth)
         {
-            uint32_t SIDE_RESOLUTION = 128;
-
             //--
 
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
-
-            TransientBufferView storageBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, 4 * SIDE_RESOLUTION * SIDE_RESOLUTION);
-            cmd.opAllocTransientBuffer(storageBuffer);
 
             TestConsts tempConsts;
             tempConsts.TimeOffset = time;
@@ -113,7 +106,7 @@ namespace rendering
             {
                 TestParamsWrite params;
                 params.Params = consts;
-                params.Colors = storageBuffer;
+                params.Colors = m_tempBuffer;
                 cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
                 cmd.opBindParametersInline("TestParamsWrite"_id, params);
                 cmd.opDraw(m_shaderGenerate, 0, SIDE_RESOLUTION * SIDE_RESOLUTION);
@@ -124,7 +117,7 @@ namespace rendering
             {
                 TestParamsRead params;
                 params.Params = consts;
-                params.Colors = storageBuffer;
+                params.Colors = m_tempBuffer;
                 cmd.opBindParametersInline("TestParamsRead"_id, params);
 
                 cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);

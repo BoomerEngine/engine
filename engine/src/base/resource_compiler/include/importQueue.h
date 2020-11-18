@@ -92,8 +92,11 @@ namespace base
 
             //--
 
-            struct LocalJobInfo : public NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
+            struct LocalJobInfo : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_IMPORT)
+
+            public:
                 ImportJobInfo info;
             };
 

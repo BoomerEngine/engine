@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -27,6 +26,8 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
 
         private:
+            static const auto SIDE_RESOLUTION = 512;
+
             const ShaderLibrary* m_shaderGenerate;
             const ShaderLibrary* m_shaderTest;
 
@@ -34,8 +35,6 @@ namespace rendering
             ImageView m_imageWritable;
 
             uint32_t m_vertexCount;
-
-            uint16_t SIDE_RESOLUTION = 512;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_ComputeFillTexture2D);
@@ -80,17 +79,10 @@ namespace rendering
         void RenderingTest_ComputeFillTexture2D::initialize()
         {
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
             // create image

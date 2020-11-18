@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -85,16 +84,7 @@ namespace rendering
             base::Array<Simple3DVertex> vertices;
             PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, 32, vertices);
             m_vertexCount = vertices.size();
-
-            // create vertex buffer
-            { 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
-            }
+            m_vertexBuffer = createVertexBuffer(vertices);
         }
 
         void RenderingTest_GeometryShader::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )

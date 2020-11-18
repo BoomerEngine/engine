@@ -97,8 +97,10 @@ namespace base
         //---
 
         // function code block
-        class BASE_OBJECT_API IFunctionCodeBlock : public base::NoCopy, public mem::GlobalPoolObject<POOL_SCRIPT_CODE>
+        class BASE_OBJECT_API IFunctionCodeBlock : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_SCRIPT_CODE)
+
         public:
             virtual ~IFunctionCodeBlock();
             virtual void release() = 0;
@@ -109,8 +111,10 @@ namespace base
         //---
 
         // callable native function
-        class BASE_OBJECT_API Function : public base::NoCopy, public mem::GlobalPoolObject<POOL_RTTI>
+        class BASE_OBJECT_API Function : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RTTI)
+
         public:
             Function(const IType* parent, StringID name, bool isScripted = false);
             virtual ~Function();

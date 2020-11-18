@@ -31,7 +31,7 @@ namespace base
         class BASE_OBJECT_API IClassType : public IType
         {
         public:
-            IClassType(StringID name, uint32_t size, uint32_t alignment);
+            IClassType(StringID name, uint32_t size, uint32_t alignment, PoolTag pool);
             virtual ~IClassType();
 
             // can we create objects from this class ?
@@ -143,22 +143,33 @@ namespace base
 
             //---------------
 
+            // memory pool class belongs to (changed with RTTI_DECLARE_POOL)
+            INLINE PoolTag pool() const { return m_memoryPool; }
+
+            // allocate memory (from proper pool) for object of this type
+            void* allocateClassMemory(uint32_t size, uint32_t alignment) const;
+
+            // free memory (to proper pool) used by object of this type
+            void freeClassMemory(void* ptr) const;
+
+            //---------------
+
             template< typename T >
-            INLINE RefPtr<T> create(PoolTag pool = POOL_DEFAULT) const
+            INLINE RefPtr<T> create() const
             {
                 DEBUG_CHECK_EX(is<T>(), "Unrelated types");
                 DEBUG_CHECK_EX(sizeof(T) <= size(), "Trying to allocate bigger type from smaller class");
-                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), m_name.c_str());
+                auto* mem = (T*)allocateClassMemory(size(), alignment());
                 construct(mem);
                 return NoAddRef(mem);
             }
 
             template< typename T >
-            INLINE T* createPointer(PoolTag pool = POOL_DEFAULT) const
+            INLINE T* createPointer() const
             {
                 DEBUG_CHECK_EX(is<T>(), "Unrelated types");
                 DEBUG_CHECK_EX(sizeof(T) <= size(), "Trying to allocate bigger type from smaller class");
-                T* mem = (T*)base::mem::AllocateBlock(pool, size(), alignment(), m_name.c_str());
+                auto* mem = (T*)allocateClassMemory(size(), alignment());
                 construct(mem);
                 return mem;
             }
@@ -169,6 +180,7 @@ namespace base
             mutable short m_userIndex;
 
             StringID m_shortName;
+            PoolTag m_memoryPool;
 
             typedef HashMap<StringID, const Function*> TFunctionCache;
 

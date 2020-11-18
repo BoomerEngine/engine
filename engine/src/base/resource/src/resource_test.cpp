@@ -112,8 +112,11 @@ namespace tests
         }
 
     private:
-        struct FakeResource : public base::mem::GlobalPoolObject<POOL_TEMP>
+        struct FakeResource : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_TEMP)
+
+        public:
             res::ResourceKey key;
             Buffer data;
         };

@@ -31,8 +31,10 @@ namespace ed
     };
 
     // format information
-    class BASE_EDITOR_API ManagedFileFormat : public NoCopy, public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
+    class BASE_EDITOR_API ManagedFileFormat : public NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
+
     public:
         ManagedFileFormat(StringView extension);
         ~ManagedFileFormat();

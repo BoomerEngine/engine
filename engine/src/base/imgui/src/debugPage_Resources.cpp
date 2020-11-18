@@ -191,8 +191,11 @@ namespace base
             m_fileListSortedInvalid = true;
         }
    
-        struct FileInfo : public mem::GlobalPoolObject<POOL_MANAGED_DEPOT>
+        struct FileInfo
         {
+            RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
+
+        public:
             base::res::ResourceKey key;
             FileStatusMode lastStatus;
             base::NativeTimePoint lastStatusTimestamp;

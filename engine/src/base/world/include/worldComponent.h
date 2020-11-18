@@ -59,6 +59,7 @@ namespace base
         // link between two components
         class IComponentLink : public IObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(IComponentLink, IObject);
 
         public:
@@ -129,6 +130,7 @@ namespace base
         // a basic runtime component
         class BASE_WORLD_API Component : public script::ScriptedObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(Component, script::ScriptedObject);
 
         public:

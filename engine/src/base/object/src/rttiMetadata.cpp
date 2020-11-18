@@ -23,7 +23,7 @@ namespace base
 
         void IMetadata::RegisterType(rtti::TypeSystem& typeSystem)
         {
-            Type classType = new rtti::NativeClass("base::rtti::IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code());
+            Type classType = new rtti::NativeClass("base::rtti::IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code(), IMetadata::ClassAllocationPool::TAG);
             //auto baseClassType = typeSystem.findClass("base::IObject"_id);
             //classType->baseClass(baseClassType);
             typeSystem.registerType(classType);
@@ -57,7 +57,7 @@ namespace base
 
         void ShortTypeNameMetadata::RegisterType(rtti::TypeSystem& typeSystem)
         {
-            auto classType = new rtti::NativeClass("base::rtti::ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code());
+            auto classType = new rtti::NativeClass("base::rtti::ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code(), ShortTypeNameMetadata::ClassAllocationPool::TAG);
             classType->bindCtorDtor<ShortTypeNameMetadata>();
             auto baseClassType = typeSystem.findClass("rtti::IMetadata"_id);
             classType->baseClass(baseClassType.ptr());
@@ -83,7 +83,7 @@ namespace base
 
         void MetadataContainer::removeAllMetadata()
         {
-           // m_metadata.clearPtr(); // crashes :(
+            m_metadata.clearPtr(); // crashes :(
         }
 
         IMetadata& MetadataContainer::addMetadata(ClassType metadataType)
@@ -94,7 +94,7 @@ namespace base
 
             DEBUG_CHECK_EX(!metadataType->isAbstract(), TempString("Cannot create metadata from abstract class '{}'", metadataType));
 
-            auto metadata = metadataType->createPointer<IMetadata>(POOL_PERSISTENT);
+            auto metadata = metadataType->createPointer<IMetadata>();
             m_metadata.pushBack(metadata);
             return *metadata;
         }

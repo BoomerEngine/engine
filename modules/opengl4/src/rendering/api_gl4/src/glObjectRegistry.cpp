@@ -99,10 +99,10 @@ namespace rendering
             DEBUG_CHECK_RETURN(id.index() < MAX_OBJECTS);
             DEBUG_CHECK_RETURN(id.generation() <= m_generationCounter);
 
+            auto lock = CreateLock(m_lock);
+
             DEBUG_CHECK(m_numAllocatedObjects > 0);
             m_numAllocatedObjects -= 1;
-
-            auto lock = CreateLock(m_lock);
 
             auto& entry = m_objects[id.index()];
             DEBUG_CHECK_RETURN(entry.ptr == ptr);

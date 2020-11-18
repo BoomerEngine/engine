@@ -155,8 +155,11 @@ namespace application
         std::atomic<uint32_t> m_numErrors = 0;
         std::atomic<uint32_t> m_numWarnings = 0;
 
-        struct ErrorInfo : public mem::GlobalPoolObject<>
+        struct ErrorInfo
         {
+            RTTI_DECLARE_POOL(POOL_TEMP)
+
+        public:
             uint32_t line = 0;
             base::StringBuf file;
             base::StringBuf context;

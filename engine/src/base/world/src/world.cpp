@@ -336,8 +336,11 @@ namespace base
 
         namespace WorldSystemCreator
         {
-            struct Info : public base::mem::GlobalPoolObject<POOL_TEMP>
+            struct Info : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_TEMP)
+
+            public:
                 SpecificClassType<IWorldSystem> m_class = nullptr;
                 Array<Info*> m_dependsOnInit;
                 Array<Info*> m_tickBefore;

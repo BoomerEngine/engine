@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 #include "renderingTestScene.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -124,7 +123,7 @@ namespace rendering
                 TestParams params;
                 params.TestImage = m_showDepth ? m_depthBuffer.createSampledView(pointSampler) : m_colorBuffer;
                 cmd.opBindParametersInline("TestParams"_id, params);
-                DrawQuad(cmd, m_shaderPreview, -0.8f, -0.8f, 1.6f, 1.6f);
+                drawQuad(cmd, m_shaderPreview, -0.8f, -0.8f, 1.6f, 1.6f);
             }
             cmd.opEndPass();
         }

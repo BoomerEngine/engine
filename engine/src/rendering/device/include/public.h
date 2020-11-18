@@ -15,45 +15,8 @@
 
 namespace rendering
 {
-    class IRuntimePool : public base::mem::GlobalPoolObject<POOL_RENDERING_RUNTIME>
-    {};
 
-    class IDevice;
-    class IDriverResource;
-
-    struct PerformanceStats;
-
-    class IDriverOutputCallback;
-    class INativeWindowInterface;
-    struct OutputInitInfo;
-    struct DriverOutputFrameInfo;
-
-    class IErrorHandler;
-
-    class ObjectList;
-
-    class IObject;
-    class ObjectID;
-
-    class ParamID;
-    class ParamValueSupplier;
-
-    class BufferView;
-    class ImageView;
-
-    class ShaderLibrary;
-    typedef base::RefPtr<ShaderLibrary> ShaderLibraryPtr;
-    typedef base::res::Ref<ShaderLibrary> ShaderLibraryRef;
-
-    class ShaderLibraryData;
-    typedef base::RefPtr<ShaderLibraryData> ShaderLibraryDataPtr;
-
-    class Selector;
-    typedef std::initializer_list<const Selector*> SelectorList;
-
-    class DebugCollector;
-
-    class FrameBuffer;
+    ///---
 
     namespace command
     {
@@ -63,14 +26,26 @@ namespace rendering
 
     ///---
 
-    // maximum number of color targets bindable to framebuffer
-    static const uint32_t MAX_COLOR_TARGETS = 4;
+    class IDevice;
+    struct PerformanceStats;
 
-    // maximum number of vertex input streams
-    static const uint32_t MAX_VERTEX_INPUT_STREAMS = 16;
+    ///---
 
-    // maximum number of global permutation keys
-    static const uint16_t MAX_PERMUTATION_KEYS = 256;
+    class ObjectID;
+
+    class IDeviceObject;
+    typedef base::RefPtr<IDeviceObject> DeviceObjectPtr;
+
+    //--
+
+    struct OutputInitInfo;
+
+    class IOutputObject;
+    typedef base::RefPtr<IOutputObject> OutputObjectPtr;
+
+    class INativeWindowInterface;
+
+    class FrameBuffer;
 
     //----
 
@@ -84,24 +59,41 @@ namespace rendering
     /// invalid pipeline index
     static const PipelineIndex INVALID_PIPELINE_INDEX = (PipelineIndex)-1;
 
-    ///---
+    class ShaderLibrary;
+    typedef base::RefPtr<ShaderLibrary> ShaderLibraryPtr;
+    typedef base::res::Ref<ShaderLibrary> ShaderLibraryRef;
 
-    class IOutputObject;
-    typedef base::RefPtr<IOutputObject> OutputObjectPtr;
+    class ShaderLibraryData;
+    typedef base::RefPtr<ShaderLibraryData> ShaderLibraryDataPtr;
 
     class ShaderObject;
     typedef base::RefPtr<ShaderObject> ShaderObjectPtr;
 
+    //--
+
     class BufferObject;
     typedef base::RefPtr<BufferObject> BufferObjectPtr;
+
+    class BufferView;
+    struct BufferCreationInfo;
+
+    //--
 
     class ImageObject;
     typedef base::RefPtr<ImageObject> ImageObjectPtr;
 
+    class ImageView;
+
+    struct ImageCreationInfo;
+
+    //---
+
     class SamplerObject;
     typedef base::RefPtr<SamplerObject> SamplerObjectPtr;
 
+    struct SamplerState;
+
     ///---
-    
+
 } // rendering
 

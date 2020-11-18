@@ -33,8 +33,11 @@ namespace base
             bool scheduleSave(const ResourcePtr& data, StringView path);
 
         private:
-            struct SaveJob : public NoCopy, public base::mem::GlobalPoolObject<POOL_COOKING>
+            struct SaveJob : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_COOKING)
+
+            public:
                 ResourcePtr unsavedResource;
                 StringBuf absoultePath;
             };

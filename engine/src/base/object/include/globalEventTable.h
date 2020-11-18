@@ -35,8 +35,11 @@ namespace base
         void unbind(GlobalEventKey key, StringID name);
 
     protected:
-        struct Table : public mem::GlobalPoolObject<POOL_EVENTS>
+        struct Table : public NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_EVENTS)
+
+        public:
             base::Array<GlobalEventListenerPtr> entries;
         };
 

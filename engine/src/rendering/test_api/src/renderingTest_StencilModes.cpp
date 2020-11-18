@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -86,13 +85,7 @@ namespace rendering
                 AddQuad(vertices + 12, 0.1f, -0.9f, 0.9f, -0.1f); // top right
                 AddQuad(vertices + 18, -0.9f, 0.1f, -0.1f, 0.9f); // bottom left
                 AddQuad(vertices + 24, 0.1f, 0.1f, 0.9f, 0.9f); // bottom right
-
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData  = CreateSourceDataRaw(vertices);
-                m_testBuffer = createBuffer(info, &sourceData);
+                m_testBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             // allocate fill pattern to resolve the stencil value
@@ -127,16 +120,9 @@ namespace rendering
                 Simple3DVertex vertices[256 * 6];
 
                 for (uint32_t i = 0; i < 256; ++i)
-                {
                     AddQuad(vertices + 6 * i, -1, -1, 1, 1, base::Color::FromVectorLinear(colors[i]));
-                }
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;;
-                info.size = sizeof(vertices);
-
-                auto sourceData  = CreateSourceDataRaw(vertices);
-                m_fillBuffer = createBuffer(info, &sourceData);
+                m_fillBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             m_shader = loadShader("GenericGeometry.csl");

@@ -161,11 +161,15 @@ namespace rendering
             DEBUG_CHECK_RETURN_V(output, AcquiredOutput());
 
             AcquiredOutput ret;
-            if (output->prepare(&ret.color, &ret.depth, ret.size))
+            base::Point size;
+            if (output->prepare(&ret.color, &ret.depth, size))
             {
+                ret.width = size.x;
+                ret.height = size.y;
+
                 auto op = allocCommand<OpAcquireOutput>();
                 op->output = output->id();
-                op->size = ret.size;
+                op->size = size;
                 op->colorView = ret.color;
                 op->depthView = ret.depth;
             }

@@ -136,8 +136,11 @@ namespace rendering
 
         ///---
 
-        struct FilterBitInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        struct FilterBitInfo : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
+
+        public:
             base::StringID name;
             base::Array<const FilterBitInfo*> children;
             FilterBit bit; // may not be set

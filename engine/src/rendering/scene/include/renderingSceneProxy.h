@@ -94,8 +94,9 @@ namespace rendering
         ///--
 
         /// generalized proxy handler interface
-        class RENDERING_SCENE_API IProxyHandler : public ICommandDispatcher, public IRuntimePool
+        class RENDERING_SCENE_API IProxyHandler : public ICommandDispatcher
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
             RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IProxyHandler);
 
         public:

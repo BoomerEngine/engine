@@ -52,8 +52,11 @@ namespace base
 
             ImportFileService* m_fileService = nullptr;
 
-            struct CacheEntry : NoCopy, public base::mem::GlobalPoolObject<POOL_IMPORT>
+            struct CacheEntry : public NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_IMPORT)
+
+            public:
                 StringBuf assetImportPath;
                 SourceAssetPtr asset;
                 io::TimeStamp timestamp;

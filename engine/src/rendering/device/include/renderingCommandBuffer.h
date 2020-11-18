@@ -45,8 +45,10 @@ namespace rendering
         /// NOTE: Command buffers are intended to be submitted the frame they are recorded since the recorded resource IDs are only guaranteed to be valid till a given frame ends
         /// NOTE: Command buffers are single threaded beasts, only one thread with a writer can be attached to a command buffer at given time
         /// NOTE: technically unfinished command buffer can be submitted if we insert a fence there (WaitForSignal) to wait 
-        class RENDERING_DEVICE_API CommandBuffer : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_RENDERING_COMMAND_BUFFER>
+        class RENDERING_DEVICE_API CommandBuffer : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_COMMAND_BUFFER)
+
         public:
             //--
 

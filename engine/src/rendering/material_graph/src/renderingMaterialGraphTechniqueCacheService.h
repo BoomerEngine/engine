@@ -46,8 +46,11 @@ namespace rendering
 
         //---
 
-        struct TechniqueInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_TECHNIQUE>
+        struct TechniqueInfo : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE)
+
+        public:
             uint64_t key = 0;
 
             base::RefWeakPtr<MaterialTechnique> technique; // may be lost
@@ -66,8 +69,11 @@ namespace rendering
 
         //--
 
-        struct FileInfo : public base::mem::GlobalPoolObject<POOL_RENDERING_SHADER_CACHE>
+        struct FileInfo : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_SHADER_CACHE)
+
+        public:
             uint64_t timestamp = 0;
             base::StringBuf depotPath;
 

@@ -91,8 +91,11 @@ namespace rendering
             }
 
         private:
-            struct Entry : public base::mem::GlobalPoolObject<POOL_RENDERING_PARAM_LAYOUT>
+            struct Entry : public base::NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_RENDERING_PARAM_LAYOUT)
+
+            public:
                 uint16_t id = 0;
                 ParametersLayoutInfo layout;
                 base::StringBuf text;

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -102,11 +101,33 @@ namespace rendering
             base::Array<uint16_t> tempIndices;
             GenerateTempGeometry(-0.9f, -0.9f, 1.8f, 1.8f, time, tempVertices, tempIndices);
 
-            TransientBufferView tempVerticesBuffer(BufferViewFlag::Vertex, TransientBufferAccess::NoShaders, tempVertices.dataSize());
-            TransientBufferView tempIndicesBuffer(BufferViewFlag::Index, TransientBufferAccess::NoShaders, tempIndices.dataSize());
+            BufferObjectPtr vertexBuffer;
+            {
+                BufferCreationInfo data;
+                data.size = tempVertices.dataSize();
+                data.allowVertex = true;
 
-            cmd.opAllocTransientBufferWithData(tempVerticesBuffer, tempVertices.data(), tempVertices.dataSize());
-            cmd.opAllocTransientBufferWithData(tempIndicesBuffer, tempIndices.data(), tempIndices.dataSize());
+                SourceData source;
+                source.data = tempVertices.createBuffer();
+                source.offset = 0;
+                source.size = tempVertices.dataSize();
+
+                vertexBuffer = device()->createBuffer(data, &source);
+            }
+
+            BufferObjectPtr indexBuffer;
+            {
+                BufferCreationInfo data;
+                data.size = tempIndices.dataSize();
+                data.allowIndex = true;
+
+                SourceData source;
+                source.data = tempIndices.createBuffer();
+                source.offset = 0;
+                source.size = tempIndices.dataSize();
+
+                indexBuffer = device()->createBuffer(data, &source);
+            }
 
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -115,8 +136,8 @@ namespace rendering
             cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opSetFillState(PolygonMode::Line);
 
-            cmd.opBindVertexBuffer("Simple3DVertex"_id,  tempVerticesBuffer);
-            cmd.opBindIndexBuffer(tempIndicesBuffer, ImageFormat::R16_UINT);
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  vertexBuffer->view());
+            cmd.opBindIndexBuffer(indexBuffer->view(), ImageFormat::R16_UINT);
             cmd.opDrawIndexed(m_shaders, 0, 0, tempIndices.size());
 
             cmd.opEndPass();

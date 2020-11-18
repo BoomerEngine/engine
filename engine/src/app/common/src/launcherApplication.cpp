@@ -258,8 +258,8 @@ namespace application
         if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
             game::HostViewport gameViewport;
-            gameViewport.width = output.size.x;
-            gameViewport.height = output.size.y;
+            gameViewport.width = output.width;
+            gameViewport.height = output.height;
             gameViewport.backBufferColor = output.color;
             gameViewport.backBufferDepth = output.depth;
 

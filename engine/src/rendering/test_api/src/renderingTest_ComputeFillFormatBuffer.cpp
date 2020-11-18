@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -27,11 +26,14 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
 
         private:
+            static const auto SIDE_RESOLUTION = 512;
+
             const ShaderLibrary* m_shaderGenerate;
             const ShaderLibrary* m_shaderDraw;
 
             BufferView m_vertexBuffer;
-            BufferView m_tempBuffer;
+            BufferView m_texelBuffer;
+
             uint32_t m_vertexCount;
         };
 
@@ -75,38 +77,13 @@ namespace rendering
 
         void RenderingTest_ComputeFillFormatBuffer::initialize()
         {
-            // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
             }
 
-            // create temp buffer
-            {
-
-                base::Array<base::Color> initialData;
-                initialData.resize(512*512);
-
-                for (uint32_t y=0; y<512; ++y)
-                    for (uint32_t x=0; x<512; ++x)
-                        initialData[x+y*512] = base::Color(x/2, y/2, 0);
-
-                rendering::BufferCreationInfo info;
-                info.allowShaderReads = true;
-                info.allowUAV = true;
-                info.size = 512 * 512 * 4;
-
-                auto sourceData = CreateSourceData(initialData);
-                m_tempBuffer = createBuffer(info, &sourceData);
-            }
+            m_texelBuffer = createStorageBuffer(SIDE_RESOLUTION * SIDE_RESOLUTION * 4);
 
             m_shaderGenerate = loadShader("ComputeFillFormatBufferGenerate.csl");
             m_shaderDraw = loadShader("ComputeFillFormatBufferTest.csl");
@@ -114,11 +91,6 @@ namespace rendering
 
         void RenderingTest_ComputeFillFormatBuffer::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
         {
-            uint32_t SIDE_RESOLUTION = 512;
-
-            TransientBufferView storageBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite,  SIDE_RESOLUTION * SIDE_RESOLUTION * 4);
-            cmd.opAllocTransientBuffer(storageBuffer);
-
             TestConsts tempConsts;
             tempConsts.SideCount = SIDE_RESOLUTION;
             tempConsts.FrameIndex = (int)(time * 60.0f);
@@ -127,7 +99,7 @@ namespace rendering
             {
                 TestParamsWrite params;
                 params.Consts = uploadedConsts;
-                params.ColorsWrite = storageBuffer;
+                params.ColorsWrite = m_texelBuffer;
                 cmd.opBindParametersInline("TestParamsWrite"_id, params);
                 cmd.opDispatch(m_shaderGenerate, SIDE_RESOLUTION / 8, SIDE_RESOLUTION / 8);
             }
@@ -142,7 +114,7 @@ namespace rendering
             {
                 TestParamsRead tempParams;
                 tempParams.Consts = uploadedConsts;
-                tempParams.ColorsRead = storageBuffer;
+                tempParams.ColorsRead = m_texelBuffer;
                 cmd.opBindParametersInline("TestParamsRead"_id, tempParams);
 
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);

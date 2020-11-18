@@ -87,8 +87,11 @@ namespace base
                 {}
             };
 
-            struct PathCache : public base::mem::GlobalPoolObject<POOL_CANVAS>
+            struct PathCache
             {
+                RTTI_DECLARE_POOL(POOL_CANVAS)
+            public:
+
                 float minPointDist = 0.025f;
                 float tessTol = 0.1f;
                 InplaceArray<PathPoint, 64> points;

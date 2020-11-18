@@ -53,11 +53,7 @@ namespace game
                 m_imgui = nullptr;
             }
 
-            if (m_renderingOutput)
-            {
-                base::GetService<DeviceService>()->device()->releaseObject(m_renderingOutput);
-                m_renderingOutput = ObjectID();
-            }
+            m_renderingOutput.reset();
         }
 
         bool SceneTestProject::initialize(const base::app::CommandLine& cmdLine)
@@ -143,17 +139,9 @@ namespace game
 
             // create rendering output
             m_renderingOutput = base::GetService<DeviceService>()->device()->createOutput(setup);
-            if (!m_renderingOutput)
+            if (!m_renderingOutput || !m_renderingOutput->window())
             {
                 TRACE_ERROR("Failed to acquire window factory, no window can be created");
-                return false;
-            }
-
-            // get window
-            m_renderingWindow = base::GetService<DeviceService>()->device()->queryOutputWindow(m_renderingOutput);
-            if (!m_renderingWindow)
-            {
-                TRACE_ERROR("Rendering output has no valid window");
                 return false;
             }
 
@@ -178,7 +166,7 @@ namespace game
         void SceneTestProject::update()
         {
             // exit when window closed
-            if (m_renderingWindow->windowHasCloseRequest())
+            if (m_renderingOutput->window()->windowHasCloseRequest())
             {
                 TRACE_INFO("Main window closed, exiting");
                 base::platform::GetLaunchPlatform().requestExit("Window closed");
@@ -214,7 +202,7 @@ namespace game
             }
 
             // process events
-            if (auto inputContext = m_renderingWindow->windowGetInputContext())
+            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
                 handleInput(*inputContext);
 
             // navigate to other test
@@ -230,20 +218,17 @@ namespace game
 
                 // set the window caption
                 auto testName = m_testClasses[m_currentTestCaseIndex].m_testName;
-                m_renderingWindow->windowSetTitle(base::TempString("Boomer Engine Scene Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
+                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Scene Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
             }
 
             // create output frame, this will fail if output is not valid
             {
-                base::Rect viewport;
-                rendering::ImageView colorBackBuffer, depthBackBuffer;
-
                 rendering::command::CommandWriter cmd("TestScene");
 
-                if (cmd.opAcquireOutput(m_renderingOutput, viewport, colorBackBuffer, &depthBackBuffer))
+                if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-                    prepareSceneCommandBuffers(cmd, colorBackBuffer, depthBackBuffer, viewport);
-                    prepareCanvasCommandBuffers(cmd, colorBackBuffer, depthBackBuffer, viewport);
+                    prepareSceneCommandBuffers(cmd, output.color, output.depth, output.width, output.width);
+                    prepareCanvasCommandBuffers(cmd, output.color, output.depth, output.height, output.height);
 
                     cmd.opSwapOutput(m_renderingOutput);
                 }
@@ -344,13 +329,13 @@ namespace game
             context.requestCapture(shouldCapture ? 2 : 0);
         }
         
-        void SceneTestProject::prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, base::Rect& area)
+        void SceneTestProject::prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height)
         {
-            rendering::scene::FrameParams frame(area.width(), area.height(), rendering::scene::Camera());
-            frame.resolution.width = area.width();
-            frame.resolution.height = area.height();
-            frame.resolution.finalCompositionWidth = area.width();
-            frame.resolution.finalCompositionHeight = area.height();
+            rendering::scene::FrameParams frame(width, height, rendering::scene::Camera());
+            frame.resolution.width = width;
+            frame.resolution.height = height;
+            frame.resolution.finalCompositionWidth = width;
+            frame.resolution.finalCompositionHeight = height;
             frame.filters = rendering::scene::FilterFlags::DefaultGame();
             frame.mode = rendering::scene::FrameRenderMode::Default;
             frame.time.engineRealTime = m_lastGameTime;
@@ -391,7 +376,7 @@ namespace game
             }
         }
 
-        void SceneTestProject::prepareCanvasCommandBuffers(rendering::command::CommandWriter& parentCmd, const rendering::ImageView& color, const rendering::ImageView& depth, base::Rect& area)
+        void SceneTestProject::prepareCanvasCommandBuffers(rendering::command::CommandWriter& parentCmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height)
         {
             base::canvas::Canvas canvas(color.width(), color.height());
             renderCanvas(canvas);

@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -79,23 +78,23 @@ namespace rendering
             // cube A
             tempParams.TestTexture = m_cubeA;
             cmd.opBindParametersInline("TestParams"_id, tempParams);
-            DrawQuad(cmd, m_shaderDraw, -0.8f, y, 1.6f, height); y += height + margin;
+            drawQuad(cmd, m_shaderDraw, -0.8f, y, 1.6f, height); y += height + margin;
 
             // cube B
             tempParams.TestTexture = m_cubeB;
             cmd.opBindParametersInline("TestParams"_id, tempParams);
-            DrawQuad(cmd, m_shaderDraw, -0.8f, y, 1.6f, height); y += height + margin;
+            drawQuad(cmd, m_shaderDraw, -0.8f, y, 1.6f, height); y += height + margin;
 
             // ref mapping
-            DrawQuad(cmd, m_shaderReference, -0.8f, y, 1.6f, height); y += height + margin;
+            drawQuad(cmd, m_shaderReference, -0.8f, y, 1.6f, height); y += height + margin;
 
             // error term mapping
-            DrawQuad(cmd, m_shaderError, -0.8f, y, 1.6f, height); y += height + margin;
+            drawQuad(cmd, m_shaderError, -0.8f, y, 1.6f, height); y += height + margin;
 
             // custom cubemap
             tempParams.TestTexture = m_cubeC;
             cmd.opBindParametersInline("TestParams"_id, tempParams);
-            DrawQuad(cmd, m_shaderDrawY, -0.8f, y, 1.6f, height); y += height + margin;
+            drawQuad(cmd, m_shaderDrawY, -0.8f, y, 1.6f, height); y += height + margin;
 
             cmd.opEndPass();
         }

@@ -109,8 +109,11 @@ namespace rendering
                 base::StringBuf buildUniqueName() const;
             };
 
-            struct Function : public base::mem::GlobalPoolObject<POOL_SHADER_COMPILATION>
+            struct Function : public base::NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_SHADER_COMPILATION)
+
+            public:
                 FunctionKey m_key;
                 base::StringBuf m_name; // build from key
                 base::StringBuilder m_preamble;

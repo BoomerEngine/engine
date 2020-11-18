@@ -19,8 +19,10 @@ namespace ui
         typedef uint16_t ValueID;
 
         /// selector evaluation context, used to match selectors that apply to the given attributes
-        class BASE_UI_API SelectorMatchContext : public base::mem::GlobalPoolObject<POOL_UI>
+        class BASE_UI_API SelectorMatchContext : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_UI_STYLES)
+
         public:
             SelectorMatchContext(base::StringID id, base::SpecificClassType<IElement> elementClass = nullptr);
 
@@ -84,8 +86,10 @@ namespace ui
 
         /// set of matched selectors that satisfied the SelectorMatchContext
         /// the matched selectors are basis of determining which rule set to apply
-        class BASE_UI_API SelectorMatch : public base::mem::GlobalPoolObject<POOL_UI_STYLES>
+        class BASE_UI_API SelectorMatch
         {
+            RTTI_DECLARE_POOL(POOL_UI_STYLES)
+
         public:
             SelectorMatch();
             SelectorMatch(base::Array<SelectorID>&& ids, uint64_t hash);

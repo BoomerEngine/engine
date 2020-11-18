@@ -143,8 +143,10 @@ namespace base
 
                 //--
 
-                struct Connection : public NoCopy, public mem::GlobalPoolObject<POOL_NET>
+                struct Connection : public NoCopy
                 {
+                    RTTI_DECLARE_POOL(POOL_NET)
+
                 public:
                     Address address;
                     ConnectionID id = 0;
@@ -169,8 +171,11 @@ namespace base
 
                 //--
 
-                struct PendingConnection : public mem::GlobalPoolObject<POOL_NET>
+                struct PendingConnection : public NoCopy
                 {
+                    RTTI_DECLARE_POOL(POOL_NET)
+
+                public:
                     Connection* connection = nullptr;
                     NativeTimePoint timeoutPoint;
                     uint32_t connectionTimeout;

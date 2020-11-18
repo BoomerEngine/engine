@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -27,9 +26,13 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
 
         private:
+            static const uint32_t MAX_ELEMENTS = 1024;
+
             uint32_t m_vertexCount;
             const ShaderLibrary* m_shaderGenerate;
             const ShaderLibrary* m_shaderTest;
+
+            BufferView m_tempBuffer;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FormatBufferWrite);
@@ -59,19 +62,16 @@ namespace rendering
         {
             m_shaderGenerate = loadShader("FormatBufferWriteGenerate.csl");
             m_shaderTest = loadShader("FormatBufferWriteTest.csl");
+
+            m_tempBuffer = createStorageBuffer(2 * sizeof(base::Vector4) * MAX_ELEMENTS);
         }
 
         void RenderingTest_FormatBufferWrite::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
         {
-            static const uint32_t MAX_ELEMENTS = 1024;
-
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
-
-            TransientBufferView storageBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, 2 * sizeof(base::Vector4) * MAX_ELEMENTS);
-            cmd.opAllocTransientBuffer(storageBuffer);
 
             float yScale = 0.05f;
             for (float y = -1.0f; y < 1.0f; y += yScale)
@@ -83,7 +83,7 @@ namespace rendering
 
                 TestParams params;
                 params.Params = cmd.opUploadConstants(tempConsts);
-                params.VertexData = storageBuffer;
+                params.VertexData = m_tempBuffer;
                 cmd.opBindParametersInline("TestParams"_id, params);
 
                 {

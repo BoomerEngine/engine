@@ -353,14 +353,20 @@ namespace wavefront
             }
         }
 
-        struct TempGroup : public base::mem::GlobalPoolObject<POOL_WAVEFRONT>
+        struct TempGroup : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_WAVEFRONT)
+
+        public:
             base::StringBuf name;
             base::Array<GroupChunk> chunks;            
         };
 
-        struct TempObject : public base::mem::GlobalPoolObject<POOL_WAVEFRONT>
+        struct TempObject : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_WAVEFRONT)
+
+        public:
             base::StringBuf name;
             base::HashMap<base::StringBuf, TempGroup*> groups;
             base::Array<TempGroup*> groupList;

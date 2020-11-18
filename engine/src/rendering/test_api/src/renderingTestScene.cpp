@@ -136,9 +136,7 @@ namespace rendering
             {
                 MeshSetup meshSetup;
                 meshSetup.m_loadTransform = base::Matrix::BuildScale(3.0f / 1.0f);
-                meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
-                //meshSetup.m_swapYZ = true;
-                meshSetup.m_computeFaceNormals = true;
+                //meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
                 auto mesh = owner.loadMesh("teapot.obj", meshSetup);
                 if (mesh)
                 {
@@ -154,8 +152,6 @@ namespace rendering
             // piramid
             {
                 MeshSetup meshSetup;
-                //meshSetup.m_loadTransform = base::Matrix::BuildScale(1.0f / 1.0f);
-                meshSetup.m_computeFaceNormals = true;
 
                 auto mesh = owner.loadMesh("tetrahedron.obj", meshSetup);
                 if (mesh)
@@ -172,8 +168,6 @@ namespace rendering
             // octa
             {
                 MeshSetup meshSetup;
-                //meshSetup.m_loadTransform = base::Matrix::BuildScale(1.0f / 2.0f);
-                meshSetup.m_computeFaceNormals = true;
 
                 auto mesh = owner.loadMesh("octahedron.obj", meshSetup);
                 if (mesh)
@@ -190,8 +184,6 @@ namespace rendering
             // dodeca
             {
                 MeshSetup meshSetup;
-                //meshSetup.m_loadTransform = base::Matrix::BuildScale(1.0f / 2.0f);
-                meshSetup.m_computeFaceNormals = true;
 
                 auto mesh = owner.loadMesh("dodecahedron.obj", meshSetup);
                 if (mesh)
@@ -208,8 +200,6 @@ namespace rendering
             // icosahedron
             {
                 MeshSetup meshSetup;
-                //meshSetup.m_loadTransform = base::Matrix::BuildScale(1.0f / 2.0f);
-                meshSetup.m_computeFaceNormals = true;
 
                 auto mesh = owner.loadMesh("icosahedron.obj", meshSetup);
                 if (mesh)
@@ -238,8 +228,7 @@ namespace rendering
                 MeshSetup meshSetup;
                 meshSetup.m_swapYZ = true;
 
-                auto mesh = owner.loadMesh("plane.obj", meshSetup);
-                if (mesh)
+                if (auto mesh = owner.loadMesh("plane.obj", meshSetup))
                 {
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;
@@ -252,11 +241,9 @@ namespace rendering
             {
                 MeshSetup meshSetup;
                 meshSetup.m_loadTransform = base::Matrix::BuildScale(6.0f / 1.0f);
-                meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
-                meshSetup.m_computeFaceNormals = true;
+                //meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
 
-                auto mesh = owner.loadMesh("teapot.obj", meshSetup);
-                if (mesh)
+                if (auto mesh = owner.loadMesh("teapot.obj", meshSetup))
                 {
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;

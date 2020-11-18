@@ -26,7 +26,7 @@ shader ShadowSampler
 {
 	float CalcShadow(vec3 pos)
 	{
-		vec4 uv = mul(WorldToShadowMap, pos.xyz1);
+		vec4 uv = pos.xyz1 * WorldToShadowMap;
 		float mask = 1.0f - (float)(all(uv.xy >= 0.0f) && all(uv.xy <= 1.0f));
 		return max(textureDepthCompare(ShadowMap, uv.xy, uv.z), mask);
  	}

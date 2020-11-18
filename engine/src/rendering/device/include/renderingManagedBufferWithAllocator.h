@@ -27,8 +27,10 @@ namespace rendering
     //---
 
     /// a buffer that supports allocations and tracking of it's sub parts
-    class RENDERING_DEVICE_API ManagedBufferWithAllocator : public base::mem::GlobalPoolObject<POOL_RENDERING_RUNTIME>
+    class RENDERING_DEVICE_API ManagedBufferWithAllocator : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
+
     public:
         ManagedBufferWithAllocator(const BufferCreationInfo& info, uint32_t alignment, float growthFactor = 2.0f, uint64_t maxSize = 0);
         ~ManagedBufferWithAllocator();
@@ -84,8 +86,11 @@ namespace rendering
 
         //--
 
-        struct PendingUpload : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        struct PendingUpload : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
+
+        public:
             uint32_t offset = 0;
             uint32_t size = 0;
             MemoryBlock block;
@@ -97,8 +102,11 @@ namespace rendering
 
         //--
 
-        struct PendingFree : public base::mem::GlobalPoolObject<POOL_RENDERING_FRAME>
+        struct PendingFree : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
+
+        public:
             MemoryBlock block;
         };
 

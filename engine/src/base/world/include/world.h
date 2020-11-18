@@ -64,6 +64,7 @@ namespace base
         /// NOTE: this object is never saved neither are the components inside
         class BASE_WORLD_API World : public script::ScriptedObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(World, script::ScriptedObject);
 
         public:

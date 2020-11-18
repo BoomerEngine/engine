@@ -22,8 +22,10 @@ namespace rendering
     //---
 
     /// a local compiler used to compile a single technique of given material
-    class MaterialTechniqueCompiler : public base::parser::IErrorReporter, base::parser::IIncludeHandler, public base::mem::GlobalPoolObject<POOL_RENDERING_TECHNIQUE>
+    class MaterialTechniqueCompiler : public base::parser::IErrorReporter, base::parser::IIncludeHandler
     {
+        RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE_COMPILER)
+
     public:
         MaterialTechniqueCompiler(base::depot::DepotStructure& depot, const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique);
         virtual ~MaterialTechniqueCompiler();

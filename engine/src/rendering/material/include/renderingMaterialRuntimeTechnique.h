@@ -32,8 +32,11 @@ namespace rendering
     ///---
 
     /// compiler data for material technique
-    struct RENDERING_MATERIAL_API MaterialCompiledTechnique : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_RENDERING_TECHNIQUE>
+    struct RENDERING_MATERIAL_API MaterialCompiledTechnique : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE)
+
+    public:
         ShaderLibraryPtr shader;
         MaterialTechniqueRenderStates renderStates;
 

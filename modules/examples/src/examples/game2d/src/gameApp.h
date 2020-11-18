@@ -38,8 +38,7 @@ namespace example
         NativeTimePoint m_lastTickTime;
 
         // rendering output (native window)
-        rendering::ObjectID m_renderingOutput;
-        INativeWindowInterface* m_renderingWindow = nullptr;
+        rendering::OutputObjectPtr m_renderingOutput;
 
         //--
 

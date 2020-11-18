@@ -52,6 +52,7 @@ namespace base
         /// node templates form a tree that is transformed once the nodes are instantiated
         class BASE_WORLD_API NodeTemplate : public IObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(NodeTemplate, IObject);
 
         public:
@@ -91,6 +92,8 @@ namespace base
         /// "compiled" node template
         struct BASE_WORLD_API NodeTemplateCompiledData : public IReferencable
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
+
         public:
             StringID name; // assigned name of the node (NOTE: may be different than name of the node in the prefab)
             Array<NodeTemplatePtr> templates; // all collected templates from all prefabs that matched the node's path, NOTE: NOT OWNED and NOT modified

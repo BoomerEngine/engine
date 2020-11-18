@@ -227,8 +227,11 @@ namespace ui
     //------
 
     /// generic cached geometry for the widget
-    struct ElementCachedGeometry : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_CANVAS>
+    struct ElementCachedGeometry : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_UI_CANVAS)
+
+    public:
         base::canvas::GeometryPtr shadow = nullptr; // rendered with parent clip rect
         base::canvas::GeometryPtr background = nullptr; // rendered with widget client clip rect
         base::canvas::GeometryPtr foreground = nullptr; // rendered with widget client clip rect
@@ -304,6 +307,7 @@ namespace ui
     /// the tiny bits are left to be implemented by the "elements"
     class BASE_UI_API IElement : public base::IObject
     {
+        RTTI_DECLARE_POOL(POOL_UI_OBJECTS)
         RTTI_DECLARE_VIRTUAL_CLASS(IElement, base::IObject);
 
     public:

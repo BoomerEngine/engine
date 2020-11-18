@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -47,9 +46,9 @@ namespace rendering
         void RenderingTest_Clear::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
         {
             base::Vector4 clearColor;
-            clearColor.x = base::RandOne(m_random);
-            clearColor.y = base::RandOne(m_random);
-            clearColor.z = base::RandOne(m_random);
+            clearColor.x = m_random.unit();
+            clearColor.y = m_random.unit();
+            clearColor.z = m_random.unit();
             clearColor.w = 1.0f;
 
             FrameBuffer fb;

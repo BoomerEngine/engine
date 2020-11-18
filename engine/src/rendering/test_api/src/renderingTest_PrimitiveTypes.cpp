@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -192,14 +191,8 @@ namespace rendering
                 GeneratePointListTest(-0.9f, y, 1.8f, yscale * ystep, base::Color::CYAN, NUM_LINE_SEGMENTS, verties);
                 y += ystep;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = verties.dataSize();
-
                 m_numPointListVertices = verties.size();
-
-                auto sourceData = CreateSourceData(verties);
-                m_vertexBufferPointList = createBuffer(info, &sourceData);
+                m_vertexBufferPointList = createVertexBuffer(verties);
             }
 
             // create vertex buffer for line test
@@ -208,14 +201,8 @@ namespace rendering
                 GenerateLineListTest(-0.9f, y, 1.8f, yscale * ystep, base::Color::CYAN, NUM_LINE_SEGMENTS, verties);
                 y += ystep;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = verties.dataSize();
-
                 m_numLineListVertices = verties.size();
-
-                auto sourceData = CreateSourceData(verties);
-                m_vertexBufferLineList = createBuffer(info, &sourceData);
+                m_vertexBufferLineList = createVertexBuffer(verties);
             }
 
             // create vertex buffer for line strip test
@@ -224,14 +211,8 @@ namespace rendering
                 GenerateLineStripTest(-0.9f, y, 1.8f, yscale * ystep, base::Color::CYAN, NUM_LINE_SEGMENTS, verties);
                 y += ystep;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = verties.dataSize();
-
                 m_numLineStripVertices = verties.size();
-
-                auto sourceData = CreateSourceData(verties);
-                m_vertexBufferLineStrip = createBuffer(info, &sourceData);
+                m_vertexBufferLineStrip = createVertexBuffer(verties);
             }
 
             // create vertex buffer for triangle list test
@@ -240,14 +221,8 @@ namespace rendering
                 GenerateTriangleListTest(-0.9f, y, 1.8f, yscale * ystep, base::Color::CYAN, NUM_LINE_SEGMENTS, verties);
                 y += ystep;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = verties.dataSize();
-
                 m_numTriangleListVertices = verties.size();
-
-                auto sourceData = CreateSourceData(verties);
-                m_vertexBufferTriangleList = createBuffer(info, &sourceData);
+                m_vertexBufferTriangleList = createVertexBuffer(verties);
             }
 
             // create vertex buffer for triangle trip test
@@ -256,14 +231,8 @@ namespace rendering
                 GenerateTriangleStripTest(-0.9f, y, 1.8f, yscale * ystep, base::Color::CYAN, NUM_LINE_SEGMENTS, verties);
                 y += ystep;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = verties.dataSize();
-
                 m_numTriangleStripVertices = verties.size();
-
-                auto sourceData = CreateSourceData(verties);
-                m_vertexBufferTriangleStrip = createBuffer(info, &sourceData);
+                m_vertexBufferTriangleStrip = createVertexBuffer(verties);
             }
 
             m_shaders = loadShader("GenericGeometry.csl");

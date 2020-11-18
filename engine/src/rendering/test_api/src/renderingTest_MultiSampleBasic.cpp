@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -132,17 +131,10 @@ namespace rendering
             }
 
             // generate test geometry
-            base::Array<Simple3DVertex> vertices;
-            PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
-
-            // create vertex buffer
             {
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = vertices.dataSize();
-
-                auto sourceData = CreateSourceData(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                base::Array<Simple3DVertex> vertices;
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, vertices);
+                m_vertexBuffer = createVertexBuffer(vertices);
                 m_vertexCount = vertices.size();
             }
         }
@@ -226,7 +218,7 @@ namespace rendering
                     TestParams2 tempParams;
                     tempParams.TestImageMS = m_resolvedColorBuffer.createSampledView(ObjectID::DefaultPointSampler());
                     cmd.opBindParametersInline("TestParams"_id, tempParams);
-                    DrawQuad(cmd, m_shaderDraw2, 0.2f, 0.2f, 0.8f, 0.8f, 0.45f, 0.45f, 0.55f, 0.55f);
+                    drawQuad(cmd, m_shaderDraw2, 0.2f, 0.2f, 0.8f, 0.8f, 0.45f, 0.45f, 0.55f, 0.55f);
                 }
 
                 cmd.opEndPass();              

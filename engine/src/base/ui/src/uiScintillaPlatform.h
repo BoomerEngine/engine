@@ -99,8 +99,11 @@ namespace Scintilla
 
     //--
 
-    struct FontInfo : public base::mem::GlobalPoolObject<POOL_FONTS>
+    struct FontInfo : public base::NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_FONTS)
+
+    public:
         base::font::FontStyleParams m_style;
         base::font::FontAssemblyParams m_assembly;
         base::RefPtr<base::font::Font> m_font;

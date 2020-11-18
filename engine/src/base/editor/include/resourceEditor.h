@@ -161,6 +161,7 @@ namespace ed
     /// NOTE: this is called only if no existing opened editor is found that can open the file
     class BASE_EDITOR_API IResourceEditorOpener : public NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
         RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IResourceEditorOpener);
 
     public:

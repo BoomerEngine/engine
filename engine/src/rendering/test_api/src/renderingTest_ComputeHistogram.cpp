@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 #include "renderingTestScene.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -28,6 +27,8 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float frameIndex, const ImageView& backBufferView, const ImageView& depth) override final;
 
         private:
+            static const auto NUM_BUCKETS = 256;
+
             const ShaderLibrary* m_drawImage;
             const ShaderLibrary* m_drawHistogram;
             const ShaderLibrary* m_shaderFindMinMax;
@@ -35,6 +36,11 @@ namespace rendering
             const ShaderLibrary* m_shaderNormalizeHistogram;
 
             ImageView m_testImage;
+
+            BufferView m_minMaxBuffer;
+            BufferView m_redHistogramBuffer;
+            BufferView m_greenHistogramBuffer;
+            BufferView m_blueHistogramBuffer;
 
             void computeHistogram(command::CommandWriter& cmd, uint32_t componentType, const ImageView& view, const BufferView& outMinMax, const BufferView& outHistogram);
             void drawHistogram(command::CommandWriter& cmd, uint32_t componentType, const BufferView& minMax, const BufferView& histogram);
@@ -73,8 +79,6 @@ namespace rendering
 
         }
 
-        static const auto NumBuckets = 256;
-
         void RenderingTest_ComputeHistogram::initialize()
         {
             // load test image
@@ -91,6 +95,11 @@ namespace rendering
             m_shaderFindMinMax = loadShader("HistogramComputeMinMax.csl");
             m_shaderComputeHistogram = loadShader("HistogramCompute.csl");
             m_shaderNormalizeHistogram = loadShader("HistogramComputeMax.csl");
+
+            m_minMaxBuffer = createStorageBuffer(sizeof(float) * 3);
+            m_redHistogramBuffer = createStorageBuffer(sizeof(uint32_t) * NUM_BUCKETS);
+            m_greenHistogramBuffer = createStorageBuffer(sizeof(uint32_t) * NUM_BUCKETS);
+            m_blueHistogramBuffer = createStorageBuffer(sizeof(uint32_t) * NUM_BUCKETS);
         }
 
         void RenderingTest_ComputeHistogram::computeHistogram(command::CommandWriter& cmd, uint32_t componentType, const ImageView& view, const BufferView& outMinMax, const BufferView& outHistogram)
@@ -100,7 +109,7 @@ namespace rendering
                 ComputeHistogramConstants consts;
                 consts.imageWidth = view.width();
                 consts.imageHeight = view.height();
-                consts.numberOfBuckets = NumBuckets;
+                consts.numberOfBuckets = NUM_BUCKETS;
                 consts.verticalScale = 1.0f;
                 consts.componentType = componentType;
 
@@ -133,7 +142,7 @@ namespace rendering
 
             // calculate the maximum value of stuff in histogram
             {
-                const auto groupsX = (NumBuckets + 63) / 64;
+                const auto groupsX = (NUM_BUCKETS + 63) / 64;
                 cmd.opDispatch(m_shaderNormalizeHistogram, groupsX);
             }
 
@@ -142,14 +151,12 @@ namespace rendering
 
         void RenderingTest_ComputeHistogram::drawHistogram(command::CommandWriter& cmd, uint32_t componentType, const BufferView& minMax, const BufferView& histogram)
         {
-            const auto numBuckets = 256;
-
             // bind params
             {
                 ComputeHistogramConstants consts;
                 consts.imageWidth = 512;
                 consts.imageHeight = 512;
-                consts.numberOfBuckets = NumBuckets;
+                consts.numberOfBuckets = NUM_BUCKETS;
                 consts.verticalScale = 1.0f;
                 consts.componentType = componentType;
 
@@ -162,21 +169,12 @@ namespace rendering
                 cmd.opSetFillState(PolygonMode::Fill, 2.0f);
                 cmd.opBindParametersInline("ComputeHistogramParams"_id, params);
                 cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
-                cmd.opDraw(m_drawHistogram, 0, numBuckets);
+                cmd.opDraw(m_drawHistogram, 0, NUM_BUCKETS);
             }
         }
 
         void RenderingTest_ComputeHistogram::render(command::CommandWriter& cmd, float frameIndex, const ImageView& backBufferView, const ImageView& depth)
         {
-            TransientBufferView minMaxBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, sizeof(float) * 3);
-            cmd.opAllocTransientBuffer(minMaxBuffer);
-            TransientBufferView redHistogramBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, sizeof(uint32_t) * NumBuckets);
-            TransientBufferView greenHistogramBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, sizeof(uint32_t) * NumBuckets);
-            TransientBufferView blueHistogramBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, sizeof(uint32_t) * NumBuckets);
-            cmd.opAllocTransientBuffer(redHistogramBuffer);
-            cmd.opAllocTransientBuffer(greenHistogramBuffer);
-            cmd.opAllocTransientBuffer(blueHistogramBuffer);
-
             // draw
             {
                 FrameBuffer fb;
@@ -188,16 +186,16 @@ namespace rendering
                     TestParams tempParams;
                     tempParams.TestImage = m_testImage;
                     cmd.opBindParametersInline("TestParams"_id, tempParams);
-                    DrawQuad(cmd, m_drawImage, -0.8f, -0.8f, 0.6f, 0.6f);
+                    drawQuad(cmd, m_drawImage, -0.8f, -0.8f, 0.6f, 0.6f);
                 }
 
                 // draw the histogram
-                computeHistogram(cmd, 0, m_testImage, minMaxBuffer, redHistogramBuffer);
-                computeHistogram(cmd, 1, m_testImage, minMaxBuffer, greenHistogramBuffer);
-                computeHistogram(cmd, 2, m_testImage, minMaxBuffer, blueHistogramBuffer);
-                drawHistogram(cmd, 0, minMaxBuffer, redHistogramBuffer);
-                drawHistogram(cmd, 1, minMaxBuffer, greenHistogramBuffer);
-                drawHistogram(cmd, 2, minMaxBuffer, blueHistogramBuffer);
+                computeHistogram(cmd, 0, m_testImage, m_minMaxBuffer, m_redHistogramBuffer);
+                computeHistogram(cmd, 1, m_testImage, m_minMaxBuffer, m_greenHistogramBuffer);
+                computeHistogram(cmd, 2, m_testImage, m_minMaxBuffer, m_blueHistogramBuffer);
+                drawHistogram(cmd, 0, m_minMaxBuffer, m_redHistogramBuffer);
+                drawHistogram(cmd, 1, m_minMaxBuffer, m_greenHistogramBuffer);
+                drawHistogram(cmd, 2, m_minMaxBuffer, m_blueHistogramBuffer);
 
                 cmd.opEndPass();
             }

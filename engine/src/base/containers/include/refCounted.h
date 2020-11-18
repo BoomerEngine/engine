@@ -14,8 +14,10 @@ namespace base
     //---
 
     /// helper class for referencable objects that want to have weak refs to them
-    class BASE_CONTAINERS_API RefWeakContainer : public NoCopy, public mem::GlobalPoolObject<POOL_REF_HOLDER>
+    class BASE_CONTAINERS_API RefWeakContainer : public NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_REF_HOLDER)
+
     public:
         RefWeakContainer(IReferencable* ptr);
 
@@ -42,8 +44,10 @@ namespace base
     //---
 
     /// basic implementation of a intrusive reference counting object
-    class BASE_CONTAINERS_API IReferencable : public NoCopy, public mem::GlobalPoolObject<POOL_OBJECTS>
+    class BASE_CONTAINERS_API IReferencable : public NoCopy
     {
+        RTTI_DECLARE_POOL(POOL_REF_OBJECT)
+
     public:
         // object is constructed with initial refcount of 1, this can be overridden if required
         IReferencable(uint32_t initialRefCount = 1);

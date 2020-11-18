@@ -19,6 +19,7 @@ namespace ed
     // item in depot directory
     class BASE_EDITOR_API ManagedItem : public IObject
     {
+        RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
         RTTI_DECLARE_VIRTUAL_CLASS(ManagedItem, IObject);
 
     public:

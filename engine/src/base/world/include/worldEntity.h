@@ -42,6 +42,7 @@ namespace base
         /// generic input event
         class BASE_WORLD_API EntityInputEvent : public IObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(EntityInputEvent, IObject);
 
         public:
@@ -57,6 +58,7 @@ namespace base
         // a basic game dweller, contains components and links between them
         class BASE_WORLD_API Entity : public script::ScriptedObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
             RTTI_DECLARE_VIRTUAL_CLASS(Entity, script::ScriptedObject);
 
         public:

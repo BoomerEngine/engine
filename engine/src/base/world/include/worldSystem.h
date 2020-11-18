@@ -26,6 +26,7 @@ namespace base
         /// scene system, integrates scene with various engine and gameplay systems
         class BASE_WORLD_API IWorldSystem : public script::ScriptedObject
         {
+            RTTI_DECLARE_POOL(POOL_WORLD_SYSTEM)
             RTTI_DECLARE_VIRTUAL_CLASS(IWorldSystem, script::ScriptedObject);
 
         public:

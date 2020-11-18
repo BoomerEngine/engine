@@ -68,8 +68,11 @@ namespace base
                     {}
                 };
 
-                struct JobPayload : public mem::GlobalPoolObject<POOL_FIBERS>
+                struct JobPayload : public NoCopy
                 {
+                    RTTI_DECLARE_POOL(POOL_FIBERS)
+
+                public:
                     TJobFunc m_funcToRun;
                     uint32_t m_invocationIndex;
                     const char* m_name;
@@ -78,8 +81,11 @@ namespace base
                     JobPayload();
                 };
 
-                struct JobThread : public base::NoCopy, public mem::GlobalPoolObject<POOL_FIBERS>
+                struct JobThread : public NoCopy
                 {
+                    RTTI_DECLARE_POOL(POOL_FIBERS)
+
+                public:
                     Thread m_thread;
                     Event m_waitForJob;
                     uint32_t m_id;

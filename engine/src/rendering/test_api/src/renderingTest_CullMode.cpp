@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingTest.h"
-#include "renderingTestShared.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -90,12 +89,7 @@ namespace rendering
                 AddQuad(x, y, 0.2f, 0.8f, true, base::Color::RED, writePtr); x += 0.2f;
                 AddQuad(x, y, 0.2f, 0.8f, false, base::Color::GREEN, writePtr); x += 0.3f;
 
-                rendering::BufferCreationInfo info;
-                info.allowVertex = true;
-                info.size = sizeof(vertices);
-
-                auto sourceData = CreateSourceDataRaw(vertices);
-                m_vertexBuffer = createBuffer(info, &sourceData);
+                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
             m_shader = loadShader("SimpleVertexColor.csl");

@@ -27,8 +27,10 @@ namespace rendering
         //---
 
         // a OpenGL 4 driver thread, all things happen here
-        class DeviceThread : public base::NoCopy, public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+        class DeviceThread : public base::NoCopy
         {
+            RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+
         public:
             DeviceThread(Device* drv, WindowManager* windows);
             virtual ~DeviceThread();
@@ -83,8 +85,11 @@ namespace rendering
 
             //--
 
-            struct Job : public base::mem::GlobalPoolObject<POOL_API_RUNTIME>
+            struct Job : public base::NoCopy
             {
+                RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+
+            public:
                 std::function<void()> m_jobFunc;
             };
 
