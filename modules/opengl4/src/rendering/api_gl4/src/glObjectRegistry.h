@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingDeviceObject.h"
-
 namespace rendering
 {
     namespace gl4
@@ -63,7 +61,7 @@ namespace rendering
         private:
             static const uint32_t MAX_OBJECTS = 1U << 16;
 
-            base::SpinLock m_lock; // may be called from threads
+            base::Mutex m_lock; // may be called from threads
 
             uint32_t m_numAllocatedObjects = 0;
 
@@ -96,13 +94,27 @@ namespace rendering
 
             virtual void releaseToDevice(ObjectID id) override;
 
-            bool runWithObject(ObjectID id, const std::function<void(Object*)>& func);
+			//--
+
+			Object* resolveStatic(ObjectID id, ObjectType type) const;
+
+			template< typename T >
+			INLINE T* resolveStatic(ObjectID id) const
+			{
+				return static_cast<T*>(resolveStatic(id, T::STATIC_TYPE));
+			}
+
+			//--
+
+			bool runWithObject(ObjectID id, const std::function<void(Object*)>& func) const;
 
             template< typename T >
-            bool run(ObjectID id, const std::function<void(T*)>& func)
+            bool run(ObjectID id, const std::function<void(T*)>& func) const
             {
                 return runWithObject(id, [&func](Object* obj) { func(static_cast<T*>(obj)); });
             }
+
+			//--
 
         private:
             base::Mutex m_lock;

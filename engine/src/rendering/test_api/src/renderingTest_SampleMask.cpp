@@ -11,9 +11,8 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-
-#include "base/image/include/image.h"
-#include "base/image/include/imageUtils.h"
+#include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
 
 namespace rendering
 {
@@ -26,17 +25,19 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            const ShaderLibrary* m_shaderDraw;
-            const ShaderLibrary* m_shaderGenerate;
+            ShaderLibraryPtr m_shaderDraw;
+            ShaderLibraryPtr m_shaderGenerate;
 
             uint8_t m_sampleCount = 1;
-            ImageView m_staticImage;
 
-            ImageView m_colorBuffer;
-            ImageView m_resolvedColorBuffer;
+			ImageObjectPtr m_colorBuffer;
+			RenderTargetViewPtr m_colorBufferRTV;
+
+			ImageObjectPtr m_resolvedColorBuffer;
+			ImageViewPtr m_resolvedColorBufferSRV;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_SampleMask);
@@ -62,17 +63,19 @@ namespace rendering
             m_shaderGenerate = loadShader(base::TempString("SampleMaskGenerate{}.csl", subTestIndex()));
         }
 
-        void RenderingTest_SampleMask::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_SampleMask::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             if (m_colorBuffer.empty())
             {
                 ImageCreationInfo info;
                 info.allowRenderTarget = true;
                 info.format = rendering::ImageFormat::RGBA8_UNORM;
-                info.width = backBufferView.width();
-                info.height = backBufferView.height();
+                info.width = backBufferView->width();
+                info.height = backBufferView->height();
                 info.numSamples = m_sampleCount;
+
                 m_colorBuffer = createImage(info);
+				m_colorBufferRTV = m_colorBuffer->createRenderTargetView();
             }
 
             if (m_resolvedColorBuffer.empty())
@@ -80,15 +83,19 @@ namespace rendering
                 ImageCreationInfo info;
                 info.allowShaderReads = true;
                 info.format = rendering::ImageFormat::RGBA8_UNORM;
-                info.width = backBufferView.width();
-                info.height = backBufferView.height();
+                info.width = backBufferView->width();
+                info.height = backBufferView->height();
+
                 m_resolvedColorBuffer = createImage(info);
+
+				auto sampler = rendering::Globals().SamplerWrapPoint;
+				m_resolvedColorBufferSRV = m_resolvedColorBuffer->createView(sampler);
             }
 
             // draw triangles
             {
                 FrameBuffer fb;
-                fb.color[0].view(m_colorBuffer).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
+                fb.color[0].view(m_colorBufferRTV).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
                 cmd.opBeingPass(fb);
 
@@ -99,9 +106,11 @@ namespace rendering
 
             //--
 
-            cmd.opGraphicsBarrier();
+			cmd.opTransitionLayout(m_colorBuffer, ResourceLayout::RenderTarget, ResourceLayout::ResolveSource);
+			cmd.opTransitionLayout(m_resolvedColorBuffer, ResourceLayout::ShaderResource, ResourceLayout::ResolveDest);
             cmd.opResolve(m_colorBuffer, m_resolvedColorBuffer);
-
+			cmd.opTransitionLayout(m_resolvedColorBuffer, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
+			cmd.opTransitionLayout(m_colorBuffer, ResourceLayout::ResolveSource, ResourceLayout::RenderTarget);
             //--
 
             {
@@ -109,9 +118,9 @@ namespace rendering
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
                 cmd.opBeingPass(fb);
 
-                TestParams tempParams;
-                tempParams.TestImage = m_resolvedColorBuffer;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
+				DescriptorEntry entry[1];
+				entry[0] = m_resolvedColorBufferSRV;
+                cmd.opBindDescriptor("TestParams"_id, entry);
 
                 cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
                 cmd.opDraw(m_shaderDraw, 0, 4);

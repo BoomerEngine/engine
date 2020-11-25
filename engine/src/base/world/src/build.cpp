@@ -9,10 +9,8 @@
 * [# dependency: base_resource #]
 * [# dependency: base_app #]
 * [# dependency: base_graph #]
+* [# dependency: base_imgui #]
 * [# dependency: base_script #]
-* [# dependency: rendering_scene #]
-* [# dependency: rendering_mesh #]
-* [# dependency: rendering_material #]
 ***/
 
 #include "build.h"

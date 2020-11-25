@@ -23,11 +23,11 @@ namespace rendering
 
         public:
             virtual void initialize() override final;            
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
             VertexIndexBunch<> m_indexedTriList;
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_BufferOffsets);
@@ -98,7 +98,7 @@ namespace rendering
             m_shaders = loadShader("BufferOffsets.csl");
         }
 
-        void RenderingTest_BufferOffsets::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_BufferOffsets::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -116,16 +116,23 @@ namespace rendering
                 float y = -0.9f;
                 float ystep = 0.1f;
 
-                cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(base::Vector2(0.0f, y)));
-                y += ystep;
-                cmd.opDrawIndexed(m_shaders, 0, 0, numIndices);
+				{
+					DescriptorEntry params[1];
+					params[0].constants(base::Vector2(0.0f, y));
+					cmd.opBindDescriptor("TestParams"_id, params);
+
+					y += ystep;
+					cmd.opDrawIndexed(m_shaders, 0, 0, numIndices);
+				}
 
                 y += 0.05f;
 
                 // sub-parts by index offset
                 for (uint32_t subOffset = 0; subOffset < 3; subOffset++)
                 {
-                    cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(base::Vector2(0.0f, y)));
+					DescriptorEntry params[1];
+					params[0].constants(base::Vector2(0.0f, y));
+					cmd.opBindDescriptor("TestParams"_id, params);
 
                     y += ystep;
                     uint32_t firstIndex = 0;
@@ -142,15 +149,16 @@ namespace rendering
                 // sub-parts by index buffer view
                 for (uint32_t subOffset = 0; subOffset < 3; subOffset++)
                 {
-                    cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(base::Vector2(0.0f, y)));
+					DescriptorEntry params[1];
+					params[0].constants(base::Vector2(0.0f, y));
+					cmd.opBindDescriptor("TestParams"_id, params);
                 
                     y += ystep;
                     uint32_t firstIndex = 0;
                     uint32_t indexBlock = 6 * 10;
                     while (firstIndex + indexBlock < numIndices)
                     {
-                        auto offsetedIndexBufer  = m_indexedTriList.m_indexBuffer.createSubViewAtOffset(firstIndex * sizeof(uint16_t));
-                        cmd.opBindIndexBuffer(offsetedIndexBufer, ImageFormat::R16_UINT);
+                        cmd.opBindIndexBuffer(m_indexedTriList.m_indexBuffer, ImageFormat::R16_UINT, firstIndex * sizeof(uint16_t));
 
                         cmd.opDrawIndexed(m_shaders, 0, 0, indexBlock);
                         firstIndex += indexBlock + 12 + subOffset;
@@ -164,7 +172,9 @@ namespace rendering
                 {
                     cmd.opBindIndexBuffer(m_indexedTriList.m_indexBuffer, ImageFormat::R16_UINT);
 
-                    cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(base::Vector2(0.0f, y)));
+					DescriptorEntry params[1];
+					params[0].constants(base::Vector2(0.0f, y));
+					cmd.opBindDescriptor("TestParams"_id, params);
 
                     y += ystep;
                     uint32_t firstVertex = 0;
@@ -184,7 +194,9 @@ namespace rendering
                 {
                     cmd.opBindIndexBuffer(m_indexedTriList.m_indexBuffer, rendering::ImageFormat::R16_UINT);
 
-                    cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(base::Vector2(0.0f, y)));
+					DescriptorEntry params[1];
+					params[0].constants(base::Vector2(0.0f, y));
+					cmd.opBindDescriptor("TestParams"_id, params);
 
                     y += ystep;
 
@@ -193,9 +205,7 @@ namespace rendering
                     uint32_t vertexBlock = 2 * 10;
                     while (firstVertex + vertexBlock < numVertices)
                     {
-                        auto offsetedVertexBuffer  = m_indexedTriList.m_vertexBuffer.createSubViewAtOffset(firstVertex * sizeof(Simple3DVertex));
-                        cmd.opBindVertexBuffer("Simple3DVertex"_id,  offsetedVertexBuffer);
-
+                        cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_indexedTriList.m_vertexBuffer, firstVertex * sizeof(Simple3DVertex));
                         cmd.opDrawIndexed(m_shaders, 0, 0, indexBlock);
                         firstVertex += vertexBlock + 4 + subOffset;
                     }

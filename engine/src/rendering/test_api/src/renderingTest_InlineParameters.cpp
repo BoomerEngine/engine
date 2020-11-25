@@ -23,11 +23,11 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            const ShaderLibrary* m_shaders;
+            BufferObjectPtr m_vertexBuffer;
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_InlineParameters);
@@ -50,28 +50,23 @@ namespace rendering
             }
         }
 
-        namespace
+        void RenderingTest_InlineParameters::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
-            struct InlineParameterConsts
-            {
-                base::Vector2 TestOffset = base::Vector2(0, 0);
-                base::Vector2 TestScale = base::Vector2(1, 1);
-            };
+			//--
 
-            struct InlineParameterConstsEx
-            {
-                base::Vector4 TestColor = base::Vector4(1,1,1,1);
-            };
+			struct InlineParameterConsts
+			{
+				base::Vector2 TestOffset = base::Vector2(0, 0);
+				base::Vector2 TestScale = base::Vector2(1, 1);
+			};
 
-            struct TestParams
-            {
-                ConstantsView m_data;
-                ConstantsView m_dataEx;
-            };
-        }
+			struct InlineParameterConstsEx
+			{
+				base::Vector4 TestColor = base::Vector4(1, 1, 1, 1);
+			};
 
-        void RenderingTest_InlineParameters::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
-        {
+			//--
+
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
@@ -100,10 +95,10 @@ namespace rendering
                     paramsEx.TestColor.z = 0.0f;
                     paramsEx.TestColor.w = 1.0f;
 
-                    TestParams data;
-                    data.m_data = cmd.opUploadConstants(params);
-                    data.m_dataEx = cmd.opUploadConstants(paramsEx);
-                    cmd.opBindParametersInline("TestParams"_id, data);
+					DescriptorEntry desc[2];
+					desc[0].constants(params);
+					desc[1].constants(paramsEx);
+                    cmd.opBindDescriptor("TestParams"_id, desc);
 
                     cmd.opDraw(m_shaders, 0, 3);
                 }

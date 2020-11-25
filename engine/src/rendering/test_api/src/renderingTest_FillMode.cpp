@@ -25,11 +25,11 @@ namespace rendering
             RenderingTest_FillMode();
 
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            const ShaderLibrary* m_shader;
+            BufferObjectPtr m_vertexBuffer;
+            ShaderLibraryPtr m_shader;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FillMode);
@@ -81,7 +81,7 @@ namespace rendering
             m_shader = loadShader("SimpleVertexColor.csl");
         }
 
-        void RenderingTest_FillMode::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_FillMode::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

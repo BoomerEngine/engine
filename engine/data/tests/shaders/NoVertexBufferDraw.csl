@@ -5,20 +5,10 @@
 
 //--
 
-struct VertexPosition
-{
-	vec4 position;
-};
-
-struct VertexColor
-{
-	vec4 color;
-};
-
 descriptor TestParams
 {
-    attribute(layout=VertexPosition) Buffer VertexPositions;
-    attribute(layout=VertexColor) Buffer VertexColors;
+    attribute(format=rgba32f) Buffer VertexPositions;
+    attribute(format=rgba32f) Buffer VertexColors;
 }
 
 //--
@@ -39,7 +29,9 @@ export shader SimpleTriangleVS
 
 	void main()
 	{
-		gl_Position = VertexPositions[gl_VertexID].position.xyz1;
-		Color = VertexColors[gl_VertexID/3].color.xyz1;
+		gl_Position = VertexPositions[gl_VertexID].xyz1;
+		Color = VertexColors[gl_VertexID/3].xyz1;
 	}
 }
+
+//--

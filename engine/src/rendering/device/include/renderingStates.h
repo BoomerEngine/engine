@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "renderingImageFormat.h"
+
 namespace rendering
 {
     //---
@@ -47,6 +49,7 @@ namespace rendering
     };
 
 #undef Always // X11 FFS
+	#define COMPARE_OP_BITS 3
     enum class CompareOp : uint8_t
     {
         Never,
@@ -58,7 +61,9 @@ namespace rendering
         GreaterEqual,
         Always,
     };
+	static_assert((int)CompareOp::Always < (1U << COMPARE_OP_BITS), "Adjust COMPARE_OP_BITS");
 
+	#define LOGICAL_OP_BITS 4
     enum class LogicalOp : uint8_t
     {
         Clear,
@@ -78,7 +83,9 @@ namespace rendering
         Nand,
         Set,
     };
+	static_assert((int)LogicalOp::Set < (1U << LOGICAL_OP_BITS), "Adjust LOGICAL_OP_BITS");
 
+	#define BLEND_FACTOR_BITS 5
     enum class BlendFactor : uint8_t
     {
         Zero,
@@ -100,8 +107,12 @@ namespace rendering
         OneMinusSrc1Color,
         Src1Alpha,
         OneMinusSrc1Alpha,
-    };
 
+		MAX,
+    };
+	static_assert((int)BlendFactor::OneMinusSrc1Alpha < (1U << BLEND_FACTOR_BITS), "Adjust BLEND_FACTOR_BITS");
+
+	#define BLEND_OP_BITS 3
     enum class BlendOp : uint8_t
     {
         Add,
@@ -110,7 +121,9 @@ namespace rendering
         Min,
         Max,
     };
+	static_assert((int)BlendOp::Max < (1U << BLEND_OP_BITS), "Adjust BLEND_OP_BITS");
 
+	#define STENCIL_OP_BITS 3
     enum class StencilOp : uint8_t
     {
         Keep,
@@ -122,14 +135,18 @@ namespace rendering
         IncrementAndWrap,
         DecrementAndWrap,
     };
+	static_assert((int)StencilOp::DecrementAndWrap < (1U << STENCIL_OP_BITS), "Adjust STENCIL_OP_BITS");
 
-    enum class PolygonMode : uint8_t
+	#define FILL_MODE_BITS 2
+    enum class FillMode : uint8_t
     {
         Fill,
         Line,
         Point,
     };
+	static_assert((int)FillMode::Point < (1U << FILL_MODE_BITS), "Adjust FILL_MODE_BITS");
 
+	#define CULL_MODE_BITS 2
     enum class CullMode : uint8_t
     {
         Disabled,
@@ -137,13 +154,17 @@ namespace rendering
         Back,
         Both,
     };
+	static_assert((int)CullMode::Both < (1U << CULL_MODE_BITS), "Adjust CULL_MODE_BITS");
 
+	#define FRONT_FACE_MODE_BITS 2
     enum class FrontFace : uint8_t
     {
         CCW,
         CW,
     };
+	static_assert((int)FrontFace::CW < (1U << FRONT_FACE_MODE_BITS), "Adjust FRONT_FACE_MODE_BITS");
 
+	#define PRIMITIVE_TOPOLOGY_BITS 4
     enum class PrimitiveTopology : uint8_t
     {
         PointList,
@@ -160,6 +181,9 @@ namespace rendering
         TriangleStripWithAdjacency,
         PatchList,
     };
+	static_assert((int)PrimitiveTopology::PatchList < (1U << PRIMITIVE_TOPOLOGY_BITS), "Adjust PRIMITIVE_TOPOLOGY_BITS");
+
+	//--
 
     enum class LoadOp : uint8_t
     {
@@ -187,17 +211,7 @@ namespace rendering
         MAX,
     };
 
-    enum class Stage : uint8_t // for barriers
-    {
-        All = 0, // consider all stages a dependency, most wide, default one since it's hard to come up with better narrowing
-        VertexInput, // stuff will be needed before vertex input starts
-        VertexShaderInput, // stuff will be needed before vertex shader start
-        PixelShaderInput, // stuff will be needed before pixel shader start
-        ComputeShaderInput, // stuff will be needed before compute shader start
-        RasterInput, // stuff will be needed before rasterization starts
-        ShaderOutput, // stuff is produced by the shaders
-        RasterOutput, // stuff is produced by rasterization
-    };
+	typedef base::BitFlags<ShaderType> ShaderTypeMask;
 
     enum class ResourceType : uint8_t
     {
@@ -217,163 +231,7 @@ namespace rendering
         UAVWriteOnly,
     };
 
-    ///---
-    /// DATA STRUCTURES DESCRIBING RENDER STATES
-    ///---
-
-#pragma pack(push)
-#pragma pack(1)
-
-    /// blend state for single render target, updated via opSetBlendState
-    struct RENDERING_DEVICE_API BlendState
-    {
-        BlendFactor srcColorBlendFactor = BlendFactor::One;
-        BlendFactor destColorBlendFactor = BlendFactor::Zero;
-        BlendOp colorBlendOp = BlendOp::Add;
-        BlendFactor srcAlphaBlendFactor = BlendFactor::One;
-        BlendFactor destAlphaBlendFactor = BlendFactor::Zero;
-        BlendOp alphaBlendOp = BlendOp::Add;
-
-        static uint32_t CalcHash(const BlendState& key);
-
-        bool operator==(const BlendState& other) const;
-        bool operator!=(const BlendState& other) const;
-    };
-
-    ///---
-
-    /// stencil operation state for a single facing
-    struct RENDERING_DEVICE_API StencilSideState
-    {
-        StencilOp failOp = StencilOp::Keep;
-        StencilOp passOp = StencilOp::Keep;
-        StencilOp depthFailOp = StencilOp::Keep;
-        CompareOp compareOp = CompareOp::Always;
-        uint8_t compareMask = 0xFF;
-        uint8_t writeMask = 0xFF;
-        uint8_t referenceValue = 0xFF;
-
-        static uint32_t CalcHash(const StencilSideState& key);
-
-        bool operator==(const StencilSideState& other) const;
-        bool operator!=(const StencilSideState& other) const;
-    };
-
-    /// stencil op state
-    struct RENDERING_DEVICE_API StencilState
-    {
-        bool enabled = 0;
-        StencilSideState front;
-        StencilSideState back;
-
-        static uint32_t CalcHash(const StencilState& key);
-
-        bool operator==(const StencilState& other) const;
-        bool operator!=(const StencilState& other) const;
-    };
-
-    ///---
-
-    /// culling state
-    struct RENDERING_DEVICE_API CullState
-    {
-        CullMode mode = CullMode::Back;
-        FrontFace face = FrontFace::CW;
-
-        static uint32_t CalcHash(const CullState& key);
-
-        bool operator==(const CullState& other) const;
-        bool operator!=(const CullState& other) const;
-    };
-
-    ///---
-
-    /// polygon rasterization state
-    struct RENDERING_DEVICE_API FillState
-    {
-        PolygonMode mode = PolygonMode::Fill;
-        float lineWidth = 1.0f;
-
-        static uint32_t CalcHash(const FillState& key);
-
-        bool operator==(const FillState& other) const;
-        bool operator!=(const FillState& other) const;
-    };
-
-    ///---
-
-    /// depth testing state
-    struct RENDERING_DEVICE_API DepthState
-    {
-        bool enabled = 0;
-        bool writeEnabled = 0;
-        CompareOp depthCompareOp = CompareOp::Always;
-
-        static uint32_t CalcHash(const DepthState& key);
-
-        bool operator==(const DepthState& other) const;
-        bool operator!=(const DepthState& other) const;
-    };
-
-    /// depth clip state
-    struct RENDERING_DEVICE_API DepthClipState
-    {
-        bool enabled = false;
-        float clipMin = 0.0f;
-        float clipMax = 1.0f;
-
-        static uint32_t CalcHash(const DepthClipState& key);
-
-        bool operator==(const DepthClipState& other) const;
-        bool operator!=(const DepthClipState& other) const;
-    };
-
-    /// depth bias state
-    struct RENDERING_DEVICE_API DepthBiasState
-    {
-        bool enabled = 0;
-        float constant = 0.0f;
-        float slope = 0.0f;
-        float clamp = 0.0f;
-
-        static uint32_t CalcHash(const DepthBiasState& key);
-
-        bool operator==(const DepthBiasState& other) const;
-        bool operator!=(const DepthBiasState& other) const;
-    };
-
-    ///----
-
-    /// primitive assembly state
-    struct RENDERING_DEVICE_API PrimitiveAssemblyState
-    {
-        PrimitiveTopology topology = PrimitiveTopology::TriangleList;
-        bool restartEnabled = 0;
-
-        static uint32_t CalcHash(const PrimitiveAssemblyState& key);
-
-        bool operator==(const PrimitiveAssemblyState& other) const;
-        bool operator!=(const PrimitiveAssemblyState& other) const;
-    };
-
-    ///---
-
-    /// multisampling state
-    struct RENDERING_DEVICE_API MultisampleState
-    {
-        uint8_t sampleCount = 1;
-        bool sampleShadingEnable = 0;
-        bool alphaToCoverageEnable = 0;
-        bool alphaToCoverageDitherEnable = 0;
-        bool  alphaToOneEnable = 0;
-        float minSampleShading = 0.0f;
-        uint32_t sampleMask = 0xFFFFFFFF;
-
-        static uint32_t CalcHash(const MultisampleState& key);
-
-        bool operator==(const MultisampleState& other) const;
-        bool operator!=(const MultisampleState& other) const;
-    };
+	//--
 
     /// quantized value for use with samplers
     /// sign + 11.4 fixed point 
@@ -412,14 +270,278 @@ namespace rendering
         uint8_t maxAnisotropy = 0; // unlimited
         bool compareEnabled = false;
 
+		base::StringBuf label;
+
         static uint32_t CalcHash(const SamplerState& key);
 
         bool operator==(const SamplerState& other) const;
         bool operator!=(const SamplerState& other) const;
     };
 
-    //---
+	//---
 
+	// bit describing which render state is dirty
+	enum class StaticRenderStateDirtyBit : uint64_t
+	{
+		FillMode,
+
+		CullEnabled,
+		CullMode,
+		CullFrontFace,
+
+		DepthEnabled,
+		DepthWriteEnabled,
+		DepthBiasEnabled,
+		DepthBoundsEnabled,
+		DepthFunc,
+
+		ScissorEnabled,
+
+		StencilEnabled,
+		StencilFrontOps,
+		StencilBackOps,
+
+		PrimitiveRestartEnabled,
+		PrimitiveTopology,
+
+		BlendingEnabled,
+
+		AlphaCoverageEnabled,
+		AlphaCoverageDitherEnabled,
+
+		//--
+
+		BlendEquation0,
+		BlendEquation1,
+		BlendEquation2,
+		BlendEquation3,
+		BlendEquation4,
+		BlendEquation5,
+		BlendEquation6,
+		BlendEquation7,
+
+		BlendFunc0,
+		BlendFunc1,
+		BlendFunc2,
+		BlendFunc3,
+		BlendFunc4,
+		BlendFunc5,
+		BlendFunc6,
+		BlendFunc7,
+
+		ColorMask0,
+		ColorMask1,
+		ColorMask2,
+		ColorMask3,
+		ColorMask4,
+		ColorMask5,
+		ColorMask6,
+		ColorMask7,
+
+		MAX,
+	};
+
+	static_assert((int)StaticRenderStateDirtyBit::MAX <= 64, "To many render states to track");
+
+	typedef base::BitFlags<StaticRenderStateDirtyBit> StaticRenderStateDirtyFlags;
+
+	//--
+
+	/// helper structure for collecting (setting) all STATIC render states that are usually baked in
+#pragma pack(push)
+#pragma pack(1)
+	struct RENDERING_DEVICE_API StaticRenderStatesSetup
+	{
+		static const uint8_t MAX_TARGETS = 8;
+
+		static const StaticRenderStateDirtyBit COLOR_MASK_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS];
+		static const StaticRenderStateDirtyBit BLEND_FUNC_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS];
+		static const StaticRenderStateDirtyBit BLEND_EQUATION_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS];
+
+		struct BlendState
+		{
+			uint32_t srcColorBlendFactor : BLEND_FACTOR_BITS;
+			uint32_t destColorBlendFactor : BLEND_FACTOR_BITS;
+			uint32_t colorBlendOp : BLEND_OP_BITS;
+			uint32_t srcAlphaBlendFactor : BLEND_FACTOR_BITS;
+			uint32_t destAlphaBlendFactor : BLEND_FACTOR_BITS;
+			uint32_t alphaBlendOp : BLEND_OP_BITS;
+		};
+		static_assert(sizeof(BlendState) == 4, "Keep small");
+
+		struct CommonState
+		{
+			uint64_t fillMode : FILL_MODE_BITS; // PolygonMode
+			uint64_t depthCompareOp : COMPARE_OP_BITS; // CompareOp
+			uint64_t depthEnabled : 1;
+			uint64_t depthWriteEnabled : 1;
+			uint64_t depthBiasEnabled : 1;
+			uint64_t depthClipEnabled : 1;
+
+			uint64_t stencilEnabled : 1;
+			uint64_t stencilFrontFailOp : STENCIL_OP_BITS;
+			uint64_t stencilFrontPassOp : STENCIL_OP_BITS;
+			uint64_t stencilFrontDepthFailOp : STENCIL_OP_BITS;
+			uint64_t stencilFrontCompareOp : COMPARE_OP_BITS;
+			uint64_t stencilBackFailOp : STENCIL_OP_BITS;
+			uint64_t stencilBackPassOp : STENCIL_OP_BITS;
+			uint64_t stencilBackDepthFailOp : STENCIL_OP_BITS;
+			uint64_t stencilBackCompareOp : COMPARE_OP_BITS;
+
+			uint64_t cullEnabled : 1;
+			uint64_t cullMode : CULL_MODE_BITS; // CullMode
+			uint64_t cullFrontFace : 1; // FrontFace 
+
+			uint64_t primitiveTopology : PRIMITIVE_TOPOLOGY_BITS; // PrimitiveTopology;
+			uint64_t primitiveRestartEnabled : 1;
+
+			uint64_t multisampleSampleCount : 4;
+			uint64_t multisamplePerSameShadingEnable : 1;
+			uint64_t alphaToCoverageEnable : 1;
+			uint64_t alphaToCoverageDitherEnable : 1;
+			uint64_t alphaToOneEnable : 1;
+
+			uint64_t scissorEnabled : 1;
+			uint64_t blendingEnabled : 1;
+		};		
+		static_assert(sizeof(CommonState) == 8, "Keep small");
+
+		CommonState common; 
+		BlendState blendStates[MAX_TARGETS];
+		uint8_t colorMasks[MAX_TARGETS];
+
+		//--
+
+		static StaticRenderStatesSetup& DEFAULT_STATES();
+
+		//--
+
+		StaticRenderStatesSetup();
+
+		//--
+
+		uint64_t key() const;
+
+		void apply(const StaticRenderStatesSetup& other, const StaticRenderStateDirtyFlags* mask = nullptr);
+
+		void print(base::IFormatStream& f) const;
+
+		void print(base::IFormatStream& f, const StaticRenderStateDirtyFlags& stateMask) const;
+
+		bool operator==(const StaticRenderStatesSetup& other) const;
+		INLINE bool operator!=(const StaticRenderStatesSetup& other) const { return !operator==(other); }
+
+		//--
+	};
 #pragma pack(pop)
+
+	/// helper structure for collecting (setting) all render states
+	class StaticRenderStatesBuilder
+	{
+		RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
+
+	public:
+		StaticRenderStatesBuilder();
+
+		//--
+
+		StaticRenderStatesSetup states;
+		StaticRenderStateDirtyFlags dirtyFlags;
+
+		//--
+
+		/// reset to default states
+		void reset();
+
+		/// set color mask
+		void colorMask(uint8_t rtIndex, uint8_t mask);
+
+		/// set blend state for a given render target
+		void blend(bool enabled);
+		void blendFactor(uint8_t renderTargetIndex, BlendFactor src, BlendFactor dest);
+		void blendFactor(uint8_t renderTargetIndex, BlendFactor srcColor, BlendFactor destColor, BlendFactor srcAlpha, BlendFactor destAlpha);
+		void blendOp(uint8_t renderTargetIndex, BlendOp op);
+		void blendOp(uint8_t renderTargetIndex, BlendOp color, BlendOp alpha);
+
+		/// set cull state
+		void cull(bool enabled);
+		void cullMode(CullMode mode);
+		void cullFrontFace(FrontFace mode);
+
+		/// set polygon mode
+		void fill(FillMode mode);
+
+		/// enable/disable scissoring
+		void scissorState(bool enabled);
+
+		/// set the stencil state
+		void stencil(bool enabled); // disable
+		void stencilAll(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp);
+		void stencilFront(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp);
+		void stencilBack(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp);
+
+		/// set depth state
+		void depth(bool enable);
+		void depthWrite(bool enable);
+		void depthFunc(CompareOp func);
+		void depthClip(bool enabled);
+		void depthBias(bool enabled);
+
+		/// set primitive assembly
+		void primitiveTopology(PrimitiveTopology topology);
+		void primitiveRestart(bool enabled);
+
+		/// set multisample state
+		//void multisample(uint8_t numSamples);
+
+		/// alpha to coverage
+		void alphaToCoverage(bool enabled);
+		void alphaToCoverageDither(bool enabled);
+		void alphaToOne(bool enabled);
+	};
+
+	//--
+
+#pragma pack(push)
+#pragma pack(1)
+	/// pass attachment state
+	struct RENDERING_DEVICE_API GraphicsPassLayoutSetup
+	{
+		static const uint32_t MAX_TARGETS = 8;
+
+		struct Attachment
+		{
+			ImageFormat format;
+
+			void print(base::IFormatStream& f) const;
+			INLINE operator bool() const { return format != ImageFormat::UNKNOWN; }
+			INLINE bool operator==(const Attachment& other) const { return format == other.format; }
+			INLINE bool operator!=(const Attachment& other) const { return !operator==(other); }
+		};
+
+		uint8_t samples = 1;
+		Attachment depth;
+		Attachment color[MAX_TARGETS];
+
+		//--
+
+		GraphicsPassLayoutSetup();
+
+		//--
+
+		uint64_t key() const;
+
+		void reset();
+
+		void print(base::IFormatStream& f) const;
+
+		bool operator==(const GraphicsPassLayoutSetup& other) const;
+		INLINE bool operator!=(const GraphicsPassLayoutSetup& other) const { return !operator==(other); }
+	};
+#pragma pack(pop)
+
+	static_assert(sizeof(GraphicsPassLayoutSetup) == 10, "Check for gaps");
+
+	//--
 
 } // rendering

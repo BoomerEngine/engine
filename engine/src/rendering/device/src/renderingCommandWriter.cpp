@@ -11,26 +11,52 @@
 #include "renderingCommandBuffer.h"
 #include "renderingCommandWriter.h"
 #include "renderingFramebuffer.h"
-#include "renderingParametersLayoutID.h"
-#include "renderingParametersLayoutInfo.h"
+#include "renderingDescriptorID.h"
+#include "renderingDescriptorInfo.h"
 #include "renderingShaderLibrary.h"
-#include "renderingBufferView.h"
+#include "renderingObject.h"
 #include "renderingOutput.h"
+#include "renderingImage.h"
+#include "renderingBuffer.h"
 #include "renderingDeviceService.h"
 #include "renderingDeviceApi.h"
+#include "renderingDescriptor.h"
+#include "renderingStates.h"
+#include "renderingPipeline.h"
 
 #include "base/containers/include/bitUtils.h"
 #include "base/image/include/imageVIew.h"
 #include "base/image/include/imageUtils.h"
 #include "base/system/include/thread.h"
 #include "base/memory/include/pageCollection.h"
+#include "base/image/include/imageRect.h"
 
 namespace rendering
 {
     namespace command
     {
 
-//#define ALWAYS_ALLOC_TO_EXTERNAL_MEMORY
+		//--
+
+		static uint32_t CalcUpdateMemorySize(ImageFormat format, const ResourceCopyRange& range)
+		{
+			const auto& formatInfo = GetImageFormatInfo(format);
+			if (formatInfo.compressed)
+			{
+				DEBUG_CHECK_RETURN_V((range.image.offsetX & 3) == 0, 0);
+				DEBUG_CHECK_RETURN_V((range.image.offsetY & 3) == 0, 0);
+				DEBUG_CHECK_RETURN_V((range.image.offsetZ & 3) == 0, 0);
+				DEBUG_CHECK_RETURN_V(range.image.sizeZ == 1, 0);
+
+				const auto alignedSizeX = base::Align<uint32_t>(range.image.sizeX, 4);
+				const auto alignedSizeY = base::Align<uint32_t>(range.image.sizeY, 4);
+				return alignedSizeX * alignedSizeY * formatInfo.bitsPerPixel / 8;
+			}
+			else
+			{
+				return range.image.sizeX * range.image.sizeY * range.image.sizeZ * formatInfo.bitsPerPixel / 8;
+			}
+		}
 
         //--
 
@@ -66,7 +92,12 @@ namespace rendering
             buffer->beginWriting();
 
             // get carried over parameter bindings
-            m_currentParameterBindings = std::move(buffer->m_activeParameterBindings);
+			m_currentParameterBindings = std::move(buffer->m_activeParameterBindings);
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+			m_currentParameterData = std::move(buffer->m_activeParameterData);
+#endif
+
             m_currentPass = buffer->m_parentBufferBeginPass;
             m_isChildBufferWithParentPass = (buffer->m_parentBufferBeginPass != nullptr);
 
@@ -105,11 +136,20 @@ namespace rendering
                 if (finishRecording)
                 {
                     m_writeBuffer->finishRecording();
+
                     m_currentParameterBindings.reset();
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+					m_currentParameterData.reset();					
+#endif
                 }
                 else
                 {
                     m_writeBuffer->m_activeParameterBindings = std::move(m_currentParameterBindings);
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+					m_writeBuffer->m_activeParameterData = std::move(m_currentParameterData);
+#endif
                 }
 
                 m_writePtr = nullptr;
@@ -123,6 +163,7 @@ namespace rendering
                 m_currentPassViewports = 0;
                 m_currentIndexBufferElementCount = 0;
                 m_currentVertexBufferRemainingSize.reset();
+				m_currentVertexBuffers.reset();
             }
         }
 
@@ -169,9 +210,6 @@ namespace rendering
 
                 auto op = allocCommand<OpAcquireOutput>();
                 op->output = output->id();
-                op->size = size;
-                op->colorView = ret.color;
-                op->depthView = ret.depth;
             }
 
             return ret;
@@ -191,52 +229,94 @@ namespace rendering
             auto op  = allocCommand<OpTriggerCapture>();
         }
 
-        void CommandWriter::opBeingPass(const FrameBuffer& frameBuffer, uint8_t numViewports, const FrameBufferViewportState* intialViewportSettings)
+        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t numViewports, const FrameBufferViewportState* intialViewportSettings)
         {
-            DEBUG_CHECK_EX(!m_currentPass, "Recursive passes are not allowed");
-            DEBUG_CHECK_EX(numViewports >= 1 && numViewports <= 16, "Invalid number of viewports");
+			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
+            DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
+            DEBUG_CHECK_RETURN_EX(numViewports >= 1 && numViewports <= 16, "Invalid number of viewports");
 
             numViewports = std::clamp<uint8_t>(numViewports, 1, 16);
 
             auto frameBufferValid = frameBuffer.validate();
-            DEBUG_CHECK_EX(frameBufferValid, "Cannot enter a pass with invalid frame buffer");
-            if (frameBufferValid)
+            DEBUG_CHECK_RETURN_EX(frameBufferValid , "Cannot enter a pass with invalid frame buffer");
+
+			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
+			{
+				if (frameBuffer.color[i].viewPtr)
+				{
+					const auto format = frameBuffer.color[i].viewPtr->format();
+					const auto expectedFormat = layout->layout().color[i].format;
+					DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Color target {} in frame buffer has layout {} but {} is expected by pass layout", i, format, expectedFormat));
+				}
+				else
+				{
+					DEBUG_CHECK_RETURN_EX(layout->layout().color[i].format == ImageFormat::UNKNOWN, base::TempString("Color target {} in frame buffer is not specified but it's expected by pass layout", i));
+				}
+			}
+
+			if (frameBuffer.depth.viewPtr)
+			{
+				const auto format = frameBuffer.depth.viewPtr->format();
+				const auto expectedFormat = layout->layout().depth.format;
+				DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Depth target in frame buffer has layout {} but {} is expected by pass layout", format, expectedFormat));
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_EX(layout->layout().depth.format == ImageFormat::UNKNOWN, "Depth target in frame buffer is not specified but it's expected by pass layout");
+			}
+
+			DEBUG_CHECK_RETURN_EX(frameBuffer.samples() == layout->layout().samples, base::TempString("Frame buffer has {} samples per pixel while layout expects {}", frameBuffer.samples(), layout->layout().samples));
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
+			{
+				if (frameBuffer.color[i].viewPtr)
+				{
+					// NOTE: render target may NOT be owned by image but then the layout does not change much
+					if (auto* owningImage = base::rtti_cast<ImageObject>(frameBuffer.color[i].viewPtr->object()))
+						ensureResourceState(owningImage, ResourceLayout::RenderTarget);
+				}
+			}
+
+			if (frameBuffer.depth.viewPtr)
+			{
+				// NOTE: render target may NOT be owned by image but then the layout does not change much
+				if (auto* owningImage = base::rtti_cast<ImageObject>(frameBuffer.depth.viewPtr->object()))
+					ensureResourceState(owningImage, ResourceLayout::DepthWrite);
+			}
+#endif
+
+			//--
+
+            auto payloadSize = intialViewportSettings ? (sizeof(FrameBufferViewportState) * numViewports) : 0;
+            auto op = allocCommand<OpBeginPass>(payloadSize);
+            op->frameBuffer = frameBuffer;
+			op->passLayoutId = layout->id();
+            op->hasResourceTransitions = false;
+            op->numViewports = numViewports;
+
+            if (intialViewportSettings)
             {
-                auto payloadSize = intialViewportSettings ? (sizeof(FrameBufferViewportState) * numViewports) : 0;
-
-                auto op = allocCommand<OpBeginPass>(payloadSize);
-                op->frameBuffer = frameBuffer;
-                op->hasBarriers = false;
-                op->numViewports = numViewports;
-
-                if (intialViewportSettings)
-                {
-                    op->hasInitialViewportSetup = true;
-                    memcpy(op->payload(), intialViewportSettings, payloadSize);
-                }
-                else
-                {
-                    op->hasInitialViewportSetup = false;
-                }
-
-                m_currentPass = op;
-                m_currentPassViewports = numViewports;
-                m_currentPassRts = frameBuffer.validColorSurfaces();
+                op->hasInitialViewportSetup = true;
+                memcpy(op->payload(), intialViewportSettings, payloadSize);
             }
+            else
+            {
+                op->hasInitialViewportSetup = false;
+            }
+			
+            m_currentPass = op;
+            m_currentPassViewports = numViewports;
+            m_currentPassRts = frameBuffer.validColorSurfaces();
         }
 
         void CommandWriter::opEndPass()
         {
-            DEBUG_CHECK_EX(m_currentPass, "Not in pass");
-            if (m_currentPass)
-            {
-                DEBUG_CHECK_EX(!m_isChildBufferWithParentPass, "Cannot end pass that started in parent command buffer");
-                if (!m_isChildBufferWithParentPass)
-                {
-                    auto op = allocCommand<OpEndPass>();
-                    m_currentPass = nullptr;
-                }
-            }
+            DEBUG_CHECK_RETURN(m_currentPass);// , "Not in pass");
+            DEBUG_CHECK_RETURN(!m_isChildBufferWithParentPass);// , "Cannot end pass that started in parent command buffer");
+
+            auto op = allocCommand<OpEndPass>();
+            m_currentPass = nullptr;
         }
 
         //--
@@ -253,13 +333,10 @@ namespace rendering
 
         void CommandWriter::opEndBlock()
         {
-            DEBUG_CHECK(m_numOpenedBlocks > 0);
+            DEBUG_CHECK_RETURN(m_numOpenedBlocks > 0);
 
-            if (m_numOpenedBlocks > 0)
-            {
-                auto op = allocCommand<OpEndBlock>();
-                m_numOpenedBlocks -= 1;
-            }
+            auto op = allocCommand<OpEndBlock>();
+            m_numOpenedBlocks -= 1;
         }
 
         //--
@@ -294,7 +371,7 @@ namespace rendering
 
         void CommandWriter::opAttachChildCommandBuffer(CommandBuffer* buffer)
         {
-            DEBUG_CHECK_EX(m_currentPass == nullptr, "External command buffers can only be attached outside the pass");
+            DEBUG_CHECK_RETURN(m_currentPass == nullptr)// , "External command buffers can only be attached outside the pass");
 
             auto op = allocCommand<OpChildBuffer>();
             op->childBuffer = buffer;
@@ -316,158 +393,70 @@ namespace rendering
 
         //--
 
-#define DEBUG_CHECK_PASS_ONLY() \
-        DEBUG_CHECK_EX(m_currentPass != nullptr, "No active render pass"); \
-        if (m_currentPass == nullptr) return;
-
-        void CommandWriter::opSetViewportRect(uint8_t viewport, const base::Rect& viewportRect)
+        void CommandWriter::opSetViewportRect(uint8_t viewport, const base::Rect& viewportRect, float depthMin, float depthMax)
         {
-            DEBUG_CHECK_PASS_ONLY();
-            DEBUG_CHECK_EX(viewport < m_currentPassViewports, "Invalid viewport index, current pass defines less viewports");
-            DEBUG_CHECK_EX(viewportRect.width() >= 0, "Width can't be negataive");
-            DEBUG_CHECK_EX(viewportRect.height() >= 0, "Height can't be negataive");
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(viewport < m_currentPassViewports);// "Invalid viewport index, current pass defines less view ports");
+            DEBUG_CHECK_RETURN(viewportRect.width() >= 0);// , "Width can't be negative");
+            DEBUG_CHECK_RETURN(viewportRect.height() >= 0);// , "Height can't be negative");
 
-            if (viewport < m_currentPassViewports)
-            {
-                auto op = allocCommand<OpSetViewportRect>();
-                op->viewportIndex = viewport;
-                op->rect = viewportRect;
-            }
+            auto op = allocCommand<OpSetViewportRect>();
+            op->viewportIndex = viewport;
+            op->rect = viewportRect;
+			op->depthMin = depthMin;
+			op->depthMax = depthMax;
         }
 
-        void CommandWriter::opSetViewportRect(uint8_t viewport, int x, int y, int w, int h)
+        void CommandWriter::opSetViewportRect(uint8_t viewport, int x, int y, int w, int h, float depthMin, float depthMax)
         {
-            opSetViewportRect(viewport, base::Rect(x, y, x + w, y + h));
+            opSetViewportRect(viewport, base::Rect(x, y, x + w, y + h), depthMin, depthMax);
         }
 
-        void CommandWriter::opSetViewportDepthRange(uint8_t viewport, float minZ, float maxZ)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-            DEBUG_CHECK_EX(viewport < m_currentPassViewports, "Invalid viewport index, current pass defines less viewports");
+		void CommandWriter::opSetBlendConstant(const base::Color& color)
+		{
+			opSetBlendConstant(color.toVectorLinear());
+		}
 
-            if (viewport < m_currentPassViewports)
-            {
-                auto op = allocCommand<OpSetViewportDepthRange>();
-                op->viewportIndex = viewport;
-                op->minZ = minZ;
-                op->maxZ = maxZ;
-            }
-        }
+		void CommandWriter::opSetBlendConstant(const base::Vector4& color)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
-        void CommandWriter::opSetColorMask(uint8_t rtIndex /*= 0*/, uint8_t mask /*= 0xF*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-            DEBUG_CHECK_EX(rtIndex < m_currentPassRts, "Invalid color render target index, current pass defines less color render targets");
+			auto op = allocCommand<OpSetBlendColor>();
+			op->color[0] = color.x;
+			op->color[1] = color.y;
+			op->color[2] = color.z;
+			op->color[3] = color.w;
+		}
 
-            if (rtIndex < m_currentPassRts)
-            {
-                auto op = allocCommand<OpSetColorMask>();
-                op->rtIndex = rtIndex;
-                op->colorMask = mask;
-            }
-        }
+		void CommandWriter::opSetBlendConstant(float r /*= 1.0f*/, float g /*= 1.0f*/, float b /*= 1.0f*/, float a /*= 1.0f*/)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
-        void CommandWriter::opSetBlendState(uint8_t renderTargetIndex, const BlendState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-            DEBUG_CHECK_EX(renderTargetIndex < m_currentPassRts, "Invalid color render target index, current pass defines less color render targets");
+			auto op = allocCommand<OpSetBlendColor>();
+			op->color[0] = r;
+			op->color[1] = g;
+			op->color[2] = b;
+			op->color[3] = a;
+		}
 
-            if (renderTargetIndex < m_currentPassRts)
-            {
-                auto op = allocCommand<OpSetBlendState>();
-                op->rtIndex = renderTargetIndex;
-                op->state = state;
-            }
-        }
+		void CommandWriter::opSetLineWidth(float lineWidth)
+		{
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
-        void CommandWriter::opSetBlendState(uint8_t renderTargetIndex)
-        {
-            BlendState state;
-            opSetBlendState(renderTargetIndex, state);
-        }
-
-        void CommandWriter::opSetBlendState(uint8_t renderTargetIndex, BlendFactor src, BlendFactor dest)
-        {
-            BlendState state;
-            state.srcAlphaBlendFactor = state.srcColorBlendFactor = src;
-            state.destAlphaBlendFactor = state.destColorBlendFactor = dest;
-            opSetBlendState(renderTargetIndex, state);
-        }
-
-        void CommandWriter::opSetBlendState(uint8_t renderTargetIndex, BlendOp op, BlendFactor src, BlendFactor dest)
-        {
-            BlendState state;
-            state.srcAlphaBlendFactor = state.srcColorBlendFactor = src;
-            state.destAlphaBlendFactor = state.destColorBlendFactor = dest;
-            state.colorBlendOp = state.alphaBlendOp = op;
-            opSetBlendState(renderTargetIndex, state);
-        }
-
-        void CommandWriter::opSetBlendState(uint8_t renderTargetIndex, BlendFactor srcColor, BlendFactor destColor, BlendFactor srcAlpha, BlendFactor destAlpha)
-        {
-            BlendState state;
-            state.srcAlphaBlendFactor = srcAlpha;
-            state.srcColorBlendFactor = srcColor;
-            state.destAlphaBlendFactor = destAlpha;
-            state.destColorBlendFactor = destColor;
-            opSetBlendState(renderTargetIndex, state);
-        }
-
-        void CommandWriter::opSetCullState(CullMode mode /*= CullMode::Back*/, FrontFace face /*= FrontFace::CW*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetCullState>();
-            op->state.face = face;
-            op->state.mode = mode;
-        }
-
-        void CommandWriter::opSetCullState(const CullState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetCullState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetFillState(const FillState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetFillState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetFillState(PolygonMode mode /*= PolygonMode::Fill*/, float lineWidth /*= 1.0f*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetFillState>();
-            op->state.lineWidth = lineWidth;
-            op->state.mode = mode;
-        }
-
-        void CommandWriter::opSetScissorState(bool enabled)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetScissorState>();
-            op->state = enabled;
+            auto op = allocCommand<OpSetLineWidth>();
+			op->width = lineWidth;
         }
 
         void CommandWriter::opSetScissorRect(uint8_t viewportIndex, const base::Rect& scissorRect)
         {
-            DEBUG_CHECK_PASS_ONLY();
-            DEBUG_CHECK_EX(viewportIndex < m_currentPassViewports, "Invalid viewport index, current pass defines less viewports");
-            DEBUG_CHECK_EX(scissorRect.width() >= 0, "Width can't be negataive");
-            DEBUG_CHECK_EX(scissorRect.height() >= 0, "Height can't be negataive");
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(viewportIndex < m_currentPassViewports);// , "Invalid viewport index, current pass defines less viewports");
+            DEBUG_CHECK_RETURN(scissorRect.width() >= 0);// "Width can't be negataive");
+            DEBUG_CHECK_RETURN(scissorRect.height() >= 0);//, "Height can't be negataive");
 
-            if (viewportIndex < m_currentPassViewports)
-            {
-                auto op = allocCommand<OpSetScissorRect>();
-                op->viewportIndex = viewportIndex;
-                op->rect = scissorRect;
-            }
+            auto op = allocCommand<OpSetScissorRect>();
+            op->viewportIndex = viewportIndex;
+            op->rect = scissorRect;
         }
 
         void CommandWriter::opSetScissorRect(uint8_t viewportIndex, int x, int y, int w, int h)
@@ -480,66 +469,9 @@ namespace rendering
             opSetScissorRect(viewportIndex, base::Rect(x0, y0, x1, y1));
         }
 
-        void CommandWriter::opSetStencilState(const StencilState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetStencilState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetStencilState(const StencilSideState& commonFaceState)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetStencilState>();
-            op->state.enabled = 1;
-            op->state.front = commonFaceState;
-            op->state.back = commonFaceState;
-        }
-
-        void CommandWriter::opSetStencilState()
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetStencilState>();
-            op->state.enabled = 0;
-            op->state.front = StencilSideState();
-            op->state.back = StencilSideState();
-        }
-
-        void CommandWriter::opSetStencilState(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp, uint8_t reference /*= 0*/, uint8_t compareMask /*= 0xFF*/, uint8_t writeMask /*= 0xFF*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            StencilSideState state;
-            state.compareOp = compareOp;
-            state.failOp = failOp;
-            state.depthFailOp = depthFailOp;
-            state.passOp = passOp;
-            state.referenceValue = reference;
-            state.writeMask = writeMask;
-            state.compareMask = compareMask;
-
-            auto op = allocCommand<OpSetStencilState>();
-            op->state.enabled = 1;
-            op->state.front = state;
-            op->state.back = state;
-        }
-
-        void CommandWriter::opSetStencilState(const StencilSideState& frontState, const StencilSideState& backState)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetStencilState>();
-            op->state.enabled = 1;
-            op->state.front = frontState;
-            op->state.back = backState;
-        }
-
         void CommandWriter::opSetStencilReferenceValue(uint8_t value)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op  = allocCommand<OpSetStencilReference>();
             op->front = value;
@@ -548,7 +480,7 @@ namespace rendering
 
         void CommandWriter::opSetStencilReferenceValue(uint8_t frontValue, uint8_t backValue)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op = allocCommand<OpSetStencilReference>();
             op->front = frontValue;
@@ -557,7 +489,7 @@ namespace rendering
 
         void CommandWriter::opSetStencilCompareMask(uint8_t mask)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op  = allocCommand<OpSetStencilCompareMask>();
             op->front = mask;
@@ -566,7 +498,7 @@ namespace rendering
 
         void CommandWriter::opSetStencilCompareMask(uint8_t frontValue, uint8_t backValue)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op = allocCommand<OpSetStencilCompareMask>();
             op->front = frontValue;
@@ -575,7 +507,7 @@ namespace rendering
 
         void CommandWriter::opSetStencilWriteMask(uint8_t mask)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op  = allocCommand<OpSetStencilWriteMask>();
             op->front = mask;
@@ -584,249 +516,387 @@ namespace rendering
 
         void CommandWriter::opSetStencilWriteMask(uint8_t front, uint8_t back)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
             auto op = allocCommand<OpSetStencilWriteMask>();
             op->front = front;
             op->back = back;
         }
 
-        void CommandWriter::opSetDepthState(bool enable /*= true*/, bool write /*= true*/, CompareOp func /*= CompareOp::LessEqual*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
+		void CommandWriter::opSetDepthClip(float minBounds, float maxBounds)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
-            DepthState state;
-            state.enabled = enable;
-            state.writeEnabled = write;
-            state.depthCompareOp = func;
+			auto op = allocCommand<OpSetDepthClip>();
+			op->min = minBounds;
+			op->max = maxBounds;
+		}
 
-            auto op = allocCommand<OpSetDepthState>();
-            op->state = state;
-        }
+		void CommandWriter::opSetDepthBias(float constant, float slopeFactor /*= 0.0f*/, float clampValue /*= -1.0f*/)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
-        void CommandWriter::opSetDepthState(const DepthState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op  = allocCommand<OpSetDepthState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetDepthClip(const DepthClipState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetDepthClipState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetDepthClip(bool enabled, float min, float max)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetDepthClipState>();
-            op->state.enabled = enabled;
-            op->state.clipMin = min;
-            op->state.clipMax = max;
-        }
-
-        void CommandWriter::opSetDepthBias(const DepthBiasState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetDepthBiasState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetDepthBias(float constant, float slope, float clampValue)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op  = allocCommand<OpSetDepthBiasState>();
-            op->state.enabled = 1;
-            op->state.constant = constant;
-            op->state.slope = slope;
-            op->state.clamp = clampValue;
-        }
-
-        void CommandWriter::opSetPrimitiveState(const PrimitiveAssemblyState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetPrimitiveAssemblyState>();
-            op->state = state;
-        }
-
-        void CommandWriter::opSetPrimitiveType(PrimitiveTopology topology, bool enableVertexRestart /*= false*/)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetPrimitiveAssemblyState>();
-            op->state.topology = topology;
-            op->state.restartEnabled = enableVertexRestart ? 1 : 0;
-        }
-
-        void CommandWriter::opSetMultisampleState(const MultisampleState& state)
-        {
-            DEBUG_CHECK_PASS_ONLY();
-
-            auto op = allocCommand<OpSetMultisampleState>();
-            op->state = state;
-        }
+			auto op = allocCommand<OpSetDepthBias>();
+			op->constant = constant;
+			op->slope = slopeFactor;
+			op->clamp = clampValue;
+		}
 
         //--
 
-        void CommandWriter::opClearPassColor(uint32_t index, const base::Vector4& color)
+        void CommandWriter::opClearPassRenderTarget(uint32_t index, const base::Vector4& color)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(index < m_currentPassRts);// , "Invalid render target index");
+            DEBUG_CHECK_RETURN(m_currentPass->frameBuffer.color[index]);// , "Clearing color render target that was never bound");
 
-            DEBUG_CHECK_EX(index < m_currentPassRts, "Invalid render target index");
-            if (index < m_currentPassRts)
-            {
-                DEBUG_CHECK_EX(m_currentPass->frameBuffer.color[index], "Clearing color render target that was never bound");
-                if (m_currentPass->frameBuffer.color[index])
-                {
-                    auto op = allocCommand<OpClearPassColor>();
-                    op->index = index;
-                    op->color[0] = color.x;
-                    op->color[1] = color.y;
-                    op->color[2] = color.z;
-                    op->color[3] = color.w;
-                }
-            }
+            auto op = allocCommand<OpClearPassRenderTarget>();
+            op->index = index;
+            op->color[0] = color.x;
+            op->color[1] = color.y;
+            op->color[2] = color.z;
+            op->color[3] = color.w;
         }
 
         void CommandWriter::opClearPassDepthStencil(float depth, uint8_t stencil, bool doClearDepth /*= true*/, bool doClearStencil /*= true*/)
         {
-            DEBUG_CHECK_PASS_ONLY();
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(m_currentPass->frameBuffer.depth);// , "Clearing color render target that was never bound");
 
-            DEBUG_CHECK_EX(m_currentPass->frameBuffer.depth, "Clearing color render target that was never bound");
-            if (m_currentPass->frameBuffer.depth)
+            if (doClearStencil || doClearDepth)
             {
-                if (doClearStencil || doClearDepth)
-                {
-                    DEBUG_CHECK_EX(m_currentPass, "Should be in pass");
-                    DEBUG_CHECK_EX(m_currentPass->frameBuffer.depth, "Depth stencil not used in pass");
-
-                    auto op = allocCommand<OpClearPassDepthStencil>();
-                    op->depthValue = depth;
-                    op->stencilValue = stencil;
-                    op->clearFlags = (doClearDepth ? 1 : 0) | (doClearStencil ? 2 : 0);
-                }
+                auto op = allocCommand<OpClearPassDepthStencil>();
+                op->depthValue = depth;
+                op->stencilValue = stencil;
+                op->clearFlags = (doClearDepth ? 1 : 0) | (doClearStencil ? 2 : 0);
             }
         }
 
-        void CommandWriter::opClearBuffer(BufferView view, const void* clearValue /*= nullptr*/, uint32_t clearValueSize /*= 0*/)
+		void CommandWriter::opClear(const IDeviceObjectView* writableView, ImageFormat clearFormat, const void* clearValue, const base::image::ImageRect* rects, uint32_t numRects)
+		{
+			DEBUG_CHECK_RETURN(writableView);
+
+			uint32_t payloadDataSize = 0;
+			uint32_t clearValueSize = 0;
+			uint32_t colorValuePayloadOffset = 0;
+
+			if (auto* bufferView = base::rtti_cast<BufferWritableView>(writableView))
+			{
+				DEBUG_CHECK_RETURN(clearFormat == bufferView->format());
+				clearValueSize = GetImageFormatInfo(clearFormat).bitsPerPixel / 8;
+				payloadDataSize = clearValueSize;
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				DEBUG_CHECK_RETURN(ensureResourceState(writableView->object(), ResourceLayout::UAV));
+#endif
+
+				if (numRects != 0)
+				{
+					const auto bufferSize = bufferView->size();
+
+					for (uint32_t i = 0; i < numRects; ++i)
+					{
+						const auto& r = rects[i];
+						DEBUG_CHECK_RETURN(r.offsetX < bufferSize);
+						DEBUG_CHECK_RETURN(r.offsetY != 0);
+						DEBUG_CHECK_RETURN(r.offsetZ != 0);
+						DEBUG_CHECK_RETURN(r.offsetX + r.sizeX < bufferSize);
+						DEBUG_CHECK_RETURN(r.sizeY != 1);
+						DEBUG_CHECK_RETURN(r.sizeZ != 1);
+
+						const auto totalOffset = bufferView->offset() + r.offsetX;
+						DEBUG_CHECK_RETURN(totalOffset % clearValueSize == 0);
+						DEBUG_CHECK_RETURN(r.sizeX % clearValueSize == 0);
+					}
+
+					colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
+					payloadDataSize += colorValuePayloadOffset;
+				}
+			}
+			else if (auto* imageView = base::rtti_cast<ImageWritableView>(writableView))
+			{
+				const auto* image = imageView->image();
+				DEBUG_CHECK_RETURN(image != nullptr);
+				DEBUG_CHECK_RETURN(image->format() != ImageFormat::UNKNOWN);
+				DEBUG_CHECK_RETURN((numRects != 0 && rects != nullptr) || (numRects == 0 && rects == nullptr));
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				{
+					SubImageRegion region;
+					region.firstMip = imageView->mip();
+					region.numMips = 1;
+					region.firstSlice = imageView->slice();
+					region.numSlices = 1;
+					DEBUG_CHECK_RETURN(ensureResourceState(writableView->object(), ResourceLayout::UAV, &region));
+				}
+#endif
+
+				DEBUG_CHECK_RETURN(clearFormat == image->format()); // for now
+				clearValueSize = GetImageFormatInfo(clearFormat).bitsPerPixel / 8;
+				payloadDataSize = clearValueSize;
+
+				if (numRects != 0)
+				{
+					const auto mipWidth = std::max<uint32_t>(1, image->width() >> imageView->mip());
+					const auto mipHeight = std::max<uint32_t>(1, image->height() >> imageView->mip());
+					const auto mipDepth = std::max<uint32_t>(1, image->depth() >> imageView->mip());
+
+					for (uint32_t i = 0; i < numRects; ++i)
+					{
+						const auto& r = rects[i];
+						DEBUG_CHECK_RETURN(r.offsetX < mipWidth);
+						DEBUG_CHECK_RETURN(r.offsetY < mipHeight);
+						DEBUG_CHECK_RETURN(r.offsetZ < mipDepth);
+						DEBUG_CHECK_RETURN(r.offsetX + r.sizeX < mipWidth);
+						DEBUG_CHECK_RETURN(r.offsetY + r.sizeY < mipHeight);
+						DEBUG_CHECK_RETURN(r.offsetZ + r.sizeZ < mipDepth);
+					}
+
+					colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
+					payloadDataSize += colorValuePayloadOffset;
+				}
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN(!"Invalid view type");
+			}
+
+			auto op = allocCommand<OpClear>(payloadDataSize);
+			op->view = writableView->viewId();
+			op->clearFormat = clearFormat;
+
+			if (numRects)
+				memcpy(op->payload(), rects, sizeof(base::image::ImageRect) * numRects);
+
+			if (clearValue)
+				memcpy(op->payload<uint8_t>() + colorValuePayloadOffset, clearValue, clearValueSize);
+			else
+				memzero(op->payload<uint8_t>() + colorValuePayloadOffset, clearValueSize);
+		}
+
+        void CommandWriter::opClearWritableBuffer(const BufferWritableView* view, const void* clearValue /*= nullptr*/, uint32_t offset /*= 0*/, uint32_t size /*= INDEX_MAX*/)
         {
-            DEBUG_CHECK_EX(view.id(), "Invalid buffer");
+			DEBUG_CHECK_RETURN(view);
+
+			DEBUG_CHECK_RETURN(view->format() != ImageFormat::UNKNOWN);
+			DEBUG_CHECK_RETURN(offset < view->size());
+
+			if (size == INDEX_MAX)
+				size = view->size() - offset;
+
+			DEBUG_CHECK_RETURN(size > 0);
+			DEBUG_CHECK_RETURN(offset + size <= view->size());
+
+			if (offset == 0 && size == view->size())
+			{
+				opClear(view, view->format(), clearValue);
+			}
+			else
+			{
+				base::image::ImageRect rect(offset, size);
+				opClear(view, view->format(), clearValue, &rect, 1);
+			}
         }
 
-        void CommandWriter::opClearImage(ImageView view, const void* clearValue /*= nullptr*/, uint32_t clearValueSize /*= 0*/)
+        void CommandWriter::opClearWritableImage(const ImageWritableView* view, ImageFormat clearFormat, const void* clearValue /*= nullptr*/)
         {
-            DEBUG_CHECK_EX(view.id(), "Invalid image");
+			DEBUG_CHECK_RETURN(view);
+
+			const auto* image = view->image();
+			DEBUG_CHECK_RETURN(image != nullptr);
+			DEBUG_CHECK_RETURN(image->format() != ImageFormat::UNKNOWN);
+
+			opClear(view, clearFormat, clearValue, nullptr, 0);
         }
 
-        void CommandWriter::opResolve(const ImageView& msaaSource, const ImageView& nonMsaaDest, uint32_t sampleMask /*= INDEX_NONE*/, uint8_t depthSampleIndex /*= 0*/)
+        void CommandWriter::opClearRenderTarget(const RenderTargetView * view, const base::Vector4 & values, const base::Rect * rects /*= nullptr*/, uint32_t numRects /*= 0*/)
         {
-            DEBUG_CHECK_EX(msaaSource, "Invalid source");
-            DEBUG_CHECK_EX(nonMsaaDest, "Invalid destination");
-            DEBUG_CHECK_EX(msaaSource.viewType() == ImageViewType::View2D, "Only 2D images are supported for resolve");
-            DEBUG_CHECK_EX(nonMsaaDest.viewType() == ImageViewType::View2D, "Only 2D images are supported for resolve"); // HMMM, may not be necessary
-            //DEBUG_CHECK_EX(msaaSource.multisampled() && msaaSource.numSamples() > 1, "Source should be multisampled");
-            DEBUG_CHECK_EX(!nonMsaaDest.multisampled(), "Destination should not be multisampled");
-            DEBUG_CHECK_EX(msaaSource.format() == nonMsaaDest.format(), "Source and Destination must have the same format");
-            DEBUG_CHECK_EX(msaaSource.width() == nonMsaaDest.width() && msaaSource.height() == nonMsaaDest.height(), "Source and Destination must have the same size");
+			DEBUG_CHECK_RETURN(view);
+			DEBUG_CHECK_RETURN(!view->depth());
 
-            if (msaaSource && msaaSource.viewType() == ImageViewType::View2D)// && msaaSource.multisampled())
-            {
-                if (nonMsaaDest && nonMsaaDest.viewType() == ImageViewType::View2D && !nonMsaaDest.multisampled())
-                {
-                    if (msaaSource.format() == nonMsaaDest.format() && msaaSource.width() == nonMsaaDest.width() && msaaSource.height() == nonMsaaDest.height())
-                    {
-                        auto op = allocCommand<OpResolve>();
-                        op->msaaSource = msaaSource;
-                        op->nonMsaaDest = nonMsaaDest;
-                        op->sampleMask = sampleMask;
-                        op->depthSampleIndex = depthSampleIndex;
-                    }
-                }
-            }
+			for (uint32_t i = 0; i < numRects; ++i)
+			{
+				const auto& r = rects[i];
+				DEBUG_CHECK_RETURN(r.min.x >= 0);
+				DEBUG_CHECK_RETURN(r.min.y >= 0);
+				DEBUG_CHECK_RETURN(r.max.x <= view->width());
+				DEBUG_CHECK_RETURN(r.max.y <= view->height());
+			}
+
+			const auto payloadDataSize = sizeof(base::Rect) * numRects;
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			{
+				SubImageRegion region;
+				region.firstMip = view->mip();
+				region.numMips = 1;
+				region.firstSlice = view->firstSlice();
+				region.numSlices = view->slices();
+				DEBUG_CHECK_RETURN(ensureResourceState(view->object(), ResourceLayout::RenderTarget, &region));
+			}
+#endif
+
+			auto op = allocCommand<OpClearRenderTarget>(payloadDataSize);
+			op->view = view->viewId();
+			op->color[0] = values.x;
+			op->color[1] = values.y;
+			op->color[2] = values.z;
+			op->color[3] = values.w;
+			op->numRects = numRects;
+
+			if (payloadDataSize)
+				memcpy(op->payload(), rects, payloadDataSize);
         }
 
-        void CommandWriter::opBindVertexBuffer(base::StringID bindpoint, BufferView buffer, uint32_t offset /*= 0*/)
+        void CommandWriter::opClearDepthStencil(const RenderTargetView* view, bool doClearDepth, bool doClearStencil, float clearDepth, uint32_t clearStencil, const base::Rect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
         {
-            DEBUG_CHECK_EX(bindpoint, "Invalid bind point");
-            if (bindpoint)
-            {
-                DEBUG_CHECK_EX(buffer.id(), "Invalid vertex buffer");
-                DEBUG_CHECK_EX(buffer.vertex(), "Buffer was not created with inteded use as vertex buffer");
-                DEBUG_CHECK_EX(offset < buffer.size(), "Offset to vertex data is not within the buffer");
+			DEBUG_CHECK_RETURN(view);
+			DEBUG_CHECK_RETURN(view->depth());
+			DEBUG_CHECK_RETURN(doClearStencil || doClearStencil);
 
-                auto op = allocCommand<OpBindVertexBuffer>();
-                op->bindpoint = bindpoint;
+			for (uint32_t i = 0; i < numRects; ++i)
+			{
+				const auto& r = rects[i];
+				DEBUG_CHECK_RETURN(r.min.x >= 0);
+				DEBUG_CHECK_RETURN(r.min.y >= 0);
+				DEBUG_CHECK_RETURN(r.max.x <= view->width());
+				DEBUG_CHECK_RETURN(r.max.y <= view->height());
+			}
 
-                if (buffer.id() && buffer.vertex() && (offset < buffer.size()))
-                {
-                    op->offset = offset;
-                    op->buffer = buffer;
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			{
+				SubImageRegion region;
+				region.firstMip = view->mip();
+				region.numMips = 1;
+				region.firstSlice = view->firstSlice();
+				region.numSlices = view->slices();
+				DEBUG_CHECK_RETURN(ensureResourceState(view->object(), ResourceLayout::DepthWrite, &region));
+			}
+#endif
 
-                    m_currentVertexBufferRemainingSize[bindpoint] = buffer.size() - offset;
-                }
-                else
-                {
-                    op->offset = 0;
-                    op->buffer = BufferView();
+			const auto payloadDataSize = sizeof(base::Rect) * numRects;
 
-                    m_currentVertexBufferRemainingSize[bindpoint] = 0;
-                }
-            }
+			auto op = allocCommand<OpClearDepthStencil>(payloadDataSize);
+			op->view = view->viewId();
+			op->stencilValue = clearStencil;
+			op->depthValue = clearDepth;
+			op->clearFlags = 0;
+			if (doClearDepth)
+				op->clearFlags = 1;
+			if (doClearStencil)
+				op->clearFlags |= 1;
+
+			if (payloadDataSize)
+				memcpy(op->payload(), rects, payloadDataSize);
+        }
+
+		static bool FormatsComaptibleForResolve(ImageFormat src, ImageFormat dest)
+		{
+			// TODO: some formats can be resolved R32F -> R32UI, etc
+			return src == dest;
+		}
+
+        void CommandWriter::opResolve(const ImageObject* msaaSource, const ImageObject* nonMsaaDest, uint8_t sourceMip /*= 0*/, uint8_t destMip /*= 0*/, uint16_t sourceSlice /*= 0*/, uint16_t destSlice /*= 0*/)
+        {
+            DEBUG_CHECK_RETURN_EX(msaaSource , "Invalid source");
+            DEBUG_CHECK_RETURN_EX(nonMsaaDest, "Invalid destination");
+			DEBUG_CHECK_RETURN_EX(msaaSource != nonMsaaDest, "Can resolve to the same resource");
+            //DEBUG_CHECK_RETURN_EX(msaaSource->multisampled() && msaaSource->samples() > 1, "Source should be multisampled");
+            DEBUG_CHECK_RETURN_EX(!nonMsaaDest->multisampled(), "Destination should not be multisampled");
+            DEBUG_CHECK_RETURN_EX(FormatsComaptibleForResolve(msaaSource->format(), nonMsaaDest->format()), "Source and Destination must have the same format");
+            DEBUG_CHECK_RETURN_EX(msaaSource->width() == nonMsaaDest->width() && msaaSource->height() == nonMsaaDest->height(), "Source and Destination must have the same size");
+
+			DEBUG_CHECK_RETURN_EX(msaaSource->type() == ImageViewType::View2D || msaaSource->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
+			DEBUG_CHECK_RETURN_EX(nonMsaaDest->type() == ImageViewType::View2D || nonMsaaDest->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
+
+			DEBUG_CHECK_RETURN_EX(sourceMip < msaaSource->mips(), "Invalid source mip index");
+			DEBUG_CHECK_RETURN_EX(destMip < nonMsaaDest->mips(), "Invalid dest mip index");
+			DEBUG_CHECK_RETURN_EX(sourceSlice < msaaSource->slices(), "Invalid source mip index");
+			DEBUG_CHECK_RETURN_EX(destSlice < nonMsaaDest->slices(), "Invalid dest mip index");
+
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			{
+				SubImageRegion srcRegion;
+				srcRegion.firstMip = sourceMip;
+				srcRegion.firstSlice = sourceSlice;
+				srcRegion.numMips = 1;
+				srcRegion.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(msaaSource, ResourceLayout::ResolveSource, &srcRegion));
+
+				SubImageRegion destRegion;
+				destRegion.firstMip = destMip;
+				destRegion.firstSlice = destSlice;
+				destRegion.numMips = 1;
+				destRegion.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(nonMsaaDest, ResourceLayout::ResolveDest, &destRegion));
+			}
+#endif
+
+            auto op = allocCommand<OpResolve>();
+            op->source = msaaSource->id();
+            op->dest = nonMsaaDest->id();
+			op->sourceMip = sourceMip;
+			op->sourceSlice = sourceSlice;
+			op->destMip = destMip;
+			op->destSlice = destSlice;            
+        }
+
+        void CommandWriter::opBindVertexBuffer(base::StringID bindpoint, const BufferObject* buffer, uint32_t offset /*= 0*/)
+        {
+            DEBUG_CHECK_RETURN(bindpoint);// , "Invalid bind point");
+            DEBUG_CHECK_RETURN(buffer);// .id(), "Invalid vertex buffer");
+            DEBUG_CHECK_RETURN(buffer->vertex());// , "Buffer was not created with inteded use as vertex buffer");
+            DEBUG_CHECK_RETURN(offset < buffer->size());// , "Offset to vertex data is not within the buffer");
+
+            auto op = allocCommand<OpBindVertexBuffer>();
+            op->bindpoint = bindpoint;
+            op->offset = offset;
+            op->id = buffer->id();
+
+#ifdef VALIDATE_VERTEX_LAYOUTS
+            m_currentVertexBufferRemainingSize[bindpoint] = buffer->size() - offset;
+			m_currentVertexBuffers[bindpoint] = AddRef(buffer);
+#endif
         }
 
         void CommandWriter::opUnbindVertexBuffer(base::StringID bindpoint)
         {
-            DEBUG_CHECK_EX(bindpoint, "Invalid bind point");
+            DEBUG_CHECK_RETURN(bindpoint);// , "Invalid bind point");
 
-            if (bindpoint)
-            {
-                auto op = allocCommand<OpBindVertexBuffer>();
-                op->bindpoint = bindpoint;
-                op->offset = 0;
-                op->buffer = BufferView();
+            auto op = allocCommand<OpBindVertexBuffer>();
+            op->bindpoint = bindpoint;
+            op->offset = 0;
+            op->id = ObjectID();
 
-                m_currentVertexBufferRemainingSize[bindpoint] = 0;
-            }
+#ifdef VALIDATE_VERTEX_LAYOUTS
+            m_currentVertexBufferRemainingSize[bindpoint] = 0;
+			m_currentVertexBuffers[bindpoint] = nullptr;
+#endif
         }
 
-        void CommandWriter::opBindIndexBuffer(BufferView buffer, ImageFormat indexFormat, uint32_t offset /*= 0*/)
+        void CommandWriter::opBindIndexBuffer(const BufferObject* buffer, ImageFormat indexFormat, uint32_t offset /*= 0*/)
         {
-            DEBUG_CHECK_EX(buffer.id(), "Invalid index buffer");
-            DEBUG_CHECK_EX(buffer.index(), "Buffer was not created with inteded use as index buffer");
-            DEBUG_CHECK_EX(indexFormat == ImageFormat::R32_UINT || indexFormat == ImageFormat::R16_UINT, "Invalid index buffer format");
-            DEBUG_CHECK_EX(indexFormat != ImageFormat::R32_UINT || (0 == (offset % 4)), "Index data must be aligned");
-            DEBUG_CHECK_EX(indexFormat != ImageFormat::R16_UINT || (0 == (offset % 2)), "Index data must be aligned");
-            DEBUG_CHECK_EX(offset < buffer.size(), "Offset to index data is not within the buffer");
+            DEBUG_CHECK_RETURN(buffer);// .id(), "Invalid index buffer");
+            DEBUG_CHECK_RETURN(buffer->index());// "Buffer was not created with intended use as index buffer");
+            DEBUG_CHECK_RETURN(indexFormat == ImageFormat::R32_UINT || indexFormat == ImageFormat::R16_UINT); // , "Invalid index buffer format");
+            DEBUG_CHECK_RETURN(indexFormat != ImageFormat::R32_UINT || (0 == (offset % 4))); // , "Index data must be aligned");
+            DEBUG_CHECK_RETURN(indexFormat != ImageFormat::R16_UINT || (0 == (offset % 2))); // , "Index data must be aligned");
+            DEBUG_CHECK_RETURN(offset < buffer->size());// , "Offset to index data is not within the buffer");
 
             auto op = allocCommand<OpBindIndexBuffer>();
+            op->offset = offset;
+            op->id = buffer->id();
+            op->format = indexFormat;
 
-            if (buffer.id() && buffer.index() && (offset < buffer.size()) && (indexFormat == ImageFormat::R32_UINT || indexFormat == ImageFormat::R16_UINT))
-            {
-                op->offset = offset;
-                op->buffer = buffer;
-                op->format = indexFormat;
-
-                if (indexFormat == ImageFormat::R32_UINT)
-                    m_currentIndexBufferElementCount = (buffer.size() - offset) / 4;
-                else
-                    m_currentIndexBufferElementCount = (buffer.size() - offset) / 2;
-            }
+#ifdef VALIDATE_VERTEX_LAYOUTS
+            if (indexFormat == ImageFormat::R32_UINT)
+                m_currentIndexBufferElementCount = (buffer->size() - offset) / 4;
             else
-            {
-                op->offset = 0;
-                op->format = ImageFormat::R32_UINT;
-                op->buffer = BufferView();
+                m_currentIndexBufferElementCount = (buffer->size() - offset) / 2;
 
-                m_currentIndexBufferElementCount = 0;
-            }
+			m_currentIndexBuffer = AddRef(buffer);
+#endif
         }
 
         void CommandWriter::opUnbindIndexBuffer()
@@ -834,202 +904,347 @@ namespace rendering
             auto op  = allocCommand<OpBindIndexBuffer>();
             op->offset = 0;
             op->format = ImageFormat::R32_UINT;
-            op->buffer = BufferView();
+            op->id = ObjectID();
 
+#ifdef VALIDATE_VERTEX_LAYOUTS
             m_currentIndexBufferElementCount = 0;
+			m_currentIndexBuffer.reset();
+#endif
         }
 
-        bool CommandWriter::validateDrawVertexLayout(const ShaderLibrary* func, uint32_t requiredVertexCount) const
+		bool CommandWriter::validateDrawIndexLayout(uint32_t requiredElementCount)
+		{
+#ifdef VALIDATE_VERTEX_LAYOUTS
+			DEBUG_CHECK_RETURN_EX_V(m_currentIndexBuffer, "No index buffer bound", false);
+			DEBUG_CHECK_RETURN_EX_V(requiredElementCount <= m_currentIndexBufferElementCount, "Not enough index elements in the buffer", false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN_V(ensureResourceState(m_currentIndexBuffer, ResourceLayout::IndexBuffer), false);
+#endif
+
+#endif
+			return true;
+		}
+
+        bool CommandWriter::validateDrawVertexLayout(const ShaderObject* func, uint32_t requiredVertexCount)
         {
-#ifndef BUILD_RELEASE
-            ObjectID funcId;
-            PipelineIndex funcIndex;
-            ShaderLibraryDataPtr programData;
-            if (func && func->resolve(funcId, funcIndex, &programData))
+#ifdef VALIDATE_VERTEX_LAYOUTS
+			DEBUG_CHECK_RETURN_V(func, false);
+			DEBUG_CHECK_RETURN_V(func->data(), false);
+
+			const auto* programData = func->data().get();
+            const auto& shaderBundleInfo = programData->shaderBundles()[func->index()];
+            DEBUG_CHECK_RETURN_EX_V(shaderBundleInfo.vertexBindingState != INVALID_PIPELINE_INDEX, "Draw functions require programs with shader bundle that contains vertex input layout, even if it's empty", false);
+
+            const auto& vertexInputState = programData->vertexInputStates()[shaderBundleInfo.vertexBindingState];
+
+            // check that we have a vertex buffer for each referenced binding point
+            for (uint32_t i = 0; i < vertexInputState.numStreamLayouts; ++i)
             {
-                const auto& shaderBundleInfo = programData->shaderBundles()[funcIndex];
+                const auto& vertexInputLayout = programData->vertexInputLayouts()[programData->indirectIndices()[i + vertexInputState.firstStreamLayout]];
+                const auto name = programData->names()[vertexInputLayout.name];
 
-                DEBUG_CHECK_EX(shaderBundleInfo.vertexBindingState != INVALID_PIPELINE_INDEX, "Draw functions require programs with shader bundle that contains vertex input layout, even if it's empty");
-                if (shaderBundleInfo.vertexBindingState == INVALID_PIPELINE_INDEX)
-                    return false;
-
-                const auto& vertexInputState = programData->vertexInputStates()[shaderBundleInfo.vertexBindingState];
-
-                // check that we have a vertex buffer for each referenced binding point
-                for (uint32_t i = 0; i < vertexInputState.numStreamLayouts; ++i)
+                uint32_t dataSizeAtVertexBinding = 0;
+                bool found = m_currentVertexBufferRemainingSize.find(name, dataSizeAtVertexBinding);
+				DEBUG_CHECK_RETURN_EX_V(found, base::TempString("Missing vertex buffer '{}' for current draw call", name), false);
+                    
+                auto vertexSize = vertexInputLayout.customStride;
+                if (vertexSize == 0)
                 {
-                    const auto& vertexInputLayout = programData->vertexInputLayouts()[programData->indirectIndices()[i + vertexInputState.firstStreamLayout]];
-                    const auto name = programData->names()[vertexInputLayout.name];
-
-                    uint32_t dataSizeAtVertexBinding = 0;
-                    bool found = m_currentVertexBufferRemainingSize.find(name, dataSizeAtVertexBinding);
-                    DEBUG_CHECK_EX(found, base::TempString("Missing vertex buffer '{}' for current draw call", name));
-                    if (!found)
-                        return false;
-
-                    auto vertexSize = vertexInputLayout.customStride;
-                    if (vertexSize == 0)
-                    {
-                        const auto& structureInfo = programData->dataLayoutStructures()[vertexInputLayout.structureIndex];
-                        vertexSize = structureInfo.size;
-                    }
-
-                    auto sizeNeeded = vertexSize * requiredVertexCount;
-                    DEBUG_CHECK_EX(dataSizeAtVertexBinding >= sizeNeeded, base::TempString("Vertex buffer '{}' has not enough data for current draw call {} < {}", name, dataSizeAtVertexBinding, sizeNeeded));
-                    if (dataSizeAtVertexBinding < sizeNeeded)
-                        return false;
+                    const auto& structureInfo = programData->dataLayoutStructures()[vertexInputLayout.structureIndex];
+                    vertexSize = structureInfo.size;
                 }
+
+                auto sizeNeeded = vertexSize * requiredVertexCount;
+                DEBUG_CHECK_RETURN_EX_V(dataSizeAtVertexBinding >= sizeNeeded, base::TempString("Vertex buffer '{}' has not enough data for current draw call {} < {}", name, dataSizeAtVertexBinding, sizeNeeded), false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				{
+					const auto buffer = m_currentVertexBuffers.find(name);
+					DEBUG_CHECK_RETURN_V(buffer != nullptr, false);
+					DEBUG_CHECK_RETURN_V(ensureResourceState(buffer->get(), ResourceLayout::VertexBuffer), false);
+				}
+#endif
             }
 #endif
 
             return true;
         }
 
-        static ObjectViewType ViewTypeFromResourceType(ResourceType resourceType)
+        static DeviceObjectViewType ViewTypeFromResourceType(const ParameterResourceLayoutElement& elem)
         {
-            switch (resourceType)
+            const auto uav = (elem.access != ResourceAccess::ReadOnly);
+
+            switch (elem.type)
             {
-                case ResourceType::Buffer: return ObjectViewType::Buffer;
-                case ResourceType::Texture: return ObjectViewType::Image;
-                case ResourceType::Constants: return ObjectViewType::Constants;
+                case ResourceType::Constants: 
+                    return DeviceObjectViewType::ConstantBuffer;
+
+                case ResourceType::Buffer: 
+                    if (elem.layout != INVALID_PIPELINE_INDEX)
+                        return uav ? DeviceObjectViewType::BufferStructuredWritable : DeviceObjectViewType::BufferStructured;
+                    else
+                        return uav ? DeviceObjectViewType::BufferWritable : DeviceObjectViewType::Buffer;
+
+                case ResourceType::Texture: 
+                    return uav ? DeviceObjectViewType::ImageWritable : DeviceObjectViewType::Image;
             }
 
-            return ObjectViewType::Invalid;
+            return DeviceObjectViewType::Invalid;
         }
 
-        bool CommandWriter::validateParameterBindings(const ShaderLibrary* func) const
+        bool CommandWriter::validateParameterBindings(const ShaderObject* func)
         {
-#ifndef BUILD_RELEASE
-            ObjectID funcId;
-            PipelineIndex funcIndex;
-            ShaderLibraryDataPtr programData;
-            if (func && func->resolve(funcId, funcIndex, &programData))
+#ifdef VALIDATE_DESCRIPTOR_BINDINGS
+			DEBUG_CHECK_RETURN_V(func, false);
+			DEBUG_CHECK_RETURN_V(func->data(), false);
+
+			const auto* programData = func->data().get();
+            const auto& shaderBundleInfo = programData->shaderBundles()[func->index()];
+
+			DEBUG_CHECK_RETURN_EX_V(shaderBundleInfo.parameterBindingState != INVALID_PIPELINE_INDEX, "Draw/Dispatch functions require programs with parameter layout, even if it's empty", false);
+
+            const auto& parameterBindingState = programData->parameterBindingStates()[shaderBundleInfo.parameterBindingState];
+            for (uint32_t i = 0; i < parameterBindingState.numParameterLayoutIndices; ++i)
             {
-                const auto& shaderBundleInfo = programData->shaderBundles()[funcIndex];
+				const auto parameterLayoutIndex = programData->indirectIndices()[parameterBindingState.firstParameterLayoutIndex + i];
+                const auto& parameterLayout = programData->parameterLayouts()[parameterLayoutIndex];
 
-                DEBUG_CHECK_EX(shaderBundleInfo.parameterBindingState != INVALID_PIPELINE_INDEX, "Draw/Dispatch functions require programs with parameter layout, even if it's empty");
-                if (shaderBundleInfo.parameterBindingState == INVALID_PIPELINE_INDEX)
-                    return false;
+                const auto parameterBindingName = programData->names()[parameterLayout.name];
 
-                const auto& parameterBindingState = programData->parameterBindingStates()[shaderBundleInfo.parameterBindingState];
-                for (uint32_t i = 0; i < parameterBindingState.numParameterLayoutIndices; ++i)
-                {
-                    const auto& parameterLayout = programData->parameterLayouts()[parameterBindingState.firstParameterLayoutIndex + i];
+                const auto* currentLayout = m_currentParameterBindings.find(parameterBindingName);
+				DEBUG_CHECK_RETURN_EX_V(currentLayout != nullptr, base::TempString("Selected shader requires parameter layout '{}' that is not bound", parameterBindingName), false);
 
-                    const auto parameterBindingName = programData->names()[parameterLayout.name];
+                DEBUG_CHECK_RETURN_EX_V(currentLayout->layout().size() == parameterLayout.numElements, base::TempString("Bound parameter layout '{}' requires {} elements but {} provided",
+					parameterBindingName, parameterLayout.numElements, currentLayout->layout().size()), false);
 
-                    const auto* currentLayout = m_currentParameterBindings.find(parameterBindingName);
-                    DEBUG_CHECK_EX(currentLayout != nullptr, base::TempString("Selected shader requires parameter layout '{}' that is not bound", parameterBindingName));
-                    if (currentLayout == nullptr)
-                        return false;
+				for (uint32_t j = 0; j < parameterLayout.numElements; j++)
+				{
+					const auto& boundElemViewType = currentLayout->layout()[j];
 
-                    DEBUG_CHECK_EX(currentLayout->layout().size() == parameterLayout.numElements, base::TempString("Bound parameter layout '{}' requires {} elements but {} provided", parameterBindingName, parameterLayout.numElements, currentLayout->layout().size()));
-                    if (currentLayout->layout().size() != parameterLayout.numElements)
-                        return false;
+					const auto expectedElementIndex = programData->indirectIndices()[j + parameterLayout.firstElementIndex];
+					const auto& expectedElem = programData->parameterLayoutsElements()[expectedElementIndex];
+					const auto expectedElemName = programData->names()[expectedElem.name];
+					const auto expectedViewType = ViewTypeFromResourceType(expectedElem);
 
-                    for (uint32_t j = 0; j < parameterLayout.numElements; j++)
-                    {
-                        const auto& boundElemViewType = currentLayout->layout()[j];
+					DEBUG_CHECK_RETURN_EX_V(expectedViewType == boundElemViewType, base::TempString("Element '{}' (index {}) at binding '{}' is expected to be {} bound actually is {}",
+						expectedElemName, j, parameterBindingName, expectedViewType, boundElemViewType), false);
+				}
 
-                        const auto& expectedElem = programData->parameterLayoutsElements()[j + parameterLayout.firstElementIndex];
-                        const auto expectedElemName = programData->names()[expectedElem.name];
-                        const auto expectedViewType = ViewTypeFromResourceType(expectedElem.type);
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+				const auto* descriptorEntries = (const DescriptorEntry*)m_currentParameterData.findSafe(parameterBindingName, nullptr);
+				DEBUG_CHECK_RETURN_EX_V(descriptorEntries != nullptr, "No actual descript data found", false);
 
-                        DEBUG_CHECK_EX(expectedViewType == boundElemViewType, base::TempString("Element '{}' (index {}) at binding '{}' is expected to be {} bound actually is {}",
-                            expectedElemName, j, parameterBindingName, expectedViewType, boundElemViewType));
-                        if (expectedViewType != boundElemViewType)
-                            return false;
+				for (uint32_t j = 0; j < parameterLayout.numElements; j++)
+				{
+					const auto& descriptorEntry = descriptorEntries[j];
+					const auto expectedElementIndex = programData->indirectIndices()[j + parameterLayout.firstElementIndex];
+					const auto& expectedElem = programData->parameterLayoutsElements()[expectedElementIndex];
 
-                        // TODO: actual data check
-                        // TODO: check for matching image flags for UAV views
-                        // TODO: check for matching image format for UAV views
-                        // TODO: check for matching image dimensions (2D/2DArray, etc) 
-                        // TODO: check for matching buffer flags for UAV views
-                        // TODO: check for matching buffer stride for structured views
-                        // TODO: check for matching constant data size for constant data view
-                    }
-                }
+					switch (expectedElem.type)
+					{
+						case ResourceType::Constants:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::ConstantBuffer, false);
+							DEBUG_CHECK_RETURN_V(expectedElem.layout != INVALID_PIPELINE_INDEX, false);
+
+							if (descriptorEntry.offsetPtr) // way more common to have inlined constants
+							{
+								DEBUG_CHECK_RETURN_V(!descriptorEntry.id, false);
+
+								const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
+								DEBUG_CHECK_RETURN_V(descriptorEntry.size == structureLayoutInfo.size, false);
+							}
+							else
+							{
+								const auto* view = base::rtti_cast<BufferConstantView>(descriptorEntry.viewPtr);
+								DEBUG_CHECK_RETURN_V(view != nullptr, false);
+								DEBUG_CHECK_RETURN_V(descriptorEntry.size == 0, false);
+								DEBUG_CHECK_RETURN_V(descriptorEntry.offset == 0, false);
+
+								const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
+								DEBUG_CHECK_RETURN_V(view->size() >= structureLayoutInfo.size, false);
+							}
+
+							break;
+						}
+
+						case ResourceType::Buffer:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);;
+
+							const auto uav = (expectedElem.access != ResourceAccess::ReadOnly);
+							const auto structured = (expectedElem.layout != INVALID_PIPELINE_INDEX);
+							if (uav)
+							{
+								if (structured)
+								{
+									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferStructuredWritable, false);
+									const auto* view = base::rtti_cast<BufferWritableStructuredView>(descriptorEntry.viewPtr);
+									DEBUG_CHECK_RETURN_V(view != nullptr, false);					
+
+									const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
+									DEBUG_CHECK_RETURN_V(structureLayoutInfo.size == view->stride(), false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
+#endif
+
+								}
+								else
+								{
+									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferWritable, false);
+									const auto* view = base::rtti_cast<BufferWritableView>(descriptorEntry.viewPtr);
+									DEBUG_CHECK_RETURN_V(view != nullptr, false);
+									DEBUG_CHECK_RETURN_V(view->format() == expectedElem.format, false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
+#endif
+								}
+							}
+							else
+							{
+								if (structured)
+								{
+									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferStructured, false);
+
+									const auto* view = base::rtti_cast<BufferStructuredView>(descriptorEntry.viewPtr);
+									DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+									const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
+									DEBUG_CHECK_RETURN_V(structureLayoutInfo.size == view->stride(), false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
+#endif
+
+								}
+								else
+								{
+									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::Buffer, false);
+									const auto* view = base::rtti_cast<BufferView>(descriptorEntry.viewPtr);
+									DEBUG_CHECK_RETURN_V(view != nullptr, false);
+									DEBUG_CHECK_RETURN_V(view->format() == expectedElem.format, false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
+#endif
+								}
+							}
+
+							break;
+						}
+
+						case ResourceType::Texture:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);;
+
+							const auto uav = (expectedElem.access != ResourceAccess::ReadOnly);
+							if (uav)
+							{
+								DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::ImageWritable, false);
+								const auto* view = base::rtti_cast<ImageWritableView>(descriptorEntry.viewPtr);
+								DEBUG_CHECK_RETURN_V(view != nullptr, false);
+								DEBUG_CHECK_RETURN_V(view->image()->format() == expectedElem.format, false);
+									
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+								SubImageRegion region;
+								region.firstMip = view->mip();
+								region.numMips = 1;
+								region.firstSlice = view->slice();
+								region.numSlices = 1;
+								DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::UAV, &region), false);
+#endif
+							}
+							else
+							{
+								DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::Image, false);
+								const auto* view = base::rtti_cast<ImageView>(descriptorEntry.viewPtr);
+								DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+								SubImageRegion region;
+								region.firstMip = view->firstMip();
+								region.numMips = view->mips();
+								region.firstSlice = view->firstSlice();
+								region.numSlices = view->slices();
+								DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::ShaderResource, &region), false);
+#endif
+							}
+
+							break;
+						}
+					}
+				}
+
+
+#endif
             }
 #endif
 
             return true;
         }
 
-        void CommandWriter::opDraw(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t vertexCount)
+        void CommandWriter::opDraw(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t vertexCount)
         {
-            opDrawInstanced(shader, firstVertex, vertexCount, 0, 1);
+            opDrawInstanced(po, firstVertex, vertexCount, 0, 1);
         }
 
-        void CommandWriter::opDrawInstanced(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t vertexCount, uint16_t firstInstance, uint16_t numInstances)
+        void CommandWriter::opDrawInstanced(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t vertexCount, uint16_t firstInstance, uint16_t numInstances)
         {
-            DEBUG_CHECK_PASS_ONLY();
-
-            DEBUG_CHECK_RETURN(shader);
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(po);
             DEBUG_CHECK_RETURN(vertexCount > 0);
             DEBUG_CHECK_RETURN(numInstances > 0);
 
-            PipelineIndex shaderIndex;
-            rendering::ObjectID shaderObject;
-            if (shader->resolve(shaderObject, shaderIndex))
+            if (validateDrawVertexLayout(po->shaders(), vertexCount) && validateParameterBindings(po->shaders()))
             {
-                if (validateDrawVertexLayout(shader, vertexCount))
-                {
-                    auto op = allocCommand<OpDraw>();
-                    op->shaderLibrary = shaderObject;
-                    op->shaderIndex = shaderIndex;
-                    op->firstVertex = firstVertex;
-                    op->vertexCount = vertexCount;
-                    op->firstInstance = firstInstance;
-                    op->numInstances = numInstances;
-                }
+                auto op = allocCommand<OpDraw>();
+                op->pipelineObject = po->id();
+                op->firstVertex = firstVertex;
+                op->vertexCount = vertexCount;
+                op->firstInstance = firstInstance;
+                op->numInstances = numInstances;
             }
         }
 
-        void CommandWriter::opDrawIndexed(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount)
+        void CommandWriter::opDrawIndexed(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount)
         {
-            opDrawIndexedInstanced(shader, firstVertex, firstIndex, indexCount, 0, 1);
+            opDrawIndexedInstanced(po, firstVertex, firstIndex, indexCount, 0, 1);
         }
 
-        void CommandWriter::opDrawIndexedInstanced(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint16_t firstInstance, uint16_t numInstances)
+        void CommandWriter::opDrawIndexedInstanced(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint16_t firstInstance, uint16_t numInstances)
         {
-            DEBUG_CHECK_PASS_ONLY();
-
-            DEBUG_CHECK_RETURN(shader);
+            DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+            DEBUG_CHECK_RETURN(po);
             DEBUG_CHECK_RETURN(indexCount > 0);
             DEBUG_CHECK_RETURN(numInstances > 0);
 
-            PipelineIndex shaderIndex;
-            rendering::ObjectID shaderObject;
-
-            if (shader->resolve(shaderObject, shaderIndex))
+			const auto* shaders = po->shaders().get();
+            if (validateDrawVertexLayout(shaders, 0) && validateDrawIndexLayout(indexCount) && validateParameterBindings(shaders))
             {
-                if (validateDrawVertexLayout(shader, 0))
-                {
-                    auto op = allocCommand<OpDrawIndexed>();
-                    op->shaderLibrary = shaderObject;
-                    op->shaderIndex = shaderIndex;
-                    op->firstVertex = firstVertex;
-                    op->firstIndex = firstIndex;
-                    op->indexCount = indexCount;
-                    op->firstInstance = firstInstance;
-                    op->numInstances = numInstances;
-                }
+                auto op = allocCommand<OpDrawIndexed>();
+                op->pipelineObject = po->id();
+                op->firstVertex = firstVertex;
+                op->firstIndex = firstIndex;
+                op->indexCount = indexCount;
+                op->firstInstance = firstInstance;
+                op->numInstances = numInstances;
             }
         }
 
-        void CommandWriter::opDispatch(const ShaderLibrary* shader, uint32_t countX /*= 1*/, uint32_t countY /*= 1*/, uint32_t countZ /*= 1*/)
+        void CommandWriter::opDispatch(const ComputePipelineObject* co, uint32_t countX /*= 1*/, uint32_t countY /*= 1*/, uint32_t countZ /*= 1*/)
         {
-            DEBUG_CHECK_RETURN(shader);
+            DEBUG_CHECK_RETURN(co);
             DEBUG_CHECK_RETURN(countX > 0 && countY > 0 && countZ > 0);
 
-            PipelineIndex shaderIndex;
-            rendering::ObjectID shaderObject;
-
-            if (shader->resolve(shaderObject, shaderIndex))
+            if (validateParameterBindings(co->shaders()))
             {
                 auto op = allocCommand<OpDispatch>();
-                op->shaderLibrary = shaderObject;
-                op->shaderIndex = shaderIndex;
+                op->pipelineObject = co->id();
                 op->counts[0] = countX;
                 op->counts[1] = countY;
                 op->counts[2] = countZ;
@@ -1038,197 +1253,792 @@ namespace rendering
 
         //--
 
-        void CommandWriter::opImageLayoutBarrier(const ImageView& view, ImageLayout layout)
-        {
-            DEBUG_CHECK_EX(view.id(), "Invalid image cannot be transitioned");
+		void CommandWriter::opTransitionFlushUAV(const ImageWritableView* imageView)
+		{
+			DEBUG_CHECK_RETURN(imageView);
 
-            if (view.id())
-            {
-                auto op = allocCommand<OpImageLayoutBarrier>();
-                op->view = view;
-                op->targetLayout = layout;
-            }
-        }
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			{
+				SubImageRegion region;
+				region.firstMip = imageView->mip();
+				region.numMips = 1;
+				region.firstSlice = imageView->slice();
+				region.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(imageView->image(), ResourceLayout::UAV, &region));
+			}
+#endif
 
-        void CommandWriter::opGraphicsBarrier(Stage from, Stage to)
-        {
-            auto op  = allocCommand<OpGraphicsBarrier>();
-            op->from = from;
-            op->to = to;
+			auto op = allocCommand<OpUAVBarrier>();
+			op->viewId = imageView->viewId();
+		}
 
-            if (m_currentPass)
-                m_currentPass->hasBarriers = true;
-        }
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+		static bool LayoutCompatible(const IDeviceObject* obj, ResourceLayout incomingLayout)
+		{
+			if (const auto* buffer = base::rtti_cast<BufferObject>(obj))
+			{
+				switch (incomingLayout)
+				{
+				case ResourceLayout::Common:
+				case ResourceLayout::ConstantBuffer:
+				case ResourceLayout::VertexBuffer:
+				case ResourceLayout::IndexBuffer:
+				case ResourceLayout::UAV:
+				case ResourceLayout::ShaderResource:
+				case ResourceLayout::IndirectArgument:
+				case ResourceLayout::CopyDest:
+				case ResourceLayout::CopySource:
+				case ResourceLayout::RayTracingAcceleration:
+					return true;
+				}
+			}
+			else if (const auto* image = base::rtti_cast<ImageObject>(obj))
+			{
+				switch (incomingLayout)
+				{
+				case ResourceLayout::Common:
+				case ResourceLayout::UAV:
+				case ResourceLayout::ShaderResource:
+				case ResourceLayout::CopyDest:
+				case ResourceLayout::CopySource:
+					return true;
+
+				case ResourceLayout::RenderTarget:
+					return image->renderTarget() && !image->renderTargetDepth();
+
+				case ResourceLayout::DepthWrite:
+				case ResourceLayout::DepthRead:
+					return image->renderTarget() && image->renderTargetDepth();
+
+				case ResourceLayout::ResolveDest:
+					return image->samples() == 1;
+
+				case ResourceLayout::ResolveSource:
+					return image->renderTarget();
+				}
+			}
+
+			ASSERT(!"Unknown object type for layout tracking");
+			return false;
+		}
+
+		ResourceCurrentStateTrackingRecord* CommandWriter::createResourceStateTrackingEntry(const IDeviceObject* obj)
+		{
+			if (const auto* imageObject = base::rtti_cast<ImageObject>(obj))
+			{
+				if (imageObject->subResourceLayouts())
+				{
+					const auto entryCount = imageObject->mips() * imageObject->slices();
+					const auto memorySize = sizeof(ResourceCurrentStateTrackingRecord) + (entryCount - 1) * sizeof(ResourceCurrentStateTrackingRecord::SubResourceState);
+
+					auto* entry = (ResourceCurrentStateTrackingRecord*)allocMemory(memorySize);
+					memzero(entry, memorySize);
+
+					entry->numSubResources = entryCount;
+					entry->tracksSubResources = true;
+					entry->numImageMips = imageObject->mips();
+					entry->numImageSlices = imageObject->slices();
+
+					const auto initialLayout = imageObject->initialLayout();
+					if (initialLayout != ResourceLayout::INVALID)
+					{
+						for (uint32_t i = 0; i < entryCount; ++i)
+						{
+							entry->subResources[i].currentLayout = initialLayout;
+							entry->subResources[i].firstKnownLayout = initialLayout;
+						}
+					}
+
+					return entry;
+				}
+				else
+				{
+					auto* entry = (ResourceCurrentStateTrackingRecord*)allocMemory(sizeof(ResourceCurrentStateTrackingRecord));
+					memzero(entry, sizeof(ResourceCurrentStateTrackingRecord));
+					entry->numSubResources = 1;
+					entry->tracksSubResources = false;
+					entry->numImageMips = imageObject->mips();
+					entry->numImageSlices = imageObject->slices();
+
+					const auto initialLayout = imageObject->initialLayout();
+					if (initialLayout != ResourceLayout::INVALID)
+					{
+						entry->subResources[0].currentLayout = initialLayout;
+						entry->subResources[0].firstKnownLayout = initialLayout;
+					}
+
+					return entry;
+				}
+			}
+			else if (const auto* bufferObject = base::rtti_cast<BufferObject>(obj))
+			{
+				auto* entry = (ResourceCurrentStateTrackingRecord*)allocMemory(sizeof(ResourceCurrentStateTrackingRecord));
+				memzero(entry, sizeof(ResourceCurrentStateTrackingRecord));
+				entry->numSubResources = 1;
+				entry->tracksSubResources = false;
+
+				const auto initialLayout = bufferObject->initialLayout();
+				if (initialLayout != ResourceLayout::INVALID)
+				{
+					entry->subResources[0].currentLayout = initialLayout;
+					entry->subResources[0].firstKnownLayout = initialLayout;
+				}
+
+				return entry;
+			}
+
+			ASSERT(!"Unknown object type for layout tracking");
+			return nullptr;
+		}
+
+		bool CommandWriter::ensureResourceState(const IDeviceObject* object, ResourceLayout layout, const SubImageRegion* subImageRegion, ResourceLayout newLayout)
+		{
+			DEBUG_CHECK_RETURN_V(object, false);
+			DEBUG_CHECK_RETURN_V(layout != ResourceLayout::Common && layout != ResourceLayout::INVALID, false);
+
+			// create tracking
+			ResourceCurrentStateTrackingRecord* entry = nullptr;
+			if (!m_currentResourceState.find(object->id(), entry))
+			{
+				entry = createResourceStateTrackingEntry(object);
+				m_currentResourceState[object->id()] = entry;
+			}
+
+			// make sure resource allows sub-resource tracking
+			if (subImageRegion)
+			{
+				DEBUG_CHECK_RETURN_V(subImageRegion->firstMip < entry->numImageMips, false);
+				DEBUG_CHECK_RETURN_V(subImageRegion->firstSlice < entry->numImageSlices, false);
+				DEBUG_CHECK_RETURN_V(subImageRegion->firstMip + subImageRegion->numMips <= entry->numImageMips, false);
+				DEBUG_CHECK_RETURN_V(subImageRegion->firstSlice + subImageRegion->numSlices <= entry->numImageSlices, false);
+			}
+
+			if (entry->tracksSubResources && subImageRegion)
+			{
+				auto entryIndex = entry->numImageMips * subImageRegion->firstSlice;
+				for (uint32_t i = 0; i < subImageRegion->numSlices; ++i)
+				{
+					auto localEntryIndex = entryIndex + subImageRegion->firstMip;
+					for (uint32_t j = 0; j < subImageRegion->numMips; ++j, ++localEntryIndex)
+					{
+						auto& layoutEntry = entry->subResources[localEntryIndex];
+						if (layoutEntry.currentLayout == ResourceLayout::INVALID)
+						{
+							layoutEntry.currentLayout = layout;
+							layoutEntry.firstKnownLayout = layout;
+						}
+						else
+						{
+							DEBUG_CHECK_RETURN_EX_V(layoutEntry.currentLayout == layout, base::TempString("Sub-Resource {},{} of {} should be in layout {} but is in {}",
+								i, j, object->id(), layout, layoutEntry.currentLayout), false);
+						}
+
+						if (newLayout != ResourceLayout::INVALID)
+							layoutEntry.currentLayout = newLayout;
+					}
+
+					entryIndex += entry->numImageMips;
+				}
+			}
+			else
+			{
+				if (subImageRegion && !entry->tracksSubResources)
+				{
+					DEBUG_CHECK_RETURN_EX_V(newLayout == ResourceLayout::INVALID, "Trying to change layout of a sub-resource on a resource that is not tracking that", false);
+				}
+
+				for (uint32_t i = 0; i < entry->numSubResources; ++i)
+				{
+					auto& layoutEntry = entry->subResources[i];
+					if (layoutEntry.currentLayout == ResourceLayout::INVALID)
+					{
+						layoutEntry.currentLayout = layout;
+						layoutEntry.firstKnownLayout = layout;
+					}
+					else
+					{
+						DEBUG_CHECK_RETURN_EX_V(layoutEntry.currentLayout == layout, base::TempString("Sub-Resource {} of {} should be in layout {} but is in {}", 
+							i, object->id(), layout, layoutEntry.currentLayout), false);
+					}
+
+					if (newLayout != ResourceLayout::INVALID)
+						layoutEntry.currentLayout = newLayout;
+				}
+			}
+
+			return true;
+		}
+#endif
+
+		void CommandWriter::opTransitionLayout(const IDeviceObject* obj, ResourceLayout incomingLayout, ResourceLayout outgoingLayout)
+		{
+			DEBUG_CHECK_RETURN(obj != nullptr);
+			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN_EX(LayoutCompatible(obj, incomingLayout), base::TempString("Object '{}' has incompatible source layout {}", *obj, incomingLayout));
+			DEBUG_CHECK_RETURN_EX(LayoutCompatible(obj, outgoingLayout), base::TempString("Object '{}' has incompatible target layout {}", *obj, outgoingLayout));
+			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, nullptr, outgoingLayout));
+#endif
+
+			auto op = allocCommand<OpResourceLayoutBarrier>();
+			op->id = obj->id();
+			op->sourceLayout = incomingLayout;
+			op->targetLayout = outgoingLayout;
+			op->firstMip = 0;
+			op->numMips = 0;
+			op->firstSlice = 0;
+			op->numSlices = 0;
+		}
+
+		void CommandWriter::opTransitionImageRangeLayout(const ImageObject* obj, uint8_t firstMip, uint8_t numMips, ResourceLayout incomingLayout, ResourceLayout outgoingLayout)
+		{
+			DEBUG_CHECK_RETURN(obj != nullptr);
+			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
+			DEBUG_CHECK_RETURN(obj->subResourceLayouts());
+#endif
+			DEBUG_CHECK_RETURN(firstMip < obj->mips());
+			DEBUG_CHECK_RETURN(firstMip + numMips <= obj->mips());
+
+			SubImageRegion region;
+			region.firstMip = firstMip;
+			region.numMips = numMips;
+			region.firstSlice = 0;
+			region.numSlices = obj->slices();
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
+#endif
+
+			auto op = allocCommand<OpResourceLayoutBarrier>();
+			op->id = obj->id();
+			op->sourceLayout = incomingLayout;
+			op->targetLayout = outgoingLayout;
+			op->firstMip = firstMip;
+			op->numMips = numMips;
+			op->firstSlice = 0;
+			op->numSlices = obj->slices();
+		}
+
+		void CommandWriter::opTransitionImageArrayRangeLayout(const ImageObject* obj, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ResourceLayout incomingLayout, ResourceLayout outgoingLayout)
+		{
+			DEBUG_CHECK_RETURN(obj != nullptr);
+			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
+			DEBUG_CHECK_RETURN(obj->subResourceLayouts());
+			DEBUG_CHECK_RETURN(firstMip < obj->mips());
+			DEBUG_CHECK_RETURN(firstMip + numMips <= obj->mips());
+			DEBUG_CHECK_RETURN(firstSlice < obj->slices());
+			DEBUG_CHECK_RETURN(firstSlice + numSlices <= obj->slices());
+
+			SubImageRegion region;
+			region.firstMip = firstMip;
+			region.numMips = numMips;
+			region.firstSlice = firstSlice;
+			region.numSlices = numSlices;
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
+#endif
+			auto op = allocCommand<OpResourceLayoutBarrier>();
+			op->id = obj->id();
+			op->sourceLayout = incomingLayout;
+			op->targetLayout = outgoingLayout;
+			op->firstMip = firstMip;
+			op->numMips = numMips;
+			op->firstSlice = firstSlice;
+			op->numSlices = numSlices;
+		}
+
+		void CommandWriter::opTransitionImageArrayRangeLayout(const ImageObject* obj, uint32_t firstSlice, uint32_t numSlices, ResourceLayout incomingLayout, ResourceLayout outgoingLayout)
+		{
+			DEBUG_CHECK_RETURN(obj != nullptr);
+			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
+			DEBUG_CHECK_RETURN(obj->subResourceLayouts());
+			DEBUG_CHECK_RETURN(firstSlice < obj->slices());
+			DEBUG_CHECK_RETURN(firstSlice + numSlices <= obj->slices());
+
+			SubImageRegion region;
+			region.firstMip = 0;
+			region.numMips = obj->mips();
+			region.firstSlice = firstSlice;
+			region.numSlices = numSlices;
+
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
+#endif
+
+			auto op = allocCommand<OpResourceLayoutBarrier>();
+			op->id = obj->id();
+			op->sourceLayout = incomingLayout;
+			op->targetLayout = outgoingLayout;
+			op->firstMip = 0;
+			op->numMips = obj->mips();
+			op->firstSlice = firstSlice;
+			op->numSlices = numSlices;
+		}
 
         //--
 
-        void CommandWriter::opUpdateDynamicImage(const ImageView& dynamicImage, const base::image::ImageView& unsafeUpdateData, uint32_t offsetX /*= 0*/, uint32_t offsetY /*= 0*/, uint32_t offsetZ /*= 0*/)
+		void CommandWriter::linkUpdate(OpUpdate* op)
+		{
+			op->stagingBufferOffset = 0;
+			op->next = nullptr;
+
+			if (m_writeBuffer->m_gatheredState.dynamicBufferUpdatesHead == nullptr)
+				m_writeBuffer->m_gatheredState.dynamicBufferUpdatesHead = op;
+			else
+				m_writeBuffer->m_gatheredState.dynamicBufferUpdatesTail->next = op;
+			m_writeBuffer->m_gatheredState.dynamicBufferUpdatesTail = op;
+		}
+
+		static const uint32_t MAX_INLINED_BUFFER_PAYLOAD = 1024;
+		static const uint32_t MAX_INLINED_IMAGE_PAYLOAD = 4096;
+
+		void* CommandWriter::opUpdateDynamicPtr(const IDeviceObject* dynamicObject, const ResourceCopyRange& range)
+		{
+			DEBUG_CHECK_RETURN_V(dynamicObject, nullptr);
+
+			if (const auto* dynamicBuffer = base::rtti_cast<BufferObject>(dynamicObject))
+			{
+				DEBUG_CHECK_RETURN_V(dynamicBuffer, nullptr);// , "Unable to update invalid buffer");
+				DEBUG_CHECK_RETURN_V(dynamicBuffer->dynamic(), nullptr);// , "Dynamic update of buffer requires a buffer created with dynamic flag");
+				DEBUG_CHECK_RETURN_V(range.buffer.size, nullptr);
+
+				DEBUG_CHECK_RETURN_V(range.buffer.offset < dynamicBuffer->size(), nullptr);// , "Update offset is not within buffer bounds, something is really wrong");
+
+				auto maxUpdateSize = dynamicBuffer->size() - range.buffer.offset;
+				DEBUG_CHECK_RETURN_V(range.buffer.size <= maxUpdateSize, nullptr);// , "Dynamic data to update goes over the buffer range");
+
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				DEBUG_CHECK_RETURN_V(ensureResourceState(dynamicObject, ResourceLayout::CopyDest), nullptr);
+#endif
+
+				auto dataSize = std::min<uint32_t>(maxUpdateSize, range.buffer.size);
+				auto maxLocalPayload = std::max<uint32_t>(MAX_INLINED_BUFFER_PAYLOAD, m_writeEndPtr - m_writePtr);
+
+				OpUpdate* op;
+				if (dataSize < maxLocalPayload)
+				{
+					op = allocCommand<OpUpdate>(dataSize);
+					op->dataBlockPtr = op->payload();
+				}
+				else
+				{
+					op = allocCommand<OpUpdate>();
+					op->dataBlockPtr = m_writeBuffer->m_pages->allocateOustandingBlock(dataSize, 16);
+				}
+
+				op->id = dynamicBuffer->id();
+				op->dataBlockSize = dataSize;
+				op->range = range;
+
+				linkUpdate(op);
+
+				return op->dataBlockPtr;
+			}
+			else if (const auto* dynamicImage = base::rtti_cast<ImageObject>(dynamicObject))
+			{ 
+				DEBUG_CHECK_RETURN_V(dynamicImage, nullptr);// .id(), "Unable to update invalid image");
+				DEBUG_CHECK_RETURN_V(dynamicImage->dynamic(), nullptr);//, "Dynamic update of image requires an image created with dynamic flag");
+				DEBUG_CHECK_RETURN_V(range.image.firstMip < dynamicImage->mips(), nullptr);
+				DEBUG_CHECK_RETURN_V(range.image.firstSlice < dynamicImage->slices(), nullptr);
+				DEBUG_CHECK_RETURN_V(range.image.numMips == 1, nullptr);
+				DEBUG_CHECK_RETURN_V(range.image.numSlices == 1, nullptr);
+
+				const auto mipWidth = std::max<uint32_t>(dynamicImage->width() >> range.image.firstMip, 1);
+				const auto mipHeight = std::max<uint32_t>(dynamicImage->height() >> range.image.firstMip, 1);
+				const auto mipDepth = std::max<uint32_t>(dynamicImage->depth() >> range.image.firstMip, 1);
+				DEBUG_CHECK_RETURN_V(range.image.offsetX < mipWidth && range.image.offsetY < mipHeight && range.image.offsetZ < mipDepth, nullptr);
+
+				auto maxAllowedWidth = mipWidth - range.image.offsetX;
+				auto maxAllowedHeight = mipHeight - range.image.offsetY;
+				auto maxAllowedDepth = mipDepth - range.image.offsetZ;
+				DEBUG_CHECK_RETURN_V(range.image.sizeX <= maxAllowedWidth && range.image.sizeY <= maxAllowedHeight && range.image.sizeZ <= maxAllowedDepth, nullptr);
+
+				const auto dataSize = CalcUpdateMemorySize(dynamicImage->format(), range);
+				const auto maxLocalPayload = std::max<uint32_t>(MAX_INLINED_IMAGE_PAYLOAD, m_writeEndPtr - m_writePtr);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				{
+					SubImageRegion region;
+					region.firstMip = range.image.firstMip;
+					region.firstSlice = range.image.firstSlice;
+					region.numMips = range.image.numMips;
+					region.numSlices = range.image.numSlices;
+					DEBUG_CHECK_RETURN_V(ensureResourceState(dynamicObject, ResourceLayout::CopyDest, &region), nullptr);
+				}
+#endif
+
+				OpUpdate* op;
+				if (dataSize < maxLocalPayload)
+				{
+					op = allocCommand<OpUpdate>(dataSize);
+					op->dataBlockPtr = op->payload();
+				}
+				else
+				{
+					op = allocCommand<OpUpdate>();
+					op->dataBlockPtr = m_writeBuffer->m_pages->allocateOustandingBlock(dataSize, 16);
+				}
+
+				op->id = dynamicImage->id();
+				op->range = range;
+
+				linkUpdate(op);
+
+				return op->dataBlockPtr;
+			}
+
+			return nullptr;
+		}
+
+        void CommandWriter::opUpdateDynamicImage(const ImageObject* dynamicImage, const base::image::ImageView& sourceData, uint8_t mipIndex /*= 0*/, uint32_t sliceIndex /*= 0*/, uint32_t offsetX /*= 0*/, uint32_t offsetY /*= 0*/, uint32_t offsetZ /*= 0*/)
         {
-            DEBUG_CHECK_EX(dynamicImage.id(), "Unable to update invalid image");
-            DEBUG_CHECK_EX(dynamicImage.dynamic(), "Dynamic update of image requires an image created with dynamic flag");
-            DEBUG_CHECK_EX(!unsafeUpdateData.empty(), "Empty data for update");
+            DEBUG_CHECK_RETURN(!sourceData.empty());//, "Empty data for update");
 
-            if (dynamicImage.id() && dynamicImage.dynamic() && !unsafeUpdateData.empty())
-            {
-                DEBUG_CHECK_EX(offsetX < dynamicImage.width() && offsetY < dynamicImage.height() && offsetZ < dynamicImage.depth(), "Update offset is outside image space, something is seriously wrong");
-                if (offsetX < dynamicImage.width() && offsetY < dynamicImage.height() && offsetZ < dynamicImage.depth())
-                {
-                    auto maxAllowedWidth = dynamicImage.width() - offsetX;
-                    auto maxAllowedHeight = dynamicImage.height() - offsetY;
-                    auto maxAllowedDepth = dynamicImage.depth() - offsetZ;
+			ResourceCopyRange range;
+			range.image.firstMip = mipIndex;
+			range.image.firstSlice = sliceIndex;
+			range.image.numMips = 1;
+			range.image.numSlices = 1;
+			range.image.offsetX = offsetX;
+			range.image.offsetY = offsetY;
+			range.image.offsetZ = offsetZ;
+			range.image.sizeX = sourceData.width();
+			range.image.sizeY = sourceData.height();
+			range.image.sizeZ = sourceData.depth();
 
-                    DEBUG_CHECK_EX(unsafeUpdateData.width() <= maxAllowedWidth && unsafeUpdateData.height() <= maxAllowedHeight && unsafeUpdateData.depth() <= maxAllowedDepth, "Update data placement goes outside the target image");
+			void* targetUpdatePtr = opUpdateDynamicPtr(dynamicImage, range);
+			DEBUG_CHECK_RETURN(targetUpdatePtr);
+			
+			// copy image data into inlined storage
+			// NOTE: we use the image utilities since the image view may be a sub-rect of bigger view
+			{
+				PC_SCOPE_LVL2(InternalImageCopy);
 
-                    auto safeUpdateData = unsafeUpdateData.subView(0, 0, 0,
-                        std::min<uint32_t>(maxAllowedWidth, unsafeUpdateData.width()),
-                        std::min<uint32_t>(maxAllowedHeight, unsafeUpdateData.height()),
-                        std::min<uint32_t>(maxAllowedDepth, unsafeUpdateData.depth()));
-
-                    auto dataSize = safeUpdateData.dataSize();
-                    auto maxLocalPayload = std::max<uint32_t>(1024, m_writeEndPtr - m_writePtr);
-
-                    OpUpdateDynamicImage* op;
-                    if (dataSize < maxLocalPayload)
-                    {
-                        op = allocCommand<OpUpdateDynamicImage>(dataSize);
-                        op->dataBlockPtr = op->payload();
-                    }
-                    else
-                    {
-                        op = allocCommand<OpUpdateDynamicImage>();
-                        op->dataBlockPtr = m_writeBuffer->m_pages->allocateOustandingBlock(dataSize, 16);
-                    }
-
-                    op->view = dynamicImage;
-                    op->data = base::image::ImageView(base::image::NATIVE_LAYOUT, safeUpdateData.format(), safeUpdateData.channels(), op->dataBlockPtr, safeUpdateData.width(), safeUpdateData.height(), safeUpdateData.depth());
-                    op->placementOffset[0] = offsetX;
-                    op->placementOffset[1] = offsetY;
-                    op->placementOffset[2] = offsetZ;
-                    base::image::Copy(safeUpdateData, op->data);
-                }
-            }
+				// NOTE: we assume that pixels in the payload buffer are packed tightly (hence the native layout)
+				auto targetRect = base::image::ImageView(base::image::NATIVE_LAYOUT, sourceData.format(), sourceData.channels(), targetUpdatePtr, sourceData.width(), sourceData.height(), sourceData.depth());
+				base::image::Copy(sourceData, targetRect);
+			}
         }
 
-        void* CommandWriter::opUpdateDynamicBufferPtr(const BufferView& dynamicBuffer, uint32_t dataOffset, uint32_t dataSize)
-        {
-            DEBUG_CHECK_EX(dynamicBuffer.id(), "Unable to update invalid buffer");
-            DEBUG_CHECK_EX(dynamicBuffer.dynamic(), "Dynamic update of buffer requires a buffer created with dynamic flag");
-            
-            if (dynamicBuffer.id() && dynamicBuffer.dynamic() && dataSize)
-            {
-                DEBUG_CHECK_EX(dataOffset < dynamicBuffer.size(), "Update offset is not within buffer bounds, something is really wrong");
-                if (dataOffset < dynamicBuffer.size())
-                {
-                    auto maxUpdateSize = dynamicBuffer.size() - dataOffset;
-                    DEBUG_CHECK_EX(dataSize <= maxUpdateSize, "Dynamic data to update goes over the buffer range");
+		void CommandWriter::opUpdateDynamicBuffer(const BufferObject* dynamicBuffer, uint32_t dataOffset, uint32_t dataSize, const void* dataPtr)
+		{
+			ResourceCopyRange range;
+			range.buffer.offset = dataOffset;
+			range.buffer.size = dataSize;
 
-                    dataSize = std::min<uint32_t>(maxUpdateSize, dataSize);
-                    auto maxLocalPayload = std::max<uint32_t>(1024, m_writeEndPtr - m_writePtr);
+			void* targetUpdatePtr = opUpdateDynamicPtr(dynamicBuffer, range);
+			DEBUG_CHECK_RETURN(targetUpdatePtr);
 
-                    OpUpdateDynamicBuffer* op;
-                    if (dataSize < maxLocalPayload)
-                    {
-                        op = allocCommand<OpUpdateDynamicBuffer>(dataSize);
-                        op->dataBlockPtr = op->payload();
-                    }
-                    else
-                    {
-                        op = allocCommand<OpUpdateDynamicBuffer>();
-                        op->dataBlockPtr = m_writeBuffer->m_pages->allocateOustandingBlock(dataSize, 16);
-                    }
-
-                    //memcpy(, dataPtr, dataSize);
-                    op->view = dynamicBuffer;
-                    op->offset = dataOffset;
-                    op->dataBlockSize = dataSize;
-                    op->stagingBufferOffset = 0;
-                    op->next = nullptr;
-
-                    if (m_writeBuffer->m_gatheredState.dynamicBufferUpdatesHead == nullptr)
-                        m_writeBuffer->m_gatheredState.dynamicBufferUpdatesHead = op;
-                    else
-                        m_writeBuffer->m_gatheredState.dynamicBufferUpdatesTail->next = op;
-                    m_writeBuffer->m_gatheredState.dynamicBufferUpdatesTail = op;
-
-                    return op->dataBlockPtr;
-                }
-            }
-
-            return nullptr;
-        }
-
-        void CommandWriter::opUpdateDynamicBuffer(const BufferView& dynamicBuffer, uint32_t dataOffset, uint32_t dataSize, const void* dataPtr)
-        {
-            if (dataSize)
-            {
-                DEBUG_CHECK_EX(dataPtr, "Empty data for update");
-
-                if (auto* targetPtr = opUpdateDynamicBufferPtr(dynamicBuffer, dataOffset, dataSize))
-                    memcpy(targetPtr, dataPtr, dataSize);
-            }
-        }
+			memcpy(targetUpdatePtr, dataPtr, dataSize);
+		}
 
         //---
 
-        void CommandWriter::opCopyBuffer(const BufferView& src, const BufferView& dest, uint32_t srcOffset, uint32_t destOffset, uint32_t size)
-        {
-            DEBUG_CHECK_EX(size > 0, "No data to copy");
-            DEBUG_CHECK_EX(src.id(), "Invalid source buffer");
-            DEBUG_CHECK_EX(dest.id(), "Invalid target buffer");
-            DEBUG_CHECK_EX(src.copyCapable(), "Only copiable buffers can be copied. DUH.");
-            DEBUG_CHECK_EX(dest.copyCapable(), "Only copiable buffers can be copied. DUH.");
-            DEBUG_CHECK_EX(src.offset() + srcOffset + size < src.size(), "Source region out of bounds");
-            DEBUG_CHECK_EX(dest.offset() + destOffset + size < dest.size(), "Destination region out of bounds");
+		static bool IsCopiableObject(const IDeviceObject* src, const ResourceCopyRange& range, uint32_t& outDataSize)
+		{
+			if (const auto* srcImage = base::rtti_cast<ImageObject>(src))
+			{
+				DEBUG_CHECK_RETURN_V(srcImage->copyCapable(), false);
+				DEBUG_CHECK_RETURN_V(range.image.firstMip < srcImage->mips(), false);
+				DEBUG_CHECK_RETURN_V(range.image.firstSlice < srcImage->slices(), false);
+				DEBUG_CHECK_RETURN_V(range.image.numMips == 1, false);
+				DEBUG_CHECK_RETURN_V(range.image.numSlices == 1, false);
 
-            if (src.id() == dest.id())
-            {
-                const auto srcAbsStart = src.offset() + srcOffset;
-                const auto srcAbsEnd = srcAbsStart + size;
-                const auto destAbsStart = dest.offset() + destOffset;
-                const auto destAbsEnd = destAbsStart + size;
-                DEBUG_CHECK_EX(destAbsEnd <= srcAbsStart || destAbsStart >= srcAbsEnd, "Overlaped buffer regions");
-            }
+				const auto mipWidth = std::max<uint32_t>(srcImage->width() >> range.image.firstMip, 1);
+				const auto mipHeight = std::max<uint32_t>(srcImage->height() >> range.image.firstMip, 1);
+				const auto mipDepth = std::max<uint32_t>(srcImage->depth() >> range.image.firstMip, 1);
+
+				DEBUG_CHECK_RETURN_V(range.image.offsetX < mipWidth, false);
+				DEBUG_CHECK_RETURN_V(range.image.offsetY < mipHeight, false);
+				DEBUG_CHECK_RETURN_V(range.image.offsetZ < mipDepth, false);
+				DEBUG_CHECK_RETURN_V(range.image.offsetX + range.image.sizeX <= mipWidth, false);
+				DEBUG_CHECK_RETURN_V(range.image.offsetY + range.image.sizeY <= mipHeight, false);
+				DEBUG_CHECK_RETURN_V(range.image.offsetZ + range.image.sizeZ <= mipDepth, false);
+
+				outDataSize = CalcUpdateMemorySize(srcImage->format(), range);
+				return true;
+			}
+			else if (const auto* srcBuffer = base::rtti_cast<BufferObject>(src))
+			{
+				DEBUG_CHECK_RETURN_V(srcBuffer->copyCapable(), false);
+				DEBUG_CHECK_RETURN_V(range.buffer.offset < srcBuffer->size(), false);
+				DEBUG_CHECK_RETURN_V(range.buffer.offset + range.buffer.size <= srcBuffer->size(), false);
+
+				outDataSize = range.buffer.size;
+				return true;
+			}
+
+			return false;
+		}
+
+		static bool CheckSizeRanges(const IDeviceObject* src, const ResourceCopyRange& srcRange, const ResourceCopyRange& destRange)
+		{
+			if (src->cls()->is<BufferObject>())
+			{
+				DEBUG_CHECK_RETURN_V(srcRange.buffer.size == destRange.buffer.size, false);
+			}
+			else if (src->cls()->is<ImageObject>())
+			{
+				DEBUG_CHECK_RETURN_V(srcRange.image.numMips == 1, false);
+				DEBUG_CHECK_RETURN_V(srcRange.image.numSlices == 1, false);
+				DEBUG_CHECK_RETURN_V(destRange.image.numMips == 1, false);
+				DEBUG_CHECK_RETURN_V(destRange.image.numSlices == 1, false);
+			}
+
+			return true;
+		}
+
+		static bool CheckOverlapRanges(const IDeviceObject* src, const ResourceCopyRange& srcRange, const ResourceCopyRange& destRange)
+		{
+			if (src->cls()->is<BufferObject>())
+			{
+				const auto srcEnd = srcRange.buffer.offset + srcRange.buffer.size;
+				const auto destEnd = destRange.buffer.offset + destRange.buffer.size;
+				DEBUG_CHECK_RETURN_V(srcRange.buffer.offset >= destEnd || srcEnd <= destRange.buffer.offset, false);
+			}
+			else if (src->cls()->is<ImageObject>())
+			{
+				if (srcRange.image.firstMip == destRange.image.firstMip &&
+					srcRange.image.firstSlice == destRange.image.firstSlice)
+				{
+					const auto srcEndX = srcRange.image.offsetX + srcRange.image.sizeX;
+					const auto srcEndY = srcRange.image.offsetY + srcRange.image.sizeY;
+					const auto srcEndZ = srcRange.image.offsetZ + srcRange.image.sizeZ;
+					const auto destEndX = destRange.image.offsetX + destRange.image.sizeX;
+					const auto destEndY = destRange.image.offsetY + destRange.image.sizeY;
+					const auto destEndZ = destRange.image.offsetZ + destRange.image.sizeZ;
+
+					bool separated = false;
+					separated |= (destRange.image.offsetX >= srcEndX) || (srcRange.image.offsetX >= destEndX);
+					separated |= (destRange.image.offsetY >= srcEndY) || (srcRange.image.offsetY >= destEndY);
+					separated |= (destRange.image.offsetZ >= srcEndZ) || (srcRange.image.offsetZ >= destEndZ);
+					DEBUG_CHECK_RETURN_V(separated, false);
+				}
+			}
+
+			return true;
+		}
+
+        void CommandWriter::opCopy(const IDeviceObject* src, const ResourceCopyRange& srcRange, const IDeviceObject* dest, const ResourceCopyRange& destRange)
+        {
+            DEBUG_CHECK_RETURN(src);//, "Invalid source buffer");
+            DEBUG_CHECK_RETURN(dest);//, "Invalid target buffer");
+			//DEBUG_CHECK_RETURN(src != dest);
+
+			uint32_t srcDataSize = 0, destDataSize = 0;
+			DEBUG_CHECK_RETURN(IsCopiableObject(src, srcRange, srcDataSize));
+			DEBUG_CHECK_RETURN(IsCopiableObject(dest, destRange, destDataSize));
+			DEBUG_CHECK_RETURN(srcDataSize == destDataSize);            
+
+			DEBUG_CHECK_RETURN(CheckSizeRanges(src, srcRange, destRange));
+
+			if (src->id() == dest->id())
+			{
+				DEBUG_CHECK_RETURN(CheckOverlapRanges(src, srcRange, destRange));
+			}
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			if (src->cls()->is<ImageObject>())
+			{
+				SubImageRegion region;
+				region.firstMip = srcRange.image.firstMip;
+				region.firstSlice = srcRange.image.firstSlice;
+				region.numMips = srcRange.image.numMips;
+				region.numSlices = srcRange.image.numSlices;
+				DEBUG_CHECK_RETURN(ensureResourceState(src, ResourceLayout::CopySource, &region));
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN(ensureResourceState(src, ResourceLayout::CopySource));
+			}
+
+			if (src->cls()->is<ImageObject>())
+			{
+				SubImageRegion region;
+				region.firstMip = destRange.image.firstMip;
+				region.firstSlice = destRange.image.firstSlice;
+				region.numMips = destRange.image.numMips;
+				region.numSlices = destRange.image.numSlices;
+				DEBUG_CHECK_RETURN(ensureResourceState(dest, ResourceLayout::CopyDest, &region));
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN(ensureResourceState(dest, ResourceLayout::CopyDest));
+			}
+#endif
+
+			auto* op = allocCommand<OpCopy>();
+			op->src = src->id();
+			op->srcRange = srcRange;
+			op->dest = src->id();
+			op->destRange = destRange;
         }
+
+		void CommandWriter::opCopyBuffer(const BufferObject* src, uint32_t srcOffset, const BufferObject* dest, uint32_t destOffset, uint32_t size)
+		{
+			ResourceCopyRange srcRange;
+			srcRange.buffer.offset = srcOffset;
+			srcRange.buffer.size = size;
+
+			ResourceCopyRange destRange;
+			destRange.buffer.offset = destOffset;
+			destRange.buffer.size = size;
+
+			opCopy(src, srcRange, dest, destRange);
+		}
+
+		void CommandWriter::opCopyBufferToImage(const BufferObject* src, uint32_t srcOffset, const ImageObject* dest, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint8_t mipIndex /*= 0*/, uint32_t sliceIndex /*= 0*/)
+		{
+			ResourceCopyRange destRange;
+			destRange.image.offsetX = offsetX;
+			destRange.image.offsetY = offsetY;
+			destRange.image.offsetZ = offsetZ;
+			destRange.image.firstMip = mipIndex;
+			destRange.image.firstSlice = sliceIndex;
+			destRange.image.numMips = 1;
+			destRange.image.numSlices = 1;
+			destRange.image.sizeX = sizeX;
+			destRange.image.sizeY = sizeY;
+			destRange.image.sizeZ = sizeZ;
+
+			const auto imageDataSize = CalcUpdateMemorySize(dest->format(), destRange);
+			DEBUG_CHECK_RETURN(imageDataSize != 0);
+
+			ResourceCopyRange srcRange;
+			srcRange.buffer.offset = srcOffset;
+			srcRange.buffer.size = imageDataSize;
+
+			opCopy(src, srcRange, dest, destRange);
+		}
+
+		void CommandWriter::opCopyImageToBuffer(const ImageObject* src, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, const BufferObject* dest, uint32_t destOffset, uint8_t mipIndex /*= 0*/, uint32_t sliceIndex /*= 0*/)
+		{
+			ResourceCopyRange srcRange;
+			srcRange.image.offsetX = offsetX;
+			srcRange.image.offsetY = offsetY;
+			srcRange.image.offsetZ = offsetZ;
+			srcRange.image.firstMip = mipIndex;
+			srcRange.image.firstSlice = sliceIndex;
+			srcRange.image.numMips = 1;
+			srcRange.image.numSlices = 1;
+			srcRange.image.sizeX = sizeX;
+			srcRange.image.sizeY = sizeY;
+			srcRange.image.sizeZ = sizeZ;
+
+			const auto imageDataSize = CalcUpdateMemorySize(src->format(), srcRange);
+			DEBUG_CHECK_RETURN(imageDataSize != 0);
+
+			ResourceCopyRange destRange;
+			destRange.buffer.offset = destOffset;
+			destRange.buffer.size = imageDataSize;
+
+			opCopy(src, srcRange, dest, destRange);
+		}
 
         //---
 
-        void CommandWriter::opDownloadBuffer(const BufferView& buffer, const DownloadBufferPtr& ptr)
-        {
-            DEBUG_CHECK_EX(buffer.id(), "Cannot copy from invalid buffer");
-            DEBUG_CHECK_EX(buffer.copyCapable(), "Buffer to copy from must be copy capable :)");
+		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink)
+		{
+			DEBUG_CHECK_RETURN(obj);
+			DEBUG_CHECK_RETURN(sink);
 
-            if (buffer.id() && buffer.copyCapable() && ptr)
-            {
-                auto op = allocCommand<OpDownloadBuffer>();
-                memset(&op->ptr, 0, sizeof(op->ptr));
-                op->buffer = buffer;
-                op->downloadOffset = 0;
-                op->downloadSize = buffer.size();
-                op->ptr = ptr;
+			if (const auto* image = base::rtti_cast<ImageObject>(obj))
+			{
+				DEBUG_CHECK_RETURN(range.image.numMips == 1);
+				DEBUG_CHECK_RETURN(range.image.numSlices == 1);
+				DEBUG_CHECK_RETURN(range.image.firstMip < image->mips());
+				DEBUG_CHECK_RETURN(range.image.firstSlice < image->slices());
 
-                m_writeBuffer->m_downloadBuffers.pushBack(ptr);
-            }
-        }
+				const auto mipWidth = std::max<uint32_t>(1, image->width() >> range.image.firstMip);
+				const auto mipHeight = std::max<uint32_t>(1, image->height() >> range.image.firstMip);
+				const auto mipDepth = std::max<uint32_t>(1, image->depth() >> range.image.firstMip);
 
-        void CommandWriter::opDownloadImage(const ImageView& image, const DownloadImagePtr& ptr)
-        {
-            DEBUG_CHECK_EX(image.id(), "Cannot copy from invalid image");
-            DEBUG_CHECK_EX(image.copyCapable(), "Image to copy from must be copy capable :)");
+				DEBUG_CHECK_RETURN(range.image.offsetX < mipWidth);
+				DEBUG_CHECK_RETURN(range.image.offsetY < mipHeight);
+				DEBUG_CHECK_RETURN(range.image.offsetZ < mipDepth);
+				DEBUG_CHECK_RETURN(range.image.offsetX + range.image.sizeX <= mipWidth);
+				DEBUG_CHECK_RETURN(range.image.offsetY + range.image.sizeY <= mipHeight);
+				DEBUG_CHECK_RETURN(range.image.offsetZ + range.image.sizeZ <= mipDepth);
 
-            if (image.id() && image.copyCapable() && ptr)
-            {
-                auto op = allocCommand<OpDownloadImage>();
-                memset(&op->ptr, 0, sizeof(op->ptr));
-                op->image = image;
-                op->ptr = ptr;
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				{
+					SubImageRegion region;
+					region.firstMip = range.image.firstMip;
+					region.firstSlice = range.image.firstSlice;
+					region.numMips = range.image.numMips;
+					region.numSlices = range.image.numSlices;
+					DEBUG_CHECK_RETURN(ensureResourceState(image, ResourceLayout::CopySource, &region));
+				}
+#endif
 
-                m_writeBuffer->m_downloadImages.pushBack(ptr);
-            }
-        }
+				auto op = allocCommand<OpDownload>();
+				op->id = obj->id();
+				op->range = range;
+				op->sink = sink;
+
+				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
+			}
+			else if (const auto* buffer = base::rtti_cast<BufferObject>(obj))
+			{
+				DEBUG_CHECK_RETURN(range.buffer.offset < buffer->size());
+				DEBUG_CHECK_RETURN(range.buffer.offset + range.buffer.size <= buffer->size());
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+				DEBUG_CHECK_RETURN(ensureResourceState(buffer, ResourceLayout::CopySource));
+#endif
+
+				auto op = allocCommand<OpDownload>();
+				op->id = obj->id();
+				op->range = range;
+				op->sink = sink;
+
+				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
+			}
+		}
 
         //---
 
-        ConstantsView CommandWriter::opAllocConstants(uint32_t size, void*& outDataPtr)
+        void CommandWriter::opBindDescriptorEntries(base::StringID binding, const DescriptorEntry* entries, uint32_t count)
+        {
+            DEBUG_CHECK_RETURN(binding);
+
+            const auto layout = DescriptorID::FromDescriptor(entries, count);
+            DEBUG_CHECK_RETURN(layout);
+
+            auto* data = uploadDescriptor(layout, entries, count);
+            DEBUG_CHECK_RETURN(data);
+
+            auto op = allocCommand<OpBindDescriptor>();
+            op->layout = &layout.layout();
+            op->binding = binding;
+            op->data = data;
+
+            m_currentParameterBindings[binding] = layout;
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+			{
+				m_currentParameterData[binding] = data;
+
+				for (uint32_t i = 0; i < count; ++i)
+					if (entries[i].viewPtr && m_trackedObjectViews.contains(entries[i].viewPtr))
+						m_trackedObjectViews.insert(AddRef(entries[i].viewPtr));
+			}
+#endif
+        }
+
+        void* CommandWriter::allocConstants(uint32_t size, const uint32_t*& outOffsetPtr)
         {
             ASSERT_EX(size > 0, "Recording contants with zero size is not a good idea");
 
@@ -1267,50 +2077,24 @@ namespace rendering
             else
                 m_writeBuffer->m_gatheredState.constantUploadHead = op;
             m_writeBuffer->m_gatheredState.constantUploadTail = op;
-            outDataPtr = op->dataPtr;
+            outOffsetPtr = offsetPtr;
 
-            // return constant view at given offset
-            return ConstantsView(offsetPtr, 0, alignedSize);
+            return op->dataPtr;
         }
 
-        ConstantsView CommandWriter::opUploadConstants(const void* data, uint32_t size)
+		DescriptorEntry* CommandWriter::uploadDescriptor(DescriptorID layoutID, const DescriptorEntry* entries, uint32_t count)
         {
-            ASSERT_EX(size > 0, "Recording contants with zero size is not a good idea");
+            DEBUG_CHECK_RETURN_V(!layoutID.empty(), nullptr);
+            DEBUG_CHECK_RETURN_V(entries != nullptr, nullptr);
+            DEBUG_CHECK_RETURN_V(count != 0, nullptr);
+            DEBUG_CHECK_RETURN_V(count == layoutID.layout().size(), nullptr);
 
-            // allocate data
-            void* targetDataPtr = nullptr;
-            auto view = opAllocConstants(size, targetDataPtr);
+            const auto additionalMemory = count * sizeof(DescriptorEntry);
 
-            // copy data
-            if (!view.empty() && size)
-                memcpy(targetDataPtr, data, size);
-
-            // return constant view at given offset
-            return view;
-        }
-
-        ParametersView CommandWriter::opUploadParameters(const void* data, uint32_t dataSize, ParametersLayoutID layoutID)
-        {
-            ASSERT_EX(layoutID.value() < CommandBufferGatheredState::MAX_LAYOUTS, "To many different parameter layouts");
-
-            // invalid layout
-            if (layoutID.empty())
-                return ParametersView();
-
-            // get the layout information
-            auto& layoutInfo = layoutID.layout();
-            if (!layoutInfo.validateMemory(data, dataSize))
-                return ParametersView();
-
-            // validate resource bindings
-            if (!layoutInfo.validateBindings(data))
-                return ParametersView();
-
-            // allocate the OP and copy the data in there
-            auto op  = allocCommand<OpUploadParameters>(layoutInfo.memorySize());
-            op->layout = &layoutInfo;
+            auto op  = allocCommand<OpUploadDescriptor>(additionalMemory);
+            op->layout = &layoutID.layout();
             op->nextParameters = nullptr;
-            memcpy(op->payload(), data, layoutInfo.memorySize());
+            memcpy(op->payload(), entries, additionalMemory);
 
             // link in the list
             auto entryList  = &m_writeBuffer->m_gatheredState.parameterUploadEntries[layoutID.value()];
@@ -1342,43 +2126,23 @@ namespace rendering
             op->index = entryList->nextIndex;
             entryList->nextIndex += 1;
 
+            // upload specified constant data
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                auto& entry = ((DescriptorEntry*)op->payload())[i];
+
+                if (entry.type == DeviceObjectViewType::ConstantBuffer && entry.offsetPtr)
+                {
+                    DEBUG_CHECK(!entry.id);
+
+                    const void* sourceData = entry.offsetPtr;
+                    void* targetData = allocConstants(entry.size, entry.offsetPtr);
+                    memcpy(targetData, sourceData, entry.size);
+                }
+            }
+
             // return the view on the data
-            return ParametersView(op->payload(), layoutID, op->index);
-        }
-
-        //---
-
-        void CommandWriter::opBindParameters(base::StringID binding, const ParametersView& parameters)
-        {
-            DEBUG_CHECK_EX(binding, "Unnamed binding for parameters");
-
-            if (parameters)
-            {
-                // validate the data we are binding
-#ifndef BUILD_RELEASE
-                parameters.layout().layout().validateMemory(parameters.dataPtr(), parameters.layout().memorySize());
-#endif
-
-                // TODO: filtering ?
-                auto op = allocCommand<OpBindParameters>();
-                op->binding = binding;
-                op->view = parameters;
-
-#ifndef BUILD_RELEASE
-                m_currentParameterBindings[binding] = parameters.layout();
-#endif
-            }
-            else
-            {
-                auto op = allocCommand<OpBindParameters>();
-                op->binding = binding;
-                op->view = ParametersView();
-
-#ifndef BUILD_RELEASE
-                if (auto* value = m_currentParameterBindings.find(binding))
-                    *value = ParametersLayoutID(); // empty layout
-#endif
-            }
+            return op->payload<DescriptorEntry>();
         }
 
         //---

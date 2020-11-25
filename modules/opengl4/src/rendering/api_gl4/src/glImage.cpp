@@ -10,261 +10,21 @@
 #include "glUtils.h"
 #include "glImage.h"
 #include "glDevice.h"
+#include "glDeviceThreadCopy.h"
 
 #include "base/image/include/imageView.h"
+#include "glSampler.h"
+#include "glBuffer.h"
 
 namespace rendering
 {
     namespace gl4
     {
         
-        ///---
 
-        Image::Image(Device* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID)
-            : Object(drv, ObjectType::Image)
-            , m_poolID(poolID)
-            , m_setup(setup)
-            , m_glImage(0)
-            , m_glFormat(0)
-            , m_glType(0)
-        {
-            auto memoryUsage = m_setup.calcMemoryUsage();
-            base::mem::PoolStats::GetInstance().notifyAllocation(poolID, memoryUsage);
-
-            if (initData)
-            {
-                uint32_t numSourceSlices = setup.numSlices * setup.numMips;
-                m_initData.resize(numSourceSlices);
-
-                for (uint32_t i = 0; i < numSourceSlices; ++i)
-                    m_initData[i] = initData[i];
-            }
-        }
-
-        Image::Image(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
-            : Object(drv, ObjectType::Image)
-            , m_poolID(poolID)
-            , m_setup(setup)
-            , m_glImage(id)
-            , m_glFormat(TranslateImageFormat(setup.format))
-            , m_glType(TranslateTextureType(setup.view, setup.multisampled()))
-        {
-            auto memoryUsage = m_setup.calcMemoryUsage();
-            base::mem::PoolStats::GetInstance().notifyAllocation(poolID, memoryUsage);
-        }
-
-        Image::~Image()
-        {
-            // release views
-            for (auto view : m_imageViewMap.values())
-                GL_PROTECT(glDeleteTextures(1, &view));
-            m_imageViewMap.clear();
-
-            // release the buffer object
-            GL_PROTECT(glDeleteTextures(1, &m_glImage));
-            m_glImage = 0;
-
-            // update stats
-            auto memoryUsage = m_setup.calcMemoryUsage();
-            base::mem::PoolStats::GetInstance().notifyFree(m_poolID, memoryUsage);
-        }
-
-        static uint32_t CalcMipSize(uint32_t x, uint32_t mipIndex)
-        {
-            return std::max<uint32_t>(1, x >> mipIndex);
-        }
-
-        void Image::finalizeCreation()
-        {
-            PC_SCOPE_LVL1(ImageUpload);
-
-            // get texture format and type
-            auto imageType = TranslateTextureType(m_setup.view, m_setup.multisampled());
-            auto imageFormat = TranslateImageFormat(m_setup.format);
-
-            // decompose texture format
-            GLenum imageBaseFormat, imageBaseType;
-            bool imageFormatCompressed = false;
-            DecomposeTextureFormat(imageFormat, imageBaseFormat, imageBaseType, imageFormatCompressed);
-
-            // create texture object
-            ASSERT(m_glImage == 0);
-            GL_PROTECT(glCreateTextures(imageType, 1, &m_glImage));
-
-            // label the object
-            if (!m_setup.label.empty())
-            {
-                GL_PROTECT(glObjectLabel(GL_TEXTURE, m_glImage, m_setup.label.length(), m_setup.label.c_str()));
-            }
-
-            // setup texture storage
-            switch (imageType)
-            {
-                case GL_TEXTURE_1D:
-                    ASSERT(m_setup.numSlices == 1);
-                    GL_PROTECT(glTextureStorage1D(m_glImage, m_setup.numMips, imageFormat, m_setup.width));
-                    break;
-
-                case GL_TEXTURE_1D_ARRAY:
-                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.numSlices));
-                    break;
-
-                case GL_TEXTURE_2D:
-                    ASSERT(m_setup.numSlices == 1);
-                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.height));
-                    break;
-
-                case GL_TEXTURE_2D_MULTISAMPLE:
-                    ASSERT(m_setup.numSlices == 1);
-                    ASSERT(m_setup.numMips == 1);
-                    ASSERT(m_setup.numSamples >= 2);
-                    GL_PROTECT(glTextureStorage2DMultisample(m_glImage, m_setup.numSamples, imageFormat, m_setup.width, m_setup.height, GL_TRUE));
-                    break;
-
-                case GL_TEXTURE_2D_ARRAY:
-                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.height, m_setup.numSlices));
-                    break;
-
-                case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
-                    ASSERT(m_setup.numMips == 1);
-                    ASSERT(m_setup.numSamples >= 2);
-                    GL_PROTECT(glTextureStorage3DMultisample(m_glImage, m_setup.numSamples, imageFormat, m_setup.width, m_setup.height, m_setup.numSlices, GL_TRUE));
-                    break;
-
-                case GL_TEXTURE_3D:
-                    ASSERT(m_setup.numSlices == 1);
-                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.height, m_setup.depth));
-                    break;
-
-                case GL_TEXTURE_CUBE_MAP:
-                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.height));
-                    //GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.m_numMips, imageFormat, m_setup.width, m_setup.height, 6));
-                    break;
-
-                case GL_TEXTURE_CUBE_MAP_ARRAY:
-                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, imageFormat, m_setup.width, m_setup.height, m_setup.numSlices));
-                    break;
-
-                default:
-                    FATAL_ERROR("Invalid texture type");
-            }
-
-            // setup state
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_R, GL_RED));
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_G, GL_GREEN));
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_B, GL_BLUE));
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_A, GL_ALPHA));
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_BASE_LEVEL, 0));
-            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAX_LEVEL, m_setup.numMips-1));
-
-            // setup some more state :)
-            if (!m_setup.multisampled())
-            {
-                GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-                GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-            }
-
-            // upload initial data
-            if (!m_initData.empty())
-            {
-               // auto imageBytesPerPixel = GetTextureFormatBytesPerPixel(imageFormat);
-
-                for (uint8_t sliceIndex = 0; sliceIndex<m_setup.numSlices; ++sliceIndex)
-                {
-                    for (uint8_t mipIndex = 0; mipIndex<m_setup.numMips; ++mipIndex)
-                    {
-                        auto srcSliceIndex = (sliceIndex * m_setup.numMips) + mipIndex;
-                        auto& srcSlice = m_initData[srcSliceIndex];
-
-                        auto mipWidth = CalcMipSize(m_setup.width, mipIndex);
-                        auto mipHeight = CalcMipSize(m_setup.height, mipIndex);
-                        auto mipDepth = CalcMipSize(m_setup.depth, mipIndex);
-
-                        //ASSERT_EX(srcSlice.m_rowPitch % imageBytesPerPixel == 0, "Invalid source data row pitch");
-                        //GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, srcSlice.m_rowPitch / imageBytesPerPixel));
-                        //ASSERT_EX(srcSlice.m_slicePitch % imageBytesPerPixel == 0, "Invalid source data slice pitch");
-                        //GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, srcSlice.m_slicePitch / imageBytesPerPixel));
-                        GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, mipWidth));
-                        GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-                        GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-
-                        auto sourceData  = base::OffsetPtr(srcSlice.data.data(), srcSlice.offset);
-
-                        switch (imageType)
-                        {
-                            case GL_TEXTURE_1D:
-                                ASSERT(!imageFormatCompressed);
-                                GL_PROTECT(glTextureSubImage1D(m_glImage, mipIndex, 0, mipWidth, imageBaseFormat, imageBaseType, sourceData));
-                                break;
-
-                            case GL_TEXTURE_2D:
-                                if (imageFormatCompressed)
-                                {
-                                    unsigned int blockSize = (imageFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || imageFormat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT || imageFormat == GL_COMPRESSED_RED_RGTC1) ? 8 : 16;
-                                    unsigned int size = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * blockSize;
-                                    ASSERT(size == srcSlice.size);
-                                    GL_PROTECT(glCompressedTextureSubImage2D(m_glImage, mipIndex, 0, 0, mipWidth, mipHeight, imageFormat, srcSlice.size, sourceData));
-                                }
-                                else
-                                {
-                                    GL_PROTECT(glTextureSubImage2D(m_glImage, mipIndex, 0, 0, mipWidth, mipHeight, imageBaseFormat, imageBaseType, sourceData));
-                                }
-                                break;
-
-                            case GL_TEXTURE_2D_ARRAY:
-                                if (imageFormatCompressed)
-                                {
-                                    unsigned int blockSize = (imageFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || imageFormat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT || imageFormat == GL_COMPRESSED_RED_RGTC1) ? 8 : 16;
-                                    unsigned int size = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * blockSize;
-                                    ASSERT(size == srcSlice.size);
-                                    GL_PROTECT(glCompressedTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageFormat, srcSlice.size, sourceData));
-                                }
-                                else
-                                {
-                                    GL_PROTECT(glTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageBaseFormat, imageBaseType, sourceData));
-                                }
-                                break;
-                                //ASSERT(!imageFormatCompressed);
-                                //GL_PROTECT(glTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageBaseFormat, imageBaseType, sourceData));
-                                //break;
-
-                            case GL_TEXTURE_3D:
-                            ASSERT(!imageFormatCompressed);
-                                GL_PROTECT(glTextureSubImage3D(m_glImage, mipIndex, 0, 0, 0, mipWidth, mipHeight, mipDepth, imageBaseFormat, imageBaseType, sourceData));
-                                break;
-
-                            case GL_TEXTURE_CUBE_MAP:
-                                if (imageFormatCompressed)
-                                {
-                                    unsigned int blockSize = (imageFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || imageFormat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT) ? 8 : 16;
-                                    unsigned int size = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * blockSize;
-                                    ASSERT(size == srcSlice.size);
-                                    GL_PROTECT(glCompressedTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageFormat, srcSlice.size, sourceData));
-                                }
-                                else
-                                {
-                                    GL_PROTECT(glTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageBaseFormat, imageBaseType, sourceData));
-                                }
-                                break;
-
-                            case GL_TEXTURE_CUBE_MAP_ARRAY:
-                                ASSERT(!imageFormatCompressed);
-                                GL_PROTECT(glTextureSubImage3D(m_glImage, mipIndex, 0, 0, sliceIndex, mipWidth, mipHeight, 1, imageBaseFormat, imageBaseType, sourceData));
-                                break;
-
-                            default:
-                                FATAL_ERROR("Invalid texture type");
-                        }
-                    }
-                }
-            }
-
-            // release the initialization data
-            m_initData.clear();
-
-            // remember final format
-            m_glFormat = imageFormat;
-        }
+#define VALIDATION_CHECK(x, txt) \
+        DEBUG_CHECK_EX(x, txt); \
+        if (!(x)) return false;
 
         static uint32_t CalcMaxMipCount(const ImageCreationInfo& setup)
         {
@@ -284,11 +44,7 @@ namespace rendering
             return mipCount;
         }
 
-#define VALIDATION_CHECK(x, txt) \
-        DEBUG_CHECK_EX(x, txt); \
-        if (!(x)) return false;
-
-        static bool ValidateCreationInfo(ImageCreationInfo& setup)
+        static bool ValidateCreationInfo(const ImageCreationInfo& setup)
         {
             VALIDATION_CHECK(setup.width >= 1 && setup.height >= 1 && setup.depth >= 1, "Invalid image size");
             VALIDATION_CHECK(setup.format != ImageFormat::UNKNOWN, "Unknown image format");
@@ -320,7 +76,7 @@ namespace rendering
             else if (setup.view == ImageViewType::ViewCubeArray)
             {
                 VALIDATION_CHECK(setup.numSlices >= 6, "Cubemap must have 6 slices");
-                VALIDATION_CHECK((setup.numSlices % 6) == 6, "Cubemap array must have multiple of 6 slices");
+                VALIDATION_CHECK((setup.numSlices % 6) == 0, "Cubemap array must have multiple of 6 slices");
                 VALIDATION_CHECK(setup.width == setup.height, "Cubemap must be square");
                 VALIDATION_CHECK(setup.depth == 1, "Cubemap must can't have depth");
             }
@@ -335,143 +91,311 @@ namespace rendering
             return true;
         }
 
-        Image* Image::CreateImage(Device* drv, const ImageCreationInfo& originalSetup, const SourceData* sourceData)
+        ///---
+
+        Image::Image(Device* drv, const ImageCreationInfo& setup)
+            : Object(drv, ObjectType::Image)
+            , m_setup(setup)
         {
-            ImageCreationInfo setup = originalSetup;
+            DEBUG_CHECK(ValidateCreationInfo(setup));
 
-            // make sure we can create this texture
-            if (!ValidateCreationInfo(setup))
-                return nullptr;
+			m_glType = TranslateTextureType(m_setup.view, m_setup.multisampled());
+			m_glFormat = TranslateImageFormat(m_setup.format);
 
-            // determine ID of the pool
-            auto poolID = POOL_API_STATIC_TEXTURES;
+			if (m_setup.initialLayout == ResourceLayout::INVALID)
+				m_setup.initialLayout = m_setup.computeDefaultLayout();
+
             if (setup.allowRenderTarget)
-                poolID = POOL_API_RENDER_TARGETS;
-
-            // create the image wrapper
-            return new Image(drv, setup, sourceData, poolID);
+                m_poolTag = POOL_API_RENDER_TARGETS;
+            else
+                m_poolTag = POOL_API_STATIC_TEXTURES;
         }
 
-        Image* Image::CreateImage(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID)
+        Image::~Image()
         {
-            return new Image(drv, setup, id, poolID);
-        }
-
-        void Image::ensureInitialized()
-        {
-            if (m_glImage == 0)
-                finalizeCreation();
-        }
-
-        ResolvedImageView Image::resolveView(ImageViewKey key)
-        {
-            ensureInitialized();
-        
-            // validate params
-            DEBUG_CHECK_EX(key.numSlices >= 1, "Invalid slice count in view key");
-            DEBUG_CHECK_EX(key.firstSlice + key.numSlices <= m_setup.numSlices, "To many requested slices in view key");
-            DEBUG_CHECK_EX(key.numMips >= 1, "Invalid mip count in view key");
-            DEBUG_CHECK_EX(key.firstMip + key.numMips <= m_setup.numMips, "To many mipmaps requested in view key");
-
-            // TODO: check format compatibility
-
-            // get texture type
-            auto glImageViewType = TranslateTextureType(key.viewType, m_setup.multisampled());
-
-            // full view does not require a specialized view object
-            if (key.firstMip == 0 && key.firstSlice == 0 && key.numMips == m_setup.numMips && key.numSlices == m_setup.numSlices && key.viewType == m_setup.view)
-                return ResolvedImageView(m_glImage, m_glImage, glImageViewType, 0, key.numSlices, 0, key.numMips);
-
-            // use existing view
-            GLuint glImageView = 0;
-            if (m_imageViewMap.find(key, glImageView))
-                return ResolvedImageView(m_glImage, glImageView, glImageViewType, 0, key.numSlices, 0, key.numMips);
-
-            // create new texture
-            GL_PROTECT(glGenTextures(1, &glImageView));
-            GL_PROTECT(glTextureView(glImageView, glImageViewType, m_glImage, m_glFormat, key.firstMip, key.numMips, key.firstSlice, key.numSlices));
-            m_imageViewMap[key] = glImageView;
-
-            return ResolvedImageView(m_glImage, glImageView, glImageViewType, 0, key.numSlices, 0, key.numMips);
-        }
-
-        void Image::updateContent(const rendering::ImageView& view, const base::image::ImageView& data, uint32_t x, uint32_t y, uint32_t z)
-        {
-            PC_SCOPE_LVL1(ImageUpdate);
-
-            // make sure view exists
-            if (m_glImage == 0)
-                finalizeCreation();
-
-            // get update target
-            auto imageMip = view.firstMip();
-            auto imageSlice = view.firstArraySlice();
-
-            // validate params
-            ASSERT(imageSlice < m_setup.numSlices);
-            ASSERT(imageMip < m_setup.numMips);
-            ASSERT_EX(!m_setup.multisampled(), "Cannot upload multisampled image");
-
-            // get texture format and type
-            auto imageType = TranslateTextureType(m_setup.view, m_setup.multisampled());
-            auto imageFormat = TranslateImageFormat(m_setup.format);
-            auto imageBytesPerPixel = GetTextureFormatBytesPerPixel(imageFormat);
-
-            // decompose texture format
-            GLenum targetImageBaseFormat, targetImageBaseType;
-            bool targetImageCompressed;
-            DecomposeTextureFormat(imageFormat, targetImageBaseFormat, targetImageBaseType, targetImageCompressed);
-
-            // we cannot update compressed images
-            if (targetImageCompressed)
+            if (m_glImage)
             {
-                TRACE_ERROR("Cannot update compressed image");
-                return;
+                GL_PROTECT(glDeleteTextures(1, &m_glImage));
+                m_glImage = 0;
+
+                // update stats
+                auto memoryUsage = m_setup.calcMemoryUsage();
+                base::mem::PoolStats::GetInstance().notifyFree(m_poolTag, memoryUsage);
+            }
+        }
+
+        static uint32_t CalcMipSize(uint32_t x, uint32_t mipIndex)
+        {
+            return std::max<uint32_t>(1, x >> mipIndex);
+        }
+
+        void Image::finalizeCreation()
+        {
+            DEBUG_CHECK_RETURN(m_glImage == 0);
+            PC_SCOPE_LVL1(ImageUpload);
+			
+            // decompose texture format
+            GLenum imageBaseFormat, imageBaseType;
+            bool imageFormatCompressed = false;
+            DecomposeTextureFormat(m_glFormat, imageBaseFormat, imageBaseType, imageFormatCompressed);
+
+            // create texture object
+            ASSERT(m_glImage == 0);
+            GL_PROTECT(glCreateTextures(m_glType, 1, &m_glImage));
+            TRACE_SPAM("GL: Created image {} from {}", m_glImage, m_setup);
+
+            // label the object
+            if (!m_setup.label.empty())
+            {
+                GL_PROTECT(glObjectLabel(GL_TEXTURE, m_glImage, m_setup.label.length(), m_setup.label.c_str()));
             }
 
-            // decompose texture format
-            GLenum sourceImageBaseFormat, sourceImageBaseType;
-            DecomposeTextureFormat(data.format(), data.channels(), sourceImageBaseFormat, sourceImageBaseType);
-
-            // setup format specification
-            auto mipWidth = std::max(1, m_setup.width >> imageMip);
-            auto mipHeight = std::max(1, m_setup.height >> imageMip);
-            auto mipDepth = std::max(1, m_setup.depth >> imageMip);
-            GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-            GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, data.rowPitch() / data.pixelPitch()));
-            GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, data.height()));
-
-            // get texture type
-            switch (imageType)
+            // setup texture storage
+            switch (m_glType)
             {
                 case GL_TEXTURE_1D:
-                    GL_PROTECT(glTextureSubImage1D(m_glImage, imageMip, x, data.width(), sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    ASSERT(m_setup.numSlices == 1);
+                    GL_PROTECT(glTextureStorage1D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width));
+                    break;
+
+                case GL_TEXTURE_1D_ARRAY:
+                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.numSlices));
                     break;
 
                 case GL_TEXTURE_2D:
-                    GL_PROTECT(glTextureSubImage2D(m_glImage, imageMip, x, y, data.width(), data.height(), sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    ASSERT(m_setup.numSlices == 1);
+                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.height));
+                    break;
+
+                case GL_TEXTURE_2D_MULTISAMPLE:
+                    ASSERT(m_setup.numSlices == 1);
+                    ASSERT(m_setup.numMips == 1);
+                    ASSERT(m_setup.numSamples >= 2);
+                    GL_PROTECT(glTextureStorage2DMultisample(m_glImage, m_setup.numSamples, m_glFormat, m_setup.width, m_setup.height, GL_TRUE));
                     break;
 
                 case GL_TEXTURE_2D_ARRAY:
-                    GL_PROTECT(glTextureSubImage3D(m_glImage, imageMip, x, y, imageSlice, data.width(), data.height(), 1, sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.height, m_setup.numSlices));
+                    break;
+
+                case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+                    ASSERT(m_setup.numMips == 1);
+                    ASSERT(m_setup.numSamples >= 2);
+                    GL_PROTECT(glTextureStorage3DMultisample(m_glImage, m_setup.numSamples, m_glFormat, m_setup.width, m_setup.height, m_setup.numSlices, GL_TRUE));
                     break;
 
                 case GL_TEXTURE_3D:
-                    GL_PROTECT(glTextureSubImage3D(m_glImage, imageMip, x, y, z, data.width(), data.height(), data.depth(), sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    ASSERT(m_setup.numSlices == 1);
+                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.height, m_setup.depth));
                     break;
 
                 case GL_TEXTURE_CUBE_MAP:
-                    GL_PROTECT(glTextureSubImage3D(m_glImage, imageMip, x, y, imageSlice, data.width(), data.height(), 1, sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    GL_PROTECT(glTextureStorage2D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.height));
+                    //GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.m_numMips, imageFormat, m_setup.width, m_setup.height, 6));
                     break;
 
                 case GL_TEXTURE_CUBE_MAP_ARRAY:
-                    GL_PROTECT(glTextureSubImage3D(m_glImage, imageMip, x, y, imageSlice, data.width(), data.height(), 1, sourceImageBaseFormat, sourceImageBaseType, data.data()));
+                    GL_PROTECT(glTextureStorage3D(m_glImage, m_setup.numMips, m_glFormat, m_setup.width, m_setup.height, m_setup.numSlices));
                     break;
 
                 default:
                     FATAL_ERROR("Invalid texture type");
             }
+
+            // setup state
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_R, GL_RED));
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_G, GL_GREEN));
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_B, GL_BLUE));
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_A, GL_ALPHA));
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_BASE_LEVEL, 0));
+            GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAX_LEVEL, m_setup.numMips-1));
+
+            // setup some more state :)
+            if (!m_setup.multisampled())
+            {
+                GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+                GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            }
+
+            // inform about allocation
+            auto memoryUsage = m_setup.calcMemoryUsage();
+            base::mem::PoolStats::GetInstance().notifyAllocation(m_poolTag, memoryUsage);
         }
+
+		ResolvedImageView Image::resolveMainView()
+		{
+			if (m_glImage == 0)
+			{
+				finalizeCreation();
+				DEBUG_CHECK_RETURN_V(m_glImage != 0, ResolvedImageView());
+			}
+
+			ResolvedImageView ret;
+			ret.glImage = m_glImage;
+			ret.glInternalFormat = m_glFormat;
+			ret.glImageView = m_glImage;
+			ret.glImageViewType = m_glType; // GL_TEXTURE_2D, etc
+			ret.glSampler = 0; // not assigned to main views
+			ret.firstSlice = 0;
+			ret.numSlices = m_setup.numSlices;
+			ret.firstMip = 0;
+			ret.numMips = m_setup.numMips;
+			return ret;
+		}
+        
+		void Image::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
+		{
+			PC_SCOPE_LVL1(ImageCopyFromBuffer);
+
+			if (m_glImage == 0)
+			{
+				finalizeCreation();
+				DEBUG_CHECK_RETURN(m_glImage != 0);
+			}
+
+			const auto& im = range.image;
+
+			const auto rowLength = m_setup.calcRowLength(im.firstMip);
+			const auto mipHeight = m_setup.calcMipHeight(im.firstMip);
+
+			const auto pixelSize = GetImageFormatInfo(im.format).bitsPerPixel / 8;
+			//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
+
+			GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+			GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
+			GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
+			GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, view.offset / pixelSize));
+			GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, view.glBuffer));
+
+			// TODO: support for sub-part ?
+
+			// get texture type
+			switch (m_glType)
+			{
+			case GL_TEXTURE_1D:
+				GL_PROTECT(glCopyTextureSubImage1D(m_glImage, im.firstMip, im.offsetX, 0, 0, im.sizeX));
+				break;
+
+			case GL_TEXTURE_2D:
+				GL_PROTECT(glCopyTextureSubImage2D(m_glImage, im.firstMip, im.offsetX, im.offsetY, 0, 0, im.sizeX, im.sizeY));
+				break;
+
+			case GL_TEXTURE_2D_ARRAY:
+				GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
+				break;
+
+			case GL_TEXTURE_3D:
+				GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.offsetZ, 0, 0, im.sizeX, im.sizeY));// TODO:!! , im.sizeZ));
+				break;
+
+			case GL_TEXTURE_CUBE_MAP:
+				GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
+				break;
+
+			case GL_TEXTURE_CUBE_MAP_ARRAY:
+				GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
+				break;
+
+			default:
+				FATAL_ERROR("Invalid texture type");
+			}
+
+			GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
+		}
+
+        ImageView* Image::createView_ClientAPI(const ImageViewKey& key, Sampler* sampler) const
+        {
+            DEBUG_CHECK_RETURN_V(key.firstMip < m_setup.numMips, nullptr);
+            DEBUG_CHECK_RETURN_V(key.numMips > 0, nullptr);
+            DEBUG_CHECK_RETURN_V(key.firstMip + key.numMips <= m_setup.numMips, nullptr);
+            DEBUG_CHECK_RETURN_V(key.firstSlice < m_setup.numSlices, nullptr);
+            DEBUG_CHECK_RETURN_V(key.numSlices > 0, nullptr);
+            DEBUG_CHECK_RETURN_V(key.firstSlice + key.numSlices <= m_setup.numSlices, nullptr);
+
+            return new ImageView(device(), const_cast<Image*>(this), key, sampler);
+        }
+
+        //--
+
+        ImageView::ImageView(Device* drv, Image* img, ImageViewKey key, Sampler* sampler)
+            : Object(drv, ObjectType::ImageView)
+			, m_sampler(sampler)
+			, m_image(img)
+            , m_key(key)
+        {
+            m_resolved.glImageView = 0;
+            m_resolved.glImage = m_image->m_glImage;
+            m_resolved.glImageViewType = TranslateTextureType(key.viewType, m_image->m_setup.multisampled());
+			m_resolved.glInternalFormat = m_image->m_glFormat;
+			m_resolved.glSampler = 0;
+			m_resolved.firstSlice = key.firstSlice;
+            m_resolved.firstMip = key.firstMip;
+            m_resolved.numSlices = key.numSlices;
+            m_resolved.numMips = key.numMips;
+        }
+
+        ImageView::~ImageView()
+        {
+            if (m_resolved.glImageView && m_resolved.glImageView != m_resolved.glImage)
+                GL_PROTECT(glDeleteTextures(1, &m_resolved.glImageView));
+
+			memzero(&m_resolved, sizeof(m_resolved));
+        }
+
+        static ResolvedImageView TheEmptyView;
+
+        const ResolvedImageView& ImageView::resolveView()
+        {
+            if (m_resolved.glImageView == 0)
+            {
+                finalizeCreation();
+                DEBUG_CHECK_RETURN_V(m_resolved.glImageView != 0, TheEmptyView);
+            }
+
+            return m_resolved;
+        }
+
+        void ImageView::finalizeCreation()
+        {
+            DEBUG_CHECK_RETURN(m_resolved.glImageView == 0);
+
+            // validate params
+            DEBUG_CHECK_RETURN(m_resolved.numSlices >= 1);
+            DEBUG_CHECK_RETURN(m_resolved.firstSlice + m_resolved.numSlices <= m_image->m_setup.numSlices);
+            DEBUG_CHECK_RETURN(m_resolved.numMips >= 1);
+            DEBUG_CHECK_RETURN(m_resolved.firstMip + m_resolved.numMips <= m_image->m_setup.numMips);
+
+            // TODO: check format compatibility
+
+            // ensure image is initialized
+            if (m_image->m_glImage == 0)
+                m_image->finalizeCreation();
+
+			// ensure sampler is resolved as well
+			if (m_resolved.glSampler == 0 && m_sampler)
+			{
+				m_resolved.glSampler = m_sampler->deviceObject();
+				DEBUG_CHECK_RETURN(m_resolved.glSampler != 0);
+			}
+
+            // full view does not require a specialized view object
+            if (m_resolved.firstMip == 0 && m_resolved.numMips == m_image->m_setup.numMips
+                && m_resolved.firstSlice == 0 && m_resolved.numSlices == m_image->m_setup.numSlices
+                && m_key.viewType == m_image->m_setup.view)
+            {
+				m_resolved.glImage = m_image->m_glImage;
+                m_resolved.glImageView = m_image->m_glImage; // use texture directly
+                return;
+            }
+
+            // create new texture
+            GL_PROTECT(glGenTextures(1, &m_resolved.glImageView));
+            GL_PROTECT(glTextureView(m_resolved.glImageView, m_resolved.glImageViewType, m_image->m_glImage, m_image->m_glFormat, m_resolved.firstMip, m_resolved.numMips, m_resolved.firstSlice, m_resolved.numSlices));
+            TRACE_SPAM("GL: Created image view {} of {} with {}", m_resolved.glImageView, m_image->m_glImage, m_key);
+			m_resolved.glImage = m_image->m_glImage;
+        }
+
+        //--
 
     } // gl4
 } // rendering

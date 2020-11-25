@@ -13,7 +13,7 @@ namespace rendering
 {
     //--
 
-    RTTI_BEGIN_TYPE_ENUM(DriverOutputClass);
+    RTTI_BEGIN_TYPE_ENUM(OutputClass);
         RTTI_ENUM_OPTION(Offscreen);
         RTTI_ENUM_OPTION(NativeWindow);
         RTTI_ENUM_OPTION(Fullscreen);
@@ -31,6 +31,9 @@ namespace rendering
     {}
 
     ///--
+
+	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IOutputObject);
+	RTTI_END_TYPE();
 
     IOutputObject::IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window)
         : IDeviceObject(id, impl)

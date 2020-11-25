@@ -11,8 +11,6 @@
 #include "renderingTexture.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/bufferAsync.h"
-#include "rendering/device/include/renderingImageView.h"
-#include "rendering/device/include/renderingDeviceObject.h"
 
 namespace rendering
 {

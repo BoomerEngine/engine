@@ -17,13 +17,13 @@
 #include "base/fibers/include/fiberSyncPoint.h"
 
 #include "rendering/device/include/renderingOutput.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/api_common/include/renderingWindow.h"
 
 namespace rendering
 {
     namespace gl4
     {
-
         //---
 
         // a OpenGL 4 driver thread, all things happen here
@@ -42,6 +42,8 @@ namespace rendering
             void run(const std::function<void()>& func);
             void submit(command::CommandBuffer* masterCommandBuffer);
 
+			void initializeCopyQueue();
+
             //--
 
             virtual ObjectID createOutput(const OutputInitInfo& info) = 0;
@@ -56,6 +58,10 @@ namespace rendering
 
             GLuint createQuery();
             void releaseQuery(GLuint id);
+
+			//--
+
+			bool scheduleAsyncCopy_ClientApi(Object* ptr, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter fence);
 
             //--
 
@@ -72,8 +78,11 @@ namespace rendering
             base::Array<Frame*> m_sequencePendingList;
             Frame* m_currentFrame;
 
-            Device* m_device;
-            WindowManager* m_windows;
+            Device* m_device = nullptr;
+            WindowManager* m_windows = nullptr;
+
+			DeviceCopyStagingPool* m_copyPool = nullptr;
+			DeviceCopyQueue* m_copyQueue = nullptr;
 
             base::fibers::SyncPoint m_cleanupSync;
             base::Array<GLuint> m_freeQueryObjects;
@@ -99,6 +108,20 @@ namespace rendering
 
             Job* popJob();
             void pushJob(const std::function<void()>& func);
+
+			//--
+
+			struct PendingCopy : public NoCopy
+			{
+				RTTI_DECLARE_POOL(POOL_API_RUNTIME);
+
+			public:
+				ObjectID id;
+				ResourceCopyRange range;
+				SourceDataProviderPtr data;
+				base::fibers::WaitCounter signal;
+			};
+
 
             //--
             

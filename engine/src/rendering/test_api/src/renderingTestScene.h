@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
+
 namespace rendering
 {
     namespace test
@@ -42,23 +44,18 @@ namespace rendering
         /// global params for scene shading
         struct SceneGlobalParams
         {
-            struct ConstData
+            base::Matrix WorldToScreen;
+            base::Vector4 CameraPosition;
+            base::Vector4 LightDirection;
+            base::Vector4 LightColor;
+            base::Vector4 AmbientColor;
+
+            INLINE SceneGlobalParams()
             {
-                base::Matrix WorldToScreen;
-                base::Vector4 CameraPosition;
-                base::Vector4 LightDirection;
-                base::Vector4 LightColor;
-                base::Vector4 AmbientColor;
-
-                INLINE ConstData()
-                {
-                    WorldToScreen = base::Matrix::IDENTITY();
-                    LightDirection = base::Vector3(1, 1, 1).normalized();
-                    CameraPosition = base::Vector3(0, 0, 0);
-                }
-            };
-
-            ConstantsView Consts;
+                WorldToScreen = base::Matrix::IDENTITY();
+                LightDirection = base::Vector3(1, 1, 1).normalized();
+                CameraPosition = base::Vector3(0, 0, 0);
+            }
         };
 
         ///---
@@ -66,29 +63,18 @@ namespace rendering
         /// params for scene object
         struct SceneObjectParams
         {
-            struct ConstsData
-            {
-                base::Matrix LocalToWorld;
-                base::Vector2 UVScale;
-                base::Vector2 Dummy;
-                base::Vector4 DiffuseColor;
-                base::Vector4 SpecularColor;
+            base::Matrix LocalToWorld;
+            base::Vector2 UVScale;
+            base::Vector2 Dummy;
+            base::Vector4 DiffuseColor;
+            base::Vector4 SpecularColor;
 
-                INLINE ConstsData()
-                {
-                    LocalToWorld = base::Matrix::IDENTITY();
-                    UVScale = base::Vector2(1, 1);
-                    DiffuseColor = base::Vector4(0.5f, 0.5f, 0.5f, 1.0f);
-                    SpecularColor = base::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-                }
-            };
-
-            ConstantsView Consts;
-            ImageView Texture;
-            
             INLINE SceneObjectParams()
             {
-                Texture = ImageView::DefaultWhite();
+                LocalToWorld = base::Matrix::IDENTITY();
+                UVScale = base::Vector2(1, 1);
+                DiffuseColor = base::Vector4(0.5f, 0.5f, 0.5f, 1.0f);
+                SpecularColor = base::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             }
         };
 
@@ -108,7 +94,7 @@ namespace rendering
                     base::Vector2 UVScale;
                     base::Vector4 DiffuseColor;
                     base::Vector4 SpecularColor;
-                    ImageView Texture;
+					ImageViewPtr Texture;
 
                     INLINE Params()
                     {
@@ -116,7 +102,7 @@ namespace rendering
                         UVScale = base::Vector2(1, 1);
                         DiffuseColor = base::Vector4(0.5f, 0.5f, 0.5f, 1.0f);
                         SpecularColor = base::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-                        Texture = ImageView::DefaultWhite();
+						Texture = rendering::Globals().TextureWhite;
                     }
                 };
 

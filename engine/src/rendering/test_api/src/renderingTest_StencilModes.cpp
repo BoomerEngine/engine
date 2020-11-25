@@ -23,12 +23,11 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
         private:
-            BufferView m_testBuffer;
-            BufferView m_fillBuffer;
-            ImageView m_depthBuffer;
+            BufferObjectPtr m_testBuffer;
+			BufferObjectPtr m_fillBuffer;
 
             static const uint32_t NUM_OPS = 8;
             static const uint32_t NUM_CMP = 8;
@@ -54,7 +53,7 @@ namespace rendering
                 StencilOp::DecrementAndWrap
             };
 
-            const ShaderLibrary* m_shader;
+            ShaderLibraryPtr m_shader;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_StencilModes);
@@ -128,7 +127,7 @@ namespace rendering
             m_shader = loadShader("GenericGeometry.csl");
         }
 
-        void RenderingTest_StencilModes::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_StencilModes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -138,8 +137,8 @@ namespace rendering
 
             auto numOptions  = ARRAY_COUNT(StencilOpNames);
 
-            auto viewWidth = backBufferView.width() / numOptions;
-            auto viewHeight = backBufferView.height() / numOptions;
+            auto viewWidth = backBufferView->width() / numOptions;
+            auto viewHeight = backBufferView->height() / numOptions;
 
             for (uint32_t x = 0; x < numOptions; ++x)
             {

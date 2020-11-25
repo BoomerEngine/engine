@@ -3,107 +3,96 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\objects #]
+* [# filter: interface\object #]
 ***/
 
 #include "build.h"
-#include "renderingDeviceApi.h"
 #include "renderingObject.h"
-#include "base/containers/include/stringBuilder.h"
 
 namespace rendering
 {
 
+    //--
+
+	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDeviceObject);
+	RTTI_END_TYPE();
+
+    IDeviceObject::IDeviceObject(ObjectID id, IDeviceObjectHandler* impl)
+        : m_id(id)
+        , m_impl(impl)
+    {
+    }
+
+    IDeviceObject::~IDeviceObject()
+    {
+        if (auto impl = m_impl.lock())
+        {
+            TRACE_SPAM("Rendering: Releasing device object {}", m_id);
+            impl->releaseToDevice(m_id);
+        }
+    }
+
+	api::IBaseObject* IDeviceObject::resolveInternalApiObjectRaw(uint8_t objectType) const
+	{
+		if (auto impl = m_impl.lock())
+			return impl->resolveInternalObjectPtrRaw(m_id, objectType);
+
+		return nullptr;
+	}
+
+	//---
+
+	RTTI_BEGIN_TYPE_ENUM(DeviceObjectViewType);
+		RTTI_ENUM_OPTION(Invalid);
+		RTTI_ENUM_OPTION(ConstantBuffer);
+		RTTI_ENUM_OPTION(Buffer);
+		RTTI_ENUM_OPTION(BufferWritable);
+		RTTI_ENUM_OPTION(BufferStructured);
+		RTTI_ENUM_OPTION(BufferStructuredWritable);
+		RTTI_ENUM_OPTION(Image);
+		RTTI_ENUM_OPTION(ImageWritable);
+		RTTI_ENUM_OPTION(RenderTarget);
+		RTTI_ENUM_OPTION(Sampler);
+	RTTI_END_TYPE();
+
     //---
 
-    void ObjectID::print(base::IFormatStream& f) const
+	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDeviceObjectView);
+	RTTI_END_TYPE();
+
+    IDeviceObjectView::IDeviceObjectView(ObjectID viewId, DeviceObjectViewType viewType, IDeviceObject* object, IDeviceObjectHandler* impl)
+        : m_viewId(viewId)
+        , m_viewType(viewType)
+        , m_object(AddRef(object))
+        , m_impl(impl)
+    {}
+
+    IDeviceObjectView::~IDeviceObjectView()
     {
-        switch (data.fields.type)
+        if (auto impl = m_impl.lock())
         {
-            case TYPE_NULL:
-                f.append("EMPTY");
-                break;
-
-            case TYPE_STATIC:
-                f.appendf("STATIC {}@{}", generation(), index());
-                break;
-
-            case TYPE_PREDEFINED:
-                f.appendf("PREDEFINED {}", index());
-                break;
-
-            case TYPE_TRANSIENT:
-                f.appendf("TRANSIENT {}", index());
-                break;
-        }           
+            TRACE_SPAM("Rendering: Releasing device object view {} of object {}", m_viewId, m_object->id());
+            impl->releaseToDevice(m_viewId);
+        }
     }
 
-    static std::atomic<uint32_t> ObjectIDTransientIdAllocator(1);
+    //---
 
-    ObjectID ObjectID::AllocTransientID()
-    {
-        ObjectID ret;
-        ret.data.fields.type = TYPE_TRANSIENT;
-        ret.data.fields.index = ++ObjectIDTransientIdAllocator;
-        return ret;
-    }
+    IDeviceObjectHandler::~IDeviceObjectHandler()
+    {}
 
-    ObjectID ObjectID::CreateStaticID(uint32_t internalIndex, uint32_t internalGeneration)
-    {
-        DEBUG_CHECK(internalGeneration != 0);
+    //---
 
-        ObjectID ret;
-        ret.data.fields.type = TYPE_STATIC;
-        ret.data.fields.index = internalIndex;
-        ret.data.fields.generation = internalGeneration;
-        return ret;
-    }
+	RTTI_BEGIN_TYPE_NATIVE_CLASS(SamplerObject);
+	RTTI_END_TYPE();
 
-    ObjectID ObjectID::CreatePredefinedID(uint8_t predefinedIndex)
-    {
-        if (!predefinedIndex)
-            return EMPTY();
+    SamplerObject::SamplerObject(ObjectID id, IDeviceObjectHandler* impl)
+        : IDeviceObject(id, impl)
+    {}
 
-        ObjectID ret;
-        ret.data.fields.type = TYPE_PREDEFINED;
-        ret.data.fields.index = predefinedIndex;
-        return ret;
-    }
+    SamplerObject::~SamplerObject()
+    {}
 
-    static ObjectID TheEmptyObject;
-
-    const ObjectID& ObjectID::EMPTY()
-    {
-        return TheEmptyObject;
-    }
-
-    //--
-
-    ObjectID ObjectID::DefaultPointSampler(bool clamp)
-    {
-        return ObjectID::CreatePredefinedID(clamp ? ID_SamplerClampPoint : ID_SamplerWrapPoint);
-    }
-
-    ObjectID ObjectID::DefaultBilinearSampler(bool clamp)
-    {
-        return ObjectID::CreatePredefinedID(clamp ? ID_SamplerClampBiLinear : ID_SamplerWrapBiLinear);
-    }
-
-    ObjectID ObjectID::DefaultTrilinearSampler(bool clamp)
-    {
-        return ObjectID::CreatePredefinedID(clamp ? ID_SamplerClampTriLinear : ID_SamplerWrapTriLinear);
-    }
-
-    ObjectID ObjectID::DefaultDepthPointSampler()
-    {
-        return ObjectID::CreatePredefinedID(ID_SamplerPointDepthLE);
-    }
-
-    ObjectID ObjectID::DefaultDepthBilinearSampler()
-    {
-        return ObjectID::CreatePredefinedID(ID_SamplerBiLinearDepthLE);
-    }
-
-    //--
+    //---
 
 } // rendering

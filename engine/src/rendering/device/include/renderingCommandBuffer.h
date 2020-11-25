@@ -18,8 +18,8 @@ namespace rendering
         struct UploadParametersLinkEntry
         {
             uint32_t nextIndex = 0;
-            OpUploadParameters* head = nullptr;
-            OpUploadParameters* tail = nullptr;
+            OpUploadDescriptor* head = nullptr;
+            OpUploadDescriptor* tail = nullptr;
             UploadParametersLinkEntry* next = nullptr;
         };
 
@@ -32,8 +32,8 @@ namespace rendering
             OpUploadConstants* constantUploadTail = nullptr;
 
             // linked list of buffer updates
-            OpUpdateDynamicBuffer* dynamicBufferUpdatesHead = nullptr;
-            OpUpdateDynamicBuffer* dynamicBufferUpdatesTail = nullptr;
+            OpUpdate* dynamicBufferUpdatesHead = nullptr;
+            OpUpdate* dynamicBufferUpdatesTail = nullptr;
 
             // linked list of parameter uploads organized by the type
             static const uint32_t MAX_LAYOUTS = 256;
@@ -106,10 +106,13 @@ namespace rendering
 
             std::atomic<uint32_t> m_finished = 0;
 
-            base::InplaceArray<DownloadBufferPtr, 4> m_downloadBuffers;
-            base::InplaceArray<DownloadImagePtr, 4> m_downloadImages;
+            base::InplaceArray<DownloadDataSinkPtr, 16> m_downloadSinks;
 
-            base::HashMap<base::StringID, ParametersLayoutID> m_activeParameterBindings;
+            base::HashMap<base::StringID, DescriptorID> m_activeParameterBindings;
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+			base::HashMap<base::StringID, const DescriptorEntry*> m_activeParameterData;
+#endif
 
             bool m_isChildCommandBuffer = false;
             OpBeginPass* m_parentBufferBeginPass = nullptr;

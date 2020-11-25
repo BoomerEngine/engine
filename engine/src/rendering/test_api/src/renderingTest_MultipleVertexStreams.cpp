@@ -23,13 +23,13 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            BufferView m_vertexBuffer0;
-            BufferView m_vertexBuffer1;
-            BufferView m_indexBuffer;
-            const ShaderLibrary* m_shaders;
+            BufferObjectPtr m_vertexBuffer0;
+			BufferObjectPtr m_vertexBuffer1;
+			BufferObjectPtr m_indexBuffer;
+            ShaderLibraryPtr m_shaders;
 
             uint32_t m_indexCount;
             uint32_t m_vertexCount;
@@ -147,7 +147,7 @@ namespace rendering
             m_shaders = loadShader("MultipleVertexStreams.csl");
         }
 
-        void RenderingTest_MultipleVertexStreams::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_MultipleVertexStreams::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

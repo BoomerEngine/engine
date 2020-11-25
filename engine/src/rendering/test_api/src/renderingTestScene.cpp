@@ -10,6 +10,9 @@
 #include "renderingTest.h"
 #include "renderingTestScene.h"
 
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingImage.h"
+
 namespace rendering
 {
     namespace test
@@ -62,32 +65,33 @@ namespace rendering
         void SimpleScene::draw(command::CommandWriter& cmd, const ShaderLibrary* func, const SceneCamera& cameraParams)
         {
             // setup global params
-            SceneGlobalParams::ConstData constsData;
+            SceneGlobalParams constsData;
             constsData.WorldToScreen = cameraParams.m_WorldToScreen.transposed();
             constsData.AmbientColor = m_ambientColor;
             constsData.LightColor = m_lightColor;
             constsData.LightDirection = m_lightPosition.normalized();
             constsData.CameraPosition = cameraParams.cameraPosition;
 
-            SceneGlobalParams params;
-            params.Consts = cmd.opUploadConstants(constsData);
-            cmd.opBindParametersInline("SceneGlobalParams"_id, params);
+			DescriptorEntry params[1];
+			params[0].constants(constsData);
+
+            cmd.opBindDescriptor("SceneGlobalParams"_id, params);
 
             // draw objects
             for (auto& obj : m_objects)
             {
                 if (obj.m_mesh)
                 {
-                    SceneObjectParams::ConstsData objectConstData;
+                    SceneObjectParams objectConstData;
                     objectConstData.UVScale = obj.m_params.UVScale;
                     objectConstData.DiffuseColor = obj.m_params.DiffuseColor;
                     objectConstData.LocalToWorld = obj.m_params.LocalToWorld.transposed();
                     objectConstData.SpecularColor = obj.m_params.SpecularColor;
 
-                    SceneObjectParams objectParams;
-                    objectParams.Texture = obj.m_params.Texture;
-                    objectParams.Consts = cmd.opUploadConstants(objectConstData);
-                    cmd.opBindParametersInline("SceneObjectParams"_id, objectParams);
+					DescriptorEntry objectParams[2];
+                    objectParams[0].view(obj.m_params.Texture);
+					objectParams[1].constants(objectConstData);
+                    cmd.opBindDescriptor("SceneObjectParams"_id, objectParams);
 
                     obj.m_mesh->drawMesh(cmd, func);
                 }
@@ -111,7 +115,10 @@ namespace rendering
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
-                    obj.m_params.Texture = owner.loadImage2D("checker_d.png", true).createSampledView(ObjectID::DefaultTrilinearSampler(false));
+					
+					auto texture = owner.loadImage2D("checker_d.png", true);
+					auto sampler = Globals().SamplerWrapTriLinear;
+					obj.m_params.Texture = texture->createView(sampler);
                 }
             }
 
@@ -233,7 +240,10 @@ namespace rendering
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
-                    obj.m_params.Texture = owner.loadImage2D("checker_d.png", true).createSampledView(ObjectID::DefaultTrilinearSampler(false));
+                    
+					auto texture = owner.loadImage2D("checker_d.png", true);
+					auto sampler = Globals().SamplerWrapTriLinear;
+					obj.m_params.Texture = texture->createView(sampler);
                 }
             }
 

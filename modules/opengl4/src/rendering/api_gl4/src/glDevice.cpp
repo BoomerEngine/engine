@@ -48,8 +48,8 @@ namespace rendering
 
         Device::Device()
         {
-            memzero(m_predefinedImages, sizeof(m_predefinedImages));
-            memzero(m_predefinedSamplers, sizeof(m_predefinedSamplers));
+            //memzero(m_predefinedImages, sizeof(m_predefinedImages));
+            //memzero(m_predefinedSamplers, sizeof(m_predefinedSamplers));
         }
 
         Device::~Device()
@@ -102,6 +102,9 @@ namespace rendering
             m_objectRegistry = new ObjectRegistry(this, m_thread);
             m_objectCache = new ObjectCache(this);
 
+			// create copy queue handler
+			m_thread->initializeCopyQueue();
+
             // staging pools
             m_bufferPoolConstants = new TempBufferPool(this, TempBufferType::Constants);
             m_bufferPoolStaging = new TempBufferPool(this, TempBufferType::Staging);
@@ -109,8 +112,8 @@ namespace rendering
             // create default objects - NOTE this requires running on device thread
             m_thread->run([this]()
                 {
-                    createPredefinedImages();
-                    createPredefinedSamplers();
+                    //createPredefinedImages();
+                    //createPredefinedSamplers();
                 });
 
             // we are initialized now
@@ -128,8 +131,8 @@ namespace rendering
             m_objectRegistry = nullptr;
 
             // predefined objects are also freed since they were allocated from pool
-            memset(m_predefinedImages, 0, sizeof(m_predefinedImages));
-            memset(m_predefinedSamplers, 0, sizeof(m_predefinedSamplers));
+            //memset(m_predefinedImages, 0, sizeof(m_predefinedImages));
+            //memset(m_predefinedSamplers, 0, sizeof(m_predefinedSamplers));
 
             // delete object cache
             // NOTE: deletions of cached objects must be run from device thread

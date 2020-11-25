@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 
 namespace rendering
 {
@@ -25,22 +26,28 @@ namespace rendering
             RenderingTest_EarlyPixelTestAtomic();
             virtual void initialize() override final;
             
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
             static const auto NUM_LINES = 1024;
 
-            const ShaderLibrary* m_shaderClear;
-            const ShaderLibrary* m_shaderOccluder;
-            const ShaderLibrary* m_shaderGenerateA;
-            const ShaderLibrary* m_shaderGenerateB;
-            const ShaderLibrary* m_shaderDraw;
+			//ShaderLibraryPtr m_shaderClear;
+			ShaderLibraryPtr m_shaderOccluder;
+			ShaderLibraryPtr m_shaderGenerateA;
+			ShaderLibraryPtr m_shaderGenerateB;
+			ShaderLibraryPtr m_shaderDraw;
 
-            BufferView m_tempLineBuffer;
-            BufferView m_tempQuadBuffer;
+            BufferObjectPtr m_tempLineBuffer;
+			BufferObjectPtr m_tempQuadBuffer;
 
-            BufferView m_storageBufferA;
-            BufferView m_storageBufferB;
+			BufferObjectPtr m_storageBufferA;
+			BufferObjectPtr m_storageBufferB;
+
+			BufferViewPtr m_storageBufferA_SRV;
+			BufferViewPtr m_storageBufferB_SRV;
+
+			BufferWritableViewPtr m_storageBufferA_UAV;
+			BufferWritableViewPtr m_storageBufferB_UAV;
 
             void renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const;
             void renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const;
@@ -57,38 +64,47 @@ namespace rendering
         {
         }
 
-        namespace
-        {
-
-            struct TestParams
-            {
-                BufferView BufferData;
-            };
-        }
-
         void RenderingTest_EarlyPixelTestAtomic::initialize()
         {
-            m_shaderClear = loadShader("EarlyFragmentTestsClear.csl");
+            //m_shaderClear = loadShader("EarlyFragmentTestsClear.csl");
             m_shaderOccluder = loadShader("EarlyFragmentTestsOccluder.csl");
             m_shaderGenerateA = loadShader("EarlyFragmentTestsGenerateNormal.csl");
             m_shaderGenerateB = loadShader("EarlyFragmentTestsGenerateEarlyTests.csl");
             m_shaderDraw = loadShader("EarlyFragmentTestsDraw.csl");
 
-            m_tempLineBuffer = createStorageBuffer(NUM_LINES * sizeof(Simple3DVertex), 0, true, true);
+			{
+				BufferCreationInfo info;
+				//info.allowShaderReads = true;
+				info.allowDynamicUpdate = true;
+				info.allowVertex = true;
+				info.size = NUM_LINES * sizeof(Simple3DVertex);
+				info.stride = 0;
+				info.label = "TempLineBuffer";
+				m_tempLineBuffer = createBuffer(info);
+			}
+             
             m_tempQuadBuffer = createVertexBuffer(6 * sizeof(Simple3DVertex), nullptr);
 
             m_storageBufferA = createStorageBuffer(NUM_LINES * 4);
+			m_storageBufferA_SRV = m_storageBufferA->createView(ImageFormat::R32_INT);
+			m_storageBufferA_UAV = m_storageBufferA->createWritableView(ImageFormat::R32_INT);
+
             m_storageBufferB = createStorageBuffer(NUM_LINES * 4);
+			m_storageBufferB_SRV = m_storageBufferB->createView(ImageFormat::R32_INT);
+			m_storageBufferB_UAV = m_storageBufferB->createWritableView(ImageFormat::R32_INT);
         }
 
         void RenderingTest_EarlyPixelTestAtomic::renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const
         {
+			cmd.opTransitionLayout(m_tempLineBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto writeVertex = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempLineBuffer, 0, NUM_LINES);
             for (uint32_t i=0; i<NUM_LINES; ++i, ++writeVertex)
             {
                 float x = i / (float)NUM_LINES;
                 writeVertex->set(-1.0f + 2.0f*x, 0.95f, 0.5f, x, 0.2f, color);
             }
+
+			cmd.opTransitionLayout(m_tempLineBuffer, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
 
             cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_tempLineBuffer);
@@ -97,6 +113,7 @@ namespace rendering
 
         void RenderingTest_EarlyPixelTestAtomic::renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const
         {
+			cmd.opTransitionLayout(m_tempQuadBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto* verts = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempQuadBuffer, 0, 6);
             verts[0] = Simple3DVertex(x, y, z, 0.0f, 0.0f, color);
             verts[1] = Simple3DVertex(x + w, y, z, 1.0f, 0.0f, color);
@@ -105,11 +122,13 @@ namespace rendering
             verts[4] = Simple3DVertex(x + w, y + h, z, 1.0f, 1.0f, color);
             verts[5] = Simple3DVertex(x, y + h, z, 0.0f, 1.0f, color);
 
+			cmd.opTransitionLayout(m_tempQuadBuffer, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
+
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_tempQuadBuffer);
             cmd.opDraw(func, 0, 6);
         }
 
-        void RenderingTest_EarlyPixelTestAtomic::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_EarlyPixelTestAtomic::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -119,23 +138,8 @@ namespace rendering
 
             cmd.opSetDepthState(true, true, CompareOp::Less);
 
-            cmd.opGraphicsBarrier();
-
-            // clear A
-            {
-                TestParams tempParams;
-                tempParams.BufferData = m_storageBufferA;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
-                cmd.opDispatch(m_shaderClear, 1024/8,1,1);
-            }
-
-            // clear B
-            {
-                TestParams tempParams;
-                tempParams.BufferData = m_storageBufferB;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
-                cmd.opDispatch(m_shaderClear, 1024 / 8, 1, 1);
-            }
+			cmd.opClearWritableBuffer(m_storageBufferA_UAV);
+			cmd.opClearWritableBuffer(m_storageBufferB_UAV);
 
             // draw test rect A - no early tests
             const float h = 0.1f;
@@ -160,9 +164,9 @@ namespace rendering
             }
 
             {
-                TestParams tempParams;
-                tempParams.BufferData = m_storageBufferA;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
+				DescriptorEntry desc[1];
+				desc[0] = m_storageBufferA_UAV;
+				cmd.opBindDescriptor("TestParams"_id, desc);
                 renderQuad(cmd, m_shaderGenerateA, x1, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
                 if (subTestIndex() >= 1)
                     renderQuad(cmd, m_shaderGenerateA, x2, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
@@ -171,9 +175,9 @@ namespace rendering
             }
 
             {
-                TestParams tempParams;
-                tempParams.BufferData = m_storageBufferB;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
+				DescriptorEntry desc[1];
+				desc[0] = m_storageBufferB_UAV;
+				cmd.opBindDescriptor("TestParams"_id, desc);
                 renderQuad(cmd, m_shaderGenerateB, x1, y2, 0.5f, w, h*1.01f, base::Color(0, 255, 0, 255));
                 if (subTestIndex() >= 1)
                     renderQuad(cmd, m_shaderGenerateB, x2, y2, 0.5f, w, h * 1.01f, base::Color(0, 255, 0, 255));
@@ -181,17 +185,21 @@ namespace rendering
                     renderQuad(cmd, m_shaderGenerateB, x3, y2, 0.5f, w, h * 1.01f, base::Color(0, 255, 0, 255));
             }
 
-            cmd.opGraphicsBarrier();
+            cmd.opTransitionLayout(m_storageBufferA, ResourceLayout::UAV, ResourceLayout::ShaderResource);
+			cmd.opTransitionLayout(m_storageBufferB, ResourceLayout::UAV, ResourceLayout::ShaderResource);
 
             // draw
-            {
-                TestParams tempParams;
-                tempParams.BufferData = m_storageBufferA;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
-                renderLine(cmd, m_shaderDraw, base::Color::RED);
+			{
+				DescriptorEntry desc[1];
+				desc[0] = m_storageBufferA_SRV;
+				cmd.opBindDescriptor("TestParams"_id, desc);
+				renderLine(cmd, m_shaderDraw, base::Color::RED);
+			}
 
-                tempParams.BufferData = m_storageBufferB;
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
+			{
+				DescriptorEntry desc[1];
+				desc[0] = m_storageBufferB_SRV;
+				cmd.opBindDescriptor("TestParams"_id, desc);
                 renderLine(cmd, m_shaderDraw, base::Color::GREEN);
             }
 

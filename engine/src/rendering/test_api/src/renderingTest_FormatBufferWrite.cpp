@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 
 namespace rendering
 {
@@ -23,16 +24,18 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
             static const uint32_t MAX_ELEMENTS = 1024;
 
             uint32_t m_vertexCount;
-            const ShaderLibrary* m_shaderGenerate;
-            const ShaderLibrary* m_shaderTest;
+            ShaderLibraryPtr m_shaderGenerate;
+            ShaderLibraryPtr m_shaderTest;
 
-            BufferView m_tempBuffer;
+            BufferObjectPtr m_tempBuffer;
+			BufferViewPtr m_tempBufferSRV;
+			BufferWritableViewPtr m_tempBufferUAV;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FormatBufferWrite);
@@ -41,32 +44,17 @@ namespace rendering
 
         //---       
 
-        namespace
-        {
-
-            struct TestConsts
-            {
-                float TimeOffset;
-                float DrawOffset;
-                float DrawScale;
-            };
-
-            struct TestParams
-            {
-                ConstantsView Params;
-                BufferView VertexData;
-            };
-        }
-
         void RenderingTest_FormatBufferWrite::initialize()
         {
             m_shaderGenerate = loadShader("FormatBufferWriteGenerate.csl");
             m_shaderTest = loadShader("FormatBufferWriteTest.csl");
 
             m_tempBuffer = createStorageBuffer(2 * sizeof(base::Vector4) * MAX_ELEMENTS);
+			m_tempBufferUAV = m_tempBuffer->createWritableView(ImageFormat::RGBA32F);
+			m_tempBufferSRV = m_tempBuffer->createView(ImageFormat::RGBA32F);
         }
 
-        void RenderingTest_FormatBufferWrite::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_FormatBufferWrite::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -76,29 +64,40 @@ namespace rendering
             float yScale = 0.05f;
             for (float y = -1.0f; y < 1.0f; y += yScale)
             {
-                TestConsts tempConsts;
-                tempConsts.TimeOffset = time + y * TWOPI;
-                tempConsts.DrawOffset = y;
-                tempConsts.DrawScale = yScale;
+				struct
+				{
+					float TimeOffset;
+					float DrawOffset;
+					float DrawScale;
+				} tempConsts;
 
-                TestParams params;
-                params.Params = cmd.opUploadConstants(tempConsts);
-                params.VertexData = m_tempBuffer;
-                cmd.opBindParametersInline("TestParams"_id, params);
+				tempConsts.TimeOffset = time + y * TWOPI;
+				tempConsts.DrawOffset = y;
+				tempConsts.DrawScale = yScale;
 
                 {
+					DescriptorEntry params[2];
+					params[0].constants(tempConsts);
+					params[1] = m_tempBufferUAV;
+					cmd.opBindDescriptor("TestParams"_id, params);
+
                     cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
                     cmd.opDraw(m_shaderGenerate, 0, MAX_ELEMENTS);
                 }
 
-                cmd.opGraphicsBarrier();
+                cmd.opTransitionLayout(m_tempBuffer, ResourceLayout::UAV, ResourceLayout::ShaderResource);
 
                 {
+					DescriptorEntry params[2];
+					params[0].constants(tempConsts);
+					params[1] = m_tempBufferSRV;
+					cmd.opBindDescriptor("TestParams"_id, params);
+
                     cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
                     cmd.opDraw(m_shaderTest, 0, MAX_ELEMENTS);
                 }
 
-                cmd.opGraphicsBarrier();
+				cmd.opTransitionLayout(m_tempBuffer, ResourceLayout::ShaderResource, ResourceLayout::UAV);
             }
 
             cmd.opEndPass();

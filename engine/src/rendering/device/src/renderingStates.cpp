@@ -112,7 +112,7 @@ namespace rendering
         RTTI_ENUM_OPTION(DecrementAndWrap);
     RTTI_END_TYPE()
 
-    RTTI_BEGIN_TYPE_ENUM(PolygonMode);
+    RTTI_BEGIN_TYPE_ENUM(FillMode);
         RTTI_ENUM_OPTION(Fill);
         RTTI_ENUM_OPTION(Line);
         RTTI_ENUM_OPTION(Point);
@@ -164,17 +164,6 @@ namespace rendering
         RTTI_ENUM_OPTION(Compute);
     RTTI_END_TYPE()
 
-    RTTI_BEGIN_TYPE_ENUM(Stage); // for bariers
-        RTTI_ENUM_OPTION(All);
-        RTTI_ENUM_OPTION(VertexInput);
-        RTTI_ENUM_OPTION(VertexShaderInput);
-        RTTI_ENUM_OPTION(PixelShaderInput);
-        RTTI_ENUM_OPTION(ComputeShaderInput);
-        RTTI_ENUM_OPTION(RasterInput);
-        RTTI_ENUM_OPTION(ShaderOutput);
-        RTTI_ENUM_OPTION(RasterOutput);
-    RTTI_END_TYPE()
-
     //---
 
     uint32_t SamplerState::CalcHash(const SamplerState& key)
@@ -211,278 +200,638 @@ namespace rendering
         return !operator==(other);
     }
 
+	//--
+
+	static StaticRenderStatesSetup GDefaultStaticRenderStates;
+
+	const StaticRenderStateDirtyBit StaticRenderStatesSetup::COLOR_MASK_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS] = {
+		StaticRenderStateDirtyBit::ColorMask0,
+		StaticRenderStateDirtyBit::ColorMask1,
+		StaticRenderStateDirtyBit::ColorMask2,
+		StaticRenderStateDirtyBit::ColorMask3,
+		StaticRenderStateDirtyBit::ColorMask4,
+		StaticRenderStateDirtyBit::ColorMask5,
+		StaticRenderStateDirtyBit::ColorMask6,
+		StaticRenderStateDirtyBit::ColorMask7,
+	};
+
+	const StaticRenderStateDirtyBit StaticRenderStatesSetup::BLEND_FUNC_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS] = {
+		StaticRenderStateDirtyBit::BlendFunc0,
+		StaticRenderStateDirtyBit::BlendFunc1,
+		StaticRenderStateDirtyBit::BlendFunc2,
+		StaticRenderStateDirtyBit::BlendFunc3,
+		StaticRenderStateDirtyBit::BlendFunc4,
+		StaticRenderStateDirtyBit::BlendFunc5,
+		StaticRenderStateDirtyBit::BlendFunc6,
+		StaticRenderStateDirtyBit::BlendFunc7,
+	};
+
+	const StaticRenderStateDirtyBit StaticRenderStatesSetup::BLEND_EQUATION_DIRTY_BITS[StaticRenderStatesSetup::MAX_TARGETS] = {
+		StaticRenderStateDirtyBit::BlendEquation0,
+		StaticRenderStateDirtyBit::BlendEquation1,
+		StaticRenderStateDirtyBit::BlendEquation2,
+		StaticRenderStateDirtyBit::BlendEquation3,
+		StaticRenderStateDirtyBit::BlendEquation4,
+		StaticRenderStateDirtyBit::BlendEquation5,
+		StaticRenderStateDirtyBit::BlendEquation6,
+		StaticRenderStateDirtyBit::BlendEquation7,
+	};
+
+	StaticRenderStatesSetup::StaticRenderStatesSetup()
+	{
+		memzero(this, sizeof(StaticRenderStatesSetup));
+
+		common.fillMode = (int)FillMode::Fill;
+		common.depthCompareOp = (int)CompareOp::LessEqual;
+		common.stencilFrontFailOp = (int)StencilOp::Keep;
+		common.stencilFrontPassOp = (int)StencilOp::Keep;
+		common.stencilFrontDepthFailOp = (int)StencilOp::Keep;
+		common.stencilFrontCompareOp = (int)CompareOp::Always;
+		common.stencilBackFailOp = (int)StencilOp::Keep;
+		common.stencilBackPassOp = (int)StencilOp::Keep;
+		common.stencilBackDepthFailOp = (int)StencilOp::Keep;
+		common.stencilBackCompareOp = (int)CompareOp::Always;
+		common.cullMode = (int)CullMode::Disabled;
+		common.cullFrontFace = (int)FrontFace::CW;
+		common.primitiveTopology = (int)PrimitiveTopology::TriangleList;
+
+		for (uint32_t i = 0; i < MAX_TARGETS; ++i)
+		{
+			blendStates[i].alphaBlendOp = (int)BlendOp::Add;
+			blendStates[i].colorBlendOp = (int)BlendOp::Add;
+			blendStates[i].srcColorBlendFactor = (int)BlendFactor::One;
+			blendStates[i].srcAlphaBlendFactor = (int)BlendFactor::One;
+			blendStates[i].destColorBlendFactor = (int)BlendFactor::Zero;
+			blendStates[i].destAlphaBlendFactor = (int)BlendFactor::Zero;
+			colorMasks[i] = 0x0F;
+		}
+	}
+
+	StaticRenderStatesSetup& StaticRenderStatesSetup::DEFAULT_STATES()
+	{
+		return GDefaultStaticRenderStates;
+	}
+
+	bool StaticRenderStatesSetup::operator==(const StaticRenderStatesSetup& other) const
+	{
+		return false;
+	}
+
+	uint64_t StaticRenderStatesSetup::key() const
+	{
+		StaticRenderStateDirtyFlags copyMask;
+		copyMask.enableAll();
+
+		// zero entries that are not used so they don't crapout the CRC
+		if (!common.stencilEnabled)
+		{
+			copyMask -= StaticRenderStateDirtyBit::StencilFrontOps;
+			copyMask -= StaticRenderStateDirtyBit::StencilBackOps;
+		}
+		if (!common.depthEnabled)
+		{
+			copyMask -= StaticRenderStateDirtyBit::DepthBiasEnabled;
+			copyMask -= StaticRenderStateDirtyBit::DepthBoundsEnabled;
+			copyMask -= StaticRenderStateDirtyBit::DepthWriteEnabled;
+			copyMask -= StaticRenderStateDirtyBit::DepthFunc;
+		}
+		if (!common.blendingEnabled)
+		{
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation0;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation1;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation2;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation3;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation4;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation5;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation6;
+			copyMask -= StaticRenderStateDirtyBit::BlendEquation7;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc0;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc1;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc2;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc3;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc4;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc5;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc6;
+			copyMask -= StaticRenderStateDirtyBit::BlendFunc7;
+		}
+		if (!common.cullEnabled)
+		{
+			copyMask -= StaticRenderStateDirtyBit::CullFrontFace;
+			copyMask -= StaticRenderStateDirtyBit::CullMode;
+		}
+
+		// prepare clear state
+		StaticRenderStatesSetup copy;
+		copy.apply(*this, &copyMask);
+
+		// now we can make CRC of whole structure
+		base::CRC64 crc;
+		crc.append(&copy, sizeof(copy));
+		return crc;
+	}
+
+	void StaticRenderStatesSetup::apply(const StaticRenderStatesSetup& other, const StaticRenderStateDirtyFlags* mask /*= nullptr*/)
+	{
+		StaticRenderStateDirtyFlags allStats;
+		allStats.enableAll();
+
+		const auto applyMask = mask ? allStats : *mask;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::ScissorEnabled))
+			common.scissorEnabled = other.common.scissorEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::StencilEnabled))
+			common.stencilEnabled = other.common.stencilEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::StencilFrontOps))
+		{
+			common.stencilFrontFailOp = other.common.stencilFrontFailOp;
+			common.stencilFrontPassOp = other.common.stencilFrontPassOp;
+			common.stencilFrontDepthFailOp = other.common.stencilFrontDepthFailOp;
+			common.stencilFrontCompareOp = other.common.stencilFrontCompareOp;
+		}
+
+		if (applyMask.test(StaticRenderStateDirtyBit::StencilBackOps))
+		{
+			common.stencilBackFailOp = other.common.stencilBackFailOp;
+			common.stencilBackPassOp = other.common.stencilBackPassOp;
+			common.stencilBackDepthFailOp = other.common.stencilBackDepthFailOp;
+			common.stencilBackCompareOp = other.common.stencilBackCompareOp;
+		}
+
+		if (applyMask.test(StaticRenderStateDirtyBit::DepthBiasEnabled))
+			common.depthBiasEnabled = other.common.depthBiasEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::FillMode))
+			common.fillMode = other.common.fillMode;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::PrimitiveRestartEnabled))
+			common.primitiveRestartEnabled = other.common.primitiveRestartEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::PrimitiveTopology))
+			common.primitiveTopology = other.common.primitiveTopology;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::CullFrontFace)) 
+			common.cullFrontFace = other.common.cullFrontFace;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::CullMode))
+			common.cullMode = other.common.cullMode;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::CullEnabled))
+			common.cullEnabled = other.common.cullEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::BlendingEnabled))
+			common.blendingEnabled = other.common.blendingEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::DepthEnabled))
+			common.depthEnabled = other.common.depthEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::DepthWriteEnabled))
+			common.depthWriteEnabled = other.common.depthWriteEnabled;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::DepthFunc))
+			common.depthCompareOp = other.common.depthCompareOp;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::DepthBoundsEnabled)) 
+			common.depthClipEnabled = other.common.depthClipEnabled;
+		
+		if (applyMask.test(StaticRenderStateDirtyBit::AlphaCoverageEnabled))
+			common.alphaToCoverageEnable = other.common.alphaToCoverageEnable;
+
+		if (applyMask.test(StaticRenderStateDirtyBit::AlphaCoverageDitherEnabled))
+			common.alphaToCoverageDitherEnable = other.common.alphaToCoverageDitherEnable;
+
+		for (uint8_t i = 0; i < MAX_TARGETS; ++i)
+		{
+			if (applyMask.test(BLEND_EQUATION_DIRTY_BITS[i]))
+			{
+				blendStates[i].srcColorBlendFactor = other.blendStates[i].srcColorBlendFactor;
+				blendStates[i].destColorBlendFactor = other.blendStates[i].destColorBlendFactor;
+				blendStates[i].srcAlphaBlendFactor = other.blendStates[i].srcAlphaBlendFactor;
+				blendStates[i].destAlphaBlendFactor = other.blendStates[i].destAlphaBlendFactor;
+			}
+
+			if (applyMask.test(BLEND_FUNC_DIRTY_BITS[i]))
+			{
+				blendStates[i].alphaBlendOp = other.blendStates[i].alphaBlendOp;
+				blendStates[i].colorBlendOp = other.blendStates[i].colorBlendOp;
+			}
+
+			if (applyMask.test(COLOR_MASK_DIRTY_BITS[i]))
+				colorMasks[i] = other.colorMasks[i];
+		}
+	}
+
+	void StaticRenderStatesSetup::print(base::IFormatStream& f) const
+	{
+		StaticRenderStateDirtyFlags allFlags;
+		allFlags.enableAll();
+
+		print(f, allFlags);
+	}
+
+	void StaticRenderStatesSetup::print(base::IFormatStream& f, const StaticRenderStateDirtyFlags& stateMask) const
+	{
+		if (stateMask.test(StaticRenderStateDirtyBit::ScissorEnabled))
+			f.appendf("ScissorEnabled: {}\n", (bool)common.scissorEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::StencilEnabled))
+			f.appendf("StencilEnabled: {}\n", (bool)common.stencilEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::StencilFrontOps))
+		{
+			f.appendf("StencilFront: fail={}, depthFail={}, pass={}, op={}\n",
+				(StencilOp)common.stencilFrontFailOp,
+				(StencilOp)common.stencilFrontDepthFailOp,
+				(StencilOp)common.stencilFrontPassOp,
+				(CompareOp)common.stencilFrontCompareOp);
+		}
+
+		if (stateMask.test(StaticRenderStateDirtyBit::StencilBackOps))
+		{
+			f.appendf("StencilBack: fail={}, depthFail={}, pass={}, op={}\n",
+				(StencilOp)common.stencilBackFailOp,
+				(StencilOp)common.stencilBackDepthFailOp,
+				(StencilOp)common.stencilBackPassOp,
+				(CompareOp)common.stencilBackCompareOp);
+		}
+
+		if (stateMask.test(StaticRenderStateDirtyBit::DepthEnabled))
+			f.appendf("DepthEnabled: {}\n", (bool)common.depthEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::DepthWriteEnabled))
+			f.appendf("DepthWriteEnabled: {}\n", (bool)common.depthWriteEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::DepthFunc))
+			f.appendf("DepthFunc: {}\n", (CompareOp)common.depthCompareOp);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::DepthBoundsEnabled))
+			f.appendf("DepthClipEnabled: {}\n", (bool)common.depthWriteEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::DepthBiasEnabled))
+			f.appendf("DepthBiasEnabled: {}\n", (bool)common.depthBiasEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::CullEnabled))
+			f.appendf("CullEnabled: {}\n", (bool)common.cullEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::CullFrontFace))
+			f.appendf("CullFrontFace: {}\n", (FrontFace)common.cullFrontFace);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::CullMode))
+			f.appendf("CullMode: {}\n", (FrontFace)common.cullMode);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::FillMode))
+			f.appendf("FillMode: {}\n", (FillMode)common.fillMode);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::PrimitiveRestartEnabled))
+			f.appendf("PrimitiveRestartEnabled: {}\n", (bool)common.primitiveRestartEnabled);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::PrimitiveTopology))
+			f.appendf("PrititiveTopology: {}\n", (PrimitiveTopology)common.primitiveTopology);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::AlphaCoverageEnabled))
+			f.appendf("AlphaCoverageEnabled: {}\n", (bool)common.alphaToCoverageEnable);
+			
+		if (stateMask.test(StaticRenderStateDirtyBit::AlphaCoverageDitherEnabled))
+			f.appendf("AlphaCoverageDitherEnabled: {}\n", (bool)common.alphaToCoverageDitherEnable);
+
+		if (stateMask.test(StaticRenderStateDirtyBit::BlendingEnabled))
+			f.appendf("BlendingEnabled: {}\n", (bool)common.blendingEnabled);
+
+		for (uint8_t i = 0; i < MAX_TARGETS; ++i)
+		{
+			if (stateMask.test(BLEND_EQUATION_DIRTY_BITS[i]))
+			{
+				f.appendf("BlendEquationColor[{}]: src={} dest={}\n", i, (BlendFactor)blendStates[i].srcColorBlendFactor, (BlendOp)blendStates[i].destColorBlendFactor);
+				f.appendf("BlendEquationAlpha[{}]: src={} dest={}\n", i, (BlendFactor)blendStates[i].srcAlphaBlendFactor, (BlendOp)blendStates[i].destAlphaBlendFactor);
+			}
+
+			if (stateMask.test(BLEND_FUNC_DIRTY_BITS[i]))
+				f.appendf("BlendFunc[{}]: color={} alpha={}\n", i, (BlendOp)blendStates[i].colorBlendOp, (BlendOp)blendStates[i].alphaBlendOp);
+			
+			if (stateMask.test(COLOR_MASK_DIRTY_BITS[i]))
+				f.appendf("ColorMask[{}]: {}\n", i, Hex(colorMasks[i]));
+		}
+	}
+
     //--
 
-    uint32_t BlendState::CalcHash(const BlendState& key)
-    {
-        base::CRC32 crc;
-        crc << (uint8_t)key.srcColorBlendFactor;
-        crc << (uint8_t)key.destColorBlendFactor;
-        crc << (uint8_t)key.colorBlendOp;
-        crc << (uint8_t)key.srcAlphaBlendFactor;
-        crc << (uint8_t)key.destAlphaBlendFactor;
-        crc << (uint8_t)key.alphaBlendOp;
-        return crc;
-    }
+	StaticRenderStatesBuilder::StaticRenderStatesBuilder()
+	{
+		reset();
+	}
 
-    bool BlendState::operator==(const BlendState& other) const
-    {
-        if ((srcColorBlendFactor != other.srcColorBlendFactor) || (destColorBlendFactor != other.destColorBlendFactor) || (colorBlendOp != other.colorBlendOp))
-            return false;
+	void StaticRenderStatesBuilder::reset()
+	{
+		dirtyFlags.clearAll();
+		states = StaticRenderStatesSetup();
+	}
 
-        if ((srcAlphaBlendFactor != other.srcAlphaBlendFactor) || (destAlphaBlendFactor != other.destAlphaBlendFactor) || (alphaBlendOp != other.alphaBlendOp))
-            return false;
+	void StaticRenderStatesBuilder::colorMask(uint8_t i, uint8_t mask)
+	{
+		DEBUG_CHECK_RETURN(i < StaticRenderStatesSetup::MAX_TARGETS);
+		if (states.colorMasks[i] != mask)
+		{
+			dirtyFlags |= StaticRenderStatesSetup::COLOR_MASK_DIRTY_BITS[i];
+			states.colorMasks[i] = mask;
+		}
+	}
 
-        return true;
-    }
+	void StaticRenderStatesBuilder::blend(bool enabled)
+	{
+		if (states.common.blendingEnabled != enabled)
+		{
+			states.common.blendingEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::BlendingEnabled;
+		}
+	}
 
-    bool BlendState::operator!=(const BlendState& other) const
-    {
-        return !operator==(other);
-    }
+	void StaticRenderStatesBuilder::blendFactor(uint8_t i, BlendFactor src, BlendFactor dest)
+	{
+		blendFactor(i, src, dest, src, dest);
+	}
 
-    //--
+	void StaticRenderStatesBuilder::blendFactor(uint8_t i, BlendFactor srcColor, BlendFactor destColor, BlendFactor srcAlpha, BlendFactor destAlpha)
+	{
+		DEBUG_CHECK_RETURN(i < StaticRenderStatesSetup::MAX_TARGETS);
 
-    uint32_t StencilSideState::CalcHash(const StencilSideState& key)
-    {
-        base::CRC32 crc;
-        crc << (uint8_t)key.failOp;
-        crc << (uint8_t)key.passOp;
-        crc << (uint8_t)key.depthFailOp;
-        crc << (uint8_t)key.compareOp;
-        crc << key.compareMask;
-        crc << key.writeMask;
-        crc << key.referenceValue;
-        return crc;
-    }
+		auto& state = states.blendStates[i];
+		if ((BlendFactor)state.srcColorBlendFactor != srcColor || (BlendFactor)state.destColorBlendFactor != destColor
+			|| (BlendFactor)state.srcAlphaBlendFactor != srcAlpha || (BlendFactor)state.destAlphaBlendFactor != destAlpha)
+		{
+			state.srcColorBlendFactor = (int)srcColor;
+			state.destColorBlendFactor = (int)destColor;
+			state.srcAlphaBlendFactor = (int)srcAlpha;
+			state.destAlphaBlendFactor = (int)destAlpha;
+			dirtyFlags |= StaticRenderStatesSetup::BLEND_EQUATION_DIRTY_BITS[i];
+		}
+	}
 
-    bool StencilSideState::operator==(const StencilSideState& other) const
-    {
-        return (failOp == other.failOp) && (passOp == other.passOp) && (depthFailOp == other.depthFailOp) && (compareOp == other.compareOp)
-            && (compareMask == other.compareMask) && (writeMask == other.writeMask) && (referenceValue == other.referenceValue);
-    }
+	void StaticRenderStatesBuilder::blendOp(uint8_t i, BlendOp op)
+	{
+		blendOp(i, op, op);
+	}
 
-    bool StencilSideState::operator!=(const StencilSideState& other) const
-    {
-        return !operator==(other);
-    }
+	void StaticRenderStatesBuilder::blendOp(uint8_t i, BlendOp color, BlendOp alpha)
+	{
+		DEBUG_CHECK_RETURN(i < StaticRenderStatesSetup::MAX_TARGETS);
 
-    //---
+		auto& state = states.blendStates[i];
+		if ((BlendOp)state.colorBlendOp != color|| (BlendOp)state.alphaBlendOp != alpha)
+		{
+			state.colorBlendOp = (int)color;
+			state.alphaBlendOp = (int)alpha;
+			dirtyFlags |= StaticRenderStatesSetup::BLEND_FUNC_DIRTY_BITS[i];
+		}
+	}
 
-    uint32_t StencilState::CalcHash(const StencilState& key)
-    {
-        base::CRC32 crc;
-        crc << key.enabled;
-        if (key.enabled)
-        {
-            crc << StencilSideState::CalcHash(key.front);
-            crc << StencilSideState::CalcHash(key.back);
-        }
-        return crc;
-    }
+	void StaticRenderStatesBuilder::cull(bool enabled)
+	{
+		if (states.common.cullEnabled != enabled)
+		{
+			states.common.cullEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::CullEnabled;
+		}
+	}
 
-    bool StencilState::operator==(const StencilState& other) const
-    {
-        if (enabled != other.enabled)
-            return false;
+	void StaticRenderStatesBuilder::cullMode(CullMode mode)
+	{
+		if ((CullMode)states.common.cullMode != mode)
+		{
+			states.common.cullMode = (int)mode;
+			dirtyFlags |= StaticRenderStateDirtyBit::CullMode;
+		}
+	}
 
-        if (enabled)
-        {
-            if (front != other.front || back != other.back)
-                return false;
-        }
+	void StaticRenderStatesBuilder::cullFrontFace(FrontFace mode)
+	{
+		if ((FrontFace)states.common.cullFrontFace != mode)
+		{
+			states.common.cullFrontFace = (int)mode;
+			dirtyFlags |= StaticRenderStateDirtyBit::CullFrontFace;
+		}
+	}
 
-        return true;
-    }
+	void StaticRenderStatesBuilder::fill(FillMode mode)
+	{
+		if ((FillMode)states.common.fillMode != mode)
+		{
+			states.common.fillMode = (int)mode;
+			dirtyFlags |= StaticRenderStateDirtyBit::FillMode;
+		}
+	}
 
-    bool StencilState::operator!=(const StencilState& other) const
-    {
-        return !operator==(other);
-    }
+	void StaticRenderStatesBuilder::scissorState(bool enabled)
+	{
+		if (states.common.scissorEnabled != enabled)
+		{
+			states.common.scissorEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::ScissorEnabled;
+		}
+	}
 
-    //---
+	void StaticRenderStatesBuilder::stencil(bool enabled)
+	{
+		if (states.common.stencilEnabled != enabled)
+		{
+			states.common.stencilEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::StencilEnabled;
+		}
+	}
 
-    uint32_t CullState::CalcHash(const CullState& key)
-    {
-        base::CRC32 crc;
-        crc << (uint8_t)key.mode;
-        crc << (uint8_t)key.face;
-        return crc;
-    }
+	void StaticRenderStatesBuilder::stencilAll(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp)
+	{
+		stencilFront(compareOp, failOp, depthFailOp, passOp);
+		stencilBack(compareOp, failOp, depthFailOp, passOp);
+	}
 
-    bool CullState::operator==(const CullState& other) const
-    {
-        return (mode == other.mode) && (face == other.face);
-    }
+	void StaticRenderStatesBuilder::stencilFront(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp)
+	{
+		if ((CompareOp)states.common.stencilFrontCompareOp != compareOp
+			|| (StencilOp)states.common.stencilFrontFailOp != failOp
+			|| (StencilOp)states.common.stencilFrontPassOp != passOp
+			|| (StencilOp)states.common.stencilFrontDepthFailOp != depthFailOp)
+		{
+			states.common.stencilFrontCompareOp = (int)compareOp;
+			states.common.stencilFrontFailOp = (int)failOp;
+			states.common.stencilFrontPassOp = (int)passOp;
+			states.common.stencilFrontDepthFailOp = (int)depthFailOp;
+			dirtyFlags |= StaticRenderStateDirtyBit::StencilFrontOps;
+		}
+	}
 
-    bool CullState::operator!=(const CullState& other) const
-    {
-        return !operator==(other);
-    }
+	void StaticRenderStatesBuilder::stencilBack(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp)
+	{
+		if ((CompareOp)states.common.stencilBackCompareOp != compareOp
+			|| (StencilOp)states.common.stencilBackFailOp != failOp
+			|| (StencilOp)states.common.stencilBackPassOp != passOp
+			|| (StencilOp)states.common.stencilBackDepthFailOp != depthFailOp)
+		{
+			states.common.stencilBackCompareOp = (int)compareOp;
+			states.common.stencilBackFailOp = (int)failOp;
+			states.common.stencilBackPassOp = (int)passOp;
+			states.common.stencilBackDepthFailOp = (int)depthFailOp;
+			dirtyFlags |= StaticRenderStateDirtyBit::StencilBackOps;
+		}
+	}
 
-    //---
+	void StaticRenderStatesBuilder::depth(bool enable)
+	{
+		if (states.common.depthEnabled != enable)
+		{
+			states.common.depthEnabled = enable;
+			dirtyFlags |= StaticRenderStateDirtyBit::DepthEnabled;
+		}
+	}
 
-    uint32_t FillState::CalcHash(const FillState& key)
-    {
-        base::CRC32 crc;
-        crc << (uint8_t)key.mode;
-        crc << key.lineWidth;
-        return crc;
-    }
+	void StaticRenderStatesBuilder::depthWrite(bool enable)
+	{
+		if (states.common.depthWriteEnabled != enable)
+		{
+			states.common.depthWriteEnabled = enable;
+			dirtyFlags |= StaticRenderStateDirtyBit::DepthWriteEnabled;
+		}
+	}
 
-    bool FillState::operator==(const FillState& other) const
-    {
-        return (mode == other.mode) && (lineWidth == other.lineWidth);
-    }
+	void StaticRenderStatesBuilder::depthFunc(CompareOp func)
+	{
+		if ((CompareOp)states.common.depthCompareOp != func)
+		{
+			states.common.depthCompareOp = (int)func;
+			dirtyFlags |= StaticRenderStateDirtyBit::DepthFunc;
+		}
+	}
 
-    bool FillState::operator!=(const FillState& other) const
-    {
-        return !operator==(other);
-    }
+	void StaticRenderStatesBuilder::depthClip(bool enabled)
+	{
+		if (states.common.depthClipEnabled != enabled)
+		{
+			states.common.depthClipEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::DepthBoundsEnabled;
+		}
+	}
 
-    //----
+	void StaticRenderStatesBuilder::depthBias(bool enabled)
+	{
+		if (states.common.depthBiasEnabled != enabled)
+		{
+			states.common.depthBiasEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::DepthBiasEnabled;
+		}
+	}
 
-    uint32_t DepthState::CalcHash(const DepthState& key)
-    {
-        base::CRC32 crc;
-        crc << key.enabled;
-        if (key.enabled)
-        {
-            crc << key.writeEnabled;
-            crc << (uint8_t)key.depthCompareOp;
-        }
-        return crc;
-    }
+	void StaticRenderStatesBuilder::primitiveTopology(PrimitiveTopology topology)
+	{
+		if ((PrimitiveTopology)states.common.primitiveTopology != topology)
+		{
+			states.common.primitiveTopology = (int)topology;
+			dirtyFlags |= StaticRenderStateDirtyBit::PrimitiveTopology;
+		}
+	}
 
-    bool DepthState::operator==(const DepthState& other) const
-    {
-        if (enabled != other.enabled)
-            return false;
-        if (enabled)
-        {
-            if (writeEnabled != other.writeEnabled || depthCompareOp != other.depthCompareOp)
-                return false;
-        }
-        return true;
-    }
+	void StaticRenderStatesBuilder::primitiveRestart(bool enabled)
+	{
+		if (states.common.primitiveRestartEnabled != enabled)
+		{
+			states.common.primitiveRestartEnabled = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::PrimitiveRestartEnabled;
+		}
+	}
 
-    bool DepthState::operator!=(const DepthState& other) const
-    {
-        return !operator==(other);
-    }
+	//void StaticRenderStatesBuilder::multisample(uint8_t numSamples);
 
-    //----
+	void StaticRenderStatesBuilder::alphaToCoverage(bool enabled)
+	{
+		if (states.common.alphaToCoverageEnable != enabled)
+		{
+			states.common.alphaToCoverageEnable = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::AlphaCoverageEnabled;
+		}
+	}
 
-    uint32_t DepthClipState::CalcHash(const DepthClipState& key)
-    {
-        base::CRC32 crc;
-        crc << key.enabled;
-        if (key.enabled)
-        {
-            crc << key.clipMin;
-            crc << key.clipMax;
-        }
-        return crc;
-    }
+	void StaticRenderStatesBuilder::alphaToCoverageDither(bool enabled)
+	{
+		if (states.common.alphaToCoverageDitherEnable != enabled)
+		{
+			states.common.alphaToCoverageDitherEnable = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::AlphaCoverageDitherEnabled;
+		}
+	}
 
-    bool DepthClipState::operator==(const DepthClipState& other) const
-    {
-        if (enabled != other.enabled)
-            return false;
+	void StaticRenderStatesBuilder::alphaToOne(bool enabled)
+	{
+		/*if (states.common.alphaToCoverageDitherEnable != enabled)
+		{
+			states.common.alphaToCoverageDitherEnable = enabled;
+			dirtyFlags |= StaticRenderStateDirtyBit::AlphaCoverageDitherEnabled;
+		}*/
+	}
 
-        if (enabled)
-            if ((clipMax != other.clipMin) || (clipMax != other.clipMax))
-                return false;
+	//--
 
-        return true;
-    }
+	GraphicsPassLayoutSetup::GraphicsPassLayoutSetup()
+	{
+		reset();
+	}
 
-    bool DepthClipState::operator!=(const DepthClipState& other) const
-    {
-        return !operator==(other);
-    }
+	void GraphicsPassLayoutSetup::reset()
+	{
+		samples = 1;
+		depth = Attachment();
+		for (uint32_t i=0; i<MAX_TARGETS; ++i)
+			color[i] = Attachment();
+	}
+	
+	uint64_t GraphicsPassLayoutSetup::key() const
+	{
+		base::CRC64 crc;
+		crc.append(this, sizeof(GraphicsPassLayoutSetup));
+		return crc;
+	}
 
-    //----
+	void GraphicsPassLayoutSetup::Attachment::print(base::IFormatStream& f) const
+	{
+		f << format;
+	}
 
-    uint32_t DepthBiasState::CalcHash(const DepthBiasState& key)
-    {
-        base::CRC32 crc;
-        crc << key.enabled;
-        if (key.enabled)
-        {
-            crc << key.constant;
-            crc << key.slope;
-            crc << key.clamp;
-        }
-        return crc;
-    }
+	void GraphicsPassLayoutSetup::print(base::IFormatStream& f) const
+	{
+		if (depth)
+		{
+			f.appendf("DEPTH: {}", depth);
+			if (samples)
+				f.appendf(" MSAA x{}", samples);
+			f << "\n";
+		}
 
+		for (uint32_t i=0; i<MAX_TARGETS; ++i)
+		{
+			if (!color[i])
+				break;
 
-    bool DepthBiasState::operator==(const DepthBiasState& other) const
-    {
-        if (enabled != other.enabled)
-            return false;
+			f.appendf("COLOR[{}]: {}", i, color[i]);
+			if (samples)
+				f.appendf(" MSAA x{}", samples);
+			f << "\n";
+		}
+	}
 
-        if (enabled)
-        {
-            if (constant != other.constant || slope != other.slope || clamp != other.clamp)
-                return false;
-        }
+	bool GraphicsPassLayoutSetup::operator==(const GraphicsPassLayoutSetup& other) const
+	{
+		if (depth != other.depth || samples != other.samples)
+			return false;
 
-        return true;
-    }
+		for (uint32_t i = 0; i < MAX_TARGETS; ++i)
+		{
+			if (color[i] != other.color[i])
+				return false;
+			if (!color[i])
+				break;
+		}
 
-    bool DepthBiasState::operator!=(const DepthBiasState& other) const
-    {
-        return !operator==(other);
-    }
+		return true;
+	}
 
-    //----
-
-    uint32_t PrimitiveAssemblyState::CalcHash(const PrimitiveAssemblyState& key)
-    {
-        base::CRC32 crc;
-        crc << (uint8_t)key.topology;
-        crc << key.restartEnabled;
-        return crc;
-    }
-
-    bool PrimitiveAssemblyState::operator==(const PrimitiveAssemblyState& other) const
-    {
-        return (topology == other.topology) && (restartEnabled && other.restartEnabled);
-    }
-
-    bool PrimitiveAssemblyState::operator!=(const PrimitiveAssemblyState& other) const
-    {
-        return !operator==(other);
-    }
-
-    //----
-
-    uint32_t MultisampleState::CalcHash(const MultisampleState& key)
-    {
-        base::CRC32 crc;
-        crc << key.sampleCount;
-        crc << key.sampleShadingEnable;
-        crc << key.alphaToCoverageEnable;
-        crc << key.alphaToOneEnable;
-        crc << key.minSampleShading;
-        crc << key.sampleMask;
-        return crc;
-    }
-
-    bool MultisampleState::operator==(const MultisampleState& other) const
-    {
-        return (sampleCount == other.sampleCount) && (sampleShadingEnable == other.sampleShadingEnable)
-            && (alphaToCoverageEnable == other.alphaToCoverageEnable) && (alphaToOneEnable == other.alphaToOneEnable)
-            && (minSampleShading == other.minSampleShading) && (sampleMask == other.sampleMask);
-    }
-
-    bool MultisampleState::operator!=(const MultisampleState& other) const
-    {
-        return !operator==(other);
-    }
-
-    //----
+	//--
 
 } // rendering

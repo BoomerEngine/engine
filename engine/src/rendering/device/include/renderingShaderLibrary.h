@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "renderingDeviceObject.h"
+#include "renderingObject.h"
 
 namespace rendering
 {
@@ -317,66 +317,65 @@ namespace rendering
     /// shaders (as uploaded to device)
     class RENDERING_DEVICE_API ShaderObject : public IDeviceObject
     {
+		RTTI_DECLARE_VIRTUAL_CLASS(ShaderObject, IDeviceObject);
+
     public:
-        ShaderObject(ObjectID id, const ShaderLibraryDataPtr& data, IDeviceObjectHandler* impl);
+        ShaderObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderLibraryData* data, PipelineIndex index);
 
         // shaders data
         INLINE const ShaderLibraryDataPtr& data() const { return m_data; }
 
+		// shader index in the data 
+		INLINE const PipelineIndex index() const { return m_index; }
+
         //--
+
+		// create the graphics pipeline object with know pass layout and render states
+		// NOTE: this may start background shader compilation
+		virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats) = 0;
+
+		// create the compute pipeline object
+		// NOTE: this may start background shader compilation
+		virtual ComputePipelineObjectPtr createComputePipeline() = 0;
+
+		//--
 
     private:
         ShaderLibraryDataPtr m_data;
+		PipelineIndex m_index;
     };
 
     //----
 
-    /// shader state
-    enum class ShaderState : uint8_t
-    {
-        Loaded, // we are loaded and valid to use
-        Loading, // we were created and empty shell and promised to load at some point
-        Failed, // we tried to load but failed
-    };
-
-    /// all possible states of pipeline aggregated in one setup
+    /// single shader loaded from a file on disk, most common case for technical shaders, post processes
     class RENDERING_DEVICE_API ShaderLibrary : public base::res::IResource
     {
         RTTI_DECLARE_VIRTUAL_CLASS(ShaderLibrary, base::res::IResource);
 
     public:
         ShaderLibrary();
-        ShaderLibrary(const ShaderLibraryDataPtr& existingData);
+        ShaderLibrary(const ShaderLibraryDataPtr& data);
         virtual ~ShaderLibrary();
 
         //--
 
-        // get current state
-        INLINE ShaderState state() const { return m_state.load(); }
+        // shader object, can be used to create pipeline states
+		// NOTE: this is valid only if shaders loaded correctly
+        INLINE const ShaderObjectPtr& shaderObject() const { return m_object; }
 
-        //--
-
-        // get current rendering object, can be null if we are loading
-        bool resolve(ObjectID& outObject, PipelineIndex& outIndex, ShaderLibraryDataPtr* outData=nullptr) const;
-
-        // assign data, can happen asynchronously while shader is loading
-        void bind(const ShaderObjectPtr& obj, PipelineIndex index);
+		// original data (mostly for validation)
+		INLINE const ShaderLibraryDataPtr& data() const { return m_data; }
 
         //--
 
     private:
-        base::SpinLock m_lock;
-
         ShaderObjectPtr m_object;
-        ShaderLibraryDataPtr m_data; // read only original one
-        PipelineIndex m_index = 0;
-
-        std::atomic<ShaderState> m_state;
+        ShaderLibraryDataPtr m_data; 
 
         virtual void onPostLoad() override;
 
-        void createDeviceResources_NoLock();
-        void destroyDeviceResources_NoLock();
+		void createDeviceObjects();
+		void destroyDeviceObjects();
     };
 
     //----

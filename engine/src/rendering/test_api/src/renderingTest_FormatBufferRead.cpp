@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 
 namespace rendering
 {
@@ -23,12 +24,15 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            BufferView m_extraBuffer;
-            const ShaderLibrary* m_shaders;
+            BufferObjectPtr m_vertexBuffer;
+
+			BufferObjectPtr m_extraBuffer;
+			BufferViewPtr m_extraBufferSRV;
+
+            ShaderLibraryPtr m_shaders;
             uint32_t m_vertexCount;
         };
 
@@ -38,21 +42,7 @@ namespace rendering
 
         //---       
 
-        namespace
-        {
-            struct TestConsts
-            {
-                float ElementSizeScale;
-            };
-
-            struct TestParams
-            {
-                ConstantsView Consts;
-                BufferView ElementData;
-            };
-        }
-
-        static void PrepareTestGeometry(float x, float y, float w, float h, uint32_t count, base::Array<Simple3DVertex>& outVertices, base::Array<base::Vector4>& outBufferData)
+		void PrepareTestGeometry(float x, float y, float w, float h, uint32_t count, base::Array<Simple3DVertex>& outVertices, base::Array<base::Vector4>& outBufferData)
         {
             for (uint32_t py = 0; py <= count; ++py)
             {
@@ -89,28 +79,25 @@ namespace rendering
             {
                 rendering::BufferCreationInfo info;
                 info.allowShaderReads = true;
-                info.allowUAV = true;
                 info.size = bufferData.dataSize();
 
                 auto sourceData = CreateSourceData(bufferData);
-                m_extraBuffer = createBuffer(info, &sourceData);
+                m_extraBuffer = createBuffer(info, sourceData);
+				m_extraBufferSRV = m_extraBuffer->createView(ImageFormat::RGBA32F);
             }
         }
 
-        void RenderingTest_FormatBufferRead::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_FormatBufferRead::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
-            FrameBuffer fb;
+			FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
 
-            TestConsts tempConsts;
-            tempConsts.ElementSizeScale = 5.0f + 3.0f * cos(time);
-
-            TestParams tempParams;
-            tempParams.ElementData = m_extraBuffer;
-            tempParams.Consts = cmd.opUploadConstants(tempConsts);
-            cmd.opBindParametersInline("TestParams"_id, tempParams);
+			DescriptorEntry tempParams[2];
+			tempParams[0].constants<float>(5.0f + 3.0f * cos(time));
+			tempParams[1] = m_extraBufferSRV;
+            cmd.opBindDescriptor("TestParams"_id, tempParams);
 
             cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);

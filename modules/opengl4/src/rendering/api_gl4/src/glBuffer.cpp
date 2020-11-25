@@ -12,6 +12,7 @@
 #include "glUtils.h"
 
 #include "base/memory/include/buffer.h"
+#include "glDeviceThreadCopy.h"
 
 namespace rendering
 {
@@ -19,68 +20,54 @@ namespace rendering
     {
         //--
 
-        PoolTag DetermineBestMemoryPool(const BufferCreationInfo& setup)
-        {
-            if (setup.allowVertex)
-                return POOL_API_VERTEX_BUFFER;
-            if (setup.allowIndex)
-                return POOL_API_INDEX_BUFFER;
-            if (setup.allowCostantReads)
-                return POOL_API_CONSTANT_BUFFER;
-            if (setup.allowIndirect)
-                return POOL_API_INDIRECT_BUFFER;
-            return POOL_API_STORAGE_BUFFER;
-        }
+
+
+		static GLuint DetermineBestUsageFlag(const BufferCreationInfo& info)
+		{
+			GLuint flags = 0;
+
+			if (info.allowDynamicUpdate)
+				flags |= GL_DYNAMIC_STORAGE_BIT;
+			
+			return flags;
+		}
 
         //--
 
-        Buffer::Buffer(Device* drv, const BufferCreationInfo &setup, const SourceData* initialData)
+        Buffer::Buffer(Device* drv, const BufferCreationInfo &setup)
             : Object(drv, ObjectType::Buffer)
-            , m_glBuffer(0)
             , m_size(setup.size)
+			, m_stride(setup.stride)
         {
-            // setup initialization data
-            if (initialData)
-                m_initData = *initialData;
-            
-            // update stats
-            m_poolId = DetermineBestMemoryPool(setup);
-            base::mem::PoolStats::GetInstance().notifyAllocation(m_poolId, m_size);
+			// determine read/write capabilities
+			m_shaderReadable = setup.allowShaderReads;
+			m_uavWritable = setup.allowUAV;
+			m_constantReadable = setup.allowCostantReads;
+
+			// determine resource usage
+			m_glUsage = DetermineBestUsageFlag(setup);
         }
 
         Buffer::~Buffer()
         {
-            // release views
-            for (auto typedView : m_baseTypedViews.values())
-                GL_PROTECT(glDeleteTextures(1, &typedView));
-            m_baseTypedViews.clear();
-
-            // release views
-            for (auto typedView : m_offsetTypedViews.values())
-                GL_PROTECT(glDeleteTextures(1, &typedView));
-            m_offsetTypedViews.clear();
-
             // release the buffer object
-            GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
-            m_glBuffer = 0;
+            if (m_glBuffer)
+            {
+                GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
+                m_glBuffer = 0;
+            }
 
             // update stats
-            base::mem::PoolStats::GetInstance().notifyAllocation(m_poolId, m_size);
+            base::mem::PoolStats::GetInstance().notifyAllocation(m_poolTag, m_size);
         }
 
-        Buffer *Buffer::CreateBuffer(Device* drv, const BufferCreationInfo &setup, const SourceData* initializationData)
-        {
-            return new Buffer(drv, setup, initializationData);
-        }
-
-        //--
+        //--		
 
         void Buffer::finalizeCreation()
         {
-            PC_SCOPE_LVL1(BufferUpload);
+            ASSERT_EX(m_glBuffer == 0, "Buffer already created");
+            PC_SCOPE_LVL1(BufferCreate);
 
-            ASSERT(m_glBuffer == 0);
-            GL_PROTECT(glEnable(GL_DEBUG_OUTPUT));
             // create buffer
             GLuint buffer = 0;
             GL_PROTECT(glCreateBuffers(1, &buffer));
@@ -90,76 +77,167 @@ namespace rendering
             if (m_label)
                 GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, m_label.length(), m_label.c_str()));
 
-            // setup buffer
-            if (m_initData.data)
-            {
-                auto sourceData = m_initData.data.data() + m_initData.offset;
-                GL_PROTECT(glNamedBufferData(buffer, m_size, sourceData, GL_STATIC_DRAW));
-                m_initData = SourceData();
-            }
-            else
-            {
-                // determine buffer usage flags
-                GLuint usageFlags = 0;
+            // setup data with buffer
+            GL_PROTECT(glNamedBufferStorage(buffer, m_size, nullptr, m_glUsage));
+        }
 
-                // setup data with buffer
-                GL_PROTECT(glNamedBufferStorage(buffer, m_size, nullptr, usageFlags));
+		void Buffer::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
+		{
+			PC_SCOPE_LVL1(BufferAsyncCopy);
+
+			if (m_glBuffer == 0)
+				finalizeCreation();
+
+			const auto copySize = std::min<uint32_t>(range.buffer.size, view.size);
+			GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
+		}
+
+		//--
+
+        ResolvedBufferView Buffer::resolveUntypedView(uint32_t offset /*=0*/, uint32_t size /*= INDEX_MAX*/)
+        {
+            if (m_glBuffer == 0)
+            {
+                finalizeCreation();
+                DEBUG_CHECK_RETURN_V(m_glBuffer != 0, ResolvedBufferView());
+            }
+
+            return ResolvedBufferView(m_glBuffer, offset, size, m_stride);
+        }
+
+		BufferUntypedView* Buffer::createConstantView_ClientAPI(uint32_t offset, uint32_t size) const
+		{
+			DEBUG_CHECK_RETURN_V(m_stride == 0, nullptr);
+
+			DEBUG_CHECK_RETURN_V((offset & 15) == 0, nullptr);
+			DEBUG_CHECK_RETURN_V((size & 15) == 0, nullptr);
+
+			DEBUG_CHECK_RETURN_V(offset < m_size, nullptr);
+			DEBUG_CHECK_RETURN_V(size <= m_size, nullptr);
+			DEBUG_CHECK_RETURN_V(offset + size <= m_size, nullptr);
+
+			DEBUG_CHECK_RETURN_V(m_constantReadable, nullptr);
+
+
+			return new BufferUntypedView(device(), const_cast<Buffer*>(this), offset, size, 0, false);
+		}
+
+        BufferTypedView* Buffer::createTypedView_ClientAPI(ImageFormat format, uint32_t offset, uint32_t size, bool writable) const
+        {
+            DEBUG_CHECK_RETURN_V(offset < m_size, nullptr);
+            DEBUG_CHECK_RETURN_V(size <= m_size, nullptr);
+            DEBUG_CHECK_RETURN_V(offset + size <= m_size, nullptr);
+            DEBUG_CHECK_RETURN_V(format != ImageFormat::UNKNOWN, nullptr);
+
+			// TODO: check format compatibility
+
+			DEBUG_CHECK_RETURN_V(!GetImageFormatInfo(format).compressed, nullptr);
+			const auto formatSize = GetImageFormatInfo(format).bitsPerPixel / 8;
+			DEBUG_CHECK_RETURN_V((offset % formatSize) == 0, nullptr);
+			DEBUG_CHECK_RETURN_V((size % formatSize) == 0, nullptr);
+
+			if (writable)
+			{
+				DEBUG_CHECK_RETURN_V(m_uavWritable, nullptr);
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_V(m_shaderReadable, nullptr);
+			}
+
+            return new BufferTypedView(device(), const_cast<Buffer*>(this), format, offset, size, writable);
+        }
+
+        BufferUntypedView* Buffer::createUntypedView_ClientAPI(uint32_t offset, uint32_t size, bool writable) const
+        {
+			DEBUG_CHECK_RETURN_V(m_stride != 0, nullptr);
+
+			DEBUG_CHECK_RETURN_V((offset % m_stride == 0), nullptr);
+			DEBUG_CHECK_RETURN_V((size % m_stride == 0), nullptr);
+
+            DEBUG_CHECK_RETURN_V(offset < m_size, nullptr);
+            DEBUG_CHECK_RETURN_V(size <= m_size, nullptr);
+            DEBUG_CHECK_RETURN_V(offset + size <= m_size, nullptr);
+
+			if (writable)
+			{
+				DEBUG_CHECK_RETURN_V(m_uavWritable, nullptr);
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_V(m_shaderReadable, nullptr);
+			}
+
+            return new BufferUntypedView(device(), const_cast<Buffer*>(this), offset, size, m_stride, writable);
+        }
+
+        //--
+
+        BufferTypedView::BufferTypedView(Device* drv, Buffer* buffer, ImageFormat dataFormat, uint32_t offset, uint32_t size, bool writable)
+            : Object(drv, ObjectType::BufferTypedView)
+            , m_buffer(buffer)
+            , m_offset(offset)
+            , m_size(size)
+			, m_writable(writable)
+        {
+            DEBUG_CHECK_EX(dataFormat != ImageFormat::UNKNOWN, "Trying to resolve a typed view without specifying a type");
+            m_glViewFormat = TranslateImageFormat(dataFormat);
+        }
+
+        BufferTypedView::~BufferTypedView()
+        {
+            if (m_glTextureView)
+            {
+                GL_PROTECT(glDeleteTextures(1, &m_glTextureView));
+                m_glTextureView = 0;
             }
         }
 
-        ResolvedBufferView Buffer::resolveUntypedView(const BufferView& view)
+        ResolvedFormatedView BufferTypedView::resolve()
         {
-            // initialize the buffer on first use
-            if (m_glBuffer == 0)
+            if (m_glTextureView == 0)
                 finalizeCreation();
 
-            // create buffer view
-            return ResolvedBufferView(m_glBuffer, view.offset(), view.size());
+            return ResolvedFormatedView(m_glTextureView, m_glViewFormat);
         }
 
-        ResolvedFormatedView Buffer::resolveTypedView(const BufferView& view, const ImageFormat dataFormat)
+        void BufferTypedView::finalizeCreation()
         {
-            // initialize the buffer on first use
-            if (m_glBuffer == 0)
-                finalizeCreation();
+            PC_SCOPE_LVL1(BufferTypedView);
+
+            DEBUG_CHECK_RETURN(m_glTextureView == 0);
+            DEBUG_CHECK_RETURN(m_glViewFormat != 0);
+
+            // make sure buffer itself is created
+            if (0 == m_buffer->m_glBuffer)
+            {
+                m_buffer->finalizeCreation();
+                DEBUG_CHECK_RETURN(m_buffer->m_glBuffer != 0);
+            }
 
             // we should have a typed view of the buffer
-            DEBUG_CHECK_EX(dataFormat != ImageFormat::UNKNOWN, "Trying to resolve a typed view without specifying a type");
-            if (dataFormat == ImageFormat::UNKNOWN)
-                return ResolvedFormatedView();
+            GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &m_glTextureView));
+            GL_PROTECT(glTextureBufferRange(m_glTextureView, m_glViewFormat, m_buffer->m_glBuffer, m_offset, m_size));
+            TRACE_SPAM("GL: Created typed buffer view {} of {}, offset {}, size {}", m_glTextureView, m_buffer->m_glBuffer, m_offset, m_size);
+        }
 
-            // translate format
-            auto imageFormat = TranslateImageFormat(dataFormat);
+        //--
 
-            // if we have 0 offset our job is a tid bit simpler
-            if (view.offset() == 0)
-            {
-                // use existing view
-                GLuint glTextureView = 0;
-                if (m_baseTypedViews.find((uint16_t)dataFormat, glTextureView))
-                    return ResolvedFormatedView(glTextureView, imageFormat);
+        BufferUntypedView::BufferUntypedView(Device* drv, Buffer* buffer, uint32_t offset, uint32_t size, uint32_t stride, bool writable)
+            : Object(drv, ObjectType::BufferUntypedView)
+            , m_buffer(buffer)
+            , m_offset(offset)
+            , m_size(size)
+            , m_stride(stride)
+			, m_writable(writable)
+        {}
 
-                // create a view
-                GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &glTextureView));
-                GL_PROTECT(glTextureBufferRange(glTextureView, imageFormat, m_glBuffer, 0, m_size));
-                m_baseTypedViews[(uint16_t)dataFormat] = glTextureView;
+        BufferUntypedView::~BufferUntypedView()
+        {}
 
-                return ResolvedFormatedView(glTextureView, imageFormat);
-            }
-            else
-            {
-                GLuint glTextureView = 0;
-                BufferTypedViewKey key = { dataFormat, view.offset() };
-                if (m_offsetTypedViews.find(key, glTextureView))
-                    return ResolvedFormatedView(glTextureView, imageFormat);
-
-                // create a view
-                GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &glTextureView));
-                GL_PROTECT(glTextureBufferRange(glTextureView, imageFormat, m_glBuffer, view.offset(), m_size - view.offset()));
-                m_offsetTypedViews[key] = glTextureView;
-
-                return ResolvedFormatedView(glTextureView, imageFormat);
-            }
+        ResolvedBufferView BufferUntypedView::resolve()
+        {
+			return m_buffer->resolveUntypedView(m_offset, m_size);
         }
 
         //--

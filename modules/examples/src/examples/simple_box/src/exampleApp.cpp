@@ -58,7 +58,7 @@ namespace example
         setup.m_height = 1024;
         setup.m_windowMaximized = false;
         setup.m_windowTitle = "BoomerEngine - SimpleBox";
-        setup.m_class = rendering::DriverOutputClass::NativeWindow; // render to native window on given OS
+        setup.m_class = rendering::OutputClass::NativeWindow; // render to native window on given OS
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);
@@ -193,60 +193,47 @@ namespace example
         base::GetService<DeviceService>()->device()->submitWork(cmd.release());
     }
 
+	// NOTE: this layout must match the shader
+	struct GPUCameraParams
+	{
+		Matrix WorldToScreen;
+	};
+
     void SimpleApp::setupCamera(CommandWriter& cmd, const Vector3& from, const Vector3& to, float fov, float aspect)
     {
-        // NOTE: this layout must match the shader
-        struct CameraDescriptor
-        {
-            ConstantsView data;
-        };
-
-        // NOTE: this layout must match the shader
-        struct CameraParams
-        {
-            Matrix WorldToScreen;
-        };
-
         // calculate camera matrices
         helper::CameraMatrices camera;
         camera.calculate(from, to, fov, aspect); 
 
-        CameraParams params;
+		GPUCameraParams params;
         params.WorldToScreen = camera.WorldToScreen.transposed();
 
         // prepare descriptor
-        CameraDescriptor desc;
-        desc.data = cmd.opUploadConstants(params);
+		rendering::DescriptorEntry cameraDescriptor[1];
+		cameraDescriptor[0].constants(params);
 
         // record and set descriptor
-        cmd.opBindParametersInline("SceneParams"_id, desc);
+        cmd.opBindDescriptor("SceneParams"_id, cameraDescriptor);
     }
+
+	// NOTE: this layout must match the shader
+	struct GPUObjectParams
+	{
+		Matrix localToWorld;
+	};
 
     void SimpleApp::setupObject(CommandWriter& cmd, const Matrix& localToWorld)
     {
-        // NOTE: this layout must match the shader
-        struct ObjectDescriptor
-        {
-            ConstantsView data;
-        };
-
-        // NOTE: this layout must match the shader
-        struct ObjectParams
-        {
-            Matrix localToWorld;
-        };
-
-        ObjectParams params;
+		GPUObjectParams params;
         params.localToWorld = localToWorld.transposed();
 
-        ObjectDescriptor desc;
-        desc.data = cmd.opUploadConstants(params); // copy the content of constant buffer onto the command buffer
+		rendering::DescriptorEntry objectDescriptor[1];
+		objectDescriptor[0].constants(params);
 
-        // record and set descriptor
-        cmd.opBindParametersInline("ObjectParams"_id, desc);
+        cmd.opBindDescriptor("ObjectParams"_id, objectDescriptor);
     }
 
-    void SimpleApp::renderScene(CommandWriter& cmd, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget)
+    void SimpleApp::renderScene(CommandWriter& cmd, const rendering::RenderTargetView* colorTarget, const rendering::RenderTargetView* depthTarget)
     {
         if (!m_shaders)
             return;
@@ -258,15 +245,15 @@ namespace example
 
         // setup constants for camera
         const auto cameraPos = m_cameraRotation.forward() * m_cameraDistance;
-        const float aspect = colorTarget.width() / (float)colorTarget.height(); // NOTE: we never get to rendering phase if we have zero sized render targets
+        const float aspect = colorTarget->width() / (float)colorTarget->height(); // NOTE: we never get to rendering phase if we have zero sized render targets
         setupCamera(cmd, cameraPos, Vector3(0, 0, 0), 70.0f, aspect);
 
         // end pass rendering to that frame buffer
         cmd.opBeingPass(fb);
 
         // bind buffers
-        cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer->view());
-        cmd.opBindIndexBuffer(m_indexBuffer->view());
+        cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer);
+        cmd.opBindIndexBuffer(m_indexBuffer);
 
         // enable depth buffer
         cmd.opSetDepthState(true, true);
@@ -310,12 +297,8 @@ namespace example
             info.size = boxVertices.dataSize();
             info.allowVertex = true;
 
-            SourceData source;
-            source.data = boxVertices.createBuffer();
-
-            m_vertexBuffer = GetService<DeviceService>()->device()->createBuffer(info, &source);
-            if (!m_vertexBuffer)
-                return false;
+			auto sourceData = base::RefNew<rendering::SourceDataProviderBuffer>(boxVertices.createBuffer());
+            m_vertexBuffer = GetService<DeviceService>()->device()->createBuffer(info, sourceData);
         }
 
         {
@@ -324,12 +307,8 @@ namespace example
             info.size = boxIndices.dataSize();
             info.allowIndex = true;
 
-            SourceData source;
-            source.data = boxIndices.createBuffer();
-
-            m_indexBuffer = GetService<DeviceService>()->device()->createBuffer(info, &source);
-            if (!m_indexBuffer)
-                return false;
+			auto sourceData = base::RefNew<rendering::SourceDataProviderBuffer>(boxIndices.createBuffer());
+            m_indexBuffer = GetService<DeviceService>()->device()->createBuffer(info, sourceData);
         }
 
         return true;

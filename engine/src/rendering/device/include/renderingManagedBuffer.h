@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "renderingBufferView.h"
-#include "renderingDeviceObject.h"
 #include "base/containers/include/blockPool.h"
 
 namespace rendering
@@ -31,9 +29,6 @@ namespace rendering
 
         /// buffer object
         INLINE const BufferObjectPtr& bufferObject() { return m_bufferObject; }
-
-        /// view of the buffer
-        INLINE const BufferView& bufferView() const { return m_bufferView; }
 
         // backing CPU data buffer, read only
         template< typename T >
@@ -57,7 +52,6 @@ namespace rendering
         //---
 
     private:
-        BufferView m_bufferView;
         BufferObjectPtr m_bufferObject;
 
         uint8_t* m_backingStorage = nullptr;
@@ -69,10 +63,6 @@ namespace rendering
         uint32_t m_structureGranularity = 0;
 
         base::SpinLock m_stateLock;
-
-        IDevice* m_api = nullptr;
-
-        BufferCreationInfo m_creationInfo;
     };
 
     //--

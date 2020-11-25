@@ -15,47 +15,14 @@ namespace rendering
 {
     namespace gl4
     {
-        //---
+        ///---
 
-        /// a key for a typed view resolver
-        struct BufferTypedViewKey
-        {
-            ImageFormat dataFormat = ImageFormat::UNKNOWN;
-            uint32_t dataOffset = 0;
-
-            INLINE static uint32_t CalcHash(const BufferTypedViewKey& key)
-            {
-                return base::CRC32() << (uint16_t)key.dataFormat << key.dataOffset;
-            }
-
-            INLINE bool operator==(const BufferTypedViewKey& other) const
-            {
-                return (dataFormat == other.dataFormat) && (dataOffset == other.dataOffset);
-            }
-        };
+        class BufferTypedView;
+        class BufferUntypedView;
 
         ///---
 
-        /// resolved buffer view information (not provided via buffer view)
-        struct ResolvedBufferView
-        {
-            GLuint glBuffer = 0;
-            uint32_t offset = 0;
-            uint32_t size = 0;
 
-            INLINE ResolvedBufferView() {};
-            INLINE ResolvedBufferView(GLuint glBuffer_, uint32_t offset_, uint32_t size_)
-                : glBuffer(glBuffer_)
-                , offset(offset_)
-                , size(size_)
-            {}
-
-            INLINE bool operator==(const ResolvedBufferView& other) const { return (glBuffer == other.glBuffer) && (offset == other.offset) && (size == other.size); }
-            INLINE bool operator!=(const ResolvedBufferView& other) const { return !operator==(other); }
-
-            INLINE bool empty() const { return (glBuffer == 0); }
-            INLINE operator bool() const { return (glBuffer != 0); }
-        };
 
         ///---
 
@@ -84,7 +51,7 @@ namespace rendering
         class Buffer : public Object
         {
         public:
-            Buffer(Device* drv, const BufferCreationInfo& setup, const SourceData* initialData);
+            Buffer(Device* drv, const BufferCreationInfo& setup);
             virtual ~Buffer();
 
             static const auto STATIC_TYPE = ObjectType::Buffer;
@@ -99,34 +66,107 @@ namespace rendering
 
             //---
 
-            // resolve untyped buffer view
-            ResolvedBufferView resolveUntypedView(const BufferView& view);
-
-            // resolve typed buffer view
-            ResolvedFormatedView resolveTypedView(const BufferView& view, ImageFormat dataFormat);
+            // directly resolve untyped buffer view of the whole buffer
+            ResolvedBufferView resolveUntypedView(uint32_t offset = 0, uint32_t size = INDEX_MAX);
 
             //---
 
-            // create a vertex buffer (always in the device memory), can be updated only via the staging buffer and transfer queue
-            static Buffer* CreateBuffer(Device* drv, const BufferCreationInfo& setup, const SourceData* initializationData);
+			// create a constant (uniform) view of the buffer
+			BufferUntypedView* createConstantView_ClientAPI(uint32_t offset, uint32_t size) const;
+
+            // create typed view object
+            // NOTE: function might be called from outside render thread
+            BufferTypedView* createTypedView_ClientAPI(ImageFormat format, uint32_t offset, uint32_t size, bool writable) const;
+
+            // create untyped view object
+            // NOTE: function might be called from outside render thread
+            BufferUntypedView* createUntypedView_ClientAPI(uint32_t offset, uint32_t size, bool writable) const;
+
+            //---
+
+			// copy staging data into this buffer
+			void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
 
         private:
-            GLuint m_glBuffer;
+            GLuint m_glBuffer = 0;
+			GLuint m_glUsage = 0;
 
-            uint32_t m_size;
+            uint32_t m_size = 0;
+            uint32_t m_stride = 0;
+
+			bool m_shaderReadable = false;
+			bool m_uavWritable = false;
+			bool m_constantReadable = false;
+
+            PoolTag m_poolTag;
             base::StringBuf m_label;
 
-            base::HashMap<uint16_t, GLuint> m_baseTypedViews;
-            base::HashMap<BufferTypedViewKey, GLuint> m_offsetTypedViews; // typed views with offsets
+            //--
 
-            SourceData m_initData;
+            void finalizeCreation();
 
-            PoolTag m_poolId;
+            friend class BufferTypedView;
+            friend class BufferUntypedView;
+        };
+
+        //---
+
+		// typed (formated) view of the buffer
+        class BufferTypedView : public Object
+        {
+        public:
+            BufferTypedView(Device* drv, Buffer* buffer, ImageFormat format, uint32_t offset, uint32_t size, bool writable);
+            virtual ~BufferTypedView();
+
+            static const auto STATIC_TYPE = ObjectType::BufferTypedView;
+
+            ResolvedFormatedView resolve();
+
+			INLINE bool writable() const { return m_writable; }
+
+        private:
+            Buffer* m_buffer = nullptr;
+
+            uint32_t m_offset = 0;
+            uint32_t m_size = 0;
+
+            GLuint m_glViewFormat = 0;
+            GLuint m_glTextureView = 0;
+
+			bool m_writable = false;
 
             //--
 
             void finalizeCreation();
         };
+
+        //---
+
+        class BufferUntypedView : public Object
+        {
+        public:
+            BufferUntypedView(Device* drv, Buffer* buffer, uint32_t offset, uint32_t size, uint32_t stride, bool writable);
+            virtual ~BufferUntypedView();
+
+            static const auto STATIC_TYPE = ObjectType::BufferUntypedView;
+
+            ResolvedBufferView resolve();
+
+			INLINE uint32_t stride() const { return m_stride; }
+			INLINE bool writable() const { return m_writable; }
+
+        private:
+            Buffer* m_buffer = nullptr;
+
+            uint32_t m_offset = 0;
+            uint32_t m_size = 0;
+            uint32_t m_stride = 0;
+
+			bool m_writable = false;
+        };
+
+
+        //---
 
     } // gl4
 } // rendering

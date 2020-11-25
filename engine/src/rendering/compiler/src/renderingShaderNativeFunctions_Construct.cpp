@@ -74,6 +74,13 @@ namespace rendering
                 return DataType();
             }
 
+			// to many
+			if (expectedComponentCount && numComponentsCollected > expectedComponentCount)
+			{
+				err.reportError(loc, base::TempString("Too much data in type constructor, expected {} components, {} provided", expectedComponentCount, numComponentsCollected));
+				return DataType();				
+			}
+
             // validate component count
             if (expectedComponentCount && numComponentsCollected < expectedComponentCount)
             {

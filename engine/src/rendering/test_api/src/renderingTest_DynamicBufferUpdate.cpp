@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 
@@ -25,15 +26,15 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
         private:
             static const uint32_t MAX_VERTICES = 1024;
 
-            BufferView m_vertexColorBuffer;
-            BufferView m_vertexBuffer;
+            BufferObjectPtr m_vertexColorBuffer;
+			BufferObjectPtr m_vertexBuffer;
 
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_DynamicBufferUpdate);
@@ -79,13 +80,19 @@ namespace rendering
             m_shaders = loadShader("GenericGeometryTwoStreams.csl");
         }
 
-        void RenderingTest_DynamicBufferUpdate::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView)
+        void RenderingTest_DynamicBufferUpdate::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
         {
             // prepare some dynamic geometry
             {
+				cmd.opTransitionLayout(m_vertexBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
+				cmd.opTransitionLayout(m_vertexColorBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
+
                 auto* dynamicVerticesData = cmd.opUpdateDynamicBufferPtrN<base::Vector2>(m_vertexBuffer, 0, MAX_VERTICES);
                 auto* dynamicColorsData = cmd.opUpdateDynamicBufferPtrN<base::Color>(m_vertexColorBuffer, 0, MAX_VERTICES);
                 PrepareTestGeometry(MAX_VERTICES, 0.0f, 0.0f, 0.33f, time, dynamicVerticesData, dynamicColorsData);
+
+				cmd.opTransitionLayout(m_vertexBuffer, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
+				cmd.opTransitionLayout(m_vertexColorBuffer, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
             }
 
             FrameBuffer fb;

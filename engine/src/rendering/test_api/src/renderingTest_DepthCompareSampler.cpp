@@ -14,6 +14,7 @@
 
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
+#include "../../device/include/renderingDeviceGlobalObjects.h"
 
 namespace rendering
 {
@@ -27,14 +28,18 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
         private:
-            const ShaderLibrary* m_shaderTest;
-            const ShaderLibrary* m_shaderPreview;
+            ShaderLibraryPtr m_shaderTest;
+            ShaderLibraryPtr m_shaderPreview;
 
-            BufferView m_vertexBuffer;
-            ImageView m_depthBuffer;
+            BufferObjectPtr m_vertexBuffer;
+
+            ImageObjectPtr m_depthBuffer;
+			RenderTargetViewPtr m_depthBufferRTV;
+			ImageViewPtr m_depthBufferSRV;
+
             uint32_t m_vertexCount;
         };
 
@@ -90,15 +95,6 @@ namespace rendering
             }
         }
 
-        namespace
-        {
-            struct TestParams
-            {
-                ConstantsView Constants;
-                ImageView TestImage;
-            };
-        };
-
         void RenderingTest_DepthCompareSampler::initialize()
         {
             {
@@ -112,7 +108,7 @@ namespace rendering
             m_shaderPreview = loadShader("DepthCompareSamplerPreview.csl");
         }
         
-        void RenderingTest_DepthCompareSampler::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView)
+        void RenderingTest_DepthCompareSampler::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
         {
             // create depth render target
             if (m_depthBuffer.empty())
@@ -121,15 +117,20 @@ namespace rendering
                 info.allowShaderReads = true;
                 info.allowRenderTarget = true;
                 info.format = rendering::ImageFormat::D24S8;
-                info.width = backBufferView.width();
-                info.height = backBufferView.height();
+                info.width = backBufferView->width();
+                info.height = backBufferView->height();
                 m_depthBuffer = createImage(info);
+
+				m_depthBufferRTV = m_depthBuffer->createRenderTargetView();
+
+				auto depthCompareSampler = rendering::Globals().SamplerPointDepthLE;
+				m_depthBufferSRV = m_depthBuffer->createView(depthCompareSampler);
             }
 
             // draw the triangles
             {
                 FrameBuffer fb;
-                fb.depth.view(m_depthBuffer).clearDepth(1.0f).clearStencil(0);
+                fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0);
 
                 cmd.opBeingPass(fb);
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
@@ -138,8 +139,8 @@ namespace rendering
                 cmd.opEndPass();
             }
 
-            // we will wait for the buffer to be generated
-            cmd.opGraphicsBarrier();
+            // transition buffer to allow reading in shader
+			cmd.opTransitionLayout(m_depthBuffer, ResourceLayout::DepthWrite, ResourceLayout::ShaderResource);
 
             // draw the depth compare test
             {
@@ -148,14 +149,12 @@ namespace rendering
 
                 cmd.opBeingPass(fb);
 
-                auto depthCompareSampler = rendering::ObjectID::DefaultDepthPointSampler();
-
                 float zRef = 0.5f + 0.5f * sinf(time);
 
-                TestParams tempParams;
-                tempParams.TestImage = m_depthBuffer.createSampledView(depthCompareSampler);
-                tempParams.Constants = cmd.opUploadConstants(zRef);
-                cmd.opBindParametersInline("TestParams"_id, tempParams);
+				DescriptorEntry tempParams[2];
+				tempParams[0].constants(zRef);
+				tempParams[1] = m_depthBufferSRV;
+                cmd.opBindDescriptor("TestParams"_id, tempParams);
 
                 drawQuad(cmd, m_shaderPreview, -0.9f, -0.9f, 1.8f, 1.8f);
                 cmd.opEndPass();

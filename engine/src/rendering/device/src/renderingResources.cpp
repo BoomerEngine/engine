@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "renderingResources.h"
+#include "renderingDeviceApi.h"
 
 #include "base/containers/include/stringBuilder.h"
 
@@ -43,7 +44,8 @@ namespace rendering
             && (allowDynamicUpdate == other.allowDynamicUpdate)
             && (allowCopies == other.allowCopies)
             && (allowShaderReads == other.allowShaderReads)
-            && (allowUAV == other.allowUAV);
+            && (allowUAV == other.allowUAV)
+            && (initialLayout == other.initialLayout);
     }
 
     bool ImageCreationInfo::operator!=(const ImageCreationInfo& other) const
@@ -69,6 +71,31 @@ namespace rendering
 
         return flags;
     }
+
+	ResourceLayout ImageCreationInfo::computeDefaultLayout() const
+	{
+		if (allowRenderTarget)
+		{
+			if (GetImageFormatInfo(format).formatClass == ImageFormatClass::DEPTH)
+				return ResourceLayout::DepthWrite;
+			else
+				return ResourceLayout::RenderTarget;
+		}
+		else if (allowUAV)
+		{
+			return ResourceLayout::UAV;
+		}
+		else if (allowShaderReads)
+		{
+			return ResourceLayout::ShaderResource;
+		}
+		else if (allowCopies)
+		{
+			return ResourceLayout::CopyDest;
+		}
+
+		return ResourceLayout::INVALID;
+	}
 
     void ImageCreationInfo::print(base::IFormatStream& ret) const
     {
@@ -106,6 +133,59 @@ namespace rendering
         if (allowRenderTarget) ret << ", RT";
         if (allowUAV) ret << ", UAV";
     }
+
+	uint32_t ImageCreationInfo::calcMipDataSize(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+
+		const auto& formatInfo = GetImageFormatInfo(format);
+
+		const auto minSize = formatInfo.compressed ? 4 : 1;
+		const auto mipWidth = std::max<uint32_t>(width >> mipIndex, minSize);
+		const auto mipHeight = std::max<uint32_t>(height >> mipIndex, minSize);
+		const auto mipDepth = std::max<uint32_t>(depth >> mipIndex, 1);
+
+		return ((mipWidth * mipHeight * mipDepth) * formatInfo.bitsPerPixel) / 8;
+	}
+
+	uint32_t ImageCreationInfo::calcMipWidth(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+		return std::max<uint32_t>(width >> mipIndex, 1);
+	}
+
+	uint32_t ImageCreationInfo::calcMipHeight(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+		return std::max<uint32_t>(height >> mipIndex, 1);
+	}
+
+	uint32_t ImageCreationInfo::calcMipDepth(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+		return std::max<uint32_t>(depth >> mipIndex, 1);
+	}
+
+	uint32_t ImageCreationInfo::calcRowPitch(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+
+		const auto& formatInfo = GetImageFormatInfo(format);
+
+		const auto minSize = formatInfo.compressed ? 4 : 1;
+		const auto mipWidth = std::max<uint32_t>(width >> mipIndex, minSize);
+		return (mipWidth * formatInfo.bitsPerPixel) / 8;
+	}
+
+	uint32_t ImageCreationInfo::calcRowLength(uint8_t mipIndex) const
+	{
+		DEBUG_CHECK(mipIndex < numMips);
+
+		const auto& formatInfo = GetImageFormatInfo(format);
+
+		const auto minSize = formatInfo.compressed ? 4 : 1;
+		return std::max<uint32_t>(width >> mipIndex, minSize);
+	}
 
     uint32_t ImageCreationInfo::calcMemoryUsage() const
     {
@@ -167,6 +247,24 @@ namespace rendering
         return ret;
     }
 
+	ResourceLayout BufferCreationInfo::computeDefaultLayout() const
+	{
+		if (allowCostantReads)
+			return ResourceLayout::ConstantBuffer;
+		else if (allowUAV)
+			return ResourceLayout::UAV;
+		else if (allowShaderReads)
+			return ResourceLayout::ShaderResource;
+		else if (allowIndex)
+			return ResourceLayout::IndexBuffer;
+		else if (allowVertex)
+			return ResourceLayout::VertexBuffer;
+		else if (allowCopies)
+			return ResourceLayout::CopyDest;
+
+		return ResourceLayout::INVALID;
+	}
+
     void BufferCreationInfo::print(base::IFormatStream& f) const
     {
         f.appendf("{} bytes", size);
@@ -185,6 +283,70 @@ namespace rendering
     }
 
     //--
+
+	ISourceDataProvider::~ISourceDataProvider()
+	{}
+
+	ISourceDataProvider::ReadyStatus ISourceDataProvider::checkSourceDataReady(const void* token) const
+	{
+		return ReadyStatus::Ready;
+	}
+
+	bool ISourceDataProvider::openSourceData(const ResourceCopyRange& range, void*& outToken, bool& outSupportsAsyncWrites) const
+	{
+		outToken = nullptr;
+		outSupportsAsyncWrites = true;
+		return true;
+	}
+
+	void ISourceDataProvider::closeSourceData(void* token) const
+	{
+	}
+
+	//--
+
+	SourceDataProviderBuffer::SourceDataProviderBuffer(const base::Buffer& data, uint32_t sourceOffset /*= 0*/, uint32_t sourceSize /*= 0*/)
+		: m_data(data)
+		, m_sourceOffset(sourceOffset)
+		, m_sourceSize(sourceSize)
+	{
+		DEBUG_CHECK(sourceOffset <= data.size());
+		DEBUG_CHECK((uint64_t)sourceOffset + (uint64_t)sourceSize <= (uint64_t)data.size());
+	}
+
+	void SourceDataProviderBuffer::writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const
+	{
+		DEBUG_CHECK_RETURN(!m_sourceSize || element.dataSize == m_sourceSize);
+		memcpy(destPointer, m_data.data(), element.dataSize);
+	}
+
+	//--
+
+	IDownloadDataSink::~IDownloadDataSink()
+	{}
+
+	//--
+
+	DownloadDataSinkBuffer::DownloadDataSinkBuffer(PoolTag pool, uint32_t alignment/*=16*/)
+		: m_version(0)
+		, m_poolTag(pool)
+		, m_alignment(alignment)
+	{}
+
+	void DownloadDataSinkBuffer::processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info)
+	{
+		auto data = base::Buffer::Create(m_poolTag, retrievedSize, m_alignment, srcPtr);
+		DEBUG_CHECK_RETURN(data); // something wrong happened with the data - OOM ? :(
+
+		{
+			auto lock = CreateLock(m_dataLock);
+			m_data = std::move(data);
+		}
+
+		++m_version;
+	}
+
+	//--
 
 } // rendering
 

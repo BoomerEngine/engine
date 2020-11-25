@@ -50,10 +50,12 @@ namespace rendering
             virtual void advanceFrame() override final;
 
             virtual OutputObjectPtr createOutput(const OutputInitInfo& info) override final;
-            virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const SourceData* sourceData = nullptr) override final;
+            virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override final;
             virtual ShaderObjectPtr createShaders(const ShaderLibraryData* shaders) override final;
-            virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const SourceData* sourceData = nullptr) override final;
+            virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override final;
             virtual SamplerObjectPtr createSampler(const SamplerState& info) override final;
+
+			virtual void asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished /*= base::fibers::WaitCounter()*/) override final;
 
             virtual void submitWork(command::CommandBuffer* masterCommandBuffer, bool background) override final;
 
@@ -66,10 +68,10 @@ namespace rendering
             //--
 
             // resolve a view to predefined image
-            ResolvedImageView resolvePredefinedImage(const ImageView& view) const;
+            /*ResolvedImageView resolvePredefinedImage(const ImageView& view) const;
 
             // resolve a view of predefined sampler
-            GLuint resolvePredefinedSampler(uint32_t id) const;
+            GLuint resolvePredefinedSampler(uint32_t id) const;*/
 
             //--
 
@@ -88,7 +90,7 @@ namespace rendering
 
             base::StringBuf m_desc;
 
-            Image* m_predefinedImages[128];
+            /*Image* m_predefinedImages[128];
             GLuint m_predefinedSamplers[128];
 
             void createPredefinedImages();
@@ -96,7 +98,7 @@ namespace rendering
 
             void createPredefinedImageFromColor(uint32_t id, const base::Color fillColor, const ImageFormat format, const char* debugName);
             void createPredefinedSampler(uint32_t id, const SamplerState& info, const char* debugName);
-            void createPredefinedRenderTarget(uint32_t id, const ImageFormat format, uint32_t numSlices, const char* debugName);
+            void createPredefinedRenderTarget(uint32_t id, const ImageFormat format, uint32_t numSlices, const char* debugName);*/
 
             //-----
         };

@@ -28,7 +28,7 @@ namespace example
         void updateCamera(float dt);
 
         void renderFrame();
-        void renderScene(CommandWriter& cmd, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget);
+        void renderScene(CommandWriter& cmd, const rendering::RenderTargetView* colorTarget, const rendering::RenderTargetView* depthTarget);
         void setupCamera(CommandWriter& cmd, const Vector3& from, const Vector3& to, float fov, float aspect);
         void setupObject(CommandWriter& cmd, const Matrix& localToWorld);
 

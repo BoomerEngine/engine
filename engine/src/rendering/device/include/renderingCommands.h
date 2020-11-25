@@ -9,12 +9,10 @@
 #pragma once
 
 #include "renderingObject.h"
-#include "renderingImageView.h"
-#include "renderingBufferView.h"
-#include "renderingConstantsView.h"
-#include "renderingParametersView.h"
-#include "renderingParametersLayoutID.h"
+#include "renderingDescriptorID.h"
 #include "renderingFramebuffer.h"
+#include "renderingResources.h"
+#include "renderingDeviceApi.h"
 
 #include "base/image/include/imageVIew.h"
 
@@ -143,9 +141,6 @@ namespace rendering
         RENDER_DECLARE_OPCODE_DATA(AcquireOutput)
         {
             ObjectID output;
-            ImageView colorView;
-            ImageView depthView;
-            base::Point size;
         };
 
         RENDER_DECLARE_OPCODE_DATA(SwapOutput)
@@ -155,48 +150,32 @@ namespace rendering
         };
 
         //---
-        // BLEND
+        // DYNAMIC STATE
         //---
 
-        RENDER_DECLARE_OPCODE_DATA(SetColorMask)
-        {
-            uint8_t rtIndex = 0;
-            uint8_t colorMask = 0xF;
-        };
+		RENDER_DECLARE_OPCODE_DATA(SetLineWidth)
+		{
+			float width = 1.0f;
+		};
 
-        RENDER_DECLARE_OPCODE_DATA(SetBlendState)
-        {
-            BlendState state;
-            uint8_t rtIndex = 0;
-        };
 
         RENDER_DECLARE_OPCODE_DATA(SetBlendColor)
         {
             float color[4]; // NOTE: we avoid using aligned types in command buffer, hence the float[4] instead of Vector4
         };
 
-        //---
-        // DEPTH
-        //---
-
-        RENDER_DECLARE_OPCODE_DATA(SetDepthState)
+        RENDER_DECLARE_OPCODE_DATA(SetDepthBias)
         {
-            DepthState state;
+			float constant = 0.0f;
+			float slope = 0.0f;
+			float clamp = 0.0f;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(SetDepthBiasState)
+        RENDER_DECLARE_OPCODE_DATA(SetDepthClip)
         {
-            DepthBiasState state;
+			float min = 0.0f;
+			float max = 0.0f;
         };
-
-        RENDER_DECLARE_OPCODE_DATA(SetDepthClipState)
-        {
-            DepthClipState state;
-        };
-
-        //---
-        // STENCIL
-        //---
 
         RENDER_DECLARE_OPCODE_DATA(SetScissorRect)
         {
@@ -204,15 +183,13 @@ namespace rendering
             uint8_t viewportIndex = 0;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(SetScissorState)
-        {
-            bool state = false;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetStencilState)
-        {
-            StencilState state;
-        };
+		RENDER_DECLARE_OPCODE_DATA(SetViewportRect)
+		{
+			base::Rect rect;
+			float depthMin = 0.0f;
+			float depthMax = 1.0f;
+			uint8_t viewportIndex = 0;
+		};
 
         RENDER_DECLARE_OPCODE_DATA(SetStencilWriteMask)
         {
@@ -232,31 +209,6 @@ namespace rendering
             uint8_t back = 0xFF;
         };
 
-
-        //---
-        // TINY STATES
-        //---
-
-        RENDER_DECLARE_OPCODE_DATA(SetCullState)
-        {
-            CullState state;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetFillState)
-        {
-            FillState state;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetPrimitiveAssemblyState)
-        {
-            PrimitiveAssemblyState state;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetMultisampleState)
-        {
-            MultisampleState state;
-        };
-
         //---
         // FRAMEBUFFER
         //---
@@ -264,8 +216,9 @@ namespace rendering
         RENDER_DECLARE_OPCODE_DATA(BeginPass)
         {
             FrameBuffer frameBuffer;
+			ObjectID passLayoutId;
             uint8_t numViewports = 1;
-            bool hasBarriers = false; // TODO: track dependencies better!
+            bool hasResourceTransitions = false; // set if we have any layout transition while in this pass
             bool hasInitialViewportSetup = false;
         };
 
@@ -276,17 +229,27 @@ namespace rendering
 
         RENDER_DECLARE_OPCODE_DATA(Resolve)
         {
-            ImageView msaaSource;
-            ImageView nonMsaaDest;
-            uint8_t sampleMask = 0xFF;
-            uint8_t depthSampleIndex = 0;
+            ObjectID source;
+            ObjectID dest;
+			uint8_t sourceMip = 0;
+			uint8_t destMip = 0;
+			uint16_t sourceSlice = 0;
+			uint16_t destSlice = 0;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(ClearPassColor)
+        RENDER_DECLARE_OPCODE_DATA(ClearPassRenderTarget)
         {
             uint32_t index;
             float color[4];
         };
+
+		RENDER_DECLARE_OPCODE_DATA(ClearRenderTarget)
+		{
+			ObjectID view;
+			float color[4];
+			uint32_t numRects = 0;
+			// rects (base::Rect)
+		};		
 
         RENDER_DECLARE_OPCODE_DATA(ClearPassDepthStencil)
         {
@@ -295,27 +258,25 @@ namespace rendering
             float depthValue = 1.0f;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(SetViewportRect)
-        {
-            base::Rect rect;
-            uint8_t viewportIndex = 0;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetViewportDepthRange)
-        {
-            float minZ = 0.0f;
-            float maxZ = 1.0f;
-            uint8_t viewportIndex = 0;
-        };
+		RENDER_DECLARE_OPCODE_DATA(ClearDepthStencil)
+		{
+			ObjectID view;
+			uint8_t stencilValue = 0;
+			uint8_t clearFlags = 0; // 1-depth, 2-stencil
+			float depthValue = 1.0f;
+			uint32_t numRects = 0;
+			// rects (base::Rect)
+		};
 
         //---
         // PARAMETERS
         //---
 
-        RENDER_DECLARE_OPCODE_DATA(BindParameters)
+        RENDER_DECLARE_OPCODE_DATA(BindDescriptor)
         {
             base::StringID binding;
-            ParametersView view;
+            const DescriptorInfo* layout = nullptr;
+            const DescriptorEntry* data = nullptr; // embedded
         };
 
         RENDER_DECLARE_OPCODE_DATA(UploadConstants)
@@ -327,25 +288,11 @@ namespace rendering
             OpUploadConstants* nextConstants = nullptr;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(UploadParameters)
+        RENDER_DECLARE_OPCODE_DATA(UploadDescriptor)
         {
             uint32_t index = 0;
-            const ParametersLayoutInfo* layout = nullptr;
-            OpUploadParameters* nextParameters = nullptr;
-        };
-
-        //---
-        // RESOURCES
-        //---
-
-        RENDER_DECLARE_OPCODE_DATA(ClearBuffer)
-        {
-            BufferView view;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(ClearImage)
-        {
-            ImageView view;
+            const DescriptorInfo* layout = nullptr;
+            OpUploadDescriptor* nextParameters = nullptr;
         };
 
         //---
@@ -356,42 +303,39 @@ namespace rendering
         {
             base::StringID bindpoint;
             uint32_t offset = 0;
-            BufferView buffer;
+            ObjectID id;
         };
 
         RENDER_DECLARE_OPCODE_DATA(BindIndexBuffer)
         {
-            ImageFormat format;
+            ImageFormat format = ImageFormat::UNKNOWN;
             uint32_t offset = 0;
-            BufferView buffer;
+            ObjectID id;
         };
 
         RENDER_DECLARE_OPCODE_DATA(Draw)
         {
-            ObjectID shaderLibrary;
-            PipelineIndex shaderIndex;
-            uint32_t firstVertex;
-            uint32_t vertexCount;
-            uint16_t firstInstance;
-            uint16_t numInstances;
+            ObjectID pipelineObject;
+            uint32_t firstVertex = 0;
+            uint32_t vertexCount = 0;
+            uint16_t firstInstance = 0;
+            uint16_t numInstances = 0;
         };      
 
         RENDER_DECLARE_OPCODE_DATA(DrawIndexed)
         {
-            ObjectID shaderLibrary;
-            PipelineIndex shaderIndex;
-            uint32_t firstVertex;
-            uint32_t firstIndex;
-            uint32_t indexCount;
-            uint16_t firstInstance;
-            uint16_t numInstances;
+			ObjectID pipelineObject;
+            uint32_t firstVertex = 0;
+            uint32_t firstIndex = 0;
+            uint32_t indexCount = 0;
+            uint16_t firstInstance = 0;
+            uint16_t numInstances = 0;
         };
 
         RENDER_DECLARE_OPCODE_DATA(Dispatch)
         {
-            ObjectID shaderLibrary;
-            PipelineIndex shaderIndex;
-            uint32_t counts[3];
+			ObjectID pipelineObject;
+			uint32_t counts[3];
         };
 
         //---
@@ -411,69 +355,61 @@ namespace rendering
         {
         };
 
-        RENDER_DECLARE_OPCODE_DATA(ImageLayoutBarrier)
+		RENDER_DECLARE_OPCODE_DATA(ResourceLayoutBarrier)
+		{
+			ObjectID id;
+			ResourceLayout sourceLayout = ResourceLayout::INVALID;
+			ResourceLayout targetLayout = ResourceLayout::INVALID;
+			uint8_t firstMip = 0;
+			uint8_t numMips = 0;
+			uint8_t firstSlice = 0;
+			uint8_t numSlices = 0;
+		};
+
+		RENDER_DECLARE_OPCODE_DATA(UAVBarrier)
+		{
+			ObjectID viewId;
+		};
+
+		//---
+		// RESOURCES
+		//---
+
+		RENDER_DECLARE_OPCODE_DATA(Clear)
+		{
+			ObjectID view; // writable view!
+			ImageFormat clearFormat = ImageFormat::UNKNOWN;
+			uint32_t numRects = 0;
+			// base::image::ImageRect[numRects]
+			// payload contains clear data (up to 16 bytes)
+		};
+
+
+        RENDER_DECLARE_OPCODE_DATA(Copy)
         {
-            ImageView view;
-            ImageLayout targetLayout;
+            ObjectID src;
+            ObjectID dest;
+			ResourceCopyRange srcRange;
+			ResourceCopyRange destRange;
         };
 
-        RENDER_DECLARE_OPCODE_DATA(GraphicsBarrier)
+        RENDER_DECLARE_OPCODE_DATA(Update)
         {
-            Stage from;
-            Stage to;
+            ObjectID id; // resource (must be with the "dynamic" flag) - NOTE: it's NOT a view, it's directly the resource
+			ResourceCopyRange range;
+            void* dataBlockPtr = nullptr; // update data (byte-packed)
+            uint32_t dataBlockSize = 0; // size of the update data
+
+			OpUpdate* next = nullptr;
+
+			uint32_t stagingBufferOffset = 0; // assigned placement in the staging area
         };
 
-        RENDER_DECLARE_OPCODE_DATA(CopyBuffer)
+        RENDER_DECLARE_OPCODE_DATA(Download)
         {
-            BufferView src;
-            BufferView dest;
-            uint32_t srcOffset = 0;
-            uint32_t destOffset = 0;
-            uint32_t size = 0;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(UpdateDynamicImage)
-        {
-            ImageView view; // the image to update (must be with the "dynamic" flag)
-            uint32_t placementOffset[3]; // update placement
-            base::image::ImageView data; // image data, placed locally
-            void* dataBlockPtr; // update data (byte-packed)
-            uint32_t dataBlockSize; // size of the update data
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(UpdateDynamicBuffer)
-        {
-            BufferView view; // the image to update (must be with the "dynamic" flag)
-            uint32_t offset; // offset in the view
-            uint32_t dataBlockSize; // size of the update data
-            void* dataBlockPtr; // update data (byte-packed)
-            OpUpdateDynamicBuffer* next;
-            uint32_t stagingBufferOffset;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SignalCounter)
-        {
-            base::fibers::WaitCounter counter;
-            uint32_t valueToSignal;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(WaitForCounter)
-        {
-            base::fibers::WaitCounter counter;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(DownloadBuffer)
-        {
-            BufferView buffer;
-            DownloadBuffer* ptr;
-            uint32_t downloadOffset;
-            uint32_t downloadSize;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(DownloadImage)
-        {
-            ImageView image;
-            DownloadImage* ptr;
+            ObjectID id;
+			IDownloadDataSink* sink = nullptr;
+			ResourceCopyRange range;
         };
 
 #pragma pack(pop)
@@ -494,6 +430,14 @@ namespace rendering
         }
 
         //--
+
+		struct DescriptorTrackingEntry
+		{
+			const DescriptorEntry* dataPtr = nullptr;
+			base::InplaceArray<DeviceObjectViewPtr, 10> views;
+		};
+
+		//--
 
     } // command
 } // rendering

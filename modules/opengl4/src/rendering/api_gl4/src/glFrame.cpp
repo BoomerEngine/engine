@@ -59,7 +59,7 @@ namespace rendering
             {
                 TRACE_INFO("Has {} objects to delete", m_deferedDeletionObjects.size());
                 for (auto obj : m_deferedDeletionObjects)
-                    delete obj;
+					delete obj;
             }
         }
 
@@ -115,7 +115,7 @@ namespace rendering
 
         void Frame::registerObjectForDeletion(Object* obj)
         {
-            if (obj)
+            if (obj && obj->objectType() != ObjectType::OutputRenderTargetView)
             {
                 auto lock = base::CreateLock(m_completionCallbacksLock);
                 m_deferedDeletionObjects.pushBack(obj);
@@ -346,9 +346,9 @@ namespace rendering
                     {
                         auto* op = static_cast<const command::OpChildBuffer*>(cmd);
 
-                        stateTracker.pushParamState(op->inheritsParameters);
+                        stateTracker.pushDescriptorState(op->inheritsParameters);
                         ExecuteCommandsFromBuffer(drv, thread, seq, stateTracker, op->childBuffer);
-                        stateTracker.popParamState();
+                        stateTracker.popDescriptorState();
                     }
                     else
                     {
@@ -424,4 +424,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

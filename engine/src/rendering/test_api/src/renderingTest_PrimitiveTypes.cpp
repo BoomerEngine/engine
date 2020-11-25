@@ -23,22 +23,22 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBufferPointList;
-            BufferView m_vertexBufferLineList;
-            BufferView m_vertexBufferLineStrip;
-            BufferView m_vertexBufferTriangleList;
-            BufferView m_vertexBufferTriangleStrip;
+            BufferObjectPtr m_vertexBufferPointList;
+			BufferObjectPtr m_vertexBufferLineList;
+			BufferObjectPtr m_vertexBufferLineStrip;
+			BufferObjectPtr m_vertexBufferTriangleList;
+			BufferObjectPtr m_vertexBufferTriangleStrip;
 
-            uint32_t m_numPointListVertices;
-            uint32_t m_numLineListVertices;
-            uint32_t m_numLineStripVertices;
-            uint32_t m_numTriangleListVertices;
-            uint32_t m_numTriangleStripVertices;
+            uint32_t m_numPointListVertices = 0;
+            uint32_t m_numLineListVertices = 0;
+            uint32_t m_numLineStripVertices = 0;
+            uint32_t m_numTriangleListVertices = 0;
+            uint32_t m_numTriangleStripVertices = 0;
 
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
 
             static const auto NUM_LINE_SEGMENTS = 512U;
         };
@@ -238,7 +238,7 @@ namespace rendering
             m_shaders = loadShader("GenericGeometry.csl");
         }
 
-        void RenderingTest_PrimitiveTypes::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_PrimitiveTypes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

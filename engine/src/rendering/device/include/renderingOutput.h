@@ -8,28 +8,10 @@
 
 #pragma once
 
-#include "renderingImageView.h"
-#include "renderingDeviceObject.h"
+#include "renderingObject.h"
 
 namespace rendering
 {
-    //--
-
-    // general output class
-    enum class DriverOutputClass : uint8_t
-    {
-        // render offscreen, no window is allocated, content can be streamed to file/network
-        Offscreen,
-
-        // render to native window, window can be moved and resized be user
-        NativeWindow, 
-
-        // render to fullscreen device, input and rendering may be handled differently
-        Fullscreen,
-
-        // render to connected HMD device (VR/AD headset)
-        HMD,
-    };
 
     //--
 
@@ -144,7 +126,7 @@ namespace rendering
     struct OutputInitInfo
     {
         base::StringBuf m_context;
-        DriverOutputClass m_class = DriverOutputClass::Offscreen;
+        OutputClass m_class = OutputClass::Offscreen;
         uint32_t m_width = 0;
         uint32_t m_height = 0;
         uint32_t m_refreshRate = 0;
@@ -174,6 +156,8 @@ namespace rendering
     /// output object
     class RENDERING_DEVICE_API IOutputObject : public IDeviceObject
     {
+		RTTI_DECLARE_VIRTUAL_CLASS(IOutputObject, IDeviceObject);
+
     public:
         IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window);
 
@@ -190,7 +174,7 @@ namespace rendering
 
         /// Query output status and rendering parameters (format/resolution)
         /// NOTE: if this function returns false than output is dead (closed/lost) and has to be recreated
-        virtual bool prepare(ImageView* outColorRT, ImageView* outDepthRT, base::Point& outViewport) = 0;
+        virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) = 0;
 
         //--
 

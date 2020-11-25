@@ -8,16 +8,14 @@
 
 #pragma once
 
-#include "renderingBufferView.h"
-#include "renderingImageView.h"
-#include "renderingDeviceObject.h"
-
 #include "base/object/include/rttiMetadata.h"
+#include "renderingBuffer.h"
+#include "renderingImage.h"
 
 namespace rendering
 {
 
-    // device class identification (GL4, Vulkan, DX12, etc)
+    // rendering class identification (GL4, Vulkan, DX12, etc)
     class RENDERING_DEVICE_API DeviceNameMetadata : public base::rtti::IMetadata
     {
         RTTI_DECLARE_VIRTUAL_CLASS(DeviceNameMetadata, base::rtti::IMetadata);
@@ -94,50 +92,8 @@ namespace rendering
         base::StringBuf name;
         int value = 0;
     };
-
-    //--
-
-    // buffer object wrapper
-    class RENDERING_DEVICE_API BufferObject : public IDeviceObject
-    {
-    public:
-        BufferObject(const BufferView& view, IDeviceObjectHandler* impl);
-        virtual ~BufferObject();
-
-        // get main buffer view
-        INLINE const BufferView& view() const { return m_view; }
-
-    private:
-        BufferView m_view;
-    };
-
-    //--
-
-    // image object wrapper
-    class RENDERING_DEVICE_API ImageObject : public IDeviceObject
-    {
-    public:
-        ImageObject(const ImageView& view, IDeviceObjectHandler* impl);
-        virtual ~ImageObject();
-
-        // get main image view
-        INLINE const ImageView& view() const { return m_view; }
-
-    private:
-        ImageView m_view;
-    };
-
-    //--
-
-    // sampler object wrapper
-    class RENDERING_DEVICE_API SamplerObject : public IDeviceObject
-    {
-    public:
-        SamplerObject(ObjectID id, IDeviceObjectHandler* impl);
-        virtual ~SamplerObject();
-    };
-
-    //--
+	
+	//--
     
     // rendering device implementation
     // this is the most "low-level" API used by the rendering, can be used directly but it's more work
@@ -178,16 +134,24 @@ namespace rendering
 
         /// prepare shader library for rendering, returns opaque object that represents the shader library on the rendering device's side
         /// NOTE: the source data will be kept alive as long as the object exists
-        virtual ShaderObjectPtr createShaders(const ShaderLibraryData* shaderLibraryData) = 0;
+        virtual ShaderObjectPtr createShaders(const ShaderLibraryData* shaderLibraryData, PipelineIndex shaderIndex) = 0;
 
-        /// create a buffer, optionally fill it with data
-        virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const SourceData* sourceData = nullptr) = 0;
+        /// create a buffer, if source data is provided then it's asked to fill in the buffer with content, optionally a fiber fence may be signaled once resource initialization is completed
+		/// NOTE: it's legal to use resource BEFORE it's fully initialized with data it might just contain crap
+        virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
 
-        /// create an image, optionally fill it with data (one "SourceData" entry for each mip*slice) 
-        virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const SourceData* sourceData = nullptr) = 0;
+        /// create an image, optionally fill it with data (one "SourceData" entry for each mip*slice) , optionally a fiber fence may be signaled once resource initialization is completed
+		/// NOTE: it's legal to use resource BEFORE it's fully initialized with data it might just contain crap
+        virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
 
         /// create a sampler
         virtual SamplerObjectPtr createSampler(const SamplerState& info) = 0;
+
+		/// create pass layout state, NOTE: may return shared object
+		virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) = 0;
+
+		/// create pass layout state, NOTE: may return shared object
+		virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const StaticRenderStatesSetup& states) = 0;
 
         //---
 
@@ -206,6 +170,14 @@ namespace rendering
         /// enumerate supported refresh rates for given resolution
         virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const = 0;
 
+		//---
+
+		/// schedule asynchronous (background) copying of data to a buffer/image
+		/// NOTE: me must guarantee that that part of the resource is NOT used or we may get visual glitches
+		/// NOTE: resource can't be deleted while a copy is scheduled
+		/// NOTE: once the copy is finished a fence is signaled (usually this or next frame)
+		virtual bool asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
+
         //---
 
         /// Submit a command buffer (with potential child command buffers) to execution
@@ -214,6 +186,10 @@ namespace rendering
         virtual void submitWork(command::CommandBuffer* commandBuffer, bool background=false) = 0;
 
         //--
+
+	protected:
+		bool validateBufferCreationSetup(const BufferCreationInfo& info, BufferObject::Setup& outSetup) const;
+		bool validateImageCreationSetup(const ImageCreationInfo& info, ImageObject::Setup& outSetup) const;
     };
 
 } // rendering

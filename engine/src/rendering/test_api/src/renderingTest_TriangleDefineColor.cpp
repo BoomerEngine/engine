@@ -25,13 +25,13 @@ namespace rendering
             RenderingTest_TriangleDefineColor();
 
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            const ShaderLibrary* m_shaderRed;
-            const ShaderLibrary* m_shaderGreen;
-            const ShaderLibrary* m_shaderBlue;
+            BufferObjectPtr m_vertexBuffer;
+            ShaderLibraryPtr m_shaderRed;
+            ShaderLibraryPtr m_shaderGreen;
+            ShaderLibraryPtr m_shaderBlue;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleDefineColor);
@@ -67,7 +67,7 @@ namespace rendering
             m_shaderBlue = loadShader("TriangleDefineColorBlue.csl");
         }
 
-        void RenderingTest_TriangleDefineColor::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_TriangleDefineColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

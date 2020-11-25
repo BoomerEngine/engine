@@ -8,10 +8,8 @@
 
 #pragma once
 
-#include "renderingImageView.h"
-#include "renderingConstantsView.h"
-#include "renderingParametersView.h"
-#include "renderingParametersLayoutID.h"
+#include "renderingDescriptorID.h"
+#include "renderingResources.h"
 
 namespace rendering
 {
@@ -22,6 +20,7 @@ namespace rendering
         struct OpBase;
         struct OpAllocTransientBuffer;
         struct OpBeginPass;
+		struct OpUpdate;
 
         class CommandBuffer;
 
@@ -29,12 +28,28 @@ namespace rendering
         {
             uint32_t width = 0;
             uint32_t height = 0;
-            ImageView color;
-            ImageView depth;
+            RenderTargetViewPtr color; // NOTE: rt size may be bigger than window size
+            RenderTargetViewPtr depth; // NOTE: may be null (some windows only have color surface)
 
             INLINE AcquiredOutput() {}
             INLINE operator bool() const { return width != 0 && height != 0; }
         };
+
+		struct ResourceCurrentStateTrackingRecord : public base::NoCopy
+		{
+			bool tracksSubResources = false;
+			uint8_t numImageMips = 0;
+			uint16_t numImageSlices = 0;
+
+			struct SubResourceState
+			{
+				ResourceLayout currentLayout;
+				ResourceLayout firstKnownLayout;
+			};
+
+			uint32_t numSubResources = 0; // at least 1
+			SubResourceState subResources[1];
+		};
 
         /// helper class for writing the micro operations stream
         /// NOTE: thread safe to write using multiple threads once inside a pass
@@ -65,19 +80,20 @@ namespace rendering
             // NOTE: draw commands only work when there is bound pass
             // NOTE: if we intend to use multiple viewports while rendering we must set it here, optionally we can pass settings for those viewports
             // If settings for viewports are not passed we assume no scissor test and viewport covering full render target area
-            void opBeingPass(const FrameBuffer& frameBuffer, uint8_t numViewports = 1, const FrameBufferViewportState* intialViewportSettings = nullptr);
+            void opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t numViewports = 1, const FrameBufferViewportState* intialViewportSettings = nullptr);
 
             // finish rendering to a frame buffer, optionally resolve MSSA targets into non-MSAA ones
             void opEndPass();
 
             /// fill current color render target to single color
-            void opClearPassColor(uint32_t index, const base::Vector4& color);
+            void opClearPassRenderTarget(uint32_t index, const base::Vector4& color);
 
             /// fill current depth/stencil render target to given depth value
             void opClearPassDepthStencil(float depth, uint8_t stencil, bool doClearDepth = true, bool doClearStencil = true);
 
             /// resolve a MSAA source into a non-msaa destination, average selected samples, for depth targets we can only select one sample
-            void opResolve(const ImageView& msaaSource, const ImageView& nonMsaaDest, uint32_t sampleMask = INDEX_NONE, uint8_t depthSampleIndex = 0);
+			/// NOTE: we are resolving resources, not views
+            void opResolve(const ImageObject* msaaSource, const ImageObject* nonMsaaDest, uint8_t sourceMip = 0, uint8_t destMip = 0, uint16_t sourceSlice = 0, uint16_t destSlice = 0);
 
             //---
 
@@ -101,16 +117,28 @@ namespace rendering
 
             //--
            
-            /// clear buffer with custom value or with zero if no value was provided
-            void opClearBuffer(BufferView view, const void* clearValue=nullptr, uint32_t clearValueSize=0);
+            /// clear writable resource view custom value or with zero if no value was provided
+			/// optionally a list of regions (rects) may be provided to select parts of the resource to clear, if no list is provided then the whole resource is cleared
+            void opClear(const IDeviceObjectView* writableView, ImageFormat clearFormat, const void* clearValue = nullptr, const base::image::ImageRect* rects = nullptr, uint32_t numRects = 0);
 
-            /// clear image with custom value or with zero if no value was provided
-            void opClearImage(ImageView view, const void* clearValue = nullptr, uint32_t clearValueSize = 0);
+			/// clear part of writable buffer
+			void opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue = nullptr, uint32_t offset = 0, uint32_t size = INDEX_MAX);
+
+            /// clear writable image with custom value of with zeros
+			/// NOTE: this requires writable view of the image (mostly to accommodate DX that requires UAV for clearing)
+			/// NOTE: it's best to provide no rects or at most 1 because clears are sequential otherwise (slow...)
+			void opClearWritableImage(const ImageWritableView* view, ImageFormat clearFormat, const void* clearValue);
+
+            /// clear buffer with custom value or with zero if no value was provided
+            void opClearRenderTarget(const RenderTargetView* view, const base::Vector4& values, const base::Rect* rects = nullptr, uint32_t numRects = 0);
+
+            /// clear buffer with custom value or with zero if no value was provided
+            void opClearDepthStencil(const RenderTargetView* view, bool doClearDepth, bool doClearStencil, float clearDepth, uint32_t clearStencil, const base::Rect* rects = nullptr, uint32_t numRects = 0);
 
             //---
 
             /// bind vertex buffer at specified slot
-            void opBindVertexBuffer(base::StringID name, BufferView buffer, uint32_t offset = 0);
+            void opBindVertexBuffer(base::StringID name, const BufferObject* buffer, uint32_t offset = 0);
 
             /// unbind vertex buffer from specified slot
             void opUnbindVertexBuffer(base::StringID name);
@@ -118,7 +146,7 @@ namespace rendering
             //---
 
             /// bind index buffer
-            void opBindIndexBuffer(BufferView buffer, ImageFormat indexFormat = ImageFormat::R16_UINT, uint32_t offset = 0);
+            void opBindIndexBuffer(const BufferObject* buffer, ImageFormat indexFormat = ImageFormat::R16_UINT, uint32_t offset = 0);
 
             /// unbind vertex buffer from specified slot
             void opUnbindIndexBuffer();
@@ -127,43 +155,21 @@ namespace rendering
 
             /// change rendering viewport
             /// NOTE: viewport is always reset at the beginning of each pass
-            void opSetViewportRect(uint8_t viewportIndex, const base::Rect& viewportRect);
-            void opSetViewportRect(uint8_t viewportIndex, int x, int y, int w, int h);
+            void opSetViewportRect(uint8_t viewportIndex, const base::Rect& viewportRect, float depthMin = 0.0f, float depthMax = 1.0f);
+            void opSetViewportRect(uint8_t viewportIndex, int x, int y, int w, int h, float depthMin = 0.0f, float depthMax = 1.0f);
 
-            /// change viewport depth range
-            /// NOTE: depth range is always reset at the beginning of each pass
-            void opSetViewportDepthRange(uint8_t viewportIndex, float minZ, float maxZ);
+            /// set blend constant
+			void opSetBlendConstant(const base::Color& color);
+			void opSetBlendConstant(const base::Vector4& color);
+			void opSetBlendConstant(float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
 
-            /// set blend state for a given render target
-            void opSetBlendState(uint8_t renderTargetIndex, const BlendState& state);
-            void opSetBlendState(uint8_t renderTargetIndex); // disable
-            void opSetBlendState(uint8_t renderTargetIndex, BlendFactor src, BlendFactor dest);
-            void opSetBlendState(uint8_t renderTargetIndex, BlendOp op, BlendFactor src, BlendFactor dest);
-            void opSetBlendState(uint8_t renderTargetIndex, BlendFactor srcColor, BlendFactor destColor, BlendFactor srcAlpha, BlendFactor destAlpha);
+            /// set line with for line rendering
+            void opSetLineWidth(float lineWidth);
 
-            /// set cull state
-            void opSetCullState(const CullState& state);
-            void opSetCullState(CullMode mode = CullMode::Back, FrontFace face = FrontFace::CW);
-
-            /// set polygon mode
-            void opSetFillState(const FillState& state);
-            void opSetFillState(PolygonMode mode = PolygonMode::Fill, float lineWidth=1.0f);
-
-            /// enable/disable scissoring
-            void opSetScissorState(bool enabled);
-
-            //// change scissor area
             /// NOTE: scissor is always reset at the beginning of each pass
             void opSetScissorRect(uint8_t viewportIndex, const base::Rect& scissorRect);
             void opSetScissorRect(uint8_t viewportIndex, int x, int y, int w, int h);
             void opSetScissorBounds(uint8_t viewportIndex, int x0, int y0, int x1, int y1);
-
-            /// set the stencil state
-            void opSetStencilState(); // disable
-            void opSetStencilState(const StencilState& state);
-            void opSetStencilState(const StencilSideState& commonFaceState);
-            void opSetStencilState(const StencilSideState& frontState, const StencilSideState& backState);
-            void opSetStencilState(CompareOp compareOp, StencilOp failOp, StencilOp depthFailOp, StencilOp passOp, uint8_t reference = 0, uint8_t compareMask = 0xFF, uint8_t writeMask = 0xFF);
 
             /// set the stencil reference value
             void opSetStencilReferenceValue(uint8_t value);
@@ -177,132 +183,127 @@ namespace rendering
             void opSetStencilWriteMask(uint8_t mask);
             void opSetStencilWriteMask(uint8_t frontMask, uint8_t backMask);
 
-            /// set depth state
-            void opSetDepthState(const DepthState& state);
-            void opSetDepthState(bool enable=true, bool write=true, CompareOp func = CompareOp::LessEqual); // disable
-
             /// set dynamic depth clip state and ranges
-            void opSetDepthClip(bool enabled, float minBounds, float maxBounds);
-            void opSetDepthClip(const DepthClipState& state);
+			/// NOTE: works only for states in which it's enabled in the StaticStates
+            void opSetDepthClip(float minBounds, float maxBounds);
 
-            /// set dynamic depth bias clamp
-            void opSetDepthBias(const DepthBiasState& state);
+            /// set dynamic depth bias/slope/clamp values
+			/// NOTE: works only for states in which it's enabled in the StaticStates
             void opSetDepthBias(float constant, float slopeFactor = 0.0f, float clampValue = -1.0f);
-
-            /// set primitive assembly
-            void opSetPrimitiveState(const PrimitiveAssemblyState& state);
-            void opSetPrimitiveType(PrimitiveTopology topology, bool enableVertexRestart = false);
-
-            /// set multisample state
-            void opSetMultisampleState(const MultisampleState& state);
-
-            /// set color mask
-            void opSetColorMask(uint8_t rtIndex, uint8_t mask);
 
             //---
 
             /// draw non-indexed geometry
-            void opDraw(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t vertexCount);
+            void opDraw(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t vertexCount);
 
             /// draw non-indexed geometry with instancing
-            void opDrawInstanced(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t vertexCount, uint16_t firstInstance, uint16_t numInstances);
+            void opDrawInstanced(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t vertexCount, uint16_t firstInstance, uint16_t numInstances);
 
             /// draw indexed geometry
-            void opDrawIndexed(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount);
+            void opDrawIndexed(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount);
 
             /// draw indexed geometry
-            void opDrawIndexedInstanced(const ShaderLibrary* shader, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint16_t firstInstance, uint16_t numInstances);
+            void opDrawIndexedInstanced(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint16_t firstInstance, uint16_t numInstances);
 
             /// dispatch compute shader
-            void opDispatch(const ShaderLibrary* shader, uint32_t countX = 1, uint32_t countY = 1, uint32_t countZ = 1);
+            void opDispatch(const ComputePipelineObject* po, uint32_t countX = 1, uint32_t countY = 1, uint32_t countZ = 1);
 
             //---
-            /// transition image to target layout
-            /// NOTE: only the part of the image in the view is transformed
-            void opImageLayoutBarrier(const ImageView& view, ImageLayout layout);
+			// inlined resource updates
+			/// NOTE: inlined updates are not intended to update large portions of resources for that device->asyncCopy should be used
 
-            /// create a graphics pipeline barrier telling one stage to wait for results from other stage
-            void opGraphicsBarrier(Stage fromStage = Stage::All, Stage toStage = Stage::All);
+			// update part of dynamic resource, returns pointer to memory where the update can be written
+			// NOTE: for images the memory assumes native image layout (packed pixels) and number of pixels equal to sizeX*sizeY*sizeZ
+			void* opUpdateDynamicPtr(const IDeviceObject* dynamicObject, const ResourceCopyRange& range);
 
-            //---
+			/// update part of typed dynamic resource
+			/// the source data can be copied into the command buffer or kept as a separate buffer
+			template< typename T >
+			INLINE T* opUpdateDynamicBufferPtrN(const IDeviceObject* dynamicObject, uint32_t first, uint32_t count)
+			{
+				ResourceCopyRange range;
+				range.buffer.offset = first * sizeof(T);
+				range.buffer.size = count * sizeof(T);
+				return (T*)opUpdateDynamicPtr(dynamicObject, range);
+			}
 
-            /// update part of dynamic image
-            /// the source data can be copied into the command buffer or kept as a separate buffer
-            void opUpdateDynamicImage(const ImageView& dynamicImage, const base::image::ImageView& updateData, uint32_t offsetX=0, uint32_t offsetY=0, uint32_t offsetZ=0);
+			/// update part of typed dynamic resource
+			/// the source data can be copied into the command buffer or kept as a separate buffer
+			template< typename T >
+			INLINE T* opUpdateDynamicImagePtrN(const IDeviceObject* dynamicObject, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint8_t mipIndex=0, uint32_t sliceIndex=0)
+			{
+				ResourceCopyRange range;
+				range.image.firstMip = mipIndex;
+				range.image.numMips = 1;
+				range.image.firstSlice = sliceIndex;
+				range.image.numSlices = 1;
+				range.image.offsetX = x;
+				range.image.offsetY = y;
+				range.image.sizeX = width;
+				range.image.sizeY = height;
+				range.image.sizeZ = 1;
+				return (T*)opUpdateDynamicPtr(dynamicObject, range);
+			}
+			
+			//--
+
+            /// inlined (executed between other calls) update part of dynamic image
+            /// the source data is provided in form of an image view
+            void opUpdateDynamicImage(const ImageObject* dynamicImage, const base::image::ImageView& updateData, uint8_t mipIndex = 0, uint32_t sliceIndex = 0, uint32_t offsetX=0, uint32_t offsetY=0, uint32_t offsetZ=0);
 
             /// update part of dynamic buffer
             /// the source data can be copied into the command buffer or kept as a separate buffer
-            void opUpdateDynamicBuffer(const BufferView& dynamicBuffer, uint32_t dataOffset, uint32_t dataSize, const void* dataPtr);
+            void opUpdateDynamicBuffer(const BufferObject* dynamicBuffer, uint32_t dataOffset, uint32_t dataSize, const void* dataPtr);
 
-            /// update part of dynamic buffer
-            /// the source data can be copied into the command buffer or kept as a separate buffer
-            void* opUpdateDynamicBufferPtr(const BufferView& dynamicBuffer, uint32_t dataOffset, uint32_t dataSize);
+			//--
 
-            /// update part of dynamic buffer
-            /// the source data can be copied into the command buffer or kept as a separate buffer
-            template< typename T >
-            INLINE T* opUpdateDynamicBufferPtrN(const BufferView& dynamicBuffer, uint32_t first, uint32_t count)
-            {
-                return (T*)opUpdateDynamicBufferPtr(dynamicBuffer, first * sizeof(T), count * sizeof(T));
-            }
+			/// copy content of two resources
+			void opCopy(const IDeviceObject* src, const ResourceCopyRange& srcRange, const IDeviceObject* dest, const ResourceCopyRange& destRange);
 
-            //---
+			/// copy data between buffers
+			void opCopyBuffer(const BufferObject* src, uint32_t srcOffset, const BufferObject* dest, uint32_t destOffset, uint32_t size);
 
-            /// copy data between buffers
-            void opCopyBuffer(const BufferView& src, const BufferView& dest, uint32_t srcOffset, uint32_t destOffset, uint32_t size);
+			/// copy data between buffer and an image
+			void opCopyBufferToImage(const BufferObject* src, uint32_t srcOffset, const ImageObject* dest, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint8_t mipIndex = 0, uint32_t sliceIndex = 0);
 
-            //---
+			/// copy data between image and buffer
+			void opCopyImageToBuffer(const ImageObject* src, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, const BufferObject* dest, uint32_t destOffset, uint8_t mipIndex = 0, uint32_t sliceIndex = 0);
 
-            /// uploads raw constants to command buffer, returns a view on the constant data
-            ConstantsView opUploadConstants(const void* data, uint32_t size);
+			//--
 
-            /// uploads raw constants to command buffer, returns a view on the constant data
-            ConstantsView opAllocConstants(uint32_t size, void*& outDataPtr);
+			/// finish UAV writes to resource so new reads can see them
+			/// NOTE: no layout transition, expected resource layout is ResourceLayout::UAV
+			void opTransitionFlushUAV(const ImageWritableView* imageView);
 
-            /// uploads raw constants to command buffer, returns a view on the constant data
-            template< typename T >
-            INLINE ConstantsView opUploadConstants(const T& data)
-            {
-                static_assert(!std::is_pointer<T>::value, "Pass a reference here, not a pointer");
-                return opUploadConstants(&data, sizeof(data));
-            }
+            /// transition layout of whole resource (image or buffer)
+            void opTransitionLayout(const IDeviceObject* image, ResourceLayout incomingLayout, ResourceLayout outgoingLayout);
 
-            /// upload parameters from a buffer of known type
-            ParametersView opUploadParameters(const void* data, uint32_t dataSize, ParametersLayoutID layoutID);
+            /// transition layout of an image resource (whole image)
+            void opTransitionImageRangeLayout(const ImageObject* image, uint8_t firstMip, uint8_t numMips, ResourceLayout incomingLayout, ResourceLayout outgoingLayout);
 
-            /// upload parameters from a buffer of known type
-            template< typename T >
-            INLINE ParametersView opUploadParameters(const T& data)
-            {
-                static_assert(!std::is_pointer<T>::value, "Pass a reference here, not a pointer");
-                static auto layoutId  = ParametersLayoutID::FromData(&data, sizeof(T));
-                return opUploadParameters(&data, sizeof(T), layoutId);
-            }
+            /// transition layout of an image resource (whole image)
+            void opTransitionImageArrayRangeLayout(const ImageObject* image, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ResourceLayout incomingLayout, ResourceLayout outgoingLayout);
+
+			/// transition layout of an image resource (whole image)
+			void opTransitionImageArrayRangeLayout(const ImageObject* image, uint32_t firstSlice, uint32_t numSlices, ResourceLayout incomingLayout, ResourceLayout outgoingLayout);
 
             //---
 
-            /// bind parameters
-            void opBindParameters(base::StringID bindingID, const ParametersView& parameters);
+            /// bind new descriptor values to given slot, returns local (in command buffer) descriptor index
+            void opBindDescriptorEntries(base::StringID bindingID, const DescriptorEntry* entries, uint32_t count);
 
-            /// bind parameters from a struct that has the binding ID
-            template <typename T>
-            INLINE void opBindParametersInline(base::StringID name, const T &parameters)
-            {
-                // the inline parameters are assumed to be unique, upload them and bind
-                static auto layoutId  = ParametersLayoutID::FromData(&parameters, sizeof(T));
-                opBindParameters(name, opUploadParameters(&parameters, sizeof(parameters), layoutId));
-            }
+			/// bind new descriptor entries specified in a table
+			template< typename T >
+			INLINE void opBindDescriptor(base::StringID bindingID, const T& data)
+			{
+				static_assert(!std::is_pointer<T>::value, "No pointers allowed here, use opBindDescriptorEntries");
+				return opBindDescriptorEntries(bindingID, data, ARRAY_COUNT(data));
+			}
 
             //---
 
-            /// download content of buffer resource from the GPU
-            /// NOTE: the download does not complete immediately, use the isReady() or waitUntilReady()
-            void opDownloadBuffer(const BufferView& buffer, const DownloadBufferPtr& ptr);
-
-            /// download content of image resource from the GPU
-            /// NOTE: the download does not complete immediately, use the isReady() or waitUntilReady()
-            /// NOTE: only first mipmap and slice of the image is downloaded, use multiple downloads to get the whole thing for now
-            void opDownloadImage(const ImageView& image, const DownloadImagePtr& ptr);
+            /// download content of a resource (or part of it), downloaded data is forwarded to sink (usually 2 frames later)
+			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink);
 
             //---
 
@@ -341,17 +342,53 @@ namespace rendering
             uint32_t m_currentPassRts = 0;
             uint32_t m_currentPassViewports = 0;
 
+#ifdef VALIDATE_VERTEX_LAYOUTS
             uint32_t m_currentIndexBufferElementCount = 0;
+			BufferObjectPtr m_currentIndexBuffer;
+
             base::HashMap<base::StringID, uint32_t> m_currentVertexBufferRemainingSize;
-            base::HashMap<base::StringID, ParametersLayoutID> m_currentParameterBindings;
+			base::HashMap<base::StringID, BufferObjectPtr> m_currentVertexBuffers;
+#endif
+
+			base::HashMap<base::StringID, DescriptorID> m_currentParameterBindings;
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES			
+			base::HashMap<base::StringID, const DescriptorEntry*> m_currentParameterData;
+			base::HashSet<DeviceObjectViewPtr> m_trackedObjectViews;
+#endif
 
             bool m_isChildBufferWithParentPass = false;
+
+			//--
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			mutable base::HashMap<ObjectID, ResourceCurrentStateTrackingRecord*> m_currentResourceState; 
+
+			struct SubImageRegion
+			{
+				uint8_t firstMip = 0;
+				uint8_t numMips = 0;
+				uint16_t firstSlice = 0;
+				uint16_t numSlices = 0;
+			};
+
+			bool ensureResourceState(const IDeviceObject* object, ResourceLayout layout, const SubImageRegion* subImageRegion = nullptr, ResourceLayout newState = ResourceLayout::INVALID);
+			ResourceCurrentStateTrackingRecord* createResourceStateTrackingEntry(const IDeviceObject* obj);
+#endif
+
+			//--
 
             void attachBuffer(CommandBuffer* buffer);
             void detachBuffer(bool finishRecording);
 
-            bool validateDrawVertexLayout(const ShaderLibrary* func, uint32_t requiredVertexCount) const;
-            bool validateParameterBindings(const ShaderLibrary* func) const;
+            bool validateDrawVertexLayout(const ShaderObject* func, uint32_t requiredVertexCount);
+			bool validateDrawIndexLayout(uint32_t requiredElementCount);
+            bool validateParameterBindings(const ShaderObject* func);
+
+			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorEntry* entries, uint32_t count);
+            void* allocConstants(uint32_t size, const uint32_t*& outOffsetPtr);
+
+			void linkUpdate(OpUpdate* op);
         };
 
         //--

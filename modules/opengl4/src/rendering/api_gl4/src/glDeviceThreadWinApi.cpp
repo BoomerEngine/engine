@@ -99,10 +99,7 @@ namespace rendering
                     result = initializeContext_Thread(cmdLine);
                 });
 
-            if (!result)
-                return false;
-
-            return true;
+			return result;
         }
 
         void DeviceThreadWinApi::shutdownContext_Thread()
@@ -276,7 +273,7 @@ namespace rendering
             ObjectID outputHandle;
 
             // different wrappers require different stuff
-            if (info.m_class == DriverOutputClass::NativeWindow || info.m_class == DriverOutputClass::Fullscreen)
+            if (info.m_class == OutputClass::NativeWindow || info.m_class == OutputClass::Fullscreen)
             {
                 auto* output = new Output(m_device, this, m_windows, info.m_class, true);
                 outputHandle = output->handle();
@@ -324,10 +321,12 @@ namespace rendering
                 }
 
                 // configure
+				// TODO: get ACTUAL format
                 const auto colorFormat = ImageFormat::RGBA8_UNORM;
                 const auto depthFormat = ImageFormat::D24S8;
+				const auto numSamples = 1;
                 auto windowInterface = m_windows->windowInterface(window);
-                output->bind(window, (uint64_t)hDC, colorFormat, depthFormat, windowInterface);
+                output->bind(window, (uint64_t)hDC, colorFormat, depthFormat, 1, windowInterface);
             }
             else
             {
@@ -374,4 +373,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

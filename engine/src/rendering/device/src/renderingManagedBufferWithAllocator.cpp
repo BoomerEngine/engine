@@ -7,10 +7,12 @@
 ***/
 
 #include "build.h"
+
 #include "renderingManagedBufferWithAllocator.h"
 #include "renderingCommandWriter.h"
 #include "renderingDeviceApi.h"
 #include "renderingDeviceService.h"
+#include "renderingResources.h"
 
 namespace rendering
 {
@@ -18,20 +20,20 @@ namespace rendering
     //---
 
     ManagedBufferWithAllocator::ManagedBufferWithAllocator(const BufferCreationInfo& info, uint32_t alignment, float growthFactor /*= 2.0f*/, uint64_t maxSize /*= 0*/)
-        : m_creationInfo(info)
-        , m_alignment(alignment)
+        : m_alignment(alignment)
         , m_growthFactor(growthFactor)
         , m_maxSize(maxSize)
         , m_api(base::GetService<DeviceService>()->device())
     {
+        auto creationInfo = info;
+
         const auto blockCount = std::min<uint32_t>(65536, info.size / 4096);
         m_bufferAllocator.setup(info.size, blockCount, 4096);
 
-        m_creationInfo.allowCopies = true;
-        m_creationInfo.allowDynamicUpdate = true;
+        creationInfo.allowCopies = true;
+        creationInfo.allowDynamicUpdate = true;
 
-        m_bufferObject = m_api->createBuffer(m_creationInfo);
-        m_bufferView = m_bufferObject->view();
+        m_bufferObject = m_api->createBuffer(creationInfo);
     }
 
     ManagedBufferWithAllocator::~ManagedBufferWithAllocator()
@@ -88,8 +90,8 @@ namespace rendering
             auto curBlockCount = m_bufferAllocator.numAllocatedBlocks();
             auto curByteCount = m_bufferAllocator.numAllocatedBytes();
 
-            TRACE_INFO("Freed {} ({} block(s)) from managed buffer '{}'. {}->{}, {}->{}",
-                finalFrees.size(), MemSize(freedSize), m_creationInfo.label,
+            TRACE_INFO("Freed {} ({} block(s)) from managed buffer. {}->{}, {}->{}",
+                finalFrees.size(), MemSize(freedSize),
                 prevBlockCount, curBlockCount,
                 MemSize(prevByteCount), MemSize(curByteCount));
         }
@@ -108,7 +110,7 @@ namespace rendering
                 uint64_t totalUploadedSize = 0;
                 for (auto* entry : finalUploads)
                 {
-                    cmd.opUpdateDynamicBuffer(m_bufferView, entry->offset, entry->size, entry->data.data());
+                    cmd.opUpdateDynamicBuffer(m_bufferObject, entry->offset, entry->size, entry->data.data());
                     totalUploadedSize += entry->size;
                 }
 

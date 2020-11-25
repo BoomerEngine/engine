@@ -23,14 +23,14 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
             VertexIndexBunch<> m_indexedTriList1;
             VertexIndexBunch<> m_indexedTriList2;
 
-            const ShaderLibrary* m_shaderNormal;
-            const ShaderLibrary* m_shaderFlat;
+            ShaderLibraryPtr m_shaderNormal;
+            ShaderLibraryPtr m_shaderFlat;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FlatAttribute);
@@ -127,7 +127,7 @@ namespace rendering
             }
         }
 
-        void RenderingTest_FlatAttribute::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_FlatAttribute::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

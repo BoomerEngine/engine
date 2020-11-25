@@ -12,6 +12,9 @@
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingShaderLibrary.h"
 #include "rendering/device/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingImage.h"
 
 #include "base/object/include/rttiMetadata.h"
 
@@ -23,20 +26,18 @@ namespace rendering
 
         /// create buffer upload data from an array
         template< typename T >
-        INLINE static SourceData CreateSourceData(const base::Array<T>& sourceData)
+        INLINE static SourceDataProviderPtr CreateSourceData(const base::Array<T>& sourceData)
         {
-            SourceData ret;
-            ret.data = base::Buffer::Create(POOL_TEMP, sourceData.dataSize(), 1, sourceData.data());
-            return ret;
+            auto buf = base::Buffer::Create(POOL_TEMP, sourceData.dataSize(), 1, sourceData.data());
+			return base::RefNew<SourceDataProviderBuffer>(buf);;
         }
 
         /// create buffer upload data from an array
         template< typename T >
-        INLINE static SourceData CreateSourceDataRaw(const T& sourceData)
+        INLINE static SourceDataProviderPtr CreateSourceDataRaw(const T& sourceData)
         {
-            SourceData ret;
-            ret.data = base::Buffer::Create(POOL_TEMP, sizeof(sourceData), 1, &sourceData);
-            return ret;
+            auto buf = base::Buffer::Create(POOL_TEMP, sizeof(sourceData), 1, &sourceData);
+			return base::RefNew<SourceDataProviderBuffer>(buf);;
         }
 
         //---
@@ -208,8 +209,8 @@ namespace rendering
             base::Box m_bounds;
             base::Array<SimpleChunk> m_chunks;
 
-            BufferView m_vertexBuffer;
-            BufferView m_indexBuffer;
+            BufferObjectPtr m_vertexBuffer;
+			BufferObjectPtr m_indexBuffer;
 
             void drawChunk(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t chunkIndex) const;
             void drawMesh(command::CommandWriter& cmd, const ShaderLibrary* func) const;
@@ -246,7 +247,7 @@ namespace rendering
             // did loading of any resource failed ?
             INLINE bool hasErrors() const { return m_hasErrors; }
 
-            // device
+            // rendering
             INLINE IDevice* device() const { return m_device; }
 
             // sub test
@@ -264,18 +265,18 @@ namespace rendering
             virtual void shutdown();
 
             // render test via the provided interface, in the interactive mode the frame index is animated
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) = 0;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) = 0;
 
             //--
 
             // load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
-            const ShaderLibrary* loadShader(base::StringView partialPath);
+            ShaderLibraryPtr loadShader(base::StringView partialPath);
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
-            ImageView loadImage2D(base::StringView assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
+			ImageObjectPtr loadImage2D(base::StringView assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
             
             // load a custom cubemap from 6 images
-            ImageView loadCubemap(base::StringView assetFile, bool createMipmaps = false);
+			ImageObjectPtr loadCubemap(base::StringView assetFile, bool createMipmaps = false);
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
             SimpleRenderMeshPtr loadMesh(base::StringView assetFile, const MeshSetup& setup = MeshSetup());
@@ -283,45 +284,48 @@ namespace rendering
             //--
 
             // create buffer
-            BufferView createBuffer(const BufferCreationInfo& info, const SourceData* initializationData = nullptr);
+            BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* initializationData = nullptr);
 
             // create vertex buffer
-            BufferView createVertexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create updatable buffer
+			BufferObjectPtr createVertexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create dynamic buffer
 
             // create index buffer
-            BufferView createIndexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create updatable buffer
+			BufferObjectPtr createIndexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create dynamic buffer
 
             // create storage buffer
-            BufferView createStorageBuffer(uint32_t size, uint32_t stride = 0, bool dynamic=false, bool allowVertex=false, bool allowIndex=false);
+			BufferObjectPtr createStorageBuffer(uint32_t size, uint32_t stride = 0, bool dynamic=false, bool allowVertex=false, bool allowIndex=false);
+
+			// create constant buffer
+			BufferObjectPtr createConstantBuffer(uint32_t size, const void* sourceData=nullptr, bool dynamic = false, bool allowUav = false);
 
             // create vertex buffer from array
             template< typename T >
-            INLINE BufferView createVertexBuffer(const Array<T>& data) { return createVertexBuffer(data.dataSize(), data.data()); }
+            INLINE BufferObjectPtr createVertexBuffer(const Array<T>& data) { return createVertexBuffer(data.dataSize(), data.data()); }
 
             // create index buffer from array
             template< typename T >
-            INLINE BufferView createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
+            INLINE BufferObjectPtr createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
 
             // create image
-            ImageView createImage(const ImageCreationInfo& info, const SourceData* sourceData = nullptr, bool uavCapable = false);
+            ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, bool uavCapable = false);
 
             // create texture from list of slices
-            ImageView createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable = false);
+			ImageObjectPtr createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable = false);
 
             // create a 2D mipmap test, each mipmap has different color
-            ImageView createMipmapTest2D(uint16_t initialSize, bool markers = false);
+            ImageObjectPtr createMipmapTest2D(uint16_t initialSize, bool markers = false);
 
             // create a 2D checker image
-            ImageView createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps = true, base::Color colorA = base::Color::WHITE, base::Color colorB = base::Color::BLACK);
+			ImageObjectPtr createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps = true, base::Color colorA = base::Color::WHITE, base::Color colorB = base::Color::BLACK);
 
             // create a simple flat-color test cubemap
-            ImageView createFlatCubemap(uint16_t size = 64);
+			ImageObjectPtr createFlatCubemap(uint16_t size = 64);
 
             // create a simple normal color test cubemap
-            ImageView createColorCubemap(uint16_t size = 64);
+			ImageObjectPtr createColorCubemap(uint16_t size = 64);
 
             // create sampler
-            ObjectID createSampler(const SamplerState& info);
+            SamplerObjectPtr createSampler(const SamplerState& info);
 
             //--
 
@@ -330,7 +334,7 @@ namespace rendering
 
             // configure quad params
             void setQuadParams(command::CommandWriter& cmd, float x, float y, float w, float h);
-            void setQuadParams(command::CommandWriter& cmd, const ImageView& rt, const base::Rect& rect);
+            void setQuadParams(command::CommandWriter& cmd, const RenderTargetView* rt, const base::Rect& rect);
 
             //--
 
@@ -340,12 +344,12 @@ namespace rendering
         private:
             base::SpinLock m_allLoadedResourcesLock;
             base::Array<base::res::BaseReference> m_allLoadedResources;
-            base::Array<DeviceObjectPtr> m_driverObjects;
+            
             bool m_hasErrors;
             uint32_t m_subTestIndex;
             IDevice* m_device;
 
-            BufferView m_quadVertices;
+            BufferObjectPtr m_quadVertices;
 
             bool loadCubemapSide(base::Array<TextureSlice>& outSlices, base::StringView assetFile, bool createMipmaps /*= false*/);
         };
@@ -358,8 +362,8 @@ namespace rendering
             base::Array<VT> m_vertices;
             base::Array<IT> m_indices;
 
-            BufferView m_vertexBuffer;
-            BufferView m_indexBuffer;
+			BufferObjectPtr m_vertexBuffer;
+			BufferObjectPtr m_indexBuffer;
 
             void createBuffers(IRenderingTest& owner)
             {
@@ -370,7 +374,7 @@ namespace rendering
                     vertexInfo.size = m_vertices.dataSize();
 
                     auto sourceData = CreateSourceData(m_vertices);
-                    m_vertexBuffer = owner.createBuffer(vertexInfo, &sourceData);
+                    m_vertexBuffer = owner.createBuffer(vertexInfo, sourceData);
                 }
 
                 if (!m_indices.empty())
@@ -380,7 +384,7 @@ namespace rendering
                     indexInfo.size = m_indices.dataSize();
 
                     auto sourceData = CreateSourceData(m_indices);
-                    m_indexBuffer = owner.createBuffer(indexInfo, &sourceData);
+                    m_indexBuffer = owner.createBuffer(indexInfo, sourceData);
                 }
             }
 

@@ -24,7 +24,7 @@ namespace rendering
         public:
             RenderingTest_Clear();
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
             base::FastRandState m_random;
         };
@@ -43,7 +43,7 @@ namespace rendering
         {
         }
 
-        void RenderingTest_Clear::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_Clear::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             base::Vector4 clearColor;
             clearColor.x = m_random.unit();

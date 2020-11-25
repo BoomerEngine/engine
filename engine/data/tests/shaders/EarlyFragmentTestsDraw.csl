@@ -10,7 +10,7 @@
 
 descriptor TestParams
 {
-    attribute(format=r32i, uav) Buffer BufferData;
+    attribute(format=r32i) Buffer BufferData;
 }
 
 //--

@@ -16,6 +16,7 @@
 #include "base/object/include/rttiClassType.h"
 #include "base/containers/include/queue.h"
 #include "worldNodePath.h"
+#include "base/imgui/include/imgui.h"
 
 namespace base
 {

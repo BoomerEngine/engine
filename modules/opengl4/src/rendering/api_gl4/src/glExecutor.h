@@ -12,6 +12,7 @@
 
 #include "glBuffer.h"
 #include "glImage.h"
+#include "glObjectCache.h"
 
 namespace rendering
 {
@@ -35,59 +36,13 @@ namespace rendering
                 DepthClipRange,
                 StencilState,
                 ColorMask,
-                Parameters,
+                Descriptors,
             };
 
             typedef base::BitFlags<DirtyStateBit> DirtyStateFlags;
 
             //----
 
-            /// helper class to extract temp data from command buffers
-            class RuntimeDataAllocations : public base::NoCopy
-            {
-            public:
-                RuntimeDataAllocations();
-
-                //--
-
-                uint32_t m_requiredConstantsBuffer = 0;
-                uint32_t m_requiredStagingBuffer = 0;
-
-                uint32_t m_constantsDataOffsetInStaging = 0;
-
-                struct Write
-                {
-                    uint32_t offset = 0;
-                    uint32_t size = 0;
-                    const void* data = nullptr;
-                };
-
-                struct Copy
-                {
-                    TempBufferType targetType;
-                    uint32_t sourceOffset = 0;
-                    uint32_t targetOffset = 0;
-                    uint32_t size = 0;
-                };
-
-                struct Mapping
-                {
-                    ObjectID id;
-                    TempBufferType type;
-                    uint32_t offset = 0;
-                    uint32_t size = 0;
-                };
-
-                base::InplaceArray<Write, 1024> m_writes;
-                base::InplaceArray<Copy, 1024> m_copies;
-                base::InplaceArray<Mapping, 1024> m_mapping;
-
-                uint32_t allocStagingData(uint32_t size);
-
-                void reportConstantsBlockSize(uint32_t size);
-                void reportConstData(uint32_t offset, uint32_t size, const void* dataPtr, uint32_t& outOffsetInBigBuffer);
-                void reportBufferUpdate(const void* updateData, uint32_t updateSize, uint32_t& outStagingOffset);
-            };
 
             //----
 
@@ -122,21 +77,20 @@ namespace rendering
             class FrameExecutor : public base::NoCopy
             {
             public:
-                FrameExecutor(Device* drv, DeviceThread* thread, Frame* frame, const RuntimeDataAllocations& data, PerformanceStats* stats);
+                FrameExecutor(IBaseThread* thread, Frame* frame, const RuntimeDataAllocations& data, PerformanceStats* stats);
                 ~FrameExecutor();
 
                 INLINE PerformanceStats& stats() { return *m_stats; }
 
-                void pushParamState(bool inheritCurrentParameters);
-                void popParamState();
-                void printParamState();
+                void pushDescriptorState(bool inheritCurrentParameters);
+                void popDescriptorState();
+                void printDescriptorState();
 
     #define RENDER_COMMAND_OPCODE(x) void run##x(const command::Op##x& op);
     #include "rendering/device/include/renderingCommandOpcodes.inl"
     #undef RENDER_COMMAND_OPCODE
 
             private:
-                Device& m_device;
                 DeviceThread& m_thread;
                 Frame& m_frame;
 
@@ -147,23 +101,39 @@ namespace rendering
 
                 //--
 
+                struct GeometryBuffer
+                {
+                    ObjectID id; // buffer ID
+                    uint32_t offset = 0;
+                    //uint32_t size = 0;
+                };
+
                 struct GeometryState
                 {
-                    base::Array<BufferView> vertexBindings;
+                    base::Array<GeometryBuffer> vertexBindings;
                     uint8_t maxBoundVertexStreams = 0;
 
-                    uint32_t indexBufferOffset = 0;
-                    BufferView indexStreamBinding;
+                    GeometryBuffer indexStreamBinding;
                     ImageFormat indexFormat = ImageFormat::UNKNOWN;
+
+					uint32_t finalIndexStreamOffset = 0;
 
                     bool indexBindingsChanged = false;
                     bool vertexBindingsChanged = false;
                 };
 
-                struct ParamsState
+                struct DescriptorBinding
                 {
-                    base::Array<ParametersView> paramBindings;
-                    bool parameterBindingsChanged = false;
+                    const DescriptorEntry* dataPtr = nullptr;
+					const DescriptorInfo* layoutPtr = nullptr;
+
+					INLINE operator bool() const { return dataPtr != nullptr; }
+                };
+
+                struct DescriptorState
+                {
+                    base::Array<DescriptorBinding> descriptors;
+                    bool descriptorsChanged = false;
                 };
 
                 struct PassState
@@ -369,7 +339,7 @@ namespace rendering
 
                 GeometryState m_geometry;
                 PassState m_pass;
-                ParamsState m_params;
+                DescriptorState m_descriptors;
                 ProgramState m_program;
                 RuntimeBindingState m_objectBindings;
 
@@ -386,11 +356,10 @@ namespace rendering
 
                 //--
 
-                ResolvedBufferView resolveUntypedBufferView(const rendering::BufferView& view);
-                ResolvedFormatedView resolveTypedBufferView(const rendering::BufferView& view, ImageFormat format);
-                ResolvedImageView resolveImageView(const rendering::ImageView& view);
-
-                GLuint resolveSampler(ObjectID id);
+                ResolvedBufferView resolveGeometryBufferView(const rendering::ObjectID& id, uint32_t offset);
+				ResolvedBufferView resolveUntypedBufferView(const rendering::ObjectID& viewId);
+				ResolvedFormatedView resolveTypedBufferView(const rendering::ObjectID& viewId);
+				ResolvedImageView resolveImageView(const rendering::ObjectID& viewID);
 
                 //--
 
@@ -401,27 +370,22 @@ namespace rendering
 
                 void applyDirtyRenderStates();
                 void applyViewportScissorState(uint8_t index, const FrameBufferViewportState& vs, bool& usesStencil);
-                bool applyVertexData(const Shaders& shaders, PipelineIndex vertexStateIndex);
-                bool applyParameters(const Shaders& shaders, PipelineIndex parameterBindingStateIndex);
-                bool applyIndexData();
+				void applyVertexData(const Shaders& shaders, PipelineIndex vertexStateIndex);
+				void applyIndexData();
+				void applyDescriptors(const Shaders& shaders, PipelineIndex parameterBindingStateIndex);
 
-                bool prepareDraw(const Shaders& shaders, PipelineIndex linkedProgramIndex, bool usesIndices);
-                bool prepareDispatch(const Shaders& shaders, PipelineIndex linkedProgramIndex);
+				void applyDescriptorEntry(const ResolvedParameterBindingState::BindingElement& elem, const DescriptorEntry& entry);
 
-                //--
-
-                base::Array<ParamsState> m_paramStateStack;
+                void prepareDraw(const Shaders& shaders, PipelineIndex linkedProgramIndex, bool usesIndices);
+				void prepareDispatch(const Shaders& shaders, PipelineIndex linkedProgramIndex);
 
                 //--
 
-                struct ActiveSwapchains
-                {
-                    ObjectID colorRT;
-                    ObjectID depthRT;
-                    ObjectID swapchain;
-                };
+                base::InplaceArray<DescriptorState, 8> m_descriptorStateStack;
 
-                base::InplaceArray<ActiveSwapchains, 4> m_activeSwapchains;
+                //--
+
+                ObjectID m_activeSwapchain;
 
                 //--
 

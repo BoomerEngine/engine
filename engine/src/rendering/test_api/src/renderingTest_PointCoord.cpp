@@ -23,12 +23,13 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            uint32_t m_vertexCount;
-            const ShaderLibrary* m_shaders;
+            BufferObjectPtr m_vertexBuffer;
+            uint32_t m_vertexCount = 0;
+
+			ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_PointCoord);
@@ -72,7 +73,7 @@ namespace rendering
             }
         }
 
-        void RenderingTest_PointCoord::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_PointCoord::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

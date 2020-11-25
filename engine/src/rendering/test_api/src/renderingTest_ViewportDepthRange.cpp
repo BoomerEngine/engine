@@ -23,12 +23,15 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            ImageView m_depthBuffer;
-            const ShaderLibrary* m_shaders;
+            BufferObjectPtr m_vertexBuffer;
+
+            ImageObjectPtr m_depthBuffer;
+			RenderTargetViewPtr m_depthBufferRTV;
+
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_ViewportDepthRange);
@@ -36,21 +39,6 @@ namespace rendering
         RTTI_END_TYPE();
 
         //---
-
-        namespace
-        {
-            struct ViewportDepthRangeConsts
-            {
-                base::Vector4 DrawColor;
-                base::Vector4 Scale;
-                base::Vector4 Offset;
-            };
-
-            struct TestParams
-            {
-                ConstantsView m_data;
-            };
-        }
 
         void RenderingTest_ViewportDepthRange::initialize()
         {
@@ -75,7 +63,13 @@ namespace rendering
             {
                 float frac = i / (float)(count-1);
 
-                ViewportDepthRangeConsts params;
+				struct
+				{
+					base::Vector4 DrawColor;
+					base::Vector4 Scale;
+					base::Vector4 Offset;
+				} params;
+
                 params.DrawColor = color;
                 params.Scale.x = size;
                 params.Scale.y = size;
@@ -84,15 +78,15 @@ namespace rendering
                 params.Offset.y = y;
                 params.Offset.z = startZ + frac * (endZ - startZ);
 
-                TestParams desc;
-                desc.m_data = cmd.opUploadConstants(params);
-                cmd.opBindParametersInline("TestParams"_id, desc);
+                DescriptorEntry desc[1];
+				desc[0].constants(params);
+                cmd.opBindDescriptor("TestParams"_id, desc);
 
                 cmd.opDraw(func, 0, 6);
             }
         }
 
-        void RenderingTest_ViewportDepthRange::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView)
+        void RenderingTest_ViewportDepthRange::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));

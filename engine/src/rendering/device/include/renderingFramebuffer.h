@@ -10,7 +10,6 @@
 
 #include "base/containers/include/inplaceArray.h"
 #include "base/system/include/staticCRC.h"
-#include "renderingImageView.h"
 
 namespace rendering
 {
@@ -18,23 +17,26 @@ namespace rendering
 
     struct FrameBufferAttachmentInfo
     {
-        ImageView rt;
+		const RenderTargetView* viewPtr = nullptr;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint8_t slices = 0;
+        uint8_t samples = 0;
         LoadOp loadOp = LoadOp::Keep;
         StoreOp storeOp = StoreOp::Store;
+		bool swapchain = false;
 
-        INLINE bool empty() const { return rt.empty(); }
-        INLINE operator bool() const { return !rt.empty(); }
+		ObjectID viewID; // resolved when copied to command buffer
+
+        INLINE bool empty() const { return viewPtr == nullptr && viewID.empty(); }
+        INLINE operator bool() const { return !empty(); }
     };
 
     struct RENDERING_DEVICE_API FrameBufferColorAttachmentInfo : public FrameBufferAttachmentInfo
     {
         float clearColorValues[4] = { 1.0f };
 
-        INLINE FrameBufferColorAttachmentInfo& view(const ImageView& view)
-        {
-            rt = view;
-            return *this;
-        }
+        FrameBufferColorAttachmentInfo& view(const RenderTargetView* rtv);
 
         INLINE FrameBufferColorAttachmentInfo& dontCare()
         {
@@ -88,11 +90,7 @@ namespace rendering
         float clearDepthValue = 1.0f;
         uint8_t clearStencilValue = 0;
 
-        INLINE FrameBufferDepthAttachmentInfo& view(const ImageView& view)
-        {
-            rt = view;
-            return *this;
-        }
+        FrameBufferDepthAttachmentInfo& view(const RenderTargetView* view);
 
         INLINE FrameBufferDepthAttachmentInfo& dontCare()
         {
@@ -144,7 +142,9 @@ namespace rendering
 
         void print(base::IFormatStream& f) const;
         bool validate() const;
+
         uint8_t validColorSurfaces() const;
+		uint8_t samples() const;
     };
 
     //---

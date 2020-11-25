@@ -22,11 +22,11 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
             VertexIndexBunch<> m_indexedTriList;
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
 
             static const auto NUM_ELEMENTS = 32;
         };
@@ -36,22 +36,6 @@ namespace rendering
         RTTI_END_TYPE();
 
         //---
-
-        namespace
-        {
-            struct VertexBuiltinAttributestTestConsts
-            {
-                int NumInstances;
-                int NumVertices;
-                float InstanceStepY;
-            };
-
-            struct TestParams
-            {
-                ConstantsView m_data;
-            };
-
-        }
 
         static void GenerateTestGeometry(float x, float y, float w, float h, uint32_t count, VertexIndexBunch<>& outGeometry)
         {
@@ -84,21 +68,27 @@ namespace rendering
             m_shaders = loadShader("VertexBuiltinAttributes.csl");
         }
 
-        void RenderingTest_VertexBuiltinAttributes::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_VertexBuiltinAttributes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
 
-            VertexBuiltinAttributestTestConsts params;
+			struct
+			{
+				int NumInstances;
+				int NumVertices;
+				float InstanceStepY;
+			} params;
+
             params.NumInstances = NUM_ELEMENTS;
             params.NumVertices = NUM_ELEMENTS;
             params.InstanceStepY = (1.8f) / (NUM_ELEMENTS + 1);
 
-            TestParams desc;
-            desc.m_data = cmd.opUploadConstants(params);
-            cmd.opBindParametersInline("TestParams"_id, desc);
+			DescriptorEntry desc[1];
+			desc[0].constants(params);
+            cmd.opBindDescriptor("TestParams"_id, desc);
 
             m_indexedTriList.draw(cmd, m_shaders, 0, NUM_ELEMENTS);
 

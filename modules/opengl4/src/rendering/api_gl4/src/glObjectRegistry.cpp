@@ -89,7 +89,7 @@ namespace rendering
 
             TRACE_SPAM("GL: Registered object {}", m_generationCounter);
 
-            return ObjectID::CreateStaticID(index, m_generationCounter);
+            return ObjectID(index, m_generationCounter, ptr);
         }
 
         void ObjectRegistry::unregisterObject(ObjectID id, Object* ptr)
@@ -106,7 +106,7 @@ namespace rendering
 
             auto& entry = m_objects[id.index()];
             DEBUG_CHECK_RETURN(entry.ptr == ptr);
-            DEBUG_CHECK(entry.markedForDeletion);
+            DEBUG_CHECK(entry.markedForDeletion || ptr->objectType() == ObjectType::OutputRenderTargetView); // HACK!
 
             m_objects[id.index()].ptr = nullptr;
             m_objects[id.index()].markedForDeletion = false;
@@ -119,7 +119,6 @@ namespace rendering
         {
             if (!id.empty())
             {
-                DEBUG_CHECK_RETURN_V(id.isStatic(), nullptr);
                 DEBUG_CHECK_RETURN_V(id.index() < MAX_OBJECTS, nullptr);
                 DEBUG_CHECK_RETURN_V(id.generation() <= m_generationCounter, nullptr);
 
@@ -147,6 +146,9 @@ namespace rendering
             auto& entry = m_objects[id.index()];
             if (entry.ptr && entry.ptr->handle() == id)
             {
+				if (entry.ptr->objectType() == ObjectType::OutputRenderTargetView)
+					return; // HACK!
+
                 if (!entry.markedForDeletion)
                 {
                     TRACE_SPAM("GL: Marked object {} for deletion", id.generation());
@@ -195,7 +197,16 @@ namespace rendering
                 m_registry->requestObjectDeletion(id);
         }
 
-        bool ObjectRegistryProxy::runWithObject(ObjectID id, const std::function<void(Object*)>& func)
+		Object* ObjectRegistryProxy::resolveStatic(ObjectID id, ObjectType type) const
+		{
+			auto lock = CreateLock(m_lock);
+			if (m_registry)
+				return m_registry->resolveStatic(id, type);
+			
+				return nullptr;
+		}
+
+        bool ObjectRegistryProxy::runWithObject(ObjectID id, const std::function<void(Object*)>& func) const
         {
             auto lock = CreateLock(m_lock);
             if (m_registry)

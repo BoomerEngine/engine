@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 
 namespace rendering
 {
@@ -23,11 +24,11 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_backgroundBuffer;
-            BufferView m_testBuffer;
+            BufferObjectPtr m_backgroundBuffer;
+			BufferObjectPtr m_testBuffer;
 
             static const uint8_t MAX_BLEND_MODES = 15;
             static const uint8_t MAX_BLEND_FUNCS = 5;
@@ -59,7 +60,7 @@ namespace rendering
             };
 
             base::StringBuf m_blendMode;
-            const ShaderLibrary* m_shader;
+            ShaderLibraryPtr m_shader;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_BasicBlendingModes);
@@ -111,7 +112,7 @@ namespace rendering
             m_shader = loadShader("GenericGeometry.csl");
         }
 
-        void RenderingTest_BasicBlendingModes::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_BasicBlendingModes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
@@ -119,8 +120,8 @@ namespace rendering
             cmd.opBeingPass(fb);
 
             auto numBlendModes  = ARRAY_COUNT(BlendModesNames);
-            auto viewWidth = backBufferView.width() / numBlendModes;
-            auto viewHeight = backBufferView.height() / numBlendModes;
+            auto viewWidth = backBufferView->width() / numBlendModes;
+            auto viewHeight = backBufferView->height() / numBlendModes;
 
             auto blendOp = BlendFuncNames[subTestIndex()];
 
@@ -134,7 +135,7 @@ namespace rendering
                     {
                         cmd.opSetBlendState(0);
                         cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_backgroundBuffer);
-                        cmd.opDraw(m_shader, 0, m_backgroundBuffer.size() / sizeof(Simple3DVertex));
+                        cmd.opDraw(m_shader, 0, m_backgroundBuffer->size() / sizeof(Simple3DVertex));
                     }
 
                     // test
@@ -143,7 +144,7 @@ namespace rendering
                         auto blendDest = BlendModesNames[y];
                         cmd.opSetBlendState(0, blendOp, blendSrc, blendDest);
                         cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_testBuffer);
-                        cmd.opDraw(m_shader, 0, m_testBuffer.size() / sizeof(Simple3DVertex));
+                        cmd.opDraw(m_shader, 0, m_testBuffer->size() / sizeof(Simple3DVertex));
                     }
                 }
             }

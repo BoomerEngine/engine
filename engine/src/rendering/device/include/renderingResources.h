@@ -49,7 +49,10 @@ namespace rendering
         uint32_t stride = 0; // non zero ONLY for structured buffers
         base::StringBuf label; // debug label
 
+        ResourceLayout initialLayout = ResourceLayout::INVALID;
+
         BufferViewFlags computeFlags() const;
+		ResourceLayout computeDefaultLayout() const;
 
         void print(base::IFormatStream& f) const;
     };
@@ -71,18 +74,10 @@ namespace rendering
         CopyCapable = FLAG(9), // we can copy to/from this image
         SwapChain = FLAG(10), // render target is part of output swapchain
         FlippedY = FLAG(11), // this render target must be Y-flipped for display (OpenGL window)
+		SubResourceLayouts = FLAG(12), // this resource allows sub-resources to be transition independently
     };
 
     typedef base::DirectFlags<ImageViewFlag> ImageViewFlags;
-
-    // internal memory layout of image
-    enum class ImageLayout : uint8_t
-    {
-        ShaderReadOnly, // image is readable by the shader (but it's not modified, SRV), required state for ImageViewFlag::ShaderRead
-        ShaderReadWrite, // image is writable by the shader (UAV), required state for ImageViewFlag::UAVCapable
-        RenderTarget, // image is used as target for rendering (read/write), required state for ImageViewFlag::RenderTarget
-        DepthReadOnly, // image is used as read only depth buffer), required state for ImageViewFlag::Depth in read only mode
-    };
 
     ///---
     
@@ -90,7 +85,6 @@ namespace rendering
     {
         ImageViewType view = ImageViewType::View2D; // dimensionality of the image + is it an array
         ImageFormat format = ImageFormat::UNKNOWN; // specialized image format
-        ObjectID sampler = ObjectID::DefaultBilinearSampler();
 
         bool allowShaderReads = false; // allow this image to be read in shaders - this is the most common state for textures, etc
         bool allowDynamicUpdate = false; // allow this image to be dynamically updated
@@ -106,6 +100,8 @@ namespace rendering
         uint16_t numSlices = 1; // number of array slices in the image (for arrays and cubemaps, NOTE: for cubemap arrays this will be in multiples of 6)
         uint8_t numSamples = 1; // number of samples (<=1 - not mulitsampled) NOTE: lmited to 2D textures
 
+        ResourceLayout initialLayout = ResourceLayout::INVALID; // auto determine based on flags
+
         base::StringBuf label; // debug label
 
         //--
@@ -115,8 +111,16 @@ namespace rendering
         //--
 
         ImageViewFlags computeViewFlags() const;
+		ResourceLayout computeDefaultLayout() const;
 
         uint32_t calcMemoryUsage() const;
+		uint32_t calcMipDataSize(uint8_t mipIndex) const;
+		uint32_t calcMipWidth(uint8_t mipIndex) const;
+		uint32_t calcMipHeight(uint8_t mipIndex) const;
+		uint32_t calcMipDepth(uint8_t mipIndex) const;
+
+		uint32_t calcRowPitch(uint8_t mipIndex) const;
+		uint32_t calcRowLength(uint8_t mipIndex) const; // NOTE: for compressed textures it's never <4
 
         //--
 
@@ -132,72 +136,120 @@ namespace rendering
 
     //--
 
-    /// holder for data we want to download from rendering device side
-    template< typename T >
-    class DownloadData : public base::IReferencable
-    {
-    public:
-        typedef std::function<void(const T & data)> TCallback;
-
-        INLINE DownloadData(const TCallback& callback = TCallback())
-            : m_callback(callback)
-            , m_ready(false)
-        {}
-
-        INLINE bool isReady()
-        {
-            auto lock = base::CreateLock(m_lock);
-            return m_ready;
-        }
-
-        INLINE T data()
-        {
-            auto lock = base::CreateLock(m_lock);
-            return m_data;
-        }
-
-        INLINE void publish(const T& data)
-        {
-            {
-                auto lock = base::CreateLock(m_lock);
-
-                if (m_ready)
-                    return;
-
-                m_data = data;
-                m_ready = true;
-            }
-
-            if (m_callback)
-                m_callback(data);
-        }
-
-        //--
-
-    private:
-        base::SpinLock m_lock;
-        TCallback m_callback;
-        T m_data;
-        volatile bool m_ready;
-    };
-
-    using DownloadImage = DownloadData<base::image::ImagePtr>;
-    using DownloadImagePtr = base::RefPtr<DownloadImage>;
-
-    using DownloadBuffer = DownloadData<base::Buffer>;
-    using DownloadBufferPtr = base::RefPtr<DownloadBuffer>;
-
-    //--
-
     // source data for image/buffer initialization
-    struct SourceData
+	// NOTE: this is asynchronous in nature and can be kept alive for undetermined amount of time
+    class RENDERING_DEVICE_API ISourceDataProvider : public base::IReferencable
     {
-        base::Buffer data; // source data
-        uint32_t offset = 0; // offset into the buffer we passed (we can have one buffer used to initialize multiple resources)
-        uint32_t size = 0; // size of data in the buffer (for validation)
+		RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
+
+	public:
+		virtual ~ISourceDataProvider();
+
+		enum class ReadyStatus : uint8_t
+		{
+			NotReady,
+			Ready,
+			Failed
+		};
+
+		// get a debug label for this data, usually resource name
+		virtual base::StringView debugLabel() const { return ""; }
+
+		// called once when we want to indicate we want to begin copying from this source
+		// NOTE: source should start preparing internal data, optionally a persistent load state may be returned in the "token" 
+		// NOTE: this method should NOT block, if async operation is needed you can use checkSourceDataReady
+		// NOTE: the copy queue assumes that ALL sub-resources may be filled at the same time, if that's not the case specify "supportsAsyncWrites=false"
+		virtual bool openSourceData(const ResourceCopyRange& range, void*& outToken, bool& outSupportsAsyncWrites) const;
+
+		// check if source is ready for copying (whatever operation has started in openSourceData) is finished
+		// NOTE: this may return "late failure" - i.e. file did not open etc. If that happens the whole copy is canceled
+		virtual ReadyStatus checkSourceDataReady(const void* token) const;
+
+		// write initialization data into provided pointer
+		// NOTE: the most amazing thing about it this function is that it can wait happen in background (ie. disk loading is allowed here)
+		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const = 0;
+
+		// called once all copying is finished, allows to free related resources
+		virtual CAN_YIELD void closeSourceData(void* token) const;
     };
 
     //--
+
+	// shitty implementation of source data that uses copied data to initialize the resource
+	// NOTE: we do support copying from an offset in the buffer
+	// NOTE: this is fallback/corner case use as this does not provide nice asynchronous resource upload
+	class RENDERING_DEVICE_API SourceDataProviderBuffer : public ISourceDataProvider
+	{
+		RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
+
+	public:
+		SourceDataProviderBuffer(const base::Buffer& data, uint32_t sourceOffset=0, uint32_t sourceSize=0);
+
+		INLINE uint32_t sourceOffset() const { return m_sourceOffset; }
+		INLINE uint32_t sourceSize() const { return m_sourceSize; }
+
+		INLINE const base::Buffer& data() const { return m_data; }
+
+		// upload buffer to GPU memory (copies the content from buffer if it fits)
+		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const override final;
+
+	private:
+		base::Buffer m_data;
+
+		uint32_t m_sourceOffset = 0;
+		uint32_t m_sourceSize = 0; // validated only if non-zero
+	};
+
+	//--
+
+	// sink for GPU data download
+	// NOTE: this is asynchronous in nature and can be kept alive for undetermined amount of time so it should handle cancellation internally
+	// NOTE: this WILL be called from internal device thread, do not use fiber sync points inside
+	class RENDERING_DEVICE_API IDownloadDataSink : public base::IReferencable
+	{
+		RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
+
+	public:
+		virtual ~IDownloadDataSink();
+
+		// get a debug label for this data, usually resource name
+		virtual base::StringView debugLabel() const { return ""; }
+
+		// data was retrieved from GPU, do whatever you want with it
+		// NOTE: the data is stored either in special staging buffer or in case of UMA you will have direct pointer to it
+		// NOTE: it goes without saying that the pointer should not be cached
+		virtual CAN_YIELD void processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info) = 0;
+	};
+
+	//--
+
+	// simple (aka. BAD EXMAPLE) sink that keeps the retrieved data in a buffer for later inspection
+	class RENDERING_DEVICE_API DownloadDataSinkBuffer : public IDownloadDataSink
+	{
+	public:
+		DownloadDataSinkBuffer(PoolTag pool, uint32_t alignment=16);
+
+		/// get the buffer version, initially it's zero, increments after each processRetreivedData call (so the sink can be reused)
+		INLINE uint32_t version() const { return m_version.load(); }
+
+		/// retrieve the internal buffer (NOTE: object copy, the buffer holder is ref counted inside so its fast)
+		base::Buffer data(uint32_t* outVersion = nullptr) const;
+
+	protected:
+		std::atomic<uint32_t> m_version; // changed after each new upload
+
+		base::SpinLock m_dataLock;
+		base::Buffer m_data;
+
+		PoolTag m_poolTag;
+		uint32_t m_alignment;
+
+		//--
+
+		virtual CAN_YIELD void processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info) override final;
+	};
+
+	//--
 
 } // rendering
 

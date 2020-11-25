@@ -62,6 +62,12 @@ namespace base
         return m_elements.size(); // yes, we don't have to consume the full array, in principle
     }
 
+	template<class T, typename Container>
+	void Queue<T, Container>::reserve(uint32_t size)
+	{
+		m_elements.reserve(size);
+	}
+
     template<class T, typename Container>
     INLINE uint32_t Queue<T, Container>::size() const
     {

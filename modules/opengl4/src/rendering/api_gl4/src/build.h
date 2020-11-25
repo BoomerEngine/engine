@@ -51,30 +51,14 @@ namespace rendering
 
         //--
 
-        enum class ObjectType : uint8_t
-        {
-            Invalid,
-            Buffer,
-            Image,
-            Sampler,
-            Shaders,
-            Output,
-        };
-
-        enum class TempBufferType : uint8_t
-        {
-            Constants,
-            Storage,
-            Geometry,
-            Staging,
-        };
 
         //--
 
         class Device;
         class DeviceThread;
-
-        class Frame;
+		class DeviceCopyQueue;
+		class DeviceCopyStagingPool;
+		struct DeviceCopyStagingArea;
 
         class TempBuffer;
         class TempBufferPool;
@@ -95,8 +79,6 @@ namespace rendering
         struct ResolvedBufferView;
         struct ResolvedParameterBindingState;
         struct ResolvedVertexBindingState;
-
-        typedef std::function<void(void)> FrameCompletionCallback;
 
         //--
 

@@ -10,9 +10,11 @@
 #include "glObject.h"
 #include "glDevice.h"
 #include "glDeviceThread.h"
+#include "glDeviceThreadCopy.h"
 #include "glFrame.h"
 
 #include "rendering/device/include/renderingCommandBuffer.h"
+
 
 namespace rendering
 {
@@ -24,6 +26,9 @@ namespace rendering
         base::ConfigProperty<bool> cvPrintGLTimings("GL4", "PrintThreadTimings", false);
         base::ConfigProperty<bool> cvEnableProcessingThread("GL4", "EnableProcessingThread", true);
         base::ConfigProperty<bool> cvEnableDebugOutput("GL4", "EnableDebugOutput", true);
+
+		base::ConfigProperty<uint32_t> cvCopyQueueStagingAreaSizeMB("GL4", "CopyStagingAreaSizeMB", 256);
+		base::ConfigProperty<uint32_t> cvCopyQueueStagingAreaPageSize("GL4", "CopyQueueStagingAreaPageSize", 4096);
 
         //--
 
@@ -125,12 +130,20 @@ namespace rendering
             m_currentFrame = new Frame(this);
             
             if (m_useThread)
-                m_thread.init(setup);
+                m_thread.init(setup);			
         }
 
         DeviceThread::~DeviceThread()
         {
             TRACE_INFO("Device thread shutting down");
+
+			// delete queue
+			run([this]() {
+					delete m_copyQueue;
+					m_copyQueue = nullptr;
+					delete m_copyPool;
+					m_copyPool = nullptr;
+				});
 
             // wait for all work on the GPU to finish
             sync();
@@ -153,6 +166,17 @@ namespace rendering
 
             TRACE_INFO("Device thread closed");
         }        
+
+		void DeviceThread::initializeCopyQueue()
+		{
+			run([this]()
+				{
+					const auto copyPoolSize = cvCopyQueueStagingAreaSizeMB.get() << 20;
+					const auto copyPoolPageSize = cvCopyQueueStagingAreaPageSize.get();
+					m_copyPool = new DeviceCopyStagingPool(m_device, copyPoolSize, copyPoolPageSize);
+					m_copyQueue = new DeviceCopyQueue(m_device, m_copyPool, &m_device->objectRegistry());
+				});
+		}
 
         void DeviceThread::initializeDebug_Thread()
         {
@@ -417,6 +441,15 @@ namespace rendering
                 m_freeQueryObjects.pushBack(id);
         }
 
+		//--
+
+		bool DeviceThread::scheduleAsyncCopy_ClientApi(Object* ptr, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter fence)
+		{
+			return m_copyQueue->scheduleAsync_ClientApi(ptr, range, sourceData, fence);
+		}
+
+		//--
+
         void DeviceThread::threadFunc()
         {
             if (m_useThread)
@@ -427,8 +460,15 @@ namespace rendering
 
                 for (;;)
                 {
+					// start/finish any async copying
+					if (m_copyQueue)
+					{
+						auto lock = CreateLock(m_sequenceLock);
+						m_copyQueue->update(m_currentFrame);
+					}
+
                     // wait for job
-                    m_jobQueueSemaphore.wait(10);
+                    m_jobQueueSemaphore.wait(1);
 
                     // request exit ?
                     if (m_requestExit)
@@ -459,6 +499,12 @@ namespace rendering
                 // manual job loop
                 while (auto job = popJob())
                 {
+					if (m_copyQueue)
+					{
+						auto lock = CreateLock(m_sequenceLock);
+						m_copyQueue->update(m_currentFrame);
+					}
+
                     base::ScopeTimer timer;
                     PC_SCOPE_LVL0(DeviceThreadJob);
                     job->m_jobFunc();
@@ -473,4 +519,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

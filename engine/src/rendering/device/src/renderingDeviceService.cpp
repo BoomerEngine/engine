@@ -13,8 +13,8 @@
 #include "base/containers/include/hashSet.h"
 
 #include "renderingDeviceApi.h"
-#include "renderingNullDevice.h"
 #include "renderingOutput.h"
+#include "renderingDeviceGlobalObjects.h"
 
 namespace rendering
 {
@@ -35,7 +35,8 @@ namespace rendering
 
     DeviceService::~DeviceService()
     {
-        DEBUG_CHECK_EX(m_device == nullptr, "Device not closed properly");
+		DEBUG_CHECK_EX(m_globals == nullptr, "Global resources not freed properly");
+		DEBUG_CHECK_EX(m_device == nullptr, "Device not closed properly");
     }
 
     base::app::ServiceInitializationResult DeviceService::onInitializeService(const base::app::CommandLine &cmdLine)
@@ -44,7 +45,7 @@ namespace rendering
         auto deviceToInitializeName = cvDeviceName.get();
         TRACE_INFO("Driver name loaded from config: '{}'", deviceToInitializeName);
 
-        // override with commandline
+        // override with command line
         if (cmdLine.hasParam("device"))
         {
             deviceToInitializeName = cmdLine.singleValue("device");
@@ -65,12 +66,21 @@ namespace rendering
             }
         }
 
+		// create default objects
+		m_globals = new DeviceGlobalObjects(m_device);
+
         // canvas renderer initialized
         return base::app::ServiceInitializationResult::Finished;
     }
 
     void DeviceService::onShutdownService()
     {
+		if (m_globals)
+		{
+			delete m_globals;
+			m_globals = nullptr;
+		}
+
         if (m_device)
         {
             m_device->sync();
@@ -137,6 +147,13 @@ namespace rendering
     }
 
     //--
+
+	const DeviceGlobalObjects& Globals()
+	{
+		return base::GetService<DeviceService>()->globals();
+	}
+
+	//--
 
 } // rendering
 

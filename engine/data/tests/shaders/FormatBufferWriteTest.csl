@@ -18,7 +18,7 @@ descriptor TestParams
         float DrawScale;
     }
 
-    attribute(uav, format=rgba32f) Buffer VertexData;
+    attribute(format=rgba32f) Buffer VertexData;
 }
 
 //--

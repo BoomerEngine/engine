@@ -11,27 +11,49 @@
 #include "glDeviceThread.h"
 #include "glObjectRegistry.h"
 #include "glOutput.h"
+#include "rendering/device/include/renderingImage.h"
 
 namespace rendering
 {
     namespace gl4
     {
+		//--
+
+		OutputRenderTarget::OutputRenderTarget(Device* drv, Output* output, ImageFormat format, uint8_t samples, bool depth)
+			: Object(drv, ObjectType::OutputRenderTargetView)
+			, m_output(output)
+			, m_format(format)
+			, m_samples(samples)
+			, m_depth(depth)
+		{}
 
         //--
 
-        Output::Output(Device* drv, DeviceThread* th, WindowManager* windows, DriverOutputClass cls, bool flipped)
+        Output::Output(Device* drv, DeviceThread* th, WindowManager* windows, OutputClass cls, bool flipped)
             : Object(drv, ObjectType::Output)
             , m_outputClass(cls)
             , m_windows(windows)
             , m_thread(th)
             , m_flipped(flipped)
         {
-            m_colorID = ObjectID::AllocTransientID();
-            m_depthID = ObjectID::AllocTransientID();
         }
 
         Output::~Output()
         {
+			// release color surface
+			if (m_colorTarget)
+			{
+				delete m_colorTarget;
+				m_colorTarget = nullptr;
+			}
+
+			// release depth surface
+			if (m_depthTarget)
+			{
+				delete m_depthTarget;
+				m_depthTarget = nullptr;
+			}
+
             // delete DC, if used
             if (m_deviceHandle)
             {
@@ -50,21 +72,33 @@ namespace rendering
             DEBUG_CHECK_EX(m_windowHandle == 0, "Output still has a window");
         }
 
-        void Output::bind(uint64_t windowHandle, uint64_t deviceHandle, ImageFormat colorFormat, ImageFormat depthFormat, INativeWindowInterface* window)
+        void Output::bind(uint64_t windowHandle, uint64_t deviceHandle, ImageFormat colorFormat, ImageFormat depthFormat, uint8_t numSamples, INativeWindowInterface* window)
         {
             DEBUG_CHECK_RETURN(m_windowHandle == 0);
             DEBUG_CHECK_RETURN(m_deviceHandle == 0);
-            DEBUG_CHECK_RETURN(m_colorFormat == ImageFormat::UNKNOWN);
-            DEBUG_CHECK_RETURN(m_depthFormat == ImageFormat::UNKNOWN);
+			DEBUG_CHECK_RETURN(m_colorTarget == nullptr);
+			DEBUG_CHECK_RETURN(m_depthTarget == nullptr);
+
+			if (colorFormat != ImageFormat::UNKNOWN)
+			{
+				const auto formatClass = GetImageFormatInfo(colorFormat).formatClass;
+				DEBUG_CHECK_RETURN(formatClass == ImageFormatClass::UNORM || formatClass == ImageFormatClass::SRGB || formatClass == ImageFormatClass::FLOAT);
+				m_colorTarget = new OutputRenderTarget(device(), this, colorFormat, numSamples, false);
+			}
+			
+			if (depthFormat != ImageFormat::UNKNOWN)
+			{
+				const auto formatClass = GetImageFormatInfo(depthFormat).formatClass;
+				DEBUG_CHECK_RETURN(formatClass == ImageFormatClass::DEPTH);
+				m_depthTarget = new OutputRenderTarget(device(), this, depthFormat, numSamples, true);
+			}
 
             m_windowHandle = windowHandle;
             m_deviceHandle = deviceHandle;
-            m_colorFormat = colorFormat;
-            m_depthFormat = depthFormat;
             m_windowInterface = window;
         }
-
-        bool Output::prepare(ImageView* outColorRT, ImageView* outDepthRT, base::Point& outViewport) const
+		
+        bool Output::prepare(IDeviceObject* owner, RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport)
         {
             uint16_t width = 0, height = 0;
             if (!m_windows->prepareWindowForRendering(m_windowHandle, width, height))
@@ -73,33 +107,58 @@ namespace rendering
             outViewport.x = width;
             outViewport.y = height;
 
-            const auto flipFlag = flipped() ? ImageViewFlag::FlippedY : (ImageViewFlag)0;
+			if (m_renderTargets.lastWidth != width && m_renderTargets.lastHeight != height)
+			{
+				TRACE_INFO("GL: Recreating internal render targets [{}x{}] -> [{}x{}]",
+					m_renderTargets.lastWidth, m_renderTargets.lastHeight, width, height);
 
-            if (outColorRT)
-            {
-                if (m_colorFormat != ImageFormat::UNKNOWN)
-                {
-                    ImageViewFlags colorFlags = { ImageViewFlag::RenderTarget, ImageViewFlag::SwapChain, flipFlag };
-                    *outColorRT = ImageView(m_colorID, ImageViewKey(m_colorFormat, ImageViewType::View2D, 0, 1, 0, 1), 1, width, height, 1, colorFlags, ObjectID::DefaultPointSampler());
-                }
-                else
-                {
-                    *outColorRT = ImageView();
-                }
-            }
+				m_renderTargets.color.reset();
+				m_renderTargets.depth.reset();
+				m_renderTargets.lastWidth = width;
+				m_renderTargets.lastHeight = height;
 
-            if (outDepthRT)
-            {
-                if (m_depthFormat != ImageFormat::UNKNOWN)
-                {
-                    ImageViewFlags depthFlags = { ImageViewFlag::RenderTarget, ImageViewFlag::SwapChain, ImageViewFlag::Depth, flipFlag };
-                    *outDepthRT = ImageView(m_depthID, ImageViewKey(m_depthFormat, ImageViewType::View2D, 0, 1, 0, 1), 1, width, height, 1, depthFlags, ObjectID::DefaultPointSampler());
-                }
-                else
-                {
-                    *outDepthRT = ImageView();
-                }
-            }
+				if (width && height)
+				{
+					RenderTargetView::Setup setup;
+					setup.firstSlice = 0;
+					setup.numSlices = 1;
+					setup.width = width;
+					setup.height = height;
+					setup.mip = 0;
+					setup.arrayed = false;
+					setup.flipped = true;
+					setup.swapchain = true;
+
+					if (m_colorTarget)
+					{
+						setup.format = m_colorTarget->format();
+						setup.samples = m_colorTarget->samples();
+						setup.msaa = m_colorTarget->samples() > 1;
+						setup.samples = m_colorTarget->samples();
+						setup.msaa = m_colorTarget->samples() > 1;
+						setup.depth = false;
+						m_renderTargets.color = base::RefNew<RenderTargetView>(m_colorTarget->handle(), owner, device()->objectRegistry().proxy(), setup);
+					}
+
+					if (m_depthTarget)
+					{
+						setup.format = m_depthTarget->format();
+						setup.samples = m_depthTarget->samples();
+						setup.msaa = m_depthTarget->samples() > 1;
+						setup.samples = m_depthTarget->samples();
+						setup.msaa = m_depthTarget->samples() > 1;
+						setup.depth = true;
+						m_renderTargets.depth = base::RefNew<RenderTargetView>(m_depthTarget->handle(), owner, device()->objectRegistry().proxy(), setup);
+					}
+					
+				}
+			}
+
+			if (outColorRT)
+				*outColorRT = m_renderTargets.color;
+
+			if (outDepthRT)
+				*outDepthRT = m_renderTargets.depth;
 
             return true;
         }
@@ -111,7 +170,7 @@ namespace rendering
             , m_proxy(impl)
         {}
 
-        bool OutputObjectProxy::prepare(ImageView* outColorRT, ImageView* outDepthRT, base::Point& outViewport)
+        bool OutputObjectProxy::prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport)
         {
             bool ret = false;
 
@@ -119,7 +178,7 @@ namespace rendering
             {
                 proxy->run<Output>(id(), [this, &ret, outColorRT, outDepthRT, &outViewport](Output* ptr)
                     {
-                        ret = ptr->prepare(outColorRT, outDepthRT, outViewport);
+                        ret = ptr->prepare(this, outColorRT, outDepthRT, outViewport);
                     });
             }
 
@@ -129,4 +188,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

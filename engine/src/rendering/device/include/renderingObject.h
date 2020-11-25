@@ -3,110 +3,126 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\objects #]
+* [# filter: interface\object #]
 ***/
 
 #pragma once
 
 namespace rendering
 {
-    //--
 
-    // internal ID of the object
-    // used instead of pointer since ALL of the true knowledge about the object is on the rendering side
-    class RENDERING_DEVICE_API ObjectID
-    {
+    ///---
+    
+    // an object created by device API and passed to engine side
+    // NOTE: destruction of this object will destroy the API-internal object once the current frame finishes
+    class RENDERING_DEVICE_API IDeviceObject : public base::IReferencable
+	{
+		RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDeviceObject);
+
     public:
-        static const uint64_t TYPE_NULL = 0;
-        static const uint64_t TYPE_TRANSIENT = 1;
-        static const uint64_t TYPE_PREDEFINED = 2;
-        static const uint64_t TYPE_STATIC = 3;
+        IDeviceObject(ObjectID id, IDeviceObjectHandler* impl);
+        virtual ~IDeviceObject();
+
+        // get the assigned object ID (it should static ID)
+        // NOTE: this ID can be used until the object is deleted, after that it's use is no longer valid (although it will not crash)
+        INLINE ObjectID id() const { return m_id; }
 
         //--
 
-        INLINE ObjectID() { data.raw = 0;  }; // 0
-        INLINE ~ObjectID() = default;
-
-        INLINE ObjectID(const ObjectID& other) = default;
-        INLINE ObjectID(ObjectID&& other) = default;
-        INLINE ObjectID(std::nullptr_t) { data.raw = 0; };
-
-        INLINE ObjectID& operator=(const ObjectID& other) = default;
-        INLINE ObjectID& operator=(ObjectID&& other) = default;
-
-        INLINE bool operator==(const ObjectID& other) const { return data.raw == other.data.raw; }
-        INLINE bool operator!=(const ObjectID& other) const { return data.raw != other.data.raw; }
-
-        // is this a null object ID ?
-        INLINE bool empty() const { return (TYPE_NULL == data.fields.type); }
-
-        // get the internal object index
-        INLINE uint32_t index() const { return data.fields.index; }
-
-        // get the internal object generation
-        INLINE uint32_t generation() const { return data.fields.generation; }
-
-        // is the ID for a transient object
-        INLINE bool isTransient() const { return data.fields.type == TYPE_TRANSIENT; }
-
-        // is the ID for a predefined object
-        INLINE bool isPredefined() const { return data.fields.type == TYPE_PREDEFINED; }
-
-        // is the ID for a static object
-        INLINE bool isStatic() const { return data.fields.type == TYPE_STATIC; }
-
-        // easy test
-        INLINE explicit operator bool() const { return !empty(); }
+        // calculate GPU memory size used by the object
+        virtual uint32_t calcMemorySize() const { return 0; }
 
         //--
 
-        // NULL object ID
-        static const ObjectID& EMPTY();
+		// resolve pointer to internal API object, always valid if this object is alive
+		// NOTE: obviously should not be cached :)
+		api::IBaseObject* resolveInternalApiObjectRaw(uint8_t objectType) const;
+
+		// resolve pointer to internal API object, always valid if this object is alive
+		// NOTE: obviously should not be cached :)
+		template< typename T >
+		INLINE T* resolveInternalApiObject() const
+		{
+			return (T*)resolveInternalApiObjectRaw((uint8_t) T::STATIC_TYPE);
+		}
+
+		//--
+
+	protected:
+		// TODO: fix
+		INLINE IDeviceObjectHandler* owner() const { return m_impl.unsafe(); }
+
+    private:
+        ObjectID m_id;
+
+        base::RefWeakPtr<IDeviceObjectHandler> m_impl;
+    };
+
+    ///---
+
+    // a view of device resource
+    // NOTE: destruction of this object will destroy some of the API-internal object but NOT the original resource
+    // NOTE: this object will keep the original resource alive
+    class RENDERING_DEVICE_API IDeviceObjectView : public base::IReferencable
+    {
+		RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDeviceObjectView);
+
+    public:
+        IDeviceObjectView(ObjectID viewId, DeviceObjectViewType viewType, IDeviceObject* object, IDeviceObjectHandler* impl);
+        virtual ~IDeviceObjectView();
 
         //--
 
-        // allocate transient object ID - something that will be used later
-        // transient objects are not reference counted, they are all released at the end of the command buffer they were allocated at
-        // transient object IDs never repeat (until they wrap, which is considered safe and handled, also, we use 64-bit value, so yeah, it would take some time)
-        static ObjectID AllocTransientID();
+        // type of the view (descriptor type)
+        INLINE DeviceObjectViewType viewType() const { return m_viewType; }
 
-        // create static object
-        static ObjectID CreateStaticID(uint32_t internalIndex, uint32_t internalGeneration);
+        // get the assigned view ID 
+        INLINE ObjectID viewId() const { return m_viewId; }
 
-        // create predefined object ID
-        static ObjectID CreatePredefinedID(uint8_t predefinedIndex);
-
-        //--
-
-        // get a string representation (for debug)
-        void print(base::IFormatStream& f) const;
-
-        //--
-
-        // predefined object
-        static ObjectID DefaultPointSampler(bool clamp = true);
-        static ObjectID DefaultBilinearSampler(bool clamp = true);
-        static ObjectID DefaultTrilinearSampler(bool clamp = true);
-        static ObjectID DefaultDepthPointSampler();
-        static ObjectID DefaultDepthBilinearSampler();
+        // get source resource, guaranteed alive hence no shared ptr
+        INLINE IDeviceObject* object() const { return m_object; }
 
         //--
 
     private:
-        union
-        {
-            struct
-            {
-                uint64_t type : 2;
-                uint64_t index : 30;
-                uint64_t generation : 32;
-            } fields;
-
-            uint64_t raw;
-
-        } data;
+        ObjectID m_viewId;
+        DeviceObjectViewType m_viewType;
+        DeviceObjectPtr m_object;
+        base::RefWeakPtr<IDeviceObjectHandler> m_impl;
     };
 
-    //--
+    ///---
+
+    /// internal API-owned pointer
+    class RENDERING_DEVICE_API IDeviceObjectHandler : public base::IReferencable
+    {
+    public:
+        virtual ~IDeviceObjectHandler();
+
+        virtual void releaseToDevice(ObjectID id) = 0;
+
+		virtual api::IBaseObject* resolveInternalObjectPtrRaw(ObjectID id, uint8_t objectType) = 0;
+
+		template< typename T >
+		INLINE T* resolveInternalObject(ObjectID id) // rendering::api::IBaseObject
+		{
+			return (T*)resolveInternalObjectPtrRaw(id, (uint8_t)T::STATIC_TYPE);
+		}
+    };
+
+    ///---
+
+    // sampler object wrapper
+    class RENDERING_DEVICE_API SamplerObject : public IDeviceObject
+    {
+		RTTI_DECLARE_VIRTUAL_CLASS(SamplerObject, IDeviceObject);
+
+    public:
+        SamplerObject(ObjectID id, IDeviceObjectHandler* impl);
+        virtual ~SamplerObject();
+    };
+
+    ///---
 
 } // rendering
+

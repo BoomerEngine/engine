@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "renderingBufferView.h"
-#include "renderingDeviceObject.h"
 #include "base/containers/include/blockPool.h"
 
 namespace rendering
@@ -40,9 +38,6 @@ namespace rendering
         /// buffer object
         INLINE const BufferObjectPtr& bufferObject() { return m_bufferObject; }
 
-        /// buffer
-        INLINE const BufferView& bufferView() const { return m_bufferView; }
-
         //---
 
         /// advance frame, does a final free on the blocks
@@ -66,7 +61,6 @@ namespace rendering
         //---
 
     private:
-        BufferView m_bufferView;
         BufferObjectPtr m_bufferObject;
 
         base::BlockPool m_bufferAllocator;
@@ -74,8 +68,6 @@ namespace rendering
         uint32_t m_bufferIndex = 1;
 
         uint32_t m_alignment;
-
-        BufferCreationInfo m_creationInfo;
 
         float m_growthFactor = 2.0f;
         uint64_t m_maxSize;

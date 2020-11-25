@@ -204,7 +204,7 @@ namespace rendering
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Rendering Tests";
-            setup.m_class = DriverOutputClass::NativeWindow;
+            setup.m_class = OutputClass::NativeWindow;
 
             // create rendering output
             m_renderingOutput = base::GetService<DeviceService>()->device()->createOutput(setup);

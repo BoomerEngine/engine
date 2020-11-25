@@ -11,6 +11,7 @@
 #include "renderingCommandWriter.h"
 #include "renderingDeviceApi.h"
 #include "renderingDeviceService.h"
+#include "renderingResources.h"
 
 namespace rendering
 {
@@ -18,14 +19,13 @@ namespace rendering
     //---
 
     ManagedBuffer::ManagedBuffer(const BufferCreationInfo& info)
-        : m_creationInfo(info)
-        , m_api(base::GetService<DeviceService>()->device())
     {
-        m_creationInfo.allowCopies = true;
-        m_creationInfo.allowDynamicUpdate = true;
+        auto creationInfo = info;
+        creationInfo.allowCopies = true;
+        creationInfo.allowDynamicUpdate = true;
 
-        m_bufferObject = m_api->createBuffer(m_creationInfo);
-        m_bufferView = m_bufferObject->view();
+        auto device = base::GetService<DeviceService>()->device();
+        m_bufferObject = device->createBuffer(creationInfo);
 
         m_backingStorage = base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
         m_backingStorageEnd = m_backingStorage + info.size;
@@ -48,7 +48,7 @@ namespace rendering
         if (m_dirtyRegionEnd > m_dirtyRegionStart)
         {
             const auto uploadSize = m_dirtyRegionEnd - m_dirtyRegionStart;
-            cmd.opUpdateDynamicBuffer(m_bufferView, m_dirtyRegionStart, uploadSize, m_backingStorage + m_dirtyRegionStart);
+            cmd.opUpdateDynamicBuffer(m_bufferObject, m_dirtyRegionStart, uploadSize, m_backingStorage + m_dirtyRegionStart);
 
             if (uploadSize > 4096)
             {

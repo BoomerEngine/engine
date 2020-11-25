@@ -11,6 +11,8 @@
 #include "glDevice.h"
 #include "glDeviceThread.h"
 #include "glUtils.h"
+#include "glImage.h"
+#include "glObjectRegistry.h"
 
 namespace rendering
 {
@@ -21,7 +23,7 @@ namespace rendering
         
             //---
 
-            void FrameExecutor::runClearPassColor(const command::OpClearPassColor& op)
+            void FrameExecutor::runClearPassRenderTarget(const command::OpClearPassRenderTarget& op)
             {
                 DEBUG_CHECK_EX(m_pass.passOp != nullptr, "No active pass to run this command in");
                 if (m_pass.passOp)
@@ -60,7 +62,7 @@ namespace rendering
 
             static bool IsSwapChain(const FrameBuffer& fb)
             {
-                return fb.color[0].rt.swapchain() || fb.depth.rt.swapchain();
+                return fb.color[0].swapchain || fb.depth.swapchain;
             }
 
             // clears
@@ -81,8 +83,8 @@ namespace rendering
 
             void FrameExecutor::runBeginPass(const command::OpBeginPass& op)
             {
-                DEBUG_CHECK_EX(op.frameBuffer.validate(), "Begin pass with invalid frame buffer should not be recorded");
-                DEBUG_CHECK_EX(op.numViewports >= 1 && op.numViewports <= 16, "Invalid viewport count");
+				DEBUG_CHECK_EX(op.frameBuffer.validate(), "Begin pass with invalid frame buffer should not be recorded");
+				DEBUG_CHECK_EX(op.numViewports >= 1 && op.numViewports <= 16, "Invalid viewport count");
 
                 // determine rendering area size as we go
                 m_pass.width = 0;
@@ -90,7 +92,7 @@ namespace rendering
                 m_pass.samples = 0;
 
                 // reset state
-                DEBUG_CHECK_EX(!m_pass.passOp, "Theres already an active pass");
+				DEBUG_CHECK_EX(!m_pass.passOp, "Theres already an active pass");
                 m_pass.passOp = &op;
 
                 // collect clear setup
@@ -101,24 +103,15 @@ namespace rendering
                 // special output frame buffer ?
                 if (IsSwapChain(op.frameBuffer))
                 {
-                    bool hasValidSwapchain = false;
-                    for (const auto& info : m_activeSwapchains)
-                    {
-                        if (info.colorRT == op.frameBuffer.color[0].rt.id() || info.depthRT == op.frameBuffer.depth.rt.id())
-                        {
-                            m_thread.bindOutput(info.swapchain);
-                            GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-                            hasValidSwapchain = true;
-                            break;
-                        }
-                    }
+					ASSERT_EX(m_activeSwapchain, "Invalid swapchain");
 
-                    DEBUG_CHECK_EX(hasValidSwapchain, "Invalid swapchain");
+                    m_thread.bindOutput(m_activeSwapchain);
+                    GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
                     // color clear
                     {
                         const auto& att = op.frameBuffer.color[0];
-                        if (att.rt)
+                        if (att.viewID)
                         {
                             if (att.loadOp == LoadOp::Clear)
                             {
@@ -136,7 +129,7 @@ namespace rendering
                     // depth clear
                     {
                         const auto& att = op.frameBuffer.depth;
-                        if (att.rt)
+                        if (att.viewID)
                         {
                             if (att.loadOp == LoadOp::Clear)
                             {
@@ -149,9 +142,9 @@ namespace rendering
                     }
 
                     // swapchain frame buffer has index 0
-                    m_pass.width = op.frameBuffer.color[0].rt.width();
-                    m_pass.height = op.frameBuffer.color[0].rt.height();
-                    m_pass.samples = op.frameBuffer.color[0].rt.numSamples();
+                    m_pass.width = op.frameBuffer.color[0].width;
+                    m_pass.height = op.frameBuffer.color[0].height;
+                    m_pass.samples = op.frameBuffer.color[0].samples;
                     m_pass.fbo = 0;
                 }
                 else
@@ -172,7 +165,7 @@ namespace rendering
                             break;
 
                         // resolve the attached view
-                        auto imageView = resolveImageView(att.rt);
+                        auto imageView = resolveImageView(att.viewID);
                         if (0 == imageView.glImageView)
                         {
                             TRACE_ERROR(base::TempString("Invalid GL image for a color render target {}: {}", i, att));
@@ -192,14 +185,14 @@ namespace rendering
                         // set size of render area
                         if (m_pass.width == 0 && m_pass.height == 0 && m_pass.samples == 0)
                         {
-                            m_pass.width = att.rt.width();
-                            m_pass.height = att.rt.height();
-                            m_pass.samples = att.rt.numSamples();
+                            m_pass.width = att.width;
+                            m_pass.height = att.height;
+                            m_pass.samples = att.samples;
                         }
                         else
                         {
-                            DEBUG_CHECK_EX(att.rt.width() == m_pass.width && att.rt.height() == m_pass.height, "Render targets have different sizes");
-                            DEBUG_CHECK_EX(att.rt.numSamples() == m_pass.width, "Render targets have different sample count");
+                            DEBUG_CHECK_EX(att.width == m_pass.width && att.height == m_pass.height, "Render targets have different sizes");
+                            DEBUG_CHECK_EX(att.samples == m_pass.samples, "Render targets have different sample count");
                         }
 
                         // clear this target ?
@@ -226,24 +219,24 @@ namespace rendering
                         // set size of render area
                         if (m_pass.width == 0 && m_pass.height == 0 && m_pass.samples == 0)
                         {
-                            m_pass.width = att.rt.width();
-                            m_pass.height = att.rt.height();
-                            m_pass.samples = att.rt.numSamples();
+                            m_pass.width = att.width;
+                            m_pass.height = att.height;
+                            m_pass.samples = att.samples;
                         }
                         else
                         {
-                            DEBUG_CHECK_EX(att.rt.width() == m_pass.width && att.rt.height() == m_pass.height,
-                                base::TempString("Render targets have different sizes: [{}x{}] != [{}x{}]", att.rt.width(), att.rt.height(), m_pass.width, m_pass.height));
-                            DEBUG_CHECK_EX(att.rt.numSamples() == m_pass.samples, "Render targets have different sample count");
+                            DEBUG_CHECK_EX(att.width == m_pass.width && att.height == m_pass.height,
+                                base::TempString("Render targets have different sizes: [{}x{}] != [{}x{}]", att.width, att.height, m_pass.width, m_pass.height));
+                            DEBUG_CHECK_EX(att.samples == m_pass.samples, "Render targets have different sample count");
                         }
 
                         // resolve the attached view
-                        auto imageView = resolveImageView(att.rt);
+                        auto imageView = resolveImageView(att.viewID);
 
                         // invalid texture
                         if (0 == imageView.glImageView)
                         {
-                            auto imageViewEx = resolveImageView(att.rt);
+                            auto imageViewEx = resolveImageView(att.viewID);
                             TRACE_ERROR(base::TempString("Invalid GL image for a depth stencil target view in pass {}", imageViewEx.glImage));
                         }
 
@@ -438,60 +431,86 @@ namespace rendering
                 m_passChangedRenderStates = RenderDirtyStateTrack();
             }
 
-            void FrameExecutor::runResolve(const command::OpResolve& op)
-            {
-                // TODO: depth surface
+			void FrameExecutor::runResolve(const command::OpResolve& op)
+			{
+				// TODO: depth surface
 
-                auto sourceView = resolveImageView(op.msaaSource);
-                auto targetView = resolveImageView(op.nonMsaaDest);
-                if (!sourceView.empty() && !targetView.empty())
-                {
-                    // make sure size matches
-                    DEBUG_CHECK(op.msaaSource.width() == op.nonMsaaDest.width());
-                    DEBUG_CHECK(op.msaaSource.height() == op.nonMsaaDest.height());
-                    DEBUG_CHECK(op.msaaSource.format() == op.nonMsaaDest.format());
+				auto sourceImage = m_objectRegistry.resolveStatic<Image>(op.source);
+				ASSERT_EX(sourceImage, "Resource got removed while command buffer was pending for execution");
 
-                    // determine type
-                    auto attachmentType = GL_COLOR_ATTACHMENT0;
-                    auto attachmentFormat = gl4::TranslateImageFormat(op.msaaSource.format());
-                    if (attachmentFormat == GL_DEPTH24_STENCIL8 || attachmentFormat == GL_DEPTH32F_STENCIL8)
-                        attachmentType = GL_DEPTH_ATTACHMENT;
+				auto targetImage = m_objectRegistry.resolveStatic<Image>(op.dest);
+				ASSERT_EX(targetImage, "Resource got removed while command buffer was pending for execution");
 
-                    // prepare target frame buffer
-                    GLuint targetFrameBuffer;
-                    GL_PROTECT(glCreateFramebuffers(1, &targetFrameBuffer));
-                    GL_PROTECT(glNamedFramebufferTexture(targetFrameBuffer, attachmentType, targetView.glImageView, 0));
-                    auto targetStatus = glCheckNamedFramebufferStatus(targetFrameBuffer, GL_DRAW_FRAMEBUFFER);
-                    ASSERT_EX(targetStatus == GL_FRAMEBUFFER_COMPLETE, "Invalid framebuffer status");
+				auto sourceView = sourceImage->resolveMainView();
+				ASSERT_EX(sourceView, "Unable to resource source view");
 
-                    // prepare source frame buffer
-                    GLuint sourceFrameBuffer;
-                    GL_PROTECT(glCreateFramebuffers(1, &sourceFrameBuffer));
-                    GL_PROTECT(glNamedFramebufferTexture(sourceFrameBuffer, attachmentType, sourceView.glImageView, 0));
-                    glCheckNamedFramebufferStatus(sourceFrameBuffer, GL_READ_FRAMEBUFFER);
-                    auto sourceStatus = glCheckNamedFramebufferStatus(sourceFrameBuffer, GL_DRAW_FRAMEBUFFER);
-                    ASSERT_EX(sourceStatus == GL_FRAMEBUFFER_COMPLETE, "Invalid framebuffer status");
+				auto targetView = targetImage->resolveMainView();
+				ASSERT_EX(targetView, "Unable to resource target view");
 
-                    // resolve
-                    if (targetStatus == GL_FRAMEBUFFER_COMPLETE && sourceStatus == GL_FRAMEBUFFER_COMPLETE)
-                    {
-                        const auto isDepth = GetImageFormatInfo(op.msaaSource.format()).formatClass == ImageFormatClass::DEPTH;
-                        const auto bit = isDepth ? GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
+				// determine type
+				const auto depthResolve = GetImageFormatInfo(sourceImage->creationSetup().format).formatClass == ImageFormatClass::DEPTH;
+				const auto attachmentType = depthResolve ? GL_DEPTH_ATTACHMENT : GL_COLOR_ATTACHMENT0;
+				const auto resolveBit = depthResolve ? GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
 
-                        {
-                            auto frameWidth = op.nonMsaaDest.width();
-                            auto frameHeight = op.nonMsaaDest.width();
-                            GL_PROTECT(glBlitNamedFramebuffer(sourceFrameBuffer, targetFrameBuffer,
-                                0, 0, frameWidth, frameHeight,
-                                0, 0, frameWidth, frameHeight,
-                                bit, GL_NEAREST));
-                        }
-                    }
+				// prepare target frame buffer
+				GLuint targetFrameBuffer;
+				{
+					GL_PROTECT(glCreateFramebuffers(1, &targetFrameBuffer));
 
-                    // destroy
-                    GL_PROTECT(glDeleteFramebuffers(1, &sourceFrameBuffer));
-                    GL_PROTECT(glDeleteFramebuffers(1, &targetFrameBuffer));
+					// bind target
+					ASSERT_EX(targetImage->creationSetup().view == ImageViewType::View2D || targetImage->creationSetup().view == ImageViewType::View2DArray, "Unexpected target texture type");
+					ASSERT_EX(op.destMip < targetImage->creationSetup().numMips, "Invalid target mip index");
+					ASSERT_EX(op.destSlice < targetImage->creationSetup().numSlices, "Invalid target slice index");
+					if (targetImage->creationSetup().view == ImageViewType::View2D)
+					{
+						GL_PROTECT(glNamedFramebufferTexture(targetFrameBuffer, attachmentType, targetView.glImage, op.destMip));
+					}
+					else
+					{
+						GL_PROTECT(glNamedFramebufferTextureLayer(targetFrameBuffer, attachmentType, targetView.glImage, op.destMip, op.destSlice));
+					}
+
+					auto targetStatus = glCheckNamedFramebufferStatus(targetFrameBuffer, GL_DRAW_FRAMEBUFFER);
+					ASSERT_EX(targetStatus == GL_FRAMEBUFFER_COMPLETE, "Invalid framebuffer status");
+				}
+
+                // bind source
+				GLuint sourceFrameBuffer;
+				{
+					GL_PROTECT(glCreateFramebuffers(1, &sourceFrameBuffer));
+					ASSERT_EX(sourceImage->creationSetup().view == ImageViewType::View2D || sourceImage->creationSetup().view == ImageViewType::View2DArray, "Unexpected texture type");
+					ASSERT_EX(op.sourceMip < sourceImage->creationSetup().numMips, "Invalid source mip index");
+					ASSERT_EX(op.sourceSlice < sourceImage->creationSetup().numSlices, "Invalid source slice index");
+					if (sourceImage->creationSetup().view == ImageViewType::View2D)
+					{
+						GL_PROTECT(glNamedFramebufferTexture(sourceFrameBuffer, attachmentType, sourceView.glImage, op.sourceMip));
+					}
+					else
+					{
+						GL_PROTECT(glNamedFramebufferTextureLayer(sourceFrameBuffer, attachmentType, sourceView.glImage, op.sourceMip, op.sourceSlice));
+					}
+					
+					auto sourceStatus = glCheckNamedFramebufferStatus(sourceFrameBuffer, GL_DRAW_FRAMEBUFFER);
+					ASSERT_EX(sourceStatus == GL_FRAMEBUFFER_COMPLETE, "Invalid framebuffer status");
+				}
+
+				// resolve
+				{
+					const auto sourceWidth = std::max<uint32_t>(1, sourceImage->creationSetup().width >> op.sourceMip);
+					const auto sourceHeight = std::max<uint32_t>(1, sourceImage->creationSetup().height >> op.sourceMip);
+					const auto targetWidth = std::max<uint32_t>(1, targetImage->creationSetup().width >> op.destMip);
+					const auto targetHeight = std::max<uint32_t>(1, targetImage->creationSetup().height >> op.destMip);
+					ASSERT_EX(sourceWidth == targetWidth && sourceHeight == targetHeight, base::TempString("Incomaptible size [{}x{}] != [{}x{}]", sourceWidth, sourceHeight, targetWidth, targetHeight));
+
+                    GL_PROTECT(glBlitNamedFramebuffer(sourceFrameBuffer, targetFrameBuffer,
+                        0, 0, sourceWidth, sourceHeight,
+                        0, 0, targetWidth, targetHeight,
+						resolveBit, GL_NEAREST));
                 }
+
+                // destroy
+                GL_PROTECT(glDeleteFramebuffers(1, &sourceFrameBuffer));
+                GL_PROTECT(glDeleteFramebuffers(1, &targetFrameBuffer));
             }
 
             //---

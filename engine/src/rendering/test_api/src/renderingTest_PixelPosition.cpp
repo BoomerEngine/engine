@@ -23,10 +23,10 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_PixelPosition);
@@ -40,15 +40,16 @@ namespace rendering
             m_shaders = loadShader("ScreenCoordBorder.csl");
         }
 
-        void RenderingTest_PixelPosition::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_PixelPosition::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
 
-            const auto resolution = base::Point(backBufferView.width(), backBufferView.height());
-            cmd.opBindParametersInline("TestParams"_id, cmd.opUploadConstants(resolution));
+			DescriptorEntry params[1];
+			params[0].constants(base::Point(backBufferView->width(), backBufferView->height()));
+			cmd.opBindDescriptor("TestParams"_id, params);
 
             setQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
 

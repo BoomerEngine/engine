@@ -24,9 +24,9 @@ namespace rendering
 
         public:
             virtual void initialize() override final;            
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
-            const ShaderLibrary* m_shaders;
+            ShaderLibraryPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_InlineBuffers);
@@ -95,7 +95,7 @@ namespace rendering
             }
         }
 
-        void RenderingTest_InlineBuffers::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_InlineBuffers::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             base::Array<Simple3DVertex> tempVertices;
             base::Array<uint16_t> tempIndices;
@@ -107,12 +107,8 @@ namespace rendering
                 data.size = tempVertices.dataSize();
                 data.allowVertex = true;
 
-                SourceData source;
-                source.data = tempVertices.createBuffer();
-                source.offset = 0;
-                source.size = tempVertices.dataSize();
-
-                vertexBuffer = device()->createBuffer(data, &source);
+				auto source = base::RefNew<SourceDataProviderBuffer>(tempVertices.createBuffer());
+                vertexBuffer = device()->createBuffer(data, source);
             }
 
             BufferObjectPtr indexBuffer;
@@ -121,12 +117,8 @@ namespace rendering
                 data.size = tempIndices.dataSize();
                 data.allowIndex = true;
 
-                SourceData source;
-                source.data = tempIndices.createBuffer();
-                source.offset = 0;
-                source.size = tempIndices.dataSize();
-
-                indexBuffer = device()->createBuffer(data, &source);
+				auto source = base::RefNew<SourceDataProviderBuffer>(tempIndices.createBuffer());
+                indexBuffer = device()->createBuffer(data, source);
             }
 
             FrameBuffer fb;
@@ -136,8 +128,8 @@ namespace rendering
             cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opSetFillState(PolygonMode::Line);
 
-            cmd.opBindVertexBuffer("Simple3DVertex"_id,  vertexBuffer->view());
-            cmd.opBindIndexBuffer(indexBuffer->view(), ImageFormat::R16_UINT);
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  vertexBuffer);
+            cmd.opBindIndexBuffer(indexBuffer, ImageFormat::R16_UINT);
             cmd.opDrawIndexed(m_shaders, 0, 0, tempIndices.size());
 
             cmd.opEndPass();

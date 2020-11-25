@@ -242,4 +242,4 @@ namespace rendering
         //--
 
     } // gl4
-} // device
+} // rendering

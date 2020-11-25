@@ -16,6 +16,8 @@ namespace rendering
 
     ///---
 
+	class DeviceGlobalObjects;
+
     /// service that manages and controls rendering device
     class RENDERING_DEVICE_API DeviceService : public base::app::ILocalService
     {
@@ -31,6 +33,9 @@ namespace rendering
         /// NOTE: once created the device is never recreated
         INLINE IDevice* device() const { return m_device; }
 
+		/// get global object (common textures, samplers and other resources)
+		INLINE const DeviceGlobalObjects& globals() const { return *m_globals; }
+
         //--
 
         /// flush any scheduled/stalled operations and wait for all rendering to finish
@@ -44,15 +49,13 @@ namespace rendering
         virtual void onShutdownService() override final;
         virtual void onSyncUpdate() override final;
 
-        //---
+		//--
 
-        // the rendering device, always valid (but may be a NULL device)
         IDevice* m_device = nullptr;
 
-        // command line used to create the device
-        base::app::CommandLine m_driverCommandLine;
+		DeviceGlobalObjects* m_globals = nullptr;
 
-        //--
+		//--
 
         IDevice* createAndInitializeDevice(base::StringView name, const base::app::CommandLine& cmdLine) const;
     };

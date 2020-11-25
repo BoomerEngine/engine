@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingParametersLayoutID.h"
+#include "rendering/device/include/renderingDescriptorID.h"
 
 namespace rendering
 {
@@ -57,17 +57,18 @@ namespace rendering
             struct BindingElement
             {
                 uint16_t bindPointIndex = 0; // where to look for "ParameterInfo"
-                uint16_t offsetToView = 0; // in parameter struct
+                uint16_t descriptorElementIndex = 0; // index of element inside descriptor
 
-                ParametersLayoutID bindPointLayout;
+                DescriptorID bindPointLayout;
                 base::StringID bindPointName;
                 base::StringID paramName;
 
-                ObjectViewType objectType = ObjectViewType::Invalid;
-                PackingType objectPackingType = PackingType::NotPacked;
+                DeviceObjectViewType objectType = DeviceObjectViewType::Invalid;
+                //PackingType objectPackingType = PackingType::NotPacked;
                 ImageFormat objectFormat = ImageFormat::UNKNOWN;
                 uint16_t objectSlot = 0; // in OpenGL
                 GLuint objectReadWriteMode = GL_READ_ONLY;
+				//bool objectWritable = false;
             };
 
             base::Array<BindingElement> bindingElements;
@@ -77,7 +78,7 @@ namespace rendering
         struct UniqueParamBindPointKey
         {
             base::StringID name;
-            ParametersLayoutID layout;
+            DescriptorID layout;
 
             INLINE UniqueParamBindPointKey() {};
 
@@ -100,10 +101,10 @@ namespace rendering
             uint16_t resolveVertexBindPointIndex(base::StringID name);
 
             /// find a parameter index by name and type
-            uint16_t resolveParametersBindPointIndex(base::StringID name, ParametersLayoutID layout);
+            uint16_t resolveDescriptorBindPointIndex(base::StringID name, DescriptorID layout);
 
             /// find a parameter index by name and type
-            uint16_t resolveParametersBindPointIndex(const rendering::ShaderLibraryData& shaderLib, PipelineIndex paramLayoutIndex);
+            uint16_t resolveDescriptorBindPointIndex(const rendering::ShaderLibraryData& shaderLib, PipelineIndex descriptorLayoutIndex);
 
             /// find/create VBO layout
             ResolvedVertexBindingState* resolveVertexLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex vertexInputStateIndex);
@@ -115,7 +116,7 @@ namespace rendering
             GLuint resolveCompiledShaderBundle(const rendering::ShaderLibraryData& shaderLib, PipelineIndex pipelineIndex);
 
             /// resolve the mapping of inputs parameters to actual slots in OpenGL
-            ResolvedParameterBindingState* resolveParametersBinding(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingState);
+            ResolvedParameterBindingState* resolveDescriptorBinding(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingState);
 
             /// get a sampler for given setup
             GLuint resolveSampler(const rendering::SamplerState& sampler);
@@ -124,11 +125,11 @@ namespace rendering
             Device* m_device;
 
             base::HashMap<base::StringID, uint16_t> m_vertexBindPointMap;
-            base::HashMap<UniqueParamBindPointKey, uint16_t> m_paramBindPointMap;
-            base::Array<ParametersLayoutID> m_paramBindPointLayouts;
+            base::HashMap<UniqueParamBindPointKey, uint16_t> m_descriptorBindPointMap;
+            base::Array<DescriptorID> m_descriptorBindPointLayouts;
 
             base::HashMap<uint64_t, ResolvedVertexBindingState*> m_vertexLayoutMap;
-            base::HashMap<uint64_t, ResolvedParameterBindingState*> m_paramBindingMap;
+            base::HashMap<uint64_t, ResolvedParameterBindingState*> m_descriptorBindingMap;
 
             base::HashMap<uint64_t, GLuint> m_shaderMap;
             base::HashMap<uint64_t, GLuint> m_programMap;

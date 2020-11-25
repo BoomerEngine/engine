@@ -11,6 +11,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
 
 namespace rendering
 {
@@ -23,16 +24,19 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
             static const auto SIDE_RESOLUTION = 512;
 
-            const ShaderLibrary* m_shaderGenerate;
-            const ShaderLibrary* m_shaderTest;
+            ShaderLibraryPtr m_shaderGenerate;
+            ShaderLibraryPtr m_shaderTest;
 
-            BufferView m_vertexBuffer;
-            ImageView m_imageWritable;
+            BufferObjectPtr m_vertexBuffer;
+
+            ImageObjectPtr m_image;
+			ImageViewPtr m_imageSRV;
+			ImageWritableViewPtr m_imageUAV;
 
             uint32_t m_vertexCount;
         };
@@ -42,28 +46,6 @@ namespace rendering
         RTTI_END_TYPE();
 
         //---       
-
-        namespace
-        {
-            struct TestConsts
-            {
-                base::Vector2 ZoomOffset;
-                base::Vector2 ZoomScale;
-                uint32_t SideCount;
-                uint32_t MaxIterations;
-            };
-
-            struct TestParamsWrite
-            {
-                ConstantsView Params;
-                ImageView Colors;
-            };
-
-            struct TestParamsRead
-            {
-                ImageView Colors;
-            };
-        };
 
         static void PrepareTestGeometry(float x, float y, float w, float h, base::Array<Simple3DVertex>& outVertices)
         {
@@ -93,42 +75,43 @@ namespace rendering
             storageImageSetup.view = ImageViewType::View2D;
             storageImageSetup.allowShaderReads = true;
             storageImageSetup.allowUAV = true;
-            m_imageWritable = createImage(storageImageSetup);
+            m_image = createImage(storageImageSetup);
+
+			auto sampler = Globals().SamplerClampPoint;
+			m_imageSRV = m_image->createView(sampler);
 
             m_shaderGenerate = loadShader("ComputeFillTexture2DGenerate.csl");
             m_shaderTest = loadShader("ComputeFillTexture2DText.csl");
         }
 
-        void RenderingTest_ComputeFillTexture2D::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_ComputeFillTexture2D::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
-            // transition the data to reading format
-            cmd.opImageLayoutBarrier(m_imageWritable, ImageLayout::ShaderReadWrite);
+			struct
+			{
+				base::Vector2 ZoomOffset;
+				base::Vector2 ZoomScale;
+				uint32_t SideCount;
+				uint32_t MaxIterations;
+			} params;
 
-            // upload consts
+			// upload consts
             float linear = std::fmod(time * 0.2f, 1.0f); // 10s
             float logZoom = base::Lerp(std::log(2.0f), std::log(0.000014628f), linear);
             float zoom = exp(logZoom);
-            TestConsts tempConsts;
-            tempConsts.ZoomOffset = base::Vector2(-0.743643135f, -0.131825963f);
-            tempConsts.ZoomScale = base::Vector2(zoom, zoom);
-            tempConsts.SideCount = SIDE_RESOLUTION;
-            tempConsts.MaxIterations = (uint32_t)(256 + 768 * linear);
-            auto uploadedConsts = cmd.opUploadConstants(tempConsts);
+			params.ZoomOffset = base::Vector2(-0.743643135f, -0.131825963f);
+			params.ZoomScale = base::Vector2(zoom, zoom);
+			params.SideCount = SIDE_RESOLUTION;
+			params.MaxIterations = (uint32_t)(256 + 768 * linear);
 
             {
-                TestParamsWrite tempParams;
-                tempParams.Params = uploadedConsts;
-                tempParams.Colors = m_imageWritable;
-                cmd.opBindParametersInline("TestParamsWrite"_id, tempParams);
-
+				DescriptorEntry desc[2];
+				desc[0].constants(params);
+				desc[1] = m_imageUAV;
+                cmd.opBindDescriptor("TestParamsWrite"_id, desc);
                 cmd.opDispatch(m_shaderGenerate, SIDE_RESOLUTION / 8, SIDE_RESOLUTION / 8);
             }
 
-            // we will wait for the buffer to be generated
-            cmd.opGraphicsBarrier();
-
-            // transition the data to reading format
-            cmd.opImageLayoutBarrier(m_imageWritable, ImageLayout::ShaderReadOnly);
+			cmd.opTransitionLayout(m_image, ResourceLayout::UAV, ResourceLayout::ShaderResource);
 
             {
                 FrameBuffer fb;
@@ -136,9 +119,11 @@ namespace rendering
 
                 cmd.opBeingPass(fb);
 
-                TestParamsRead tempParams;
-                tempParams.Colors = m_imageWritable;
-                cmd.opBindParametersInline("TestParamsRead"_id, tempParams);
+				{
+					DescriptorEntry desc[2];
+					desc[1] = m_imageSRV;
+					cmd.opBindDescriptor("TestParamsRead"_id, desc);
+				}
 
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
                 cmd.opDraw(m_shaderTest, 0, 6);

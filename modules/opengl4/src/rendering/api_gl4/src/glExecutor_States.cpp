@@ -159,33 +159,7 @@ namespace rendering
                     glDisable(val);
             }
 
-            FrameExecutor::RenderDirtyStateTrack& FrameExecutor::RenderDirtyStateTrack::operator|=(const RenderDirtyStateTrack& other)
-            {
-                flags |= other.flags;
-                blendEquationDirtyPerRT |= other.blendEquationDirtyPerRT;
-                blendFuncDirtyPerRT |= other.blendFuncDirtyPerRT;
-                colorMaskDirtyPerRT |= other.colorMaskDirtyPerRT;
-                scissorDirtyPerVP |= other.scissorDirtyPerVP;
-                viewportDirtyPerVP |= other.viewportDirtyPerVP;
-                depthRangeDirtyPerVP |= other.depthRangeDirtyPerVP;
-                return *this;
-            }
-
-            FrameExecutor::RenderDirtyStateTrack FrameExecutor::RenderDirtyStateTrack::ALL_STATES()
-            {
-                RenderDirtyStateTrack ret;
-                ret.blendEquationDirtyPerRT = RenderStates::RT_MASK;
-                ret.blendFuncDirtyPerRT = RenderStates::RT_MASK;
-                ret.colorMaskDirtyPerRT = RenderStates::RT_MASK;
-                ret.depthRangeDirtyPerVP = RenderStates::VIEWPORT_MASK;
-                //ret.scissorDirtyPerVP = RenderStates::VIEWPORT_MASK;
-                //ret.viewportDirtyPerVP = RenderStates::VIEWPORT_MASK; ?
-
-                static const auto ALL_FLAGS_MASK = (1ULL << (uint64_t)RenderStateDirtyBit::MAX) - 1;
-                ret.flags = RenderStateDirtyFlags(ALL_FLAGS_MASK);
-                return ret;
-            }
-
+            
             void FrameExecutor::RenderStates::apply(RenderDirtyStateTrack statesToApply) const
             {
                 PC_SCOPE_LVL2(ApplyRenderStates);
@@ -367,156 +341,9 @@ namespace rendering
             DEBUG_CHECK_EX(m_pass.passOp != nullptr, "Not in pass"); \
             if (m_pass.passOp == nullptr) return;
 
-            void FrameExecutor::runSetViewportRect(const command::OpSetViewportRect& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
+            
 
-                DEBUG_CHECK_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
-                if (op.viewportIndex < m_pass.viewportCount)
-                {
-                    auto& targetRect = m_render.viewport[op.viewportIndex].rect;
-
-                    const float x = op.rect.left();
-                    //const float y = op.rect.top();
-                    const float y = (int)m_pass.height - op.rect.top() - op.rect.height();
-                    const float w = op.rect.width();
-                    const float h = op.rect.height();
-
-                    if (targetRect[0] != x || targetRect[1] != y || targetRect[2] != w || targetRect[3] != h)
-                    {
-                        targetRect[0] = x;
-                        targetRect[1] = y;
-                        targetRect[2] = w;
-                        targetRect[3] = h;
-
-                        m_dirtyRenderStates.viewportDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_dirtyRenderStates.flags |= RenderStateDirtyBit::ViewportRects;
-                        m_passChangedRenderStates.viewportDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_passChangedRenderStates.flags |= RenderStateDirtyBit::ViewportRects;
-                    }
-                }
-            }
-
-            void FrameExecutor::runSetViewportDepthRange(const command::OpSetViewportDepthRange& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                DEBUG_CHECK_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
-                if (op.viewportIndex < m_pass.viewportCount)
-                {
-                    auto& target = m_render.viewport[op.viewportIndex];
-                    if (target.depthMin != op.minZ || target.depthMax != op.maxZ)
-                    {
-                        target.depthMin = op.minZ;
-                        target.depthMax = op.maxZ;
-
-                        m_dirtyRenderStates.depthRangeDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_dirtyRenderStates.flags |= RenderStateDirtyBit::ViewportDepthRanges;
-                        m_passChangedRenderStates.depthRangeDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_passChangedRenderStates.flags |= RenderStateDirtyBit::ViewportDepthRanges;
-                    }
-                }
-            }
-
-            void FrameExecutor::runSetScissorRect(const command::OpSetScissorRect& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                DEBUG_CHECK_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
-                if (op.viewportIndex < m_pass.viewportCount)
-                {
-                    auto& targetRect = m_render.viewport[op.viewportIndex].scissor;
-
-                    const auto x = op.rect.left();
-                    const auto y = (int)m_pass.height - op.rect.top() - op.rect.height();
-                    //const auto y = op.rect.top();
-                    const auto w = op.rect.width();
-                    const auto h = op.rect.height();
-
-                    if (x != targetRect[0] || y != targetRect[1] || w != targetRect[2] || h != targetRect[3])
-                    {
-                        targetRect[0] = x;
-                        targetRect[1] = y;
-                        targetRect[2] = w;
-                        targetRect[3] = h;
-
-                        m_dirtyRenderStates.scissorDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_dirtyRenderStates.flags |= RenderStateDirtyBit::ScissorRects;
-                        m_passChangedRenderStates.scissorDirtyPerVP |= (1UL << op.viewportIndex);
-                        m_passChangedRenderStates.flags |= RenderStateDirtyBit::ScissorRects;
-                    }
-                }
-            }
-
-            void FrameExecutor::runSetScissorState(const command::OpSetScissorState& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                if (op.state != m_render.scissorEnabled)
-                {
-                    m_render.scissorEnabled = op.state;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::ScissorEnabled;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::ScissorEnabled;
-                }
-            }
-
-            void FrameExecutor::runSetStencilReference(const command::OpSetStencilReference& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                if (op.front != m_render.stencil.front.ref)
-                {
-                    m_render.stencil.front.ref = op.front;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilFrontFuncReferenceMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilFrontFuncReferenceMask;
-                }
-
-                if (op.back != m_render.stencil.back.ref)
-                {
-                    m_render.stencil.back.ref = op.back;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilBackFuncReferenceMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilBackFuncReferenceMask;
-                }
-            }
-
-            void FrameExecutor::runSetStencilWriteMask(const command::OpSetStencilWriteMask& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                if (op.front != m_render.stencil.front.writeMask)
-                {
-                    m_render.stencil.front.writeMask = op.front;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilFrontWriteMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilFrontWriteMask;
-                }
-
-                if (op.back != m_render.stencil.back.writeMask)
-                {
-                    m_render.stencil.back.writeMask = op.back;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilBackWriteMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilBackWriteMask;
-                }
-            }
-
-            void FrameExecutor::runSetStencilCompareMask(const command::OpSetStencilCompareMask& op)
-            {
-                DEBUG_CHECK_PASS_ONLY();
-
-                if (op.front != m_render.stencil.front.compareMask)
-                {
-                    m_render.stencil.front.compareMask = op.front;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilFrontFuncReferenceMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilFrontFuncReferenceMask;
-                }
-
-                if (op.back != m_render.stencil.back.compareMask)
-                {
-                    m_render.stencil.back.compareMask = op.back;
-                    m_dirtyRenderStates.flags |= RenderStateDirtyBit::StencilBackFuncReferenceMask;
-                    m_passChangedRenderStates.flags |= RenderStateDirtyBit::StencilBackFuncReferenceMask;
-                }
-            }
-
+            
             bool FrameExecutor::SetStencilFunc(RenderStates::ResolvedStencilFaceState& face, const StencilSideState& op)
             {
                 auto value = TranslateCompareOp(op.compareOp);
@@ -909,15 +736,15 @@ namespace rendering
                     GL_PROTECT(glBindVertexBuffer(i, 0, 0, 0));
                 m_geometry.maxBoundVertexStreams = 0;
                 m_geometry.vertexBindings.reset();
-                m_geometry.indexBufferOffset = 0;
+                m_geometry.finalIndexStreamOffset = 0;
                 m_geometry.vertexBindingsChanged = true;
 
                 m_geometry.indexFormat = ImageFormat::UNKNOWN;
-                m_geometry.indexStreamBinding = BufferView();
+                m_geometry.indexStreamBinding = GeometryBuffer();
                 m_geometry.indexBindingsChanged = true;
 
-                m_params.paramBindings.reset();
-                m_params.parameterBindingsChanged = true;
+                m_descriptors.descriptors.reset();
+				m_descriptors.descriptorsChanged = true;
 
                 m_objectBindings.reset();
             }

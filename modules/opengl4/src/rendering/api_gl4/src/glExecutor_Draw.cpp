@@ -22,32 +22,8 @@ namespace rendering
 
             //--
 
-            void FrameExecutor::runBindVertexBuffer(const command::OpBindVertexBuffer& op)
-            {
-                if (op.bindpoint)
-                {
-                    auto bindPointIndex = m_objectCache.resolveVertexBindPointIndex(op.bindpoint);
-                    m_geometry.vertexBindings.prepare(bindPointIndex+1);
-
-                    if (m_geometry.vertexBindings[bindPointIndex] != op.buffer)
-                    {
-                        m_geometry.vertexBindings[bindPointIndex] = op.buffer;
-                        m_geometry.vertexBindingsChanged = true;
-                    }
-                }
-            }
-
-            void FrameExecutor::runBindIndexBuffer(const command::OpBindIndexBuffer& op)
-            {
-                if (m_geometry.indexStreamBinding != op.buffer || m_geometry.indexFormat != op.format)
-                {
-                    m_geometry.indexStreamBinding = op.buffer;
-                    m_geometry.indexFormat = op.format;
-                    m_geometry.indexBindingsChanged = true;
-                }
-            }
-
-            bool FrameExecutor::applyVertexData(const Shaders& shaders, PipelineIndex vertexStateIndex)
+            
+            void FrameExecutor::applyVertexData(const Shaders& shaders, PipelineIndex vertexStateIndex)
             {
                 // get the vertex array object with the cached layout of the vertices
                 if (const auto* vertexBinding = shaders.vertexState(vertexStateIndex))
@@ -58,79 +34,46 @@ namespace rendering
                     const auto* bindingInfo = vertexBinding->vertexBindPoints.typedData();
                     for (uint32_t i = 0; i < numStreams; ++i, ++bindingInfo)
                     {
-                        if (bindingInfo->bindPointIndex < m_geometry.vertexBindings.size())
-                        {
-                            if (const auto& bufferView = m_geometry.vertexBindings[bindingInfo->bindPointIndex])
-                            {
-                                auto buffer = resolveUntypedBufferView(bufferView);
-                                if (buffer.glBuffer != 0)
-                                {
-                                    ASSERT_EX(glIsBuffer(buffer.glBuffer), "Object is not a buffer");
-                                    GL_PROTECT(glBindVertexBuffer(i, buffer.glBuffer, buffer.offset, bindingInfo->stride));
-                                }
-                                else
-                                {
-                                    TRACE_ERROR("Unable to resolve vertex buffer for bind point '{}', object '{}'", bindingInfo->name, bufferView);
-                                    return false;
-                                }
-                            }
-                            else
-                            {
-                                TRACE_ERROR("Missing vertex buffer for bind point '{}'", bindingInfo->name);
-                                return false;
-                            }
-                        }
-                        else
-                        {
-                            TRACE_ERROR("Missing vertex buffer for bind point '{}'", bindingInfo->name);
-                            return false;
-                        }
-                    }
+						DEBUG_CHECK_EX(bindingInfo->bindPointIndex < m_geometry.vertexBindings.size(), base::TempString("Missing vertex buffer for bind point '{}'", bindingInfo->name));
+
+                        const auto& bufferView = m_geometry.vertexBindings[bindingInfo->bindPointIndex];
+						DEBUG_CHECK_EX(bufferView.id, base::TempString("Missing vertex buffer for bind point '{}'", bindingInfo->name));
+
+                        auto buffer = resolveGeometryBufferView(bufferView.id, bufferView.offset);
+						DEBUG_CHECK_EX(buffer.glBuffer != 0, base::TempString("Vertex buffer for bind point '{}' unloaded while command buffer was being recorded", bindingInfo->name));
+						DEBUG_CHECK_EX(glIsBuffer(buffer.glBuffer), "Object is not a buffer");
+
+                        GL_PROTECT(glBindVertexBuffer(i, buffer.glBuffer, buffer.offset, bindingInfo->stride));
+					}
 
                     // unbind buffers from unused slots
                     for (uint32_t i = numStreams; i < m_geometry.maxBoundVertexStreams; ++i)
                         GL_PROTECT(glBindVertexBuffer(i, 0, 0, 0));
                     m_geometry.maxBoundVertexStreams = numStreams;
-                    return true;
                 };
-
-                // ups
-                return false;
             }
 
-            bool FrameExecutor::applyIndexData()
+            void FrameExecutor::applyIndexData()
             {
-                bool ret = false;
-
-                if (m_geometry.indexStreamBinding.empty())
+                if (m_geometry.indexStreamBinding.id.empty())
                 {
                     GL_PROTECT(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-                    m_geometry.indexBufferOffset = 0;
+					m_geometry.indexStreamBinding = GeometryBuffer();
                 }
                 else
                 {
-                    auto buffer = resolveUntypedBufferView(m_geometry.indexStreamBinding);
-                    if (buffer.glBuffer != 0 && glIsBuffer(buffer.glBuffer))
-                    {
-                        GL_PROTECT(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.glBuffer));
-                        m_geometry.indexBufferOffset = buffer.offset;
-                        ret = true;
-                    }
-                    else
-                    {
-                        TRACE_ERROR("Unable to resolve index buffer");
-                        m_geometry.indexBufferOffset = 0;
-                    }
-                }
+                    auto buffer = resolveGeometryBufferView(m_geometry.indexStreamBinding.id, m_geometry.indexStreamBinding.offset);
+					DEBUG_CHECK_EX(buffer.glBuffer != 0, "Index buffer unloaded while command buffer was being recorded");
+					DEBUG_CHECK_EX(glIsBuffer(buffer.glBuffer), "Object is not a buffer");
 
-                return ret;
+                    GL_PROTECT(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.glBuffer));
+                    m_geometry.finalIndexStreamOffset = buffer.offset;
+                }
             }
 
-            bool FrameExecutor::prepareDraw(const Shaders& shaders, PipelineIndex programIndex, bool usesIndices)
+            void FrameExecutor::prepareDraw(const Shaders& shaders, PipelineIndex programIndex, bool usesIndices)
             {
-                DEBUG_CHECK_EX(programIndex != INVALID_PIPELINE_INDEX, "Draw with invalid program");
-                if (programIndex == INVALID_PIPELINE_INDEX)
-                    return false;
+				ASSERT_EX(programIndex != INVALID_PIPELINE_INDEX, "Draw with invalid program");
 
                 if (m_program.activeDrawShaderLibrary != shaders.handle() || m_program.activeDrawShaderBundleIndex != programIndex)
                 {
@@ -139,33 +82,30 @@ namespace rendering
                     m_program.glActiveDrawLinkedProgramObject = shaders.shaderBundle(m_program.activeDrawShaderBundleIndex);
                     m_geometry.vertexBindingsChanged = true;
                     m_geometry.indexBindingsChanged = true;
-                    m_params.parameterBindingsChanged = true;
+                    m_descriptors.descriptorsChanged = true;
                 }
 
-                if (!m_program.glActiveDrawLinkedProgramObject)
-                    return false;
+                /*if (!m_program.glActiveDrawLinkedProgramObject)
+                    return false;*/
 
                 auto& bundleSetup = shaders.data().shaderBundles()[m_program.activeDrawShaderBundleIndex];
 
                 if (m_geometry.vertexBindingsChanged)
                 {
-                    if (!applyVertexData(shaders, bundleSetup.vertexBindingState))
-                        return false;
+					applyVertexData(shaders, bundleSetup.vertexBindingState);
                     m_geometry.vertexBindingsChanged = false;
                 }
 
-                if (m_geometry.indexBindingsChanged)
+                if (usesIndices && m_geometry.indexBindingsChanged)
                 {
-                    if (usesIndices && !applyIndexData())
-                        return false;
-                    m_geometry.indexBindingsChanged = false;
+					applyIndexData();
+					m_geometry.indexBindingsChanged = false;
                 }
 
-                if (m_params.parameterBindingsChanged)
+                if (m_descriptors.descriptorsChanged)
                 {
-                    if (!applyParameters(shaders, bundleSetup.parameterBindingState))
-                        return false;
-                    m_params.parameterBindingsChanged = false;
+					applyDescriptors(shaders, bundleSetup.parameterBindingState);
+					m_descriptors.descriptorsChanged = false;
                 }
 
                 if (m_program.glActiveDrawLinkedProgramObject != m_program.glActiveProgram)
@@ -175,34 +115,29 @@ namespace rendering
                 }
 
                 applyDirtyRenderStates();
-
-                return true;
             }
 
-            bool FrameExecutor::prepareDispatch(const Shaders& shaders, PipelineIndex programIndex)
+            void FrameExecutor::prepareDispatch(const Shaders& shaders, PipelineIndex programIndex)
             {
-                DEBUG_CHECK_EX(programIndex != INVALID_PIPELINE_INDEX, "Dispatch with invalid program");
-                if (programIndex == INVALID_PIPELINE_INDEX)
-                    return false;
+                ASSERT_EX(programIndex != INVALID_PIPELINE_INDEX, "Dispatch with invalid program");
 
                 if (m_program.activeComputeShaderLibrary != shaders.handle() || m_program.activeDispatchShaderBundleIndex != programIndex)
                 {
                     m_program.activeComputeShaderLibrary = shaders.handle();
                     m_program.activeDispatchShaderBundleIndex = programIndex;
                     m_program.glActiveDispatchLinkedProgramObject = shaders.shaderBundle(programIndex);
-                    m_params.parameterBindingsChanged = true;
+                    m_descriptors.descriptorsChanged = true;
                 }
 
-                if (!m_program.glActiveDispatchLinkedProgramObject)
-                    return false;
+                /*if (!m_program.glActiveDispatchLinkedProgramObject)
+                    return false;*/
 
                 auto& bundleSetup = shaders.data().shaderBundles()[m_program.activeDispatchShaderBundleIndex];
 
-                if (m_params.parameterBindingsChanged)
+                if (m_descriptors.descriptorsChanged)
                 {
-                    if (!applyParameters(shaders, bundleSetup.parameterBindingState))
-                        return false;
-                    m_params.parameterBindingsChanged = false;
+					applyDescriptors(shaders, bundleSetup.parameterBindingState);
+					m_descriptors.descriptorsChanged = false;
                 }
 
                 if (m_program.glActiveDispatchLinkedProgramObject != m_program.glActiveProgram)
@@ -210,70 +145,69 @@ namespace rendering
                     m_program.glActiveProgram = m_program.glActiveDispatchLinkedProgramObject;
                     GL_PROTECT(glBindProgramPipeline(m_program.glActiveProgram));
                 }
-
-                return true;
             }
 
             void FrameExecutor::runDraw(const command::OpDraw& op)
             {
-                if (const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary))
+				const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary);
+				DEBUG_CHECK_RETURN_EX(shaders, "Shaders unloaded while command buffer was pending processing");
+
+				prepareDraw(*shaders, op.shaderIndex, false);
+                if (op.numInstances > 1 || op.firstInstance)
                 {
-                    if (prepareDraw(*shaders, op.shaderIndex, false))
-                    {
-                        if (op.numInstances > 1 || op.firstInstance)
-                        {
-                            GL_PROTECT(glDrawArraysInstancedBaseInstance(m_render.polygon.topology, op.firstVertex, op.vertexCount, op.numInstances, op.firstInstance));
-                        }
-                        else
-                        {
-                            GL_PROTECT(glDrawArrays(m_render.polygon.topology, op.firstVertex, op.vertexCount));
-                        }
-                    }
+                    GL_PROTECT(glDrawArraysInstancedBaseInstance(m_render.polygon.topology, op.firstVertex, op.vertexCount, op.numInstances, op.firstInstance));
+                }
+                else
+                {
+                    GL_PROTECT(glDrawArrays(m_render.polygon.topology, op.firstVertex, op.vertexCount));
                 }
             }
 
             void FrameExecutor::runDrawIndexed(const command::OpDrawIndexed& op)
             {
-                if (const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary))
-                {
-                    if (prepareDraw(*shaders, op.shaderIndex, true))
-                    {
-                        GLenum indexType = 0;
-                        uint32_t indexSize = 0;
-                        uint32_t indexOffset = m_geometry.indexBufferOffset;
-                        if (m_geometry.indexFormat == ImageFormat::R16_UINT)
-                        {
-                            indexType = GL_UNSIGNED_SHORT;
-                            indexSize = 2;
-                        }
-                        else if (m_geometry.indexFormat == ImageFormat::R32_UINT)
-                        {
-                            indexType = GL_UNSIGNED_INT;
-                            indexSize = 4;
-                        }
+				const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary);
+				DEBUG_CHECK_RETURN_EX(shaders, "Shaders unloaded while command buffer was pending processing");
 
-                        if (op.numInstances > 1 || op.firstInstance > 0)
-                        {
-                            GL_PROTECT(glDrawElementsInstancedBaseVertexBaseInstance(m_render.polygon.topology, op.indexCount, indexType, (uint8_t*) nullptr + op.firstIndex * indexSize + indexOffset, op.numInstances, op.firstVertex, op.firstInstance));
-                        }
-                        else
-                        {
-                            GL_PROTECT(glDrawElementsBaseVertex(m_render.polygon.topology, op.indexCount, indexType, (uint8_t*) nullptr + op.firstIndex * indexSize + indexOffset, op.firstVertex));
-                        }
-                    }
+				prepareDraw(*shaders, op.shaderIndex, true);
+
+                GLenum indexType = 0;
+                uint32_t indexSize = 0;
+				ASSERT(m_geometry.indexFormat == ImageFormat::R16_UINT || m_geometry.indexFormat == ImageFormat::R32_UINT);
+                if (m_geometry.indexFormat == ImageFormat::R16_UINT)
+                {
+                    indexType = GL_UNSIGNED_SHORT;
+                    indexSize = 2;
+                }
+                else if (m_geometry.indexFormat == ImageFormat::R32_UINT)
+                {
+                    indexType = GL_UNSIGNED_INT;
+                    indexSize = 4;
+                }
+
+                if (op.numInstances > 1 || op.firstInstance > 0)
+                {
+                    GL_PROTECT(glDrawElementsInstancedBaseVertexBaseInstance(m_render.polygon.topology, op.indexCount, indexType, 
+						(uint8_t*) nullptr + op.firstIndex * indexSize + m_geometry.finalIndexStreamOffset,
+						op.numInstances, op.firstVertex, op.firstInstance));
+                }
+                else
+                {
+                    GL_PROTECT(glDrawElementsBaseVertex(m_render.polygon.topology, op.indexCount, indexType, 
+						(uint8_t*) nullptr + op.firstIndex * indexSize + m_geometry.finalIndexStreamOffset, 
+						op.firstVertex));
                 }
             }
 
             void FrameExecutor::runDispatch(const command::OpDispatch& op)
             {
-                if (const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary))
-                {
-                    if (prepareDispatch(*shaders, op.shaderIndex))
-                    {
-                        GL_PROTECT(glDispatchCompute(op.counts[0], op.counts[1], op.counts[2]));
-                    }
-                }
+				const auto* shaders = m_objectRegistry.resolveStatic<Shaders>(op.shaderLibrary);
+				DEBUG_CHECK_RETURN_EX(shaders, "Shaders unloaded while command buffer was pending processing");
+
+				prepareDispatch(*shaders, op.shaderIndex);
+                GL_PROTECT(glDispatchCompute(op.counts[0], op.counts[1], op.counts[2]));
             }
+
+			//--
 
         } // exe
     } // gl4

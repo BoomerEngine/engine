@@ -44,7 +44,7 @@ namespace rendering
                 if (const auto* ret = m_parameterBindingStateMap[index])
                     return ret;
 
-                m_parameterBindingStateMap[index] = device()->objectCache().resolveParametersBinding(data(), index);
+                m_parameterBindingStateMap[index] = device()->objectCache().resolveDescriptorBinding(data(), index);
                 return m_parameterBindingStateMap[index];
             }
 

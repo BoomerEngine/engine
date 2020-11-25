@@ -282,77 +282,48 @@ namespace rendering
     RTTI_END_TYPE();
 
     ShaderLibrary::ShaderLibrary()
-        : m_state(ShaderState::Loading)
     {
     }
 
     ShaderLibrary::ShaderLibrary(const ShaderLibraryDataPtr& existingData)
         : m_data(existingData)
-        , m_state(ShaderState::Loaded)
     {
         m_data->parent(this);
-        createDeviceResources_NoLock();
+		createDeviceObjects();
     }
 
     ShaderLibrary::~ShaderLibrary()
     {
-        destroyDeviceResources_NoLock();
+		destroyDeviceObjects();
     }
 
     void ShaderLibrary::onPostLoad()
     {
         TBaseClass::onPostLoad();
-        createDeviceResources_NoLock();
+		createDeviceObjects();
     }
 
-    bool ShaderLibrary::resolve(ObjectID& outObject, PipelineIndex& outIndex, ShaderLibraryDataPtr* outData /*= nullptr*/) const
+    void ShaderLibrary::createDeviceObjects()
     {
-        auto lock = base::CreateLock(m_lock);
-        if (m_object && m_object->id())
-        {
-            if (outData)
-                *outData = m_object->data();
-
-            outObject = m_object->id();
-            outIndex = m_index;
-            return true;
-        }
-
-        return false;
-    }
-
-    void ShaderLibrary::bind(const ShaderObjectPtr& obj, PipelineIndex index)
-    {
-        auto lock = base::CreateLock(m_lock);
-
-        DEBUG_CHECK(m_state == ShaderState::Loading);
-
-        m_index = index;
-
-        m_object = obj;
-        m_data = m_object ? m_object->data() : nullptr;
-        m_state = m_object ? ShaderState::Loaded : ShaderState::Failed;
-    }
-
-    void ShaderLibrary::createDeviceResources_NoLock()
-    {
-        DEBUG_CHECK_RETURN(m_data);
-
         if (auto service = base::GetService<rendering::DeviceService>())
             if (auto device = service->device())
-                m_object = device->createShaders(m_data);
+                m_object = device->createShaders(m_data, 0); // use the first (any only) shader setup
     }
 
-    void ShaderLibrary::destroyDeviceResources_NoLock()
+    void ShaderLibrary::destroyDeviceObjects()
     {
         m_object.reset();
     }
 
     //--
 
-    ShaderObject::ShaderObject(ObjectID id, const ShaderLibraryDataPtr& data, IDeviceObjectHandler* impl)
+	RTTI_BEGIN_TYPE_NATIVE_CLASS(ShaderObject);
+	RTTI_END_TYPE();
+
+    ShaderObject::ShaderObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderLibraryData* data, PipelineIndex index)
         : IDeviceObject(id, impl)
-        , m_data(data)
+        , m_data(AddRef(data))
+		, m_index(index)
     {
         DEBUG_CHECK(m_data);
     }

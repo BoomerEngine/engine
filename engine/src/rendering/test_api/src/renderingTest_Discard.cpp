@@ -23,12 +23,13 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView ) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            BufferView m_extraBuffer;
-            const ShaderLibrary* m_shaders;
+			BufferObjectPtr m_vertexBuffer;
+			BufferObjectPtr m_extraBuffer;
+            ShaderLibraryPtr m_shaders;
+
             uint32_t m_sideCount;
         };
 
@@ -48,20 +49,7 @@ namespace rendering
             outVertices.pushBack(Simple3DVertex(x + w, y + h, 0.5f, 1.0f, 1.0f));
             outVertices.pushBack(Simple3DVertex(x, y + h, 0.5f, 0.0f, 1.0f));
         }
-
-        namespace
-        {
-            struct DiscardConsts
-            {
-                base::Vector2 ScreenResolution;
-            };
-
-            struct TestParams
-            {
-                ConstantsView m_data;
-            };
-        }
-
+		
         void RenderingTest_Discard::initialize()
         {
             // generate test geometry
@@ -74,19 +62,18 @@ namespace rendering
             m_shaders = loadShader("Discard.csl");
         }
 
-        void RenderingTest_Discard::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& backBufferDepthView )
+        void RenderingTest_Discard::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
 
-            DiscardConsts params;
-            params.ScreenResolution = base::Vector2((float) backBufferView.width(), (float) backBufferView.height());
+			const auto ScreenResolution = base::Vector2((float)backBufferView->width(), (float)backBufferView->height());
 
-            TestParams desc;
-            desc.m_data = cmd.opUploadConstants(params);
-            cmd.opBindParametersInline("TestParams"_id, desc);
+			DescriptorEntry params[1];
+			params[0].constants(ScreenResolution);
+			cmd.opBindDescriptor("TestParams"_id, params);
 
             cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);

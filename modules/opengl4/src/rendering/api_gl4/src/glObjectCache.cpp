@@ -15,7 +15,7 @@
 #include "glUtils.h"
 
 #include "rendering/device/include/renderingShaderLibrary.h"
-#include "rendering/device/include/renderingConstantsView.h"
+#include "rendering/device/include/renderingDescriptor.h"
 
 namespace rendering
 {
@@ -52,7 +52,7 @@ namespace rendering
                     GL_PROTECT(glDeleteSamplers(1, &value));
 
             m_vertexLayoutMap.clearPtr();
-            m_paramBindingMap.clearPtr();
+            m_descriptorBindingMap.clearPtr();
         }
 
         uint16_t ObjectCache::resolveVertexBindPointIndex(base::StringID name)
@@ -72,7 +72,7 @@ namespace rendering
             return ret;
         }
 
-        uint16_t ObjectCache::resolveParametersBindPointIndex(base::StringID name, ParametersLayoutID layout)
+        uint16_t ObjectCache::resolveDescriptorBindPointIndex(base::StringID name, DescriptorID layout)
         {
             DEBUG_CHECK_EX(layout, "Invalid layout used");
 
@@ -81,12 +81,12 @@ namespace rendering
             key.layout = layout;
 
             uint16_t ret = 0;
-            if (m_paramBindPointMap.find(key, ret))
+            if (m_descriptorBindPointMap.find(key, ret))
                 return ret;
 
-            ret = m_paramBindPointMap.size();
-            m_paramBindPointMap[key] = ret;
-            m_paramBindPointLayouts.pushBack(layout);
+            ret = m_descriptorBindPointMap.size();
+            m_descriptorBindPointMap[key] = ret;
+            m_descriptorBindPointLayouts.pushBack(layout);
 
             if (cvDumpCachedObject.get())
             {
@@ -96,28 +96,41 @@ namespace rendering
             return ret;
         }
 
-        uint16_t ObjectCache::resolveParametersBindPointIndex(const rendering::ShaderLibraryData& shaderLib, PipelineIndex paramLayoutIndex)
+        uint16_t ObjectCache::resolveDescriptorBindPointIndex(const rendering::ShaderLibraryData& shaderLib, PipelineIndex descriptorLayoutIndex)
         {
-            const auto& paramTable = shaderLib.parameterLayouts()[paramLayoutIndex];
+            const auto& paramTable = shaderLib.parameterLayouts()[descriptorLayoutIndex];
             const auto paramTableName = shaderLib.names()[paramTable.name];
 
-            base::InplaceArray<ObjectViewType, 32> viewTypes;
+            base::InplaceArray<DeviceObjectViewType, 32> viewTypes;
             viewTypes.reserve(paramTable.numElements);
 
             for (uint32_t i = 0; i < paramTable.numElements; ++i)
             {
                 const auto& paramTableElement = shaderLib.parameterLayoutsElements()[shaderLib.indirectIndices()[i + paramTable.firstElementIndex]];
+                const auto uav = (paramTableElement.access != ResourceAccess::ReadOnly);
                 switch (paramTableElement.type)
                 {
-                    case ResourceType::Buffer: viewTypes.pushBack(ObjectViewType::Buffer); break;
-                    case ResourceType::Constants: viewTypes.pushBack(ObjectViewType::Constants); break;
-                    case ResourceType::Texture: viewTypes.pushBack(ObjectViewType::Image); break;
+                    case ResourceType::Constants:
+                        viewTypes.pushBack(DeviceObjectViewType::ConstantBuffer);
+                        break;
+
+                    case ResourceType::Buffer: 
+                        if (paramTableElement.layout != INVALID_PIPELINE_INDEX)
+                            viewTypes.pushBack(uav ? DeviceObjectViewType::BufferStructuredWritable : DeviceObjectViewType::BufferStructured);
+                        else
+                            viewTypes.pushBack(uav ? DeviceObjectViewType::BufferWritable : DeviceObjectViewType::Buffer);
+                        break;
+
+                    case ResourceType::Texture: 
+                        viewTypes.pushBack(uav ? DeviceObjectViewType::ImageWritable : DeviceObjectViewType::Image);
+                        break;
+
                     default: DEBUG_CHECK(!"Invalid resource type");
                 }
             }
 
-            auto layoutId = ParametersLayoutID::FromObjectTypes(viewTypes.typedData(), viewTypes.size());
-            return resolveParametersBindPointIndex(paramTableName, layoutId);
+            auto layoutId = DescriptorID::FromTypes(viewTypes.typedData(), viewTypes.size());
+            return resolveDescriptorBindPointIndex(paramTableName, layoutId);
         }
 
         ResolvedVertexBindingState* ObjectCache::resolveVertexLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex vertexInputStateIndex)
@@ -383,14 +396,14 @@ namespace rendering
             return GL_READ_ONLY;
         }
 
-        ResolvedParameterBindingState* ObjectCache::resolveParametersBinding(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingStateIndex)
+        ResolvedParameterBindingState* ObjectCache::resolveDescriptorBinding(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingStateIndex)
         {
             DEBUG_CHECK(parameterBindingStateIndex != INVALID_PIPELINE_INDEX);
             const auto& bindingSetup = shaderLib.parameterBindingStates()[parameterBindingStateIndex];
             
             // already cached ?
             ResolvedParameterBindingState* ret = nullptr;
-            if (m_paramBindingMap.find(bindingSetup.structureKey, ret))
+            if (m_descriptorBindingMap.find(bindingSetup.structureKey, ret))
                 return ret;
 
             // binding slot assignment
@@ -406,12 +419,11 @@ namespace rendering
             for (uint32_t i = 0; i < bindingSetup.numParameterLayoutIndices; ++i)
             {
                 const auto& parameterLayoutIndex = shaderLib.indirectIndices()[i + bindingSetup.firstParameterLayoutIndex];
-                const auto parameterLayoutBindingIndex = resolveParametersBindPointIndex(shaderLib, parameterLayoutIndex);
+                const auto parameterLayoutBindingIndex = resolveDescriptorBindPointIndex(shaderLib, parameterLayoutIndex);
 
                 const auto& parameterLayoutData = shaderLib.parameterLayouts()[parameterLayoutIndex];
                 const auto parameterLayoutName = shaderLib.names()[parameterLayoutData.name];
 
-                uint32_t structureOffset = 0;
                 for (uint32_t j = 0; j < parameterLayoutData.numElements; ++j)
                 {
                     const auto& parameterElementIndex = shaderLib.indirectIndices()[j + parameterLayoutData.firstElementIndex];
@@ -420,10 +432,10 @@ namespace rendering
 
                     auto& bindingElement = ret->bindingElements.emplaceBack();
                     bindingElement.bindPointName = parameterLayoutName;
-                    bindingElement.bindPointLayout = m_paramBindPointLayouts[parameterLayoutBindingIndex];
+                    bindingElement.bindPointLayout = m_descriptorBindPointLayouts[parameterLayoutBindingIndex];
                     bindingElement.paramName = parameterElementName;
                     bindingElement.bindPointIndex = parameterLayoutBindingIndex;
-                    bindingElement.offsetToView = structureOffset;
+                    bindingElement.descriptorElementIndex = j;
                     bindingElement.objectReadWriteMode = TranslateReadWriteMode(parameterElementData.access);
                     bindingElement.objectFormat = parameterElementData.format;
 
@@ -432,9 +444,8 @@ namespace rendering
                         case rendering::ResourceType::Constants:
                         {
                             bindingElement.objectSlot = numUniformBuffers++;
-                            bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Constants;
-                            bindingElement.objectType = ObjectViewType::Constants;
-                            structureOffset += sizeof(ConstantsView);
+							//bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Constants;
+                            bindingElement.objectType = DeviceObjectViewType::ConstantBuffer;
                             break;
                         }
 
@@ -443,16 +454,15 @@ namespace rendering
                             if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
                             {
                                 bindingElement.objectSlot = numTextures++;
-                                bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Texture;
+                                //bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Texture;
+                                bindingElement.objectType = DeviceObjectViewType::Image;
                             }
                             else
                             {
                                 bindingElement.objectSlot = numImages++;
-                                bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Image;
+                                //bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Image;
+                                bindingElement.objectType = DeviceObjectViewType::ImageWritable;
                             }
-    
-                            bindingElement.objectType = ObjectViewType::Image;
-                            structureOffset += sizeof(ImageView);
                             break;
                         }
 
@@ -460,17 +470,25 @@ namespace rendering
                         {
                             if (parameterElementData.layout != INVALID_PIPELINE_INDEX)
                             {
-                                bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::StorageBuffer;
+								//bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::StorageBuffer;
                                 bindingElement.objectSlot = numStorageBuffers++;
+
+                                if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
+                                    bindingElement.objectType = DeviceObjectViewType::BufferStructured;
+                                else
+                                    bindingElement.objectType = DeviceObjectViewType::BufferStructuredWritable;
                             }
                             else
                             {
-                                bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Buffer;
+                                //bindingElement.objectPackingType = ResolvedParameterBindingState::PackingType::Buffer;
                                 bindingElement.objectSlot = numImages++;
+
+                                if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
+                                    bindingElement.objectType = DeviceObjectViewType::Buffer;
+                                else
+                                    bindingElement.objectType = DeviceObjectViewType::BufferWritable;
                             }
 
-                            bindingElement.objectType = ObjectViewType::Buffer;
-                            structureOffset += sizeof(BufferView);
                             break;
                         }
                         
@@ -488,13 +506,13 @@ namespace rendering
                 {
                     const auto& info = ret->bindingElements[i];
                     TRACE_INFO("  [{}]: {}.{} @ {} (S{}, O{}), {}", i, 
-                        info.bindPointName, info.paramName, (uint8_t)info.objectPackingType, 
-                        info.bindPointIndex, info.offsetToView, info.objectFormat);
+                        info.bindPointName, info.paramName, info.objectType, 
+                        info.bindPointIndex, info.descriptorElementIndex, info.objectFormat);
                 }
             }
 
             // store in map
-            m_paramBindingMap[bindingSetup.structureKey] = ret;
+            m_descriptorBindingMap[bindingSetup.structureKey] = ret;
             return ret;
         }
 

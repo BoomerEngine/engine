@@ -18,6 +18,8 @@ namespace base
 
         class ImageView;
 
+		struct ImageRect;
+
         /// Image formats (global)
         enum class PixelFormat : uint8_t
         {

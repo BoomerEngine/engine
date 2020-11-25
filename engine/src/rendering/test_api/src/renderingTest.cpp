@@ -9,14 +9,18 @@
 #include "build.h"
 #include "renderingTest.h"
 
-#include "rendering/device/include/renderingDeviceApi.h"
 #include "base/image/include/image.h"
 #include "base/image/include/imageUtils.h"
 #include "base/image/include/imageView.h"
 #include "base/io/include/ioSystem.h"
+
 #include "base/resource/include/resourceCooker.h"
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceTags.h"
+#include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/device/include/renderingBuffer.h"
+#include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingDescriptor.h"
 
 namespace rendering
 {
@@ -46,7 +50,6 @@ namespace rendering
 
         void IRenderingTest::shutdown()
         {
-            m_driverObjects.clear();
         }
 
         bool IRenderingTest::reportError(base::StringView txt)
@@ -68,7 +71,7 @@ namespace rendering
             return !m_hasErrors;
         }
 
-        const ShaderLibrary* IRenderingTest::loadShader(base::StringView partialPath)
+        ShaderLibraryPtr IRenderingTest::loadShader(base::StringView partialPath)
         {
             if (auto res = base::LoadResource<ShaderLibrary>(base::TempString("/engine/tests/shaders/{}", partialPath)))
             {
@@ -81,20 +84,44 @@ namespace rendering
             return nullptr;
         }
 
-        BufferView IRenderingTest::createBuffer(const BufferCreationInfo& info, const SourceData* initializationData)
+        BufferObjectPtr IRenderingTest::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* initializationData)
         {
-            auto ret = m_device->createBuffer(info, initializationData);
-            if (ret.empty())
-            {
-                reportError("Failed to create data buffer");
-                return BufferView();
-            }
+			base::fibers::WaitCounter fence;
+			if (initializationData)
+				fence = Fibers::GetInstance().createCounter("CreateBufferFence", 1);
 
-            m_driverObjects.pushBack(ret);
-            return ret->view();
+            if (auto ret = m_device->createBuffer(info, initializationData, fence))
+			{ 
+				Fibers::GetInstance().waitForCounterAndRelease(fence);
+				return ret;
+			}
+
+            reportError("Failed to create data buffer");
+			return nullptr;
         }
 
-        BufferView IRenderingTest::createVertexBuffer(uint32_t size, const void* sourceData)
+		BufferObjectPtr IRenderingTest::createConstantBuffer(uint32_t size, const void* sourceData /*= nullptr*/, bool dynamic /*= false*/, bool allowUav /*= false*/)
+		{
+			BufferCreationInfo info;
+			info.allowCostantReads = true;
+			info.allowUAV = allowUav;
+			info.allowDynamicUpdate = dynamic;
+			info.size = size;
+			info.label = "ConstantBuffer";
+
+			if (sourceData)
+			{
+				auto buf = base::Buffer::Create(POOL_TEMP, size, 16, sourceData);
+				auto data = base::RefNew<SourceDataProviderBuffer>(buf);
+				return createBuffer(info, data);
+			}
+			else
+			{
+				return createBuffer(info);
+			}
+		}
+
+        BufferObjectPtr IRenderingTest::createVertexBuffer(uint32_t size, const void* sourceData)
         {
             BufferCreationInfo info;
             info.allowVertex = true;
@@ -102,18 +129,19 @@ namespace rendering
             info.size = size;
             info.label = "VertexBuffer";
 
-            SourceData data;
-            if (sourceData)
-            {
-                data.offset = 0;
-                data.data = base::Buffer::Create(POOL_TEMP, size, 16, sourceData);
-                data.size = size;
-            }
-
-            return createBuffer(info, sourceData ? &data : nullptr);
+			if (sourceData)
+			{
+				auto buf = base::Buffer::Create(POOL_TEMP, size, 16, sourceData);
+				auto data = base::RefNew<SourceDataProviderBuffer>(buf);
+				return createBuffer(info, data);
+			}
+			else
+			{ 
+				return createBuffer(info);
+			}
         }
 
-        BufferView IRenderingTest::createIndexBuffer(uint32_t size, const void* sourceData)
+        BufferObjectPtr IRenderingTest::createIndexBuffer(uint32_t size, const void* sourceData)
         {
             BufferCreationInfo info;
             info.allowIndex = true;
@@ -121,18 +149,19 @@ namespace rendering
             info.size = size;
             info.label = "VertexBuffer";
 
-            SourceData data;
-            if (sourceData)
-            {
-                data.offset = 0;
-                data.data = base::Buffer::Create(POOL_TEMP, size, 16, sourceData);
-                data.size = size;
-            }
-
-            return createBuffer(info, sourceData ? &data : nullptr);
+			if (sourceData)
+			{
+				auto buf = base::Buffer::Create(POOL_TEMP, size, 16, sourceData);
+				auto data = base::RefNew<SourceDataProviderBuffer>(buf);
+				return createBuffer(info, data);
+			}
+			else
+			{
+				return createBuffer(info);
+			}
         }
 
-        BufferView IRenderingTest::createStorageBuffer(uint32_t size, uint32_t stride /*= 0*/, bool dynamic /*= false*/, bool allowVertex /*= false*/, bool allowIndex /*= false*/)
+        BufferObjectPtr IRenderingTest::createStorageBuffer(uint32_t size, uint32_t stride /*= 0*/, bool dynamic /*= false*/, bool allowVertex /*= false*/, bool allowIndex /*= false*/)
         {
             BufferCreationInfo info;
             info.allowShaderReads = true;
@@ -146,30 +175,29 @@ namespace rendering
             return createBuffer(info);
         }
 
-        ImageView IRenderingTest::createImage(const ImageCreationInfo& info, const SourceData* sourceData /*= nullptr*/, bool uavCapable /*= false*/)
+        ImageObjectPtr IRenderingTest::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData /*= nullptr*/, bool uavCapable /*= false*/)
         {
-            auto ret = m_device->createImage(info, sourceData);
-            if (ret.empty())
-            {
-                reportError("Failed to create image");
-                return ImageView();
-            }
+			base::fibers::WaitCounter fence;
+			if (sourceData)
+				fence = Fibers::GetInstance().createCounter("CreateImageFence", 1);
 
-            m_driverObjects.pushBack(ret);
-            return ret->view();
+			if (auto ret = m_device->createImage(info, sourceData, fence))
+			{
+				Fibers::GetInstance().waitForCounterAndRelease(fence);
+				return ret;
+			}
+
+            reportError("Failed to create image");
+            return nullptr;
         }
 
-        ObjectID IRenderingTest::createSampler(const SamplerState& info)
+        SamplerObjectPtr IRenderingTest::createSampler(const SamplerState& info)
         {
-            auto ret = m_device->createSampler(info);
-            if (ret.empty())
-            {
-                reportError("Failed to sampler");
-                return ObjectID();
-            }
+			if (auto ret = m_device->createSampler(info))
+				return ret;
 
-            m_driverObjects.pushBack(ret);
-            return ret->id();
+            reportError("Failed to sampler");
+			return nullptr;
         }
 
         //--
@@ -236,13 +264,32 @@ namespace rendering
             }
         }
 
-        ImageView IRenderingTest::createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable /*= false*/)
+		class RenderingTestImageSlicesDataProvider : public ISourceDataProvider
+		{
+		public:
+			RenderingTestImageSlicesDataProvider(const base::Array<TextureSlice>& data, uint32_t numMips)
+				: m_data(data)
+				, m_numMips(numMips)
+			{}
+
+			virtual void writeSourceData(void* destPointer, uint32_t expectedSize, const ResourceCopyRange& info) const override final
+			{
+				const auto& data = m_data[info.image.firstSlice].m_mipmaps[info.image.firstMip];
+				memcpy(destPointer, data->data(), expectedSize);
+			}
+
+		private:
+			base::Array<TextureSlice> m_data;
+			uint32_t m_numMips;
+		};
+
+        ImageObjectPtr IRenderingTest::createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable /*= false*/)
         {
             // no slices or no mips
             if (slices.empty() || slices[0].m_mipmaps.empty())
             {
                 reportError("Failed to create image from empty list of slices");
-                return ImageView();
+                return ImageObjectPtr();
             }
 
             // get the image format from the first mip of the first slice
@@ -251,32 +298,12 @@ namespace rendering
             if (imageFormat == ImageFormat::UNKNOWN)
             {
                 reportError("Failed to create image from unknown pixel format");
-                return ImageView();
+                return ImageObjectPtr();
             }
 
             // create source data blocks
-            base::Array<SourceData> sourceData;
-            auto numMips = slices[0].m_mipmaps.size();
-            //sourceData.reserve(slices.size() * numMips);
-
-            // prepare structures describing the data location
-            for (uint32_t i = 0; i < slices.size(); ++i)
-            {
-                auto& slice = slices[i];
-                for (uint32_t j = 0; j < slice.m_mipmaps.size(); ++j)
-                {
-                    auto& mip = slice.m_mipmaps[j];
-                    auto view = mip->view();
-
-                    SourceData data;
-                    data.size = view.dataSize();
-                    data.offset = 0;
-                    data.data = base::Buffer::Create(POOL_TEMP, view.dataSize(), 1, mip->data());
-                    //data.m_rowPitch = mip->layout().m_rowPitch;
-                    //data.m_slicePitch = mip->layout().m_layerPitch;
-                    sourceData.pushBack(data);
-                }
-            }
+			const auto numMips = slices[0].m_mipmaps.size();
+			const auto sourceData = base::RefNew< RenderingTestImageSlicesDataProvider>(slices, numMips);
 
             // setup image information
             auto* imagePtr = rootImage.get();
@@ -292,16 +319,16 @@ namespace rendering
             imageInfo.format = imageFormat;
 
             // create the image
-            return createImage(imageInfo, sourceData.typedData());
+			return createImage(imageInfo, sourceData);
         }
 
-        ImageView IRenderingTest::loadImage2D(base::StringView assetFile, bool createMipmaps /*= false*/, bool uavCapable /*= false*/, bool forceAlpha)
+        ImageObjectPtr IRenderingTest::loadImage2D(base::StringView assetFile, bool createMipmaps /*= false*/, bool uavCapable /*= false*/, bool forceAlpha)
         {
             auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
-                return ImageView();
+                return ImageObjectPtr();
             }
 
             // update 3 components to 4 components by adding opaque alpha
@@ -318,7 +345,7 @@ namespace rendering
             return createImage(slices, ImageViewType::View2D, uavCapable);
         }
 
-        ImageView IRenderingTest::createMipmapTest2D(uint16_t initialSize, bool markers /*= false*/)
+        ImageObjectPtr IRenderingTest::createMipmapTest2D(uint16_t initialSize, bool markers /*= false*/)
         {
             base::Array<TextureSlice> slices;
             slices.emplaceBack();
@@ -357,7 +384,7 @@ namespace rendering
             return createImage(slices, ImageViewType::View2D);
         }
 
-        ImageView IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps /*= true*/, base::Color colorA /*= base::Color::WHITE*/, base::Color colorB /*= base::Color::BLACK*/)
+        ImageObjectPtr IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps /*= true*/, base::Color colorA /*= base::Color::WHITE*/, base::Color colorB /*= base::Color::BLACK*/)
         {
             auto mipImage = base::RefNew<base::image::Image>(PixelFormat::Uint8_Norm, 4, initialSize, initialSize);
             base::image::Fill(mipImage->view(), &colorA);
@@ -392,7 +419,7 @@ namespace rendering
             return mipImage;
         }
 
-        ImageView IRenderingTest::createFlatCubemap(uint16_t size)
+        ImageObjectPtr IRenderingTest::createFlatCubemap(uint16_t size)
         {
             base::Array<TextureSlice> slices;
             slices.emplaceBack().m_mipmaps.pushBack(CreateFilledImage(size, base::Color(255, 128, 128, 255))); // X+
@@ -422,7 +449,7 @@ namespace rendering
             return mipImage;
         }
 
-        ImageView IRenderingTest::createColorCubemap(uint16_t size)
+        ImageObjectPtr IRenderingTest::createColorCubemap(uint16_t size)
         {
             base::Array<TextureSlice> slices;
             slices.emplaceBack().m_mipmaps.pushBack(CreateCubeSide(size, base::Vector3::EX(), -base::Vector3::EZ(), -base::Vector3::EY())); // X+
@@ -456,15 +483,15 @@ namespace rendering
             return true;
         }
 
-        ImageView IRenderingTest::loadCubemap(base::StringView assetFile, bool createMipmaps /*= false*/)
+        ImageObjectPtr IRenderingTest::loadCubemap(base::StringView assetFile, bool createMipmaps /*= false*/)
         {
             base::Array<TextureSlice> slices;
-            if (!loadCubemapSide(slices, base::TempString("{}_right.png", assetFile), createMipmaps)) return ImageView();
-            if (!loadCubemapSide(slices, base::TempString("{}_left.png", assetFile), createMipmaps)) return ImageView();
-            if (!loadCubemapSide(slices, base::TempString("{}_top.png", assetFile), createMipmaps)) return ImageView();
-            if (!loadCubemapSide(slices, base::TempString("{}_bottom.png", assetFile), createMipmaps)) return ImageView();
-            if (!loadCubemapSide(slices, base::TempString("{}_front.png", assetFile), createMipmaps)) return ImageView();
-            if (!loadCubemapSide(slices, base::TempString("{}_back.png", assetFile), createMipmaps)) return ImageView();
+            if (!loadCubemapSide(slices, base::TempString("{}_right.png", assetFile), createMipmaps)) return ImageObjectPtr();
+            if (!loadCubemapSide(slices, base::TempString("{}_left.png", assetFile), createMipmaps)) return ImageObjectPtr();
+            if (!loadCubemapSide(slices, base::TempString("{}_top.png", assetFile), createMipmaps)) return ImageObjectPtr();
+            if (!loadCubemapSide(slices, base::TempString("{}_bottom.png", assetFile), createMipmaps)) return ImageObjectPtr();
+            if (!loadCubemapSide(slices, base::TempString("{}_front.png", assetFile), createMipmaps)) return ImageObjectPtr();
+            if (!loadCubemapSide(slices, base::TempString("{}_back.png", assetFile), createMipmaps)) return ImageObjectPtr();
 
             return createImage(slices, ImageViewType::ViewCube);
         }
@@ -473,7 +500,9 @@ namespace rendering
 
         void IRenderingTest::drawQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float w, float h, float u0, float v0, float u1, float v1, base::Color color)
         {
+			cmd.opTransitionLayout(m_quadVertices, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto* v = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_quadVertices, 0, 6);
+			cmd.opTransitionLayout(m_quadVertices, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
 
             v[0].set(x, y, 0.5f, u0, v0, color);
             v[1].set(x + w, y, 0.5f, u1, v0), color;
@@ -495,20 +524,28 @@ namespace rendering
             rectCoords.y = -1.0f + (y) * 2.0f;
             rectCoords.z = -1.0f + (x + w) * 2.0f;
             rectCoords.w = -1.0f + (y + h) * 2.0f;
-            cmd.opBindParametersInline("QuadParams"_id, cmd.opUploadConstants(rectCoords));
+
+			DescriptorEntry desc[1];
+			desc[0].constants(rectCoords);
+
+			cmd.opBindDescriptor("QuadParams"_id, desc);
         }
 
-        void IRenderingTest::setQuadParams(command::CommandWriter& cmd, const ImageView& rt, const base::Rect& rect)
+        void IRenderingTest::setQuadParams(command::CommandWriter& cmd, const RenderTargetView* rt, const base::Rect& rect)
         {
-            const auto invWidth = 1.0f / rt.width();
-            const auto invHeight = 1.0f / rt.height();
+            const auto invWidth = rt ? 1.0f / rt->width() : 1.0f;
+            const auto invHeight = rt ? 1.0f / rt->height() : 1.0f;
 
             base::Vector4 rectCoords;
             rectCoords.x = -1.0f + (rect.min.x * invWidth) * 2.0f;
             rectCoords.y = -1.0f + (rect.min.y * invHeight) * 2.0f;
             rectCoords.z = -1.0f + (rect.max.x * invWidth) * 2.0f;
             rectCoords.w = -1.0f + (rect.max.y * invHeight) * 2.0f;
-            cmd.opBindParametersInline("QuadParams"_id, cmd.opUploadConstants(rectCoords));
+            
+			DescriptorEntry desc[1];
+			desc[0].constants(rectCoords);
+
+			cmd.opBindDescriptor("QuadParams"_id, desc);
         }
 
         //--

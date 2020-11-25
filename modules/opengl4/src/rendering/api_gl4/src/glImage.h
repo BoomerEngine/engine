@@ -9,9 +9,7 @@
 #pragma once
 
 #include "glObject.h"
-
-#include "rendering/device/include/renderingImageView.h"
-#include "base/containers/include/sortedArray.h"
+#include "rendering/device/include/renderingImage.h"
 
 namespace rendering
 {
@@ -19,41 +17,25 @@ namespace rendering
     {
         ///---
 
-           /// resolved image view information
+        class ImageView;
+
+        /// resolved image view information
         struct ResolvedImageView
         {
             GLuint glImage = 0; // actual image
             GLuint glImageView = 0; // view
             GLenum glImageViewType = 0; // GL_TEXTURE_2D, etc
+			GLenum glInternalFormat = 0;
+			GLenum glSampler = 0;
             uint16_t firstSlice = 0;
             uint16_t numSlices = 0;
             uint16_t firstMip = 0;
             uint16_t numMips = 0;
 
             INLINE ResolvedImageView() {}
-            INLINE ResolvedImageView(GLuint glImage_, GLuint glImageView_, GLenum glImageViewType_ = GL_TEXTURE_2D, uint16_t firstSlice_ = 0, uint16_t numSlices_ = 1, uint16_t firstMip_ = 0, uint16_t numMips_ = 1)
-                : glImage(glImage_)
-                , glImageView(glImageView_)
-                , glImageViewType(glImageViewType_)
-                , firstSlice(firstSlice_)
-                , numSlices(numSlices_)
-                , firstMip(firstMip_)
-                , numMips(numMips_)
-            {}
 
-            INLINE ResolvedImageView(GLuint glImage_, GLuint glImageView_, const ImageViewKey& key)
-                : glImage(glImage)
-                , glImageView(glImageView)
-                , glImageViewType(GetTargetForViewType(key.viewType))
-                , firstSlice(key.firstSlice)
-                , numSlices(key.numSlices)
-                , firstMip(key.firstMip)
-                , numMips(key.numMips)
-            {}
-
-            INLINE bool empty() const { return (glImage == 0); }
-            INLINE operator bool() const { return (glImage != 0); }
-
+            INLINE bool empty() const { return (glImage == 0) || (glImageView == 0); }
+            INLINE operator bool() const { return !empty(); }
 
             //--
 
@@ -61,13 +43,13 @@ namespace rendering
             {
                 switch (viewType)
                 {
-                case ImageViewType::View1D: return GL_TEXTURE_1D;
-                case ImageViewType::View1DArray: return GL_TEXTURE_1D_ARRAY;
-                case ImageViewType::View2D: return GL_TEXTURE_2D;
-                case ImageViewType::View2DArray: return GL_TEXTURE_2D_ARRAY;
-                case ImageViewType::View3D: return GL_TEXTURE_3D;
-                case ImageViewType::ViewCube: return GL_TEXTURE_CUBE_MAP;
-                case ImageViewType::ViewCubeArray: return GL_TEXTURE_CUBE_MAP_ARRAY;
+                    case ImageViewType::View1D: return GL_TEXTURE_1D;
+                    case ImageViewType::View1DArray: return GL_TEXTURE_1D_ARRAY;
+                    case ImageViewType::View2D: return GL_TEXTURE_2D;
+                    case ImageViewType::View2DArray: return GL_TEXTURE_2D_ARRAY;
+                    case ImageViewType::View3D: return GL_TEXTURE_3D;
+                    case ImageViewType::ViewCube: return GL_TEXTURE_CUBE_MAP;
+                    case ImageViewType::ViewCubeArray: return GL_TEXTURE_CUBE_MAP_ARRAY;
                 }
 
                 FATAL_ERROR("Invalid view type");
@@ -81,8 +63,7 @@ namespace rendering
         class Image : public Object
         {
         public:
-            Image(Device* drv, const ImageCreationInfo& setup, const SourceData* initData, PoolTag poolID);
-            Image(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
+            Image(Device* drv, const ImageCreationInfo& setup);
             virtual ~Image();
 
             static const auto STATIC_TYPE = ObjectType::Image;
@@ -106,25 +87,18 @@ namespace rendering
 
             //---
 
-            // ensure all data for this object is created
-            void ensureInitialized();
+			// resolve main view of the image
+			ResolvedImageView resolveMainView();
 
-            // resolve a view of this image
-            ResolvedImageView resolveView(ImageViewKey key);
-
-            //---
-
-            // update image content
-            // NOTE: not synchronized
-            void updateContent(const ImageView& view, const base::image::ImageView& data, uint32_t x, uint32_t y, uint32_t z);
+			// copy new content from staging area
+			void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
 
             //---
 
-            // create an image
-            static Image* CreateImage(Device* drv, const ImageCreationInfo& setup, const SourceData *sourceData);
+            // create an image view, works for all kind of images
+            ImageView* createView_ClientAPI(const ImageViewKey& key, Sampler* sampler) const;
 
-            // create an image with already existing resource (recycled)
-            static Image* CreateImage(Device* drv, const ImageCreationInfo& setup, GLuint id, PoolTag poolID);
+            //---
 
         private:
             GLuint m_glImage = 0;
@@ -132,15 +106,53 @@ namespace rendering
             GLuint m_glType = 0;
 
             ImageCreationInfo m_setup;
-            base::Array<SourceData> m_initData;
-            base::HashMap<ImageViewKey, GLuint> m_imageViewMap;
 
-            PoolTag m_poolID;
+            PoolTag m_poolTag = POOL_API_STATIC_TEXTURES;
 
             //--
 
             void finalizeCreation();
+
+            friend class ImageView;
         };
+
+        //--
+
+        /// wrapper for typical image view
+        class ImageView : public Object
+        {
+        public:
+            ImageView(Device* drv, Image* img, ImageViewKey key, Sampler* sampler);
+            virtual ~ImageView();
+
+            static const auto STATIC_TYPE = ObjectType::ImageView;
+
+			// get the format of the image
+			INLINE GLuint format() const { return m_image->format(); }
+
+			// get the format of the image (GL_TEXTURE_X)
+			INLINE GLuint type() const { return m_image->type(); }
+
+			/// get the image creation setup
+			INLINE const ImageCreationInfo& imageSetup() const { return m_image->creationSetup(); }
+
+            //--
+
+            const ResolvedImageView& resolveView();
+
+            //--
+
+        private:
+            Image* m_image = nullptr;
+			Sampler* m_sampler = nullptr;
+
+			ImageViewKey m_key;
+            ResolvedImageView m_resolved;
+
+            void finalizeCreation();
+        };
+
+        //--
 
     } // gl4
 } // rendering

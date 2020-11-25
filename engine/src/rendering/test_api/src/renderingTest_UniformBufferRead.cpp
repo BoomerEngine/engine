@@ -10,7 +10,7 @@
 #include "renderingTest.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/device/include/renderingBuffer.h"
 
 namespace rendering
 {
@@ -19,25 +19,20 @@ namespace rendering
 
         namespace
         {
-            struct TestConsts
-            {
-                static const uint32_t ELEMENTS_PER_SIDE = 32;
-                static const uint32_t MAX_BUFFER_ELEMENTS = (ELEMENTS_PER_SIDE + 1) * (ELEMENTS_PER_SIDE + 1);
+			struct TestConsts
+			{
+				static const uint32_t ELEMENTS_PER_SIDE = 32;
+				static const uint32_t MAX_BUFFER_ELEMENTS = (ELEMENTS_PER_SIDE + 1) * (ELEMENTS_PER_SIDE + 1);
 
-                struct TestElement
-                {
-                    float m_size;
-                    base::Vector4 m_color;
-                };
+				struct TestElement
+				{
+					float m_size;
+					base::Vector4 m_color;
+				};
 
-                float TestSizeScale;
-                TestElement TestElements[MAX_BUFFER_ELEMENTS];
-            };
-
-            struct TestParams
-            {
-                ConstantsView Consts;
-            };
+				float TestSizeScale;
+				TestElement TestElements[MAX_BUFFER_ELEMENTS];
+			};
         }
 
         /// test of the custom uniform buffer read in the shader
@@ -47,12 +42,15 @@ namespace rendering
 
         public:
             virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth) override final;
+            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            BufferView m_vertexBuffer;
-            const ShaderLibrary* m_shaders;
-            TestConsts m_data;
+            BufferObjectPtr m_vertexBuffer;
+			BufferObjectPtr m_constantBuffer;
+            ShaderLibraryPtr m_shaders;
+
+			BufferConstantViewPtr m_constantView;
+
             uint32_t m_vertexCount;
         };
 
@@ -93,28 +91,34 @@ namespace rendering
 
         void RenderingTest_UniformBufferRead::initialize()
         {
-            m_data.TestSizeScale = 1.0f;
+			TestConsts constData;
+			constData.TestSizeScale = 1.0f;
 
             {
                 base::Array<Simple3DVertex> vertices;
-                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, TestConsts::ELEMENTS_PER_SIDE, vertices, m_data);
+                PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, TestConsts::ELEMENTS_PER_SIDE, vertices, constData);
                 m_vertexCount = vertices.size();
                 m_vertexBuffer = createVertexBuffer(vertices);
             }
 
+			{
+				m_constantBuffer = createConstantBuffer(sizeof(constData), &constData);
+				m_constantView = m_constantBuffer->createConstantView();
+			}
+
             m_shaders = loadShader("UniformBufferRead.csl");
         }
 
-        void RenderingTest_UniformBufferRead::render(command::CommandWriter& cmd, float time, const ImageView& backBufferView, const ImageView& depth)
+        void RenderingTest_UniformBufferRead::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
         {
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
             cmd.opBeingPass(fb);
             
-            TestParams params;
-            params.Consts = cmd.opUploadConstants(m_data);
-            cmd.opBindParametersInline("TestParams"_id, params);
+			DescriptorEntry desc[1];
+			desc[0] = m_constantView;
+            cmd.opBindDescriptor("TestParams"_id, desc);
 
             cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);

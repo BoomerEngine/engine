@@ -8,9 +8,41 @@
 
 #include "build.h"
 #include "renderingFramebuffer.h"
+#include "renderingImage.h"
 
 namespace rendering
 {
+    //--
+
+    FrameBufferColorAttachmentInfo& FrameBufferColorAttachmentInfo::view(const RenderTargetView* rtv)
+    {
+        DEBUG_CHECK_RETURN_V(rtv, *this);
+        DEBUG_CHECK_RETURN_V(!rtv->depth(), *this);
+		viewPtr = rtv;
+        viewID = rtv->viewId();
+        width = rtv->width();
+        height = rtv->height();
+        slices = rtv->slices();
+        samples = rtv->swapchain();
+		swapchain = rtv->swapchain();
+        return *this;
+    }
+
+    //--
+
+    FrameBufferDepthAttachmentInfo& FrameBufferDepthAttachmentInfo::view(const RenderTargetView* rtv)
+    {
+        DEBUG_CHECK_RETURN_V(rtv, *this);
+        DEBUG_CHECK_RETURN_V(rtv->depth(), *this);
+		viewPtr = rtv;
+        viewID = rtv->viewId();
+        width = rtv->width();
+        height = rtv->height();
+        slices = rtv->slices();
+        samples = rtv->swapchain();
+        return *this;
+    }
+
     //--
 
     void FrameBufferColorAttachmentInfo::print(base::IFormatStream& f) const
@@ -21,7 +53,13 @@ namespace rendering
         }
         else
         {
-            f << rt;
+            f.appendf("[{}x{}] ", width, height);
+
+            if (samples)
+                f.append("{} samples", samples);
+
+            if (slices)
+                f.append(", {} slices", slices);
 
             f << ", " << loadOp;
             f << ", " << storeOp;
@@ -43,7 +81,13 @@ namespace rendering
         }
         else
         {
-            f << rt;
+            f.appendf("[{}x{}] ", width, height);
+
+            if (samples)
+                f.append("{} samples", samples);
+
+            if (slices)
+                f.append(", {} slices", slices);
 
             f << ", " << loadOp;
             f << ", " << storeOp;
@@ -77,48 +121,6 @@ namespace rendering
         }
     }
 
-    static bool CheckRT(const ImageView& view, bool depth, int& w, int& h, int& s)
-    {
-        if (!view.empty())
-        {
-            if (!view.renderTarget())
-                return false;
-            if (view.viewType() != ImageViewType::View2D && view.viewType() != ImageViewType::View2DArray)
-                return false;
-            if (view.format() == ImageFormat::UNKNOWN)
-                return false;
-            if (view.numMips() != 1)
-                return false;
-
-            const auto isDepthFormat = (GetImageFormatInfo(view.format()).formatClass == ImageFormatClass::DEPTH);
-            if (depth != isDepthFormat)
-                return false;
-            if (depth != view.renderTargetDepth())
-                return false;
-
-            /*int realW = std::max<int>(1, view.width() >> view.firstMip());
-            int realH = std::max<int>(1, view.width() >> view.firstMip());*/
-
-            if (w == -1 || h == -1 || s == -1)
-            {
-                w = view.width();
-                h = view.height();
-                s = view.numSamples();
-            }
-            else
-            {
-                if (w != (int)view.width())
-                    return false;
-                if (h != (int)view.height())
-                    return false;
-                if (s != (int)view.numSamples())
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
     uint8_t FrameBuffer::validColorSurfaces() const
     {
         uint8_t ret = 0;
@@ -133,26 +135,60 @@ namespace rendering
         return ret;
     }
 
+	uint8_t FrameBuffer::samples() const
+	{
+		if (depth.samples)
+			return depth.samples;
+		for (uint8_t i = 0; i < MAX_COLOR_TARGETS; ++i)
+			if (color[i].samples)
+				return color[i].samples;
+
+		return 1;
+	}
+
     bool FrameBuffer::validate() const
     {
         int w = -1;
         int h = -1;
         int s = -1;
+        int l = -1;
 
-        if (!CheckRT(depth.rt, true, w, h, s))
-            return false;
+        bool first = true;
 
-        for (uint32_t i = 0; i < MAX_COLOR_TARGETS; ++i)
+        for (const auto& entry : color)
         {
-            if (!CheckRT(color[i].rt, false, w, h, s))
-                return false;
+            if (!entry)
+                break;
+
+            if (first)
+            {
+                w = entry.width;
+                h = entry.height;
+                s = entry.samples;
+                l = entry.slices;
+                first = false;
+            }
+            else
+            {
+                DEBUG_CHECK_RETURN_V(w == entry.width, false);
+                DEBUG_CHECK_RETURN_V(h == entry.height, false);
+                DEBUG_CHECK_RETURN_V(s == entry.samples, false);
+                DEBUG_CHECK_RETURN_V(l == entry.slices, false);
+            }
         }
 
-        if (w == -1 || h == -1 || s == -1)
-            return false;
+        if (depth && !first)
+        {
+            DEBUG_CHECK_RETURN_V(w == depth.width, false);
+            DEBUG_CHECK_RETURN_V(h == depth.height, false);
+            DEBUG_CHECK_RETURN_V(s == depth.samples, false);
+            DEBUG_CHECK_RETURN_V(l == depth.slices, false);
+        }
 
         return true;
     }
+
+    //--
 
  } // rendering
 
