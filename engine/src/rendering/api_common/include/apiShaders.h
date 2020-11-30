@@ -9,7 +9,9 @@
 #pragma once
 
 #include "apiObject.h"
-#include "rendering/device/include/renderingShaderLibrary.h"
+
+#include "rendering/device/include/renderingShaderData.h"
+#include "rendering/device/include/renderingShader.h"
 
 namespace rendering
 {
@@ -17,25 +19,11 @@ namespace rendering
 	{
 		//---
 
-		/// type of shader
-		enum class ShaderTypeBit : uint16_t
-		{
-			VertexShaderBit,
-			GeometryShaderBit,
-			HullShaderBit,
-			DomainShaderBit,
-			PixelShaderBit,
-			ComputeShaderBit,
-
-		};
-
-		//---
-
 		/// loaded shaders, this object mainly servers as caching interface to object cache
 		class RENDERING_API_COMMON_API IBaseShaders : public IBaseObject
 		{
 		public:
-			IBaseShaders(IBaseThread* drv, const ShaderLibraryData* data, PipelineIndex index);
+			IBaseShaders(IBaseThread* drv, const ShaderData* data);
 			virtual ~IBaseShaders();
 
 			static const auto STATIC_TYPE = ObjectType::Shaders;
@@ -43,16 +31,16 @@ namespace rendering
 			//--
 
 			// what shaders do we have in the bundle
-			INLINE ShaderTypeMask mask() const { return m_mask; }
+			INLINE ShaderStageMask mask() const { return m_mask; }
 
 			// key that identifies the shader bundle (can be used to find compiled data in cache)
 			INLINE uint64_t key() const { return m_key; }
 
-			// source platform-independent data
-			INLINE const ShaderLibraryData* data() const { return m_data; }
+			// get source shader (client-side) metadata
+			INLINE const ShaderMetadata* sourceMetadata() const { return m_sourceMetadata; }
 
-			// shader bundle index in the shader library
-			INLINE PipelineIndex index() const { return m_index; }
+			// get source data (portable opcodes)
+			INLINE const base::Buffer& sourceData() const { return m_sourceData; }
 
 			// vertex layout to use with shaders (NULL for compute shaders)
 			INLINE IBaseVertexBindingLayout* vertexLayout() const { return m_vertexLayout; }
@@ -72,10 +60,10 @@ namespace rendering
 
 		private:
 			uint64_t m_key = 0;
-			ShaderTypeMask m_mask;
+			ShaderStageMask m_mask;
 
-			ShaderLibraryDataPtr m_data;
-			PipelineIndex m_index;
+			ShaderMetadataPtr m_sourceMetadata;
+			base::Buffer m_sourceData;
 
 			IBaseVertexBindingLayout* m_vertexLayout = nullptr;
 			IBaseDescriptorBindingLayout* m_descriptorLayout = nullptr;
@@ -87,7 +75,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API ShadersObjectProxy : public ShaderObject
 		{
 		public:
-			ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderLibraryData* data, PipelineIndex index);
+			ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata);
 
 			virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats) override;
 			virtual ComputePipelineObjectPtr createComputePipeline() override;

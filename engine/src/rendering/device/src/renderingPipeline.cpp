@@ -17,7 +17,7 @@ namespace rendering
 	RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphicsRenderStatesObject);
 	RTTI_END_TYPE();
 
-	GraphicsRenderStatesObject::GraphicsRenderStatesObject(ObjectID id, IDeviceObjectHandler* impl, const StaticRenderStatesSetup& states, uint64_t key)
+	GraphicsRenderStatesObject::GraphicsRenderStatesObject(ObjectID id, IDeviceObjectHandler* impl, const GraphicsRenderStatesSetup& states, uint64_t key)
 		: IDeviceObject(id, impl)
 		, m_states(states)
 		, m_key(key)

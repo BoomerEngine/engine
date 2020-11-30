@@ -174,11 +174,11 @@ namespace base
 
             ///---
 
-            INLINE const PagedBuffer<Vertex>& vertices() const { return m_vertices; }
-            INLINE const PagedBuffer<uint32_t>& indices() const { return m_indices; }
-            INLINE const PagedBuffer<Params>& params() const { return m_params; }
-            INLINE const PagedBuffer<ImageRef>& images() const { return m_images; }
-            INLINE const PagedBuffer<Batch>& baches() const { return m_batches; }
+            INLINE const PagedBufferTyped<Vertex>& vertices() const { return m_vertices; }
+            INLINE const PagedBufferTyped<uint32_t>& indices() const { return m_indices; }
+            INLINE const PagedBufferTyped<Params>& params() const { return m_params; }
+            INLINE const PagedBufferTyped<ImageRef>& images() const { return m_images; }
+            INLINE const PagedBufferTyped<Batch>& baches() const { return m_batches; }
 
             ///---
 
@@ -349,11 +349,11 @@ namespace base
 
             //--
 
-            PagedBuffer<Vertex> m_vertices;
-            PagedBuffer<uint32_t> m_indices;
-            PagedBuffer<Params> m_params;
-            PagedBuffer<Batch> m_batches;
-            PagedBuffer<ImageRef> m_images;
+            PagedBufferTyped<Vertex> m_vertices;
+			PagedBufferTyped<uint32_t> m_indices;
+			PagedBufferTyped<Params> m_params;
+			PagedBufferTyped<Batch> m_batches;
+			PagedBufferTyped<ImageRef> m_images;
 
             mem::LinearAllocator m_customPayloadData;
 

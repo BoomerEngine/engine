@@ -15,25 +15,22 @@ namespace base
 {
     ///--
 
-    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID /*= POOL_TEMP*/)
+    PagedBuffer::PagedBuffer(uint32_t alignment, PoolTag poolID /*= POOL_TEMP*/)
         : m_allocator(&mem::PageAllocator::GetDefaultAllocator(poolID))
-        , m_elementAlignment(alignment)
-        , m_elementSize(size)
+        , m_alignment(alignment)
     {
         m_pageSize = m_allocator->pageSize();
     }
 
-    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, mem::PageAllocator& pageAllocator)
+    PagedBuffer::PagedBuffer(uint32_t alignment, mem::PageAllocator& pageAllocator)
         : m_allocator(&pageAllocator)
-        , m_elementAlignment(alignment)
-        , m_elementSize(size)
+        , m_alignment(alignment)
     {
         m_pageSize = m_allocator->pageSize();
     }
 
-    PagedBufferBase::PagedBufferBase(uint32_t size, uint32_t alignment, PoolTag poolID, uint32_t pageSize)
-        : m_elementAlignment(alignment)
-        , m_elementSize(size)
+    PagedBuffer::PagedBuffer(uint32_t alignment, PoolTag poolID, uint32_t pageSize)
+        : m_alignment(alignment)
     {
         m_allocator = new mem::PageAllocator();
         m_allocator->initialize(poolID, pageSize);
@@ -41,7 +38,7 @@ namespace base
         m_ownsAllocator = true;
     }
 
-    PagedBufferBase::~PagedBufferBase()
+    PagedBuffer::~PagedBuffer()
     {
         clear();
 
@@ -49,7 +46,7 @@ namespace base
             delete m_allocator;
     }
 
-    void PagedBufferBase::clear()
+    void PagedBuffer::clear()
     {
         auto* page = m_pageList;
 
@@ -57,8 +54,7 @@ namespace base
         m_writePtr = nullptr;
         m_writeStartPtr = nullptr;
         m_writeEndPtr = nullptr;
-        m_elementsLeftOnPage = 0;
-        m_numElements = 0;
+        m_numBytes = 0;
         m_writeStartPtr = nullptr;
         m_writeOffsetSoFar = 0;
         m_pageCount = 0;
@@ -76,82 +72,89 @@ namespace base
         // do not put anything here !
     }
 
-    void* PagedBufferBase::allocSingle()
-    {
+	uint8_t* PagedBuffer::allocSmall(uint32_t memorySize)
+	{
+		ASSERT_EX(memorySize <= m_pageSize / 16, "Memory size of small allocation is way to big"); // typically
+
         auto* ret = m_writePtr;
-        auto* retEnd = ret + m_elementSize;
+        auto* retEnd = ret + memorySize;
         if (retEnd <= m_writeEndPtr)
         {
             m_writePtr = retEnd;
-            DEBUG_CHECK_EX(m_elementsLeftOnPage >= 1, "Invalid count");
-            m_elementsLeftOnPage -= 1;
-            m_numElements += 1;
+            m_numBytes += memorySize;
         }
         else
         {
             allocPage();
 
             ret = m_writePtr;
-            m_writePtr += m_elementSize;
-            DEBUG_CHECK_EX(m_elementsLeftOnPage >= 1, "Invalid count");
-            m_elementsLeftOnPage -= 1;
-            m_numElements += 1;
+            m_writePtr += memorySize;
+			m_numBytes += memorySize;
         }
 
         return ret;
     }
 
-    void* PagedBufferBase::allocateBatch(uint64_t memorysize, uint32_t elementCount, uint32_t& outNumAllocated)
+    uint8_t* PagedBuffer::allocateBatch(uint64_t memorySize, uint32_t elementSize, uint32_t& outNumAllocated)
     {
         auto* ret = m_writePtr;
-        auto* retEnd = ret + memorysize;
-        if (retEnd <= m_writeEndPtr)
+        auto* retEnd = ret + memorySize;
+
+		// easiest case first: we fit
+		if (retEnd <= m_writeEndPtr)
         {
             m_writePtr = retEnd;
-            m_elementsLeftOnPage -= elementCount;
-            DEBUG_CHECK_EX(m_elementsLeftOnPage >= 0, "Invalid count");
-            outNumAllocated = elementCount; // all elements allocated
-            m_numElements += outNumAllocated;
-        }
-        else if (m_elementsLeftOnPage > 0)
-        {
-            outNumAllocated = std::min<uint32_t>(elementCount, m_elementsLeftOnPage);
-            m_elementsLeftOnPage -= outNumAllocated;
-            DEBUG_CHECK_EX(m_elementsLeftOnPage == 0, "All memory from page used, we should have zero elements");
-            m_writePtr = m_writeEndPtr;
-            m_numElements += outNumAllocated;
-        }
-        else
-        {
-            allocPage();
-            ret = (uint8_t*)allocateBatch(memorysize, elementCount, outNumAllocated);
+			m_numBytes += memorySize;
+			outNumAllocated = memorySize; // all elements allocated
+			return ret;
         }
 
-        return ret;
+		// second easy case: there's some memory on the page
+        if (m_bytesLeftOnPage > 0)
+        {
+			DEBUG_CHECK_EX(elementSize > 1, "Invalid element size"); // 1 is excluded because it's the first case
+
+			auto maxElmentsInThisPage = m_bytesLeftOnPage / elementSize;
+			if (maxElmentsInThisPage > 0)
+			{
+				outNumAllocated = maxElmentsInThisPage * elementSize;
+				m_writePtr = m_writeEndPtr;
+				m_numBytes += outNumAllocated;
+				m_bytesLeftOnPage -= outNumAllocated; // we may have non zero space left, just not enough for a next element
+				return ret;
+			}
+        }
+
+		// if we are here then there's no memory left on the page
+        allocPage();
+
+		// retry
+		return allocateBatch(memorySize, elementSize, outNumAllocated);
     }
 
-    void PagedBufferBase::write(const void* data, uint64_t elementCountToWrite)
+    void PagedBuffer::writeLarge(const void* data, uint64_t size)
     {
         const auto* readPtr = (uint8_t*)data;
-        const auto* readEndPtr = readPtr + (elementCountToWrite * m_elementSize);
+        const auto* readEndPtr = readPtr + size;
         
-        uint64_t left = elementCountToWrite;
+        uint64_t left = size;
         while (readPtr < readEndPtr)
         {
-            uint32_t toCopy = std::min<uint64_t>(INDEX_MAX, left);
-            uint64_t memorySize = toCopy * m_elementSize;
-            void* writePtr = allocateBatch(memorySize, toCopy, toCopy);
-            if (toCopy)
+            uint32_t memorySizeToCopy = std::min<uint64_t>(INDEX_MAX, left);
+            void* writePtr = allocateBatch(memorySizeToCopy, 1, memorySizeToCopy);
+			DEBUG_CHECK_RETURN_EX(writePtr != nullptr, "Out of memory");
+			DEBUG_CHECK_RETURN_EX(memorySizeToCopy, "Out of memory");
+
+            if (memorySizeToCopy)
             {
-                memorySize = toCopy * m_elementSize;
-                memcpy(writePtr, readPtr, memorySize);
-                readPtr += memorySize;
-                left -= toCopy;
+				memcpy(writePtr, readPtr, memorySizeToCopy);
+                readPtr += memorySizeToCopy;
+                left -= memorySizeToCopy;
             }
         }
     }
 
-    void PagedBufferBase::fill(const void* templateData, uint64_t elementCountToWrite)
+    /*void PagedBuffer::fill(const void* templateData, uint64_t elementCountToWrite)
     {
         uint64_t left = elementCountToWrite;
         while (left > 0)
@@ -172,75 +175,29 @@ namespace base
                 left -= toCopy;
             }
         }
-    }
-
-    void PagedBufferBase::append(const PagedBufferBase& buffer)
-    {
-        DEBUG_CHECK_EX(buffer.m_elementSize == m_elementSize, "Can only append data of the same size");
-        if (auto* page = buffer.m_pageHead)
-        {
-            while (page)
-            {
-                auto* pagePayload = AlignPtr((char*)page + sizeof(Page), buffer.m_elementAlignment);
-                auto pageElements = page->dataSize / buffer.m_elementSize;
-                write(pagePayload, pageElements);
-
-                page = page->next;
-            }
-        }
-
-        if (buffer.m_writePtr > buffer.m_writeStartPtr)
-        {
-            auto numElems = (buffer.m_writePtr - buffer.m_writeStartPtr) / buffer.m_elementSize;
-            write(buffer.m_writeStartPtr, numElems);
-        }
-    }
-
-    void PagedBufferBase::copy(void* ptr, uint64_t size) const
-    {
-        auto* writePtr = (uint8_t*)ptr;
-        auto* writeEndPtr = writePtr + size;
-
-        // write full pages
-        if (auto* page = m_pageList)
-        {
-            // write head page
-            const auto dataSize = m_writePtr - m_writeStartPtr;
-            DEBUG_CHECK_EX(writePtr + m_writeOffsetSoFar + dataSize <= writeEndPtr, "Write would write outside the memory bounds");
-            memcpy(writePtr + m_writeOffsetSoFar, m_writeStartPtr, dataSize);
-
-            // write rest of the pages
-            page = page->prev;
-            while (page)
-            {
-                DEBUG_CHECK_EX(writePtr + page->offsetSoFar + page->dataSize <= writeEndPtr, "Write would write outside the memory bounds");
-                auto* pagePayload = AlignPtr((char*)page + sizeof(Page), m_elementAlignment);
-                memcpy(writePtr + page->offsetSoFar, pagePayload, page->dataSize);
-                page = page->prev;
-            }
-        }
-    }
-
-/*    bool PagedBufferBase::read(void*& outReadPtr, uint32_t& outCount, int& token) const
-    {
-
-        if ((token && token != END_OF_LIST_TOKEN) || (!token && m_pageListHead))
-        {
-            auto page = token ? (Page*)token : m_pageListHead;
-
-            outReadPtr = page->elements;
-            outCount = NUM_ELEMS_PER_PAGE - (page == m_pageListTail ? m_elementsLeftOnPage : page->elementsLeftOnPage);
-
-            token = page->nextPage ? page->nextPage : END_OF_LIST_TOKEN;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }*/
 
-    void PagedBufferBase::allocPage()
+    void PagedBuffer::append(const PagedBuffer& buffer)
+	{
+		buffer.iteratePages([this](const void* pageData, uint32_t pageSize, uint64_t offsetSoFar)
+			{
+				writeLarge(pageData, pageSize);
+			});        
+    }
+
+    void PagedBuffer::copy(void* ptr, uint64_t size) const
+    {
+		auto* writePtr = (uint8_t*)ptr;
+		auto* writeEndPtr = writePtr + size;
+
+		iteratePages([writePtr, writeEndPtr](const void* pageData, uint32_t pageSize, uint64_t offsetSoFar)
+			{
+				DEBUG_CHECK_RETURN(writePtr + offsetSoFar + pageSize <= writeEndPtr);
+				memcpy(writePtr + offsetSoFar, pageData, pageSize);
+			});
+    }
+
+    void PagedBuffer::allocPage()
     {
         // update current page
         if (m_writePtr > m_writeStartPtr)
@@ -264,22 +221,62 @@ namespace base
 
         // setup write pointers
         m_writeEndPtr = (uint8_t*)page + m_pageSize;
-        m_writeStartPtr = AlignPtr((uint8_t*)page + sizeof(Page), m_elementAlignment);
+        m_writeStartPtr = AlignPtr((uint8_t*)page + sizeof(Page), m_alignment);
         m_writePtr = m_writeStartPtr;
-        m_elementsLeftOnPage = (m_writeEndPtr - m_writeStartPtr) / m_elementSize;
-        m_writeEndPtr = m_writeStartPtr + (m_elementsLeftOnPage * m_elementSize); // make sure end is the last element we can write
     }
 
-    Buffer PagedBufferBase::toBuffer(PoolTag pool /*= POOL_DEFAULT*/) const
+	//--
+
+	void PagedBuffer::iteratePages(const std::function<void(const void* pageData, uint32_t pageDataSize, uint64_t totalOffset)>& func) const
+	{
+		uint64_t offsetSoFar = 0;
+		if (auto* page = m_pageHead)
+		{
+			while (page)
+			{
+				auto* pagePayload = AlignPtr((char*)page + sizeof(Page), m_alignment);
+				func(pagePayload, page->dataSize, offsetSoFar);
+				offsetSoFar += page->dataSize;
+				page = page->next;
+			}
+		}
+
+		if (m_writePtr > m_writeStartPtr)
+			func(m_writeStartPtr, m_writePtr - m_writeStartPtr, offsetSoFar);
+	}
+
+	void PagedBuffer::iteratePages(const std::function<void(void* pageData, uint32_t pageDataSize, uint64_t totalOffset)>& func)
+	{
+		uint64_t offsetSoFar = 0;
+		if (auto* page = m_pageHead)
+		{
+			while (page)
+			{
+				auto* pagePayload = AlignPtr((char*)page + sizeof(Page), m_alignment);
+				func(pagePayload, page->dataSize, offsetSoFar);
+				offsetSoFar += page->dataSize;
+				page = page->next;
+			}
+		}
+
+		if (m_writePtr > m_writeStartPtr)
+			func(m_writeStartPtr, m_writePtr - m_writeStartPtr, offsetSoFar);
+	}
+
+	//--
+
+    Buffer PagedBuffer::toBuffer(PoolTag pool /*= POOL_DEFAULT*/) const
     {
         if (pool == POOL_DEFAULT)
             pool = m_allocator->poolID();
 
-        auto buf = Buffer::Create(pool, dataSize(), m_elementAlignment);
+        auto buf = Buffer::Create(pool, dataSize(), m_alignment);
         if (buf)
             copy(buf.data(), buf.size());
 
         return buf;
     }
+
+	//--
 
 } // base

@@ -20,8 +20,8 @@ namespace rendering
 
 			//--
 
-			VertexBindingLayout::VertexBindingLayout(Thread* owner, base::Array<IBaseVertexBindingLayout::BindingInfo>&& elements)
-				: IBaseVertexBindingLayout(std::move(elements))
+			VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
+				: IBaseVertexBindingLayout(streams)
 			{}
 
 			VertexBindingLayout::~VertexBindingLayout()

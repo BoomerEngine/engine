@@ -66,7 +66,7 @@ namespace base
         class StubDataWriter : public IStubWriter
         {
         public:
-            StubDataWriter(const StubMapper& mapper, PagedBuffer<uint8_t>& outMemory);
+            StubDataWriter(const StubMapper& mapper, PagedBuffer& outMemory);
 
             virtual void writeBool(bool b) override final;
             virtual void writeInt8(char val) override final;
@@ -90,7 +90,7 @@ namespace base
 
         private:
             const StubMapper& m_mapper;
-            PagedBuffer<uint8_t>& m_outMemory;
+            PagedBuffer& m_outMemory;
         };
 
         ///---

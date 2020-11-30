@@ -27,14 +27,14 @@ namespace rendering
 			ObjectCache::~ObjectCache()
 			{}
 
-			IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(base::Array<IBaseVertexBindingLayout::BindingInfo>&& elements)
+			IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
 			{
-				return new VertexBindingLayout(owner(), std::move(elements));
+				return new VertexBindingLayout(owner(), streams);
 			}
 
-			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(base::Array<DescriptorBindingElement>&& elements)
+			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors)
 			{
-				return new DescriptorBindingLayout(owner(), std::move(elements));
+				return new DescriptorBindingLayout(owner(), descriptors);
 			}
 
 			//---

@@ -39,9 +39,9 @@ namespace rendering
 				virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info) override final;
 				virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info) override final;
 				virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
-				virtual IBaseShaders* createOptimalShaders(const ShaderLibraryData* data, PipelineIndex index) override final;
+				virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
 				virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) override final;
-				virtual IBaseGraphicsRenderStates* createOptimalRenderStates(const StaticRenderStatesSetup& states) override final;
+				virtual IBaseGraphicsRenderStates* createOptimalRenderStates(const GraphicsRenderStatesSetup& states) override final;
 
 				virtual IBaseStagingPool* createOptimalStagingPool(uint32_t size, uint32_t pageSize, const base::app::CommandLine& cmdLine) override final;
 				virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) override final;

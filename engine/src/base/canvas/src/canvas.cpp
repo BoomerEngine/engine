@@ -878,8 +878,6 @@ namespace base
         {
             auto firstIndex = m_indices.size();
 
-            // TODO: rewrite to use allocBatch
-
             for (uint32_t j = 2; j < numPathVertices; ++j)
             {
                 uint32_t writeIndex[3];
@@ -896,7 +894,7 @@ namespace base
                     writeIndex[2] = baseVertexIndex + j;
                 }
 
-                m_indices.write(writeIndex, 3);
+                m_indices.writeSmall(writeIndex, 3);
             }
 
             return firstIndex;
@@ -914,7 +912,7 @@ namespace base
                 indices[0] = baseVertexIndex + 0;
                 indices[1] = baseVertexIndex + j - 1;
                 indices[2] = baseVertexIndex + j;
-                m_indices.write(indices, 3);
+                m_indices.writeSmall(indices, 3);
             }
 
             return firstIndex;
@@ -1022,7 +1020,7 @@ namespace base
             // push all vertices allocated so far
             uint32_t baseVertexIndex = m_vertices.size();
             calcScissorUV(cache.m_localVertices, cache.m_numLocalGlyphs * 4);
-            m_vertices.write(cache.m_localVertices, cache.m_numLocalGlyphs * 4);
+            m_vertices.writeLarge(cache.m_localVertices, cache.m_numLocalGlyphs * 4);
 
             // generate index buffer
             uint32_t baseIndex = packTriangleQuads(baseVertexIndex, cache.m_numLocalGlyphs * 4);

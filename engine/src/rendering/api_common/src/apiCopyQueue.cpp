@@ -28,6 +28,7 @@ namespace rendering
 		IBaseCopyQueue::IBaseCopyQueue(IBaseThread* owner, IBaseStagingPool* pool, ObjectRegistry* objects)
 			: m_pool(pool)
 			, m_objects(objects)
+			, m_owner(owner)
 		{
 			ASSERT(m_pool != nullptr);
 			ASSERT(m_owner != nullptr);

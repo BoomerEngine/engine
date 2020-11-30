@@ -10,7 +10,8 @@
 
 #include "renderingObject.h"
 #include "renderingResources.h"
-#include "renderingStates.h"
+#include "renderingGraphicsPassLayout.h"
+#include "renderingGraphicsStates.h"
 
 namespace rendering
 {
@@ -22,13 +23,13 @@ namespace rendering
 		RTTI_DECLARE_VIRTUAL_CLASS(GraphicsRenderStatesObject, IDeviceObject);
 
     public:
-		GraphicsRenderStatesObject(ObjectID id, IDeviceObjectHandler* impl, const StaticRenderStatesSetup& states, uint64_t key);
+		GraphicsRenderStatesObject(ObjectID id, IDeviceObjectHandler* impl, const GraphicsRenderStatesSetup& states, uint64_t key);
         virtual ~GraphicsRenderStatesObject();
 
 		//--
 
 		// rendering states we used to generate this from
-		INLINE const StaticRenderStatesSetup& states() const { return m_states; }
+		INLINE const GraphicsRenderStatesSetup& states() const { return m_states; }
 
 		// merged "key" (64-bit hash) that represents the graphical render stats
 		INLINE uint64_t key() const { return m_key; }
@@ -37,7 +38,7 @@ namespace rendering
 	
 	protected:
 		uint64_t m_key = 0;
-		StaticRenderStatesSetup m_states;
+		GraphicsRenderStatesSetup m_states;
     };
 
 	///---

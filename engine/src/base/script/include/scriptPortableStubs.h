@@ -185,7 +185,7 @@ namespace base
 
         //---
 
-        #define STUB_CLASS(x) \
+        #define STUB_CLASS_X(x) \
         static const auto STATIC_TYPE  = StubType::x; \
         INLINE Stub##x() { stubType = StubType::x; } \
         virtual const Stub##x* as##x() const override final { return this; } \
@@ -195,7 +195,7 @@ namespace base
 
         struct BASE_SCRIPT_API StubModule : public Stub
         {
-            STUB_CLASS(Module);
+            STUB_CLASS_X(Module);
 
             Array<const StubFile*> files;
             Array<const StubModule*> imports; // imported modules CLONES (note: mostly stripped of stubs)
@@ -216,7 +216,7 @@ namespace base
 
         struct BASE_SCRIPT_API StubModuleImport : public Stub
         {
-            STUB_CLASS(ModuleImport);
+            STUB_CLASS_X(ModuleImport);
 
             mutable const StubModule* m_importedModuleData = nullptr;
 
@@ -227,7 +227,7 @@ namespace base
 
         struct BASE_SCRIPT_API StubFile : public Stub
         {
-            STUB_CLASS(File);
+            STUB_CLASS_X(File);
 
             StringBuf depotPath;
             StringBuf absolutePath;
@@ -247,7 +247,7 @@ namespace base
         /// type alias name
         struct BASE_SCRIPT_API StubTypeName : public Stub
         {
-            STUB_CLASS(TypeName);
+            STUB_CLASS_X(TypeName);
 
             //--
 
@@ -263,7 +263,7 @@ namespace base
         /// enum option
         struct BASE_SCRIPT_API StubEnumOption : public Stub
         {
-            STUB_CLASS(EnumOption);
+            STUB_CLASS_X(EnumOption);
 
             int64_t assignedValue = 0;
             bool hasUserAssignedValue = false;
@@ -276,7 +276,7 @@ namespace base
         /// enum type
         struct BASE_SCRIPT_API StubEnum : public Stub
         {
-            STUB_CLASS(Enum);
+            STUB_CLASS_X(Enum);
 
             Array<StubEnumOption*> options;
             HashMap<StringID, const StubEnumOption*> optionsMap;
@@ -294,7 +294,7 @@ namespace base
         /// reference to a named stub (to be resolved), always created in context
         struct BASE_SCRIPT_API StubTypeRef : public Stub
         {
-            STUB_CLASS(TypeRef);
+            STUB_CLASS_X(TypeRef);
 
             // resolved during resolveTypes() or loaded from imported module
             // NOTE: this NEVER points to a typeDecl or typeRef or typeName, only actual types
@@ -319,7 +319,7 @@ namespace base
         /// type definition
         struct BASE_SCRIPT_API StubTypeDecl : public Stub
         {
-            STUB_CLASS(TypeDecl);
+            STUB_CLASS_X(TypeDecl);
 
             StubTypeType metaType = StubTypeType::Simple;
 
@@ -360,7 +360,7 @@ namespace base
         /// constant value
         struct BASE_SCRIPT_API StubConstantValue : public Stub
         {
-            STUB_CLASS(ConstantValue);
+            STUB_CLASS_X(ConstantValue);
 
             StubConstValueType m_valueType = StubConstValueType::Integer;
 
@@ -384,7 +384,7 @@ namespace base
         /// constant
         struct BASE_SCRIPT_API StubConstant : public Stub
         {
-            STUB_CLASS(Constant);
+            STUB_CLASS_X(Constant);
 
             const StubTypeDecl* typeDecl = nullptr;
             const StubConstantValue* value = nullptr;
@@ -397,7 +397,7 @@ namespace base
         /// property definition
         struct BASE_SCRIPT_API StubProperty : public Stub
         {
-            STUB_CLASS(Property);
+            STUB_CLASS_X(Property);
 
             const StubTypeDecl* typeDecl = nullptr;
             const StubConstantValue* defaultValue = nullptr;
@@ -410,7 +410,7 @@ namespace base
         /// function argument
         struct BASE_SCRIPT_API StubFunctionArg : public Stub
         {
-            STUB_CLASS(FunctionArg);
+            STUB_CLASS_X(FunctionArg);
 
             const StubTypeDecl* typeDecl = nullptr;
             const StubConstantValue* defaultValue = nullptr;
@@ -424,7 +424,7 @@ namespace base
         /// function
         struct BASE_SCRIPT_API StubFunction : public Stub
         {
-            STUB_CLASS(Function);
+            STUB_CLASS_X(Function);
 
             StringID operatorName;
             StringID opcodeName;
@@ -454,7 +454,7 @@ namespace base
         /// class definition
         struct BASE_SCRIPT_API StubClass : public Stub
         {
-            STUB_CLASS(Class);
+            STUB_CLASS_X(Class);
 
             StringID baseClassName;
             StringID parentClassName;
@@ -506,7 +506,7 @@ namespace base
 
         struct BASE_SCRIPT_API StubOpcode : public Stub
         {
-            STUB_CLASS(Opcode);
+            STUB_CLASS_X(Opcode);
 
             Opcode op = Opcode::Nop; // opcode value
             const Stub* stub = nullptr; // referenced object, constant, variable, function to call, etc

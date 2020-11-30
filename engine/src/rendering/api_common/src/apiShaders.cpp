@@ -15,7 +15,7 @@
 #include "apiGraphicsPassLayout.h"
 #include "apiGraphicsRenderStates.h"
 
-#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingPipeline.h"
 
 namespace rendering
@@ -24,29 +24,19 @@ namespace rendering
     {
 		//--
 
-		IBaseShaders::IBaseShaders(IBaseThread* drv, const ShaderLibraryData* data, PipelineIndex index)
+		IBaseShaders::IBaseShaders(IBaseThread* drv, const ShaderData* data)
 			: IBaseObject(drv, ObjectType::Shaders)
-			, m_data(AddRef(data))
-			, m_index(index)
+			, m_sourceMetadata(AddRef(data->metadata()))
+			, m_sourceData(data->data())
+			, m_mask(data->metadata()->stageMask)
+			, m_key(data->metadata()->key)
 		{
 			// resolve the vertex layout
-			const auto& shaderBundle = m_data->shaderBundles()[index];
-			if (shaderBundle.vertexBindingState != INVALID_PIPELINE_INDEX)
-				m_vertexLayout = drv->objectCache()->resolveVertexBindingLayout(*data, shaderBundle.vertexBindingState);
-
-			// set mask for valid shaders
-			for (uint32_t i = 0; i < shaderBundle.numShaders; ++i)
-			{
-				const auto shaderIndex = data->indirectIndices()[shaderBundle.firstShaderIndex + i];
-				const auto& shaderEntry = data->shaderBlobs()[shaderIndex];
-				m_mask.set(shaderEntry.type);
-			}
+			if (m_sourceMetadata->stageMask.test(ShaderStage::Vertex))
+				m_vertexLayout = drv->objectCache()->resolveVertexBindingLayout(m_sourceMetadata);
 
 			// resolve descriptor state
-			m_descriptorLayout = drv->objectCache()->resolveDescriptorBindingLayout(*data, shaderBundle.parameterBindingState);
-
-			// data key
-			m_key = shaderBundle.bundleKey;
+			m_descriptorLayout = drv->objectCache()->resolveDescriptorBindingLayout(m_sourceMetadata);
 		}
 
 		IBaseShaders::~IBaseShaders()
@@ -54,8 +44,8 @@ namespace rendering
 
 		//--
 
-		ShadersObjectProxy::ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderLibraryData* data, PipelineIndex index)
-			: ShaderObject(id, impl, data, index)
+		ShadersObjectProxy::ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata)
+			: ShaderObject(id, impl, metadata)
 		{}
 
 		GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats)

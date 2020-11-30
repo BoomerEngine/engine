@@ -11,6 +11,7 @@
 #include "renderingDeviceGlobalObjects.h"
 #include "renderingResources.h"
 #include "renderingImage.h"
+#include "renderingSamplerState.h"
 
 namespace rendering
 {
@@ -453,9 +454,9 @@ namespace rendering
 			ss.minFilter = FilterMode::Nearest;
 			ss.mipmapMode = MipmapFilterMode::Nearest;
 
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.label = "SamplerClampPoint";
 			SamplerClampPoint = m_device->createSampler(ss);
 
@@ -472,9 +473,9 @@ namespace rendering
 			ss.minFilter = FilterMode::Linear;
 			ss.mipmapMode = MipmapFilterMode::Nearest;
 
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.label = "SamplerClampBiLinear";
 			SamplerClampBiLinear = m_device->createSampler(ss);
 
@@ -491,9 +492,9 @@ namespace rendering
 			ss.minFilter = FilterMode::Linear;
 			ss.mipmapMode = MipmapFilterMode::Linear;
 
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.label = "SamplerClampTriLinear";
 			SamplerClampTriLinear = m_device->createSampler(ss);
 
@@ -511,9 +512,9 @@ namespace rendering
 			ss.mipmapMode = MipmapFilterMode::Linear;
 			ss.maxAnisotropy = 16;
 
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.label = "SamplerClampAniso";
 			SamplerClampAniso = m_device->createSampler(ss);
 
@@ -529,9 +530,9 @@ namespace rendering
 			ss.magFilter = FilterMode::Nearest;
 			ss.minFilter = FilterMode::Nearest;
 			ss.mipmapMode = MipmapFilterMode::Nearest;
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.compareEnabled = true;
 
 			ss.compareOp = CompareOp::LessEqual;
@@ -548,9 +549,9 @@ namespace rendering
 			ss.magFilter = FilterMode::Linear;
 			ss.minFilter = FilterMode::Linear;
 			ss.mipmapMode = MipmapFilterMode::Nearest;
-			ss.addresModeU = AddressMode::ClampToEdge;
-			ss.addresModeV = AddressMode::ClampToEdge;
-			ss.addresModeW = AddressMode::ClampToEdge;
+			ss.addresModeU = AddressMode::Clamp;
+			ss.addresModeV = AddressMode::Clamp;
+			ss.addresModeW = AddressMode::Clamp;
 			ss.compareEnabled = true;
 
 			ss.compareOp = CompareOp::LessEqual;

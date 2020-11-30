@@ -9,6 +9,7 @@
 #pragma once
 
 #include "rendering/device/include/renderingDescriptorID.h"
+#include "rendering/device/include/renderingShaderMetadata.h"
 
 namespace rendering
 {
@@ -23,61 +24,16 @@ namespace rendering
             RTTI_DECLARE_POOL(POOL_API_PIPELINES)
 
         public:
-			struct AttributeInfo
-			{
-				ImageFormat format = ImageFormat::UNKNOWN;
-				uint16_t offset = 0;
-			};
-
-            struct BindingInfo
-            {
-                uint16_t bindPointIndex = 0;
-                uint32_t stride = 0;
-                base::StringID name;
-                bool instanced = 0;
-
-				base::Array<AttributeInfo> attributes;
-            };
-
-			//--
-
-			IBaseVertexBindingLayout(base::Array<BindingInfo>&& data);
+			IBaseVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams);
 			virtual ~IBaseVertexBindingLayout();
 
-			INLINE const base::Array<BindingInfo>& vertexBindPoints() const { return m_vertexBindPoints; }
+			INLINE const base::Array<ShaderVertexStreamMetadata>& vertexStreams() const { return m_elements; }
 
 			void print(base::IFormatStream& f) const;
 
 		protected:
-			base::Array<BindingInfo> m_vertexBindPoints;
+			base::Array<ShaderVertexStreamMetadata> m_elements;
         };
-
-		//---
-
-		struct RENDERING_API_COMMON_API DescriptorBindingElement
-		{
-			uint16_t bindPointIndex = 0; // where to look for "ParameterInfo"
-			uint16_t descriptorElementIndex = 0; // index of element inside descriptor
-
-			DescriptorID bindPointLayout;
-			base::StringID bindPointName;
-			base::StringID paramName;
-
-			DeviceObjectViewType objectType = DeviceObjectViewType::Invalid;
-
-			ImageFormat objectFormat = ImageFormat::UNKNOWN;
-			bool writable = false;
-
-			//--
-
-			uint16_t apiObjectSlot = 0; // in target API
-
-			//--
-			
-			DescriptorBindingElement();
-
-			void print(base::IFormatStream& f) const;
-		};
 
 		//--
 
@@ -88,15 +44,15 @@ namespace rendering
             RTTI_DECLARE_POOL(POOL_API_PIPELINES)
 
         public:
-			IBaseDescriptorBindingLayout(const base::Array<DescriptorBindingElement>& elements);
+			IBaseDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors);
 			virtual ~IBaseDescriptorBindingLayout();
 
-			INLINE const base::Array<DescriptorBindingElement>& elements() const { return m_elements; }
+			INLINE const base::Array<ShaderDescriptorMetadata>& descriptors() const { return m_descriptors; }
 
 			void print(base::IFormatStream& f) const;
 
 		private:
-			base::Array<DescriptorBindingElement> m_elements;
+			base::Array<ShaderDescriptorMetadata> m_descriptors;
         };
 
 		//--
@@ -142,14 +98,11 @@ namespace rendering
             /// find a parameter index by name and type
             uint16_t resolveDescriptorBindPointIndex(base::StringID name, DescriptorID layout);
 
-            /// find a parameter index by name and type
-            uint16_t resolveDescriptorBindPointIndex(const ShaderLibraryData& shaderLib, PipelineIndex descriptorLayoutIndex);
-
             /// find/create VBO layout
-            IBaseVertexBindingLayout* resolveVertexBindingLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex vertexInputStateIndex);
+            IBaseVertexBindingLayout* resolveVertexBindingLayout(const ShaderMetadata* metadata);
 
 			/// resolve the mapping of inputs parameters to actual slots in OpenGL
-			IBaseDescriptorBindingLayout* resolveDescriptorBindingLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingState);
+			IBaseDescriptorBindingLayout* resolveDescriptorBindingLayout(const ShaderMetadata* metadata);
 
 			//--
         private:
@@ -162,8 +115,8 @@ namespace rendering
             base::HashMap<uint64_t, IBaseVertexBindingLayout*> m_vertexLayoutMap;
             base::HashMap<uint64_t, IBaseDescriptorBindingLayout*> m_descriptorBindingMap;
 
-			virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(base::Array<IBaseVertexBindingLayout::BindingInfo>&& elements) = 0;
-			virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(base::Array<DescriptorBindingElement>&& elements) = 0;
+			virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) = 0;
+			virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors) = 0;
         };
 
         //---

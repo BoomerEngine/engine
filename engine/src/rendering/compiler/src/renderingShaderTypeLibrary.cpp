@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler\data #]
+* [# filter: compiler\types #]
 ***/
 
 #include "build.h"
@@ -157,7 +157,7 @@ namespace rendering
             if (prop.type.isArray())
             {
                 err.reportError(prop.location, base::TempString("Vertex data layout '{}' can't contain member '{}' with array type '{}'", m_name, prop.name, prop.type));
-                return INVALID_PIPELINE_INDEX;
+                return false;
             }
 
             // determine the packed data format for the member
@@ -165,7 +165,7 @@ namespace rendering
             if (dataFormat == ImageFormat::UNKNOWN)
             {
                 err.reportError(prop.location, base::TempString("Vertex data layout '{}' member '{}' with type '{}' that is not packable for vertex shader input", m_name, prop.name, prop.type));
-                return INVALID_PIPELINE_INDEX;
+                return false;
             }
 
             // use the custom packing format if it was specified
@@ -175,7 +175,7 @@ namespace rendering
                 if (!GetImageFormatByShaderName(customFormatTxt, dataFormat))
                 {
                     err.reportError(prop.location, base::TempString("Vertex data layout '{}' member '{}' with type '{}' wants to use custom format '{}' that is not recognized or supported", m_name, prop.name, prop.type, customFormatTxt));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
             }
 
@@ -201,7 +201,7 @@ namespace rendering
                 if (offset < 0 || offset >= 65536)
                 {
                     err.reportError(prop.location, base::TempString("Vertex data layout '{}' contains member '{}' with user invalid offset {}", m_name, prop.name, offset));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
 
                 }
 
@@ -209,14 +209,14 @@ namespace rendering
                 if (offset % alignment != 0)
                 {
                     err.reportError(prop.location, base::TempString("Vertex data layout '{}' contains member '{}' with user specified offset {} that is not a multiply of required alignment {}", m_name, prop.name, offset, alignment));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // make sure we are not moving back in offsets
                 if (offset < (int)inOutPackingOffset)
                 {
                     err.reportError(prop.location, base::TempString("Vertex data layout '{}' contains member '{}' with user specified offset {} that overlaps current data at offset {}", m_name, prop.name, offset, inOutPackingOffset));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // use the offset
@@ -280,7 +280,7 @@ namespace rendering
                 if (dataFormat == ImageFormat::UNKNOWN)
                 {
                     err.reportError(prop.location, base::TempString("Structure layout '{}' member '{}' with type '{}' is not packable for std140", m_name, prop.name, type));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // get the size and alignment
@@ -317,7 +317,7 @@ namespace rendering
                 {
                     err.reportError(prop.location, base::TempString("Struct layout '{}' contains member '{}' with user specified offset {} that is not a multiply of required alignment {}",
                         m_name, prop.name, offset, alignment));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // the offset must be a multiply of the required alignment
@@ -325,7 +325,7 @@ namespace rendering
                 {
                     err.reportError(prop.location, base::TempString("Struct layout '{}' contains member '{}' with user specified offset {} that is not a multiply of required alignment {}",
                                                                     m_name, prop.name, offset, alignment));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // make sure we are not moving back in offsets
@@ -333,7 +333,7 @@ namespace rendering
                 {
                     err.reportError(prop.location, base::TempString("Struct layout '{}' contains member '{}' with user specified offset {} that overlaps current data at offset {}",
                                                                     m_name, prop.name, offset, inOutPackingOffset));
-                    return INVALID_PIPELINE_INDEX;
+                    return false;
                 }
 
                 // use the offset
@@ -486,7 +486,7 @@ namespace rendering
             return base::StringID();
         }
 
-        void ResourceTable::addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes)
+        void ResourceTable::addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes, char localSampler, const StaticSampler* staticSampler)
         {
             ASSERT(name);
             ASSERT(memberIndex(name) == -1);
@@ -494,12 +494,10 @@ namespace rendering
             auto& member = m_members.emplaceBack();
             member.m_location = loc;
             member.m_name = name;
-            member.m_mergedName = base::StringID(base::TempString("{}_{}", m_name, name));
             member.m_type = type;
-            member.m_attributes = attributes;
-            //member.m_resourceLayout = info.compositeLayout;
-            //member.m_resourceFormat = info.format;
-            //member.m_resourceImageType = info.imageType;
+            member.m_attributes = attributes;            
+			member.m_localSampler = localSampler;
+			member.m_staticSampler = staticSampler;
         }
 
         void ResourceTable::print(base::IFormatStream& f) const
@@ -529,6 +527,20 @@ namespace rendering
             }
         }       
 
+		//---
+
+		StaticSampler::StaticSampler(base::StringID name, const SamplerState& state)
+			: m_name(name)
+			, m_state(state)
+		{}
+
+		//---
+
+		StaticRenderStates::StaticRenderStates(base::StringID name, const GraphicsRenderStatesSetup& state)
+			: m_name(name)
+			, m_state(state)
+		{}
+
         //---
 
         TypeLibrary::TypeLibrary(base::mem::LinearAllocator& allocator)
@@ -551,11 +563,23 @@ namespace rendering
             m_resourceTableMap.clear();
             m_resourceTables.clear();
 
-            for (auto ptr : m_resourceTypes)
-                ptr->~ResourceType();
+            for (auto ptr : m_staticSamplers)
+                ptr->~StaticSampler();
 
-            m_resourceTypesMap.clear();
-            m_resourceTypes.clear();
+			m_staticSamplerMap.clear();
+			m_staticSamplers.clear();
+
+			for (auto ptr : m_staticRenderStates)
+				ptr->~StaticRenderStates();
+
+			m_staticRenderStatesMap.clear();
+			m_staticRenderStates.clear();
+
+			for (auto ptr : m_compositeTypes)
+				ptr->~CompositeType();
+
+			m_compositeTypeMap.clear();
+			m_compositeTypes.clear();
         }
 
         DataType TypeLibrary::compositeType(const base::StringID name) const
@@ -683,6 +707,44 @@ namespace rendering
             m_resourceTableMap.find(name, ret);
             return ret;
         }
+
+		//---
+
+		void TypeLibrary::registerStaticSampler(StaticSampler* sampler)
+		{
+			ASSERT(sampler != nullptr);
+			ASSERT(!sampler->name().empty());
+			ASSERT(!m_staticSamplerMap.contains(sampler->name()));
+
+			m_staticSamplerMap.set(sampler->name(), sampler);
+			m_staticSamplers.pushBack(sampler);
+		}
+
+		const StaticSampler* TypeLibrary::findStaticSampler(base::StringID name) const
+		{
+			const StaticSampler* ret = nullptr;
+			m_staticSamplerMap.find(name, ret);
+			return ret;
+		}
+
+		///--
+
+		void TypeLibrary::registerStaticRenderStates(StaticRenderStates* states)
+		{
+			ASSERT(states != nullptr);
+			ASSERT(!states->name().empty());
+			ASSERT(!m_staticRenderStatesMap.contains(states->name()));
+
+			m_staticRenderStatesMap.set(states->name(), states);
+			m_staticRenderStates.pushBack(states);
+		}
+
+		const StaticRenderStates* TypeLibrary::findStaticRenderStates(base::StringID name) const
+		{
+			const StaticRenderStates* ret = nullptr;
+			m_staticRenderStatesMap.find(name, ret);
+			return ret;
+		}
 
         //---
 
@@ -833,8 +895,7 @@ namespace rendering
             auto* ret = m_allocator.createNoCleanup<ResourceType>();;
 
             ret->attributes = attributes;
-            ret->type = "ConstantBuffer"_id;
-            ret->constants = true;
+            ret->type = DeviceObjectViewType::ConstantBuffer;
             ret->resolvedLayout = constantBufferLayout;
             
             m_resourceTypes.pushBack(ret);
@@ -851,22 +912,18 @@ namespace rendering
 
             auto* ret = m_allocator.createNoCleanup<ResourceType>();
             m_resourceTypes.pushBack(ret);
-
             ret->attributes = attributes;
-            ret->type = typeName;
 
-            if (ret->type != "Texture"_id && ret->type.view().beginsWith("Texture"))
+            if (typeName != "Texture"_id && typeName != "TextureTable" && typeName.view().beginsWith("Texture"))
             {
-                if (!MutateTextureName(ret->type, ret->attributes))
+                if (!MutateTextureName(typeName, ret->attributes))
                     return DataType();
             }
 
-            if (ret->type == "Texture"_id)
+            if (typeName == "Texture"_id || typeName == "TextureTable")
             {
-                ret->texture = true;
                 ret->depth = ret->attributes.has("depth"_id);
-                ret->uav = ret->attributes.has("uav"_id);
-                ret->multisampled = ret->attributes.has("multisample"_id);
+				ret->multisampled = ret->attributes.has("multisample"_id);
                 ret->resolvedFormat = ImageFormat::RGBA32F;
 
                 if (ret->attributes.has("unsigned"_id))
@@ -889,45 +946,77 @@ namespace rendering
                 if (ret->resolvedViewType == ImageViewType::View3D && isArray)
                     return DataType();
 
-                if (auto formatString = ret->attributes.value("format"_id))
-                {
-                    if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
-                        return DataType();
-                }
-            }
-            else if (ret->type == "Buffer"_id)
-            {
-                ret->buffer = true;
-                ret->uav = ret->attributes.has("uav"_id);
+				if (ret->attributes.has("uav"_id))
+				{
+					if (typeName == "TextureTable")
+						return DataType();
 
-                if (auto formatString = ret->attributes.value("format"_id))
-                {
-                    if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
-                        return DataType();
-                }
-                else
-                {
-                    ret->resolvedFormat = ImageFormat::R32F;
-                }
+					ret->type = DeviceObjectViewType::ImageWritable;
 
-                if (auto layoutString = ret->attributes.value("layout"_id))
-                {
-                    const auto* layout = findCompositeType(layoutString);
-                    if (nullptr == layout)
-                        return DataType();
+					if (auto formatString = ret->attributes.value("format"_id))
+					{
+						if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
+							return DataType();
+					}
+					else
+					{
+						return DataType();
+					}
+				}
+				else
+				{
+					if (typeName == "TextureTable")
+						ret->type = DeviceObjectViewType::ImageTable;
+					else
+						ret->type = DeviceObjectViewType::Image;
+				}
+            }
+            else if (typeName == "Buffer"_id)
+            {
+				if (auto layoutString = ret->attributes.value("layout"_id))
+				{
+					const auto* layout = findCompositeType(layoutString);
+					if (nullptr == layout)
+						return DataType();
 
-                    ret->resolvedLayout = layout;
-                }
+					ret->resolvedLayout = layout;
+
+					if (ret->attributes.has("uav"_id))
+						ret->type = DeviceObjectViewType::BufferStructuredWritable;
+					else
+						ret->type = DeviceObjectViewType::BufferStructured;
+				}
+				else
+				{
+					if (auto formatString = ret->attributes.value("format"_id))
+					{
+						if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
+							return DataType();
+					}
+					else
+					{
+						ret->resolvedFormat = ImageFormat::R32F;
+					}
+
+					if (ret->attributes.has("uav"_id))
+						ret->type = DeviceObjectViewType::BufferWritable;
+					else
+						ret->type = DeviceObjectViewType::Buffer;
+				}
             }
-            else if (ret->type == "ConstantBuffer"_id)
+            else if (typeName == "ConstantBuffer"_id)
             {
-                ret->constants = true;
-                ret->uav = ret->attributes.has("uav"_id);
+				ret->type = DeviceObjectViewType::ConstantBuffer;
             }
-            else
-            {
-                
-            }
+			else if (typeName == "Sampler"_id)
+			{
+				ret->type = DeviceObjectViewType::Sampler;
+			}
+			else
+			{
+				DEBUG_CHECK(!"Unknown resource type");
+				return DataType();
+			}
 
             m_resourceTypes.pushBack(ret);
             m_resourceTypesMap[typeHash] = ret;

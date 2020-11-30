@@ -85,7 +85,7 @@ namespace base
             NativeTimePoint m_timeoutTime;
             NativeTimePoint m_sentTime;
 
-            PagedBuffer<uint8_t> m_data;
+            PagedBuffer m_data;
 
             CURL* m_handle;
 

@@ -220,7 +220,7 @@ namespace base
 
         size_t Request::WriteFunc(void *ptr, size_t size, size_t nmemb, Request* self)
         {
-            self->m_data.write(ptr, size * nmemb);
+            self->m_data.writeLarge(ptr, size * nmemb);
             return size * nmemb;
         }
 

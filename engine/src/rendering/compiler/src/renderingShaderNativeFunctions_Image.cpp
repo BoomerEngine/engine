@@ -18,6 +18,21 @@ namespace rendering
     {
         //---
 
+		static bool IsLoadableImage(const DataType& dataType, bool multisampled = false)
+		{
+			if (!dataType.isResource())
+				return false;
+
+			const auto& res = dataType.resource();
+			if (res.type != DeviceObjectViewType::ImageWritable)
+				return false;
+
+			if ((res.multisampled != multisampled) || res.depth)
+				return false;
+
+			return true;
+		}
+
         static DataType GetImageSizeType(TypeLibrary& typeLibrary, const DataType& imageType)
         {
             auto numComponents = imageType.resource().sizeComponentCount();
@@ -49,7 +64,7 @@ namespace rendering
                     return DataType();
                 }
 
-                if (!argTypes[0].isResource() || !argTypes[0].resource().texture || !argTypes[0].resource().uav || !argTypes[0].resource().multisampled)
+                if (!IsLoadableImage(argTypes[0], true))
                 {
                     err.reportError(loc, "Only multisampled uav textures can be used here");
                     return DataType();
@@ -97,7 +112,7 @@ namespace rendering
                     return DataType();
                 }
 
-                if (!argTypes[0].isResource() || !argTypes[0].resource().texture || !argTypes[0].resource().uav || !argTypes[0].resource().multisampled)
+				if (!IsLoadableImage(argTypes[0], true))
                 {
                     err.reportError(loc, "Only multisampled uav textures can be used here");
                     return DataType();
@@ -145,7 +160,7 @@ namespace rendering
                     return DataType();
                 }
 
-                if (!argTypes[0].isResource() || !argTypes[0].resource().texture || !argTypes[0].resource().uav)
+				if (!IsLoadableImage(argTypes[0]))
                 {
                     err.reportError(loc, "Only uav textures can be used here");
                     return DataType();

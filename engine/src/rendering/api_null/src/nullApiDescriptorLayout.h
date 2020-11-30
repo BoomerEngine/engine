@@ -21,7 +21,7 @@ namespace rendering
 			class DescriptorBindingLayout : public IBaseDescriptorBindingLayout
 			{
 			public:
-				DescriptorBindingLayout(Thread* owner, const base::Array<DescriptorBindingElement>& elements);
+				DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors);
 				virtual ~DescriptorBindingLayout();
 			};
 

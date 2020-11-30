@@ -178,11 +178,6 @@ namespace rendering
             , m_err(err)
         {
             //m_nativeFunctionMapping["__mod"_id] = "mod";
-            /*m_nativeFunctionMapping["__castToFloat"_id] = "float";
-            m_nativeFunctionMapping["__castToInt"_id] = "int";
-            m_nativeFunctionMapping["__castToUint"_id] = "uint";
-            m_nativeFunctionMapping["__castToBool"_id] = "bool";*/
-
             m_nativeFunctionMapping["__create_vec2"_id] = "vec2";
             m_nativeFunctionMapping["__create_vec3"_id] = "vec3";
             m_nativeFunctionMapping["__create_vec4"_id] = "vec4";

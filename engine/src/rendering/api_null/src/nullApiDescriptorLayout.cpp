@@ -18,8 +18,8 @@ namespace rendering
 
 			//--
 
-			DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<DescriptorBindingElement>& elements)
-				: IBaseDescriptorBindingLayout(std::move(elements))
+			DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors)
+				: IBaseDescriptorBindingLayout(descriptors)
 			{}
 
 			DescriptorBindingLayout::~DescriptorBindingLayout()

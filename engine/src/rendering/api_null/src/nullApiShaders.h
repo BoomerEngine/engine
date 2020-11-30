@@ -22,7 +22,7 @@ namespace rendering
 			class Shaders : public IBaseShaders
 			{
 			public:
-				Shaders(Thread* drv, const ShaderLibraryData* data, PipelineIndex index);
+				Shaders(Thread* drv, const ShaderData* data);
 				virtual ~Shaders();
 
 				//--

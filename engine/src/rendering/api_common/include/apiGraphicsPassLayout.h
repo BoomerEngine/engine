@@ -10,6 +10,8 @@
 
 #include "apiObject.h"
 
+#include "rendering/device/include/renderingGraphicsPassLayout.h"
+
 namespace rendering
 {
 	namespace api

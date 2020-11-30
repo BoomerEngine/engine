@@ -66,4 +66,8 @@ namespace rendering
 
     ///--
 
+	static const uint32_t DESCRIPTOR_ENTRY_MEMORY_SIZE = 64;
+
+	///--
+
 } // rendering

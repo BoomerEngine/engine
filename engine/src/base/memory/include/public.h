@@ -21,7 +21,8 @@ enum PoolTag
     POOL_PERSISTENT,
     POOL_OBJECT,
     POOL_DEFAULT_OBJECTS,
-    POOL_IO,
+	POOL_STUBS,
+	POOL_IO,
     POOL_IO_OUTSTANDING,
     POOL_CONTAINERS,
     POOL_HASH_BUCKETS,
@@ -92,6 +93,7 @@ enum PoolTag
 
     POOL_RENDERING_FRAME,
     POOL_RENDERING_SHADER_CACHE,
+	POOL_RENDERING_SHADER_BLOB,
     POOL_RENDERING_PARAM_LAYOUT,
     POOL_RENDERING_TECHNIQUE,
     POOL_RENDERING_TECHNIQUE_COMPILER,
@@ -283,6 +285,49 @@ namespace base
         extern BASE_MEMORY_API PageAllocator& DefaultPageAllocator(PoolTag pool = POOL_TEMP);
 
         //--
+
+		struct AutoFreePtr : public NoCopy
+		{
+			INLINE AutoFreePtr(void* ptr)
+				: m_ptr(ptr)
+			{}
+
+			INLINE ~AutoFreePtr()
+			{
+				clear();
+			}
+
+			INLINE void* ptr() const
+			{
+				return m_ptr;
+			}
+
+			INLINE operator bool () const
+			{
+				return m_ptr != nullptr;
+			}
+
+			INLINE void clear()
+			{
+				if (m_ptr)
+				{
+					FreeBlock(m_ptr);
+					m_ptr = nullptr;
+				}
+			}
+
+			INLINE void* detach()
+			{
+				auto* ret = m_ptr;
+				m_ptr = nullptr;
+				return ret;
+			}
+
+		private:
+			void* m_ptr = nullptr;
+		};
+
+		//--
 
     } // mem
 } // base

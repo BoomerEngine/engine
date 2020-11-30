@@ -8,9 +8,14 @@
 
 #include "rendering_device_glue.inl"
 
-#include "renderingObjectID.h"
-#include "renderingStates.h"
-#include "renderingImageFormat.h"
+namespace base
+{
+	namespace image
+	{
+		struct ImageRect;
+		class ImageView;
+	}
+}
 
 namespace rendering
 {
@@ -66,29 +71,29 @@ namespace rendering
 
     //----
 
-    /// index of structure in pipeline library
-    /// TOD: let's pray this won't have to be 32-bit, it would be a huge waste of memory
-    typedef uint16_t PipelineIndex;
+	class ShaderObject;
+	typedef base::RefPtr<ShaderObject> ShaderObjectPtr;
 
-    /// index to debug string in pipeline library
-    typedef uint32_t PipelineStringIndex;
+	class ShaderData;
+	typedef base::RefPtr<ShaderData> ShaderDataPtr;
 
-    /// invalid pipeline index
-    static const PipelineIndex INVALID_PIPELINE_INDEX = (PipelineIndex)-1;
+	class ShaderMetadata;
+	typedef base::RefPtr<ShaderMetadata> ShaderMetadataPtr;
 
-    class ShaderLibrary;
-    typedef base::RefPtr<ShaderLibrary> ShaderLibraryPtr;
-    typedef base::res::Ref<ShaderLibrary> ShaderLibraryRef;
+	class ShaderFile;
+	typedef base::RefPtr<ShaderFile> ShaderFilePtr;
+	typedef base::res::Ref<ShaderFile> ShaderFileRef;
 
-    class ShaderLibraryData;
-    typedef base::RefPtr<ShaderLibraryData> ShaderLibraryDataPtr;
-
-    class ShaderObject;
-    typedef base::RefPtr<ShaderObject> ShaderObjectPtr;
+	struct ShaderVertexElementMetadata;
+	struct ShaderVertexStreamMetadata;
+	struct ShaderDescriptorEntryMetadata;
+	struct ShaderDescriptorMetadata;
+	struct ShaderStaticSamplerMetadata;
 
 	//--
 
-	struct GraphicsPassLayout;
+	struct GraphicsPassLayoutSetup;	
+	struct GraphicsRenderStatesSetup;
 
 	class GraphicsRenderStatesObject;
 	typedef base::RefPtr<GraphicsRenderStatesObject> GraphicsRenderStatesObjectPtr;
@@ -176,23 +181,6 @@ namespace rendering
 
     ///---
 
-    /// type of object view
-    enum class DeviceObjectViewType : uint8_t
-    {
-        Invalid,
-		ConstantBuffer, // CBV (may be inlined - it's missing an object then)
-        Buffer,  // SRV for buffer
-        BufferWritable, // UAV for buffer
-        BufferStructured, // read only UAV
-        BufferStructuredWritable, // read/write UAV
-        Image, // read only texture (SRV)
-        ImageWritable, // UAV
-        RenderTarget,
-        Sampler,
-    };
-
-    struct DescriptorEntry;
-
     class DescriptorID;
     class DescriptorInfo;
     class DescriptorInfoBuilder;
@@ -256,8 +244,62 @@ namespace rendering
 
 	///---
 
+    enum class ShaderStage : uint8_t
+    {
+        Invalid = 0,
+
+        Vertex,
+        Geometry,
+        Domain,
+        Hull,
+        Pixel,
+        Compute,
+        Task,
+        Mesh,
+
+        MAX,
+    };
+
+    //--
+
+    typedef base::BitFlagsBase<ShaderStage, uint16_t> ShaderStageMask;
+
+    //--
+
+    enum class DeviceObjectViewType : uint8_t
+    {
+        Invalid = 0,
+
+        ConstantBuffer,  // CBV (may be inlined - it's missing an object then)
+
+        Buffer,  // SRV for buffer, requires format
+        BufferWritable, // UAV for buffer, requires format
+
+        BufferStructured, // read only UAV
+        BufferStructuredWritable, // read/write UAV
+
+        Image, // read only texture (SRV), sampled, related to some sampler somewhere (specified in shader metadata)
+        ImageWritable, // UAV
+
+		ImageTable, // descriptor table/binding table for multiple images
+
+        Sampler, // explicit sampler entry that can be changed at runtime
+
+        RenderTarget,
+    };
+
+    struct DescriptorEntry;
+
+    class DescriptorID;
+    class DescriptorInfo;
+
+    //--
+
+
 } // rendering
 
+#include "renderingObjectID.h"
+#include "renderingImageFormat.h"
 
 #ifndef BUILD_RELEASE
 	#define VALIDATE_RESOURCE_LAYOUTS

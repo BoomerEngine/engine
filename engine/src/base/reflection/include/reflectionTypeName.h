@@ -149,7 +149,7 @@ namespace base
                 return false;
 
             int64_t value = 0;
-            if (!rtti::GetEnumNameValue(static_cast<const rtti::EnumType*>(enumType), name, value))
+            if (!rtti::GetEnumNameValue(static_cast<const rtti::EnumType*>(enumType.ptr()), name, value))
                 return false;
 
             outEnumValue = (T)value;

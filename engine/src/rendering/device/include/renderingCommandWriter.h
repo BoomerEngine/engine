@@ -381,9 +381,9 @@ namespace rendering
             void attachBuffer(CommandBuffer* buffer);
             void detachBuffer(bool finishRecording);
 
-            bool validateDrawVertexLayout(const ShaderObject* func, uint32_t requiredVertexCount);
+			bool validateParameterBindings(const ShaderMetadata* meta);
+            bool validateDrawVertexLayout(const ShaderMetadata* meta, uint32_t requiredVertexCount, uint32_t requiredInstanceCount);
 			bool validateDrawIndexLayout(uint32_t requiredElementCount);
-            bool validateParameterBindings(const ShaderObject* func);
 
 			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorEntry* entries, uint32_t count);
             void* allocConstants(uint32_t size, const uint32_t*& outOffsetPtr);

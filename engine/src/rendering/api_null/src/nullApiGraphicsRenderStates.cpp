@@ -20,7 +20,7 @@ namespace rendering
 
 			//--
 
-			GraphicsRenderStates::GraphicsRenderStates(Thread* owner, const rendering::StaticRenderStatesSetup& setup)
+			GraphicsRenderStates::GraphicsRenderStates(Thread* owner, const GraphicsRenderStatesSetup& setup)
 				: IBaseGraphicsRenderStates(owner, setup)
 			{}
 

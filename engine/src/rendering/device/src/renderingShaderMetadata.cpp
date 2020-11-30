@@ -1,0 +1,294 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: shader #]
+*/
+
+#include "build.h"
+#include "renderingShaderMetadata.h"
+
+namespace rendering
+{
+
+    //--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderVertexElementMetadata);
+		RTTI_PROPERTY(name);
+		RTTI_PROPERTY(format);
+		RTTI_PROPERTY(offset);
+		RTTI_PROPERTY(size);
+	RTTI_END_TYPE();
+
+	void ShaderVertexElementMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("[{}]: {} {} at offset {}, size {}", name, format, offset, size);
+	}
+
+    //--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderVertexStreamMetadata);
+		RTTI_PROPERTY(name);
+		RTTI_PROPERTY(size);
+		RTTI_PROPERTY(index);
+		RTTI_PROPERTY(stride);
+		RTTI_PROPERTY(instanced);
+		RTTI_PROPERTY(elements);
+	RTTI_END_TYPE();
+
+	void ShaderVertexStreamMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("Stream {}, size {}, stride {}, index {} {}\n", name, size, stride, index, instanced ? "INSTANCED" : "");
+
+		for (auto i : elements.indexRange())
+			f.appendf("    [{}]: {}\n", i, elements[i]);
+	}
+
+	static void PrintShaderStageMask(ShaderStageMask mask, base::IFormatStream& f)
+	{
+		f.append(mask.test(ShaderStage::Vertex) ? "V" : "-");
+		f.append(mask.test(ShaderStage::Geometry) ? "G" : "-");
+		f.append(mask.test(ShaderStage::Domain) ? "D" : "-");
+		f.append(mask.test(ShaderStage::Hull) ? "H" : "-");
+		f.append(mask.test(ShaderStage::Pixel) ? "P" : "-");
+		f.append(mask.test(ShaderStage::Compute) ? "C" : "-");
+		f.append(mask.test(ShaderStage::Task) ? "T" : "-");
+		f.append(mask.test(ShaderStage::Mesh) ? "M" : "-");
+	}
+
+	//--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderDescriptorEntryMetadata);
+		RTTI_PROPERTY(name);
+		RTTI_PROPERTY(index);
+		RTTI_PROPERTY(type);
+		RTTI_PROPERTY(viewType);
+		RTTI_PROPERTY_FORCE_TYPE(stageMask, uint16_t);
+		RTTI_PROPERTY(format);
+		RTTI_PROPERTY(number);
+	RTTI_END_TYPE();
+
+	void ShaderDescriptorEntryMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("{} ({}) ", type, name);
+		PrintShaderStageMask(stageMask, f);
+
+		switch (type)
+		{
+		case DeviceObjectViewType::ConstantBuffer:
+			f.appendf(" size={}", number);
+			break;
+
+		case DeviceObjectViewType::Buffer:
+		case DeviceObjectViewType::BufferWritable:
+		case DeviceObjectViewType::ImageWritable:
+			f.appendf(" format={}", format);
+			break;
+
+		case DeviceObjectViewType::BufferStructured:
+		case DeviceObjectViewType::BufferStructuredWritable:
+			f.appendf(" stride={}", number);
+			break;
+		}
+
+		if (type == DeviceObjectViewType::Image || type == DeviceObjectViewType::ImageWritable)
+			f.appendf(" view={}", viewType);
+
+		if (type == DeviceObjectViewType::Image)
+		{
+			if (number >= 1)
+				f.appendf("  staticSampler={}", number-1);
+			else if(number <= -1)
+				f.appendf(" localSampler={}", -number - 1);
+		}
+	}
+
+	//--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderDescriptorMetadata);
+		RTTI_PROPERTY(name);
+		RTTI_PROPERTY(index);
+		RTTI_PROPERTY_FORCE_TYPE(stageMask, uint16_t);
+		RTTI_PROPERTY(elements);
+	RTTI_END_TYPE();
+
+	void ShaderDescriptorMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("Descritor {} ", name);
+		PrintShaderStageMask(stageMask, f);
+		f << "\n";
+
+		for (auto i : elements.indexRange())
+			f.appendf("    [{}] {}\n", i, elements[i]);
+	}
+
+	//--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderStaticSamplerMetadata);
+		RTTI_PROPERTY(name);
+		RTTI_PROPERTY_FORCE_TYPE(stageMask, uint16_t);
+		RTTI_PROPERTY(state);
+	RTTI_END_TYPE();
+
+	void ShaderStaticSamplerMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("Sampler '{}' ");
+		PrintShaderStageMask(stageMask, f);
+		f.append(":\n");
+		state.print(f);
+	}
+
+	//--
+
+	RTTI_BEGIN_TYPE_CLASS(ShaderMetadata);
+		RTTI_PROPERTY_FORCE_TYPE(stageMask, uint16_t);
+		RTTI_PROPERTY(key);
+		RTTI_PROPERTY(vertexLayoutKey);
+		RTTI_PROPERTY(descriptorLayoutKey);
+		RTTI_PROPERTY(computeGroupSizeX);
+		RTTI_PROPERTY(computeGroupSizeY);
+		RTTI_PROPERTY(computeGroupSizeZ);
+		RTTI_PROPERTY(usesPixelShaderEarlyTest);
+		RTTI_PROPERTY(usesPixelShaderDiscard);
+		RTTI_PROPERTY(usesPixelShaderWritesDepth);
+		RTTI_PROPERTY(descriptors);
+		RTTI_PROPERTY(vertexStreams);
+		RTTI_PROPERTY(staticSamplers);
+		RTTI_PROPERTY(renderStates);
+	RTTI_END_TYPE();
+
+	ShaderMetadata::ShaderMetadata()
+	{}
+
+	void ShaderMetadata::print(base::IFormatStream& f) const
+	{
+		f.appendf("Used stages: ");
+		PrintShaderStageMask(stageMask, f);
+		f << "\n";
+
+		if (stageMask.test(ShaderStage::Compute))
+			f.appendf("Compute group size: {}x{}x{}\n", computeGroupSizeX, computeGroupSizeY, computeGroupSizeZ);
+
+		if (stageMask.test(ShaderStage::Pixel))
+		{
+			f.append("Pixel shader features:");
+			if (usesPixelShaderEarlyTest) f.append(" EarlyTest");
+			if (usesPixelShaderDiscard) f.append(" Discard");
+			if (usesPixelShaderWritesDepth) f.append(" WriteDepth");
+			f << "\n";
+
+			f.appendf("Render states: {}\n", renderStates);
+		}
+
+		if (!descriptors.empty())
+		{
+			f.appendf("Uses {} descriptors:\n", descriptors.size());
+			for (auto i : descriptors.indexRange())
+				f.appendf("  [{}] {}\n", i, descriptors[i]);
+		}
+
+		if (!vertexStreams.empty())
+		{
+			f.appendf("Uses {} vertex streams:\n", vertexStreams.size());
+			for (auto i : vertexStreams.indexRange())
+				f.appendf("  [{}] {}\n", i, vertexStreams[i]);
+		}
+
+		if (!staticSamplers.empty())
+		{
+			f.appendf("Uses {} static samplers:\n", staticSamplers.size());
+			for (auto i : staticSamplers.indexRange())
+				f.appendf("  [{}] {}\n", i, staticSamplers[i]);
+		}
+	}
+
+	void ShaderMetadata::cacheRuntimeData()
+	{
+		{
+			base::InplaceArray<DeviceObjectViewType, 32> viewTypes;
+			for (auto& desc : descriptors)
+			{
+				viewTypes.reserve(desc.elements.size());
+				viewTypes.reset();
+
+				for (const auto& elem : desc.elements)
+					viewTypes.pushBack(elem.type);
+
+				desc.id = DescriptorID::FromTypes(viewTypes.typedData(), viewTypes.size());
+				TRACE_INFO("Descriptor '{}' determine to have layout '{}'", desc.name, desc.id);
+			}
+		}
+
+		if (vertexLayoutKey == 0 && !vertexStreams.empty())
+		{
+			base::CRC64 crc;
+			for (const auto& element : vertexStreams)
+			{
+				crc << element.name;
+				crc << element.instanced;
+				crc << element.size;
+				crc << element.stride;
+
+				crc << element.elements.size();
+				for (const auto& elem : element.elements)
+				{
+					//crc << (int)elem.name;
+					crc << (int)elem.format;
+					crc << elem.offset;
+					crc << elem.size;
+				}
+			}
+
+			vertexLayoutKey = crc;
+		}
+
+		if (descriptorLayoutKey == 0)// && !descriptors.empty())
+		{
+			base::CRC64 crc;
+			for (const auto& element : descriptors)
+			{
+				crc << element.name;
+				crc << element.stageMask.rawValue();
+
+				crc << element.elements.size();
+				for (const auto& elem : element.elements)
+				{
+					crc << (uint8_t) elem.type;
+
+					switch (elem.type)
+					{
+						case DeviceObjectViewType::ConstantBuffer:
+						case DeviceObjectViewType::BufferStructured:
+						case DeviceObjectViewType::BufferStructuredWritable:
+						case DeviceObjectViewType::Sampler:
+							crc << elem.number;
+							break;
+
+						case DeviceObjectViewType::Buffer:
+						case DeviceObjectViewType::BufferWritable:
+						case DeviceObjectViewType::ImageWritable:
+							crc << (uint8_t)elem.format;
+							break;
+
+						case DeviceObjectViewType::Image:
+							crc << (uint8_t)elem.viewType;
+							crc << (uint8_t)elem.number;
+							break;
+					}
+				}
+			}
+
+			descriptorLayoutKey = crc;
+		}
+	}
+
+	void ShaderMetadata::onPostLoad()
+	{
+		TBaseClass::onPostLoad();
+		cacheRuntimeData();
+	}
+
+	//--
+
+} // rendering

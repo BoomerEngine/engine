@@ -6,7 +6,7 @@
 * [# dependency: base_* #]
 * [# dependency: rendering_compiler #] - needed to compile shaders, should not be a dependency in real app
 * [# dependency: rendering_device #]
-* [# dependency: rendering_api_* #]
+* [# dependency: rendering_api_gl4 #]
 * [# app #]
 * [# generate_main #]
 * [# devonly #]

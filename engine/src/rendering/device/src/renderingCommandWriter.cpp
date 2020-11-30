@@ -13,19 +13,19 @@
 #include "renderingFramebuffer.h"
 #include "renderingDescriptorID.h"
 #include "renderingDescriptorInfo.h"
-#include "renderingShaderLibrary.h"
 #include "renderingObject.h"
 #include "renderingOutput.h"
 #include "renderingImage.h"
 #include "renderingBuffer.h"
+#include "renderingShader.h"
 #include "renderingDeviceService.h"
 #include "renderingDeviceApi.h"
 #include "renderingDescriptor.h"
-#include "renderingStates.h"
 #include "renderingPipeline.h"
+#include "renderingShaderMetadata.h"
 
 #include "base/containers/include/bitUtils.h"
-#include "base/image/include/imageVIew.h"
+#include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
 #include "base/system/include/thread.h"
 #include "base/memory/include/pageCollection.h"
@@ -926,41 +926,32 @@ namespace rendering
 			return true;
 		}
 
-        bool CommandWriter::validateDrawVertexLayout(const ShaderObject* func, uint32_t requiredVertexCount)
+        bool CommandWriter::validateDrawVertexLayout(const ShaderMetadata* meta, uint32_t requiredVertexCount, uint32_t requiredInstanceCount)
         {
 #ifdef VALIDATE_VERTEX_LAYOUTS
-			DEBUG_CHECK_RETURN_V(func, false);
-			DEBUG_CHECK_RETURN_V(func->data(), false);
-
-			const auto* programData = func->data().get();
-            const auto& shaderBundleInfo = programData->shaderBundles()[func->index()];
-            DEBUG_CHECK_RETURN_EX_V(shaderBundleInfo.vertexBindingState != INVALID_PIPELINE_INDEX, "Draw functions require programs with shader bundle that contains vertex input layout, even if it's empty", false);
-
-            const auto& vertexInputState = programData->vertexInputStates()[shaderBundleInfo.vertexBindingState];
+			DEBUG_CHECK_RETURN_V(meta, false);
 
             // check that we have a vertex buffer for each referenced binding point
-            for (uint32_t i = 0; i < vertexInputState.numStreamLayouts; ++i)
+            for (const auto& stream : meta->vertexStreams)
             {
-                const auto& vertexInputLayout = programData->vertexInputLayouts()[programData->indirectIndices()[i + vertexInputState.firstStreamLayout]];
-                const auto name = programData->names()[vertexInputLayout.name];
-
                 uint32_t dataSizeAtVertexBinding = 0;
-                bool found = m_currentVertexBufferRemainingSize.find(name, dataSizeAtVertexBinding);
-				DEBUG_CHECK_RETURN_EX_V(found, base::TempString("Missing vertex buffer '{}' for current draw call", name), false);
+                bool found = m_currentVertexBufferRemainingSize.find(stream.name, dataSizeAtVertexBinding);
+				DEBUG_CHECK_RETURN_EX_V(found, base::TempString("Missing vertex buffer '{}' for current draw call", stream.name), false);
                     
-                auto vertexSize = vertexInputLayout.customStride;
-                if (vertexSize == 0)
-                {
-                    const auto& structureInfo = programData->dataLayoutStructures()[vertexInputLayout.structureIndex];
-                    vertexSize = structureInfo.size;
-                }
-
-                auto sizeNeeded = vertexSize * requiredVertexCount;
-                DEBUG_CHECK_RETURN_EX_V(dataSizeAtVertexBinding >= sizeNeeded, base::TempString("Vertex buffer '{}' has not enough data for current draw call {} < {}", name, dataSizeAtVertexBinding, sizeNeeded), false);
+				if (stream.instanced)
+				{
+					auto sizeNeeded = stream.size * requiredInstanceCount;
+					DEBUG_CHECK_RETURN_EX_V(dataSizeAtVertexBinding >= sizeNeeded, base::TempString("Instance vertex buffer '{}' has not enough data for current draw call {} < {}", stream.name, dataSizeAtVertexBinding, sizeNeeded), false);
+				}
+				else
+				{
+					auto sizeNeeded = stream.size * requiredVertexCount;
+					DEBUG_CHECK_RETURN_EX_V(dataSizeAtVertexBinding >= sizeNeeded, base::TempString("Vertex buffer '{}' has not enough data for current draw call {} < {}", stream.name, dataSizeAtVertexBinding, sizeNeeded), false);
+				}
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 				{
-					const auto buffer = m_currentVertexBuffers.find(name);
+					const auto buffer = m_currentVertexBuffers.find(stream.name);
 					DEBUG_CHECK_RETURN_V(buffer != nullptr, false);
 					DEBUG_CHECK_RETURN_V(ensureResourceState(buffer->get(), ResourceLayout::VertexBuffer), false);
 				}
@@ -971,89 +962,49 @@ namespace rendering
             return true;
         }
 
-        static DeviceObjectViewType ViewTypeFromResourceType(const ParameterResourceLayoutElement& elem)
-        {
-            const auto uav = (elem.access != ResourceAccess::ReadOnly);
-
-            switch (elem.type)
-            {
-                case ResourceType::Constants: 
-                    return DeviceObjectViewType::ConstantBuffer;
-
-                case ResourceType::Buffer: 
-                    if (elem.layout != INVALID_PIPELINE_INDEX)
-                        return uav ? DeviceObjectViewType::BufferStructuredWritable : DeviceObjectViewType::BufferStructured;
-                    else
-                        return uav ? DeviceObjectViewType::BufferWritable : DeviceObjectViewType::Buffer;
-
-                case ResourceType::Texture: 
-                    return uav ? DeviceObjectViewType::ImageWritable : DeviceObjectViewType::Image;
-            }
-
-            return DeviceObjectViewType::Invalid;
-        }
-
-        bool CommandWriter::validateParameterBindings(const ShaderObject* func)
+        bool CommandWriter::validateParameterBindings(const ShaderMetadata* meta)
         {
 #ifdef VALIDATE_DESCRIPTOR_BINDINGS
-			DEBUG_CHECK_RETURN_V(func, false);
-			DEBUG_CHECK_RETURN_V(func->data(), false);
+			DEBUG_CHECK_RETURN_V(meta, false);
 
-			const auto* programData = func->data().get();
-            const auto& shaderBundleInfo = programData->shaderBundles()[func->index()];
-
-			DEBUG_CHECK_RETURN_EX_V(shaderBundleInfo.parameterBindingState != INVALID_PIPELINE_INDEX, "Draw/Dispatch functions require programs with parameter layout, even if it's empty", false);
-
-            const auto& parameterBindingState = programData->parameterBindingStates()[shaderBundleInfo.parameterBindingState];
-            for (uint32_t i = 0; i < parameterBindingState.numParameterLayoutIndices; ++i)
+			for (const auto& desc : meta->descriptors)
             {
-				const auto parameterLayoutIndex = programData->indirectIndices()[parameterBindingState.firstParameterLayoutIndex + i];
-                const auto& parameterLayout = programData->parameterLayouts()[parameterLayoutIndex];
+                const auto* currentLayout = m_currentParameterBindings.find(desc.name);
+				DEBUG_CHECK_RETURN_EX_V(currentLayout != nullptr, base::TempString("Selected shader requires descriptor '{}' that is not bound", desc.name), false);
 
-                const auto parameterBindingName = programData->names()[parameterLayout.name];
+                DEBUG_CHECK_RETURN_EX_V(currentLayout->layout().size() == desc.elements.size(), base::TempString("Bound parameter layout '{}' requires {} elements but {} provided",
+					desc.name, desc.elements.size(), currentLayout->layout().size()), false);
 
-                const auto* currentLayout = m_currentParameterBindings.find(parameterBindingName);
-				DEBUG_CHECK_RETURN_EX_V(currentLayout != nullptr, base::TempString("Selected shader requires parameter layout '{}' that is not bound", parameterBindingName), false);
-
-                DEBUG_CHECK_RETURN_EX_V(currentLayout->layout().size() == parameterLayout.numElements, base::TempString("Bound parameter layout '{}' requires {} elements but {} provided",
-					parameterBindingName, parameterLayout.numElements, currentLayout->layout().size()), false);
-
-				for (uint32_t j = 0; j < parameterLayout.numElements; j++)
+				for (auto i : desc.elements.indexRange())
 				{
-					const auto& boundElemViewType = currentLayout->layout()[j];
+					const auto& expectedElem = desc.elements[i];
+					const auto& boundElemViewType = currentLayout->layout()[i];
 
-					const auto expectedElementIndex = programData->indirectIndices()[j + parameterLayout.firstElementIndex];
-					const auto& expectedElem = programData->parameterLayoutsElements()[expectedElementIndex];
-					const auto expectedElemName = programData->names()[expectedElem.name];
-					const auto expectedViewType = ViewTypeFromResourceType(expectedElem);
-
-					DEBUG_CHECK_RETURN_EX_V(expectedViewType == boundElemViewType, base::TempString("Element '{}' (index {}) at binding '{}' is expected to be {} bound actually is {}",
-						expectedElemName, j, parameterBindingName, expectedViewType, boundElemViewType), false);
+ 					DEBUG_CHECK_RETURN_EX_V(expectedElem.type == boundElemViewType, base::TempString("Element '{}' in descriptor '{}' is expected to be {} but in layout it's {}",
+						expectedElem.name, desc.name, expectedElem.type, boundElemViewType), false);
 				}
 
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
-				const auto* descriptorEntries = (const DescriptorEntry*)m_currentParameterData.findSafe(parameterBindingName, nullptr);
-				DEBUG_CHECK_RETURN_EX_V(descriptorEntries != nullptr, "No actual descript data found", false);
+				const auto* descriptorEntries = (const DescriptorEntry*)m_currentParameterData.findSafe(desc.name, nullptr);
+				DEBUG_CHECK_RETURN_EX_V(descriptorEntries != nullptr, base::TempString("No actual descript data for descriptor '{}' found", desc.name), false);
 
-				for (uint32_t j = 0; j < parameterLayout.numElements; j++)
+				for (auto i : desc.elements.indexRange())
 				{
-					const auto& descriptorEntry = descriptorEntries[j];
-					const auto expectedElementIndex = programData->indirectIndices()[j + parameterLayout.firstElementIndex];
-					const auto& expectedElem = programData->parameterLayoutsElements()[expectedElementIndex];
+					const auto& expectedElem = desc.elements[i];
+					const auto& descriptorEntry = descriptorEntries[i];
+
+					DEBUG_CHECK_RETURN_EX_V(expectedElem.type == descriptorEntry.type, base::TempString("Element '{}' in descriptor '{}' is expected to be {} bound in data it's {}",
+						expectedElem.name, desc.name, expectedElem.type, descriptorEntry.type), false);
 
 					switch (expectedElem.type)
 					{
-						case ResourceType::Constants:
+						case DeviceObjectViewType::ConstantBuffer:
 						{
-							DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::ConstantBuffer, false);
-							DEBUG_CHECK_RETURN_V(expectedElem.layout != INVALID_PIPELINE_INDEX, false);
-
 							if (descriptorEntry.offsetPtr) // way more common to have inlined constants
 							{
 								DEBUG_CHECK_RETURN_V(!descriptorEntry.id, false);
-
-								const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
-								DEBUG_CHECK_RETURN_V(descriptorEntry.size == structureLayoutInfo.size, false);
+								DEBUG_CHECK_RETURN_EX_V(descriptorEntry.size == expectedElem.number, base::TempString("Constant buffer '{}' in descriptor '{}' is expected to be of size {} but {} bytes were given.",
+									expectedElem.name, desc.name, expectedElem.number, descriptorEntry.size), false);
 							}
 							else
 							{
@@ -1062,119 +1013,136 @@ namespace rendering
 								DEBUG_CHECK_RETURN_V(descriptorEntry.size == 0, false);
 								DEBUG_CHECK_RETURN_V(descriptorEntry.offset == 0, false);
 
-								const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
-								DEBUG_CHECK_RETURN_V(view->size() >= structureLayoutInfo.size, false);
+								DEBUG_CHECK_RETURN_EX_V(view->size() >= expectedElem.number, base::TempString("Constant buffer '{}' in descriptor '{}' is expected to be of size {} but {} bytes are in the bound view.",
+									expectedElem.name, desc.name, expectedElem.number, view->size()), false);
 							}
 
 							break;
 						}
 
-						case ResourceType::Buffer:
+						case DeviceObjectViewType::Buffer:
 						{
 							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
-							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);;
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
 
-							const auto uav = (expectedElem.access != ResourceAccess::ReadOnly);
-							const auto structured = (expectedElem.layout != INVALID_PIPELINE_INDEX);
-							if (uav)
-							{
-								if (structured)
-								{
-									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferStructuredWritable, false);
-									const auto* view = base::rtti_cast<BufferWritableStructuredView>(descriptorEntry.viewPtr);
-									DEBUG_CHECK_RETURN_V(view != nullptr, false);					
+							const auto* view = base::rtti_cast<BufferView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
 
-									const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
-									DEBUG_CHECK_RETURN_V(structureLayoutInfo.size == view->stride(), false);
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.format == view->format(), base::TempString("Buffer view '{}' in descriptor '{}' is expected to be of format '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.format, view->format()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
 #endif
+							break;
+						}
 
-								}
-								else
-								{
-									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferWritable, false);
-									const auto* view = base::rtti_cast<BufferWritableView>(descriptorEntry.viewPtr);
-									DEBUG_CHECK_RETURN_V(view != nullptr, false);
-									DEBUG_CHECK_RETURN_V(view->format() == expectedElem.format, false);
+						case DeviceObjectViewType::BufferWritable:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
+
+							const auto* view = base::rtti_cast<BufferWritableView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.format == view->format(), base::TempString("Writable buffer view '{}' in descriptor '{}' is expected to be of format '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.format, view->format()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
 #endif
-								}
-							}
-							else
-							{
-								if (structured)
-								{
-									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::BufferStructured, false);
+							break;
+						}
 
-									const auto* view = base::rtti_cast<BufferStructuredView>(descriptorEntry.viewPtr);
-									DEBUG_CHECK_RETURN_V(view != nullptr, false);
+						case DeviceObjectViewType::BufferStructured:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
 
-									const auto& structureLayoutInfo = programData->dataLayoutStructures()[expectedElem.layout];
-									DEBUG_CHECK_RETURN_V(structureLayoutInfo.size == view->stride(), false);
+							const auto* view = base::rtti_cast<BufferStructuredView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.number == view->stride(), base::TempString("Structured buffer view '{}' in descriptor '{}' is expected to have stride {} but buffer with stride {} is bound.",
+								expectedElem.name, desc.name, expectedElem.number, view->stride()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
 #endif
+							break;
+						}
 
-								}
-								else
-								{
-									DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::Buffer, false);
-									const auto* view = base::rtti_cast<BufferView>(descriptorEntry.viewPtr);
-									DEBUG_CHECK_RETURN_V(view != nullptr, false);
-									DEBUG_CHECK_RETURN_V(view->format() == expectedElem.format, false);
+						case DeviceObjectViewType::BufferStructuredWritable:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
+
+							const auto* view = base::rtti_cast<BufferWritableStructuredView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.number == view->stride(), base::TempString("Writable structured buffer view '{}' in descriptor '{}' is expected to have stride {} but buffer with stride {} is bound.",
+								expectedElem.name, desc.name, expectedElem.number, view->stride()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-									DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::ShaderResource), false);
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->buffer(), ResourceLayout::UAV), false);
 #endif
-								}
-							}
+							break;
+						}
+
+						case DeviceObjectViewType::Sampler:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
+
+							const auto* sampler = base::rtti_cast<SamplerObject>(descriptorEntry.objectPtr);
+							DEBUG_CHECK_RETURN_V(sampler != nullptr, false);
 
 							break;
 						}
 
-						case ResourceType::Texture:
+						case DeviceObjectViewType::Image:
 						{
 							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
-							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);;
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
 
-							const auto uav = (expectedElem.access != ResourceAccess::ReadOnly);
-							if (uav)
-							{
-								DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::ImageWritable, false);
-								const auto* view = base::rtti_cast<ImageWritableView>(descriptorEntry.viewPtr);
-								DEBUG_CHECK_RETURN_V(view != nullptr, false);
-								DEBUG_CHECK_RETURN_V(view->image()->format() == expectedElem.format, false);
-									
-#ifdef VALIDATE_RESOURCE_LAYOUTS
-								SubImageRegion region;
-								region.firstMip = view->mip();
-								region.numMips = 1;
-								region.firstSlice = view->slice();
-								region.numSlices = 1;
-								DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::UAV, &region), false);
-#endif
-							}
-							else
-							{
-								DEBUG_CHECK_RETURN_V(descriptorEntry.type == DeviceObjectViewType::Image, false);
-								const auto* view = base::rtti_cast<ImageView>(descriptorEntry.viewPtr);
-								DEBUG_CHECK_RETURN_V(view != nullptr, false);
+							const auto* view = base::rtti_cast<ImageView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->image()->type(), base::TempString("Image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.type, view->image()->type()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-								SubImageRegion region;
-								region.firstMip = view->firstMip();
-								region.numMips = view->mips();
-								region.firstSlice = view->firstSlice();
-								region.numSlices = view->slices();
-								DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::ShaderResource, &region), false);
+							SubImageRegion region;
+							region.firstMip = view->firstMip();
+							region.numMips = view->mips();
+							region.firstSlice = view->firstSlice();
+							region.numSlices = view->slices();
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::ShaderResource, &region), false);
 #endif
-							}
+							break;
+						}
 
+						case DeviceObjectViewType::ImageWritable:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
+
+							const auto* view = base::rtti_cast<ImageWritableView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.format == view->image()->format(), base::TempString("Writable image view '{}' in descriptor '{}' is expected to be of format '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.format, view->image()->format()), false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->image()->type(), base::TempString("Writable image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.type, view->image()->type()), false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+							SubImageRegion region;
+							region.firstMip = view->mip();
+							region.numMips = 1;
+							region.firstSlice = view->slice();
+							region.numSlices = 1;
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::UAV, &region), false);
+#endif
 							break;
 						}
 					}
@@ -1200,7 +1168,8 @@ namespace rendering
             DEBUG_CHECK_RETURN(vertexCount > 0);
             DEBUG_CHECK_RETURN(numInstances > 0);
 
-            if (validateDrawVertexLayout(po->shaders(), vertexCount) && validateParameterBindings(po->shaders()))
+			const auto* metadata = po->shaders()->metadata();
+            if (validateDrawVertexLayout(metadata, vertexCount, numInstances) && validateParameterBindings(metadata))
             {
                 auto op = allocCommand<OpDraw>();
                 op->pipelineObject = po->id();
@@ -1223,8 +1192,8 @@ namespace rendering
             DEBUG_CHECK_RETURN(indexCount > 0);
             DEBUG_CHECK_RETURN(numInstances > 0);
 
-			const auto* shaders = po->shaders().get();
-            if (validateDrawVertexLayout(shaders, 0) && validateDrawIndexLayout(indexCount) && validateParameterBindings(shaders))
+			const auto* metadata = po->shaders()->metadata();
+            if (validateDrawVertexLayout(metadata, 0, numInstances) && validateDrawIndexLayout(indexCount) && validateParameterBindings(metadata))
             {
                 auto op = allocCommand<OpDrawIndexed>();
                 op->pipelineObject = po->id();
@@ -1241,7 +1210,7 @@ namespace rendering
             DEBUG_CHECK_RETURN(co);
             DEBUG_CHECK_RETURN(countX > 0 && countY > 0 && countZ > 0);
 
-            if (validateParameterBindings(co->shaders()))
+            if (validateParameterBindings(co->shaders()->metadata()))
             {
                 auto op = allocCommand<OpDispatch>();
                 op->pipelineObject = co->id();

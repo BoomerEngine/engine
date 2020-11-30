@@ -14,8 +14,6 @@
 #include "renderingResources.h"
 #include "renderingDeviceApi.h"
 
-#include "base/image/include/imageVIew.h"
-
 namespace rendering
 {
     namespace command

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 ***/
 
 #pragma once
@@ -28,7 +28,7 @@ namespace rendering
 
         struct ExportedShaders
         {
-            const Program* exports[(int)ShaderType::MAX];
+            const Program* exports[(int)ShaderStage::MAX];
 
             INLINE ExportedShaders()
             {
@@ -72,8 +72,8 @@ namespace rendering
             // create program declaration or a definition
             const Program* createProgram(base::StringID programName, const base::parser::Location& loc, AttributeList&& attributes);
 
-            // create a unique program instance - a program parametrized with parameters
-            const ProgramInstance* createProgramInstance(const base::parser::Location& loc, const Program* program, const ProgramConstants& params, base::parser::IErrorReporter& err);
+			// create instance of program (program + parametrization)
+			const ProgramInstance* createProgramInstance(const base::parser::Location& loc, const Program* program, const ProgramConstants& sourceParams, base::parser::IErrorReporter& err);
 
             //---
 
@@ -127,13 +127,13 @@ namespace rendering
             TProgram m_programs;
             TProgramList m_programList;
 
+			// program instances
+			typedef base::HashMap<uint64_t, ProgramInstance*> TProgramInstanceMap;
+			TProgramInstanceMap m_programInstanceMap;
+			base::Mutex m_programInstanceLock;
+
             // all top-level exports
             ExportedShaders m_exports;
-
-            // program instances
-            typedef base::HashMap<uint64_t, ProgramInstance*> TProgramInstanceMap;
-            TProgramInstanceMap m_programInstanceMap;
-            base::Mutex m_programInstanceLock;
 
             //--
 

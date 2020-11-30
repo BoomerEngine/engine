@@ -18,6 +18,24 @@ attribute(packing=vertex) struct CanvasVertex
 	attribute(offset=36) float batchID;
 }
 
+sampler CanvasSampler
+{
+	MagFilter = Linear,
+	MinFilter = Linear,
+	MipFilter = None,
+	AddressU = Clamp,
+	AddressV = Clamp,
+	AddressW = Clamp,
+	MaxLod = 0,
+}
+
+setup CanvasDefault
+{
+	DepthEnabled = true,
+	DepthWriteEnabled = false,
+	StencilEnabled = true,
+}
+
 struct CanvasRenderStyle
 {
 	vec4 InnerCol;
@@ -52,9 +70,11 @@ descriptor CanvasViewportParams
 		mat4 CanvasToScreen;
 	}
 
-	attribute(layout = CanvasRenderStyle) Buffer RenderStyles;
-	Texture2DArray AlphaTextureAtlas;
-	Texture2DArray ColorTextureAtlas;
+	attribute(layout=CanvasRenderStyle) Buffer RenderStyles;
+
+	sampler LocalSampler;
+	attribute(sampler=LocalSampler) Texture2DArray AlphaTextureAtlas;
+	attribute(sampler=CanvasSampler) Texture2DArray ColorTextureAtlas;
 }
 
 //--
@@ -81,15 +101,16 @@ shader CanvasVS
 		CanvasBatchID = v.batchID;
 
 		gl_Position = v.pos.xy01 * CanvasToScreen;
-#if FLIP_Y
-		gl_Position.y = -gl_Position.y;
-#endif
+//#if FLIP_Y
+//		gl_Position.y = -gl_Position.y;
+//#endif
 	}
 }
 
 //----
 
 // common pixel shader
+attribute(setup=CanvasDefault)
 shader CanvasPS
 {
 	in vec2 CanvasPosition;
@@ -103,7 +124,7 @@ shader CanvasPS
 	{
 		vec2 ext2 = ext - rad.xx;
 		vec2 d = abs(pt) - ext2;
-		return min(max(d.x,d.y),0.0) + length(max(d,vec2(0,0))) - rad;
+		return min(max(d.x,d.y),0.0) + length(max(d,vec2(0))) - rad;
 	}
 
 	float CalcScissorMask(vec2 pos)

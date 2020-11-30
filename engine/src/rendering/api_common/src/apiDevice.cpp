@@ -100,6 +100,9 @@ namespace rendering
 				return false;
 			}
 
+			// store thread
+			m_thread = thread;
+
 			// we are initialized now
 			TRACE_INFO("Rendering device initialized");
 			return true;
@@ -161,8 +164,14 @@ namespace rendering
 		{
 			if (auto* swapchain = m_thread->createOptimalSwapchain(info))
 			{
+				GraphicsPassLayoutSetup passLayout;
+				swapchain->queryLayout(passLayout);
+
+				auto layoutObj = createGraphicsPassLayout(passLayout);
+				DEBUG_CHECK_RETURN_EX_V(layoutObj, "Layout for created swapchain not created", nullptr);
+
 				auto* output = new Output(m_thread, swapchain);
-				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface());
+				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface(), layoutObj);
 			}
 
 			return nullptr;
@@ -190,10 +199,10 @@ namespace rendering
 			return nullptr;
 		}
 
-		ShaderObjectPtr IBaseDevice::createShaders(const ShaderLibraryData* shaders, PipelineIndex index)
+		ShaderObjectPtr IBaseDevice::createShaders(const ShaderData* shader)
 		{
-			if (auto* obj = m_thread->createOptimalShaders(shaders, index))
-				return base::RefNew<ShadersObjectProxy>(obj->handle(), m_thread->objectRegistry(), shaders, index);
+			if (auto* obj = m_thread->createOptimalShaders(shader))
+				return base::RefNew<ShadersObjectProxy>(obj->handle(), m_thread->objectRegistry(), shader->metadata());
 
 			return nullptr;
 		}
@@ -238,7 +247,7 @@ namespace rendering
 			return nullptr;
 		}
 
-		GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const StaticRenderStatesSetup& states)
+		GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const GraphicsRenderStatesSetup& states)
 		{
 			if (auto* obj = m_thread->createOptimalRenderStates(states))
 				return base::RefNew<GraphicsRenderStatesObject>(obj->handle(), m_thread->objectRegistry(), states, obj->key());

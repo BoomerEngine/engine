@@ -44,6 +44,13 @@ namespace base
         // create a buffer with external storage
         static BufferStorage* CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void* externalPayload);
 
+		//--
+
+		// detach memory from this buffer storage
+		void* detach();
+
+		//--
+
     private:
         ~BufferStorage() = delete;
 

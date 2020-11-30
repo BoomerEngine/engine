@@ -134,7 +134,7 @@ namespace rendering
 
         /// prepare shader library for rendering, returns opaque object that represents the shader library on the rendering device's side
         /// NOTE: the source data will be kept alive as long as the object exists
-        virtual ShaderObjectPtr createShaders(const ShaderLibraryData* shaderLibraryData, PipelineIndex shaderIndex) = 0;
+        virtual ShaderObjectPtr createShaders(const ShaderData* shaderData) = 0;
 
         /// create a buffer, if source data is provided then it's asked to fill in the buffer with content, optionally a fiber fence may be signaled once resource initialization is completed
 		/// NOTE: it's legal to use resource BEFORE it's fully initialized with data it might just contain crap
@@ -151,7 +151,7 @@ namespace rendering
 		virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) = 0;
 
 		/// create pass layout state, NOTE: may return shared object
-		virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const StaticRenderStatesSetup& states) = 0;
+		virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) = 0;
 
         //---
 

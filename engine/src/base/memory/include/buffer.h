@@ -102,7 +102,7 @@ namespace base
         // create buffer from system memory (bypassing allocator), do it regardless of the buffer's size
         static Buffer CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);
 
-        //--
+		//--
 
     private:
         BufferStorage* m_storage = nullptr; // refcounted

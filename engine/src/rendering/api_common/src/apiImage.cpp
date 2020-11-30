@@ -32,6 +32,7 @@ namespace rendering
 
 		IBaseImage::IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup)
 			: IBaseCopiableObject(owner, ObjectType::Image)
+			, m_setup(setup)
 		{
 			if (m_setup.initialLayout == ResourceLayout::INVALID)
 				m_setup.initialLayout = m_setup.computeDefaultLayout();

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\optimizer #]
 ***/
 
 #pragma once
@@ -27,8 +27,6 @@ namespace rendering
             uint64_t localArgsKey = 0;
 
             INLINE FoldedFunctionKey() {};
-
-            uint64_t key() const;
 
             INLINE static uint32_t CalcHash(const FoldedFunctionKey& key);
 

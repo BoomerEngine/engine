@@ -21,7 +21,7 @@ namespace rendering
 			class VertexBindingLayout : public IBaseVertexBindingLayout
 			{
 			public:
-				VertexBindingLayout(Thread* owner, base::Array<IBaseVertexBindingLayout::BindingInfo>&& elements);
+				VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
 				virtual ~VertexBindingLayout();
 			};
 

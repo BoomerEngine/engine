@@ -127,6 +127,12 @@ namespace rendering
             // get a string representation (for debug and error printing)
             void print(base::IFormatStream& f) const;
 
+			//--
+
+			// compare
+			bool operator==(const ArrayCounts& other) const;
+			bool operator!=(const ArrayCounts& other) const;
+
         private:
             int m_sizes[MAX_ARRAY_DIMS];
         };
@@ -136,17 +142,14 @@ namespace rendering
         /// resource type
         struct RENDERING_COMPILER_API ResourceType
         {
-            base::StringID type; // "Texture2D", "Buffer", etc
+			DeviceObjectViewType type = DeviceObjectViewType::Invalid;
+
             AttributeList attributes; // additional attributes
 
             const CompositeType* resolvedLayout = nullptr; // resolved layout for composited resources (structured buffers etc)
             ImageFormat resolvedFormat = ImageFormat::UNKNOWN; // resolved format
             ImageViewType resolvedViewType = ImageViewType::View2D; // resolved "size" of the texture view
 
-            bool texture = false;
-            bool buffer = false;
-            bool constants = false;
-            bool uav = false; // writable (RWBuffer, RWTexture, etc)
             bool depth = false; // depth sampler
             bool multisampled = false; // MS versions
 
@@ -215,7 +218,6 @@ namespace rendering
             {
                 return m_flags.test(TypeFlags::Pointer);
             }
-
 
             // is this a numerical type ? (float/int)
             INLINE bool isNumericalScalar() const
@@ -384,15 +386,25 @@ namespace rendering
             // get a string representation (for debug and error printing)
             void print(base::IFormatStream& f) const;
 
+			//--
+
+			// compare types
+			bool operator==(const DataType& other) const;
+			bool operator!=(const DataType& other) const;
+
+			// calculate type hash
+			static uint32_t CalcHash(const DataType& type);
+
         private:
             BaseType m_baseType; // base kind of the type
             base::DirectFlags<TypeFlags> m_flags; // internal flags
             ArrayCounts m_arrayCounts; // array element counts (if known)
 
-            const CompositeType* m_composite = nullptr;
-            const Function* m_function = nullptr;
-            const Program* m_program = nullptr;
-            const ResourceType* m_resource = nullptr;
+			// TODO: union!
+			const CompositeType* m_composite = nullptr;
+			const Function* m_function = nullptr;
+			const Program* m_program = nullptr;
+			const ResourceType* m_resource = nullptr;
         };
 
     } // shader

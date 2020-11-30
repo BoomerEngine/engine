@@ -118,7 +118,7 @@ namespace rendering
         return numPixels * GetImageFormatInfo(m_key.format).bitsPerPixel / 8;
     }
 
-    bool ImageObject::validateView(SamplerObject* sampler, uint8_t firstMip, uint32_t firstSlice, uint8_t numMips, uint32_t numSlices, ImageView::Setup& outSetup) const
+    bool ImageObject::validateView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageView::Setup& outSetup) const
     {
         if (numMips == 255)
             numMips = mips() - firstMip;

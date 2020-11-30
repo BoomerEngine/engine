@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\optimizer #]
 ***/
 
 #include "build.h"
@@ -68,16 +68,6 @@ namespace rendering
 
         ///---
 
-        uint64_t FoldedFunctionKey::key() const
-        {
-            base::CRC64 crc;
-            crc << func->name(); // TODO: function hash
-            crc << (func->program() ? func->program()->name() : base::StringID());
-            crc << (pi ? pi->key() : 0);
-            crc << localArgsKey;
-            return crc;
-        }
-
         uint32_t FoldedFunctionKey::CalcHash(const FoldedFunctionKey& key)
         {
             base::CRC32 crc;
@@ -131,6 +121,13 @@ namespace rendering
 
             switch (node->opCode())
             {
+				// copy local variables as is in scope
+				case OpCode::Scope:
+				{
+					ret->m_declarations = node->m_declarations;
+					break;
+				}
+
                 // fold parameter into known constant value
                 case OpCode::ParamRef:
                 {
@@ -226,6 +223,7 @@ namespace rendering
                 }
 
                 // cast
+				case OpCode::ImplicitCast:
                 case OpCode::Cast:
                 {
                     return const_cast<CodeNode*>(ret->children()[0]);
@@ -736,8 +734,9 @@ namespace rendering
             if (m_foldedFunctionsMap.find(key, ret))
                 return ret;
 
-            ret = m_mem.create<Function>(*original, key.key());
+            ret = m_mem.create<Function>(*original, &localArgs);
             m_foldedFunctionsMap[key] = ret; // add before folding to support recursion :P
+
             ret->m_code = foldCode(ret, original->m_code, thisArgs, localArgs, err);
             return ret;
         }

@@ -10,6 +10,8 @@
 
 #include "apiObject.h"
 
+#include "rendering/device/include/renderingSamplerState.h"
+
 namespace rendering
 {
 	namespace api

@@ -23,7 +23,11 @@ namespace rendering
         const uint32_t* offsetPtr = nullptr;
 
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
-		const IDeviceObjectView* viewPtr = nullptr; // not ref counted
+		union
+		{
+			const IDeviceObjectView* viewPtr = nullptr; // not ref counted
+			class IDeviceObject* objectPtr;
+		};
 #endif
 
         INLINE DescriptorEntry() = default;

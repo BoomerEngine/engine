@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\functions #]
 ***/
 
 #include "build.h"

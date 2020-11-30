@@ -73,12 +73,12 @@ namespace base
             TRACE_INFO("Found {} stubs, {} names, {} strings", mapper.m_stubs.size(), mapper.m_names.size(), mapper.m_strings.size());
 
             // write data to memory buffer
-            PagedBuffer<uint8_t> memoryWriter(POOL_SCRIPTS);
+            PagedBuffer memoryWriter(POOL_SCRIPTS);
             StubDataWriter stubWriter(mapper, memoryWriter);
             stubWriter.writeContainers();
 
             // report size of data
-            TRACE_INFO("Packed script data size: {}", MemSize(memoryWriter.size()));
+            TRACE_INFO("Packed script data size: {}", MemSize(memoryWriter.dataSize()));
 
             // create output object
             auto ret = RefNew<PortableData>();

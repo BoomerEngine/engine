@@ -1,0 +1,2006 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: shader\stubs #]
+***/
+
+#include "build.h"
+#include "renderingShaderStubs.h"
+
+#include "base/object/include/stubLoader.h"
+#include "base/object/include/stub.h"
+
+namespace rendering
+{
+    namespace shader
+    {
+		//--
+
+		StubDebugPrinter::StubDebugPrinter(base::IFormatStream& f)
+			: m_printer(f)
+		{
+			m_stubs.reserve(1024);
+		}
+
+		void StubDebugPrinter::enableOutput()
+		{
+			m_outputEnabled = true;
+		}
+
+		int StubDebugPrinter::index(const Stub* stub)
+		{
+			if (!stub)
+				return 0;
+
+			int index = 0;
+			if (m_stubs.find(stub, index))
+				return index;
+
+			index = m_stubs.size() + 1;
+			m_stubs[stub] = index;
+			return index;
+		}
+
+		void StubDebugPrinter::printChild(const char* name, const Stub* s)
+		{
+			int id = index(s);
+
+			if (m_outputEnabled)
+			{
+				if (m_pendingLineEnd)
+				{
+					m_printer.append("\n");
+					m_pendingLineEnd = false;
+				}
+
+				m_printer.appendPadding(' ', m_depth * 4);
+				m_printer.appendf("{}: ", name);
+
+				if (s)
+				{
+					m_printer.appendf("#({}_{}) ", s->debugName(), id);
+					m_depth += 1;
+					m_pendingLineEnd = true;
+					s->dump(*this); // may recurse
+					m_depth -= 1;
+				}
+				else
+				{
+					m_printer.appendf("null\n");
+				}
+			}
+			else
+			{
+				if (s)
+					s->dump(*this);
+			}
+		}
+
+		void StubDebugPrinter::printChildRefArray(const char* name, const Stub* const* ptr, uint32_t count)
+		{
+			if (m_outputEnabled)
+			{
+				if (m_pendingLineEnd)
+				{
+					m_printer.append("\n");
+					m_pendingLineEnd = false;
+				}
+
+				if (count)
+				{
+					m_printer.appendPadding(' ', m_depth * 4);
+					m_printer.appendf("{}: {} references(s)\n", name, count);
+
+					m_depth += 1;
+
+					for (uint32_t i = 0; i < count; ++i)
+					{
+						if (ptr[i])
+						{
+							m_printer.appendPadding(' ', m_depth * 4);
+							m_printer.appendf("{}[{}]: ", name, i);
+							m_printer.appendf("#({}_{})\n", ptr[i]->debugName(), index(ptr[i]));
+						}
+						else
+						{
+							//m_printer.appendf("null\n");
+						}
+					}
+
+					m_depth -= 1;
+				}
+				else
+				{
+					//m_printer.appendPadding(' ', m_depth * 4);
+					//m_printer.appendf("{}: empty", name);
+				}
+			}
+			else
+			{
+				// not indexed			
+			}
+		}
+
+		void StubDebugPrinter::printChildArray(const char* name, const Stub* const* ptr, uint32_t count)
+		{
+			if (m_outputEnabled)
+			{
+				if (m_pendingLineEnd)
+				{
+					m_printer.append("\n");
+					m_pendingLineEnd = false;
+				}
+
+				if (count)
+				{
+					m_printer.appendPadding(' ', m_depth * 4);
+					m_printer.appendf("{}: {} element(s)\n", name, count);
+
+					m_depth += 1;
+
+					for (uint32_t i = 0; i < count; ++i)
+					{
+						if (m_pendingLineEnd)
+						{
+							m_printer.append("\n");
+							m_pendingLineEnd = false;
+						}
+
+						if (ptr[i])
+						{
+							m_printer.appendPadding(' ', m_depth * 4);
+							m_printer.appendf("{}[{}]: ", name, i);
+							m_printer.appendf("#({}_{}) ", ptr[i]->debugName(), index(ptr[i]));
+
+							m_depth += 1;
+							m_pendingLineEnd = true;
+							ptr[i]->dump(*this); // may recurse
+							m_depth -= 1;
+						}
+						else
+						{
+							//m_printer.appendf("null\n");
+						}
+					}
+
+					m_depth -= 1;
+				}
+				else
+				{
+					//m_printer.appendPadding(' ', m_depth * 4);
+					//m_printer.appendf("{}: empty", name);
+				}
+			}
+			else
+			{
+				for (uint32_t i = 0; i < count; ++i)
+				{
+					if (ptr[i])
+					{
+						index(ptr[i]);
+						ptr[i]->dump(*this);
+					}
+				}
+			}
+		}
+
+		template< typename T >
+		INLINE void printChildArray(const char* name, const base::StubPseudoArray<T>& arr)
+		{
+			printChildArray(name, (const Stub* const*)arr.elems, arr.size());
+		}
+
+		StubDebugPrinter& StubDebugPrinter::printRef(const char* name, const Stub* s)
+		{
+			if (m_outputEnabled)
+			{
+				m_printer.appendf(" {}=", name);
+
+				if (s)
+				{
+					int index = 0;
+					if (m_stubs.find(s, index))
+						m_printer.appendf("#({}_{})", s->debugName(), index);
+					else
+						m_printer.appendf("#({}_???)", s->debugName());
+				}
+				else
+				{
+					m_printer << "null";
+				}
+			}
+
+			return *this;
+		}
+
+		base::IFormatStream& StubDebugPrinter::append(const char* str, uint32_t len /*= INDEX_MAX*/)
+		{
+			if (m_outputEnabled)
+				m_printer.append(str, len);
+			return *this;
+		}
+
+		//--
+
+		ComponentSwizzle::ComponentSwizzle()
+		{
+			memzero(mask, sizeof(mask));
+		}
+
+		ComponentSwizzle::ComponentSwizzle(base::StringView str)
+		{
+			memzero(mask, sizeof(mask));
+
+			const auto len = str.length();
+			DEBUG_CHECK_RETURN_EX(len >= 1 && len <= MAX_COMPONENTS, base::TempString("Invalid swizzle '{}'", str));
+
+			for (uint32_t i = 0; i < len; ++i)
+			{
+				const char ch = str.data()[i];
+				DEBUG_CHECK_RETURN_EX(ch == 'x' || ch == 'y' || ch == 'z' || ch == 'w' || ch == '1' || ch == '0', base::TempString("Invalid swizzle '{}'", str));
+				mask[i] = ch;
+
+				if (ch == 0)
+					break;
+			}			
+		}
+
+		static bool ComponentIndexFromMask(char ch, uint8_t& outIndex)
+		{
+			switch (ch)
+			{
+			case 'r':
+			case 'x':
+				outIndex = 0;
+				return true;
+
+			case 'g':
+			case 'y':
+				outIndex = 1;
+				return true;
+
+			case 'b':
+			case 'z':
+				outIndex = 2;
+				return true;
+
+			case 'a':
+			case 'w':
+				outIndex = 3;
+				return true;
+			}
+
+			return false;
+		}
+
+
+		uint8_t ComponentSwizzle::writeMask() const
+		{
+			uint8_t mask = 0;
+			uint8_t prevValue = 0;
+
+			for (uint32_t i = 0; i < MAX_COMPONENTS; ++i)
+			{
+				uint8_t componentIndex = 0;
+				if (!ComponentIndexFromMask(this->mask[i], componentIndex))
+					return 0;
+
+				uint8_t bitValue = 1 << componentIndex;
+				if (mask & bitValue)
+					return 0;
+				if (bitValue < prevValue)
+					return 0;
+				mask |= bitValue;
+				prevValue = bitValue;
+			}
+
+			return mask;
+		}
+		
+		uint8_t ComponentSwizzle::outputComponents(uint8_t* outList /*= nullptr*/) const
+		{
+			uint8_t ret = 0;
+
+			for (uint32_t i = 0; i < MAX_COMPONENTS; ++i)
+			{
+				if (mask[i] == 0)
+					break;
+
+				uint8_t componentIndex = 0;
+				if (!ComponentIndexFromMask(this->mask[i], componentIndex))
+					return 0;
+
+				if (outList)
+					outList[ret] = componentIndex;
+
+				ret += 1;
+			}
+
+			return ret;
+		}
+
+		uint8_t ComponentSwizzle::inputComponents() const
+		{
+			uint8_t ret = 0;
+			for (uint32_t i = 0; i < MAX_COMPONENTS; ++i)
+			{
+				uint8_t componentIndex = 0;
+				if (ComponentIndexFromMask(this->mask[i], componentIndex))
+					ret = std::max<uint8_t>(ret, componentIndex + 1);
+			}
+
+			return ret;
+		}
+
+		void ComponentSwizzle::print(base::IFormatStream& f) const
+		{
+			for (uint32_t i = 0; i < MAX_COMPONENTS; ++i)
+			{
+				f.appendch(mask[i] ? mask[i] : '-');
+			}
+		}
+
+		void ComponentSwizzle::write(base::IStubWriter& f) const
+		{
+			const auto* ptr = (const uint32_t*)&mask;
+			f.writeUint32(*ptr);
+		}
+
+		void ComponentSwizzle::read(base::IStubReader& f)
+		{
+			auto* ptr = (uint32_t*)&mask;
+			*ptr = f.readUint32();
+		}
+		
+        //--
+
+		void StubLocation::write(base::IStubWriter& f) const
+		{
+			f.writeRef(file);
+			f.writeCompressedInt(line);
+		}
+
+		void StubLocation::read(base::IStubReader& f)
+		{
+			f.readRef(file);
+			line = f.readCompressedInt();
+		}
+
+		void StubLocation::print(base::IFormatStream& f) const
+		{}
+
+		//--
+
+		void Stub::postLoad()
+		{}
+
+		//--
+
+		class RenderStubFactory : public base::StubFactory
+		{
+		public:
+			RenderStubFactory()
+			{
+				#define DECLARE_RENDERING_SHADER_STUB(x) registerTypeNoDestructor<Stub##x>();
+				#include "renderingShaderStubsCodes.inl"
+			}
+		};
+
+		const base::StubFactory& Stub::Factory()
+		{
+			static RenderStubFactory TheFactory;
+			return TheFactory;
+		}
+
+		//--
+
+		void StubFile::write(base::IStubWriter& f) const
+		{
+			f.writeString(depotPath);
+			f.writeUint64(contentCrc);
+			f.writeUint64(contentTimestamp);
+		}
+
+		void StubFile::read(base::IStubReader& f)
+		{
+			depotPath = f.readString();
+			contentCrc = f.readUint64();
+			contentTimestamp = f.readUint64();
+		}
+
+		void StubFile::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("path='{}', crc={}, timestamp={}", depotPath, contentCrc, contentTimestamp);
+		}
+
+		//--
+
+		void StubAttribute::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeString(value);
+		}
+
+		void StubAttribute::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			value = f.readString();
+		}
+
+		void StubAttribute::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("{}={}", name, value);
+		}
+
+		//--
+
+		StubStage::StubStage()
+		{}
+
+		void StubStage::write(base::IStubWriter& f) const
+		{
+			f.writeArray(types);
+			f.writeArray(structures);
+			f.writeArray(inputs);
+			f.writeArray(outputs);
+			f.writeArray(sharedMemory);
+			f.writeArray(descriptorMembers);
+			f.writeArray(builtins);
+			f.writeArray(vertexStreams);
+			f.writeArray(samplers);
+			f.writeArray(functions);
+			f.writeRef(entryFunction);
+		}
+
+		void StubStage::read(base::IStubReader& f)
+		{
+			f.readArray(types);
+			f.readArray(structures);
+			f.readArray(inputs);
+			f.readArray(outputs);
+			f.readArray(sharedMemory);
+			f.readArray(descriptorMembers);
+			f.readArray(builtins);
+			f.readArray(vertexStreams);
+			f.readArray(samplers);
+			f.readArray(functions);
+			f.readRef(entryFunction);
+		}
+
+		void StubStage::dump(StubDebugPrinter& f) const
+		{
+			f.printRef("entry", entryFunction);
+
+			f.printChildRefArray("TypeDeclRef", types);
+			f.printChildRefArray("StructureRef", structures);
+			f.printChildRefArray("DescriptorMemberRef", descriptorMembers);
+			f.printChildRefArray("StaticSamplerRef", samplers);
+			f.printChildRefArray("VertexStream", vertexStreams);
+			f.printChildArray("StageInput", inputs);
+			f.printChildArray("StageOutput", outputs);
+			f.printChildArray("SharedMemory", sharedMemory);
+			f.printChildArray("BuiltIn", builtins);
+			f.printChildArray("Function", functions);			
+		}
+
+		//--
+
+		StubProgram::StubProgram()
+		{
+		}
+
+		void StubProgram::write(base::IStubWriter& f) const
+		{
+			f.writeArray(files);
+			f.writeArray(types);
+			f.writeArray(structures);
+			f.writeArray(descriptors);
+			f.writeArray(samplers);
+			f.writeArray(vertexStreams);
+			f.writeArray(stages);
+			f.writeRef(renderStates);
+		}
+
+		void StubProgram::read(base::IStubReader& f)
+		{
+			f.readArray(files);
+			f.readArray(types);
+			f.readArray(structures);
+			f.readArray(descriptors);
+			f.readArray(samplers);
+			f.readArray(vertexStreams);
+			f.readArray(stages);
+			f.readRef(renderStates);
+		}
+
+		void StubProgram::dump(StubDebugPrinter& f) const
+		{
+			f.printChildArray("File", files);
+			f.printChildArray("TypeDecl", types);
+			f.printChildArray("Structure", structures);
+			f.printChildArray("Descriptor", descriptors);
+			f.printChildArray("Sampler", samplers);
+			f.printChildArray("VertexStream", vertexStreams);
+			f.printChildArray("Stage", stages);
+			f.printChild("RenderStates", renderStates);
+		}
+
+		//--
+
+		RTTI_BEGIN_TYPE_ENUM(ScalarType);
+			RTTI_ENUM_OPTION(Void);
+			RTTI_ENUM_OPTION(Half);
+			RTTI_ENUM_OPTION(Float);
+			RTTI_ENUM_OPTION(Double);
+			RTTI_ENUM_OPTION(Int);
+			RTTI_ENUM_OPTION(Uint);
+			RTTI_ENUM_OPTION(Int64);
+			RTTI_ENUM_OPTION(Uint64);
+			RTTI_ENUM_OPTION(Boolean);
+		RTTI_END_TYPE();
+
+		void StubScalarTypeDecl::print(base::IFormatStream& f) const
+		{
+			switch (type)
+			{
+				case ScalarType::Void: f << "void"; break;
+				case ScalarType::Boolean: f << "bool"; break;
+				case ScalarType::Half: f << "half"; break;
+				case ScalarType::Double: f << "double"; break;
+				case ScalarType::Float: f << "float"; break;
+				case ScalarType::Int: f << "int"; break;
+				case ScalarType::Uint: f << "uint"; break;
+				case ScalarType::Int64: f << "int64"; break;
+				case ScalarType::Uint64: f << "uint64"; break;
+				default:
+					ASSERT(!"Invalid scalar type");
+			}
+		}
+
+		void StubScalarTypeDecl::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(type);
+		}
+
+		void StubScalarTypeDecl::read(base::IStubReader& f)
+		{
+			f.readEnum(type);
+		}
+
+		void StubScalarTypeDecl::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			print(f);
+		}
+
+		//--
+
+		void StubVectorTypeDecl::print(base::IFormatStream& f) const
+		{
+			ASSERT_EX(componentCount >= 2 && componentCount <= 4, "Invalid component count");
+
+			const char* prefix = "";
+			switch (type)
+			{
+			case ScalarType::Boolean: prefix = "b"; break;
+			case ScalarType::Int: prefix = "i"; break;
+			case ScalarType::Uint: prefix = "u"; break;
+			case ScalarType::Double: prefix = "d"; break;
+			case ScalarType::Half: prefix = "h"; break;
+			case ScalarType::Float: prefix = ""; break;
+			default:
+				ASSERT(!"Invalid scalar type for vector");
+			}
+
+			f.appendf("{}vec{}", prefix, componentCount); // vec4, uvec2, bvec3, etc			
+		}
+
+		void StubVectorTypeDecl::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(type);
+			f.writeUint8(componentCount);
+		}
+
+		void StubVectorTypeDecl::read(base::IStubReader& f)
+		{
+			f.readEnum(type);
+			componentCount = f.readUint8();
+		}
+
+		void StubVectorTypeDecl::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			print(f);
+		}
+
+		//--
+
+		void StubMatrixTypeDecl::print(base::IFormatStream& f) const
+		{
+			bool hasRows = componentCount >= 2 && componentCount <= 4;
+			bool hasColumns = rowCount >= 2 && rowCount <= 4;
+			ASSERT_EX(hasRows || hasColumns, "Invalid component count");
+
+			const char* prefix = "";
+			switch (type)
+			{
+			case ScalarType::Double: prefix = "d"; break;
+			case ScalarType::Float: prefix = ""; break;
+			default:
+				ASSERT(!"Invalid scalar type for matrix");
+			}
+
+			if (componentCount == rowCount)
+				f.appendf("{}mat{}", prefix, componentCount); // vec4, uvec2, bvec3, etc			
+			else
+				f.appendf("{}mat{}x{}", prefix, componentCount, rowCount); // vec4, uvec2, bvec3, etc			
+		}
+
+		void StubMatrixTypeDecl::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(type);
+			f.writeUint8(componentCount);
+			f.writeUint8(rowCount);
+		}
+
+		void StubMatrixTypeDecl::read(base::IStubReader& f)
+		{
+			f.readEnum(type);
+			componentCount = f.readUint8();
+			rowCount = f.readUint8();
+		}
+
+		void StubMatrixTypeDecl::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			print(f);
+		}
+
+		//--
+
+		void StubArrayTypeDecl::dump(StubDebugPrinter& f) const
+		{
+			f.append("type=");
+			print(f);
+
+			f.printRef("innerType", innerType);
+		}
+
+		void StubArrayTypeDecl::print(base::IFormatStream& f) const
+		{
+			ASSERT_EX(innerType, "Invalid array type");
+			innerType->print(f);
+
+			if (count > 0)
+				f.appendf("[{}]", count);
+			else
+				f.append("[]");
+		}
+
+		void StubArrayTypeDecl::write(base::IStubWriter& f) const
+		{
+			f.writeUint32(count);
+			f.writeRef(innerType);
+		}
+
+		void StubArrayTypeDecl::read(base::IStubReader& f)
+		{
+			count = f.readUint32();
+			f.readRef(innerType);
+		}
+
+		//--
+
+		void StubStructTypeDecl::print(base::IFormatStream& f) const
+		{
+			f << structType->name;
+		}
+
+		void StubStructTypeDecl::write(base::IStubWriter& f) const
+		{
+			f.writeRef(structType);
+		}
+
+		void StubStructTypeDecl::read(base::IStubReader& f)
+		{
+			f.readRef(structType);
+		}
+
+		void StubStructTypeDecl::dump(StubDebugPrinter& f) const
+		{
+			f.append("type=");
+			print(f);
+
+			f.printRef("struct", structType);
+		}
+
+		//--
+
+		void StubStructMember::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(owner);
+			f.writeCompressedInt(index);
+			f.writeCompressedInt(linearAlignment);
+			f.writeCompressedInt(linearOffset);
+			f.writeCompressedInt(linearSize);
+			f.writeCompressedInt(linearArrayCount);
+			f.writeCompressedInt(linearArrayStride);
+			f.writeRef(type);
+			f.writeArray(attributes);
+		}
+
+		void StubStructMember::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(owner);
+			index = f.readCompressedInt();
+			linearAlignment = f.readCompressedInt();
+			linearOffset = f.readCompressedInt();
+			linearSize = f.readCompressedInt();
+			linearArrayCount = f.readCompressedInt();
+			linearArrayStride = f.readCompressedInt();
+			f.readRef(type);
+			f.readArray(attributes);
+		}
+
+		void StubStructMember::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={}, offset={}, align={}, size={}, arrayCount={}, arrayStride={}",
+				name, index, linearOffset, linearAlignment, linearSize, linearArrayCount, linearArrayStride);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+
+			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		void StubSamplerState::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeCompressedInt(index);
+			f.writeArray(attributes);
+
+			f.writeEnum(state.magFilter);
+			f.writeEnum(state.minFilter);
+			f.writeEnum(state.mipmapMode);
+			f.writeEnum(state.addresModeU);
+			f.writeEnum(state.addresModeV);
+			f.writeEnum(state.addresModeW);
+			f.writeBool(state.compareEnabled);
+			f.writeEnum(state.compareOp);
+			f.writeEnum(state.borderColor);
+			f.writeUint8(state.maxAnisotropy);
+			f.writeFloat(state.mipLodBias);
+			f.writeFloat(state.minLod);
+			f.writeFloat(state.maxLod);
+		}
+
+		void StubSamplerState::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			index = f.readCompressedInt();
+			f.readArray(attributes);
+
+			f.readEnum(state.magFilter);
+			f.readEnum(state.minFilter);
+			f.readEnum(state.mipmapMode);
+			f.readEnum(state.addresModeU);
+			f.readEnum(state.addresModeV);
+			f.readEnum(state.addresModeW);
+			state.compareEnabled = f.readBool();
+			f.readEnum(state.compareOp);
+			f.readEnum(state.borderColor);
+			state.maxAnisotropy = f.readUint8();
+			state.mipLodBias = f.readFloat();
+			state.minLod = f.readFloat();
+			state.maxLod = f.readFloat();
+		}
+
+		void StubSamplerState::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("magFilter={} ", state.magFilter);
+			f.appendf("minFilter={} ", state.minFilter);
+			f.appendf("mipmapMode={} ", state.mipmapMode);
+			f.appendf("addresModeU={} ", state.addresModeU);
+			f.appendf("addresModeV={} ", state.addresModeV);
+			f.appendf("addresModeW={} ", state.addresModeW);
+			f.appendf("compareEnabled={} ", state.compareEnabled);
+			f.appendf("compareOp={} ", state.compareOp);
+			f.appendf("borderColor={} ", state.borderColor);
+			f.appendf("maxAnisotropy={} ", state.maxAnisotropy);
+			f.appendf("mipLodBias={} ", state.mipLodBias);
+			f.appendf("minLod={} ", state.minLod);
+			f.appendf("maxLod={} ", state.maxLod);
+		}
+
+		//--
+
+		void StubRenderStates::write(base::IStubWriter& f) const
+		{
+			f.writeData(&states, sizeof(states));
+		}
+
+		void StubRenderStates::read(base::IStubReader& f)
+		{
+			const auto* sourceData = f.readData(sizeof(states));
+			memcpy(&states, sourceData, sizeof(states));
+		}
+
+		void StubRenderStates::dump(StubDebugPrinter& f) const
+		{
+			f.append("\n");
+			states.print(f);
+		}
+
+		//--
+
+		void StubStruct::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeCompressedInt(size);
+			f.writeCompressedInt(alignment);
+			f.writeArray(members);
+			f.writeArray(attributes);
+		}
+
+		void StubStruct::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			size = f.readCompressedInt();
+			alignment = f.readCompressedInt();
+			f.readArray(members);
+			f.readArray(attributes);
+		}
+
+		void StubStruct::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} size={} alignment={}", name, size, alignment);
+			f.printChildArray("Attribute", attributes);
+			f.printChildArray("StructureMember", members);
+		}
+
+		//--
+
+		void StubDescriptorMember::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeRef(descriptor);
+			f.writeName(name);
+			f.writeArray(attributes);
+		}
+
+		void StubDescriptorMember::read(base::IStubReader& f)
+		{
+			location.read(f);
+			f.readRef(descriptor);
+			name = f.readName();
+			f.readArray(attributes);
+		}
+
+		//--
+
+		void StubDescriptorMemberConstantBufferElement::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeRef(constantBuffer);
+			f.writeName(name);
+			f.writeCompressedInt(linearAlignment);
+			f.writeCompressedInt(linearOffset);
+			f.writeCompressedInt(linearSize);
+			f.writeCompressedInt(linearArrayCount);
+			f.writeCompressedInt(linearArrayStride);
+			f.writeRef(type);
+			f.writeArray(attributes);
+		}
+
+		void StubDescriptorMemberConstantBufferElement::read(base::IStubReader& f)
+		{
+			location.read(f);
+			f.readRef(constantBuffer);
+			name = f.readName();
+			linearAlignment = f.readCompressedInt();
+			linearOffset = f.readCompressedInt();
+			linearSize = f.readCompressedInt();
+			linearArrayCount = f.readCompressedInt();
+			linearArrayStride = f.readCompressedInt();
+			f.readRef(type);
+			f.readArray(attributes);
+		}
+
+		void StubDescriptorMemberConstantBufferElement::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} offset={}, align={}, size={}, arrayCount={}, arrayStride={}",
+				name, linearOffset, linearAlignment, linearSize, linearArrayCount, linearArrayStride);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+			f.printRef("parent", constantBuffer);
+
+			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		void StubDescriptorMemberConstantBuffer::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeCompressedInt(size);
+			f.writeArray(elements);
+		}
+
+		void StubDescriptorMemberConstantBuffer::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			size = f.readCompressedInt();
+			f.readArray(elements);
+		}
+
+		void StubDescriptorMemberConstantBuffer::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} size={}", name, index, size);
+			f.printChildArray("Attribute", attributes);
+			f.printChildArray("Constant", elements);
+		}
+
+		//--
+
+		void StubDescriptorMemberFormatBuffer::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeEnum(format);
+			f.writeBool(writable);
+		}
+
+		void StubDescriptorMemberFormatBuffer::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			f.readEnum(format);
+			writable = f.readBool();
+		}
+
+		void StubDescriptorMemberFormatBuffer::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} format={} writable={}", name, index, format, writable);
+		}
+
+		//--
+
+		void StubDescriptorMemberStructuredBuffer::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeRef(layout);
+			f.writeCompressedInt(stride);
+			f.writeBool(writable);
+		}
+
+		void StubDescriptorMemberStructuredBuffer::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			f.readRef(layout);
+			stride = f.readCompressedInt();
+			writable = f.readBool();
+		}
+
+		void StubDescriptorMemberStructuredBuffer::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} stride={} writable={}", name, index, stride, writable);
+
+			f.appendf(" layout={}", layout->name);
+			f.printRef("layoutRef", layout);
+		}
+
+		//--
+
+		void StubDescriptorMemberSampledImage::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeEnum(viewType);
+			f.writeBool(depth);
+			f.writeBool(multisampled);
+			f.writeRef(staticState);
+			f.writeRef(dynamicSamplerDescriptorEntry);
+		}
+
+		void StubDescriptorMemberSampledImage::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			f.readEnum(viewType);
+			depth = f.readBool();
+			multisampled = f.readBool();
+			f.readRef(staticState);
+			f.readRef(dynamicSamplerDescriptorEntry);
+		}
+
+		void StubDescriptorMemberSampledImage::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} view={} depth={} ms={}", name, index, viewType, depth, multisampled);
+
+			if (staticState)
+				f.printRef("staticSamplerRef", staticState);
+
+			if (dynamicSamplerDescriptorEntry)
+				f.printRef("dynamicSamplerRef", dynamicSamplerDescriptorEntry);
+		}
+
+		//--
+
+		void StubDescriptorMemberSampledImageTable::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeEnum(viewType);
+			f.writeBool(depth);
+			f.writeRef(staticState);
+			f.writeRef(dynamicSamplerDescriptorEntry);
+		}
+
+		void StubDescriptorMemberSampledImageTable::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			f.readEnum(viewType);
+			depth = f.readBool();
+			f.readRef(staticState);
+			f.readRef(dynamicSamplerDescriptorEntry);
+		}
+		
+		void StubDescriptorMemberSampledImageTable::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} view={} depth={}", name, index, viewType, depth);
+
+			if (staticState)
+				f.printRef("staticSamplerRef", staticState);
+
+			if (dynamicSamplerDescriptorEntry)
+				f.printRef("dynamicSamplerRef", dynamicSamplerDescriptorEntry);
+		}
+
+		//--
+
+		void StubDescriptorMemberImage::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+			f.writeEnum(viewType);
+			f.writeEnum(format);
+			f.writeBool(writable);
+		}
+
+		void StubDescriptorMemberImage::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+			f.readEnum(viewType);
+			f.readEnum(format);
+			writable = f.readBool();
+		}
+
+		void StubDescriptorMemberImage::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} view={} format={}", name, index, viewType, format);
+		}
+
+		//--
+
+		void StubDescriptorMemberSampler::write(base::IStubWriter& f) const
+		{
+			StubDescriptorMember::write(f);
+		}
+
+		void StubDescriptorMemberSampler::read(base::IStubReader& f)
+		{
+			StubDescriptorMember::read(f);
+		}
+
+		void StubDescriptorMemberSampler::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={}", name, index);
+		}
+
+		//--
+
+		void StubDescriptor::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeArray(attributes);
+			f.writeArray(members);
+		}
+
+		void StubDescriptor::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readArray(attributes);
+			f.readArray(members);
+		}
+
+		void StubDescriptor::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+			f.printChildArray("Attribute", attributes);
+			f.printChildArray("DescriptorMember", members);
+		}
+
+		//--
+
+		void StubStageOutput::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(type);
+			f.writeArray(attributes);
+		}
+
+		void StubStageOutput::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(type);
+			f.readArray(attributes);
+		}
+
+		void StubStageOutput::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+
+			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		void StubStageInput::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(type);
+			f.writeArray(attributes);
+		}
+
+		void StubStageInput::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(type);
+			f.readArray(attributes);
+		}
+
+		void StubStageInput::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+
+			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		void StubSharedMemory::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(type);
+			f.writeArray(attributes);
+		}
+
+		void StubSharedMemory::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(type);
+			f.readArray(attributes);
+		}
+
+		void StubSharedMemory::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+
+			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		RTTI_BEGIN_TYPE_ENUM(ShaderBuiltIn)
+			RTTI_ENUM_OPTION(Position);
+			RTTI_ENUM_OPTION(PositionIn);
+			RTTI_ENUM_OPTION(PointSize);
+			RTTI_ENUM_OPTION(PointSizeIn);
+			RTTI_ENUM_OPTION(ClipDistance);
+			RTTI_ENUM_OPTION(VertexID);
+			RTTI_ENUM_OPTION(InstanceID);
+			RTTI_ENUM_OPTION(DrawID);
+			RTTI_ENUM_OPTION(BaseVertex);
+			RTTI_ENUM_OPTION(BaseInstance);
+			RTTI_ENUM_OPTION(PatchVerticesIn);
+			RTTI_ENUM_OPTION(PrimitiveID);
+			RTTI_ENUM_OPTION(InvocationID);
+			RTTI_ENUM_OPTION(TessLevelOuter);
+			RTTI_ENUM_OPTION(TessLevelInner);
+			RTTI_ENUM_OPTION(TessCoord);
+			RTTI_ENUM_OPTION(FragCoord);
+			RTTI_ENUM_OPTION(FrontFacing);
+			RTTI_ENUM_OPTION(PointCoord);
+			RTTI_ENUM_OPTION(SampleID);
+			RTTI_ENUM_OPTION(SamplePosition);
+			RTTI_ENUM_OPTION(SampleMaskIn);
+			RTTI_ENUM_OPTION(Target0);
+			RTTI_ENUM_OPTION(Target1);
+			RTTI_ENUM_OPTION(Target2);
+			RTTI_ENUM_OPTION(Target3);
+			RTTI_ENUM_OPTION(Target4);
+			RTTI_ENUM_OPTION(Target5);
+			RTTI_ENUM_OPTION(Target6);
+			RTTI_ENUM_OPTION(Target7);
+			RTTI_ENUM_OPTION(NumWorkGroups);
+			RTTI_ENUM_OPTION(GlobalInvocationID);
+			RTTI_ENUM_OPTION(LocalInvocationID);
+			RTTI_ENUM_OPTION(WorkGroupID);
+			RTTI_ENUM_OPTION(LocalInvocationIndex);
+		RTTI_END_TYPE();
+
+		void StubBuiltInVariable::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(builinType);
+			f.writeRef(dataType);
+		}
+
+		void StubBuiltInVariable::read(base::IStubReader& f)
+		{
+			f.readEnum(builinType);
+			f.readRef(dataType);
+		}
+
+		void StubBuiltInVariable::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("builtin={}", builinType);
+
+			f.append(" type=");
+			dataType->print(f);
+			f.printRef("typeRef", dataType);
+		}
+
+		//--
+
+		void StubVertexInputElement::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(stream);
+			f.writeUint8(elementIndex);
+			f.writeCompressedInt(elementOffset);
+			f.writeCompressedInt(elementSize);
+			f.writeEnum(elementFormat);
+			f.writeRef(type);
+		}
+
+		void StubVertexInputElement::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(stream);
+			elementIndex = f.readUint8();
+			elementOffset = f.readCompressedInt();
+			elementSize = f.readCompressedInt();
+			f.readEnum(elementFormat);
+			f.readRef(type);
+		}
+
+		void StubVertexInputElement::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} offset={} size={} format={}", name, elementIndex, elementOffset, elementSize, elementFormat);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+			f.printRef("stream", stream);
+		}
+
+		//--
+
+		void StubVertexInputStream::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeBool(instanced);
+			f.writeUint8(streamIndex);
+			f.writeCompressedInt(streamSize);
+			f.writeCompressedInt(streamStride);
+			f.writeArray(elements);
+		}
+
+		void StubVertexInputStream::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			instanced = f.readBool();
+			streamIndex = f.readUint8();
+			streamSize = f.readCompressedInt();
+			streamStride = f.readCompressedInt();
+			f.readArray(elements);
+		}
+
+		void StubVertexInputStream::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={} index={} size={} stride={}, instanced={}", name, streamIndex, streamSize, streamStride, instanced);
+			f.printChildArray("Element", elements);
+		}
+
+		//--
+
+		void StubFunction::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(returnType);
+			f.writeArray(attributes);
+			f.writeArray(parameters);
+			f.writeRef(code);
+		}
+
+		void StubFunction::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(returnType);
+			f.readArray(attributes);
+			f.readArray(parameters);
+			f.readRef(code);
+		}
+
+		void StubFunction::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" returnType=");
+			returnType->print(f);
+			f.printRef("returnTypeRef", returnType);
+
+			f.printChildArray("Attribute", attributes);
+			f.printChildArray("Parameter", parameters);
+
+			f.printChild("Code", code);
+		}
+
+		//--
+
+		void StubScopeLocalVariable::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeRef(type);
+		}
+
+		void StubScopeLocalVariable::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			f.readRef(type);
+		}
+
+		void StubScopeLocalVariable::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+		}
+
+		//--
+
+		void StubFunctionParameter::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+			f.writeName(name);
+			f.writeBool(reference);
+			f.writeRef(type);
+		}
+
+		void StubFunctionParameter::read(base::IStubReader& f)
+		{
+			location.read(f);
+			name = f.readName();
+			reference = f.readBool();
+			f.readRef(type);
+		}
+
+		void StubFunctionParameter::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			f.append(" type=");
+			type->print(f);
+			f.printRef("typeRef", type);
+		}
+
+		//--
+
+		void StubOpcode::write(base::IStubWriter& f) const
+		{
+			location.write(f);
+		}
+
+		void StubOpcode::read(base::IStubReader& f)
+		{
+			location.read(f);
+		}
+
+		//--
+
+		void StubOpcodeScope::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeArray(locals);
+			f.writeArray(statements);
+		}
+
+		void StubOpcodeScope::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readArray(locals);
+			f.readArray(statements);
+		}
+
+		void StubOpcodeScope::dump(StubDebugPrinter& f) const
+		{
+			f.printChildArray("LocalVariable", locals);
+			f.printChildArray("Statement", statements);
+		}
+
+		//--
+
+		void StubOpcodeLoad::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(valueReferece);
+		}
+
+		void StubOpcodeLoad::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(valueReferece);
+		}
+
+		void StubOpcodeLoad::dump(StubDebugPrinter& f) const
+		{
+			f.printChild("Ptr", valueReferece);
+		}
+
+		//--
+
+		void StubOpcodeStore::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			mask.write(f);
+			f.writeRef(type);
+			f.writeRef(lvalue);
+			f.writeRef(rvalue);
+		}
+
+		void StubOpcodeStore::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			mask.read(f);
+			f.readRef(type);
+			f.readRef(lvalue);
+			f.readRef(rvalue);
+		}
+
+		void StubOpcodeStore::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("mask={} type=", mask);
+			type->print(f);
+			f.printRef("typeRef", type);
+
+			f.printChild("LValue", lvalue);
+			f.printChild("RValue", rvalue);
+		}
+
+		//--
+
+		void StubOpcodeCast::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(generalType);
+			f.writeRef(targetType);
+			f.writeRef(value);
+		}
+
+		void StubOpcodeCast::read(base::IStubReader& f)
+		{
+			f.readEnum(generalType);
+			f.readRef(targetType);
+			f.readRef(value);
+		}
+
+		void StubOpcodeCast::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("scalar={} type=", generalType);
+			targetType->print(f);
+			f.printRef("typeRef", targetType);
+
+			f.printChild("Value", value);
+		}
+
+		//--
+
+		void StubOpcodeCreateArray::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(arrayTypeDecl);
+			f.writeArray(elements);
+		}
+
+		void StubOpcodeCreateArray::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(arrayTypeDecl);
+			f.readArray(elements);
+		}
+
+		void StubOpcodeCreateArray::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			arrayTypeDecl->print(f);
+			f.printRef("typeRef", arrayTypeDecl);
+
+			f.printChildArray("ArrayElement", elements);
+		}
+
+		//--
+
+		void StubOpcodeCreateVector::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(typeDecl);
+			f.writeArray(elements);
+		}
+
+		void StubOpcodeCreateVector::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(typeDecl);
+			f.readArray(elements);
+		}
+
+		void StubOpcodeCreateVector::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			typeDecl->print(f);
+			f.printRef("typeRef", typeDecl);
+
+			f.printChildArray("VectorElement", elements);
+		}
+
+		//--
+
+		void StubOpcodeCreateMatrix::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(typeDecl);
+			f.writeArray(elements);
+		}
+
+		void StubOpcodeCreateMatrix::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(typeDecl);
+			f.readArray(elements);
+		}
+
+		void StubOpcodeCreateMatrix::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			typeDecl->print(f);
+			f.printRef("typeRef", typeDecl);
+
+			f.printChildArray("VectorElement", elements);
+		}
+
+		//--
+
+		void StubOpcodeResourceAccess::write(base::IStubWriter& f) const
+		{
+			f.writeEnum(type);
+			f.writeRef(resourceRef);
+		}
+
+		void StubOpcodeResourceAccess::read(base::IStubReader& f)
+		{
+			f.readEnum(type);
+			f.readRef(resourceRef);
+		}
+
+		void StubOpcodeResourceAccess::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type={}", type);
+			f.printRef("resourceRef", resourceRef);
+		}
+
+		//--
+
+		void StubOpcodeConstant::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(typeDecl);
+			f.writeEnum(dataType);
+			f.writeCompressedInt(dataSize);
+			f.writeData(data, dataSize);
+		}
+
+		void StubOpcodeConstant::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(typeDecl);
+			f.readEnum(dataType);
+			dataSize = f.readCompressedInt();
+			data = f.readData(dataSize);
+		}
+
+		template< typename T >
+		static void PrintArray(base::IFormatStream& f, const void* ptr, uint32_t dataSize)
+		{
+			const auto count = dataSize / sizeof(T);
+			const auto* readPtr = (const T*)ptr;
+			f.appendf(" count={}", count);
+			for (uint32_t i = 0; i < count; ++i)
+				f.appendf(" [{}]={}", i, readPtr[i]);
+		}
+
+		void StubOpcodeConstant::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("size={} scalar={}", dataSize, dataType);
+
+			switch (dataType)
+			{
+			case ScalarType::Float: 
+			case ScalarType::Half:
+				PrintArray<float>(f, data, dataSize);
+				break;
+
+			case ScalarType::Boolean:
+			case ScalarType::Uint:
+				PrintArray<uint32_t>(f, data, dataSize);
+				break;
+
+			case ScalarType::Int:
+				PrintArray<int>(f, data, dataSize);
+				break;
+
+			case ScalarType::Int64:
+				PrintArray<int64_t>(f, data, dataSize);
+				break;
+
+			case ScalarType::Uint64:
+				PrintArray<uint64_t>(f, data, dataSize);
+				break;				
+			}
+		}
+
+		//--
+
+		void StubOpcodeAccessArray::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(arrayOp);
+			f.writeRef(indexOp);
+			f.writeRef(arrayType);
+			f.writeInt32(staticIndex);
+		}
+
+		void StubOpcodeAccessArray::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(arrayOp);
+			f.readRef(indexOp);
+			f.readRef(arrayType);
+			staticIndex = f.readInt32();
+		}
+
+		void StubOpcodeAccessArray::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("type=");
+			arrayType->print(f);
+			f.printRef("typeRef", arrayType);
+
+			if (!indexOp)
+				f.appendf("index={}", staticIndex);
+
+			f.printChild("Array", arrayOp);
+
+			if (indexOp)
+				f.printChild("Index", indexOp);
+		}
+
+		//--
+
+		void StubOpcodeDataRef::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(stub);
+		}
+
+		void StubOpcodeDataRef::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(stub);
+		}
+
+		void StubOpcodeDataRef::dump(StubDebugPrinter& f) const
+		{
+			if (stub)
+			{
+				f.appendf("refType={}", stub->debugName());
+				f.printRef("ref", stub);
+			}
+			else
+			{
+				f.append("INVALID");
+			}
+		}
+
+		//--
+
+		void StubOpcodeAccessMember::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(value);
+			f.writeName(name);
+			f.writeRef(member);
+		}
+
+		void StubOpcodeAccessMember::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(value);
+			name = f.readName();
+			f.readRef(member);
+		}
+
+		void StubOpcodeAccessMember::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			if (member)
+			{
+				if (member->owner)
+				{
+					f.appendf(" struct={}", member->owner->name);
+					f.printRef("structRef", member->owner);
+				}
+
+				f.printRef("memberRef", member);
+			}
+		}
+
+		//--
+
+		void StubOpcodeSwizzle::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(value);
+			f.writeUint8(inputComponents);
+			f.writeUint8(outputComponents);
+			swizzle.write(f);
+		}
+
+		void StubOpcodeSwizzle::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(value);
+			inputComponents = f.readUint8();
+			outputComponents = f.readUint8();
+			swizzle.read(f);
+		}
+
+		void StubOpcodeSwizzle::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("inputCount={} outputCount={} swizzle={}", inputComponents, outputComponents, swizzle);
+			f.printChild("Value", value);
+		}
+
+		//--
+
+		void StubOpcodeNativeCall::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeName(name);
+			f.writeRef(returnType);
+			f.writeArray(arguments);
+		}
+
+		void StubOpcodeNativeCall::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			name = f.readName();
+			f.readRef(returnType);
+			f.readArray(arguments);
+		}
+
+		void StubOpcodeNativeCall::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("name={}", name);
+
+			if (returnType)
+			{
+				f.appendf(" returnType=");
+				returnType->print(f);
+				f.printRef("returnTypeRef", returnType);
+			}
+
+			f.printChildArray("NativeCallArgument", arguments);
+		}
+
+		//--
+
+		void StubOpcodeCall::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(func);
+			f.writeArray(arguments);
+		}
+
+		void StubOpcodeCall::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(func);
+			f.readArray(arguments);
+		}
+
+		void StubOpcodeCall::dump(StubDebugPrinter& f) const
+		{
+			if (func)
+			{
+				f.appendf("name={}", func->name);
+
+				if (func->returnType)
+				{
+					f.appendf(" returnType=");
+					func->returnType->print(f);
+					f.printRef("returnTypeRef", func->returnType);
+				}
+
+				f.printRef("funcRef", func);
+			}
+
+			f.printChildArray("CallArgument", arguments);
+		}
+
+		//--
+
+		void StubOpcodeIfElse::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeBool(branchHint);
+			f.writeArray(conditions);
+			f.writeArray(statements);
+			f.writeRef(elseStatement);
+		}
+
+		void StubOpcodeIfElse::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			branchHint = f.readBool();
+			f.readArray(conditions);
+			f.readArray(statements);
+			f.readRef(elseStatement);
+		}
+
+		void StubOpcodeIfElse::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("branchHint={}", branchHint);
+			f.printChildArray("Condition", conditions);
+			f.printChildArray("Statement", statements);
+			if (elseStatement)
+				f.printChild("Else", elseStatement);
+		}
+
+		//--
+
+		void StubOpcodeLoop::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeBool(unrollHint);
+			f.writeRef(condition);
+			f.writeRef(increment);
+			f.writeRef(body);
+		}
+
+		void StubOpcodeLoop::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			unrollHint = f.readBool();
+			f.readRef(condition);
+			f.readRef(increment);
+			f.readRef(body);
+		}
+
+		void StubOpcodeLoop::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("unrollHint={}", unrollHint);
+			f.printChild("LoopCondition", condition);
+			f.printChild("LoopIncrement", increment);
+			f.printChild("LoopBody", body);
+		}
+
+		//--
+
+		void StubOpcodeReturn::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(value);
+		}
+
+		void StubOpcodeReturn::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(value);
+		}
+
+		void StubOpcodeReturn::dump(StubDebugPrinter& f) const
+		{
+			if (value)
+				f.printChild("ReturnValue", value);
+		}
+
+		//--
+
+		void StubOpcodeBreak::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+		}
+
+		void StubOpcodeBreak::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+		}
+
+		//--
+
+		void StubOpcodeContinue::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+		}
+
+		void StubOpcodeContinue::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+		}
+
+		//--
+
+		void StubOpcodeExit::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+		}
+
+		void StubOpcodeExit::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+		}
+
+		//--
+
+    } // shader
+} // rendering

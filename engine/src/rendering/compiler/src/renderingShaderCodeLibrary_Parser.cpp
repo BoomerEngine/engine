@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 */
 
 #include "build.h"
@@ -91,7 +91,7 @@ namespace rendering
         {
             for (const auto& entry : table->members())
             {
-                if (entry.m_type.resource().constants)
+                if (entry.m_type.resource().type == DeviceObjectViewType::ConstantBuffer)
                 {
                     DEBUG_CHECK_EX(entry.m_type.resource().resolvedLayout != nullptr, "Constant buffer with no layout");
 
@@ -381,6 +381,9 @@ namespace rendering
 
                     auto attributes = elem->gatherAttributes();
 
+					int localSampler = -1;
+					const StaticSampler* staticSampler = nullptr;
+
                     auto type = m_typeLibrary->resourceType(elem->stringData, attributes);
                     if (!type.valid())
                     {
@@ -389,7 +392,44 @@ namespace rendering
                         continue;
                     }
 
-                    table->addMember(elem->location, elem->name, type, attributes);
+					if (type.resource().type == DeviceObjectViewType::ImageTable || type.resource().type == DeviceObjectViewType::Image)
+					{
+						const auto samplerName = attributes.value("sampler"_id);
+						if (samplerName.empty())
+						{
+							err.reportError(elem->location, base::TempString("Sampled image '{}' in descriptor '{}' should have sampler specified via attribute(sampler=xxx)", elem->name, table->name()));
+							valid = false;
+							continue;
+						}
+
+						// use local sampler first
+						for (auto i : table->members().indexRange())
+						{
+							const auto& member = table->members()[i];
+							if (member.m_type.resource().type == DeviceObjectViewType::Sampler)
+							{
+								if (member.m_name == samplerName)
+								{
+									localSampler = i;
+									break;
+								}
+							}
+						}
+
+						// if local sampler was not found fall back to static sampler
+						if (localSampler == -1)
+						{
+							staticSampler = typeLibrary().findStaticSampler(base::StringID::Find(samplerName));
+							if (!staticSampler)
+							{
+								err.reportError(elem->location, base::TempString("Sampler '{}' used in entry '{}' in descriptor '{}' was not found", samplerName, elem->name, table->name()));
+								valid = false;
+								continue;
+							}
+						}
+					}
+
+                    table->addMember(elem->location, elem->name, type, attributes, localSampler, staticSampler);
                     alreadyDeclaredParameters[elem->name] = elem;
                 }
                 else if (elem->type == parser::ElementType::DescriptorConstantTable)
@@ -454,6 +494,31 @@ namespace rendering
         {
             bool valid = true;
 
+			for (const auto& attr : program->attributes().attributes.pairs())
+			{
+				if (attr.key == "setup"_id)
+				{
+					const auto* rs = typeLibrary().findStaticRenderStates(base::StringID::Find(attr.value));
+					if (rs)
+					{
+						if (program->staticRenderStates().contains(rs))
+						{
+							err.reportWarning(program->location(), base::TempString("Render states '{}' were already included in this program", attr.value));
+						}
+						else
+						{
+							program->addRenderStates(rs);
+						}
+					}
+					else
+					{
+						err.reportError(program->location(), base::TempString("Unable to find static render states '{}'", attr.value));
+						valid = false;
+						continue;
+					}
+				}
+			}
+
             for (parser::Element* elem : parent->children)
             {
                 if (elem->type == parser::ElementType::Using)
@@ -492,12 +557,6 @@ namespace rendering
 
                     program->addParentProgram(baseProgram);
                 }
-            }
-
-            if (program->parentPrograms().empty())
-            {
-                auto* baseProgram = findProgram("GenericShader"_id);
-                program->addParentProgram(baseProgram);
             }
 
             return valid;
@@ -837,6 +896,72 @@ namespace rendering
                         m_typeLibrary->registerResourceTable(table);
                     }
                 }
+				else if (elem->type == parser::ElementType::StaticSampler)
+				{
+					// get the descriptor
+					auto sampler = m_typeLibrary->findStaticSampler(elem->name);
+					if (sampler)
+					{
+						err.reportError(elem->location, base::TempString("Static sampler '{}' was already defined", elem->name));
+						valid = false;
+					}
+					else
+					{
+						SamplerState setup;
+
+						for (const auto* child : elem->children)
+						{
+							ASSERT(child->type == parser::ElementType::KeyValueParam);
+
+							const auto key = base::StringID(child->name);
+							base::StringBuilder errorString;
+							if (!setup.configure(key, child->stringData, errorString))
+							{
+								err.reportError(child->location, errorString.view());
+								valid = false;
+							}
+						}
+
+						if (valid)
+						{
+							auto sampler = m_allocator.create<StaticSampler>(elem->name, setup);
+							m_typeLibrary->registerStaticSampler(sampler);
+						}
+					}
+				}
+				else if (elem->type == parser::ElementType::RenderStates)
+				{
+					// get the descriptor
+					auto sampler = m_typeLibrary->findStaticRenderStates(elem->name);
+					if (sampler)
+					{
+						err.reportError(elem->location, base::TempString("Static render states '{}' were already defined", elem->name));
+						valid = false;
+					}
+					else
+					{
+						GraphicsRenderStatesSetup setup;
+
+						for (const auto* child : elem->children)
+						{
+							ASSERT(child->type == parser::ElementType::KeyValueParam);
+
+							const auto key = base::StringID(child->name);
+							base::StringBuilder errorString;
+							if (!setup.configure(key, child->stringData, errorString))
+							{
+								err.reportError(elem->location, errorString.view());
+								valid = false;
+							}
+						}
+
+						if (valid)
+						{
+							auto states = m_allocator.create<StaticRenderStates>(elem->name, setup);
+							m_typeLibrary->registerStaticRenderStates(states);
+						}
+					}
+				}
                 else if (elem->type == parser::ElementType::Struct)
                 {
                     // get the struct
@@ -925,17 +1050,17 @@ namespace rendering
                 {
                     if (elem->flags.test(parser::ElementFlag::Export))
                     {
-                        auto type = ShaderType::None;
-                        if (elem->name.endsWith("PS")) type = ShaderType::Pixel;
-                        else if (elem->name.endsWith("VS")) type = ShaderType::Vertex;
-                        else if (elem->name.endsWith("GS")) type = ShaderType::Geometry;
-                        else if (elem->name.endsWith("DS")) type = ShaderType::Domain;
-                        else if (elem->name.endsWith("HS")) type = ShaderType::Hull;
-                        else if (elem->name.endsWith("CS")) type = ShaderType::Compute;
-                        //else if (elem->name.endsWith("MS")) type = ShaderType::Mesh;
-                        //else if (elem->name.endsWith("TS")) type = ShaderType::Task;
+                        auto type = ShaderStage::Invalid;
+                        if (elem->name.endsWith("PS")) type = ShaderStage::Pixel;
+                        else if (elem->name.endsWith("VS")) type = ShaderStage::Vertex;
+                        else if (elem->name.endsWith("GS")) type = ShaderStage::Geometry;
+                        else if (elem->name.endsWith("DS")) type = ShaderStage::Domain;
+                        else if (elem->name.endsWith("HS")) type = ShaderStage::Hull;
+                        else if (elem->name.endsWith("CS")) type = ShaderStage::Compute;
+                        else if (elem->name.endsWith("MS")) type = ShaderStage::Mesh;
+                        else if (elem->name.endsWith("TS")) type = ShaderStage::Task;
 
-                        if (type == ShaderType::None)
+                        if (type == ShaderStage::Invalid)
                         {
                             err.reportError(elem->location, base::TempString("Exported shader name '{}' must end in PS,VS,GS,DS,HS or CS to specify target pipeline", elem->name));
                         }
@@ -955,8 +1080,7 @@ namespace rendering
                         }
                     }
                 }
-                else
-                if (elem->type == parser::ElementType::Variable)
+                else if (elem->type == parser::ElementType::Variable)
                 {
                     // variable can't start with "gl_"
                     if (elem->name.beginsWith("gl_"))
@@ -969,12 +1093,9 @@ namespace rendering
                     auto existingConst  = findGlobalConstant(elem->name);
                     if (existingConst)
                     {
-                        //if (!elem->flags.test(parser::ElementFlag::Override))
-                        //{
-                            err.reportError(elem->location, base::TempString("Global variable '{}' was already defined at {}", elem->name, existingConst->loc));
-                            valid = false;
-                            continue;
-                        //}
+                        err.reportError(elem->location, base::TempString("Global variable '{}' was already defined at {}", elem->name, existingConst->loc));
+                        valid = false;
+                        continue;
                     }
                     else if (auto existingFunction  = findGlobalFunction(elem->name))
                     {

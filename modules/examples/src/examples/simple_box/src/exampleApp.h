@@ -55,7 +55,7 @@ namespace example
         //--
 
         // pipeline state for rendering
-        ShaderLibraryPtr m_shaders;
+		GraphicsPipelineObjectPtr m_shadersPSO;
 
         // rendering output (native window)
         OutputObjectPtr m_renderingOutput;

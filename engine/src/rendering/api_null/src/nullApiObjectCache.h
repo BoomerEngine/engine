@@ -31,8 +31,8 @@ namespace rendering
 
 				//--
 
-				virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(base::Array<IBaseVertexBindingLayout::BindingInfo>&& elements) override final;
-				virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(base::Array<DescriptorBindingElement>&& elements) override final;
+				virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) override;
+				virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors) override;
 			};
 
 			//---

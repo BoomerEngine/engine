@@ -51,6 +51,7 @@ namespace rendering
 		RTTI_ENUM_OPTION(BufferStructuredWritable);
 		RTTI_ENUM_OPTION(Image);
 		RTTI_ENUM_OPTION(ImageWritable);
+		RTTI_ENUM_OPTION(ImageTable);
 		RTTI_ENUM_OPTION(RenderTarget);
 		RTTI_ENUM_OPTION(Sampler);
 	RTTI_END_TYPE();

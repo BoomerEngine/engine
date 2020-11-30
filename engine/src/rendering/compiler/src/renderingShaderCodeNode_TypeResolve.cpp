@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 ***/
 
 #include "build.h"
@@ -117,19 +117,31 @@ namespace rendering
             return true;
         }
 
-        static const char* GetCastFunctionName(TypeMatchTypeConv conv)
-        {
-            switch (conv)
-            {
-            case TypeMatchTypeConv::ConvToInt: return "__castToInt";
-            case TypeMatchTypeConv::ConvToBool: return "__castToBool";
-            case TypeMatchTypeConv::ConvToUint: return "__castToUint";
-            case TypeMatchTypeConv::ConvToFloat: return "__castToFloat";
-            }
+		static bool AllowedVectorConstructionType(BaseType type)
+		{
+			switch (type)
+			{
+				case BaseType::Float:
+				case BaseType::Int:
+				case BaseType::Uint:
+				case BaseType::Boolean:
+					return true;
+			}
 
-            return nullptr;
-        }
+			return false;
+		}
 
+		static bool AllowedMatrixConstructionType(BaseType type)
+		{
+			switch (type)
+			{
+			case BaseType::Float:
+				return true;
+			}
+
+			return false;
+		}
+		
         static DataType GetCastedType(CodeLibrary& lib, const DataType& sourceType, TypeMatchTypeConv convType)
         {
             auto componentCount = ExtractComponentCount(sourceType);
@@ -164,18 +176,9 @@ namespace rendering
             if (convType == TypeMatchTypeConv::Matches)
                 return nodePtr;
 
-            // find function
-            auto castFunctionName  = GetCastFunctionName(convType);
-            auto castFunction  = INativeFunction::FindFunctionByName(castFunctionName);
-            if (!castFunction)
-                return nodePtr; // maybe it will work :)
-
-            /*TRACE_INFO("Inserting cast to {} at {}", castFunctionName, nodePtr->location());
-            nodePtr->print(base::logging::ILogStream::GetStream(), 0,0);*/
-
             // create the call node
-            auto ret  = lib.allocator().create<CodeNode>(nodePtr->location(), OpCode::NativeCall);
-            ret->extraData().m_nativeFunctionRef = castFunction;
+            auto ret  = lib.allocator().create<CodeNode>(nodePtr->location(), OpCode::ImplicitCast);
+			ret->extraData().m_castMode = convType;
             ret->m_dataType = GetCastedType(lib, nodePtr->dataType(), convType);
             ret->m_typesResolved = true;
             ret->m_children.pushBack(nodePtr);
@@ -473,11 +476,11 @@ namespace rendering
                 case OpCode::Call:
                 {
                     auto callContextNode  = const_cast<CodeNode*>(node->m_children[0]);
-                    if (node->m_children.size() == 3 && callContextNode->m_op == OpCode::Ident)
+                    if (callContextNode->m_op == OpCode::Ident)
                     {
                         // convert the pipeline state settings
                         auto funcName = callContextNode->m_extraData.m_name.view();
-                        if (funcName.beginsWith("__assign"))
+                        if (node->m_children.size() == 3 && funcName.beginsWith("__assign"))
                         {
                             auto extraFunctionName = funcName.afterFirst("__assign");
                             if (extraFunctionName.empty())
@@ -508,7 +511,29 @@ namespace rendering
                                 node = storeNode;
                             }
                         }
-                    }
+						else if (node->m_children.size() > 1 && (funcName == "__create_vector" || funcName == "__create_matrix"))
+						{
+							if (node->m_extraData.m_castType.isComposite())
+							{
+								const auto hint = node->m_extraData.m_castType.composite().hint();
+								if (hint == CompositeTypeHint::VectorType)
+								{
+									node->m_op = OpCode::CreateVector;
+									node->m_children.erase(0);
+								}
+								else if (hint == CompositeTypeHint::MatrixType)
+								{
+									node->m_op = OpCode::CreateMatrix;
+									node->m_children.erase(0);
+								}
+							}
+						}
+						else if (node->m_children.size() >= 1 && (funcName == "__create_array"))
+						{
+							node->m_op = OpCode::CreateArray;
+							node->m_children.erase(0);
+						}
+					}
 
                     break;
                 }
@@ -539,7 +564,7 @@ namespace rendering
 
                             // we can't access the constant buffer directly
                             const auto& resolvedEntry = resolvedEntries[0];
-                            if (resolvedEntry.entry->m_type.resource().constants && resolvedEntry.member == nullptr)
+                            if (resolvedEntry.entry->m_type.resource().type == DeviceObjectViewType::ConstantBuffer && resolvedEntry.member == nullptr)
                             {
                                 err.reportError(node->location(), base::TempString("Constant buffer '{}' in descriptor '{}' can't be accessed directly, only it members can", resolvedEntry.entry->m_name, resourceTable->name()));
                                 return false;
@@ -705,7 +730,7 @@ namespace rendering
                     if (!ResolveTypes(lib, program, func, child, err))
                         allTypesResolved = false;
 
-                    // suck in the cast nodes
+                    // suck in the cast nodes, hack...
                     if (node->m_children[i] && (node->m_children[i]->m_op == OpCode::Cast))
                     {
                         auto castNode  = node->m_children[i];
@@ -720,549 +745,62 @@ namespace rendering
 
             // some expressions require
             auto op = node->opCode();
-            auto& value = node->extraData();
             switch (op)
             {
-                // no-op nothing to resolve
-                case OpCode::Nop:
-                {
-                    return true;
-                }
-
-                // this can only be used in programs
                 case OpCode::This:
-                {
-                    if (!program)
-                    {
-                        err.reportError(node->location(), "'this' can only be used when function is member of a program/shader");
-                        return false;
-                    }
-
-                    node->m_dataType = DataType(program);
-                    return true;
-                }
-
-                // constant value
-                case OpCode::Const:
-                {
-                    ASSERT(node->m_dataType.valid());
-                    return true;
-                }
-
-                // load a value from a reference
+					return ResolveTypes_This(lib, program, func, node, err);
+               
                 case OpCode::Load:
-                {
-                    // we can only load from reference
-                    auto loadedType = node->m_children[0]->dataType();
-                    if (!loadedType.isReference())
-                    {
-                        err.reportError(node->location(), "Explicit loading requires a reference");
-                        return false;
-                    }
-
-                    node->m_dataType = loadedType.unmakePointer();
-                    return true;
-                }
-
-                // store value at reference
+					return ResolveTypes_Load(lib, program, func, node, err);
+               
                 case OpCode::Store:
-                {
-                    // pull the mask in
-                    auto targetType = node->m_children[0]->dataType();
-                    if (node->m_children[0]->m_op == OpCode::ReadSwizzle)
-                    {
-                        auto& mask = node->m_children[0]->m_extraData.m_mask;
-                        if (!mask.isMask())
-                        {
-                            err.reportError(node->location(), base::TempString("Swizzle '{}' is not a valid write mask for '{}'", mask, targetType));
-                            return false;
-                        }
-
-                        // pull in the mask
-                        node->m_extraData.m_mask = mask;
-                        node->m_children[0] = node->m_children[0]->m_children[0];
-
-                        // un-load (to make a reference again)
-                        if (node->m_children[0]->m_op == OpCode::Load)
-                            node->m_children[0] = node->m_children[0]->m_children[0];
-
-                        targetType = node->m_children[0]->dataType();
-                    }
-
-                    // we can only store into references
-                    if (!targetType.isReference())
-                    {
-                        err.reportError(node->location(), base::TempString("Cannot write to '{}', type is not a reference", targetType));
-                        return false;
-                    }
-
-                    // we cannot write to a const expression
-                    /*if ()
-                    {
-                        err.reportError(node->location(), base::TempString("Cannot write to const expression '{}', use the initialization on declaration", targetType));
-                        return false;
-                    }*/
-
-                    // if the store has a mask use it to limit the write
-                    if (node->m_extraData.m_mask.valid())
-                        targetType = GetContractedType(lib.typeLibrary(), targetType, node->m_extraData.m_mask.numberOfComponentsProduced());
-
-                    // convert the source into the target type, note that the type should be dereferenced (will generate a load)
-                    auto targetTypeNoRef = targetType.unmakePointer();
-                    if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], targetTypeNoRef, false, err))
-                        return false;
-
-                    // the assignment has the same type as the target and is, of course, read only
-                    node->m_dataType = targetTypeNoRef;
-                    break;
-                }
-
-                // a reference to parameter, we keep the parameter type
-                // the value will be assignable or not depending on our context and the value
+					return ResolveTypes_Store(lib, program, func, node, err);
+                
                 case OpCode::Ident:
-                {
-                    // resolve the identifier
-                    auto resolvedIdent = ResolveIdent(lib, program, func, node, value.m_name, err);
-                    if (!resolvedIdent)
-                    {
-                        err.reportError(node->location(), base::TempString("Unknown reference to '{}'", value.m_name));
-                        auto resolvedIdent2 = ResolveIdent(lib, program, func, node, value.m_name, err);
-                        return false;
-                    }
-
-                    // assign type from param
-                    if (resolvedIdent.m_param)
-                    {
-                        // there's a trick with resource references: they are used as names internally to allow us to pass them through functions etc
-                        if (resolvedIdent.m_param->dataType.isResource())
-                        {
-                            DEBUG_CHECK(resolvedIdent.m_param->scope == DataParameterScope::GlobalParameter);
-
-                            // make ourselves a constant
-                            node->m_op = OpCode::Const;
-                            node->m_dataType = resolvedIdent.m_param->dataType.unmakePointer();
-                            node->m_dataValue = DataValue(resolvedIdent.m_param->name);
-                        }
-                        else
-                        {
-                            // the node's return type depends on the parameter type
-                            node->m_op = OpCode::ParamRef;
-                            node->m_dataType = resolvedIdent.m_param->dataType.makePointer();
-                            value.m_paramRef = resolvedIdent.m_param;
-                        }
-                    }
-                    // assign type from function
-                    else if (resolvedIdent.m_function)
-                    {
-                        // the node's return type depends on the parameter type
-                        node->m_op = OpCode::FuncRef;
-                        node->m_dataType = DataType(resolvedIdent.m_function);
-
-                        // sub node (call context for the function)
-                        if (program != nullptr)
-                        {
-                            auto thisNode  = lib.allocator().create<CodeNode>(node->location(), OpCode::This);
-                            thisNode->m_dataType = DataType(program);
-                            thisNode->m_typesResolved = true;
-                            node->addChild(thisNode);
-                        }
-                        else
-                        {
-                            auto nopNode  = lib.allocator().create<CodeNode>(node->location(), OpCode::Nop);
-                            nopNode->m_typesResolved = true;
-                            node->addChild(nopNode);
-                        }
-                    }
-                    // native function call
-                    else if (resolvedIdent.m_nativeFunction)
-                    {
-                        node->m_extraData.m_nativeFunctionRef = resolvedIdent.m_nativeFunction;
-                    }
-
-                    break;
-                }
-
-                // array entry access
+					return ResolveTypes_Ident(lib, program, func, node, err);
+                
                 case OpCode::AccessArray:
-                {
-                    // structured parameters are implicit arrays
-                    auto sourceType = node->m_children[0]->dataType();
-                    if (sourceType.isResource())
-                        return HandleResourceArrayAccess(lib, node, err);
+					return ResolveTypes_AccessArray(lib, program, func, node, err);
 
-                    // we can only access elements of arrays :)
-                    if (!sourceType.isArray())
-                    {
-                        err.reportError(node->location(), base::TempString("Type '{}' has no operator[] defined", sourceType));
-                        return false;
-                    }
-
-                    /*// member access is only legal on references
-                    if (!sourceType.isReference())
-                    {
-                        err.reportError(node->location(), base::TempString("Type '{}' is not addressable as an array", sourceType));
-                        return false;
-                    }*/
-
-                    // the array index should be a single int
-                    auto arrayIndexType = DataType::UnsignedScalarType();
-                    if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
-                        return false;
-
-                    // return type is the array inner type
-                    node->m_dataType = GetArrayInnerType(sourceType).makePointer();
-                    node->m_dataType.applyFlags(sourceType.flags());
-                    return true;
-                }
-
-                // member access
                 case OpCode::AccessMember:
-                {
-                    // we can only access member of structures or types that can be swizzled
-                    auto sourceType = node->m_children[0]->dataType();
-                    auto memberName = node->m_extraData.m_name;
-                    if (sourceType.isComposite())
-                    {
-                        // convert the member access to read swizzle on vector types
-                        if (sourceType.composite().hint() == CompositeTypeHint::VectorType)
-                        {
-                            // use the swizzle if possible
-                            ComponentMask mask;
-                            if (!ComponentMask::Parse(memberName.c_str(), mask))
-                            {
-                                err.reportError(node->location(), base::TempString("Unable to parse swizzle from '{}'", memberName));
-                                return false;
-                            }
+					return ResolveTypes_AccessMember(lib, program, func, node, err);
 
-                            // validate the swizzle
-                            if (!CanUseComponentMask(sourceType, mask))
-                            {
-                                err.reportError(node->location(), base::TempString("Swizzle '{}' is not compatible with type '{}'", memberName, sourceType));
-                                return false;
-                            }
-
-                            // make sure the type is dereferenced before swizzling
-                            node->m_children[0] = Dereferece(lib, (CodeNode*)node->m_children[0], err);
-
-                            // change the node type
-                            node->m_op = OpCode::ReadSwizzle;
-                            node->m_extraData.m_mask = mask;
-
-                            // contract the type to the number of components extracted and remove the assignability of the result
-                            node->m_dataType = GetContractedType(lib.typeLibrary(), sourceType, mask.numberOfComponentsProduced());
-                            node->m_dataType = node->m_dataType.unmakePointer();
-
-                        }
-                        else
-                        {
-                            // member access is only legal on references
-                            /*if (!sourceType.isReference())
-                            {
-                                err.reportError(node->location(), base::TempString("Type '{}' is not addressable as a structure", sourceType));
-                                return false;
-                            }*/
-
-                            // find member in the composite type
-                            auto memberIndex = sourceType.composite().memberIndex(memberName);
-                            if (memberIndex == -1)
-                            {
-                                err.reportError(node->location(), base::TempString("Structure '{}' has no member '{}'", sourceType, memberName));
-                                return false;
-                            }
-
-                            // use the member type, preserve parent reference and const flag
-                            node->m_dataType = sourceType.composite().memberType(memberIndex).applyFlags(sourceType.flags());
-                        }
-                    }                   
-                    else if (sourceType.isProgram())
-                    {
-                        auto program  = sourceType.program();
-
-                        // find a variable
-                        auto programParam  = program->findParameter(memberName);
-                        if (programParam != nullptr)
-                        {
-                            node->m_dataType = programParam->dataType; // reference is preserved
-                        }
-                        else
-                        {
-                            // find a function
-                            auto programFunc  = program->findFunction(memberName);
-                            if (programFunc != nullptr)
-                            {
-                                node->m_op = OpCode::FuncRef;
-                                node->m_dataType = DataType(programFunc);
-                            }
-                            else
-                            {
-                                err.reportError(node->location(), base::TempString("Member '{}' not found in program '{}'", memberName, program->name()));
-                                return false;
-                            }
-                        }
-                    }
-                    else if (sourceType.isNumericalScalar())
-                    {
-                        // for scalar types we allow the .x .xx .xxx etc stuff
-                        // use the swizzle if possible
-                        ComponentMask mask;
-                        if (!ComponentMask::Parse(memberName.c_str(), mask))
-                        {
-                            err.reportError(node->location(), base::TempString("Unable to parse swizzle from '{}'", memberName));
-                            return false;
-                        }
-
-                        // validate the swizzle
-                        if (!CanUseComponentMask(sourceType, mask))
-                        {
-                            err.reportError(node->location(), base::TempString("Swizzle '{}' is not compatible with type '{}'", memberName, sourceType));
-                            return false;
-                        }
-
-                        // make sure the type is dereferenced before swizzling
-                        node->m_children[0] = Dereferece(lib, (CodeNode*)node->m_children[0], err);
-
-                        // change the node type
-                        node->m_op = OpCode::ReadSwizzle;
-                        node->m_extraData.m_mask = mask;
-
-                        // contract the type to the number of components extracted and remove the assignability of the result
-                        node->m_dataType = GetContractedType(lib.typeLibrary(), sourceType, mask.numberOfComponentsProduced());
-                        node->m_dataType = node->m_dataType.unmakePointer();
-                        TRACE_DEEP("{}: swizzled type for '{}' {} -> '{}'", sourceType, mask, node->m_dataType);
-                    }
-                    else
-                    {
-                        err.reportError(node->location(), base::TempString("Type '{}' has no member '{}'", sourceType, memberName));
-                        return false;
-                    }
-
-                    break;
-                }
-
-                // cast node
                 case OpCode::Cast:
-                {
-                    // do explicit cast
-                    if (!MatchNodeType(lib, (CodeNode*&)node->m_children[0], node->m_extraData.m_castType, true, err))
-                        return false;
-
-                    // use the casted type
-                    node->m_dataType = node->m_extraData.m_castType.unmakePointer();
-                    node->m_typesResolved = true;
-                    break;
-                }
-
-                // function call
+					return ResolveTypes_Cast(lib, program, func, node, err);
+               
                 case OpCode::Call:
-                {
-                    base::Array<DataType> argumentTypes;
-                    DataType returnType;
+					return ResolveTypes_Call(lib, program, func, node, err);
 
-                    // the first child must be of a "function ref" type
-                    const char* functionName = "Unknown";
-                    auto callContextNode  = const_cast<CodeNode*>(node->m_children[0]);
-                    if (callContextNode->m_op == OpCode::Ident)
-                    {
-                        auto nativeFunction  = callContextNode->extraData().m_nativeFunctionRef;
-                        auto funcName = nativeFunction->cls()->findMetadataRef<FunctionNameMetadata>().name();
-
-                        // collect the types of the children (arguments)
-                        for (uint32_t i=1; i<node->m_children.size(); ++i)
-                        {
-                            auto child = node->m_children[i];
-                            ASSERT(child != nullptr);
-                            argumentTypes.pushBack(child->dataType());
-                        }
-
-                        // mutate function
-                        // this is used mostly for changing the "flavor" of multiplication
-                        callContextNode->extraData().m_nativeFunctionRef = callContextNode->extraData().m_nativeFunctionRef->mutateFunction(lib.typeLibrary(), argumentTypes.size(), argumentTypes.typedData(), node->location(), err);
-                        if (!callContextNode->extraData().m_nativeFunctionRef)
-                        {
-                            err.reportError(node->location(), base::TempString("Failed to mutate function '{}'", funcName));
-                            return false;
-                        }
-
-                        // ask the function to determine the return type
-                        // NOTE: the "invalid" return type means something failed
-                        functionName = funcName;
-                        returnType = callContextNode->extraData().m_nativeFunctionRef->determineReturnType(lib.typeLibrary(), argumentTypes.size(), argumentTypes.typedData(), node->location(), err);
-                    }
-                    else if (callContextNode->dataType().isFunction())
-                    {
-                        // no function to call ?
-                        auto callFunction = callContextNode->dataType().function();
-                        ASSERT(callFunction != nullptr);
-
-                        // use the return type of the function it's defined
-                        returnType = callFunction->returnType();
-                        functionName = callFunction->name().c_str();
-
-                        // use the types for arguments as specified in the function
-                        for (auto arg  : callFunction->inputParameters())
-                            argumentTypes.pushBack(arg->dataType);
-                    }
-                    else
-                    {
-                        err.reportError(node->location(), base::TempString("Context of call ({}) is not a function", callContextNode->dataType()));
-                        return false;
-                    }
-
-                    // return type of the function is not valid
-                    if (!returnType.valid())
-                        return false;
-
-                    // apply conversion if needed
-                    // NOTE: child may be substituted by conversion
-                    bool typesMatched = true;
-                    for (uint32_t i = 0; i < argumentTypes.size(); ++i)
-                    {
-                        auto childIndex = 1+i;
-                        if (childIndex >= node->m_children.size())
-                        {
-                            err.reportError(node->location(), base::TempString("Missing argument {} needed by function call to {}", childIndex, functionName));
-                            return false;
-                        }
-
-                        if (!argumentTypes[i].valid())
-                        {
-                            err.reportError(node->location(), base::TempString("Argument {} of function call to {} takes undefined type", childIndex, functionName));
-                            return false;
-                        }
-
-                        if (!node->m_children[childIndex])
-                            continue;
-
-                        if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[1+i]), argumentTypes[i], false, err))
-                            typesMatched = false;
-                    }
-
-                    // validate that the types match
-                    if (!typesMatched)
-                        return false;
-
-                    // mutate the node
-                    if (callContextNode->m_op == OpCode::Ident)
-                    {
-                        // mutate the node
-                        node->m_op = OpCode::NativeCall;
-                        node->m_extraData.m_nativeFunctionRef = callContextNode->m_extraData.m_nativeFunctionRef;
-                        node->m_children.erase(0);
-                        ASSERT(node->m_extraData.m_nativeFunctionRef != nullptr);
-                    }
-
-                    // we have a valid function call, set the return type
-                    node->m_dataType = returnType.unmakePointer();
-                    break;
-                }
-
-                // if-else selector
                 case OpCode::IfElse:
-                {
-                    // every condition should evaluate to bool
-                    for (uint32_t i = 0; (i + 1) < node->m_children.size(); i += 2)
-                    {
-                        if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[i]), DataType::BoolScalarType(), true, err))
-                            return false;
-                    }
+					return ResolveTypes_IfElse(lib, program, func, node, err);
 
-                    // no more work here
-                    break;
-                }
-
-                // loop
                 case OpCode::Loop:
-                {
-                    // make sure loop condition can be casted to bool
-                    if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[0]), DataType::BoolScalarType(), true, err))
-                        return false;
-                    break;
-                }
+					return ResolveTypes_Loop(lib, program, func, node, err);
 
-                // program instance
                 case OpCode::ProgramInstance:
-                {
-                    // get the program
-                    ASSERT(node->m_dataType.baseType() == BaseType::Program);
-                    auto program  = node->m_dataType.program();
-                    ASSERT(program != nullptr);
+					return ResolveTypes_ProgramInstance(lib, program, func, node, err);
 
-                    // check types of the parameters
-                    TRACE_DEEP("{}: instancing for '{}'", node->location(), program->name());
-                    for (uint32_t i=0; i<node->m_children.size(); ++i)
-                    {
-                        auto programParamNode  = node->m_children[i];
-                        ASSERT(programParamNode->opCode() == OpCode::ProgramInstanceParam);
+				case OpCode::CreateVector:
+					return ResolveTypes_CreateVector(lib, program, func, node, err);
 
-                        // make sure program defines given parameter
-                        auto programParamName = programParamNode->extraData().m_name;
-                        auto programParam  = program->findParameter(programParamName, true);
-                        if (!programParam)
-                        {
-                            err.reportError(node->location(), base::TempString("Parameter '{}' is not declared in program '{}' or any parent programs", programParamName, program->name()));
-                            return false;
-                        }
+				case OpCode::CreateMatrix:
+					return ResolveTypes_CreateMatrix(lib, program, func, node, err);
 
-                        // make sure it's a constexpr param
-                        if (programParam->scope != DataParameterScope::GlobalConst)
-                        {
-                            err.reportError(node->location(), base::TempString("Parameter '{}' from program '{}' was not declared as constexpr", programParamName, program->name()));
-                            return false;
-                        }
+				case OpCode::CreateArray:
+					return ResolveTypes_CreateArray(lib, program, func, node, err);
 
-                        // match type
-                        auto requestedDataType = programParam->dataType;
-                        if (!MatchNodeType(lib, const_cast<CodeNode*&>(programParamNode->m_children[0]), requestedDataType, false, err))
-                            return false;
-
-                        TRACE_DEEP("{}: resolved type for '{}', '{}'", programParamNode->location(), programParamName, requestedDataType);
-                    }
-
-                    // prepared
-                    return true;
-                }
-
-                case OpCode::ProgramInstanceParam:
-                {
-                    return true;
-                }
-
-                // empty shit
-                case OpCode::Break:
-                case OpCode::Continue:
-                case OpCode::Exit:
-                case OpCode::Scope:
-                {
-                    return true;
-                }
-
-                // return value from function
                 case OpCode::Return:
-                {
-                    // we cannot return stuff if function does not define ar return
-                    if (func->returnType().baseType() == BaseType::Void)
-                    {
-                        if (!node->children().empty())
-                        {
-                            err.reportError(node->location(), base::TempString("Function '{}' does not return anything", func->name()));
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (node->children().empty())
-                        {
-                            err.reportError(node->location(), "Expected value to return");
-                            return false;
-                        }
+					return ResolveTypes_Return(lib, program, func, node, err);
 
-                        // match the source node to the target type
-                        if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[0]), func->returnType(), false, err))
-                            return false;
-                    }
-
-                    return true;
-                }
+				// empty shit
+				case OpCode::Nop:
+				case OpCode::Const:
+				case OpCode::Break:
+				case OpCode::Continue:
+				case OpCode::Exit:
+				case OpCode::Scope:
+				case OpCode::ProgramInstanceParam:
+					return true;
 
                 // unsupported node
                 default:
@@ -1282,7 +820,7 @@ namespace rendering
             DEBUG_CHECK(sourceType.isResource());
             const auto& res = sourceType.resource();
 
-            if (res.texture)
+            if (res.type == DeviceObjectViewType::Image || res.type == DeviceObjectViewType::ImageWritable)
             {
                 // TODO: add support for texture tables (unbounded tables of descriptors/bindless texture arrays)
 
@@ -1308,13 +846,14 @@ namespace rendering
                 }
 
                 // for UAV textures the output may be writable
-                auto writable = res.uav && !res.attributes.has("readonly"_id);
+                auto writable = (res.type == DeviceObjectViewType::ImageWritable) && !res.attributes.has("readonly"_id);
                 if (writable)
                     node->m_dataType = node->m_dataType.makePointer().makeAtomic();
 
                 return true;
             }
-            else if (res.buffer)
+            else if (res.type == DeviceObjectViewType::BufferStructured || res.type == DeviceObjectViewType::BufferWritable 
+				|| res.type == DeviceObjectViewType::BufferStructuredWritable || res.type == DeviceObjectViewType::Buffer)
             {
                 // all buffers can be indexed with one coordinate
                 const auto arrayIndexType = lib.typeLibrary().unsignedType();
@@ -1338,7 +877,7 @@ namespace rendering
                 }
 
                 // for UAV buffers the output may be writable
-                auto writable = res.uav && !res.attributes.has("readonly"_id);
+				auto writable = (res.type == DeviceObjectViewType::BufferWritable  || res.type == DeviceObjectViewType::BufferStructuredWritable) && !res.attributes.has("readonly"_id);
                 if (writable)
                     node->m_dataType = node->m_dataType.makePointer().makeAtomic();
                 return true;
@@ -1348,70 +887,782 @@ namespace rendering
             return false;
         }
 
-        /*bool CodeNode::CalcCRC(base::CRC64& crc, const CodeNode* node)
-        {
-            bool valid = true;
+		//--
 
-            // opcode is always dump, in case of empty node we dump 0
-            auto opCode = node ? node->opCode() : OpCode::Nop;
-            crc << (uint8_t)opCode;
+		bool CodeNode::ResolveTypes_This(SHADER_RESOLVE_FUNC)
+		{
+			if (!program)
+			{
+				err.reportError(node->location(), "'this' can only be used when function is member of a program/shader");
+				return false;
+			}
 
-            // non empty nodes dump additional data
-            if (node)
-            {
-                // dump node computed type
-                auto& dataType = node->dataType();
-                valid &= dataType.calcTypeHash(crc);
+			node->m_dataType = DataType(program);
+			return true;
+		}
 
-                // node specific data
-                auto& extraData = node->extraData();
-                if (opCode == OpCode::Const)
-                {
-                    if (!node->dataValue().calcCRC(crc))
-                    {
-                        valid = false;
-                    }
-                }
-                else if (opCode == OpCode::ParamRef)
-                {
-                    if (extraData.m_paramRef != nullptr)
-                    {
-                        auto &dataParam = *extraData.m_paramRef;
-                        crc << dataParam.name.c_str();
-                        crc << (uint8_t) dataParam.scope;
+		bool CodeNode::ResolveTypes_Load(SHADER_RESOLVE_FUNC)
+		{
+			// we can only load from reference
+			auto loadedType = node->m_children[0]->dataType();
+			if (!loadedType.isReference())
+			{
+				err.reportError(node->location(), "Explicit loading requires a reference");
+				return false;
+			}
 
-                        for (auto& key : dataParam.attributes.attributes.keys())
-                            crc << key;
-                        for (auto& value : dataParam.attributes.attributes.values())
-                            crc << value;
+			node->m_dataType = loadedType.unmakePointer();
+			return true;
+		}
 
-                        if (!dataParam.dataType.calcTypeHash(crc))
-                        {
-                            valid = false;
-                        }
-                    }
-                }
-                else if (opCode == OpCode::Ident)
-                {
-                    if (extraData.m_nativeFunctionRef != nullptr)
-                    {
-                        crc << extraData.m_nativeFunctionRef->cls()->findMetadataRef<FunctionNameMetadata>().name();
-                    }
-                }
-                else if (opCode == OpCode::AccessMember)
-                {
-                    crc << extraData.m_name.c_str();
-                }
+		bool CodeNode::ResolveTypes_Store(SHADER_RESOLVE_FUNC)
+		{
+			// pull the mask in
+			auto targetType = node->m_children[0]->dataType();
+			if (node->m_children[0]->m_op == OpCode::ReadSwizzle)
+			{
+				auto& mask = node->m_children[0]->m_extraData.m_mask;
+				if (!mask.isMask())
+				{
+					err.reportError(node->location(), base::TempString("Swizzle '{}' is not a valid write mask for '{}'", mask, targetType));
+					return false;
+				}
 
-                // children
-                crc << node->children().size();
-                for (auto child  : node->children())
-                    valid &= CalcCRC(crc, child);
-            }
+				// pull in the mask
+				node->m_extraData.m_mask = mask;
+				node->m_children[0] = node->m_children[0]->m_children[0];
 
-            // accept computation
-            return valid;
-        }*/
+				// un-load (to make a reference again)
+				if (node->m_children[0]->m_op == OpCode::Load)
+					node->m_children[0] = node->m_children[0]->m_children[0];
+
+				targetType = node->m_children[0]->dataType();
+			}
+
+			// we can only store into references
+			if (!targetType.isReference())
+			{
+				err.reportError(node->location(), base::TempString("Cannot write to '{}', type is not a reference", targetType));
+				return false;
+			}
+
+			// if the store has a mask use it to limit the write
+			if (node->m_extraData.m_mask.valid())
+				targetType = GetContractedType(lib.typeLibrary(), targetType, node->m_extraData.m_mask.numberOfComponentsProduced());
+
+			// convert the source into the target type, note that the type should be dereferenced (will generate a load)
+			auto targetTypeNoRef = targetType.unmakePointer();
+			if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], targetTypeNoRef, false, err))
+				return false;
+
+			// the assignment has the same type as the target and is, of course, read only
+			node->m_dataType = targetTypeNoRef;
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_Ident(SHADER_RESOLVE_FUNC)
+		{
+			// resolve the identifier
+			const auto& paramName = node->m_extraData.m_name;
+			auto resolvedIdent = ResolveIdent(lib, program, func, node, paramName, err);
+			if (!resolvedIdent)
+			{
+				err.reportError(node->location(), base::TempString("Unknown reference to '{}'", paramName));
+				auto resolvedIdent2 = ResolveIdent(lib, program, func, node, paramName, err);
+				return false;
+			}
+
+			// assign type from param
+			if (resolvedIdent.m_param)
+			{
+				// there's a trick with resource references: they are used as names internally to allow us to pass them through functions etc
+				if (resolvedIdent.m_param->dataType.isResource())
+				{
+					DEBUG_CHECK(resolvedIdent.m_param->scope == DataParameterScope::GlobalParameter);
+
+					// make ourselves a constant
+					node->m_op = OpCode::Const;
+					node->m_dataType = resolvedIdent.m_param->dataType.unmakePointer();
+
+					// make resource key
+					const auto key = base::StringID(base::TempString("res:{}.{}", resolvedIdent.m_param->resourceTable->name(), resolvedIdent.m_param->resourceTableEntry->m_name));
+					err.reportWarning(node->location(), base::TempString("Referenced resource: {}", key));
+					node->m_dataValue = DataValue(key);
+				}
+				else
+				{
+					// the node's return type depends on the parameter type
+					node->m_op = OpCode::ParamRef;
+					node->m_dataType = resolvedIdent.m_param->dataType.makePointer();
+					node->m_extraData.m_paramRef = resolvedIdent.m_param;
+				}
+			}
+			// assign type from function
+			else if (resolvedIdent.m_function)
+			{
+				// the node's return type depends on the parameter type
+				node->m_op = OpCode::FuncRef;
+				node->m_dataType = DataType(resolvedIdent.m_function);
+
+				// sub node (call context for the function)
+				if (program != nullptr)
+				{
+					auto thisNode = lib.allocator().create<CodeNode>(node->location(), OpCode::This);
+					thisNode->m_dataType = DataType(program);
+					thisNode->m_typesResolved = true;
+					node->addChild(thisNode);
+				}
+				else
+				{
+					auto nopNode = lib.allocator().create<CodeNode>(node->location(), OpCode::Nop);
+					nopNode->m_typesResolved = true;
+					node->addChild(nopNode);
+				}
+			}
+			// native function call
+			else if (resolvedIdent.m_nativeFunction)
+			{
+				node->m_extraData.m_nativeFunctionRef = resolvedIdent.m_nativeFunction;
+			}
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_AccessArray(SHADER_RESOLVE_FUNC)
+		{
+			// structured parameters are implicit arrays
+			auto sourceType = node->m_children[0]->dataType();
+			if (sourceType.isResource())
+				return HandleResourceArrayAccess(lib, node, err);
+
+			// we can only access elements of arrays :)
+			if (!sourceType.isArray())
+			{
+				err.reportError(node->location(), base::TempString("Type '{}' has no operator[] defined", sourceType));
+				return false;
+			}
+
+			// the array index should be a single int
+			auto arrayIndexType = DataType::UnsignedScalarType();
+			if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
+				return false;
+
+			// return type is the array inner type
+			node->m_dataType = GetArrayInnerType(sourceType).makePointer();
+			node->m_dataType.applyFlags(sourceType.flags());
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember(SHADER_RESOLVE_FUNC)
+		{
+			// we can only access member of structures or types that can be swizzled
+			auto sourceType = node->m_children[0]->dataType();
+			auto memberName = node->m_extraData.m_name;
+			if (sourceType.isComposite())
+			{
+				if (sourceType.composite().hint() == CompositeTypeHint::VectorType)
+					return ResolveTypes_AccessMember_Vector(sourceType, memberName, lib, program, func, node, err);
+
+				else if (sourceType.composite().hint() == CompositeTypeHint::MatrixType)
+					return ResolveTypes_AccessMember_Matrix(sourceType, memberName, lib, program, func, node, err);
+
+				else
+					return ResolveTypes_AccessMember_Struct(sourceType, memberName, lib, program, func, node, err);
+
+			}
+			else if (sourceType.isProgram())
+				return ResolveTypes_AccessMember_Program(sourceType, memberName, lib, program, func, node, err);
+
+			else if (sourceType.isNumericalScalar())
+				return ResolveTypes_AccessMember_Scalar(sourceType, memberName, lib, program, func, node, err);
+
+			// well, no member
+			err.reportError(node->location(), base::TempString("Type '{}' has no member '{}'", sourceType, memberName));
+			return false;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember_Vector(const DataType& sourceType, base::StringID memberName, SHADER_RESOLVE_FUNC)
+		{
+			// use the swizzle if possible
+			ComponentMask mask;
+			if (!ComponentMask::Parse(memberName.c_str(), mask))
+			{
+				err.reportError(node->location(), base::TempString("Unable to parse swizzle from '{}'", memberName));
+				return false;
+			}
+
+			// validate the swizzle
+			if (!CanUseComponentMask(sourceType, mask))
+			{
+				err.reportError(node->location(), base::TempString("Swizzle '{}' is not compatible with type '{}'", memberName, sourceType));
+				return false;
+			}
+
+			// make sure the type is dereferenced before swizzling
+			node->m_children[0] = Dereferece(lib, (CodeNode*)node->m_children[0], err);
+
+			// change the node type
+			node->m_op = OpCode::ReadSwizzle;
+			node->m_extraData.m_mask = mask;
+
+			// contract the type to the number of components extracted 
+			node->m_dataType = GetContractedType(lib.typeLibrary(), sourceType, mask.numberOfComponentsProduced());
+
+			// in general the member is not assignable
+			// TODO: maybe it should be? it would allow for passing components (or valid write masks) to function as out/inout parameters
+			node->m_dataType = node->m_dataType.unmakePointer();
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember_Matrix(const DataType& sourceType, base::StringID memberName, SHADER_RESOLVE_FUNC)
+		{
+			err.reportError(node->location(), base::TempString("Matrices have no direct members, use the array operator to access COLUMNS"));
+			return false;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember_Struct(const DataType& sourceType, base::StringID memberName, SHADER_RESOLVE_FUNC)
+		{
+			// find member in the composite type
+			auto memberIndex = sourceType.composite().memberIndex(memberName);
+			if (memberIndex == -1)
+			{
+				err.reportError(node->location(), base::TempString("Structure '{}' has no member '{}'", sourceType, memberName));
+				return false;
+			}
+
+			// use the member type, preserve parent reference and const flag
+			node->m_dataType = sourceType.composite().memberType(memberIndex).applyFlags(sourceType.flags());
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember_Program(const DataType& sourceType, base::StringID memberName, SHADER_RESOLVE_FUNC)
+		{
+			// try as variable first
+			auto targetProgram = sourceType.program();
+			if (auto programParam = targetProgram->findParameter(memberName))
+			{
+				node->m_dataType = programParam->dataType; // reference is preserved
+				return true;
+			}
+
+			// try now as a function
+			else if (auto programFunc = targetProgram->findFunction(memberName))
+			{
+				node->m_op = OpCode::FuncRef;
+				node->m_dataType = DataType(programFunc);
+				return true;
+			}
+
+			// unknown
+			err.reportError(node->location(), base::TempString("Member '{}' not found in program '{}'", memberName, targetProgram->name()));
+			return false;
+		}
+
+		bool CodeNode::ResolveTypes_AccessMember_Scalar(const DataType& sourceType, base::StringID memberName, SHADER_RESOLVE_FUNC)
+		{
+			// for scalar types we allow the .x .xx .xxx etc stuff
+			// use the swizzle if possible
+			ComponentMask mask;
+			if (!ComponentMask::Parse(memberName.c_str(), mask))
+			{
+				err.reportError(node->location(), base::TempString("Unable to parse swizzle from '{}'", memberName));
+				return false;
+			}
+
+			// validate the swizzle
+			if (!CanUseComponentMask(sourceType, mask))
+			{
+				err.reportError(node->location(), base::TempString("Swizzle '{}' is not compatible with type '{}'", memberName, sourceType));
+				return false;
+			}
+
+			// make sure the type is dereferenced before swizzling
+			node->m_children[0] = Dereferece(lib, (CodeNode*)node->m_children[0], err);
+
+			// change the node type
+			node->m_op = OpCode::ReadSwizzle;
+			node->m_extraData.m_mask = mask;
+
+			// expand the scalar to the correct number of components
+			node->m_dataType = GetContractedType(lib.typeLibrary(), sourceType, mask.numberOfComponentsProduced());
+
+			// scalar in general is not assignable after expansion
+			node->m_dataType = node->m_dataType.unmakePointer();
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_Cast(SHADER_RESOLVE_FUNC)
+		{
+			// do explicit cast
+			if (!MatchNodeType(lib, (CodeNode*&)node->m_children[0], node->m_extraData.m_castType, true, err))
+				return false;
+
+			// use the casted type
+			node->m_dataType = node->m_extraData.m_castType.unmakePointer();
+			node->m_typesResolved = true;
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_Call(SHADER_RESOLVE_FUNC)
+		{
+			base::Array<DataType> argumentTypes;
+			DataType returnType;
+
+			// the first child must be of a "function ref" type
+			const char* functionName = "Unknown";
+			auto callContextNode = const_cast<CodeNode*>(node->m_children[0]);
+			if (callContextNode->m_op == OpCode::Ident)
+			{
+				auto nativeFunction = callContextNode->extraData().m_nativeFunctionRef;
+				auto funcName = nativeFunction->cls()->findMetadataRef<FunctionNameMetadata>().name();
+
+				// collect the types of the children (arguments)
+				for (uint32_t i = 1; i < node->m_children.size(); ++i)
+				{
+					auto child = node->m_children[i];
+					ASSERT(child != nullptr);
+					argumentTypes.pushBack(child->dataType());
+				}
+
+				// mutate function
+				// this is used mostly for changing the "flavor" of multiplication
+				callContextNode->extraData().m_nativeFunctionRef = callContextNode->extraData().m_nativeFunctionRef->mutateFunction(lib.typeLibrary(), argumentTypes.size(), argumentTypes.typedData(), node->location(), err);
+				if (!callContextNode->extraData().m_nativeFunctionRef)
+				{
+					err.reportError(node->location(), base::TempString("Failed to mutate function '{}'", funcName));
+					return false;
+				}
+
+				// ask the function to determine the return type
+				// NOTE: the "invalid" return type means something failed
+				functionName = funcName;
+				returnType = callContextNode->extraData().m_nativeFunctionRef->determineReturnType(lib.typeLibrary(), argumentTypes.size(), argumentTypes.typedData(), node->location(), err);
+			}
+			else if (callContextNode->dataType().isFunction())
+			{
+				// no function to call ?
+				auto callFunction = callContextNode->dataType().function();
+				ASSERT(callFunction != nullptr);
+
+				// use the return type of the function it's defined
+				returnType = callFunction->returnType();
+				functionName = callFunction->name().c_str();
+
+				// use the types for arguments as specified in the function
+				for (auto arg : callFunction->inputParameters())
+					argumentTypes.pushBack(arg->dataType);
+			}
+			else
+			{
+				err.reportError(node->location(), base::TempString("Context of call ({}) is not a function", callContextNode->dataType()));
+				return false;
+			}
+
+			// return type of the function is not valid
+			if (!returnType.valid())
+				return false;
+
+			// apply conversion if needed
+			// NOTE: child may be substituted by conversion
+			bool typesMatched = true;
+			for (uint32_t i = 0; i < argumentTypes.size(); ++i)
+			{
+				auto childIndex = 1 + i;
+				if (childIndex >= node->m_children.size())
+				{
+					err.reportError(node->location(), base::TempString("Missing argument {} needed by function call to {}", childIndex, functionName));
+					return false;
+				}
+
+				if (!argumentTypes[i].valid())
+				{
+					err.reportError(node->location(), base::TempString("Argument {} of function call to {} takes undefined type", childIndex, functionName));
+					return false;
+				}
+
+				if (!node->m_children[childIndex])
+					continue;
+
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[1 + i]), argumentTypes[i], false, err))
+					typesMatched = false;
+			}
+
+			// validate that the types match
+			if (!typesMatched)
+				return false;
+
+			// mutate the node
+			if (callContextNode->m_op == OpCode::Ident)
+			{
+				// mutate the node
+				node->m_op = OpCode::NativeCall;
+				node->m_extraData.m_nativeFunctionRef = callContextNode->m_extraData.m_nativeFunctionRef;
+				node->m_children.erase(0);
+				ASSERT(node->m_extraData.m_nativeFunctionRef != nullptr);
+			}
+
+			// we have a valid function call, set the return type
+			node->m_dataType = returnType.unmakePointer();
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_IfElse(SHADER_RESOLVE_FUNC)
+		{
+			// every condition should evaluate to bool
+			for (uint32_t i = 0; (i + 1) < node->m_children.size(); i += 2)
+			{
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[i]), DataType::BoolScalarType(), true, err))
+					return false;
+			}
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_Loop(SHADER_RESOLVE_FUNC)
+		{
+			// look condition must be resolvable to boolean
+			auto*& loopCondition = const_cast<CodeNode*&>(node->m_children[0]);
+			if (!MatchNodeType(lib, loopCondition, DataType::BoolScalarType(), true, err))
+				return false;
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_ProgramInstance(SHADER_RESOLVE_FUNC)
+		{
+			// get the program
+			ASSERT(node->m_dataType.baseType() == BaseType::Program);
+			auto targetProgram = node->m_dataType.program();
+			ASSERT(targetProgram != nullptr);
+
+			// check types of the parameters
+			TRACE_DEEP("{}: instancing for '{}'", node->location(), targetProgram->name());
+			for (uint32_t i = 0; i < node->m_children.size(); ++i)
+			{
+				auto programParamNode = node->m_children[i];
+				ASSERT(programParamNode->opCode() == OpCode::ProgramInstanceParam);
+
+				// make sure target program defines given parameter
+				auto programParamName = programParamNode->extraData().m_name;
+				auto programParam = targetProgram->findParameter(programParamName, true);
+				if (!programParam)
+				{
+					err.reportError(node->location(), base::TempString("Parameter '{}' is not declared in program '{}' or any parent programs", programParamName, targetProgram->name()));
+					return false;
+				}
+
+				// make sure it's a constexpr param
+				if (programParam->scope != DataParameterScope::GlobalConst)
+				{
+					err.reportError(node->location(), base::TempString("Parameter '{}' from program '{}' was not declared as constexpr", programParamName, targetProgram->name()));
+					return false;
+				}
+
+				// match type
+				auto requestedDataType = programParam->dataType;
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(programParamNode->m_children[0]), requestedDataType, false, err))
+					return false;
+
+				TRACE_DEEP("{}: resolved type for '{}', '{}'", programParamNode->location(), programParamName, requestedDataType);
+			}
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_Return(SHADER_RESOLVE_FUNC)
+		{
+			// we cannot return stuff if function does not define a return type ;)
+			if (func->returnType().baseType() == BaseType::Void)
+			{
+				if (!node->children().empty())
+				{
+					err.reportError(node->location(), base::TempString("Function '{}' does not return anything", func->name()));
+					return false;
+				}
+			}
+			else
+			{
+				if (node->children().empty())
+				{
+					err.reportError(node->location(), "Expected value to return");
+					return false;
+				}
+
+				// match the source node to the target type
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(node->m_children[0]), func->returnType(), false, err))
+					return false;
+			}
+
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_CreateVector(SHADER_RESOLVE_FUNC)
+		{
+			// get the base type
+			const auto& dataType = node->m_extraData.m_castType;
+			auto baseType = ExtractBaseType(dataType);
+			if (!AllowedVectorConstructionType(baseType))
+			{
+				err.reportError(node->location(), "Vector constructor requires a valid numerical type as a base");
+				return false;
+			}
+
+			// get the number of components the vector should produce
+			const auto expectedComponentCount = ExtractComponentCount(dataType);
+			if (expectedComponentCount < 2 || expectedComponentCount > 4)
+			{
+				err.reportError(node->location(), "Unexpected number of components in vector type");
+				return false;
+			}
+
+			// we need at least one argument
+			const auto numArgs = node->m_children.size();
+			if (numArgs == 0)
+			{
+				err.reportError(node->location(), "Vector constructor requires at least one argument, pass zero if not sure :)");
+				return false;
+			}
+
+			// make sure all arguments are castable
+			uint32_t numComponentsCollected = 0;
+			for (uint32_t i = 0; i < numArgs; ++i)
+			{
+				auto*& argNode = node->m_children[i];
+				const auto& argType = argNode->dataType();
+
+				// we must be a conforming vector :)
+				if (!argType.isNumericalVectorLikeOperand(true))
+				{
+					err.reportError(node->location(), base::TempString("Vector constructor cannot accept '{}' as input type", argType));
+					return false;
+				}
+
+				// get the number of components in the argument
+				auto numComponents = ExtractComponentCount(argType);
+				if (!numComponents)
+				{
+					err.reportError(node->location(), base::TempString("Vector constructor cannot accept type '{}' as argument because the component count cannot be determined", argType));
+					return false;
+				}
+
+				// make sure we get casted to the base type (for conversion), ie ivec2 -> vec2, int -> float
+				const auto targetType = GetCastedType(lib.typeLibrary(), argType, baseType);
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(argNode), targetType, false, err))
+					return false;
+
+				// remember how many components we have so far
+				numComponentsCollected += numComponents;
+			}
+
+			// if we have to many components it's not good unless there were all provided in one parameter (vec4 -> vec2, ie. vec2(pos))
+			if (numComponentsCollected > expectedComponentCount && numArgs != -1)
+			{
+				err.reportError(node->location(), base::TempString("Too much data in type constructor, expected {} components, {} provided", expectedComponentCount, numComponentsCollected));
+				return false;
+			}
+
+			// not enough component collected - not good unless we just have a single scalar to promote (float -> vec3)
+			if (numComponentsCollected < expectedComponentCount && numComponentsCollected != 1)
+			{
+				err.reportError(node->location(), base::TempString("Vector constructor expects {} components, {} provided", expectedComponentCount, numComponentsCollected));
+				return false;
+			}
+
+			// create the output type
+			node->m_dataType = node->m_extraData.m_castType;
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_CreateMatrix(SHADER_RESOLVE_FUNC)
+		{
+			// get the base type
+			const auto& dataType = node->m_extraData.m_castType;
+			auto baseType = ExtractBaseType(dataType);
+			if (!AllowedMatrixConstructionType(baseType))
+			{
+				err.reportError(node->location(), "Matrix constructor requires a valid numerical type as a base");
+				return false;
+			}
+
+			// get the number of components the vector should produce
+			const auto expectedRowCount = ExtractComponentCount(dataType);
+			const auto expectedColumnCount = ExtractRowCount(dataType);
+			const auto maxComponents = expectedRowCount * expectedColumnCount;
+			if (expectedRowCount < 2 || expectedRowCount > 4 || expectedColumnCount < 2 || expectedColumnCount > 4)
+			{
+				err.reportError(node->location(), "Unexpected number of components in matrix type");
+				return false;
+			}
+
+			// we need at least one argument
+			const auto numArgs = node->m_children.size();
+			if (numArgs == 0)
+			{
+				err.reportError(node->location(), "Matrix constructor requires at least one argument, pass zero if not sure :)");
+				return false;
+			}
+
+			// make sure all arguments are castable
+			uint32_t numComponentsCollected = 0;
+			base::InplaceArray<uint32_t, 16> argumentsComponentCounts;
+			for (uint32_t i = 0; i < numArgs; ++i)
+			{
+				auto*& argNode = node->m_children[i];
+				const auto& argType = argNode->dataType();
+
+				// we must be a conforming vector :)
+				if (!argType.isNumericalVectorLikeOperand(false) && !argType.isNumericalMatrixLikeOperand())
+				{
+					err.reportError(node->location(), base::TempString("Matrix constructor cannot accept '{}' as input type", argType));
+					return false;
+				}
+
+				// get the number of components in the argument
+				auto numComponents = ExtractComponentCount(argType) * ExtractRowCount(argType);
+				if (!numComponents)
+				{
+					err.reportError(node->location(), base::TempString("Matrix constructor cannot accept type '{}' as argument because the component count cannot be determined", argType));
+					return false;
+				}
+
+				// make sure we get casted to the base type (for conversion), ie ivec2 -> vec2, int -> float
+				const auto targetType = GetCastedType(lib.typeLibrary(), argType, baseType);
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(argNode), targetType, false, err))
+					return false;
+
+				// remember how many components we have so far
+				argumentsComponentCounts.pushBack(numComponents);
+				numComponentsCollected += numComponents;
+			}
+
+			// if we don't have ONE argument that they all must be either scalars or column vectors
+			if (numArgs != 1 && numArgs != maxComponents)
+			{
+				if (numArgs != expectedColumnCount)
+				{
+					err.reportError(node->location(), base::TempString("Matrix constructor requires {} colum vectors", expectedColumnCount));
+					return false;
+				}
+
+				for (uint32_t i = 0; i < numArgs; ++i)
+				{
+					if (argumentsComponentCounts[i] != expectedRowCount)
+					{
+						err.reportError(node->location(), base::TempString("Matrix constructor requires {} colum vectors of {} components each", expectedColumnCount, expectedRowCount));
+						return false;
+					}
+				}
+			}
+
+			// we support only 1-4 components
+			// TODO: we can make other counts work as well
+			if (numComponentsCollected > maxComponents)
+			{
+				if (numArgs != 1)
+				{
+					err.reportError(node->location(), base::TempString("Matrix constructor of this type can accept up to {} components, {} provided", maxComponents, numComponentsCollected));
+					return false;
+				}
+				else
+				{
+					auto sourceCols = ExtractComponentCount(node->m_children[0]->m_dataType);
+					auto sourceRows = ExtractRowCount(node->m_children[0]->m_dataType);
+
+					if (expectedRowCount > sourceRows || sourceCols > sourceCols)
+					{
+						err.reportError(node->location(), base::TempString("Source matrix does not have enough row/columns for this construction"));
+						return false;
+					}
+					else
+					{
+						// matrix truncation, ie mat4x3 -> mat3x2
+					}
+				}
+			}
+
+			// not enough components
+			else if (numComponentsCollected < maxComponents)
+			{
+				if (numArgs == 1)
+				{
+					if (numComponentsCollected != 1)
+					{
+						auto targetSquare = (expectedRowCount == expectedColumnCount);
+						auto sourceSquare = ExtractComponentCount(node->m_children[0]->m_dataType) == ExtractRowCount(node->m_children[0]->m_dataType);
+						if (!targetSquare || !sourceSquare)
+						{
+							err.reportError(node->location(), base::TempString("Matrix constructor of this type works only with squre matrices"));
+							return false;
+						}
+					}
+					else
+					{
+						// trace matrix case
+						// mat3(1.0) -> mat3(1,0,0, 0,1,0, 0,0,1);
+					}
+				}
+				else
+				{
+					// matrix automatic promotion, ie. mat2 -> mat3
+					/*
+						mat2 m2x2 = mat2(
+						   1.1, 2.1,
+						   1.2, 2.2
+						);
+						mat3 m3x3 = mat3(m2x2); // = mat3(
+						   // 1.1, 2.1, 0.0,
+						   // 1.2, 2.2, 0.0,
+						   // 0.0, 0.0, 1.0)
+					*/
+				}
+			}
+
+			// create the output type
+			node->m_dataType = node->m_extraData.m_castType;
+			return true;
+		}
+
+		bool CodeNode::ResolveTypes_CreateArray(SHADER_RESOLVE_FUNC)
+		{
+			// we need at least one argument
+			const auto numArgs = node->m_children.size();
+			if (numArgs == 0)
+			{
+				err.reportError(node->location(), "Array constructor requires at least one argument");
+				return false;
+			}
+
+			// get the type of element in the array
+			const auto arrayType = node->m_extraData.m_castType;
+			ASSERT(arrayType.isArray());
+
+			const auto arrayElementType = arrayType.applyArrayCounts(arrayType.arrayCounts().innerCounts());
+			const auto expectedElementCount = arrayType.arrayCounts().outermostCount();
+			if (expectedElementCount != numArgs)
+			{
+				err.reportError(node->location(), base::TempString("Array constructor requires {} arguments but {} were provided", expectedElementCount, numArgs));
+				return false;
+			}
+
+			// make sure each argument matches, there's some small wiggle room for conversion but not much
+			for (uint32_t i = 0; i < numArgs; ++i)
+			{
+				auto*& argNode = node->m_children[i];
+				const auto& argType = argNode->dataType();
+
+				// make sure we get casted to the base type (for conversion), ie ivec2 -> vec2, int -> float
+				if (!MatchNodeType(lib, const_cast<CodeNode*&>(argNode), arrayElementType, false, err))
+					return false;
+			}
+
+			// looks ok
+			node->m_dataType = node->m_extraData.m_castType;
+			return true;
+		}
+
+		//--        
 
     } // shader
 } // rendering

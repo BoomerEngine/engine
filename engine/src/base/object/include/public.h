@@ -26,6 +26,15 @@ namespace base
 
     //--
 
+	/// stubs
+	struct IStub;
+	class IStubWriter;
+	class IStubReader;
+
+	typedef uint16_t StubTypeValue;
+
+	//---
+
     /// object pointer types
     class IObject;
     typedef RefPtr<IObject> ObjectPtr;

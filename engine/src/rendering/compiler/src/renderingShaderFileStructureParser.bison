@@ -1,4 +1,4 @@
-%{
+ %{
 
 // [# filter: compiler\parser #]
 
@@ -46,6 +46,8 @@ static int cslf_error(rendering::compiler::parser::ParsingFileContext& ctx, rend
 %token TOKEN_SHADER
 %token TOKEN_DESCRIPTOR
 %token TOKEN_CONSTANTS
+%token TOKEN_STATIC_SAMPLER
+%token TOKEN_RENDER_STATES
 %token TOKEN_STRUCT
 %token TOKEN_THIS
 %token TOKEN_VERTEX
@@ -68,6 +70,7 @@ static int cslf_error(rendering::compiler::parser::ParsingFileContext& ctx, rend
 %token TOKEN_CASTABLE_TYPE
 %token TOKEN_ARRAY_TYPE
 %token TOKEN_VECTOR_TYPE
+%token TOKEN_MATRIX_TYPE
 %token TOKEN_SHADER_TYPE
 %token TOKEN_STRUCT_TYPE
 
@@ -127,6 +130,8 @@ global_declaration_internal
 	| program_declaration
     | global_function_declaration
 	| global_const_declaration
+	| static_sampler_declaration
+	| render_states_declaration
 	;
 
 struct_definition
@@ -179,7 +184,7 @@ attribute_list
     ;
 
 attribute
-    : TOKEN_IDENT attribute_optional_value {
+    : attribute_key attribute_optional_value {
         $$ = ParsingNode(context.alloc<Element>($1.location, ElementType::Attribute, $1.stringData));
         $$.element->stringData = $2.stringData;
         $$.element->intData = $2.intData;
@@ -190,6 +195,20 @@ attribute_optional_value
     : '=' attribute_value { $$.stringData = $2.stringData; $$.intData = $2.intData; }
     | /* empty */ { $$.intData = 0; $$.stringData = ""; }
     ;
+
+attribute_key
+	: TOKEN_IDENT
+	| TOKEN_RENDER_STATES
+	| TOKEN_STATIC_SAMPLER
+	| TOKEN_DESCRIPTOR
+	| TOKEN_CONST
+	| TOKEN_SHADER
+	| TOKEN_VERTEX
+	| TOKEN_EXPORT
+	| TOKEN_SHARED
+	| TOKEN_DISCARD
+	| TOKEN_ATTRIBUTE
+	;
 
 attribute_value
     : TOKEN_INT_NUMBER
@@ -206,6 +225,55 @@ attribute_value
     | TOKEN_IDENT
     | TOKEN_STRING
     ;
+
+//---
+
+static_sampler_declaration
+	: TOKEN_STATIC_SAMPLER TOKEN_IDENT '{' general_param_element_element_list optional_comma '}' optional_semicolon
+	{
+		$$ = ParsingNode(context.alloc<Element>($2.location, ElementType::StaticSampler, $2.stringData));
+        $$.element->children = std::move($4.elements);
+	} 
+	;
+
+render_states_declaration
+	: TOKEN_RENDER_STATES TOKEN_IDENT '{' general_param_element_element_list optional_comma '}' optional_semicolon
+	{
+		$$ = ParsingNode(context.alloc<Element>($2.location, ElementType::RenderStates, $2.stringData));
+        $$.element->children = std::move($4.elements);
+	}
+	;
+
+general_param_element_element_list
+    : general_param_element_element_list ',' general_param_element
+    {
+        $$.elements.pushBack($3.element);
+    }
+    | general_param_element
+	{
+		$$.elements.reset();
+		$$.elements.pushBack($1.element);
+	}
+    ;
+
+general_param_element
+    : attributes TOKEN_IDENT '=' general_param_value
+    {
+        $$ = ParsingNode(context.alloc<Element>($3.location, ElementType::KeyValueParam, $2.stringData));
+        $$.element->attributes = std::move($1.elements);
+        $$.element->stringData = $4.stringData;
+    }
+    ;
+
+general_param_value
+	: TOKEN_IDENT
+	| TOKEN_BOOL_TRUE
+	| TOKEN_BOOL_FALSE
+	| TOKEN_STRING
+	| TOKEN_INT_NUMBER
+	| TOKEN_FLOAT_NUMBER
+	| TOKEN_NAME
+	;
 
 //---
 
@@ -241,6 +309,13 @@ descriptor_element
         $$ = ParsingNode(context.alloc<Element>($1.location, ElementType::DescriptorConstantTable));
         $$.element->children = std::move($3.elements);
     }
+
+	| TOKEN_STATIC_SAMPLER TOKEN_IDENT ';'
+    {
+        $$ = ParsingNode(context.alloc<Element>($1.location, ElementType::DescriptorResourceElement, $2.stringData));
+        $$.element->stringData = "Sampler";
+    }
+
     ;
 
 //---
@@ -418,28 +493,22 @@ type_declaration_simple
     {
         $$ = ParsingNode(context.alloc<TypeReference>($1.location, $1.stringData));
     }
-    | program_type type_inner
+    | program_type '<' TOKEN_IDENT '>'
     {
         $$ = ParsingNode(context.alloc<TypeReference>($1.location, $1.stringData));
-        $$.typeRef->innerType = $2.stringData;
-        if ($$.typeRef->innerType.empty()) // HACK
-        {            
-            if ($1.stringData == "program")
-                $$.typeRef->innerType = "GenericProgram";
-            else
-                $$.typeRef->innerType = "GenericShader";
-        }
+        $$.typeRef->innerType = $3.stringData;
     }    
     ;
-
-type_inner
-    : '<' TOKEN_IDENT '>' { $$.stringData = $2.stringData; }
-    | /* empty */ { $$.stringData = ""; }
 
 //---
 
 optional_semicolon
     : ';'
+    | /*empty*/
+    ;
+
+optional_comma
+    : ','
     | /*empty*/
     ;
 

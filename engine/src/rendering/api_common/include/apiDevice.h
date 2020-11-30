@@ -44,11 +44,11 @@ namespace rendering
 
 			virtual OutputObjectPtr createOutput(const OutputInitInfo& info) override;
 			virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override;
-			virtual ShaderObjectPtr createShaders(const ShaderLibraryData* shaders, PipelineIndex index) override;
+			virtual ShaderObjectPtr createShaders(const ShaderData* shaders) override;
 			virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override;
 			virtual SamplerObjectPtr createSampler(const SamplerState& info) override;
 			virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) override;
-			virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const StaticRenderStatesSetup& states) override;
+			virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) override;
 
 			virtual bool asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished /*= base::fibers::WaitCounter()*/) override;
 

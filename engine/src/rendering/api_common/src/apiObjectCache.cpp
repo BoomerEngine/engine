@@ -9,7 +9,6 @@
 #include "build.h"
 #include "apiObjectCache.h"
 
-#include "rendering/device/include/renderingShaderLibrary.h"
 #include "rendering/device/include/renderingDescriptor.h"
 
 namespace rendering
@@ -18,8 +17,8 @@ namespace rendering
     {
 		//---
 
-		IBaseVertexBindingLayout::IBaseVertexBindingLayout(base::Array<BindingInfo>&& data)
-			: m_vertexBindPoints(std::move(data))
+		IBaseVertexBindingLayout::IBaseVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
+			: m_elements(streams)
 		{}
 
 		IBaseVertexBindingLayout::~IBaseVertexBindingLayout()
@@ -27,42 +26,15 @@ namespace rendering
 
 		void IBaseVertexBindingLayout::print(base::IFormatStream& f) const
 		{
-			f.appendf("{} vertex streams:\n", m_vertexBindPoints.size());
-
-			for (const auto& v : m_vertexBindPoints)
-			{
-				f.appendf("  Stream [{}]: {}, stride {}{}, {} element(s)\n", v.bindPointIndex, v.name, v.stride, v.instanced ? " INSTANCED" : "", v.attributes.size());
-
-				for (auto i : v.attributes.indexRange())
-				{
-					const auto& a = v.attributes[i];
-					f.appendf("    Attribute [{}]: {} at offset {}\n", i, a.format, a.offset);
-				}
-			}
+			f.appendf("{} vertex streams:\n", m_elements.size());
+			for (const auto& v : m_elements)
+				f.appendf("{}\n", v);
 		}
 
         //---
 
-		DescriptorBindingElement::DescriptorBindingElement()
-		{}
-
-		void DescriptorBindingElement::print(base::IFormatStream& f) const
-		{
-			f.appendf("{}({}) at {}({}): {}", paramName, descriptorElementIndex, bindPointName, bindPointIndex, objectType);
-
-			if (objectFormat != ImageFormat::UNKNOWN)
-				f.appendf(", format: {}", objectFormat);
-
-			if (writable)
-				f.appendf(", writable");
-
-			f.appendf(" at slot {}", apiObjectSlot);
-		}
-
-		//---
-
-		IBaseDescriptorBindingLayout::IBaseDescriptorBindingLayout(const base::Array<DescriptorBindingElement>& elements)
-			: m_elements(elements)
+		IBaseDescriptorBindingLayout::IBaseDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors)
+			: m_descriptors(descriptors)
 		{}
 
 		IBaseDescriptorBindingLayout::~IBaseDescriptorBindingLayout()
@@ -70,13 +42,10 @@ namespace rendering
 
 		void IBaseDescriptorBindingLayout::print(base::IFormatStream& f) const
 		{
-			f.appendf("{} binding elements (API: {})\n", m_elements.size());
+			f.appendf("{} binding elements (API: {})\n", m_descriptors.size());
 
-			for (auto i : m_elements.indexRange())
-			{
-				const auto& b = m_elements[i];
-				f.appendf("  Binding [{}]: {}\n", i, b);
-			}
+			for (auto i : m_descriptors.indexRange())
+				f.appendf("  Binding [{}]: {}\n", i, m_descriptors[i]);
 		}
 
 		//---
@@ -136,95 +105,20 @@ namespace rendering
             return ret;
         }
 
-        uint16_t IBaseObjectCache::resolveDescriptorBindPointIndex(const rendering::ShaderLibraryData& shaderLib, PipelineIndex descriptorLayoutIndex)
+        IBaseVertexBindingLayout* IBaseObjectCache::resolveVertexBindingLayout(const ShaderMetadata* data)
         {
-            const auto& paramTable = shaderLib.parameterLayouts()[descriptorLayoutIndex];
-            const auto paramTableName = shaderLib.names()[paramTable.name];
-
-            base::InplaceArray<DeviceObjectViewType, 32> viewTypes;
-            viewTypes.reserve(paramTable.numElements);
-
-            for (uint32_t i = 0; i < paramTable.numElements; ++i)
-            {
-                const auto& paramTableElement = shaderLib.parameterLayoutsElements()[shaderLib.indirectIndices()[i + paramTable.firstElementIndex]];
-                const auto uav = (paramTableElement.access != ResourceAccess::ReadOnly);
-                switch (paramTableElement.type)
-                {
-                    case ResourceType::Constants:
-                        viewTypes.pushBack(DeviceObjectViewType::ConstantBuffer);
-                        break;
-
-                    case ResourceType::Buffer: 
-                        if (paramTableElement.layout != INVALID_PIPELINE_INDEX)
-                            viewTypes.pushBack(uav ? DeviceObjectViewType::BufferStructuredWritable : DeviceObjectViewType::BufferStructured);
-                        else
-                            viewTypes.pushBack(uav ? DeviceObjectViewType::BufferWritable : DeviceObjectViewType::Buffer);
-                        break;
-
-                    case ResourceType::Texture: 
-                        viewTypes.pushBack(uav ? DeviceObjectViewType::ImageWritable : DeviceObjectViewType::Image);
-                        break;
-
-                    default: DEBUG_CHECK(!"Invalid resource type");
-                }
-            }
-
-            auto layoutId = DescriptorID::FromTypes(viewTypes.typedData(), viewTypes.size());
-            return resolveDescriptorBindPointIndex(paramTableName, layoutId);
-        }
-
-        IBaseVertexBindingLayout* IBaseObjectCache::resolveVertexBindingLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex vertexInputStateIndex)
-        {
-            DEBUG_CHECK(vertexInputStateIndex != INVALID_PIPELINE_INDEX);
-            const auto& srcBinding = shaderLib.vertexInputStates()[vertexInputStateIndex];
+			DEBUG_CHECK_RETURN_EX_V(!data->vertexStreams.empty(), "No vertex bindings in shader, compute shader?", nullptr);
+			DEBUG_CHECK_RETURN_EX_V(data->vertexLayoutKey, "Invalid vertex layout key", nullptr);
 
             // use cached one
-			{
-				IBaseVertexBindingLayout* ret = nullptr;
-				if (m_vertexLayoutMap.find(srcBinding.structureKey, ret))
-					return ret;
-			}
-
-            // create the return wrapper
-			base::Array<IBaseVertexBindingLayout::BindingInfo> vertexBindPoints;
-			vertexBindPoints.reserve(srcBinding.numStreamLayouts);
-
-            // create the attribute mapping from all active streams
-            for (uint32_t i = 0; i < srcBinding.numStreamLayouts; ++i)
-            {
-                auto vertexLayoutIndex = shaderLib.indirectIndices()[srcBinding.firstStreamLayout + i];
-                DEBUG_CHECK_EX(vertexLayoutIndex != INVALID_PIPELINE_INDEX, "Invalid layout index");
-
-                // get the data layout description for the vertex layout
-                auto& vertexLayout = shaderLib.vertexInputLayouts()[vertexLayoutIndex];
-                auto& dataStructure = shaderLib.dataLayoutStructures()[vertexLayout.structureIndex];
-
-                // get name of this binding point
-                auto& bindingPointInfo = vertexBindPoints.emplaceBack();
-                bindingPointInfo.name = shaderLib.names()[vertexLayout.name];
-                bindingPointInfo.stride = vertexLayout.customStride ? vertexLayout.customStride : dataStructure.size;
-                bindingPointInfo.bindPointIndex = resolveVertexBindPointIndex(bindingPointInfo.name);
-                bindingPointInfo.instanced = vertexLayout.instanced;
-
-                // is this instanced stream ?
-                auto isInstanceData = vertexLayout.instanced;
-
-                // setup the vertex attributes as in the layout
-                for (uint32_t j = 0; j < dataStructure.numElements; ++j)
-                {
-                    auto structureElementIndex = shaderLib.indirectIndices()[dataStructure.firstElementIndex + j];
-                    auto& dataElement = shaderLib.dataLayoutElements()[structureElementIndex];
-
-					auto& bindingAttribute = bindingPointInfo.attributes.emplaceBack();
-					bindingAttribute.format = dataElement.format;
-					bindingAttribute.offset = dataElement.offset;
-                }
-            }
-
+			IBaseVertexBindingLayout* ret = nullptr;
+			if (m_vertexLayoutMap.find(data->vertexLayoutKey, ret))
+				return ret;
+			
 			// create entry
-			if (auto* ret = createOptimalVertexBindingLayout(std::move(vertexBindPoints)))
+			if (auto* ret = createOptimalVertexBindingLayout(data->vertexStreams))
 			{
-				m_vertexLayoutMap[srcBinding.structureKey] = ret;
+				m_vertexLayoutMap[data->vertexLayoutKey] = ret;
 				return ret;
 			}
 
@@ -233,90 +127,20 @@ namespace rendering
             return nullptr;
         }
 
-        IBaseDescriptorBindingLayout* IBaseObjectCache::resolveDescriptorBindingLayout(const rendering::ShaderLibraryData& shaderLib, PipelineIndex parameterBindingStateIndex)
+        IBaseDescriptorBindingLayout* IBaseObjectCache::resolveDescriptorBindingLayout(const ShaderMetadata* metadata)
         {
-            DEBUG_CHECK(parameterBindingStateIndex != INVALID_PIPELINE_INDEX);
-            const auto& bindingSetup = shaderLib.parameterBindingStates()[parameterBindingStateIndex];
-            
-            // already cached ?
-			{
-				IBaseDescriptorBindingLayout* ret = nullptr;
-				if (m_descriptorBindingMap.find(bindingSetup.structureKey, ret))
-					return ret;
-			}
+			//DEBUG_CHECK_RETURN_EX_V(!data->vertexStreams.empty(), "No vertex bindings in shader, compute shader?", nullptr);
+			DEBUG_CHECK_RETURN_EX_V(metadata->descriptorLayoutKey, "Invalid vertex layout key", nullptr);
 
-            // create new state
-			base::Array<DescriptorBindingElement> bindingElements;
-            for (uint32_t i = 0; i < bindingSetup.numParameterLayoutIndices; ++i)
-            {
-                const auto& parameterLayoutIndex = shaderLib.indirectIndices()[i + bindingSetup.firstParameterLayoutIndex];
-                const auto parameterLayoutBindingIndex = resolveDescriptorBindPointIndex(shaderLib, parameterLayoutIndex);
-
-                const auto& parameterLayoutData = shaderLib.parameterLayouts()[parameterLayoutIndex];
-                const auto parameterLayoutName = shaderLib.names()[parameterLayoutData.name];
-
-                for (uint32_t j = 0; j < parameterLayoutData.numElements; ++j)
-                {
-                    const auto& parameterElementIndex = shaderLib.indirectIndices()[j + parameterLayoutData.firstElementIndex];
-                    const auto& parameterElementData = shaderLib.parameterLayoutsElements()[parameterElementIndex];
-                    const auto parameterElementName = shaderLib.names()[parameterElementData.name];
-
-                    auto& bindingElement = bindingElements.emplaceBack();
-                    bindingElement.bindPointName = parameterLayoutName;
-                    bindingElement.bindPointLayout = m_descriptorBindPointLayouts[parameterLayoutBindingIndex];
-                    bindingElement.paramName = parameterElementName;
-                    bindingElement.bindPointIndex = parameterLayoutBindingIndex;
-                    bindingElement.descriptorElementIndex = j;
-                    bindingElement.writable = (parameterElementData.access != ResourceAccess::ReadOnly);
-                    bindingElement.objectFormat = parameterElementData.format;
-
-                    switch (parameterElementData.type)
-                    {
-                        case rendering::ResourceType::Constants:
-                        {
-                            bindingElement.objectType = DeviceObjectViewType::ConstantBuffer;
-                            break;
-                        }
-
-                        case rendering::ResourceType::Texture:
-                        {
-                            if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
-                                bindingElement.objectType = DeviceObjectViewType::Image;
-                            else
-                                bindingElement.objectType = DeviceObjectViewType::ImageWritable;
-                            break;
-                        }
-
-                        case rendering::ResourceType::Buffer:
-                        {
-                            if (parameterElementData.layout != INVALID_PIPELINE_INDEX)
-                            {
-                                if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
-                                    bindingElement.objectType = DeviceObjectViewType::BufferStructured;
-                                else
-                                    bindingElement.objectType = DeviceObjectViewType::BufferStructuredWritable;
-                            }
-                            else
-                            {
-                                if (parameterElementData.access == rendering::ResourceAccess::ReadOnly)
-                                    bindingElement.objectType = DeviceObjectViewType::Buffer;
-                                else
-                                    bindingElement.objectType = DeviceObjectViewType::BufferWritable;
-                            }
-
-                            break;
-                        }
-                        
-                        default:
-                            DEBUG_CHECK(!"Rendering: Invalid resource type");
-                    }
-                }   
-            }
+			// use cached one
+			IBaseDescriptorBindingLayout* ret = nullptr;
+			if (m_descriptorBindingMap.find(metadata->descriptorLayoutKey, ret))
+				return ret;
 
 			// create entry
-			if (auto* ret = createOptimalDescriptorBindingLayout(std::move(bindingElements)))
+			if (auto* ret = createOptimalDescriptorBindingLayout(metadata->descriptors))
 			{
-				m_descriptorBindingMap[bindingSetup.structureKey] = ret;
+				m_descriptorBindingMap[metadata->descriptorLayoutKey] = ret;
 				return ret;
 			}
 

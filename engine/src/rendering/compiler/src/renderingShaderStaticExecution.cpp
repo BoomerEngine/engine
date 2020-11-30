@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\optimizer #]
 ***/
 
 #include "build.h"
@@ -799,6 +799,47 @@ namespace rendering
                     return ExecuteProgramCode(stack, code->children()[0], result);
                 }
 
+				case OpCode::ImplicitCast:
+				{
+					auto ret = ExecuteProgramCode(stack, code->children()[0], result);
+					if (ret != ExecutionResult::Finished)
+						return ret;
+
+					const auto numComponents = result.numComponents();
+					switch (code->extraData().m_castMode)
+					{
+						case TypeMatchTypeConv::ConvToBool:
+						{
+							for (uint32_t i = 0; i < numComponents; ++i)
+								result.component(i, valop::ToBool(result.component(i)));
+							break;
+						}
+
+						case TypeMatchTypeConv::ConvToFloat:
+						{
+							for (uint32_t i = 0; i < numComponents; ++i)
+								result.component(i, valop::ToFloat(result.component(i)));
+							break;
+						}
+
+						case TypeMatchTypeConv::ConvToInt:
+						{
+							for (uint32_t i = 0; i < numComponents; ++i)
+								result.component(i, valop::ToInt(result.component(i)));
+							break;
+						}
+
+						case TypeMatchTypeConv::ConvToUint:
+						{
+							for (uint32_t i = 0; i < numComponents; ++i)
+								result.component(i, valop::ToUint(result.component(i)));
+							break;
+						}
+					}
+
+					return ExecutionResult::Finished;
+				}
+
                 case OpCode::NativeCall:
                 {
                     PC_SCOPE_LVL3(NativeCall);
@@ -1050,6 +1091,73 @@ namespace rendering
 
                     return ExecutionResult::Finished;
                 }
+
+				case OpCode::CreateVector:
+				{
+					const auto numTargetComponents = code->dataType().computeScalarComponentCount();
+
+					// scalar case
+					if (code->children().size() == 1)
+					{ 
+						const auto* scalarChild = code->children()[0];
+						if (scalarChild->dataType().isNumericalScalar())
+						{
+							ExecutionValue elementValue;
+
+							// evaluate the element
+							auto ret = ExecuteProgramCode(stack, scalarChild, elementValue);
+							if (ret != ExecutionResult::Finished)
+							{
+								TRACE_DEEP("{}: failed to eval scalar value", code->location());
+								return ret;
+							}
+
+							result = ExecutionValue(code->dataType()); // wasted effort, 99.999% of matrices won't be static
+
+							// replicate
+							for (uint32_t i = 0; i < numTargetComponents; ++i)
+								result.component(i, elementValue.component(0));
+
+							return ExecutionResult::Finished;
+						}
+					}
+
+					// FALL THROUGH!!!
+				}
+
+				case OpCode::CreateArray:
+				{
+					const auto numTargetComponents = code->dataType().computeScalarComponentCount();
+					result = ExecutionValue(code->dataType()); // wasted effort, 99.999% of matrices won't be static
+					TRACE_DEEP("{}: evaluating type with {} components", code->location(), numTargetComponents);
+
+					uint32_t writeComponentOffset = 0;
+					for (auto* child : code->children())
+					{
+						ExecutionValue elementValue;
+
+						// evaluate the element
+						auto ret = ExecuteProgramCode(stack, child, elementValue);
+						if (ret != ExecutionResult::Finished)
+						{
+							TRACE_DEEP("{}: failed to eval type at element {}", code->location(), writeComponentOffset);
+							return ret;
+						}
+
+						// copy values
+						const auto numElementValues = elementValue.size();
+						for (uint32_t i = 0; i < numElementValues; ++i)
+							result.component(writeComponentOffset++, elementValue.component(i));
+					}
+
+					return ExecutionResult::Finished;
+				}
+
+				case OpCode::CreateMatrix:
+				{
+					result = ExecutionValue(code->dataType()); // wasted effort, 99.999% of matrices won't be static
+					return ExecutionResult::Finished;
+				}
 
                 /*case OpCode::ConstInit:
                 {

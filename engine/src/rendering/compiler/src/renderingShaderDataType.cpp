@@ -161,6 +161,20 @@ namespace rendering
             }
         }
 
+		bool ArrayCounts::operator==(const ArrayCounts& other) const
+		{
+			for (uint32_t i = 0; i < MAX_ARRAY_DIMS; ++i)
+				if (m_sizes[i] != other.m_sizes[i])
+					return false;
+
+			return true;
+		}
+
+		bool ArrayCounts::operator!=(const ArrayCounts& other) const
+		{
+			return !operator==(other);
+		}
+
         uint64_t ArrayCounts::typeHash() const
         {
             base::CRC64 crc;
@@ -193,14 +207,14 @@ namespace rendering
 
         bool ResourceType::calcTypeHash(base::CRC64& crc) const
         {
-            crc << type;
+            crc << (char)type;
             attributes.calcTypeHash(crc);
             return true;
         }
 
         uint8_t ResourceType::dimensions() const
         {
-            if (type == "Texture")
+            if (type == DeviceObjectViewType::Image || type == DeviceObjectViewType::ImageWritable)
             {
                 switch (resolvedViewType)
                 {
@@ -218,7 +232,8 @@ namespace rendering
                     return 3;
                 }
             }
-            else if (type == "Buffer")
+            else if (type == DeviceObjectViewType::Buffer || type == DeviceObjectViewType::BufferStructured 
+				|| type == DeviceObjectViewType::BufferStructuredWritable || type == DeviceObjectViewType::BufferWritable)
             {
                 return 1;
             }
@@ -388,6 +403,40 @@ namespace rendering
                 m_arrayCounts.print(ret);
         }
 
+		bool DataType::operator==(const DataType& other) const
+		{
+			if (m_baseType != other.m_baseType)
+				return false;
+			if (m_arrayCounts != other.m_arrayCounts)
+				return false;
+
+			switch (m_baseType)
+			{
+				case BaseType::Function:
+					return m_function == other.m_function;
+				case BaseType::Struct:
+					return m_composite == other.m_composite;
+				case BaseType::Program:
+					return m_program == other.m_program;
+				case BaseType::Resource:
+					return m_resource == other.m_resource;
+			}
+
+			return true;
+		}
+
+		bool DataType::operator!=(const DataType& other) const
+		{
+			return !operator==(other);
+		}
+
+		uint32_t DataType::CalcHash(const DataType& type)
+		{
+			base::CRC64 crc;
+			type.calcTypeHash(crc);
+			return crc.crc();
+		}
+
         bool DataType::calcTypeHash(base::CRC64& crc) const
         {
             crc << (uint8_t)m_baseType;
@@ -533,7 +582,7 @@ namespace rendering
             ret.m_arrayCounts = ArrayCounts();
             return ret;
         }
-
+		
         DataType DataType::BoolScalarType()
         {
             DataType ret;

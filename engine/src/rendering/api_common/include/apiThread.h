@@ -100,13 +100,13 @@ namespace rendering
 			virtual IBaseSampler* createOptimalSampler(const SamplerState& state) = 0;
 
 			// create shaders
-			virtual IBaseShaders* createOptimalShaders(const ShaderLibraryData* data, PipelineIndex index) = 0;
+			virtual IBaseShaders* createOptimalShaders(const ShaderData* data) = 0;
 
 			// create pass layout
 			virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) = 0;
 
 			// create render state object
-			virtual IBaseGraphicsRenderStates* createOptimalRenderStates(const StaticRenderStatesSetup& states) = 0;
+			virtual IBaseGraphicsRenderStates* createOptimalRenderStates(const GraphicsRenderStatesSetup& states) = 0;
 
 			//-----
 

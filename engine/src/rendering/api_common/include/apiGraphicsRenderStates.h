@@ -10,6 +10,8 @@
 
 #include "apiObject.h"
 
+#include "rendering/device/include/renderingGraphicsStates.h"
+
 namespace rendering
 {
 	namespace api
@@ -21,7 +23,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API IBaseGraphicsRenderStates : public IBaseObject
 		{
 		public:
-			IBaseGraphicsRenderStates(IBaseThread* owner, const rendering::StaticRenderStatesSetup& setup);
+			IBaseGraphicsRenderStates(IBaseThread* owner, const rendering::GraphicsRenderStatesSetup& setup);
 			virtual ~IBaseGraphicsRenderStates();
 
 			static const auto STATIC_TYPE = ObjectType::GraphicsRenderStates;
@@ -29,13 +31,13 @@ namespace rendering
 			//--
 
 			INLINE const uint64_t key() const { return m_key; }
-			INLINE const StaticRenderStatesSetup& setup() const { return m_setup; }
+			INLINE const GraphicsRenderStatesSetup& setup() const { return m_setup; }
 
 			//--
 
 		private:
 			uint64_t m_key = 0;
-			StaticRenderStatesSetup m_setup;
+			GraphicsRenderStatesSetup m_setup;
 		};
 
 		//---

@@ -343,7 +343,7 @@ namespace rendering
         virtual RenderTargetViewPtr createRenderTargetView(uint8_t mip = 0, uint32_t firstSlice = 0, uint32_t numSlices = 1) = 0;
 
     protected:
-        bool validateView(SamplerObject* sampler, uint8_t firstMip, uint32_t firstSlice, uint8_t numMips, uint32_t numSlices, ImageView::Setup& outSetup) const;
+        bool validateView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageView::Setup& outSetup) const;
         bool validateWritableView(uint8_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const;
         bool validateRenderTargetView(uint8_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const;
 

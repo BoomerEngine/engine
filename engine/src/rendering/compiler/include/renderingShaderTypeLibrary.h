@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler\data #]
+* [# filter: compiler\types #]
 ***/
 
 #pragma once
@@ -13,12 +13,15 @@
 #include "base/parser/include/textErrorReporter.h"
 #include "base/containers/include/hashMap.h"
 #include "base/reflection/include/variantTable.h"
+#include "rendering/device/include/renderingSamplerState.h"
+#include "rendering/device/include/renderingGraphicsStates.h"
 
 namespace rendering
 {
     namespace compiler
     {
 
+		class StaticSampler;
         struct ResolvedDescriptorInfo;
 
         /// get composite kind, encodes some special cases for composite types that can be swizzled
@@ -149,13 +152,11 @@ namespace rendering
         {
             base::parser::Location m_location; // location of the member definition
             base::StringID m_name; // name of the member
-            base::StringID m_mergedName; // descriptor + field, this way it's unique
             DataType m_type; // type of the entry
             AttributeList m_attributes; // used provided attributes
 
-            //ImageFormat m_resourceFormat; // format for the formated buffer
-            //ImageType m_resourceImageType; // type for images (textures)
-            //const CompositeType* m_resourceLayout; // layout of the constant buffer or structured buffer
+			char m_localSampler = -1;
+			const StaticSampler* m_staticSampler = nullptr;
 
             ResourceTableEntry();
         };
@@ -181,7 +182,8 @@ namespace rendering
             //--
 
             // add member, fails if member with that name already exists
-            void addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes);
+			void addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes, char localSampler = -1, const StaticSampler* staticSampler = nullptr);
+
 
             // get index of member, returns -1 if not found
             int memberIndex(const base::StringID name) const;
@@ -199,6 +201,44 @@ namespace rendering
             TMembers m_members; // members and their types
             AttributeList m_attributes; // is thia a material resource layout
         };
+
+		///---
+
+		/// static sampler
+		class RENDERING_COMPILER_API StaticSampler : public base::NoCopy
+		{
+		public:
+			StaticSampler(base::StringID name, const SamplerState& state);
+
+			// name of the samples
+			INLINE base::StringID name() const { return m_name; }
+
+			// sampler state
+			INLINE const SamplerState& state() const { return m_state; }
+
+		private:
+			base::StringID m_name;
+			SamplerState m_state;
+		};
+
+		///---
+
+		/// static rendering states... DX12/Vulkan BS
+		class RENDERING_COMPILER_API StaticRenderStates : public base::NoCopy
+		{
+		public:
+			StaticRenderStates(base::StringID name, const GraphicsRenderStatesSetup& state);
+
+			// name of the samples
+			INLINE base::StringID name() const { return m_name; }
+
+			// sampler state
+			INLINE const GraphicsRenderStatesSetup& state() const { return m_state; }
+
+		private:
+			base::StringID m_name;
+			GraphicsRenderStatesSetup m_state;
+		};
 
         ///---
 
@@ -257,15 +297,39 @@ namespace rendering
             /// find resource table by name
             const ResourceTable* findResourceTable(base::StringID name) const;
 
+			///--
+
+			/// declare static sampler
+			void registerStaticSampler(StaticSampler* sampler);
+
+			/// find static sampler by name
+			const StaticSampler* findStaticSampler(base::StringID name) const;
+
+			///--
+
+			/// declare render states
+			void registerStaticRenderStates(StaticRenderStates* states);
+
+			/// find static sampler by name
+			const StaticRenderStates* findStaticRenderStates(base::StringID name) const;
+
             //--
 
             /// get all registered composite types (NOTE: includes the vector types)
             typedef base::Array<const CompositeType*> TCompositeTypes;
             INLINE const TCompositeTypes& allCompositeTypes() const { return m_compositeTypes; }
 
-            /// get all registered resource tables types (NOTE: includes the vector types)
+            /// get all registered resource tables types
             typedef base::Array<const ResourceTable*> TResourceTables;
             INLINE const TResourceTables& allResourceTables() const { return m_resourceTables; }
+
+			/// get all registered static samplers
+			typedef base::Array<const StaticSampler*> TStaticSamplers;
+			INLINE const TStaticSamplers& allStaticSamplers() const { return m_staticSamplers; }
+
+			/// get all registered static render states
+			typedef base::Array<const StaticRenderStates*> TStaticRenderStates;
+			INLINE const TStaticRenderStates& allStaticRenderStates() const { return m_staticRenderStates; }
 
             //--
 
@@ -281,20 +345,26 @@ namespace rendering
             DataType m_floatTypes[MAX_COMPONENTS][MAX_COMPONENTS];
 
             typedef base::HashMap<base::StringID, const CompositeType*> TCompositeTypeMap;
-
             TCompositeTypeMap m_compositeTypeMap;
             TCompositeTypes m_compositeTypes;
 
             typedef base::HashMap<base::StringID, const ResourceTable*> TResourceTableMap;
-
             TResourceTableMap m_resourceTableMap;
             TResourceTables m_resourceTables;
+
+			typedef base::HashMap<base::StringID, const StaticSampler*> TStaticSamplerMap;
+			TStaticSamplerMap m_staticSamplerMap;
+			TStaticSamplers m_staticSamplers;
+
+			typedef base::HashMap<base::StringID, const StaticRenderStates*> TStaticRenderStatesMap;
+			TStaticRenderStatesMap m_staticRenderStatesMap;
+			TStaticRenderStates m_staticRenderStates;
 
             typedef base::HashMap<uint64_t, const ResourceType*> TResourceTypeMap;
             TResourceTypeMap m_resourceTypesMap;
             base::Array<ResourceType*> m_resourceTypes;
 
-            base::mem::LinearAllocator& m_allocator;
+			base::mem::LinearAllocator& m_allocator;
 
             //--
 

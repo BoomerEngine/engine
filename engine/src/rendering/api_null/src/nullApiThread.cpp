@@ -102,9 +102,9 @@ namespace rendering
 				return new Sampler(this, state);
 			}
 
-			IBaseShaders* Thread::createOptimalShaders(const ShaderLibraryData* data, PipelineIndex index)
+			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
-				return new Shaders(this, data, index);
+				return new Shaders(this, data);
 			}
 
 			IBaseGraphicsPassLayout* Thread::createOptimalPassLayout(const GraphicsPassLayoutSetup& info)
@@ -112,7 +112,7 @@ namespace rendering
 				return new GraphicsPassLayout(this, info);
 			}
 
-			IBaseGraphicsRenderStates* Thread::createOptimalRenderStates(const StaticRenderStatesSetup& states)
+			IBaseGraphicsRenderStates* Thread::createOptimalRenderStates(const GraphicsRenderStatesSetup& states)
 			{
 				return new GraphicsRenderStates(this, states);
 			}

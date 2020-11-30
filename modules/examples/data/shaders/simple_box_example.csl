@@ -47,9 +47,9 @@ export shader DrawVS
 		WorldPosition = (LocalToWorld * v.pos.xyz1).xyz;
 		gl_Position = WorldToScreen * WorldPosition.xyz1;
 
-		#if FLIP_Y
-			gl_Position.y = -gl_Position.y;
-		#endif
+		//#if FLIP_Y
+		//	gl_Position.y = -gl_Position.y;
+		//#endif
 
 		Color = v.color.xyz;
 	}

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 ***/
 
 #pragma once
@@ -45,11 +45,14 @@ namespace rendering
             AccessMember, // access member of a structure
             ReadSwizzle, // read swizzle (extracted from member access for simplicity)
             Cast, // explicit cast
+			ImplicitCast, // automatic cast
             This, // current program instance
             ProgramInstance, // program instance constructor
             ProgramInstanceParam, // program instance initialization variable constructor
             ResourceTable, // a resource table type
-            //ConstantTable, // a constant table
+            CreateVector, // vector constructor
+			CreateMatrix, // matrix constructor
+			CreateArray, // array constructor
 
             Ident, // unresolved identifier, muted to FuncRef or ParamRef
             VariableDecl, // variable declaration
@@ -210,9 +213,9 @@ namespace rendering
                 ComponentMask m_mask; // member mask for AccessMember and Store operations
                 DataType m_castType; // type for casting
                 uint32_t m_attributes = 0; // extra attributes
+				TypeMatchTypeConv m_castMode = TypeMatchTypeConv::NotMatches; // how to cast data
                 const Function* m_finalFunctionRef = nullptr;
-                //const Program* m_finalProgramRef = nullptr;
-                //const ProgramConstants* m_finalProgramConsts = nullptr;
+                
             };
 
             //--
@@ -237,6 +240,9 @@ namespace rendering
 
             // get extra data for code node
             INLINE const ExtraData& extraData() const { return m_extraData; }
+
+			// declarations in this scope
+			INLINE const base::Array<const DataParameter*>& declarations() const { return m_declarations; }
 
             // get assigned value
             INLINE ExtraData& extraData() { return m_extraData; }
@@ -281,6 +287,30 @@ namespace rendering
             TChildren m_children; // child nodes
             base::Array<const DataParameter*> m_declarations; // declarations in this scope
             bool m_typesResolved = false;
+
+			//--
+
+#define SHADER_RESOLVE_FUNC CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, base::parser::IErrorReporter& err
+			static bool ResolveTypes_This(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Load(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Store(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Ident(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessArray(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember_Vector(const DataType&, base::StringID, SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember_Matrix(const DataType&, base::StringID, SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember_Scalar(const DataType&, base::StringID, SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember_Program(const DataType&, base::StringID, SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_AccessMember_Struct(const DataType&, base::StringID, SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Cast(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Call(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_IfElse(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Loop(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_ProgramInstance(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_Return(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_CreateVector(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_CreateMatrix(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_CreateArray(SHADER_RESOLVE_FUNC);
 
             //--
 

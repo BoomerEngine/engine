@@ -158,6 +158,8 @@ namespace rendering
                     defs.addKeyword("struct", TOKEN_STRUCT);
                     defs.addKeyword("const", TOKEN_CONST);
                     defs.addKeyword("descriptor", TOKEN_DESCRIPTOR);
+					defs.addKeyword("sampler", TOKEN_STATIC_SAMPLER);
+					defs.addKeyword("setup", TOKEN_RENDER_STATES);
 
                     defs.addKeyword("this", TOKEN_THIS);
                     defs.addKeyword("true", TOKEN_BOOL_TRUE);
@@ -294,15 +296,6 @@ namespace rendering
                                 typeRef.innerType = stream[2]->view();
                                 size += 3;
                             }
-                            else if (stream[1]->view() == "<" && stream[2]->view() == ">")
-                            {
-                                typeRef.innerType = "GenericShader";
-                                size += 2;
-                            }
-                            else
-                            {
-                                typeRef.innerType = "GenericShader";
-                            }
                         }
 
                         // eat array sizes
@@ -338,8 +331,10 @@ namespace rendering
                                 outNode.m_tokenID = TOKEN_SHADER_TYPE;
                             else if (type.isArray())
                                 outNode.m_tokenID = TOKEN_ARRAY_TYPE;
-                            else if (type.isVector() || type.isMatrix())
+                            else if (type.isVector())
                                 outNode.m_tokenID = TOKEN_VECTOR_TYPE;
+							else if (type.isMatrix())
+								outNode.m_tokenID = TOKEN_MATRIX_TYPE;
                             else if ((type.isNumericalScalar() || type.isBoolean()) && !type.isArray())
                                 outNode.m_tokenID = TOKEN_CASTABLE_TYPE;
                             else if (type.isComposite())

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\program #]
 ***/
 
 #pragma once
@@ -54,6 +54,10 @@ namespace rendering
             typedef base::Array<const Program*> TParentPrograms;
             INLINE const TParentPrograms& parentPrograms() const { return m_parentPrograms; }
 
+			// get render states used by the program
+			typedef base::Array<const StaticRenderStates*> TStaticRenderStates;
+			INLINE const TStaticRenderStates& staticRenderStates() const { return m_staticRenderStates; }
+
             // get list of referenced descriptors 
             // NOTE: given descriptor may be NOT used in specific permutation, this is upper bound
             typedef base::Array<const ResourceTable*> TDescriptors;
@@ -72,6 +76,9 @@ namespace rendering
 
             // add program function definition
             void addFunction(Function* func);
+
+			// add render states to use with this program
+			void addRenderStates(const StaticRenderStates* states);
 
             //---
 
@@ -112,6 +119,7 @@ namespace rendering
             mutable TDescriptors m_descriptors; // all referenced descriptors
             TFunctions m_functions; // all program functions
             TParentPrograms m_parentPrograms; // parent programs we extend/implement
+			TStaticRenderStates m_staticRenderStates; // static graphics pipeline configuration
             AttributeList m_attributes; // as defined in the shader code
 
             base::parser::Location m_loc; // location in source file
@@ -119,6 +127,9 @@ namespace rendering
             const CodeLibrary* m_library; // source library this function was compiled as part of
 
             base::Array<base::parser::Location> m_refLocs;
+
+			mutable base::HashMap<base::StringBuf, DataParameter*> m_descriptorConstantBufferEntriesMap;
+			mutable base::HashMap<base::StringBuf, DataParameter*> m_descriptorResourceMap;
 
             friend class ParsingContext;
             friend class FunctionContext;

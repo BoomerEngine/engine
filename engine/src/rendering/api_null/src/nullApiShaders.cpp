@@ -20,8 +20,8 @@ namespace rendering
 
 			//--
 
-			Shaders::Shaders(Thread* drv, const ShaderLibraryData* data, PipelineIndex index)
-				: IBaseShaders(drv, data, index)
+			Shaders::Shaders(Thread* drv, const ShaderData* data)
+				: IBaseShaders(drv, data)
 			{}
 
 			Shaders::~Shaders()
@@ -31,8 +31,8 @@ namespace rendering
 			{
 				DEBUG_CHECK_RETURN_V(passLayout != nullptr, nullptr);
 				DEBUG_CHECK_RETURN_V(renderStates != nullptr, nullptr);
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderType::Vertex), "Shader bundle has no vertex shader", nullptr);
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderType::Pixel), "Shader bundle has no pixel shader", nullptr);
+				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Vertex), "Shader bundle has no vertex shader", nullptr);
+				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Pixel), "Shader bundle has no pixel shader", nullptr);
 
 				auto* localPassLayout = static_cast<const GraphicsPassLayout*>(passLayout);
 				auto* localRenderStates = static_cast<const GraphicsRenderStates*>(renderStates);
@@ -41,7 +41,7 @@ namespace rendering
 
 			IBaseComputePipeline* Shaders::createComputePipeline_ClientApi()
 			{
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderType::Compute), "Shader bundle has no compute shader", nullptr);
+				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Compute), "Shader bundle has no compute shader", nullptr);
 				return new ComputePipeline(owner(), this);
 			}
 

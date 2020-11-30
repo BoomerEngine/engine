@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\program #]
 ***/
 
 #include "build.h"
@@ -18,6 +18,23 @@ namespace rendering
 {
     namespace compiler
     {
+		//---
+
+		RTTI_BEGIN_TYPE_ENUM(DataParameterScope)
+			RTTI_ENUM_OPTION(Unknown)
+			RTTI_ENUM_OPTION(StaticConstant)
+			RTTI_ENUM_OPTION(GlobalConst)
+			RTTI_ENUM_OPTION(GlobalParameter)
+			RTTI_ENUM_OPTION(GlobalBuiltin)
+			RTTI_ENUM_OPTION(VertexInput)
+			RTTI_ENUM_OPTION(StageInput)
+			RTTI_ENUM_OPTION(StageOutput)
+			RTTI_ENUM_OPTION(GroupShared)
+			RTTI_ENUM_OPTION(FunctionInput)
+			RTTI_ENUM_OPTION(ScopeLocal)
+			RTTI_ENUM_OPTION(Export)
+		RTTI_END_TYPE();
+
         //---
 
         void DataParameter::print(base::IFormatStream& ret) const
@@ -252,79 +269,25 @@ namespace rendering
         {
         }
 
-        Function::Function(const Function& func, uint64_t foldedKey)
+        Function::Function(const Function& func, const ProgramConstants* localConstantArgs)
             : m_loc(func.m_loc)
             , m_name(func.m_name)
             , m_returnType(func.m_returnType)
             , m_inputParameters(func.m_inputParameters)
             , m_attributes(func.m_attributes)
-            , m_foldedKey(foldedKey)
             , m_code(nullptr)
             , m_library(func.m_library)
             , m_program(func.m_program)
-        {}
+        {
+			if (localConstantArgs)
+				for (const auto* param : m_inputParameters)
+					if (localConstantArgs->findConstValue(param))
+						m_staticParameters.pushBack(param->name);
+		}
 
         Function::~Function()
         {
         }            
-
-        /*namespace helper
-        {
-            static bool ComputeParamCRC(base::CRC64& crc, const DataParameter& dataParam)
-            {
-                crc << dataParam.name.c_str();
-                crc << (uint8_t)dataParam.scope;
-
-                for (const auto& key : dataParam.attributes.attributes.keys())
-                    crc << key;
-                for (const auto& value : dataParam.attributes.attributes.values())
-                    crc << value;
-
-                if (!dataParam.dataType.calcTypeHash(crc))
-                    return false;
-
-                if (!CodeNode::CalcCRC(crc, dataParam.initializerCode))
-                    return false;
-
-                return true;
-            }
-        }
-
-        bool Function::refreshCRC()
-        {
-            // CRC is already known
-            if (m_crc != 0)
-                return true;
-
-            bool validCrc = true;
-
-            // compute the CRC from code
-            base::CRC64 crc;
-            validCrc &= CodeNode::CalcCRC(crc, m_code);
-
-            // include CRC of the return type
-            validCrc &= m_returnType.calcTypeHash(crc);
-
-            // include CRC of the parameter (and the initialization values as well)
-            for (auto param  : m_inputParameters)
-                validCrc &= helper::ComputeParamCRC(crc, *param);
-
-            // we have a valid CRC
-            if (validCrc)
-            {
-                if (program())
-                {
-                    TRACE_SPAM("Static CRC of function '{}' in program '{}' computed to be 0x{}", name(), program()->name(), Hex(crc.crc()));
-                }
-                else
-                {
-                    TRACE_SPAM("Static CRC of global function '{}' computed to be 0x{}", name(), Hex(crc.crc()));
-                }
-                m_crc = crc.crc();
-            }
-
-            return validCrc;
-        }*/
 
         //---
 

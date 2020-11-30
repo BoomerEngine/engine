@@ -3,12 +3,14 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\program #]
 ***/
 
 #pragma once
 
 #include "renderingShaderCodeNode.h"
+#include "renderingShaderTypeLibrary.h"
+#include "rendering/device/include/renderingShaderStubs.h"
 
 namespace rendering
 {
@@ -17,7 +19,7 @@ namespace rendering
 
         class FunctionFolder;
 
-        //---
+		//---
 
         /// type of shader symbol usage
         /// we support following symbols: inputs, outputs, parameters and functions
@@ -48,9 +50,14 @@ namespace rendering
             DataType dataType; // data type defined for parameter
 
             base::parser::Location loc; // location in source file
-            const DataParameter* linkedSampler = nullptr; // hack for texture/sampler pairs
+
             base::Array<base::parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
             CodeNode* initializerCode = nullptr; // parsed initialization code for the value
+
+			const ResourceTable* resourceTable = nullptr;
+			const ResourceTableEntry* resourceTableEntry = nullptr;
+			const CompositeType::Member* resourceTableCompositeEntry = nullptr;
+			shader::ShaderBuiltIn builtInVariable = shader::ShaderBuiltIn::Invalid;
 
             void print(base::IFormatStream& f) const;
         };
@@ -62,7 +69,7 @@ namespace rendering
         {
         public:
             Function(const CodeLibrary& library, const Program* program, const base::parser::Location& loc, const base::StringID name, const DataType& retType, const base::Array<DataParameter*>& params, const base::Array<base::parser::Token*>& tokens, AttributeList&& attributes);
-            Function(const Function& func, uint64_t foldedKey);
+			Function(const Function& func, const ProgramConstants* localConstantArgs = nullptr);
             ~Function();
 
             // get shader library this function is coming from
@@ -87,21 +94,16 @@ namespace rendering
             // get function input parameters
             INLINE const base::Array<DataParameter*>& inputParameters() const { return m_inputParameters; }
 
+			// get list of static (predefined) function parameters
+			INLINE const base::Array<base::StringID>& staticParameters() const { return m_staticParameters; }
+
             // get the name of the function
             INLINE base::StringID name() const { return m_name; }
-
-            // get the folded unique KEY of the function
-            INLINE uint64_t foldedKey() const { DEBUG_CHECK(m_foldedKey); return m_foldedKey; }
 
             // get function code
             INLINE const CodeNode& code() const { return *m_code; }
 
             //---
-
-            /*// compute the CRC of the "code", this includes CRC of all included functions and fragments
-            // the CRC can depend on content of multiple files, beware
-            // this may return false if there's not enough data to compute the CRC at this time
-            bool refreshCRC();*/
 
             // bind compiled code to function
             void bindCode(CodeNode* code);
@@ -122,6 +124,7 @@ namespace rendering
             base::Array<base::parser::Token*> m_codeTokens; // code tokens
 
             base::Array<DataParameter*> m_inputParameters; // input parameters of the function
+			base::Array<base::StringID> m_staticParameters;
 
             AttributeList m_attributes; // user defined function attributes
 

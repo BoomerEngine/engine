@@ -9,9 +9,9 @@
 * [#dependency: base_reflection #]
 * [#dependency: base_math #]
 * [#dependency: base_input #]
+* [#dependency: base_image #]
 * [#dependency: base_app #]
 * [#dependency: base_fibers #]
-* [#dependency: base_canvas #]
 ***/
 
 #include "build.h"

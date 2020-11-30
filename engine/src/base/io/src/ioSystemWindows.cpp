@@ -845,7 +845,7 @@ namespace base
 
                         if (length > 0)
                         {
-                            wcscat(path, L"Boomer");
+                            wcscat(path, L"Boomer\\");
                         }
                         else
                         {
@@ -854,7 +854,7 @@ namespace base
                             if (auto* ch = wcsrchr(path, '\\'))
                                 ch[1] = 0;
 
-                            wcscat(path, L".temp\\local");
+                            wcscat(path, L".temp\\local\\");
                         }
 
                         f << path;

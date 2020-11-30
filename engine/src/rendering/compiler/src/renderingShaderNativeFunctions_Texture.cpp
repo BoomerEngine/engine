@@ -270,6 +270,21 @@ namespace rendering
             return typeLibrary.unsignedType(numSizeComponents);
         }
 
+		static bool IsSamplableTexture(const DataType& dataType)
+		{
+			if (!dataType.isResource())
+				return false;
+
+			const auto& res = dataType.resource();
+			if (res.type != DeviceObjectViewType::Image)
+				return false;
+
+			if (res.multisampled)
+				return false;
+
+			return true;
+		}
+
         //---
 
         class FunctionTextureSample_Base : public INativeFunction
@@ -300,7 +315,7 @@ namespace rendering
 
                 // check if the resource type is supported
                 // NOTE: some texture functions do not support some operations
-                if (!argTypes[0].isResource() || !argTypes[0].resource().texture || argTypes[0].resource().uav)
+                if (!IsSamplableTexture(argTypes[0]))
                 {
                     err.reportError(loc, base::TempString("Function '{}' only supports non-uav textures", functionName()));
                     return DataType();
@@ -570,7 +585,7 @@ namespace rendering
                     return DataType();
                 }
 
-                if (!argTypes[0].isResource() || !argTypes[0].resource().texture || argTypes[0].resource().uav)
+				if (!IsSamplableTexture(argTypes[0]))
                 {
                     err.reportError(loc, base::TempString("Function supports non-uav textures"));
                     return DataType();

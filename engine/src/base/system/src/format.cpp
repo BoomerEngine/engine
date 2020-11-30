@@ -394,9 +394,9 @@ namespace base
     
     IFormatStream& IFormatStream::appendPadding(char ch, uint32_t count)
     {
-        auto maxPadding = std::min<uint32_t>(count, 64);
+        auto maxPadding = std::min<uint32_t>(count, 256);
 
-        char str[64];
+        char str[256];
         memset(str, ch, maxPadding);
 
         return append(str, maxPadding);

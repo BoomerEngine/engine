@@ -124,70 +124,70 @@ namespace base
 
         //--
 
-        StubDataWriter::StubDataWriter(const StubMapper& mapper, PagedBuffer<uint8_t>& outMemory)
+        StubDataWriter::StubDataWriter(const StubMapper& mapper, PagedBuffer& outMemory)
             : m_mapper(mapper)
             , m_outMemory(outMemory)
         {}
 
         void StubDataWriter::writeBool(bool b)
         {
-            *m_outMemory.allocSingle() = b ? 1 : 0;
+            *m_outMemory.allocSmall<uint8_t>() = b ? 1 : 0;
         }
 
         void StubDataWriter::writeInt8(char val)
         {
-            *m_outMemory.allocSingle() = val;
+            *m_outMemory.allocSmall<char>() = val;
         }
 
         void StubDataWriter::writeInt16(short val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<short>() = val;
         }
 
         void StubDataWriter::writeInt32(int val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<int>() = val;
         }
 
         void StubDataWriter::writeInt64(int64_t val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<int64_t>() = val;
         }
 
         void StubDataWriter::writeUint8(uint8_t val)
         {
-            *m_outMemory.allocSingle() = val;
+			*m_outMemory.allocSmall<uint8_t>() = val;
         }
 
         void StubDataWriter::writeUint16(uint16_t val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<uint16_t>() = val;
         }
 
         void StubDataWriter::writeUint32(uint32_t val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<uint32_t>() = val;
         }
 
         void StubDataWriter::writeUint64(uint64_t val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<uint64_t>() = val;
         }
 
         void StubDataWriter::writeFloat(float val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<float>() = val;
         }
 
         void StubDataWriter::writeDouble(double val)
         {
-            //m_outMemory.write(val);
+			*m_outMemory.allocSmall<double>() = val;
         }
 
         void StubDataWriter::writeRawString(StringView txt)
         {
             writeUint16(txt.length());
-            m_outMemory.write((const uint8_t*)txt.data(), txt.length());
+			m_outMemory.writeSmall(txt.data(), txt.length());
         }
 
         void StubDataWriter::writeString(StringView str)
@@ -202,7 +202,7 @@ namespace base
                 }
             }
 
-            //m_outMemory.write(stringId);
+			*m_outMemory.allocSmall<uint16_t>() = stringId;
         }
 
         void StubDataWriter::writeName(StringID name)
@@ -216,7 +216,7 @@ namespace base
                 }
             }
 
-            //m_outMemory.write(nameId);
+			*m_outMemory.allocSmall<uint16_t>() = nameId;
         }
 
         void StubDataWriter::writeRef(const Stub* otherStub)
@@ -230,7 +230,7 @@ namespace base
                 }
             }
 
-            //m_outMemory.write(objectId);
+			*m_outMemory.allocSmall<uint16_t>() = objectId;
         }
 
         void StubDataWriter::writeContainers()
@@ -247,8 +247,8 @@ namespace base
 
             // write object types
             writeUint32(m_mapper.m_stubs.size());
-            /*for (uint32_t i=1; i<m_mapper.m_stubs.size(); ++i)
-                m_outMemory.write((uint8_t)m_mapper.m_stubs[i]->stubType);*/
+            for (uint32_t i=1; i<m_mapper.m_stubs.size(); ++i)
+                //m_outMemory.writeSmall((uint8_t)m_mapper.m_stubs[i]->stubType);
 
             // write objects
             for (uint32_t i=1; i<m_mapper.m_stubs.size(); ++i)

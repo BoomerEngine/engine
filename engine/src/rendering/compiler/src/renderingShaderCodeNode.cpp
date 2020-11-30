@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 ***/
 
 #include "build.h"
@@ -29,6 +29,7 @@ namespace rendering
             RTTI_ENUM_OPTION(NativeCall);
             RTTI_ENUM_OPTION(Const);
             RTTI_ENUM_OPTION(Cast);
+			RTTI_ENUM_OPTION(ImplicitCast);
             RTTI_ENUM_OPTION(Ident);
             RTTI_ENUM_OPTION(FuncRef);
             RTTI_ENUM_OPTION(ParamRef);
@@ -38,6 +39,9 @@ namespace rendering
             RTTI_ENUM_OPTION(ProgramInstance);
             RTTI_ENUM_OPTION(ProgramInstanceParam);
             RTTI_ENUM_OPTION(VariableDecl);
+			RTTI_ENUM_OPTION(CreateVector);
+			RTTI_ENUM_OPTION(CreateMatrix);
+			RTTI_ENUM_OPTION(CreateArray);
 
             RTTI_ENUM_OPTION(First);
             RTTI_ENUM_OPTION(Loop);

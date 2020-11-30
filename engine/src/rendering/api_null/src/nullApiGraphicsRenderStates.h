@@ -21,7 +21,7 @@ namespace rendering
 			class GraphicsRenderStates : public IBaseGraphicsRenderStates
 			{
 			public:
-				GraphicsRenderStates(Thread* owner, const rendering::StaticRenderStatesSetup& setup);
+				GraphicsRenderStates(Thread* owner, const GraphicsRenderStatesSetup& setup);
 				virtual ~GraphicsRenderStates();
 
 				//--

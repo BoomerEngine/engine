@@ -10,49 +10,61 @@
 
 namespace base
 {
+	//---
+
+	INLINE void PagedBuffer::writeSmall(const void* data, uint32_t size)
+	{
+		memcpy(allocSmall(size), data, size);
+	}
 
     //---
 
     template< typename T >
-    INLINE PagedBuffer<T>::PagedBuffer(PoolTag poolID /*= POOL_TEMP*/)
-        : PagedBufferBase(sizeof(T), alignof(T), poolID)
+    INLINE PagedBufferTyped<T>::PagedBufferTyped(PoolTag poolID /*= POOL_TEMP*/)
+        : PagedBuffer(alignof(T), poolID)
     {}
 
     template< typename T >
-    INLINE PagedBuffer<T>::PagedBuffer(mem::PageAllocator& pageAllocator)
-    : PagedBufferBase(sizeof(T), alignof(T), pageAllocator)
+    INLINE PagedBufferTyped<T>::PagedBufferTyped(mem::PageAllocator& pageAllocator)
+		: PagedBuffer(alignof(T), pageAllocator)
     {}
 
     template< typename T >
-    INLINE PagedBuffer<T>::PagedBuffer(PoolTag poolID, uint32_t pageSize)
-        : PagedBufferBase(sizeof(T), alignof(T), poolID, pageSize)
+    INLINE PagedBufferTyped<T>::PagedBufferTyped(PoolTag poolID, uint32_t pageSize)
+        : PagedBuffer(alignof(T), poolID, pageSize)
     {}
 
     template< typename T >
-    INLINE PagedBuffer<T>::~PagedBuffer()
+    INLINE PagedBufferTyped<T>::~PagedBufferTyped()
     {}
 
+	template< typename T >
+	INLINE uint32_t PagedBufferTyped<T>::size() const
+	{
+		return dataSize() / sizeof(T);
+	}
+
     template< typename T >
-    INLINE T* PagedBuffer<T>::allocSingle()
+    INLINE T* PagedBufferTyped<T>::allocSingle()
     {
-        return (T*)PagedBufferBase::allocSingle();
+        return (T*)PagedBuffer::allocSmall(sizeof(T));
     }
 
     template< typename T >
-    INLINE T* PagedBuffer<T>::allocateBatch(uint32_t elementCount, uint32_t& outNumAllocated)
+    INLINE T* PagedBufferTyped<T>::allocateBatch(uint32_t elementCount, uint32_t& outNumAllocated)
     {
-        return (T*)PagedBufferBase::allocateBatch(sizeof(T) * elementCount, elementCount, outNumAllocated);
+        return (T*)PagedBuffer::allocateBatch(sizeof(T) * elementCount, elementCount, outNumAllocated);
     }
 
     template< typename T >
     template< typename F >
-    INLINE void PagedBuffer<T>::forEach(const F& func) const
+    INLINE void PagedBufferTyped<T>::forEach(const F& func) const
     {
         if (auto* page = m_pageHead)
         {
             while (page)
             {
-                auto* pagePayload = AlignPtr((char*)page + sizeof(Page), m_elementAlignment);
+                auto* pagePayload = AlignPtr((char*)page + sizeof(Page), m_alignment);
                 std::for_each((const T*)pagePayload, (const T*)(pagePayload + page->dataSize), func);
                 page = page->next;
             }

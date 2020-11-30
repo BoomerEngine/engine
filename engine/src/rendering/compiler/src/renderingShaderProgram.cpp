@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\program #]
 ***/
 
 #include "build.h"
@@ -11,6 +11,8 @@
 #include "renderingShaderProgram.h"
 #include "renderingShaderTypeLibrary.h"
 #include "renderingShaderCodeLibrary.h"
+
+#include "rendering/device/include/renderingShaderStubs.h"
 
 namespace rendering
 {
@@ -107,6 +109,12 @@ namespace rendering
             m_functions.pushBack(func);
         }
 
+		void Program::addRenderStates(const StaticRenderStates* states)
+		{
+			ASSERT(!m_staticRenderStates.contains(states));
+			m_staticRenderStates.pushBack(states);
+		}
+
         bool Program::isBasedOnProgram(const Program* program) const
         {
             if (this == program)
@@ -128,81 +136,198 @@ namespace rendering
                     return param;
 
             DataType type;
+			auto builtIn = shader::ShaderBuiltIn::Invalid;
             DataParameterScope scope = DataParameterScope::GlobalBuiltin;
-            if (name == "gl_Position"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_PositionIn"_id)
-                type = m_library->typeLibrary().floatType(4).applyArrayCounts(ArrayCounts().appendUndefinedArray());
-            else if (name == "gl_PointSize"_id)
-                type = m_library->typeLibrary().floatType();
-            else if (name == "gl_PointSize"_id)
-                type = m_library->typeLibrary().floatType();
-            else if (name == "gl_ClipDistance"_id)
-                type = m_library->typeLibrary().floatType().applyArrayCounts(6);
-            else if (name == "gl_VertexID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_InstanceID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_DrawID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_BaseVertex"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_BaseInstance"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_PatchVerticesIn"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_PrimitiveID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_InvocationID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_TessLevelOuter"_id)
-                type = m_library->typeLibrary().floatType(1).applyArrayCounts(4);
-            else if (name == "gl_TessLevelInner"_id)
-                type = m_library->typeLibrary().floatType(1).applyArrayCounts(2);
-            else if (name == "gl_TessCoord"_id)
-                type = m_library->typeLibrary().floatType(3);
-            else if (name == "gl_PatchVerticesIn"_id)
-                type = m_library->typeLibrary().integerType();
-            else if (name == "gl_FragCoord"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_FrontFacing"_id)
-                type = m_library->typeLibrary().booleanType();
+			if (name == "gl_Position"_id)
+			{
+				type = m_library->typeLibrary().floatType(4);
+				builtIn = shader::ShaderBuiltIn::Position;
+			}
+			else if (name == "gl_PositionIn"_id)
+			{
+				type = m_library->typeLibrary().floatType(4).applyArrayCounts(ArrayCounts().appendUndefinedArray());
+				builtIn = shader::ShaderBuiltIn::PositionIn;
+			}
+			else if (name == "gl_PointSize"_id)
+			{
+				type = m_library->typeLibrary().floatType();
+				builtIn = shader::ShaderBuiltIn::PointSize;
+			}
+			else if (name == "gl_PointSizeIn"_id)
+			{
+				type = m_library->typeLibrary().floatType().applyArrayCounts(ArrayCounts().appendUndefinedArray());
+				builtIn = shader::ShaderBuiltIn::PointSizeIn;
+			}
+			else if (name == "gl_ClipDistance"_id)
+			{
+				type = m_library->typeLibrary().floatType().applyArrayCounts(6);
+				builtIn = shader::ShaderBuiltIn::ClipDistance;
+			}
+			else if (name == "gl_VertexID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::VertexID;
+			}
+			else if (name == "gl_InstanceID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::InstanceID;
+			}
+			else if (name == "gl_DrawID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::DrawID;
+			}
+			else if (name == "gl_BaseVertex"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::BaseVertex;
+			}
+			else if (name == "gl_BaseInstance"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::BaseInstance;
+			}
+			else if (name == "gl_PatchVerticesIn"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::PatchVerticesIn;
+			}
+			else if (name == "gl_PrimitiveID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::PrimitiveID;
+			}
+			else if (name == "gl_InvocationID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::InvocationID;
+			}
+			else if (name == "gl_TessLevelOuter"_id)
+			{
+				type = m_library->typeLibrary().floatType(1).applyArrayCounts(4);
+				builtIn = shader::ShaderBuiltIn::TessLevelOuter;
+			}
+			else if (name == "gl_TessLevelInner"_id)
+			{
+				type = m_library->typeLibrary().floatType(1).applyArrayCounts(2);
+				builtIn = shader::ShaderBuiltIn::TessLevelInner;
+			}
+			else if (name == "gl_TessCoord"_id)
+			{
+				type = m_library->typeLibrary().floatType(3);
+				builtIn = shader::ShaderBuiltIn::TessCoord;
+			}
+			else if (name == "gl_PatchVerticesIn"_id)
+			{
+				type = m_library->typeLibrary().integerType();
+				builtIn = shader::ShaderBuiltIn::PatchVerticesIn;
+			}
+			else if (name == "gl_FragCoord"_id)
+			{
+				type = m_library->typeLibrary().floatType(4);
+				builtIn = shader::ShaderBuiltIn::FragCoord;
+			}
+			else if (name == "gl_FrontFacing"_id)
+			{
+				type = m_library->typeLibrary().booleanType();
+				builtIn = shader::ShaderBuiltIn::FrontFacing;
+			}
             else if (name == "gl_PointCoord"_id)
+			{
                 type = m_library->typeLibrary().floatType(2);
-            else if (name == "gl_SampleID"_id)
-                type = m_library->typeLibrary().integerType(1);
-            else if (name == "gl_SamplePosition"_id)
-                type = m_library->typeLibrary().floatType(2);
-            else if (name == "gl_SampleMaskIn"_id)
-                type = m_library->typeLibrary().integerType();
-            else if (name == "gl_SampleMask"_id)
-                type = m_library->typeLibrary().integerType();
-            else if (name == "gl_Target0"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target1"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target2"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target3"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target4"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target5"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target6"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_Target7"_id)
-                type = m_library->typeLibrary().floatType(4);
-            else if (name == "gl_NumWorkGroups"_id)
-                type = m_library->typeLibrary().unsignedType(3);
-            else if (name == "gl_GlobalInvocationID"_id)
-                type = m_library->typeLibrary().unsignedType(3);
-            else if (name == "gl_LocalInvocationID"_id)
-                type = m_library->typeLibrary().unsignedType(3);
-            else if (name == "gl_WorkGroupID"_id)
-                type = m_library->typeLibrary().unsignedType(3);
-            else if (name == "gl_LocalInvocationIndex"_id)
-                type = m_library->typeLibrary().unsignedType(1);
+				builtIn = shader::ShaderBuiltIn::PointCoord;
+			}
+			else if (name == "gl_SampleID"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::SampleID;
+			}
+			else if (name == "gl_SamplePosition"_id)
+			{
+				type = m_library->typeLibrary().floatType(2);
+				builtIn = shader::ShaderBuiltIn::SamplePosition;
+			}
+			else if (name == "gl_SampleMaskIn"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::SampleMaskIn;
+				type = m_library->typeLibrary().integerType();
+			}
+			else if (name == "gl_SampleMask"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::SampleMask;
+				type = m_library->typeLibrary().integerType();
+			}
+			else if (name == "gl_Target0"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target0;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target1"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target1;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target2"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target2;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target3"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target3;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target4"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target4;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target5"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target5;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target6"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target6;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Target7"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Target7;
+				type = m_library->typeLibrary().floatType(4);
+			}
+			else if (name == "gl_Depth"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::Depth;
+				type = m_library->typeLibrary().floatType();
+			}
+			else if (name == "gl_NumWorkGroups"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::NumWorkGroups;
+				type = m_library->typeLibrary().unsignedType(3);
+			}
+			else if (name == "gl_GlobalInvocationID"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::GlobalInvocationID;
+				type = m_library->typeLibrary().unsignedType(3);
+			}
+			else if (name == "gl_LocalInvocationID"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::LocalInvocationID;
+				type = m_library->typeLibrary().unsignedType(3);
+			}
+			else if (name == "gl_WorkGroupID"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::WorkGroupID;
+				type = m_library->typeLibrary().unsignedType(3);
+			}
+			else if (name == "gl_LocalInvocationIndex"_id)
+			{
+				builtIn = shader::ShaderBuiltIn::LocalInvocationID;
+				type = m_library->typeLibrary().unsignedType(1);
+			}
             
 
             if (!type.valid())
@@ -212,6 +337,7 @@ namespace rendering
             param->name = name;
             param->scope = scope;
             param->dataType = type;
+			param->builtInVariable = builtIn;
             param->attributes.add("builtin"_id);
             param->loc = m_loc;
 
@@ -225,37 +351,44 @@ namespace rendering
             DEBUG_CHECK(entry.table != nullptr);
 
             DataParameter* param = nullptr;
-            if (entry.entry->m_type.resource().constants)
+            if (entry.entry->m_type.resource().type == DeviceObjectViewType::ConstantBuffer)
             {
                 DEBUG_CHECK(entry.member != nullptr);
 
-                // format name and find existing param
-                auto mergedName = base::StringID(base::TempString("{}_{}_{}", entry.table->name(), entry.entry->m_name, entry.member->name));
-                if (auto existingParam = findParameter(mergedName, true))
-                    return existingParam;
+				base::StringBuf key = base::TempString("{}_{}_{}", entry.table->name(), entry.entry->m_name, entry.member->name);
+				if (m_descriptorConstantBufferEntriesMap.find(key, param))
+					return param;
 
                 // create param
                 param = m_library->allocator().create<DataParameter>();
-                param->name = mergedName;
+                param->name = entry.member->name;
                 param->scope = DataParameterScope::GlobalParameter;
+				param->resourceTable = entry.table;
+				param->resourceTableEntry = entry.entry;
+				param->resourceTableCompositeEntry = entry.member;
                 param->dataType = entry.member->type;
                 param->attributes = entry.member->attributes;
                 param->loc = entry.member->location;
+
+				m_descriptorConstantBufferEntriesMap[key] = param;
             }
             else
             {
-                // format name and find existing param
-                auto mergedName = base::StringID(base::TempString("{}_{}", entry.table->name(), entry.entry->m_name));
-                if (auto existingParam = findParameter(mergedName, true))
-                    return existingParam;
+				base::StringBuf key = base::TempString("{}_{}", entry.table->name(), entry.entry->m_name);
+				if (m_descriptorResourceMap.find(key, param))
+					return param;
 
                 // create param
                 param = m_library->allocator().create<DataParameter>();
-                param->name = mergedName;
+                param->name = entry.entry->m_name;
                 param->scope = DataParameterScope::GlobalParameter;
                 param->dataType = entry.entry->m_type;
+				param->resourceTable = entry.table;
+				param->resourceTableEntry = entry.entry;
                 param->attributes = entry.entry->m_attributes;
-                param->loc = entry.entry->m_location;
+                param->loc = entry.entry->m_location;				
+
+				m_descriptorResourceMap[key] = param;
             }
 
             m_parameters.pushBack(param);
@@ -266,8 +399,8 @@ namespace rendering
         const DataParameter* Program::findParameter(const base::StringID name, bool recurseToParent /*= true*/) const
         {
             // local search
-            for (auto param  : m_parameters)
-                if (param->name == name)
+            for (auto param : m_parameters)
+                if (param->name == name && param->scope != DataParameterScope::GlobalParameter)
                     return param;
 
             // recurse

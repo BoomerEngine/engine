@@ -9,10 +9,7 @@
 * [#dependency: base_resource #]
 * [#dependency: base_reflection #]
 * [#dependency: rendering_device #]
-* [#dependency: rendering_shader_glsl #]
 * [#dependency: rendering_api_common #]
-* [#privatelib: glew #]
-* [#privatelib: opengl #]
 ***/
 
 #include "build.h"

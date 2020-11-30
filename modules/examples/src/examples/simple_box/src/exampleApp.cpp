@@ -235,9 +235,6 @@ namespace example
 
     void SimpleApp::renderScene(CommandWriter& cmd, const rendering::RenderTargetView* colorTarget, const rendering::RenderTargetView* depthTarget)
     {
-        if (!m_shaders)
-            return;
-
         // prepare frame buffer
         FrameBuffer fb;
         fb.color[0].view(colorTarget).clear(0.2f, 0.2f, 0.2f, 1.0f);
@@ -249,14 +246,11 @@ namespace example
         setupCamera(cmd, cameraPos, Vector3(0, 0, 0), 70.0f, aspect);
 
         // end pass rendering to that frame buffer
-        cmd.opBeingPass(fb);
+        cmd.opBeingPass(m_renderingOutput->layout(), fb);
 
         // bind buffers
         cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer);
         cmd.opBindIndexBuffer(m_indexBuffer);
-
-        // enable depth buffer
-        cmd.opSetDepthState(true, true);
 
         // draw objects
         for (int y=-5; y<=5; ++y)
@@ -269,7 +263,7 @@ namespace example
                 localToWorld.translation(x, y, 0.0f);
 
                 setupObject(cmd, localToWorld);
-                cmd.opDrawIndexed(m_shaders, 0, 0, 36);
+                cmd.opDrawIndexed(m_shadersPSO, 0, 0, 36);
             }
         }
 
@@ -278,8 +272,17 @@ namespace example
 
     bool SimpleApp::compileShaders()
     {
-        m_shaders = LoadResource<ShaderLibrary>("/examples/shaders/simple_box_example.csl").acquire();
-        return !m_shaders.empty();
+		auto device = GetService<DeviceService>()->device();
+
+		LoadResource<ShaderFile>("/engine/shaders/canvas/canvas_fill.fx");
+
+		if (auto shader = LoadResource<ShaderFile>("/examples/shaders/simple_box_example.csl").acquire())
+		{
+			// create a PSO from the shader that's compatible with the layout we use for the window's render targets
+			m_shadersPSO = shader->shader()->deviceShader()->createGraphicsPipeline(m_renderingOutput->layout());
+		}
+
+		return m_shadersPSO;
     }
 
     bool SimpleApp::buildGeometry()

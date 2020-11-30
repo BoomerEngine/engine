@@ -51,6 +51,8 @@ static int cslc_error(rendering::compiler::parser::ParsingCodeContext& ctx, rend
 %token TOKEN_SHADER
 %token TOKEN_DESCRIPTOR
 %token TOKEN_CONSTANTS
+%token TOKEN_STATIC_SAMPLER
+%token TOKEN_RENDER_STATES
 %token TOKEN_STRUCT
 %token TOKEN_THIS
 %token TOKEN_VERTEX
@@ -73,6 +75,7 @@ static int cslc_error(rendering::compiler::parser::ParsingCodeContext& ctx, rend
 %token TOKEN_CASTABLE_TYPE
 %token TOKEN_ARRAY_TYPE
 %token TOKEN_VECTOR_TYPE
+%token TOKEN_MATRIX_TYPE
 %token TOKEN_SHADER_TYPE
 %token TOKEN_STRUCT_TYPE
 
@@ -343,14 +346,14 @@ array_build_expression
     : TOKEN_ARRAY_TYPE '{' argument_expression_list '}'
     {
         //TRACE_ERROR("Building array {} with {} children", $1.m_type, $3.m_code->getChildren().size());
-        $$ = context.createFunctionCall($2.m_location, "array", $3.m_code);
+        $$ = context.createFunctionCall($2.m_location, "__create_array", $3.m_code);
         $$.m_code->extraData().m_castType = $1.m_type;
     }
 
     | TOKEN_ARRAY_TYPE '{' '}'
     {
         //TRACE_ERROR("Building array {}", $1.m_type);
-        $$ = context.createFunctionCall($2.m_location, "array");
+        $$ = context.createFunctionCall($2.m_location, "__create_array");
         $$.m_code->extraData().m_castType = $1.m_type;
     }
     ;
@@ -358,8 +361,16 @@ array_build_expression
 vector_build_expression
     : TOKEN_VECTOR_TYPE '(' argument_expression_list ')'
     {
-        //TRACE_ERROR("Building array {} with {} children", $1.m_type, $3.m_code->getChildren().size());
-        $$ = context.createFunctionCall($1.m_location, base::TempString("__create_{}", $1.m_type.composite().name()), $3.m_code);
+		$$ = context.createFunctionCall($2.m_location, "__create_vector", $3.m_code);
+        $$.m_code->extraData().m_castType = $1.m_type;
+    }
+    ;
+
+matrix_build_expression
+    : TOKEN_MATRIX_TYPE '(' argument_expression_list ')'
+    {
+		$$ = context.createFunctionCall($2.m_location, "__create_matrix", $3.m_code);
+        $$.m_code->extraData().m_castType = $1.m_type;
     }
     ;
 
@@ -376,6 +387,7 @@ primary_expression
 	| constant
 	| '(' expression ')' { $$ = $2; }
 	| vector_build_expression
+	| matrix_build_expression
 	| array_build_expression
 	| program_instance_expression
 	;
@@ -432,11 +444,16 @@ unary_operator
 
 cast_expression
 	: unary_expression
-	| '(' TOKEN_CASTABLE_TYPE ')' cast_expression
+	| '(' cast_type ')' cast_expression
 	{
         $$ = context.alloc<CodeNode>($2.m_location, OpCode::Cast, $4.m_code);
         $$.m_code->extraData().m_castType = $2.m_type;
     }
+	;
+
+cast_type
+	: TOKEN_CASTABLE_TYPE
+	| TOKEN_VECTOR_TYPE
 	;
 
 multiplicative_expression

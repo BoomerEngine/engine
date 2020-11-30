@@ -330,9 +330,9 @@ namespace rendering
             
         // setup wrapping
         SamplerCreationInfo setupInfo;
-        setupInfo.addresModeU = textureGroup.m_wrapU ? AddressMode::Wrap : AddressMode::ClampToEdge;
-        setupInfo.addresModeV = textureGroup.m_wrapV ? AddressMode::Wrap : AddressMode::ClampToEdge;
-        setupInfo.addresModeW = textureGroup.m_wrapW ? AddressMode::Wrap : AddressMode::ClampToEdge;
+        setupInfo.addresModeU = textureGroup.m_wrapU ? AddressMode::Wrap : AddressMode::Clamp;
+        setupInfo.addresModeV = textureGroup.m_wrapV ? AddressMode::Wrap : AddressMode::Clamp;
+        setupInfo.addresModeW = textureGroup.m_wrapW ? AddressMode::Wrap : AddressMode::Clamp;
 
         // setup filtering
         if (textureGroup.m_filteringMode == TextureFilteringMode::Point)

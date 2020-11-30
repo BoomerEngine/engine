@@ -15,7 +15,7 @@ namespace rendering
     {
 		//--
 
-		IBaseGraphicsRenderStates::IBaseGraphicsRenderStates(IBaseThread* owner, const StaticRenderStatesSetup& setup)
+		IBaseGraphicsRenderStates::IBaseGraphicsRenderStates(IBaseThread* owner, const GraphicsRenderStatesSetup& setup)
 			: IBaseObject(owner, ObjectType::GraphicsRenderStates)
 			, m_setup(setup)
 		{

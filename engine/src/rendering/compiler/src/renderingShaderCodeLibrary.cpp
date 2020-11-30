@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: compiler #]
+* [# filter: compiler\nodes #]
 ***/
 
 #include "build.h"
@@ -31,7 +31,6 @@ namespace rendering
             : m_allocator(allocator)
             , m_typeLibrary(&typeLibrary)
         {
-            createProgram("GenericShader"_id, base::parser::Location(), AttributeList());
         }
 
         CodeLibrary::~CodeLibrary()
