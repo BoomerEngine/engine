@@ -71,13 +71,13 @@ namespace rendering
             return 0;
 
         OutputInitInfo initInfo;
-        initInfo.m_class = DriverOutputClass::NativeWindow;
+        initInfo.m_class = OutputClass::Window;
         initInfo.m_width = setup.size.x;
         initInfo.m_height = setup.size.y;
         initInfo.m_windowActivate = setup.activate;
         initInfo.m_windowTopmost = setup.topmost;
         initInfo.m_windowTitle = setup.title;
-        initInfo.m_windowSystemBorder = false; // we never use sytem border for UI windows
+        initInfo.m_windowSystemBorder = false; // we never use system border for UI windows
         initInfo.m_windowPopup = setup.popup;
         initInfo.m_windowAdjustArea = false;
         initInfo.m_windowCanResize = true;
@@ -90,6 +90,7 @@ namespace rendering
         initInfo.m_windowPlacementY = setup.position.y;
         initInfo.m_windowShow = false;
         initInfo.m_windowInputContextGameMode = false; // don't use RawInput, etc
+		initInfo.m_windowAllowFullscreenToggle = false; // not in UI
         initInfo.m_windowCallback = this;
 
         ui::NativeWindowID ownerWindowId = 0;

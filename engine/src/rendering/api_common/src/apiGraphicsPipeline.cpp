@@ -19,16 +19,18 @@ namespace rendering
     {
 		//--
 
-		IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* states)
+		IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates)
 			: IBaseObject(owner, ObjectType::GraphicsPipelineObject)
 			, m_passLayout(passLayout)
-			, m_renderStates(states)
+			, m_mergedRenderStates(mergedRenderStates)
 			, m_shaders(shaders)
 		{
+			m_mergedRenderStatesKey = mergedRenderStates.key();
+
 			base::CRC64 crc;
-			crc << m_passLayout->key();
-			crc << m_renderStates->key();
 			crc << m_shaders->key();
+			crc << m_passLayout->key();
+			crc << m_mergedRenderStatesKey;
 			m_key = crc;
 		}
 

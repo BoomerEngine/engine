@@ -26,6 +26,10 @@ namespace rendering
 
 			//--
 
+			static const auto STATIC_TYPE = ObjectType::ComputePipelineObject;
+
+			//--
+
 			// internal unique key (can be used to find compiled data in cache)
 			INLINE uint64_t key() const { return m_key; }
 

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\ #]
+* [# filter: api #]
 ***/
 
 #include "build.h"
@@ -90,8 +90,8 @@ namespace rendering
 					if (state.depthFormat != ImageFormat::UNKNOWN)
 					{
 						setup.format = state.depthFormat;
-						setup.depth = false;
-						m_depthRTV = base::RefNew<RenderTargetView>(m_colorTarget->handle(), owningObject, owner()->objectRegistry(), setup);
+						setup.depth = true;
+						m_depthRTV = base::RefNew<RenderTargetView>(m_depthTarget->handle(), owningObject, owner()->objectRegistry(), setup);
 					}
 				}
 			}

@@ -45,7 +45,8 @@ namespace rendering
 			virtual void additionalPrint(ImageFormat& f) const { }
 
 			// can this object be deleted ?
-			virtual bool canDelete() const { return true; }
+			// TODO: add internal flag if used more often
+			INLINE bool canDelete() const { return m_type != ObjectType::OutputRenderTargetView; }
 
 			// called THE MOMENT client releases last reference to the client-side object
 			// NOTE: this may be called from any thread!

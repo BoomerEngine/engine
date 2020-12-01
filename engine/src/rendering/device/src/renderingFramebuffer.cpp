@@ -23,7 +23,7 @@ namespace rendering
         width = rtv->width();
         height = rtv->height();
         slices = rtv->slices();
-        samples = rtv->swapchain();
+        samples = rtv->samples();
 		swapchain = rtv->swapchain();
         return *this;
     }
@@ -39,7 +39,8 @@ namespace rendering
         width = rtv->width();
         height = rtv->height();
         slices = rtv->slices();
-        samples = rtv->swapchain();
+        samples = rtv->samples();
+		swapchain = rtv->swapchain();
         return *this;
     }
 

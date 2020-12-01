@@ -39,29 +39,30 @@ namespace rendering
 
         ObjectRegistry::~ObjectRegistry()
         {
-            if (m_numAllocatedObjects > 0)
-            {
-                TRACE_WARNING("There are still {} live API objects, deleting them", m_numAllocatedObjects);
+            DEBUG_CHECK_EX(m_numAllocatedObjects == 0, "Not all objects deleted");
 
-                for (uint32_t i = 0; i < m_numObjects; ++i)
-                {
-                    auto& obj = m_objects[i];
-                    if (obj.ptr && !obj.markedForDeletion)
-                    {
-                        obj.markedForDeletion = true;
-                        m_owner->scheduleObjectForDestruction(obj.ptr);
-                    }
-                }
-
-				m_owner->sync(); // this should actually delete all objects
-				m_owner->sync(); // this should actually delete all objects
-
-                DEBUG_CHECK_EX(m_numAllocatedObjects == 0, "Not all objects deleted");
-
-                for (uint32_t i=0; i<m_numObjects; ++i)
-                    DEBUG_CHECK_EX(m_objects[i].ptr == nullptr, "Not all objects deleted");
-            }
+            for (uint32_t i=0; i<m_numObjects; ++i)
+                DEBUG_CHECK_EX(m_objects[i].ptr == nullptr, "Not all objects deleted");
         }
+
+		void ObjectRegistry::purge()
+		{
+			if (m_numAllocatedObjects > 0)
+			{
+				TRACE_WARNING("There are still {} live API objects, deleting them", m_numAllocatedObjects);
+
+				for (uint32_t i = 0; i < m_numObjects; ++i)
+				{
+					auto& obj = m_objects[i];
+					if (obj.ptr && !obj.markedForDeletion && obj.ptr->canDelete())
+					{
+						TRACE_INFO("Purging {}({}) for deletion", obj.ptr, obj.ptr->objectType());
+						obj.markedForDeletion = true;
+						m_owner->scheduleObjectForDestruction(obj.ptr);
+					}
+				}
+			}
+		}
 
         ObjectID ObjectRegistry::registerObject(IBaseObject* ptr)
         {
@@ -100,7 +101,7 @@ namespace rendering
 
             auto& entry = m_objects[id.index()];
             DEBUG_CHECK_RETURN(entry.ptr == ptr);
-			DEBUG_CHECK(entry.markedForDeletion || !ptr->canDelete());
+			DEBUG_CHECK(entry.markedForDeletion == ptr->canDelete());
 
             m_objects[id.index()].ptr = nullptr;
             m_objects[id.index()].markedForDeletion = false;

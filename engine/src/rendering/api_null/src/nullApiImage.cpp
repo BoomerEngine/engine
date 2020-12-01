@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\image #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"

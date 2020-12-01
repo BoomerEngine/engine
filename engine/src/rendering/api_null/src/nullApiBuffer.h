@@ -56,6 +56,8 @@ namespace rendering
 				BufferAnyView(Thread* drv, Buffer* buffer, const Setup& setup);
 				virtual ~BufferAnyView();
 
+				INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
+
 			private:
 				// api ptr
 			};

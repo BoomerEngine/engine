@@ -25,6 +25,11 @@ namespace rendering
 				virtual ~Sampler();
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+
+				GLuint object();
+
+			private:
+				GLuint m_glSampler;
 			};
 
 			//--

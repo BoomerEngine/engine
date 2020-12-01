@@ -12,6 +12,8 @@ namespace rendering
     {
 		namespace gl4
 		{
+			
+			//--
 
 			// get number of bits per pixel of texture
 			extern RENDERING_API_GL4_API uint8_t GetTextureFormatBytesPerPixel(GLenum format);
@@ -30,6 +32,8 @@ namespace rendering
 
 			// decompose format into parts
 			extern RENDERING_API_GL4_API void DecomposeTextureFormat(base::image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);
+
+			//--
 
 		} // gl4
     } // api

@@ -138,6 +138,7 @@ namespace rendering
 
         FrameBufferColorAttachmentInfo color[MAX_COLOR_TARGETS];
         FrameBufferDepthAttachmentInfo depth;
+		base::Rect area; // initial render area, if empty the whole area of render targets is used
 
         //--
 

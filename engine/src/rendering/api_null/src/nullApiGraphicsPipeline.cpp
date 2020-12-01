@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\pipeline #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
@@ -20,8 +20,8 @@ namespace rendering
 
 			//--
 
-			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsPassLayout* passLayout, const GraphicsRenderStates* states)
-				: IBaseGraphicsPipeline(owner, shaders, passLayout, states)
+			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates)
+				: IBaseGraphicsPipeline(owner, shaders, passLayout, mergedRenderStates)
 			{
 			}
 

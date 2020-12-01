@@ -40,7 +40,8 @@ RENDER_COMMAND_OPCODE(ClearDepthStencil) // fill current depth/stencil buffer (b
 
 // -- RESOURCES
 
-RENDER_COMMAND_OPCODE(Clear) // clear any buffer with any data, NOTE: uses copy engine
+RENDER_COMMAND_OPCODE(ClearImage) // clear any image with any data
+RENDER_COMMAND_OPCODE(ClearBuffer) // clear any buffer with any data
 RENDER_COMMAND_OPCODE(Download) // download data from GPU resource back to the CPU side
 RENDER_COMMAND_OPCODE(Update) // update content of the dynamic resource (image, buffer mostly)
 RENDER_COMMAND_OPCODE(Copy) // copy data between buffers and images
@@ -69,10 +70,7 @@ RENDER_COMMAND_OPCODE(SetLineWidth) // line width for line drawing mode
 RENDER_COMMAND_OPCODE(SetScissorRect) // set scissor area
 RENDER_COMMAND_OPCODE(SetViewportRect) // set viewport area + depth range
 RENDER_COMMAND_OPCODE(SetBlendColor) // set values for the const blending color
-RENDER_COMMAND_OPCODE(SetDepthBias) // change the depth bias state
 RENDER_COMMAND_OPCODE(SetDepthClip) // change the depth min/max ranges
 RENDER_COMMAND_OPCODE(SetStencilReference) // set values for the stencil reference value (requires the pipeline to allow for dynamic stencil reference value)
-RENDER_COMMAND_OPCODE(SetStencilCompareMask) // set values for the stencil compare mask (requires the pipeline to allow for dynamic stencil compare mask)
-RENDER_COMMAND_OPCODE(SetStencilWriteMask) // set values for the stencil write mask (requires the pipeline to allow for dynamic stencil write mask)
 
 #endif

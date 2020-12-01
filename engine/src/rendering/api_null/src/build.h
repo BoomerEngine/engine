@@ -29,7 +29,6 @@ namespace rendering
 			class Sampler;
 			class Swapchain;
 			class PassLayout;
-			class RenderStates;
 
 			//--
 

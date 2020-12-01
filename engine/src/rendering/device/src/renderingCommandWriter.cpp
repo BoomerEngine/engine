@@ -160,7 +160,7 @@ namespace rendering
                 m_currentPass = nullptr;
                 m_numOpenedBlocks = 0;
                 m_currentPassRts = 0;
-                m_currentPassViewports = 0;
+                //m_currentPassViewports = 0;
                 m_currentIndexBufferElementCount = 0;
                 m_currentVertexBufferRemainingSize.reset();
 				m_currentVertexBuffers.reset();
@@ -229,13 +229,11 @@ namespace rendering
             auto op  = allocCommand<OpTriggerCapture>();
         }
 
-        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t numViewports, const FrameBufferViewportState* intialViewportSettings)
+        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount)
         {
 			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
             DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
-            DEBUG_CHECK_RETURN_EX(numViewports >= 1 && numViewports <= 16, "Invalid number of viewports");
-
-            numViewports = std::clamp<uint8_t>(numViewports, 1, 16);
+			DEBUG_CHECK_RETURN_EX(viewportCount < 16, "To many viewports");
 
             auto frameBufferValid = frameBuffer.validate();
             DEBUG_CHECK_RETURN_EX(frameBufferValid , "Cannot enter a pass with invalid frame buffer");
@@ -288,26 +286,15 @@ namespace rendering
 
 			//--
 
-            auto payloadSize = intialViewportSettings ? (sizeof(FrameBufferViewportState) * numViewports) : 0;
-            auto op = allocCommand<OpBeginPass>(payloadSize);
+            auto op = allocCommand<OpBeginPass>();
             op->frameBuffer = frameBuffer;
 			op->passLayoutId = layout->id();
             op->hasResourceTransitions = false;
-            op->numViewports = numViewports;
+			op->viewportCount = viewportCount;
 
-            if (intialViewportSettings)
-            {
-                op->hasInitialViewportSetup = true;
-                memcpy(op->payload(), intialViewportSettings, payloadSize);
-            }
-            else
-            {
-                op->hasInitialViewportSetup = false;
-            }
-			
             m_currentPass = op;
-            m_currentPassViewports = numViewports;
             m_currentPassRts = frameBuffer.validColorSurfaces();
+			m_currentPassViewports = viewportCount;
         }
 
         void CommandWriter::opEndPass()
@@ -317,6 +304,8 @@ namespace rendering
 
             auto op = allocCommand<OpEndPass>();
             m_currentPass = nullptr;
+			m_currentPassViewports = 0;
+			m_currentPassRts = 0;
         }
 
         //--
@@ -451,8 +440,8 @@ namespace rendering
         {
             DEBUG_CHECK_RETURN(m_currentPass != nullptr);
             DEBUG_CHECK_RETURN(viewportIndex < m_currentPassViewports);// , "Invalid viewport index, current pass defines less viewports");
-            DEBUG_CHECK_RETURN(scissorRect.width() >= 0);// "Width can't be negataive");
-            DEBUG_CHECK_RETURN(scissorRect.height() >= 0);//, "Height can't be negataive");
+            DEBUG_CHECK_RETURN(scissorRect.width() >= 0);// "Width can't be negative");
+            DEBUG_CHECK_RETURN(scissorRect.height() >= 0);//, "Height can't be negative");
 
             auto op = allocCommand<OpSetScissorRect>();
             op->viewportIndex = viewportIndex;
@@ -487,7 +476,7 @@ namespace rendering
             op->back = backValue;
         }
 
-        void CommandWriter::opSetStencilCompareMask(uint8_t mask)
+        /*void CommandWriter::opSetStencilCompareMask(uint8_t mask)
         {
             DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
@@ -521,7 +510,7 @@ namespace rendering
             auto op = allocCommand<OpSetStencilWriteMask>();
             op->front = front;
             op->back = back;
-        }
+        }*/
 
 		void CommandWriter::opSetDepthClip(float minBounds, float maxBounds)
 		{
@@ -532,7 +521,7 @@ namespace rendering
 			op->max = maxBounds;
 		}
 
-		void CommandWriter::opSetDepthBias(float constant, float slopeFactor /*= 0.0f*/, float clampValue /*= -1.0f*/)
+		/*void CommandWriter::opSetDepthBias(float constant, float slopeFactor, float clampValue)
 		{
 			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
 
@@ -540,7 +529,7 @@ namespace rendering
 			op->constant = constant;
 			op->slope = slopeFactor;
 			op->clamp = clampValue;
-		}
+		}*/
 
         //--
 
@@ -572,98 +561,46 @@ namespace rendering
             }
         }
 
-		void CommandWriter::opClear(const IDeviceObjectView* writableView, ImageFormat clearFormat, const void* clearValue, const base::image::ImageRect* rects, uint32_t numRects)
+		void CommandWriter::opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
 		{
-			DEBUG_CHECK_RETURN(writableView);
+			DEBUG_CHECK_RETURN_EX(bufferView != nullptr, "Missing buffer");
+			DEBUG_CHECK_RETURN_EX((rects == nullptr && numRects == 0) || (rects != nullptr && numRects >= 0), "Invalid rectangles");
 
 			uint32_t payloadDataSize = 0;
 			uint32_t clearValueSize = 0;
 			uint32_t colorValuePayloadOffset = 0;
 
-			if (auto* bufferView = base::rtti_cast<BufferWritableView>(writableView))
-			{
-				DEBUG_CHECK_RETURN(clearFormat == bufferView->format());
-				clearValueSize = GetImageFormatInfo(clearFormat).bitsPerPixel / 8;
-				payloadDataSize = clearValueSize;
+			clearValueSize = GetImageFormatInfo(bufferView->format()).bitsPerPixel / 8;
+			payloadDataSize = clearValueSize;
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-				DEBUG_CHECK_RETURN(ensureResourceState(writableView->object(), ResourceLayout::UAV));
+			DEBUG_CHECK_RETURN(ensureResourceState(bufferView->object(), ResourceLayout::UAV));
 #endif
 
-				if (numRects != 0)
-				{
-					const auto bufferSize = bufferView->size();
-
-					for (uint32_t i = 0; i < numRects; ++i)
-					{
-						const auto& r = rects[i];
-						DEBUG_CHECK_RETURN(r.offsetX < bufferSize);
-						DEBUG_CHECK_RETURN(r.offsetY != 0);
-						DEBUG_CHECK_RETURN(r.offsetZ != 0);
-						DEBUG_CHECK_RETURN(r.offsetX + r.sizeX < bufferSize);
-						DEBUG_CHECK_RETURN(r.sizeY != 1);
-						DEBUG_CHECK_RETURN(r.sizeZ != 1);
-
-						const auto totalOffset = bufferView->offset() + r.offsetX;
-						DEBUG_CHECK_RETURN(totalOffset % clearValueSize == 0);
-						DEBUG_CHECK_RETURN(r.sizeX % clearValueSize == 0);
-					}
-
-					colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
-					payloadDataSize += colorValuePayloadOffset;
-				}
-			}
-			else if (auto* imageView = base::rtti_cast<ImageWritableView>(writableView))
+			if (numRects != 0)
 			{
-				const auto* image = imageView->image();
-				DEBUG_CHECK_RETURN(image != nullptr);
-				DEBUG_CHECK_RETURN(image->format() != ImageFormat::UNKNOWN);
-				DEBUG_CHECK_RETURN((numRects != 0 && rects != nullptr) || (numRects == 0 && rects == nullptr));
+				const auto bufferSize = bufferView->size();
 
-#ifdef VALIDATE_RESOURCE_LAYOUTS
+				for (uint32_t i = 0; i < numRects; ++i)
 				{
-					SubImageRegion region;
-					region.firstMip = imageView->mip();
-					region.numMips = 1;
-					region.firstSlice = imageView->slice();
-					region.numSlices = 1;
-					DEBUG_CHECK_RETURN(ensureResourceState(writableView->object(), ResourceLayout::UAV, &region));
+					const auto& r = rects[i];
+					DEBUG_CHECK_RETURN(r.buffer.offset < bufferSize);
+					DEBUG_CHECK_RETURN(r.buffer.offset + r.buffer.size < bufferSize);
+
+					const auto totalOffset = bufferView->offset() + r.buffer.offset;
+					DEBUG_CHECK_RETURN(totalOffset % clearValueSize == 0);
+					DEBUG_CHECK_RETURN(r.buffer.size % clearValueSize == 0);
 				}
-#endif
 
-				DEBUG_CHECK_RETURN(clearFormat == image->format()); // for now
-				clearValueSize = GetImageFormatInfo(clearFormat).bitsPerPixel / 8;
-				payloadDataSize = clearValueSize;
-
-				if (numRects != 0)
-				{
-					const auto mipWidth = std::max<uint32_t>(1, image->width() >> imageView->mip());
-					const auto mipHeight = std::max<uint32_t>(1, image->height() >> imageView->mip());
-					const auto mipDepth = std::max<uint32_t>(1, image->depth() >> imageView->mip());
-
-					for (uint32_t i = 0; i < numRects; ++i)
-					{
-						const auto& r = rects[i];
-						DEBUG_CHECK_RETURN(r.offsetX < mipWidth);
-						DEBUG_CHECK_RETURN(r.offsetY < mipHeight);
-						DEBUG_CHECK_RETURN(r.offsetZ < mipDepth);
-						DEBUG_CHECK_RETURN(r.offsetX + r.sizeX < mipWidth);
-						DEBUG_CHECK_RETURN(r.offsetY + r.sizeY < mipHeight);
-						DEBUG_CHECK_RETURN(r.offsetZ + r.sizeZ < mipDepth);
-					}
-
-					colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
-					payloadDataSize += colorValuePayloadOffset;
-				}
-			}
-			else
-			{
-				DEBUG_CHECK_RETURN(!"Invalid view type");
+				colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
+				payloadDataSize += colorValuePayloadOffset;
 			}
 
-			auto op = allocCommand<OpClear>(payloadDataSize);
-			op->view = writableView->viewId();
-			op->clearFormat = clearFormat;
+			auto op = allocCommand<OpClearBuffer>(payloadDataSize);
+			op->view = bufferView->viewId();
+			op->clearFormat = bufferView->format();
+			uint8_t imageMip = 0;
+			uint16_t imageSlice = 0;
 
 			if (numRects)
 				memcpy(op->payload(), rects, sizeof(base::image::ImageRect) * numRects);
@@ -689,16 +626,79 @@ namespace rendering
 
 			if (offset == 0 && size == view->size())
 			{
-				opClear(view, view->format(), clearValue);
+				opClearWritableBuffer(view, clearValue, nullptr, 0);
 			}
 			else
 			{
-				base::image::ImageRect rect(offset, size);
-				opClear(view, view->format(), clearValue, &rect, 1);
+				ResourceClearRect rect;
+				rect.buffer.offset = offset;
+				rect.buffer.size = size;
+				opClearWritableBuffer(view, clearValue, &rect, 1);
 			}
         }
 
-        void CommandWriter::opClearWritableImage(const ImageWritableView* view, ImageFormat clearFormat, const void* clearValue /*= nullptr*/)
+		void CommandWriter::opClearWritableImage(const ImageWritableView* imageView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
+		{
+			DEBUG_CHECK_RETURN_EX(imageView != nullptr, "Missing image");
+			DEBUG_CHECK_RETURN_EX((rects == nullptr && numRects == 0) || (rects != nullptr && numRects >= 0), "Invalid rectangles");
+
+			const auto* image = imageView->image();
+
+			uint32_t payloadDataSize = 0;
+			uint32_t clearValueSize = 0;
+			uint32_t colorValuePayloadOffset = 0;
+
+			clearValueSize = GetImageFormatInfo(image->format()).bitsPerPixel / 8;
+			payloadDataSize = clearValueSize;
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			{
+				SubImageRegion region;
+				region.firstMip = imageView->mip();
+				region.numMips = 1;
+				region.firstSlice = imageView->slice();
+				region.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(image, ResourceLayout::UAV, &region));
+			}
+#endif
+
+			if (numRects != 0)
+			{
+				const auto mipWidth = std::max<uint32_t>(1, image->width() >> imageView->mip());
+				const auto mipHeight = std::max<uint32_t>(1, image->height() >> imageView->mip());
+				const auto mipDepth = std::max<uint32_t>(1, image->depth() >> imageView->mip());
+
+				for (uint32_t i = 0; i < numRects; ++i)
+				{
+					const auto& r = rects[i];
+					DEBUG_CHECK_RETURN(r.image.offsetX < mipWidth);
+					DEBUG_CHECK_RETURN(r.image.offsetY < mipHeight);
+					DEBUG_CHECK_RETURN(r.image.offsetZ < mipDepth);
+					DEBUG_CHECK_RETURN(r.image.offsetX + r.image.sizeX <= mipWidth);
+					DEBUG_CHECK_RETURN(r.image.offsetY + r.image.sizeY <= mipHeight);
+					DEBUG_CHECK_RETURN(r.image.offsetZ + r.image.sizeZ <= mipDepth);
+				}
+
+				colorValuePayloadOffset = sizeof(base::image::ImageRect) * numRects;
+				payloadDataSize += colorValuePayloadOffset;
+			}
+
+			auto op = allocCommand<OpClearImage>(payloadDataSize);
+			op->view = imageView->viewId();
+			op->clearFormat = image->format();
+			uint8_t imageMip = 0;
+			uint16_t imageSlice = 0;
+
+			if (numRects)
+				memcpy(op->payload(), rects, sizeof(base::image::ImageRect) * numRects);
+
+			if (clearValue)
+				memcpy(op->payload<uint8_t>() + colorValuePayloadOffset, clearValue, clearValueSize);
+			else
+				memzero(op->payload<uint8_t>() + colorValuePayloadOffset, clearValueSize);
+		}
+
+        void CommandWriter::opClearWritableImage(const ImageWritableView* view, const void* clearValue)
         {
 			DEBUG_CHECK_RETURN(view);
 
@@ -706,7 +706,7 @@ namespace rendering
 			DEBUG_CHECK_RETURN(image != nullptr);
 			DEBUG_CHECK_RETURN(image->format() != ImageFormat::UNKNOWN);
 
-			opClear(view, clearFormat, clearValue, nullptr, 0);
+			opClearWritableImage(view, clearValue, nullptr, 0);
         }
 
         void CommandWriter::opClearRenderTarget(const RenderTargetView * view, const base::Vector4 & values, const base::Rect * rects /*= nullptr*/, uint32_t numRects /*= 0*/)

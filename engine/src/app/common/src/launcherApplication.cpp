@@ -94,14 +94,13 @@ namespace application
         setup.m_windowInputContextGameMode = true;
         setup.m_windowShowOnTaskBar = true;
         setup.m_windowCreateInputContext = true;
-        setup.m_class = rendering::DriverOutputClass::NativeWindow; // render to native window on given OS
+        setup.m_class = rendering::OutputClass::Window; // render to native window on given OS
         
-
         // switch fullscreen/windowed
-        if (commandline.hasParam("fullscreen"))
-            setup.m_class = rendering::DriverOutputClass::Fullscreen;
+		if (commandline.hasParam("fullscreen"))
+			setup.m_windowStartInFullScreen = true;
         else if (commandline.hasParam("window") || commandline.hasParam("windowed"))
-            setup.m_class = rendering::DriverOutputClass::NativeWindow;
+			setup.m_windowStartInFullScreen = false;
 
         // resolution
         if (commandline.hasParam("width") && commandline.hasParam("height"))

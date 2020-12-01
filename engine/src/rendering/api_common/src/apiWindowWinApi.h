@@ -38,7 +38,6 @@ namespace rendering
 
 			void bindOwner(ObjectID id);
 			bool prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight);
-			void releaseWindowFromRendering();
 			void disconnectWindow();
 			void update();
 
@@ -105,7 +104,6 @@ namespace rendering
 			base::input::ContextPtr m_inputContext;
 
 			std::atomic<uint32_t> m_numFramesStarted = 0;
-			std::atomic<uint32_t> m_numFramesRendered = 0;
 			uint32_t m_numLastFramesRendered = 0;
 			base::NativeTimePoint m_nextFPSCapture;
 
@@ -140,7 +138,6 @@ namespace rendering
 			virtual void bindWindowOwner(uint64_t handle, ObjectID owner) override final;
 			virtual void closeWindow(uint64_t handle) override final;
 			virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
-			virtual void finishWindowRendering(uint64_t handle) override final;
 			virtual void disconnectWindow(uint64_t handle) override final;
 			virtual INativeWindowInterface* windowInterface(uint64_t handle) override final;
 
@@ -149,8 +146,6 @@ namespace rendering
 			virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override final;
 			virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override final;
 			virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override final;
-			virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const override final;
-			virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const override final;
 
 			//--
 
@@ -158,17 +153,10 @@ namespace rendering
 			base::Array<base::Rect> m_monitorRects;
 			HWND m_hFakeWnd = NULL;
 
-			struct CachedDisplayMode
-			{
-				uint16_t m_width;
-				uint16_t m_height;
-				uint16_t m_refreshRate;
-			};
-
 			struct CachedDisplay
 			{
 				DisplayInfo m_displayInfo;
-				base::Array<CachedDisplayMode> m_displayModes;
+				base::Array<ResolutionInfo> m_resolutions;
 			};
 
 			base::Array<CachedDisplay> m_cachedDisplayInfos;

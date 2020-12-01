@@ -51,7 +51,7 @@ namespace rendering
 			//--
 
 			// create graphical rendering pipeline using these shaders that is compatible with given rendering pass and rendering states
-			virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* renderStates) = 0;
+			virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup) = 0;
 
 			// create graphical rendering pipeline using these shaders that is compatible with given rendering pass and rendering states
 			virtual IBaseComputePipeline* createComputePipeline_ClientApi() = 0;

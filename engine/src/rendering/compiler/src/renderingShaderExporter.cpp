@@ -1406,6 +1406,12 @@ namespace rendering
 						printer << "------------------------------------------\n\n";
 						outAssembledShader.metadata->print(printer);
 
+						auto dataCopy = CloneObject(outAssembledShader.metadata);
+						printer << "\n------------------------------------------\n";
+						printer << "-- METADATA COPY                          --\n";
+						printer << "------------------------------------------\n\n";
+						dataCopy->print(printer);
+
 						base::io::SaveFileFromString(debugPath, txt.view());
 					}
 				}

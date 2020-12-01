@@ -9,6 +9,7 @@
 #pragma once
 
 #include "apiObject.h"
+#include "rendering/device/include/renderingGraphicsStates.h"
 
 namespace rendering
 {
@@ -21,13 +22,20 @@ namespace rendering
 		class RENDERING_API_COMMON_API IBaseGraphicsPipeline : public IBaseObject
 		{
 		public:
-			IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* states);
+			IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates);
 			virtual ~IBaseGraphicsPipeline();
+
+			//--
+
+			static const auto STATIC_TYPE = ObjectType::GraphicsPipelineObject;
 
 			//--
 
 			// internal unique key (can be used to find compiled data in cache)
 			INLINE uint64_t key() const { return m_key; }
+
+			// render state key
+			INLINE uint64_t mergedRenderStateKey() const { return m_mergedRenderStatesKey; }
 
 			// shaders used to build the pipeline
 			INLINE const IBaseShaders* shaders() const { return m_shaders; }
@@ -36,7 +44,7 @@ namespace rendering
 			INLINE const IBaseGraphicsPassLayout* passLayout() const { return m_passLayout; }
 
 			// rendering states
-			INLINE const IBaseGraphicsRenderStates* renderStates() const { return m_renderStates; }
+			INLINE const GraphicsRenderStatesSetup& mergedRenderStates() const { return m_mergedRenderStates; }
 
 			//--
 
@@ -45,7 +53,9 @@ namespace rendering
 			
 			const IBaseShaders* m_shaders = nullptr;
 			const IBaseGraphicsPassLayout* m_passLayout = nullptr;
-			const IBaseGraphicsRenderStates* m_renderStates = nullptr;
+			
+			GraphicsRenderStatesSetup m_mergedRenderStates;
+			uint64_t m_mergedRenderStatesKey;
 		};
 
 		//---

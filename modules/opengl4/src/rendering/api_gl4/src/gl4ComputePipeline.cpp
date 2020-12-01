@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\pipeline #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
@@ -24,6 +24,11 @@ namespace rendering
 
 			ComputePipeline::~ComputePipeline()
 			{}
+
+			bool ComputePipeline::apply()
+			{
+				return false;
+			}
 
 			//--
 

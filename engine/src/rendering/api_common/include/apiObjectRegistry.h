@@ -55,6 +55,11 @@ namespace rendering
                 return static_cast<T*>(resolveStatic(id, T::STATIC_TYPE));
             }
 
+			//--
+
+			// purge all still active objects
+			void purge();
+
         private:
             static const uint32_t MAX_OBJECTS = 1U << 16;
 

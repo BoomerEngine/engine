@@ -9,6 +9,7 @@
 #include "build.h"
 #include "renderingDescriptorInfo.h"
 #include "renderingDescriptorID.h"
+#include "renderingDescriptor.h"
 
 #include "base/containers/include/stringParser.h"
 
@@ -161,15 +162,12 @@ namespace rendering
         DescriptorInfo info;
         info.m_entries.reserve(count);
 
-		const auto* readPtr = (const uint8_t*)data;
-        for (uint32_t i = 0; i < count; ++i)
+        for (uint32_t i = 0; i < count; ++i, ++data)
         {
-			const auto type = *(const DeviceObjectViewType*)readPtr;
+			const auto type = data->type;
             DEBUG_CHECK_RETURN_V(type != DeviceObjectViewType::Invalid, DescriptorID());
 
             info.m_entries.pushBack(type);
-
-			readPtr += DESCRIPTOR_ENTRY_MEMORY_SIZE;
         }
 
         // just use the data hash as the key

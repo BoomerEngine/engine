@@ -57,8 +57,10 @@ namespace example
         setup.m_width = 1024;
         setup.m_height = 1024;
         setup.m_windowMaximized = false;
+		setup.m_windowInputContextGameMode = false;
         setup.m_windowTitle = "BoomerEngine - SimpleBox";
-        setup.m_class = rendering::OutputClass::NativeWindow; // render to native window on given OS
+		setup.m_windowAllowFullscreenToggle = true;
+        setup.m_class = rendering::OutputClass::Window; // render to native window on given OS
 
         // create rendering output
         m_renderingOutput = renderingService->device()->createOutput(setup);

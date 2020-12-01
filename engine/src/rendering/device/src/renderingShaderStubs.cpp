@@ -879,6 +879,7 @@ namespace rendering
 		{
 			location.write(f);
 			f.writeRef(descriptor);
+			f.writeCompressedInt(index);
 			f.writeName(name);
 			f.writeArray(attributes);
 		}
@@ -887,6 +888,7 @@ namespace rendering
 		{
 			location.read(f);
 			f.readRef(descriptor);
+			index = f.readCompressedInt();
 			name = f.readName();
 			f.readArray(attributes);
 		}

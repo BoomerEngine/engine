@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "gl4Thread.h"
+#include "gl4ObjectCache.h"
 #include "gl4Sampler.h"
 
 namespace rendering
@@ -25,6 +26,15 @@ namespace rendering
 
 			Sampler::~Sampler()
 			{}
+
+			GLuint Sampler::object()
+			{
+				if (m_glSampler)
+					return m_glSampler;
+
+				m_glSampler = owner()->objectCache()->createSampler(state());
+				return m_glSampler;
+			}
 
 			//--
 

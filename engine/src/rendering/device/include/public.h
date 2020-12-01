@@ -55,8 +55,7 @@ namespace rendering
     enum class OutputClass : uint8_t
     {
         Offscreen, // render off-screen, no window is allocated, content can be streamed to file/network via consumer callback
-        NativeWindow, // render to native window, window can be moved and resized be user
-        Fullscreen, // render to full screen device, input and rendering may be handled differently
+        Window, // render to native window, window can be moved and resized be user or made fullscreen
         HMD, // render to connected HMD device (VR/AD headset)
     };
 
@@ -240,6 +239,29 @@ namespace rendering
 			uint8_t mip = 0;
 			uint16_t slice = 0;
 		} image;
+	};
+
+	///---
+
+	union ResourceClearRect
+	{
+		struct
+		{
+			uint32_t offset = 0;
+			uint32_t size = 0;
+		}  buffer;
+
+		struct
+		{
+			uint16_t offsetX = 0;
+			uint16_t offsetY = 0;
+			uint16_t offsetZ = 0;
+			uint16_t sizeX = 0;
+			uint16_t sizeY = 0;
+			uint16_t sizeZ = 0;
+		}  image;
+
+		INLINE ResourceClearRect() {};
 	};
 
 	///---

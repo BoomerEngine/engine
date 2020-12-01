@@ -29,7 +29,7 @@ namespace rendering
 
         public:
 			IBaseCopyQueue(IBaseThread* owner, IBaseStagingPool* pool, ObjectRegistry* objects);
-            ~IBaseCopyQueue();
+            virtual ~IBaseCopyQueue();
 
 			//--
 

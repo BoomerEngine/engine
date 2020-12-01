@@ -51,7 +51,11 @@ namespace rendering
 		{
             TRACE_INFO("Device thread shutting down");
 
+			// mark all still live objects as not needed
+			m_objectRegistry->purge();
+
 			// finish any high level rendering
+			// NOTE: this will also remove all pending objects
 			sync();
 
 			// delete queue
@@ -125,9 +129,9 @@ namespace rendering
 		{
 			DEBUG_CHECK_EX(base::GetCurrentThreadID() == m_threadId, "This function should be called on rendering thread");
 
-			delete m_objectRegistry;
-			m_objectRegistry = nullptr;
+			m_objectRegistry.reset();
 
+			m_objectCache->clear();
 			delete m_objectCache;
 			m_objectCache = nullptr;
 
@@ -181,6 +185,9 @@ namespace rendering
         void IBaseThread::advanceFrame()
         {
             ASSERT_EX(Fibers::GetInstance().isMainThread(), "Expected main thread");
+
+			// update windows
+			m_windows->updateWindows();
 
             // wait if previous cleanup job has not yet finished
             {
@@ -265,7 +272,10 @@ namespace rendering
 
         void IBaseThread::scheduleObjectForDestruction(IBaseObject* ptr)
         {
+			ASSERT(ptr && ptr->canDelete());
+
             auto lock = base::CreateLock(m_sequenceLock);
+			TRACE_INFO("Scheduled {}({}) for deletion", ptr, ptr->objectType());
             m_currentFrame->registerObjectForDeletion(ptr);
         }
 

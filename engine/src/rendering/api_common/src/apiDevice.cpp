@@ -241,18 +241,18 @@ namespace rendering
 
 		GraphicsPassLayoutObjectPtr IBaseDevice::createGraphicsPassLayout(const GraphicsPassLayoutSetup& info)
 		{
-			if (auto* obj = m_thread->createOptimalPassLayout(info))
-				return base::RefNew<GraphicsPassLayoutObject>(obj->handle(), m_thread->objectRegistry(), info, obj->key());
+			auto* obj = m_thread->createOptimalPassLayout(info);
+			ASSERT_EX(obj != nullptr, "This should never fail");
 
-			return nullptr;
+			return base::RefNew<GraphicsPassLayoutObject>(obj->handle(), m_thread->objectRegistry(), info, obj->key());
 		}
 
 		GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const GraphicsRenderStatesSetup& states)
 		{
-			if (auto* obj = m_thread->createOptimalRenderStates(states))
-				return base::RefNew<GraphicsRenderStatesObject>(obj->handle(), m_thread->objectRegistry(), states, obj->key());
+			// TODO: share "cache" ?
 
-			return nullptr;
+			auto* obj = new IBaseGraphicsRenderStates(m_thread, states);
+			return base::RefNew<GraphicsRenderStatesObject>(obj->handle(), m_thread->objectRegistry(), states, obj->key());
 		}
 
 		//--
@@ -270,16 +270,6 @@ namespace rendering
 		void IBaseDevice::enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const
 		{
 			m_windows->enumResolutions(displayIndex, outResolutions);
-		}
-
-		void IBaseDevice::enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const
-		{
-			m_windows->enumVSyncModes(displayIndex, outVSyncModes);
-		}
-
-		void IBaseDevice::enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const
-		{
-			m_windows->enumRefreshRates(displayIndex, info, outRefreshRates);
 		}
 
 		//--

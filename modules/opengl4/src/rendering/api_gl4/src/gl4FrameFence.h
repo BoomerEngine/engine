@@ -21,14 +21,16 @@ namespace rendering
 			class FrameFence : public IBaseFrameFence
 			{
 			public:
-				FrameFence(float timeout);
+				FrameFence();
 				virtual ~FrameFence();
 
 				virtual FenceResult check() override final;
 
 			private:
-				base::NativeTimePoint m_expirationTime;
+				base::NativeTimePoint m_issueTime;
 				bool m_signaled = false;
+
+				GLsync m_glFence = 0;
 			};
 
 			//---

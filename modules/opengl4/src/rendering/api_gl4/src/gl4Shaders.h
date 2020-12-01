@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\shaders #]
+* [# filter: api\objects #]
 ***/
 
 #pragma once
@@ -29,9 +29,12 @@ namespace rendering
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
+				INLINE VertexBindingLayout* vertexLayout() const { return (VertexBindingLayout*)IBaseShaders::vertexLayout();  }
+				INLINE DescriptorBindingLayout* descriptorLayout() const { return (DescriptorBindingLayout*)IBaseShaders::descriptorLayout(); }
+
 				//--
 
-				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* renderStates) override;
+				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup) override;
 				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
 				//--            

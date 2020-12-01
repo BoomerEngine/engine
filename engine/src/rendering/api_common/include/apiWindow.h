@@ -50,9 +50,6 @@ namespace rendering
 			// prepare window for rendering
 			virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) = 0;
 
-			// notify window a frame was rendered
-			virtual void finishWindowRendering(uint64_t handle) = 0;
-
 			// disconnect window from any further rendering
 			// NOTE: can be called on any thread, disconnects window's callback to other parts of engine
 			virtual void disconnectWindow(uint64_t handle) = 0;
@@ -70,12 +67,6 @@ namespace rendering
 
 			// enumerate resolutions available at given display index
 			virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const = 0;
-
-			// enumerate vsync modes
-			virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const = 0;
-
-			// enumerate refresh rates
-			virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const = 0;
 
 			//--
 

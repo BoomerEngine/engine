@@ -83,48 +83,6 @@ namespace rendering
 
 		typedef base::BitFlags<DynamicRenderStatesDirtyBit> DynamicRenderStatesDirtyFlags;
 
-		//--
-
-		struct RENDERING_API_COMMON_API DynamicRenderStates
-		{
-			static const uint8_t MAX_VIEWPORTS = 16;
-
-			struct ViewportState
-			{
-				float rect[4] = { 0,0,0,0 };
-				int scissor[4] = { 0,0,0,0 };
-				float depthMin = 0.0f;
-				float depthMax = 1.0f;
-			};
-
-			float lineWidth = 1.0f;
-
-			float depthBiasConstant = 0.0f;
-			float depthBiasSlope = 0.0f;
-			float depthBiasClamp = 0.0f;
-
-			float depthClipMin = 0.0f;
-			float depthClipMax = 1.0f;
-
-			uint8_t stencilFrontWriteMask = 0xFF;
-			uint8_t stencilFrontCompareMask = 0xFF;
-			uint8_t stencilFrontReference = 0;
-
-			uint8_t stencilBackWriteMask = 0xFF;
-			uint8_t stencilBackCompareMask = 0xFF;
-			uint8_t stencilBackReference = 0;
-;
-			float blendColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-			ViewportState viewports[MAX_VIEWPORTS];
-
-			//--
-
-			DynamicRenderStates();
-
-			static const DynamicRenderStates& DEFAULT_STATES();
-		};
-
 		//---
 
 		struct RENDERING_API_COMMON_API GeometryBufferBinding
@@ -214,16 +172,18 @@ namespace rendering
 		{
 			const command::OpBeginPass* passOp = nullptr;
 
-			PlatformPtr apiFBO;
-
-			uint8_t colorCount = 0;
-			uint8_t viewportCount = 0;
+			bool m_valid = false;
 
 			uint8_t samples = 0;
 			uint32_t width = 0;
 			uint32_t height = 0;
 
-			bool swapchain = false;
+			uint8_t viewportCount = 0;
+			uint8_t colorCount = 0;
+			
+			base::Rect area;
+
+			bool swapchain = false; // we are rendering to a swapchain
 
 			PassAttachmentBinding color[FrameBuffer::MAX_COLOR_TARGETS];
 			PassAttachmentBinding depth;
@@ -243,11 +203,11 @@ namespace rendering
 			IBaseFrameExecutor(IBaseThread* thread, Frame* frame, PerformanceStats* stats);
 			virtual ~IBaseFrameExecutor();
 
-			INLINE IBaseThread* thread() { return m_thread; }
-			INLINE Frame* frame() { return m_frame; }
-			INLINE PerformanceStats* stats() { return m_stats; }
-			INLINE ObjectRegistry* objects() { return m_objectRegistry; }
-			INLINE IBaseObjectCache* cache() { return m_objectCache; }
+			INLINE IBaseThread* thread() const { return m_thread; }
+			INLINE Frame* frame() const { return m_frame; }
+			INLINE PerformanceStats* stats() const { return m_stats; }
+			INLINE ObjectRegistry* objects() const { return m_objectRegistry; }
+			INLINE IBaseObjectCache* cache() const { return m_objectCache; }
 
 #define RENDER_COMMAND_OPCODE(x) virtual void run##x(const command::Op##x& op) = 0;
 #include "rendering/device/include/renderingCommandOpcodes.inl"
@@ -284,12 +244,8 @@ namespace rendering
 			PassState m_pass;
 			GeometryStates m_geometry;
 			DescriptorState m_descriptors;
-			DynamicRenderStates m_dynamic;
 
 			base::InplaceArray<DescriptorState, 8> m_descriptorStateStack; // pushed descriptors (for child command buffer processing so nothing leaks)
-
-			DynamicRenderStatesDirtyFlags m_drawDirtyRenderStates; // dynamic render states changed since last draw (what we need to reapply)
-			DynamicRenderStatesDirtyFlags m_passDirtyRenderStates; // dynamic render states changes since start of pass (what we will need to restore at pass' end) 
 
 			IBaseTransientBuffer* m_stagingBuffer = nullptr;
 			IBaseTransientBuffer* m_constantBuffer = nullptr;
@@ -316,9 +272,6 @@ namespace rendering
 
 			uint32_t printBoundDescriptors() const;
 
-			void flushDrawDynamicStates();
-			virtual void applyDynamicStates(const DynamicRenderStates& state, DynamicRenderStatesDirtyFlags mask) = 0;
-
 			//--
 
 			static void ExtractPassAttachment(PassState& state, int index, PassAttachmentBinding& att, const FrameBufferColorAttachmentInfo& src);
@@ -335,16 +288,6 @@ namespace rendering
 			virtual void runBindVertexBuffer(const command::OpBindVertexBuffer& op) override final;
 			virtual void runBindIndexBuffer(const command::OpBindIndexBuffer& op) override final;
 			virtual void runBindDescriptor(const command::OpBindDescriptor& op) override final;
-
-			virtual void runSetViewportRect(const command::OpSetViewportRect& op) override final;
-			virtual void runSetScissorRect(const command::OpSetScissorRect& op) override final;
-			virtual void runSetBlendColor(const command::OpSetBlendColor& op) override final;
-			virtual void runSetLineWidth(const command::OpSetLineWidth& op) override final;
-			virtual void runSetDepthBias(const command::OpSetDepthBias& op) override final;
-			virtual void runSetDepthClip(const command::OpSetDepthClip& op) override final;
-			virtual void runSetStencilReference(const command::OpSetStencilReference& op) override final;
-			virtual void runSetStencilWriteMask(const command::OpSetStencilWriteMask& op) override final;
-			virtual void runSetStencilCompareMask(const command::OpSetStencilCompareMask& op) override final;
 
 			virtual void runUploadConstants(const command::OpUploadConstants& op) override final;
 			virtual void runUploadDescriptor(const command::OpUploadDescriptor& op) override final;

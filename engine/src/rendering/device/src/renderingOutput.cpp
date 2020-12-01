@@ -15,8 +15,7 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_ENUM(OutputClass);
         RTTI_ENUM_OPTION(Offscreen);
-        RTTI_ENUM_OPTION(NativeWindow);
-        RTTI_ENUM_OPTION(Fullscreen);
+        RTTI_ENUM_OPTION(Window);
         RTTI_ENUM_OPTION(HMD);
     RTTI_END_TYPE();
 

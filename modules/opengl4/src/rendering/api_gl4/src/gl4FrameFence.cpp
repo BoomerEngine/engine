@@ -18,28 +18,49 @@ namespace rendering
 
 			//---
 
-			FrameFence::FrameFence(float timeout)
+			FrameFence::FrameFence()
 			{
 				m_signaled = false;
-				m_expirationTime = base::NativeTimePoint::Now() + (double)timeout;
+				m_issueTime.resetToNow();
+
+				m_glFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+				DEBUG_CHECK_EX(m_glFence != nullptr, "Fence not created");
 			}
 
 			FrameFence::~FrameFence()
 			{
 				DEBUG_CHECK_EX(m_signaled, "Deleting unsignalled frame fence");
+
+				if (m_glFence)
+				{
+					glDeleteSync(m_glFence);
+					m_glFence = 0;
+				}
 			}
 
 			FrameFence::FenceResult FrameFence::check()
 			{
-				DEBUG_CHECK_EX(!m_signaled, "Signaled fence not removed");
+				DEBUG_CHECK_RETURN_EX_V(!m_signaled, "Signaled fence not removed", FenceResult::Completed);
 
-				if (m_expirationTime.reached())
+				auto ret = glClientWaitSync(m_glFence, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+				switch (ret)
 				{
-					m_signaled = true;
-					return FenceResult::Completed;
+					case GL_ALREADY_SIGNALED: 
+					case GL_CONDITION_SATISFIED:
+						m_signaled = true;
+						return FenceResult::Completed;
+
+					case GL_TIMEOUT_EXPIRED:
+						return FenceResult::Pending;
+
+					default:
+						break;
 				}
 
-				return FenceResult::Pending;
+				auto error = glGetError();
+				TRACE_WARNING("Frame fence failed with return code {} and error code {}", ret, error);
+				m_signaled = true;
+				return FenceResult::Failed;
 			}
 
 			//---

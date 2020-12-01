@@ -32,7 +32,7 @@ namespace rendering
 				return new VertexBindingLayout(owner(), streams);
 			}
 
-			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors)
+			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers)
 			{
 				return new DescriptorBindingLayout(owner(), descriptors);
 			}

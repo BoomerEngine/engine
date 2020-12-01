@@ -17,6 +17,7 @@
 
 #include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingPipeline.h"
+#include "rendering/device/include/renderingShaderMetadata.h"
 
 namespace rendering
 {
@@ -51,16 +52,20 @@ namespace rendering
 		GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats)
 		{
 			DEBUG_CHECK_RETURN_V(passLayout != nullptr, nullptr);
-			DEBUG_CHECK_RETURN_V(renderStats != nullptr, nullptr);
 
 			auto resolvedPassLayout = passLayout->resolveInternalApiObject<IBaseGraphicsPassLayout>();
 			DEBUG_CHECK_RETURN_V(resolvedPassLayout != nullptr, nullptr);
 
-			auto resolvedRenderStates = renderStats->resolveInternalApiObject<IBaseGraphicsRenderStates>();
-			DEBUG_CHECK_RETURN_V(resolvedRenderStates != nullptr, nullptr);
+			GraphicsRenderStatesSetup mergedStates = metadata()->renderStates;
+
+			if (renderStats)
+			{
+				if (auto apiRenderStates = renderStats->resolveInternalApiObject<IBaseGraphicsRenderStates>())
+					mergedStates.apply(apiRenderStates->setup());
+			}
 
 			if (auto* obj = resolveInternalApiObject<IBaseShaders>())
-				if (auto* view = obj->createGraphicsPipeline_ClientApi(resolvedPassLayout, resolvedRenderStates))
+				if (auto* view = obj->createGraphicsPipeline_ClientApi(resolvedPassLayout, mergedStates))
 					return base::RefNew<rendering::GraphicsPipelineObject>(view->handle(), owner(), passLayout, renderStats, this);
 
 			return nullptr;

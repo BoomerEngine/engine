@@ -76,6 +76,7 @@ namespace rendering
 
 		bool IBaseWindowedSwapchain::prepare_ClientApi(SwapchainState& outState)
 		{
+			DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windowed swap chain can only be used from main thread", false);
 			DEBUG_CHECK_RETURN_V(m_disconnected == 0, false);
 
 			if (!m_windowManager)

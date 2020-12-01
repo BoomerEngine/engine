@@ -8,7 +8,18 @@
 
 #include "build.h"
 #include "gl4Device.h"
-#include "gl4Thread.h"
+
+#ifdef PLATFORM_WINDOWS
+#pragma comment(lib, "opengl32.lib")
+#endif
+
+#if defined(PLATFORM_WINAPI)
+	#include "gl4ThreadWinApi.h"
+	typedef rendering::api::gl4::ThreadWinApi ThreadClass;
+#elif defined(PLATFORM_LINUX)
+	#include "gl4ThreadX11.h"
+	typedef rendering::api::gl4::ThreadX11 ThreadClass;
+#endif
 
 namespace rendering
 {
@@ -32,12 +43,12 @@ namespace rendering
         
 			base::StringBuf Device::name() const
 			{
-				return "NullDevice";
+				return "GL4";
 			}
 
 			IBaseThread* Device::createOptimalThread(const base::app::CommandLine& cmdLine)
 			{
-				return new Thread(this, windows());
+				return new ThreadClass(this, windows());
 			}
 
 			//---

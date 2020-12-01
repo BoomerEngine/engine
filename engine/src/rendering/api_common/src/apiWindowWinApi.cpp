@@ -89,11 +89,6 @@ namespace rendering
 			SetWindowLongPtr(m_hWnd, GWLP_USERDATA, 0);
 		}
 
-		void WindowWinApi::releaseWindowFromRendering()
-		{
-			m_numFramesRendered += 1;
-		}
-
 		static void MessageLoop(HWND hWnd)
 		{
 			MSG msg;
@@ -114,9 +109,8 @@ namespace rendering
 				// update the FPS display
 				if (m_nextFPSCapture.reached())
 				{
-					m_numLastFramesRendered = m_numFramesRendered;
+					m_numLastFramesRendered = m_numFramesStarted.exchange(0);
 					m_nextFPSCapture = base::NativeTimePoint::Now() + 1.0;
-					m_numFramesRendered = 0;
 					updateTitle_NoLock();
 				}
 			}
@@ -134,7 +128,7 @@ namespace rendering
 				// Create the application window
 				memzero(&cls, sizeof(cls));
 				cls.cbSize = sizeof(WNDCLASSEXW);
-				cls.style = CS_VREDRAW | CS_HREDRAW;
+				cls.style = CS_VREDRAW | CS_HREDRAW | CS_OWNDC;
 				cls.lpfnWndProc = &WindowWinApi::WindowProc;
 				cls.cbClsExtra = 0;
 				cls.cbWndExtra = sizeof(void*);
@@ -142,7 +136,7 @@ namespace rendering
 				cls.hCursor = LoadCursor(NULL, IDC_ARROW);
 				cls.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 				cls.lpszMenuName = NULL;
-				cls.lpszClassName = L"BoomerEngineGL4WindowClass";
+				cls.lpszClassName = L"BoomerEngineWindowClass";
 				cls.hInstance = GetModuleHandle(NULL);
 				cls.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
@@ -171,7 +165,7 @@ namespace rendering
 			int sizeX = creationInfo.m_width;
 			int sizeY = creationInfo.m_height;
 			DWORD dwStyle = 0, dwExStyle = 0;
-			if (creationInfo.m_class == OutputClass::Fullscreen)
+			/*if (creationInfo.m_class == OutputClass::Fullscreen)
 			{
 				dwStyle |= WS_POPUP | WS_MAXIMIZE;
 
@@ -181,7 +175,7 @@ namespace rendering
 				sizeX = GetSystemMetrics(SM_CXSCREEN);
 				sizeY = GetSystemMetrics(SM_CYSCREEN);
 			}
-			else
+			else*/
 			{
 				// child window style
 				if (creationInfo.m_windowPopup)
@@ -241,7 +235,7 @@ namespace rendering
 			// create window
 			HWND hWnd = CreateWindowExW(
 				dwExStyle,
-				L"BoomerEngineGL4WindowClass",
+				L"BoomerEngineWindowClass",
 				creationInfo.m_windowTitle.uni_str().c_str(),
 				dwStyle,
 				windowRect.left,
@@ -1145,15 +1139,6 @@ namespace rendering
 					return wnd->disconnectWindow();
 		}
 
-		void WindowManagerWinApi::finishWindowRendering(uint64_t handle)
-		{
-			auto lock = CreateLock(m_windowsLock);
-
-			for (auto wnd : m_windows)
-				if (wnd->handle() == (HWND)handle)
-					return wnd->releaseWindowFromRendering();
-		}
-
 		INativeWindowInterface* WindowManagerWinApi::windowInterface(uint64_t handle)
 		{
 			auto lock = CreateLock(m_windowsLock);
@@ -1197,24 +1182,46 @@ namespace rendering
 					if (!EnumDisplaySettingsA(info.DeviceName, modeIndex, &mode))
 						break;
 
-					CachedDisplayMode resolutionInfo;
-					resolutionInfo.m_width = (uint16_t)mode.dmPelsWidth;
-					resolutionInfo.m_height = (uint16_t)mode.dmPelsHeight;
-					resolutionInfo.m_refreshRate = (uint16_t)mode.dmDisplayFrequency;
-					displayInfo.m_displayModes.pushBack(resolutionInfo);
+					bool newMode = true;
+					for (auto& resolutionInfo : displayInfo.m_resolutions)
+					{
+						if (resolutionInfo.width == mode.dmPelsWidth && resolutionInfo.height == mode.dmPelsHeight)
+						{
+							auto& refreshRate = resolutionInfo.refreshRates.emplaceBack();
+							refreshRate.num = mode.dmDisplayFrequency;
+							refreshRate.denom = 1;
+							newMode = false;
+							break;
+						}
+					}
+
+					if (newMode)
+					{
+						auto& resolutionInfo = displayInfo.m_resolutions.emplaceBack();
+						resolutionInfo.width = (uint16_t)mode.dmPelsWidth;
+						resolutionInfo.height = (uint16_t)mode.dmPelsHeight;
+
+						auto& refreshRate = resolutionInfo.refreshRates.emplaceBack();
+						refreshRate.num = mode.dmDisplayFrequency;
+						refreshRate.denom = 1;
+					}
 
 					modeIndex += 1;
 				}
 
-				std::sort(displayInfo.m_displayModes.begin(), displayInfo.m_displayModes.end(), [](const CachedDisplayMode& a, CachedDisplayMode& b)
+				for (auto& displayInfo : displayInfo.m_resolutions)
+				{
+					std::sort(displayInfo.refreshRates.begin(), displayInfo.refreshRates.end(), [](const RefreshRateInfo& a, const RefreshRateInfo& b)
+						{
+							return a.rate() < b.rate();
+						});
+				}
+
+				std::sort(displayInfo.m_resolutions.begin(), displayInfo.m_resolutions.end(), [](const ResolutionInfo& a, ResolutionInfo& b)
 					{
-						if (a.m_height != a.m_height)
-							return a.m_height < b.m_height;
-
-						if (a.m_width != b.m_width)
-							return a.m_width < b.m_width;
-
-						return a.m_refreshRate < b.m_refreshRate;
+						if (a.height != a.height)
+							return a.height < b.height;
+						return a.width < b.width;
 					});
 
 				m_cachedDisplayInfos.pushBack(displayInfo);
@@ -1269,41 +1276,7 @@ namespace rendering
 		void WindowManagerWinApi::enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const
 		{
 			if (displayIndex < m_cachedDisplayInfos.size())
-			{
-				for (auto& mode : m_cachedDisplayInfos[displayIndex].m_displayModes)
-				{
-					ResolutionInfo resInfo;
-					resInfo.width = mode.m_width;
-					resInfo.height = mode.m_height;
-					outResolutions.pushBackUnique(resInfo);
-				}
-			}
-		}
-
-		void WindowManagerWinApi::enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const
-		{
-			ResolutionSyncInfo info;
-			info.value = 0;
-			info.name = "No VSync";
-			outVSyncModes.pushBack(info);
-
-			info.value = 1;
-			info.name = "VSync";
-			outVSyncModes.pushBack(info);
-		}
-
-		void WindowManagerWinApi::enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const
-		{
-			if (displayIndex < m_cachedDisplayInfos.size())
-			{
-				for (auto& mode : m_cachedDisplayInfos[displayIndex].m_displayModes)
-				{
-					if (mode.m_width == info.width && mode.m_height == info.height)
-					{
-						outRefreshRates.pushBackUnique(mode.m_refreshRate);
-					}
-				}
-			}
+				outResolutions = m_cachedDisplayInfos[displayIndex].m_resolutions;
 		}
 
 		LRESULT CALLBACK WindowManagerWinApi::DummyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

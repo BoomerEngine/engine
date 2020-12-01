@@ -8,34 +8,28 @@
 
 #pragma once
 
-#include "rendering/api_common/include/apiGraphicsRenderStates.h"
+#include "rendering/api_common/include/apiSampler.h"
 
 namespace rendering
 {
     namespace api
     {
-		namespace nul
+		namespace dx11
 		{
 			///---
 
-			class GraphicsRenderStates : public IBaseGraphicsRenderStates
+			class Sampler : public IBaseSampler
 			{
 			public:
-				GraphicsRenderStates(Thread* owner, const GraphicsRenderStatesSetup& setup);
-				virtual ~GraphicsRenderStates();
-
-				//--
+				Sampler(Thread* owner, const SamplerState& setup);
+				virtual ~Sampler();
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-
-				//--
-
-			private:
 			};
 
 			//--
 
-		} // nul
+		} // dx11
     } // api
 } // rendering
 

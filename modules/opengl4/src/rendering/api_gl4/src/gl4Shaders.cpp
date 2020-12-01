@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\shaders #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
@@ -27,16 +27,14 @@ namespace rendering
 			Shaders::~Shaders()
 			{}
 
-			IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* renderStates)
+			IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup)
 			{
 				DEBUG_CHECK_RETURN_V(passLayout != nullptr, nullptr);
-				DEBUG_CHECK_RETURN_V(renderStates != nullptr, nullptr);
 				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Vertex), "Shader bundle has no vertex shader", nullptr);
 				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Pixel), "Shader bundle has no pixel shader", nullptr);
 
 				auto* localPassLayout = static_cast<const GraphicsPassLayout*>(passLayout);
-				auto* localRenderStates = static_cast<const GraphicsRenderStates*>(renderStates);
-				return new GraphicsPipeline(owner(), this, localPassLayout, localRenderStates);
+				return new GraphicsPipeline(owner(), this, localPassLayout, setup);
 			}
 
 			IBaseComputePipeline* Shaders::createComputePipeline_ClientApi()

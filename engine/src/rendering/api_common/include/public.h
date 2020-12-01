@@ -94,6 +94,7 @@ namespace rendering
 			Unknown,
 			Staging,
 			Constants,
+			Geometry,
 		};
 
 		//--

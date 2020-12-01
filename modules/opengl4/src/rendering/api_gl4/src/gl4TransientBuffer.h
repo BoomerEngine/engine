@@ -32,8 +32,14 @@ namespace rendering
 				virtual void copyDataFrom(const IBaseTransientBuffer* srcBuffer, uint32_t srcOffset, uint32_t destOffset, uint32_t size) override final;
 				virtual void flushInnerWrites(uint32_t offset, uint32_t size) override final;
 
+				//--
+
+				ResolvedBufferView resolve(uint32_t offset, uint32_t size) const;
+
+				//--
+
 			private:
-				uint8_t* m_bufferPtr = nullptr;
+				GLuint m_glBuffer = 0;
 			};
 
 			//---

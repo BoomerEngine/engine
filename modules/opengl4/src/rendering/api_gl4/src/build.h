@@ -39,6 +39,8 @@ namespace rendering
 			class Thread;
 			class CopyQueue;
 			class CopyPool;
+			class ObjectCache;
+			class TransientBuffer;
 
 			class Buffer;
 			class Image;
@@ -48,12 +50,67 @@ namespace rendering
 			class Swapchain;
 			class PassLayout;
 			class RenderStates;
+			class GraphicsPipeline;
+			class ComputePipeline;
+			class DescriptorBindingLayout;
+			class VertexBindingLayout;
+
+			struct FrameBufferTargets;
+			struct FrameBufferTargetInfo;
 
 			//--
 
 			/// validate GL API result, prints an error message if something goes wrong
 			/// we can enable more strict modes as well via config
 			extern RENDERING_API_GL4_API void ValidateResult(const char* testExpr, uint32_t line, const char* file);
+
+			//--
+
+			struct ResolvedFormatedView
+			{
+				GLuint glBufferView = 0;
+				GLuint glViewFormat = 0;
+				uint32_t size = 0;
+
+				INLINE operator bool() const { return (glBufferView != 0); }
+				INLINE bool operator==(const ResolvedFormatedView& other) const { return (glBufferView == other.glBufferView) && (glViewFormat == other.glViewFormat); }
+				INLINE bool operator!=(const ResolvedFormatedView& other) const { return !operator==(other); }
+			};
+
+			//--
+
+			struct ResolvedBufferView
+			{
+				GLuint glBuffer = 0;
+				uint32_t offset = 0;
+				uint32_t size = 0;
+
+				INLINE operator bool() const { return glBuffer != 0; }
+				INLINE bool operator==(const ResolvedBufferView& other) const { return (glBuffer == other.glBuffer) && (offset == other.offset) && (size == other.size); }
+				INLINE bool operator!=(const ResolvedBufferView& other) const { return !operator==(other); }
+			};
+
+			//--
+
+			struct ResolvedImageView
+			{
+				GLuint glImage = 0; // actual image
+				GLuint glImageView = 0; // view
+				GLenum glViewType = 0; // GL_TEXTURE_2D, etc
+				GLenum glInternalFormat = 0;
+				uint16_t firstSlice = 0;
+				uint16_t numSlices = 0;
+				uint8_t firstMip = 0;
+				uint8_t numMips = 0;
+
+				INLINE operator bool() const { return glImageView != 0; }
+				INLINE bool operator==(const ResolvedImageView& other) const
+				{
+					return (glImageView == other.glImageView) && (glViewType == other.glViewType) && (glInternalFormat == other.glInternalFormat)
+						&& (firstMip == other.firstMip) && (numMips == other.numMips) && (firstSlice == other.firstSlice) && (numMips == other.numMips);
+				}
+				INLINE bool operator!=(const ResolvedImageView& other) const { return !operator==(other); }
+			};
 
 			//--
 

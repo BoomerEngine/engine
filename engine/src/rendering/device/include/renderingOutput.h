@@ -145,7 +145,9 @@ namespace rendering
         bool m_windowActivate = true;
         bool m_windowCreateInputContext = true;
         bool m_windowInputContextGameMode = true; // prefer full capture over cooperative capture
-        float m_windowOpacity = 1.0f;
+		bool m_windowStartInFullScreen = false;
+		bool m_windowAllowFullscreenToggle = false;
+		float m_windowOpacity = 1.0f;
         uint64_t m_windowNativeParent = 0;
         base::StringBuf m_windowTitle;
         INativeWindowCallback* m_windowCallback = nullptr;

@@ -57,8 +57,6 @@ namespace rendering
 			virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override;
 			virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override;
 			virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override;
-			virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const override;
-			virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const override;
 
 			//--
 

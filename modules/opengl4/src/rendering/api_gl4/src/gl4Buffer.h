@@ -9,6 +9,7 @@
 #pragma once
 
 #include "rendering/api_common/include/apiBuffer.h"
+#include "gl4Thread.h"
 
 namespace rendering
 {
@@ -16,6 +17,11 @@ namespace rendering
     {
 		namespace gl4
 		{
+
+			//--
+
+			class BufferUntypedView;
+			class BufferTypedView;
 
 			//--
 
@@ -28,6 +34,7 @@ namespace rendering
 				//--
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+				INLINE GLuint object() { ensureCreated(); return m_glBuffer; }
 
 				//--
 
@@ -41,23 +48,60 @@ namespace rendering
 
 				virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) override final;
 
+				void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
+
+				//--
+
+				ResolvedBufferView resolve(uint32_t offset = 0, uint32_t size = INDEX_MAX);
+
 				//--
 
 			private:
-				// api ptr
+				GLuint m_glUsage = 0;
+				GLuint m_glBuffer = 0;
+
+				void ensureCreated();
+
+				friend class BufferUntypedView;
+				friend class BufferTypedView;
 			};
 
 			//---
 
-			// any view of the buffer, usually APIs require more specific views
-			class BufferAnyView : public IBaseBufferView
+			// untyped view of the buffer, can be structured with stride
+			class BufferUntypedView : public IBaseBufferView
 			{
 			public:
-				BufferAnyView(Thread* drv, Buffer* buffer, const Setup& setup);
-				virtual ~BufferAnyView();
+				BufferUntypedView(Thread* drv, Buffer* buffer, const Setup& setup);
+				virtual ~BufferUntypedView();
+
+				static const auto STATIC_TYPE = ObjectType::BufferUntypedView;
+
+				INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
+
+				ResolvedBufferView resolve();
+			};
+
+			//---
+
+			// typed (formatted) view of the buffer, 
+			class BufferTypedView : public IBaseBufferView
+			{
+			public:
+				BufferTypedView(Thread* drv, Buffer* buffer, const Setup& setup);
+				virtual ~BufferTypedView();
+
+				static const auto STATIC_TYPE = ObjectType::BufferTypedView;
+
+				INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
+
+				ResolvedFormatedView resolve();
 
 			private:
-				// api ptr
+				GLuint m_glBufferFormat = 0;
+				GLuint m_glBufferView = 0;
+
+				void ensureCreated();
 			};
 
 			//--

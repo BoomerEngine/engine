@@ -84,18 +84,6 @@ namespace rendering
 
         //---
 
-		DynamicRenderStates::DynamicRenderStates()
-		{}
-
-		static DynamicRenderStates GDefaultStats;
-
-		const DynamicRenderStates& DynamicRenderStates::DEFAULT_STATES()
-		{
-			return GDefaultStats;
-		}
-
-		//---
-
 		GeometryBufferBinding::GeometryBufferBinding()
 		{}
 
@@ -436,159 +424,6 @@ namespace rendering
 
 		//--
 
-		void IFrameExecutor::runSetViewportRect(const command::OpSetViewportRect& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-			ASSERT_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
-
-			auto& v = m_dynamic.viewports[op.viewportIndex];
-
-			const float x = op.rect.left();
-			//const float y = op.rect.top();
-			const float y = (int)m_pass.height - op.rect.top() - op.rect.height();
-			const float w = op.rect.width();
-			const float h = op.rect.height();
-
-			if (v.rect[0] != x || v.rect[1] != y || v.rect[2] != w || v.rect[3] != h || v.depthMin != op.depthMin || v.depthMax != op.depthMax)
-			{
-				v.rect[0] = x;
-				v.rect[1] = y;
-				v.rect[2] = w;
-				v.rect[3] = h;
-				v.depthMin = op.depthMin;
-				v.depthMax = op.depthMax;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::ViewportRects;
-			}
-		}
-
-		void IFrameExecutor::runSetLineWidth(const command::OpSetLineWidth& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.width != m_dynamic.lineWidth)
-			{
-				m_dynamic.lineWidth = op.width;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::LineWidth;
-			}
-		}
-
-		void IFrameExecutor::runSetDepthBias(const command::OpSetDepthBias& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.clamp != m_dynamic.depthBiasClamp || op.constant != m_dynamic.depthBiasConstant || op.slope != m_dynamic.depthBiasSlope)
-			{
-				m_dynamic.depthBiasClamp = op.clamp;
-				m_dynamic.depthBiasConstant = op.constant;
-				m_dynamic.depthBiasSlope = op.slope;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::DepthBiasValues;
-			}
-		}
-
-		void IFrameExecutor::runSetDepthClip(const command::OpSetDepthClip& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.min != m_dynamic.depthClipMin || op.max != m_dynamic.depthClipMax)
-			{
-				m_dynamic.depthClipMin = op.min;
-				m_dynamic.depthClipMax = op.max;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::DepthClampValues;
-			}
-		}
-
-		void IFrameExecutor::runSetBlendColor(const command::OpSetBlendColor& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.color[0] != m_dynamic.blendColor[0] || op.color[1] != m_dynamic.blendColor[1] 
-				|| op.color[2] != m_dynamic.blendColor[2] || op.color[3] != m_dynamic.blendColor[3])
-			{
-				m_dynamic.blendColor[0] = op.color[0];
-				m_dynamic.blendColor[1] = op.color[1];
-				m_dynamic.blendColor[2] = op.color[2];
-				m_dynamic.blendColor[3] = op.color[3];
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::BlendColor;
-				
-			}
-		}
-			
-		void IFrameExecutor::runSetScissorRect(const command::OpSetScissorRect& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-			ASSERT_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
-
-			auto& targetRect = m_dynamic.viewports[op.viewportIndex].scissor;
-
-			const auto x = op.rect.left();
-			const auto y = (int)m_pass.height - op.rect.top() - op.rect.height();
-			//const auto y = op.rect.top();
-			const auto w = op.rect.width();
-			const auto h = op.rect.height();
-
-			if (x != targetRect[0] || y != targetRect[1] || w != targetRect[2] || h != targetRect[3])
-			{
-				targetRect[0] = x;
-				targetRect[1] = y;
-				targetRect[2] = w;
-				targetRect[3] = h;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::ScissorRects;
-			}
-		}
-
-		void IFrameExecutor::runSetStencilReference(const command::OpSetStencilReference& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.front != m_dynamic.stencilFrontReference)
-			{
-				m_dynamic.stencilFrontReference = op.front;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilFrontRef;
-			}
-
-			if (op.back != m_dynamic.stencilBackReference)
-			{
-				m_dynamic.stencilBackReference = op.back;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilBackRef;
-			}
-		}
-
-		void IFrameExecutor::runSetStencilWriteMask(const command::OpSetStencilWriteMask& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.front != m_dynamic.stencilFrontWriteMask)
-			{
-				m_dynamic.stencilFrontWriteMask = op.front;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilFrontWriteMask;
-			}
-
-			if (op.back != m_dynamic.stencilBackWriteMask)
-			{
-				m_dynamic.stencilBackWriteMask = op.back;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilBackWriteMask;
-			}
-		}
-
-		void IFrameExecutor::runSetStencilCompareMask(const command::OpSetStencilCompareMask& op)
-		{
-			ASSERT_EX(m_pass.passOp != nullptr, "Not in pass");
-
-			if (op.front != m_dynamic.stencilFrontCompareMask)
-			{
-				m_dynamic.stencilFrontCompareMask = op.front;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilFrontCompareMask;
-			}
-
-			if (op.back != m_dynamic.stencilBackCompareMask)
-			{
-				m_dynamic.stencilBackCompareMask = op.back;
-				m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::StencilBackCompareMask;
-			}
-		}
-		
-		//--
-
 		static bool IsSwapChain(const FrameBuffer& fb)
 		{
 			return fb.color[0].swapchain || fb.depth.swapchain;
@@ -674,12 +509,16 @@ namespace rendering
 		{
 			ASSERT_EX(op.passLayoutId, "Invalid pass layout");
 			ASSERT_EX(op.frameBuffer.validate(), "Begin pass with invalid frame buffer should not be recorded");
-			ASSERT_EX(op.numViewports >= 1 && op.numViewports <= 16, "Invalid viewport count");
+			ASSERT_EX(op.viewportCount >= 1 && op.viewportCount <= 16, "Invalid viewport count");
 			ASSERT_EX(!m_pass.passOp, "Theres already an active pass");
 			ASSERT_EX(!m_activePassLayout, "Theres already an active pass");
 
 			// determine rendering area size as we go
 			memzero(&m_pass, sizeof(m_pass));
+
+			// set active pass
+			m_pass.passOp = &op;
+			m_pass.viewportCount = op.viewportCount;
 
 			// extract depth attachment
 			if (op.frameBuffer.depth)
@@ -696,69 +535,18 @@ namespace rendering
 				ExtractPassAttachment(m_pass, i, target, att);
 			}
 
-			// set viewports/scissor rects from passed data
-			if (op.hasInitialViewportSetup)
+			// determine on the area
+			if (op.frameBuffer.area.empty())
 			{
-				m_pass.viewportCount = op.numViewports;
-
-				const auto* viewPtr = (const FrameBufferViewportState*)op.payload();
-				for (uint8_t i = 0; i < op.numViewports; ++i, ++viewPtr)
-				{
-					auto& v = m_dynamic.viewports[i];
-					if (viewPtr->viewportRect.empty())
-					{
-						v.rect[0] = 0;
-						v.rect[1] = 0;
-						v.rect[2] = m_pass.width;
-						v.rect[3] = m_pass.height;
-					}
-					else
-					{
-						v.rect[0] = viewPtr->viewportRect.min.x;
-						v.rect[1] = viewPtr->viewportRect.min.y;
-						v.rect[2] = viewPtr->viewportRect.max.x;
-						v.rect[3] = viewPtr->viewportRect.max.y;
-					}
-
-					if (viewPtr->scissorRect.empty())
-					{
-						v.scissor[0] = v.rect[0];
-						v.scissor[1] = v.rect[1];
-						v.scissor[2] = v.rect[2];
-						v.scissor[3] = v.rect[3];
-					}
-					else
-					{
-						v.scissor[0] = viewPtr->scissorRect.min.x;
-						v.scissor[1] = viewPtr->scissorRect.min.y;
-						v.scissor[2] = viewPtr->scissorRect.max.x;
-						v.scissor[3] = viewPtr->scissorRect.max.y;
-					}
-
-					v.depthMin = viewPtr->minDepthRange;
-					v.depthMax = viewPtr->maxDepthRange;
-				}
+				m_pass.area.min.x = 0;
+				m_pass.area.min.y = 0;
+				m_pass.area.max.x = m_pass.width;
+				m_pass.area.max.y = m_pass.height;
 			}
 			else
 			{
-				m_pass.viewportCount = 1;
-
-				auto& v = m_dynamic.viewports[0];
-				v.rect[0] = 0;
-				v.rect[1] = 0;
-				v.rect[2] = m_pass.width;
-				v.rect[3] = m_pass.height;
-				v.scissor[0] = 0;
-				v.scissor[1] = 0;
-				v.scissor[2] = m_pass.width;
-				v.scissor[3] = m_pass.height;
-				v.depthMin = 0.0f;
-				v.depthMax = 1.0f;
+				m_pass.area = op.frameBuffer.area;
 			}
-
-			// setting a new pass resets viewports and scissor stuff
-			m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::ViewportRects;
-			m_drawDirtyRenderStates |= DynamicRenderStatesDirtyBit::ScissorRects;
 
 			// use given pass layout
 			m_activePassLayout = op.passLayoutId;
@@ -781,10 +569,6 @@ namespace rendering
 					}
 				}
 			}
-
-			// clear graphics state tracking for this frame
-			m_drawDirtyRenderStates.clearAll();
-			m_passDirtyRenderStates.clearAll();
 		}
 
 		void IFrameExecutor::runEndPass(const command::OpEndPass& op)
@@ -792,25 +576,6 @@ namespace rendering
 			DEBUG_CHECK_EX(m_pass.passOp, "No pass active");
 
 			m_pass = PassState();
-
-			if (m_passDirtyRenderStates.rawValue())
-			{
-				applyDynamicStates(m_dynamic, m_passDirtyRenderStates);
-
-				m_dynamic = DynamicRenderStates::DEFAULT_STATES();
-				m_passDirtyRenderStates.clearAll();
-				m_drawDirtyRenderStates.clearAll();
-			}
-		}
-
-		void IFrameExecutor::flushDrawDynamicStates()
-		{
-			if (m_drawDirtyRenderStates.rawValue())
-			{
-				applyDynamicStates(m_dynamic, m_drawDirtyRenderStates);
-				m_passDirtyRenderStates |= m_drawDirtyRenderStates;
-				m_drawDirtyRenderStates.clearAll();
-			}
 		}
 
 		//--

@@ -17,7 +17,6 @@
 #include "nullApiTransientBuffer.h"
 #include "nullApiSwapchain.h"
 #include "nullApiExecutor.h"
-#include "nullApiGraphicsRenderStates.h"
 #include "nullApiGraphicsPassLayout.h"
 #include "nullApiShaders.h"
 #include "nullApiSampler.h"
@@ -66,22 +65,22 @@ namespace rendering
 
 			IBaseSwapchain* Thread::createOptimalSwapchain(const OutputInitInfo& info)
 			{
-				if (info.m_class == OutputClass::NativeWindow || info.m_class == OutputClass::Fullscreen)
+				if (info.m_class == OutputClass::Window)
 				{
-					if (auto window = m_windows->createWindow(info))
-					{
-						IBaseWindowedSwapchain::WindowSetup setup;
-						setup.colorFormat = ImageFormat::RGBA8_UNORM;
-						setup.depthFormat = ImageFormat::D24S8;
-						setup.samples = 1;
-						setup.flipped = false;
-						setup.deviceHandle = 0;
-						setup.windowHandle = window;
-						setup.windowManager = m_windows;
-						setup.windowInterface = m_windows->windowInterface(window);
+					auto window = m_windows->createWindow(info)~;
+					DEBUG_CHECK_RETURN_EX(window, "Window not created", nullptr);
 
-						return new Swapchain(info.m_class, setup);
-					}
+					IBaseWindowedSwapchain::WindowSetup setup;
+					setup.colorFormat = ImageFormat::RGBA8_UNORM;
+					setup.depthFormat = ImageFormat::D24S8;
+					setup.samples = 1;
+					setup.flipped = false;
+					setup.deviceHandle = 0;
+					setup.windowHandle = window;
+					setup.windowManager = m_windows;
+					setup.windowInterface = m_windows->windowInterface(window);
+
+					return new Swapchain(info.m_class, setup);
 				}
 
 				return nullptr;
@@ -110,11 +109,6 @@ namespace rendering
 			IBaseGraphicsPassLayout* Thread::createOptimalPassLayout(const GraphicsPassLayoutSetup& info)
 			{
 				return new GraphicsPassLayout(this, info);
-			}
-
-			IBaseGraphicsRenderStates* Thread::createOptimalRenderStates(const GraphicsRenderStatesSetup& states)
-			{
-				return new GraphicsRenderStates(this, states);
 			}
 
 			IBaseFrameFence* Thread::createOptimalFrameFence()

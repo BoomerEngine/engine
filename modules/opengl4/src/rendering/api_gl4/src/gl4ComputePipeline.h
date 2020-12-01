@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\pipeline #]
+* [# filter: api\objects #]
 ***/
 
 #pragma once
@@ -33,6 +33,10 @@ namespace rendering
 				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseComputePipeline::shaders()); }
 
 				//--				
+
+				bool apply();
+
+				//--
 
 			private:
 			};

@@ -135,7 +135,9 @@ namespace game
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Game Scene Tests";
-            setup.m_class = rendering::DriverOutputClass::NativeWindow;
+            setup.m_class = rendering::OutputClass::Window;
+			setup.m_windowStartInFullScreen = false;
+			setup.m_windowAllowFullscreenToggle = true;
 
             // create rendering output
             m_renderingOutput = base::GetService<DeviceService>()->device()->createOutput(setup);

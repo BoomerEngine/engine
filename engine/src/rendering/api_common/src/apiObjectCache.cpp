@@ -138,7 +138,7 @@ namespace rendering
 				return ret;
 
 			// create entry
-			if (auto* ret = createOptimalDescriptorBindingLayout(metadata->descriptors))
+			if (auto* ret = createOptimalDescriptorBindingLayout(metadata->descriptors, metadata->staticSamplers))
 			{
 				m_descriptorBindingMap[metadata->descriptorLayoutKey] = ret;
 				return ret;

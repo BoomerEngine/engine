@@ -60,7 +60,7 @@ namespace example
         setup.m_height = 1080;
         setup.m_windowMaximized = false;
         setup.m_windowTitle = "BoomerEngine - Game2D";
-        setup.m_class = rendering::DriverOutputClass::NativeWindow; // render to native window on given OS
+        setup.m_class = rendering::OutputClass::Window; // render to native window on given OS
         setup.m_windowCreateInputContext = true;
         setup.m_windowInputContextGameMode = true; // RawInput
 

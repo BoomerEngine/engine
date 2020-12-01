@@ -78,9 +78,10 @@ namespace rendering
 
             // bind a frame buffer for pixel rendering, only one frame buffer can be bound at any given time
             // NOTE: draw commands only work when there is bound pass
-            // NOTE: if we intend to use multiple viewports while rendering we must set it here, optionally we can pass settings for those viewports
-            // If settings for viewports are not passed we assume no scissor test and viewport covering full render target area
-            void opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t numViewports = 1, const FrameBufferViewportState* intialViewportSettings = nullptr);
+            // NOTE: starting a pass resets ALL of the active graphics render states (blending, depth, stencil, etc...)
+			// NOTE: starting a pass resets all viewports and scissor states to full render target area unless specified differently in the frame buffer
+			// NOTE: number of viewports must be known at the beginning of the pess
+            void opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount = 1);
 
             // finish rendering to a frame buffer, optionally resolve MSSA targets into non-MSAA ones
             void opEndPass();
@@ -116,18 +117,24 @@ namespace rendering
             void opAttachChildCommandBuffer(CommandBuffer* buffer);
 
             //--
-           
-            /// clear writable resource view custom value or with zero if no value was provided
-			/// optionally a list of regions (rects) may be provided to select parts of the resource to clear, if no list is provided then the whole resource is cleared
-            void opClear(const IDeviceObjectView* writableView, ImageFormat clearFormat, const void* clearValue = nullptr, const base::image::ImageRect* rects = nullptr, uint32_t numRects = 0);
 
 			/// clear part of writable buffer
 			void opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue = nullptr, uint32_t offset = 0, uint32_t size = INDEX_MAX);
 
-            /// clear writable image with custom value of with zeros
+			/// clear regions in writable buffer
+			void opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
+
+			//--
+
+            /// clear whole view of writable image with custom value of with zeros
 			/// NOTE: this requires writable view of the image (mostly to accommodate DX that requires UAV for clearing)
-			/// NOTE: it's best to provide no rects or at most 1 because clears are sequential otherwise (slow...)
-			void opClearWritableImage(const ImageWritableView* view, ImageFormat clearFormat, const void* clearValue);
+			void opClearWritableImage(const ImageWritableView* view, const void* clearValue = nullptr);
+
+			/// clear parts in view of writable image with custom value of with zeros
+			/// NOTE: this requires writable view of the image (mostly to accommodate DX that requires UAV for clearing)
+			void opClearWritableImage(const ImageWritableView* view, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
+
+			//--
 
             /// clear buffer with custom value or with zero if no value was provided
             void opClearRenderTarget(const RenderTargetView* view, const base::Vector4& values, const base::Rect* rects = nullptr, uint32_t numRects = 0);
@@ -175,22 +182,10 @@ namespace rendering
             void opSetStencilReferenceValue(uint8_t value);
             void opSetStencilReferenceValue(uint8_t frontValue, uint8_t backValue);
 
-            /// set stencil compare mask value
-            void opSetStencilCompareMask(uint8_t mask);
-            void opSetStencilCompareMask(uint8_t frontMask, uint8_t backMask);
-
-            /// set stencil write mask value
-            void opSetStencilWriteMask(uint8_t mask);
-            void opSetStencilWriteMask(uint8_t frontMask, uint8_t backMask);
-
             /// set dynamic depth clip state and ranges
 			/// NOTE: works only for states in which it's enabled in the StaticStates
             void opSetDepthClip(float minBounds, float maxBounds);
-
-            /// set dynamic depth bias/slope/clamp values
-			/// NOTE: works only for states in which it's enabled in the StaticStates
-            void opSetDepthBias(float constant, float slopeFactor = 0.0f, float clampValue = -1.0f);
-
+            
             //---
 
             /// draw non-indexed geometry
@@ -338,9 +333,9 @@ namespace rendering
             CommandBuffer* m_writeBuffer = nullptr;
 
             OpBeginPass* m_currentPass = nullptr;
-            uint32_t m_numOpenedBlocks = 0;
-            uint32_t m_currentPassRts = 0;
-            uint32_t m_currentPassViewports = 0;
+            uint8_t m_numOpenedBlocks = 0;
+            uint8_t m_currentPassRts = 0;
+			uint8_t m_currentPassViewports = 0;
 
 #ifdef VALIDATE_VERTEX_LAYOUTS
             uint32_t m_currentIndexBufferElementCount = 0;

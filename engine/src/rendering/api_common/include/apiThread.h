@@ -105,9 +105,6 @@ namespace rendering
 			// create pass layout
 			virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) = 0;
 
-			// create render state object
-			virtual IBaseGraphicsRenderStates* createOptimalRenderStates(const GraphicsRenderStatesSetup& states) = 0;
-
 			//-----
 
 			// sync GPU (stop all work), usually inserts a GPU fence and waits for it

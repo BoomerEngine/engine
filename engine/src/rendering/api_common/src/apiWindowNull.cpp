@@ -46,10 +46,6 @@ namespace rendering
 			m_callback = nullptr;			
 		}
 
-		void WindowNull::releaseWindowFromRendering()
-		{
-		}
-
 		void WindowNull::update()
 		{
 			DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be accessed on main thread");
@@ -61,7 +57,7 @@ namespace rendering
 
 			auto ret = new WindowNull();
 
-			if (creationInfo.m_class == OutputClass::Fullscreen || creationInfo.m_windowMaximized)
+			if (creationInfo.m_windowMaximized)
 			{
 				ret->m_width = 2560;
 				ret->m_height = 1440;
@@ -383,15 +379,6 @@ namespace rendering
 					return wnd->disconnectWindow();
 		}
 
-		void WindowManagerNull::finishWindowRendering(uint64_t handle)
-		{
-			auto lock = CreateLock(m_windowsLock);
-
-			for (auto wnd : m_windows)
-				if (wnd->handle() == handle)
-					return wnd->releaseWindowFromRendering();
-		}
-
 		INativeWindowInterface* WindowManagerNull::windowInterface(uint64_t handle)
 		{
 			auto lock = CreateLock(m_windowsLock);
@@ -428,24 +415,11 @@ namespace rendering
 				auto& outInfo = outResolutions.emplaceBack();
 				outInfo.width = 2560;
 				outInfo.height = 1440;
+
+				auto& rate = outInfo.refreshRates.emplaceBack();
+				rate.num = 60;
+				rate.denom = 1;
 			}
-		}
-
-		void WindowManagerNull::enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const
-		{
-			ResolutionSyncInfo info;
-			info.value = 0;
-			info.name = "No VSync";
-			outVSyncModes.pushBack(info);
-
-			info.value = 1;
-			info.name = "VSync";
-			outVSyncModes.pushBack(info);
-		}
-
-		void WindowManagerNull::enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const
-		{
-			outRefreshRates.pushBack(60);
 		}
 
 		//--

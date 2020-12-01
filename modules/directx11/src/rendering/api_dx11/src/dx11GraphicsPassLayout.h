@@ -8,21 +8,21 @@
 
 #pragma once
 
-#include "rendering/api_common/include/apiGraphicsRenderStates.h"
+#include "rendering/api_common/include/apiGraphicsPassLayout.h"
 
 namespace rendering
 {
     namespace api
     {
-		namespace gl4
+		namespace dx11
 		{
 			///---
 
-			class GraphicsRenderStates : public IBaseGraphicsRenderStates
+			class GraphicsPassLayout : public IBaseGraphicsPassLayout
 			{
 			public:
-				GraphicsRenderStates(Thread* owner, const GraphicsRenderStatesSetup& setup);
-				virtual ~GraphicsRenderStates();
+				GraphicsPassLayout(Thread* owner, const rendering::GraphicsPassLayoutSetup& setup);
+				virtual ~GraphicsPassLayout();
 
 				//--
 
@@ -35,7 +35,7 @@ namespace rendering
 
 			//--
 
-		} // gl4
+		} // dx11
     } // api
 } // rendering
 

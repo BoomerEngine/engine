@@ -35,7 +35,6 @@ namespace rendering
 			//--
 
 			bool prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight);
-			void releaseWindowFromRendering();
 			void disconnectWindow();
 			void update();
 
@@ -115,7 +114,6 @@ namespace rendering
 			virtual void bindWindowOwner(uint64_t handle, ObjectID owner) override final;
 			virtual void closeWindow(uint64_t handle) override final;
 			virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
-			virtual void finishWindowRendering(uint64_t handle) override final;
 			virtual void disconnectWindow(uint64_t handle) override final;
 			virtual INativeWindowInterface* windowInterface(uint64_t handle) override final;
 
@@ -124,8 +122,6 @@ namespace rendering
 			virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override final;
 			virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override final;
 			virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override final;
-			virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const override final;
-			virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const override final;
 
 			//--
 

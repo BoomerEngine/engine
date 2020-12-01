@@ -23,6 +23,11 @@ namespace rendering
 			public:
 				VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
 				virtual ~VertexBindingLayout();
+
+				GLuint object();
+
+			private:
+				GLuint m_glVertexLayout = 0;
 			};
 
 			//--

@@ -35,8 +35,6 @@ namespace rendering
 		private:
 			Output* m_output = nullptr;
 			bool m_depth = false;
-
-			virtual bool canDelete() { return false; }; // deleted by the output directly
 		};
 
 		//--

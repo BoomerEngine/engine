@@ -33,7 +33,7 @@ namespace rendering
 				uint8_t firstMip = 0;
 				uint8_t numMips = 0;
 				uint16_t firstSlice = 0;
-				uint16_t numSlices = 0;
+				uint16_t numSlices = 0;				
 			};
 
 			IBaseImageView(IBaseThread* owner, ObjectType viewType, IBaseImage* img, IBaseSampler* sampler, const Setup& setup);

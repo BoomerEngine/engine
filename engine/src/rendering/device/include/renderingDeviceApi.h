@@ -63,6 +63,15 @@ namespace rendering
         uint32_t uploadParametersCount = 0;
     };
 
+	// adapter information
+	struct AdapterInfo
+	{
+		base::StringBuf name;
+		uint64_t deviceMemorySize = 0;
+		uint64_t hostMemorySize = 0;
+		uint64_t sharedMemorySize = 0;
+	};
+
     // display information
     struct DisplayInfo
     {
@@ -74,16 +83,40 @@ namespace rendering
         bool active = false;
     };
 
+	// display format information
+	struct DisplayFormatInfo
+	{
+		ImageFormat format = ImageFormat::UNKNOWN;
+		bool hdr = false;
+
+		// TODO: more (color space)?
+	};
+
+	// resolution information
+	struct RefreshRateInfo
+	{
+		uint32_t num = 0;
+		uint32_t denom = 0;
+
+		INLINE float rate() const
+		{
+			return denom ? num / (float)denom : num;
+		}
+
+		INLINE bool operator==(const RefreshRateInfo& other) const
+		{
+			return (num == other.num) && (denom == other.denom);
+		}
+	};
+
     // resolution information
     struct ResolutionInfo
     {
         uint32_t width = 0;
         uint32_t height = 0;
 
-        INLINE bool operator==(const ResolutionInfo& other) const
-        {
-            return (width == other.width) && (height == other.height);
-        }
+		base::Array<RefreshRateInfo> refreshRates;
+		base::Array<DisplayFormatInfo> formats;
     };
 
     // vsync information
@@ -163,12 +196,6 @@ namespace rendering
 
         /// enumerate resolutions for given display
         virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const = 0;
-
-        /// enumerate vsync modes
-        virtual void enumVSyncModes(uint32_t displayIndex, base::Array<ResolutionSyncInfo>& outVSyncModes) const = 0;
-
-        /// enumerate supported refresh rates for given resolution
-        virtual void enumRefreshRates(uint32_t displayIndex, const ResolutionInfo& info, base::Array<int>& outRefreshRates) const = 0;
 
 		//---
 

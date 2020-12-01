@@ -116,7 +116,7 @@ namespace rendering
             base::HashMap<uint64_t, IBaseDescriptorBindingLayout*> m_descriptorBindingMap;
 
 			virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) = 0;
-			virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors) = 0;
+			virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers) = 0;
         };
 
         //---

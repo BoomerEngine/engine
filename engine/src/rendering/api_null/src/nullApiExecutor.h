@@ -43,8 +43,6 @@ namespace rendering
 				virtual void runDispatch(const command::OpDispatch &) override final;
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier &) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier &) override final;
-
-				virtual void applyDynamicStates(const DynamicRenderStates& states, DynamicRenderStatesDirtyFlags mask) override final;
             };
 
 			//---

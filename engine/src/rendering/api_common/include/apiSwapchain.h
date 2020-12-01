@@ -77,7 +77,7 @@ namespace rendering
 		public:
 			INativeWindowInterface* m_window = nullptr;
 
-			OutputClass m_outputClass = OutputClass::Fullscreen;
+			OutputClass m_outputClass = OutputClass::Window;
 			bool m_flipped = false;
 		};
 

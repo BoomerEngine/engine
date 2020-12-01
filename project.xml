@@ -18,6 +18,7 @@
   
   <!-- additional modules this projects uses -->
   <module>modules/opengl4</module>
+  <module>modules/directx11</module>
   <module>modules/fbx</module>
   <module>modules/wavefront</module>
   <module>modules/ui</module>

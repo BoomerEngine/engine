@@ -162,13 +162,6 @@ namespace rendering
             float color[4]; // NOTE: we avoid using aligned types in command buffer, hence the float[4] instead of Vector4
         };
 
-        RENDER_DECLARE_OPCODE_DATA(SetDepthBias)
-        {
-			float constant = 0.0f;
-			float slope = 0.0f;
-			float clamp = 0.0f;
-        };
-
         RENDER_DECLARE_OPCODE_DATA(SetDepthClip)
         {
 			float min = 0.0f;
@@ -189,18 +182,6 @@ namespace rendering
 			uint8_t viewportIndex = 0;
 		};
 
-        RENDER_DECLARE_OPCODE_DATA(SetStencilWriteMask)
-        {
-            uint8_t front = 0xFF;
-            uint8_t back = 0xFF;
-        };
-
-        RENDER_DECLARE_OPCODE_DATA(SetStencilCompareMask)
-        {
-            uint8_t front = 0xFF;
-            uint8_t back = 0xFF;
-        };
-
         RENDER_DECLARE_OPCODE_DATA(SetStencilReference)
         {
             uint8_t front = 0xFF;
@@ -215,9 +196,8 @@ namespace rendering
         {
             FrameBuffer frameBuffer;
 			ObjectID passLayoutId;
-            uint8_t numViewports = 1;
+			uint8_t viewportCount = 1;
             bool hasResourceTransitions = false; // set if we have any layout transition while in this pass
-            bool hasInitialViewportSetup = false;
         };
 
         RENDER_DECLARE_OPCODE_DATA(EndPass)
@@ -373,12 +353,21 @@ namespace rendering
 		// RESOURCES
 		//---
 
-		RENDER_DECLARE_OPCODE_DATA(Clear)
+		RENDER_DECLARE_OPCODE_DATA(ClearBuffer)
 		{
 			ObjectID view; // writable view!
 			ImageFormat clearFormat = ImageFormat::UNKNOWN;
 			uint32_t numRects = 0;
-			// base::image::ImageRect[numRects]
+			// ResourceClearRect[numRects]
+			// payload contains clear data (up to 16 bytes)
+		};
+
+		RENDER_DECLARE_OPCODE_DATA(ClearImage)
+		{
+			ObjectID view; // writable view!
+			ImageFormat clearFormat = ImageFormat::UNKNOWN;
+			uint32_t numRects = 0;
+			// ResourceClearRect[numRects]
 			// payload contains clear data (up to 16 bytes)
 		};
 

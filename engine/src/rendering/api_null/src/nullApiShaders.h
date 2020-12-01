@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\shaders #]
+* [# filter: api\objects #]
 ***/
 
 #pragma once
@@ -31,7 +31,7 @@ namespace rendering
 
 				//--
 
-				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const IBaseGraphicsRenderStates* renderStates) override;
+				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates) override;
 				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
 				//--            

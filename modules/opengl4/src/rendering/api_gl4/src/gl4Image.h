@@ -18,6 +18,9 @@ namespace rendering
     {
 		namespace gl4
 		{
+			///---
+
+			class ImageAnyView;
 
 			///---
 
@@ -32,6 +35,11 @@ namespace rendering
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
+				INLINE GLuint format() const { return m_glFormat; }
+				INLINE GLuint viewType() const { return m_glViewType; } // GL_TEXTURE_2D
+
+				INLINE GLuint object() { ensureCreated(); return m_glImage; }
+
 				//--
 
 				virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler) override final;
@@ -42,10 +50,22 @@ namespace rendering
 
 				virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) override final;
 
+				void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
+
+				//--
+
+				ResolvedImageView resolve();
+
 				//--
 
 			private:
-				// internals
+				GLuint m_glImage = 0;
+				GLuint m_glFormat = 0;
+				GLuint m_glViewType = 0;
+
+				void ensureCreated();
+
+				friend class ImageAnyView;
 			};
 
 			//--
@@ -56,12 +76,18 @@ namespace rendering
 				ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup);
 				virtual ~ImageAnyView();
 
+				static const ObjectType STATIC_TYPE = ObjectType::ImageView;
+
 				INLINE Image* image() const { return static_cast<Image*>(IBaseImageView::image()); }
 				INLINE Sampler* sampler() const { return static_cast<Sampler*>(IBaseImageView::sampler());; }
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
+				ResolvedImageView resolve();
+
 			private:
-				// internals
+				GLuint m_glViewObject = 0;
+
+				void ensureCreated();
 			};
 
 			//--
