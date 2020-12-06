@@ -282,6 +282,10 @@ namespace rendering
 			virtual void runUploadConstants(const command::OpUploadConstants& op) override final;
 			virtual void runUploadDescriptor(const command::OpUploadDescriptor& op) override final;
 
+			virtual void runUpdate(const command::OpUpdate&) override final;
+			virtual void runDownload(const command::OpDownload&) override final;
+			virtual void runCopy(const command::OpCopy&) override final;
+
 			virtual void runBeginPass(const command::OpBeginPass& op) override; // NOT FINAL
 			virtual void runEndPass(const command::OpEndPass& op) override; // NOT FINAL
 		};

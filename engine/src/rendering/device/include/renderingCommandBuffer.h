@@ -106,6 +106,7 @@ namespace rendering
             std::atomic<uint32_t> m_finished = 0;
 
             base::InplaceArray<DownloadDataSinkPtr, 16> m_downloadSinks;
+			base::InplaceArray<DownloadAreaObjectPtr, 16> m_downloadAreas;
 
             base::HashMap<base::StringID, DescriptorID> m_activeParameterBindings;
 

@@ -210,10 +210,8 @@ namespace rendering
 		// get a debug label for this data, usually resource name
 		virtual base::StringView debugLabel() const { return ""; }
 
-		// data was retrieved from GPU, do whatever you want with it
-		// NOTE: the data is stored either in special staging buffer or in case of UMA you will have direct pointer to it
-		// NOTE: it goes without saying that the pointer should not be cached
-		virtual CAN_YIELD void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) = 0;
+		// data was retrieved from GPU, do whatever you want with it, if you don't consume it already hold on to the "area" it's in
+		virtual void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) = 0;
 	};
 
 	//--

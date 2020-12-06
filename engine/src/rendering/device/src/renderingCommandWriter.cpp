@@ -1975,7 +1975,7 @@ namespace rendering
 
         //---
 
-		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, const IDownloadAreaObject* area, IDownloadDataSink* sink)
+		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadAreaObject* area, uint32_t areaOffset, IDownloadDataSink* sink)
 		{
 			DEBUG_CHECK_RETURN(obj);
 			DEBUG_CHECK_RETURN(sink);
@@ -1990,12 +1990,25 @@ namespace rendering
 				const auto mipHeight = std::max<uint32_t>(1, image->height() >> range.image.mip);
 				const auto mipDepth = std::max<uint32_t>(1, image->depth() >> range.image.mip);
 
-				DEBUG_CHECK_RETURN(range.image.offsetX < mipWidth);
-				DEBUG_CHECK_RETURN(range.image.offsetY < mipHeight);
-				DEBUG_CHECK_RETURN(range.image.offsetZ < mipDepth);
-				DEBUG_CHECK_RETURN(range.image.offsetX + range.image.sizeX <= mipWidth);
-				DEBUG_CHECK_RETURN(range.image.offsetY + range.image.sizeY <= mipHeight);
-				DEBUG_CHECK_RETURN(range.image.offsetZ + range.image.sizeZ <= mipDepth);
+				DEBUG_CHECK_RETURN_EX(range.image.offsetX < mipWidth, "Offset lies beyond image bounds");
+				DEBUG_CHECK_RETURN_EX(range.image.offsetY < mipHeight, "Offset lies beyond image bounds");
+				DEBUG_CHECK_RETURN_EX(range.image.offsetZ < mipDepth, "Offset lies beyond image bounds");
+				DEBUG_CHECK_RETURN_EX(range.image.offsetX + range.image.sizeX <= mipWidth, "Size of area to download is outside image bounds");
+				DEBUG_CHECK_RETURN_EX(range.image.offsetY + range.image.sizeY <= mipHeight, "Size of area to download is outside image bounds");
+				DEBUG_CHECK_RETURN_EX(range.image.offsetZ + range.image.sizeZ <= mipDepth, "Size of area to download is outside image bounds");
+
+				const auto& formatInfo = GetImageFormatInfo(image->format());
+				if (formatInfo.compressed)
+				{
+					DEBUG_CHECK_RETURN_EX((range.image.offsetX & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+					DEBUG_CHECK_RETURN_EX((range.image.offsetY & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+					DEBUG_CHECK_RETURN_EX((range.image.offsetZ & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+					DEBUG_CHECK_RETURN_EX((range.image.sizeX & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+					DEBUG_CHECK_RETURN_EX((range.image.sizeY & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+					DEBUG_CHECK_RETURN_EX((range.image.sizeZ & 3) == 0, "Compressed images require offset and size aligned to block size (4)");
+				}
+
+				const auto dataSize = (range.image.sizeX * range.image.sizeY * range.image.sizeZ) * formatInfo.bitsPerPixel / 8;
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 				{
@@ -2012,9 +2025,13 @@ namespace rendering
 				op->id = obj->id();
 				op->areaId = area->id();
 				op->range = range;
+				op->offsetInArea = areaOffset;
+				op->sizeInArea = dataSize;
 				op->sink = sink;
+				op->area = area;
 
 				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
+				m_writeBuffer->m_downloadAreas.pushBack(AddRef(area));
 			}
 			else if (const auto* buffer = base::rtti_cast<BufferObject>(obj))
 			{
@@ -2028,10 +2045,13 @@ namespace rendering
 				auto op = allocCommand<OpDownload>();
 				op->id = obj->id();
 				op->areaId = area->id();
+				op->offsetInArea = areaOffset;
+				op->sizeInArea = range.buffer.size;
 				op->range = range;
 				op->sink = sink;
 
 				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
+				m_writeBuffer->m_downloadAreas.pushBack(AddRef(area));
 			}
 		}
 

@@ -154,8 +154,10 @@ namespace rendering
             {
                 // setup scene camera
                 SceneCamera camera;
-                camera.cameraPosition = base::Vector3(-4.5f, 0.5f, 1.5f);
-                camera.calcMatrices(true);
+                camera.position = base::Vector3(-4.5f, 0.5f, 1.5f);
+				camera.rotation = base::Angles(10.0f, 0.0f, 0.0f).toQuat();
+				camera.flipY = m_colorBufferRTV->flipped();
+                camera.calcMatrices();
 
                 // render shit to render targets
                 FrameBuffer fb;

@@ -13,13 +13,15 @@
 #include "apiObjectCache.h"
 #include "apiObjectRegistry.h"
 #include "apiOutput.h"
+#include "apiImage.h"
+#include "apiBuffer.h"
+#include "apiDownloadArea.h"
 
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingCommands.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingDescriptorInfo.h"
 #include "rendering/device/include/renderingDescriptor.h"
-
 
 namespace rendering
 {
@@ -314,6 +316,66 @@ namespace rendering
 				descriptor.dataPtr = op.data;
 				descriptor.layoutPtr = op.layout;
 				m_dirtyDescriptors = true;
+			}
+		}
+
+		void IFrameExecutor::runDownload(const command::OpDownload& op)
+		{
+			auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
+			DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
+
+			auto* destCopiable = destObject->toCopiable();
+			DEBUG_CHECK_RETURN_EX(destCopiable, "Destination object is not copiable");
+
+			auto* destArea = objects()->resolveStatic<IBaseDownloadArea>(op.areaId);
+			DEBUG_CHECK_RETURN_EX(destArea, "Destination area is invalid");
+
+			destCopiable->downloadIntoArea(destArea, op.offsetInArea, op.sizeInArea, op.range);
+
+			{
+				auto areaPtr = DownloadAreaObjectPtr(AddRef(op.area));
+				auto sinkPtr = DownloadDataSinkPtr(AddRef(op.sink));
+				auto size = op.sizeInArea;
+				auto offset = op.offsetInArea;
+				auto range = op.range;
+
+				thread()->registerCurrentFrameGPUComplectionCallback([areaPtr, sinkPtr, size, offset, range]() {
+					const auto* dataPtr = areaPtr->memoryPointer() + offset;
+					sinkPtr->processRetreivedData(areaPtr, dataPtr, size, range);
+					});
+			}
+		}
+
+		void IFrameExecutor::runUpdate(const command::OpUpdate& op)
+		{
+			auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
+			DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
+
+			auto* destCopiable = destObject->toCopiable();
+			DEBUG_CHECK_RETURN_EX(destCopiable, "Destination object is not copiable");
+
+			destCopiable->updateFromDynamicData(op.dataBlockPtr, op.dataBlockSize, op.range);
+		}
+
+		void IFrameExecutor::runCopy(const command::OpCopy& op)
+		{
+			auto* source = objects()->resolveStatic(op.src, ObjectType::Unknown);
+			auto* target = objects()->resolveStatic(op.dest, ObjectType::Unknown);
+			DEBUG_CHECK_RETURN_EX(source && target, "Objects lost");
+
+			auto* sourceCopiable = source->toCopiable();
+			auto* targetCopiable = target->toCopiable();
+			DEBUG_CHECK_RETURN_EX(sourceCopiable && targetCopiable, "Objects not copiable");
+
+			if (sourceCopiable->objectType() == ObjectType::Image)
+			{
+				auto sourceImage = static_cast<IBaseImage*>(sourceCopiable);
+				targetCopiable->copyFromImage(sourceImage, op.srcRange, op.destRange);
+			}
+			else if (sourceCopiable->objectType() == ObjectType::Buffer)
+			{
+				auto sourceBuffer = static_cast<IBaseBuffer*>(sourceCopiable);
+				targetCopiable->copyFromBuffer(sourceBuffer, op.srcRange, op.destRange);
 			}
 		}
 

@@ -276,6 +276,15 @@ namespace rendering
             // render test via the provided interface, in the interactive mode the frame index is animated
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) = 0;
 
+			// query initial camera position
+			virtual void queryInitialCamera(base::Vector3& outPosition, base::Angles& outRotation);
+
+			// update camera 
+			virtual void updateCamera(const base::Vector3& position, const base::Angles& rotation);
+
+			// describe the current subtest 
+			virtual void describeSubtest(base::IFormatStream& f);
+
             //--
 
 			// load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
@@ -361,6 +370,10 @@ namespace rendering
 
             // report loading error
             bool reportError(base::StringView txt);
+
+		protected:
+			base::Vector3 m_cameraPosition;
+			base::Angles m_cameraAngles;
 
         private:
             base::SpinLock m_allLoadedResourcesLock;

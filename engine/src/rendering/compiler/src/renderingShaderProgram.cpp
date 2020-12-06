@@ -209,6 +209,18 @@ namespace rendering
 				type = m_library->typeLibrary().integerType(1);
 				builtIn = shader::ShaderBuiltIn::InvocationID;
 			}
+			else if (name == "gl_Layer"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::Layer;
+				assignable = true;
+			}
+			else if (name == "gl_ViewportIndex"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::ViewportIndex;
+				assignable = true;
+			}
 			else if (name == "gl_TessLevelOuter"_id)
 			{
 				type = m_library->typeLibrary().floatType(1).applyArrayCounts(4);

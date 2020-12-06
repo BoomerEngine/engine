@@ -169,9 +169,9 @@ namespace rendering
 		{ "BC3_SRGB", "bc3_srgb", base::CompileTimeCRC32("BC3_SRGB").crc(), 4, 8, true, true, ImageFormatClass::SRGB },
 		{ "BC7_SRGB", "bc7_srgb", base::CompileTimeCRC32("BC7_SRGB").crc(), 4, 8, true, true, ImageFormatClass::SRGB },
 
-		{ "D24S8", "d24s8", base::CompileTimeCRC32("D24S8").crc(), 2, 32, true, true, ImageFormatClass::DEPTH },
-		{ "D24FS8", "d24fs8", base::CompileTimeCRC32("D24FS8").crc(), 2, 32, true, true, ImageFormatClass::DEPTH },
-		{ "D32", "d32", base::CompileTimeCRC32("D32").crc(), 1, 32, true, true, ImageFormatClass::DEPTH },
+		{ "D24S8", "d24s8", base::CompileTimeCRC32("D24S8").crc(), 2, 32, false, true, ImageFormatClass::DEPTH },
+		{ "D24FS8", "d24fs8", base::CompileTimeCRC32("D24FS8").crc(), 2, 32, false, true, ImageFormatClass::DEPTH },
+		{ "D32", "d32", base::CompileTimeCRC32("D32").crc(), 1, 32, false, false, ImageFormatClass::DEPTH },
 	};
 
 	//--

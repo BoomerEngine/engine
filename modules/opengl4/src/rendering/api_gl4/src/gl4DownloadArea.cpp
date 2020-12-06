@@ -52,10 +52,10 @@ namespace rendering
 				GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, label.length(), label.data()));
 
 				// setup data with buffer
-				GL_PROTECT(glNamedBufferStorage(m_glBuffer, size(), nullptr, GL_CLIENT_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT));
+				GL_PROTECT(glNamedBufferStorage(m_glBuffer, size(), nullptr, GL_CLIENT_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT | GL_MAP_COHERENT_BIT));
 
 				// persistently map the buffer
-				GL_PROTECT(m_mappedMemoryPtr = (uint8_t*)glMapNamedBufferRange(m_glBuffer, 0, size(), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT));
+				GL_PROTECT(m_mappedMemoryPtr = (uint8_t*)glMapNamedBufferRange(m_glBuffer, 0, size(), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 				ASSERT_EX(m_mappedMemoryPtr != nullptr, "Buffer mapping failed");
 			}
 

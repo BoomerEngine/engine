@@ -209,6 +209,16 @@ namespace base
         return *this;
     }
 
+	template< typename EnumType, typename DataType, typename FlagCalculator >
+	INLINE FlagsBase<EnumType, DataType, FlagCalculator>& FlagsBase<EnumType, DataType, FlagCalculator>::configure(EnumType singleFlag, bool value)
+	{
+		if (value)
+			m_data |= FlagCalculator::GetFlagValue(singleFlag);
+		else
+			m_data &= ~FlagCalculator::GetFlagValue(singleFlag);
+		return *this;
+	}
+
     template< typename EnumType, typename DataType, typename FlagCalculator >
     INLINE FlagsBase<EnumType, DataType, FlagCalculator>& FlagsBase<EnumType, DataType, FlagCalculator>::set(FlagsBase<EnumType, DataType, FlagCalculator> flags)
     {

@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "scene.h"
+#include "scene_ex.h"
+#include "GenericScenePoisonShadows.csl"
 
-export shader ScenePS;
-export shader SceneVS;
+export shader SceneGS;

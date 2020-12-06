@@ -32,15 +32,26 @@ descriptor SceneObjectParams
 
 //--
 
+struct CameraInfo
+{
+	mat4 WorldToScreen;
+	vec3 Position;
+	float _padding0;
+};
+
 descriptor SceneGlobalParams
 {
     ConstantBuffer
     {
-        attribute(offset=0) mat4 WorldToScreen;
-        attribute(offset=64) vec3 CameraPosition;
-        attribute(offset=80) vec3 LightDirection;
-        attribute(offset=96) vec4 LightColor;
-        attribute(offset=112) vec4 AmbientColor;
+		CameraInfo[6] Camera;
+		vec3 LightDirection;
+        vec4 LightColor;
+        vec4 AmbientColor;
+
+		uint NumCameras;
+		uint _Padding0;
+		uint _Padding1;
+		uint _Padding2;
     }
 }
 
@@ -56,7 +67,7 @@ shader ShadowSampler
 
 //--
 
-export shader ScenePS
+shader ScenePS
 {
 	in vec3 WorldPosition;
 	in vec3 WorldNormal;
@@ -69,7 +80,7 @@ export shader ScenePS
 		float NdotL = saturate(dot(WorldNormal, LightDirection));
 		vec4 lightColor = AmbientColor + NdotL*LightColor*shadow;
 
-		vec3 V = normalize(CameraPosition - WorldPosition);
+		vec3 V = normalize(Camera[0].Position - WorldPosition);
 		vec3 H = normalize(V + LightDirection);
 		float HdotN = saturate(dot(WorldNormal, H));
 		float spec = pow(HdotN, 40.0) * shadow;
@@ -79,7 +90,7 @@ export shader ScenePS
 	}
 }
 
-export shader SceneVS
+shader SceneVS
 {
     vertex Mesh3DVertex v;
 
@@ -90,9 +101,9 @@ export shader SceneVS
 	void main()
 	{
 		WorldPosition = (LocalToWorld * v.pos.xyz1).xyz;
-		gl_Position = WorldToScreen * WorldPosition.xyz1;
-
 		WorldNormal = (LocalToWorld * v.normal.xyz0).xyz;
 		UV = v.uv * UVScale;
+
+		gl_Position = Camera[0].WorldToScreen * WorldPosition.xyz1;
 	}
 }

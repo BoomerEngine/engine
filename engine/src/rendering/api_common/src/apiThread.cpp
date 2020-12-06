@@ -259,6 +259,11 @@ namespace rendering
 			return false;
 		}
 
+		bool IBaseThread::registerCurrentFrameGPUComplectionCallback(const std::function<void(void)>& func)
+		{
+			return m_syncQueues.gpuQueue->registerNotification(m_syncInfo.threadFrameIndex, func);
+		}
+
         void IBaseThread::scheduleObjectForDestruction(IBaseObject* ptr)
         {
 			ASSERT(ptr && ptr->canDelete());

@@ -10,9 +10,11 @@
 
 #include "gl4Thread.h"
 #include "gl4Image.h"
+#include "gl4Buffer.h"
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
 #include "gl4CopyQueue.h"
+#include "gl4DownloadArea.h"
 
 namespace rendering
 {
@@ -303,45 +305,6 @@ namespace rendering
 					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, atom.internalOffset / pixelSize));
 
-					// TODO: support for sub-part ?
-
-					/*// get texture type
-					switch (m_glViewType)
-					{
-					case GL_TEXTURE_1D:
-						GL_PROTECT(glCopyTextureSubImage1D(m_glImage, atom.mip, 
-							0, // destX
-							0, 0, // srcX, srcY
-							mipWidth)); // width, height
-						break;
-
-					case GL_TEXTURE_2D:
-						GL_PROTECT(glCopyTextureSubImage2D(m_glImage, atom.mip, 
-							0, 0, // destX, destY
-							0, 0, // srcX, srcY
-							mipWidth, mipHeight)); // width, height
-						break;
-
-					case GL_TEXTURE_CUBE_MAP:
-					case GL_TEXTURE_CUBE_MAP_ARRAY:
-					case GL_TEXTURE_2D_ARRAY:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, atom.mip, 
-							0, 0, atom.slice, // destX, destY, slice
-							0, 0, // srcX, srcY
-							mipWidth, mipHeight)); // width, height
-						break;
-
-					case GL_TEXTURE_3D:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, atom.mip, 
-							0, 0, 0, // destX, destY, destZ
-							0, 0, // srcX, srcY
-							mipWidth, mipHeight)); // width, height
-						break;
-
-					default:
-						FATAL_ERROR("Invalid texture type");
-					}*/
-
 					GLenum glBaseFormat = 0; // GL_RGBA
 					GLenum glBaseType = 0; // GL_FLOAT
 					DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType);
@@ -441,27 +404,98 @@ namespace rendering
 				}
 			}
 
-			void Image::downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range)
+			void Image::downloadIntoArea(IBaseDownloadArea* baseArea, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
 			{
+				auto* area = static_cast<DownloadArea*>(baseArea);
 
+				// well, we will download empty data but still make sure texture is there
+				ensureCreated();
+
+				// compressed textures are not supported (for now)
+				DEBUG_CHECK_RETURN_EX(!GetImageFormatInfo(setup().format).compressed, "Compressed textures are not yet supported");
+
+				// calculate params
+				const auto pixelSize = GetImageFormatInfo(setup().format).bitsPerPixel / 8;
+				const auto dataSize = range.image.sizeX * range.image.sizeY * range.image.sizeZ * pixelSize;
+				ASSERT(dataSize == sizeInArea);
+
+				// bind packing buffer
+				GL_PROTECT(glBindBuffer(GL_PIXEL_PACK_BUFFER, area->resolveBuffer()));
+				GL_PROTECT(glPixelStorei(GL_PACK_ALIGNMENT, 1));
+				GL_PROTECT(glPixelStorei(GL_PACK_ROW_LENGTH, range.image.sizeX));
+				GL_PROTECT(glPixelStorei(GL_PACK_IMAGE_HEIGHT, range.image.sizeY));
+				GL_PROTECT(glPixelStorei(GL_PACK_SKIP_PIXELS, offsetInArea / pixelSize));
+
+				// download data
+				GLenum glBaseFormat = 0; // GL_RGBA
+				GLenum glBaseType = 0; // GL_FLOAT
+				DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType);
+
+				// HACK!!! - download only depth for now
+				if (glBaseFormat == GL_DEPTH_STENCIL)
+					glBaseFormat = GL_DEPTH_COMPONENT;
+
+				// get texture type
+				switch (m_glViewType)
+				{
+				case GL_TEXTURE_1D:
+					GL_PROTECT(glGetTextureSubImage(m_glImage, range.image.mip,
+						range.image.offsetX, 0, 0,
+						range.image.sizeX, 1, 1,
+						glBaseFormat, glBaseType, dataSize, nullptr));
+					break;
+
+				case GL_TEXTURE_2D:
+					GL_PROTECT(glGetTextureSubImage(m_glImage, range.image.mip,
+						range.image.offsetX, range.image.offsetY, 0, 
+						range.image.sizeX, range.image.sizeY, 1,
+						glBaseFormat, glBaseType, dataSize, nullptr));
+					break;
+
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glGetTextureSubImage(m_glImage, range.image.mip,
+						range.image.offsetX, range.image.offsetY, range.image.slice,
+						range.image.sizeX, range.image.sizeY, 1,
+						glBaseFormat, glBaseType, dataSize, nullptr));
+					break;
+
+				case GL_TEXTURE_3D:
+					GL_PROTECT(glGetTextureSubImage(m_glImage, range.image.mip,
+						range.image.offsetX, range.image.offsetY, range.image.offsetZ,
+						range.image.sizeX, range.image.sizeY, range.image.sizeZ,
+						glBaseFormat, glBaseType, dataSize, nullptr));
+					break;
+
+				default:
+					FATAL_ERROR("Invalid texture type");
+				}
+
+				GL_PROTECT(glBindBuffer(GL_PIXEL_PACK_BUFFER, 0));
 			}
 
-			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			void Image::copyFromBuffer(IBaseBuffer* sourceBaseBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
-
+				auto* sourceBuffer = static_cast<Buffer*>(sourceBaseBuffer);
+				auto sourceView = sourceBuffer->resolve();
+				copyFromBuffer(sourceView, targetRange);
 			}
 
-			void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			void Image::copyFromImage(IBaseImage* sourceBaseImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
-
+				auto sourceImage = static_cast<Image*>(sourceBaseImage);
+				auto sourceView = sourceImage->resolve();
+				copyFromImage(sourceView, sourceRange, targetRange);
 			}
-
 
 			//--
 
 			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType)
 				: IBaseImageView(owner, viewType, img, setup)
-			{}
+			{
+				m_glViewType = TranslateTextureType(setup.viewType, img->setup().multisampled());
+			}
 
 			ImageAnyView::~ImageAnyView()
 			{
@@ -482,7 +516,7 @@ namespace rendering
 				ret.glImage = image()->object();
 				ret.glImageView = m_glViewObject;
 				ret.glInternalFormat = image()->format();
-				ret.glViewType = image()->viewType();
+				ret.glViewType = m_glViewType;
 				ret.firstMip = setup().firstMip;
 				ret.firstSlice = setup().firstSlice;
 				ret.numMips = setup().numMips;
@@ -515,11 +549,9 @@ namespace rendering
 					else
 					{
 						GL_PROTECT(glGenTextures(1, &m_glViewObject));
-						GL_PROTECT(glTextureView(m_glViewObject, image()->viewType(), glImage, image()->format(), setup().firstMip, setup().numMips, setup().firstSlice, setup().numSlices));
+						GL_PROTECT(glTextureView(m_glViewObject, m_glViewType, glImage, image()->format(), setup().firstMip, setup().numMips, setup().firstSlice, setup().numSlices));
 						GL_PROTECT(glObjectLabel(GL_TEXTURE, m_glViewObject, -1, base::TempString("ImageView {} {},{} +{},{} of {}",
 							image()->setup().format, setup().firstMip, setup().firstSlice, setup().numMips, setup().numSlices, image()->setup().label).c_str()));
-
-						//TRACE_SPAM("GL: Created image view {} of {} with {}", m_glViewObject, glImage, setup());
 					}
 				}
 			}

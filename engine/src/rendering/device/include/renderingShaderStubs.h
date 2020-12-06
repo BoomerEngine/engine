@@ -571,6 +571,7 @@ namespace rendering
 			STUB_CLASS(StageOutput);
 
 			base::StringID name;
+			base::StringID bindingName;
 			const StubTypeDecl* type = nullptr; // may be structure or array for GS
 			const StubStageInput* nextStageInput = nullptr; // if next stage uses this output as an input this is the link to it
 
@@ -588,6 +589,7 @@ namespace rendering
 			STUB_CLASS(StageInput);
 
 			base::StringID name;
+			base::StringID bindingName;
 			const StubTypeDecl* type = nullptr; // may be structure or array for GS
 			const StubStageOutput* prevStageOutput = nullptr; // if previous stage declared this output as an input this is the link to it (usually it's required)
 

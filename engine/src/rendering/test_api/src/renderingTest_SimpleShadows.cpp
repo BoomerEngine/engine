@@ -18,13 +18,19 @@ namespace rendering
     namespace test
     {
         /// test of 3d mesh rendering
-        class RenderingTest_Scene : public IRenderingTest
+        class RenderingTest_SimpleShadows : public IRenderingTest
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_Scene, IRenderingTest);
+            RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_SimpleShadows, IRenderingTest);
 
         public:
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
+
+			virtual void queryInitialCamera(base::Vector3& outPosition, base::Angles& outRotation)
+			{
+				outPosition = base::Vector3(-4.5f, 0.5f, 1.5f);
+				outRotation = base::Angles(15.0f, 0.0f, 0.0f);
+			}
 
         private:
             SimpleScenePtr m_scene;
@@ -41,14 +47,14 @@ namespace rendering
             uint32_t m_shadowMode = 0;
         };
 
-        RTTI_BEGIN_TYPE_CLASS(RenderingTest_Scene);
+        RTTI_BEGIN_TYPE_CLASS(RenderingTest_SimpleShadows);
             RTTI_METADATA(RenderingTestOrderMetadata).order(3000);
             RTTI_METADATA(RenderingTestSubtestCountMetadata).count(4);
         RTTI_END_TYPE();
 
         ///---
 
-        void RenderingTest_Scene::initialize()
+        void RenderingTest_SimpleShadows::initialize()
         {
             m_shadowMode = subTestIndex();
             m_scene = CreatePlatonicScene(*this);
@@ -92,7 +98,7 @@ namespace rendering
             base::Matrix WorldToShadowmap;
         };
         
-        void RenderingTest_Scene::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepth)
+        void RenderingTest_SimpleShadows::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepth)
         {
             // create shadowmap
             if (m_shadowMap.empty())
@@ -117,11 +123,8 @@ namespace rendering
             if (m_shadowMode != 0)
             {
                 SceneCamera camera;
-                camera.aspect = 1.0f;
-                camera.fov = 0.0f;
-                camera.zoom = 10.0f;
-                camera.cameraTarget = base::Vector3(0,0,0);
-                camera.cameraPosition = m_scene->m_lightPosition * 10.0f;
+				camera.setupDirectionalShadowmap(base::Vector3(0, 0, 0), m_scene->m_lightPosition);
+				camera.flipY = m_shadowMapRTV->flipped();
                 camera.calcMatrices();
 
                 {
@@ -161,7 +164,9 @@ namespace rendering
             {
                 SceneCamera camera;
                 camera.aspect = backBufferView->width() / (float) backBufferView->height();
-                camera.cameraPosition = base::Vector3(-4.5f, 0.5f, 1.5f);
+				camera.flipY = backBufferView->flipped();
+                camera.position = m_cameraPosition;
+				camera.rotation = m_cameraAngles.toQuat();
                 camera.calcMatrices();
 
                 FrameBuffer fb;

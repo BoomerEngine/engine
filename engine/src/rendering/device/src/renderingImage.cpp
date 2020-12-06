@@ -167,7 +167,7 @@ namespace rendering
 
     bool ImageObject::validateRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const
     {
-        DEBUG_CHECK_RETURN_V(type() == ImageViewType::View2D || type() == ImageViewType::View2DArray, false);
+        DEBUG_CHECK_RETURN_V(type() == ImageViewType::View2D || type() == ImageViewType::View2DArray || type() == ImageViewType::ViewCube || type() == ImageViewType::ViewCubeArray, false);
 
         if (numSlices == INDEX_MAX)
             numSlices = slices() - firstSlice;
@@ -179,12 +179,44 @@ namespace rendering
         DEBUG_CHECK_RETURN_V(firstSlice + numSlices <= slices(), false);
         DEBUG_CHECK_RETURN_V(mip < mips(), false);
 
-        if (numSlices > 1 || firstSlice)
-            DEBUG_CHECK_RETURN_V(type() == ImageViewType::View2DArray, false);
+		if (type() == ImageViewType::View2DArray)
+		{
+			if (numSlices == 1)
+			{
+				outSetup.arrayed = false;
+				outSetup.type = ImageViewType::View2D;
+			}
+			else
+			{
+				outSetup.arrayed = true;
+				outSetup.type = ImageViewType::View2DArray;
+			}
+		}
+		else if (type() == ImageViewType::ViewCube || type() == ImageViewType::ViewCubeArray)
+		{
+			if (numSlices == 1)
+			{
+				outSetup.arrayed = false;
+				outSetup.type = ImageViewType::View2D;
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_V((numSlices % 6) == 0, false);
+				DEBUG_CHECK_RETURN_V((firstSlice == 0), false);
+				outSetup.arrayed = true;
+				outSetup.type = type();
+			}
+		}
+		else
+		{
+			DEBUG_CHECK_RETURN_V(numSlices == 1, false);
+			DEBUG_CHECK_RETURN_V(firstSlice == 0, false);
+			outSetup.arrayed = false;
+			outSetup.type = ImageViewType::View2D;
+		}
 
         outSetup.format = format();
-        outSetup.arrayed = type() == ImageViewType::View2DArray;
-        outSetup.depth = renderTargetDepth();
+		outSetup.depth = renderTargetDepth();
         outSetup.flipped = flippedY();
         outSetup.firstSlice = firstSlice;
         outSetup.numSlices = numSlices;

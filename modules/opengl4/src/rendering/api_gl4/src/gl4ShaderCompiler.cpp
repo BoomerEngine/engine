@@ -277,6 +277,10 @@ namespace rendering
 					else if (output == "triangle_strip")
 						f.appendf("layout(triangle_strip, max_vertices={}) out;\n", maxVertices);
 
+					auto numInvocations = GetAttributeInt(m_stage->entryFunction->attributes, "invocations"_id, 1);
+					if (numInvocations > 1)
+						f.appendf("layout(invocations={}) in;\n", numInvocations);
+
 					f << "\n";
 				}
 				else if (m_stageIndex == ShaderStage::Pixel)
@@ -1234,7 +1238,7 @@ namespace rendering
 				case shader::ShaderBuiltIn::PatchVerticesIn: f << "gl_PatchVertices"; return;
 				case shader::ShaderBuiltIn::PrimitiveID: f << "gl_PrimitiveID"; return;
 				case shader::ShaderBuiltIn::PrimitiveIDIn: f << "gl_PrimitiveID"; return;
-				case shader::ShaderBuiltIn::InvocationID: f << "g_InvocationID"; return;
+				case shader::ShaderBuiltIn::InvocationID: f << "gl_InvocationID"; return;
 				case shader::ShaderBuiltIn::TessLevelOuter: f << ""; return;
 				case shader::ShaderBuiltIn::TessLevelInner: f << ""; return;
 				case shader::ShaderBuiltIn::TessCoord: f << "gl_TessCoord"; return;

@@ -41,9 +41,6 @@ namespace rendering
 				virtual void runClearDepthStencil(const command::OpClearDepthStencil &) override final;
 				virtual void runClearBuffer(const command::OpClearBuffer &) override final;
 				virtual void runClearImage(const command::OpClearImage &) override final;
-				virtual void runDownload(const command::OpDownload &) override final;
-				virtual void runUpdate(const command::OpUpdate &) override final;
-				virtual void runCopy(const command::OpCopy &) override final;
 				virtual void runDraw(const command::OpDraw &) override final;
 				virtual void runDrawIndexed(const command::OpDrawIndexed &) override final;
 				virtual void runDispatch(const command::OpDispatch &) override final;

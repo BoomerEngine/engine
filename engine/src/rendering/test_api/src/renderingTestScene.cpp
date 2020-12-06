@@ -21,21 +21,48 @@ namespace rendering
         //--
 
         SceneCamera::SceneCamera()
-            : cameraPosition(-10.0f, 1.0f, 3.0f)
-            , cameraTarget(0.0f, 0.0f, 0.5f)
+            : position(-10.0f, 1.0f, 3.0f)
         {
             calcMatrices();
         }
 
+		static const base::Angles CUBE_ROTATIONS[6] = {
+			base::Angles(0,0,-90), // X+
+			base::Angles(0,180,90), // X-
+			base::Angles(0,90,180), // Y+
+			base::Angles(0,-90,0), // Y-
+			base::Angles(-90,0,-90), // Z+
+			base::Angles(90,0,-90), // Z-
+		};
 
-        void SceneCamera::calcMatrices(bool renderToTexture /*= false*/)
+		void SceneCamera::setupCubemap(const base::Vector3& pos, int face, float limit /*= 20.0f*/)
+		{
+			rotation = CUBE_ROTATIONS[face].toQuat();
+			position = pos;
+			aspect = 1.0f;
+			zoom = 1.0f;
+			fov = 90.0f;
+			farPlane = limit;
+		}
+
+		void SceneCamera::setupDirectionalShadowmap(const base::Vector3& target, const base::Vector3& source, float _zoom /*= 10.0f*/, float _farPlane /*= 50.0f*/)
+		{
+			aspect = 1.0f;
+			fov = 0.0f;
+			zoom = _zoom;
+			farPlane = _farPlane;
+			position = target;
+			rotation = (target - source).toRotator().toQuat();
+		}
+
+        void SceneCamera::calcMatrices()
         {
-            auto position = (fov == 0.0f) ? cameraTarget : cameraPosition;
-            auto rotation = (cameraTarget - cameraPosition).toRotator().toQuat();
+            //auto position = (fov == 0.0f) ? cameraTarget : cameraPosition;
+            //auto rotation = (cameraTarget - cameraPosition).toRotator().toQuat();
 
             static base::Matrix CameraToView(base::Vector4(0, 1, 0, 0), base::Vector4(0, 0, -1, 0), base::Vector4(1, 0, 0, 0), base::Vector4(0, 0, 0, 1));
             static base::Matrix CameraToViewYFlip(base::Vector4(0, 1, 0, 0), base::Vector4(0, 0, 1, 0), base::Vector4(1, 0, 0, 0), base::Vector4(0, 0, 0, 1));
-            const base::Matrix ConvMatrix = renderToTexture ? CameraToViewYFlip : CameraToView;
+            const base::Matrix ConvMatrix = flipY ? CameraToViewYFlip : CameraToView;
 
             const base::Matrix ViewToCamera = ConvMatrix.inverted();
 
@@ -43,9 +70,9 @@ namespace rendering
             m_WorldToCamera.translation(-m_WorldToCamera.transformVector(position));
 
             if (fov == 0.0f)
-                m_ViewToScreen = base::Matrix::BuildOrtho(zoom * aspect, zoom, -50.0f, 50.0f);
+                m_ViewToScreen = base::Matrix::BuildOrtho(zoom * aspect, zoom, -farPlane, farPlane);
             else
-                m_ViewToScreen = base::Matrix::BuildPerspectiveFOV(fov, aspect, 0.01f, 20.0f);
+                m_ViewToScreen = base::Matrix::BuildPerspectiveFOV(fov, aspect, 0.01f, farPlane);
 
             m_ScreenToView = m_ViewToScreen.inverted();
             m_CameraToScreen = ConvMatrix * m_ViewToScreen;
@@ -69,15 +96,28 @@ namespace rendering
             , m_ambientColor(0.2f, 0.2f, 0.2f, 1.0f)
         {}
 
-        void SimpleScene::draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, const SceneCamera& cameraParams)
+		void SimpleScene::draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, const SceneCamera& cameraParams)
+		{
+			draw(cmd, func, &cameraParams, 1);
+		}
+
+		void SimpleScene::draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, const SceneCamera* cameras, uint32_t numCameras)
         {
+			SceneGlobalParams constsData;
+			memzero(&constsData, sizeof(constsData));
+
             // setup global params
-            SceneGlobalParams constsData;
-            constsData.WorldToScreen = cameraParams.m_WorldToScreen.transposed();
             constsData.AmbientColor = m_ambientColor;
             constsData.LightColor = m_lightColor;
             constsData.LightDirection = m_lightPosition.normalized();
-            constsData.CameraPosition = cameraParams.cameraPosition;
+			constsData.NumCameras = numCameras;
+
+			// setup cameras
+			for (uint32_t i = 0; i < numCameras; ++i)
+			{
+				constsData.Cameras[i].WorldToScreen = cameras[i].m_WorldToScreen.transposed();
+				constsData.Cameras[i].CameraPosition = cameras[i].position;
+			}
 
 			DescriptorEntry params[1];
 			params[0].constants(constsData);
@@ -232,6 +272,32 @@ namespace rendering
 
         //--
 
+		SimpleScenePtr CreateSphereScene(IRenderingTest& owner, const base::Vector3& initialPos, float size)
+		{
+			auto ret = base::RefNew<SimpleScene>();
+
+			// teapot
+			{
+				MeshSetup meshSetup;
+				meshSetup.m_loadTransform = base::Matrix::BuildScale(size);
+				//meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
+
+				if (auto mesh = owner.loadMesh("sphere.obj", meshSetup))
+				{
+					auto& obj = ret->m_objects.emplaceBack();
+					obj.m_mesh = mesh;
+					obj.m_initialPos = initialPos - mesh->m_bounds.center();
+					obj.m_params.DiffuseColor = base::Vector4(1, 1, 1, 1);
+					obj.m_params.LocalToWorld.identity();
+					obj.m_params.LocalToWorld.translation(initialPos);
+				}
+			}
+
+			return ret;
+		}
+
+		//--
+
         SimpleScenePtr CreateTeapotScene(IRenderingTest& owner)
         {
             auto ret = base::RefNew<SimpleScene>();
@@ -273,6 +339,65 @@ namespace rendering
         }
 
         //--
+
+		SimpleScenePtr CreateManyTeapotsScene(IRenderingTest& owner, int gridSize)
+		{
+			auto ret = base::RefNew<SimpleScene>();
+
+			// plane as a base
+			{
+				MeshSetup meshSetup;
+				meshSetup.m_swapYZ = true;
+
+				if (auto mesh = owner.loadMesh("plane.obj", meshSetup))
+				{
+					auto& obj = ret->m_objects.emplaceBack();
+					obj.m_mesh = mesh;
+					obj.m_params.DiffuseColor = base::Vector4::ONE();
+					obj.m_params.UVScale = base::Vector2(10.0f, 10.0f);
+
+					auto texture = owner.loadImage2D("checker_d.png", true, true);
+					obj.m_params.Texture = texture->createSampledView();
+				}
+			}
+
+			// teapots
+			{
+				MeshSetup meshSetup;
+				meshSetup.m_loadTransform = base::Matrix::BuildScale(1.6f / 1.0f);
+				//meshSetup.m_loadTransform *= base::Matrix::BuildRotationX(-90.0f);
+
+				base::FastRandState rng;
+
+				if (auto mesh = owner.loadMesh("teapot.obj", meshSetup))
+				{
+					float spacing = 1.6f;
+					for (int y = -gridSize; y <= gridSize; ++y)
+					{
+						for (int x = -gridSize; x <= gridSize; ++x)
+						{
+							auto& obj = ret->m_objects.emplaceBack();
+							obj.m_mesh = mesh;
+							obj.m_params.DiffuseColor.x = rng.range(0.4f, 1.0f);
+							obj.m_params.DiffuseColor.y = rng.range(0.4f, 1.0f);
+							obj.m_params.DiffuseColor.z = rng.range(0.4f, 1.0f);
+							obj.m_params.DiffuseColor.w = 1.0f;
+
+							obj.m_initialYaw = rng.range(0, 360);
+							obj.m_initialPos.x = x * spacing;
+							obj.m_initialPos.y = y * spacing;
+							obj.m_initialPos.z = -mesh->m_bounds.min.z;
+							obj.m_params.LocalToWorld = base::Matrix::BuildRotation(0.0f, obj.m_initialYaw, 0.0f);
+							obj.m_params.LocalToWorld.translation(obj.m_initialPos);
+						}
+					}					
+				}
+			}
+
+			return ret;
+		}
+
+		//--
 
 
     } // test

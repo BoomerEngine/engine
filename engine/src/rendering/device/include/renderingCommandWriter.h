@@ -306,7 +306,7 @@ namespace rendering
             //---
 
             /// download content of a resource (or part of it), downloaded data is forwarded to sink (usually 2 frames later)
-			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, const IDownloadAreaObject* area, IDownloadDataSink* sink);
+			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadAreaObject* area, uint32_t areaOffset, IDownloadDataSink* sink);
 
             //---
 

@@ -48,7 +48,7 @@ namespace rendering
 
 				virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) override final;
 				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
-				virtual void downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range) override final;
+				virtual void downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range) override final;
 				virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
 				virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
 

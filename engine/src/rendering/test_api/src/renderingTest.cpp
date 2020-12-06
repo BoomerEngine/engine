@@ -58,6 +58,23 @@ namespace rendering
         {
         }
 
+		void IRenderingTest::queryInitialCamera(base::Vector3& outPosition, base::Angles& outRotation)
+		{
+			outPosition = base::Vector3(-1.5f, 0.0f, 1.0f);
+			outRotation = base::Angles(15.0f, 0.0f, 0.0f);
+		}
+
+		void IRenderingTest::updateCamera(const base::Vector3& position, const base::Angles& rotation)
+		{
+			m_cameraPosition = position;
+			m_cameraAngles = rotation;
+		}
+
+		void IRenderingTest::describeSubtest(base::IFormatStream& f)
+		{
+			f.appendf("SubTest {}", subTestIndex());
+		}
+
         bool IRenderingTest::reportError(base::StringView txt)
         {
             TRACE_ERROR("Rendering test error: {}", txt);

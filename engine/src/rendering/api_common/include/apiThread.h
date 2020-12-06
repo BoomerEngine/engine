@@ -64,6 +64,9 @@ namespace rendering
 			// request a completion callback
 			bool registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback);
 
+			// request a completion callback for current frame finishing on GPU
+			bool registerCurrentFrameGPUComplectionCallback(const std::function<void(void)>& func);
+
 			//--
 
 			// get sync information

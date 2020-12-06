@@ -28,6 +28,22 @@ namespace rendering
 {
     namespace test
     {
+		//---
+
+		enum class CameraButtonBit : uint8_t
+		{
+			Forward,
+			Backward,
+			Left,
+			Right,
+			Up,
+			Down,
+			Fast,
+			Slow
+		};
+
+		typedef base::BitFlags<CameraButtonBit> CameraButtonMask;
+
         //---
 
         // command to spawn a test window with basic rendering/GPU testes
@@ -58,11 +74,20 @@ namespace rendering
             double m_advanceTimeSpeed = 1.0f;
             bool m_advanceTime = true;
 
+			// camera
+			base::Vector3 m_cameraPosition;
+			base::Vector2 m_cameraViewDeltas;
+			base::Angles m_cameraAngles;
+			CameraButtonMask m_cameraButtons;
+
             // render the test case
             OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
 
             bool createRenderingOutput();
+			void updateTitleBar();
+			void processInput();
+			void processCamera(float dt);
 
 
             // syncing
@@ -217,6 +242,139 @@ namespace rendering
             return true;
         }
 
+		void TestRenderingFramework::processInput()
+		{
+			if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
+			{
+				while (auto evt = inputContext->pull())
+				{
+					if (auto keyEvt = evt->toKeyEvent())
+					{
+						if (keyEvt->pressed())
+						{
+							if (keyEvt->keyCode() == base::input::KeyCode::KEY_ESCAPE)
+							{
+								m_exitRequested = true;
+								break;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT)
+							{
+								if (m_pendingTestCaseIndex <= 0)
+									m_pendingTestCaseIndex = m_testClasses.size() - 1;
+								else
+									m_pendingTestCaseIndex -= 1;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_RIGHT)
+							{
+								m_pendingTestCaseIndex += 1;
+								if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
+									m_pendingTestCaseIndex = 0;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_SPACE)
+							{
+								m_advanceTime = !m_advanceTime;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_MINUS)
+							{
+								m_advanceTimeSpeed *= 0.5f;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_EQUAL)
+							{
+								m_advanceTimeSpeed *= 2.0f;
+							}
+
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_R)
+							{
+								m_advanceTimeSpeed = 1.0f;
+								m_advanceTime = true;
+								m_timeCounter = 0.0f;
+							}
+						}
+
+						if (keyEvt->keyCode() == base::input::KeyCode::KEY_W)
+							m_cameraButtons.configure(CameraButtonBit::Forward, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_S)
+							m_cameraButtons.configure(CameraButtonBit::Backward, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_A)
+							m_cameraButtons.configure(CameraButtonBit::Left, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_D)
+							m_cameraButtons.configure(CameraButtonBit::Right, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_Q)
+							m_cameraButtons.configure(CameraButtonBit::Up, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_E)
+							m_cameraButtons.configure(CameraButtonBit::Down, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT_SHIFT)
+							m_cameraButtons.configure(CameraButtonBit::Fast, keyEvt->isDown());
+						else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT_CTRL)
+							m_cameraButtons.configure(CameraButtonBit::Slow, keyEvt->isDown());
+					}
+					else if (auto keyEvt = evt->toAxisEvent())
+					{
+						if (keyEvt->axisCode() == base::input::AxisCode::AXIS_MOUSEX)
+							m_cameraViewDeltas.x += keyEvt->displacement();
+						else if (keyEvt->axisCode() == base::input::AxisCode::AXIS_MOUSEY)
+							m_cameraViewDeltas.y += keyEvt->displacement();
+					}
+				}
+			}
+		}
+
+		void TestRenderingFramework::processCamera(float dt)
+		{
+			base::Vector3 moveFactors;
+
+			moveFactors.x += m_cameraButtons.test(CameraButtonBit::Forward) ? 1.0f : 0.0f;
+			moveFactors.x += m_cameraButtons.test(CameraButtonBit::Backward) ? -1.0f : 0.0f;
+			moveFactors.y += m_cameraButtons.test(CameraButtonBit::Left) ? -1.0f : 0.0f;
+			moveFactors.y += m_cameraButtons.test(CameraButtonBit::Right) ? 1.0f : 0.0f;
+			moveFactors.z += m_cameraButtons.test(CameraButtonBit::Up) ? 1.0f : 0.0f;
+			moveFactors.z += m_cameraButtons.test(CameraButtonBit::Down) ? -1.0f : 0.0f;
+
+			m_cameraAngles.pitch = std::clamp<float>(m_cameraAngles.pitch + m_cameraViewDeltas.y * 0.2f, -90.0f, 90.0f);
+			m_cameraAngles.yaw = m_cameraAngles.yaw + m_cameraViewDeltas.x * 0.2f;
+			m_cameraViewDeltas = base::Vector2::ZERO();
+
+			if (!moveFactors.isNearZero())
+			{
+				moveFactors.normalize();
+
+				float speed = 3.0f;
+				if (m_cameraButtons.test(CameraButtonBit::Fast))
+					speed *= 2.0f;
+				if (m_cameraButtons.test(CameraButtonBit::Slow))
+					speed /= 4.0f;
+
+				base::Vector3 forward, right, up;
+				m_cameraAngles.angleVectors(forward, right, up);				
+
+				m_cameraPosition += forward * speed * dt * moveFactors.x;
+				m_cameraPosition += right * speed * dt * moveFactors.y;
+				m_cameraPosition.z += speed * dt * moveFactors.z;
+			}
+		}
+
+		void TestRenderingFramework::updateTitleBar()
+		{
+			auto testName = m_testClasses[m_currentTestCaseIndex].m_name;
+
+			base::StringBuilder txt;
+			txt.appendf("Rendering Tests - {} ", testName);
+
+			if (m_currentTestCase)
+			{
+				txt << "(";
+				m_currentTestCase->describeSubtest(txt);
+				txt << ")";
+			}
+			else
+			{
+				auto testIndex = m_testClasses[m_currentTestCaseIndex].m_subTestIndex;
+				txt.appendf("(SubTest{} - FAILED TO INITIALIZE)", testIndex);
+			}
+
+			m_renderingOutput->window()->windowSetTitle(txt.toString());
+		}
+
         void TestRenderingFramework::update()
         {
             // exit when window closed
@@ -234,62 +392,15 @@ namespace rendering
                 return;
             }
 
-            // pump window messages
-            //m_windowFactory->pumpMessages();
+			// calculate real time delta
+			const auto dt = m_lastFrameTime.timeTillNow().toSeconds();
+			m_lastFrameTime.resetToNow();
+			
+			// process user input
+			processInput();
 
-            // get input
-            //auto& inputBuffer = base::GetService<base::input::InputService>()->events();
-            
-            // process events
-            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
-            {
-                while (auto evt = inputContext->pull())
-                {
-                    if (auto keyEvt  = evt->toKeyEvent())
-                    {
-                        if (keyEvt->pressed())
-                        {
-                            if (keyEvt->keyCode() == base::input::KeyCode::KEY_ESCAPE)
-                            {
-                                m_exitRequested = true;
-                                break;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT)
-                            {
-                                if (m_pendingTestCaseIndex <= 0)
-                                    m_pendingTestCaseIndex = m_testClasses.size() - 1;
-                                else
-                                    m_pendingTestCaseIndex -= 1;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_RIGHT)
-                            {
-                                m_pendingTestCaseIndex += 1;
-                                if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
-                                    m_pendingTestCaseIndex = 0;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_SPACE)
-                            {
-                                m_advanceTime = !m_advanceTime;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_MINUS)
-                            {
-                                m_advanceTimeSpeed *= 0.5f;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_EQUAL)
-                            {
-                                m_advanceTimeSpeed *= 2.0f;
-                            }
-
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_R)
-                            {
-                                m_advanceTimeSpeed = 1.0f;
-                                m_advanceTime = true;
-                                m_timeCounter = 0.0f;
-                            }
-                        }
-                    }
-                }
-            }
+			// move camera
+			processCamera(dt);
 
             // navigate to other test
             if (m_pendingTestCaseIndex != m_currentTestCaseIndex)
@@ -307,16 +418,17 @@ namespace rendering
                 m_currentTestCase = initializeTest(m_currentTestCaseIndex);
 
                 // should we reset time
-                if (prevTestClass != m_testClasses[m_currentTestCaseIndex].m_testClass)
+				const bool resetTiming = prevTestClass != m_testClasses[m_currentTestCaseIndex].m_testClass;
+                if (resetTiming)
                 {
+					if (m_currentTestCase)
+						m_currentTestCase->queryInitialCamera(m_cameraPosition, m_cameraAngles);
+
                     m_lastFrameTime.resetToNow();
                     m_timeCounter = 0.0;
                 }
 
-                // set the window caption
-                auto testName = m_testClasses[m_currentTestCaseIndex].m_name;
-                auto testIndex = m_testClasses[m_currentTestCaseIndex].m_subTestIndex;
-                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Rendering Tests - {} ({}) {}", testName, testIndex, m_currentTestCase ? "" : "(FAILED TO INITIALIZE)"));
+				updateTitleBar();
             }
 
             {
@@ -326,19 +438,20 @@ namespace rendering
                 if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
                     // render the test
-                    if (m_currentTestCase)
-                        m_currentTestCase->render(cmd, (float)m_timeCounter, output.color, output.depth);
+					if (m_currentTestCase)
+					{
+						m_currentTestCase->updateCamera(m_cameraPosition, m_cameraAngles);
+						m_currentTestCase->render(cmd, (float)m_timeCounter, output.color, output.depth);
+					}
 
                     // swap
                     cmd.opSwapOutput(m_renderingOutput);
                 }
 
                 // accumulate time
-                const auto dt = m_lastFrameTime.timeTillNow().toSeconds();
                 if (m_advanceTime)
                     m_timeCounter += dt * m_advanceTimeSpeed;
-                m_lastFrameTime.resetToNow();
-
+				
                 // create new fence
                 m_frameSubmissionTime = base::NativeTimePoint::Now();
 

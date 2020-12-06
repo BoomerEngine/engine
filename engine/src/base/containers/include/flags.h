@@ -101,6 +101,7 @@ namespace base
         INLINE FlagsBase& clear(EnumType singleFlag);
         INLINE FlagsBase& toggle(EnumType singleFlag);
         INLINE FlagsBase& mask(EnumType singleFlag);
+		INLINE FlagsBase& configure(EnumType singleFlag, bool value);
 
         INLINE FlagsBase& set(FlagsBase<EnumType, DataType, FlagCalculator> flags);
         INLINE FlagsBase& clear(FlagsBase<EnumType, DataType, FlagCalculator> flags);

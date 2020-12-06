@@ -62,22 +62,9 @@ namespace rendering
 
 			void FrameExecutor::runClearImage(const command::OpClearImage&)
 			{
-
 			}
 
 			void FrameExecutor::runClearBuffer(const command::OpClearBuffer&)
-			{
-			}
-
-			void FrameExecutor::runDownload(const command::OpDownload& op)
-			{
-			}
-
-			void FrameExecutor::runUpdate(const command::OpUpdate& op)
-			{
-			}
-
-			void FrameExecutor::runCopy(const command::OpCopy& op)
 			{
 			}
 

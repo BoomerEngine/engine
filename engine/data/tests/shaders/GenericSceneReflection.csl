@@ -1,0 +1,42 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+#include "scene.h"
+
+descriptor ReflectionParams
+{
+    ConstantBuffer
+    {
+        vec3 ReflectionCenter;
+    }
+
+	attribute(sampler=SamplerClampLinear) TextureCube ReflectionMap;
+}
+
+export shader SceneReflectionPS : ScenePS
+{
+	void main()
+	{
+		vec3 faceNormal = normalize(WorldPosition - ReflectionCenter);
+		//gl_Target0 = (0.5*dir + 0.5).xyz1;
+		//gl_Target0 = (0.5*WorldNormal + 0.5).xyz1;
+		//gl_Target0 = texture(ReflectionMap, WorldNormal);
+
+		vec3 cameraDir = normalize(Camera[0].Position - WorldPosition);
+		vec3 reflectedCameraDir = -(cameraDir - 2*dot(cameraDir, faceNormal)*faceNormal);
+
+		vec3 V = normalize(Camera[0].Position - WorldPosition);
+		vec3 H = normalize(V + LightDirection);
+		float HdotN = saturate(dot(faceNormal, H));
+		float spec = pow(HdotN, 40.0);
+
+		gl_Target0 = texture(ReflectionMap, reflectedCameraDir) + vec3(spec).xyz1;
+	}
+}
+
+export shader SceneVS;

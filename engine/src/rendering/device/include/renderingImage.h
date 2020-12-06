@@ -174,6 +174,7 @@ namespace rendering
         struct Setup
         {
             ImageFormat format;
+			ImageViewType type;
             uint8_t mip = 0; // in original image
             uint8_t samples = 0; // number of MSAA samples
             uint32_t firstSlice = 0; // in original image

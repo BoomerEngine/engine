@@ -397,6 +397,9 @@ namespace rendering
         {
             ObjectID id;
 			ObjectID areaId;
+			uint32_t offsetInArea = 0;
+			uint32_t sizeInArea = 0;
+			IDownloadAreaObject* area = nullptr;
 			IDownloadDataSink* sink = nullptr;
 			ResourceCopyRange range;
         };

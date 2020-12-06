@@ -166,14 +166,16 @@ namespace rendering
 				GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
 			}
 
-			void Buffer::downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range)
+			void Buffer::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
 			{
 				ensureCreated();
 
 				auto glTargetBuffer = static_cast<DownloadArea*>(area)->resolveBuffer();
 
-				const auto copySize = std::min<uint32_t>(range.buffer.size, area->size());
-				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, glTargetBuffer, range.buffer.offset, 0, copySize));
+				ASSERT(offsetInArea + sizeInArea <= area->size());
+				ASSERT(range.buffer.size == sizeInArea);
+
+				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, glTargetBuffer, range.buffer.offset, 0, range.buffer.size));
 			}
 
 			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
@@ -184,7 +186,7 @@ namespace rendering
 
 			void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
-				// TODO!
+				ASSERT(!"Not implemented");
 			}
 
 			//--		

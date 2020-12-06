@@ -293,7 +293,7 @@ namespace rendering
 				{
 
 				case GL_TEXTURE_2D:
-					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, 0, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, clearData));
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, view.firstSlice, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, clearData));
 					break;
 
 				case GL_TEXTURE_CUBE_MAP:
@@ -317,7 +317,7 @@ namespace rendering
 				switch (view.glViewType)
 				{
 				case GL_TEXTURE_2D:
-					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, 0, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, &clearValue));
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, view.firstSlice, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, &clearValue));
 					break;
 
 				case GL_TEXTURE_CUBE_MAP:
@@ -442,70 +442,7 @@ namespace rendering
 						ClearImageRect(imageResolved, *rect, clearData);
 				}
 			}
-
-			void FrameExecutor::runDownload(const command::OpDownload& op)
-			{
-			}
-
-			void FrameExecutor::runUpdate(const command::OpUpdate& op)
-			{
-				auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
-				DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
-
-				if (auto* destCopiable = destObject->toCopiable())
-					destCopiable->updateFromDynamicData(op.dataBlockPtr, op.dataBlockSize, op.range);
-			}
-
-			void FrameExecutor::runCopy(const command::OpCopy& op)
-			{
-				auto* source = objects()->resolveStatic(op.src, ObjectType::Unknown);
-				auto* target = objects()->resolveStatic(op.dest, ObjectType::Unknown);
-				DEBUG_CHECK_RETURN_EX(source && target, "Objects lost");
-
-				auto* sourceCopiable = source->toCopiable();
-				auto* targetCopiable = target->toCopiable();
-				DEBUG_CHECK_RETURN_EX(sourceCopiable && targetCopiable, "Objects not copiable");
-
-				if (targetCopiable->objectType() == ObjectType::Image)
-				{
-					auto targetImage = static_cast<Image*>(targetCopiable);
-
-					if (sourceCopiable->objectType() == ObjectType::Image)
-					{
-						auto sourceImage = static_cast<Image*>(sourceCopiable);
-						auto sourceView = sourceImage->resolve();
-						targetImage->copyFromImage(sourceView, op.srcRange, op.destRange);						
-					}
-					else if (sourceCopiable->objectType() == ObjectType::Buffer)
-					{
-						auto sourceBuffer = static_cast<Buffer*>(sourceCopiable);
-						auto sourceView = sourceBuffer->resolve();
-						sourceView.offset = op.srcRange.buffer.offset;
-						sourceView.size = op.srcRange.buffer.size;
-						targetImage->copyFromBuffer(sourceView, op.destRange);
-					}
-				}
-				else if (targetCopiable->objectType() == ObjectType::Buffer)
-				{
-					auto targetBuffer = static_cast<Buffer*>(targetCopiable);
-
-					if (sourceCopiable->objectType() == ObjectType::Image)
-					{
-						auto sourceImage = static_cast<Image*>(sourceCopiable);
-						auto sourceView = sourceImage->resolve();
-						//targetBuffer->copyFromImage(sourceView, op.srcRange, op.destRange);
-					}
-					else if (sourceCopiable->objectType() == ObjectType::Buffer)
-					{
-						auto sourceBuffer = static_cast<Buffer*>(sourceCopiable);
-						auto sourceView = sourceBuffer->resolve();
-						sourceView.offset = op.srcRange.buffer.offset;
-						sourceView.size = op.srcRange.buffer.size;
-						targetBuffer->copyFromBuffer(sourceView, op.destRange);
-					}
-				}
-			}
-
+			
 			void FrameExecutor::runDraw(const command::OpDraw& op)
 			{
 				auto* pso = objects()->resolveStatic<GraphicsPipeline>(op.pipelineObject);

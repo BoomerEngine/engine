@@ -1161,6 +1161,7 @@ namespace rendering
 		{
 			location.write(f);
 			f.writeName(name);
+			f.writeName(bindingName);
 			f.writeRef(type);
 			f.writeRef(nextStageInput);
 			f.writeArray(attributes);
@@ -1170,6 +1171,7 @@ namespace rendering
 		{
 			location.read(f);
 			name = f.readName();
+			bindingName = f.readName();
 			f.readRef(type);
 			f.readRef(nextStageInput);
 			f.readArray(attributes);
@@ -1177,7 +1179,7 @@ namespace rendering
 
 		void StubStageOutput::dump(StubDebugPrinter& f) const
 		{
-			f.appendf("name={}", name);
+			f.appendf("name={} binding={}", name, bindingName);
 
 			f.append(" type=");
 			type->print(f);
@@ -1193,6 +1195,7 @@ namespace rendering
 		{
 			location.write(f);
 			f.writeName(name);
+			f.writeName(bindingName);
 			f.writeRef(type);
 			f.writeRef(prevStageOutput);
 			f.writeArray(attributes);
@@ -1202,6 +1205,7 @@ namespace rendering
 		{
 			location.read(f);
 			name = f.readName();
+			bindingName = f.readName();
 			f.readRef(type);
 			f.readRef(prevStageOutput);
 			f.readArray(attributes);
@@ -1209,7 +1213,7 @@ namespace rendering
 
 		void StubStageInput::dump(StubDebugPrinter& f) const
 		{
-			f.appendf("name={}", name);
+			f.appendf("name={} binding={}", name, bindingName);
 
 			f.append(" type=");
 			type->print(f);

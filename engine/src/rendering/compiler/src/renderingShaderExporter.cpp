@@ -134,6 +134,8 @@ namespace rendering
 						if (auto* finalFunc = folder.foldFunction(sourceStage.func, sourceStage.pi, emptyConstants, err))
 						{
 							m_activeStage = &m_stages[i];
+							m_activeStage->stage = (ShaderStage)i;
+							m_activeStage->sourceEntryFunction = sourceStage.func;
 							m_activeStage->m_entryFunction = exportFunction(finalFunc);
 						}
 						else
@@ -204,7 +206,7 @@ namespace rendering
 								const shader::StubStageOutput* prevStageOutput = nullptr;
 								for (auto* outputParam : prevStage->outputs)
 								{
-									if (outputParam->name == inputParam->name)
+									if (outputParam->bindingName == inputParam->bindingName)
 									{
 										prevStageOutput = outputParam;
 										break;
@@ -221,8 +223,8 @@ namespace rendering
 									for (auto it : localStage.m_parametersMap.pairs())
 									{
 										if (it.value == inputParam)
-											err.reportError(it.key->loc, base::TempString("Current stage {} input parmeter {} is not declared as output in previous stage", 
-												(ShaderStage)i, inputParam->name));
+											err.reportError(it.key->loc, base::TempString("Current stage {} input parmeter {} (binding: {}) is not declared as output in previous stage", 
+												(ShaderStage)i, inputParam->name, inputParam->bindingName));
 									}
 
 									valid = false;
@@ -301,6 +303,9 @@ namespace rendering
 
 			struct StageContext
 			{
+				ShaderStage stage;
+				const Function* sourceEntryFunction = nullptr;
+
 				base::HashMap<const Function*, shader::StubFunction*> m_functionMap;
 				base::HashSet<const shader::StubFunction*> m_functionForwardRefs;
 				base::HashSet<const shader::StubTypeDecl*> m_types;
@@ -1050,6 +1055,24 @@ namespace rendering
 				return ret;
 			}
 
+			static uint32_t DetermineGeometryShaderVertexInputCount(const Function* entryFunction)
+			{
+				auto input = entryFunction->attributes().valueOrDefault("input"_id, "");
+				if (input == "points")
+					return 1;
+				else if (input == "lines")
+					return 2;
+				else if (input == "lines_adjacency")
+					return 4;
+				else if (input == "triangles")
+					return 3;
+				else if (input == "triangles_adjacency")
+					return 6;
+
+				ASSERT(!"Invalid geometry shader parameters");
+				return 0;
+			}
+
 			const shader::Stub* exportDataParamReference(const DataParameter* param)
 			{
 				const shader::Stub* ret = nullptr;
@@ -1091,7 +1114,22 @@ namespace rendering
 					{
 						auto* op = m_builder.createStub<shader::StubStageInput>();
 						op->name = param->name;
-						op->type = exportDataType(param->dataType);
+						op->bindingName = base::StringID(param->attributes.valueOrDefault("binding"_id, param->name.view()));
+
+						if (m_activeStage->stage == ShaderStage::Geometry)
+						{
+							ASSERT(param->dataType.isArray());
+
+							// inject the count for array input parameters that is based on the primitive type
+							const auto vertexCount = DetermineGeometryShaderVertexInputCount(m_activeStage->sourceEntryFunction);
+							const auto dataType = param->dataType.removeArrayCounts().applyArrayCounts(vertexCount);
+							op->type = exportDataType(dataType);
+						}
+						else
+						{
+							op->type = exportDataType(param->dataType);
+						}
+
 						op->attributes = exportAttributes(param->attributes);
 						m_activeStage->m_stageInputs.insert(op);
 						ret = op;
@@ -1102,6 +1140,7 @@ namespace rendering
 					{
 						auto* op = m_builder.createStub<shader::StubStageOutput>();
 						op->name = param->name;
+						op->bindingName = base::StringID(param->attributes.valueOrDefault("binding"_id, param->name.view()));
 						op->type = exportDataType(param->dataType);
 						op->attributes = exportAttributes(param->attributes);
 						m_activeStage->m_stageOutputs.insert(op);
