@@ -17,6 +17,11 @@ namespace rendering
     {
 		namespace gl4
 		{
+			///--
+
+			class ShaderCompilationJob;
+
+			///--
 
 			/// loaded shaders, this object mainly servers as caching interface to object cache
 			class Shaders : public IBaseShaders
@@ -37,10 +42,17 @@ namespace rendering
 				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup) override;
 				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
-				//--            
+				//--
+
+				GLuint object();
 
 			private:
+				GLuint m_glProgram = 0;
+
+				base::RefPtr<ShaderCompilationJob> m_compilationJob;
 			};
+
+			///--
 
 		} // null
     } // api

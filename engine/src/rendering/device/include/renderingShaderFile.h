@@ -25,9 +25,11 @@ namespace rendering
 
 		//--
 
-		// get main shader
-		// TODO: implement 
-		INLINE const ShaderDataPtr& shader() const { return m_shader; }
+		// find shader permutation matching given definitions
+		const ShaderData* findShader(const ShaderSelector& selector) const;
+
+		// get root shader (no defines)
+		const ShaderData* rootShader() const;
 
 		//--
 

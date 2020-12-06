@@ -80,7 +80,7 @@ namespace ed
             return false;
 
         static std::atomic<uint32_t> GImportIndex = 0;
-        const auto& tempDir = base::io::SystemPath(io::PathCategory::TempDir);
+        const auto& tempDir = base::io::SystemPath(io::PathCategory::LocalTempDir);
         StringBuf tempListPath = TempString("{}importList{}.xml", tempDir, GImportIndex++);
 
         // save the XML to a temporary file

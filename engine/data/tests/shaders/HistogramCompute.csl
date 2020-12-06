@@ -7,7 +7,7 @@
 
 //--
 
-descriptor ComputeHistogramParams
+descriptor HistogramDesc
 {
     ConstantBuffer
     {
@@ -15,16 +15,17 @@ descriptor ComputeHistogramParams
         uint ImageHeight;
 		uint ComponentType;
 		uint NumBuckets;
-		float VerticalScale;
     }
 
-    attribute(uav, format=rgba8) Texture2D InputImage;
-	attribute(uav, format=r32i) Buffer MinMaxBuffer;
+    attribute(nosampler, format=rgba8) Texture2D InputImage;
 	attribute(coherent, uav, format=r32i) Buffer HistogramBuffer;
 }
 
-shader HistogramCommon
-{
+
+//---
+
+export shader ComputeHistogramCS
+{	
 	float GetHistogramValue()
 	{
 	    vec3 color = InputImage[gl_GlobalInvocationID.xy].xyz;
@@ -41,8 +42,8 @@ shader HistogramCommon
 
 	uint BucketIndex(float val, uint count)
 	{
-		float minValue = 0.0f;//intBitsToFloat(MinMaxBuffer[0]);
-		float maxValue = 1.0f;//intBitsToFloat(MinMaxBuffer[1]); 
+		float minValue = intBitsToFloat(HistogramBuffer[NumBuckets+0]);
+		float maxValue = intBitsToFloat(HistogramBuffer[NumBuckets+1]); 
 
 		if (maxValue <= minValue)
 			return 0;
@@ -55,12 +56,7 @@ shader HistogramCommon
 			bi = count - 1;
 		return bi;
 	}
-}
 
-//---
-
-export shader ComputeHistogramCS : HistogramCommon
-{	
     attribute(local_size_x=8, local_size_y=8)
 	void main()
 	{

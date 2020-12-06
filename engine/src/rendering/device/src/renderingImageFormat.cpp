@@ -221,4 +221,66 @@ namespace rendering
 
 	//--
 
+	bool IsFormatValidForView(ImageFormat format)
+	{
+		switch (format)
+		{
+		case ImageFormat::RGBA32F:
+		case ImageFormat::RGBA16F:
+		case ImageFormat::RG32F:
+		case ImageFormat::RG16F:
+		case ImageFormat::R11FG11FB10F:
+		case ImageFormat::R32F:
+		case ImageFormat::R16F:
+		case ImageFormat::RGBA16_UNORM:
+		case ImageFormat::RGB10_A2_UNORM:
+		case ImageFormat::RGBA8_UNORM:
+		case ImageFormat::RG16_UNORM:
+		case ImageFormat::RG8_UNORM:
+		case ImageFormat::R16_UNORM:
+		case ImageFormat::R8_UNORM:
+		case ImageFormat::RGBA16_SNORM:
+		case ImageFormat::RGBA8_SNORM:
+		case ImageFormat::RG16_SNORM:
+		case ImageFormat::RG8_SNORM:
+		case ImageFormat::R16_SNORM:
+		case ImageFormat::R8_SNORM:
+
+		case ImageFormat::RGBA32_INT:
+		case ImageFormat::RGBA16_INT:
+		case ImageFormat::RGBA8_INT:
+		case ImageFormat::RG32_INT:
+		case ImageFormat::RG16_INT:
+		case ImageFormat::RG8_INT:
+		case ImageFormat::R32_INT:
+		case ImageFormat::R16_INT:
+		case ImageFormat::R8_INT:
+
+		case ImageFormat::RGBA32_UINT:
+		case ImageFormat::RGBA16_UINT:
+		case ImageFormat::RGB10_A2_UINT:
+		case ImageFormat::RGBA8_UINT:
+		case ImageFormat::RG16_UINT:
+		case ImageFormat::RG8_UINT:
+		case ImageFormat::R32_UINT:
+		case ImageFormat::R16_UINT:
+		case ImageFormat::R8_UINT:
+			return true;
+		}
+
+		return false;
+	}
+
+	bool IsFormatValidForAtomic(ImageFormat format)
+	{
+		switch (format)
+		{
+		case ImageFormat::R32_INT:
+		case ImageFormat::R32_UINT:
+			return true;
+		}
+
+		return false;
+	}
+
 } // rendering

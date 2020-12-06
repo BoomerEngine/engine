@@ -10,6 +10,13 @@
 
 namespace rendering
 {
+	///--
+
+	namespace command
+	{
+		struct OpUploadConstants;
+	}
+
     ///--
 
     // entry in the recording side descriptor table
@@ -20,13 +27,18 @@ namespace rendering
         DeviceObjectViewType type = DeviceObjectViewType::Invalid; // type of view object
         uint32_t offset = 0; // internal offset
         uint32_t size = 0;
-        const uint32_t* offsetPtr = nullptr;
+
+		union
+		{
+			const void* sourceDataPtr = nullptr;
+			const command::OpUploadConstants* uploadedDataPtr;
+		} inlinedConstants;
 
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
 		union
 		{
 			const IDeviceObjectView* viewPtr = nullptr; // not ref counted
-			class IDeviceObject* objectPtr;
+			const IDeviceObject* objectPtr;
 		};
 #endif
 
@@ -48,6 +60,18 @@ namespace rendering
             view(ptr);
             return *this;
         }
+
+		//--
+
+		// bind sampler
+		void sampler(const SamplerObject* ptr);
+
+		// bind an object view to this descriptor
+		INLINE DescriptorEntry& operator=(const SamplerObject* ptr)
+		{
+			sampler(ptr);
+			return *this;
+		}
 
         //--
 

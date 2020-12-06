@@ -71,7 +71,8 @@ namespace rendering
 				}
 				else if (const auto* obj = descMember->asDescriptorMemberSampledImage())
 				{
-					memberInfo.type = DeviceObjectViewType::Image;
+					memberInfo.type = DeviceObjectViewType::SampledImage;
+					memberInfo.viewType = obj->viewType;
 
 					if (obj->staticState)
 						memberInfo.number = 1 + obj->staticState->index;
@@ -80,7 +81,7 @@ namespace rendering
 					else
 						memberInfo.number = 0; // no sampler
 				}
-				else if (const auto* obj = descMember->asDescriptorMemberSampledImageTable())
+				/*else if (const auto* obj = descMember->asDescriptorMemberSampledImageTable())
 				{
 					memberInfo.type = DeviceObjectViewType::ImageTable;
 
@@ -90,10 +91,11 @@ namespace rendering
 						memberInfo.number = -(1 + obj->dynamicSamplerDescriptorEntry->index);
 					else
 						memberInfo.number = 0; // no sampler
-				}
+				}*/
 				else if (const auto* obj = descMember->asDescriptorMemberImage())
 				{
-					memberInfo.type = DeviceObjectViewType::ImageWritable;
+					memberInfo.type = obj->writable ? DeviceObjectViewType::ImageWritable : DeviceObjectViewType::Image;
+					memberInfo.viewType = obj->viewType;
 					memberInfo.format = obj->format;
 				}
 			}
@@ -125,93 +127,90 @@ namespace rendering
 			info.state = desc->state;
 		}
 
-		for (uint32_t i = 0; i < program->stages.size(); ++i)
+		for (auto* stage : program->stages)
 		{
-			if (auto* stage = program->stages[i])
+			auto shaderStage = stage->stage;
+			ret->stageMask |= shaderStage;
+
+			if (stage->entryFunction)
 			{
-				auto shaderStage = (ShaderStage)i;
-				ret->stageMask |= shaderStage;
-
-				if (stage->entryFunction)
+				if (shaderStage == ShaderStage::Pixel)
 				{
-					if (shaderStage == ShaderStage::Pixel)
-					{
-						if (HasAttribute(stage->entryFunction->attributes, "early_fragment_tests"_id))
-							ret->usesPixelShaderEarlyTest = true;
+					if (HasAttribute(stage->entryFunction->attributes, "early_fragment_tests"_id))
+						ret->featureMask |= ShaderFeatureBit::EarlyTestsPixelShader;
 
-						// TODO: usesPixelShaderDiscard 
-						// TODO: usesPixelShaderWritesDepth
-					}
-					else if (shaderStage == ShaderStage::Compute)
+					// TODO: usesPixelShaderDiscard 
+					// TODO: usesPixelShaderWritesDepth
+				}
+				else if (shaderStage == ShaderStage::Compute)
+				{
+					FindAttributeVal(stage->entryFunction->attributes, "local_size_x"_id, ret->computeGroupSizeX);
+					FindAttributeVal(stage->entryFunction->attributes, "local_size_y"_id, ret->computeGroupSizeY);
+					FindAttributeVal(stage->entryFunction->attributes, "local_size_z"_id, ret->computeGroupSizeZ);
+				}
+			}
+
+			// mark descriptors used in this stage
+			for (const auto* descMember : stage->descriptorMembers)
+			{
+				const auto* desc = descMember->descriptor;
+				ASSERT(desc);
+
+				for (auto& descInfo : ret->descriptors)
+				{
+					if (descInfo.name == desc->name)
 					{
-						FindAttributeVal(stage->entryFunction->attributes, "local_size_x"_id, ret->computeGroupSizeX);
-						FindAttributeVal(stage->entryFunction->attributes, "local_size_y"_id, ret->computeGroupSizeY);
-						FindAttributeVal(stage->entryFunction->attributes, "local_size_z"_id, ret->computeGroupSizeZ);
+						descInfo.stageMask |= shaderStage;
+
+						for (auto& descMemberInfo : descInfo.elements)
+							if (descMemberInfo.name == descMember->name)
+								descMemberInfo.stageMask |= shaderStage;
+
+						break;
 					}
 				}
 
-				// mark descriptors used in this stage
-				for (const auto* descMember : stage->descriptorMembers)
+				base::StringID samplerName, staticSamplerName;
+				if (auto* image = descMember->asDescriptorMemberSampledImage())
 				{
-					const auto* desc = descMember->descriptor;
-					ASSERT(desc);
+					if (image->dynamicSamplerDescriptorEntry)
+						samplerName = image->dynamicSamplerDescriptorEntry->name;
+					else if (image->staticState)
+						staticSamplerName = image->staticState->name;
+				}
+				else if (auto* imageTable = descMember->asDescriptorMemberSampledImageTable())
+				{
+					if (imageTable->dynamicSamplerDescriptorEntry)
+						samplerName = imageTable->dynamicSamplerDescriptorEntry->name;
+					else if (imageTable->staticState)
+						staticSamplerName = imageTable->staticState->name;
+				}
 
+				if (samplerName)
+				{
 					for (auto& descInfo : ret->descriptors)
 					{
-						if (descInfo.name == desc->name)
+						if (descInfo.name == samplerName)
 						{
 							descInfo.stageMask |= shaderStage;
-
-							for (auto& descMemberInfo : descInfo.elements)
-								if (descMemberInfo.name == descMember->name)
-									descMemberInfo.stageMask |= shaderStage;
-
 							break;
 						}
 					}
-
-					base::StringID samplerName, staticSamplerName;
-					if (auto* image = descMember->asDescriptorMemberSampledImage())
+				}
+				else if (staticSamplerName)
+				{
+					for (auto& descInfo : ret->staticSamplers)
 					{
-						if (image->dynamicSamplerDescriptorEntry)
-							samplerName = image->dynamicSamplerDescriptorEntry->name;
-						else if (image->staticState)
-							staticSamplerName = image->staticState->name;
-					}
-					else if (auto* imageTable = descMember->asDescriptorMemberSampledImageTable())
-					{
-						if (imageTable->dynamicSamplerDescriptorEntry)
-							samplerName = imageTable->dynamicSamplerDescriptorEntry->name;
-						else if (imageTable->staticState)
-							staticSamplerName = imageTable->staticState->name;
-					}
-
-					if (samplerName)
-					{
-						for (auto& descInfo : ret->descriptors)
+						if (descInfo.name == staticSamplerName)
 						{
-							if (descInfo.name == samplerName)
-							{
-								descInfo.stageMask |= shaderStage;
-								break;
-							}
+							descInfo.stageMask |= shaderStage;
+							break;
 						}
 					}
-					else if (staticSamplerName)
-					{
-						for (auto& descInfo : ret->staticSamplers)
-						{
-							if (descInfo.name == staticSamplerName)
-							{
-								descInfo.stageMask |= shaderStage;
-								break;
-							}
-						}
-					}
-				}				
-			}
+				}
+			}				
 		}
-		
+
 		ret->key = key;
 
 		if (program->renderStates)

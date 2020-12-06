@@ -138,9 +138,11 @@ namespace rendering
        
         base::UniquePtr<IFrameCapture> IFrameCapture::ConditionalStartCapture(command::CommandBuffer* masterCommandBuffer)
         {
+#ifndef BUILD_RELEASE
 #ifdef USE_RENDER_DOC
 			if (HasTriggeredCapture(masterCommandBuffer))
 				return base::CreateUniquePtr<RenderDocCapture>();
+#endif
 #endif
 
             return nullptr;

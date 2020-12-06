@@ -19,10 +19,11 @@ namespace rendering
     namespace compiler
     {
 
-        Program::Program(const CodeLibrary& library, base::StringID name, AttributeList&& attributes)
+        Program::Program(const CodeLibrary& library, base::StringID name, const base::parser::Location& loc, AttributeList&& attributes)
             : m_name(name)
             , m_library(&library)
             , m_attributes(attributes)
+			, m_loc(loc)
         {}
 
         Program::~Program()
@@ -136,12 +137,14 @@ namespace rendering
                     return param;
 
             DataType type;
+			bool assignable = false;
 			auto builtIn = shader::ShaderBuiltIn::Invalid;
             DataParameterScope scope = DataParameterScope::GlobalBuiltin;
 			if (name == "gl_Position"_id)
 			{
 				type = m_library->typeLibrary().floatType(4);
 				builtIn = shader::ShaderBuiltIn::Position;
+				assignable = true;
 			}
 			else if (name == "gl_PositionIn"_id)
 			{
@@ -152,6 +155,7 @@ namespace rendering
 			{
 				type = m_library->typeLibrary().floatType();
 				builtIn = shader::ShaderBuiltIn::PointSize;
+				assignable = true;
 			}
 			else if (name == "gl_PointSizeIn"_id)
 			{
@@ -162,6 +166,7 @@ namespace rendering
 			{
 				type = m_library->typeLibrary().floatType().applyArrayCounts(6);
 				builtIn = shader::ShaderBuiltIn::ClipDistance;
+				assignable = true;
 			}
 			else if (name == "gl_VertexID"_id)
 			{
@@ -197,6 +202,7 @@ namespace rendering
 			{
 				type = m_library->typeLibrary().integerType(1);
 				builtIn = shader::ShaderBuiltIn::PrimitiveID;
+				assignable = true;
 			}
 			else if (name == "gl_InvocationID"_id)
 			{
@@ -257,51 +263,61 @@ namespace rendering
 			{
 				builtIn = shader::ShaderBuiltIn::SampleMask;
 				type = m_library->typeLibrary().integerType();
+				assignable = true;
 			}
 			else if (name == "gl_Target0"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target0;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target1"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target1;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target2"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target2;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target3"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target3;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target4"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target4;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target5"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target5;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target6"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target6;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
 			else if (name == "gl_Target7"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Target7;
 				type = m_library->typeLibrary().floatType(4);
+				assignable = true;
 			}
-			else if (name == "gl_Depth"_id)
+			else if (name == "gl_FragDepth"_id)
 			{
 				builtIn = shader::ShaderBuiltIn::Depth;
 				type = m_library->typeLibrary().floatType();
+				assignable = true;
 			}
 			else if (name == "gl_NumWorkGroups"_id)
 			{
@@ -325,7 +341,7 @@ namespace rendering
 			}
 			else if (name == "gl_LocalInvocationIndex"_id)
 			{
-				builtIn = shader::ShaderBuiltIn::LocalInvocationID;
+				builtIn = shader::ShaderBuiltIn::LocalInvocationIndex;
 				type = m_library->typeLibrary().unsignedType(1);
 			}
             
@@ -338,6 +354,7 @@ namespace rendering
             param->scope = scope;
             param->dataType = type;
 			param->builtInVariable = builtIn;
+			param->assignable = assignable;
             param->attributes.add("builtin"_id);
             param->loc = m_loc;
 

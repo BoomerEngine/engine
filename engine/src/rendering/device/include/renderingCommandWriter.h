@@ -20,6 +20,7 @@ namespace rendering
         struct OpBase;
         struct OpAllocTransientBuffer;
         struct OpBeginPass;
+		struct OpUploadConstants;
 		struct OpUpdate;
 
         class CommandBuffer;
@@ -122,7 +123,7 @@ namespace rendering
 			void opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue = nullptr, uint32_t offset = 0, uint32_t size = INDEX_MAX);
 
 			/// clear regions in writable buffer
-			void opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
+			void opClearWritableBufferRects(const BufferWritableView* bufferView, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
 
 			//--
 
@@ -132,7 +133,7 @@ namespace rendering
 
 			/// clear parts in view of writable image with custom value of with zeros
 			/// NOTE: this requires writable view of the image (mostly to accommodate DX that requires UAV for clearing)
-			void opClearWritableImage(const ImageWritableView* view, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
+			void opClearWritableImageRects(const ImageWritableView* view, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
 
 			//--
 
@@ -200,8 +201,11 @@ namespace rendering
             /// draw indexed geometry
             void opDrawIndexedInstanced(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint16_t firstInstance, uint16_t numInstances);
 
-            /// dispatch compute shader
-            void opDispatch(const ComputePipelineObject* po, uint32_t countX = 1, uint32_t countY = 1, uint32_t countZ = 1);
+            /// dispatch compute shader GROUPS
+            void opDispatchGroups(const ComputePipelineObject* po, uint32_t countX = 1, uint32_t countY = 1, uint32_t countZ = 1);
+
+			/// dispatch compute shader, count is given in threads
+			void opDispatchThreads(const ComputePipelineObject* po, uint32_t threadCountX = 1, uint32_t threadCountY = 1, uint32_t threadCountZ = 1);
 
             //---
 			// inlined resource updates
@@ -268,6 +272,10 @@ namespace rendering
 
 			/// finish UAV writes to resource so new reads can see them
 			/// NOTE: no layout transition, expected resource layout is ResourceLayout::UAV
+			void opTransitionFlushUAV(const BufferWritableView* bufferView);
+
+			/// finish UAV writes to resource so new reads can see them
+			/// NOTE: no layout transition, expected resource layout is ResourceLayout::UAV
 			void opTransitionFlushUAV(const ImageWritableView* imageView);
 
             /// transition layout of whole resource (image or buffer)
@@ -298,7 +306,7 @@ namespace rendering
             //---
 
             /// download content of a resource (or part of it), downloaded data is forwarded to sink (usually 2 frames later)
-			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink);
+			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, const IDownloadAreaObject* area, IDownloadDataSink* sink);
 
             //---
 
@@ -380,8 +388,8 @@ namespace rendering
             bool validateDrawVertexLayout(const ShaderMetadata* meta, uint32_t requiredVertexCount, uint32_t requiredInstanceCount);
 			bool validateDrawIndexLayout(uint32_t requiredElementCount);
 
-			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorEntry* entries, uint32_t count);
-            void* allocConstants(uint32_t size, const uint32_t*& outOffsetPtr);
+			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorInfo* layout, const DescriptorEntry* entries, uint32_t count);
+            void* allocConstants(uint32_t size, const command::OpUploadConstants*& outCommand);
 
 			void linkUpdate(OpUpdate* op);
         };

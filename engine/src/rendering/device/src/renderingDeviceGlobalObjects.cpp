@@ -30,22 +30,25 @@ namespace rendering
 			memcpy(m_valueData, color, m_valueSize);
 		}
 
-		virtual base::StringView debugLabel() const
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			return "SourceProviderSingleColor";
+			f << "SourceProviderSingleColor";
 		}
 
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 		{
-			const auto numPixels = info.dataSize / m_valueSize;
-			DEBUG_CHECK(info.dataSize % m_valueSize == 0);
-
-			auto* ptr = (uint8_t*)destPointer;
-			auto* endPtr = ptr + (numPixels * m_valueSize);
-			while (ptr < endPtr)
+			for (const auto& atom : atoms)
 			{
-				memcpy(ptr, m_valueData, m_valueSize);
-				ptr += m_valueSize;
+				const auto numPixels = atom.targetDataSize / m_valueSize;
+				DEBUG_CHECK(atom.targetDataSize % m_valueSize == 0);
+
+				auto* ptr = (uint8_t*)atom.targetDataPtr;
+				auto* endPtr = ptr + (numPixels * m_valueSize);
+				while (ptr < endPtr)
+				{
+					memcpy(ptr, m_valueData, m_valueSize);
+					ptr += m_valueSize;
+				}
 			}
 		}
 
@@ -66,23 +69,26 @@ namespace rendering
 		{
 		}
 
-		virtual base::StringView debugLabel() const
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			return "SourceProviderCubemapDirectionColor";
+			f << "SourceProviderCubemapDirectionColor";
 		}
 
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 		{
-			const auto numPixels = info.dataSize / sizeof(base::Color);
-			DEBUG_CHECK(info.dataSize % sizeof(base::Color) == 0);
+			for (const auto& atom : atoms)
+			{
+				const auto numPixels = atom.targetDataSize / sizeof(base::Color);
+				DEBUG_CHECK(atom.targetDataSize % sizeof(base::Color) == 0);
 
-			const auto writeValue = COLORS[info.image.slice % 6];
+				const auto writeValue = COLORS[atom.slice % 6];
 
-			auto* ptr = (base::Color*)destPointer;
-			auto* endPtr = ptr + numPixels;
+				auto* ptr = (base::Color*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
 
-			while (ptr < endPtr)
-				*ptr++ = writeValue;
+				while (ptr < endPtr)
+					*ptr++ = writeValue;
+			}
 		}
 
 	private:
@@ -115,7 +121,7 @@ namespace rendering
 
     //--
 
-	ImageViewPtr DeviceGlobalObjects::createDefaultTexture(const char* tag, uint32_t width, uint32_t height, ImageFormat format, ISourceDataProvider* data)
+	ImageSampledViewPtr DeviceGlobalObjects::createDefaultTexture(const char* tag, uint32_t width, uint32_t height, ImageFormat format, ISourceDataProvider* data)
 	{
 		ImageCreationInfo info;
 		info.view = ImageViewType::View2D;
@@ -132,10 +138,10 @@ namespace rendering
 		auto image = m_device->createImage(info, data);
 		DEBUG_CHECK_RETURN_V(image, nullptr);
 
-		return image->createView(SamplerClampPoint);
+		return image->createSampledView();
 	}
 
-	ImageViewPtr DeviceGlobalObjects::createDefaultTextureArray(const char* tag, uint32_t width, uint32_t height, uint32_t slices, ImageFormat format, ISourceDataProvider* data)
+	ImageSampledViewPtr DeviceGlobalObjects::createDefaultTextureArray(const char* tag, uint32_t width, uint32_t height, uint32_t slices, ImageFormat format, ISourceDataProvider* data)
 	{
 		ImageCreationInfo info;
 		info.view = ImageViewType::View2DArray;
@@ -153,10 +159,10 @@ namespace rendering
 		auto image = m_device->createImage(info, data);
 		DEBUG_CHECK_RETURN_V(image, nullptr);
 
-		return image->createView(SamplerClampPoint);
+		return image->createSampledView();
 	}
 
-	ImageViewPtr DeviceGlobalObjects::createDefaultTextureCube(const char* tag, uint32_t size, ImageFormat format, ISourceDataProvider* data)
+	ImageSampledViewPtr DeviceGlobalObjects::createDefaultTextureCube(const char* tag, uint32_t size, ImageFormat format, ISourceDataProvider* data)
 	{
 		ImageCreationInfo info;
 		info.view = ImageViewType::ViewCube;
@@ -174,10 +180,10 @@ namespace rendering
 		auto image = m_device->createImage(info, data);
 		DEBUG_CHECK_RETURN_V(image, nullptr);
 
-		return image->createView(SamplerClampPoint);
+		return image->createSampledView();
 	}
 
-	ImageViewPtr DeviceGlobalObjects::createDefaultTextureCubeArray(const char* tag, uint32_t size, uint32_t slices, ImageFormat format, ISourceDataProvider* data)
+	ImageSampledViewPtr DeviceGlobalObjects::createDefaultTextureCubeArray(const char* tag, uint32_t size, uint32_t slices, ImageFormat format, ISourceDataProvider* data)
 	{
 		ImageCreationInfo info;
 		info.view = ImageViewType::ViewCubeArray;
@@ -195,10 +201,10 @@ namespace rendering
 		auto image = m_device->createImage(info, data);
 		DEBUG_CHECK_RETURN_V(image, nullptr);
 
-		return image->createView(SamplerClampPoint);
+		return image->createSampledView();
 	}
 
-	ImageViewPtr DeviceGlobalObjects::createDefaultTexture3D(const char* tag, uint32_t width, uint32_t height, uint32_t depth, ImageFormat format, ISourceDataProvider* data)
+	ImageSampledViewPtr DeviceGlobalObjects::createDefaultTexture3D(const char* tag, uint32_t width, uint32_t height, uint32_t depth, ImageFormat format, ISourceDataProvider* data)
 	{
 		ImageCreationInfo info;
 		info.view = ImageViewType::View3D;
@@ -216,7 +222,7 @@ namespace rendering
 		auto image = m_device->createImage(info, data);
 		DEBUG_CHECK_RETURN_V(image, nullptr);
 
-		return image->createView(SamplerClampPoint);
+		return image->createSampledView();
 	}
 
 	//--
@@ -271,28 +277,28 @@ namespace rendering
 		{
 		}
 
-		virtual base::StringView debugLabel() const
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			return "SourceProviderFloatNoise";
+			f << "SourceProviderFloatNoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 		{
-			const auto numPixels = info.dataSize / sizeof(float);
-			DEBUG_CHECK(info.dataSize % sizeof(float) == 0);
+			base::FastRandState rnd;
 
-			auto* ptr = (float*)destPointer;
-			auto* endPtr = ptr + numPixels;
+			for (const auto& atom : atoms)
+			{
+				const auto numPixels = atom.targetDataSize / sizeof(float);
+				DEBUG_CHECK(atom.targetDataSize % sizeof(float) == 0);
 
-			base::MTRandState rnd;
+				auto* ptr = (float*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
 
-			/*if (m_gaussian)
-			{ }*/
+				// TODO: gaussian
 
-			// TODO:
-
-			while (ptr < endPtr)
-				*ptr++ = rnd.range(m_min, m_max);
+				while (ptr < endPtr)
+					*ptr++ = rnd.range(m_min, m_max);
+			}
 		}
 
 	private:
@@ -307,23 +313,26 @@ namespace rendering
 	class SourceProviderRGBANoise : public ISourceDataProvider
 	{
 	public:
-		virtual base::StringView debugLabel() const
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			return "SourceProviderRGBANoise";
+			f << "SourceProviderRGBANoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 		{
-			const auto numPixels = info.dataSize / sizeof(uint32_t);
-			DEBUG_CHECK(info.dataSize % sizeof(uint32_t) == 0);
+			base::FastRandState rnd;
 
-			auto* ptr = (uint32_t*)destPointer;
-			auto* endPtr = ptr + numPixels;
+			for (const auto& atom : atoms)
+			{
+				const auto numPixels = atom.targetDataSize / sizeof(uint32_t);
+				DEBUG_CHECK(atom.targetDataSize % sizeof(uint32_t) == 0);
 
-			base::MTRandState rnd;
+				auto* ptr = (uint32_t*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
 
-			while (ptr < endPtr)
-				*ptr++ = rnd.next();
+				while (ptr < endPtr)
+					*ptr++ = rnd.next();
+			}
 		}
 	};
 
@@ -333,26 +342,29 @@ namespace rendering
 	class SourceProviderRotationNoise : public ISourceDataProvider
 	{
 	public:
-		virtual base::StringView debugLabel() const
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			return "SourceProviderRotationNoise";
+			f << "SourceProviderRotationNoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 		{
-			const auto numPixels = info.dataSize / 4;
-			DEBUG_CHECK(info.dataSize % 4 == 0);
+			base::FastRandState rnd;
 
-			auto* ptr = (uint16_t*)destPointer;
-			auto* endPtr = ptr + numPixels;
-
-			base::MTRandState rnd;
-
-			while (ptr < endPtr)
+			for (const auto& atom : atoms)
 			{
-				auto angle = rnd.unit() * TWOPI;
-				*ptr++ = base::Float16Helper::Compress(cos(angle));
-				*ptr++ = base::Float16Helper::Compress(sin(angle));
+				const auto numPixels = atom.targetDataSize / 4;
+				DEBUG_CHECK(atom.targetDataSize % 4 == 0);
+
+				auto* ptr = (uint16_t*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
+
+				while (ptr < endPtr)
+				{
+					auto angle = rnd.unit() * TWOPI;
+					*ptr++ = base::Float16Helper::Compress(cos(angle));
+					*ptr++ = base::Float16Helper::Compress(sin(angle));
+				}
 			}
 		}
 	};
@@ -363,23 +375,31 @@ namespace rendering
 	class SourceProviderHemiSpherePoints : public ISourceDataProvider
 	{
 	public:
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			const auto numPixels = info.dataSize / 8;
-			DEBUG_CHECK(info.dataSize % 8 == 0);
+			f << "SourceProviderHemiSpherePoints";
+		}
 
-			auto* ptr = (uint16_t*)destPointer;
-			auto* endPtr = ptr + numPixels;
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		{
+			base::FastRandState rnd;
 
-			base::MTRandState rnd;
-
-			while (ptr < endPtr)
+			for (const auto& atom : atoms)
 			{
-				auto point = base::RandHemiSphereSurfacePoint(rnd.unit2());
-				*ptr++ = base::Float16Helper::Compress(point.x);
-				*ptr++ = base::Float16Helper::Compress(point.y);
-				*ptr++ = base::Float16Helper::Compress(point.z);
-				*ptr++ = rnd.unit();				
+				const auto numPixels = atom.targetDataSize / 8;
+				DEBUG_CHECK(atom.targetDataSize % 8 == 0);
+
+				auto* ptr = (uint16_t*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
+
+				while (ptr < endPtr)
+				{
+					auto point = base::RandHemiSphereSurfacePoint(rnd.unit2());
+					*ptr++ = base::Float16Helper::Compress(point.x);
+					*ptr++ = base::Float16Helper::Compress(point.y);
+					*ptr++ = base::Float16Helper::Compress(point.z);
+					*ptr++ = rnd.unit();
+				}
 			}
 		}
 	};
@@ -390,27 +410,34 @@ namespace rendering
 	class SourceProviderSpherePoints : public ISourceDataProvider
 	{
 	public:
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& info) const override final
+		virtual void print(base::IFormatStream& f) const override final
 		{
-			const auto numPixels = info.dataSize / 8;
-			DEBUG_CHECK(info.dataSize % 8 == 0);
+			f << "SourceProviderSpherePoints";
+		}
 
-			auto* ptr = (uint16_t*)destPointer;
-			auto* endPtr = ptr + numPixels;
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		{
+			base::FastRandState rnd;
 
-			base::MTRandState rnd;
-
-			while (ptr < endPtr)
+			for (const auto& atom : atoms)
 			{
-				auto point = base::RandSphereSurfacePoint(rnd.unit2(), base::Vector3::ZERO(), 1.0f);
-				*ptr++ = base::Float16Helper::Compress(point.x);
-				*ptr++ = base::Float16Helper::Compress(point.y);
-				*ptr++ = base::Float16Helper::Compress(point.z);
-				*ptr++ = rnd.unit();
+				const auto numPixels = atom.targetDataSize / 8;
+				DEBUG_CHECK(atom.targetDataSize % 8 == 0);
+
+				auto* ptr = (uint16_t*)atom.targetDataPtr;
+				auto* endPtr = ptr + numPixels;
+
+				while (ptr < endPtr)
+				{
+					auto point = base::RandSphereSurfacePoint(rnd.unit2(), base::Vector3::ZERO(), 1.0f);
+					*ptr++ = base::Float16Helper::Compress(point.x);
+					*ptr++ = base::Float16Helper::Compress(point.y);
+					*ptr++ = base::Float16Helper::Compress(point.z);
+					*ptr++ = rnd.unit();
+				}
 			}
 		}
 	};
-
 	
 	void DeviceGlobalObjects::createNoiseTextures()
 	{

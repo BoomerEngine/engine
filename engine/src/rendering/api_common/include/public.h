@@ -22,12 +22,9 @@ namespace rendering
 		class IBaseCopiableObject;
 		class IBaseFrameExecutor;
 		class IBaseObjectCache;
-		class IBaseStagingPool;
 		class IBaseCopyQueue;
-		class IBaseTransientBuffer;
-		class IBaseTransientBufferPool;
+		class IBaseCopyQueueStagingArea;
 		class IBaseSwapchain;
-		class IBaseFrameFence;
 		class IBaseBuffer;
 		class IBaseBufferView;
 		class IBaseImage;
@@ -41,17 +38,20 @@ namespace rendering
 		class IBaseGraphicsPipeline;
 		class IBaseComputePipeline;		
 		class IBaseRaytracePipeline;
+		class IBaseBackgroundJob;
+		class IBaseBackgroundQueue;
+		class IBaseDownloadArea;
 
 		class ObjectRegistry;
 		class ObjectRegistryProxy;
 
 		class WindowManager;
-		class Frame;
-		class RuntimeDataAllocations;
-
-		struct StagingArea;
+		class FrameCompleteionQueue;
+		class FrameExecutionData;
 
 		class Output;
+
+		typedef base::RefPtr<IBaseBackgroundJob> BackgroundJobPtr;
 
 		//--
 
@@ -66,20 +66,24 @@ namespace rendering
 			Shaders,
 			Output,
 
-			ImageView,
+			ImageReadOnlyView,
 			ImageWritableView,
+			SampledImageView,
+
+			RenderTargetView,
+			OutputRenderTargetView,
+
 			BufferTypedView,
 			BufferUntypedView,
 			StructuredBufferView,
 			StructuredBufferWritableView,
-			RenderTargetView,
-
-			OutputRenderTargetView,
 
 			GraphicsPassLayout,
 			GraphicsRenderStates,
 			GraphicsPipelineObject,
 			ComputePipelineObject,
+
+			DownloadArea,
 		};
 
 		//--
@@ -99,23 +103,13 @@ namespace rendering
 
 		//--
 
-		union PlatformPtr
+		struct StagingAtom
 		{
-			void* dx = nullptr;
-			uint64_t vk;
-			uint32_t gl;
+			uint8_t mip = 0;
+			uint16_t slice = 0;
 
-			ALWAYS_INLINE operator bool() const { return dx != nullptr; }
-			ALWAYS_INLINE bool operator==(PlatformPtr other) const { return dx == other.dx; }
-			ALWAYS_INLINE bool operator!=(PlatformPtr other) const { return dx != other.dx; }
-		};
-
-		//--
-
-		struct ResourceCopyAtom
-		{
-			uint32_t stagingAreaOffset = 0; // where to place the copy data
-			ResourceCopyElement copyElement; // what is exactly being copied
+			uint16_t alignment = 0;
+			uint32_t size = 0;
 		};
 
 		//--

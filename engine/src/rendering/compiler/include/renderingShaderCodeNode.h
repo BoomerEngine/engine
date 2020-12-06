@@ -29,42 +29,42 @@ namespace rendering
 
         //----
 
-        enum class OpCode : uint16_t
-        {
-            Nop, // do-nothing plug
+		enum class OpCode : uint16_t
+		{
+			Nop, // do-nothing plug
 
-            Scope, // list of statements
-            Store, // store value at given reference
-            Load, // loads value from dereferenced reference, requires a reference
-            Call, // call to a shader defined function
-            NativeCall, // call to a native function
-            Const, // literal value, stored as float/int union
-            FuncRef, // reference to a function
-            ParamRef, // reference to a data parameter
-            AccessArray, // access sub-element of an array
-            AccessMember, // access member of a structure
-            ReadSwizzle, // read swizzle (extracted from member access for simplicity)
-            Cast, // explicit cast
-			ImplicitCast, // automatic cast
-            This, // current program instance
-            ProgramInstance, // program instance constructor
-            ProgramInstanceParam, // program instance initialization variable constructor
-            ResourceTable, // a resource table type
-            CreateVector, // vector constructor
+			Scope, // list of statements
+			Store, // store value at given reference
+			VariableDecl, // variable declaration
+			Load, // loads value from dereferenced reference, requires a reference
+			Call, // call to a shader defined function
+			NativeCall, // call to a native function
+			Const, // literal value, stored as float/int union
+			FuncRef, // reference to a function
+			ParamRef, // reference to a data parameter
+			AccessArray, // access sub-element of an array
+			AccessMember, // access member of a structure
+			ReadSwizzle, // read swizzle (extracted from member access for simplicity)
+			Cast, // explicit cast
+			This, // current program instance
+			ProgramInstance, // program instance constructor
+			ProgramInstanceParam, // program instance initialization variable constructor
+			ResourceTable, // a resource table type
+			CreateVector, // vector constructor
 			CreateMatrix, // matrix constructor
 			CreateArray, // array constructor
 
-            Ident, // unresolved identifier, muted to FuncRef or ParamRef
-            VariableDecl, // variable declaration
-            
-            First, // evaluates all nodes but returns the first value
-            Loop, // repeats code while condition occurs
-            Break, // breaks the innermost while loop
-            Continue, // continues the innermost while loop
-            Exit, // "exit" the shader without writing anything (discard)
-            Return, // return from function
-            IfElse, // if-else condition 
-        };
+			Ident, // unresolved identifier, muted to FuncRef or ParamRef
+
+			Loop, // repeats code while condition occurs
+			Break, // breaks the innermost while loop
+			Continue, // continues the innermost while loop
+			Exit, // "exit" the shader without writing anything (discard)
+			Return, // return from function
+			IfElse, // if-else condition 
+
+			ListElement, // element of linked list, used only during initial parsing
+		};
 
         //---
 
@@ -194,29 +194,36 @@ namespace rendering
             CodeNode(const base::parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d);
             CodeNode(const base::parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d, const CodeNode* e);
             CodeNode(const base::parser::Location& loc, OpCode op, const DataType& dataType);
-            CodeNode(const base::parser::Location& loc, const DataType& dataType, const DataValue& dataValue); // cosnt node
+            CodeNode(const base::parser::Location& loc, const DataType& dataType, const DataValue& dataValue); // constant node
             ~CodeNode(); // never directly deleted
 
             //--
 
+			// The Mr. Creosote structure a.k.a. "The Bucket"
             struct ExtraData
             {
-                const DataParameter* m_paramRef = nullptr;; // variable access
+				base::StringID m_name; // member/function access
+				base::StringBuf m_path; // member/function access
+
+				const DataParameter* m_paramRef = nullptr;; // variable access
                 const INativeFunction* m_nativeFunctionRef = nullptr;; // reference to a native function (implemented in the c++)
-                base::StringID m_name; // member/function access
-                base::StringBuf m_path; // member/function access
-                CodeNode* m_nodeRef = nullptr;;  // break/continue
-                CodeNode* m_parentScopeRef = nullptr;; // paren OpScope we are under
+				const Function* m_finalFunctionRef = nullptr;
+				CodeNode* m_nodeRef = nullptr;;  // break/continue
+				CodeNode* m_parentScopeRef = nullptr;; // paren OpScope we are under
+				CodeNode* m_nextStatement = nullptr;
+
                 const ResourceTable* m_resourceTable = nullptr; // descriptor reference
                 const ResourceTableEntry* m_resourceTableMember = nullptr;
+
                 const CompositeType* m_compositeTable = nullptr; // constant buffer reference
                 ComponentMask m_mask; // member mask for AccessMember and Store operations
+
                 DataType m_castType; // type for casting
-                uint32_t m_attributes = 0; // extra attributes
 				TypeMatchTypeConv m_castMode = TypeMatchTypeConv::NotMatches; // how to cast data
-                const Function* m_finalFunctionRef = nullptr;
-                
-            };
+				uint8_t m_rawAttribute = 0;
+
+				base::Array<ExtraAttribute> m_attributesMap;
+			};
 
             //--
 
@@ -253,7 +260,7 @@ namespace rendering
             void addChild(const CodeNode* child);
 
             // transfer children from another node
-            void moveChildren(CodeNode* otherNode);
+            void moveChildren(base::Array<const CodeNode*>&& children);
 
             //--
 
@@ -274,9 +281,6 @@ namespace rendering
             // resolve type at node
             static bool ResolveTypes(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, base::parser::IErrorReporter& err);
 
-            /*// calculate CRC of the code
-            static bool CalcCRC(base::CRC64& crc, const CodeNode* node);*/
-
         private:
             OpCode m_op; // operation
 
@@ -294,6 +298,7 @@ namespace rendering
 			static bool ResolveTypes_This(SHADER_RESOLVE_FUNC);
 			static bool ResolveTypes_Load(SHADER_RESOLVE_FUNC);
 			static bool ResolveTypes_Store(SHADER_RESOLVE_FUNC);
+			static bool ResolveTypes_VariableDecalration(SHADER_RESOLVE_FUNC);
 			static bool ResolveTypes_Ident(SHADER_RESOLVE_FUNC);
 			static bool ResolveTypes_AccessArray(SHADER_RESOLVE_FUNC);
 			static bool ResolveTypes_AccessMember(SHADER_RESOLVE_FUNC);

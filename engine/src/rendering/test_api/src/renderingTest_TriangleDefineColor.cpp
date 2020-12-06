@@ -29,9 +29,9 @@ namespace rendering
 
         private:
             BufferObjectPtr m_vertexBuffer;
-            ShaderLibraryPtr m_shaderRed;
-            ShaderLibraryPtr m_shaderGreen;
-            ShaderLibraryPtr m_shaderBlue;
+            GraphicsPipelineObjectPtr m_shaderRed;
+			GraphicsPipelineObjectPtr m_shaderGreen;
+			GraphicsPipelineObjectPtr m_shaderBlue;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleDefineColor);
@@ -62,9 +62,9 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shaderRed = loadShader("TriangleDefineColorRed.csl");
-            m_shaderGreen = loadShader("TriangleDefineColorGreen.csl");
-            m_shaderBlue = loadShader("TriangleDefineColorBlue.csl");
+            m_shaderRed = loadGraphicsShader("TriangleDefineColorRed.csl", outputLayoutNoDepth());
+            m_shaderGreen = loadGraphicsShader("TriangleDefineColorGreen.csl", outputLayoutNoDepth());
+            m_shaderBlue = loadGraphicsShader("TriangleDefineColorBlue.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_TriangleDefineColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -72,8 +72,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opBindVertexBuffer("Vertex2D"_id, m_vertexBuffer);
             cmd.opDraw(m_shaderRed, 0, 3);
             cmd.opDraw(m_shaderGreen, 3, 3);

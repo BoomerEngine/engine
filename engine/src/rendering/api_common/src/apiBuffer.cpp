@@ -21,6 +21,7 @@ namespace rendering
 		IBaseBufferView::IBaseBufferView(IBaseThread* owner, IBaseBuffer* buffer, ObjectType viewType, const Setup& setup)
 			: IBaseObject(owner, viewType)
 			, m_setup(setup)
+			, m_buffer(buffer)
 		{}
 
 		IBaseBufferView::~IBaseBufferView()
@@ -54,20 +55,11 @@ namespace rendering
 			base::mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_setup.size);
 		}
 
-		bool IBaseBuffer::generateCopyAtoms(const ResourceCopyRange& range, base::Array<ResourceCopyAtom>& outAtoms, uint32_t& outStagingAreaSize, uint32_t& outStagingAreaAlignment) const
+		void IBaseBuffer::computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const
 		{
-			DEBUG_CHECK_RETURN_V(range.buffer.offset <= m_setup.size, false);
-			DEBUG_CHECK_RETURN_V(range.buffer.offset + range.buffer.size <= m_setup.size, false);
-
-			outStagingAreaAlignment = 256;
-			outStagingAreaSize = range.buffer.size;
-
 			auto& atom = outAtoms.emplaceBack();
-			atom.copyElement.buffer.offset = range.buffer.offset;
-			atom.copyElement.buffer.size = range.buffer.size;
-			atom.stagingAreaOffset = 0;
-
-			return true;
+			atom.alignment = 256;
+			atom.size = m_setup.size;
 		}
 
 		//--

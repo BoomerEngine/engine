@@ -94,7 +94,8 @@ namespace rendering
                     base::Vector2 UVScale;
                     base::Vector4 DiffuseColor;
                     base::Vector4 SpecularColor;
-					ImageViewPtr Texture;
+					ImageSampledViewPtr Texture;
+					SamplerObjectPtr Sampler;
 
                     INLINE Params()
                     {
@@ -103,6 +104,7 @@ namespace rendering
                         DiffuseColor = base::Vector4(0.5f, 0.5f, 0.5f, 1.0f);
                         SpecularColor = base::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 						Texture = rendering::Globals().TextureWhite;
+						Sampler = rendering::Globals().SamplerWrapTriLinear;
                     }
                 };
 
@@ -119,7 +121,7 @@ namespace rendering
 
             SimpleScene();
 
-            void draw(command::CommandWriter& cmd, const ShaderLibrary* func, const SceneCamera& camera);
+            void draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, const SceneCamera& camera);
         };
 
         typedef base::RefPtr<SimpleScene> SimpleScenePtr;

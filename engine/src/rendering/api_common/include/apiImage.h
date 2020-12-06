@@ -28,28 +28,24 @@ namespace rendering
 				ImageViewType viewType = ImageViewType::View2D;
 				ImageFormat format = ImageFormat::UNKNOWN;
 
-				bool writable = false;
-
 				uint8_t firstMip = 0;
 				uint8_t numMips = 0;
 				uint16_t firstSlice = 0;
 				uint16_t numSlices = 0;				
 			};
 
-			IBaseImageView(IBaseThread* owner, ObjectType viewType, IBaseImage* img, IBaseSampler* sampler, const Setup& setup);
+			IBaseImageView(IBaseThread* owner, ObjectType viewType, IBaseImage* img, const Setup& setup);
 			virtual ~IBaseImageView();
 
 			//--
 
 			INLINE IBaseImage* image() const { return m_image; }
-			INLINE IBaseSampler* sampler() const { return m_sampler; }
 			INLINE const Setup& setup() const { return m_setup; }
 
 			//--
 
 		private:
 			IBaseImage* m_image = nullptr;
-			IBaseSampler* m_sampler = nullptr;
 
 			Setup m_setup;
 		};
@@ -72,7 +68,8 @@ namespace rendering
 
 			//---
 
-			virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler) = 0;
+			virtual IBaseImageView* createSampledView_ClientApi(const IBaseImageView::Setup& setup) = 0;
+			virtual IBaseImageView* createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup) = 0;
 			virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) = 0;
 			virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) = 0;
 
@@ -80,7 +77,7 @@ namespace rendering
 
 			// generate default atoms for image (each mip and slice is copied separately)
 			// NOTE: default copying sucks for the lowest mips very badly :(
-			virtual bool generateCopyAtoms(const ResourceCopyRange& range, base::Array<ResourceCopyAtom>& outAtoms, uint32_t& outStagingAreaSize, uint32_t& outStagingAreaAlignment) const override;
+			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const override;
 
 			//---
 
@@ -99,10 +96,11 @@ namespace rendering
 		public:
 			ImageObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const Setup& setup);
 
-			virtual ImageViewPtr createView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips) override;
-			virtual ImageViewPtr createArrayView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices) override;
-			virtual ImageWritableViewPtr createWritableView(uint8_t mip, uint32_t slice) override;
-			virtual RenderTargetViewPtr createRenderTargetView(uint8_t mip, uint32_t firstSlice, uint32_t numSlices) override;
+			virtual ImageSampledViewPtr createSampledView(uint32_t firstMip, uint32_t firstSlice) override;
+			virtual ImageSampledViewPtr createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices) override;
+			virtual ImageReadOnlyViewPtr createReadOnlyView(uint32_t mip = 0, uint32_t slice = 0) override;
+			virtual ImageWritableViewPtr createWritableView(uint32_t mip, uint32_t slice) override;
+			virtual RenderTargetViewPtr createRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices) override;
 		};
 
 		//--

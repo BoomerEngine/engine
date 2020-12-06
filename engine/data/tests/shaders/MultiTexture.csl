@@ -7,10 +7,10 @@
 
 descriptor TestParams
 {
-    Texture2D TextureA;
-    Texture2D TextureB;
-    Texture2D TextureC;
-    Texture2D TextureD;
+    attribute(sampler=SamplerClampPoint) Texture2D TextureA;
+    attribute(sampler=SamplerClampPoint) Texture2D TextureB;
+    attribute(sampler=SamplerClampPoint) Texture2D TextureC;
+    attribute(sampler=SamplerClampPoint) Texture2D TextureD;
 }
 
 export shader SimpleTrianglePS
@@ -19,13 +19,21 @@ export shader SimpleTrianglePS
 
 	void main()
 	{
-	    float factorB = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.2));
-        float factorC = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.5));
-	    float factorD = saturate(5*(dot(UV, normalize(vec2(1,1))) - 0.8));
+		vec4 factors;
+		factors.x = 1.0f - length(UV - vec2(0,0));
+		factors.y = 1.0f - length(UV - vec2(0,1));
+		factors.z = 1.0f - length(UV - vec2(1,0));
+		factors.w = 1.0f - length(UV - vec2(1,1));
 
-		vec4 a = lerp(texture(TextureA, UV), texture(TextureD, UV), factorB);
-		vec4 b = lerp(texture(TextureC, UV), texture(TextureB, UV), factorD);
-		gl_Target0 = lerp(a, b, factorC);
+		factors = pow(max(factors,0), 8);
+		factors /= length(factors);
+
+		vec4 ret = texture(TextureA, UV) * factors.x;
+		ret += texture(TextureB, UV) * factors.y;
+		ret += texture(TextureC, UV) * factors.z;
+		ret += texture(TextureD, UV) * factors.w;
+
+		gl_Target0 = ret;
 	}
 }
 

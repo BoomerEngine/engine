@@ -51,6 +51,8 @@ static int cslf_error(rendering::compiler::parser::ParsingFileContext& ctx, rend
 %token TOKEN_STRUCT
 %token TOKEN_THIS
 %token TOKEN_VERTEX
+%token TOKEN_ATTR_START
+%token TOKEN_ATTR_END
 
 %token TOKEN_SHARED
 %token TOKEN_IN

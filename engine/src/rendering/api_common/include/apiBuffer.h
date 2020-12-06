@@ -77,7 +77,7 @@ namespace rendering
 			//--
 
 			// generate default atoms for buffer
-			virtual bool generateCopyAtoms(const ResourceCopyRange& range, base::Array<ResourceCopyAtom>& outAtoms, uint32_t& outStagingAreaSize, uint32_t& outStagingAreaAlignment) const override;
+			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const override;
 
 			//--
 

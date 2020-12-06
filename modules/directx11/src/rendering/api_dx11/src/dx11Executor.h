@@ -34,7 +34,8 @@ namespace rendering
 				virtual void runClearPassDepthStencil(const command::OpClearPassDepthStencil &) override final;
 				virtual void runClearRenderTarget(const command::OpClearRenderTarget &) override final;
 				virtual void runClearDepthStencil(const command::OpClearDepthStencil &) override final;
-				virtual void runClear(const command::OpClear &) override final;
+				virtual void runClearImage(const command::OpClearImage&) override final;
+				virtual void runClearBuffer(const command::OpClearBuffer&) override final;
 				virtual void runDownload(const command::OpDownload &) override final;
 				virtual void runUpdate(const command::OpUpdate &) override final;
 				virtual void runCopy(const command::OpCopy &) override final;
@@ -44,7 +45,50 @@ namespace rendering
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier &) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier &) override final;
 
-				virtual void applyDynamicStates(const DynamicRenderStates& states, DynamicRenderStatesDirtyFlags mask) override final;
+				virtual void runSetViewportRect(const command::OpSetViewportRect& op) override final;
+				virtual void runSetScissorRect(const command::OpSetScissorRect& op) override final;
+				virtual void runSetBlendColor(const command::OpSetBlendColor& op) override final;
+				virtual void runSetLineWidth(const command::OpSetLineWidth& op) override final;
+				virtual void runSetDepthClip(const command::OpSetDepthClip& op) override final;
+				virtual void runSetStencilReference(const command::OpSetStencilReference& op) override final;
+
+				//--
+
+				ID3D11Device* m_dxDevice = nullptr;
+				ID3D11DeviceContext* m_dxDeviceContext = nullptr;
+
+				struct FrameBufferState
+				{
+					ID3D11DepthStencilView* dxDepthRTV = nullptr;
+					ID3D11RenderTargetView* dxColorRTV[8];
+
+					D3D11_VIEWPORT viewports[16];
+					D3D11_RECT scissor[16];
+
+					uint8_t numColorTargets = 0;
+					uint8_t numEnabledViewports = 0;
+
+					INLINE FrameBufferState()
+					{
+						memzero(dxColorRTV, sizeof(dxColorRTV));
+					}
+				};
+
+				struct ActiveRenderStates
+				{
+					ID3D11BlendState* dxBlendState = nullptr;
+					ID3D11DepthStencilState* dxDepthStencilState = nullptr;
+
+					FLOAT blendColor[4];
+					UINT sampleMask = 0xFFFFFFFF;
+					UINT stencilRef = 0;
+				};
+
+				FrameBufferState m_frameBufferState;
+				ActiveRenderStates m_renderStates;
+
+				//--
+				
             };
 
 			//---

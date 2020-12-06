@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\objects #]
+* [# filter: interface\object #]
 ***/
 
 #include "build.h"
@@ -47,26 +47,32 @@ namespace rendering
 
 		DEBUG_CHECK_RETURN_V(m_stride == 0, nullptr);
 
-		DEBUG_CHECK_RETURN_V((offset & 15) == 0, nullptr);
+		DEBUG_CHECK_RETURN_V((offset & 255) == 0, nullptr);
 		DEBUG_CHECK_RETURN_V(offset < m_size, nullptr);
 
 		if (size == INDEX_MAX)
 			size = m_size - offset;
 
 		DEBUG_CHECK_RETURN_V(size > 0, false);
-		DEBUG_CHECK_RETURN_V((size & 15) == 0, nullptr);
+		//DEBUG_CHECK_RETURN_V((size & 255) == 0, nullptr);
 		DEBUG_CHECK_RETURN_V(size <= m_size, nullptr);
 
 		DEBUG_CHECK_RETURN_V(offset + size <= m_size, nullptr);
 
-		return false;
+		return true;
 	}
 
     bool BufferObject::validateTypedView(ImageFormat format, uint32_t offset, uint32_t &size, bool writable) const
     {
-		DEBUG_CHECK_RETURN_V(shadeReadable(), false);
-		DEBUG_CHECK_RETURN_V(!writable || uavCapable(), false);
-
+		if (writable)
+		{
+			DEBUG_CHECK_RETURN_V(uavCapable(), false);
+		}
+		else
+		{
+			DEBUG_CHECK_RETURN_V(shadeReadable(), false);
+		}
+		
 		DEBUG_CHECK_RETURN_V(m_stride == 0, false);// "Offset must be multiple of structure stride");
 		DEBUG_CHECK_RETURN_V(offset < m_size, false);// "Trying to create a view past the buffer size");
 		
@@ -87,11 +93,17 @@ namespace rendering
 
 	bool BufferObject::validateStructureView(uint32_t stride, uint32_t offset, uint32_t& size, bool writable) const
 	{
-		DEBUG_CHECK_RETURN_V(shadeReadable(), false);
-		DEBUG_CHECK_RETURN_V(!writable || uavCapable(), false);
+		if (writable)
+		{
+			DEBUG_CHECK_RETURN_V(uavCapable(), false);
+		}
+		else
+		{
+			DEBUG_CHECK_RETURN_V(shadeReadable(), false);
+		}
 
 		DEBUG_CHECK_RETURN_V(m_stride != 0, false);
-		DEBUG_CHECK_RETURN_V(m_stride != stride, false);
+		DEBUG_CHECK_RETURN_V(m_stride == stride, false);
 		DEBUG_CHECK_RETURN_V(offset < m_size, false);// "Trying to create a view past the buffer size");
 
 		// TODO: check format compatibility

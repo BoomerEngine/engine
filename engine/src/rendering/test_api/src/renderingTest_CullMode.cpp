@@ -26,8 +26,24 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
+			static const auto NUM_FACE_MODES = 2;
+			static const auto NUM_CULL_MODES = 4;
+
+			static inline const rendering::FrontFace FACE_MODES[NUM_FACE_MODES] = {
+				rendering::FrontFace::CW, 
+				rendering::FrontFace::CCW
+			};
+
+			static inline const rendering::CullMode CULL_MODES[NUM_CULL_MODES] = {
+				rendering::CullMode::Front, 
+				rendering::CullMode::Front, 
+				rendering::CullMode::Back, 
+				rendering::CullMode::Both
+			};
+
             BufferObjectPtr m_vertexBuffer;
-            ShaderLibraryPtr m_shader;
+
+            GraphicsPipelineObjectPtr m_testShader[NUM_FACE_MODES][NUM_CULL_MODES];
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_CullMode);
@@ -92,7 +108,18 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shader = loadShader("SimpleVertexColor.csl");
+			for (uint32_t i = 0; i < NUM_FACE_MODES; ++i)
+			{
+				for (uint32_t j = 0; j < NUM_CULL_MODES; ++j)
+				{
+					GraphicsRenderStatesSetup setup;
+					setup.primitiveTopology(PrimitiveTopology::TriangleList);
+					setup.cull(j != 0);
+					setup.cullFrontFace(FACE_MODES[i]);
+					setup.cullMode(CULL_MODES[j]);
+					m_testShader[i][j] = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+				}
+			}
         }
 
         void RenderingTest_CullMode::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -100,23 +127,15 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
-            int pos = 0;
-            rendering::FrontFace FACE_MODES[2] = { rendering::FrontFace::CW, rendering::FrontFace::CCW };
-            for (uint32_t i = 0; i < ARRAY_COUNT(FACE_MODES); ++i)
-            {
-                rendering::CullMode CULL_MODES[4] = { rendering::CullMode::Disabled, rendering::CullMode::Front, rendering::CullMode::Back, rendering::CullMode::Both };
-                for (uint32_t j = 0; j < ARRAY_COUNT(CULL_MODES); ++j)
-                {
-                    CullState state;
-                    state.face = FACE_MODES[i];
-                    state.mode = CULL_MODES[j];
-                    cmd.opSetCullState(state);
-
-                    cmd.opDraw(m_shader, 12 * pos, 12);
+			int pos = 0;
+			for (uint32_t i = 0; i < NUM_FACE_MODES; ++i)
+			{
+				for (uint32_t j = 0; j < NUM_CULL_MODES; ++j)
+				{
+                    cmd.opDraw(m_testShader[i][j], 12 * pos, 12);
                     pos += 1;
                 }
             }

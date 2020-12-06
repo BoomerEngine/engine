@@ -7,7 +7,7 @@
 
 descriptor TestParams
 {
-    Texture2D TestTexture;
+    attribute(sampler=SamplerClampLinear) Texture2D TestTexture;
 }
 
 export shader SimpleTrianglePS

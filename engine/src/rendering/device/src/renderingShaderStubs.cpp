@@ -443,6 +443,8 @@ namespace rendering
 
 		void StubStage::write(base::IStubWriter& f) const
 		{
+			f.writeEnum(stage);
+			f.writeUint32(featureMask.rawValue());
 			f.writeArray(types);
 			f.writeArray(structures);
 			f.writeArray(inputs);
@@ -451,13 +453,17 @@ namespace rendering
 			f.writeArray(descriptorMembers);
 			f.writeArray(builtins);
 			f.writeArray(vertexStreams);
+			f.writeArray(globalConstants);
 			f.writeArray(samplers);
+			f.writeArray(functionsRefs);
 			f.writeArray(functions);
 			f.writeRef(entryFunction);
 		}
 
 		void StubStage::read(base::IStubReader& f)
 		{
+			f.readEnum(stage);
+			featureMask = ShaderFeatureMask(f.readUint32());
 			f.readArray(types);
 			f.readArray(structures);
 			f.readArray(inputs);
@@ -466,13 +472,16 @@ namespace rendering
 			f.readArray(descriptorMembers);
 			f.readArray(builtins);
 			f.readArray(vertexStreams);
+			f.readArray(globalConstants);
 			f.readArray(samplers);
+			f.readArray(functionsRefs);
 			f.readArray(functions);
 			f.readRef(entryFunction);
 		}
 
 		void StubStage::dump(StubDebugPrinter& f) const
 		{
+			f.appendf("stage={}", stage);
 			f.printRef("entry", entryFunction);
 
 			f.printChildRefArray("TypeDeclRef", types);
@@ -483,8 +492,10 @@ namespace rendering
 			f.printChildArray("StageInput", inputs);
 			f.printChildArray("StageOutput", outputs);
 			f.printChildArray("SharedMemory", sharedMemory);
+			f.printChildArray("GlobalConstants", globalConstants);
 			f.printChildArray("BuiltIn", builtins);
-			f.printChildArray("Function", functions);			
+			f.printChildRefArray("FunctionRefs", functionsRefs);
+			f.printChildArray("Function", functions);
 		}
 
 		//--
@@ -495,6 +506,9 @@ namespace rendering
 
 		void StubProgram::write(base::IStubWriter& f) const
 		{
+			f.writeString(depotPath);
+			f.writeString(options);
+			f.writeUint32(featureMask.rawValue());
 			f.writeArray(files);
 			f.writeArray(types);
 			f.writeArray(structures);
@@ -507,6 +521,9 @@ namespace rendering
 
 		void StubProgram::read(base::IStubReader& f)
 		{
+			depotPath = f.readString();
+			options = f.readString();
+			featureMask = ShaderFeatureMask(f.readUint32());
 			f.readArray(files);
 			f.readArray(types);
 			f.readArray(structures);
@@ -519,6 +536,7 @@ namespace rendering
 
 		void StubProgram::dump(StubDebugPrinter& f) const
 		{
+			f.appendf("file='{}' options='{}'", depotPath, options);
 			f.printChildArray("File", files);
 			f.printChildArray("TypeDecl", types);
 			f.printChildArray("Structure", structures);
@@ -1012,6 +1030,7 @@ namespace rendering
 		{
 			StubDescriptorMember::write(f);
 			f.writeEnum(viewType);
+			f.writeEnum(scalarType);
 			f.writeBool(depth);
 			f.writeBool(multisampled);
 			f.writeRef(staticState);
@@ -1022,6 +1041,7 @@ namespace rendering
 		{
 			StubDescriptorMember::read(f);
 			f.readEnum(viewType);
+			f.readEnum(scalarType);
 			depth = f.readBool();
 			multisampled = f.readBool();
 			f.readRef(staticState);
@@ -1142,6 +1162,7 @@ namespace rendering
 			location.write(f);
 			f.writeName(name);
 			f.writeRef(type);
+			f.writeRef(nextStageInput);
 			f.writeArray(attributes);
 		}
 
@@ -1150,6 +1171,7 @@ namespace rendering
 			location.read(f);
 			name = f.readName();
 			f.readRef(type);
+			f.readRef(nextStageInput);
 			f.readArray(attributes);
 		}
 
@@ -1160,6 +1182,7 @@ namespace rendering
 			f.append(" type=");
 			type->print(f);
 			f.printRef("typeRef", type);
+			f.printRef("nextStageInput", nextStageInput);
 
 			f.printChildArray("Attribute", attributes);
 		}
@@ -1171,6 +1194,7 @@ namespace rendering
 			location.write(f);
 			f.writeName(name);
 			f.writeRef(type);
+			f.writeRef(prevStageOutput);
 			f.writeArray(attributes);
 		}
 
@@ -1179,6 +1203,7 @@ namespace rendering
 			location.read(f);
 			name = f.readName();
 			f.readRef(type);
+			f.readRef(prevStageOutput);
 			f.readArray(attributes);
 		}
 
@@ -1189,8 +1214,69 @@ namespace rendering
 			f.append(" type=");
 			type->print(f);
 			f.printRef("typeRef", type);
+			f.printRef("prevStageOutput", prevStageOutput);
 
 			f.printChildArray("Attribute", attributes);
+		}
+
+		//--
+
+		void StubGlobalConstant::write(base::IStubWriter& f) const
+		{
+			f.writeCompressedInt(index);
+			f.writeRef(typeDecl);
+			f.writeEnum(dataType);
+			f.writeCompressedInt(dataSize);
+			f.writeData(data, dataSize);
+		}
+
+		void StubGlobalConstant::read(base::IStubReader& f)
+		{
+			index = f.readCompressedInt();
+			f.readRef(typeDecl);
+			f.readEnum(dataType);
+			dataSize = f.readCompressedInt();
+			data = f.readData(dataSize);
+		}
+
+		template< typename T >
+		static void PrintArray(base::IFormatStream& f, const void* ptr, uint32_t dataSize)
+		{
+			const auto count = dataSize / sizeof(T);
+			const auto* readPtr = (const T*)ptr;
+			f.appendf(" count={}", count);
+			for (uint32_t i = 0; i < count; ++i)
+				f.appendf(" [{}]={}", i, readPtr[i]);
+		}
+
+		void StubGlobalConstant::dump(StubDebugPrinter& f) const
+		{
+			f.appendf("index={} size={} scalar={}", index, dataSize, dataType);
+
+			switch (dataType)
+			{
+			case ScalarType::Float:
+			case ScalarType::Half:
+				PrintArray<float>(f, data, dataSize);
+				break;
+
+			case ScalarType::Boolean:
+			case ScalarType::Uint:
+				PrintArray<uint32_t>(f, data, dataSize);
+				break;
+
+			case ScalarType::Int:
+				PrintArray<int>(f, data, dataSize);
+				break;
+
+			case ScalarType::Int64:
+				PrintArray<int64_t>(f, data, dataSize);
+				break;
+
+			case ScalarType::Uint64:
+				PrintArray<uint64_t>(f, data, dataSize);
+				break;
+			}
 		}
 
 		//--
@@ -1403,7 +1489,7 @@ namespace rendering
 
 		void StubScopeLocalVariable::dump(StubDebugPrinter& f) const
 		{
-			f.appendf("name={}", name);
+			f.appendf("name={}", name, initialized);
 
 			f.append(" type=");
 			type->print(f);
@@ -1447,6 +1533,30 @@ namespace rendering
 		void StubOpcode::read(base::IStubReader& f)
 		{
 			location.read(f);
+		}
+
+		//--
+
+		void StubOpcodeVariableDeclaration::write(base::IStubWriter& f) const
+		{
+			StubOpcode::write(f);
+			f.writeRef(var);
+			f.writeRef(init);
+		}
+
+		void StubOpcodeVariableDeclaration::read(base::IStubReader& f)
+		{
+			StubOpcode::read(f);
+			f.readRef(var);
+			f.readRef(init);
+		}
+
+		void StubOpcodeVariableDeclaration::dump(StubDebugPrinter& f) const
+		{
+			f.printRef("Variable", var);
+
+			if (init)
+				f.printChild("Init", init);
 		}
 
 		//--
@@ -1622,22 +1732,103 @@ namespace rendering
 
 		//--
 
-		void StubOpcodeResourceAccess::write(base::IStubWriter& f) const
+		void StubOpcodeResourceRef::write(base::IStubWriter& f) const
 		{
 			f.writeEnum(type);
-			f.writeRef(resourceRef);
+			f.writeRef(descriptorEntry);
+			f.writeRef(index);
+			f.writeUint8(numAddressComponents);
 		}
 
-		void StubOpcodeResourceAccess::read(base::IStubReader& f)
+		void StubOpcodeResourceRef::read(base::IStubReader& f)
 		{
 			f.readEnum(type);
-			f.readRef(resourceRef);
+			f.readRef(descriptorEntry);
+			f.readRef(index);
+			numAddressComponents = f.readUint8();
+
 		}
 
-		void StubOpcodeResourceAccess::dump(StubDebugPrinter& f) const
+		void StubOpcodeResourceRef::dump(StubDebugPrinter& f) const
 		{
-			f.appendf("type={}", type);
-			f.printRef("resourceRef", resourceRef);
+			f.printRef("descriptorEntry", descriptorEntry);
+			if (index)
+				f.printChild("Index", index);
+		}
+
+		///--
+
+		void StubOpcodeResourceLoad::write(base::IStubWriter& f) const
+		{
+			f.writeRef(resourceRef);
+			f.writeRef(address);
+			f.writeUint8(numAddressComponents);
+			f.writeUint8(numValueComponents);
+		}
+
+		void StubOpcodeResourceLoad::read(base::IStubReader& f)
+		{
+			f.readRef(resourceRef);
+			f.readRef(address);
+			numAddressComponents = f.readUint8();
+			numValueComponents = f.readUint8();
+		}
+
+		void StubOpcodeResourceLoad::dump(StubDebugPrinter& f) const
+		{
+			f.printRef("Resource", resourceRef);
+			f.printChild("Address", address);
+		}
+
+		///--
+
+		void StubOpcodeResourceStore::write(base::IStubWriter& f) const
+		{
+			f.writeRef(resourceRef);
+			f.writeRef(address);
+			f.writeRef(value);
+			f.writeUint8(numAddressComponents);
+			f.writeUint8(numValueComponents);
+		}
+
+		void StubOpcodeResourceStore::read(base::IStubReader& f)
+		{
+			f.readRef(resourceRef);
+			f.readRef(address);
+			f.readRef(value);
+			numAddressComponents = f.readUint8();
+			numValueComponents = f.readUint8();
+		}
+
+		void StubOpcodeResourceStore::dump(StubDebugPrinter& f) const
+		{
+			f.printRef("Resource", resourceRef);
+			f.printChild("Address", address);
+			f.printChild("Value", address);
+		}
+
+		///--
+
+		void StubOpcodeResourceElement::write(base::IStubWriter& f) const
+		{
+			f.writeRef(resourceRef);
+			f.writeRef(address);
+			f.writeUint8(numAddressComponents);
+			f.writeUint8(numValueComponents);
+		}
+
+		void StubOpcodeResourceElement::read(base::IStubReader& f)
+		{
+			f.readRef(resourceRef);
+			f.readRef(address);
+			numAddressComponents = f.readUint8();
+			numValueComponents = f.readUint8();
+		}
+
+		void StubOpcodeResourceElement::dump(StubDebugPrinter& f) const
+		{
+			f.printRef("Resource", resourceRef);
+			f.printChild("Address", address);
 		}
 
 		//--
@@ -1658,16 +1849,6 @@ namespace rendering
 			f.readEnum(dataType);
 			dataSize = f.readCompressedInt();
 			data = f.readData(dataSize);
-		}
-
-		template< typename T >
-		static void PrintArray(base::IFormatStream& f, const void* ptr, uint32_t dataSize)
-		{
-			const auto count = dataSize / sizeof(T);
-			const auto* readPtr = (const T*)ptr;
-			f.appendf(" count={}", count);
-			for (uint32_t i = 0; i < count; ++i)
-				f.appendf(" [{}]={}", i, readPtr[i]);
 		}
 
 		void StubOpcodeConstant::dump(StubDebugPrinter& f) const
@@ -1830,6 +2011,7 @@ namespace rendering
 			f.writeName(name);
 			f.writeRef(returnType);
 			f.writeArray(arguments);
+			f.writeArray(argumentTypes);
 		}
 
 		void StubOpcodeNativeCall::read(base::IStubReader& f)
@@ -1838,6 +2020,7 @@ namespace rendering
 			name = f.readName();
 			f.readRef(returnType);
 			f.readArray(arguments);
+			f.readArray(argumentTypes);
 		}
 
 		void StubOpcodeNativeCall::dump(StubDebugPrinter& f) const
@@ -1852,6 +2035,7 @@ namespace rendering
 			}
 
 			f.printChildArray("NativeCallArgument", arguments);
+			f.printChildRefArray("NativeCallArgumentTypes", argumentTypes);
 		}
 
 		//--
@@ -1861,6 +2045,7 @@ namespace rendering
 			StubOpcode::write(f);
 			f.writeRef(func);
 			f.writeArray(arguments);
+			f.writeArray(argumentTypes);
 		}
 
 		void StubOpcodeCall::read(base::IStubReader& f)
@@ -1868,6 +2053,7 @@ namespace rendering
 			StubOpcode::read(f);
 			f.readRef(func);
 			f.readArray(arguments);
+			f.readArray(argumentTypes);
 		}
 
 		void StubOpcodeCall::dump(StubDebugPrinter& f) const
@@ -1887,6 +2073,7 @@ namespace rendering
 			}
 
 			f.printChildArray("CallArgument", arguments);
+			f.printChildRefArray("CallArgumentTypes", argumentTypes);
 		}
 
 		//--
@@ -1894,7 +2081,7 @@ namespace rendering
 		void StubOpcodeIfElse::write(base::IStubWriter& f) const
 		{
 			StubOpcode::write(f);
-			f.writeBool(branchHint);
+			f.writeInt8(branchHint);
 			f.writeArray(conditions);
 			f.writeArray(statements);
 			f.writeRef(elseStatement);
@@ -1903,7 +2090,7 @@ namespace rendering
 		void StubOpcodeIfElse::read(base::IStubReader& f)
 		{
 			StubOpcode::read(f);
-			branchHint = f.readBool();
+			branchHint = f.readInt8();
 			f.readArray(conditions);
 			f.readArray(statements);
 			f.readRef(elseStatement);
@@ -1923,7 +2110,9 @@ namespace rendering
 		void StubOpcodeLoop::write(base::IStubWriter& f) const
 		{
 			StubOpcode::write(f);
-			f.writeBool(unrollHint);
+			f.writeInt8(unrollHint);
+			f.writeCompressedInt(dependencyLength);
+			f.writeRef(init);
 			f.writeRef(condition);
 			f.writeRef(increment);
 			f.writeRef(body);
@@ -1932,7 +2121,9 @@ namespace rendering
 		void StubOpcodeLoop::read(base::IStubReader& f)
 		{
 			StubOpcode::read(f);
-			unrollHint = f.readBool();
+			unrollHint = f.readInt8();
+			dependencyLength = f.readCompressedInt();
+			f.readRef(init);
 			f.readRef(condition);
 			f.readRef(increment);
 			f.readRef(body);
@@ -1940,7 +2131,8 @@ namespace rendering
 
 		void StubOpcodeLoop::dump(StubDebugPrinter& f) const
 		{
-			f.appendf("unrollHint={}", unrollHint);
+			f.appendf("unrollHint={}, dependencyLength=", unrollHint, dependencyLength);
+			f.printChild("LoopInit", init);
 			f.printChild("LoopCondition", condition);
 			f.printChild("LoopIncrement", increment);
 			f.printChild("LoopBody", body);
@@ -2003,6 +2195,72 @@ namespace rendering
 		}
 
 		//--
+		
+		static char SafePathChar(char ch)
+		{
+			if (ch >= 'A' && ch <= 'Z') return ch;
+			if (ch >= 'a' && ch <= 'z') return ch;
+			if (ch >= '0' && ch <= '9') return ch;
+
+			switch (ch)
+			{
+			case '_':
+			case '-':
+			case '+':
+			case '[':
+			case ']':
+			case '(':
+			case ')':
+				return ch;
+			}
+
+			return '_';
+		}
+
+		void AssembleDumpFileName(base::StringBuilder& f, const base::StringView contextName, const base::StringView contextOptions, const base::StringView type)
+		{
+			auto fileName = contextName.fileStem();
+			if (fileName.empty())
+				fileName = "UnnamedShader";
+
+			auto pathHash = contextName.calcCRC64();
+			f.appendf("{}_{}", fileName, Hex(pathHash));
+
+			if (contextOptions)
+			{
+				f.append("_(");
+				for (auto ch : contextOptions)
+					f.appendch(SafePathChar(ch));
+				f.append(")");
+			}
+
+			if (type)
+				f.appendf(".{}", type);
+
+			f.append(".txt");
+		}
+
+		base::StringBuf AssembleDumpFileName(const base::StringView contextName, const base::StringView contextOptions, const base::StringView type)
+		{
+			base::StringBuilder txt;
+			AssembleDumpFileName(txt, contextName, contextOptions, type);
+			return txt.toString();
+		}
+
+		base::StringBuf AssembleDumpFilePath(const base::StringView contextName, const base::StringView contextOptions, const base::StringView type)
+		{
+			const auto& tempDir = base::io::SystemPath(base::io::PathCategory::LocalTempDir);
+
+			base::StringBuilder txt;
+			txt << tempDir;
+			txt << "shader_dump/";
+			AssembleDumpFileName(txt, contextName, contextOptions, type);
+
+			return txt.toString();
+		}
+
+		//--
+
 
     } // shader
 } // rendering

@@ -26,7 +26,7 @@ namespace rendering
             virtual void initialize() override final;            
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_InlineBuffers);
@@ -37,7 +37,11 @@ namespace rendering
 
         void RenderingTest_InlineBuffers::initialize()
         {
-            m_shaders = loadShader("GenericGeometry.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.primitiveTopology(PrimitiveTopology::TriangleList);
+			setup.fill(FillMode::Line);
+
+            m_shaders = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
         }
 
         static void GenerateTempGeometry(float x, float y, float w, float h, float time, base::Array<Simple3DVertex>& outVertices, base::Array<uint16_t>& outIndices)
@@ -101,6 +105,8 @@ namespace rendering
             base::Array<uint16_t> tempIndices;
             GenerateTempGeometry(-0.9f, -0.9f, 1.8f, 1.8f, time, tempVertices, tempIndices);
 
+			//auto counter = Fibers::GetInstance().createCounter("BufferUpload", 2);
+
             BufferObjectPtr vertexBuffer;
             {
                 BufferCreationInfo data;
@@ -121,12 +127,12 @@ namespace rendering
                 indexBuffer = device()->createBuffer(data, source);
             }
 
+//			Fibers::GetInstance().waitForCounterAndRelease(counter);
+
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-            cmd.opSetFillState(PolygonMode::Line);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  vertexBuffer);
             cmd.opBindIndexBuffer(indexBuffer, ImageFormat::R16_UINT);

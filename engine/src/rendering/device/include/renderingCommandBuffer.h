@@ -27,7 +27,6 @@ namespace rendering
         struct CommandBufferGatheredState
         {
             // linked list of constant upload commands as well as total size of the upload memory for constants
-            uint32_t totalConstantsUploadSize = 0;
             OpUploadConstants* constantUploadHead = nullptr;
             OpUploadConstants* constantUploadTail = nullptr;
 

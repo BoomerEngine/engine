@@ -21,7 +21,7 @@ namespace rendering
 			//--
 
 			VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
-				: IBaseVertexBindingLayout(streams)
+				: IBaseVertexBindingLayout(owner->objectCache(), streams)
 			{}
 
 			VertexBindingLayout::~VertexBindingLayout()

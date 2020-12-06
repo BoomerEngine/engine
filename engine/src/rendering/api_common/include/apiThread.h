@@ -1,4 +1,4 @@
-/***
+﻿/***
 * Boomer Engine v4
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
@@ -36,9 +36,6 @@ namespace rendering
 
 			//--
 
-			// pool for staging copy data
-			INLINE IBaseStagingPool* copyPool() const { return m_copyPool; }
-
 			// async copy queue
 			INLINE IBaseCopyQueue* copyQueue() const { return m_copyQueue; }
 			
@@ -48,11 +45,8 @@ namespace rendering
 			// object registry - contains internal API objects
 			INLINE IBaseObjectCache* objectCache() const { return m_objectCache; }
 
-			// pool for staging buffers
-			INLINE IBaseTransientBufferPool* transientStagingPool() const { return m_transientStagingPool; }
-
-			// pool for constant buffers
-			INLINE IBaseTransientBufferPool* transientConstantPool() const { return m_transientConstantPool; }
+			// background job queue (shader compilation mostly)
+			INLINE IBaseBackgroundQueue* backgroundQueue() const { return m_backgroundQueue; }
 
 			//--
 
@@ -67,13 +61,16 @@ namespace rendering
 			// API object is no longer needed, add it to current frame as an object to delete once frame finished
 			void scheduleObjectForDestruction(IBaseObject* ptr);
 
+			// request a completion callback
+			bool registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback);
+
 			//--
 
-			// stop all driver side process
-			void sync();
+			// get sync information
+			DeviceSyncInfo syncInfo() const;
 
-			// called from client to indicate that a logical new frame has started
-			void advanceFrame();
+			// sync processing between host, render thread and GPU (with optional full pipeline flush)
+			void sync(bool flush);
 
 			// run a custom function in the thread context
 			void run(const std::function<void()>& func);
@@ -86,9 +83,6 @@ namespace rendering
 			// create swapchain for specific output 
 			// NOTE: this is OS/third party specific, can be called from any thread but can be internally synchronized if needed
 			virtual IBaseSwapchain* createOptimalSwapchain(const OutputInitInfo& info) = 0;
-
-			// create frame fence, fence can be used to check if current frame has finished
-			virtual IBaseFrameFence* createOptimalFrameFence() = 0;
 
 			// create buffer data object
 			virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info) = 0;
@@ -105,6 +99,9 @@ namespace rendering
 			// create pass layout
 			virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) = 0;
 
+			// create download area
+			virtual IBaseDownloadArea* createOptimalDownloadArea(uint32_t size) = 0;
+
 			//-----
 
 			// sync GPU (stop all work), usually inserts a GPU fence and waits for it
@@ -113,7 +110,7 @@ namespace rendering
 
 			// record native command buffers
 			// NOTE: called from render thread
-			virtual void execute_Thread(Frame& frame, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, RuntimeDataAllocations& data) = 0;;
+			virtual void execute_Thread(uint64_t frameIndex, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, const FrameExecutionData& data) = 0;
 
 			//--
 
@@ -123,32 +120,42 @@ namespace rendering
 			base::Thread m_thread;
 			uint32_t m_threadId = 0;
 
-			base::SpinLock m_sequenceLock;
-			base::Array<Frame*> m_sequencePendingList;
-
-			Frame* m_currentFrame;
-			std::atomic<uint32_t> m_currentFrameIndex;
-
 			IBaseDevice* m_device = nullptr;
 			WindowManager* m_windows = nullptr;
 
+			uint32_t m_constantBufferAlignment = 0;
+			uint32_t m_constantBufferSize = 0;
+
+			struct
+			{
+				volatile uint32_t cpuFrameIndex;
+				volatile uint32_t threadFrameIndex;
+				volatile uint32_t gpuStartedFrameIndex;
+				volatile uint32_t gpuFinishedFrameIndex;
+			} m_syncInfo;			
+
+			struct
+			{
+				FrameCompleteionQueue* cpuQueue = nullptr;
+				FrameCompleteionQueue* recordQueue = nullptr; // signaled at the end of the recording
+				FrameCompleteionQueue* gpuQueue = nullptr; // signaled at the end of the GPU work
+			} m_syncQueues;
+
+			//--
+
+			
 			base::RefPtr<ObjectRegistry> m_objectRegistry = nullptr;
 
-			IBaseStagingPool* m_copyPool = nullptr;
 			IBaseCopyQueue* m_copyQueue = nullptr;
 
 			IBaseObjectCache* m_objectCache = nullptr;
 
-			IBaseTransientBufferPool* m_transientStagingPool = nullptr;
-			IBaseTransientBufferPool* m_transientConstantPool = nullptr;
-
-			base::fibers::SyncPoint m_cleanupSync;
-			//base::Array<GLuint> m_freeQueryObjects;
+			IBaseBackgroundQueue* m_backgroundQueue = nullptr;
 
 			//--
 
-			base::Array<uint64_t> m_windowsToClose;
-			base::Mutex m_windowsToCloseLock;
+			base::fibers::SyncPoint m_cleanupSync;
+			base::fibers::WaitCounter m_frameSync;
 
 			//--
 
@@ -169,12 +176,10 @@ namespace rendering
 
 			//--
 
-			virtual IBaseStagingPool* createOptimalStagingPool(uint32_t size, uint32_t pageSize, const base::app::CommandLine& cmdLine) = 0;
 			virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) = 0;
 			virtual IBaseObjectCache* createOptimalObjectCache(const base::app::CommandLine& cmdLine) = 0;
 
-			virtual IBaseTransientBufferPool* createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine) = 0;
-			virtual IBaseTransientBufferPool* createOptimalTransientConstantPool(const base::app::CommandLine& cmdLine) = 0;
+			virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine) = 0;
 
 			virtual ObjectRegistry* createOptimalObjectRegistry(const base::app::CommandLine& cmdLine);
 
@@ -183,7 +188,12 @@ namespace rendering
 
 			void threadFunc();
 
-			void closeFinishedFrames_Thread();
+			void advanceFrame_Thread(uint64_t frameIndex);
+			void checkFences_Thread();
+
+			virtual void insertGpuFrameFence_Thread(uint64_t frameIndex) = 0;
+
+			virtual bool checkGpuFrameFence_Thread(uint64_t& outFrameIndex) = 0;
 
 			friend class Frame;
 		};

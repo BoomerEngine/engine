@@ -214,7 +214,7 @@ namespace rendering
 
         uint8_t ResourceType::dimensions() const
         {
-            if (type == DeviceObjectViewType::Image || type == DeviceObjectViewType::ImageWritable)
+            if (type == DeviceObjectViewType::Image || type == DeviceObjectViewType::ImageWritable || type == DeviceObjectViewType::SampledImage)
             {
                 switch (resolvedViewType)
                 {

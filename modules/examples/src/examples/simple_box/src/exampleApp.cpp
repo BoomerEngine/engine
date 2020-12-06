@@ -278,10 +278,11 @@ namespace example
 
 		LoadResource<ShaderFile>("/engine/shaders/canvas/canvas_fill.fx");
 
-		if (auto shader = LoadResource<ShaderFile>("/examples/shaders/simple_box_example.csl").acquire())
+		if (auto shaderFile = LoadResource<ShaderFile>("/examples/shaders/simple_box_example.csl").acquire())
 		{
 			// create a PSO from the shader that's compatible with the layout we use for the window's render targets
-			m_shadersPSO = shader->shader()->deviceShader()->createGraphicsPipeline(m_renderingOutput->layout());
+			if (const auto shader = shaderFile->rootShader())
+				m_shadersPSO = shader->deviceShader()->createGraphicsPipeline(m_renderingOutput->layout());
 		}
 
 		return m_shadersPSO;

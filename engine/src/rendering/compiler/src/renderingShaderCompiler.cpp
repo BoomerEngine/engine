@@ -66,7 +66,7 @@ namespace rendering
 		ShaderDataPtr CompileShader(
 			base::StringView code, // code to compile
 			base::StringView contextPath, // context path to print with errors (Z:/projects/awesome/shaders/box.fx)
-			base::StringView sourceContentDebugPath,
+			base::StringView contextOptions,
 			base::parser::IIncludeHandler* includeHandler, // handler for any files we want to include (ShaderCompilerDefaultIncludeHandler in cooking)
 			base::parser::IErrorReporter& err, // where to report any errors (ShaderCompilerDefaultErrorReporter in cooking)
 			base::HashMap<base::StringID, base::StringBuf>* defines)  // defines and their values
@@ -101,7 +101,7 @@ namespace rendering
 
 			// assemble final data
 			AssembledShader data;
-			if (!AssembleShaderStubs(mem, codeLibrary, data, sourceContentDebugPath, err))
+			if (!AssembleShaderStubs(mem, codeLibrary, data, contextPath, contextOptions, err))
 				return false;
 			
             // prints stats

@@ -51,7 +51,7 @@ namespace rendering
 		RTTI_ENUM_OPTION(BufferStructuredWritable);
 		RTTI_ENUM_OPTION(Image);
 		RTTI_ENUM_OPTION(ImageWritable);
-		RTTI_ENUM_OPTION(ImageTable);
+		RTTI_ENUM_OPTION(SampledImage);
 		RTTI_ENUM_OPTION(RenderTarget);
 		RTTI_ENUM_OPTION(Sampler);
 	RTTI_END_TYPE();
@@ -95,5 +95,18 @@ namespace rendering
     {}
 
     //---
+
+	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDownloadAreaObject);
+	RTTI_END_TYPE();
+
+	IDownloadAreaObject::IDownloadAreaObject(ObjectID id, IDeviceObjectHandler* impl, uint32_t size)
+		: IDeviceObject(id, impl)
+		, m_size(size)
+	{}
+
+	IDownloadAreaObject::~IDownloadAreaObject()
+	{}
+
+	//---
 
 } // rendering

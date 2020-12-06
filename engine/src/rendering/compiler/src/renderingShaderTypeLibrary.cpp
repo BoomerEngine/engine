@@ -892,7 +892,7 @@ namespace rendering
 
         DataType TypeLibrary::resourceType(const CompositeType* constantBufferLayout, const AttributeList& attributes)
         {
-            auto* ret = m_allocator.createNoCleanup<ResourceType>();;
+            auto* ret = m_allocator.createNoCleanup<ResourceType>();
 
             ret->attributes = attributes;
             ret->type = DeviceObjectViewType::ConstantBuffer;
@@ -901,8 +901,8 @@ namespace rendering
             m_resourceTypes.pushBack(ret);
             return DataType(ret);
         }
-
-        DataType TypeLibrary::resourceType(base::StringID typeName, const AttributeList& attributes)
+		
+        DataType TypeLibrary::resourceType(base::StringID typeName, const AttributeList& attributes, base::StringBuf& outError)
         {
             const auto typeHash = CalcResourceTypeHash(typeName, attributes);
             
@@ -914,13 +914,16 @@ namespace rendering
             m_resourceTypes.pushBack(ret);
             ret->attributes = attributes;
 
-            if (typeName != "Texture"_id && typeName != "TextureTable" && typeName.view().beginsWith("Texture"))
+            if (typeName != "Texture"_id && typeName.view().beginsWith("Texture"))
             {
-                if (!MutateTextureName(typeName, ret->attributes))
-                    return DataType();
+				if (!MutateTextureName(typeName, ret->attributes))
+				{
+					outError = base::TempString("Unable to infer attributes from unrecognized resource type '{}'", typeName);
+					return DataType();
+				}
             }
 
-            if (typeName == "Texture"_id || typeName == "TextureTable")
+            if (typeName == "Texture"_id)
             {
                 ret->depth = ret->attributes.has("depth"_id);
 				ret->multisampled = ret->attributes.has("multisample"_id);
@@ -943,32 +946,95 @@ namespace rendering
                 else
                     return DataType();
 
-                if (ret->resolvedViewType == ImageViewType::View3D && isArray)
-                    return DataType();
+				if (ret->resolvedViewType == ImageViewType::View3D && isArray)
+				{
+					outError = base::TempString("3D texture can't be an array");
+					return DataType();
+				}
 
 				if (ret->attributes.has("uav"_id))
 				{
-					if (typeName == "TextureTable")
+					if (ret->attributes.has("sampler"_id))
+					{
+						outError = base::TempString("UAV bound textures can't have 'sampler' attribute");
 						return DataType();
-
-					ret->type = DeviceObjectViewType::ImageWritable;
+					}
 
 					if (auto formatString = ret->attributes.value("format"_id))
 					{
 						if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
+						{
+							outError = base::TempString("Unrecognized image format: '{}'", formatString);
 							return DataType();
+						}
+
+						if (!IsFormatValidForView(ret->resolvedFormat))
+						{
+							outError = base::TempString("Format '{}' is not valid for UAV", formatString);
+							return DataType();
+						}
+
+						// TODO: validate if format is a legal format for UAV write
 					}
 					else
 					{
+						outError = base::TempString("UAV view of an image must have the format specified, use 'format=rgba8', format='r32f' etc.");
+						return DataType();
+					}
+
+					ret->type = DeviceObjectViewType::ImageWritable;
+				}
+				else if (ret->attributes.has("nosampler"_id))
+				{
+					if (ret->attributes.has("sampler"_id))
+					{
+						outError = base::TempString("'nosampler' and 'sampler' can't be specified at the same time");
+						return DataType();
+					}
+
+					ret->type = DeviceObjectViewType::Image;
+
+					if (auto formatString = ret->attributes.value("format"_id))
+					{
+						if (!GetImageFormatByShaderName(formatString, ret->resolvedFormat))
+						{
+							outError = base::TempString("Unrecognized image format: '{}'", formatString);
+							return DataType();
+						}
+
+						if (!IsFormatValidForView(ret->resolvedFormat))
+						{
+							outError = base::TempString("Format '{}' is not valid for an shader bound image", formatString);
+							return DataType();
+						}
+					}
+					else
+					{
+						outError = base::TempString("No-sample views of texture must have the format specified, use 'format=rgba8', format='r32f' etc.");
 						return DataType();
 					}
 				}
+				else if (ret->attributes.has("sampler"_id))
+				{
+					if (auto formatString = ret->attributes.value("format"_id))
+					{
+						outError = base::TempString("Format specialization is not used for sampled images but you can use 'signed' and 'unsigned' attributes");
+						return DataType();
+					}
+
+					if (ret->attributes.has("signed"_id))
+						ret->sampledImageFlavor = BaseType::Int;
+					else if (ret->attributes.has("unsigned"_id))
+						ret->sampledImageFlavor = BaseType::Uint;
+					else
+						ret->sampledImageFlavor = BaseType::Float;
+
+					ret->type = DeviceObjectViewType::SampledImage;					
+				}
 				else
 				{
-					if (typeName == "TextureTable")
-						ret->type = DeviceObjectViewType::ImageTable;
-					else
-						ret->type = DeviceObjectViewType::Image;
+					outError = base::TempString("Texture resource resource 'sampler', 'nosampler' or 'uav' specialization");
+					return DataType();
 				}
             }
             else if (typeName == "Buffer"_id)
@@ -1014,7 +1080,7 @@ namespace rendering
 			}
 			else
 			{
-				DEBUG_CHECK(!"Unknown resource type");
+				outError = "Unknown resource type";
 				return DataType();
 			}
 

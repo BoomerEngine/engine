@@ -10,9 +10,10 @@
 #include "gl4Thread.h"
 #include "gl4Buffer.h"
 #include "gl4Utils.h"
+#include "gl4CopyQueue.h"
+#include "gl4DownloadArea.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/api_common/include/apiCopyPool.h"
 
 namespace rendering
 {
@@ -136,17 +137,25 @@ namespace rendering
 				return ret;
 			}
 
-			void Buffer::applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area)
+			void Buffer::initializeFromStaging(IBaseCopyQueueStagingArea* baseData)
 			{
 				PC_SCOPE_LVL1(BufferAsyncCopy);
 
 				ensureCreated();
 
-				for (const auto& atom : atoms)
+				const auto* data = static_cast<CopyQueueStagingArea*>(baseData);
+				for (const auto& atom : data->writeAtoms)
 				{
-					const auto copySize = atom.copyElement.buffer.size;
-					GL_PROTECT(glCopyNamedBufferSubData(area.apiPointer.gl, m_glBuffer, atom.stagingAreaOffset, atom.copyElement.buffer.offset, copySize));
+					GL_PROTECT(glCopyNamedBufferSubData(data->glBuffer, m_glBuffer, atom.internalOffset, 0, atom.targetDataSize));
 				}
+			}
+
+			void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+			{
+				ensureCreated();
+
+				const auto copySize = std::min<uint32_t>(range.buffer.size, dataSize - range.buffer.offset);
+				GL_PROTECT(glNamedBufferSubData(m_glBuffer, range.buffer.offset, copySize, data));
 			}
 
 			void Buffer::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
@@ -155,6 +164,27 @@ namespace rendering
 
 				const auto copySize = std::min<uint32_t>(range.buffer.size, view.size);
 				GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
+			}
+
+			void Buffer::downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range)
+			{
+				ensureCreated();
+
+				auto glTargetBuffer = static_cast<DownloadArea*>(area)->resolveBuffer();
+
+				const auto copySize = std::min<uint32_t>(range.buffer.size, area->size());
+				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, glTargetBuffer, range.buffer.offset, 0, copySize));
+			}
+
+			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+				auto view = static_cast<Buffer*>(sourceBuffer)->resolve(sourceRange.buffer.offset, sourceRange.buffer.size);
+				copyFromBuffer(view, targetRange);
+			}
+
+			void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+				// TODO!
 			}
 
 			//--		
@@ -203,11 +233,14 @@ namespace rendering
 				{
 					GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &m_glBufferView));
 					GL_PROTECT(glTextureBufferRange(m_glBufferView, m_glBufferFormat, glBuffer, setup().offset, setup().size));
+					GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBufferView, -1, base::TempString("TypedView {} @{} of {}", setup().format, setup().offset, buffer()->setup().label).c_str()));
 				}
 			}
 
 			ResolvedFormatedView BufferTypedView::resolve()
 			{
+				ensureCreated();
+
 				ResolvedFormatedView ret;
 				ret.glBufferView = m_glBufferView;
 				ret.glViewFormat = m_glBufferFormat;

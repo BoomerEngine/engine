@@ -18,6 +18,53 @@ namespace rendering
     namespace helper
     {
 
+		//--
+
+		struct ThreadLocalDescpritorRegistry
+		{
+			RTTI_DECLARE_POOL(POOL_PERSISTENT); // known leak
+
+		public:
+			INLINE ThreadLocalDescpritorRegistry()
+			{
+				m_localMap.reserve(512);
+			}
+
+			INLINE bool findInLocalCache(uint64_t hash, DescriptorID& outID, const DescriptorInfo** outInfoPtr)
+			{
+				if (const auto* entry = m_localMap.find(hash))
+				{
+					outID = entry->id;
+					if (outInfoPtr)
+						*outInfoPtr = entry->layout;
+					return true;
+				}
+
+				return false;
+			}
+
+			INLINE void stroreInLocalCache(uint64_t hash, DescriptorID id, const DescriptorInfo* infoPtr)
+			{
+				Entry entry;
+				entry.id = id;
+				entry.layout = infoPtr;
+				m_localMap[hash] = entry;
+			}
+
+		private:
+			struct Entry
+			{
+				DescriptorID id;
+				const DescriptorInfo* layout = nullptr;
+			};
+
+			base::HashMap<uint64_t, Entry> m_localMap;
+		};
+
+		static TYPE_TLS ThreadLocalDescpritorRegistry* GLocalDescriptorMap = nullptr;
+
+		//--
+
         /// the registry of all of the layouts
         class LayoutRegistry : public base::ISingleton
         {
@@ -31,28 +78,49 @@ namespace rendering
                 m_entries.pushBack(nullptr);
             }
 
-            DescriptorID registerEntry(const DescriptorInfo& info)
+            DescriptorID registerEntry(const DescriptorInfo& info, const DescriptorInfo** outInfoPtr = nullptr)
             {
+				// calculate hash outside of the lock section
+				const auto hash = info.hash();
+
+				// try in thread local cache first
+				{
+					// create on first use for each thread
+					if (!GLocalDescriptorMap)
+						GLocalDescriptorMap = new ThreadLocalDescpritorRegistry();
+
+					// find
+					DescriptorID id;
+					if (GLocalDescriptorMap->findInLocalCache(hash, id, outInfoPtr))
+						return id;
+				}
+
                 // take the lock
                 auto lock = base::CreateLock(m_lock);
 
                 // compute the hash
-                auto hash = info.hash();
                 Entry* entry = nullptr;
                 if (m_entriesMap.find(hash, entry))
                 {
                     ASSERT(entry->layout == info);
-                    return DescriptorID(entry->id);
                 }
+				else
+				{
+					entry = new Entry;
+					entry->id = (uint16_t)m_entries.size();
+					entry->layout = std::move(DescriptorInfo(info, DescriptorID(entry->id)));
+					entry->text = base::TempString("{}", info);
+					m_entriesMap[hash] = entry;
+					m_entries.pushBack(entry);
+					TRACE_INFO("Register parameter layout '{}' at ID {}", entry->text, entry->id);
+				}
 
-                // add new entry
-                entry = new Entry;
-                entry->id = (uint16_t)m_entries.size();
-                entry->layout = std::move(DescriptorInfo(info, DescriptorID(entry->id)));
-                entry->text = base::TempString("{}", info);
-                m_entriesMap[hash] = entry;
-                m_entries.pushBack(entry);
-                TRACE_INFO("Register parameter layout '{}' at ID {}", entry->text, entry->id);
+				// return the layout ID
+				if (outInfoPtr)
+					*outInfoPtr = &entry->layout;
+
+				// save in thread local cache for next use
+				GLocalDescriptorMap->stroreInLocalCache(hash, DescriptorID(entry->id), &entry->layout);
 
                 // return the ID of the new entry
                 return DescriptorID(entry->id);
@@ -130,7 +198,7 @@ namespace rendering
         return layout().size() * DESCRIPTOR_ENTRY_MEMORY_SIZE;
     }
 
-    DescriptorID DescriptorID::FromTypes(const DeviceObjectViewType* types, uint32_t numTypes)
+    DescriptorID DescriptorID::FromTypes(const DeviceObjectViewType* types, uint32_t numTypes, const DescriptorInfo** outInfoPtr /*= nullptr*/)
     {
         DEBUG_CHECK_RETURN_V(types, DescriptorID());
         DEBUG_CHECK_RETURN_V(numTypes, DescriptorID());
@@ -151,10 +219,10 @@ namespace rendering
         info.m_hash = base::CRC64().append(info.m_entries.data(), info.m_entries.dataSize()).crc();
 
         // register the layout, return it's ID
-        return DescriptorID::Register(info);
+        return DescriptorID::Register(info, outInfoPtr);
     }
 
-    DescriptorID DescriptorID::FromDescriptor(const DescriptorEntry* data, uint32_t count)
+    DescriptorID DescriptorID::FromDescriptor(const DescriptorEntry* data, uint32_t count, const DescriptorInfo** outInfoPtr /*= nullptr*/)
     {
         DEBUG_CHECK_RETURN_V(data, DescriptorID());
         DEBUG_CHECK_RETURN_V(count, DescriptorID());
@@ -175,20 +243,20 @@ namespace rendering
         info.m_hash = base::CRC64().append(info.m_entries.data(), info.m_entries.dataSize()).crc();
 
         // register the layout, return it's ID
-        return DescriptorID::Register(info);
+        return DescriptorID::Register(info, outInfoPtr);
     }
 
-    DescriptorID DescriptorID::Register(const DescriptorInfo& info)
+    DescriptorID DescriptorID::Register(const DescriptorInfo& info, const DescriptorInfo** outInfoPtr /*= nullptr*/)
     {
         // empty
         if (info.empty())
             return DescriptorID();
 
         // register in global registry
-        return helper::LayoutRegistry::GetInstance().registerEntry(info);
+        return helper::LayoutRegistry::GetInstance().registerEntry(info, outInfoPtr);
     }
 
-    DescriptorID DescriptorID::Register(base::StringView layoutDesc)
+    DescriptorID DescriptorID::Register(base::StringView layoutDesc, const DescriptorInfo** outInfoPtr /*= nullptr*/)
     {
         DEBUG_CHECK_RETURN_V(layoutDesc, DescriptorID());
 
@@ -215,6 +283,8 @@ namespace rendering
                 viewTypes.pushBack(DeviceObjectViewType::Image);
             else if (parser.parseKeyword("IUAV"))
                 viewTypes.pushBack(DeviceObjectViewType::ImageWritable);
+			else if (parser.parseKeyword("SSRV"))
+				viewTypes.pushBack(DeviceObjectViewType::SampledImage);
             else if (parser.parseKeyword("SBSRV"))
                 viewTypes.pushBack(DeviceObjectViewType::BufferStructured);
             else if (parser.parseKeyword("SBUAV"))
@@ -230,7 +300,7 @@ namespace rendering
             }
         }
 
-        return FromTypes(viewTypes.typedData(), viewTypes.size());
+        return FromTypes(viewTypes.typedData(), viewTypes.size(), outInfoPtr);
     }
 
 } // rendering

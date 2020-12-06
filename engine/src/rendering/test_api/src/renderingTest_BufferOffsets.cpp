@@ -27,7 +27,7 @@ namespace rendering
 
         private:
             VertexIndexBunch<> m_indexedTriList;
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_BufferOffsets);
@@ -95,7 +95,10 @@ namespace rendering
             PrepareIndexedTriangleList(-0.9f, 0.f, 1.8f, 0.09f, m_indexedTriList);
             m_indexedTriList.createBuffers(*this);
 
-            m_shaders = loadShader("BufferOffsets.csl");
+			GraphicsRenderStatesSetup states;
+			states.primitiveTopology(PrimitiveTopology::TriangleList);
+
+            m_shaders = loadGraphicsShader("BufferOffsets.csl", outputLayoutNoDepth(), &states);
         }
 
         void RenderingTest_BufferOffsets::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -103,9 +106,9 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            //cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opBindIndexBuffer(m_indexedTriList.m_indexBuffer, rendering::ImageFormat::R16_UINT);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_indexedTriList.m_vertexBuffer);
 

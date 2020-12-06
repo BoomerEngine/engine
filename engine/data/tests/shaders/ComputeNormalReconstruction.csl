@@ -15,7 +15,7 @@ descriptor TestParams
         mat4 PixelCoordToWorld;
     }
 
-    Texture2D PreviewTexture;
+	attribute(nosampler, format=r32f) Texture2D LinearizedDepth;
 	attribute(uav, format=rgba8) Texture2D OutTexture;
 }
 
@@ -31,7 +31,7 @@ export shader NormalReconstructionCS
 
     vec3 FetchViewPos(ivec2 pixelCoord)
     {
-        float depth = textureLoadLod(PreviewTexture, pixelCoord, 0).x;
+        float depth = LinearizedDepth[pixelCoord];
         return PosToWorld(pixelCoord, depth);
     }
 

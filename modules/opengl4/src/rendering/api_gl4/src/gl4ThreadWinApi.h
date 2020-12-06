@@ -22,6 +22,24 @@ namespace rendering
 
 			//--
 
+			struct ThreadSharedContextWinApi
+			{
+				RTTI_DECLARE_POOL(POOL_API_RUNTIME);
+
+			public:
+				ThreadSharedContextWinApi(HDC dc, HGLRC rc);
+				~ThreadSharedContextWinApi();
+
+				void activate();
+				void deactivate();
+
+			private:
+				HDC hDC = NULL;
+				HGLRC hRC = NULL;
+			};
+
+			//--
+
 			// WinAPI specific OpenGL 4 driver thread
 			class ThreadWinApi : public Thread
 			{
@@ -38,6 +56,13 @@ namespace rendering
 				//--
 
 				virtual IBaseSwapchain* createOptimalSwapchain(const OutputInitInfo& info) override final;
+				virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine) override final;
+
+				//--
+
+				ThreadSharedContextWinApi* createSharedContext();
+
+				//--
 
 			private:
 				HGLRC m_hRC = NULL;

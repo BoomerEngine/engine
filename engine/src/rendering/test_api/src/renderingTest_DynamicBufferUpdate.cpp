@@ -34,7 +34,7 @@ namespace rendering
             BufferObjectPtr m_vertexColorBuffer;
 			BufferObjectPtr m_vertexBuffer;
 
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_DynamicBufferUpdate);
@@ -77,7 +77,10 @@ namespace rendering
             m_vertexBuffer = createVertexBuffer(sizeof(base::Vector2) * MAX_VERTICES, nullptr);
             m_vertexColorBuffer = createVertexBuffer(sizeof(base::Color) * MAX_VERTICES, nullptr);
 
-            m_shaders = loadShader("GenericGeometryTwoStreams.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.primitiveTopology(PrimitiveTopology::LineStrip);
+
+            m_shaders = loadGraphicsShader("GenericGeometryTwoStreams.csl", outputLayoutNoDepth(), &setup);
         }
 
         void RenderingTest_DynamicBufferUpdate::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -98,8 +101,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opBindVertexBuffer("VertexStream0"_id,  m_vertexBuffer);
             cmd.opBindVertexBuffer("VertexStream1"_id, m_vertexColorBuffer);
             cmd.opDraw(m_shaders, 0, MAX_VERTICES); // loop

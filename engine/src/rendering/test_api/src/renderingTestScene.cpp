@@ -30,7 +30,7 @@ namespace rendering
 
         void SceneCamera::calcMatrices(bool renderToTexture /*= false*/)
         {
-            auto position = cameraPosition;
+            auto position = (fov == 0.0f) ? cameraTarget : cameraPosition;
             auto rotation = (cameraTarget - cameraPosition).toRotator().toQuat();
 
             static base::Matrix CameraToView(base::Vector4(0, 1, 0, 0), base::Vector4(0, 0, -1, 0), base::Vector4(1, 0, 0, 0), base::Vector4(0, 0, 0, 1));
@@ -51,7 +51,14 @@ namespace rendering
             m_CameraToScreen = ConvMatrix * m_ViewToScreen;
 
             m_WorldToScreen = m_WorldToCamera * m_CameraToScreen;
-            m_ScreenToWorld = m_WorldToScreen.inverted();            
+            m_ScreenToWorld = m_WorldToScreen.inverted();   
+
+			if (fov == 0.0f)
+			{
+				auto screenPosCamera = m_WorldToScreen.transformPoint(position);
+				auto cameraZDist = std::fabsf(screenPosCamera.z - 0.5f);
+				ASSERT(cameraZDist < 0.01f);
+			}
         }
 
         //--
@@ -62,7 +69,7 @@ namespace rendering
             , m_ambientColor(0.2f, 0.2f, 0.2f, 1.0f)
         {}
 
-        void SimpleScene::draw(command::CommandWriter& cmd, const ShaderLibrary* func, const SceneCamera& cameraParams)
+        void SimpleScene::draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, const SceneCamera& cameraParams)
         {
             // setup global params
             SceneGlobalParams constsData;
@@ -89,9 +96,9 @@ namespace rendering
                     objectConstData.SpecularColor = obj.m_params.SpecularColor;
 
 					DescriptorEntry objectParams[2];
-                    objectParams[0].view(obj.m_params.Texture);
-					objectParams[1].constants(objectConstData);
-                    cmd.opBindDescriptor("SceneObjectParams"_id, objectParams);
+					objectParams[0].constants(objectConstData);
+					objectParams[1].view(obj.m_params.Texture);
+					cmd.opBindDescriptor("SceneObjectParams"_id, objectParams);
 
                     obj.m_mesh->drawMesh(cmd, func);
                 }
@@ -116,9 +123,8 @@ namespace rendering
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
 					
-					auto texture = owner.loadImage2D("checker_d.png", true);
-					auto sampler = Globals().SamplerWrapTriLinear;
-					obj.m_params.Texture = texture->createView(sampler);
+					auto texture = owner.loadImage2D("checker_d.png", true, true);
+					obj.m_params.Texture = texture->createSampledView();
                 }
             }
 
@@ -241,9 +247,8 @@ namespace rendering
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
                     
-					auto texture = owner.loadImage2D("checker_d.png", true);
-					auto sampler = Globals().SamplerWrapTriLinear;
-					obj.m_params.Texture = texture->createView(sampler);
+					auto texture = owner.loadImage2D("checker_d.png", true, true);
+					obj.m_params.Texture = texture->createSampledView();
                 }
             }
 

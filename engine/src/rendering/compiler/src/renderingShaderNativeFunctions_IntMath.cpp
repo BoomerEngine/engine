@@ -17,8 +17,18 @@ namespace rendering
     namespace compiler
     {
 
+		static bool IsIntegerType(BaseType type)
+		{
+			return (type == BaseType::Int) || (type == BaseType::Uint);
+		}
+
+		static bool IsMixedIntegerType(BaseType a, BaseType b)
+		{
+			return (a != b) && IsIntegerType(a) && IsIntegerType(b);
+		}
+
         // logical operations require both types to be the same, conversion from float to int is not legal
-        static DataType DetermineIntMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const base::parser::Location& loc, base::parser::IErrorReporter& err)
+        static DataType DetermineIntMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const base::parser::Location& loc, base::parser::IErrorReporter& err, bool allowMixedIntegers = true)
         {
             // math uses const values
             argTypes[0] = argTypes[0].unmakePointer();
@@ -64,6 +74,11 @@ namespace rendering
                 err.reportError(loc, "Operands of binary math function must have the same row/elem counts");
                 return DataType();
             }
+
+			if (allowMixedIntegers && IsMixedIntegerType(baseType0, baseType1))
+			{
+				return (baseType0 == BaseType::Int) ? argTypes[0] : argTypes[1];
+			}
 
             // const expr magic
             auto retType = argTypes[0];

@@ -63,6 +63,12 @@ export shader SimpleTriangleGS
 	}
 }
 
+state PointList
+{
+	PrimitiveTopology = PointList,
+}
+
+attribute(state=PointList)
 export shader SimpleTriangleVS
 {
 	vertex Simple3DVertex v;

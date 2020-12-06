@@ -9,7 +9,7 @@
 
 //--
 
-descriptor TestParamsWrite
+descriptor TestParams
 {
     ConstantBuffer
     {
@@ -50,16 +50,22 @@ export shader GeneratePS
 	}
 }
 
+state Generate
+{
+	PrimitiveTopology = PointList,
+}
+
+attribute(state=Generate)
 export shader GenerateVS
 {
 	void main()
 	{
-		uint x = gl_VertexID % TestParamsWrite.SideCount;
-		uint y = gl_VertexID / TestParamsWrite.SideCount;
+		uint x = gl_VertexID % TestParams.SideCount;
+		uint y = gl_VertexID / TestParams.SideCount;
 
-		float invSide = 1. / TestParamsWrite.SideCount;
-	    vec3 col = CalcPlasma(x * invSide, y * invSide, TestParamsWrite.TimeOffset);
-        TestParamsWrite.Colors[gl_VertexID] = (col * 0.5 + 0.5).xy;
+		float invSide = 1. / TestParams.SideCount;
+	    vec3 col = CalcPlasma(x * invSide, y * invSide, TestParams.TimeOffset);
+        TestParams.Colors[gl_VertexID] = (col * 0.5 + 0.5).xy;
 
 		gl_Position = vec4(0,0,0,1);
 	}

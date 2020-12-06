@@ -223,7 +223,7 @@ namespace base
 
             //-----------------------------------------------------------------------------
 
-            static void FormatLineForDebugOutputPrinting(IFormatStream& f, const logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+            static void FormatLineForDebugOutputPrinting(IFormatStream& f, const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
             {
                 if (file && *file)
                 {
@@ -244,15 +244,30 @@ namespace base
                     case logging::OutputLevel::Fatal: f.append("fatal"); break;
                 }
 
-                if (context && *context)
-                    f.appendf(" @{}: ", context);
-                else
-                    f.append(": ");
+				if (module && *module || context && *context)
+				{
+					f.append(" (");
+
+					if (module && *module)
+						f.append(module);
+
+					if (module && *module && context && *context)
+						f.append(",");
+
+					if (context && *context)
+						f.append(context);
+
+					f.append("): ");
+				}
+				else
+				{
+					f.append(": ");
+				}
 
                 f.append(text);
             }
 
-            static void FormatLineForConsolePrinting(IFormatStream& f, const logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+            static void FormatLineForConsolePrinting(IFormatStream& f, const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
             {
                 switch (level)
                 {
@@ -262,6 +277,9 @@ namespace base
                     case logging::OutputLevel::Error: f.append("[E]"); break;
                     case logging::OutputLevel::Fatal: f.append("[F]"); break;
                 }
+
+				if (module && *module)
+					f.appendf("[{}]", module);
 
                 if (context && *context)
                     f.appendf("[{}] ", context);
@@ -349,7 +367,7 @@ namespace base
 
             TYPE_TLS LocalStringBuffer* GPrintBuffer = nullptr;
 
-            bool GenericOutput::print(const logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+            bool GenericOutput::print(const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
             {
                 if (level == logging::OutputLevel::Meta)
                     return false;
@@ -392,14 +410,14 @@ namespace base
                     if (m_debugEcho)
                     {
                         GPrintBuffer->reset();
-                        FormatLineForDebugOutputPrinting(*GPrintBuffer, level, file, line, context, text);
+                        FormatLineForDebugOutputPrinting(*GPrintBuffer, level, file, line, module, context, text);
                         OutputDebugStringA(GPrintBuffer->c_str());
                     }
 
                     if (m_stdOut != INVALID_HANDLE_VALUE)
                     {
                         GPrintBuffer->reset();
-                        FormatLineForConsolePrinting(*GPrintBuffer, level, file, line, context, text);
+                        FormatLineForConsolePrinting(*GPrintBuffer, level, file, line, module, context, text);
 
                         // Write to stdout
                         DWORD written = 0;

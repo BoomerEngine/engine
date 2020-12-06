@@ -113,7 +113,7 @@ namespace rendering
             {
                 // initialize the test
                 auto testCase = testClass.m_testClass->create<IRenderingTest>();
-                if (testCase && testCase->prepareAndInitialize(device, testClass.m_subTestIndex))
+                if (testCase && testCase->prepareAndInitialize(device, testClass.m_subTestIndex, m_renderingOutput))
                     return testCase;
 
                 TRACE_ERROR("Failed to initialize test '{}', sub test {}", testClass.m_testClass->name(), testClass.m_subTestIndex);

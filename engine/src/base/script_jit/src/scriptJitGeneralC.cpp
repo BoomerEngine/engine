@@ -160,7 +160,7 @@ namespace base
 
         static StringBuf GetTempFilePath()
         {
-            const auto& tempDir = base::io::SystemPath(io::PathCategory::TempDir);
+            const auto& tempDir = base::io::SystemPath(io::PathCategory::LocalTempDir);
             return TempString("{}jit/it_temp_{}.c", tempDir, NativeTimePoint::Now().rawValue()) ;
         }
 

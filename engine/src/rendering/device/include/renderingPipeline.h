@@ -113,11 +113,20 @@ namespace rendering
 		ComputePipelineObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderObject* shaders);
 		virtual ~ComputePipelineObject();
 
+		// group size (used very often so it's exposed here)
+		INLINE uint32_t groupSizeX() const { return m_computeGroupX; }
+		INLINE uint32_t groupSizeY() const { return m_computeGroupY; }
+		INLINE uint32_t groupSizeZ() const { return m_computeGroupZ; }
+
 		// source shaders
 		INLINE const ShaderObjectPtr& shaders() const { return m_shaders; }
 
 	public:
 		ShaderObjectPtr m_shaders;
+
+		uint16_t m_computeGroupX = 1;
+		uint16_t m_computeGroupY = 1;
+		uint16_t m_computeGroupZ = 1;
 	};
 
 	///---

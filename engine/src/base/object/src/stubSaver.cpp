@@ -59,8 +59,6 @@ namespace base
 				auto id = m_names.size();
 				m_names.pushBack(name);
 				m_nameMap[name] = id;
-
-				writeString(name.view()); // just because string was a name does not mean it is not a string
 			}
 		}
 	}
@@ -208,7 +206,8 @@ namespace base
 		uint16_t stringId = 0;
 		if (!str.empty())
 		{
-			DEBUG_CHECK_EX(m_mapper.m_stringMap.find(str, stringId), "Saving unmapped string");
+			m_mapper.m_stringMap.find(str, stringId);
+			DEBUG_CHECK_EX(stringId != 0, "Saving unmapped string");
 		}
 
 		writeCompressedInt(stringId);
@@ -219,7 +218,8 @@ namespace base
 		uint16_t nameId = 0;
 		if (!name.empty())
 		{
-			DEBUG_CHECK_EX(m_mapper.m_nameMap.find(name, nameId), "Saving unmapped name");
+			m_mapper.m_nameMap.find(name, nameId);
+			DEBUG_CHECK_EX(nameId != 0, "Saving unmapped name");
 		}
 
 		writeCompressedInt(nameId);
@@ -230,10 +230,8 @@ namespace base
 		uint32_t objectId = 0;
 		if (otherStub)
 		{
-			if (!m_mapper.m_stubMap.find(otherStub, objectId))
-			{
-				FATAL_ERROR("Unmapped object");
-			}
+			m_mapper.m_stubMap.find(otherStub, objectId);
+			DEBUG_CHECK_EX(objectId != 0, "Saving unmapped stub");
 		}
 
 		writeCompressedInt(objectId);

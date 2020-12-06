@@ -141,17 +141,36 @@ namespace rendering
 
 	//--
 
+	RTTI_BEGIN_TYPE_BITFIELD(ShaderStageMask);
+		RTTI_BITFIELD_OPTION(Vertex);
+		RTTI_BITFIELD_OPTION(Geometry);
+		RTTI_BITFIELD_OPTION(Domain);
+		RTTI_BITFIELD_OPTION(Hull);
+		RTTI_BITFIELD_OPTION(Pixel);
+		RTTI_BITFIELD_OPTION(Compute);
+		RTTI_BITFIELD_OPTION(Task);
+		RTTI_BITFIELD_OPTION(Mesh);		
+	RTTI_END_TYPE();
+
+	//--
+
+	RTTI_BEGIN_TYPE_BITFIELD(ShaderFeatureMask);
+		RTTI_BITFIELD_OPTION(ControlFlowHints)
+		RTTI_BITFIELD_OPTION(UAVPixelShader);
+		RTTI_BITFIELD_OPTION(UAVOutsidePixelShader);
+	RTTI_END_TYPE();
+
+	//--
+
 	RTTI_BEGIN_TYPE_CLASS(ShaderMetadata);
-		RTTI_PROPERTY_FORCE_TYPE(stageMask, uint16_t);
+		RTTI_PROPERTY(stageMask);
 		RTTI_PROPERTY(key);
 		RTTI_PROPERTY(vertexLayoutKey);
 		RTTI_PROPERTY(descriptorLayoutKey);
 		RTTI_PROPERTY(computeGroupSizeX);
 		RTTI_PROPERTY(computeGroupSizeY);
 		RTTI_PROPERTY(computeGroupSizeZ);
-		RTTI_PROPERTY(usesPixelShaderEarlyTest);
-		RTTI_PROPERTY(usesPixelShaderDiscard);
-		RTTI_PROPERTY(usesPixelShaderWritesDepth);
+		RTTI_PROPERTY(featureMask);
 		RTTI_PROPERTY(descriptors);
 		RTTI_PROPERTY(vertexStreams);
 		RTTI_PROPERTY(staticSamplers);
@@ -172,11 +191,7 @@ namespace rendering
 
 		if (stageMask.test(ShaderStage::Pixel))
 		{
-			f.append("Pixel shader features:");
-			if (usesPixelShaderEarlyTest) f.append(" EarlyTest");
-			if (usesPixelShaderDiscard) f.append(" Discard");
-			if (usesPixelShaderWritesDepth) f.append(" WriteDepth");
-			f << "\n";
+//			f.appendf("Feature mask: {}\n", featureMask);
 
 			f.appendf("Render states: {}\n", renderStates);
 		}
@@ -267,15 +282,37 @@ namespace rendering
 
 						case DeviceObjectViewType::Buffer:
 						case DeviceObjectViewType::BufferWritable:
-						case DeviceObjectViewType::ImageWritable:
 							crc << (uint8_t)elem.format;
 							break;
 
+						case DeviceObjectViewType::ImageWritable:
 						case DeviceObjectViewType::Image:
+							crc << (uint8_t)elem.viewType;
+							crc << (uint8_t)elem.format;
+							break;
+
+						case DeviceObjectViewType::SampledImage:
 							crc << (uint8_t)elem.viewType;
 							crc << (uint8_t)elem.number;
 							break;
 					}
+				}
+
+				for (const auto& sampler : staticSamplers)
+				{
+					crc << (char)sampler.state.magFilter;
+					crc << (char)sampler.state.minFilter;
+					crc << (char)sampler.state.mipmapMode;
+					crc << (char)sampler.state.addresModeU;
+					crc << (char)sampler.state.addresModeV;
+					crc << (char)sampler.state.addresModeW;
+					crc << sampler.state.compareEnabled;
+					crc << (char)sampler.state.compareOp;
+					crc << (char)sampler.state.borderColor;
+					crc << sampler.state.maxAnisotropy;
+					crc << sampler.state.mipLodBias;
+					crc << sampler.state.minLod;
+					crc << sampler.state.maxLod;
 				}
 			}
 

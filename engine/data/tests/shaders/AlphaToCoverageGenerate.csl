@@ -5,11 +5,6 @@
 
 #include "common.h"
 
-descriptor TestParams
-{
-    Texture2D Texture;
-}
-
 export shader GeneratePS
 {
 	in vec2 UV;

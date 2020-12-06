@@ -45,6 +45,7 @@ namespace rendering
             case DeviceObjectViewType::BufferStructured: str.append("SBSRV"); break;
             case DeviceObjectViewType::BufferStructuredWritable: str.append("SBUAV"); break;
             case DeviceObjectViewType::Image: str.append("ISRV"); break;
+			case DeviceObjectViewType::SampledImage: str.append("SSRV"); break;
             case DeviceObjectViewType::ImageWritable: str.append("IUAV"); break;
             case DeviceObjectViewType::RenderTarget: str.append("RTV"); break;
             case DeviceObjectViewType::Sampler: str.append("SMPL"); break;

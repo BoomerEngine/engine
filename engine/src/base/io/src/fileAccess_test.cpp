@@ -39,14 +39,14 @@ TEST(FileAccess, FileExistsTestFalse)
 
 TEST(FileAccess, CachePathValid)
 {
-    auto path = base::io::SystemPath(base::io::PathCategory::TempDir);
+    auto path = base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     ASSERT_FALSE(path.empty());
 }
 
 TEST(FileAccess, CreateCacheFile)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
@@ -60,7 +60,7 @@ TEST(FileAccess, CreateCacheFile)
 TEST(FileAccess, WriteFile)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     base::io::DeleteFile(path.view());
@@ -89,7 +89,7 @@ TEST(FileAccess, WriteFile)
 TEST(FileAccess, WriteFileExclusiveForWrite)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
@@ -111,7 +111,7 @@ TEST(FileAccess, WriteFileExclusiveForWrite)
 TEST(FileAccess, WriteFileExclusiveForRead)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
@@ -133,7 +133,7 @@ TEST(FileAccess, WriteFileExclusiveForRead)
 TEST(FileAccess, WriteFileExclusiveForDelete)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     auto f = base::io::OpenForWriting(path.view(), base::io::FileWriteMode::DirectWrite);
@@ -149,7 +149,7 @@ TEST(FileAccess, WriteFileExclusiveForDelete)
 TEST(FileAccess, ReadFileExclusiveForWrite)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     {
@@ -178,7 +178,7 @@ TEST(FileAccess, ReadFileExclusiveForWrite)
 TEST(FileAccess, ReadFileNonExclusiveForRead)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     {
@@ -202,7 +202,7 @@ TEST(FileAccess, ReadFileNonExclusiveForRead)
 TEST(FileAccess, ReadFile)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     base::io::DeleteFile(path.view());
@@ -242,7 +242,7 @@ TEST(FileAccess, ReadFile)
 TEST(FileAccess, AppendFile)
 {
     StringBuilder path;
-    path << base::io::SystemPath(base::io::PathCategory::TempDir);
+    path << base::io::SystemPath(base::io::PathCategory::LocalTempDir);
     path << "cache.txt";
 
     base::io::DeleteFile(path.view());

@@ -354,9 +354,9 @@ namespace rendering
 				}
 			}
 
-			void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool& outCompressed)
+			void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool* outCompressed)
 			{
-				outCompressed = false;
+				bool compressed = false;
 
 				switch (format)
 				{
@@ -431,35 +431,35 @@ namespace rendering
 				case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
 					outBaseType = GL_BYTE;
 					outBaseFormat = GL_RGBA;
-					outCompressed = true;
+					compressed = true;
 					break;
 
 				case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB:
 				case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB:
 					outBaseType = GL_HALF_FLOAT;
 					outBaseFormat = GL_RGB;
-					outCompressed = true;
+					compressed = true;
 					break;
 
 				case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
 				case GL_COMPRESSED_RGBA_BPTC_UNORM:
 					outBaseType = GL_BYTE;
 					outBaseFormat = GL_RGBA;
-					outCompressed = true;
+					compressed = true;
 					break;
 
 				case GL_COMPRESSED_RED_RGTC1:
 				case GL_3DC_X_AMD:
 					outBaseType = GL_BYTE;
 					outBaseFormat = GL_R;
-					outCompressed = true;
+					compressed = true;
 					break;
 
 				case GL_COMPRESSED_RG_RGTC2:
 				case GL_3DC_XY_AMD:
 					outBaseType = GL_BYTE;
 					outBaseFormat = GL_RG;
-					outCompressed = true;
+					compressed = true;
 					break;
 
 				case GL_DEPTH32F_STENCIL8:
@@ -478,6 +478,9 @@ namespace rendering
 				default:
 					FATAL_ERROR("Unknown format!");
 				}
+
+				if (outCompressed)
+					*outCompressed = compressed;
 			}
 
 		} // gl4

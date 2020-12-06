@@ -13,13 +13,6 @@
 
 //--
 
-descriptor TestParams
-{
-    Texture2D Texture;
-}
-
-//--
-
 export shader SimpleTrianglePS
 {
 	in vec2 UV;

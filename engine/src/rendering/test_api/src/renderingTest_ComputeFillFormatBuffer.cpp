@@ -12,6 +12,9 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingBuffer.h"
+#include "rendering/device/include/renderingShader.h"
+#include "rendering/device/include/renderingPipeline.h"
+#include "rendering/device/include/renderingShaderMetadata.h"
 
 namespace rendering
 {
@@ -29,8 +32,8 @@ namespace rendering
         private:
             static const auto SIDE_RESOLUTION = 512;
 
-            ShaderLibraryPtr m_shaderGenerate;
-            ShaderLibraryPtr m_shaderDraw;
+            ComputePipelineObjectPtr m_shaderGenerate;
+            GraphicsPipelineObjectPtr m_shaderDraw;
 
             BufferObjectPtr m_vertexBuffer;
 
@@ -70,8 +73,8 @@ namespace rendering
 			m_texelBufferSRV = m_texelBuffer->createView(ImageFormat::RGBA8_UNORM);
 			m_texelBufferUAV = m_texelBuffer->createWritableView(ImageFormat::RGBA8_UNORM);
 
-            m_shaderGenerate = loadShader("ComputeFillFormatBufferGenerate.csl");
-            m_shaderDraw = loadShader("ComputeFillFormatBufferTest.csl");
+            m_shaderGenerate = loadComputeShader("ComputeFillFormatBufferGenerate.csl");
+            m_shaderDraw = loadGraphicsShader("ComputeFillFormatBufferTest.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_ComputeFillFormatBuffer::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -89,7 +92,7 @@ namespace rendering
 				desc[0].constants(params);
 				desc[1] = m_texelBufferUAV;
                 cmd.opBindDescriptor("TestParamsWrite"_id, desc);
-                cmd.opDispatch(m_shaderGenerate, SIDE_RESOLUTION / 8, SIDE_RESOLUTION / 8);
+				cmd.opDispatchThreads(m_shaderGenerate, SIDE_RESOLUTION, SIDE_RESOLUTION);
             }
 
 			cmd.opTransitionLayout(m_texelBuffer, ResourceLayout::UAV, ResourceLayout::ShaderResource);   
@@ -97,7 +100,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);            
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             {
 				DescriptorEntry desc[2];

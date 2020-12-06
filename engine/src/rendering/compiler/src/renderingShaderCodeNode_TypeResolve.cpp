@@ -177,7 +177,7 @@ namespace rendering
                 return nodePtr;
 
             // create the call node
-            auto ret  = lib.allocator().create<CodeNode>(nodePtr->location(), OpCode::ImplicitCast);
+            auto ret  = lib.allocator().create<CodeNode>(nodePtr->location(), OpCode::Cast);
 			ret->extraData().m_castMode = convType;
             ret->m_dataType = GetCastedType(lib, nodePtr->dataType(), convType);
             ret->m_typesResolved = true;
@@ -291,11 +291,19 @@ namespace rendering
 
         void CodeNode::LinkScopes(CodeNode* node, CodeNode* parentScopeNode)
         {
+			/*TRACE_INFO("Node {} at {}, {} children", node->opCode(), node->location(), node->children().size());
+			for (uint32_t i : node->children().indexRange())
+			{
+				const auto* child = node->children()[i];
+				TRACE_INFO("  Child[i] {} at {} (0x{})", i, child->opCode(), child->location(), Hex((uint64_t)child));
+			}*/
+
             ASSERT(!node->m_extraData.m_parentScopeRef);
             node->m_extraData.m_parentScopeRef = parentScopeNode;
 
             if (node->m_op == OpCode::Scope)
                 parentScopeNode = node;
+
 
             for (auto child  : node->m_children)
                 if (child != nullptr)
@@ -428,7 +436,7 @@ namespace rendering
             // replace null nodes with nodes
             if (!node)
             {
-                node = lib.allocator().create<CodeNode>(parentStack.back()->location(), OpCode::Nop);
+				node = lib.allocator().create<CodeNode>(parentStack.back()->location(), OpCode::Nop);
                 return true;
             }
 
@@ -578,11 +586,24 @@ namespace rendering
                                 return false;
                             }
 
-                            node->m_op = OpCode::ParamRef;
-                            node->m_extraData.m_paramRef = paramRef;
-                            node->m_children.clear();
-                            node->m_dataType = node->m_extraData.m_paramRef->dataType;
-                            node->m_typesResolved = true;
+							if (paramRef->dataType.isResource())
+							{
+								const auto key = base::StringID(base::TempString("res:{}.{}", resolvedEntry.table->name(), resolvedEntry.entry->m_name));
+
+								node->m_op = OpCode::Const;
+								node->m_dataType = paramRef->dataType.unmakePointer();
+								node->m_dataValue = DataValue(key);
+								node->m_typesResolved = true;
+							}
+							else
+							{
+								node->m_op = OpCode::ParamRef;
+								node->m_extraData.m_paramRef = paramRef;
+								node->m_children.clear();
+								node->m_dataType = node->m_extraData.m_paramRef->dataType;
+								node->m_typesResolved = true;
+							}
+                            
                             return true;
                         }
                         
@@ -618,89 +639,93 @@ namespace rendering
                     }
 
                     // if we are compile time we must have a initializer
-                    if (node->m_children.empty() && value.m_attributes == 1)
+                    if (node->m_children.empty() && value.m_rawAttribute)
                     {
                         err.reportError(node->location(), base::TempString("Value '{}' was declared as constant and must be initialized right away", value.m_name));
                         return false;
                     }
 
                     // create the local variable in the scope
-                    auto localVar  = lib.allocator().create<DataParameter>();
+                    auto localVar = lib.allocator().create<DataParameter>();
                     localVar->name = value.m_name;
                     localVar->scope = DataParameterScope::ScopeLocal;
-                    localVar->dataType = value.m_castType;
-                    localVar->loc = node->location();
+					localVar->dataType = value.m_castType;
+					localVar->loc = node->location();
+					localVar->assignable = (value.m_rawAttribute == 0);
+
+					// add local variable to parent scope
                     value.m_parentScopeRef->m_declarations.pushBack(localVar);
 
-                    // if we have initialization convert this not to assignment, otherwise remove it via Noping
-                    if (node->m_children.empty())
-                    {
-                        // leave variable uninitialized
-                        node->m_op = OpCode::Nop;
+					// link variable 
+					node->extraData().m_paramRef = localVar;
 
-                        // if we are a composite type initialize the members with the initialization code
-                        if (localVar->dataType.isComposite())
+					// if we are a composite type initialize the members with the initialization code
+					if (node->m_children.empty() && localVar->dataType.isComposite())
+                    {
+                        uint32_t numMembersWithInitialization = 0;
+                        auto& compositeType = localVar->dataType.composite();
+                        for (auto& member : compositeType.members())
                         {
-                            uint32_t numMembersWithInitialization = 0;
-                            auto& compositeType = localVar->dataType.composite();
+                            if (member.initializerCode)
+                                numMembersWithInitialization += 1;
+                        }
+
+                        // warn if not all members were initialized
+                        if (numMembersWithInitialization && numMembersWithInitialization != compositeType.members().size())
+                            err.reportWarning(node->location(), base::TempString("Not all members of '{}' are initialized", compositeType.name()));
+
+                        // emit the initialization code
+                        if (0 != numMembersWithInitialization)
+                        {
+							auto* scopeNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Scope);
+							scopeNode->addChild(node);
+							node = scopeNode;
+
                             for (auto& member : compositeType.members())
                             {
                                 if (member.initializerCode)
-                                    numMembersWithInitialization += 1;
-                            }
-
-                            // warn if not all members were initialized
-                            if (numMembersWithInitialization && numMembersWithInitialization != compositeType.members().size())
-                                err.reportWarning(node->location(), base::TempString("Not all members of '{}' are initialized", compositeType.name()));
-
-                            // emit the initialization code
-                            if (0 != numMembersWithInitialization)
-                            {
-                                node->m_op = OpCode::Scope;
-
-                                for (auto& member : compositeType.members())
                                 {
-                                    if (member.initializerCode)
-                                    {
-                                        auto paramRefNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Ident);
-                                        paramRefNode->m_extraData.m_name = value.m_name;
-                                        paramRefNode->m_extraData.m_parentScopeRef = value.m_parentScopeRef;
-                                        paramRefNode->m_dataType = localVar->dataType;
+                                    auto paramRefNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Ident);
+                                    paramRefNode->m_extraData.m_name = value.m_name;
+                                    paramRefNode->m_extraData.m_parentScopeRef = value.m_parentScopeRef;
+                                    paramRefNode->m_dataType = localVar->dataType;
 
-                                        auto memberRefNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::AccessMember);
-                                        memberRefNode->m_extraData.m_name = member.name;
-                                        memberRefNode->m_extraData.m_parentScopeRef = value.m_parentScopeRef;
-                                        memberRefNode->m_dataType = member.type;
-                                        memberRefNode->addChild(paramRefNode);
+                                    auto memberRefNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::AccessMember);
+                                    memberRefNode->m_extraData.m_name = member.name;
+                                    memberRefNode->m_extraData.m_parentScopeRef = value.m_parentScopeRef;
+                                    memberRefNode->m_dataType = member.type;
+                                    memberRefNode->addChild(paramRefNode);
 
-                                        auto storeNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Store);
-                                        storeNode->m_op = OpCode::Store;
-                                        storeNode->m_dataType = DataType(); // no expected value of the store
-                                        storeNode->addChild(memberRefNode);
-                                        storeNode->addChild(member.initializerCode);
+                                    auto storeNode = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Store);
+                                    storeNode->m_op = OpCode::Store;
+                                    storeNode->m_dataType = DataType(); // no expected value of the store
+                                    storeNode->addChild(memberRefNode);
+                                    storeNode->addChild(member.initializerCode);
 
-                                        node->addChild(storeNode);
-                                    }
+                                    scopeNode->addChild(storeNode);
                                 }
                             }
                         }
                     }
-                    else
-                    {
-                        // create a variable ref node
-                        auto paramRefNode  = lib.allocator().create<CodeNode>(node->m_loc, OpCode::Ident);
-                        paramRefNode->m_extraData.m_name = value.m_name;
-                        paramRefNode->m_extraData.m_parentScopeRef = value.m_parentScopeRef;
-                        paramRefNode->m_dataType = localVar->dataType;
-
-                        // set as initialization store
-                        node->m_op = OpCode::Store;
-                        node->m_dataType = DataType(); // no expected value of the store
-                        node->m_children.insert(0, paramRefNode);
-                    }
 
                     break;
                 }
+
+				case OpCode::IfElse:
+				{
+					ASSERT(node->m_children.size() <= 3);
+					if (node->m_children.size() == 3) // we have the else
+					{
+						auto* elseNode = node->m_children[2];
+						if (elseNode->opCode() == OpCode::IfElse) // suck in the if inside the else as our own if/else
+						{
+							node->m_children.popBack(); // remove the else
+							node->m_children.pushBack(elseNode->m_children.typedData(), elseNode->m_children.size());
+						}
+					}
+
+					break;
+				}
             }
 
             return true;
@@ -755,6 +780,9 @@ namespace rendering
                
                 case OpCode::Store:
 					return ResolveTypes_Store(lib, program, func, node, err);
+
+				case OpCode::VariableDecl:
+					return ResolveTypes_VariableDecalration(lib, program, func, node, err);
                 
                 case OpCode::Ident:
 					return ResolveTypes_Ident(lib, program, func, node, err);
@@ -822,13 +850,13 @@ namespace rendering
 
             if (res.type == DeviceObjectViewType::Image || res.type == DeviceObjectViewType::ImageWritable)
             {
-                // TODO: add support for texture tables (unbounded tables of descriptors/bindless texture arrays)
-
                 // we need multi-dimensional index to access 2D/3D textures like that
                 const auto numCoords = res.addressComponentCount();
-                const auto arrayIndexType = lib.typeLibrary().unsignedType(numCoords);
-                if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
-                    return false;
+
+				// texel loading always uses integer coordinates
+				const auto arrayIndexType = lib.typeLibrary().integerType(numCoords);
+				if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
+					return false;
 
                 // unknown texture format ?
                 if (res.resolvedFormat == ImageFormat::UNKNOWN)
@@ -846,17 +874,35 @@ namespace rendering
                 }
 
                 // for UAV textures the output may be writable
-                auto writable = (res.type == DeviceObjectViewType::ImageWritable) && !res.attributes.has("readonly"_id);
+                auto writable = (res.type == DeviceObjectViewType::ImageWritable);
                 if (writable)
                     node->m_dataType = node->m_dataType.makePointer().makeAtomic();
 
                 return true;
             }
+			else if (res.type == DeviceObjectViewType::SampledImage)
+			{
+				// TODO: add support for texture tables (unbounded tables of descriptors/bindless texture arrays)
+
+				// we need multi-dimensional index to access 2D/3D textures like that
+				const auto numCoords = res.addressComponentCount();
+
+				// texel loading always uses integer coordinates
+				const auto arrayIndexType = lib.typeLibrary().integerType(numCoords);
+				if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
+					return false;
+
+				// all textures are always return 4 component value but it can be signed/unsigned
+				ASSERT(res.sampledImageFlavor == BaseType::Float || res.sampledImageFlavor == BaseType::Int || res.sampledImageFlavor == BaseType::Uint);
+				node->m_dataType = lib.typeLibrary().simpleCompositeType(res.sampledImageFlavor, 4);
+				return true;
+			}
             else if (res.type == DeviceObjectViewType::BufferStructured || res.type == DeviceObjectViewType::BufferWritable 
 				|| res.type == DeviceObjectViewType::BufferStructuredWritable || res.type == DeviceObjectViewType::Buffer)
             {
                 // all buffers can be indexed with one coordinate
-                const auto arrayIndexType = lib.typeLibrary().unsignedType();
+                //const auto arrayIndexType = lib.typeLibrary().unsignedType();
+				const auto arrayIndexType = lib.typeLibrary().integerType(); // addressing functions want int's for some reason
                 if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
                     return false;
 
@@ -960,6 +1006,24 @@ namespace rendering
 			return true;
 		}
 
+		bool CodeNode::ResolveTypes_VariableDecalration(SHADER_RESOLVE_FUNC)
+		{
+			// variable declaration node has not type on it's own 
+			node->m_dataType = DataType();
+
+			// if we have no children we have nothing to do
+			if (node->m_children.empty())
+				return true;
+
+			// make sure initialization code matches type
+			const auto& variableType = node->extraData().m_paramRef->dataType;
+
+			// convert the source into the target type, note that the type should be dereferenced (will generate a load)
+			// NOTE: we assume variable initialization can use explicit casting, ie, float a = 5 will cast just fine.
+			auto targetTypeNoRef = variableType.unmakePointer();
+			return MatchNodeType(lib, (CodeNode*&)node->m_children[0], targetTypeNoRef, true, err);
+		}
+
 		bool CodeNode::ResolveTypes_Ident(SHADER_RESOLVE_FUNC)
 		{
 			// resolve the identifier
@@ -986,15 +1050,18 @@ namespace rendering
 
 					// make resource key
 					const auto key = base::StringID(base::TempString("res:{}.{}", resolvedIdent.m_param->resourceTable->name(), resolvedIdent.m_param->resourceTableEntry->m_name));
-					err.reportWarning(node->location(), base::TempString("Referenced resource: {}", key));
 					node->m_dataValue = DataValue(key);
 				}
 				else
 				{
 					// the node's return type depends on the parameter type
 					node->m_op = OpCode::ParamRef;
-					node->m_dataType = resolvedIdent.m_param->dataType.makePointer();
 					node->m_extraData.m_paramRef = resolvedIdent.m_param;
+
+					if (resolvedIdent.m_param->assignable)
+						node->m_dataType = resolvedIdent.m_param->dataType.makePointer();
+					else
+						node->m_dataType = resolvedIdent.m_param->dataType;
 				}
 			}
 			// assign type from function
@@ -1042,14 +1109,19 @@ namespace rendering
 				return false;
 			}
 
-			// the array index should be a single int
-			auto arrayIndexType = DataType::UnsignedScalarType();
-			if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
-				return false;
+			// if we are already an integer number than we don't have to convert it (saves us a cast)
+			const auto currentIndexType = node->m_children[1]->dataType();
+			if (!currentIndexType.isArrayIndex())
+			{
+				// the array index should be a single int
+				//auto arrayIndexType = DataType::UnsignedScalarType();
+				auto arrayIndexType = DataType::IntScalarType();
+				if (!MatchNodeType(lib, (CodeNode*&)node->m_children[1], arrayIndexType, true, err))
+					return false;
+			}
 
 			// return type is the array inner type
-			node->m_dataType = GetArrayInnerType(sourceType).makePointer();
-			node->m_dataType.applyFlags(sourceType.flags());
+			node->m_dataType = GetArrayInnerType(sourceType).applyFlags(sourceType.flags());
 			return true;
 		}
 
@@ -1268,7 +1340,7 @@ namespace rendering
 			// NOTE: child may be substituted by conversion
 			bool typesMatched = true;
 			for (uint32_t i = 0; i < argumentTypes.size(); ++i)
-			{
+			{	
 				auto childIndex = 1 + i;
 				if (childIndex >= node->m_children.size())
 				{
@@ -1323,7 +1395,7 @@ namespace rendering
 		bool CodeNode::ResolveTypes_Loop(SHADER_RESOLVE_FUNC)
 		{
 			// look condition must be resolvable to boolean
-			auto*& loopCondition = const_cast<CodeNode*&>(node->m_children[0]);
+			auto*& loopCondition = const_cast<CodeNode*&>(node->m_children[1]);
 			if (!MatchNodeType(lib, loopCondition, DataType::BoolScalarType(), true, err))
 				return false;
 
@@ -1640,11 +1712,15 @@ namespace rendering
 
 			const auto arrayElementType = arrayType.applyArrayCounts(arrayType.arrayCounts().innerCounts());
 			const auto expectedElementCount = arrayType.arrayCounts().outermostCount();
-			if (expectedElementCount != numArgs)
+			if (expectedElementCount != numArgs && arrayType.arrayCounts().isSizeDefined())
 			{
 				err.reportError(node->location(), base::TempString("Array constructor requires {} arguments but {} were provided", expectedElementCount, numArgs));
 				return false;
 			}
+
+			// modify array counts to actually reflect the number of elements
+			auto arrayCounts = arrayType.arrayCounts();
+			arrayCounts = arrayCounts.innerCounts().appendArray(numArgs);
 
 			// make sure each argument matches, there's some small wiggle room for conversion but not much
 			for (uint32_t i = 0; i < numArgs; ++i)
@@ -1658,7 +1734,7 @@ namespace rendering
 			}
 
 			// looks ok
-			node->m_dataType = node->m_extraData.m_castType;
+			node->m_dataType = node->m_extraData.m_castType.applyArrayCounts(arrayCounts);
 			return true;
 		}
 

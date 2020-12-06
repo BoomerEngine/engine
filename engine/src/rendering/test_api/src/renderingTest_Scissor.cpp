@@ -26,7 +26,7 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_Scissor);
@@ -37,10 +37,13 @@ namespace rendering
 
         void RenderingTest_Scissor::initialize()
         {
-            m_shaders = loadShader("GenericScreenQuad.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.scissor(true);
+
+            m_shaders = loadGraphicsShader("GenericScreenQuad.csl", outputLayoutNoDepth(), &setup);
         }
 
-        static void DrawRecursivePattern(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t depth, uint32_t left, uint32_t top, uint32_t width, uint32_t height)
+        static void DrawRecursivePattern(command::CommandWriter& cmd, const GraphicsPipelineObject* func, uint32_t depth, uint32_t left, uint32_t top, uint32_t width, uint32_t height)
         {
             auto margin = 4;
             auto halfX = left + width / 2;
@@ -77,9 +80,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.5f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetScissorState(true);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             {
                 /*auto minX = 64;
@@ -95,7 +96,6 @@ namespace rendering
                 DrawRecursivePattern(cmd, m_shaders, 0, minX, minY, width, height);
             }
 
-            cmd.opSetScissorState(false);
             cmd.opEndPass();
         }
 

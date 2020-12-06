@@ -10,6 +10,7 @@
 #include "build.h"
 #include "gl4ThreadWinApi.h"
 #include "gl4SwapchainWinApi.h"
+#include "gl4BackgroundQueueWinApi.h"
 
 #include "rendering/api_common/include/apiWindow.h"
 #include "base/app/include/commandline.h"
@@ -215,6 +216,7 @@ namespace rendering
 
 				if (m_hActiveDC == (HDC)deviceHandle)
 				{
+					wglSwapIntervalEXT(0);
 					PC_SCOPE_LVL1(PresentGLSwapChain);
 					SwapBuffers((HDC)deviceHandle);
 				}
@@ -290,7 +292,45 @@ namespace rendering
 				// not possible to create other swapchains
 				return nullptr;
 			}
-		
+
+			ThreadSharedContextWinApi::ThreadSharedContextWinApi(HDC dc, HGLRC rc)
+				: hDC(dc)
+				, hRC(rc)
+			{}
+
+			ThreadSharedContextWinApi::~ThreadSharedContextWinApi()
+			{
+				wglMakeCurrent(hDC, NULL);
+				wglDeleteContext(hRC);
+			}
+
+			void ThreadSharedContextWinApi::activate()
+			{
+				wglMakeCurrent(hDC, hRC);
+			}
+
+			void ThreadSharedContextWinApi::deactivate()
+			{
+				wglMakeCurrent(hDC, NULL);
+			}
+
+			ThreadSharedContextWinApi* ThreadWinApi::createSharedContext()
+			{
+				if (HGLRC hRC = wglCreateContextAttribsARB(m_hFakeDC, m_hRC, ContextAttributes))
+				{
+					TRACE_INFO("Created shared background context");
+					return new ThreadSharedContextWinApi(m_hFakeDC, hRC);
+				}
+
+				TRACE_ERROR("Failed to create shared context");
+				return nullptr;
+			}
+					
+			IBaseBackgroundQueue* ThreadWinApi::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
+			{
+				return new BackgroundQueueWinApi(this);
+			}
+
 			//--
 
 		} // gl4

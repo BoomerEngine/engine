@@ -25,8 +25,19 @@ namespace rendering
 			ComputePipeline::~ComputePipeline()
 			{}
 
-			bool ComputePipeline::apply()
+			bool ComputePipeline::apply(GLuint& glActiveProgram)
 			{
+				if (GLuint glProgram = shaders()->object())
+				{
+					if (glProgram != glActiveProgram)
+					{
+						GL_PROTECT(glBindProgramPipeline(glProgram));
+						glActiveProgram = glProgram;
+					}
+
+					return true;
+				}
+
 				return false;
 			}
 

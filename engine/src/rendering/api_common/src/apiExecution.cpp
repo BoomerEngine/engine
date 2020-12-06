@@ -9,11 +9,9 @@
 #include "build.h"
 #include "apiObject.h"
 #include "apiThread.h"
-#include "apiFrame.h"
 #include "apiExecution.h"
 #include "apiObjectCache.h"
 #include "apiObjectRegistry.h"
-#include "apiTransientBuffer.h"
 #include "apiOutput.h"
 
 #include "rendering/device/include/renderingCommandBuffer.h"
@@ -29,58 +27,8 @@ namespace rendering
     {
 		//--
 
-		RuntimeDataAllocations::RuntimeDataAllocations()
+		FrameExecutionData::FrameExecutionData()
 		{}
-
-		uint32_t RuntimeDataAllocations::allocStagingData(uint32_t size)
-		{
-			auto offset = base::Align<uint32_t>(m_requiredStagingBuffer, 256);
-			m_requiredStagingBuffer = offset + size;
-			return offset;
-		}
-
-		void RuntimeDataAllocations::reportConstantsBlockSize(uint32_t size)
-		{
-			auto constsOffset = base::Align<uint32_t>(m_requiredConstantsBuffer, 256);
-			m_requiredConstantsBuffer = constsOffset + size;
-			m_constantsDataOffsetInStaging = allocStagingData(size);
-
-			auto& copy = m_constantBufferCopies.emplaceBack();
-			copy.size = size;
-			copy.sourceOffset = m_constantsDataOffsetInStaging;
-			copy.targetOffset = constsOffset;
-		}
-
-		void RuntimeDataAllocations::reportConstData(uint32_t offset, uint32_t size, const void* dataPtr, uint32_t& outOffsetInBigBuffer)
-		{
-			ASSERT(size > 0);
-			ASSERT(dataPtr != nullptr);
-
-			auto& write = m_writes.emplaceBack();
-			write.size = size;
-			write.offset = offset + m_constantsDataOffsetInStaging;
-			write.data = dataPtr;
-
-			outOffsetInBigBuffer = m_constantsDataOffsetInStaging + offset;
-		}
-
-		void RuntimeDataAllocations::reportBufferUpdate(const void* updateData, uint32_t updateSize, uint32_t& outStagingOffset)
-		{
-			ASSERT(updateSize > 0);
-			ASSERT(updateData != nullptr);
-
-			// allocate space in the storage
-			outStagingOffset = base::Align<uint32_t>(m_requiredStagingBuffer, 16);
-			m_requiredStagingBuffer = outStagingOffset + updateSize;
-
-			// write update data to storage
-			auto& write = m_writes.emplaceBack();
-			write.offset = outStagingOffset;
-			write.size = updateSize;
-			write.data = updateData;
-
-			ASSERT((uint64_t)updateData >= 0x1000000);
-		}
 
         //---
 
@@ -158,9 +106,8 @@ namespace rendering
 
 		//--
 
-		IBaseFrameExecutor::IBaseFrameExecutor(IBaseThread* thread, Frame* frame, PerformanceStats* stats)
+		IBaseFrameExecutor::IBaseFrameExecutor(IBaseThread* thread, PerformanceStats* stats)
 			: m_thread(thread)
-			, m_frame(frame)
 			, m_objectRegistry(thread->objectRegistry())
 			, m_objectCache(thread->objectCache())
 			, m_stats(stats)
@@ -210,8 +157,8 @@ namespace rendering
 
 		//--
 
-		IFrameExecutor::IFrameExecutor(IBaseThread* thread, Frame* frame, PerformanceStats* stats)
-			: IBaseFrameExecutor(thread, frame, stats)
+		IFrameExecutor::IFrameExecutor(IBaseThread* thread, PerformanceStats* stats)
+			: IBaseFrameExecutor(thread, stats)
 		{
 		}
 
@@ -242,58 +189,6 @@ namespace rendering
 			m_descriptorStateStack.popBack();
 
 			m_dirtyDescriptors = true;
-		}
-
-		//--
-
-		void IFrameExecutor::prepare(const RuntimeDataAllocations& info)
-		{
-			PC_SCOPE_LVL2(PrepareFrameData);
-
-			// create buffers
-			{
-				PC_SCOPE_LVL2(Allocate);
-
-				if (info.m_requiredConstantsBuffer)
-				{
-					auto buffer = thread()->transientConstantPool()->allocate(info.m_requiredConstantsBuffer);
-					frame()->registerCompletionCallback([buffer]() { buffer->returnToPool(); });
-					m_constantBuffer = buffer;
-
-				}
-
-				if (info.m_requiredStagingBuffer)
-				{
-					auto buffer = thread()->transientStagingPool()->allocate(info.m_requiredStagingBuffer);
-					frame()->registerCompletionCallback([buffer]() { buffer->returnToPool(); });
-					m_stagingBuffer = buffer;
-				}
-			}
-
-			// upload data to staging buffer from command buffer
-			{
-				PC_SCOPE_LVL2(Write);
-
-				for (auto& write : info.m_writes)
-					m_stagingBuffer->writeData(write.offset, write.size, write.data);
-			}
-
-			// finish writes
-			if (m_stagingBuffer)
-			{
-				PC_SCOPE_LVL2(Flush);
-				m_stagingBuffer->flush();
-			}
-
-			// copy data to other buffers
-			{
-				PC_SCOPE_LVL2(CopyBuffers);
-				for (auto& copy : info.m_constantBufferCopies)
-					m_constantBuffer->copyDataFrom(m_stagingBuffer, copy.sourceOffset, copy.targetOffset, copy.size);
-
-				// end copying
-				//m_tempConstantBuffer->flushCopies();
-			}
 		}
 
 		//--
@@ -576,6 +471,7 @@ namespace rendering
 			DEBUG_CHECK_EX(m_pass.passOp, "No pass active");
 
 			m_pass = PassState();
+			m_activePassLayout = nullptr;
 		}
 
 		//--

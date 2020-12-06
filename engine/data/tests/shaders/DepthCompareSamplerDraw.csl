@@ -12,7 +12,8 @@ descriptor TestParams
 		float DepthCompare;
 	}
 
-    attribute(depth) Texture2D Texture;
+	sampler TestSampler;
+    attribute(depth, sampler=TestSampler) Texture2D Texture;
 }
 
 export shader SimpleVS
@@ -28,6 +29,14 @@ export shader SimpleVS
 	}
 }
 
+state DepthWrite
+{
+	DepthEnabled = true,
+	DepthWriteEnabled = true,
+	DepthFunc = LessEqual,
+}
+
+attribute(state=DepthWrite)
 export shader DrawPS
 {
 	in vec4 Color;

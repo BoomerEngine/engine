@@ -27,12 +27,13 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            ShaderLibraryPtr m_shaderScene;
-            ShaderLibraryPtr m_shaderLinearizeDepth;
-            ShaderLibraryPtr m_shaderMinMaxDepth;
-            ShaderLibraryPtr m_shaderNormalReconstruction;
-            ShaderLibraryPtr m_shaderSSAO;
-            ShaderLibraryPtr m_shaderPreview;
+			GraphicsPassLayoutObjectPtr m_scenePassLayout;
+            GraphicsPipelineObjectPtr m_shaderScene;
+            ComputePipelineObjectPtr m_shaderLinearizeDepth;
+			ComputePipelineObjectPtr m_shaderMinMaxDepth;
+			ComputePipelineObjectPtr m_shaderNormalReconstruction;
+			ComputePipelineObjectPtr m_shaderSSAO;
+            GraphicsPipelineObjectPtr m_shaderPreview;
 
             uint8_t m_demo = 0;
 
@@ -43,28 +44,30 @@ namespace rendering
 			ImageObjectPtr m_depthBuffer;
 
 			RenderTargetViewPtr m_colorBufferRTV;
-			ImageViewPtr m_colorBufferSRV;
+			ImageReadOnlyViewPtr m_colorBufferSRV;
 
 			RenderTargetViewPtr m_depthBufferRTV;
-			ImageViewPtr m_depthBufferSRV;
+			ImageSampledViewPtr m_depthBufferSRVSampled;
 
             ImageObjectPtr m_linearDepth;
 			ImageWritableViewPtr m_linearDepthUAV;
-			ImageViewPtr m_linearDepthSRV;
+			ImageReadOnlyViewPtr m_linearDepthSRV;
 
 			ImageObjectPtr m_depth8x;
 			ImageWritableViewPtr m_depth8xUAV;
-			ImageViewPtr m_depth8xSRV;
+			ImageReadOnlyViewPtr m_depth8xSRV;
+			ImageSampledViewPtr m_depth8xSRVSampled;
 
 			ImageObjectPtr m_normals2x;
 			ImageWritableViewPtr m_normals2xUAV;
-			ImageViewPtr m_normals2xSRV;
+			ImageReadOnlyViewPtr m_normals2xSRV;
+			ImageSampledViewPtr m_normals2xSRVSampled;
 
             static const uint32_t SIZE = 512;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_ComputeGroupSharedMemory);
-            RTTI_METADATA(RenderingTestOrderMetadata).order(2230);
+            RTTI_METADATA(RenderingTestOrderMetadata).order(4600);
             RTTI_METADATA(RenderingTestSubtestCountMetadata).count(3);
         RTTI_END_TYPE();
 
@@ -88,7 +91,7 @@ namespace rendering
             colorBuffer.height = SIZE;
             m_colorBuffer = createImage(colorBuffer);
 			m_colorBufferRTV = m_colorBuffer->createRenderTargetView();
-			m_colorBufferSRV = m_colorBuffer->createView(Globals().SamplerClampPoint);
+			m_colorBufferSRV = m_colorBuffer->createReadOnlyView();
 
             rendering::ImageCreationInfo depthBuffer;
             depthBuffer.allowShaderReads = true;
@@ -98,7 +101,7 @@ namespace rendering
             depthBuffer.height = SIZE;
             m_depthBuffer = createImage(depthBuffer);
 			m_depthBufferRTV = m_depthBuffer->createRenderTargetView();
-			m_depthBufferSRV = m_depthBuffer->createView(Globals().SamplerClampPoint);
+			m_depthBufferSRVSampled = m_depthBuffer->createSampledView();
 
             // create linear depth buffer
             {
@@ -110,7 +113,7 @@ namespace rendering
                 tempBuffer.height = SIZE;
                 m_linearDepth = createImage(tempBuffer);
 				m_linearDepthUAV = m_linearDepth->createWritableView();
-				m_linearDepthSRV = m_linearDepth->createView(Globals().SamplerClampPoint);
+				m_linearDepthSRV = m_linearDepth->createReadOnlyView();
             }
 
             // normal reconstruction buffer
@@ -123,7 +126,8 @@ namespace rendering
                 tempBuffer.height = SIZE;// / 2;
                 m_normals2x = createImage(tempBuffer);
 				m_normals2xUAV = m_normals2x->createWritableView();
-				m_normals2xSRV = m_normals2x->createView(Globals().SamplerClampPoint);
+				m_normals2xSRV = m_normals2x->createReadOnlyView();
+				m_normals2xSRVSampled = m_normals2x->createSampledView();
             }
 
             // create downsampled buffer
@@ -136,15 +140,32 @@ namespace rendering
                 tempBuffer.height = SIZE / 8;
                 m_depth8x = createImage(tempBuffer);
 				m_depth8xUAV = m_depth8x->createWritableView();
-				m_depth8xSRV = m_depth8x->createView(Globals().SamplerClampPoint);
+				m_depth8xSRV = m_depth8x->createReadOnlyView();
+				m_depth8xSRVSampled = m_depth8x->createSampledView();
             }
 
-            m_shaderScene = loadShader("GenericScene.csl");
-            m_shaderLinearizeDepth = loadShader("ComputeLinearizeDepth.csl");
-            m_shaderMinMaxDepth = loadShader("ComputeMinMaxDepth.csl");
-            m_shaderNormalReconstruction = loadShader("ComputeNormalReconstruction.csl");
-            m_shaderSSAO = loadShader("ComputeSSAO.csl");
-            m_shaderPreview = loadShader("GenericGeometryWithTexture.csl");
+			{
+				GraphicsPassLayoutSetup setup;
+				setup.samples = 1;
+				setup.depth.format = rendering::ImageFormat::D24S8;
+				setup.color[0].format = rendering::ImageFormat::RGBA8_UNORM;
+				m_scenePassLayout = createPassLayout(setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup render;
+				render.depth(true);
+				render.depthWrite(true);
+				render.depthFunc(CompareOp::LessEqual);
+
+				m_shaderScene = loadGraphicsShader("GenericScene.csl", m_scenePassLayout, &render);
+			}
+
+            m_shaderLinearizeDepth = loadComputeShader("ComputeLinearizeDepth.csl");
+            m_shaderMinMaxDepth = loadComputeShader("ComputeMinMaxDepth.csl");
+            m_shaderNormalReconstruction = loadComputeShader("ComputeNormalReconstruction.csl");
+            m_shaderSSAO = loadComputeShader("ComputeSSAO.csl");
+            m_shaderPreview = loadGraphicsShader("GenericGeometryWithTexture.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_ComputeGroupSharedMemory::render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -170,8 +191,7 @@ namespace rendering
                 fb.color[0].view(m_colorBufferRTV).clear(0.2f, 0.2f, 0.2f, 1.0f);
                 fb.depth.view(m_depthBufferRTV).clearDepth().clearStencil();
 
-                cmd.opBeingPass(fb);
-                cmd.opSetDepthState(true);
+                cmd.opBeingPass(m_scenePassLayout, fb);
                 m_scene->draw(cmd, m_shaderScene, camera);
                 cmd.opEndPass();
             }
@@ -190,11 +210,11 @@ namespace rendering
 
 				DescriptorEntry desc[3];
 				desc[0].constants(data);
-				desc[1] = m_depthBufferSRV;
+				desc[1] = m_depthBufferSRVSampled;
 				desc[2] = m_linearDepthUAV;
                 cmd.opBindDescriptor("TestParams"_id, desc);
 
-                cmd.opDispatch(m_shaderLinearizeDepth, SIZE / 8, SIZE / 8);
+                cmd.opDispatchThreads(m_shaderLinearizeDepth, SIZE, SIZE);
             }
 
 			// transition the data to format of the next pass
@@ -213,7 +233,7 @@ namespace rendering
 				desc[2] = m_depth8xUAV;
                 cmd.opBindDescriptor("TestParams"_id, desc);
 
-                cmd.opDispatch(m_shaderMinMaxDepth, SIZE / 8, SIZE / 8);
+                cmd.opDispatchThreads(m_shaderMinMaxDepth, SIZE, SIZE);
 
 				cmd.opTransitionLayout(m_depth8x, ResourceLayout::UAV, ResourceLayout::ShaderResource);
             }
@@ -241,7 +261,7 @@ namespace rendering
 				desc[2] = m_normals2xUAV;
 				cmd.opBindDescriptor("TestParams"_id, desc);
 
-                cmd.opDispatch(m_shaderNormalReconstruction, SIZE / 8, SIZE / 8);
+                cmd.opDispatchThreads(m_shaderNormalReconstruction, SIZE, SIZE);
 
 				cmd.opTransitionLayout(m_normals2x, ResourceLayout::UAV, ResourceLayout::ShaderResource);
             }
@@ -249,16 +269,14 @@ namespace rendering
             {
                 struct Data
                 {
-                    base::Vector4 Params;
                     base::Matrix PixelCoordToWorld;
                 } data;
 
-                base::Matrix pixelCoordToScreen;
-                pixelCoordToScreen.identity();
-                pixelCoordToScreen.m[0][0] = 2.0f / SIZE;
-                pixelCoordToScreen.m[1][1] = 2.0f / SIZE;
-                pixelCoordToScreen.m[0][3] = -1.0f;
-                pixelCoordToScreen.m[1][3] = -1.0f;
+                data.PixelCoordToWorld.identity();
+                data.PixelCoordToWorld.m[0][0] = 2.0f / SIZE;
+                data.PixelCoordToWorld.m[1][1] = 2.0f / SIZE;
+                data.PixelCoordToWorld.m[0][3] = -1.0f;
+                data.PixelCoordToWorld.m[1][3] = -1.0f;
 
 				DescriptorEntry desc[3];
 				desc[0].constants(data);
@@ -266,7 +284,7 @@ namespace rendering
 				desc[2] = m_normals2xUAV;
 				cmd.opBindDescriptor("TestParams"_id, desc);
 
-                cmd.opDispatch(m_shaderSSAO, SIZE / 8, SIZE / 8);
+                cmd.opDispatchThreads(m_shaderSSAO, SIZE, SIZE);
 
 				cmd.opTransitionLayout(m_normals2x, ResourceLayout::UAV, ResourceLayout::ShaderResource);
             }
@@ -277,15 +295,15 @@ namespace rendering
                 // render the preview quad
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
 				DescriptorEntry desc[1];
 				if (m_demo == 0)
-					desc[0] = m_depth8xSRV;
+					desc[0] = m_depth8xSRVSampled;
                 else if (m_demo == 1)
-					desc[0] = m_normals2xSRV;
+					desc[0] = m_normals2xSRVSampled;
                 else if (m_demo == 2)
-					desc[0] = m_normals2xSRV;
+					desc[0] = m_normals2xSRVSampled;
                 cmd.opBindDescriptor("TestParams"_id, desc);
 
                 drawQuad(cmd, m_shaderPreview, -1.0f, -1.0f, 2.0f, 2.0f);

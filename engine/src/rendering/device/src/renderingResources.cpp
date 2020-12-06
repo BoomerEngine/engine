@@ -287,37 +287,22 @@ namespace rendering
 	ISourceDataProvider::~ISourceDataProvider()
 	{}
 
-	ISourceDataProvider::ReadyStatus ISourceDataProvider::checkSourceDataReady(const void* token) const
-	{
-		return ReadyStatus::Ready;
-	}
-
-	bool ISourceDataProvider::openSourceData(const ResourceCopyRange& range, void*& outToken, bool& outSupportsAsyncWrites) const
-	{
-		outToken = nullptr;
-		outSupportsAsyncWrites = true;
-		return true;
-	}
-
-	void ISourceDataProvider::closeSourceData(void* token) const
-	{
-	}
-
 	//--
 
 	SourceDataProviderBuffer::SourceDataProviderBuffer(const base::Buffer& data, uint32_t sourceOffset /*= 0*/, uint32_t sourceSize /*= 0*/)
 		: m_data(data)
 		, m_sourceOffset(sourceOffset)
-		, m_sourceSize(sourceSize)
+		, m_sourceSize(sourceSize ? sourceSize : data.size())
 	{
 		DEBUG_CHECK(sourceOffset <= data.size());
 		DEBUG_CHECK((uint64_t)sourceOffset + (uint64_t)sourceSize <= (uint64_t)data.size());
 	}
 
-	void SourceDataProviderBuffer::writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const
+	void SourceDataProviderBuffer::writeSourceData(const base::Array<WriteAtom>& atoms) const
 	{
-		DEBUG_CHECK_RETURN(!m_sourceSize || element.dataSize == m_sourceSize);
-		memcpy(destPointer, m_data.data(), element.dataSize);
+		DEBUG_CHECK_RETURN_EX(atoms.size() == 1, "Unexpected atom count");
+		const auto copySize = std::min<uint32_t>(atoms[0].targetDataSize, m_sourceSize);
+		memcpy(atoms[0].targetDataPtr, m_data.data() + m_sourceOffset, copySize);
 	}
 
 	//--
@@ -327,20 +312,37 @@ namespace rendering
 
 	//--
 
-	DownloadDataSinkBuffer::DownloadDataSinkBuffer(PoolTag pool, uint32_t alignment/*=16*/)
+	DownloadDataSinkBuffer::DownloadDataSinkBuffer()
 		: m_version(0)
-		, m_poolTag(pool)
-		, m_alignment(alignment)
 	{}
 
-	void DownloadDataSinkBuffer::processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info)
+	const uint8_t* DownloadDataSinkBuffer::retrieve(uint32_t& outSize, DownloadAreaObjectPtr& outArea) const
 	{
-		auto data = base::Buffer::Create(m_poolTag, retrievedSize, m_alignment, srcPtr);
-		DEBUG_CHECK_RETURN(data); // something wrong happened with the data - OOM ? :(
+		auto lock = base::CreateLock(m_lock);
+		if (m_area)
+		{
+			outSize = m_dataSize;
+			outArea = m_area;
+			return m_dataPtr;
+		}
+
+		return nullptr;
+	}
+
+	void DownloadDataSinkBuffer::processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info)
+	{
+		DownloadAreaObjectPtr oldArea;
 
 		{
-			auto lock = CreateLock(m_dataLock);
-			m_data = std::move(data);
+			auto lock = base::CreateLock(m_lock);
+			oldArea = std::move(m_area);
+
+			if (area)
+			{
+				m_area = AddRef(area);
+				m_dataPtr = (const uint8_t*) dataPtr;
+				m_dataSize = dataSize;
+			}
 		}
 
 		++m_version;

@@ -60,7 +60,9 @@ namespace rendering
             };
 
             base::StringBuf m_blendMode;
-            ShaderLibraryPtr m_shader;
+
+			GraphicsPipelineObjectPtr m_backgroundShader;
+            GraphicsPipelineObjectPtr m_testShader[MAX_BLEND_MODES][MAX_BLEND_MODES];
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_BasicBlendingModes);
@@ -108,8 +110,22 @@ namespace rendering
                 m_testBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
+			// background shader
+			m_backgroundShader = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth());
+
             // load shaders
-            m_shader = loadShader("GenericGeometry.csl");
+			for (uint32_t i = 0; i < MAX_BLEND_MODES; ++i)
+			{
+				for (uint32_t j = 0; j < MAX_BLEND_MODES; ++j)
+				{
+					GraphicsRenderStatesSetup states;
+					states.blend(true);
+					states.blendOp(0, BlendFuncNames[subTestIndex()]);
+					states.blendFactor(0, BlendModesNames[i], BlendModesNames[j]);
+
+					m_testShader[i][j] = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &states);
+				}
+			}
         }
 
         void RenderingTest_BasicBlendingModes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -117,13 +133,11 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             auto numBlendModes  = ARRAY_COUNT(BlendModesNames);
             auto viewWidth = backBufferView->width() / numBlendModes;
             auto viewHeight = backBufferView->height() / numBlendModes;
-
-            auto blendOp = BlendFuncNames[subTestIndex()];
 
             for (uint32_t y = 0; y < numBlendModes; ++y)
             {
@@ -133,18 +147,14 @@ namespace rendering
 
                     // background
                     {
-                        cmd.opSetBlendState(0);
                         cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_backgroundBuffer);
-                        cmd.opDraw(m_shader, 0, m_backgroundBuffer->size() / sizeof(Simple3DVertex));
+                        cmd.opDraw(m_backgroundShader, 0, m_backgroundBuffer->size() / sizeof(Simple3DVertex));
                     }
 
                     // test
                     {
-                        auto blendSrc = BlendModesNames[x];
-                        auto blendDest = BlendModesNames[y];
-                        cmd.opSetBlendState(0, blendOp, blendSrc, blendDest);
                         cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_testBuffer);
-                        cmd.opDraw(m_shader, 0, m_testBuffer->size() / sizeof(Simple3DVertex));
+                        cmd.opDraw(m_testShader[x][y], 0, m_testBuffer->size() / sizeof(Simple3DVertex));
                     }
                 }
             }

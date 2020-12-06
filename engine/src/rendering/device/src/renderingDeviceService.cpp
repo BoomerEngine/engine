@@ -56,7 +56,7 @@ namespace rendering
         m_device = createAndInitializeDevice(deviceToInitializeName, cmdLine);
         if (!m_device)
         {
-            TRACE_WARNING("No rendering device class found for '{}', using NULL device", deviceToInitializeName);
+            TRACE_WARNING("Unable to start '{}', using NULL device", deviceToInitializeName);
 
             m_device = createAndInitializeDevice("Null", cmdLine);
             if (!m_device)
@@ -83,7 +83,7 @@ namespace rendering
 
         if (m_device)
         {
-            m_device->sync();
+            m_device->sync(true);
             m_device->shutdown();
 
             delete m_device;
@@ -94,28 +94,15 @@ namespace rendering
     void DeviceService::sync()
     {
         PC_SCOPE_LVL1(DeviceSync);
-        m_device->sync();
+        m_device->sync(true);
     }
 
     void DeviceService::onSyncUpdate()
     {
         PC_SCOPE_LVL1(DeviceUpdate);
 
-        // sync the rendering device every frame if requested
-        // this may be used to debug cross-frame issues
-        if (cvSyncRenderingDeviceEveryFrame.get())
-            m_device->sync();
-
-        // reset/release device
-        if (cvResetDeviceNextFrame.get())
-        {
-            cvResetDeviceNextFrame.set(false);
-
-            // TODO
-        }
-
-        // update the device
-        m_device->advanceFrame();
+        // sync with the rendering thread and GPU, with optional flush
+        m_device->sync(cvSyncRenderingDeviceEveryFrame.get());
     }
 
     //--

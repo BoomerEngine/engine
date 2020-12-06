@@ -27,21 +27,23 @@ export shader GenerateCS
 		vec2 c = ZoomOffset + pos * ZoomScale;
 		vec2 z = c;
 
-		float frac = 1.0f;
-		for (int i=0; i<MaxIterations; i = i + 1)
+		float prc = 0.1f;
+		[[unroll]]
+		for (int i=0; i<500; i = i + 1)
 		{
 			float dist = length(z);
 			if (dist > 2)
 			{
-				frac = i / (float) MaxIterations;
+				prc = i / (float)500;
 				break;
 			}
 				
-			z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y);
-			z = z + c;
+			z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
 		}
 
-		float frac2 = 1.0f - pow(1.0f - frac, 9.0f);
+		prc = frac(prc * 2.0f);
+
+		float frac2 = 1.0f - pow(1.0f - prc, 9.0f);
 		vec3 color = vec3(sin(PI*frac2), cos(PI*frac2), 0);
 		Colors[gl_GlobalInvocationID.xy] = color.xyz1;
 	}

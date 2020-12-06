@@ -195,10 +195,13 @@ namespace rendering
 
 		//---
 
+		//---
+
 		struct RENDERING_DEVICE_API StubStage : public Stub
 		{
 			STUB_CLASS(Stage);
 
+			ShaderStage stage = ShaderStage::Invalid; // pipeline stage we are for
 			base::StubPseudoArray<StubTypeDecl> types; // stage types - subset of global types used here used in this stage
 			base::StubPseudoArray<StubStruct> structures; // stage structures - subset of global types used in this stage
 			base::StubPseudoArray<StubStageInput> inputs; // stage inputs - ALL
@@ -207,10 +210,14 @@ namespace rendering
 			base::StubPseudoArray<StubDescriptorMember> descriptorMembers; // used descriptor members (referenced resources, constant buffers etc)
 			base::StubPseudoArray<StubBuiltInVariable> builtins; // used descriptor members (referenced resources, constant buffers etc)
 			base::StubPseudoArray<StubVertexInputStream> vertexStreams; // vertex shader streams (yeah, special case but convenient to put it here)
+			base::StubPseudoArray<StubGlobalConstant> globalConstants; // big (arrays) global constants used in the shader (they can't be embedded in functions)
 			base::StubPseudoArray<StubSamplerState> samplers; // referenced static samplers
 			base::StubPseudoArray<StubFunction> functions; // all functions in this stage
+			base::StubPseudoArray<StubFunction> functionsRefs; // functions that must be forward declared
 
 			const StubFunction* entryFunction = nullptr; // entry point function (main)
+
+			ShaderFeatureMask featureMask; // local feature mask
 
 			StubStage();
 
@@ -225,6 +232,8 @@ namespace rendering
 		{
 			STUB_CLASS(Program);
 
+			base::StringView depotPath; // path to the original file being compiled
+			base::StringView options; // compilation options (defines, material configuration, etc)
 			base::StubPseudoArray<StubFile> files; // all used files
 			base::StubPseudoArray<StubTypeDecl> types; // all know types
 			base::StubPseudoArray<StubStruct> structures; // all know structures
@@ -233,6 +242,8 @@ namespace rendering
 			base::StubPseudoArray<StubVertexInputStream> vertexStreams; // vertex streams (forwarded from vertex shader since it's a global state any way)
 			base::StubPseudoArray<StubStage> stages; // shader stages, constant size
 			const StubRenderStates* renderStates = nullptr; // custom render states
+
+			ShaderFeatureMask featureMask; // required shader features
 
 			StubProgram();
 
@@ -482,6 +493,7 @@ namespace rendering
 			STUB_CLASS(DescriptorMemberSampledImage);
 
 			ImageViewType viewType = ImageViewType::View2D;
+			ScalarType scalarType = ScalarType::Float;
 			bool depth = false;
 			bool multisampled = false;
 
@@ -560,6 +572,7 @@ namespace rendering
 
 			base::StringID name;
 			const StubTypeDecl* type = nullptr; // may be structure or array for GS
+			const StubStageInput* nextStageInput = nullptr; // if next stage uses this output as an input this is the link to it
 
 			base::StubPseudoArray<StubAttribute> attributes;
 
@@ -576,6 +589,7 @@ namespace rendering
 
 			base::StringID name;
 			const StubTypeDecl* type = nullptr; // may be structure or array for GS
+			const StubStageOutput* prevStageOutput = nullptr; // if previous stage declared this output as an input this is the link to it (usually it's required)
 
 			base::StubPseudoArray<StubAttribute> attributes;
 
@@ -600,6 +614,23 @@ namespace rendering
 			virtual void dump(StubDebugPrinter& f) const override final;
 		};
 
+		//---
+
+		struct RENDERING_DEVICE_API StubGlobalConstant : public Stub
+		{
+			STUB_CLASS(GlobalConstant);
+
+			const StubTypeDecl* typeDecl = nullptr; // usually array
+			uint16_t index = 0;
+			ScalarType dataType = ScalarType::Void;
+			uint32_t dataSize = 0; // size of stored data (may be many bytes for arrays)
+			const void* data = nullptr; // embedded, usually math constant
+
+			virtual void write(base::IStubWriter& f) const override final;
+			virtual void read(base::IStubReader& f) override final;
+			virtual void dump(StubDebugPrinter& f) const override final;
+		};
+
 		//--
 
 		enum class ShaderBuiltIn : uint8_t
@@ -610,6 +641,7 @@ namespace rendering
 			PointSize,
 			PointSizeIn,
 			ClipDistance,
+			ClipDistanceIn,
 			VertexID,
 			InstanceID,
 			DrawID,
@@ -617,6 +649,7 @@ namespace rendering
 			BaseInstance,
 			PatchVerticesIn,
 			PrimitiveID,
+			PrimitiveIDIn,
 			InvocationID,
 			TessLevelOuter,
 			TessLevelInner,
@@ -637,12 +670,16 @@ namespace rendering
 			Target6,
 			Target7,
 			Depth,
+			Layer,
+			ViewportIndex,
 			NumWorkGroups,
 			GlobalInvocationID,
 			LocalInvocationID,
 			WorkGroupID,
 			LocalInvocationIndex,
 		};
+
+		typedef base::BitFlagsBase<ShaderBuiltIn, uint64_t> ShaderBuiltInMask;
 
 		struct RENDERING_DEVICE_API StubBuiltInVariable : public Stub
 		{
@@ -725,6 +762,7 @@ namespace rendering
 
 			base::StringID name;
 			const StubTypeDecl* type = nullptr;
+			bool initialized = false;
 
 			virtual void write(base::IStubWriter& f) const override;
 			virtual void read(base::IStubReader& f) override;
@@ -762,7 +800,21 @@ namespace rendering
 			STUB_CLASS(OpcodeScope);
 
 			base::StubPseudoArray<StubOpcode> statements;
-			base::StubPseudoArray<StubScopeLocalVariable> locals;
+			base::StubPseudoArray<StubScopeLocalVariable> locals; // collected, not printed
+
+			virtual void write(base::IStubWriter& f) const override final;
+			virtual void read(base::IStubReader& f) override final;
+			virtual void dump(StubDebugPrinter& f) const override final;
+		};
+
+		//---
+
+		struct RENDERING_DEVICE_API StubOpcodeVariableDeclaration : public StubOpcode
+		{
+			STUB_CLASS(OpcodeVariableDeclaration);
+
+			const StubScopeLocalVariable* var = nullptr;
+			const StubOpcode* init = nullptr; // can be empty			
 
 			virtual void write(base::IStubWriter& f) const override final;
 			virtual void read(base::IStubReader& f) override final;
@@ -816,17 +868,69 @@ namespace rendering
 
 		//---
 
-		struct RENDERING_DEVICE_API StubOpcodeResourceAccess : public StubOpcode
+		struct RENDERING_DEVICE_API StubOpcodeResourceRef : public StubOpcode
 		{
-			STUB_CLASS(OpcodeResourceAccess);
+			STUB_CLASS(OpcodeResourceRef);
 
 			DeviceObjectViewType type = DeviceObjectViewType::Invalid;
-			const StubDescriptorMember* resourceRef = nullptr;
+			const StubDescriptorMember* descriptorEntry = nullptr;
+			const StubOpcode* index = nullptr; // may be NULL, not null only for table based resources
+			uint8_t numAddressComponents = 0;
+			
+			virtual void write(base::IStubWriter& f) const override final;
+			virtual void read(base::IStubReader& f) override final;
+			virtual void dump(StubDebugPrinter& f) const override final;
+		};
+
+		//---
+
+		struct RENDERING_DEVICE_API StubOpcodeResourceLoad : public StubOpcode
+		{
+			STUB_CLASS(OpcodeResourceLoad);
+
+			const StubOpcodeResourceRef* resourceRef = nullptr;
+			const StubOpcode* address = nullptr;
+			uint8_t numAddressComponents = 0;
+			uint8_t numValueComponents = 0;
 
 			virtual void write(base::IStubWriter& f) const override final;
 			virtual void read(base::IStubReader& f) override final;
 			virtual void dump(StubDebugPrinter& f) const override final;
 		};
+
+		//---
+
+		struct RENDERING_DEVICE_API StubOpcodeResourceStore : public StubOpcode
+		{
+			STUB_CLASS(OpcodeResourceStore);
+
+			const StubOpcodeResourceRef* resourceRef = nullptr;
+			const StubOpcode* address = nullptr;
+			const StubOpcode* value = nullptr;
+			uint8_t numAddressComponents = 0;
+			uint8_t numValueComponents = 0;
+
+			virtual void write(base::IStubWriter& f) const override final;
+			virtual void read(base::IStubReader& f) override final;
+			virtual void dump(StubDebugPrinter& f) const override final;
+		};
+
+		//---
+
+		struct RENDERING_DEVICE_API StubOpcodeResourceElement : public StubOpcode
+		{
+			STUB_CLASS(OpcodeResourceElement);
+
+			const StubOpcodeResourceRef* resourceRef = nullptr;
+			const StubOpcode* address = nullptr;
+			uint8_t numAddressComponents = 0;
+			uint8_t numValueComponents = 0;
+
+			virtual void write(base::IStubWriter& f) const override final;
+			virtual void read(base::IStubReader& f) override final;
+			virtual void dump(StubDebugPrinter& f) const override final;
+		};
+		
 
 		//---
 
@@ -954,6 +1058,7 @@ namespace rendering
 			base::StringID name;
 			const StubTypeDecl* returnType = nullptr;
 			base::StubPseudoArray<StubOpcode> arguments;
+			base::StubPseudoArray<StubTypeDecl> argumentTypes;
 
 			virtual void write(base::IStubWriter& f) const override final;
 			virtual void read(base::IStubReader& f) override final;
@@ -968,7 +1073,8 @@ namespace rendering
 
 			const StubFunction* func = nullptr;
 			base::StubPseudoArray<StubOpcode> arguments;
-			
+			base::StubPseudoArray<StubTypeDecl> argumentTypes;
+
 			virtual void write(base::IStubWriter& f) const override final;
 			virtual void read(base::IStubReader& f) override final;
 			virtual void dump(StubDebugPrinter& f) const override final;
@@ -980,7 +1086,7 @@ namespace rendering
 		{
 			STUB_CLASS(OpcodeIfElse);
 
-			bool branchHint = false;
+			char branchHint = 0; // <0 flatten, >0 branch
 			base::StubPseudoArray<StubOpcode> conditions; // 
 			base::StubPseudoArray<StubOpcode> statements; // same count as conditions
 			const StubOpcode* elseStatement = nullptr; // else statement if no condition is taken
@@ -996,7 +1102,10 @@ namespace rendering
 		{
 			STUB_CLASS(OpcodeLoop);
 
-			bool unrollHint = false;
+			char unrollHint = 0; // <0 don't unroll, >0 unroll
+			short dependencyLength = 0; // 0 - not specified, <0 - infinite
+			
+			const StubOpcode* init = nullptr;
 			const StubOpcode* condition = nullptr;
 			const StubOpcode* increment = nullptr;
 			const StubOpcode* body = nullptr;
@@ -1055,6 +1164,16 @@ namespace rendering
 		};
 
 		//---
+
+		// assemble human readable file name for any kind of dump file related to shader compilation
+		// ie. canvas_(HDR=1)_1231231.txt
+		extern RENDERING_DEVICE_API base::StringBuf AssembleDumpFileName(const base::StringView contextName, const base::StringView contextOptions, const base::StringView type);
+
+		// provide full dump path to a human readable file name for any kind of dump file related to shader compilation
+		// ie. Z:\projects\engine\.temp\shaders\canvas_(HDR=1)_1231231.txt
+		extern RENDERING_DEVICE_API base::StringBuf AssembleDumpFilePath(const base::StringView contextName, const base::StringView contextOptions, const base::StringView type);
+
+		//--
 
     } // shader
 } // rendering

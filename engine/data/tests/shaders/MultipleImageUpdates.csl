@@ -13,7 +13,7 @@ descriptor TestParams
         vec2 QuadScale;
     }
 
-    Texture2D TestTexture;
+    attribute(sampler=SamplerClampPoint) Texture2D TestTexture;
 }
 
 export shader SimpleTrianglePS

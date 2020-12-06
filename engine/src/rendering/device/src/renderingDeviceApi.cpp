@@ -22,6 +22,59 @@ namespace rendering
         : m_name(nullptr)
     {}
 
+	//--
+	
+	IDeviceCompletionCallback::~IDeviceCompletionCallback()
+	{}
+
+	//--
+
+	class StdFunctionCompletionCallback : public IDeviceCompletionCallback
+	{
+	public:
+		StdFunctionCompletionCallback(const std::function<void(void)>& func)
+			: m_func(func)
+		{}
+
+		void signalCompletion() override final
+		{
+			m_func();
+		}
+
+	private:
+		std::function<void(void)> m_func;
+	};
+
+	DeviceCompletionCallbackPtr IDeviceCompletionCallback::CreateFunctionCallback(const std::function<void(void)>& func)
+	{
+		return base::RefNew<StdFunctionCompletionCallback>(func);
+	}
+
+	//--
+
+	class FenceCompletionCallback : public IDeviceCompletionCallback
+	{
+	public:
+		FenceCompletionCallback(const base::fibers::WaitCounter& fence, uint32_t count)
+			: m_fence(fence)
+			, m_count(count)
+		{}
+
+		void signalCompletion() override final
+		{
+			Fibers::GetInstance().signalCounter(m_fence, m_count);
+		}
+
+	private:
+		base::fibers::WaitCounter m_fence;
+		uint32_t m_count = 0;
+	};
+
+	DeviceCompletionCallbackPtr IDeviceCompletionCallback::CreateFenceCallback(const base::fibers::WaitCounter& fence, uint32_t count)
+	{
+		return base::RefNew<FenceCompletionCallback>(fence, count);
+	}
+
     //--
 
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDevice);
@@ -45,11 +98,14 @@ namespace rendering
 		//if (info.allowShaderReads) numExclusiveModes += 1;
 		DEBUG_CHECK_RETURN_EX_V(numExclusiveModes <= 1, "Only one of the exclusive primary usage modes must be set: vertex, index, uniform, shader or indirect", nullptr);
 
-		// constant buffer can't be read as a format buffer
-		DEBUG_CHECK_RETURN_EX_V(!info.allowCostantReads || !info.allowShaderReads, "Buffer can't be used as uniform and shader buffer at the same time (it might by UAV buffer though)", nullptr);
-
-		// align to min size
-		DEBUG_CHECK_RETURN_EX_V(!info.allowCostantReads || ((info.size & 15) == 0), "Constant buffer size must be aligned to 16 bytes", nullptr);
+		// constant buffer can't be to big
+		if (info.allowCostantReads)
+		{
+			DEBUG_CHECK_RETURN_EX_V(info.size <= 65536, "Constant buffer size must be smaller than 64K", nullptr);
+			//DEBUG_CHECK_RETURN_EX_V(((info.size & 255) == 0), "Constant buffer size must be aligned to 256 bytes", nullptr);
+			DEBUG_CHECK_RETURN_EX_V(!info.allowShaderReads, "Constant buffer can't be used for shader reads", nullptr);
+			DEBUG_CHECK_RETURN_EX_V(!info.allowUAV, "Constant buffer can't be used as UAV", nullptr);
+		}
 
 		// describe buffer
 		outSetup.flags = info.computeFlags();

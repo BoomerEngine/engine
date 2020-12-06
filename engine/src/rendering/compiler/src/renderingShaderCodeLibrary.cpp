@@ -78,7 +78,7 @@ namespace rendering
             ASSERT(!m_programs.contains(programName));
 
             // return existing one
-            auto program = m_allocator.create<Program>(*this, programName, std::move(attributes));
+            auto program = m_allocator.create<Program>(*this, programName, loc, std::move(attributes));
             m_programs.set(programName, program);
             m_programList.pushBack(program);
             return program;

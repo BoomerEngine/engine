@@ -20,7 +20,6 @@ namespace rendering
 			class Device;
 			class Thread;
 			class CopyQueue;
-			class CopyPool;
 
 			class Buffer;
 			class Image;

@@ -140,9 +140,8 @@ namespace rendering
 		uint16_t computeGroupSizeX = 0;
 		uint16_t computeGroupSizeY = 0;
 		uint16_t computeGroupSizeZ = 0;
-		bool usesPixelShaderEarlyTest = false;
-		bool usesPixelShaderDiscard = false;
-		bool usesPixelShaderWritesDepth = false;
+
+		ShaderFeatureMask featureMask;
 
 		base::Array<ShaderDescriptorMetadata> descriptors;
 		base::Array<ShaderVertexStreamMetadata> vertexStreams;

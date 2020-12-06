@@ -838,28 +838,34 @@ namespace base
                         break;
                     }
 
-                    case PathCategory::TempDir:
-                    {
-                        wchar_t path[MAX_PATH + 1];
-                        auto length = GetTempPathW(MAX_PATH, path);
+                    case PathCategory::SystemTempDir:
+					{
+						wchar_t path[MAX_PATH + 1];
+						auto length = GetTempPathW(MAX_PATH, path);
 
-                        if (length > 0)
-                        {
-                            wcscat(path, L"Boomer\\");
-                        }
-                        else
-                        {
-                            GetModuleFileNameW(NULL, path, MAX_PATH);
+						if (length > 0)
+						{
+							wcscat(path, L"Boomer\\");
+							f << path;
+							break;
+						}
 
-                            if (auto* ch = wcsrchr(path, '\\'))
-                                ch[1] = 0;
+						// !!!!!
+						// FALL THROUGH TO LOCAL TEMP DIR
+					}
+                    
+					case PathCategory::LocalTempDir:
+					{
+						wchar_t path[MAX_PATH + 1];
+						GetModuleFileNameW(NULL, path, MAX_PATH);
 
-                            wcscat(path, L".temp\\local\\");
-                        }
+						if (auto* ch = wcsrchr(path, '\\'))
+							ch[1] = 0;
 
-                        f << path;
-                        break;
-                    }
+						wcscat(path, L".temp\\local\\");
+						f << path;
+						break;
+					}
 
                     case PathCategory::UserConfigDir:
                     {

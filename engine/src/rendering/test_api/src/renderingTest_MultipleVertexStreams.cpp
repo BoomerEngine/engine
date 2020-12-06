@@ -29,7 +29,7 @@ namespace rendering
             BufferObjectPtr m_vertexBuffer0;
 			BufferObjectPtr m_vertexBuffer1;
 			BufferObjectPtr m_indexBuffer;
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
 
             uint32_t m_indexCount;
             uint32_t m_vertexCount;
@@ -144,7 +144,7 @@ namespace rendering
             m_vertexBuffer0 = createVertexBuffer(vertices0);
             m_vertexBuffer1 = createVertexBuffer(vertices1);
 
-            m_shaders = loadShader("MultipleVertexStreams.csl");
+            m_shaders = loadGraphicsShader("MultipleVertexStreams.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_MultipleVertexStreams::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -152,7 +152,8 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+
             cmd.opBindIndexBuffer(m_indexBuffer);
             cmd.opBindVertexBuffer("VertexStream0"_id,  m_vertexBuffer0);
             cmd.opBindVertexBuffer("VertexStream1"_id, m_vertexBuffer1);

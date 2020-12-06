@@ -21,22 +21,19 @@ namespace base
     {}
 
     INLINE StringID::StringID(const char* other)
-        : indexValue(0)
     {
-        set(other);
+		indexValue = Alloc(other);
     }
 
-    INLINE StringID::StringID(StringView other)
-        : indexValue(0)
-    {
-        set(other);
-    }
+	INLINE StringID::StringID(StringView other)
+	{
+		indexValue = Alloc(other);
+	}
 
     template< uint32_t N >
     INLINE StringID::StringID(const BaseTempString<N>& other)
-        : indexValue(0)
     {
-        set(other.c_str());
+		indexValue = Alloc(other.c_str());
     }
 
     INLINE bool StringID::operator==(StringID other) const
@@ -107,12 +104,12 @@ namespace base
         
     INLINE const char* StringID::c_str() const
     {
-        return View(indexValue).data();
+        return st_StringTable.load() + indexValue;
     }
 
     INLINE StringView StringID::view() const
     {
-        return View(indexValue);
+		return StringView(st_StringTable.load() + indexValue);
     }
 
     INLINE uint32_t StringID::index() const

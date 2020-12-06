@@ -1,0 +1,24 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+export shader TestVS
+{
+	vertex Simple3DVertex v;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+	}
+}
+
+export shader TestPS 
+{
+	void main()
+	{
+		gl_Target0 = gl_FrontFacing ? vec4(1,1,0,1) : vec4(0,0,1,1);
+	}
+}

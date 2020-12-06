@@ -29,7 +29,7 @@ namespace rendering
             RTTI_ENUM_OPTION(NativeCall);
             RTTI_ENUM_OPTION(Const);
             RTTI_ENUM_OPTION(Cast);
-			RTTI_ENUM_OPTION(ImplicitCast);
+			//RTTI_ENUM_OPTION(ImplicitCast);
             RTTI_ENUM_OPTION(Ident);
             RTTI_ENUM_OPTION(FuncRef);
             RTTI_ENUM_OPTION(ParamRef);
@@ -43,13 +43,14 @@ namespace rendering
 			RTTI_ENUM_OPTION(CreateMatrix);
 			RTTI_ENUM_OPTION(CreateArray);
 
-            RTTI_ENUM_OPTION(First);
             RTTI_ENUM_OPTION(Loop);
             RTTI_ENUM_OPTION(Break);
             RTTI_ENUM_OPTION(Continue);
             RTTI_ENUM_OPTION(Exit);
             RTTI_ENUM_OPTION(Return);
             RTTI_ENUM_OPTION(IfElse);
+
+			RTTI_ENUM_OPTION(ListElement);
         RTTI_END_TYPE();
 
         //---
@@ -131,28 +132,12 @@ namespace rendering
             m_children.pushBack(child);
         }
 
-        void CodeNode::moveChildren(CodeNode* otherNode)
-        {
-            if (otherNode)
-            {
-                if (otherNode->m_op == OpCode::First)
-                {
-                    auto children = std::move(otherNode->m_children);
-                    for (auto child : children)
-                        m_children.pushBack(child);
-                }
-                /*else if (otherNode->op == OpCode::Scope && op == OpCode::Scope)
-                {
-                    auto children = std::move(otherNode->children);
-                    for (auto child : children)
-                        children.pushBack(child);
-                }*/
-                else
-                {
-                    m_children.pushBack(otherNode);
-                }
-            }
-        }
+		void CodeNode::moveChildren(base::Array<const CodeNode*>&& children)
+		{
+			for (const auto* child : children)
+				if (child)
+					m_children.pushBack(child);
+		}
 
         CodeNode* CodeNode::clone(base::mem::LinearAllocator& mem) const
         {

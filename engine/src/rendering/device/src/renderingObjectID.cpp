@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\objects #]
+* [# filter: interface\object #]
 ***/
 
 #include "build.h"
@@ -46,7 +46,7 @@ namespace rendering
 		}
 		else
 		{
-#ifdef PLATFORM_RELEASE
+#ifdef BUILD_RELEASE
 			f.appendf("ID {}, GEN {}", m_index, m_generation);
 #else
 			f.appendf("ID {}, GEN {} @ {}", m_index, m_generation, m_ptr.rawPtr);

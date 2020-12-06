@@ -149,6 +149,7 @@ namespace rendering
             const CompositeType* resolvedLayout = nullptr; // resolved layout for composited resources (structured buffers etc)
             ImageFormat resolvedFormat = ImageFormat::UNKNOWN; // resolved format
             ImageViewType resolvedViewType = ImageViewType::View2D; // resolved "size" of the texture view
+			BaseType sampledImageFlavor = BaseType::Invalid;
 
             bool depth = false; // depth sampler
             bool multisampled = false; // MS versions
@@ -224,6 +225,12 @@ namespace rendering
             {
                 return (m_baseType == BaseType::Float) || (m_baseType == BaseType::Int) || (m_baseType == BaseType::Uint);
             }
+
+			// is this a numerical integer type ? (uint/int)
+			INLINE bool isArrayIndex() const
+			{
+				return (m_baseType == BaseType::Int) || (m_baseType == BaseType::Uint);
+			}
 
             // is this a name type ?
             INLINE bool isName() const

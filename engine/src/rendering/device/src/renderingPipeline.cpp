@@ -8,6 +8,8 @@
 
 #include "build.h"
 #include "renderingPipeline.h"
+#include "renderingShaderMetadata.h"
+#include "renderingShader.h"
 
 namespace rendering
 {
@@ -64,7 +66,11 @@ namespace rendering
 	ComputePipelineObject::ComputePipelineObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderObject* shaders)
 		: IDeviceObject(id, impl)
 		, m_shaders(AddRef(shaders))
-	{}
+	{
+		m_computeGroupX = std::max<uint32_t>(1, shaders->metadata()->computeGroupSizeX);
+		m_computeGroupY = std::max<uint32_t>(1, shaders->metadata()->computeGroupSizeY);
+		m_computeGroupZ = std::max<uint32_t>(1, shaders->metadata()->computeGroupSizeZ);
+	}
 
 	ComputePipelineObject::~ComputePipelineObject()
 	{}

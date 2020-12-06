@@ -276,10 +276,7 @@ namespace rendering
 				return false;
 
 			const auto& res = dataType.resource();
-			if (res.type != DeviceObjectViewType::Image)
-				return false;
-
-			if (res.multisampled)
+			if (res.type != DeviceObjectViewType::SampledImage)
 				return false;
 
 			return true;
@@ -317,7 +314,7 @@ namespace rendering
                 // NOTE: some texture functions do not support some operations
                 if (!IsSamplableTexture(argTypes[0]))
                 {
-                    err.reportError(loc, base::TempString("Function '{}' only supports non-uav textures", functionName()));
+                    err.reportError(loc, base::TempString("Function '{}' supports only textures with samplers", functionName()));
                     return DataType();
                 }
 
@@ -587,7 +584,7 @@ namespace rendering
 
 				if (!IsSamplableTexture(argTypes[0]))
                 {
-                    err.reportError(loc, base::TempString("Function supports non-uav textures"));
+                    err.reportError(loc, base::TempString("Texture function support only samplable texture (ones with sampler=XXX defined)"));
                     return DataType();
                 }
 

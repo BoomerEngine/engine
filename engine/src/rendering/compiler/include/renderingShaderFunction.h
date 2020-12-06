@@ -48,11 +48,13 @@ namespace rendering
             AttributeList attributes;
 
             DataType dataType; // data type defined for parameter
+			bool assignable = false;
 
             base::parser::Location loc; // location in source file
 
             base::Array<base::parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
             CodeNode* initializerCode = nullptr; // parsed initialization code for the value
+			bool constant = false;
 
 			const ResourceTable* resourceTable = nullptr;
 			const ResourceTableEntry* resourceTableEntry = nullptr;

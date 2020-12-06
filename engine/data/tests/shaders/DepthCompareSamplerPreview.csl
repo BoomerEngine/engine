@@ -12,7 +12,8 @@ descriptor TestParams
 		float DepthCompare;
 	}
 
-    attribute(depth) Texture2D Texture;
+	sampler DepthSampler;
+    attribute(depth, sampler=DepthSampler) Texture2D Texture;
 }
 
 export shader SimpleVS

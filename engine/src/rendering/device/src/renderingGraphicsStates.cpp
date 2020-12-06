@@ -107,7 +107,6 @@ namespace rendering
     RTTI_END_TYPE()
 
     RTTI_BEGIN_TYPE_ENUM(CullMode);
-        RTTI_ENUM_OPTION(Disabled);
         RTTI_ENUM_OPTION(Front);
         RTTI_ENUM_OPTION(Back);
         RTTI_ENUM_OPTION(Both);
@@ -535,7 +534,7 @@ namespace rendering
 		CONFIGURE_ENUM(FillMode, common.fillMode, FillMode);
 
 		CONFIGURE_BOOL(common.primitiveRestartEnabled, PrimitiveRestartEnabled);
-		CONFIGURE_VAL(common.primitiveTopology, PrimitiveTopology);
+		CONFIGURE_ENUM(PrimitiveTopology, common.primitiveTopology, PrimitiveTopology);
 
 		CONFIGURE_BOOL(common.alphaToCoverageEnable, AlphaCoverageEnabled);
 		CONFIGURE_BOOL(common.alphaToCoverageDitherEnable, AlphaCoverageDitherEnabled);
@@ -616,6 +615,8 @@ namespace rendering
 		memzero(this, sizeof(GraphicsRenderStatesSetup));
 
 		common.fillMode = (int)FillMode::Fill;
+		common.depthEnabled = true;
+		common.depthWriteEnabled = true;
 		common.depthCompareOp = (int)CompareOp::LessEqual;
 		common.stencilFrontFailOp = (int)StencilOp::Keep;
 		common.stencilFrontPassOp = (int)StencilOp::Keep;
@@ -625,7 +626,6 @@ namespace rendering
 		common.stencilBackPassOp = (int)StencilOp::Keep;
 		common.stencilBackDepthFailOp = (int)StencilOp::Keep;
 		common.stencilBackCompareOp = (int)CompareOp::Always;
-		common.cullMode = (int)CullMode::Disabled;
 		common.cullFrontFace = (int)FrontFace::CW;
 		common.primitiveTopology = (int)PrimitiveTopology::TriangleList;
 
@@ -718,7 +718,7 @@ namespace rendering
 		mask |= GraphicRenderStatesBit::FillMode;
 	}
 
-	void GraphicsRenderStatesSetup::scissorState(bool enabled)
+	void GraphicsRenderStatesSetup::scissor(bool enabled)
 	{
 		common.scissorEnabled = enabled;
 		mask |= GraphicRenderStatesBit::ScissorEnabled;

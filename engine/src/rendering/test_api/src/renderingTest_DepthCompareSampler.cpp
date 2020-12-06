@@ -31,14 +31,16 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
         private:
-            ShaderLibraryPtr m_shaderTest;
-            ShaderLibraryPtr m_shaderPreview;
+			GraphicsPassLayoutObjectPtr m_depthRenderPass;
+
+            GraphicsPipelineObjectPtr m_shaderTest;
+			GraphicsPipelineObjectPtr m_shaderPreview;
 
             BufferObjectPtr m_vertexBuffer;
 
             ImageObjectPtr m_depthBuffer;
 			RenderTargetViewPtr m_depthBufferRTV;
-			ImageViewPtr m_depthBufferSRV;
+			ImageSampledViewPtr m_depthBufferSRV;
 
             uint32_t m_vertexCount;
         };
@@ -104,8 +106,14 @@ namespace rendering
                 m_vertexCount = vertices.size();
             }
 
-            m_shaderTest = loadShader("DepthCompareSamplerDraw.csl");
-            m_shaderPreview = loadShader("DepthCompareSamplerPreview.csl");
+			{
+				GraphicsPassLayoutSetup setup;
+				setup.depth.format = rendering::ImageFormat::D24S8;
+				m_depthRenderPass = createPassLayout(setup);
+			}
+
+            m_shaderTest = loadGraphicsShader("DepthCompareSamplerDraw.csl", m_depthRenderPass);
+            m_shaderPreview = loadGraphicsShader("DepthCompareSamplerPreview.csl", outputLayoutNoDepth());
         }
         
         void RenderingTest_DepthCompareSampler::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -122,9 +130,7 @@ namespace rendering
                 m_depthBuffer = createImage(info);
 
 				m_depthBufferRTV = m_depthBuffer->createRenderTargetView();
-
-				auto depthCompareSampler = rendering::Globals().SamplerPointDepthLE;
-				m_depthBufferSRV = m_depthBuffer->createView(depthCompareSampler);
+				m_depthBufferSRV = m_depthBuffer->createSampledView();
             }
 
             // draw the triangles
@@ -132,9 +138,8 @@ namespace rendering
                 FrameBuffer fb;
                 fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0);
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(m_depthRenderPass, fb);
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
-                cmd.opSetDepthState();
                 cmd.opDraw(m_shaderTest, 0, m_vertexCount);
                 cmd.opEndPass();
             }
@@ -147,13 +152,14 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
                 float zRef = 0.5f + 0.5f * sinf(time);
 
-				DescriptorEntry tempParams[2];
+				DescriptorEntry tempParams[3];
 				tempParams[0].constants(zRef);
-				tempParams[1] = m_depthBufferSRV;
+				tempParams[1] = rendering::Globals().SamplerPointDepthLE;
+				tempParams[2] = m_depthBufferSRV;
                 cmd.opBindDescriptor("TestParams"_id, tempParams);
 
                 drawQuad(cmd, m_shaderPreview, -0.9f, -0.9f, 1.8f, 1.8f);

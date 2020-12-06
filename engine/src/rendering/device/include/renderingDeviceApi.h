@@ -60,6 +60,7 @@ namespace rendering
         uint32_t uploadDynamicBufferSize = 0;
         uint32_t uploadConstantsCount = 0;
         uint32_t uploadConstantsSize = 0;
+		uint32_t uploadConstantsBuffersCount = 0;
         uint32_t uploadParametersCount = 0;
     };
 
@@ -125,6 +126,60 @@ namespace rendering
         base::StringBuf name;
         int value = 0;
     };
+
+	// basic device timing/sync info
+	struct DeviceSyncInfo
+	{
+		/// CPU (client side) frame index, advanced with every "advanceFrame"
+		uint64_t cpuFrameIndex = 0;
+
+		/// frame already started on the processing thread 
+		uint64_t threadFrameIndex = 0;
+
+		/// frame index that was last sent to GPU for actual rendering
+		uint64_t gpuStartedFrameIndex = 0;
+
+		/// frame index that was last confirmed by GPU as finished
+		/// NOTE: ALL submitted command buffers from within given CPU frame must finish for this to be incremented
+		uint64_t gpuFinishedFrameIndex = 0;
+	};
+
+	//--
+
+	// completion condition, corresponds to frame numbers in DeviceSyncInfo
+	enum class DeviceCompletionType : uint8_t
+	{
+		// current CPU frame has finished (advanceFrame() was called, called form MainThread)
+		CPUFrameFinished,
+
+		// recording of command buffer to native command buffers has finished and data is about to be submitted to the GPU
+		// this means that any memory blocks that were external to command buffer (i.e. not copied in) are now not needed any more
+		GPUFrameRecorded,
+
+		// GPU rendering finished, any resources that might have been used by the GPU are now free to be updated/etc
+		// NOTE: on some APIs this takes a little bit longer to get signaled then on others
+		GPUFrameFinished,
+	};
+
+	// completion callback, called from within the DEVICE once some conditions occur (usually GPU finshed particular workload)
+	class RENDERING_DEVICE_API IDeviceCompletionCallback : public base::IReferencable
+	{
+		RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME);
+
+	public:
+		virtual ~IDeviceCompletionCallback();
+
+		// signal that particular moment has occurred
+		virtual void signalCompletion() = 0;
+
+		//--
+
+		// create completion callback that calls a function
+		static DeviceCompletionCallbackPtr CreateFunctionCallback(const std::function<void(void)>& func);
+
+		// create completion callback that calls a fence
+		static DeviceCompletionCallbackPtr CreateFenceCallback(const base::fibers::WaitCounter& fence, uint32_t count = 1);
+	};
 	
 	//--
     
@@ -153,12 +208,16 @@ namespace rendering
         /// close the rendering driver, must be called before deletion
         virtual void shutdown() = 0;
 
-        /// wait for all rendering to finish, this ensures that any hard-core operations are safe
-        /// NOTE: this will wait for all work schedule so far via submitWork to complete
-        virtual void sync() = 0;
+		//---
 
-        /// start new frame
-        virtual void advanceFrame() = 0;
+		/// get current sync info, can be used to perform flip/flop resource reuse based on frame indices rather than fences
+		virtual DeviceSyncInfo querySyncInfo() const = 0;
+
+		/// sync engine, rendering thread and GPU states with optional full pipeline flush
+		virtual void sync(bool flush) = 0;
+
+		/// register callback on completion of current frame
+		virtual bool registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback) = 0;
 
         //---
 
@@ -169,16 +228,19 @@ namespace rendering
         /// NOTE: the source data will be kept alive as long as the object exists
         virtual ShaderObjectPtr createShaders(const ShaderData* shaderData) = 0;
 
-        /// create a buffer, if source data is provided then it's asked to fill in the buffer with content, optionally a fiber fence may be signaled once resource initialization is completed
+        /// create a buffer, if source data is provided then it's asked to fill in the buffer with content
 		/// NOTE: it's legal to use resource BEFORE it's fully initialized with data it might just contain crap
-        virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
+        virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData = nullptr) = 0;
 
-        /// create an image, optionally fill it with data (one "SourceData" entry for each mip*slice) , optionally a fiber fence may be signaled once resource initialization is completed
+        /// create an image, optionally fill it with data (one "SourceData" entry for each mip*slice)
 		/// NOTE: it's legal to use resource BEFORE it's fully initialized with data it might just contain crap
-        virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
+        virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr) = 0;
 
         /// create a sampler
         virtual SamplerObjectPtr createSampler(const SamplerState& info) = 0;
+
+		/// create download area of given size (NOTE: area is reusable)
+		virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) = 0;
 
 		/// create pass layout state, NOTE: may return shared object
 		virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) = 0;
@@ -196,14 +258,6 @@ namespace rendering
 
         /// enumerate resolutions for given display
         virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const = 0;
-
-		//---
-
-		/// schedule asynchronous (background) copying of data to a buffer/image
-		/// NOTE: me must guarantee that that part of the resource is NOT used or we may get visual glitches
-		/// NOTE: resource can't be deleted while a copy is scheduled
-		/// NOTE: once the copy is finished a fence is signaled (usually this or next frame)
-		virtual bool asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished = base::fibers::WaitCounter()) = 0;
 
         //---
 

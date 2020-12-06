@@ -13,6 +13,9 @@ namespace base
 {
     typedef int32_t Index;
     typedef uint32_t Count;
+
+	typedef uint32_t StringIDIndex;
+
 } // base
 
 // All shared pointer stuff is always exposed

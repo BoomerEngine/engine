@@ -11,11 +11,10 @@ descriptor TestParams
 {
     ConstantBuffer
     {
-        vec4 Params;
         mat4 PixelCoordToWorld;
     }
 
-    Texture2D PreviewTexture;
+    attribute(nosampler, format=r32f) Texture2D LinearizedDepth;
 	attribute(uav, format=rgba8) Texture2D OutTexture;
 }
 
@@ -35,7 +34,7 @@ export shader SSAOCS
 
     vec3 FetchViewPos(ivec2 pixelCoord)
     {
-        float depth = textureLoadLod(PreviewTexture, pixelCoord, 0).x;
+        float depth = LinearizedDepth[pixelCoord];
         return PosToWorld(pixelCoord, depth);
     }
 
@@ -130,9 +129,7 @@ export shader SSAOCS
         vec3 ViewPosition = FetchViewPos(gl_GlobalInvocationID.xy);
         vec3 ViewNormal = -ReconstructNormal(gl_GlobalInvocationID.xy, ViewPosition);
 
-        float ScreenDepth = textureLoadLod(PreviewTexture, gl_GlobalInvocationID.xy, 0).x;
-        float LinearDepth = Params.w / (ScreenDepth - Params.z);
-
+        float LinearDepth = LinearizedDepth[gl_GlobalInvocationID.xy];
         float RadiusPixels = controlRadiusToScreen / LinearDepth;
 
         vec4 Rand = GetJitter(gl_GlobalInvocationID.xy / 512.0f);

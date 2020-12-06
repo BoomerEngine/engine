@@ -15,6 +15,7 @@
 #include "renderingShaderCodeLibrary.h"
 #include "renderingShaderStaticExecution.h"
 #include "renderingShaderNativeFunction.h"
+#include "renderingShaderTypeUtils.h"
 
 namespace rendering
 {
@@ -124,7 +125,7 @@ namespace rendering
 				// copy local variables as is in scope
 				case OpCode::Scope:
 				{
-					ret->m_declarations = node->m_declarations;
+					ret->m_declarations = node->m_declarations; // TODO: we should remove 100% constant parameters
 					break;
 				}
 
@@ -195,7 +196,7 @@ namespace rendering
                             ret->m_op = OpCode::Const;
                             TRACE_DEEP("{}: info: static const '{}' folded to '{}'", ret->location(), param->name, ret->m_dataValue);
                         }
-                        else
+                        else if (!param->dataType.isArray())
                         {
                             err.reportError(ret->location(), base::TempString("Unable to fully initialize value of constant '{}' in given context", param->name));
                         }
@@ -223,10 +224,62 @@ namespace rendering
                 }
 
                 // cast
-				case OpCode::ImplicitCast:
                 case OpCode::Cast:
                 {
-                    return const_cast<CodeNode*>(ret->children()[0]);
+					auto valueNode = ret->children()[0];
+					if (valueNode->dataValue().isWholeValueDefined())
+					{
+						bool castValid = true;
+
+						const auto destCastType = ExtractBaseType(ret->dataType());
+						switch (destCastType)
+						{
+							case BaseType::Boolean:
+							{
+								ret->m_dataValue = valueNode->m_dataValue;
+								for (auto& comp : ret->m_dataValue.m_components)
+									comp = DataValueComponent(comp.valueBool());
+								break;
+							}
+
+							case BaseType::Int:
+							{
+								ret->m_dataValue = valueNode->m_dataValue;
+								for (auto& comp : ret->m_dataValue.m_components)
+									comp = DataValueComponent(comp.valueInt());
+								break;
+							}
+
+							case BaseType::Uint:
+							{
+								ret->m_dataValue = valueNode->m_dataValue;
+								for (auto& comp : ret->m_dataValue.m_components)
+									comp = DataValueComponent(comp.valueUint());
+								break;
+							}
+
+							case BaseType::Float:
+							{
+								ret->m_dataValue = valueNode->m_dataValue;
+								for (auto& comp : ret->m_dataValue.m_components)
+									comp = DataValueComponent(comp.valueNumerical());
+								break;
+							}
+
+							default:
+								castValid = false;
+						}
+
+						ret->m_dataValue = valueNode->m_dataValue;
+
+						if (castValid)
+						{
+							ret->m_op = OpCode::Const;
+							ret->m_children.clear();
+							TRACE_DEEP("{}: info: cast folded into '{}'", ret->location(), ret->m_dataValue);
+						}
+					}
+					break;
                 }
 
                 // load
@@ -569,6 +622,68 @@ namespace rendering
                     // empty "if", nothing bad
                     break;
                 }
+
+				case OpCode::CreateVector:
+				{
+					const auto numTargetComponents = node->dataType().computeScalarComponentCount();
+					ret->m_dataValue = DataValue(node->dataType());
+
+					if (ret->children().size() == 1 && ret->children()[0]->dataType().isNumericalScalar())
+					{
+						const auto singleValue = ret->children()[0]->dataValue().component(0);
+						for (uint32_t i = 0; i < numTargetComponents; ++i)
+						{
+							ret->m_dataValue.component(i, singleValue);
+						}
+					}
+					else
+					{
+						uint32_t componentOffset = 0;
+						for (const auto* child : ret->children())
+						{
+							const auto numSourceComponents = child->dataValue().size();
+							for (uint32_t i = 0; i < numSourceComponents; ++i)
+								ret->m_dataValue.component(i + componentOffset, child->dataValue().component(i));
+							componentOffset += numSourceComponents;
+						}
+					}
+
+					if (ret->m_dataValue.isWholeValueDefined())
+					{
+						ret->m_op = OpCode::Const;
+						ret->m_children.clear();
+					}
+
+					break;
+				}
+
+				case OpCode::CreateArray:
+				{
+					const auto numTargetComponents = node->dataType().computeScalarComponentCount();
+					ret->m_dataValue = DataValue(node->dataType());
+
+					uint32_t componentOffset = 0;
+					for (const auto* child : ret->children())
+					{
+						const auto numSourceComponents = child->dataValue().size();
+						for (uint32_t i = 0; i < numSourceComponents; ++i)
+							ret->m_dataValue.component(i + componentOffset, child->dataValue().component(i));
+						componentOffset += numSourceComponents;
+					}
+
+					if (ret->m_dataValue.isWholeValueDefined())
+					{
+						ret->m_op = OpCode::Const;
+						ret->m_children.clear();
+					}
+
+					break;
+				}
+
+				case OpCode::CreateMatrix:
+				{
+					break;
+				}
 
                 case OpCode::Call:
                 { 

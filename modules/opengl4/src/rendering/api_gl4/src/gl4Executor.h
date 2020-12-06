@@ -24,7 +24,7 @@ namespace rendering
             class FrameExecutor : public IFrameExecutor
             {
             public:
-                FrameExecutor(Thread* thread, Frame* frame, PerformanceStats* stats);
+				FrameExecutor(Thread* thread, PerformanceStats* stats, const base::Array<GLuint>& glUniformBufferTable);
                 ~FrameExecutor();
 
 				INLINE ObjectCache* cache() const { return (ObjectCache*) IFrameExecutor::cache(); }
@@ -59,6 +59,8 @@ namespace rendering
 
 				//---
 
+				const base::Array<GLuint>& m_glUniformBuffers;
+
 				std::atomic<uint32_t> m_nextDebugMessageID = 1;
 
 				StateResources m_currentResources;
@@ -66,10 +68,16 @@ namespace rendering
 				StateMask m_drawRenderStateMask;
 				StateMask m_passRenderStateMask;
 
+				GLuint m_glActiveProgram = 0;
+
+				VertexBindingLayout* m_activeVertexLayout = nullptr;
+
 				ResolvedBufferView resolveGeometryBufferView(const rendering::ObjectID& id, uint32_t offset);
 				ResolvedBufferView resolveUntypedBufferView(const rendering::ObjectID& viewId);
 				ResolvedFormatedView resolveTypedBufferView(const rendering::ObjectID& viewId);
-				ResolvedImageView resolveImageView(const rendering::ObjectID& viewID);
+				ResolvedImageView resolveSampledImageView(const rendering::ObjectID& viewID);
+				ResolvedImageView resolveWritableImageView(const rendering::ObjectID& viewID);
+				ResolvedImageView resolveReadOnlyImageView(const rendering::ObjectID& viewID);
 
 				GLuint resolveSampler(const rendering::ObjectID& id);
 

@@ -214,6 +214,7 @@ namespace rendering
 				static const StateValues& DEFAULT_STATES();
 
 				StateValues();
+				StateValues& operator=(const StateValues& other);
 
 				void apply(StateMask mask) const;
 

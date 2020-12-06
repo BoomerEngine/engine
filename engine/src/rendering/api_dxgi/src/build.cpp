@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: rendering_device #]
-* [# dependency: rendering_api_device #]
+* [# dependency: rendering_api_common #]
 * [# platform: winapi #]
 ***/
 

@@ -26,7 +26,7 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_PixelPosition);
@@ -37,7 +37,7 @@ namespace rendering
         
         void RenderingTest_PixelPosition::initialize()
         {
-            m_shaders = loadShader("ScreenCoordBorder.csl");
+            m_shaders = loadGraphicsShader("ScreenCoordBorder.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_PixelPosition::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -45,7 +45,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
 			DescriptorEntry params[1];
 			params[0].constants(base::Point(backBufferView->width(), backBufferView->height()));
@@ -53,7 +53,6 @@ namespace rendering
 
             setQuadParams(cmd, 0.0f, 0.0f, 1.0f, 1.0f);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
             cmd.opDraw(m_shaders, 0, 4);
         
             cmd.opEndPass();

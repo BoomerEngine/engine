@@ -30,8 +30,8 @@ namespace rendering
             static const uint32_t MAX_ELEMENTS = 1024;
 
             uint32_t m_vertexCount;
-            ShaderLibraryPtr m_shaderGenerate;
-            ShaderLibraryPtr m_shaderTest;
+            GraphicsPipelineObjectPtr m_shaderGenerate;
+			GraphicsPipelineObjectPtr m_shaderTest;
 
             BufferObjectPtr m_tempBuffer;
 			BufferViewPtr m_tempBufferSRV;
@@ -46,8 +46,8 @@ namespace rendering
 
         void RenderingTest_FormatBufferWrite::initialize()
         {
-            m_shaderGenerate = loadShader("FormatBufferWriteGenerate.csl");
-            m_shaderTest = loadShader("FormatBufferWriteTest.csl");
+            m_shaderGenerate = loadGraphicsShader("FormatBufferWriteGenerate.csl", outputLayoutNoDepth());
+            m_shaderTest = loadGraphicsShader("FormatBufferWriteTest.csl", outputLayoutNoDepth());
 
             m_tempBuffer = createStorageBuffer(2 * sizeof(base::Vector4) * MAX_ELEMENTS);
 			m_tempBufferUAV = m_tempBuffer->createWritableView(ImageFormat::RGBA32F);
@@ -59,7 +59,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             float yScale = 0.05f;
             for (float y = -1.0f; y < 1.0f; y += yScale)
@@ -81,7 +81,6 @@ namespace rendering
 					params[1] = m_tempBufferUAV;
 					cmd.opBindDescriptor("TestParams"_id, params);
 
-                    cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
                     cmd.opDraw(m_shaderGenerate, 0, MAX_ELEMENTS);
                 }
 
@@ -93,7 +92,6 @@ namespace rendering
 					params[1] = m_tempBufferSRV;
 					cmd.opBindDescriptor("TestParams"_id, params);
 
-                    cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
                     cmd.opDraw(m_shaderTest, 0, MAX_ELEMENTS);
                 }
 

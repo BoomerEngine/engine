@@ -31,20 +31,19 @@ namespace rendering
 
 			//--
 
-			IBaseImageView* Image::createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler)
+			IBaseImageView* Image::createView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				auto* localSampler = static_cast<Sampler*>(sampler);
-				return new ImageAnyView(owner(), this, localSampler, setup);
+				return new ImageAnyView(owner(), this, setup);
 			}
 
 			IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup);
 			}
 
 			IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup);
 			}
 
 			//--
@@ -56,8 +55,8 @@ namespace rendering
 
 			//--
 
-			ImageAnyView::ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup)
-				: IBaseImageView(owner, setup.writable ? ObjectType::ImageWritableView : ObjectType::ImageView, img, sampler, setup)
+			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup)
+				: IBaseImageView(owner, setup.writable ? ObjectType::ImageWritableView : ObjectType::ImageView, img, setup)
 			{}
 
 			ImageAnyView::~ImageAnyView()

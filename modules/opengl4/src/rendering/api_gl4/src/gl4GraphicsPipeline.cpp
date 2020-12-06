@@ -9,6 +9,7 @@
 #include "build.h"
 #include "gl4Thread.h"
 #include "gl4ObjectCache.h"
+#include "gl4Shaders.h"
 #include "gl4GraphicsPipeline.h"
 
 namespace rendering
@@ -29,8 +30,19 @@ namespace rendering
 			GraphicsPipeline::~GraphicsPipeline()
 			{}
 
-			bool GraphicsPipeline::apply()
+			bool GraphicsPipeline::apply(GLuint& glActiveProgram)
 			{
+				if (GLuint glProgram = shaders()->object())
+				{
+					if (glProgram != glActiveProgram)
+					{
+						GL_PROTECT(glBindProgramPipeline(glProgram));
+						glActiveProgram = glProgram;
+					}
+
+					return true;
+				}
+
 				return false;
 			}
 

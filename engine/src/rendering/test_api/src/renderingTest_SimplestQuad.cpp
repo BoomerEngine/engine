@@ -24,7 +24,7 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
         private:
-            ShaderLibraryPtr m_shader;
+            GraphicsPipelineObjectPtr m_shader;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_SimplestQuad);
@@ -39,7 +39,7 @@ namespace rendering
 
         void RenderingTest_SimplestQuad::initialize()
         {
-            m_shader = loadShader("SimplestQuad.csl");
+            m_shader = loadGraphicsShader("SimplestQuad.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_SimplestQuad::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -47,8 +47,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opDraw(m_shader, 0, 4);
             cmd.opEndPass();
         }

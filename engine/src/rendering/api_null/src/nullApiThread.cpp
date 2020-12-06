@@ -10,11 +10,8 @@
 
 #include "nullApiDevice.h"
 #include "nullApiThread.h"
-#include "nullApiFrameFence.h"
 #include "nullApiCopyQueue.h"
-#include "nullApiCopyPool.h"
 #include "nullApiObjectCache.h"
-#include "nullApiTransientBuffer.h"
 #include "nullApiSwapchain.h"
 #include "nullApiExecutor.h"
 #include "nullApiGraphicsPassLayout.h"
@@ -22,6 +19,8 @@
 #include "nullApiSampler.h"
 #include "nullApiImage.h"
 #include "nullApiBuffer.h"
+#include "nullApiBackgroundQueue.h"
+#include "nullApiDownloadArea.h"
 
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiSwapchain.h"
@@ -56,19 +55,31 @@ namespace rendering
 				base::Sleep(200);
 			}
 
-			void Thread::execute_Thread(Frame& frame, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, RuntimeDataAllocations& data)
+			void Thread::execute_Thread(uint64_t frameIndex, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, const FrameExecutionData& data)
 			{
-				FrameExecutor executor(this, &frame, &stats);
-				executor.prepare(data);
+				FrameExecutor executor(this, &stats);
 				executor.execute(masterCommandBuffer);
+			}
+
+			void Thread::insertGpuFrameFence_Thread(uint64_t frameIndex)
+			{
+				auto lock = base::CreateLock(m_fakeFencesLock);
+
+				//auto& fakeFence = m_fakeFences.emplaceBack();
+
+			}
+
+			bool Thread::checkGpuFrameFence_Thread(uint64_t& outFrameIndex)
+			{
+				return false;
 			}
 
 			IBaseSwapchain* Thread::createOptimalSwapchain(const OutputInitInfo& info)
 			{
 				if (info.m_class == OutputClass::Window)
 				{
-					auto window = m_windows->createWindow(info)~;
-					DEBUG_CHECK_RETURN_EX(window, "Window not created", nullptr);
+					auto window = m_windows->createWindow(info);
+					DEBUG_CHECK_RETURN_EX_V(window, "Window not created", nullptr);
 
 					IBaseWindowedSwapchain::WindowSetup setup;
 					setup.colorFormat = ImageFormat::RGBA8_UNORM;
@@ -101,6 +112,11 @@ namespace rendering
 				return new Sampler(this, state);
 			}
 
+			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)
+			{
+				return new DownloadArea(this, size);
+			}
+
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
 				return new Shaders(this, data);
@@ -111,23 +127,9 @@ namespace rendering
 				return new GraphicsPassLayout(this, info);
 			}
 
-			IBaseFrameFence* Thread::createOptimalFrameFence()
-			{
-				const auto timeout = cvFakeGPUWorkTime.get() * 0.001f;
-				return new FrameFence(timeout);
-			}
-
-			//--
-
-			IBaseStagingPool* Thread::createOptimalStagingPool(uint32_t size, uint32_t pageSize, const base::app::CommandLine& cmdLine)
-			{
-				return new CopyPool(size, pageSize);
-			}
-
 			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
 			{
-				auto* pool = static_cast<CopyPool*>(copyPool());
-				return new CopyQueue(this, pool, objectRegistry());
+				return new CopyQueue(this, objectRegistry());
 			}
 
 			ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
@@ -140,14 +142,9 @@ namespace rendering
 				return new ObjectCache(this);
 			}
 
-			IBaseTransientBufferPool* Thread::createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine)
+			IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
 			{
-				return new TransientBufferPool(this, TransientBufferType::Staging);
-			}
-
-			IBaseTransientBufferPool* Thread::createOptimalTransientConstantPool(const base::app::CommandLine& cmdLine)
-			{
-				return new TransientBufferPool(this, TransientBufferType::Constants);
+				return new BackgroundQueue();
 			}
 
 			//--

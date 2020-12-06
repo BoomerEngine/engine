@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\views #]
+* [# filter: interface\object #]
 ***/
 
 #include "build.h"
@@ -118,15 +118,14 @@ namespace rendering
         return numPixels * GetImageFormatInfo(m_key.format).bitsPerPixel / 8;
     }
 
-    bool ImageObject::validateView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageView::Setup& outSetup) const
+    bool ImageObject::validateSampledView(uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const
     {
-        if (numMips == 255)
+        if (numMips == INDEX_MAX)
             numMips = mips() - firstMip;
 
         if (numSlices == INDEX_MAX)
             numSlices = slices() - firstSlice;
 
-		DEBUG_CHECK_RETURN_V(sampler != nullptr, false);
         DEBUG_CHECK_RETURN_V(shaderReadable(), false);
         DEBUG_CHECK_RETURN_V(firstSlice < slices(), false);
 		DEBUG_CHECK_RETURN_V(firstMip < mips(), false);
@@ -140,12 +139,22 @@ namespace rendering
         outSetup.firstSlice = firstSlice;
         outSetup.numMips = numMips;
         outSetup.numSlices = numSlices;
-		outSetup.sampler = AddRef(sampler);
 
         return true;
     }
 
-    bool ImageObject::validateWritableView(uint8_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const
+	bool ImageObject::validateReadOnlyView(uint32_t mip, uint32_t slice, ImageReadOnlyView::Setup& outSetup) const
+	{
+		DEBUG_CHECK_RETURN_V(shaderReadable(), false);
+		DEBUG_CHECK_RETURN_V(slice < slices(), false);
+		DEBUG_CHECK_RETURN_V(mip < mips(), false);
+
+		outSetup.mip = mip;
+		outSetup.slice = slice;
+		return true;
+	}
+
+    bool ImageObject::validateWritableView(uint32_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const
     {
         DEBUG_CHECK_RETURN_V(uavCapable(), false);
         DEBUG_CHECK_RETURN_V(slice < slices(), false);
@@ -156,7 +165,7 @@ namespace rendering
         return true;
     }
 
-    bool ImageObject::validateRenderTargetView(uint8_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const
+    bool ImageObject::validateRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const
     {
         DEBUG_CHECK_RETURN_V(type() == ImageViewType::View2D || type() == ImageViewType::View2DArray, false);
 
@@ -189,20 +198,34 @@ namespace rendering
         return true;
     }
 
-    //--
+	//--
 
-	RTTI_BEGIN_TYPE_NATIVE_CLASS(ImageView);
+	RTTI_BEGIN_TYPE_NATIVE_CLASS(ImageSampledView);
 	RTTI_END_TYPE();
 
-    ImageView::ImageView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup)
-        : IDeviceObjectView(viewId, DeviceObjectViewType::Image, img, impl)
-        , m_firstMip(setup.firstMip)
-        , m_firstSlice(setup.firstSlice)
-        , m_numMips(setup.numMips)
-        , m_numSlices(setup.numSlices)
-    {}
+	ImageSampledView::ImageSampledView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup)
+		: IDeviceObjectView(viewId, DeviceObjectViewType::SampledImage, img, impl)
+		, m_firstMip(setup.firstMip)
+		, m_firstSlice(setup.firstSlice)
+		, m_numMips(setup.numMips)
+		, m_numSlices(setup.numSlices)
+	{}
 
-    ImageView::~ImageView()
+	ImageSampledView::~ImageSampledView()
+	{}
+
+    //--
+
+	RTTI_BEGIN_TYPE_NATIVE_CLASS(ImageReadOnlyView);
+	RTTI_END_TYPE();
+
+	ImageReadOnlyView::ImageReadOnlyView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup)
+        : IDeviceObjectView(viewId, DeviceObjectViewType::Image, img, impl)
+		, m_mip(setup.mip)
+		, m_slice(setup.slice)
+	{}
+
+	ImageReadOnlyView::~ImageReadOnlyView()
     {}
 
     //--

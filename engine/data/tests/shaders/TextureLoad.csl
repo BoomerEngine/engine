@@ -9,7 +9,7 @@
 
 descriptor TestParams
 {
-    Texture2D TestImage;
+    attribute(nosampler, format=rgba8) Texture2D TestImage;
 }
 
 //--
@@ -20,7 +20,7 @@ export shader SimpleTrianglePS
 
 	void main()
 	{
-		ivec2 size = textureSizeLod(TestImage, 0);
+		ivec2 size = imageSize(TestImage);
 		ivec2 texelCoords = frac(UV.xy) * size;
 		gl_Target0 = TestImage[texelCoords];
 	}

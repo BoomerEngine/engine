@@ -409,7 +409,7 @@ namespace base
                 base::io::DeleteFile(m_logFilePath);
             }
 
-            virtual bool print(logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override
+            virtual bool print(logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override
             {
                 if (m_logOutput)
                 {

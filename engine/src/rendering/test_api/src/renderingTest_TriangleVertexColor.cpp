@@ -29,7 +29,7 @@ namespace rendering
 
         private:
             BufferObjectPtr m_vertexBuffer;
-            ShaderLibraryPtr m_shader;
+            GraphicsPipelineObjectPtr m_shader;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleVertexColor);
@@ -63,7 +63,7 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shader = loadShader("SimpleVertexColor.csl");
+            m_shader = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_TriangleVertexColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -71,8 +71,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
             cmd.opDraw(m_shader, 0, 9);
             cmd.opEndPass();

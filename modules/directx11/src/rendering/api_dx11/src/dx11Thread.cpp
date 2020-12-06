@@ -22,6 +22,7 @@
 #include "dx11Sampler.h"
 #include "dx11Image.h"
 #include "dx11Buffer.h"
+#include "dx11BackgroundQueue.h"
 
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiSwapchain.h"
@@ -309,6 +310,11 @@ namespace rendering
 			IBaseObjectCache* Thread::createOptimalObjectCache(const base::app::CommandLine& cmdLine)
 			{
 				return new ObjectCache(this);
+			}
+
+			IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
+			{
+				return new BackgroundQueue(this);
 			}
 
 			IBaseTransientBufferPool* Thread::createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine)

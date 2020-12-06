@@ -27,7 +27,7 @@ descriptor SceneObjectParams
         attribute(offset=96) vec4 SpecularColor;
     }
 
-    Texture2D Texture;
+	attribute(sampler=SamplerWrapLinear) Texture2D Texture;
 }
 
 //--

@@ -44,7 +44,7 @@ namespace base
 
             m_numErrors += 1;
 
-            base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", TempString("{}", message).c_str());
+            base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", "", TempString("{}", message).c_str());
         }
 
         void CookerErrorReporter::reportWarning(const parser::Location& loc, StringView message)
@@ -54,7 +54,7 @@ namespace base
 
             m_numWarnings += 1;
 
-            base::logging::Log::Print(base::logging::OutputLevel::Warning, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", TempString("{}", message).c_str());
+            base::logging::Log::Print(base::logging::OutputLevel::Warning, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", "", TempString("{}", message).c_str());
         }
 
         //--
@@ -112,7 +112,7 @@ namespace base
 
             virtual void onError(uint32_t line, uint32_t pos, const char* text) override
             {
-                logging::Log().Print(logging::OutputLevel::Error, m_path.c_str(), line, "", text);
+                logging::Log().Print(logging::OutputLevel::Error, m_path.c_str(), line, "", "", text);
                 m_numErrors += 1;
             }
 

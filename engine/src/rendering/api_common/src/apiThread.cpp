@@ -11,12 +11,12 @@
 #include "apiObjectRegistry.h"
 #include "apiObjectCache.h"
 #include "apiThread.h"
-#include "apiFrame.h"
 #include "apiWindow.h"
 #include "apiCopyQueue.h"
 #include "apiExecution.h"
-#include "apiTransientBuffer.h"
 #include "apiCapture.h"
+#include "apiBackgroundJobs.h"
+#include "apiUtils.h"
 
 #include "rendering/device/include/renderingCommandBuffer.h"
 
@@ -24,11 +24,6 @@ namespace rendering
 {
     namespace api
     {
-
-		//--
-
-		base::ConfigProperty<uint32_t> cvCopyQueueStagingAreaSizeMB("Rendering", "CopyStagingAreaSizeMB", 256);
-		base::ConfigProperty<uint32_t> cvCopyQueueStagingAreaPageSize("Rendering", "CopyQueueStagingAreaPageSize", 4096);
 
         //--
 
@@ -39,12 +34,15 @@ namespace rendering
             , m_cleanupSync("InternalGLSync")
             , m_device(drv)
         {
-            m_currentFrame = new Frame(this, ++m_currentFrameIndex);
+			memzero(&m_syncInfo, sizeof(m_syncInfo));
+
+			m_syncQueues.cpuQueue = new FrameCompleteionQueue();
+			m_syncQueues.recordQueue = new FrameCompleteionQueue();
+			m_syncQueues.gpuQueue = new FrameCompleteionQueue();
         }
 
 		IBaseThread::~IBaseThread()
 		{
-			ASSERT(m_currentFrame == nullptr);
 		}
 
 		void IBaseThread::stopThread()
@@ -52,29 +50,39 @@ namespace rendering
             TRACE_INFO("Device thread shutting down");
 
 			// mark all still live objects as not needed
-			m_objectRegistry->purge();
+			if (m_objectRegistry)
+				m_objectRegistry->purge();
+
+			// stop background queue
+			if (m_backgroundQueue)
+			{
+				m_backgroundQueue->stop();
+				delete m_backgroundQueue;
+				m_backgroundQueue = nullptr;
+			}
 
 			// finish any high level rendering
 			// NOTE: this will also remove all pending objects
-			sync();
+			sync(true);
+			sync(true);
 
 			// delete queue
 			run([this]() {
 				threadFinish();
 				});
 
-            // delete final frame - should be empty
-            delete m_currentFrame;
-            m_currentFrame = nullptr;
-
             // close the rendering thread
             TRACE_INFO("Waiting for thread to stop");
             m_requestExit = true;
             m_thread.close();
 
-            // close all abandoned windows
-            for (auto window : m_windowsToClose)
-                m_windows->closeWindow(window);
+			// delete queues, they should be empty now
+			delete m_syncQueues.cpuQueue;
+			m_syncQueues.cpuQueue = nullptr;
+			delete m_syncQueues.recordQueue;
+			m_syncQueues.recordQueue = nullptr;
+			delete m_syncQueues.gpuQueue;
+			m_syncQueues.gpuQueue = nullptr;
 
             TRACE_INFO("Device thread closed");
         }        
@@ -107,20 +115,17 @@ namespace rendering
 		{
 			DEBUG_CHECK_EX(base::GetCurrentThreadID() == m_threadId, "This function should be called on rendering thread");
 
-			const auto copyPoolSize = cvCopyQueueStagingAreaSizeMB.get() << 20;
-			const auto copyPoolPageSize = cvCopyQueueStagingAreaPageSize.get();
+			// start background threads
+			m_backgroundQueue = createOptimalBackgroundQueue(cmdLine);
+			if (!m_backgroundQueue->initialize(cmdLine))
+				return false;
 
 			// create object registry
 			m_objectRegistry = AddRef(createOptimalObjectRegistry(cmdLine));
 			m_objectCache = createOptimalObjectCache(cmdLine);
 
 			// create copy queue and pool
-			m_copyPool = createOptimalStagingPool(copyPoolSize, copyPoolPageSize, cmdLine);
 			m_copyQueue = createOptimalCopyQueue(cmdLine);
-
-			// create transient data pools
-			m_transientConstantPool = createOptimalTransientConstantPool(cmdLine);
-			m_transientStagingPool = createOptimalTransientStagingPool(cmdLine);
 
 			return true;
 		}
@@ -131,133 +136,98 @@ namespace rendering
 
 			m_objectRegistry.reset();
 
-			m_objectCache->clear();
-			delete m_objectCache;
-			m_objectCache = nullptr;
+			if (m_objectCache)
+			{
+				m_objectCache->clear();
+				delete m_objectCache;
+				m_objectCache = nullptr;
+			}
 
 			delete m_copyQueue;
 			m_copyQueue = nullptr;
+		}
+		
+		void IBaseThread::advanceFrame_Thread(uint64_t frameIndex)
+		{
+			DEBUG_CHECK_EX(frameIndex == m_syncInfo.threadFrameIndex + 1, "Frame skipping");
 
-			delete m_copyPool;
-			m_copyPool = nullptr;
+			// if there was work submitted for the gpu insert a fence
+			if (auto prevFrameIndex = m_syncInfo.threadFrameIndex)
+			{
+				// did we push anything ?
+				DEBUG_CHECK_EX(m_syncInfo.gpuStartedFrameIndex <= prevFrameIndex, "Frame skipping");
+				if (prevFrameIndex == m_syncInfo.gpuStartedFrameIndex)
+					insertGpuFrameFence_Thread(m_syncInfo.gpuStartedFrameIndex);
+			}
 
-			delete m_transientStagingPool;
-			m_transientStagingPool = nullptr;
-
-			delete m_transientConstantPool;
-			m_transientConstantPool = nullptr;
-
+			// recording thread now reached new frame
+			m_syncInfo.threadFrameIndex = frameIndex;
+			m_syncQueues.recordQueue->signalNotifications(frameIndex);			
 		}
 
-        void IBaseThread::closeFinishedFrames_Thread()
+		void IBaseThread::checkFences_Thread()
+		{
+			// if GPU if fast we may already be done, check the fences
+			uint64_t completedFrame = 0;
+			while (checkGpuFrameFence_Thread(completedFrame))
+			{
+				// GPU has finished work, signal queue
+				DEBUG_CHECK_EX(completedFrame > m_syncInfo.gpuFinishedFrameIndex, "Frame skipping");
+				m_syncInfo.gpuFinishedFrameIndex = completedFrame;
+				m_syncQueues.gpuQueue->signalNotifications(completedFrame);
+			}
+		}
+
+		DeviceSyncInfo IBaseThread::syncInfo() const
+		{
+			DeviceSyncInfo ret;
+			ret.cpuFrameIndex = m_syncInfo.cpuFrameIndex;
+			ret.threadFrameIndex = m_syncInfo.threadFrameIndex;
+			ret.gpuStartedFrameIndex = m_syncInfo.gpuStartedFrameIndex;
+			ret.gpuFinishedFrameIndex = m_syncInfo.gpuFinishedFrameIndex;
+			return ret;
+		}
+
+        void IBaseThread::sync(bool flush)
         {
-            DEBUG_CHECK_EX(base::GetCurrentThreadID() == m_threadId, "This function should be called on rendering thread");
+			DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Expected main thread");
 
-            PC_SCOPE_LVL1(CleanupPendingFrames);
-
-            // get finished frames
-            base::InplaceArray<Frame*, 10> finishedFrames;
-            {
-                auto lock = base::CreateLock(m_sequenceLock);
-
-                bool sequencesFinished = false;
-                for (uint32_t i = 0; i < m_sequencePendingList.size(); ++i)
-                {
-                    auto pendingSequnce = m_sequencePendingList[i];
-                    if (pendingSequnce->checkFences())
-                    {
-                        // delete the sequence object, this will call the completion fences
-                        sequencesFinished = true;
-                        m_sequencePendingList[i] = nullptr;
-                        finishedFrames.pushBack(pendingSequnce);
-                    }
-                }
-
-                // remove empty slots
-                if (sequencesFinished)
-                    m_sequencePendingList.removeAll(nullptr);
-            }
-
-            // clear frames
-            finishedFrames.clearPtr();
-        }
-
-        void IBaseThread::advanceFrame()
-        {
-            ASSERT_EX(Fibers::GetInstance().isMainThread(), "Expected main thread");
+			base::ScopeTimer timer;
+			PC_SCOPE_LVL0(FrameSync);
 
 			// update windows
 			m_windows->updateWindows();
 
-            // wait if previous cleanup job has not yet finished
-            {
-                base::ScopeTimer timer;
-                m_cleanupSync.acquire();
+			// wait if previous cleanup job has not yet finished
+			if (!m_frameSync.empty())
+				Fibers::GetInstance().waitForCounterAndRelease(m_frameSync);
+			//m_cleanupSync.acquire();
 
-                /*auto elapsed = timer.timeElapsed();
-                if (elapsed > 0.0001)
-                {
-                    TRACE_ERROR("GL Waiting for GPU: {}", TimeInterval(elapsed));
-                }*/
-            }
+			// start new CPU frame
+			const auto newFrameIndex = ++m_syncInfo.cpuFrameIndex;
+			m_syncQueues.cpuQueue->signalNotifications(newFrameIndex);
 
-            // get the frame that is ending
-            {
-                auto lock = base::CreateLock(m_sequenceLock);
+			// create new signal
+			const auto newFrameSignal = Fibers::GetInstance().createCounter("FrameSync", 1);
+			m_frameSync = newFrameSignal;
 
-                if (m_currentFrame)
-                    m_sequencePendingList.pushBack(m_currentFrame);
-                m_currentFrame = new Frame(this, ++m_currentFrameIndex);
-            }
+			// push a cleanup job to release objects from frames that were completed
+			pushJob([this, newFrameIndex, newFrameSignal, flush]()
+				{
+					advanceFrame_Thread(newFrameIndex);
 
-            // push a cleanup job to release objects from frames that were completed
-            auto cleanup = [this]()
-            {
-                closeFinishedFrames_Thread();
-                m_cleanupSync.release();
-            };
+					if (flush)
+					{
+						m_syncInfo.gpuStartedFrameIndex = newFrameIndex;
+						syncGPU_Thread();
+					}
 
-            // post job
-            pushJob(cleanup);
+					checkFences_Thread();				
 
-            // close windows used by outputs that are not closed
-            {
-                auto lock = CreateLock(m_windowsToCloseLock);
-                for (auto wnd : m_windowsToClose)
-                    m_windows->closeWindow(wnd);
-                m_windowsToClose.reset();
-            }
-        }
-
-        void IBaseThread::sync()
-        {
-            PC_SCOPE_LVL0(DeviceSync);
-
-            ASSERT_EX(Fibers::GetInstance().isMainThread(), "Expected main thread");
-
-            base::ScopeTimer timer;
-
-            // if there is an active frame close it as no more work will be ever submitted to it
-            if (nullptr != m_currentFrame)
-            {
-                auto lock = base::CreateLock(m_sequenceLock);
-                m_sequencePendingList.pushBack(m_currentFrame);
-                m_currentFrame = new Frame(this, ++m_currentFrameIndex);
-            }
-
-            // all frames should be finished 
-			run([this]() {
-				syncGPU_Thread();
-				closeFinishedFrames_Thread();
+					Fibers::GetInstance().signalCounter(newFrameSignal);
+					//m_cleanupSync.release();
 				});
-
-            // make sure they indeed area
-            DEBUG_CHECK_EX(m_sequencePendingList.empty(), "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
-            //DEBUG_CHECK_EX(nullptr == m_currentFrame, "There are still some unfinished frames after device sync, that should not happen since all fenced should be signalled");
-
-            // start new, fresh frame
-            //m_currentFrame = new Frame(this);
-
+            
             // notify if elapsed time is outstandingly long
             auto elapsedTime = timer.milisecondsElapsed();
             if (elapsedTime > 150.0f)
@@ -270,13 +240,36 @@ namespace rendering
             }
         }
 
+		bool IBaseThread::registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback)
+		{
+			DEBUG_CHECK_RETURN_EX_V(callback != nullptr, "No callback specified", false);
+
+			switch (type)
+			{
+			case DeviceCompletionType::CPUFrameFinished:
+				return m_syncQueues.gpuQueue->registerNotification(m_syncInfo.cpuFrameIndex, callback);
+
+			case DeviceCompletionType::GPUFrameRecorded:
+				return m_syncQueues.recordQueue->registerNotification(m_syncInfo.cpuFrameIndex, callback);
+
+			case DeviceCompletionType::GPUFrameFinished:
+				return m_syncQueues.gpuQueue->registerNotification(m_syncInfo.cpuFrameIndex, callback);
+			}
+
+			return false;
+		}
+
         void IBaseThread::scheduleObjectForDestruction(IBaseObject* ptr)
         {
 			ASSERT(ptr && ptr->canDelete());
 
-            auto lock = base::CreateLock(m_sequenceLock);
-			TRACE_INFO("Scheduled {}({}) for deletion", ptr, ptr->objectType());
-            m_currentFrame->registerObjectForDeletion(ptr);
+			TRACE_INFO("Scheduled {}({}) for deletion at frame {}, current recording: {}, sent to gpu: {}, finished on gpu: {}",
+				(void*)ptr, ptr->objectType(), m_syncInfo.cpuFrameIndex, m_syncInfo.threadFrameIndex, m_syncInfo.gpuStartedFrameIndex, m_syncInfo.gpuFinishedFrameIndex);
+
+			m_syncQueues.gpuQueue->registerNotification(m_syncInfo.cpuFrameIndex, [ptr]()
+				{
+					delete ptr;
+				});
         }
 
         void IBaseThread::pushJob(const std::function<void()>& func)
@@ -335,9 +328,9 @@ namespace rendering
 				});
 		}
 
-		void BuildTransientData(IBaseThread* drv, Frame* seq, PerformanceStats& outStats, command::CommandBuffer* commandBuffer, RuntimeDataAllocations& outData)
+		void BuildExecutionData(IBaseThread* drv, uint64_t cpuFrameIndex, PerformanceStats& outStats, command::CommandBuffer* commandBuffer, FrameExecutionData& outData)
 		{
-			PC_SCOPE_LVL2(BuildTransientData);
+			PC_SCOPE_LVL2(BuildExecutionData);
 
 			// timer
 			base::ScopeTimer timer;
@@ -350,59 +343,64 @@ namespace rendering
 				PC_SCOPE_LVL2(Collect);
 
 				// report constant usage
+				uint32_t currentConstantBufferSize = 0;
 				for (auto& commandBuffer : allCommandBuffers)
 				{
-					if (commandBuffer->gatheredState().totalConstantsUploadSize > 0)
+					auto prev = commandBuffer->gatheredState().constantUploadHead;
+					for (auto cur = commandBuffer->gatheredState().constantUploadHead; cur; cur = cur->nextConstants)
 					{
-						outData.reportConstantsBlockSize(commandBuffer->gatheredState().totalConstantsUploadSize);
-						auto prev = commandBuffer->gatheredState().constantUploadHead;
-						for (auto cur = commandBuffer->gatheredState().constantUploadHead; cur; cur = cur->nextConstants)
+						ASSERT_EX(cur->dataSize <= outData.m_constantBufferSize, "Constant data can't be bigger than 64K, use other buffers");
+
+						// start new buffer if overfilling 
+						// TODO: reuse empty space in previous ones ?
+						const auto alignedDataSize = base::Align<uint32_t>(cur->dataSize, outData.m_constantBufferAlignment);
+						if (currentConstantBufferSize + alignedDataSize > outData.m_constantBufferSize)
 						{
-							uint32_t mergedOffset = 0;
-
-							const void* constData = cur->dataPtr;
-							outData.reportConstData(cur->offset, cur->dataSize, constData, mergedOffset);
-							cur->mergedRuntimeOffset = mergedOffset;
-							prev = cur;
-
-							outStats.uploadTotalSize += cur->dataSize;
-							outStats.uploadConstantsCount += 1;
-							outStats.uploadConstantsSize += cur->dataSize;
+							auto& entry = outData.m_constantBuffers.emplaceBack();
+							entry.usedSize = (uint16_t)currentConstantBufferSize;
+							outStats.uploadConstantsBuffersCount += 1;
+							outStats.uploadConstantsSize += currentConstantBufferSize;
+							currentConstantBufferSize = 0;
 						}
+
+						// remember to copy the data :)
+						auto& copyEntry = outData.m_constantBufferCopies.emplaceBack();
+						copyEntry.bufferIndex = outData.m_constantBuffers.size();
+						copyEntry.bufferOffset = currentConstantBufferSize;
+						copyEntry.srcData = cur->dataPtr;
+						copyEntry.srcDataSize = cur->dataSize;
+						outStats.uploadConstantsCount += 1;
+
+						// write back were we placed the data
+						cur->bufferIndex = outData.m_constantBuffers.size();
+						cur->bufferOffset = currentConstantBufferSize;
+						currentConstantBufferSize += alignedDataSize;
 					}
 				}
 
-				// report and prepare transient buffers
-				for (auto& commandBuffer : allCommandBuffers)
+				// finish last buffer
+				if (currentConstantBufferSize > 0)
 				{
-					/*for (auto cur = commandBuffer->gatheredState().triansienBufferAllocHead; cur; cur = cur->next)
-					{
-						// allocate the resident storage for the buffer on the GPU
-						auto initialData = (cur->initializationDataSize != 0) ? cur->initializationData : nullptr;
-						transientFrameBuilder.reportBuffer(cur->buffer, initialData, cur->initializationDataSize);
-
-						if (cur->initializationDataSize > 0)
-						{
-							outStats.m_uploadTotalSize += cur->initializationDataSize;
-							outStats.m_uploadTransientBufferCount += 1;
-							outStats.m_uploadTransientBufferSize += cur->initializationDataSize;
-						}
-					}*/
+					auto& entry = outData.m_constantBuffers.emplaceBack();
+					entry.usedSize = (uint16_t)currentConstantBufferSize;
+					outStats.uploadConstantsBuffersCount += 1;
+					outStats.uploadConstantsSize += currentConstantBufferSize;
+					currentConstantBufferSize = 0;
 				}
 
-				// report the buffer updates
+				// report general need of staging area
 				for (auto& commandBuffer : allCommandBuffers)
 				{
 					for (auto cur = commandBuffer->gatheredState().dynamicBufferUpdatesHead; cur; cur = cur->next)
 					{
-						outData.reportBufferUpdate(cur->dataBlockPtr, cur->dataBlockSize, cur->stagingBufferOffset);
+						ASSERT_EX(cur->dataBlockSize > 0, "Empty update");
 
-						if (cur->dataBlockSize > 0)
-						{
-							outStats.uploadTotalSize += cur->dataBlockSize;
-							outStats.uploadDynamicBufferCount += 1;
-							outStats.uploadDynamicBufferSize += cur->dataBlockSize;
-						}
+						auto& entry = outData.m_stagingAreas.emplaceBack();
+						entry.op = cur;
+
+						outStats.uploadTotalSize += cur->dataBlockSize;
+						outStats.uploadDynamicBufferCount += 1;
+						outStats.uploadDynamicBufferSize += cur->dataBlockSize;
 					}
 				}
 			}
@@ -415,21 +413,15 @@ namespace rendering
 
         void IBaseThread::submit(command::CommandBuffer* masterCommandBuffer)
         {
-            // no work, can happen as 0 is a valid state
-            if (!masterCommandBuffer)
-                return;
+			DEBUG_CHECK_RETURN_EX(masterCommandBuffer, "No work");
 
-            // schedule work
-            auto lock = base::CreateLock(m_sequenceLock);
-
-            // look at the current sequence, if there were frames submitted add the sequence to the completion list
-            // if there was nothing submitted keep the current sequence as it is
-            ASSERT(m_currentFrame != nullptr);
-            m_currentFrame->attachPendingFrame();
+			// get current cpu-side frame index that will protect all resources
+			// NOTE: technically submit can happen from any thread but it's not recommended 
+			// TODO: I feel race here if not used from main thread, especially close to the "advanceFrame"
+			auto cpuFrameIndex = m_syncInfo.cpuFrameIndex;
 
             // create a job
-            auto frame = m_currentFrame;
-            auto job = [this, masterCommandBuffer, frame]()
+            auto job = [this, masterCommandBuffer, cpuFrameIndex]()
             {
 				base::ScopeTimer totalTime;
 
@@ -440,16 +432,16 @@ namespace rendering
 				auto stats = base::RefNew<PerformanceStats>();
 
 				// build the transient data for the frame
-				RuntimeDataAllocations frameData;
-				BuildTransientData(this, frame, *stats, masterCommandBuffer, frameData);
+				FrameExecutionData executionData;
+				executionData.m_constantBufferSize = m_constantBufferSize;
+				executionData.m_constantBufferAlignment = m_constantBufferAlignment;
+				BuildExecutionData(this, cpuFrameIndex, *stats, masterCommandBuffer, executionData);
 
                 // execute frame
-				execute_Thread(*frame, *stats, masterCommandBuffer, frameData);
+				execute_Thread(cpuFrameIndex, *stats, masterCommandBuffer, executionData);
 
-                // create a pending frame fence and add it to the current sequence
-                // NOTE: only after all fences complete we will try to close the opened sequence and release the resources
-                if (auto fence = createOptimalFrameFence())
-					frame->attachRecordedFrame(fence);
+				// update the sync info after sending first payload for current frame
+				m_syncInfo.gpuStartedFrameIndex = cpuFrameIndex;
 
                 // release command buffers to pool
                 masterCommandBuffer->release();
@@ -471,13 +463,17 @@ namespace rendering
             {
 				// start/finish any async copying
 				if (m_copyQueue)
-				{
-					auto lock = CreateLock(m_sequenceLock);
-					m_copyQueue->update(m_currentFrame);
-				}
+					m_copyQueue->update(m_syncInfo.threadFrameIndex);
 
-                // wait for job
+				// process "sync" version of the background job queue
+				if (m_backgroundQueue)
+					m_backgroundQueue->update();
+
+                // wait for job, it will be signaled on next job or after a timeout
                 m_jobQueueSemaphore.wait(1);
+
+				// check for gpu side completion of jobs
+				checkFences_Thread();
 
                 // get the job
                 if (auto job = popJob())

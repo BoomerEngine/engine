@@ -87,11 +87,11 @@ namespace base
 			return *this;
 		}
 
-		INLINE ConstArrayIterator<const T*> begin() const { return elems; }
-		INLINE ConstArrayIterator<const T*> end() const { return elems + elemCount; }
+		INLINE ConstArrayIterator<const T*> begin() const { return (const T**)elems; }
+		INLINE ConstArrayIterator<const T*> end() const { return (const T**)(elems + elemCount); }
 
-		INLINE ArrayIterator<const T*> begin() { return elems; }
-		INLINE ArrayIterator<const T*> end() { return elems + elemCount; }
+		INLINE ArrayIterator<T*> begin() { return (T**)elems; }
+		INLINE ArrayIterator<T*> end() { return (T**)(elems + elemCount); }
 	};
 
 	//---

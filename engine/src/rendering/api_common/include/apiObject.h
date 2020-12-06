@@ -78,12 +78,23 @@ namespace rendering
 			IBaseCopiableObject(IBaseThread* drv, ObjectType type);
 			virtual ~IBaseCopiableObject(); // called on rendering thread once all frames this object was used are done rendering
 
-			// generate atoms for async update of this resource 
-			// Atoms are the independent regions of resource that should be copied to
-			virtual bool generateCopyAtoms(const ResourceCopyRange& range, base::Array<ResourceCopyAtom>& outAtoms, uint32_t& outStagingAreaSize, uint32_t& outStagingAreaAlignment) const = 0;
+			// measure size of the data required for staging this resource
+			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const = 0;
 
 			// apply copied content (in form of atoms) to this resource
-			virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) = 0;
+			virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) = 0;
+
+			// update from dynamic data
+			virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) = 0;
+
+			// download parts into download area
+			virtual void downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range) = 0;
+
+			// copy content from a buffer
+			virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) = 0;
+
+			// copy content from an image
+			virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) = 0;
 
 			///--
 

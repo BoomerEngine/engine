@@ -33,6 +33,12 @@ export shader PS
 	}
 }
 
+state Lines
+{
+	PrimitiveTopology = LineStrip,
+}
+
+attribute(state=Lines)
 export shader VS
 {
 	out vec4 Color;

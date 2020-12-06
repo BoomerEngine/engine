@@ -19,6 +19,7 @@
 #include "apiImage.h"
 #include "apiGraphicsPassLayout.h"
 #include "apiGraphicsRenderStates.h"
+#include "apiDownloadArea.h"
 
 #include "rendering/device/include/renderingPipeline.h"
 
@@ -123,18 +124,23 @@ namespace rendering
 			m_windows = nullptr;
 		}
 
-		void IBaseDevice::advanceFrame()
+		DeviceSyncInfo IBaseDevice::querySyncInfo() const
 		{
-			PC_SCOPE_LVL1(AdvanceFrame);
-			m_windows->updateWindows();
-			m_thread->advanceFrame();
+			return m_thread->syncInfo();
 		}
 
-		void IBaseDevice::sync()
+		bool IBaseDevice::registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback)
+		{
+			return m_thread->registerCompletionCallback(type, callback);
+		}
+
+		void IBaseDevice::sync(bool flush)
 		{
 			PC_SCOPE_LVL1(DriverSync);
-			m_thread->sync();
+			m_windows->updateWindows();
+			m_thread->sync(flush);
 		}
+
 
 		//--
 
@@ -177,7 +183,7 @@ namespace rendering
 			return nullptr;
 		}
 
-		BufferObjectPtr IBaseDevice::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished)
+		BufferObjectPtr IBaseDevice::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
 		{
 			BufferObject::Setup setup;
 			if (!validateBufferCreationSetup(info, setup))
@@ -186,12 +192,7 @@ namespace rendering
 			if (auto* obj = m_thread->createOptimalBuffer(info))
 			{
 				if (sourceData)
-				{
-					ResourceCopyRange range;
-					range.buffer.offset = 0;
-					range.buffer.size = info.size;
-					m_thread->copyQueue()->schedule(obj, range, sourceData, initializationFinished);
-				}
+					m_thread->copyQueue()->schedule(obj, sourceData);
 
 				return base::RefNew<BufferObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
 			}
@@ -207,7 +208,7 @@ namespace rendering
 			return nullptr;
 		}
 
-		ImageObjectPtr IBaseDevice::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished)
+		ImageObjectPtr IBaseDevice::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
 		{
 			ImageObject::Setup setup;
 			if (!validateImageCreationSetup(info, setup))
@@ -216,14 +217,7 @@ namespace rendering
 			if (auto* obj = m_thread->createOptimalImage(info))
 			{
 				if (sourceData)
-				{
-					ResourceCopyRange range;
-					range.image.firstMip = 0;
-					range.image.firstSlice = 0;
-					range.image.numMips = info.numMips;
-					range.image.numSlices= info.numSlices;
-					m_thread->copyQueue()->schedule(obj, range, sourceData, initializationFinished);
-				}
+					m_thread->copyQueue()->schedule(obj, sourceData);
 
 				return base::RefNew<ImageObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
 			}
@@ -236,6 +230,14 @@ namespace rendering
 			if (auto* obj = m_thread->createOptimalSampler(info))
 				return base::RefNew<SamplerObject>(obj->handle(), m_thread->objectRegistry());
 			
+			return nullptr;
+		}
+
+		DownloadAreaObjectPtr IBaseDevice::createDownloadArea(uint32_t size)
+		{
+			if (auto* obj = m_thread->createOptimalDownloadArea(size))
+				return base::RefNew<DownloadAreaProxy>(obj->handle(), m_thread->objectRegistry(), size);
+
 			return nullptr;
 		}
 
@@ -273,20 +275,6 @@ namespace rendering
 		}
 
 		//--
-
-		bool IBaseDevice::asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished /*= base::fibers::WaitCounter()*/)
-		{
-			DEBUG_CHECK_RETURN_V(object != nullptr, false);
-			DEBUG_CHECK_RETURN_V(sourceData != nullptr, false);
-
-			auto* baseObject = m_thread->objectRegistry()->resolveStatic(object->id(), ObjectType::Unknown);
-			DEBUG_CHECK_RETURN_V(baseObject != nullptr, false);
-
-			auto* baseCopiable = baseObject->toCopiable();
-			DEBUG_CHECK_RETURN_V(baseCopiable != nullptr, false);
-
-			return m_thread->copyQueue()->schedule(baseCopiable, range, sourceData, initializationFinished);
-		}
 
 		void IBaseDevice::submitWork(command::CommandBuffer* masterCommandBuffer, bool background)
 		{

@@ -37,10 +37,10 @@ namespace base
             DEBUG_CHECK_EX(prev == this, "Something went wrong with local log sinks attach/detach order");
         }
 
-        bool LocalLogSink::print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+        bool LocalLogSink::print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
         {
             if (m_previousLocalSink)
-                return m_previousLocalSink->print(level, file, line, context, text);
+                return m_previousLocalSink->print(level, file, line, module, context, text);
             else
                 return false;
         }
@@ -59,17 +59,17 @@ namespace base
 
         //--
 
-        void Log::Print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+        void Log::Print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
         {
-            SinkTable::GetInstance().print(level, file, line, context, text);
+            SinkTable::GetInstance().print(level, file, line, module, context, text);
         }
 
-        IFormatStream& Log::Stream(OutputLevel level /*= OutputLevel::Info*/, const char* contextFile /*= nullptr*/, uint32_t contextLine /*= 0*/)
+        IFormatStream& Log::Stream(OutputLevel level /*= OutputLevel::Info*/, const char* moduleName /*= nullptr*/, const char* contextFile /*= nullptr*/, uint32_t contextLine /*= 0*/)
         {
             if (nullptr == GLogLineStream)
                 GLogLineStream = new LineAssembler(); // never released, but it's a global log FFS, don't bother
 
-            GLogLineStream->takeOwnership(level, contextFile, contextLine);
+            GLogLineStream->takeOwnership(level, moduleName, contextFile, contextLine);
             return *GLogLineStream;
 
             // TODO: return proxy object that will call "release ownership"

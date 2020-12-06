@@ -24,20 +24,19 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(IFunctionAtomicBase, INativeFunction);
 
         public:
-            IFunctionAtomicBase(uint8_t numArgs, bool supportsFloat)
+            IFunctionAtomicBase(uint8_t numArgs)
                 : m_numArgs(numArgs)
-                , m_supportsFloat(supportsFloat)
             {}
 
             bool typeSupportsAtomic(const DataType& type) const
-            {             
+            {
+				if (!type.isNumericalScalar())
+					return false;
 
                 if (type.baseType() == BaseType::Uint)
                     return true;
                 if (type.baseType() == BaseType::Int)
                     return true;
-                if (type.baseType() == BaseType::Float)
-                    return m_supportsFloat;
 
                 return false;
             }
@@ -104,7 +103,7 @@ namespace rendering
 
         public:
             FunctionAtomicIncrement()
-                    : IFunctionAtomicBase(1, false)
+                    : IFunctionAtomicBase(1)
             {}
         };
 
@@ -120,7 +119,7 @@ namespace rendering
 
         public:
             FunctionAtomicDecrement()
-                    : IFunctionAtomicBase(1, false)
+                    : IFunctionAtomicBase(1)
             {}
         };
 
@@ -136,7 +135,7 @@ namespace rendering
 
         public:
             FunctionAtomicAdd()
-                : IFunctionAtomicBase(2, false)
+                : IFunctionAtomicBase(2)
             {}
         };
 
@@ -152,7 +151,7 @@ namespace rendering
 
         public:
             FunctionAtomicSubtract()
-                    : IFunctionAtomicBase(2, false)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -168,7 +167,7 @@ namespace rendering
 
         public:
             FunctionAtomicMin()
-                    : IFunctionAtomicBase(2, true)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -184,7 +183,7 @@ namespace rendering
 
         public:
             FunctionAtomicMax()
-                    : IFunctionAtomicBase(2, true)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -200,7 +199,7 @@ namespace rendering
 
         public:
             FunctionAtomicAnd()
-                    : IFunctionAtomicBase(2, false)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -216,7 +215,7 @@ namespace rendering
 
         public:
             FunctionAtomicOr()
-                    : IFunctionAtomicBase(2, false)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -232,7 +231,7 @@ namespace rendering
 
         public:
             FunctionAtomicXor()
-                    : IFunctionAtomicBase(2, false)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -248,7 +247,7 @@ namespace rendering
 
         public:
             FunctionAtomicExchange()
-                    : IFunctionAtomicBase(2, true)
+                    : IFunctionAtomicBase(2)
             {}
         };
 
@@ -264,7 +263,7 @@ namespace rendering
 
         public:
             FunctionAtomicCompareSwap()
-                    : IFunctionAtomicBase(3, true)
+                    : IFunctionAtomicBase(3)
             {}
         };
 

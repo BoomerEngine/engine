@@ -12,6 +12,9 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingDeviceGlobalObjects.h"
+#include "rendering/device/include/renderingPipeline.h"
+#include "rendering/device/include/renderingShader.h"
+#include "rendering/device/include/renderingShaderMetadata.h"
 
 namespace rendering
 {
@@ -29,13 +32,13 @@ namespace rendering
         private:
             static const auto SIDE_RESOLUTION = 512;
 
-            ShaderLibraryPtr m_shaderGenerate;
-            ShaderLibraryPtr m_shaderTest;
+            ComputePipelineObjectPtr m_shaderGenerate;
+            GraphicsPipelineObjectPtr m_shaderTest;
 
             BufferObjectPtr m_vertexBuffer;
 
             ImageObjectPtr m_image;
-			ImageViewPtr m_imageSRV;
+			ImageReadOnlyViewPtr m_imageSRV;
 			ImageWritableViewPtr m_imageUAV;
 
             uint32_t m_vertexCount;
@@ -78,10 +81,11 @@ namespace rendering
             m_image = createImage(storageImageSetup);
 
 			auto sampler = Globals().SamplerClampPoint;
-			m_imageSRV = m_image->createView(sampler);
+			m_imageSRV = m_image->createReadOnlyView();
+			m_imageUAV = m_image->createWritableView();
 
-            m_shaderGenerate = loadShader("ComputeFillTexture2DGenerate.csl");
-            m_shaderTest = loadShader("ComputeFillTexture2DText.csl");
+            m_shaderGenerate = loadComputeShader("ComputeFillTexture2DGenerate.csl");
+            m_shaderTest = loadGraphicsShader("ComputeFillTexture2DText.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_ComputeFillTexture2D::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -108,7 +112,7 @@ namespace rendering
 				desc[0].constants(params);
 				desc[1] = m_imageUAV;
                 cmd.opBindDescriptor("TestParamsWrite"_id, desc);
-                cmd.opDispatch(m_shaderGenerate, SIDE_RESOLUTION / 8, SIDE_RESOLUTION / 8);
+				cmd.opDispatchThreads(m_shaderGenerate, SIDE_RESOLUTION, SIDE_RESOLUTION);
             }
 
 			cmd.opTransitionLayout(m_image, ResourceLayout::UAV, ResourceLayout::ShaderResource);
@@ -117,11 +121,11 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
 				{
-					DescriptorEntry desc[2];
-					desc[1] = m_imageSRV;
+					DescriptorEntry desc[1];
+					desc[0] = m_imageSRV;
 					cmd.opBindDescriptor("TestParamsRead"_id, desc);
 				}
 

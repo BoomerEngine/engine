@@ -272,7 +272,7 @@ namespace rendering
             DataType simpleCompositeType(BaseType baseType, uint32_t vectorSize = 1, uint32_t matrixRows = 1) const;
 
             // get resource type by name (image/sampler/texture etc)
-            DataType resourceType(base::StringID typeName, const AttributeList& attributes);
+            DataType resourceType(base::StringID typeName, const AttributeList& attributes, base::StringBuf& outError);
 
             // get resource type for a constant buffer of given layout
             DataType resourceType(const CompositeType* constantBufferLayout, const AttributeList& attributes);

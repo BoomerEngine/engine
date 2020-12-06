@@ -1,0 +1,65 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+descriptor HistogramDesc
+{
+    ConstantBuffer
+    {
+		uint NumBuckets;
+    }
+
+	attribute(uav, format=r32i) Buffer HistogramBufferR;
+	attribute(uav, format=r32i) Buffer HistogramBufferG;
+	attribute(uav, format=r32i) Buffer HistogramBufferB;
+	attribute(uav, format=r32i) Buffer HistogramBufferA;
+}
+
+//---
+
+export shader ComputeHistogramMaxCS
+{	
+	attribute(local_size_x=1, local_size_y=1)
+	void main()
+	{
+		int minRange = HistogramBufferR[NumBuckets+0];
+		minRange = min(minRange, HistogramBufferG[NumBuckets+0]);
+		minRange = min(minRange, HistogramBufferB[NumBuckets+0]);
+		minRange = min(minRange, HistogramBufferA[NumBuckets+0]);
+
+		int maxRange = HistogramBufferR[NumBuckets+1];
+		maxRange = max(maxRange, HistogramBufferG[NumBuckets+1]);
+		maxRange = max(maxRange, HistogramBufferB[NumBuckets+1]);
+		maxRange = max(maxRange, HistogramBufferA[NumBuckets+1]);
+
+		int maxValue = HistogramBufferR[NumBuckets+2];
+		maxValue = max(maxValue, HistogramBufferG[NumBuckets+2]);
+		maxValue = max(maxValue, HistogramBufferB[NumBuckets+2]);
+		maxValue = max(maxValue, HistogramBufferA[NumBuckets+2]);
+
+		//--
+
+		HistogramBufferR[NumBuckets+3] = minRange;
+		HistogramBufferR[NumBuckets+4] = maxRange;
+		HistogramBufferR[NumBuckets+5] = maxValue;
+		HistogramBufferG[NumBuckets+3] = minRange;
+		HistogramBufferG[NumBuckets+4] = maxRange;
+		HistogramBufferG[NumBuckets+5] = maxValue;
+		HistogramBufferB[NumBuckets+3] = minRange;
+		HistogramBufferB[NumBuckets+4] = maxRange;
+		HistogramBufferB[NumBuckets+5] = maxValue;
+		HistogramBufferA[NumBuckets+3] = minRange;
+		HistogramBufferA[NumBuckets+4] = maxRange;
+		HistogramBufferA[NumBuckets+5] = maxValue;
+
+		//--
+	
+	}
+}
+
+//---

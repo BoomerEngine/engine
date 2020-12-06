@@ -17,10 +17,8 @@
 #include "gl4GraphicsPipeline.h"
 #include "gl4DescriptorLayout.h"
 #include "gl4VertexLayout.h"
-#include "gl4TransientBuffer.h"
 #include "gl4Sampler.h"
 
-#include "rendering/api_common/include/apiFrame.h"
 #include "rendering/api_common/include/apiExecution.h"
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiOutput.h"
@@ -38,8 +36,9 @@ namespace rendering
 
 			//--
 
-			FrameExecutor::FrameExecutor(Thread* thread, Frame* frame, PerformanceStats* stats)
-				: IFrameExecutor(thread, frame, stats)
+			FrameExecutor::FrameExecutor(Thread* thread, PerformanceStats* stats, const base::Array<GLuint>& glUniformBufferTable)
+				: IFrameExecutor(thread, stats)
+				, m_glUniformBuffers(glUniformBufferTable)
 			{
 			}
 
@@ -89,8 +88,11 @@ namespace rendering
 					return true;
 				}
 
-				if (auto* imageView = objects()->resolveStatic<ImageAnyView>(fb.viewID))
-					return imageView->resolve();
+				if (auto* imageView = objects()->resolveSpecfic<ImageAnyView>(fb.viewID, ObjectType::RenderTargetView))
+				{
+					outTarget = imageView->resolve();
+					return true;
+				}
 
 				return false;
 			}
@@ -145,6 +147,11 @@ namespace rendering
 					m_pass.m_valid = false;
 				}
 
+				m_currentRenderState = StateValues();
+				m_currentRenderState.apply(m_passRenderStateMask);
+				m_passRenderStateMask = StateMask();
+				m_drawRenderStateMask = StateMask();
+
 				IFrameExecutor::runEndPass(op);
 			}
 
@@ -184,7 +191,7 @@ namespace rendering
 				//--
 
 				const auto glSourceFrameBuffer = cache()->buildFramebuffer(sourceFrameBuffer);
-				const auto glTargetFrameBuffer = cache()->buildFramebuffer(sourceFrameBuffer);
+				const auto glTargetFrameBuffer = cache()->buildFramebuffer(targetFrameBuffer);
 
 				//--
 
@@ -244,12 +251,127 @@ namespace rendering
 				}
 			}
 
+
+			static void ClearImageRect(const ResolvedImageView& view, const ResourceClearRect& rect, const void* clearData)
+			{
+				GLuint glFormat = 0;
+				GLuint glType = 0;
+				DecomposeTextureFormat(view.glInternalFormat, glFormat, glType);
+
+				switch (view.glViewType)
+				{
+				case GL_TEXTURE_1D:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, 0, 0, /**/ rect.image.sizeX, 1, 1, /**/ glFormat, glType, clearData));
+					break;
+
+				case GL_TEXTURE_1D_ARRAY:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, view.firstSlice, 0, /**/ rect.image.sizeX, view.numSlices, 1, /**/ glFormat, glType, clearData));
+					break;
+
+				case GL_TEXTURE_2D:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, 0, /**/ rect.image.sizeX, rect.image.sizeY, 1, /**/ glFormat, glType, clearData));
+					break;
+
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, view.firstSlice, /**/ rect.image.sizeX, rect.image.sizeY, view.numSlices, /**/ glFormat, glType, clearData));
+					break;
+
+				case GL_TEXTURE_3D:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, rect.image.offsetZ, /**/ rect.image.sizeX, rect.image.sizeY, rect.image.sizeZ, /**/ glFormat, glType, clearData));
+					break;
+				}
+			}
+
+			static void ClearImageRect2(const ResolvedImageView& view, const base::Rect& rect, const void* clearData)
+			{
+				GLenum glFormat = GL_RGBA;
+				GLenum glType = GL_FLOAT;
+
+				switch (view.glViewType)
+				{
+
+				case GL_TEXTURE_2D:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, 0, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, clearData));
+					break;
+
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, view.firstSlice, /**/ rect.width(), rect.height(), view.numSlices, /**/ glFormat, glType, clearData));
+					break;
+				}
+			}
+
+			static void ClearImageRect3(const ResolvedImageView& view, const base::Rect& rect, bool clearDepth, bool clearStencil, float depthValue, uint32_t stencilValue)
+			{
+				GLuint glFormat = GL_DEPTH_STENCIL;
+				GLuint glType = GL_UNSIGNED_INT_24_8;
+
+				const uint32_t depthMaxUint = (1U << 24) - 1;
+				const uint32_t clearDepthUint = std::clamp<float>(depthValue * (double)depthMaxUint, 0, depthMaxUint);
+
+				const uint32_t clearValue = (stencilValue & 0xFF) | (clearDepthUint << 8);
+
+				switch (view.glViewType)
+				{
+				case GL_TEXTURE_2D:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, 0, /**/ rect.width(), rect.height(), 1, /**/ glFormat, glType, &clearValue));
+					break;
+
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.min.x, rect.min.y, view.firstSlice, /**/ rect.width(), rect.height(), view.numSlices, /**/ glFormat, glType, &clearValue));
+					break;
+				}
+			}
+
 			void FrameExecutor::runClearRenderTarget(const command::OpClearRenderTarget& op)
 			{
+				auto* imageViewPtr = objects()->resolveSpecfic<ImageAnyView>(op.view, ObjectType::RenderTargetView);
+				ASSERT_EX(imageViewPtr, "Object was removed while command buffer was waiting for submission");
+
+				auto imageResolved = imageViewPtr->resolve();
+				DEBUG_CHECK_RETURN_EX(imageResolved, "Internal OOM"); // OOM between recording and execution
+
+				if (op.numRects == 0)
+				{
+					base::Rect rect;
+					rect.max.x = std::max<uint32_t>(1, imageViewPtr->image()->setup().width >> imageViewPtr->setup().firstMip);
+					rect.max.y = std::max<uint32_t>(1, imageViewPtr->image()->setup().height >> imageViewPtr->setup().firstMip);
+					ClearImageRect2(imageResolved, rect, op.color);
+				}
+				else
+				{
+					const auto* rect = (const base::Rect*)op.payload();
+					for (uint32_t k = 0; k < op.numRects; ++k, ++rect)
+						ClearImageRect2(imageResolved, *rect, op.color);
+				}
 			}
 
 			void FrameExecutor::runClearDepthStencil(const command::OpClearDepthStencil& op)
 			{
+				auto* imageViewPtr = objects()->resolveSpecfic<ImageAnyView>(op.view, ObjectType::RenderTargetView);
+				ASSERT_EX(imageViewPtr, "Object was removed while command buffer was waiting for submission");
+
+				auto imageResolved = imageViewPtr->resolve();
+				DEBUG_CHECK_RETURN_EX(imageResolved, "Internal OOM"); // OOM between recording and execution
+
+				if (op.numRects == 0)
+				{
+					base::Rect rect;
+					rect.max.x = std::max<uint32_t>(1, imageViewPtr->image()->setup().width >> imageViewPtr->setup().firstMip);
+					rect.max.y = std::max<uint32_t>(1, imageViewPtr->image()->setup().height >> imageViewPtr->setup().firstMip);
+					ClearImageRect3(imageResolved, rect, op.clearFlags & 1, op.clearFlags & 2, op.depthValue, op.stencilValue);
+				}
+				else
+				{
+					const auto* rect = (const base::Rect*)op.payload();
+					for (uint32_t k = 0; k < op.numRects; ++k, ++rect)
+						ClearImageRect3(imageResolved, *rect, op.clearFlags & 1, op.clearFlags & 2, op.depthValue, op.stencilValue);
+				}
 			}
 
 			void FrameExecutor::runClearBuffer(const command::OpClearBuffer& op)
@@ -258,7 +380,7 @@ namespace rendering
 				ASSERT_EX(bufferViewPtr, "Object was removed while command buffer was waiting for submission");
 				ASSERT_EX(bufferViewPtr->setup().writable, "Non writable view");
 
-				auto bufferResolved = bufferViewPtr->resolve();
+				auto bufferResolved = bufferViewPtr->buffer()->resolve();
 				DEBUG_CHECK_RETURN_EX(bufferResolved, "Internal OOM"); // OOM between recording and execution
 
 				const auto clearValueSize = GetImageFormatInfo(op.clearFormat).bitsPerPixel / 8;
@@ -266,65 +388,35 @@ namespace rendering
 
 				GLuint glFormat = 0;
 				GLuint glType = 0;
-				bool compresed = false;
-				DecomposeTextureFormat(glInternalFormat, glFormat, glType, compresed);
-				ASSERT_EX(!compresed, "Compressed format used"); // not supported for clear
+				DecomposeTextureFormat(glInternalFormat, glFormat, glType);
 
 				const void* clearData = (const uint8_t*)op.payload() + (op.numRects * sizeof(base::image::ImageRect));
 
 				if (op.numRects == 0)
 				{
-					GL_PROTECT(glClearNamedBufferSubData(bufferResolved.glBufferView, glInternalFormat, 0, bufferResolved.size, glFormat, glType, clearData));
+					if (bufferViewPtr->setup().offset == 0 && bufferViewPtr->setup().size == bufferResolved.size)
+					{
+						GL_PROTECT(glClearNamedBufferData(bufferResolved.glBuffer, glInternalFormat, glFormat, glType, clearData));
+					}
+					else
+					{
+						GL_PROTECT(glClearNamedBufferSubData(bufferResolved.glBuffer, glInternalFormat, bufferViewPtr->setup().offset, bufferViewPtr->setup().size, glFormat, glType, clearData));
+					}
 				}
 				else
 				{
 					const auto* rect = (const ResourceClearRect*)op.payload();
 					for (uint32_t k = 0; k < op.numRects; ++k, ++rect)
 					{
-						GL_PROTECT(glClearNamedBufferSubData(bufferResolved.glBufferView, glInternalFormat, rect->buffer.offset, rect->buffer.size, glFormat, glType, clearData));
+						GL_PROTECT(glClearNamedBufferSubData(bufferResolved.glBuffer, glInternalFormat, rect->buffer.offset + bufferViewPtr->setup().offset, rect->buffer.size, glFormat, glType, clearData));
 					}
-				}
-			}
-
-			static void ClearImageRect(const ResolvedImageView& view, const ResourceClearRect& rect, const void* clearData)
-			{
-				GLuint glFormat = 0;
-				GLuint glType = 0;
-				bool compresed = false;
-				DecomposeTextureFormat(view.glInternalFormat, glFormat, glType, compresed);
-				ASSERT_EX(!compresed, "Compressed format used"); // not supported for clear
-
-				switch (view.glViewType)
-				{
-					case GL_TEXTURE_1D:
-						GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, 0, 0, /**/ rect.image.sizeX, 1, 1, /**/ glFormat, glType, clearData));
-						break;
-
-					case GL_TEXTURE_1D_ARRAY:
-						GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, view.firstSlice, 0, /**/ rect.image.sizeX, view.numSlices, 1, /**/ glFormat, glType, clearData));
-						break;
-
-					case GL_TEXTURE_2D:
-						GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, 0, /**/ rect.image.sizeX, rect.image.sizeY, 1, /**/ glFormat, glType, clearData));
-						break;
-
-					case GL_TEXTURE_CUBE_MAP:
-					case GL_TEXTURE_CUBE_MAP_ARRAY:
-					case GL_TEXTURE_2D_ARRAY:
-						GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, view.firstSlice, /**/ rect.image.sizeX, rect.image.sizeY, view.numSlices, /**/ glFormat, glType, clearData));
-						break;
-
-					case GL_TEXTURE_3D:
-						GL_PROTECT(glClearTexSubImage(view.glImage, view.firstMip, rect.image.offsetX, rect.image.offsetY, rect.image.offsetZ, /**/ rect.image.sizeX, rect.image.sizeY, rect.image.sizeZ, /**/ glFormat, glType, clearData));
-						break;
 				}
 			}
 
 			void FrameExecutor::runClearImage(const command::OpClearImage& op)
 			{
-				auto* imageViewPtr = objects()->resolveStatic<ImageAnyView>(op.view);
+				auto* imageViewPtr = objects()->resolveSpecfic<ImageAnyView>(op.view, ObjectType::ImageWritableView);
 				ASSERT_EX(imageViewPtr, "Object was removed while command buffer was waiting for submission");
-				ASSERT_EX(imageViewPtr->setup().writable, "Non writable view");
 
 				auto imageResolved = imageViewPtr->resolve();
 				DEBUG_CHECK_RETURN_EX(imageResolved, "Internal OOM"); // OOM between recording and execution
@@ -357,25 +449,61 @@ namespace rendering
 
 			void FrameExecutor::runUpdate(const command::OpUpdate& op)
 			{
-				auto stagingBuffer = static_cast<const TransientBuffer*>(m_stagingBuffer)->resolve(op.stagingBufferOffset, op.dataBlockSize);
-
 				auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
 				DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
 
-				if (destObject->objectType() == ObjectType::Image)
-				{
-					auto* destImageObject = static_cast<Image*>(destObject);
-					destImageObject->copyFromBuffer(stagingBuffer, op.range);
-				}
-				else if (destObject->objectType() == ObjectType::Buffer)
-				{
-					auto* destBufferObject = static_cast<Buffer*>(destObject);
-					destBufferObject->copyFromBuffer(stagingBuffer, op.range);
-				}
+				if (auto* destCopiable = destObject->toCopiable())
+					destCopiable->updateFromDynamicData(op.dataBlockPtr, op.dataBlockSize, op.range);
 			}
 
 			void FrameExecutor::runCopy(const command::OpCopy& op)
 			{
+				auto* source = objects()->resolveStatic(op.src, ObjectType::Unknown);
+				auto* target = objects()->resolveStatic(op.dest, ObjectType::Unknown);
+				DEBUG_CHECK_RETURN_EX(source && target, "Objects lost");
+
+				auto* sourceCopiable = source->toCopiable();
+				auto* targetCopiable = target->toCopiable();
+				DEBUG_CHECK_RETURN_EX(sourceCopiable && targetCopiable, "Objects not copiable");
+
+				if (targetCopiable->objectType() == ObjectType::Image)
+				{
+					auto targetImage = static_cast<Image*>(targetCopiable);
+
+					if (sourceCopiable->objectType() == ObjectType::Image)
+					{
+						auto sourceImage = static_cast<Image*>(sourceCopiable);
+						auto sourceView = sourceImage->resolve();
+						targetImage->copyFromImage(sourceView, op.srcRange, op.destRange);						
+					}
+					else if (sourceCopiable->objectType() == ObjectType::Buffer)
+					{
+						auto sourceBuffer = static_cast<Buffer*>(sourceCopiable);
+						auto sourceView = sourceBuffer->resolve();
+						sourceView.offset = op.srcRange.buffer.offset;
+						sourceView.size = op.srcRange.buffer.size;
+						targetImage->copyFromBuffer(sourceView, op.destRange);
+					}
+				}
+				else if (targetCopiable->objectType() == ObjectType::Buffer)
+				{
+					auto targetBuffer = static_cast<Buffer*>(targetCopiable);
+
+					if (sourceCopiable->objectType() == ObjectType::Image)
+					{
+						auto sourceImage = static_cast<Image*>(sourceCopiable);
+						auto sourceView = sourceImage->resolve();
+						//targetBuffer->copyFromImage(sourceView, op.srcRange, op.destRange);
+					}
+					else if (sourceCopiable->objectType() == ObjectType::Buffer)
+					{
+						auto sourceBuffer = static_cast<Buffer*>(sourceCopiable);
+						auto sourceView = sourceBuffer->resolve();
+						sourceView.offset = op.srcRange.buffer.offset;
+						sourceView.size = op.srcRange.buffer.size;
+						targetBuffer->copyFromBuffer(sourceView, op.destRange);
+					}
+				}
 			}
 
 			void FrameExecutor::runDraw(const command::OpDraw& op)
@@ -508,6 +636,8 @@ namespace rendering
 					if (flags)
 						GL_PROTECT(glMemoryBarrier(flags));
 				}
+
+				GL_PROTECT(glMemoryBarrier(GL_ALL_BARRIER_BITS));
 			}
 
 			void FrameExecutor::runUAVBarrier(const command::OpUAVBarrier& op)
@@ -631,27 +761,36 @@ namespace rendering
 				m_currentRenderState.apply(pso->staticRenderState(), pso->staticRenderStateMask(), m_drawRenderStateMask);
 
 				flushDrawRenderStates();
-								
-				applyVertexData(pso->shaders()->vertexLayout());
 
-				applyDescriptors(pso->shaders()->descriptorLayout());
+				if (m_activeVertexLayout != pso->shaders()->vertexLayout())
+				{
+					m_activeVertexLayout = pso->shaders()->vertexLayout();
+					m_dirtyVertexBuffers = true;
+				}
 
-				if (usesIndices)
+				if (m_dirtyVertexBuffers)
+					applyVertexData(pso->shaders()->vertexLayout());
+
+				if (usesIndices && m_dirtyIndexBuffer)
 					applyIndexData();
 
-				return pso->apply();
+				if (m_dirtyDescriptors)
+					applyDescriptors(pso->shaders()->descriptorLayout());
+
+				return pso->apply(m_glActiveProgram);
 			}
 
 			bool FrameExecutor::prepareDispatch(ComputePipeline* pso)
 			{
-				applyDescriptors(pso->shaders()->descriptorLayout());
+				if (m_dirtyDescriptors)
+					applyDescriptors(pso->shaders()->descriptorLayout());
 
-				return pso->apply();
+				return pso->apply(m_glActiveProgram);
 			}
 
 			void FrameExecutor::applyIndexData()
 			{
-				if (!m_geometry.indexBinding.id)
+				if (m_geometry.indexBinding.id)
 				{
 					auto buffer = resolveGeometryBufferView(m_geometry.indexBinding.id, m_geometry.indexBinding.offset);
 					DEBUG_CHECK_EX(buffer.glBuffer != 0, "Index buffer unloaded while command buffer was being recorded");
@@ -664,32 +803,45 @@ namespace rendering
 				{
 					GL_PROTECT(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 				}
+
+				m_dirtyIndexBuffer = false;
 			}
 
 			void FrameExecutor::applyVertexData(VertexBindingLayout* layout)
 			{
-				GL_PROTECT(glBindVertexArray(layout->object())); // TODO: opengl makes it non-const :(
-
-				const auto numStreams = layout->vertexStreams().size();
-				for (uint32_t i = 0; i < numStreams; ++i)
+				uint32_t numBoundStreams = 0;
+				if (layout)
 				{
-					const auto& info = layout->vertexStreams().typedData()[i];
-					DEBUG_CHECK_EX(info.index < m_geometry.vertexBindings.size(), base::TempString("Missing vertex buffer for bind point '{}'", info.name));
+					GL_PROTECT(glBindVertexArray(layout->object())); // TODO: opengl makes it non-const :(
 
-					const auto& bufferView = m_geometry.vertexBindings[info.index];
-					DEBUG_CHECK_EX(bufferView.id, base::TempString("Missing vertex buffer for bind point '{}'", info.name));
+					numBoundStreams = layout->vertexStreams().size();
+					for (uint32_t i = 0; i < numBoundStreams; ++i)
+					{
+						const auto& info = layout->vertexStreams().typedData()[i];
+						DEBUG_CHECK_EX(info.index < m_geometry.vertexBindings.size(), base::TempString("Missing vertex buffer for bind point '{}'", info.name));
 
-					auto buffer = resolveGeometryBufferView(bufferView.id, bufferView.offset);
-					DEBUG_CHECK_EX(buffer.glBuffer != 0, base::TempString("Vertex buffer for bind point '{}' unloaded while command buffer was being recorded", info.name));
-					DEBUG_CHECK_EX(glIsBuffer(buffer.glBuffer), "Object is not a buffer");
+						const auto& bufferView = m_geometry.vertexBindings[info.index];
+						DEBUG_CHECK_EX(bufferView.id, base::TempString("Missing vertex buffer for bind point '{}'", info.name));
 
-					GL_PROTECT(glBindVertexBuffer(i, buffer.glBuffer, buffer.offset, info.stride));
+						auto buffer = resolveGeometryBufferView(bufferView.id, bufferView.offset);
+						DEBUG_CHECK_EX(buffer.glBuffer != 0, base::TempString("Vertex buffer for bind point '{}' unloaded while command buffer was being recorded", info.name));
+						DEBUG_CHECK_EX(glIsBuffer(buffer.glBuffer), "Object is not a buffer");
+
+						GL_PROTECT(glBindVertexBuffer(i, buffer.glBuffer, buffer.offset, info.stride));
+					}
+				}
+				else
+				{
+					GL_PROTECT(glBindVertexArray(0));
+					numBoundStreams = 0;
 				}
 
 				// unbind buffers from unused slots
-				for (uint32_t i = numStreams; i < m_geometry.maxBoundVertexStreams; ++i)
+				for (uint32_t i = numBoundStreams; i < m_geometry.maxBoundVertexStreams; ++i)
 					GL_PROTECT(glBindVertexBuffer(i, 0, 0, 0));
-				m_geometry.maxBoundVertexStreams = numStreams;
+				m_geometry.maxBoundVertexStreams = numBoundStreams;
+
+				m_dirtyVertexBuffers = false;
 			}
 
 			GLuint FrameExecutor::resolveSampler(const rendering::ObjectID& id)
@@ -700,9 +852,25 @@ namespace rendering
 				return 0;
 			}
 
-			ResolvedImageView FrameExecutor::resolveImageView(const rendering::ObjectID& viewId)
+			ResolvedImageView FrameExecutor::resolveSampledImageView(const rendering::ObjectID& viewId)
 			{
-				if (auto imagePtr = objects()->resolveStatic<ImageAnyView>(viewId))
+				if (auto imagePtr = objects()->resolveSpecfic<ImageAnyView>(viewId, ObjectType::SampledImageView))
+					return imagePtr->resolve();
+
+				return ResolvedImageView();
+			}
+
+			ResolvedImageView FrameExecutor::resolveWritableImageView(const rendering::ObjectID& viewId)
+			{
+				if (auto imagePtr = objects()->resolveSpecfic<ImageAnyView>(viewId, ObjectType::ImageWritableView))
+					return imagePtr->resolve();
+
+				return ResolvedImageView();
+			}
+
+			ResolvedImageView FrameExecutor::resolveReadOnlyImageView(const rendering::ObjectID& viewId)
+			{
+				if (auto imagePtr = objects()->resolveSpecfic<ImageAnyView>(viewId, ObjectType::ImageReadOnlyView))
 					return imagePtr->resolve();
 
 				return ResolvedImageView();
@@ -764,7 +932,7 @@ namespace rendering
 					{
 						case DeviceObjectViewType::ConstantBuffer:
 						{
-							if (entry.offsetPtr == nullptr)
+							if (entry.inlinedConstants.uploadedDataPtr == nullptr)
 							{
 								ASSERT_EX(entry.id, "Missing ConstantBufferView in passed descriptor entry bindings");
 
@@ -776,9 +944,15 @@ namespace rendering
 							else
 							{
 								ASSERT_EX(!entry.id, "Both offset pointer and resource view ID are set");
-								auto assignedRealOffset = *entry.offsetPtr + entry.offset;
-								auto resolvedView = static_cast<const TransientBuffer*>(m_constantBuffer)->resolve(assignedRealOffset, entry.size);
-								m_currentResources.bindUniformBuffer(elem.objectSlot, resolvedView);
+
+								const auto* data = entry.inlinedConstants.uploadedDataPtr;
+
+								ResolvedBufferView view;
+								view.glBuffer = m_glUniformBuffers[data->bufferIndex];
+								view.offset = data->bufferOffset;
+								view.size = data->dataSize;
+
+								m_currentResources.bindUniformBuffer(elem.objectSlot, view);
 							}
 							break;
 						}
@@ -807,7 +981,33 @@ namespace rendering
 
 						case DeviceObjectViewType::Image:
 						{
-							const auto view = resolveImageView(entry.id);
+							const auto view = resolveReadOnlyImageView(entry.id);
+							ASSERT_EX(view, base::TempString("Unable to resolve image view in param table '{}', member '{}' at index'{}'.",
+								elem.bindPointName, elem.elementName, elem.elementIndex));
+
+							ResolvedFormatedView formatedView;
+							formatedView.glBufferView = view.glImageView;
+							formatedView.glViewFormat = TranslateImageFormat(elem.objectFormat);
+							m_currentResources.bindImage(elem.objectSlot, formatedView, GL_READ_ONLY);
+							break;
+						}
+
+						case DeviceObjectViewType::ImageWritable:
+						{
+							const auto view = resolveWritableImageView(entry.id);
+							ASSERT_EX(view, base::TempString("Unable to resolve image view in param table '{}', member '{}' at index'{}'.",
+								elem.bindPointName, elem.elementName, elem.elementIndex));
+
+							ResolvedFormatedView formatedView;
+							formatedView.glBufferView = view.glImageView;
+							formatedView.glViewFormat = TranslateImageFormat(elem.objectFormat);
+							m_currentResources.bindImage(elem.objectSlot, formatedView, GL_READ_WRITE);
+							break;
+						}
+
+						case DeviceObjectViewType::SampledImage:
+						{
+							const auto view = resolveSampledImageView(entry.id);
 							ASSERT_EX(view, base::TempString("Unable to resolve image view in param table '{}', member '{}' at index'{}'.",
 								elem.bindPointName, elem.elementName, elem.elementIndex));
 
@@ -826,26 +1026,15 @@ namespace rendering
 								ASSERT_EX(view, base::TempString("Unable to resolve image view in param table '{}', member '{}' at index'{}'.",
 									elem.bindPointName, elem.elementName, elem.elementIndex));
 
-								m_currentResources.bindSampler(elem.objectSlot, elem.glStaticSampler);
+								m_currentResources.bindSampler(elem.objectSlot, glSampler);
 							}
 
 							break;
 						}
-
-						case DeviceObjectViewType::ImageWritable:
-						{
-							const auto view = resolveImageView(entry.id);
-							ASSERT_EX(view, base::TempString("Unable to resolve image view in param table '{}', member '{}' at index'{}'.",
-								elem.bindPointName, elem.elementName, elem.elementIndex));
-
-							ResolvedFormatedView formatedView;
-							formatedView.glBufferView = view.glImageView;
-							formatedView.glViewFormat = TranslateImageFormat(elem.objectFormat);
-							m_currentResources.bindImage(elem.objectSlot, formatedView, GL_READ_WRITE);
-							break;
-						}
 					}
 				}
+
+				m_dirtyDescriptors = false;
 			}
 
 			//--

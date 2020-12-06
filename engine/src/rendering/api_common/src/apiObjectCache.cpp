@@ -17,9 +17,12 @@ namespace rendering
     {
 		//---
 
-		IBaseVertexBindingLayout::IBaseVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
+		IBaseVertexBindingLayout::IBaseVertexBindingLayout(IBaseObjectCache* cache, const base::Array<ShaderVertexStreamMetadata>& streams)
 			: m_elements(streams)
-		{}
+		{
+			for (auto& element : m_elements)
+				element.index = cache->resolveVertexBindPointIndex(element.name);
+		}
 
 		IBaseVertexBindingLayout::~IBaseVertexBindingLayout()
 		{}
@@ -107,8 +110,8 @@ namespace rendering
 
         IBaseVertexBindingLayout* IBaseObjectCache::resolveVertexBindingLayout(const ShaderMetadata* data)
         {
-			DEBUG_CHECK_RETURN_EX_V(!data->vertexStreams.empty(), "No vertex bindings in shader, compute shader?", nullptr);
-			DEBUG_CHECK_RETURN_EX_V(data->vertexLayoutKey, "Invalid vertex layout key", nullptr);
+			//DEBUG_CHECK_RETURN_EX_V(!data->vertexStreams.empty(), "No vertex bindings in shader, compute shader?", nullptr);
+			DEBUG_CHECK_RETURN_EX_V(data->vertexLayoutKey != 0 || data->vertexStreams.empty(), "Invalid vertex layout key", nullptr);
 
             // use cached one
 			IBaseVertexBindingLayout* ret = nullptr;

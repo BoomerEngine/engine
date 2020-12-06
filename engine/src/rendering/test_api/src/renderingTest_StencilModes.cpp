@@ -53,7 +53,9 @@ namespace rendering
                 StencilOp::DecrementAndWrap
             };
 
-            ShaderLibraryPtr m_shader;
+            GraphicsPipelineObjectPtr m_shaderBackground;
+			GraphicsPipelineObjectPtr m_shaderPreview;
+			GraphicsPipelineObjectPtr m_shaderTest[NUM_OPS][NUM_OPS];
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_StencilModes);
@@ -124,7 +126,30 @@ namespace rendering
                 m_fillBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shader = loadShader("GenericGeometry.csl");
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.stencil(true);
+				setup.stencilAll(CompareOp::Always, StencilOp::Replace, StencilOp::Replace, StencilOp::Replace);
+				m_shaderBackground = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.stencil(true);
+				setup.stencilAll(CompareOp::Equal, StencilOp::Keep, StencilOp::Keep, StencilOp::Keep);
+				m_shaderPreview = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+			}
+
+			for (uint32_t x = 0; x < NUM_OPS; ++x)
+			{
+				for (uint32_t y = 0; y < NUM_OPS; ++y)
+				{
+					GraphicsRenderStatesSetup setup;
+					setup.stencil(true);
+					setup.stencilAll(StencilFuncNames[subTestIndex()], StencilOpNames[x], StencilOp::Keep, StencilOpNames[y]);
+					m_shaderTest[x][y] = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+				}
+			}
         }
 
         void RenderingTest_StencilModes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -133,7 +158,7 @@ namespace rendering
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
             fb.depth.view(backBufferDepthView).clearDepth(1.0f).clearStencil(0);
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutWithDepth(), fb);
 
             auto numOptions  = ARRAY_COUNT(StencilOpNames);
 
@@ -147,37 +172,25 @@ namespace rendering
                     cmd.opSetViewportRect(0, x * viewWidth, y * viewHeight, viewWidth, viewHeight);
 
                     // draw the test background
-                    {
-                        cmd.opSetStencilState(CompareOp::Always, StencilOp::Replace, StencilOp::Replace, StencilOp::Replace);
-                        for (uint32_t i = 0; i < 4; ++i)
-                        {
-                            cmd.opBindVertexBuffer("Simple3DVertex"_id, m_testBuffer);
-                            cmd.opSetStencilReferenceValue(1 + i);
-                            cmd.opDraw(m_shader, 6 * (1 + i), 6);
-                        }
-                    }
+					for (uint32_t i = 0; i < 4; ++i)
+					{
+						cmd.opBindVertexBuffer("Simple3DVertex"_id, m_testBuffer);
+						cmd.opSetStencilReferenceValue(1 + i);
+						cmd.opDraw(m_shaderBackground, 6 * (1 + i), 6);
+					}
 
                     // use the value 2 for the test
                     cmd.opSetStencilReferenceValue(2);
 
                     // draw the test
-                    {
-                        auto func = StencilFuncNames[subTestIndex()];
-                        auto pass = StencilOpNames[x];
-                        auto fail = StencilOpNames[y];
-                        cmd.opSetStencilState(func, fail, StencilOp::Keep, pass);
-                        cmd.opDraw(m_shader, 0, 6); // draw the test piece
-                    }
+                    cmd.opDraw(m_shaderTest[x][y], 0, 6); // draw the test piece
 
                     // draw the visualization
+                    for (uint32_t i = 0; i < 256; ++i)
                     {
-                        cmd.opSetStencilState(CompareOp::Equal, StencilOp::Keep, StencilOp::Keep, StencilOp::Keep);
-                        for (uint32_t i = 0; i < 256; ++i)
-                        {
-                            cmd.opBindVertexBuffer("Simple3DVertex"_id, m_fillBuffer);
-                            cmd.opSetStencilReferenceValue(i);
-                            cmd.opDraw(m_shader, 6 * i, 6);
-                        }
+                        cmd.opBindVertexBuffer("Simple3DVertex"_id, m_fillBuffer);
+                        cmd.opSetStencilReferenceValue(i);
+                        cmd.opDraw(m_shaderPreview, 6 * i, 6);
                     }
                 }
             }

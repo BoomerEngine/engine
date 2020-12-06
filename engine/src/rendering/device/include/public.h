@@ -50,6 +50,9 @@ namespace rendering
     class IDeviceObjectView;
     typedef base::RefPtr<IDeviceObjectView> DeviceObjectViewPtr;
 
+	class IDeviceCompletionCallback;
+	typedef base::RefPtr<IDeviceCompletionCallback> DeviceCompletionCallbackPtr;
+
     //--
 
     enum class OutputClass : uint8_t
@@ -70,6 +73,8 @@ namespace rendering
 
     //----
 
+	struct ShaderSelector;
+
 	class ShaderObject;
 	typedef base::RefPtr<ShaderObject> ShaderObjectPtr;
 
@@ -88,6 +93,18 @@ namespace rendering
 	struct ShaderDescriptorEntryMetadata;
 	struct ShaderDescriptorMetadata;
 	struct ShaderStaticSamplerMetadata;
+
+	enum class ShaderFeatureBit : uint32_t
+	{
+		ControlFlowHints = 0, // we use control flow hints
+		UAVPixelShader = 1, // we use UAVs in pixel shader
+		UAVOutsidePixelShader = 2, // we use UAVs in other stages
+		EarlyTestsPixelShader = 3, // depth/stencil is tested before running pixel shader
+		DepthModification = 4, // pixel shader is writing to depth (we cannot assume sorting)
+		PixelDiscard = 5, // pixel shader is discarding pixels (we cannot assume opaque geometry)
+	};
+
+	typedef base::BitFlags<ShaderFeatureBit> ShaderFeatureMask;
 
 	//--
 
@@ -135,8 +152,11 @@ namespace rendering
     class ImageObject;
     typedef base::RefPtr<ImageObject> ImageObjectPtr;
 
-    class ImageView;
-    typedef base::RefPtr<ImageView> ImageViewPtr;
+    class ImageSampledView;
+    typedef base::RefPtr<ImageSampledView> ImageSampledViewPtr;
+
+	class ImageReadOnlyView;
+	typedef base::RefPtr<ImageReadOnlyView> ImageReadOnlyViewPtr;
 
     class ImageWritableView;
     typedef base::RefPtr<ImageWritableView> ImageWritableViewPtr;
@@ -191,6 +211,9 @@ namespace rendering
 
 	class IDownloadDataSink;
 	typedef base::RefPtr<IDownloadDataSink> DownloadDataSinkPtr;
+
+	class IDownloadAreaObject;
+	typedef base::RefPtr<IDownloadAreaObject> DownloadAreaObjectPtr;
 	
 	///---
 
@@ -207,10 +230,8 @@ namespace rendering
 
 		struct
 		{
-			uint8_t firstMip;
-			uint8_t numMips;  // must be set
-			uint16_t firstSlice;
-			uint16_t numSlices;  // must be set
+			uint8_t mip;
+			uint16_t slice;
 
 			uint32_t offsetX;
 			uint32_t offsetY;
@@ -294,16 +315,16 @@ namespace rendering
 
         ConstantBuffer,  // CBV (may be inlined - it's missing an object then)
 
-        Buffer,  // SRV for buffer, requires format
-        BufferWritable, // UAV for buffer, requires format
+        Buffer,  // read only typed buffer, all entires the same format
+        BufferWritable, // read/write typed buffer, all entires the same format, goes via UAV on DirectX
 
-        BufferStructured, // read only UAV
-        BufferStructuredWritable, // read/write UAV
+        BufferStructured, // read only storage buffer with stride
+        BufferStructuredWritable, // read/write storage buffer with stride, goes via UAV on DirectX
 
-        Image, // read only texture (SRV), sampled, related to some sampler somewhere (specified in shader metadata)
-        ImageWritable, // UAV
+        Image, // read only image (no mips, single slice) (SRV), not samplable but can be multi-sampled
+        ImageWritable, // read/write image (no mips, single slice) , not samplable but can be multi-sampled, goes via UAV on DirectX
 
-		ImageTable, // descriptor table/binding table for multiple images
+		SampledImage, // image that can be sampled, has mipmaps, slices, etc
 
         Sampler, // explicit sampler entry that can be changed at runtime
 
@@ -316,7 +337,6 @@ namespace rendering
     class DescriptorInfo;
 
     //--
-
 
 } // rendering
 

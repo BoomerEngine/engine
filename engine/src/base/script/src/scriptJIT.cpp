@@ -421,7 +421,7 @@ namespace base
             auto nonce = io::TimeStamp::GetNow().toSafeString();
             auto compiledModuleFileName = StringBuf(TempString("{}_{}.jit", coreProjectModuleName, nonce));
 
-            const auto& tempDir = base::io::SystemPath(io::PathCategory::TempDir);
+            const auto& tempDir = base::io::SystemPath(io::PathCategory::LocalTempDir);
             return TempString("{}jit/{}", tempDir, compiledModuleFileName);
         }
 

@@ -34,7 +34,7 @@ namespace rendering
 
 				//--
 
-				virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler) override final;
+				virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) override final;
 
@@ -53,11 +53,10 @@ namespace rendering
 			class ImageAnyView : public IBaseImageView
 			{
 			public:
-				ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup);
+				ImageAnyView(Thread* owner, Image* img, const Setup& setup);
 				virtual ~ImageAnyView();
 
 				INLINE Image* image() const { return static_cast<Image*>(IBaseImageView::image()); }
-				INLINE Sampler* sampler() const { return static_cast<Sampler*>(IBaseImageView::sampler());; }
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
 			private:

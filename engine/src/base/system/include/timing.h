@@ -100,6 +100,11 @@ namespace base
         INLINE bool operator<(const NativeTimeInterval& val) const;
         INLINE bool operator>(const NativeTimeInterval& val) const;
 
+		INLINE NativeTimeInterval operator+(const NativeTimeInterval& val) const;
+		INLINE NativeTimeInterval& operator+=(const NativeTimeInterval& val);
+		INLINE NativeTimeInterval operator-(const NativeTimeInterval& val) const;
+		INLINE NativeTimeInterval& operator-=(const NativeTimeInterval& val);
+
         // is the interval "zero" ?
         INLINE bool isZero() const;
 

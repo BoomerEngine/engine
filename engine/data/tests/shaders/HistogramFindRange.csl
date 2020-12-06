@@ -1,0 +1,105 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+descriptor HistogramDesc
+{
+    ConstantBuffer
+    {
+        uint ImageWidth;
+        uint ImageHeight;
+		uint ComponentType;
+		uint NumBuckets;
+		float MinAllowedRange;
+		float MaxAllowedRange;
+    }
+
+    attribute(nosampler, format=rgba8) Texture2D InputImage;
+	attribute(coherent, uav, format=r32i) Buffer HistogramBuffer;
+}
+
+export shader ComputeMinMaxCS
+{	
+	const uint BlockSideSize = 8;
+    const uint BlockSize = 64;
+    const uint BlockSizeLog2 = 6;
+
+	shared float[64] MaxValues;
+    shared float[64] MinValues;
+
+	shared int GlobalMaxValue;
+    shared int GlobalMinValue;
+
+	float GetHistogramValue(ivec2 pos)
+	{
+	    vec3 color = InputImage[pos].xyz;
+
+		if (ComponentType == 0)
+			return color.x;
+		else if (ComponentType == 1)
+			return color.y;
+		else if (ComponentType == 2)
+			return color.z;
+		else
+			return dot(color.xyz, vec3(0.2, 0.7, 0.1));    
+	}	
+
+    attribute(local_size_x=8, local_size_y=8)
+	void main()
+	{
+		float colorVal = GetHistogramValue(gl_GlobalInvocationID.xy);
+
+		if (gl_GlobalInvocationID.x == 0 && gl_GlobalInvocationID.y == 0)
+		{
+			GlobalMaxValue = intBitsToFloat(-10000.0f);
+			GlobalMinValue = intBitsToFloat(10000.0f);
+		}
+
+		/*if (gl_GlobalInvocationID.x < NumBuckets)
+			HistogramBuffer[gl_GlobalInvocationID.x] = 0;*/
+
+		memoryBarrierShared();
+
+	    MaxValues[gl_LocalInvocationIndex % BlockSize] = colorVal;
+        MinValues[gl_LocalInvocationIndex % BlockSize] = colorVal;
+
+		// reduction
+        for (uint level=1; level<BlockSizeLog2; level += 1)
+        {
+            uint dist = 1 << level; // 2, 4, etc
+            groupMemoryBarrier();
+
+            if (gl_LocalInvocationIndex < (BlockSize / dist))
+            {
+                MaxValues[gl_LocalInvocationIndex] = max(MaxValues[gl_LocalInvocationIndex], MaxValues[gl_LocalInvocationIndex + dist]);
+                MinValues[gl_LocalInvocationIndex] = min(MinValues[gl_LocalInvocationIndex], MinValues[gl_LocalInvocationIndex + dist]);
+            }
+        }
+
+        // write the results
+	    if ((gl_GlobalInvocationID.x & 7) == 0 && (gl_GlobalInvocationID.y & 7) == 0)
+        {
+			float clampedMin = min(MinAllowedRange, MinValues[0]);
+			float clampedMax = max(MaxAllowedRange, MaxValues[0]);
+
+			atomicMin(GlobalMinValue, floatBitsToInt(clampedMin));
+			atomicMax(GlobalMaxValue, floatBitsToInt(clampedMax));
+        }
+
+		memoryBarrier();
+
+		// write 
+		if (gl_GlobalInvocationID.x == 0 && gl_GlobalInvocationID.y == 0)
+		{
+			HistogramBuffer[NumBuckets+0] = GlobalMinValue;
+			HistogramBuffer[NumBuckets+1] = GlobalMaxValue;
+		}
+	}
+}
+
+//---

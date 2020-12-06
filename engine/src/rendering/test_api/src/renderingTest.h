@@ -10,11 +10,14 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingGraphicsPassLayout.h"
+#include "rendering/device/include/renderingGraphicsStates.h"
 #include "rendering/device/include/renderingFramebuffer.h"
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingImage.h"
 #include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingShaderSelector.h"
 
 #include "base/object/include/rttiMetadata.h"
 
@@ -212,8 +215,8 @@ namespace rendering
             BufferObjectPtr m_vertexBuffer;
 			BufferObjectPtr m_indexBuffer;
 
-            void drawChunk(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t chunkIndex) const;
-            void drawMesh(command::CommandWriter& cmd, const ShaderLibrary* func) const;
+            void drawChunk(command::CommandWriter& cmd, const GraphicsPipelineObject* func, uint32_t chunkIndex) const;
+            void drawMesh(command::CommandWriter& cmd, const GraphicsPipelineObject* func) const;
         };
 
         typedef base::RefPtr<SimpleRenderMesh> SimpleRenderMeshPtr;
@@ -253,10 +256,16 @@ namespace rendering
             // sub test
             INLINE uint32_t subTestIndex() const { return m_subTestIndex; }
 
+			// default (viewport) output layout
+			INLINE const GraphicsPassLayoutObject* outputLayoutNoDepth() const { return m_outputLayoutNoDepth; }
+
+			// default (viewport) output layout
+			INLINE const GraphicsPassLayoutObject* outputLayoutWithDepth() const { return m_outputLayoutWithDepth; }
+
             //--
 
             // prepare test
-            bool prepareAndInitialize(IDevice* drv, uint32_t subTestIndex);
+            bool prepareAndInitialize(IDevice* drv, uint32_t subTestIndex, IOutputObject* output);
 
             // initialize test
             virtual void initialize() = 0;
@@ -269,11 +278,14 @@ namespace rendering
 
             //--
 
-            // load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
-            ShaderLibraryPtr loadShader(base::StringView partialPath);
+			// load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
+            GraphicsPipelineObjectPtr loadGraphicsShader(base::StringView partialPath, const GraphicsPassLayoutObject* pass, const GraphicsRenderStatesSetup* states = nullptr, const ShaderSelector& extraSelectors = ShaderSelector());
+
+			// load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
+			ComputePipelineObjectPtr loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors = ShaderSelector());
 
             // load a simple mesh (obj file) from disk, file should be in the engine/assets/tests/ directory
-			ImageObjectPtr loadImage2D(base::StringView assetFile, bool createMipmaps = false, bool uavCapable = false, bool forceAlpha = false);
+			ImageObjectPtr loadImage2D(base::StringView assetFile, bool createMipmaps = false, bool forceAlpha = false);
             
             // load a custom cubemap from 6 images
 			ImageObjectPtr loadCubemap(base::StringView assetFile, bool createMipmaps = false);
@@ -283,8 +295,17 @@ namespace rendering
 
             //--
 
+			// create render states
+			GraphicsRenderStatesObjectPtr createRenderStates(const GraphicsRenderStatesSetup& setup);
+
+			// create pass layout
+			GraphicsPassLayoutObjectPtr createPassLayout(const GraphicsPassLayoutSetup& setup);
+
             // create buffer
             BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* initializationData = nullptr);
+
+			// create formatted buffer
+			BufferObjectPtr createFormatBuffer(ImageFormat format, uint32_t size, bool allowUAV);
 
             // create vertex buffer
 			BufferObjectPtr createVertexBuffer(uint32_t size, const void* sourceData); // pass NULL data to create dynamic buffer
@@ -307,10 +328,10 @@ namespace rendering
             INLINE BufferObjectPtr createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
 
             // create image
-            ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr, bool uavCapable = false);
+            ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr);
 
             // create texture from list of slices
-			ImageObjectPtr createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable = false);
+			ImageObjectPtr createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType);
 
             // create a 2D mipmap test, each mipmap has different color
             ImageObjectPtr createMipmapTest2D(uint16_t initialSize, bool markers = false);
@@ -330,7 +351,7 @@ namespace rendering
             //--
 
             // draw a simple quad using given shaders
-            void drawQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float w, float h, float u0=0.0f, float v0 = 0.0f, float u1 = 1.0f, float v1 = 1.0f, base::Color color = base::Color::WHITE);
+            void drawQuad(command::CommandWriter& cmd, const GraphicsPipelineObject* func, float x=-1.0f, float y = -1.0f, float w=2.0f, float h = 2.0f, float u0=0.0f, float v0 = 0.0f, float u1 = 1.0f, float v1 = 1.0f, base::Color color = base::Color::WHITE);
 
             // configure quad params
             void setQuadParams(command::CommandWriter& cmd, float x, float y, float w, float h);
@@ -343,13 +364,18 @@ namespace rendering
 
         private:
             base::SpinLock m_allLoadedResourcesLock;
-            base::Array<base::res::BaseReference> m_allLoadedResources;
+            base::Array<base::res::ResourcePtr> m_allLoadedResources;
             
+			base::HashMap<uint64_t, GraphicsPassLayoutObjectPtr> m_passLayoutsMap;
+			base::HashMap<uint64_t, GraphicsRenderStatesObjectPtr> m_renderStatesMap;
+
             bool m_hasErrors;
             uint32_t m_subTestIndex;
             IDevice* m_device;
 
             BufferObjectPtr m_quadVertices;
+			GraphicsPassLayoutObjectPtr m_outputLayoutWithDepth;
+			GraphicsPassLayoutObjectPtr m_outputLayoutNoDepth;
 
             bool loadCubemapSide(base::Array<TextureSlice>& outSlices, base::StringView assetFile, bool createMipmaps /*= false*/);
         };
@@ -388,7 +414,7 @@ namespace rendering
                 }
             }
 
-            void draw(command::CommandWriter& cmd, const ShaderLibrary* func, uint16_t firstInstance = 0, uint16_t numInstances = 1) const
+            void draw(command::CommandWriter& cmd, const GraphicsPipelineObject* func, uint16_t firstInstance = 0, uint16_t numInstances = 1) const
             {
                 if (m_indexBuffer)
                 {

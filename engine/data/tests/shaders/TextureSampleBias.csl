@@ -7,7 +7,7 @@
 
 descriptor TestParams
 {
-    Texture2D TestTexture;
+    attribute(sampler=SamplerClampLinear) Texture2D TestTexture;
 }
 
 export shader SimpleTrianglePS
@@ -16,7 +16,7 @@ export shader SimpleTrianglePS
 
 	void main()
 	{
-	    float bias = 5.0f * dot(UV, normalize(vec2(1,1)));
+	    float bias = 5.0f * UV.x;//dot(UV, normalize(vec2(1,1)));
 	    gl_Target0 = textureBias(TestTexture, UV, bias);
 	}
 }

@@ -18,7 +18,7 @@ namespace rendering
 		{
 
 			// a NULL implementation of the rendering api
-			class Device : public IBaseDevice
+			class RENDERING_API_NULL_API Device : public IBaseDevice
 			{
 				RTTI_DECLARE_VIRTUAL_CLASS(Device, IBaseDevice);
 

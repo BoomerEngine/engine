@@ -9,7 +9,7 @@
 
 //--
 
-descriptor TestParamsRead
+descriptor TestParams
 {
     ConstantBuffer
     {
@@ -41,9 +41,9 @@ export shader DrawPS
 
 	void main()
 	{
-		uvec2 texelCoords = frac(UV.xy) * TestParamsRead.SideCount;
-		uint texelIndex = texelCoords.x + texelCoords.y * TestParamsRead.SideCount;
-		gl_Target0 = TestParamsRead.Colors[texelIndex].xy01;
+		uvec2 texelCoords = frac(UV.xy) * TestParams.SideCount;
+		uint texelIndex = texelCoords.x + texelCoords.y * TestParams.SideCount;
+		gl_Target0 = TestParams.Colors[texelIndex].xy01;
 	}
 }
 

@@ -10,7 +10,6 @@
 #include "nullApiExecutor.h"
 #include "nullApiThread.h"
 
-#include "rendering/api_common/include/apiFrame.h"
 #include "rendering/api_common/include/apiExecution.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 
@@ -23,8 +22,8 @@ namespace rendering
 
 			//--
 
-			FrameExecutor::FrameExecutor(Thread* thread, Frame* frame, PerformanceStats* stats)
-				: IFrameExecutor(thread, frame, stats)
+			FrameExecutor::FrameExecutor(Thread* thread, PerformanceStats* stats)
+				: IFrameExecutor(thread, stats)
 			{
 			}
 
@@ -61,7 +60,12 @@ namespace rendering
 			{
 			}
 
-			void FrameExecutor::runClear(const command::OpClear& op)
+			void FrameExecutor::runClearImage(const command::OpClearImage&)
+			{
+
+			}
+
+			void FrameExecutor::runClearBuffer(const command::OpClearBuffer&)
 			{
 			}
 
@@ -97,10 +101,34 @@ namespace rendering
 			{
 			}
 
-			//--
-
-			void FrameExecutor::applyDynamicStates(const DynamicRenderStates& states, DynamicRenderStatesDirtyFlags mask)
+			void FrameExecutor::runSetViewportRect(const command::OpSetViewportRect& op)
 			{
+
+			}
+
+			void FrameExecutor::runSetScissorRect(const command::OpSetScissorRect& op)
+			{
+
+			}
+
+			void FrameExecutor::runSetBlendColor(const command::OpSetBlendColor& op)
+			{
+
+			}
+
+			void FrameExecutor::runSetLineWidth(const command::OpSetLineWidth& op)
+			{
+
+			}
+
+			void FrameExecutor::runSetDepthClip(const command::OpSetDepthClip& op)
+			{
+
+			}
+
+			void FrameExecutor::runSetStencilReference(const command::OpSetStencilReference& op)
+			{
+
 			}
 
 			//--

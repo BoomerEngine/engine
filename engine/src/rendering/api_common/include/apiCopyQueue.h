@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "apiCopyPool.h"
-
 #include "base/system/include/spinLock.h"
 #include "base/fibers/include/fiberSystem.h"
 #include "base/containers/include/queue.h"
@@ -22,35 +20,64 @@ namespace rendering
 
         //---
 
-        // a "copy engine" for OpenGL - mostly relies on persistently mapped staging buffers
-        class RENDERING_API_COMMON_API IBaseCopyQueue : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+        // a "copy engine" interface, used for asynchronous (non-blocking) resource initialization
+		class RENDERING_API_COMMON_API IBaseCopyQueue : public base::NoCopy
+		{
+			RTTI_DECLARE_POOL(POOL_API_RUNTIME)
 
-        public:
-			IBaseCopyQueue(IBaseThread* owner, IBaseStagingPool* pool, ObjectRegistry* objects);
-            virtual ~IBaseCopyQueue();
+		public:
+			IBaseCopyQueue(IBaseThread* owner, ObjectRegistry* objects);
+			virtual ~IBaseCopyQueue();
 
 			//--
 
-			// push async copy job, tries to start copying data right away if there's a free staging area
+			// push async copy (more like resource initialization) job
 			// NOTE: we can be called from unsafe area (outside render thread so sometimes when we can't allocate staging are we must wait)
-			bool schedule(IBaseCopiableObject* ptr, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter fence);
-
-            //--
-
-			// house keeping - signal finished copies, star new copies
-			void update(Frame* frame);
+			virtual bool schedule(IBaseCopiableObject* ptr, const ISourceDataProvider* sourceData) = 0;
 
 			//--
-            
-        protected:
+
+			// house keeping, called on render thread before processing next batch of commands
+			// NOTE: may be called multiple times within one frame
+			virtual void update(uint64_t frameIndex) = 0;
+
+			//--
+
+		protected:
 			IBaseThread* m_owner = nullptr;
-			IBaseStagingPool* m_pool = nullptr;
 			ObjectRegistry* m_objects = nullptr;
+		};
+
+		//--
+
+		class RENDERING_API_COMMON_API IBaseCopyQueueStagingArea : public base::NoCopy
+		{
+			RTTI_DECLARE_POOL(POOL_API_RUNTIME);
+
+		public:
+			virtual ~IBaseCopyQueueStagingArea();
+		};
+
+		//--
+
+		// staging area based copy queue - useful for all APIs where there's a "CopyFromBuffer" functionality (so all except DirectX11)
+		class RENDERING_API_COMMON_API IBaseCopyQueueWithStaging : public IBaseCopyQueue
+		{
+		public:
+			IBaseCopyQueueWithStaging(IBaseThread* owner, ObjectRegistry* objects);
+			virtual ~IBaseCopyQueueWithStaging();
 
 			//--
+
+			virtual bool schedule(IBaseCopiableObject* ptr, const ISourceDataProvider* sourceData) override final;
+
+			virtual void update(uint64_t frameIndex) override;
+
+			//--
+
+		protected:
 			
+
 			struct Job : public base::IReferencable
 			{
 				RTTI_DECLARE_POOL(POOL_API_RUNTIME);
@@ -58,59 +85,63 @@ namespace rendering
 			public:
 				INLINE Job() {};
 
-
 				//--
 
-				std::atomic<uint32_t> atomsIndex = 0;
-				std::atomic<uint32_t> atomsLeft = 0;
-				std::atomic<bool> canceled = false;
+				// id of target object since it can go away
+				ObjectID id; 
 
-				base::Array<ResourceCopyAtom> atoms;
-				ResourceCopyRange range;
+				// "atoms" to copy - sub-parts of the original resource
+				base::Array<StagingAtom> stagingAtoms;
 
-				//--
+				// staging resource/area assigned to the resource
+				IBaseCopyQueueStagingArea* stagingArea = nullptr;
 
-				SourceDataProviderPtr sourceData; // source data to use for copying
-				base::fibers::WaitCounter sourceFence; // fence to signal once copy is done
-				void* sourceToken = nullptr; // token created by source data (internal loading state)
-				bool sourceAsyncAtoms = false; // can atoms be initialized asynchronously
+				// source data to use for copying
+				SourceDataProviderPtr sourceData;
 
-				//--
+				// time tracking...
+				base::NativeTimePoint scheduledTimestamp; 
+				base::NativeTimePoint allocatedTimestamp;
+				base::NativeTimePoint writeStartedTimestamp;
+				base::NativeTimePoint writeFinishedTimestamp;
+				base::NativeTimePoint copyStartedTimestamp;
+				base::NativeTimePoint copyFinishedTimestamp;
 
-				base::NativeTimePoint timestamp; // when was the resource scheduled
-
-				//--
-
-				uint32_t stagingAreaSize = 0; // size of staging area for this resource
-				uint32_t stagingAreaAlignment = 0; // alignment of staging area for this resource
-				StagingArea stagingArea; // assigned when moved from pending to processing
-
-				//--
-
-				ObjectID id; // id of target object since it can go away
-
-				//--
+				// task state
+				std::atomic<bool> canceled = false; //  used only when whole system is being closed
+				std::atomic<bool> finished = false;
 			};
 
 			base::SpinLock m_pendingJobLock;
 			base::Array<base::RefPtr<Job>> m_pendingJobs; // if everything goes fine use the queue
-			
+
 			base::SpinLock m_processingJobLock;
 			base::Array<base::RefPtr<Job>> m_processingJobs;
 
-			base::Array<base::RefPtr<Job>> m_tempJobList;
+			//--
 
 			void tryStartPendingJobs();
 			bool tryStartJob(Job* job); // returns true if job is no longer pending
-			void tryRunNextAtom(Job* job); // returns true if job is no longer pending
-
-			void runAtom(Job* job, uint32_t atomIndex);
-			void finishCompletedJobs(Frame* frame);
+			void finishCompletedJobs(uint64_t frameIndex);
 
 			void stop();
 
 			//--
-        };
+
+			// given a job try to allocate necessary (platform dependent) staging resources for it
+			virtual IBaseCopyQueueStagingArea* tryAllocateStagingForJob(const Job& job) = 0;
+
+			// flush staging area (make data visible to gpu)
+			virtual void flushStagingArea(IBaseCopyQueueStagingArea* area) = 0;
+
+			// release staging area
+			virtual void releaseStagingArea(IBaseCopyQueueStagingArea* area) = 0;
+
+			// process job - copy user content from SourceDataProvider -> StagingArea
+			virtual void copyJobIntoStagingArea(const Job& job) = 0;
+
+			//--
+		};
 
         //---
 

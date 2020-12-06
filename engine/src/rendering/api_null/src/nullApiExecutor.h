@@ -23,7 +23,7 @@ namespace rendering
             class FrameExecutor : public IFrameExecutor
             {
             public:
-                FrameExecutor(Thread* thread, Frame* frame, PerformanceStats* stats);
+                FrameExecutor(Thread* thread, PerformanceStats* stats);
                 ~FrameExecutor();
 
 			private:
@@ -34,7 +34,8 @@ namespace rendering
 				virtual void runClearPassDepthStencil(const command::OpClearPassDepthStencil &) override final;
 				virtual void runClearRenderTarget(const command::OpClearRenderTarget &) override final;
 				virtual void runClearDepthStencil(const command::OpClearDepthStencil &) override final;
-				virtual void runClear(const command::OpClear &) override final;
+				virtual void runClearImage(const command::OpClearImage &) override final;
+				virtual void runClearBuffer(const command::OpClearBuffer&) override final;
 				virtual void runDownload(const command::OpDownload &) override final;
 				virtual void runUpdate(const command::OpUpdate &) override final;
 				virtual void runCopy(const command::OpCopy &) override final;
@@ -43,6 +44,13 @@ namespace rendering
 				virtual void runDispatch(const command::OpDispatch &) override final;
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier &) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier &) override final;
+
+				virtual void runSetViewportRect(const command::OpSetViewportRect& op) override final;
+				virtual void runSetScissorRect(const command::OpSetScissorRect& op) override final;
+				virtual void runSetBlendColor(const command::OpSetBlendColor& op) override final;
+				virtual void runSetLineWidth(const command::OpSetLineWidth& op) override final;
+				virtual void runSetDepthClip(const command::OpSetDepthClip& op) override final;
+				virtual void runSetStencilReference(const command::OpSetStencilReference& op) override final;
             };
 
 			//---

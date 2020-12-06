@@ -38,9 +38,8 @@ namespace rendering
 			class Device;
 			class Thread;
 			class CopyQueue;
-			class CopyPool;
+			class UniformBufferPool;
 			class ObjectCache;
-			class TransientBuffer;
 
 			class Buffer;
 			class Image;

@@ -47,18 +47,18 @@ namespace rendering
 
         /// register a layout ID form a manual layout
         /// NOTE: this may return existing one if it matches the layout
-        static DescriptorID Register(const DescriptorInfo& info);
+        static DescriptorID Register(const DescriptorInfo& info, const DescriptorInfo** outInfoPtr = nullptr);
 
         /// register a layout ID form a string description, this allows to specify the layouts at compile time
         /// NOTE: this may return existing one if it matches the layout
         /// NOTE: layout format is very simple, e.g: "CBV-CBV-ISRV-ISRV-BUAV"
-        static DescriptorID Register(base::StringView layoutDesc);
+        static DescriptorID Register(base::StringView layoutDesc, const DescriptorInfo** outInfoPtr = nullptr);
 
         /// get a layout from list of descriptor entries
-        static DescriptorID FromDescriptor(const DescriptorEntry* data, uint32_t count);
+        static DescriptorID FromDescriptor(const DescriptorEntry* data, uint32_t count, const DescriptorInfo** outInfoPtr = nullptr);
 
         /// get a layout from a list of descriptor entry types
-        static DescriptorID FromTypes(const DeviceObjectViewType* types, uint32_t numTypes);
+        static DescriptorID FromTypes(const DeviceObjectViewType* types, uint32_t numTypes, const DescriptorInfo** outInfoPtr = nullptr);
 
     private:
         uint16_t id;

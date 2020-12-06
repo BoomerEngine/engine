@@ -154,22 +154,16 @@ namespace rendering
             /// parser node for code parsing
             struct CodeParsingNode
             {
-                int m_tokenID;
-                base::parser::Location m_location;
+				base::parser::Location m_location;
+				int m_tokenID = -1;
                 base::StringView m_string;
-                double m_float;
-                int64_t m_int;
-                CodeNode* m_code;
-                DataType m_type;
-                base::Array<CodeNode*> m_nodes;
+				DataType m_type;
+				CodeNode* m_code = nullptr;
 
-                CodeParsingNode();
-                explicit CodeParsingNode(const base::parser::Location& loc, base::StringView txt);
-                explicit CodeParsingNode(const base::parser::Location& loc, double val);
-                explicit CodeParsingNode(const base::parser::Location& loc, int64_t val);
-                explicit CodeParsingNode(const base::parser::Location& loc, const DataType& knownType);
+				INLINE CodeParsingNode() {};
 
                 CodeParsingNode& operator=(CodeNode* code);
+				CodeParsingNode& operator=(std::nullptr_t);
             };
 
             //---
@@ -202,7 +196,7 @@ namespace rendering
             class ParsingCodeContext : public base::NoCopy
             {
             public:
-                ParsingCodeContext(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, CodeNode*& result, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+                ParsingCodeContext(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
                 ~ParsingCodeContext();
 
                 /// allocate some memory
@@ -226,37 +220,43 @@ namespace rendering
                     m_result = node;
                 }
 
-                /// merge stuff into a list
-                CodeNode* mergeExpressionList(CodeNode* a, CodeNode* b);
-
-                /// merge stuff into a list
-                CodeNode* mergeStatementList(CodeNode* a, CodeNode* b);
+				/// get the root node
+				INLINE CodeNode* root() const
+				{
+					return m_result;
+				}
 
                 /// report error
                 void reportError(const base::parser::Location& loc, base::StringView err);
 
                 ///---
 
-                /// push scope
-                void pushScope(CodeNode* scopeNode);
-
-                ///---
-
-                /// store attributes
-                void attributeVal(uint32_t attribute);
-
-                /// consume attribute
-                uint32_t consumeAttribute();
-
-                ///---
-
                 /// create a function class node
                 CodeNode* createFunctionCall(const base::parser::Location& loc, const base::StringView name, CodeNode* a = nullptr, CodeNode* b=nullptr, CodeNode* c=nullptr);
+
+				///---
+
+				/// create scope node from linked list of statements
+				CodeNode* createScope(CodeNode* src, bool explicitScope = false);
+
+				/// link statements
+				CodeNode* linkStatements(CodeNode* first, CodeNode* second);
+
+				/// create an ordered expression list
+				CodeNode* createExpressionList(CodeNode* first, CodeNode* second);
+
+				/// extract children from tree of OpCode::ListElement nodes
+				void extractChildrenFromExpressionList(CodeNode* target, CodeNode* src);
+
+				/// extract attributes
+				CodeNode* extractAttributes(const CodeNode* attributeList, CodeNode* target);
+
+				///--
 
             private:
                 base::mem::LinearAllocator& m_mem;
                 base::parser::IErrorReporter& m_errHandler;
-                CodeNode*& m_result;
+				CodeNode* m_result = nullptr;
 
                 uint32_t m_currentAttribute;
 

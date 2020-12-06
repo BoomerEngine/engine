@@ -45,11 +45,11 @@ namespace base
             }
         }
 
-        void SinkTable::print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text)
+        void SinkTable::print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text)
         {
             auto lock = CreateLock(m_lock);
             for (uint32_t i = 0; i < m_numSinks; ++i)
-                m_sinks[i]->print(level, file, line, context, text);
+                m_sinks[i]->print(level, file, line, module, context, text);
         }
 
         SinkTable theSinkTable;
@@ -139,7 +139,7 @@ namespace base
             return m_localSink;
         }
 
-        void LineAssembler::takeOwnership(OutputLevel level, const char* contextFile, uint32_t contextLine)
+        void LineAssembler::takeOwnership(OutputLevel level, const char* moduleName, const char* contextFile, uint32_t contextLine)
         {
             /*auto prevOwningThread = m_owningThread.exchange(GetCurrentThreadID());
             assert(prevOwningThread == 0);*/
@@ -147,6 +147,7 @@ namespace base
             m_currentLevel = level;
             m_curentFile = contextFile;
             m_currentLine = contextLine;
+			m_curentModule = moduleName;
         }
 
         void LineAssembler::releaseOwnership()
@@ -184,11 +185,11 @@ namespace base
                         // let the local sink consume it first
                         bool consumed = false;
                         if (m_localSink)
-                            consumed = m_localSink->print(m_currentLevel, m_curentFile, m_currentLine, m_curentContext, m_line.c_str());
+                            consumed = m_localSink->print(m_currentLevel, m_curentFile, m_currentLine, m_curentModule, m_curentContext, m_line.c_str());
 
                         // if it was not consumed by the local sink pass to to global ones
                         if (!consumed)
-                            SinkTable::GetInstance().print(m_currentLevel, m_curentFile, m_currentLine, m_curentContext, m_line.c_str());
+                            SinkTable::GetInstance().print(m_currentLevel, m_curentFile, m_currentLine, m_curentModule, m_curentContext, m_line.c_str());
 
                         m_line.clear();
                     }

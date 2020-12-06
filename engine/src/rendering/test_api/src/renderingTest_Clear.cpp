@@ -54,7 +54,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(clearColor);
             
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opEndPass();
         }
 

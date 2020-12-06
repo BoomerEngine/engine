@@ -160,6 +160,28 @@ namespace base
         return m_delta > val.m_delta;
     }
 
+	INLINE NativeTimeInterval NativeTimeInterval::operator+(const NativeTimeInterval& val) const
+	{
+		return NativeTimeInterval(m_delta + val.m_delta);
+	}
+
+	INLINE NativeTimeInterval& NativeTimeInterval::operator+=(const NativeTimeInterval& val)
+	{
+		m_delta += val.m_delta;
+		return *this;
+	}
+
+	INLINE NativeTimeInterval NativeTimeInterval::operator-(const NativeTimeInterval& val) const
+	{
+		return NativeTimeInterval(m_delta - val.m_delta);
+	}
+
+	INLINE NativeTimeInterval& NativeTimeInterval::operator-=(const NativeTimeInterval& val)
+	{
+		m_delta -= val.m_delta;
+		return *this;
+	}
+
     INLINE bool NativeTimeInterval::isZero() const
     {
         return m_delta == 0;

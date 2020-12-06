@@ -42,15 +42,18 @@ namespace rendering
 
 				//--
 
-				virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler) override final;
+				virtual IBaseImageView* createSampledView_ClientApi(const IBaseImageView::Setup& setup) override final;
+				virtual IBaseImageView* createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) override final;
 
 				//--
 
-				virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) override final;
+				virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) override final;
+				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
 
 				void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
+				void copyFromImage(const ResolvedImageView& view, const ResourceCopyRange& src, const ResourceCopyRange& dest);
 
 				//--
 
@@ -73,13 +76,10 @@ namespace rendering
 			class ImageAnyView : public IBaseImageView
 			{
 			public:
-				ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup);
+				ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType);
 				virtual ~ImageAnyView();
 
-				static const ObjectType STATIC_TYPE = ObjectType::ImageView;
-
 				INLINE Image* image() const { return static_cast<Image*>(IBaseImageView::image()); }
-				INLINE Sampler* sampler() const { return static_cast<Sampler*>(IBaseImageView::sampler());; }
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
 				ResolvedImageView resolve();

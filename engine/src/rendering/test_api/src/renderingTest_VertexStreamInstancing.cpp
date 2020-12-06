@@ -26,7 +26,7 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
             BufferObjectPtr m_vertexBuffer;
 			BufferObjectPtr m_instanceBuffer;
 
@@ -104,7 +104,7 @@ namespace rendering
                 m_instanceBuffer = createVertexBuffer(instances);
             }
 
-            m_shaders = loadShader("VertexStreamInstancing.csl");
+            m_shaders = loadGraphicsShader("VertexStreamInstancing.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_VertexStreamInstancing::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -112,7 +112,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
             cmd.opBindVertexBuffer("InstanceDataTest"_id, m_instanceBuffer);

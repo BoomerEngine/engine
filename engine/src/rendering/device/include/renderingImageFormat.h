@@ -162,6 +162,9 @@ namespace rendering
     extern RENDERING_DEVICE_API bool GetImageFormatByDisplayName(base::StringView name, ImageFormat& outFormat);
     extern RENDERING_DEVICE_API bool GetImageFormatByShaderName(base::StringView name, ImageFormat& outFormat);
 
+	extern RENDERING_DEVICE_API bool IsFormatValidForView(ImageFormat format);
+	extern RENDERING_DEVICE_API bool IsFormatValidForAtomic(ImageFormat format);
+
     //---
 
 } // rendering

@@ -30,7 +30,11 @@ namespace rendering
             VertexIndexBunch<> m_indexedTriList;
             VertexIndexBunch<> m_indexedTriStrip;
             VertexIndexBunch<> m_indexedTriStripVertexRestart;
-            ShaderLibraryPtr m_shaders;
+
+            GraphicsPipelineObjectPtr m_shadersLineList;
+			GraphicsPipelineObjectPtr m_shadersTriList;
+			GraphicsPipelineObjectPtr m_shadersTriStrip;
+			GraphicsPipelineObjectPtr m_shadersTriStripVertexRestart;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_IndexedGeometry);
@@ -181,7 +185,30 @@ namespace rendering
 
         void RenderingTest_IndexedGeometry::initialize()
         {
-            m_shaders = loadShader("GenericGeometry.csl");
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::LineList);
+				m_shadersLineList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::TriangleList);
+				m_shadersTriList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::TriangleStrip);
+				m_shadersTriStrip = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::TriangleStrip);
+				setup.primitiveRestart(true);
+				m_shadersTriStripVertexRestart = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
 
             float y = -0.9f;
             float ystep = 0.48f;
@@ -221,19 +248,12 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::LineList);
-            m_indexedLineList.draw(cmd, m_shaders);
-
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-            m_indexedTriList.draw(cmd, m_shaders);
-
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
-            m_indexedTriStrip.draw(cmd, m_shaders);
-
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip, true);
-            m_indexedTriStripVertexRestart.draw(cmd, m_shaders);
+            m_indexedLineList.draw(cmd, m_shadersLineList);
+			m_indexedTriList.draw(cmd, m_shadersTriList);
+			m_indexedTriStrip.draw(cmd, m_shadersTriStrip);
+            m_indexedTriStripVertexRestart.draw(cmd, m_shadersTriStripVertexRestart);
 
             cmd.opEndPass();
         }

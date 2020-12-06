@@ -45,7 +45,7 @@ namespace base
             // process a single (atomic) line of log message
             // NOTE: this function may be called from many threads and must be internally thread safe
             // NOTE: the function returns "consumed" flag and the local sinks may return true to stop propagation to GLOBAL log sink (ie. printing in log window/writing to log file)
-            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) = 0;
+            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) = 0;
         };
 
         //-----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ namespace base
             virtual ~LocalLogSink();
 
             // default version of this function just passes the log line to parent local sink and does not consume anything
-            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override;
+            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override;
 
         private:
             ILogSink* m_previousLocalSink = nullptr;
@@ -81,10 +81,10 @@ namespace base
         {
         public:
             /// report a log line to all global sink sources, can be called used to integrate better with other log sources that we don't want to route through the line assembler
-            static void Print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text);
+            static void Print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text);
 
             /// get a log stream to print line(s) to the log stream, if text contains multiple lines they are split, current indentation (spaces before first char) is preserved for each line
-            static IFormatStream& Stream(OutputLevel level = OutputLevel::Info, const char* contextFile = nullptr, uint32_t contextLine = 0);
+            static IFormatStream& Stream(OutputLevel level = OutputLevel::Info, const char* moduleName = nullptr, const char* contextFile = nullptr, uint32_t contextLine = 0);
 
             /// insert a local (thread only) log sink, returns previous sink (that we may choose to ignore or to forward data to)
             static ILogSink* MountLocalSink(ILogSink* sink);
@@ -139,7 +139,10 @@ namespace base
 
 //-----------------------------------------------------------------------------
 
-#define TRACE_STREAM( lvl ) base::logging::Log::Stream(lvl, __FILE__, __LINE__)
+#define TRACE_MAKE_TEXT(txt) #txt
+#define TRACE_MAKE_TEXT2(txt) TRACE_MAKE_TEXT(txt)
+
+#define TRACE_STREAM( lvl ) base::logging::Log::Stream(lvl, TRACE_MAKE_TEXT2(PROJECT_NAME), __FILE__, __LINE__)
 #define TRACE_STREAM_SPAM() TRACE_STREAM(base::logging::OutputLevel::Spam)
 #define TRACE_STREAM_INFO() TRACE_STREAM(base::logging::OutputLevel::Info)
 #define TRACE_STREAM_WARNING() TRACE_STREAM(base::logging::OutputLevel::Warning)

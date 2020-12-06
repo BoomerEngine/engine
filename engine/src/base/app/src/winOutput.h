@@ -31,7 +31,7 @@ namespace base
 
             private:
 				// IOutputListener interface
-                virtual bool print(const logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override final;
+                virtual bool print(const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override final;
 
 				// IErrorListener interface
 				virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) override final;

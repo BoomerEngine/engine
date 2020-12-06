@@ -28,7 +28,7 @@ namespace rendering
         private:
             BufferObjectPtr m_vertexBuffer;
             uint32_t m_vertexCount;
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_PointSize);
@@ -62,7 +62,9 @@ namespace rendering
 
         void RenderingTest_PointSize::initialize()
         {
-            m_shaders = loadShader("PointSize.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.primitiveTopology(PrimitiveTopology::PointList);
+            m_shaders = loadGraphicsShader("PointSize.csl", outputLayoutNoDepth(), &setup);
 
             base::Array<Simple3DVertex> vertices;
             PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, 48, vertices);
@@ -75,9 +77,8 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);
             cmd.opEndPass();

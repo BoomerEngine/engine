@@ -29,6 +29,11 @@ namespace rendering
 
 				//--
 
+				INLINE ID3D11Device* device() const { return m_dxDevice; }
+				INLINE ID3D11DeviceContext* deviceContext() const { return m_dxDeviceContext; }
+
+				//--
+
 				virtual void syncGPU_Thread()  override final;
 				virtual void execute_Thread(Frame& frame, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, RuntimeDataAllocations& data) override final;
 
@@ -46,6 +51,7 @@ namespace rendering
 				virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) override final;
 				virtual IBaseObjectCache* createOptimalObjectCache(const base::app::CommandLine& cmdLine) override final;
 
+				virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine) override final;
 				virtual IBaseTransientBufferPool* createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine) override final;
 				virtual IBaseTransientBufferPool* createOptimalTransientConstantPool(const base::app::CommandLine& cmdLine) override final;
 

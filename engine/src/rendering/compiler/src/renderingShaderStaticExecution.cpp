@@ -796,11 +796,7 @@ namespace rendering
                 case OpCode::Cast:
                 {
                     ASSERT(code->children().size() == 1);
-                    return ExecuteProgramCode(stack, code->children()[0], result);
-                }
 
-				case OpCode::ImplicitCast:
-				{
 					auto ret = ExecuteProgramCode(stack, code->children()[0], result);
 					if (ret != ExecutionResult::Finished)
 						return ret;
@@ -1092,6 +1088,50 @@ namespace rendering
                     return ExecutionResult::Finished;
                 }
 
+				case OpCode::VariableDecl:
+				{
+					ASSERT(code->children().size() == 0 || code->children().size() == 1);
+					if (code->children().empty())
+						return ExecutionResult::Finished;
+
+					// resolve reference
+					auto param = code->extraData().m_paramRef;
+					ASSERT(param != nullptr);
+
+					TRACE_DEEP("{}: Accessing initialization param {}, {}", code->location(), param->name, param->dataType);
+
+					ExecutionValue leftSideValue;
+					if (!stack.paramReference(param, leftSideValue))
+					{
+						stack.errorReporter().reportWarning(code->location(), base::TempString("Unable to resolve reference to parameter '{}'", param->name));
+						return stack.returnCode(code->location(), ExecutionResult::Error);
+					}
+
+					// evaluate value
+					auto rightSide = code->children()[0];
+
+					// evaluate the right side
+					ExecutionValue rightSideValue;
+					{
+						auto ret = ExecuteProgramCode(stack, rightSide, rightSideValue);
+						if (ret != ExecutionResult::Finished)
+						{
+							TRACE_DEEP("{}: failed to eval right side", code->location());
+							return ret;
+						}
+					}
+
+					// write
+					TRACE_DEEP("{}: writing '{}' (current value '{}')", code->location(), rightSideValue, leftSideValue);
+					if (!leftSideValue.writeValue(rightSideValue))
+					{
+						stack.errorReporter().reportWarning(code->location(), "Failed to assign value");
+						return stack.returnCode(code->location(), ExecutionResult::Error);
+					}
+				
+					return ExecutionResult::Finished;
+				}
+
 				case OpCode::CreateVector:
 				{
 					const auto numTargetComponents = code->dataType().computeScalarComponentCount();
@@ -1276,11 +1316,19 @@ namespace rendering
                 case OpCode::Loop:
                 {
                     PC_SCOPE_LVL3(Loop);
-                    ASSERT(code->children().size() == 3);
+                    ASSERT(code->children().size() == 4);
 
-                    auto conditionNode = code->children()[0];
-                    auto incrementNode = code->children()[1];
-                    auto codeNode = code->children()[2];
+					auto initNode = code->children()[0];
+                    auto conditionNode = code->children()[1];
+                    auto incrementNode = code->children()[2];
+                    auto codeNode = code->children()[3];
+
+					{
+						ExecutionValue testValue;
+						auto ret = ExecuteProgramCode(stack, initNode, testValue);
+						if (ret != ExecutionResult::Finished)
+							return ret;
+					}
 
                     {
                         // execute the inner code for as long as the condition remain valid

@@ -29,7 +29,7 @@ namespace rendering
 				GLuint object();
 
 			private:
-				GLuint m_glSampler;
+				GLuint m_glSampler = 0;
 			};
 
 			//--

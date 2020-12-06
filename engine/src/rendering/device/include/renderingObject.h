@@ -122,7 +122,33 @@ namespace rendering
         virtual ~SamplerObject();
     };
 
-    ///---
+	//--
+
+    // staging memory for downloading resources
+	class RENDERING_DEVICE_API IDownloadAreaObject : public IDeviceObject
+	{
+		RTTI_DECLARE_VIRTUAL_CLASS(IDownloadAreaObject, IDeviceObject);
+
+	public:
+		IDownloadAreaObject(ObjectID id, IDeviceObjectHandler* impl, uint32_t size);
+		virtual ~IDownloadAreaObject();
+
+		//--
+
+		// size of whole area
+		INLINE uint32_t memorySize() const { return m_size; }
+
+		/// get pointer data data, valid only after first download
+		/// NOTE: size of the data downloaded or the placement is controlled always by the command
+		virtual const uint8_t* memoryPointer() const = 0;
+
+		//--
+
+	private:
+		uint32_t m_size = 0;
+	};
+
+	//---
 
 } // rendering
 

@@ -29,7 +29,7 @@ namespace rendering
             BufferObjectPtr m_vertexBuffer;
             uint32_t m_vertexCount = 0;
 
-			ShaderLibraryPtr m_shaders;
+			GraphicsPipelineObjectPtr m_shaders;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_PointCoord);
@@ -63,7 +63,9 @@ namespace rendering
 
         void RenderingTest_PointCoord::initialize()
         {
-            m_shaders = loadShader("PointCoord.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.primitiveTopology(PrimitiveTopology::PointList);
+            m_shaders = loadGraphicsShader("PointCoord.csl", outputLayoutNoDepth(), &setup);
 
             {
                 base::Array<Simple3DVertex> vertices;
@@ -78,8 +80,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);

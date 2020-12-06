@@ -31,33 +31,42 @@ namespace rendering
 
 			//--
 
-			IBaseImageView* Image::createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler)
+			IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				auto* localSampler = static_cast<Sampler*>(sampler);
-				return new ImageAnyView(owner(), this, localSampler, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::SampledImageView);
+			}
+
+			IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
+			{
+				return new ImageAnyView(owner(), this, setup, ObjectType::ImageReadOnlyView);
 			}
 
 			IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::ImageWritableView);
 			}
 
 			IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::RenderTargetView);
 			}
 
 			//--
 
-			void Image::applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area)
+			void Image::initializeFromStaging(IBaseCopyQueueStagingArea* data)
+			{
+
+			}
+
+			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
 			{
 
 			}
 
 			//--
 
-			ImageAnyView::ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup)
-				: IBaseImageView(owner, setup.writable ? ObjectType::ImageWritableView : ObjectType::ImageView, img, sampler, setup)
+			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType)
+				: IBaseImageView(owner, viewType, img, setup)
 			{}
 
 			ImageAnyView::~ImageAnyView()

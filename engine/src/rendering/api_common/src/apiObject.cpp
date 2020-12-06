@@ -19,19 +19,29 @@ namespace rendering
 
 		RTTI_BEGIN_TYPE_ENUM(ObjectType);
 			RTTI_ENUM_OPTION(Unknown);
+
 			RTTI_ENUM_OPTION(Buffer);
 			RTTI_ENUM_OPTION(Image);
 			RTTI_ENUM_OPTION(Sampler);
 			RTTI_ENUM_OPTION(Shaders);
 			RTTI_ENUM_OPTION(Output);
-			RTTI_ENUM_OPTION(ImageView);
+
+			RTTI_ENUM_OPTION(ImageReadOnlyView);
 			RTTI_ENUM_OPTION(ImageWritableView);
+			RTTI_ENUM_OPTION(SampledImageView);
+
+			RTTI_ENUM_OPTION(RenderTargetView);
+			RTTI_ENUM_OPTION(OutputRenderTargetView);
+
 			RTTI_ENUM_OPTION(BufferTypedView);
 			RTTI_ENUM_OPTION(BufferUntypedView);
 			RTTI_ENUM_OPTION(StructuredBufferView);
 			RTTI_ENUM_OPTION(StructuredBufferWritableView);
-			RTTI_ENUM_OPTION(RenderTargetView);
-			RTTI_ENUM_OPTION(OutputRenderTargetView);
+
+			RTTI_ENUM_OPTION(GraphicsPassLayout);
+			RTTI_ENUM_OPTION(GraphicsRenderStates);
+			RTTI_ENUM_OPTION(GraphicsPipelineObject);
+			RTTI_ENUM_OPTION(ComputePipelineObject);
 		RTTI_END_TYPE();
 		
         //--

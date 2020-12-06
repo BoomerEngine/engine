@@ -21,12 +21,17 @@
 #include "rendering/device/include/renderingShaderMetadata.h"
 #include "base/object/include/stubBuilder.h"
 #include "base/object/include/stubLoader.h"
+#include "base/parser/include/textToken.h"
 
 
 namespace rendering
 {
     namespace compiler
     {
+
+		//--
+
+		base::ConfigProperty<bool> cvDumpShaderStubs("Rendering.Shader", "DumpCompiledStubs", true);
 
 		//--
 
@@ -112,7 +117,7 @@ namespace rendering
 					stage = StageContext();
 			}
 
-			shader::StubProgram* exportProgram(const ShaderBunderSetup& bundle, base::parser::IErrorReporter& err)
+			shader::StubProgram* exportProgram(const ShaderBunderSetup& bundle, base::StringView contextPath, base::StringView contextOptions, base::parser::IErrorReporter& err)
 			{
 				clear();
 
@@ -140,6 +145,8 @@ namespace rendering
 
 				// export
 				auto* program = m_builder.createStub<shader::StubProgram>();
+				program->depotPath = contextPath;
+				program->options = contextOptions;
 				program->files = m_builder.createArray(m_global.m_fileMap.values());
 				program->types = m_builder.createArray(m_global.m_typeMap.values());
 				program->structures = m_builder.createArray(m_global.m_compositeMap.values());
@@ -148,7 +155,9 @@ namespace rendering
 				program->samplers = m_builder.createArray(m_global.m_staticSamplers.values());
 
 				// stages
+				bool valid = true;
 				base::InplaceArray<const shader::StubStage*, 10> shaderStages;
+				shader::StubStage* prevStage = nullptr;
 				for (uint32_t i = 0; i < NUM_STAGES; ++i)
 				{
 					shader::StubStage* stage = nullptr;
@@ -157,21 +166,91 @@ namespace rendering
 						const auto& localStage = m_stages[i];
 
 						stage = m_builder.createStub<shader::StubStage>();
+						stage->stage = (ShaderStage)i;
 						stage->types = m_builder.createArray(localStage.m_types.keys());
 						stage->structures = m_builder.createArray(localStage.m_composites.keys());
 						stage->functions = m_builder.createArray(localStage.m_functionMap.values());
+						stage->functionsRefs = m_builder.createArray(localStage.m_functionForwardRefs.keys());						
 						stage->inputs = m_builder.createArray(localStage.m_stageInputs.keys());
 						stage->outputs = m_builder.createArray(localStage.m_stageOutputs.keys());
 						stage->sharedMemory = m_builder.createArray(localStage.m_sharedMemory.keys());
 						stage->descriptorMembers = m_builder.createArray(localStage.m_descriptorMembers.keys());
 						stage->builtins = m_builder.createArray(localStage.m_buildInVariables.keys());						
 						stage->vertexStreams = m_builder.createArray(localStage.m_vertexStreams.keys());
+						stage->globalConstants = m_builder.createArray(localStage.m_globalConstants.values());
 						stage->samplers = m_builder.createArray(localStage.m_staticSamplersRefs.keys());
 						stage->entryFunction = localStage.m_entryFunction;
-					}
 
-					shaderStages.pushBack(stage);
+						// flags
+						if (localStage.usesControlFlowHints)
+							stage->featureMask |= ShaderFeatureBit::ControlFlowHints;
+						else if (localStage.usesUAVs && stage->stage == ShaderStage::Pixel)
+							stage->featureMask |= ShaderFeatureBit::UAVPixelShader;
+						else if (localStage.usesUAVs && (stage->stage != ShaderStage::Pixel && stage->stage != ShaderStage::Compute))
+							stage->featureMask |= ShaderFeatureBit::UAVOutsidePixelShader;
+						else if (localStage.usesDepthOutput && stage->stage == ShaderStage::Pixel)
+							stage->featureMask |= ShaderFeatureBit::DepthModification;
+						else if (localStage.usesDiscard && stage->stage == ShaderStage::Pixel)
+							stage->featureMask |= ShaderFeatureBit::PixelDiscard;
+
+						// merge program feature flags
+						program->featureMask |= stage->featureMask;
+
+						// link inputs with outputs
+						if (prevStage != nullptr)
+						{
+							for (auto* inputParam : stage->inputs)
+							{
+								const shader::StubStageOutput* prevStageOutput = nullptr;
+								for (auto* outputParam : prevStage->outputs)
+								{
+									if (outputParam->name == inputParam->name)
+									{
+										prevStageOutput = outputParam;
+										break;
+									}
+								}
+
+								if (prevStageOutput)
+								{
+									const_cast<shader::StubStageOutput*>(prevStageOutput)->nextStageInput = inputParam;
+									const_cast<shader::StubStageInput*>(inputParam)->prevStageOutput = prevStageOutput;
+								}
+								else
+								{
+									for (auto it : localStage.m_parametersMap.pairs())
+									{
+										if (it.value == inputParam)
+											err.reportError(it.key->loc, base::TempString("Current stage {} input parmeter {} is not declared as output in previous stage", 
+												(ShaderStage)i, inputParam->name));
+									}
+
+									valid = false;
+								}
+							}
+
+						}
+						else if (!localStage.m_parametersMap.empty())
+						{
+							for (const auto* param : localStage.m_parametersMap.keys())
+							{
+								if (param->scope == DataParameterScope::StageInput)
+								{
+									err.reportError(param->loc, base::TempString("Current stage {} has no previous stage yet it's using stage input parmeter {}", 
+										(ShaderStage)i, param->name));
+									valid = false;
+								}
+							}
+						}
+
+						prevStage = stage;
+						shaderStages.pushBack(stage);
+					}
 				}
+
+				// do not continue if we are not valid
+				if (!valid)
+					return nullptr;
 
 				// render states, exported only if we used pixel shader
 				static const auto PixelShaderStageIndex = (int)ShaderStage::Pixel;
@@ -193,7 +272,7 @@ namespace rendering
 					// store only if we indeed collected something
 					if (finalStates != GraphicsRenderStatesSetup::DEFAULT_STATES())
 					{
-						TRACE_INFO("Final collected render states:\n{}", finalStates);
+						TRACE_SPAM("Final collected render states:\n{}", finalStates);
 
 						auto* stub = m_builder.createStub<shader::StubRenderStates>();
 						stub->states = finalStates;
@@ -223,6 +302,7 @@ namespace rendering
 			struct StageContext
 			{
 				base::HashMap<const Function*, shader::StubFunction*> m_functionMap;
+				base::HashSet<const shader::StubFunction*> m_functionForwardRefs;
 				base::HashSet<const shader::StubTypeDecl*> m_types;
 				base::HashSet<const shader::StubStruct*> m_composites;
 				base::HashSet<const shader::StubDescriptor*> m_descriptors;
@@ -233,8 +313,18 @@ namespace rendering
 				base::HashSet<const shader::StubBuiltInVariable*> m_buildInVariables;
 				base::HashSet<const shader::StubVertexInputStream*> m_vertexStreams;
 				base::HashSet<const shader::StubSamplerState*> m_staticSamplersRefs;
+				base::HashMap<uint64_t, const shader::StubGlobalConstant*> m_globalConstants;
 				base::HashMap<const DataParameter*, const shader::Stub*> m_parametersMap; // auto globals
 				const shader::StubFunction* m_entryFunction = nullptr;
+
+				base::HashMap<const Function*, shader::StubFunction*> m_tempFunctionMap;
+				base::Array<const Function*> m_functionExportStack;
+				base::HashMap<base::StringID, uint32_t> m_functionNameCounter;
+
+				bool usesControlFlowHints = false;
+				bool usesDiscard = false;
+				bool usesDepthOutput = false;
+				bool usesUAVs = false;
 			};
 
 			static const auto NUM_STAGES = (uint32_t)ShaderStage::MAX;
@@ -395,6 +485,10 @@ namespace rendering
 				{
 					ret = exportCompositeType(&type.composite());
 				}
+				else if (type.isResource())
+				{
+					return nullptr;
+				}
 				else
 				{
 					auto* stub = m_builder.createStub<shader::StubScalarTypeDecl>();
@@ -441,18 +535,40 @@ namespace rendering
 				if (m_activeStage->m_functionMap.find(function, ret))
 					return ret;
 
+				if (m_activeStage->m_tempFunctionMap.find(function, ret))
+				{
+					const auto* top = m_activeStage->m_functionExportStack.back();
+					if (top != function)
+						m_activeStage->m_functionForwardRefs.insert(ret); // function must be forward declared
+					return ret;
+				}				
+
 				ret = m_builder.createStub<shader::StubFunction>();
 				ret->location = exportLocation(function->location());
 				ret->attributes = std::move(exportAttributes(function->attributes()));
 				ret->returnType = exportDataType(function->returnType());
-				ret->name = function->name();
+
+				const auto nameCounter = m_activeStage->m_functionNameCounter[function->name()] + 1;
+				if (nameCounter == 1)
+					ret->name = function->name();
+				else 
+					ret->name = base::StringID(base::TempString("{}_{}", function->name(), nameCounter));
+				m_activeStage->m_functionNameCounter[function->name()] = nameCounter;
 
 				base::InplaceArray<const shader::StubFunctionParameter*, 10> parameters;
 				for (const auto* sourceParam : function->inputParameters())
 					parameters.pushBack(exportFunctionParameter(sourceParam));
 				ret->parameters = m_builder.createArray(parameters);
 
-				ret->code = exportOpcode(&function->code());
+				{
+					m_activeStage->m_tempFunctionMap[function] = ret;
+					m_activeStage->m_functionExportStack.pushBack(function);
+
+					ret->code = exportOpcode(&function->code());
+
+					m_activeStage->m_functionExportStack.popBack();
+					m_activeStage->m_tempFunctionMap.remove(function);
+				}
 
 				m_activeStage->m_functionMap[function] = ret;
 				return ret;
@@ -517,15 +633,19 @@ namespace rendering
 					if (maxInputComponents == mask.size())
 						return input;
 
-					base::InplaceArray<const shader::StubOpcode*, 1 > parts;
-					parts.pushBack(input);
+					// use the vector constructor to contract
+					if (mask.size() > 1)
+					{
+						base::InplaceArray<const shader::StubOpcode*, 1 > parts;
+						parts.pushBack(input);
 
-					// determine the base type
-					auto* op = m_builder.createStub<shader::StubOpcodeCreateVector>();
-					op->typeDecl = exportDataType(m_lib.typeLibrary().simpleCompositeType(scalarType, mask.size()))->asVectorTypeDecl();
-					ASSERT(op->typeDecl);
-					op->elements = m_builder.createArray(parts);
-					return op;
+						// determine the base type
+						auto* op = m_builder.createStub<shader::StubOpcodeCreateVector>();
+						op->typeDecl = exportDataType(m_lib.typeLibrary().simpleCompositeType(scalarType, mask.size()))->asVectorTypeDecl();
+						ASSERT(op->typeDecl);
+						op->elements = m_builder.createArray(parts);
+						return op;
+					}
 				}
 
 				// create mask from components
@@ -563,19 +683,21 @@ namespace rendering
 				const auto inputComponents = inputDataType.computeScalarComponentCount();
 				const auto inputBaseType = ExtractBaseType(inputDataType);
 
+				base::logging::Log::Print(base::logging::OutputLevel::Warning, node->location().contextName().c_str(), node->location().line(), "", "",
+					base::TempString("Swizzle {} of {} to {}. {} -> {} components", mask, inputDataType, node->dataType(), inputComponents, mask.numberOfComponentsProduced()));
+
 				// gather swizzle parts
 				base::InplaceArray<const shader::StubOpcode*, 4> parts;
 				base::InplaceArray<ComponentMaskBit, 4> swizzleSoFar;
 				{
-					auto inputCount = mask.numComponents();
-					for (uint32_t i = 0; i < inputCount; ++i)
+					for (uint32_t i = 0; i < mask.numComponents(); ++i)
 					{
 						auto field = mask.componentSwizzle(i);
 						ASSERT(field != ComponentMaskBit::NotDefined);
 
 						if (field == ComponentMaskBit::Zero || field == ComponentMaskBit::One)
 						{
-							if (const auto* part = conditionalCreateSwizzledNode(inputCount, value, swizzleSoFar, inputBaseType))
+							if (const auto* part = conditionalCreateSwizzledNode(inputComponents, value, swizzleSoFar, inputBaseType))
 								parts.pushBack(part);
 
 							swizzleSoFar.reset();
@@ -607,7 +729,7 @@ namespace rendering
 					}
 
 					// flush - we might have no zero/one swizzle
-					if (auto* part = conditionalCreateSwizzledNode(inputCount, value, swizzleSoFar, inputBaseType))
+					if (auto* part = conditionalCreateSwizzledNode(inputComponents, value, swizzleSoFar, inputBaseType))
 						parts.pushBack(part);
 				}
 
@@ -679,25 +801,32 @@ namespace rendering
 						return op;
 					}
 
-					case DeviceObjectViewType::Image:
+					case DeviceObjectViewType::SampledImage:
 					{
+						ASSERT(resourceType.attributes.has("sampler"_id));
+
 						auto* op = m_builder.createStub<shader::StubDescriptorMemberSampledImage>();
+						op->scalarType = MapBaseType(resourceType.sampledImageFlavor);
 						op->viewType = resourceType.resolvedViewType;
 						op->multisampled = resourceType.multisampled;
 						op->depth = resourceType.depth;
 
 						if (sourceMember.m_staticSampler != nullptr)
 							op->staticState = exportStaticSampler(sourceMember.m_staticSampler);
-						
+
 						return op;
 					}
 
+					case DeviceObjectViewType::Image:
 					case DeviceObjectViewType::ImageWritable:
 					{
+						ASSERT(resourceType.attributes.has("nosampler"_id) || resourceType.attributes.has("uav"_id));
+						ASSERT(!resourceType.attributes.has("sampler"_id));
+
 						auto* op = m_builder.createStub<shader::StubDescriptorMemberImage>();
 						op->viewType = resourceType.resolvedViewType;
 						op->format = resourceType.resolvedFormat;
-						op->writable = true;
+						op->writable = (resourceType.type == DeviceObjectViewType::ImageWritable);
 						return op;
 					}
 				}
@@ -786,6 +915,22 @@ namespace rendering
 								m_activeStage->m_descriptorMembers.insert(image->dynamicSamplerDescriptorEntry);
 							else if (image->staticState)
 								m_activeStage->m_staticSamplersRefs.insert(image->staticState);
+						}
+
+						else if (auto* image = member->asDescriptorMemberImage())
+						{
+							if (image->writable)
+								m_activeStage->usesUAVs = true;
+						}
+						else if (auto* buffer = member->asDescriptorMemberFormatBuffer())
+						{
+							if (buffer->writable)
+								m_activeStage->usesUAVs = true;
+						}
+						else if (auto* buffer = member->asDescriptorMemberStructuredBuffer())
+						{
+							if (buffer->writable)
+								m_activeStage->usesUAVs = true;
 						}
 
 						if (const auto* cb = member->asDescriptorMemberConstantBuffer())
@@ -930,6 +1075,10 @@ namespace rendering
 						op->builinType = param->builtInVariable;
 						op->dataType = exportDataType(param->dataType);
 						m_activeStage->m_buildInVariables.insert(op);
+
+						if (op->builinType == shader::ShaderBuiltIn::Depth)
+							m_activeStage->usesDepthOutput = true;
+
 						ret = op;
 						break;
 					}
@@ -976,6 +1125,141 @@ namespace rendering
 				return ret;
 			}
 
+			static void HashTypedData(base::CRC64& ptr, const DataType& type, const DataValue& value)
+			{
+				const auto totalComponents = type.computeScalarComponentCount();
+				for (uint32_t i = 0; i < totalComponents; ++i)
+					ptr << value.component(i).valueNumerical();
+			}
+
+			static void WriteTypedData(void* ptr, const DataType& type, const DataValue& value)
+			{
+				const auto baseType = ExtractBaseType(type);
+				const auto totalComponents = type.computeScalarComponentCount();
+
+				auto* writePtr = (float*)ptr;
+				for (uint32_t i = 0; i < totalComponents; ++i, ++writePtr)
+				{
+					switch (baseType)
+					{
+					case BaseType::Float:
+						*writePtr = value.component(i).valueFloat();
+						break;
+
+					case BaseType::Uint:
+						*(uint32_t*)writePtr = value.component(i).valueUint();
+						break;
+
+					case BaseType::Int:
+						*(int*)writePtr = value.component(i).valueInt();
+						break;
+
+					case BaseType::Boolean:
+						*(uint32_t*)writePtr = value.component(i).valueBool();
+						break;
+
+					default:
+						ASSERT(!"Invalid base type");
+					}
+				}
+			}
+
+			static uint32_t CalcDataSize(const DataType& type)
+			{
+				const auto baseType = ExtractBaseType(type);
+				const auto totalComponents = type.computeScalarComponentCount();
+
+				switch (baseType)
+				{
+				case BaseType::Float:
+				case BaseType::Uint:
+				case BaseType::Int:
+				case BaseType::Boolean:
+					return totalComponents * sizeof(float);
+
+				default:
+					ASSERT(!"Invalid base type");
+					return 0;
+				}
+			}
+
+			const shader::StubGlobalConstant* exportGlobalConstant(const DataType& type, const DataValue& value)
+			{
+				base::CRC64 crc;
+				HashTypedData(crc, type, value);
+
+				const shader::StubGlobalConstant* ret = nullptr;
+				if (m_activeStage->m_globalConstants.find(crc.crc(), ret))
+					return ret;
+
+				auto* op = m_builder.createStub<shader::StubGlobalConstant>();
+				op->index = m_activeStage->m_globalConstants.size();
+				op->typeDecl = exportDataType(type);
+				op->dataType = MapBaseType(ExtractBaseType(type));
+				op->dataSize = CalcDataSize(type);
+
+				void* data = m_builder.createData(op->dataSize);
+				WriteTypedData(data, type, value);
+				op->data = data;
+				
+				m_activeStage->m_globalConstants[crc.crc()] = op;
+				return op;
+			}
+
+			const shader::StubOpcodeConstant* exportLocalConstant(const DataType& type, const DataValue& value)
+			{
+				auto* op = m_builder.createStub<shader::StubOpcodeConstant>();
+				op->typeDecl = exportDataType(type);
+				op->dataType = MapBaseType(ExtractBaseType(type));
+				op->dataSize = CalcDataSize(type);
+
+				void* data = m_builder.createData(op->dataSize);
+				WriteTypedData(data, type, value);
+				op->data = data;
+
+				return op;
+			}
+
+			static bool ResourceSupportsElementRefToStoreConversion(const shader::StubOpcodeResourceLoad* op)
+			{
+				const auto resType = op->resourceRef->type;
+				switch (resType)
+				{
+					case DeviceObjectViewType::BufferWritable:
+					case DeviceObjectViewType::ImageWritable:
+						return true;
+				}
+
+				return false;
+			}
+
+			static bool ResourceSupportsResourceLoad(const shader::StubOpcodeResourceRef* op)
+			{
+				switch (op->type)
+				{
+					case DeviceObjectViewType::Buffer:
+					case DeviceObjectViewType::Image:
+					case DeviceObjectViewType::BufferWritable:
+					case DeviceObjectViewType::ImageWritable:
+					case DeviceObjectViewType::SampledImage:
+						return true;
+				}
+
+				return false;
+			}
+
+			static bool ResourceSupportsResourceElement(const shader::StubOpcodeResourceRef* op)
+			{
+				switch (op->type)
+				{
+				case DeviceObjectViewType::BufferStructured:
+				case DeviceObjectViewType::BufferStructuredWritable:
+					return true;
+				}
+
+				return false;
+			}
+
 			const shader::StubOpcode* exportOpcode(const CodeNode* node)
 			{
 				if (!node)
@@ -1001,7 +1285,7 @@ namespace rendering
 								stub->type = exportDataType(param->dataType);
 								localVars.pushBack(stub);
 								m_activeStage->m_parametersMap[param] = stub;
-								TRACE_INFO("Resolved local param '{}' {}", param->name, param);
+								//TRACE_INFO("Resolved local param '{}' {}", param->name, param);
 							}
 						}
 
@@ -1012,11 +1296,54 @@ namespace rendering
 
 					case OpCode::Store:
 					{
+						auto* lValue = exportOpcode(node->children()[0]);
+						if (const auto* resElement = lValue->asOpcodeResourceLoad())
+						{
+							if (ResourceSupportsElementRefToStoreConversion(resElement))
+							{
+								auto* op = m_builder.createStub<shader::StubOpcodeResourceStore>();
+								op->resourceRef = resElement->resourceRef;
+								op->address = resElement->address;
+								op->numAddressComponents = resElement->numAddressComponents;
+								op->numValueComponents = resElement->numValueComponents;
+								op->value = exportOpcode(node->children()[1]);
+								return op;
+							}
+						}
+
+						// keep as generic store
 						auto* op = m_builder.createStub<shader::StubOpcodeStore>();
 						op->mask = exportMask(node->extraData().m_mask);
-						op->lvalue = exportOpcode(node->children()[0]);
+						op->lvalue = lValue;
 						op->rvalue = exportOpcode(node->children()[1]);
 						op->type = exportDataType(node->children()[1]->dataType());
+						return op;
+					}
+
+					case OpCode::VariableDecl:
+					{
+						ASSERT(node->extraData().m_paramRef);
+						ASSERT(node->extraData().m_paramRef->scope == DataParameterScope::ScopeLocal);
+
+						const shader::Stub* stub = nullptr;
+						m_activeStage->m_parametersMap.find(node->extraData().m_paramRef, stub);
+						ASSERT(stub != nullptr);
+
+						auto* localVar = const_cast<shader::StubScopeLocalVariable*>(stub->asScopeLocalVariable());
+						ASSERT(localVar != nullptr);
+						ASSERT(!localVar->initialized);
+
+						// export as variable declaration
+						auto* op = m_builder.createStub<shader::StubOpcodeVariableDeclaration>();
+						op->var = localVar;
+
+						// export initialization code
+						if (node->children().size() == 1)
+						{
+							localVar->initialized = true;
+							op->init = exportOpcode(node->children()[0]);
+						}
+
 						return op;
 					}
 
@@ -1040,47 +1367,25 @@ namespace rendering
 							auto* resourceRef = exportResourceRef(resourceName.view());
 							ASSERT(resourceRef);
 
-							auto* op = m_builder.createStub<shader::StubOpcodeResourceAccess>();
-							op->resourceRef = resourceRef;
-							//op->type = op->->
+							auto* op = m_builder.createStub<shader::StubOpcodeResourceRef>();
+							op->type = node->dataType().resource().type;
+							ASSERT(op->type != DeviceObjectViewType::Invalid);
+							op->descriptorEntry = resourceRef;
 							return op;
 						}
-						else
+						else 
 						{
 							const auto totalComponents = node->dataType().computeScalarComponentCount();
-
-							auto* op = m_builder.createStub<shader::StubOpcodeConstant>();
-							op->typeDecl = exportDataType(node->dataType());
-							op->dataType = MapBaseType(ExtractBaseType(node->dataType()));
-							op->dataSize = totalComponents * sizeof(uint32_t);
-							op->data = m_builder.createData(op->dataSize);
-
-							auto* writePtr = (float*)op->data;
-							for (uint32_t i = 0; i < totalComponents; ++i, ++writePtr)
+							if (totalComponents > 4)
 							{
-								const auto value = node->dataValue().component(i);
-
-								switch (baseType)
-								{
-								case BaseType::Float:
-									*writePtr = value.valueFloat();
-									break;
-
-								case BaseType::Uint:
-									*(uint32_t*)writePtr = value.valueUint();
-									break;
-
-								case BaseType::Int:
-									*(int*)writePtr = value.valueInt();
-									break;
-
-								case BaseType::Boolean:
-									*(uint32_t*)writePtr = value.valueBool();
-									break;
-								}
+								auto* op = m_builder.createStub<shader::StubOpcodeDataRef>();
+								op->stub = exportGlobalConstant(node->dataType(), node->dataValue());
+								return op;
 							}
-
-							return op;
+							else
+							{
+								return exportLocalConstant(node->dataType(), node->dataValue());
+							}
 						}
 					}
 
@@ -1096,7 +1401,9 @@ namespace rendering
 						op->func = exportFunction(func);
 
 						base::InplaceArray<const shader::StubOpcode*, 10> finalArguments;
+						base::InplaceArray<const shader::StubTypeDecl*, 10> finalArgumentTypes;
 						finalArguments.reserve(node->children().size());
+						finalArgumentTypes.reserve(node->children().size());
 
 						ASSERT((node->children().size() - 1) == func->inputParameters().size()); // they should still match
 						for (auto i : func->inputParameters().indexRange())
@@ -1107,6 +1414,7 @@ namespace rendering
 							if (!func->staticParameters().contains(arg->name))
 							{
 								finalArguments.pushBack(exportOpcode(childNode));
+								finalArgumentTypes.pushBack(exportDataType(childNode->dataType()));
 							}
 							else
 							{
@@ -1115,6 +1423,7 @@ namespace rendering
 						}
 
 						op->arguments = m_builder.createArray(finalArguments);
+						op->argumentTypes = m_builder.createArray(finalArgumentTypes);
 						return op;
 					}
 
@@ -1123,7 +1432,20 @@ namespace rendering
 						auto op = m_builder.createStub<shader::StubOpcodeNativeCall>();
 						op->name = base::StringID(node->extraData().m_nativeFunctionRef->cls()->findMetadataRef<FunctionNameMetadata>().name());
 						op->returnType = exportDataType(node->dataType());
-						op->arguments = std::move(exportChildOpcodes(node));
+
+						base::InplaceArray<const shader::StubOpcode*, 10> finalArguments;
+						base::InplaceArray<const shader::StubTypeDecl*, 10> finalArgumentTypes;
+						finalArguments.reserve(node->children().size());
+						finalArgumentTypes.reserve(node->children().size());
+
+						for (const auto* childNode : node->children())
+						{
+							finalArguments.pushBack(exportOpcode(childNode));
+							finalArgumentTypes.pushBack(exportDataType(childNode->dataType()));
+						}
+
+						op->arguments = m_builder.createArray(finalArguments);
+						op->argumentTypes = m_builder.createArray(finalArgumentTypes);
 						return op;
 					}
 
@@ -1188,8 +1510,34 @@ namespace rendering
 
 					case OpCode::AccessArray:
 					{
+						auto context = exportOpcode(node->children()[0]);
+
+						// convert to resource load or resource element
+						if (const auto* resourceRef = context->asOpcodeResourceRef())
+						{
+							if (ResourceSupportsResourceLoad(resourceRef))
+							{
+								auto op = m_builder.createStub<shader::StubOpcodeResourceLoad>();
+								op->resourceRef = resourceRef;
+								op->address = exportOpcode(node->children()[1]);
+								op->numAddressComponents = ExtractComponentCount(node->children()[1]->dataType());
+								op->numValueComponents = ExtractComponentCount(node->dataType());
+								return op;
+							}
+							else if (ResourceSupportsResourceElement(resourceRef))
+							{
+								auto op = m_builder.createStub<shader::StubOpcodeResourceElement>();
+								op->resourceRef = resourceRef;
+								op->address = exportOpcode(node->children()[1]);
+								op->numAddressComponents = ExtractComponentCount(node->children()[1]->dataType());
+								op->numValueComponents = ExtractComponentCount(node->dataType());
+								return op;
+							}
+						}
+
+						// generic array access
 						auto op = m_builder.createStub<shader::StubOpcodeAccessArray>();
-						op->arrayOp = exportOpcode(node->children()[0]);
+						op->arrayOp = context;
 						op->arrayType = exportDataType(node->dataType());
 
 						if (node->children()[1]->opCode() == OpCode::Const && node->children()[1]->dataType().isNumericalScalar())
@@ -1208,7 +1556,7 @@ namespace rendering
 					case OpCode::ReadSwizzle: // read swizzle (extracted from member access for simplicity)
 						return exportReadSwizzle(node, node->extraData().m_mask);
 
-					case OpCode::ImplicitCast:// data cast
+					case OpCode::Cast:// data cast
 					{
 						auto op = m_builder.createStub<shader::StubOpcodeCast>();
 						switch (node->extraData().m_castMode)
@@ -1265,10 +1613,28 @@ namespace rendering
 					case OpCode::Loop:// repeats code while condition occurs
 					{
 						auto* op = m_builder.createStub<shader::StubOpcodeLoop>();
-						op->condition = exportOpcode(node->children()[0]);
-						op->increment = exportOpcode(node->children()[1]);
-						op->body = exportOpcode(node->children()[2]);
-						op->unrollHint = false; // TODO
+						op->init = exportOpcode(node->children()[0]);
+						op->condition = exportOpcode(node->children()[1]);
+						op->increment = exportOpcode(node->children()[2]);
+						op->body = exportOpcode(node->children()[3]);
+
+						for (const auto& attr : node->extraData().m_attributesMap)
+						{
+							if (attr.key == "unroll")
+								op->unrollHint = 1;
+							else if (attr.key == "dont_unroll")
+								op->unrollHint = -1;
+							else if (attr.key == "loop")
+								op->unrollHint = 1;
+							else if (attr.key == "dependency_infinite")
+								op->dependencyLength = -1;
+							else if (attr.key == "dependency_length")
+								attr.value.match(op->dependencyLength);
+						}
+
+						if (op->unrollHint || op->dependencyLength)
+							m_activeStage->usesControlFlowHints = true;
+						
 						return op;
 					}
 
@@ -1279,12 +1645,16 @@ namespace rendering
 						return m_builder.createStub<shader::StubOpcodeContinue>();
 
 					case OpCode::Exit: // "exit" the shader without writing anything (discard)
+						m_activeStage->usesDiscard = true;
 						return m_builder.createStub<shader::StubOpcodeExit>();
 
 					case OpCode::Return: // return from function
 					{
 						auto* op = m_builder.createStub<shader::StubOpcodeReturn>();
-						op->value = exportOpcode(node->children()[0]);
+						if (!node->children().empty())
+							op->value = exportOpcode(node->children()[0]);
+						else
+							op->value = nullptr;
 						return op;
 					}
 
@@ -1312,6 +1682,19 @@ namespace rendering
 						else
 							op->elseStatement = nullptr;
 
+						for (const auto& attr : node->extraData().m_attributesMap)
+						{
+							if (attr.key == "flatten")
+								op->branchHint = -1;
+							else if (attr.key == "dont_flatten")
+								op->branchHint = 1;
+							else if (attr.key == "branch")
+								op->branchHint = 1;
+						}
+
+						if (op->branchHint)
+							m_activeStage->usesControlFlowHints = true;
+
 						return op;
 					}
 
@@ -1319,14 +1702,12 @@ namespace rendering
 
 					// opcodes that should not appear
 					case OpCode::Ident:// unresolved identifier:muted to FuncRef or ParamRef
-					case OpCode::Cast:// explicit cast
 					case OpCode::This:// current program instance
 					case OpCode::ProgramInstanceParam:// program instance initialization variable constructor
 					case OpCode::ProgramInstance:// program instance constructor
 					case OpCode::ResourceTable:// a resource table type
 					case OpCode::FuncRef:// reference to a function
-					case OpCode::VariableDecl: // variable declaration
-					case OpCode::First:// evaluates all nodes but returns the first value
+					case OpCode::ListElement:// list should be consume by now
 						ASSERT(!"Unexpected opcode");
 						return nullptr;
 
@@ -1337,8 +1718,35 @@ namespace rendering
 			}
 		};
 
+		//--
 
-		extern bool AssembleShaderStubs(base::mem::LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, base::StringView sourceContentDebugPath, base::parser::IErrorReporter& err)
+		static void DumpShader(const shader::StubProgram* program, const AssembledShader& data, base::StringView contextPath, base::StringView contextOptions)
+		{
+			base::StringBuilder txt;
+			{
+				shader::StubDebugPrinter printer(txt);
+
+				program->dump(printer); // map
+				printer.enableOutput();
+
+				printer << "------------------------------------------\n";
+				printer << "-- SHADER                               --\n";
+				printer << "------------------------------------------\n\n";
+				program->dump(printer); // print
+
+				printer << "\n------------------------------------------\n";
+				printer << "-- METADATA                             --\n";
+				printer << "------------------------------------------\n\n";
+				data.metadata->print(printer);
+			}
+
+			const auto targetPath = shader::AssembleDumpFilePath(contextPath, contextOptions, "stubs");
+			base::io::SaveFileFromString(targetPath, txt.view());
+
+			TRACE_INFO("Saved shader dump to '{}'", targetPath);
+		}
+
+		extern bool AssembleShaderStubs(base::mem::LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, base::StringView contextPath, base::StringView contextOptions, base::parser::IErrorReporter& err)
 		{
 			// extract shaders
 			ShaderBunderSetup bundle;
@@ -1347,7 +1755,7 @@ namespace rendering
 
 			// create extractor, will help with building the stubs
 			StubExtractionHelper helper(mem, lib);
-			if (const auto* program = helper.exportProgram(bundle, err))
+			if (const auto* program = helper.exportProgram(bundle, contextPath, contextOptions, err))
 			{
 				// pack blob
 				outAssembledShader.blob = program->pack(1);
@@ -1356,66 +1764,9 @@ namespace rendering
 				const auto shaderKey = base::CRC64().append(outAssembledShader.blob.data(), outAssembledShader.blob.size()).crc();
 				outAssembledShader.metadata = ShaderMetadata::BuildFromStubs(program, shaderKey);
 
-				// dump
-				if (!sourceContentDebugPath.empty())
-				{
-					const auto& tempDir = base::io::SystemPath(base::io::PathCategory::TempDir);
-					const auto coreFileName = sourceContentDebugPath.fileStem();
-					base::StringBuf debugPath = base::TempString("{}shaderDump/{}_{}.txt", tempDir, coreFileName, sourceContentDebugPath.calcCRC32());
-
-					base::StringBuilder txt;
-					shader::StubDebugPrinter printer(txt);
-
-					program->dump(printer); // map
-					printer.enableOutput();
-
-					printer << "------------------------------------------\n";
-					printer << "-- SHADER                               --\n";
-					printer << "------------------------------------------\n\n";
-					program->dump(printer); // print
-
-					printer << "\n------------------------------------------\n";
-					printer << "-- METADATA                             --\n";
-					printer << "------------------------------------------\n\n";
-					outAssembledShader.metadata->print(printer);
-
-					base::io::SaveFileFromString(debugPath, txt.view());
-					TRACE_SPAM("Saved shader dump to '{}'", debugPath);
-
-					{
-						base::StubLoader loader(shader::Stub::Factory(), 1, POOL_TEMP);
-						const auto* loadedProgram = static_cast<const shader::StubProgram*>(loader.unpack(outAssembledShader.blob));
-
-						const auto& tempDir = base::io::SystemPath(base::io::PathCategory::TempDir);
-						const auto coreFileName = sourceContentDebugPath.fileStem();
-						base::StringBuf debugPath = base::TempString("{}shaderDump/{}_{}_loaded.txt", tempDir, coreFileName, sourceContentDebugPath.calcCRC32());
-
-						base::StringBuilder txt;
-						shader::StubDebugPrinter printer(txt);
-
-						loadedProgram->dump(printer); // map
-						printer.enableOutput();
-
-						printer << "------------------------------------------\n";
-						printer << "-- SHADER                               --\n";
-						printer << "------------------------------------------\n\n";
-						loadedProgram->dump(printer); // print
-
-						printer << "\n------------------------------------------\n";
-						printer << "-- METADATA                             --\n";
-						printer << "------------------------------------------\n\n";
-						outAssembledShader.metadata->print(printer);
-
-						auto dataCopy = CloneObject(outAssembledShader.metadata);
-						printer << "\n------------------------------------------\n";
-						printer << "-- METADATA COPY                          --\n";
-						printer << "------------------------------------------\n\n";
-						dataCopy->print(printer);
-
-						base::io::SaveFileFromString(debugPath, txt.view());
-					}
-				}
-
+				// dump if requested
+				if (cvDumpShaderStubs.get())
+					DumpShader(program, outAssembledShader, contextPath, contextOptions);
 
 				return true;
 			}

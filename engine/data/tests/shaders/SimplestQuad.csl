@@ -3,6 +3,11 @@
 * Written by Tomasz "Rex Dex" Jonarski
 ***/
 
+state TestState
+{
+	PrimitiveTopology = TriangleStrip,
+}
+
 export shader TestVS
 {
 	out vec4 Color;
@@ -21,6 +26,7 @@ export shader TestVS
 	}
 }
 
+attribute(state=TestState)
 export shader TestPS 
 {
 	in vec4 Color;

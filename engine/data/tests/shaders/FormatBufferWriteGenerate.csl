@@ -23,6 +23,12 @@ descriptor TestParams
 
 //--
 
+state Generate
+{
+	PrimitiveTopology = PointList,
+}
+
+attribute(state=Generate)
 export shader GenerateLinesVS
 {
 	void main()

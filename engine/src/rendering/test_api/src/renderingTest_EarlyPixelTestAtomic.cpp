@@ -32,10 +32,11 @@ namespace rendering
             static const auto NUM_LINES = 1024;
 
 			//ShaderLibraryPtr m_shaderClear;
-			ShaderLibraryPtr m_shaderOccluder;
-			ShaderLibraryPtr m_shaderGenerateA;
-			ShaderLibraryPtr m_shaderGenerateB;
-			ShaderLibraryPtr m_shaderDraw;
+			GraphicsPipelineObjectPtr m_shaderOccluder;
+			GraphicsPipelineObjectPtr m_shaderGenerateA;
+			GraphicsPipelineObjectPtr m_shaderGenerateB;
+			GraphicsPipelineObjectPtr m_shaderDraw;
+			GraphicsPipelineObjectPtr m_shaderClearVS;
 
             BufferObjectPtr m_tempLineBuffer;
 			BufferObjectPtr m_tempQuadBuffer;
@@ -49,8 +50,10 @@ namespace rendering
 			BufferWritableViewPtr m_storageBufferA_UAV;
 			BufferWritableViewPtr m_storageBufferB_UAV;
 
-            void renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const;
-            void renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const;
+			uint32_t m_clearMode = 0;
+
+            void renderLine(command::CommandWriter& cmd, const GraphicsPipelineObject* func, base::Color color) const;
+            void renderQuad(command::CommandWriter& cmd, const GraphicsPipelineObject* func, float x, float y, float z, float w, float h, base::Color color) const;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_EarlyPixelTestAtomic);
@@ -66,11 +69,27 @@ namespace rendering
 
         void RenderingTest_EarlyPixelTestAtomic::initialize()
         {
-            //m_shaderClear = loadShader("EarlyFragmentTestsClear.csl");
-            m_shaderOccluder = loadShader("EarlyFragmentTestsOccluder.csl");
-            m_shaderGenerateA = loadShader("EarlyFragmentTestsGenerateNormal.csl");
-            m_shaderGenerateB = loadShader("EarlyFragmentTestsGenerateEarlyTests.csl");
-            m_shaderDraw = loadShader("EarlyFragmentTestsDraw.csl");
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.depth(true);
+				setup.depthWrite(true);
+				setup.depthFunc(CompareOp::Less);
+				m_shaderOccluder = loadGraphicsShader("EarlyFragmentTestsOccluder.csl", outputLayoutWithDepth(), &setup);
+				m_shaderGenerateA = loadGraphicsShader("EarlyFragmentTestsGenerateNormal.csl", outputLayoutWithDepth(), &setup);
+				m_shaderGenerateB = loadGraphicsShader("EarlyFragmentTestsGenerateEarlyTests.csl", outputLayoutWithDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::LineStrip);
+				m_shaderDraw = loadGraphicsShader("EarlyFragmentTestsDraw.csl", outputLayoutWithDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::LineStrip);
+				m_shaderClearVS = loadGraphicsShader("EarlyFragmentTestsClearVS.csl", outputLayoutWithDepth(), &setup);
+			}
 
 			{
 				BufferCreationInfo info;
@@ -94,7 +113,7 @@ namespace rendering
 			m_storageBufferB_UAV = m_storageBufferB->createWritableView(ImageFormat::R32_INT);
         }
 
-        void RenderingTest_EarlyPixelTestAtomic::renderLine(command::CommandWriter& cmd, const ShaderLibrary* func, base::Color color) const
+        void RenderingTest_EarlyPixelTestAtomic::renderLine(command::CommandWriter& cmd, const GraphicsPipelineObject* func, base::Color color) const
         {
 			cmd.opTransitionLayout(m_tempLineBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto writeVertex = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempLineBuffer, 0, NUM_LINES);
@@ -106,12 +125,11 @@ namespace rendering
 
 			cmd.opTransitionLayout(m_tempLineBuffer, ResourceLayout::CopyDest, ResourceLayout::VertexBuffer);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_tempLineBuffer);
             cmd.opDraw(func, 0, NUM_LINES);
         }
 
-        void RenderingTest_EarlyPixelTestAtomic::renderQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float z, float w, float h, base::Color color) const
+        void RenderingTest_EarlyPixelTestAtomic::renderQuad(command::CommandWriter& cmd, const GraphicsPipelineObject* func, float x, float y, float z, float w, float h, base::Color color) const
         {
 			cmd.opTransitionLayout(m_tempQuadBuffer, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto* verts = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_tempQuadBuffer, 0, 6);
@@ -134,12 +152,28 @@ namespace rendering
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
             fb.depth.view(depth).clearDepth(1.0f).clearStencil(0);
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutWithDepth(), fb);
 
-            cmd.opSetDepthState(true, true, CompareOp::Less);
+			// clear
+			if (m_clearMode == 0)
+			{
+				DescriptorEntry desc[2];
+				desc[0] = m_storageBufferA_UAV;
+				desc[1] = m_storageBufferB_UAV;
+				cmd.opBindDescriptor("TestParams"_id, desc);
+				renderLine(cmd, m_shaderClearVS, base::Color::RED);
+			}
+			else if (m_clearMode == 1)
+			{
 
-			cmd.opClearWritableBuffer(m_storageBufferA_UAV);
-			cmd.opClearWritableBuffer(m_storageBufferB_UAV);
+			}
+			else if (m_clearMode == 2)
+			{
+				cmd.opClearWritableBuffer(m_storageBufferA_UAV);
+				cmd.opClearWritableBuffer(m_storageBufferB_UAV);
+				cmd.opTransitionFlushUAV(m_storageBufferA_UAV);
+				cmd.opTransitionFlushUAV(m_storageBufferB_UAV);
+			}
 
             // draw test rect A - no early tests
             const float h = 0.1f;
@@ -170,8 +204,8 @@ namespace rendering
                 renderQuad(cmd, m_shaderGenerateA, x1, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
                 if (subTestIndex() >= 1)
                     renderQuad(cmd, m_shaderGenerateA, x2, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
-                if (subTestIndex() >= 2)
-                    renderQuad(cmd, m_shaderGenerateA, x3, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
+				if (subTestIndex() >= 2)
+					renderQuad(cmd, m_shaderGenerateA, x3, y1, 0.5f, w, h, base::Color(255, 0, 0, 255));
             }
 
             {
@@ -202,6 +236,9 @@ namespace rendering
 				cmd.opBindDescriptor("TestParams"_id, desc);
                 renderLine(cmd, m_shaderDraw, base::Color::GREEN);
             }
+
+			cmd.opTransitionLayout(m_storageBufferA, ResourceLayout::ShaderResource, ResourceLayout::UAV);
+			cmd.opTransitionLayout(m_storageBufferB, ResourceLayout::ShaderResource, ResourceLayout::UAV);
 
             cmd.opEndPass();
         }

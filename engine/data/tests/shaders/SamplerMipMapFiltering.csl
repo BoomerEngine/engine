@@ -9,11 +9,11 @@ descriptor TestParams
 {
     ConstantBuffer
     {
-	    float OffsetZ;
-	    float MaxZ;
+	    float TopScale;
     }
 
-    Texture2D TestTexture;
+    Sampler TestSampler;
+    attribute(sampler=TestSampler) Texture2D TestTexture;
 }
 
 export shader SimpleTrianglePS
@@ -22,7 +22,11 @@ export shader SimpleTrianglePS
 
 	void main()
 	{
-		gl_Target0 = texture(TestTexture, UV);
+		vec2 uv = UV;
+		float scale = 1 + (TopScale * UV.y);
+		uv.x = 0.5 + (UV.x - 0.5) * scale;
+		uv.y *= scale;
+		gl_Target0 = texture(TestTexture, uv);
 	}
 }
 
@@ -34,8 +38,7 @@ export shader SimpleTriangleVS
 
 	void main()
 	{
-		gl_Position = v.pos.xy00;
-		gl_Position.w = OffsetZ + MaxZ * v.pos.z;
+		gl_Position = v.pos.xyz1;
 		UV = v.uv;
 	}
 }

@@ -24,7 +24,7 @@ namespace rendering
             RTTI_DECLARE_POOL(POOL_API_PIPELINES)
 
         public:
-			IBaseVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams);
+			IBaseVertexBindingLayout(IBaseObjectCache* cache, const base::Array<ShaderVertexStreamMetadata>& streams);
 			virtual ~IBaseVertexBindingLayout();
 
 			INLINE const base::Array<ShaderVertexStreamMetadata>& vertexStreams() const { return m_elements; }

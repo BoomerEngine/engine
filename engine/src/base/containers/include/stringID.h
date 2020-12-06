@@ -12,8 +12,11 @@
 
 namespace base
 {
-    /// internal key
-    typedef uint32_t StringIDIndex;
+	namespace prv
+	{
+		class StringIDDataStorage;
+		class StringIDMap;
+	}
 
     /// String class
     class BASE_CONTAINERS_API StringID
@@ -37,7 +40,7 @@ namespace base
         INLINE bool operator!=(const char* other) const;
         INLINE bool operator!=(const StringBuf& other) const;
 
-        INLINE bool operator<(StringID other) const;
+        INLINE bool operator<(StringID other) const; // compares STRINGS, not numerical IDs as this is more stable
 
         INLINE StringID& operator=(StringID other);
 
@@ -77,12 +80,24 @@ namespace base
     private:
         StringIDIndex indexValue;
 
-        void set(StringView txt);
+		//--
 
-        const char* debugString() const;
+		static StringIDIndex Alloc(StringView txt);
 
-        static const char* DebugString(StringIDIndex id);
-        static StringView View(StringIDIndex id);
+		//--
+
+		static std::atomic<const char*> st_StringTable; // global string table
+		friend class prv::StringIDDataStorage;
+		friend class prv::StringIDMap;
+
+		//--
+
+		explicit ALWAYS_INLINE StringID(StringIDIndex index)
+			: indexValue(index)
+		{}
+
+		//--
+
     };
 
 } // base

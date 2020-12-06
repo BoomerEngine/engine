@@ -118,7 +118,6 @@ namespace rendering
 #define CULL_MODE_BITS 2
 	enum class CullMode : uint8_t
 	{
-		Disabled,
 		Front,
 		Back,
 		Both,
@@ -491,7 +490,7 @@ namespace rendering
 		//--
 
 		/// enable/disable scissoring
-		void scissorState(bool enabled);
+		void scissor(bool enabled);
 
 		//--
 

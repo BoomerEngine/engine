@@ -55,6 +55,13 @@ namespace rendering
                 return static_cast<T*>(resolveStatic(id, T::STATIC_TYPE));
             }
 
+			// resolve static object
+			template< typename T >
+			INLINE T* resolveSpecfic(ObjectID id, ObjectType expectedType) const
+			{
+				return static_cast<T*>(resolveStatic(id, expectedType));
+			}
+
 			//--
 
 			// purge all still active objects

@@ -131,58 +131,25 @@ namespace rendering
 
             //----
 
-            CodeParsingNode::CodeParsingNode()
-                : m_tokenID(-1)
-                , m_float(0.0)
-                , m_int(0)
-                , m_code(nullptr)
-            {}
-
-            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, base::StringView txt)
-                : m_tokenID(-1)
-                , m_float(0.0)
-                , m_int(0)
-                , m_string(txt)
-                , m_code(nullptr)
-                , m_location(loc)
-            {}
-
-            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, double val)
-                : m_tokenID(-1)
-                , m_float(val)
-                , m_int((int64_t)val)
-                , m_code(nullptr)
-                , m_location(loc)
-            {}
-
-            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, int64_t val)
-                : m_tokenID(-1)
-                , m_float((double)val)
-                , m_int(val)
-                , m_code(nullptr)
-                , m_location(loc)
-            {}
-
-            CodeParsingNode::CodeParsingNode(const base::parser::Location& loc, const DataType& knownType)
-                : m_tokenID(-1)
-                , m_float(0.0f)
-                , m_int(0)
-                , m_code(nullptr)
-                , m_type(knownType)
-                , m_location(loc)
-            {}
-
             CodeParsingNode& CodeParsingNode::operator=(CodeNode* code)
             {
-                if (code)
-                {
-                    m_code = code;
+				m_tokenID = -1;
+				m_code = code;
+
+				if (code)
                     m_location = code->location();
-                }
 
 				return *this;
             }
 
+			CodeParsingNode& CodeParsingNode::operator=(std::nullptr_t)
+			{
+				m_tokenID = -1;
+				m_code = nullptr;
+				m_string = base::StringView();
+				return *this;
+			}
+			
             //----
 
             ParserCodeTokenStream::ParserCodeTokenStream(base::Array<CodeParsingNode>& tokens)
@@ -207,10 +174,9 @@ namespace rendering
 
             //----
 
-            ParsingCodeContext::ParsingCodeContext(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, CodeNode*& result, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
+            ParsingCodeContext::ParsingCodeContext(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
                 : m_mem(mem)
                 , m_errHandler(errHandler)
-                , m_result(result)
                 , m_lib(lib)
                 , m_contextFunction(contextFunction)
                 , m_contextProgram(contextProgram)
@@ -225,62 +191,148 @@ namespace rendering
                 m_errHandler.reportError(loc, err);
             }
 
-            CodeNode* ParsingCodeContext::mergeExpressionList(CodeNode* a, CodeNode* b)
-            {
-                if (!a) return b;
-                if (!b) return a;
+			static void ExtractExpressionList(CodeNode* scopeNode, CodeNode* child)
+			{
+				if (!child)
+					return;
 
-                if (a->opCode() == OpCode::First)
-                {
-                    a->addChild(b);
-                    return a;
-                }
-                /*else if (b->opCode() == OpCode::First)
-                {
-                    b->addChild(a);
-                    return b;
-                }*/
+				if (child->opCode() == OpCode::ListElement)
+				{
+					ASSERT(child->children().size() == 2);
+					ExtractExpressionList(scopeNode, (CodeNode*)child->children()[0]);
+					ExtractExpressionList(scopeNode, (CodeNode*)child->children()[1]);
+				}
+				else
+				{
+					scopeNode->addChild(child);
+				}
+			}
 
-                auto ret = m_mem.create<CodeNode>(a->location(), OpCode::First);
-                ret->addChild(a);
-                ret->addChild(b);
-                return ret;
-            }
+			static void ExtractNodesIntoSingleScope(CodeNode* scopeNode, CodeNode* child)
+			{
+				ExtractExpressionList(scopeNode, child);
 
-            static void AddChild(CodeNode* ret, CodeNode* b)
-            {
-                if (b->opCode() == OpCode::First)
-                {
-                    for (auto bchild  : b->children())
-                        ret->moveChildren((CodeNode*)bchild);
-                }
-                else
-                {
-                    ret->moveChildren(b);
-                }
-            }
+				if (child->extraData().m_nextStatement)
+				{
+					ExtractNodesIntoSingleScope(scopeNode, child->extraData().m_nextStatement);
+					child->extraData().m_nextStatement = nullptr;
+				}
+			}
 
-            CodeNode* ParsingCodeContext::mergeStatementList(CodeNode *a, CodeNode *b)
-            {
-                if (!a) return b;
-                if (!b) return a;
+			CodeNode* ParsingCodeContext::createScope(CodeNode* src, bool explicitScope)
+			{
+				if (!src)
+					return m_mem.create<CodeNode>(base::parser::Location(), OpCode::Nop);
 
-                if (a->opCode() == OpCode::Scope)
-                {
-                    AddChild(a, b);
-                    return a;
-                }
-                /*else if (b->opCode() == OpCode::Scope)
-                {
-                    b->moveChildren(a);
-                    return b;
-                }*/
+				if (!explicitScope && !src->extraData().m_nextStatement)
+					return src;
 
-                auto ret = m_mem.create<CodeNode>(a->location(), OpCode::Scope);
-                AddChild(ret, a);
-                AddChild(ret, b);
-                return ret;
-            }
+				auto scope = m_mem.create<CodeNode>(src->location(), OpCode::Scope);		
+				ExtractNodesIntoSingleScope(scope, src);
+
+				return scope;
+			}
+
+			static void CheckNoSelfLinks(CodeNode* node, base::HashSet<const CodeNode*>& visited)
+			{
+				ASSERT_EX(!visited.contains(node), "Node already in chain");
+				visited.insert(node);
+
+				if (node->extraData().m_nextStatement)
+					CheckNoSelfLinks(node->extraData().m_nextStatement, visited);
+			}
+
+			CodeNode* ParsingCodeContext::linkStatements(CodeNode* first, CodeNode* second)
+			{
+				if (!second)
+					return first;
+				if (!first)
+					return second;
+
+				ASSERT(first != second);
+
+				{
+					base::HashSet<const CodeNode* > a;
+					CheckNoSelfLinks(first, a);
+				}
+
+				{
+					base::HashSet<const CodeNode* > b;
+					CheckNoSelfLinks(second, b);
+				}
+
+				auto** prevLink = &first->extraData().m_nextStatement;
+				while (*prevLink)
+					prevLink = &((*prevLink)->extraData().m_nextStatement);
+
+				ASSERT((*prevLink) == nullptr);
+				(*prevLink) = second;
+
+				{
+					base::HashSet<const CodeNode* > b;
+					CheckNoSelfLinks(first, b);
+				}
+
+
+				return first;
+			}
+
+			CodeNode* ParsingCodeContext::createExpressionList(CodeNode* first, CodeNode* second)
+			{
+				if (!first)
+					return second;
+				if (!second)
+					return first;
+
+				auto scope = m_mem.create<CodeNode>(first->location(), OpCode::ListElement);
+				scope->addChild(first);
+				scope->addChild(second);
+				return scope;
+			}
+
+			void ParsingCodeContext::extractChildrenFromExpressionList(CodeNode* target, CodeNode* src)
+			{
+				ExtractExpressionList(target, src);
+			}
+
+			static void ExtractAttribute(CodeNode* target, const ExtraAttribute& attr)
+			{
+				for (auto& targetAttr : target->extraData().m_attributesMap)
+				{
+					if (targetAttr.key == attr.key)
+					{
+						TRACE_INFO("Extracted attribute '{}' = '{}'", attr.key, attr.value);
+						targetAttr.value = attr.value;
+						return;
+					}
+				}
+
+				TRACE_INFO("Extracted attribute '{}' = '{}'", attr.key, attr.value);
+				target->extraData().m_attributesMap.emplaceBack(attr);
+			}
+
+			static void ExtractAttributeList(CodeNode* target, const CodeNode* node)
+			{
+				if (!node)
+					return;
+
+				ASSERT(node->opCode() == OpCode::ListElement);
+
+				for (const auto& attr : node->extraData().m_attributesMap)
+					ExtractAttribute(target, attr);
+
+				for (const auto* child : node->children())
+					ExtractAttributeList(target, child);
+			}
+
+			CodeNode* ParsingCodeContext::extractAttributes(const CodeNode* attributeList, CodeNode* target)
+			{
+				if (target->opCode() == OpCode::Scope)
+					target = (CodeNode*)target->children()[0];
+
+				ExtractAttributeList(target, attributeList);
+				return target;
+			}
 
             CodeNode* ParsingCodeContext::createFunctionCall(const base::parser::Location& loc, const base::StringView name, CodeNode* a, CodeNode* b, CodeNode* c)
             {
@@ -297,30 +349,26 @@ namespace rendering
 
                 if (a)
                 {
-                    node->moveChildren(a);
+					ASSERT(a->opCode() != OpCode::ListElement);
+					ASSERT(a->extraData().m_nextStatement == nullptr);
+                    node->addChild(a);
+
                     if (b)
                     {
-                        node->moveChildren(b);
+						ASSERT(b->opCode() != OpCode::ListElement);
+						ASSERT(b->extraData().m_nextStatement == nullptr);
+                        node->addChild(b);
+
                         if (c)
                         {
-                            node->moveChildren(c);
+							ASSERT(c->opCode() != OpCode::ListElement);
+							ASSERT(c->extraData().m_nextStatement == nullptr);
+                            node->addChild(c);
                         }
                     }
                 }
 
                 return node;
-            }
-
-            void ParsingCodeContext::attributeVal(uint32_t attribute)
-            {
-                m_currentAttribute = attribute;
-            }
-
-            uint32_t ParsingCodeContext::consumeAttribute()
-            {
-                auto ret = m_currentAttribute;
-                m_currentAttribute = 0;
-                return ret;
             }
 
             //----

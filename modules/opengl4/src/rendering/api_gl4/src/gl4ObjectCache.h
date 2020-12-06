@@ -89,13 +89,13 @@ namespace rendering
 				//--
 
 			private:	
-				struct CachedFramebuffer : public base::NoCopy
+				struct CachedFramebuffer : public base::IReferencable
 				{
 					RTTI_DECLARE_POOL(POOL_API_RUNTIME);
 					
 				public:
-					GLuint glFrameBuffer = 0;
 					bool configured = false;
+					GLuint glFrameBuffer = 0;
 					FrameBufferTargets targets;
 				};
 
@@ -105,10 +105,10 @@ namespace rendering
 
 				public:
 					GLuint glImage = 0;
-					base::InplaceArray<CachedFramebuffer*, 4> frameBuffers;
+					base::InplaceArray<base::RefPtr<CachedFramebuffer>, 4> frameBuffers;
 				};
 
-				base::HashMap<FrameBufferTargets, CachedFramebuffer*> m_framebufferMap;
+				base::HashMap<FrameBufferTargets, base::RefPtr<CachedFramebuffer>> m_framebufferMap;
 				base::HashMap<GLuint, CachedImageInfo*> m_imageMap;
 
 				void linkImage(GLuint image, CachedFramebuffer* ret);

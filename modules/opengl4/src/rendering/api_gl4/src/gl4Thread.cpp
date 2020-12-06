@@ -10,17 +10,16 @@
 
 #include "gl4Device.h"
 #include "gl4Thread.h"
-#include "gl4FrameFence.h"
 #include "gl4CopyQueue.h"
-#include "gl4CopyPool.h"
 #include "gl4ObjectCache.h"
-#include "gl4TransientBuffer.h"
 #include "gl4Executor.h"
 #include "gl4GraphicsPassLayout.h"
 #include "gl4Shaders.h"
 #include "gl4Sampler.h"
 #include "gl4Image.h"
 #include "gl4Buffer.h"
+#include "gl4UniformPool.h"
+#include "gl4DownloadArea.h"
 
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiSwapchain.h"
@@ -144,8 +143,8 @@ namespace rendering
 				auto result = glGetError();
 				if (result != GL_NO_ERROR)
 				{
-					TRACE_ERROR("Runtime API error: {}", GetGLErrorDesc(result));
-					TRACE_ERROR("{}({}): GL: Failed expression: {}", file, line, testExpr);
+					base::logging::Log::Print(base::logging::OutputLevel::Error, file, line, "OpenGL", "", 
+						base::TempString("Function failed with error: {}", GetGLErrorDesc(result)));
 				}
 
 #ifdef BUILD_DEBUG
@@ -206,11 +205,19 @@ namespace rendering
 					TRACE_INFO("Installed OpenGL debug hook");
 				}
 
+				// create the pool for uniform values
+				m_uniformPool = new UniformBufferPool();
+				m_constantBufferAlignment = m_uniformPool->bufferAlignment();
+				m_constantBufferSize = m_uniformPool->bufferSize();
+
 				return IBaseThread::threadStartup(cmdLine);
 			}
 
 			void Thread::threadFinish()
 			{
+				delete m_uniformPool;
+				m_uniformPool = nullptr;
+
 				IBaseThread::threadFinish();
 			}
 
@@ -238,13 +245,103 @@ namespace rendering
 				TRACE_SPAM("GPU sync: {}", timer);
 			}
 
-			void Thread::execute_Thread(Frame& frame, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, RuntimeDataAllocations& data)
+			void UploadConstantBuffers(Thread* thread, const FrameExecutionData& data, base::Array<GLuint>& outFrameUniformBuffers)
 			{
-				FrameExecutor executor(this, &frame, &stats);
-				executor.prepare(data);
+				PC_SCOPE_LVL1(UploadConstantBuffers);
+
+				const auto numBuffersNeeded = data.m_constantBuffers.size();
+
+				base::InplaceArray<uint32_t, 64> maxDirtyRange;
+				base::Array<UniformBuffer> uniformBuffers;
+				uniformBuffers.reserve(numBuffersNeeded);
+				maxDirtyRange.reserve(numBuffersNeeded);
+				outFrameUniformBuffers.reserve(numBuffersNeeded);
+
+				for (auto& cbEntry : data.m_constantBuffers)
+				{
+					auto bufer = thread->uniformPool()->allocateBuffer();
+					cbEntry.resource.handle = bufer.glBuffer;
+
+					outFrameUniformBuffers.pushBack(bufer.glBuffer);
+					uniformBuffers.pushBack(bufer);
+					maxDirtyRange.pushBack(0);
+				}
+
+				for (const auto& copy : data.m_constantBufferCopies)
+				{
+					auto* targetPtr = uniformBuffers[copy.bufferIndex].memoryPtr + copy.bufferOffset;
+					memcpy(targetPtr, copy.srcData, copy.srcDataSize);
+
+					maxDirtyRange[copy.bufferIndex] = std::max<uint32_t>(maxDirtyRange[copy.bufferIndex], copy.bufferOffset + copy.srcDataSize);
+				}
+
+				for (uint32_t i = 0; i < numBuffersNeeded; ++i)
+				{
+					const auto dirtyRange = maxDirtyRange[i];
+					GL_PROTECT(glFlushMappedNamedBufferRange(uniformBuffers[i].glBuffer, 0, dirtyRange));
+				}
+
+				thread->registerCompletionCallback(DeviceCompletionType::GPUFrameFinished, 
+					IDeviceCompletionCallback::CreateFunctionCallback([thread, uniformBuffers]()
+					{
+							for (auto buffer : uniformBuffers)
+								thread->uniformPool()->returnToPool(buffer);
+					}));
+			}
+			
+			void Thread::execute_Thread(uint64_t frameIndex, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, const FrameExecutionData& data)
+			{
+				base::InplaceArray<GLuint, 128> frameUniformBuffers;
+				UploadConstantBuffers(this, data, frameUniformBuffers);
+
+				FrameExecutor executor(this, &stats, frameUniformBuffers);
 				executor.execute(masterCommandBuffer);
 			}
 			
+			void Thread::insertGpuFrameFence_Thread(uint64_t frameIndex)
+			{
+				auto lock = CreateLock(m_fencesLock);
+				ASSERT_EX(frameIndex > m_fencesLastFrame, "Unexpected frame index, no fence will be added");
+
+				FrameFence fence;
+				fence.frameIndex = frameIndex;
+				fence.glFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+				ASSERT_EX(fence.glFence != nullptr, "Fence not created");
+
+				m_fences.push(fence);
+				m_fencesLastFrame = frameIndex;
+			}
+
+			bool Thread::checkGpuFrameFence_Thread(uint64_t& outCompletedFrameIndex)
+			{
+				auto lock = CreateLock(m_fencesLock);
+
+				if (!m_fences.empty())
+				{	
+					while (m_fences.size() < 2)
+					{
+						auto& topFence = m_fences.top();
+
+						auto ret = glClientWaitSync(topFence.glFence, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+						if (ret != GL_TIMEOUT_EXPIRED)
+						{
+							if (ret != GL_CONDITION_SATISFIED && ret != GL_ALREADY_SIGNALED)
+							{
+								auto error = glGetError();
+								TRACE_ERROR("rame fence failed with return code {} and error code {}", ret, error);
+							}
+
+							outCompletedFrameIndex = topFence.frameIndex;
+							glDeleteSync(topFence.glFence);
+							m_fences.pop();
+							return true;
+						}
+					}
+				}
+
+				return false;
+			}
+
 			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info)
 			{
 				return new Buffer(this, info);
@@ -260,6 +357,11 @@ namespace rendering
 				return new Sampler(this, state);
 			}
 
+			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)
+			{
+				return new DownloadArea(this, size);
+			}
+
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
 				return new Shaders(this, data);
@@ -270,22 +372,9 @@ namespace rendering
 				return new GraphicsPassLayout(this, info);
 			}
 
-			IBaseFrameFence* Thread::createOptimalFrameFence()
-			{
-				return new FrameFence();
-			}
-
-			//--
-
-			IBaseStagingPool* Thread::createOptimalStagingPool(uint32_t size, uint32_t pageSize, const base::app::CommandLine& cmdLine)
-			{
-				return new CopyPool(size, pageSize);
-			}
-
 			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
 			{
-				auto* pool = static_cast<CopyPool*>(copyPool());
-				return new CopyQueue(this, pool, objectRegistry());
+				return new CopyQueue(this, objectRegistry());
 			}
 
 			ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
@@ -296,16 +385,6 @@ namespace rendering
 			IBaseObjectCache* Thread::createOptimalObjectCache(const base::app::CommandLine& cmdLine)
 			{
 				return new ObjectCache(this);
-			}
-
-			IBaseTransientBufferPool* Thread::createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine)
-			{
-				return new TransientBufferPool(this, TransientBufferType::Staging);
-			}
-
-			IBaseTransientBufferPool* Thread::createOptimalTransientConstantPool(const base::app::CommandLine& cmdLine)
-			{
-				return new TransientBufferPool(this, TransientBufferType::Constants);
 			}
 
 			//--

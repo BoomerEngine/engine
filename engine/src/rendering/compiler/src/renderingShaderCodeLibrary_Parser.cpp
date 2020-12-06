@@ -384,15 +384,17 @@ namespace rendering
 					int localSampler = -1;
 					const StaticSampler* staticSampler = nullptr;
 
-                    auto type = m_typeLibrary->resourceType(elem->stringData, attributes);
+					base::StringBuf errorStr;
+                    auto type = m_typeLibrary->resourceType(elem->stringData, attributes, errorStr);
                     if (!type.valid())
                     {
-                        err.reportError(elem->location, base::TempString("Member '{}' of descriptor '{}' uses invalid resource type", elem->name, table->name()));
+                        err.reportError(elem->location, base::TempString("Resource type for '{}' in descriptor '{}' is invalid: {}", elem->name, table->name(), errorStr));
                         valid = false;
                         continue;
                     }
 
-					if (type.resource().type == DeviceObjectViewType::ImageTable || type.resource().type == DeviceObjectViewType::Image)
+					// additional sampler
+					if (type.resource().type == DeviceObjectViewType::SampledImage)
 					{
 						const auto samplerName = attributes.value("sampler"_id);
 						if (samplerName.empty())
@@ -451,7 +453,7 @@ namespace rendering
                         }
                     }
 
-                    auto compositeName = base::StringID(base::TempString("Desc{}_Consts_{}", table->name(), constantBufferIndex++));
+                    auto compositeName = base::StringID(base::TempString("_{}_Consts{}", table->name(), constantBufferIndex++));
                     if (INDEX_NONE != table->memberIndex(compositeName))
                     {
                         err.reportError(elem->location, base::TempString("Member '{}' of descriptor '{}' already defined", compositeName, table->name()));
@@ -496,7 +498,7 @@ namespace rendering
 
 			for (const auto& attr : program->attributes().attributes.pairs())
 			{
-				if (attr.key == "setup"_id)
+				if (attr.key == "state"_id)
 				{
 					const auto* rs = typeLibrary().findStaticRenderStates(base::StringID::Find(attr.value));
 					if (rs)
@@ -596,10 +598,6 @@ namespace rendering
                         continue;
                     }
 
-                    // outputs are assignable
-                    if (elem->flags.test(parser::ElementFlag::Out))
-                        dataType = dataType.makePointer();
-
                     // create variable
                     auto param = m_allocator.create<DataParameter>();
                     param->name = elem->name;
@@ -612,10 +610,10 @@ namespace rendering
                     // scope depends on program type
                     {
                         // determine type
-                        if (elem->flags.test(parser::ElementFlag::In))
-                            param->scope = DataParameterScope::StageInput;
-                        else if (elem->flags.test(parser::ElementFlag::Out))
-                            param->scope = DataParameterScope::StageOutput;
+						if (elem->flags.test(parser::ElementFlag::In))
+							param->scope = DataParameterScope::StageInput;
+						else if (elem->flags.test(parser::ElementFlag::Out))
+							param->scope = DataParameterScope::StageOutput;
                         else if (elem->flags.test(parser::ElementFlag::Vertex))
                             param->scope = DataParameterScope::VertexInput;
                         else if (elem->flags.test(parser::ElementFlag::Const))
@@ -705,6 +703,10 @@ namespace rendering
                         err.reportError(elem->location, base::TempString("Constant '{}' should have default value specified", elem->name));
                         valid = false;
                     }
+
+					// make some scopes assignable
+					if (param->scope == DataParameterScope::StageOutput || param->scope == DataParameterScope::GroupShared)
+						param->assignable = true;
                 }
                 else if (elem->type == parser::ElementType::Function)
                 {
@@ -780,6 +782,7 @@ namespace rendering
                         argParam->loc = param->location;
                         argParam->dataType = paramType;
                         argParam->scope = DataParameterScope::FunctionInput;
+						argParam->assignable = true;
                         argParam->attributes = std::move(attributes);
                         functionArgs.pushBack(argParam);
                         functionArgsNames.pushBack(name);
@@ -1271,7 +1274,7 @@ namespace rendering
 
         static const CodeNode* FindExpression(const CodeNode* node)
         {
-            if (node->opCode() != OpCode::Scope && node->opCode() != OpCode::First && node->opCode() != OpCode::Nop)
+            if (node->opCode() != OpCode::Scope && node->opCode() != OpCode::Nop)
                 return node;
 
             for (auto child  : node->children())

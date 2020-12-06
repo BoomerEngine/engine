@@ -30,25 +30,28 @@ attribute(packing=vertex) struct Simple3DVertex
 //----
 
 // https://docs.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_standard_multisample_quality_levels
-const vec2[2] MSAASampleLocations2 = array(
-    vec2(4.0/8.0, 4.0/8.0),
-    vec2(-4.0/8.0, -4.0/8.0));
+const vec2[2] MSAASampleLocations2 = vec2[]{
+	vec2(4.0 / 8.0, 4.0 / 8.0),
+	vec2(-4.0 / 8.0, -4.0 / 8.0)
+};
 
-const vec2[4] MSAASampleLocations4 = array(
-    vec2(-2.0/8.0, -6.0/8.0),
-    vec2(6.0/8.0, -2.0/8.0),
-    vec2(-6.0/8.0, 2.0/8.0),
-    vec2(2.0/8.0, 6.0/8.0));
+const vec2[4] MSAASampleLocations4 = vec2[]{
+	vec2(-2.0 / 8.0, -6.0 / 8.0),
+	vec2(6.0 / 8.0, -2.0 / 8.0),
+	vec2(-6.0 / 8.0, 2.0 / 8.0),
+	vec2(2.0 / 8.0, 6.0 / 8.0)
+};
 
-const vec2[8] MSAASampleLocations8 = array(
-    vec2(1.0/8.0, -3.0/8.0),
-    vec2(-1.0/8.0, 3.0/8.0),
-    vec2(5.0/8.0, 1.0/8.0),
-    vec2(-3.0/8.0, 5.0/8.0),
-    vec2(-5.0/8.0, 5.0/8.0),
-    vec2(-7.0/8.0, -1.0/8.0),
-    vec2(3.0/8.0, 7.0/8.0),
-    vec2(7.0/8.0, -7.0/8.0));
+const vec2[8] MSAASampleLocations8 = vec2[]{
+	vec2(1.0 / 8.0, -3.0 / 8.0),
+	vec2(-1.0 / 8.0, 3.0 / 8.0),
+	vec2(5.0 / 8.0, 1.0 / 8.0),
+	vec2(-3.0 / 8.0, 5.0 / 8.0),
+	vec2(-5.0 / 8.0, 5.0 / 8.0),
+	vec2(-7.0 / 8.0, -1.0 / 8.0),
+	vec2(3.0 / 8.0, 7.0 / 8.0),
+	vec2(7.0 / 8.0, -7.0 / 8.0)
+};
 
 vec2 CalcSampleOffset(uint NumSamples, int i)
 {
@@ -81,6 +84,12 @@ descriptor QuadParams
 
 //--
 
+state QuadStrips
+{
+	PrimitiveTopology = TriangleStrip,
+}
+
+attribute(state=QuadStrips)
 shader QuadVS
 {
 	void main()
@@ -90,6 +99,48 @@ shader QuadVS
 		gl_Position.z = 0.5f;
 		gl_Position.w = 1.0f;
 	}
+}
+
+//----
+
+sampler SamplerWrapPoint
+{
+	MinFilter = Nearest,
+	MagFilter = Nearest,
+	MipFilter = None,
+	AddressU = Wrap,
+	AddressV = Wrap,
+	AddressW = Wrap,
+}
+
+sampler SamplerWrapLinear
+{
+	MinFilter = Linear,
+	MagFilter = Linear,
+	MipFilter = Linear,
+	AddressU = Wrap,
+	AddressV = Wrap,
+	AddressW = Wrap,
+}
+
+sampler SamplerClampPoint
+{
+	MinFilter = Nearest,
+	MagFilter = Nearest,
+	MipFilter = None,
+	AddressU = Clamp,
+	AddressV = Clamp,
+	AddressW = Clamp,
+}
+
+sampler SamplerClampLinear
+{
+	MinFilter = Linear,
+	MagFilter = Linear,
+	MipFilter = Linear,
+	AddressU = Clamp,
+	AddressV = Clamp,
+	AddressW = Clamp,
 }
 
 //----

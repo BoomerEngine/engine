@@ -32,7 +32,7 @@ namespace rendering
 			BufferObjectPtr m_extraBuffer;
 			BufferViewPtr m_extraBufferSRV;
 
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
             uint32_t m_vertexCount;
         };
 
@@ -67,7 +67,7 @@ namespace rendering
 
         void RenderingTest_FormatBufferRead::initialize()
         {
-            m_shaders = loadShader("FormatBufferRead.csl");
+            m_shaders = loadGraphicsShader("FormatBufferRead.csl", outputLayoutNoDepth());
 
             base::Array<Simple3DVertex> vertices;
             base::Array<base::Vector4> bufferData;
@@ -92,14 +92,13 @@ namespace rendering
 			FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
 			DescriptorEntry tempParams[2];
 			tempParams[0].constants<float>(5.0f + 3.0f * cos(time));
 			tempParams[1] = m_extraBufferSRV;
             cmd.opBindDescriptor("TestParams"_id, tempParams);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);
 

@@ -49,7 +49,7 @@ namespace rendering
             m_numErrors += 1;
 
             //TRACE_ERROR("{}: error: {}", absoluteLoc, message);
-            base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "shader", base::TempString("{}", message));
+            base::logging::Log::Print(base::logging::OutputLevel::Error, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", "", base::TempString("{}", message));
         }
 
         void ShaderCompilerDefaultErrorReporter::reportWarning(const base::parser::Location& loc, base::StringView message)
@@ -61,7 +61,7 @@ namespace rendering
             m_numWarnings += 1;
 
             //TRACE_WARNING("{}: warning: {}", absoluteLoc, message);
-            base::logging::Log::Print(base::logging::OutputLevel::Warning, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "shader", base::TempString("{}", message));
+            base::logging::Log::Print(base::logging::OutputLevel::Warning, absoluteLoc.contextName().c_str(), absoluteLoc.line(), "", "", base::TempString("{}", message));
         }
 
         //--
@@ -148,8 +148,10 @@ namespace rendering
                 ShaderCompilerDefaultIncludeHandler includeHandler(cooker);
                 ShaderCompilerDefaultErrorReporter errorHandler(cooker);
 
+				// TODO: scan for permutations
+
                 // compile the loaded code and return a compiled shader object
-                auto data = CompileShader(code, mainFilePath, mainFilePath, &includeHandler, errorHandler);
+                auto data = CompileShader(code, mainFilePath, "", &includeHandler, errorHandler);
 				if (!data)
 				{
 					TRACE_ERROR("No shader data were produced from '{}'", mainFilePath);

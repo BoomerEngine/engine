@@ -12,6 +12,8 @@
 #include "stubLoader.h"
 #include "base/containers/include/crc.h"
 
+#pragma optimize ("", off)
+
 namespace base
 {
 
@@ -144,7 +146,7 @@ namespace base
 		{
 			int index = 0;
 			if (!m_hasErrors && TryReadCompressedInt(m_objectMemPtr, m_objectMemEndPtr, index))
-				if (index > 0 && index <= m_tables.strings.lastValidIndex())
+				if (index >= 0 && index <= m_tables.strings.lastValidIndex())
 					return m_tables.strings[index];
 
 			if (!m_hasErrors)
@@ -160,7 +162,7 @@ namespace base
 		{
 			int index = 0;
 			if (!m_hasErrors && TryReadCompressedInt(m_objectMemPtr, m_objectMemEndPtr, index))
-				if (index > 0 && index <= m_tables.names.lastValidIndex())
+				if (index >= 0 && index <= m_tables.names.lastValidIndex())
 					return m_tables.names[index];
 
 			if (!m_hasErrors)
@@ -185,7 +187,7 @@ namespace base
 					const auto* stub = m_tables.stubs[index];
 					if (stub)
 					{
-						TRACE_INFO("Loaded reference {}: {}", index, stub->debugName());
+						//TRACE_INFO("Loaded reference {}: {}", index, stub->debugName());
 						DEBUG_CHECK_EX(!expectedType || stub->runtimeType() == expectedType, base::TempString("Expected stub of type {}, got {} ({})", expectedType, stub->runtimeType(), stub->debugName()));
 						return stub;
 					}
@@ -521,7 +523,7 @@ namespace base
 					StubDataReader reader(header->version, tables, dataPtr, expectedEndPtr, additionalMemoryPtr, additionalMemoryEndPtr);
 
 					auto* stub = tables.stubs[i];
-					TRACE_INFO("Reading stub {}: {}", i, stub->debugName());
+					//TRACE_SPAM("Reading stub {}: {}", i, stub->debugName());
 					stub->read(reader);
 
 					const auto sizeRead = dataPtr - startPtr;

@@ -196,6 +196,12 @@ namespace rendering
 				memset(colorMask, 0x0F, sizeof(colorMask));
 			}
 
+			StateValues& StateValues::operator=(const StateValues& other)
+			{
+				memcpy(this, &other, sizeof(StateValues));
+				return *this;
+			}
+			
 			void StateValues::apply(StateMask bits) const
 			{
 				auto mask = bits.word;
@@ -318,12 +324,17 @@ namespace rendering
 							GL_PROTECT(glFrontFace(cull.front));
 							break;
 
-						case State_CullMode:
-							GL_PROTECT(glCullFace(cull.cull));
-							break;
-
 						case State_CullEnabled:
-							GL_PROTECT(glToggle(GL_CULL_FACE, cull.enabled));
+						case State_CullMode:
+							if (cull.cull == GL_NONE)
+							{
+								GL_PROTECT(glToggle(GL_CULL_FACE, false));
+							}
+							else
+							{
+								GL_PROTECT(glToggle(GL_CULL_FACE, cull.enabled));
+								GL_PROTECT(glCullFace(cull.cull));
+							}
 							break;
 
 						case State_DepthBoundsEnabled:
@@ -461,7 +472,7 @@ namespace rendering
 						if (stencil.front.func != base.stencil.front.func || stencil.front.ref != base.stencil.front.ref || stencil.front.compareMask != base.stencil.front.compareMask)
 						{
 							stencil.front.func = base.stencil.front.func;
-							stencil.front.ref = base.stencil.front.ref;
+							//stencil.front.ref = base.stencil.front.ref;
 							stencil.front.compareMask = base.stencil.front.compareMask;
 							changed |= stateBit;
 						}
@@ -471,7 +482,7 @@ namespace rendering
 						if (stencil.back.func != base.stencil.back.func || stencil.back.ref != base.stencil.back.ref || stencil.back.compareMask != base.stencil.back.compareMask)
 						{
 							stencil.back.func = base.stencil.back.func;
-							stencil.back.ref = base.stencil.back.ref;
+							//stencil.back.ref = base.stencil.back.ref;
 							stencil.back.compareMask = base.stencil.back.compareMask;
 							changed |= stateBit;
 						}
@@ -632,36 +643,70 @@ namespace rendering
 				PC_SCOPE_LVL1(ApplyGraphicsStates);
 
 				if (setup.mask.test(GraphicRenderStatesBit::FillMode))
-					if (Apply(polygon.fill, TranslateFillMode(setup.common.fillMode)))
-						outChanged |= State_PolygonFillMode;
+				{
+					polygon.fill = TranslateFillMode(setup.common.fillMode);
+					outChanged |= State_PolygonFillMode;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::BlendingEnabled))
+				{
+					common.blendingEnabled = setup.common.blendingEnabled;
+					outChanged |= State_BlendEnabled;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::StencilEnabled))
+				{
+					stencil.enabled = setup.common.stencilEnabled;
+					outChanged |= State_StencilEnabled;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::ScissorEnabled))
+				{
+					common.scissorEnabled = setup.common.scissorEnabled;
+					outChanged |= State_ScissorEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::CullEnabled))
-					if (Apply(cull.enabled, setup.common.cullEnabled))
-						outChanged |= State_CullEnabled;
+				{
+					cull.enabled = setup.common.cullEnabled;
+					outChanged |= State_CullEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::CullFrontFace))
-					if (Apply(cull.front, TranslateFrontFace(setup.common.cullFrontFace)))
-						outChanged |= State_CullFrontFace;
+				{
+					cull.front = TranslateFrontFace(setup.common.cullFrontFace);
+					outChanged |= State_CullFrontFace;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::CullMode))
-					if (Apply(cull.cull, TranslateCullMode(setup.common.cullMode)))
-						outChanged |= State_CullMode;
+				{
+					cull.cull = TranslateCullMode(setup.common.cullMode);
+					outChanged |= State_CullMode;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::DepthEnabled))
-					if (Apply(depth.enabled, setup.common.depthEnabled))
-						outChanged |= State_DepthEnabled;
+				{
+					depth.enabled = setup.common.depthEnabled;
+					outChanged |= State_DepthEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::DepthWriteEnabled))
-					if (Apply(depth.writeEnabled, setup.common.depthWriteEnabled))
-						outChanged |= State_DepthWriteEnabled;
+				{
+					depth.writeEnabled = setup.common.depthWriteEnabled;
+					outChanged |= State_DepthWriteEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::DepthFunc))
-					if (Apply(depth.func, TranslateCompareOp(setup.common.depthCompareOp)))
-						outChanged |= State_DepthFunc;
+				{
+					depth.func = TranslateCompareOp(setup.common.depthCompareOp);
+					outChanged |= State_DepthFunc;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::DepthBiasEnabled))
-					if (Apply(depth.biasEnabled, setup.common.depthBiasEnabled))
-						outChanged |= State_DepthBiasEnabled;
+				{
+					depth.biasEnabled = setup.common.depthBiasEnabled;
+					outChanged |= State_DepthBiasEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::DepthBiasValue))
 				{
@@ -676,102 +721,106 @@ namespace rendering
 						outChanged |= State_DepthBiasEnabled;*/
 
 				if (setup.mask.test(GraphicRenderStatesBit::StencilEnabled))
-					if (Apply(stencil.enabled, setup.common.stencilEnabled))
-						outChanged |= State_StencilEnabled;
+				{
+					stencil.enabled = setup.common.stencilEnabled;
+					outChanged |= State_StencilEnabled;
+				}
 
-				if (setup.mask.test(GraphicRenderStatesBit::StencilFrontFunc))
-					if (Apply(stencil.front.func, TranslateCompareOp(setup.common.stencilFrontCompareOp)))
-						outChanged |= State_StencilFrontFuncReferenceMask;
+				if (setup.mask.test(GraphicRenderStatesBit::StencilFrontDepthFailOp) ||
+					setup.mask.test(GraphicRenderStatesBit::StencilFrontPassOp) || 
+					setup.mask.test(GraphicRenderStatesBit::StencilFrontFailOp))
+				{
+					stencil.front.failOp = TranslateStencilOp(setup.common.stencilFrontFailOp);
+					stencil.front.passOp = TranslateStencilOp(setup.common.stencilFrontPassOp);
+					stencil.front.depthFailOp = TranslateStencilOp(setup.common.stencilFrontDepthFailOp);
+					outChanged |= State_StencilFrontOps;
+				}
 
-				if (setup.mask.test(GraphicRenderStatesBit::StencilFrontFailOp))
-					if (Apply(stencil.front.failOp, TranslateStencilOp(setup.common.stencilFrontFailOp)))
-						outChanged |= State_StencilFrontOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilFrontPassOp))
-					if (Apply(stencil.front.passOp, TranslateStencilOp(setup.common.stencilFrontPassOp)))
-						outChanged |= State_StencilFrontOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilFrontDepthFailOp))
-					if (Apply(stencil.front.depthFailOp, TranslateStencilOp(setup.common.stencilFrontDepthFailOp)))
-						outChanged |= State_StencilFrontOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilReadMask))
-					if (Apply(stencil.front.compareMask, setup.depthStencilStates.stencilReadMask))
-						outChanged |= State_StencilFrontFuncReferenceMask;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilWriteMask))
-					if (Apply(stencil.front.writeMask, setup.depthStencilStates.stencilWriteMask))
-						outChanged |= State_StencilFrontWriteMask;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilBackFunc))
-					if (Apply(stencil.back.func, TranslateCompareOp(setup.common.stencilBackCompareOp)))
-						outChanged |= State_StencilBackFuncReferenceMask;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilBackFailOp))
-					if (Apply(stencil.back.failOp, TranslateStencilOp(setup.common.stencilBackFailOp)))
-						outChanged |= State_StencilBackOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilBackPassOp))
-					if (Apply(stencil.back.passOp, TranslateStencilOp(setup.common.stencilBackPassOp)))
-						outChanged |= State_StencilBackOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilBackDepthFailOp))
-					if (Apply(stencil.back.depthFailOp, TranslateStencilOp(setup.common.stencilBackDepthFailOp)))
-						outChanged |= State_StencilBackOps;
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilReadMask))
-					if (Apply(stencil.back.compareMask, setup.depthStencilStates.stencilReadMask))
-						outChanged |= State_StencilBackFuncReferenceMask;
+				if (setup.mask.test(GraphicRenderStatesBit::StencilReadMask) ||
+					setup.mask.test(GraphicRenderStatesBit::StencilFrontFunc))
+				{
+					stencil.front.func = TranslateCompareOp(setup.common.stencilFrontCompareOp);
+					stencil.front.compareMask = setup.depthStencilStates.stencilReadMask;
+					outChanged |= State_StencilFrontFuncReferenceMask;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::StencilWriteMask))
-					if (Apply(stencil.back.writeMask, setup.depthStencilStates.stencilWriteMask))
-						outChanged |= State_StencilBackWriteMask;
+				{
+					stencil.front.writeMask = setup.depthStencilStates.stencilWriteMask;
+					outChanged |= State_StencilFrontWriteMask;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::StencilBackFailOp) ||
+					setup.mask.test(GraphicRenderStatesBit::StencilBackPassOp) ||
+					setup.mask.test(GraphicRenderStatesBit::StencilBackDepthFailOp))
+				{
+					stencil.back.failOp = TranslateStencilOp(setup.common.stencilBackFailOp);
+					stencil.back.passOp = TranslateStencilOp(setup.common.stencilBackPassOp);
+					stencil.back.depthFailOp = TranslateStencilOp(setup.common.stencilBackDepthFailOp);
+					outChanged |= State_StencilBackOps;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::StencilBackFunc) || 
+					setup.mask.test(GraphicRenderStatesBit::StencilReadMask))
+				{
+					stencil.back.func = TranslateCompareOp(setup.common.stencilBackCompareOp);
+					stencil.back.compareMask = setup.depthStencilStates.stencilReadMask;
+					outChanged |= State_StencilBackFuncReferenceMask;
+				}
+
+				if (setup.mask.test(GraphicRenderStatesBit::StencilWriteMask))
+				{
+					stencil.back.writeMask = setup.depthStencilStates.stencilWriteMask;
+					outChanged |= State_StencilBackWriteMask;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::PrimitiveRestartEnabled))
-					if (Apply(polygon.restartEnabled, setup.common.primitiveRestartEnabled))
-						outChanged |= State_PolygonPrimitiveRestart;
+				{
+					polygon.restartEnabled = setup.common.primitiveRestartEnabled;
+					outChanged |= State_PolygonPrimitiveRestart;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::PrimitiveTopology))
-					if (Apply(polygon.topology, TranslateDrawTopology(setup.common.primitiveTopology)))
-						outChanged |= State_PolygonTopology;
+				{
+					polygon.topology = TranslateDrawTopology(setup.common.primitiveTopology);
+					outChanged |= State_PolygonTopology;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::AlphaCoverageEnabled))
-					if (Apply(multisample.alphaToCoverageEnabled, TranslateDrawTopology(setup.common.alphaToCoverageEnable)))
-						outChanged |= State_AlphaCoverageEnabled;
+				{
+					multisample.alphaToCoverageEnabled = setup.common.alphaToCoverageEnable;
+					outChanged |= State_AlphaCoverageEnabled;
+				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::AlphaCoverageDitherEnabled))
-					if (Apply(multisample.alphaCoverageDitherEnabled, TranslateDrawTopology(setup.common.alphaToCoverageDitherEnable)))
-						outChanged |= State_AlphaCoverageDitherEnabled;
+				{
+					multisample.alphaCoverageDitherEnabled = setup.common.alphaToCoverageDitherEnable;
+					outChanged |= State_AlphaCoverageDitherEnabled;
+				}
 
 				for (uint32_t i = 0; i < 8; ++i)
 				{
 					if (setup.mask.test(GraphicsRenderStatesSetup::COLOR_MASK_DIRTY_BITS[i]))
-						if (Apply(colorMask[i], setup.colorMasks[i]))
-							outChanged |= (StateBit)(State_ColorMask_First + i);
+					{
+						colorMask[i] = setup.colorMasks[i];
+						outChanged |= (StateBit)(State_ColorMask_First + i);
+					}
 
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_OP_DIRTY_BITS[i]))
-						if (Apply(blend[i].colorOp, TranslateBlendOp(setup.blendStates[i].colorBlendOp)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);
-
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_OP_DIRTY_BITS[i]))
-						if (Apply(blend[i].alphaOp, TranslateBlendOp(setup.blendStates[i].alphaBlendOp)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);
-
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_SRC_FACTOR_DIRTY_BITS[i]))
-						if (Apply(blend[i].colorSrc, TranslateBlendFactor(setup.blendStates[i].srcColorBlendFactor)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);
-
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_DEST_FACTOR_DIRTY_BITS[i]))
-						if (Apply(blend[i].colorDest, TranslateBlendFactor(setup.blendStates[i].destColorBlendFactor)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);
-
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_SRC_FACTOR_DIRTY_BITS[i]))
-						if (Apply(blend[i].alphaSrc, TranslateBlendFactor(setup.blendStates[i].srcAlphaBlendFactor)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);
-
-					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_DEST_FACTOR_DIRTY_BITS[i]))
-						if (Apply(blend[i].alphaDest, TranslateBlendFactor(setup.blendStates[i].destAlphaBlendFactor)))
-							outChanged |= (StateBit)(State_BlendEquation_First + i);					
+					if (setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_OP_DIRTY_BITS[i]) ||
+						setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_OP_DIRTY_BITS[i]) ||
+						setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_SRC_FACTOR_DIRTY_BITS[i]) || 
+						setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_SRC_FACTOR_DIRTY_BITS[i]) ||
+						setup.mask.test(GraphicsRenderStatesSetup::BLEND_COLOR_DEST_FACTOR_DIRTY_BITS[i]) ||
+						setup.mask.test(GraphicsRenderStatesSetup::BLEND_ALPHA_DEST_FACTOR_DIRTY_BITS[i]))
+					{
+						blend[i].colorOp = TranslateBlendOp(setup.blendStates[i].colorBlendOp);
+						blend[i].colorSrc = TranslateBlendFactor(setup.blendStates[i].srcColorBlendFactor);
+						blend[i].colorDest = TranslateBlendFactor(setup.blendStates[i].destColorBlendFactor);
+						blend[i].alphaOp = TranslateBlendOp(setup.blendStates[i].alphaBlendOp);
+						blend[i].alphaSrc = TranslateBlendFactor(setup.blendStates[i].srcAlphaBlendFactor);
+						blend[i].alphaDest = TranslateBlendFactor(setup.blendStates[i].destAlphaBlendFactor);
+						outChanged |= (StateBit)(State_BlendEquation_First + i);
+					}
 				}
 			}
 

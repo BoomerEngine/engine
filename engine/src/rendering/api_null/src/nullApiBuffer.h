@@ -39,7 +39,8 @@ namespace rendering
 
 				//--
 
-				virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) override final;
+				virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) override final;
+				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
 
 				//--
 

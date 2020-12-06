@@ -18,10 +18,9 @@ namespace rendering
     {
 		//--
 
-		IBaseImageView::IBaseImageView(IBaseThread* owner, ObjectType viewType, IBaseImage* img, IBaseSampler* sampler, const Setup& setup)
+		IBaseImageView::IBaseImageView(IBaseThread* owner, ObjectType viewType, IBaseImage* img, const Setup& setup)
 			: IBaseObject(owner, viewType)
 			, m_image(img)
-			, m_sampler(sampler)
 			, m_setup(setup)
 		{}
 
@@ -55,31 +54,20 @@ namespace rendering
 			base::mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_poolMemorySize);
 		}
 
-		bool IBaseImage::generateCopyAtoms(const ResourceCopyRange& range, base::Array<ResourceCopyAtom>& outAtoms, uint32_t& outStagingAreaSize, uint32_t& outStagingAreaAlignment) const
+		void IBaseImage::computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const
 		{
-			DEBUG_CHECK_RETURN_V(range.image.firstMip < m_setup.numMips, false);
-			DEBUG_CHECK_RETURN_V(range.image.firstMip + range.image.numMips <= m_setup.numMips, false);
-			DEBUG_CHECK_RETURN_V(range.image.firstSlice < m_setup.numSlices, false);
-			DEBUG_CHECK_RETURN_V(range.image.firstSlice + range.image.numSlices <= m_setup.numSlices, false);
-
-			outStagingAreaAlignment = 256;
-			outStagingAreaSize = 0;
-
-			// create standard update layout
-			for (uint32_t i = 0; i < range.image.numSlices; ++i)
+			outAtoms.reserve(m_setup.numMips * m_setup.numSlices);
+			for (uint32_t sliceIndex = 0; sliceIndex < m_setup.numSlices; ++sliceIndex)
 			{
-				for (uint32_t j = 0; j < range.image.numMips; ++j)
+				for (uint32_t mipIndex = 0; mipIndex < m_setup.numMips; ++mipIndex)
 				{
 					auto& atom = outAtoms.emplaceBack();
-					atom.copyElement.image.mip = range.image.firstMip + j;
-					atom.copyElement.image.slice = range.image.firstSlice + i;
-
-					atom.stagingAreaOffset = base::Align<uint32_t>(outStagingAreaSize, 16);
-					outStagingAreaSize += m_setup.calcMipDataSize(j);
+					atom.alignment = 256;
+					atom.size = m_setup.calcMipDataSize(mipIndex);
+					atom.mip = mipIndex;
+					atom.slice = sliceIndex;
 				}
 			}
-
-			return true;
 		}
 
 		//--
@@ -89,14 +77,11 @@ namespace rendering
 		{
 		}
 
-		ImageViewPtr ImageObjectProxy::createView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips)
+		ImageSampledViewPtr ImageObjectProxy::createSampledView(uint32_t firstMip /*= 0*/, uint32_t firstSlice /*= 0*/)
 		{
-			rendering::ImageView::Setup setup;
-			if (!validateView(sampler, firstMip, numMips, 0, slices(), setup))
+			rendering::ImageSampledView::Setup setup;
+			if (!validateSampledView(firstMip, INDEX_MAX, firstSlice, INDEX_MAX, setup))
 				return nullptr;
-
-			auto* samplerObj = sampler->resolveInternalApiObject<IBaseSampler>();
-			DEBUG_CHECK_RETURN_V(samplerObj, nullptr);
 
 			if (auto* obj = resolveInternalApiObject<IBaseImage>())
 			{
@@ -106,23 +91,19 @@ namespace rendering
 				localSetup.numMips = setup.numMips;
 				localSetup.numSlices = setup.numSlices;
 				localSetup.format = obj->setup().format;
-				localSetup.writable = false;
 
-				if (auto* view = obj->createView_ClientApi(localSetup, samplerObj))
-					return base::RefNew<rendering::ImageView>(view->handle(), this, owner(), setup);
+				if (auto* view = obj->createSampledView_ClientApi(localSetup))
+					return base::RefNew<rendering::ImageSampledView>(view->handle(), this, owner(), setup);
 			}
 
 			return nullptr;
 		}
 
-		ImageViewPtr ImageObjectProxy::createArrayView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices)
+		ImageSampledViewPtr ImageObjectProxy::createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices)
 		{
-			rendering::ImageView::Setup setup;
-			if (!validateView(sampler, firstMip, numMips, firstSlice, numMips, setup))
+			rendering::ImageSampledView::Setup setup;
+			if (!validateSampledView(firstMip, numMips, firstSlice, numSlices, setup))
 				return nullptr;
-
-			auto* samplerObj = sampler->resolveInternalApiObject<IBaseSampler>();
-			DEBUG_CHECK_RETURN_V(samplerObj, nullptr);
 
 			if (auto* obj = resolveInternalApiObject<IBaseImage>())
 			{
@@ -132,16 +113,37 @@ namespace rendering
 				localSetup.numMips = setup.numMips;
 				localSetup.numSlices = setup.numSlices;
 				localSetup.format = obj->setup().format;
-				localSetup.writable = false;
 
-				if (auto* view = obj->createView_ClientApi(localSetup, samplerObj))
-					return base::RefNew<rendering::ImageView>(view->handle(), this, owner(), setup);
+				if (auto* view = obj->createSampledView_ClientApi(localSetup))
+					return base::RefNew<rendering::ImageSampledView>(view->handle(), this, owner(), setup);
 			}
 
 			return nullptr;
 		}
 
-		ImageWritableViewPtr ImageObjectProxy::createWritableView(uint8_t mip, uint32_t slice)
+		ImageReadOnlyViewPtr ImageObjectProxy::createReadOnlyView(uint32_t mip, uint32_t slice)
+		{
+			rendering::ImageReadOnlyView::Setup setup;
+			if (!validateReadOnlyView(mip, slice, setup))
+				return nullptr;
+
+			if (auto* obj = resolveInternalApiObject<IBaseImage>())
+			{
+				IBaseImageView::Setup localSetup;
+				localSetup.firstMip = setup.mip;
+				localSetup.firstSlice = setup.slice;
+				localSetup.numMips = 1;
+				localSetup.numSlices = 1;
+				localSetup.format = obj->setup().format;
+
+				if (auto* view = obj->createReadOnlyView_ClientApi(localSetup))
+					return base::RefNew<rendering::ImageReadOnlyView>(view->handle(), this, owner(), setup);
+			}
+
+			return nullptr;
+		}
+
+		ImageWritableViewPtr ImageObjectProxy::createWritableView(uint32_t mip, uint32_t slice)
 		{
 			rendering::ImageWritableView::Setup setup;
 			if (!validateWritableView(mip, slice, setup))
@@ -155,7 +157,6 @@ namespace rendering
 				localSetup.numMips = 1;
 				localSetup.numSlices = 1;
 				localSetup.format = obj->setup().format;
-				localSetup.writable = false;
 
 				if (auto* view = obj->createWritableView_ClientApi(localSetup))
 					return base::RefNew<rendering::ImageWritableView>(view->handle(), this, owner(), setup);
@@ -164,7 +165,7 @@ namespace rendering
 			return nullptr;
 		}
 
-		RenderTargetViewPtr ImageObjectProxy::createRenderTargetView(uint8_t mip, uint32_t firstSlice, uint32_t numSlices)
+		RenderTargetViewPtr ImageObjectProxy::createRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices)
 		{
 			rendering::RenderTargetView::Setup setup;
 			if (!validateRenderTargetView(mip, firstSlice, numSlices, setup))
@@ -178,7 +179,6 @@ namespace rendering
 				localSetup.numMips = 1;
 				localSetup.numSlices = setup.numSlices;
 				localSetup.format = obj->setup().format;
-				localSetup.writable = false;
 
 				if (auto* view = obj->createRenderTargetView_ClientApi(localSetup))
 					return base::RefNew<rendering::RenderTargetView>(view->handle(), this, owner(), setup);

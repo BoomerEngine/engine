@@ -259,11 +259,12 @@ namespace rendering
 
         RENDER_DECLARE_OPCODE_DATA(UploadConstants)
         {
-            uint32_t offset = 0;
             uint32_t dataSize = 0;
             void* dataPtr = nullptr;
-            mutable uint32_t mergedRuntimeOffset = 0;
-            OpUploadConstants* nextConstants = nullptr;
+
+            mutable uint16_t bufferIndex = 0;
+			mutable uint32_t bufferOffset = 0; // constant buffers are 64K ONLY
+			OpUploadConstants* nextConstants = nullptr;
         };
 
         RENDER_DECLARE_OPCODE_DATA(UploadDescriptor)
@@ -389,12 +390,13 @@ namespace rendering
 
 			OpUpdate* next = nullptr;
 
-			uint32_t stagingBufferOffset = 0; // assigned placement in the staging area
+			mutable uint32_t stagingBufferOffset = 0; // assigned placement in the staging area
         };
 
         RENDER_DECLARE_OPCODE_DATA(Download)
         {
             ObjectID id;
+			ObjectID areaId;
 			IDownloadDataSink* sink = nullptr;
 			ResourceCopyRange range;
         };

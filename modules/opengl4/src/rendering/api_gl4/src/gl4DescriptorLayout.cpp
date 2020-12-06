@@ -85,23 +85,24 @@ namespace rendering
 								bindingElement.objectSlot = numStorageBuffers++;
 								break;
 
-							case DeviceObjectViewType::Image:
+							case DeviceObjectViewType::SampledImage:
 								bindingElement.objectSlot = numTextures++;
 								break;
 
+							case DeviceObjectViewType::Image:
 							case DeviceObjectViewType::ImageWritable:
-								bindingElement.objectSlot = numImages++;
+								bindingElement.objectSlot = numImages++; // writable texture
 								break;
 
-							case DeviceObjectViewType::ImageTable:
+							/*case DeviceObjectViewType::ImageTable:
 								bindingElement.objectSlot = numUniformBuffers++;
-								break;
+								break;*/
 
 							default:
 								DEBUG_CHECK(!"Rendering: Invalid resource type");
 						}
 
-						if (element.type == DeviceObjectViewType::Image || element.type == DeviceObjectViewType::ImageTable)
+						if (element.type == DeviceObjectViewType::SampledImage)
 						{
 							if (element.number < 0)
 							{

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: interface\views #]
+* [# filter: interface\object #]
 ***/
 
 #pragma once
@@ -59,50 +59,76 @@ namespace rendering
 
     static_assert(sizeof(ImageViewKey) == 8, "There are places that take assumptions of layout of this structure");
 
+	//--
+
+    // sampled texture (SRV) view of image, access to all mips/slices
+	class RENDERING_DEVICE_API ImageSampledView : public IDeviceObjectView
+	{
+		RTTI_DECLARE_VIRTUAL_CLASS(ImageSampledView, IDeviceObjectView);
+
+	public:
+		struct Setup
+		{
+			uint8_t firstMip = 0;
+			uint8_t numMips = 0;
+			uint32_t firstSlice = 0;
+			uint32_t numSlices = 0;
+		};
+
+		ImageSampledView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup);
+		virtual ~ImageSampledView();
+
+		// get the original image, guaranteed to be alive
+		INLINE ImageObject* image() const { return (ImageObject*)object(); }
+
+		// get the first mipmap (in the source image) we are viewing
+		INLINE uint8_t firstMip() const { return m_firstMip; }
+
+		// get number of mipmaps in the view
+		INLINE uint8_t mips() const { return m_numMips; }
+
+		// get the first slice (in the source image) we are viewing
+		INLINE uint32_t firstSlice() const { return m_firstSlice; }
+
+		// get number of slices in the view
+		INLINE uint32_t slices() const { return m_numSlices; }
+
+	private:
+		uint8_t m_firstMip = 0;
+		uint8_t m_numMips = 0;
+		uint32_t m_firstSlice = 0;
+		uint32_t m_numSlices = 0;
+	};
+
     //--
 
-    // texture (SRV) view of image
-    class RENDERING_DEVICE_API ImageView : public IDeviceObjectView
+    // read only view of a single mip/slice in the image
+    class RENDERING_DEVICE_API ImageReadOnlyView : public IDeviceObjectView
     {
-		RTTI_DECLARE_VIRTUAL_CLASS(ImageView, IDeviceObjectView);
+		RTTI_DECLARE_VIRTUAL_CLASS(ImageReadOnlyView, IDeviceObjectView);
 
     public:
         struct Setup
         {
-            uint8_t firstMip = 0;
-            uint8_t numMips = 0;
-            uint32_t firstSlice = 0;
-            uint32_t numSlices = 0;
-            SamplerObjectPtr sampler;
+            uint8_t mip = 0;
+            uint32_t slice = 0;
         };
 
-        ImageView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup);
-        virtual ~ImageView();
+		ImageReadOnlyView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup);
+        virtual ~ImageReadOnlyView();
 
         // get the original image, guaranteed to be alive
         INLINE ImageObject* image() const { return (ImageObject*)object(); }
 
-        // get the sampler object (must be specified for shader readable images)
-        INLINE SamplerObject* sampler() const { return m_sampler; }
+		// index of the mip we are writing view this view
+		INLINE uint8_t mip() const { return m_mip; }
 
-        // get the first mipmap (in the source image) we are viewing
-        INLINE uint8_t firstMip() const { return m_firstMip; }
-
-        // get number of mipmaps in the view
-        INLINE uint8_t mips() const { return m_numMips; }
-
-        // get the first slice (in the source image) we are viewing
-        INLINE uint32_t firstSlice() const { return m_firstSlice; }
-
-        // get number of slices in the view
-        INLINE uint32_t slices() const { return m_numSlices; }
+		// index of the slice we are writing view this view
+		INLINE uint32_t slice() const { return m_slice; }
 
     private:
-        uint8_t m_firstMip = 0;
-        uint8_t m_numMips = 0;
-        uint32_t m_firstSlice = 0;
-        uint32_t m_numSlices = 0;
-        SamplerObjectPtr m_sampler;
+		uint8_t m_mip = 0;
+		uint32_t m_slice = 0;
     };
 
     //--
@@ -330,22 +356,26 @@ namespace rendering
 
         ///--
 
-        /// create read-only shader view
-        virtual ImageViewPtr createView(SamplerObject* sampler, uint8_t firstMip = 0, uint8_t numMips = 255) = 0;
+		/// create read-only image view usable as samplable texture
+        virtual ImageSampledViewPtr createSampledView(uint32_t firstMip = 0, uint32_t firstSlice = 0) = 0;
 
-        /// create read-only shader view
-        virtual ImageViewPtr createArrayView(SamplerObject* sampler, uint8_t firstMip = 0, uint8_t numMips = 255, uint32_t firstSlice = 0, uint32_t numSlices = INDEX_MAX) = 0;
+		/// create read-only image view usable as samplable texture, more advanced function version
+		virtual ImageSampledViewPtr createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips=INDEX_MAX, uint32_t numSlices=INDEX_MAX) = 0;
+
+		/// create read-only view of a single slice (usable as image in shaders, not usable as sampled texture)
+		virtual ImageReadOnlyViewPtr createReadOnlyView(uint32_t mip = 0, uint32_t slice = 0) = 0;
 
         /// create writable UAV view of particular slice
-        virtual ImageWritableViewPtr createWritableView(uint8_t mip = 0, uint32_t slice = 0) = 0;
+        virtual ImageWritableViewPtr createWritableView(uint32_t mip = 0, uint32_t slice = 0) = 0;
 
         /// create render target view
-        virtual RenderTargetViewPtr createRenderTargetView(uint8_t mip = 0, uint32_t firstSlice = 0, uint32_t numSlices = 1) = 0;
+        virtual RenderTargetViewPtr createRenderTargetView(uint32_t mip = 0, uint32_t firstSlice = 0, uint32_t numSlices = 1) = 0;
 
     protected:
-        bool validateView(SamplerObject* sampler, uint8_t firstMip, uint8_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageView::Setup& outSetup) const;
-        bool validateWritableView(uint8_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const;
-        bool validateRenderTargetView(uint8_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const;
+        bool validateSampledView(uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const;
+		bool validateReadOnlyView(uint32_t mip, uint32_t slice, ImageReadOnlyView::Setup& outSetup) const;
+        bool validateWritableView(uint32_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const;
+        bool validateRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const;
 
     private:
         ImageViewKey m_key;

@@ -31,7 +31,7 @@ namespace rendering
 				//--
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders()); }
+				INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders())); }
 				INLINE const GraphicsPassLayout* passLayout() const { return static_cast<const GraphicsPassLayout*>(IBaseGraphicsPipeline::passLayout()); }
 
 				INLINE const StateValues& staticRenderState() const { return m_staticRenderStates; }
@@ -39,7 +39,7 @@ namespace rendering
 				
 				//--				
 
-				bool apply();
+				bool apply(GLuint& glActiveProgram);
 
 				//--
 

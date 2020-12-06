@@ -41,7 +41,7 @@ void* GCurrentModuleHandle = nullptr;
 class TestLogSink : public base::logging::ILogSink
 {
 public:
-    virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override
+    virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override
     {
         if (level == base::logging::OutputLevel::Spam)
         {

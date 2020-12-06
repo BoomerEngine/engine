@@ -17,7 +17,8 @@ descriptor SceneShadowMapParams
 		attribute(offset=0) mat4 WorldToShadowMap;
 	}
 
-	attribute(depth) Texture2D ShadowMap;
+	Sampler ShadowMapSampler;
+	attribute(depth, sampler=ShadowMapSampler) Texture2D ShadowMap;
 };
 
 //--

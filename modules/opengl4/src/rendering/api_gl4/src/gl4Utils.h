@@ -28,7 +28,7 @@ namespace rendering
 			extern RENDERING_API_GL4_API void DecomposeVertexFormat(GLenum format, GLenum& outBaseFormat, GLuint& outSize, GLboolean& outNormalized);
 
 			// decompose format into parts
-			extern RENDERING_API_GL4_API void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool& outCompressed);
+			extern RENDERING_API_GL4_API void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool* outCompressed = nullptr);
 
 			// decompose format into parts
 			extern RENDERING_API_GL4_API void DecomposeTextureFormat(base::image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);

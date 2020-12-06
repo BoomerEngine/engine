@@ -161,9 +161,12 @@ namespace rendering
                 m_numOpenedBlocks = 0;
                 m_currentPassRts = 0;
                 //m_currentPassViewports = 0;
+
+#ifdef VALIDATE_VERTEX_LAYOUTS
                 m_currentIndexBufferElementCount = 0;
                 m_currentVertexBufferRemainingSize.reset();
 				m_currentVertexBuffers.reset();
+#endif
             }
         }
 
@@ -244,7 +247,14 @@ namespace rendering
 				{
 					const auto format = frameBuffer.color[i].viewPtr->format();
 					const auto expectedFormat = layout->layout().color[i].format;
-					DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Color target {} in frame buffer has layout {} but {} is expected by pass layout", i, format, expectedFormat));
+					if (expectedFormat != ImageFormat::UNKNOWN)
+					{
+						DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Color target {} in frame buffer has layout {} but {} is expected by pass layout", i, format, expectedFormat));
+					}
+					else
+					{
+						DEBUG_CHECK_RETURN_EX(ImageFormat::UNKNOWN == format, base::TempString("Color target {} in frame buffer is bound with format '{}' but pass layout expects it's not", i, format));
+					}
 				}
 				else
 				{
@@ -256,7 +266,14 @@ namespace rendering
 			{
 				const auto format = frameBuffer.depth.viewPtr->format();
 				const auto expectedFormat = layout->layout().depth.format;
-				DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Depth target in frame buffer has layout {} but {} is expected by pass layout", format, expectedFormat));
+				if (expectedFormat != ImageFormat::UNKNOWN)
+				{
+					DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Depth target in frame buffer has layout {} but {} is expected by pass layout", format, expectedFormat));
+				}
+				else
+				{
+					DEBUG_CHECK_RETURN_EX(ImageFormat::UNKNOWN == format, base::TempString("Deth target in frame buffer is bound with format '{}' but pass layout expects it's not", format));
+				}
 			}
 			else
 			{
@@ -561,7 +578,7 @@ namespace rendering
             }
         }
 
-		void CommandWriter::opClearWritableBuffer(const BufferWritableView* bufferView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
+		void CommandWriter::opClearWritableBufferRects(const BufferWritableView* bufferView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
 		{
 			DEBUG_CHECK_RETURN_EX(bufferView != nullptr, "Missing buffer");
 			DEBUG_CHECK_RETURN_EX((rects == nullptr && numRects == 0) || (rects != nullptr && numRects >= 0), "Invalid rectangles");
@@ -599,8 +616,7 @@ namespace rendering
 			auto op = allocCommand<OpClearBuffer>(payloadDataSize);
 			op->view = bufferView->viewId();
 			op->clearFormat = bufferView->format();
-			uint8_t imageMip = 0;
-			uint16_t imageSlice = 0;
+			op->numRects = numRects;
 
 			if (numRects)
 				memcpy(op->payload(), rects, sizeof(base::image::ImageRect) * numRects);
@@ -626,18 +642,18 @@ namespace rendering
 
 			if (offset == 0 && size == view->size())
 			{
-				opClearWritableBuffer(view, clearValue, nullptr, 0);
+				opClearWritableBufferRects(view, clearValue, nullptr, 0);
 			}
 			else
 			{
 				ResourceClearRect rect;
 				rect.buffer.offset = offset;
 				rect.buffer.size = size;
-				opClearWritableBuffer(view, clearValue, &rect, 1);
+				opClearWritableBufferRects(view, clearValue, &rect, 1);
 			}
         }
 
-		void CommandWriter::opClearWritableImage(const ImageWritableView* imageView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
+		void CommandWriter::opClearWritableImageRects(const ImageWritableView* imageView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
 		{
 			DEBUG_CHECK_RETURN_EX(imageView != nullptr, "Missing image");
 			DEBUG_CHECK_RETURN_EX((rects == nullptr && numRects == 0) || (rects != nullptr && numRects >= 0), "Invalid rectangles");
@@ -686,8 +702,7 @@ namespace rendering
 			auto op = allocCommand<OpClearImage>(payloadDataSize);
 			op->view = imageView->viewId();
 			op->clearFormat = image->format();
-			uint8_t imageMip = 0;
-			uint16_t imageSlice = 0;
+			op->numRects = numRects;
 
 			if (numRects)
 				memcpy(op->payload(), rects, sizeof(base::image::ImageRect) * numRects);
@@ -706,13 +721,14 @@ namespace rendering
 			DEBUG_CHECK_RETURN(image != nullptr);
 			DEBUG_CHECK_RETURN(image->format() != ImageFormat::UNKNOWN);
 
-			opClearWritableImage(view, clearValue, nullptr, 0);
+			opClearWritableImageRects(view, clearValue, nullptr, 0);
         }
 
         void CommandWriter::opClearRenderTarget(const RenderTargetView * view, const base::Vector4 & values, const base::Rect * rects /*= nullptr*/, uint32_t numRects /*= 0*/)
         {
-			DEBUG_CHECK_RETURN(view);
-			DEBUG_CHECK_RETURN(!view->depth());
+			DEBUG_CHECK_RETURN_EX(view, "Invalid render target view");
+			DEBUG_CHECK_RETURN_EX(!view->depth(), "Render target view is not a color render target");
+			DEBUG_CHECK_RETURN_EX(!view->swapchain(), "Cannot clear swap chain views like that");
 
 			for (uint32_t i = 0; i < numRects; ++i)
 			{
@@ -750,9 +766,9 @@ namespace rendering
 
         void CommandWriter::opClearDepthStencil(const RenderTargetView* view, bool doClearDepth, bool doClearStencil, float clearDepth, uint32_t clearStencil, const base::Rect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
         {
-			DEBUG_CHECK_RETURN(view);
-			DEBUG_CHECK_RETURN(view->depth());
-			DEBUG_CHECK_RETURN(doClearStencil || doClearStencil);
+			DEBUG_CHECK_RETURN_EX(view, "Invalid render target view");
+			DEBUG_CHECK_RETURN_EX(view->depth(), "Render target view is not a depth buffer");
+			DEBUG_CHECK_RETURN_EX(!view->swapchain(), "Cannot clear swap chain views like that");
 
 			for (uint32_t i = 0; i < numRects; ++i)
 			{
@@ -780,6 +796,7 @@ namespace rendering
 			op->view = view->viewId();
 			op->stencilValue = clearStencil;
 			op->depthValue = clearDepth;
+			op->numRects = numRects;
 			op->clearFlags = 0;
 			if (doClearDepth)
 				op->clearFlags = 1;
@@ -1000,7 +1017,7 @@ namespace rendering
 					{
 						case DeviceObjectViewType::ConstantBuffer:
 						{
-							if (descriptorEntry.offsetPtr) // way more common to have inlined constants
+							if (descriptorEntry.inlinedConstants.sourceDataPtr) // way more common to have inlined constants
 							{
 								DEBUG_CHECK_RETURN_V(!descriptorEntry.id, false);
 								DEBUG_CHECK_RETURN_EX_V(descriptorEntry.size == expectedElem.number, base::TempString("Constant buffer '{}' in descriptor '{}' is expected to be of size {} but {} bytes were given.",
@@ -1091,7 +1108,6 @@ namespace rendering
 						case DeviceObjectViewType::Sampler:
 						{
 							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
-							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
 
 							const auto* sampler = base::rtti_cast<SamplerObject>(descriptorEntry.objectPtr);
 							DEBUG_CHECK_RETURN_V(sampler != nullptr, false);
@@ -1104,18 +1120,21 @@ namespace rendering
 							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
 							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
 
-							const auto* view = base::rtti_cast<ImageView>(descriptorEntry.viewPtr);
+							const auto* view = base::rtti_cast<ImageReadOnlyView>(descriptorEntry.viewPtr);
 							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.format == view->image()->format(), base::TempString("Writable image view '{}' in descriptor '{}' is expected to be of format '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.format, view->image()->format()), false);
 
 							DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->image()->type(), base::TempString("Image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
 								expectedElem.name, desc.name, expectedElem.type, view->image()->type()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 							SubImageRegion region;
-							region.firstMip = view->firstMip();
-							region.numMips = view->mips();
-							region.firstSlice = view->firstSlice();
-							region.numSlices = view->slices();
+							region.firstMip = view->mip();
+							region.numMips = 1;
+							region.firstSlice = view->slice();
+							region.numSlices = 1;
 							DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::ShaderResource, &region), false);
 #endif
 							break;
@@ -1145,6 +1164,29 @@ namespace rendering
 #endif
 							break;
 						}
+
+						case DeviceObjectViewType::SampledImage:
+						{
+							DEBUG_CHECK_RETURN_V(descriptorEntry.id, false);
+							DEBUG_CHECK_RETURN_V(descriptorEntry.viewPtr, false);
+
+							const auto* view = base::rtti_cast<ImageSampledView>(descriptorEntry.viewPtr);
+							DEBUG_CHECK_RETURN_V(view != nullptr, false);
+
+							DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->image()->type(), base::TempString("Image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
+								expectedElem.name, desc.name, expectedElem.viewType, view->image()->type()), false);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+							SubImageRegion region;
+							region.firstMip = view->firstMip();
+							region.numMips = view->mips();
+							region.firstSlice = view->firstSlice();
+							region.numSlices = view->slices();
+							DEBUG_CHECK_RETURN_V(ensureResourceState(view->image(), ResourceLayout::ShaderResource, &region), false);
+#endif
+							break;
+						}
+
 					}
 				}
 
@@ -1205,7 +1247,7 @@ namespace rendering
             }
         }
 
-        void CommandWriter::opDispatch(const ComputePipelineObject* co, uint32_t countX /*= 1*/, uint32_t countY /*= 1*/, uint32_t countZ /*= 1*/)
+        void CommandWriter::opDispatchGroups(const ComputePipelineObject* co, uint32_t countX /*= 1*/, uint32_t countY /*= 1*/, uint32_t countZ /*= 1*/)
         {
             DEBUG_CHECK_RETURN(co);
             DEBUG_CHECK_RETURN(countX > 0 && countY > 0 && countZ > 0);
@@ -1219,6 +1261,21 @@ namespace rendering
                 op->counts[2] = countZ;
             }
         }
+
+		void CommandWriter::opDispatchThreads(const ComputePipelineObject* co, uint32_t threadCountX /*= 1*/, uint32_t threadCountY /*= 1*/, uint32_t threadCountZ /*= 1*/)
+		{
+			DEBUG_CHECK_RETURN(co);
+			DEBUG_CHECK_RETURN(threadCountX > 0 && threadCountY > 0 && threadCountZ > 0);
+
+			if (validateParameterBindings(co->shaders()->metadata()))
+			{
+				auto op = allocCommand<OpDispatch>();
+				op->pipelineObject = co->id();
+				op->counts[0] = base::Align<uint32_t>(threadCountX, co->groupSizeX()) / co->groupSizeX();
+				op->counts[1] = base::Align<uint32_t>(threadCountY, co->groupSizeY()) / co->groupSizeY();
+				op->counts[2] = base::Align<uint32_t>(threadCountZ, co->groupSizeZ()) / co->groupSizeZ();
+			}
+		}
 
         //--
 
@@ -1239,6 +1296,18 @@ namespace rendering
 
 			auto op = allocCommand<OpUAVBarrier>();
 			op->viewId = imageView->viewId();
+		}
+
+		void CommandWriter::opTransitionFlushUAV(const BufferWritableView* bufferView)
+		{
+			DEBUG_CHECK_RETURN(bufferView);
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(ensureResourceState(bufferView->buffer(), ResourceLayout::UAV, nullptr));
+#endif
+
+			auto op = allocCommand<OpUAVBarrier>();
+			op->viewId = bufferView->viewId();
 		}
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
@@ -1473,13 +1542,12 @@ namespace rendering
 			DEBUG_CHECK_RETURN(firstMip < obj->mips());
 			DEBUG_CHECK_RETURN(firstMip + numMips <= obj->mips());
 
+#ifdef VALIDATE_RESOURCE_LAYOUTS
 			SubImageRegion region;
 			region.firstMip = firstMip;
 			region.numMips = numMips;
 			region.firstSlice = 0;
 			region.numSlices = obj->slices();
-
-#ifdef VALIDATE_RESOURCE_LAYOUTS
 			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
 #endif
 
@@ -1497,21 +1565,21 @@ namespace rendering
 		{
 			DEBUG_CHECK_RETURN(obj != nullptr);
 			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
-			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
-			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
 			DEBUG_CHECK_RETURN(obj->subResourceLayouts());
 			DEBUG_CHECK_RETURN(firstMip < obj->mips());
 			DEBUG_CHECK_RETURN(firstMip + numMips <= obj->mips());
 			DEBUG_CHECK_RETURN(firstSlice < obj->slices());
 			DEBUG_CHECK_RETURN(firstSlice + numSlices <= obj->slices());
 
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
+
 			SubImageRegion region;
 			region.firstMip = firstMip;
 			region.numMips = numMips;
 			region.firstSlice = firstSlice;
 			region.numSlices = numSlices;
-
-#ifdef VALIDATE_RESOURCE_LAYOUTS
 			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
 #endif
 			auto op = allocCommand<OpResourceLayoutBarrier>();
@@ -1528,20 +1596,19 @@ namespace rendering
 		{
 			DEBUG_CHECK_RETURN(obj != nullptr);
 			DEBUG_CHECK_RETURN(incomingLayout != outgoingLayout);
-			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
-			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
 			DEBUG_CHECK_RETURN(obj->subResourceLayouts());
 			DEBUG_CHECK_RETURN(firstSlice < obj->slices());
 			DEBUG_CHECK_RETURN(firstSlice + numSlices <= obj->slices());
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, incomingLayout));
+			DEBUG_CHECK_RETURN(LayoutCompatible(obj, outgoingLayout));
 
 			SubImageRegion region;
 			region.firstMip = 0;
 			region.numMips = obj->mips();
 			region.firstSlice = firstSlice;
 			region.numSlices = numSlices;
-
-
-#ifdef VALIDATE_RESOURCE_LAYOUTS
 			DEBUG_CHECK_RETURN(ensureResourceState(obj, incomingLayout, &region, outgoingLayout));
 #endif
 
@@ -1619,14 +1686,12 @@ namespace rendering
 			{ 
 				DEBUG_CHECK_RETURN_V(dynamicImage, nullptr);// .id(), "Unable to update invalid image");
 				DEBUG_CHECK_RETURN_V(dynamicImage->dynamic(), nullptr);//, "Dynamic update of image requires an image created with dynamic flag");
-				DEBUG_CHECK_RETURN_V(range.image.firstMip < dynamicImage->mips(), nullptr);
-				DEBUG_CHECK_RETURN_V(range.image.firstSlice < dynamicImage->slices(), nullptr);
-				DEBUG_CHECK_RETURN_V(range.image.numMips == 1, nullptr);
-				DEBUG_CHECK_RETURN_V(range.image.numSlices == 1, nullptr);
+				DEBUG_CHECK_RETURN_V(range.image.mip < dynamicImage->mips(), nullptr);
+				DEBUG_CHECK_RETURN_V(range.image.slice< dynamicImage->slices(), nullptr);
 
-				const auto mipWidth = std::max<uint32_t>(dynamicImage->width() >> range.image.firstMip, 1);
-				const auto mipHeight = std::max<uint32_t>(dynamicImage->height() >> range.image.firstMip, 1);
-				const auto mipDepth = std::max<uint32_t>(dynamicImage->depth() >> range.image.firstMip, 1);
+				const auto mipWidth = std::max<uint32_t>(dynamicImage->width() >> range.image.mip, 1);
+				const auto mipHeight = std::max<uint32_t>(dynamicImage->height() >> range.image.mip, 1);
+				const auto mipDepth = std::max<uint32_t>(dynamicImage->depth() >> range.image.mip, 1);
 				DEBUG_CHECK_RETURN_V(range.image.offsetX < mipWidth && range.image.offsetY < mipHeight && range.image.offsetZ < mipDepth, nullptr);
 
 				auto maxAllowedWidth = mipWidth - range.image.offsetX;
@@ -1640,10 +1705,10 @@ namespace rendering
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 				{
 					SubImageRegion region;
-					region.firstMip = range.image.firstMip;
-					region.firstSlice = range.image.firstSlice;
-					region.numMips = range.image.numMips;
-					region.numSlices = range.image.numSlices;
+					region.firstMip = range.image.mip;
+					region.firstSlice = range.image.slice;
+					region.numMips = 1;
+					region.numSlices = 1;
 					DEBUG_CHECK_RETURN_V(ensureResourceState(dynamicObject, ResourceLayout::CopyDest, &region), nullptr);
 				}
 #endif
@@ -1661,6 +1726,7 @@ namespace rendering
 				}
 
 				op->id = dynamicImage->id();
+				op->dataBlockSize = dataSize;
 				op->range = range;
 
 				linkUpdate(op);
@@ -1676,10 +1742,8 @@ namespace rendering
             DEBUG_CHECK_RETURN(!sourceData.empty());//, "Empty data for update");
 
 			ResourceCopyRange range;
-			range.image.firstMip = mipIndex;
-			range.image.firstSlice = sliceIndex;
-			range.image.numMips = 1;
-			range.image.numSlices = 1;
+			range.image.mip = mipIndex;
+			range.image.slice = sliceIndex;
 			range.image.offsetX = offsetX;
 			range.image.offsetY = offsetY;
 			range.image.offsetZ = offsetZ;
@@ -1720,14 +1784,12 @@ namespace rendering
 			if (const auto* srcImage = base::rtti_cast<ImageObject>(src))
 			{
 				DEBUG_CHECK_RETURN_V(srcImage->copyCapable(), false);
-				DEBUG_CHECK_RETURN_V(range.image.firstMip < srcImage->mips(), false);
-				DEBUG_CHECK_RETURN_V(range.image.firstSlice < srcImage->slices(), false);
-				DEBUG_CHECK_RETURN_V(range.image.numMips == 1, false);
-				DEBUG_CHECK_RETURN_V(range.image.numSlices == 1, false);
+				DEBUG_CHECK_RETURN_V(range.image.mip < srcImage->mips(), false);
+				DEBUG_CHECK_RETURN_V(range.image.slice< srcImage->slices(), false);
 
-				const auto mipWidth = std::max<uint32_t>(srcImage->width() >> range.image.firstMip, 1);
-				const auto mipHeight = std::max<uint32_t>(srcImage->height() >> range.image.firstMip, 1);
-				const auto mipDepth = std::max<uint32_t>(srcImage->depth() >> range.image.firstMip, 1);
+				const auto mipWidth = std::max<uint32_t>(srcImage->width() >> range.image.mip, 1);
+				const auto mipHeight = std::max<uint32_t>(srcImage->height() >> range.image.mip, 1);
+				const auto mipDepth = std::max<uint32_t>(srcImage->depth() >> range.image.mip, 1);
 
 				DEBUG_CHECK_RETURN_V(range.image.offsetX < mipWidth, false);
 				DEBUG_CHECK_RETURN_V(range.image.offsetY < mipHeight, false);
@@ -1760,10 +1822,10 @@ namespace rendering
 			}
 			else if (src->cls()->is<ImageObject>())
 			{
-				DEBUG_CHECK_RETURN_V(srcRange.image.numMips == 1, false);
-				DEBUG_CHECK_RETURN_V(srcRange.image.numSlices == 1, false);
-				DEBUG_CHECK_RETURN_V(destRange.image.numMips == 1, false);
-				DEBUG_CHECK_RETURN_V(destRange.image.numSlices == 1, false);
+				//DEBUG_CHECK_RETURN_V(srcRange.image.mip == 1, false);
+				//DEBUG_CHECK_RETURN_V(srcRange.image.numSlices == 1, false);
+				//DEBUG_CHECK_RETURN_V(destRange.image.numMips == 1, false);
+				//DEBUG_CHECK_RETURN_V(destRange.image.numSlices == 1, false);
 			}
 
 			return true;
@@ -1779,8 +1841,7 @@ namespace rendering
 			}
 			else if (src->cls()->is<ImageObject>())
 			{
-				if (srcRange.image.firstMip == destRange.image.firstMip &&
-					srcRange.image.firstSlice == destRange.image.firstSlice)
+				if (srcRange.image.mip == destRange.image.mip && srcRange.image.slice == destRange.image.slice)
 				{
 					const auto srcEndX = srcRange.image.offsetX + srcRange.image.sizeX;
 					const auto srcEndY = srcRange.image.offsetY + srcRange.image.sizeY;
@@ -1822,10 +1883,10 @@ namespace rendering
 			if (src->cls()->is<ImageObject>())
 			{
 				SubImageRegion region;
-				region.firstMip = srcRange.image.firstMip;
-				region.firstSlice = srcRange.image.firstSlice;
-				region.numMips = srcRange.image.numMips;
-				region.numSlices = srcRange.image.numSlices;
+				region.firstMip = srcRange.image.mip;
+				region.firstSlice = srcRange.image.slice;
+				region.numMips = 1;
+				region.numSlices = 1;
 				DEBUG_CHECK_RETURN(ensureResourceState(src, ResourceLayout::CopySource, &region));
 			}
 			else
@@ -1836,10 +1897,10 @@ namespace rendering
 			if (src->cls()->is<ImageObject>())
 			{
 				SubImageRegion region;
-				region.firstMip = destRange.image.firstMip;
-				region.firstSlice = destRange.image.firstSlice;
-				region.numMips = destRange.image.numMips;
-				region.numSlices = destRange.image.numSlices;
+				region.firstMip = srcRange.image.mip;
+				region.firstSlice = srcRange.image.slice;
+				region.numMips = 1;
+				region.numSlices = 1;
 				DEBUG_CHECK_RETURN(ensureResourceState(dest, ResourceLayout::CopyDest, &region));
 			}
 			else
@@ -1851,7 +1912,7 @@ namespace rendering
 			auto* op = allocCommand<OpCopy>();
 			op->src = src->id();
 			op->srcRange = srcRange;
-			op->dest = src->id();
+			op->dest = dest->id();
 			op->destRange = destRange;
         }
 
@@ -1874,10 +1935,8 @@ namespace rendering
 			destRange.image.offsetX = offsetX;
 			destRange.image.offsetY = offsetY;
 			destRange.image.offsetZ = offsetZ;
-			destRange.image.firstMip = mipIndex;
-			destRange.image.firstSlice = sliceIndex;
-			destRange.image.numMips = 1;
-			destRange.image.numSlices = 1;
+			destRange.image.mip = mipIndex;
+			destRange.image.slice = sliceIndex;
 			destRange.image.sizeX = sizeX;
 			destRange.image.sizeY = sizeY;
 			destRange.image.sizeZ = sizeZ;
@@ -1898,10 +1957,8 @@ namespace rendering
 			srcRange.image.offsetX = offsetX;
 			srcRange.image.offsetY = offsetY;
 			srcRange.image.offsetZ = offsetZ;
-			srcRange.image.firstMip = mipIndex;
-			srcRange.image.firstSlice = sliceIndex;
-			srcRange.image.numMips = 1;
-			srcRange.image.numSlices = 1;
+			srcRange.image.mip = mipIndex;
+			srcRange.image.slice = sliceIndex;
 			srcRange.image.sizeX = sizeX;
 			srcRange.image.sizeY = sizeY;
 			srcRange.image.sizeZ = sizeZ;
@@ -1918,21 +1975,20 @@ namespace rendering
 
         //---
 
-		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink)
+		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, const IDownloadAreaObject* area, IDownloadDataSink* sink)
 		{
 			DEBUG_CHECK_RETURN(obj);
 			DEBUG_CHECK_RETURN(sink);
+			DEBUG_CHECK_RETURN(area);
 
 			if (const auto* image = base::rtti_cast<ImageObject>(obj))
 			{
-				DEBUG_CHECK_RETURN(range.image.numMips == 1);
-				DEBUG_CHECK_RETURN(range.image.numSlices == 1);
-				DEBUG_CHECK_RETURN(range.image.firstMip < image->mips());
-				DEBUG_CHECK_RETURN(range.image.firstSlice < image->slices());
+				DEBUG_CHECK_RETURN(range.image.mip < image->mips());
+				DEBUG_CHECK_RETURN(range.image.slice < image->slices());
 
-				const auto mipWidth = std::max<uint32_t>(1, image->width() >> range.image.firstMip);
-				const auto mipHeight = std::max<uint32_t>(1, image->height() >> range.image.firstMip);
-				const auto mipDepth = std::max<uint32_t>(1, image->depth() >> range.image.firstMip);
+				const auto mipWidth = std::max<uint32_t>(1, image->width() >> range.image.mip);
+				const auto mipHeight = std::max<uint32_t>(1, image->height() >> range.image.mip);
+				const auto mipDepth = std::max<uint32_t>(1, image->depth() >> range.image.mip);
 
 				DEBUG_CHECK_RETURN(range.image.offsetX < mipWidth);
 				DEBUG_CHECK_RETURN(range.image.offsetY < mipHeight);
@@ -1944,16 +2000,17 @@ namespace rendering
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 				{
 					SubImageRegion region;
-					region.firstMip = range.image.firstMip;
-					region.firstSlice = range.image.firstSlice;
-					region.numMips = range.image.numMips;
-					region.numSlices = range.image.numSlices;
+					region.firstMip = range.image.mip;
+					region.firstSlice = range.image.slice;
+					region.numMips = 1;
+					region.numSlices = 1;
 					DEBUG_CHECK_RETURN(ensureResourceState(image, ResourceLayout::CopySource, &region));
 				}
 #endif
 
 				auto op = allocCommand<OpDownload>();
 				op->id = obj->id();
+				op->areaId = area->id();
 				op->range = range;
 				op->sink = sink;
 
@@ -1970,6 +2027,7 @@ namespace rendering
 
 				auto op = allocCommand<OpDownload>();
 				op->id = obj->id();
+				op->areaId = area->id();
 				op->range = range;
 				op->sink = sink;
 
@@ -1983,18 +2041,19 @@ namespace rendering
         {
             DEBUG_CHECK_RETURN(binding);
 
-            const auto layout = DescriptorID::FromDescriptor(entries, count);
-            DEBUG_CHECK_RETURN(layout);
+			const DescriptorInfo* layout = nullptr;
+			const auto id = DescriptorID::FromDescriptor(entries, count, &layout);
+            DEBUG_CHECK_RETURN(id);
 
-            auto* data = uploadDescriptor(layout, entries, count);
+            auto* data = uploadDescriptor(id, layout, entries, count);
             DEBUG_CHECK_RETURN(data);
 
             auto op = allocCommand<OpBindDescriptor>();
-            op->layout = &layout.layout();
+			op->layout = layout;
             op->binding = binding;
             op->data = data;
 
-            m_currentParameterBindings[binding] = layout;
+            m_currentParameterBindings[binding] = id;
 
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
 			{
@@ -2007,13 +2066,13 @@ namespace rendering
 #endif
         }
 
-        void* CommandWriter::allocConstants(uint32_t size, const uint32_t*& outOffsetPtr)
+        void* CommandWriter::allocConstants(uint32_t size, const command::OpUploadConstants*& outOffsetPtr)
         {
             ASSERT_EX(size > 0, "Recording contants with zero size is not a good idea");
 
             // allocate space
-            auto uploadSpaceOffset = base::Align<uint32_t>(m_writeBuffer->m_gatheredState.totalConstantsUploadSize, 256);
-            m_writeBuffer->m_gatheredState.totalConstantsUploadSize = uploadSpaceOffset + base::Align<uint32_t>(size, 16);
+            //auto uploadSpaceOffset = base::Align<uint32_t>(m_writeBuffer->m_gatheredState.totalConstantsUploadSize, 256);
+            //m_writeBuffer->m_gatheredState.totalConstantsUploadSize = uploadSpaceOffset + base::Align<uint32_t>(size, 16);
 
             // align size to the vector size
             auto alignedSize = base::Align<uint32_t>(size, 16);
@@ -2032,13 +2091,8 @@ namespace rendering
                 op->dataPtr = m_writeBuffer->m_pages->allocateOustandingBlock(alignedSize, 16);
             }
 
-            op->offset = uploadSpaceOffset;
             op->dataSize = alignedSize;
             op->nextConstants = nullptr;
-
-            // get the pointer to the data offset
-            auto offsetPtr  = &op->mergedRuntimeOffset;
-            op->mergedRuntimeOffset = 0xBAADF00D;
 
             // link in the list
             if (m_writeBuffer->m_gatheredState.constantUploadTail)
@@ -2046,22 +2100,22 @@ namespace rendering
             else
                 m_writeBuffer->m_gatheredState.constantUploadHead = op;
             m_writeBuffer->m_gatheredState.constantUploadTail = op;
-            outOffsetPtr = offsetPtr;
+            outOffsetPtr = op;
 
             return op->dataPtr;
         }
 
-		DescriptorEntry* CommandWriter::uploadDescriptor(DescriptorID layoutID, const DescriptorEntry* entries, uint32_t count)
+		DescriptorEntry* CommandWriter::uploadDescriptor(DescriptorID layoutID, const DescriptorInfo* layout, const DescriptorEntry* entries, uint32_t count)
         {
             DEBUG_CHECK_RETURN_V(!layoutID.empty(), nullptr);
             DEBUG_CHECK_RETURN_V(entries != nullptr, nullptr);
             DEBUG_CHECK_RETURN_V(count != 0, nullptr);
-            DEBUG_CHECK_RETURN_V(count == layoutID.layout().size(), nullptr);
+            DEBUG_CHECK_RETURN_V(count == layout->size(), nullptr);
 
             const auto additionalMemory = count * sizeof(DescriptorEntry);
 
             auto op  = allocCommand<OpUploadDescriptor>(additionalMemory);
-            op->layout = &layoutID.layout();
+            op->layout = layout;
             op->nextParameters = nullptr;
             memcpy(op->payload(), entries, additionalMemory);
 
@@ -2100,13 +2154,15 @@ namespace rendering
             {
                 auto& entry = ((DescriptorEntry*)op->payload())[i];
 
-                if (entry.type == DeviceObjectViewType::ConstantBuffer && entry.offsetPtr)
+                if (entry.type == DeviceObjectViewType::ConstantBuffer && entry.inlinedConstants.sourceDataPtr)
                 {
                     DEBUG_CHECK(!entry.id);
 
-                    const void* sourceData = entry.offsetPtr;
-                    void* targetData = allocConstants(entry.size, entry.offsetPtr);
-                    memcpy(targetData, sourceData, entry.size);
+					const command::OpUploadConstants* uploadCommand = nullptr;
+                    void* targetData = allocConstants(entry.size, uploadCommand);
+                    memcpy(targetData, entry.inlinedConstants.sourceDataPtr, entry.size);
+
+					entry.inlinedConstants.uploadedDataPtr = uploadCommand;
                 }
             }
 

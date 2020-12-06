@@ -12,10 +12,9 @@ descriptor TestParams
     ConstantBuffer
     {
         vec4 Params;
-        mat4 PixelCoordToWorld;
     }
 
-    Texture2D PreviewTexture;
+    attribute(sampler=SamplerClampPoint) Texture2D PreviewTexture;
 	attribute(uav, format=r32f) Texture2D OutTexture;
 }
 

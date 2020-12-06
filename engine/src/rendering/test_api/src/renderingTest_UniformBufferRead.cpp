@@ -47,7 +47,7 @@ namespace rendering
         private:
             BufferObjectPtr m_vertexBuffer;
 			BufferObjectPtr m_constantBuffer;
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
 
 			BufferConstantViewPtr m_constantView;
 
@@ -106,7 +106,10 @@ namespace rendering
 				m_constantView = m_constantBuffer->createConstantView();
 			}
 
-            m_shaders = loadShader("UniformBufferRead.csl");
+			GraphicsRenderStatesSetup setup;
+			setup.primitiveTopology(PrimitiveTopology::PointList);
+
+            m_shaders = loadGraphicsShader("UniformBufferRead.csl", outputLayoutNoDepth(), &setup);
         }
 
         void RenderingTest_UniformBufferRead::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -114,13 +117,12 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             
 			DescriptorEntry desc[1];
 			desc[0] = m_constantView;
             cmd.opBindDescriptor("TestParams"_id, desc);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);
 

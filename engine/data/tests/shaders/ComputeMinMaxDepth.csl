@@ -12,10 +12,9 @@ descriptor TestParams
     ConstantBuffer
     {
         vec4 Params;
-        mat4 PixelCoordToWorld;
     }
 
-    Texture2D PreviewTexture;
+    attribute(nosampler, format=r32f) Texture2D LinearizedDepth;
 	attribute(uav, format=rg16f) Texture2D OutTexture;
 }
 
@@ -35,7 +34,7 @@ export shader MinMaxDepthCS
 	void main()
 	{
 	    // load the image
-	    float depth = textureLoadLod(PreviewTexture, gl_GlobalInvocationID.xy, 0).x;
+	    float depth = LinearizedDepth[gl_GlobalInvocationID.xy];
         MaxHeights[gl_LocalInvocationIndex % BlockSize] = depth;
         MinHeights[gl_LocalInvocationIndex % BlockSize] = depth;
 

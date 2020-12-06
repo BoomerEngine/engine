@@ -30,7 +30,7 @@ namespace rendering
         class RENDERING_COMPILER_API Program : public base::NoCopy
         {
         public:
-            Program(const CodeLibrary& library, base::StringID name, AttributeList&& attributes);
+            Program(const CodeLibrary& library, base::StringID name, const base::parser::Location& loc, AttributeList&& attributes);
             ~Program();
 
             // get shader library this function is coming from

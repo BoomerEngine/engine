@@ -56,5 +56,13 @@ namespace rendering
 
         //--
 
+		struct ExtraAttribute
+		{
+			base::StringView key;
+			base::StringView value;
+		};
+
+		//--
+
     } // shader
 } // rendering

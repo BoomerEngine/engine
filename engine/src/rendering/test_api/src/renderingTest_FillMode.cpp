@@ -29,7 +29,9 @@ namespace rendering
 
         private:
             BufferObjectPtr m_vertexBuffer;
-            ShaderLibraryPtr m_shader;
+            GraphicsPipelineObjectPtr m_shaderPoint;
+			GraphicsPipelineObjectPtr m_shaderLine;
+			GraphicsPipelineObjectPtr m_shaderFill;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FillMode);
@@ -78,7 +80,23 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shader = loadShader("SimpleVertexColor.csl");
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.fill(FillMode::Point);
+				m_shaderPoint = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.fill(FillMode::Line);
+				m_shaderLine = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.fill(FillMode::Fill);
+				m_shaderFill = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+			}
         }
 
         void RenderingTest_FillMode::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -86,8 +104,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
             int pos = 0;
@@ -96,31 +113,19 @@ namespace rendering
             {
                 // solid fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Fill;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+                    cmd.opDraw(m_shaderFill, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // line fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+                    cmd.opDraw(m_shaderLine, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // point fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Point;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+                    cmd.opDraw(m_shaderPoint, 3 * pos, 3);
                     pos += 1;
                 }
             }
@@ -129,34 +134,24 @@ namespace rendering
             {
                 // solid fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 0.5f;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+					cmd.opSetLineWidth(0.5f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // line fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 1.0f;
-                    cmd.opSetFillState(state);
+					cmd.opSetLineWidth(1.0f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
 
-                    cmd.opDraw(m_shader, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // point fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 4.0f;
-                    cmd.opSetFillState(state);
+					cmd.opSetLineWidth(4.0f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
 
-                    cmd.opDraw(m_shader, 3 * pos, 3);
                     pos += 1;
                 }
             }
@@ -165,34 +160,22 @@ namespace rendering
             {
                 // solid fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 1.0f;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+					cmd.opSetLineWidth(0.5f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // line fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 5.0f;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+					cmd.opSetLineWidth(5.0f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
                     pos += 1;
                 }
 
                 // point fill mode
                 {
-                    FillState state;
-                    state.mode = PolygonMode::Line;
-                    state.lineWidth = 10.0f;
-                    cmd.opSetFillState(state);
-
-                    cmd.opDraw(m_shader, 3 * pos, 3);
+					cmd.opSetLineWidth(10.0f);
+					cmd.opDraw(m_shaderLine, 3 * pos, 3);
                     pos += 1;
                 }
             }

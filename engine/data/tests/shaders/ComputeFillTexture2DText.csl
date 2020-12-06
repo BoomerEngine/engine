@@ -7,7 +7,7 @@
 
 descriptor TestParamsRead
 {
-    attribute(format=rgba8) Texture2D ReadColors;
+    attribute(nosampler, format=rgba8) Texture2D ReadColors;
 }
 
 export shader DrawVS
@@ -29,6 +29,7 @@ export shader DrawPS
 
 	void main()
 	{
-		gl_Target0 = texture(ReadColors, UV.xy);
+		ivec2 size = imageSize(ReadColors);
+		gl_Target0 = ReadColors[ivec2(UV.xy * size)];
 	}
 }

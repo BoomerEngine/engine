@@ -38,7 +38,11 @@ namespace rendering
             uint32_t m_numTriangleListVertices = 0;
             uint32_t m_numTriangleStripVertices = 0;
 
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shadersPoints;
+			GraphicsPipelineObjectPtr m_shadersLineList;
+			GraphicsPipelineObjectPtr m_shadersLineStrip;
+			GraphicsPipelineObjectPtr m_shadersTriangleList;
+			GraphicsPipelineObjectPtr m_shadersTriangleStrips;
 
             static const auto NUM_LINE_SEGMENTS = 512U;
         };
@@ -235,7 +239,35 @@ namespace rendering
                 m_vertexBufferTriangleStrip = createVertexBuffer(verties);
             }
 
-            m_shaders = loadShader("GenericGeometry.csl");
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::PointList);
+				m_shadersPoints = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::LineList);
+				m_shadersLineList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::LineStrip);
+				m_shadersLineStrip = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::TriangleList);
+				m_shadersTriangleList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
+
+			{
+				GraphicsRenderStatesSetup setup;
+				setup.primitiveTopology(PrimitiveTopology::TriangleStrip);
+				m_shadersTriangleStrips = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+			}
         }
 
         void RenderingTest_PrimitiveTypes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -243,37 +275,22 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
-            {
-                cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
-                cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferPointList);
-                cmd.opDraw(m_shaders, 0, m_numPointListVertices);
-            }
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferPointList);
+            cmd.opDraw(m_shadersPoints, 0, m_numPointListVertices);
 
-            {
-                cmd.opSetPrimitiveType(PrimitiveTopology::LineList);
-                cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferLineList);
-                cmd.opDraw(m_shaders, 0, m_numLineListVertices);
-            }
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferLineList);
+            cmd.opDraw(m_shadersLineList, 0, m_numLineListVertices);
 
-            {
-                cmd.opSetPrimitiveType(PrimitiveTopology::LineStrip);
-                cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferLineStrip);
-                cmd.opDraw(m_shaders, 0, m_numLineStripVertices);
-            }
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferLineStrip);
+            cmd.opDraw(m_shadersLineStrip, 0, m_numLineStripVertices);
 
-            {
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-                cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferTriangleList);
-                cmd.opDraw(m_shaders, 0, m_numTriangleListVertices);
-            }
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferTriangleList);
+            cmd.opDraw(m_shadersTriangleList, 0, m_numTriangleListVertices);
 
-            {
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
-                cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferTriangleStrip);
-                cmd.opDraw(m_shaders, 0, m_numTriangleStripVertices);
-            }
+            cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBufferTriangleStrip);
+            cmd.opDraw(m_shadersTriangleStrips, 0, m_numTriangleStripVertices);
 
             cmd.opEndPass();
         }

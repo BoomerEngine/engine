@@ -7,7 +7,7 @@
 
 descriptor TestParams
 {
-    Texture2D Texture;
+    attribute(sampler=SamplerClampPoint) Texture2D Texture;
 }
 
 export shader SimpleVS

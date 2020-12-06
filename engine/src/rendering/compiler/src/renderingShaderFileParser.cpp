@@ -159,7 +159,7 @@ namespace rendering
                     defs.addKeyword("const", TOKEN_CONST);
                     defs.addKeyword("descriptor", TOKEN_DESCRIPTOR);
 					defs.addKeyword("sampler", TOKEN_STATIC_SAMPLER);
-					defs.addKeyword("setup", TOKEN_RENDER_STATES);
+					defs.addKeyword("state", TOKEN_RENDER_STATES);
 
                     defs.addKeyword("this", TOKEN_THIS);
                     defs.addKeyword("true", TOKEN_BOOL_TRUE);
@@ -185,6 +185,8 @@ namespace rendering
                     defs.addKeyword(">>=", TOKEN_RIGHT_ASSIGN);
                     defs.addKeyword("++", TOKEN_INC_OP);
                     defs.addKeyword("--", TOKEN_DEC_OP);
+					defs.addKeyword("[[", TOKEN_ATTR_START);
+					defs.addKeyword("]]", TOKEN_ATTR_END);
 
                     defs.addChar('(');
                     defs.addChar(')');
@@ -360,6 +362,105 @@ namespace rendering
                 return parser::LanguageDefinition::GetInstance().definitions();
             }
 
+
+			static void CheckChildUniqness(const CodeNode* node, base::HashSet<const CodeNode*>& allNodes)
+			{
+				ASSERT_EX(!allNodes.contains(node), "Node is in two places in hierarchy");
+				allNodes.insert(node);
+
+				for (const auto* child : node->children())
+					CheckChildUniqness(child, allNodes);
+			}
+
+			static void CheckNoLeftOvers(const CodeNode* node)
+			{
+				ASSERT_EX(node->opCode() != OpCode::ListElement, "This opcode should be long gone");
+				ASSERT_EX(node->extraData().m_nextStatement == nullptr, "Statements should be reconciled");
+
+				for (const auto* child : node->children())
+					CheckNoLeftOvers(child);
+			}
+
+			//----------
+
+			static void ConvertTokens(parser::ParsingCodeContext& ctx, const CodeLibrary& lib, const base::Array<base::parser::Token*>& tokens, base::Array<parser::CodeParsingNode>& outTokens, base::parser::IErrorReporter& err)
+			{
+				auto stream = (base::parser::Token**) tokens.typedData();
+				auto streamEnd = stream + tokens.size();
+				while (stream < streamEnd)
+				{
+					// type name ?
+					parser::CodeParsingNode token;
+					if (ResolveType(stream, streamEnd, token, lib, err))
+					{
+						// add type token to the stream
+						outTokens.pushBack(token);
+					}
+					else
+					{
+						// simple token
+						auto& token = *stream[0];
+						auto& newToken = outTokens.emplaceBack();
+						newToken.m_tokenID = token.keywordID();
+						newToken.m_location = token.location();
+						newToken.m_string = token.view();
+
+						// fill info
+						if (token.isString())
+						{
+							newToken.m_tokenID = TOKEN_STRING;
+						}
+						else if (token.isName())
+						{
+							newToken.m_tokenID = TOKEN_NAME;
+							newToken.m_code = ctx.alloc<CodeNode>(token.location(), DataType::NameScalarType(), DataValue(base::StringID(token.string())));
+						}
+						else if (token.isFloat())
+						{
+							newToken.m_tokenID = TOKEN_FLOAT_NUMBER;
+							newToken.m_code = ctx.alloc<CodeNode>(token.location(), DataType::FloatScalarType(), DataValue((float)token.floatNumber()));
+						}
+						else if (token.isInteger())
+						{
+							newToken.m_tokenID = TOKEN_INT_NUMBER;
+							newToken.m_code = ctx.alloc<CodeNode>(token.location(), DataType::IntScalarType(), DataValue((int)token.floatNumber()));
+						}
+						else if (token.isKeyword() && token.keywordID() == TOKEN_BOOL_TRUE)
+						{
+							newToken.m_tokenID = TOKEN_BOOL_TRUE;
+							newToken.m_code = ctx.alloc<CodeNode>(token.location(), DataType::BoolScalarType(), DataValue(true));
+						}
+						else if (token.isKeyword() && token.keywordID() == TOKEN_BOOL_FALSE)
+						{
+							newToken.m_tokenID = TOKEN_BOOL_FALSE;
+							newToken.m_code = ctx.alloc<CodeNode>(token.location(), DataType::BoolScalarType(), DataValue(false));
+						}
+						else if (token.isIdentifier())
+						{
+							newToken.m_tokenID = TOKEN_IDENT;
+						}
+						else if (token.isChar())
+						{
+							newToken.m_tokenID = token.ch();
+						}
+						else
+						{
+							newToken.m_tokenID = token.keywordID();
+						}
+
+						stream += 1;
+					}
+				}
+
+				// HACK
+				{
+					auto& newToken = outTokens.emplaceBack();
+					newToken.m_tokenID = ';';
+					newToken.m_location = outTokens.back().m_location;
+					newToken.m_string = ";";
+				}
+			}
+
             //----------
 
             CodeNode* AnalyzeShaderCode(
@@ -372,106 +473,21 @@ namespace rendering
                 if (tokens.empty())
                     return mem.create<CodeNode>(base::parser::Location(), OpCode::Nop);
 
-                // create tokens
-                base::Array<parser::CodeParsingNode> newTokens;
-                {
-                    auto stream = (base::parser::Token**) tokens.typedData();
-                    auto streamEnd = stream + tokens.size();
-                    while (stream < streamEnd)
-                    {
-                        // type name ?
-                        parser::CodeParsingNode token;
-                        if (ResolveType(stream, streamEnd, token, lib, errHandler))
-                        {
-                            // add type token to the stream
-                            newTokens.pushBack(token);
-                        }
-                        else
-                        {
-                            // simple token
-                            auto& token = *stream[0];
-                            auto &newToken = newTokens.emplaceBack();
-                            newToken.m_tokenID = token.keywordID();
-                            newToken.m_location = token.location();
-
-                            // fill info
-                            if (token.isString())
-                            {
-                                newToken.m_tokenID = TOKEN_STRING;
-                                newToken.m_string = token.view();
-                            }
-                            else if (token.isName())
-                            {
-                                newToken.m_tokenID = TOKEN_NAME;
-                                newToken.m_string = token.view();
-                            }
-                            else if (token.isFloat())
-                            {
-                                newToken.m_tokenID = TOKEN_FLOAT_NUMBER;
-                                newToken.m_float = token.floatNumber();
-                                newToken.m_string = token.view();
-                            }
-                            else if (token.isInteger())
-                            {
-                                newToken.m_tokenID = TOKEN_INT_NUMBER;
-                                newToken.m_int = (int64_t)token.floatNumber();
-                                newToken.m_string = token.view();
-                            }
-                            else if (token.isIdentifier())
-                            {
-                                newToken.m_tokenID = TOKEN_IDENT;
-                                // TODO: type name!
-                                newToken.m_string = token.view();
-                            }
-                            else if (token.isChar())
-                            {
-                                newToken.m_tokenID = token.ch();
-                                newToken.m_string = token.view();
-                            }
-                            else
-                            {
-                                newToken.m_tokenID = token.keywordID();
-                                newToken.m_string = token.view();
-                            }
-
-                            stream += 1;
-                        }
-                    }
-
-                    /*TRACE_INFO("Tokens {}", newTokens.size());
-                    for (auto& t : newTokens)
-                    {
-                        if (t.tokenID < 255)
-                        {
-                            char str[] = {(char) t.tokenID, 0};
-                            TRACE_INFO("  {} {}", str, t.stringData);
-                        }
-                        else
-                        {
-                            TRACE_INFO("  {} {}", t.tokenID, t.stringData);
-                        }
-                    }*/
-                }
-
-                // HACK
-                {
-                    auto &newToken = newTokens.emplaceBack();
-                    newToken.m_tokenID = ';';
-                    newToken.m_location = newTokens.back().m_location;
-                    newToken.m_string = ";";
-                }
-
                 // setup the context
-                CodeNode* rootNode = nullptr;
-                parser::ParserCodeTokenStream stream(newTokens);
-                parser::ParsingCodeContext ctx(mem, errHandler, rootNode, lib, contextFunction, contextProgram);
+                parser::ParsingCodeContext ctx(mem, errHandler, lib, contextFunction, contextProgram);
+
+				// create tokens that can be parsed by the function parser
+				base::Array<parser::CodeParsingNode> newTokens;
+				ConvertTokens(ctx, lib, tokens, newTokens, errHandler);
 
                 // parse the shit
-                auto ret = cslc_parse(ctx, stream);
+				parser::ParserCodeTokenStream stream(newTokens);
+				auto ret = cslc_parse(ctx, stream);
                 if (ret != 0)
                     return nullptr;
 
                 // no code compiled
+				auto* rootNode = ctx.root();
                 if (rootNode == nullptr)
                 {
                     if (!tokens.empty())
@@ -486,6 +502,15 @@ namespace rendering
                     scopeNode->addChild(rootNode);
                     rootNode = scopeNode;
                 }
+
+				// make sure there are no leftovers in the code
+				CheckNoLeftOvers(rootNode);
+
+				// make sure nodes are not double-linked
+				{
+					base::HashSet<const CodeNode*> uniqueNodes;
+					CheckChildUniqness(rootNode, uniqueNodes);
+				}
 
                 // link the scopes
                 CodeNode::LinkScopes(rootNode, nullptr);

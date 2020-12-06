@@ -9,7 +9,7 @@
 
 descriptor TestParams
 {
-    Texture2D PreviewTexture;
+    attribute(sampler=SamplerClampPoint) Texture2D PreviewTexture;
 }
 
 //---

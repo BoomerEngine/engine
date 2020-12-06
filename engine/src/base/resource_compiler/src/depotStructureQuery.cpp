@@ -79,6 +79,9 @@ namespace base
 
         bool DepotStructure::queryContextName(StringView fileSystemPath, StringBuf& contextName) const
         {
+			if (fileSystemPath.empty())
+				return false;
+
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AbsoluteFilePath), false);
 
             // resolve location

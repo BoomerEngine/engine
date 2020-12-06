@@ -29,8 +29,8 @@ namespace rendering
             VertexIndexBunch<> m_indexedTriList1;
             VertexIndexBunch<> m_indexedTriList2;
 
-            ShaderLibraryPtr m_shaderNormal;
-            ShaderLibraryPtr m_shaderFlat;
+            GraphicsPipelineObjectPtr m_shaderNormal;
+			GraphicsPipelineObjectPtr m_shaderFlat;
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_FlatAttribute);
@@ -105,8 +105,8 @@ namespace rendering
 
         void RenderingTest_FlatAttribute::initialize()
         {
-            m_shaderNormal = loadShader("GenericGeometry.csl");
-            m_shaderFlat = loadShader("FlatAttribute.csl");
+            m_shaderNormal = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth());
+            m_shaderFlat = loadGraphicsShader("FlatAttribute.csl", outputLayoutNoDepth());
 
             float y = -0.9f;
             float ystep = 0.48f;
@@ -132,12 +132,9 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             m_indexedTriList1.draw(cmd, m_shaderNormal);
-
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             m_indexedTriList2.draw(cmd, m_shaderFlat);
             
             cmd.opEndPass();

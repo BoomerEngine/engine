@@ -113,9 +113,12 @@ namespace base
             // path to the bin/ directory we are running from
             ExecutableDir,
 
-            // path to the temporary directory when temporary files may be stored
+            // path to the system wide temporary directory when temporary files may be stored
             // NOTE: temp directory may be totally purged between runs
-            TempDir,
+            SystemTempDir,
+
+			// project local temp directory that has higher tendency to stay around
+			LocalTempDir,
 
             // path to the user config directory - a directory where we can store user specific configuration files (like settings)
             UserConfigDir,

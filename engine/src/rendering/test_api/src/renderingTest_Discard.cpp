@@ -28,7 +28,7 @@ namespace rendering
         private:
 			BufferObjectPtr m_vertexBuffer;
 			BufferObjectPtr m_extraBuffer;
-            ShaderLibraryPtr m_shaders;
+            GraphicsPipelineObjectPtr m_shaders;
 
             uint32_t m_sideCount;
         };
@@ -59,7 +59,7 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(vertices);
             }
 
-            m_shaders = loadShader("Discard.csl");
+            m_shaders = loadGraphicsShader("Discard.csl", outputLayoutNoDepth());
         }
 
         void RenderingTest_Discard::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -67,7 +67,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(outputLayoutNoDepth(), fb);
 
 			const auto ScreenResolution = base::Vector2((float)backBufferView->width(), (float)backBufferView->height());
 
@@ -75,7 +75,6 @@ namespace rendering
 			params[0].constants(ScreenResolution);
 			cmd.opBindDescriptor("TestParams"_id, params);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, 6); // quad
             cmd.opEndPass();

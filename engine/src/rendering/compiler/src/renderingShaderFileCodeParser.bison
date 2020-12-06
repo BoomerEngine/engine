@@ -56,6 +56,8 @@ static int cslc_error(rendering::compiler::parser::ParsingCodeContext& ctx, rend
 %token TOKEN_STRUCT
 %token TOKEN_THIS
 %token TOKEN_VERTEX
+%token TOKEN_ATTR_START
+%token TOKEN_ATTR_END
 
 %token TOKEN_SHARED
 %token TOKEN_IN
@@ -118,58 +120,22 @@ static int cslc_error(rendering::compiler::parser::ParsingCodeContext& ctx, rend
 %% /* The grammar follows.  */
 
 code
-    : statement_list { context.root($1.m_code); }
+    : statement_list { context.root(context.createScope($1.m_code, false)); }
     ;
 
 statement_list
-    : statement_list statement { $$ = context.mergeStatementList($1.m_code, $2.m_code); }
-    | /* */                    { $$.m_code = nullptr; }
+    : statement_list statement { $$ = context.linkStatements($1.m_code, $2.m_code); }
+    | /* */ { $$.m_code = nullptr; }
     ;
 
 statement
     : block_statement
-    | statement_with_attributes
-    | ';' { $$.m_code = nullptr; }
-    ;
-
-statement_with_attributes
-    : attributes statement_with_attributes_inner { $$ = $2; }
-    ;
-
-statement_with_attributes_inner
-    : jump_statement
+	| jump_statement
     | variable_statement
     | expression_statement
     | selection_statement
     | iteration_statement
-    ;
-
-//---
-
-attributes
-    : TOKEN_ATTRIBUTE '(' attribute_list ')' {};
-    | /*empty*/ { }
-    ;
-
-attribute_list
-    : attribute ',' attribute_list { };
-    | attribute {  }
-    ;
-
-attribute
-    : TOKEN_IDENT attribute_optional_value {
-    }
-    ;
-
-attribute_optional_value
-    : '=' attribute_value
-    | /* empty */ {  }
-    ;
-
-attribute_value
-    : TOKEN_INT_NUMBER
-    | TOKEN_IDENT
-    | TOKEN_STRING
+    | ';' { $$.m_code = nullptr; }
     ;
 
 //---
@@ -177,10 +143,9 @@ attribute_value
 variable_statement
     : variable_type_and_flags variable_declaration_list ';'
     {
-        //TRACE_INFO("Exiting variable decl");
         context.m_contextType = DataType();
 		context.m_contextConstVar = false;
-        $$.m_code = $2.m_code;
+		$$.m_code = $2.m_code;
     }
 	;
 
@@ -206,18 +171,18 @@ variable_type
     ;
 
 variable_declaration_list
-    : variable_declaration_list ',' variable_declaration { $$ = context.mergeExpressionList($1.m_code, $3.m_code); }
-    | variable_declaration
+    : variable_declaration_list ',' variable_declaration { $$ = context.linkStatements($1.m_code, $3.m_code); }
+    | variable_declaration { $$ = $1.m_code; }
     ;
 
 variable_declaration
     : TOKEN_IDENT variable_init
     {
-        //TRACE_INFO("Variable decl {}", $1.m_string);
+		TRACE_INFO("Variable decl {}", $1.m_string);
         $$ = context.alloc<CodeNode>($1.m_location, OpCode::VariableDecl);
         $$.m_code->extraData().m_name = base::StringID($1.m_string);
         $$.m_code->extraData().m_castType = context.m_contextType;
-		$$.m_code->extraData().m_attributes = context.m_contextConstVar ? 1 : 0;
+		$$.m_code->extraData().m_rawAttribute = context.m_contextConstVar ? 1 : 0;
 
         if ($2.m_code)
             $$.m_code->addChild($2.m_code);
@@ -233,59 +198,51 @@ variable_init
 //---
 
 iteration_statement
-	: iterator_while '(' expression ')' statement
+	: statement_attributes iteration_statement_inner { 
+		$$ = context.extractAttributes($1.m_code, $2.m_code);
+	}
+	;
+
+iteration_statement_inner
+	: TOKEN_WHILE '(' expression ')' statement
 	{
          // create the loop
          $$ = context.alloc<CodeNode>($1.m_location, OpCode::Loop);
-         $$.m_code->extraData().m_attributes = $1.m_int;
+         $$.m_code->extraData().m_rawAttribute = 1; // WHILE LOOP
 
-         // loop scope contains 3 children: condition, increment and the statement
-         $$.m_code->addChild($3.m_code);
-         $$.m_code->addChild(nullptr);
-         $$.m_code->addChild($5.m_code);
+		 $$.m_code->addChild(nullptr); // no init
+         $$.m_code->addChild($3.m_code);  // CONDITON
+         $$.m_code->addChild(nullptr); // no increment
+         $$.m_code->addChild($5.m_code); // BODY
 	}
-	| iterator_do statement TOKEN_WHILE '(' expression ')' ';'
+	| TOKEN_DO statement TOKEN_WHILE '(' expression ')' ';'
 	{
 		 // create the loop
          $$ = context.alloc<CodeNode>($1.m_location, OpCode::Loop);
-         $$.m_code->extraData().m_attributes = $1.m_int;
+         $$.m_code->extraData().m_rawAttribute = 2; // DO WHITE LOOP
 
-         // loop scope contains 3 children: condition, increment and the statement
-         $$.m_code->addChild($5.m_code);
-         $$.m_code->addChild(nullptr);
-         $$.m_code->addChild($2.m_code);
+		 $$.m_code->addChild(nullptr); // no init
+         $$.m_code->addChild($5.m_code); // CONDITION
+         $$.m_code->addChild(nullptr); // no increment
+         $$.m_code->addChild($2.m_code); // BODY
 	}
-	| iterator_for '(' for_init_statement for_check_statement for_continue_statement ')' statement
-	{
-    	 // create the outer scope
-    	 $$ = context.alloc<CodeNode>($1.m_location, OpCode::Scope);
-         $$.m_code->extraData().m_attributes = $1.m_int;
-         
-    	 // add the init statement
-    	 $$.m_code->addChild($3.m_code);
+	| TOKEN_FOR '(' for_init_statement for_check_statement for_continue_statement ')' statement
+	{	
+		 // create loop node
+		 auto loopScope = context.alloc<CodeNode>($1.m_location, OpCode::Loop);
+         loopScope->extraData().m_rawAttribute = 0; // FOR LOOP
 
-    	 // create the loop
-    	 auto loopScope = context.alloc<CodeNode>($1.m_location, OpCode::Loop);
-    	 $$.m_code->addChild(loopScope);
-
-    	 // loop scope contains 3 children: condition, increment and the statement
+		 // loop scope contains 3 children: condition, increment and the statement
+		 loopScope->addChild($3.m_code);
     	 loopScope->addChild($4.m_code);
     	 loopScope->addChild($5.m_code);
     	 loopScope->addChild($7.m_code);
+
+    	 // create the loop scope
+		 $$ = context.alloc<CodeNode>($1.m_location, OpCode::Scope);
+		 $$.m_code->addChild(loopScope);
     }
 	;
-	
-iterator_while
-    : TOKEN_WHILE { $$.m_int = context.consumeAttribute(); }
-    ;	
-
-iterator_do
-    : TOKEN_DO { $$.m_int = context.consumeAttribute(); }
-    ;
-    
-iterator_for
-    : TOKEN_FOR { $$.m_int = context.consumeAttribute(); }
-    ;		
     
 for_init_statement
     : variable_statement
@@ -300,8 +257,49 @@ for_check_statement
 
 for_continue_statement
     : expression
-    | /* empty */ { $$.m_code = nullptr; }
+    | /* empty */ { $$ = nullptr; }
     ;
+
+//---
+
+statement_attributes
+	: TOKEN_ATTR_START statement_attributes_list TOKEN_ATTR_END { $$ = $2.m_code; }
+	| /* empty */ { $$ = nullptr; }
+	;
+
+statement_attributes_list
+	: statement_attributes_list ',' statement_attribute	{ $$ = context.createExpressionList($1.m_code, $3.m_code); }
+	| statement_attribute
+	;
+
+statement_attribute
+	: TOKEN_IDENT { 
+		$$.m_code = context.alloc<CodeNode>($1.m_location, OpCode::ListElement);
+		auto& entry = $$.m_code->extraData().m_attributesMap.emplaceBack();
+		entry.key = $1.m_string;
+		}
+	| TOKEN_IDENT '(' statement_attribute_value ')' {
+		$$.m_code = context.alloc<CodeNode>($1.m_location, OpCode::ListElement);
+		auto& entry = $$.m_code->extraData().m_attributesMap.emplaceBack();
+		entry.key = $1.m_string;
+		entry.value = $3.m_string;
+	}
+	;
+
+statement_attribute_value
+	: TOKEN_INT_NUMBER
+    | TOKEN_VERTEX
+    | TOKEN_SHADER
+    | TOKEN_SHARED
+    | TOKEN_IN
+    | TOKEN_OUT
+    | TOKEN_CONST
+    | TOKEN_EXPORT
+    | TOKEN_BOOL_TRUE
+    | TOKEN_BOOL_FALSE
+    | TOKEN_DISCARD
+    | TOKEN_IDENT
+    | TOKEN_STRING
 
 //---
 
@@ -311,7 +309,7 @@ expression_statement
 
 expression
 	: assignment_expression
-	| expression ',' assignment_expression { $$ = context.mergeExpressionList($1.m_code, $3.m_code); }
+//	| expression ',' assignment_expression { $$ = context.createExpressionList($1.m_code, $3.m_code); }
 	;
 
 program_instance_expression
@@ -319,7 +317,7 @@ program_instance_expression
     {
         ASSERT($1.m_type.isProgram());
         $$ = context.alloc<CodeNode>($1.m_location, OpCode::ProgramInstance, $1.m_type);
-        $$.m_code->moveChildren($3.m_code);
+		context.extractChildrenFromExpressionList($$.m_code, $3.m_code);
     }
 
     | TOKEN_SHADER_TYPE '{' '}'
@@ -330,7 +328,7 @@ program_instance_expression
     ;
 
 program_instance_param_list
-    : program_instance_param_list ',' program_instance_param { $$ = context.mergeExpressionList($1.m_code, $3.m_code); }
+    : program_instance_param_list ',' program_instance_param { $$ = context.createExpressionList($1.m_code, $3.m_code); }
     | program_instance_param
     ;
 
@@ -346,7 +344,8 @@ array_build_expression
     : TOKEN_ARRAY_TYPE '{' argument_expression_list '}'
     {
         //TRACE_ERROR("Building array {} with {} children", $1.m_type, $3.m_code->getChildren().size());
-        $$ = context.createFunctionCall($2.m_location, "__create_array", $3.m_code);
+        $$ = context.createFunctionCall($2.m_location, "__create_array");
+		context.extractChildrenFromExpressionList($$.m_code, $3.m_code);		
         $$.m_code->extraData().m_castType = $1.m_type;
     }
 
@@ -361,7 +360,8 @@ array_build_expression
 vector_build_expression
     : TOKEN_VECTOR_TYPE '(' argument_expression_list ')'
     {
-		$$ = context.createFunctionCall($2.m_location, "__create_vector", $3.m_code);
+		$$ = context.createFunctionCall($2.m_location, "__create_vector");
+		context.extractChildrenFromExpressionList($$.m_code, $3.m_code);
         $$.m_code->extraData().m_castType = $1.m_type;
     }
     ;
@@ -369,7 +369,8 @@ vector_build_expression
 matrix_build_expression
     : TOKEN_MATRIX_TYPE '(' argument_expression_list ')'
     {
-		$$ = context.createFunctionCall($2.m_location, "__create_matrix", $3.m_code);
+		$$ = context.createFunctionCall($2.m_location, "__create_matrix");
+		context.extractChildrenFromExpressionList($$.m_code, $3.m_code);
         $$.m_code->extraData().m_castType = $1.m_type;
     }
     ;
@@ -405,7 +406,7 @@ postfix_expression
 	| postfix_expression '(' argument_expression_list ')'
 	{
 	    $$ = context.alloc<CodeNode>($3.m_location, OpCode::Call, $1.m_code);
-	    $$.m_code->moveChildren($3.m_code);
+		context.extractChildrenFromExpressionList($$.m_code, $3.m_code);
 	}
 	| postfix_expression '.' ident_like
 	{
@@ -425,7 +426,7 @@ ident_like
 
 argument_expression_list
 	: assignment_expression
-	| argument_expression_list ',' assignment_expression { $$ = context.mergeExpressionList($1.m_code, $3.m_code); }
+	| argument_expression_list ',' assignment_expression { $$ = context.createExpressionList($1.m_code, $3.m_code); }
 	;
 
 unary_expression
@@ -541,7 +542,7 @@ assignment_operator
 //---
 
 block_statement
-    : '{' statement_list '}' { $$ = $2; }
+    : '{' statement_list '}' { $$ = context.createScope($2.m_code); }
     ;
 
 //---
@@ -576,51 +577,30 @@ jump_statement
 //---
 
 selection_statement
-	: selection_if '(' expression ')' statement %prec NO_ELSE
-	{
-	    $$ = context.alloc<CodeNode>($1.m_location, OpCode::IfElse, $3.m_code, $5.m_code);
-        $$.m_code->extraData().m_attributes = $1.m_int;
-	}
-	| selection_if '(' expression ')' statement TOKEN_ELSE statement %prec ELSE
-	{
-	    $$ = context.alloc<CodeNode>($1.m_location, OpCode::IfElse, $3.m_code, $5.m_code, $7.m_code);
-        $$.m_code->extraData().m_attributes = $1.m_int;
+	: statement_attributes selection_statement_inner {
+		$$ = context.extractAttributes($1.m_code, $2.m_code);
 	}
 	;
-	
-selection_if
-    : TOKEN_IF { $$.m_int = context.consumeAttribute(); }
-    ;	
+
+selection_statement_inner
+	: TOKEN_IF '(' expression ')' statement %prec NO_ELSE
+	{
+	    $$ = context.alloc<CodeNode>($1.m_location, OpCode::IfElse, $3.m_code, $5.m_code);
+	}
+	| TOKEN_IF '(' expression ')' statement TOKEN_ELSE statement %prec ELSE
+	{
+	    $$ = context.alloc<CodeNode>($1.m_location, OpCode::IfElse, $3.m_code, $5.m_code, $7.m_code);
+	}
+	;
 
 //---
 
 constant
     : TOKEN_INT_NUMBER
-    {
-        $$ = context.alloc<CodeNode>($1.m_location, DataType::IntScalarType(), DataValue((int)$1.m_int));
-    }
-
     | TOKEN_FLOAT_NUMBER
-    {
-        $$ = context.alloc<CodeNode>($1.m_location, DataType::FloatScalarType(), DataValue((float)$1.m_float));
-    }
-
     | TOKEN_BOOL_TRUE
-    {
-        $$ = context.alloc<CodeNode>($1.m_location, DataType::BoolScalarType(), DataValue(true));
-    }
-
     | TOKEN_BOOL_FALSE
-    {
-        $$ = context.alloc<CodeNode>($1.m_location, DataType::BoolScalarType(), DataValue(false));
-    }
-
-    | TOKEN_NAME
-    {
-        const auto name = base::StringID($1.m_string);
-        $$ = context.alloc<CodeNode>($1.m_location, DataType::NameScalarType(), DataValue(name));
-    }
-
+	| TOKEN_NAME
     ;
 
 %%

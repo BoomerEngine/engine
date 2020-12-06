@@ -48,6 +48,7 @@ namespace rendering
         uint32_t size = 0; // size of the buffer data to allocate
         uint32_t stride = 0; // non zero ONLY for structured buffers
         base::StringBuf label; // debug label
+		ImageFormat format; // format for formated buffers
 
         ResourceLayout initialLayout = ResourceLayout::INVALID;
 
@@ -145,32 +146,26 @@ namespace rendering
 	public:
 		virtual ~ISourceDataProvider();
 
-		enum class ReadyStatus : uint8_t
+		struct WriteAtom
 		{
-			NotReady,
-			Ready,
-			Failed
+			uint8_t* targetDataPtr = nullptr;
+			uint32_t targetDataSize = 0;
+			uint32_t internalOffset = 0;
+
+			uint8_t mip = 0;
+			uint16_t slice = 0;
 		};
 
-		// get a debug label for this data, usually resource name
-		virtual base::StringView debugLabel() const { return ""; }
-
-		// called once when we want to indicate we want to begin copying from this source
-		// NOTE: source should start preparing internal data, optionally a persistent load state may be returned in the "token" 
-		// NOTE: this method should NOT block, if async operation is needed you can use checkSourceDataReady
-		// NOTE: the copy queue assumes that ALL sub-resources may be filled at the same time, if that's not the case specify "supportsAsyncWrites=false"
-		virtual bool openSourceData(const ResourceCopyRange& range, void*& outToken, bool& outSupportsAsyncWrites) const;
-
-		// check if source is ready for copying (whatever operation has started in openSourceData) is finished
-		// NOTE: this may return "late failure" - i.e. file did not open etc. If that happens the whole copy is canceled
-		virtual ReadyStatus checkSourceDataReady(const void* token) const;
-
-		// write initialization data into provided pointer
+		// write initialization data into provided pointer(s), it's legal to take as much time as possible here
 		// NOTE: the most amazing thing about it this function is that it can wait happen in background (ie. disk loading is allowed here)
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const = 0;
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const = 0;
 
-		// called once all copying is finished, allows to free related resources
-		virtual CAN_YIELD void closeSourceData(void* token) const;
+		// notify client that resource is not available for use, 
+		// this is called as soon as rendering knows that resource can be safely used in the frame recording
+		virtual void notifyFinshed(bool success) {};
+
+		// get a debug information for this data, usually resource name, etc
+		virtual void print(base::IFormatStream& f) const {};
     };
 
     //--
@@ -191,7 +186,7 @@ namespace rendering
 		INLINE const base::Buffer& data() const { return m_data; }
 
 		// upload buffer to GPU memory (copies the content from buffer if it fits)
-		virtual CAN_YIELD void writeSourceData(void* destPointer, void* token, const ResourceCopyElement& element) const override final;
+		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final;
 
 	private:
 		base::Buffer m_data;
@@ -218,7 +213,7 @@ namespace rendering
 		// data was retrieved from GPU, do whatever you want with it
 		// NOTE: the data is stored either in special staging buffer or in case of UMA you will have direct pointer to it
 		// NOTE: it goes without saying that the pointer should not be cached
-		virtual CAN_YIELD void processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info) = 0;
+		virtual CAN_YIELD void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) = 0;
 	};
 
 	//--
@@ -227,26 +222,30 @@ namespace rendering
 	class RENDERING_DEVICE_API DownloadDataSinkBuffer : public IDownloadDataSink
 	{
 	public:
-		DownloadDataSinkBuffer(PoolTag pool, uint32_t alignment=16);
+		DownloadDataSinkBuffer();
 
 		/// get the buffer version, initially it's zero, increments after each processRetreivedData call (so the sink can be reused)
-		INLINE uint32_t version() const { return m_version.load(); }
-
-		/// retrieve the internal buffer (NOTE: object copy, the buffer holder is ref counted inside so its fast)
-		base::Buffer data(uint32_t* outVersion = nullptr) const;
-
-	protected:
-		std::atomic<uint32_t> m_version; // changed after each new upload
-
-		base::SpinLock m_dataLock;
-		base::Buffer m_data;
-
-		PoolTag m_poolTag;
-		uint32_t m_alignment;
+		INLINE uint32_t version() const { return m_version; }
 
 		//--
 
-		virtual CAN_YIELD void processRetreivedData(const void* srcPtr, uint32_t retrievedSize, const ResourceCopyRange& info) override final;
+		// retrieve pointer to data
+		const uint8_t* retrieve(uint32_t& outSize, DownloadAreaObjectPtr& outArea) const;
+
+		//--
+
+	protected:
+		std::atomic<uint32_t> m_version = 0; // changed after each new upload
+
+		base::SpinLock m_lock;
+
+		DownloadAreaObjectPtr m_area;
+		uint32_t m_dataSize = 0;
+		const uint8_t* m_dataPtr = nullptr;
+
+		//--
+
+		virtual CAN_YIELD void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) override final;
 	};
 
 	//--

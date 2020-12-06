@@ -20,7 +20,13 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingBuffer.h"
 #include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingShader.h"
+#include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingPipeline.h"
+#include "rendering/device/include/renderingOutput.h"
+#include "../../device/include/renderingDeviceGlobalObjects.h"
 
 namespace rendering
 {
@@ -59,46 +65,157 @@ namespace rendering
             return false;
         }
 
-        bool IRenderingTest::prepareAndInitialize(IDevice* drv, uint32_t subTestIndex)
+        bool IRenderingTest::prepareAndInitialize(IDevice* drv, uint32_t subTestIndex, IOutputObject* output)
         {
-            m_subTestIndex = subTestIndex;
-            m_device = drv;
+			m_subTestIndex = subTestIndex;
+			m_device = drv;
 
-            m_quadVertices = createVertexBuffer(sizeof(Simple3DVertex) * 6, nullptr);
+			m_quadVertices = createVertexBuffer(sizeof(Simple3DVertex) * 6, nullptr);
+
+			{
+				GraphicsPassLayoutSetup layout;
+				layout.color[0] = output->layout()->layout().color[0];
+				layout.depth = output->layout()->layout().depth;
+				m_outputLayoutWithDepth = createPassLayout(layout);
+			}
+
+			{
+				GraphicsPassLayoutSetup layout;
+				layout.color[0] = output->layout()->layout().color[0];
+				//layout.depth = output->layout()->layout().depth;
+				m_outputLayoutNoDepth = createPassLayout(layout);
+			}
 
             initialize();
 
             return !m_hasErrors;
         }
 
-        ShaderLibraryPtr IRenderingTest::loadShader(base::StringView partialPath)
+        GraphicsPipelineObjectPtr IRenderingTest::loadGraphicsShader(base::StringView partialPath, const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesSetup* states /*= nullptr*/, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
         {
-            if (auto res = base::LoadResource<ShaderLibrary>(base::TempString("/engine/tests/shaders/{}", partialPath)))
-            {
-                auto lock = base::CreateLock(m_allLoadedResourcesLock);
-                m_allLoadedResources.pushBack(res);
-                return res.acquire();
-            }
+			DEBUG_CHECK_RETURN_EX_V(passLayout, "Pass layout must be specified", nullptr);
 
-            reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
-            return nullptr;
+			// load shader
+			auto res = base::LoadResource<ShaderFile>(base::TempString("/engine/tests/shaders/{}", partialPath)).acquire();
+			if (!res)
+			{
+				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
+				return nullptr;
+			}
+			else
+			{
+				m_allLoadedResources.pushBack(res);
+			}
+
+			// assemble final selectors
+			auto selectors = extraSelectors;
+			selectors.set("YFLIP"_id, 1);			
+			const auto shader = res->findShader(selectors);
+			if (!shader || !shader->deviceShader())
+			{
+				reportError(base::TempString("Failed to find permutation '{}' in shader '{}'", selectors, partialPath));
+				return nullptr;
+			}
+
+			// map render states
+			GraphicsRenderStatesObjectPtr renderStates;
+			if (states)
+				renderStates = createRenderStates(*states);
+
+			// create the PSO
+            return shader->deviceShader()->createGraphicsPipeline(passLayout, renderStates);
         }
+
+		ComputePipelineObjectPtr IRenderingTest::loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
+		{
+			// load shader
+			auto res = base::LoadResource<ShaderFile>(base::TempString("/engine/tests/shaders/{}", partialPath)).acquire();
+			if (!res)
+			{
+				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
+				return nullptr;
+			}
+			else
+			{
+				m_allLoadedResources.pushBack(res);
+			}
+
+			// assemble final selectors
+			const auto shader = res->findShader(extraSelectors);
+			if (!shader || !shader->deviceShader())
+			{
+				reportError(base::TempString("Failed to find permutation '{}' in shader '{}'", extraSelectors, partialPath));
+				return nullptr;
+			}
+
+
+			// create the compute PSO
+			return shader->deviceShader()->createComputePipeline();
+		}
+
+		GraphicsRenderStatesObjectPtr IRenderingTest::createRenderStates(const GraphicsRenderStatesSetup& setup)
+		{
+			const auto key = setup.key();
+
+			GraphicsRenderStatesObjectPtr ret;
+			if (m_renderStatesMap.find(key, ret))
+			{
+				DEBUG_CHECK(ret->states() == setup);
+				return ret;
+			}
+
+			if (auto ret = m_device->createGraphicsRenderStates(setup))
+			{
+				m_renderStatesMap[key] = ret;
+				return ret;
+			}
+
+			reportError("Failed to create render states");
+			return nullptr;
+		}
+
+		GraphicsPassLayoutObjectPtr IRenderingTest::createPassLayout(const GraphicsPassLayoutSetup& setup)
+		{
+			const auto key = setup.key();
+
+			GraphicsPassLayoutObjectPtr ret;
+			if (m_passLayoutsMap.find(key, ret))
+			{
+				DEBUG_CHECK(ret->layout() == setup);
+				return ret;
+			}
+
+			if (auto ret = m_device->createGraphicsPassLayout(setup))
+			{
+				m_passLayoutsMap[key] = ret;
+				return ret;
+			}
+
+			reportError("Failed to create pass layout");
+			return nullptr;
+		}
 
         BufferObjectPtr IRenderingTest::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* initializationData)
         {
-			base::fibers::WaitCounter fence;
-			if (initializationData)
-				fence = Fibers::GetInstance().createCounter("CreateBufferFence", 1);
-
-            if (auto ret = m_device->createBuffer(info, initializationData, fence))
-			{ 
-				Fibers::GetInstance().waitForCounterAndRelease(fence);
+            if (auto ret = m_device->createBuffer(info, initializationData))
 				return ret;
-			}
 
             reportError("Failed to create data buffer");
 			return nullptr;
         }
+
+		BufferObjectPtr IRenderingTest::createFormatBuffer(ImageFormat format, uint32_t size, bool allowUAV)
+		{
+			BufferCreationInfo info;
+			info.allowCostantReads = false;
+			info.allowShaderReads = true;
+			info.allowUAV = allowUAV;
+			info.size = size;
+			info.format = format;
+			info.label = "FormatBuffer";
+
+			return createBuffer(info);
+		}
 
 		BufferObjectPtr IRenderingTest::createConstantBuffer(uint32_t size, const void* sourceData /*= nullptr*/, bool dynamic /*= false*/, bool allowUav /*= false*/)
 		{
@@ -175,20 +292,13 @@ namespace rendering
             return createBuffer(info);
         }
 
-        ImageObjectPtr IRenderingTest::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData /*= nullptr*/, bool uavCapable /*= false*/)
+        ImageObjectPtr IRenderingTest::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData /*= nullptr*/)
         {
-			base::fibers::WaitCounter fence;
-			if (sourceData)
-				fence = Fibers::GetInstance().createCounter("CreateImageFence", 1);
-
-			if (auto ret = m_device->createImage(info, sourceData, fence))
-			{
-				Fibers::GetInstance().waitForCounterAndRelease(fence);
+			if (auto ret = m_device->createImage(info, sourceData))
 				return ret;
-			}
 
             reportError("Failed to create image");
-            return nullptr;
+            return AddRef(Globals().TextureWhite->image());
         }
 
         SamplerObjectPtr IRenderingTest::createSampler(const SamplerState& info)
@@ -197,7 +307,7 @@ namespace rendering
 				return ret;
 
             reportError("Failed to sampler");
-			return nullptr;
+			return Globals().SamplerClampPoint;
         }
 
         //--
@@ -259,7 +369,7 @@ namespace rendering
                 auto newImage = base::RefNew<base::image::Image>(curImg->format(), curImg->channels(), width, height, depth);
                 base::image::Downsample(curImg->view(), newImage->view(), base::image::DownsampleMode::Average, base::image::ColorSpace::Linear);
 
-                m_mipmaps.pushBack(curImg);
+                m_mipmaps.pushBack(newImage);
                 curImg = newImage;
             }
         }
@@ -272,10 +382,13 @@ namespace rendering
 				, m_numMips(numMips)
 			{}
 
-			virtual void writeSourceData(void* destPointer, uint32_t expectedSize, const ResourceCopyRange& info) const override final
+			virtual void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
 			{
-				const auto& data = m_data[info.image.firstSlice].m_mipmaps[info.image.firstMip];
-				memcpy(destPointer, data->data(), expectedSize);
+				for (const auto& atom : atoms)
+				{
+					const auto& data = m_data[atom.slice].m_mipmaps[atom.mip];
+					memcpy(atom.targetDataPtr, data->data(), atom.targetDataSize);
+				}
 			}
 
 		private:
@@ -283,13 +396,13 @@ namespace rendering
 			uint32_t m_numMips;
 		};
 
-        ImageObjectPtr IRenderingTest::createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType, bool uavCapable /*= false*/)
+        ImageObjectPtr IRenderingTest::createImage(const base::Array<TextureSlice>& slices, ImageViewType viewType)
         {
             // no slices or no mips
             if (slices.empty() || slices[0].m_mipmaps.empty())
             {
                 reportError("Failed to create image from empty list of slices");
-                return ImageObjectPtr();
+                return AddRef(Globals().TextureWhite->image());
             }
 
             // get the image format from the first mip of the first slice
@@ -298,7 +411,7 @@ namespace rendering
             if (imageFormat == ImageFormat::UNKNOWN)
             {
                 reportError("Failed to create image from unknown pixel format");
-                return ImageObjectPtr();
+                return AddRef(Globals().TextureWhite->image());
             }
 
             // create source data blocks
@@ -312,7 +425,7 @@ namespace rendering
             imageInfo.numMips = range_cast<uint8_t>(numMips);
             imageInfo.numSlices = range_cast<uint16_t>(slices.size());
             imageInfo.allowShaderReads = true;
-            imageInfo.allowUAV = uavCapable;
+			imageInfo.allowCopies = true;
             imageInfo.width = rootImage->width();
             imageInfo.height = rootImage->height();
             imageInfo.depth = rootImage->depth();
@@ -322,13 +435,13 @@ namespace rendering
 			return createImage(imageInfo, sourceData);
         }
 
-        ImageObjectPtr IRenderingTest::loadImage2D(base::StringView assetFile, bool createMipmaps /*= false*/, bool uavCapable /*= false*/, bool forceAlpha)
+        ImageObjectPtr IRenderingTest::loadImage2D(base::StringView assetFile, bool createMipmaps /*= false*/, bool forceAlpha)
         {
             auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
-                return ImageObjectPtr();
+                return AddRef(Globals().TextureWhite->image());
             }
 
             // update 3 components to 4 components by adding opaque alpha
@@ -342,7 +455,7 @@ namespace rendering
             if (createMipmaps)
                 slices.back().generateMipmaps();
 
-            return createImage(slices, ImageViewType::View2D, uavCapable);
+			return createImage(slices, ImageViewType::View2D);
         }
 
         ImageObjectPtr IRenderingTest::createMipmapTest2D(uint16_t initialSize, bool markers /*= false*/)
@@ -498,7 +611,7 @@ namespace rendering
 
         //--
 
-        void IRenderingTest::drawQuad(command::CommandWriter& cmd, const ShaderLibrary* func, float x, float y, float w, float h, float u0, float v0, float u1, float v1, base::Color color)
+        void IRenderingTest::drawQuad(command::CommandWriter& cmd, const GraphicsPipelineObject* func, float x, float y, float w, float h, float u0, float v0, float u1, float v1, base::Color color)
         {
 			cmd.opTransitionLayout(m_quadVertices, ResourceLayout::VertexBuffer, ResourceLayout::CopyDest);
             auto* v = cmd.opUpdateDynamicBufferPtrN<Simple3DVertex>(m_quadVertices, 0, 6);
@@ -512,7 +625,7 @@ namespace rendering
             v[4].set(x + w, y + h, 0.5f, u1, v1, color);
             v[5].set(x, y + h, 0.5f, u0, v1, color);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+            //cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_quadVertices);
             cmd.opDraw(func, 0, 6);
         }
@@ -767,7 +880,7 @@ namespace rendering
 
         //--
 
-        void SimpleRenderMesh::drawChunk(command::CommandWriter& cmd, const ShaderLibrary* func, uint32_t chunkIndex) const
+        void SimpleRenderMesh::drawChunk(command::CommandWriter& cmd, const GraphicsPipelineObject* func, uint32_t chunkIndex) const
         {
             auto& chunk = m_chunks[chunkIndex];
 
@@ -776,7 +889,7 @@ namespace rendering
             cmd.opDrawIndexed(func, chunk.firstVertex, chunk.firstIndex, chunk.numIndices);
         }
 
-        void SimpleRenderMesh::drawMesh(command::CommandWriter& cmd, const ShaderLibrary* func) const
+        void SimpleRenderMesh::drawMesh(command::CommandWriter& cmd, const GraphicsPipelineObject* func) const
         {
             for (uint32_t i = 0; i < m_chunks.size(); ++i)
                 drawChunk(cmd, func, i);

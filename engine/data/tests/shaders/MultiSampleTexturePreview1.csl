@@ -15,12 +15,18 @@
 
 descriptor TestParams
 {
-    Texture2D Texture;
-	attribute(multisample) Texture2D TextureMS;
+    attribute(sampler=SamplerClampPoint) Texture2D Texture;
+	attribute(multisample, sampler=SamplerClampPoint) Texture2D TextureMS;
 }
 
 //--
 
+state CommonState
+{
+	PrimitiveTopology = TriangleStrip,
+}
+
+attribute(state=CommonState)
 export shader CommonVS
 {
 	void main()

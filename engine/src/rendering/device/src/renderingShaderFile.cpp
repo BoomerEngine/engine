@@ -34,6 +34,18 @@ namespace rendering
 	ShaderFile::~ShaderFile()
 	{}
 
+	//--
+
+	const ShaderData* ShaderFile::rootShader() const
+	{
+		return m_shader;
+	}
+
+	const ShaderData* ShaderFile::findShader(const ShaderSelector& selector) const
+	{
+		return m_shader;
+	}
+
     //--
 
 } // rendering

@@ -39,18 +39,19 @@ namespace rendering
 
 			virtual bool initialize(const base::app::CommandLine& cmdLine) override;
 			virtual void shutdown() override;
-			virtual void sync() override;
-			virtual void advanceFrame() override;
+			virtual void sync(bool flush) override;
+
+			virtual DeviceSyncInfo querySyncInfo() const override;
+			virtual bool registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback) override;
 
 			virtual OutputObjectPtr createOutput(const OutputInitInfo& info) override;
-			virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override;
+			virtual BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData) override;
 			virtual ShaderObjectPtr createShaders(const ShaderData* shaders) override;
-			virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished) override;
+			virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData) override;
 			virtual SamplerObjectPtr createSampler(const SamplerState& info) override;
+			virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) override;
 			virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) override;
 			virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) override;
-
-			virtual bool asyncCopy(const IDeviceObject* object, const ResourceCopyRange& range, const ISourceDataProvider* sourceData, base::fibers::WaitCounter initializationFinished /*= base::fibers::WaitCounter()*/) override;
 
 			virtual void submitWork(command::CommandBuffer* masterCommandBuffer, bool background) override;
 

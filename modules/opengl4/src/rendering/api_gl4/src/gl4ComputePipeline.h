@@ -30,11 +30,11 @@ namespace rendering
 				//--
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseComputePipeline::shaders()); }
+				INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseComputePipeline::shaders())); }
 
 				//--				
 
-				bool apply();
+				bool apply(GLuint& glActiveProgram);
 
 				//--
 

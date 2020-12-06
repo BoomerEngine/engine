@@ -1,0 +1,92 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+sampler SamplerTestA
+{
+	MinFilter = Nearest,
+	MagFilter = Nearest,
+	MipFilter = None,
+	AddressU = Wrap,
+	AddressV = Wrap,
+	AddressW = Wrap,
+}
+
+sampler SamplerTestB
+{
+	MinFilter = Linear,
+	MagFilter = Linear,
+	MipFilter = Linear,
+	AddressU = Wrap,
+	AddressV = Wrap,
+	AddressW = Wrap,
+}
+
+sampler SamplerTestC
+{
+	MinFilter = Linear,
+	MagFilter = Linear,
+	MipFilter = Linear,
+	MinLod = 4.0,
+	AddressU = Wrap,
+	AddressV = Wrap,
+	AddressW = Wrap,
+}
+
+sampler SamplerTestD
+{
+	MinFilter = Linear,
+	MagFilter = Linear,
+	MipFilter = Linear,
+	AddressU = Clamp,
+	AddressV = Clamp,
+	AddressW = Clamp,
+}
+
+descriptor TestParams
+{
+    attribute(sampler=SamplerTestA) Texture2D TextureA;
+    attribute(sampler=SamplerTestB) Texture2D TextureB;
+    attribute(sampler=SamplerTestC) Texture2D TextureC;
+    attribute(sampler=SamplerTestD) Texture2D TextureD;
+}
+
+export shader SimpleTrianglePS
+{
+	in vec2 UV;
+
+	void main()
+	{
+		vec4 factors;
+		factors.x = 1.0f - length(UV - vec2(0,0));
+		factors.y = 1.0f - length(UV - vec2(0,1));
+		factors.z = 1.0f - length(UV - vec2(1,0));
+		factors.w = 1.0f - length(UV - vec2(1,1));
+
+		factors = pow(max(factors,0), 8);
+		factors /= length(factors);
+
+		vec4 ret = texture(TextureA, UV) * factors.x;
+		ret += texture(TextureB, UV) * factors.y;
+		ret += texture(TextureC, UV) * factors.z;
+		ret += texture(TextureD, UV*4 - vec2(2.5,2.5)) * factors.w;
+
+		gl_Target0 = ret;
+	}
+}
+
+export shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+
+	out vec2 UV;
+
+	void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+	}
+}

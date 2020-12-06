@@ -50,10 +50,13 @@ namespace rendering
 
 			void ObjectCache::clearFramebuffers()
 			{
-				for (const auto* fb : m_framebufferMap.values())
+				for (const auto& fb : m_framebufferMap.values())
 				{
-					GL_PROTECT(glDeleteFramebuffers(1, &fb->glFrameBuffer));
-					base::mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
+					if (fb->glFrameBuffer)
+					{
+						GL_PROTECT(glDeleteFramebuffers(1, &fb->glFrameBuffer));
+						base::mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
+					}
 				}
 
 				m_imageMap.clearPtr();
@@ -75,9 +78,10 @@ namespace rendering
 						ret = new CachedImageInfo();
 						ret->glImage = glImage;
 						TRACE_SPAM("Creating frame buffer image tracking for {}", glImage);
+						m_imageMap[glImage] = ret;
 					}
 
-					ret->frameBuffers.pushBack(fb);
+					ret->frameBuffers.pushBack(AddRef(fb));
 					TRACE_SPAM("Bound frame buffer image {} to frame buffer {}", glImage, fb->glFrameBuffer);
 				}
 			}
@@ -85,7 +89,7 @@ namespace rendering
 			GLuint ObjectCache::buildFramebuffer(const FrameBufferTargets& targets)
 			{
 				// reuse if possible (that's the whole point)
-				CachedFramebuffer* ret = nullptr;
+				base::RefPtr<CachedFramebuffer> ret;
 				if (m_framebufferMap.find(targets, ret))
 					return configureFramebuffer(ret) ? ret->glFrameBuffer : 0;
 
@@ -93,10 +97,10 @@ namespace rendering
 				GLuint frameBuffer = 0;
 				GL_PROTECT(glCreateFramebuffers(1, &frameBuffer));
 				if (!frameBuffer)
-					return frameBuffer;
+					return 0;
 
 				// create cache entry
-				ret = new CachedFramebuffer();
+				ret = base::RefNew<CachedFramebuffer>();
 				ret->targets = targets;
 				ret->glFrameBuffer = frameBuffer;
 				m_framebufferMap[targets] = ret;
@@ -106,7 +110,7 @@ namespace rendering
 
 				// bind used images to the FB
 				for (auto target : targets.images)
-					linkImage(target.glImage, ret);
+					linkImage(target.glImageView, ret);
 
 				// configure the newly created frame buffer
 				return configureFramebuffer(ret) ? ret->glFrameBuffer : 0;
@@ -124,6 +128,24 @@ namespace rendering
 				GL_COLOR_ATTACHMENT7,
 			};
 
+			static const char* TranslateFramebufferError(GLenum error)
+			{
+				switch (error)
+				{
+#define TEST(x) case x: return #x;
+					TEST(GL_FRAMEBUFFER_UNDEFINED)
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT);
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER);
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER);
+					TEST(GL_FRAMEBUFFER_UNSUPPORTED);
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE);
+					TEST(GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS);
+				}
+#undef TEST
+					return "Unknown";
+			}
+
 			bool ObjectCache::configureFramebuffer(CachedFramebuffer* ret)
 			{
 				if (ret->configured)
@@ -132,31 +154,32 @@ namespace rendering
 				for (uint32_t i=0; i<FrameBufferTargets::MAX_FRAMEBUFFER_TARGETS; ++i)
 				{
 					const auto& image = ret->targets.images[i];
-					if (!image.glImage)
+					if (i && !image.glImageView)
 						break;
 
 					const auto glAttachmentType = FrameBufferTargets::glAttachmentNames[i];
 					if (image.glViewType == GL_RENDERBUFFER)
 					{
-						GL_PROTECT(glNamedFramebufferRenderbuffer(ret->glFrameBuffer, glAttachmentType, GL_RENDERBUFFER, image.glImage));
+						GL_PROTECT(glNamedFramebufferRenderbuffer(ret->glFrameBuffer, glAttachmentType, GL_RENDERBUFFER, image.glImageView));
 					}
 					else if (image.glViewType == GL_TEXTURE_2D)
 					{
-						GL_PROTECT(glNamedFramebufferTexture(ret->glFrameBuffer, glAttachmentType, image.glImage, image.firstMip));
+						GL_PROTECT(glNamedFramebufferTexture(ret->glFrameBuffer, glAttachmentType, image.glImageView, image.firstMip));
 					}
 					else if (image.glViewType == GL_TEXTURE_2D_ARRAY)
 					{
-						GL_PROTECT(glNamedFramebufferTextureLayer(ret->glFrameBuffer, glAttachmentType, image.glImage, image.firstMip, image.firstSlice));
+						GL_PROTECT(glNamedFramebufferTextureLayer(ret->glFrameBuffer, glAttachmentType, image.glImageView, image.firstMip, image.firstSlice));
 					}
 					else if (image.glViewType == GL_TEXTURE_2D_MULTISAMPLE)
 					{
-						GL_PROTECT(glNamedFramebufferTexture(ret->glFrameBuffer, glAttachmentType, image.glImage, image.firstMip));
+						GL_PROTECT(glNamedFramebufferTexture(ret->glFrameBuffer, glAttachmentType, image.glImageView, image.firstMip));
 					}
 				}
 
 				// check the frame buffer
-				GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-				DEBUG_CHECK_RETURN_EX_V(status == GL_FRAMEBUFFER_COMPLETE, "Framebuffer setup is not complete", false);
+				GLenum status = glCheckNamedFramebufferStatus(ret->glFrameBuffer, GL_FRAMEBUFFER);
+				DEBUG_CHECK_RETURN_EX_V(status == GL_FRAMEBUFFER_COMPLETE, 
+					base::TempString("Framebuffer setup is not complete, error: {}", TranslateFramebufferError(status)), false);
 
 				// save as configured
 				ret->configured = true;
@@ -171,10 +194,18 @@ namespace rendering
 				{
 					ASSERT(ret->glImage == glImage);
 
-					for (auto* fb : ret->frameBuffers)
+					for (auto fb : ret->frameBuffers)
 					{
+						if (fb->glFrameBuffer)
+						{
+							GL_PROTECT(glDeleteFramebuffers(1, &fb->glFrameBuffer));
+							base::mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
+						}
+
+						fb->glFrameBuffer = 0;
+						fb->configured = false;
+
 						m_framebufferMap.remove(fb->targets);
-						delete fb;
 					}
 
 					TRACE_SPAM("Removed tracking for render target {} ({} framebuffers released)", glImage, ret->frameBuffers.size());

@@ -7,7 +7,7 @@
 
 descriptor TestParams
 {
-    attribute(dimCube) Texture TestTexture;
+	attribute(sampler=SamplerClampPoint, dimCube) Texture TestTexture;
 }
 
 export shader ErrorTrianglePS

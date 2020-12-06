@@ -7,34 +7,55 @@
 
 //--
 
-descriptor ComputeHistogramParams
+descriptor DrawHistogramDesc
 {
     ConstantBuffer
     {
-        uint ImageWidth;
-        uint ImageHeight;
-		uint ComponentType;
 		uint NumBuckets;
-		float VerticalScale;
+		int _padding1;
+		int _padding2;
+		int _padding3;
+
+		vec4 LineColor;
+
+		float OffsetX;
+		float OffsetY;
+		float SizeX;
+		float SizeY;
     }
 
-    attribute(uav, format=rgba8) Texture2D InputImage;
-	attribute(uav, format=r32i) Buffer MinMaxBuffer;
-	attribute(coherent, uav, format=r32i) Buffer HistogramBuffer;
+	attribute(readonly, format=r32i) Buffer HistogramBuffer;
 }
 
 //--
 
+state Lines
+{
+	PrimitiveTopology = LineStrip,
+}
+
+attribute(state=Lines)
 export shader DrawVS
 {
 	void main()
 	{
-		gl_Position.x = -0.8f + 1.6 * (gl_VertexID / (float)NumBuckets);
-		
-		uint val = HistogramBuffer[gl_VertexID];
-		uint maxVal = max(1, MinMaxBuffer[2]);
+		float histogramMinRange = intBitsToFloat(HistogramBuffer[NumBuckets+0]);
+		float histogramMaxRange = intBitsToFloat(HistogramBuffer[NumBuckets+1]);
+		float histogramMaxValue = HistogramBuffer[NumBuckets+2];
 
-		gl_Position.y = 0.8f - ((val / (float)maxVal) * VerticalScale);
+		float groupMinRange = intBitsToFloat(HistogramBuffer[NumBuckets+3]);
+		float groupMaxRange = intBitsToFloat(HistogramBuffer[NumBuckets+4]);
+		float groupMaxValue = HistogramBuffer[NumBuckets+5];
+
+		float localValueIndex = histogramMinRange + (histogramMaxRange - histogramMinRange) * (gl_VertexID / (float)(NumBuckets-1));
+		float localValueFrac = (localValueIndex - groupMinRange) / (groupMaxRange - groupMinRange);
+		//float localValueFrac = gl_VertexID / (float)(NumBuckets-1);
+		gl_Position.x = OffsetX + SizeX * localValueFrac;
+		
+		float val = HistogramBuffer[gl_VertexID];
+		float normalizedValue = val / (float)max(1, groupMaxValue);
+
+		gl_Position.y = OffsetY + SizeY * max(0, normalizedValue);
 		gl_Position.z = 0.5f;
 		gl_Position.w = 1.0f;
 	}
@@ -44,14 +65,7 @@ export shader DrawPS
 {
 	void main()
 	{
-		if (ComponentType == 0)
-			gl_Target0 = vec4(1,0,0,1);
-		else if (ComponentType == 1)
-			gl_Target0 = vec4(0,1,0,1);
-		else if (ComponentType == 2)
-			gl_Target0 = vec4(0,0,1,1);
-		else
-			gl_Target0 = vec4(1,1,1,1);
+		gl_Target0 = LineColor;		
 	}
 }
 

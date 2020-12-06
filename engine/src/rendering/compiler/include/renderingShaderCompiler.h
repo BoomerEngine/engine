@@ -62,8 +62,8 @@ namespace rendering
 		// NOTE: no permutation exploration is performed here, if a define is not defined it's an error
         extern RENDERING_COMPILER_API ShaderDataPtr CompileShader(
             base::StringView code, // code to compile
-            base::StringView contextPath, // context path to print with errors (Z:/projects/awesome/shaders/box.fx)
-			base::StringView sourceContentDebugPath, // debug name/path that describes what we are compiling (added to code dumps)
+            base::StringView contextPath, // context path to print with errors (Z:/projects/awesome/shaders/box.fx)  (saved for debug)
+			base::StringView contextOptions, // high-level options we are compiling this shader with (saved for debug)
             base::parser::IIncludeHandler* includeHandler, // handler for any files we want to include (ShaderCompilerDefaultIncludeHandler in cooking)
             base::parser::IErrorReporter& err, // where to report any errors (ShaderCompilerDefaultErrorReporter in cooking)
             base::HashMap<base::StringID, base::StringBuf>* defines = nullptr);  // defines and their values

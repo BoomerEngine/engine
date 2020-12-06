@@ -12,8 +12,7 @@
 #include "gl4Image.h"
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
-
-#include "rendering/api_common/include/apiCopyPool.h"
+#include "gl4CopyQueue.h"
 
 namespace rendering
 {
@@ -35,8 +34,7 @@ namespace rendering
 			{
 				if (m_glImage)
 				{
-					if (setup().allowRenderTarget)
-						owner()->objectCache()->notifyImageDeleted(m_glImage);
+					owner()->objectCache()->notifyImageDeleted(m_glImage);
 
 					GL_PROTECT(glDeleteTextures(1, &m_glImage));
 					m_glImage = 0;
@@ -52,10 +50,10 @@ namespace rendering
 				ret.glImageView = m_glImage;
 				ret.glInternalFormat = m_glFormat;
 				ret.glViewType = m_glViewType;
-				ret.firstMip = 0;
+				ret.firstMip = 0;	
 				ret.firstSlice = 0;
 				ret.numMips = setup().numMips;
-				ret.numSlices = setup().numSamples;
+				ret.numSlices = setup().numSlices;
 				return ret;
 			}
 
@@ -69,8 +67,7 @@ namespace rendering
 
 				// decompose texture format
 				GLenum imageBaseFormat, imageBaseType;
-				bool imageFormatCompressed = false;
-				DecomposeTextureFormat(m_glFormat, imageBaseFormat, imageBaseType, imageFormatCompressed);
+				DecomposeTextureFormat(m_glFormat, imageBaseFormat, imageBaseType);
 
 				// create texture object
 				ASSERT(m_glImage == 0);
@@ -159,8 +156,8 @@ namespace rendering
 
 				const auto& im = range.image;
 
-				const auto rowLength = setup().calcRowLength(im.firstMip);
-				const auto mipHeight = setup().calcMipHeight(im.firstMip);
+				const auto rowLength = setup().calcRowLength(im.mip);
+				const auto mipHeight = setup().calcMipHeight(im.mip);
 
 				const auto pixelSize = GetImageFormatInfo(setup().format).bitsPerPixel / 8;
 				//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
@@ -177,27 +174,22 @@ namespace rendering
 				switch (m_glViewType)
 				{
 				case GL_TEXTURE_1D:
-					GL_PROTECT(glCopyTextureSubImage1D(m_glImage, im.firstMip, im.offsetX, 0, 0, im.sizeX));
+					GL_PROTECT(glCopyTextureSubImage1D(m_glImage, im.mip, im.offsetX, 0, 0, im.sizeX));
 					break;
 
 				case GL_TEXTURE_2D:
-					GL_PROTECT(glCopyTextureSubImage2D(m_glImage, im.firstMip, im.offsetX, im.offsetY, 0, 0, im.sizeX, im.sizeY));
-					break;
-
-				case GL_TEXTURE_2D_ARRAY:
-					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
-					break;
-
-				case GL_TEXTURE_3D:
-					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.offsetZ, 0, 0, im.sizeX, im.sizeY));// TODO:!! , im.sizeZ));
+					GL_PROTECT(glCopyTextureSubImage2D(m_glImage, im.mip, im.offsetX, im.offsetY, 0, 0, im.sizeX, im.sizeY));
 					break;
 
 				case GL_TEXTURE_CUBE_MAP:
-					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, im.offsetX, im.offsetY, im.slice, 0, 0, im.sizeX, im.sizeY));
 					break;
 
-				case GL_TEXTURE_CUBE_MAP_ARRAY:
-					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.firstMip, im.offsetX, im.offsetY, im.firstSlice, 0, 0, im.sizeX, im.sizeY));
+				case GL_TEXTURE_3D:
+					// TODO!
+					GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, im.offsetX, im.offsetY, im.offsetZ, 0, 0, im.sizeX, im.sizeY));
 					break;
 
 				default:
@@ -207,40 +199,101 @@ namespace rendering
 				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 			}
 
+			void Image::copyFromImage(const ResolvedImageView& view, const ResourceCopyRange& src, const ResourceCopyRange& dest)
+			{
+				PC_SCOPE_LVL1(ImageCopyFromImage);
+
+				ensureCreated();
+
+				const auto& si = src.image;
+				const auto& ti = dest.image;
+
+				uint32_t sourceOffsetZ = 0;
+				uint32_t sourceSizeZ = 1;
+				switch (view.glViewType)
+				{
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					sourceOffsetZ = si.slice;
+					sourceSizeZ = 1;
+					break;
+				case GL_TEXTURE_3D:
+					sourceOffsetZ = si.offsetZ;
+					sourceSizeZ = si.sizeZ;
+					break;
+				}
+
+				uint32_t targetOffsetZ = 0;
+				uint32_t targetSizeZ = 1;
+				switch (m_glViewType)
+				{
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					targetOffsetZ = ti.slice;
+					targetSizeZ = 1;
+					break;
+				case GL_TEXTURE_3D:
+					targetOffsetZ = ti.offsetZ;
+					targetSizeZ = ti.sizeZ;
+					break;
+				}
+
+				ASSERT(sourceSizeZ == targetSizeZ);
+
+				GL_PROTECT(glCopyImageSubData(
+					view.glImage, view.glViewType,
+					si.mip,
+					si.offsetX, si.offsetY, sourceOffsetZ,
+					//si.sizeX, si.sizeY, sourceSizeZ,
+					m_glImage, m_glViewType,
+					ti.mip,
+					ti.offsetX, ti.offsetY, targetOffsetZ,
+					ti.sizeX, ti.sizeY, targetSizeZ));
+			}
+
 			//--
 
-			IBaseImageView* Image::createView_ClientApi(const IBaseImageView::Setup& setup, IBaseSampler* sampler)
+			IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				auto* localSampler = static_cast<Sampler*>(sampler);
-				return new ImageAnyView(owner(), this, localSampler, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::SampledImageView);
+			}
+
+			IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
+			{
+				return new ImageAnyView(owner(), this, setup, ObjectType::ImageReadOnlyView);
 			}
 
 			IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::ImageWritableView);
 			}
 
 			IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
 			{
-				return new ImageAnyView(owner(), this, nullptr, setup);
+				return new ImageAnyView(owner(), this, setup, ObjectType::RenderTargetView);
 			}
 
 			//--
 
-			void Image::applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area)
+			void Image::initializeFromStaging(IBaseCopyQueueStagingArea* baseData)
 			{
-				PC_SCOPE_LVL1(ImageCopyFromBuffer);
+				PC_SCOPE_LVL1(ImageAsyncCopy);
 
 				ensureCreated();
 
-				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, area.apiPointer.gl));
-				
-				for (const auto& atom : atoms)
-				{
-					const auto& im = atom.copyElement.image;
+				const auto* data = static_cast<CopyQueueStagingArea*>(baseData);
 
-					const auto rowLength = setup().calcRowLength(im.mip);
-					const auto mipHeight = setup().calcMipHeight(im.mip);
+				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, data->glBuffer));
+				
+				for (const auto& atom : data->writeAtoms)
+				{
+					const auto rowLength = setup().calcRowLength(atom.mip);
+
+					const auto mipWidth = setup().calcMipWidth(atom.mip);
+					const auto mipHeight = setup().calcMipHeight(atom.mip);
+					const auto mipDepth = setup().calcMipDepth(atom.mip);
 
 					const auto pixelSize = GetImageFormatInfo(setup().format).bitsPerPixel / 8;
 					//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
@@ -248,35 +301,82 @@ namespace rendering
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, atom.stagingAreaOffset / pixelSize));
+					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, atom.internalOffset / pixelSize));
 
 					// TODO: support for sub-part ?
+
+					/*// get texture type
+					switch (m_glViewType)
+					{
+					case GL_TEXTURE_1D:
+						GL_PROTECT(glCopyTextureSubImage1D(m_glImage, atom.mip, 
+							0, // destX
+							0, 0, // srcX, srcY
+							mipWidth)); // width, height
+						break;
+
+					case GL_TEXTURE_2D:
+						GL_PROTECT(glCopyTextureSubImage2D(m_glImage, atom.mip, 
+							0, 0, // destX, destY
+							0, 0, // srcX, srcY
+							mipWidth, mipHeight)); // width, height
+						break;
+
+					case GL_TEXTURE_CUBE_MAP:
+					case GL_TEXTURE_CUBE_MAP_ARRAY:
+					case GL_TEXTURE_2D_ARRAY:
+						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, atom.mip, 
+							0, 0, atom.slice, // destX, destY, slice
+							0, 0, // srcX, srcY
+							mipWidth, mipHeight)); // width, height
+						break;
+
+					case GL_TEXTURE_3D:
+						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, atom.mip, 
+							0, 0, 0, // destX, destY, destZ
+							0, 0, // srcX, srcY
+							mipWidth, mipHeight)); // width, height
+						break;
+
+					default:
+						FATAL_ERROR("Invalid texture type");
+					}*/
+
+					GLenum glBaseFormat = 0; // GL_RGBA
+					GLenum glBaseType = 0; // GL_FLOAT
+					DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType);
 
 					// get texture type
 					switch (m_glViewType)
 					{
 					case GL_TEXTURE_1D:
-						GL_PROTECT(glCopyTextureSubImage1D(m_glImage, im.mip, 0, 0, 0, setup().width));
+						GL_PROTECT(glTextureSubImage1D(m_glImage, atom.mip,
+							0,
+							mipWidth,
+							glBaseFormat, glBaseType, 0));
 						break;
 
 					case GL_TEXTURE_2D:
-						GL_PROTECT(glCopyTextureSubImage2D(m_glImage, im.mip, 0, 0, 0, 0, setup().width, setup().height));
-						break;
-
-					case GL_TEXTURE_2D_ARRAY:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, 0, 0, 0, 0, 0, setup().width, setup().height));
-						break;
-
-					case GL_TEXTURE_3D:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, 0, 0, im.slice, 0, 0, setup().width, setup().height));// TODO:!! , im.sizeZ));
+						GL_PROTECT(glTextureSubImage2D(m_glImage, atom.mip,
+							0, 0,
+							mipWidth, mipHeight,
+							glBaseFormat, glBaseType, 0));
 						break;
 
 					case GL_TEXTURE_CUBE_MAP:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, 0, 0, im.slice, 0, 0, setup().width, setup().height));
+					case GL_TEXTURE_CUBE_MAP_ARRAY:
+					case GL_TEXTURE_2D_ARRAY:
+						GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
+							0, 0, atom.slice,
+							mipWidth, mipHeight, 1,
+							glBaseFormat, glBaseType, 0));
 						break;
 
-					case GL_TEXTURE_CUBE_MAP_ARRAY:
-						GL_PROTECT(glCopyTextureSubImage3D(m_glImage, im.mip, 0, 0, im.slice, 0, 0, setup().width, setup().height));
+					case GL_TEXTURE_3D:
+						GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
+							0, 0, 0,
+							mipWidth, mipHeight, mipDepth,
+							glBaseFormat, glBaseType, 0));
 						break;
 
 					default:
@@ -287,16 +387,88 @@ namespace rendering
 				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 			}
 
+			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+			{
+				PC_SCOPE_LVL1(ImageDynamicCopy);
+
+				ensureCreated();
+
+				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
+				GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+				GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, range.image.sizeX));
+				GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, range.image.sizeY));
+				GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0));
+
+				GLenum glBaseFormat = 0; // GL_RGBA
+				GLenum glBaseType = 0; // GL_FLOAT
+				DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType);
+
+				// get texture type
+				switch (m_glViewType)
+				{
+				case GL_TEXTURE_1D:
+					GL_PROTECT(glTextureSubImage1D(m_glImage, range.image.mip, 
+						range.image.offsetX, 
+						range.image.sizeX, 
+						glBaseFormat, glBaseType, data));
+					break;
+
+				case GL_TEXTURE_2D:
+					GL_PROTECT(glTextureSubImage2D(m_glImage, range.image.mip, 
+						range.image.offsetX, range.image.offsetY, 
+						range.image.sizeX, range.image.sizeY, 
+						glBaseFormat, glBaseType, data));
+					break;
+
+				case GL_TEXTURE_CUBE_MAP:
+				case GL_TEXTURE_CUBE_MAP_ARRAY:
+				case GL_TEXTURE_2D_ARRAY:
+					GL_PROTECT(glTextureSubImage3D(m_glImage, range.image.mip, 
+						range.image.offsetX, range.image.offsetY, range.image.slice, 
+						range.image.sizeX, range.image.sizeY, 1, 
+						glBaseFormat, glBaseType, data));
+					break;
+
+				case GL_TEXTURE_3D:
+					GL_PROTECT(glTextureSubImage3D(m_glImage, range.image.mip,
+						range.image.offsetX, range.image.offsetY, range.image.offsetZ,
+						range.image.sizeX, range.image.sizeY, range.image.sizeZ,
+						glBaseFormat, glBaseType, data));
+					break;
+
+				default:
+					FATAL_ERROR("Invalid texture type");
+				}
+			}
+
+			void Image::downloadIntoArea(IBaseDownloadArea* area, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+
+			}
+
+			void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+
+			}
+
+
 			//--
 
-			ImageAnyView::ImageAnyView(Thread* owner, Image* img, Sampler* sampler, const Setup& setup)
-				: IBaseImageView(owner, setup.writable ? ObjectType::ImageWritableView : ObjectType::ImageView, img, sampler, setup)
+			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType)
+				: IBaseImageView(owner, viewType, img, setup)
 			{}
 
 			ImageAnyView::~ImageAnyView()
 			{
 				if (m_glViewObject && m_glViewObject != image()->object())
 				{
+					owner()->objectCache()->notifyImageDeleted(m_glViewObject);
+
 					GL_PROTECT(glDeleteTextures(1, &m_glViewObject));
 					m_glViewObject = 0;
 				}
@@ -344,6 +516,9 @@ namespace rendering
 					{
 						GL_PROTECT(glGenTextures(1, &m_glViewObject));
 						GL_PROTECT(glTextureView(m_glViewObject, image()->viewType(), glImage, image()->format(), setup().firstMip, setup().numMips, setup().firstSlice, setup().numSlices));
+						GL_PROTECT(glObjectLabel(GL_TEXTURE, m_glViewObject, -1, base::TempString("ImageView {} {},{} +{},{} of {}",
+							image()->setup().format, setup().firstMip, setup().firstSlice, setup().numMips, setup().numSlices, image()->setup().label).c_str()));
+
 						//TRACE_SPAM("GL: Created image view {} of {} with {}", m_glViewObject, glImage, setup());
 					}
 				}

@@ -33,7 +33,8 @@ namespace rendering
 			base::mem::LinearAllocator& mem,
 			CodeLibrary& lib, // TODO: const!
 			AssembledShader& outAssembledShader,
-			base::StringView sourceContentDebugPath,
+			base::StringView contextPath, // copied into program data, debug source file location, can be empty
+			base::StringView contextOptions, // copied into program data, debug source file compilation options, can be empty
 			base::parser::IErrorReporter& err);
 
 		//--

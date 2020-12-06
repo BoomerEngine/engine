@@ -17,9 +17,9 @@ namespace rendering
 
     void DescriptorEntry::view(const IDeviceObjectView* ptr, uint32_t offset/*= 0*/)
     {
-        DEBUG_CHECK_RETURN(ptr != nullptr);
-        DEBUG_CHECK_RETURN(id.empty());
-        DEBUG_CHECK_RETURN(type == DeviceObjectViewType::Invalid);
+        DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL view to descriptor");
+        DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+        DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
         
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
 		viewPtr = ptr;
@@ -28,22 +28,30 @@ namespace rendering
         this->id = ptr->viewId();
         this->type = ptr->viewType();
         this->offset = offset;
-        this->size = 0;
-        this->offsetPtr = nullptr;
     }
+
+	void DescriptorEntry::sampler(const SamplerObject* ptr)
+	{
+		DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+		DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
+		DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL sampler to descriptor");
+
+		this->id = ptr->id();
+		this->objectPtr = ptr;
+		this->type = DeviceObjectViewType::Sampler;
+	}
 
     void DescriptorEntry::constants(const void* data, uint32_t size)
     {
-        DEBUG_CHECK_RETURN(id.empty());
-        DEBUG_CHECK_RETURN(type == DeviceObjectViewType::Invalid);
-        DEBUG_CHECK_RETURN(data != nullptr);
-        DEBUG_CHECK_RETURN(size != 0);
+		DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+		DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
+        DEBUG_CHECK_RETURN_EX(data != nullptr, "No data in inlined constants buffer");
+        DEBUG_CHECK_RETURN_EX(size != 0, "No data in inlined constants buffer");
 
         this->id = ObjectID();
 		this->type = DeviceObjectViewType::ConstantBuffer;
-		this->offset = 0;
 		this->size = size;
-		this->offsetPtr = (const uint32_t*)data;
+		this->inlinedConstants.sourceDataPtr = data;
     }
 
     void DescriptorEntry::print(base::IFormatStream& f) const
@@ -73,6 +81,10 @@ namespace rendering
             case DeviceObjectViewType::BufferStructuredWritable:
                 f.appendf("SBUAV {}", id);
                 break;
+
+			case DeviceObjectViewType::SampledImage:
+				f.appendf("SSRV {}", id);
+				break;
 
             case DeviceObjectViewType::Image:
                 f.appendf("ISRV {}", id);

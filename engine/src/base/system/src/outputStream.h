@@ -28,7 +28,7 @@ namespace base
             void detach(ILogSink* sink);
 
             // print line to all sinks
-            void print(OutputLevel level, const char* file, uint32_t line, const char* context, const char* text);
+            void print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text);
 
             //--
 
@@ -86,7 +86,7 @@ namespace base
 
             void changeContext(const char* contextName);
 
-            void takeOwnership(OutputLevel level, const char* contextFile, uint32_t contextLine);
+            void takeOwnership(OutputLevel level, const char* moduleName, const char* contextFile, uint32_t contextLine);
             void releaseOwnership();
 
             ILogSink* mountLocalSink(ILogSink* localSink);
@@ -100,7 +100,8 @@ namespace base
 
             uint32_t m_currentLine = 0;
             const char* m_curentFile = nullptr;
-            const char* m_curentContext = nullptr;
+			const char* m_curentContext = nullptr;
+            const char* m_curentModule = nullptr;
             OutputLevel m_currentLevel = OutputLevel::Info;
 
             ILogSink* m_localSink = nullptr;

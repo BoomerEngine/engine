@@ -59,7 +59,7 @@ namespace base
 
         void IFunctionStackFrame::dump()
         {
-            print(base::logging::Log::Stream(logging::OutputLevel::Info, __FILE__, __LINE__));
+            print(TRACE_STREAM_INFO());
         }
 
         //---
