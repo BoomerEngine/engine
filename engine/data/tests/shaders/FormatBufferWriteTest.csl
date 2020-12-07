@@ -43,6 +43,7 @@ export shader VS
 {
 	out vec4 Color;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = VertexData[2*gl_VertexID + 0].xyz1;

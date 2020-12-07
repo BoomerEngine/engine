@@ -92,6 +92,21 @@ namespace rendering
 
 			}
 
+			void Buffer::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+
+			}
+
+			void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+
+			}
+
 			//--		
 
 			BufferAnyView::BufferAnyView(Thread* drv, Buffer* buffer, const Setup& setup)

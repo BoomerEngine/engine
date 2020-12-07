@@ -236,7 +236,7 @@ namespace rendering
         {
 			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
             DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
-			DEBUG_CHECK_RETURN_EX(viewportCount < 16, "To many viewports");
+			DEBUG_CHECK_RETURN_EX(viewportCount <= 16, "To many viewports");
 
             auto frameBufferValid = frameBuffer.validate();
             DEBUG_CHECK_RETURN_EX(frameBufferValid , "Cannot enter a pass with invalid frame buffer");
@@ -1274,6 +1274,73 @@ namespace rendering
 				op->counts[0] = base::Align<uint32_t>(threadCountX, co->groupSizeX()) / co->groupSizeX();
 				op->counts[1] = base::Align<uint32_t>(threadCountY, co->groupSizeY()) / co->groupSizeY();
 				op->counts[2] = base::Align<uint32_t>(threadCountZ, co->groupSizeZ()) / co->groupSizeZ();
+			}
+		}
+
+		//--
+
+		bool CommandWriter::validateIndirectDraw(const BufferObject* buffer, uint32_t offsetInBuffer, uint32_t commandStride)
+		{
+			DEBUG_CHECK_RETURN_EX_V(buffer != nullptr, "No indirect arguments buffer", false);
+			DEBUG_CHECK_RETURN_EX_V(buffer->indirectArgs(), "Buffer is not enabled for indirect rendering", false);
+			DEBUG_CHECK_RETURN_EX_V(buffer->stride() == commandStride, "Buffer stride does not match the command stride", false);
+			DEBUG_CHECK_RETURN_EX_V((offsetInBuffer % commandStride) == 0, "Indirect commands are not aligned in the buffer", false); 
+
+			const auto sizeLeft = buffer->size() - offsetInBuffer;
+			DEBUG_CHECK_RETURN_EX_V(sizeLeft >= commandStride, "Not enough space left in buffer for a full command", false);
+
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			DEBUG_CHECK_RETURN_V(ensureResourceState(buffer, ResourceLayout::IndirectArgument), false);
+#endif
+
+			return true;
+		}
+
+		void CommandWriter::opDrawIndirect(const GraphicsPipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+			DEBUG_CHECK_RETURN(po);
+
+			const auto* metadata = po->shaders()->metadata();
+			if (validateDrawVertexLayout(metadata, 0, 0) && validateParameterBindings(metadata) 
+				&& validateIndirectDraw(buffer, offsetInBuffer, sizeof(GPUDrawArguments)))
+			{
+				auto op = allocCommand<OpDrawIndirect>();
+				op->pipelineObject = po->id();
+				op->argumentBuffer = buffer->id();
+				op->offset = offsetInBuffer;				
+			}
+		}
+
+		void CommandWriter::opDrawIndexedIndirect(const GraphicsPipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+			DEBUG_CHECK_RETURN(po);
+
+			const auto* metadata = po->shaders()->metadata();
+			if (validateDrawVertexLayout(metadata, 0, 0) && validateParameterBindings(metadata)
+				&& validateDrawIndexLayout(0) && validateIndirectDraw(buffer, offsetInBuffer, sizeof(GPUDrawIndexedArguments)))
+			{
+				auto op = allocCommand<OpDrawIndexedIndirect>();
+				op->pipelineObject = po->id();
+				op->argumentBuffer = buffer->id();
+				op->offset = offsetInBuffer;
+			}
+		}
+
+		void CommandWriter::opDispatchGroupsIndirect(const ComputePipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer)
+		{
+			DEBUG_CHECK_RETURN(m_currentPass != nullptr);
+			DEBUG_CHECK_RETURN(po);
+
+			const auto* metadata = po->shaders()->metadata();
+			if (validateParameterBindings(metadata) && validateIndirectDraw(buffer, offsetInBuffer, sizeof(GPUDispatchArguments)))
+			{
+				auto op = allocCommand<OpDispatchIndirect>();
+				op->pipelineObject = po->id();
+				op->argumentBuffer = buffer->id();
+				op->offset = offsetInBuffer;
 			}
 		}
 

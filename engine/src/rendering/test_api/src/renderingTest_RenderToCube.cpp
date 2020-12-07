@@ -32,6 +32,16 @@ namespace rendering
 				outPosition = base::Vector3(0.8f, 0.8f, 0.0f) - outRotation.forward() * 1.2f;
 			}
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				switch (subTestIndex())
+				{
+					case 0: f << "ClearOnly"; break;
+					case 1: f << "SeparateFaces"; break;
+					case 2: f << "GeometryShaderLayer"; break;
+				}
+			}
+
         private:
             SimpleScenePtr m_scene;
 			SimpleScenePtr m_sceneSphere;
@@ -232,8 +242,7 @@ namespace rendering
             {
                 SceneCamera camera;
 				camera.setupDirectionalShadowmap(base::Vector3::ZERO(), m_scene->m_lightPosition);
-				camera.flipY = m_shadowMapRTV->flipped();
-                camera.calcMatrices();
+				camera.calcMatrices();
 
                 {
                     FrameBuffer fb;
@@ -296,7 +305,6 @@ namespace rendering
 
 						SceneCamera camera;
 						camera.setupCubemap(m_reflectionCenter, i);
-						camera.flipY = m_cubeMapSeparateRTV[i]->flipped();
 						camera.calcMatrices();
 
 						m_scene->draw(cmd, m_shaderDrawToReflectionCube, camera);
@@ -319,7 +327,6 @@ namespace rendering
 					for (uint32_t i = 0; i < 6; ++i)
 					{
 						cameras[i].setupCubemap(m_reflectionCenter, i);
-						cameras[i].flipY = m_cubeMapSeparateRTV[i]->flipped();
 						cameras[i].calcMatrices();
 					}
 
@@ -344,8 +351,7 @@ namespace rendering
 				camera.aspect = backBufferView->width() / (float)backBufferView->height();
 				camera.position = m_cameraPosition;
 				camera.rotation = m_cameraAngles.toQuat();
-				camera.flipY = backBufferView->flipped();
-				camera.calcMatrices();
+				camera.calcMatrices(backBufferView->flipped());
 
 				FrameBuffer fb;
 				fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);

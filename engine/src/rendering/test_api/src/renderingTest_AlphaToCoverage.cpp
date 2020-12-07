@@ -35,6 +35,13 @@ namespace rendering
 
 			ImageObjectPtr m_resolvedColorBuffer;
 			ImageSampledViewPtr m_resolvedColorBufferSRV;
+
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				f.appendf("MSAAx{}", subTestIndex() / 2);
+				if (subTestIndex() & 1)
+					f.append(" Dithered");
+			}
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_AlphaToCoverage);

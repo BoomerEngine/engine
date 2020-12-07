@@ -762,22 +762,22 @@ namespace rendering
 						f.append("out float gl_FragDepth;\n"); // TODO: depth conditions!
 					//if (buildInMask.test(shader::ShaderBuiltIn::SampleMask))
 //						f.append("out int gl_SampleMask[];\n");
-					if (buildInMask.test(shader::ShaderBuiltIn::Target0))
+					/*if (buildInMask.test(shader::ShaderBuiltIn::Target0))
 						f.append("out layout(location=0) vec4 _ColorTarget0;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target1))
-						f.append("out layout(location=1) vec4 _ColorTTarget1;\n");
+						f.append("out layout(location=1) vec4 _ColorTarget1;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target2))
-						f.append("out layout(location=2) vec4 _ColorTTarget2;\n");
+						f.append("out layout(location=2) vec4 _ColorTarget2;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target3))
-						f.append("out layout(location=3) vec4 _ColorTTarget3;\n");
+						f.append("out layout(location=3) vec4 _ColorTarget3;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target4))
-						f.append("out layout(location=4) vec4 _ColorTTarget4;\n");
+						f.append("out layout(location=4) vec4 _ColorTarget4;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target5))
-						f.append("out layout(location=5) vec4 _ColorTTarget5;\n");
+						f.append("out layout(location=5) vec4 _ColorTarget5;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target6))
 						f.append("out layout(location=6) vec4 _ColorTarget6;\n");
 					if (buildInMask.test(shader::ShaderBuiltIn::Target7))
-						f.append("out layout(location=7) vec4 _ColorTarget7;\n");
+						f.append("out layout(location=7) vec4 _ColorTarget7;\n");*/
 
 
 				}
@@ -947,7 +947,12 @@ namespace rendering
 				printStatement(f, func->code, 4);
 
 				if (func == m_stage->entryFunction && m_stage->stage == ShaderStage::Vertex)
+				{
 					f << "  gl_Position.z = 2.0 * gl_Position.z - gl_Position.w;\n";
+
+					if (HasAttribute(m_stage->entryFunction->attributes, "glflip"_id))
+						f << "  gl_Position.y = -gl_Position.y;\n";
+				}
 
 				f << "}\n";
 			}
@@ -1237,7 +1242,7 @@ namespace rendering
 				case shader::ShaderBuiltIn::BaseInstance: f << "gl_BaseInstance"; return;
 				case shader::ShaderBuiltIn::PatchVerticesIn: f << "gl_PatchVertices"; return;
 				case shader::ShaderBuiltIn::PrimitiveID: f << "gl_PrimitiveID"; return;
-				case shader::ShaderBuiltIn::PrimitiveIDIn: f << "gl_PrimitiveID"; return;
+				case shader::ShaderBuiltIn::PrimitiveIDIn: f << "gl_PrimitiveIDIn"; return;
 				case shader::ShaderBuiltIn::InvocationID: f << "gl_InvocationID"; return;
 				case shader::ShaderBuiltIn::TessLevelOuter: f << ""; return;
 				case shader::ShaderBuiltIn::TessLevelInner: f << ""; return;
@@ -1249,14 +1254,14 @@ namespace rendering
 				case shader::ShaderBuiltIn::SamplePosition: f << "gl_SamplePosition"; return;
 				case shader::ShaderBuiltIn::SampleMaskIn: f << "gl_SampleMaskIn[0]"; return;
 				case shader::ShaderBuiltIn::SampleMask: f << "gl_SampleMask[0]"; return;
-				case shader::ShaderBuiltIn::Target0: f << "_ColorTarget0"; return;
-				case shader::ShaderBuiltIn::Target1: f << "_ColorTarget1"; return;
-				case shader::ShaderBuiltIn::Target2: f << "_ColorTarget2"; return;
-				case shader::ShaderBuiltIn::Target3: f << "_ColorTarget3"; return;
-				case shader::ShaderBuiltIn::Target4: f << "_ColorTarget4"; return;
-				case shader::ShaderBuiltIn::Target5: f << "_ColorTarget5"; return;
-				case shader::ShaderBuiltIn::Target6: f << "_ColorTarget6"; return;
-				case shader::ShaderBuiltIn::Target7: f << "_ColorTarget7"; return;
+				case shader::ShaderBuiltIn::Target0: f << "gl_FragData[0]"; return;
+				case shader::ShaderBuiltIn::Target1: f << "gl_FragData[1]"; return;
+				case shader::ShaderBuiltIn::Target2: f << "gl_FragData[2]"; return;
+				case shader::ShaderBuiltIn::Target3: f << "gl_FragData[3]"; return;
+				case shader::ShaderBuiltIn::Target4: f << "gl_FragData[4]"; return;
+				case shader::ShaderBuiltIn::Target5: f << "gl_FragData[5]"; return;
+				case shader::ShaderBuiltIn::Target6: f << "gl_FragData[6]"; return;
+				case shader::ShaderBuiltIn::Target7: f << "gl_FragData[7]"; return;
 				case shader::ShaderBuiltIn::Depth: f << "gl_FragDepth"; return;
 				case shader::ShaderBuiltIn::Layer: f << "gl_Layer"; return;
 				case shader::ShaderBuiltIn::ViewportIndex: f << "gl_ViewportIndex"; return;

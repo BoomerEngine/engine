@@ -317,6 +317,31 @@ namespace rendering
 			uint32_t counts[3];
         };
 
+		//---
+		// INDIRECT
+		//---
+
+		RENDER_DECLARE_OPCODE_DATA(DrawIndirect)
+		{
+			ObjectID pipelineObject;
+			ObjectID argumentBuffer;
+			uint32_t offset = 0;			
+		};
+
+		RENDER_DECLARE_OPCODE_DATA(DrawIndexedIndirect)
+		{
+			ObjectID pipelineObject;
+			ObjectID argumentBuffer;
+			uint32_t offset = 0;
+		};
+
+		RENDER_DECLARE_OPCODE_DATA(DispatchIndirect)
+		{
+			ObjectID pipelineObject;
+			ObjectID argumentBuffer;
+			uint32_t offset = 0;
+		};
+
         //---
         // OTHERS
         //---

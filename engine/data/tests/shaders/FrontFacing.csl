@@ -17,6 +17,7 @@ export shader TestVS
 
 export shader TestPS 
 {
+	attribute(glflip)
 	void main()
 	{
 		gl_Target0 = gl_FrontFacing ? vec4(1,1,0,1) : vec4(0,0,1,1);

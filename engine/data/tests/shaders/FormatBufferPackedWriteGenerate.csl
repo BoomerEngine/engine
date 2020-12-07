@@ -58,6 +58,7 @@ state Generate
 attribute(state=Generate)
 export shader GenerateVS
 {
+	attribute(glflip)
 	void main()
 	{
 		uint x = gl_VertexID % TestParams.SideCount;

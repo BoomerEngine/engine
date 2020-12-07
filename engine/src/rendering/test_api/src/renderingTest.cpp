@@ -221,6 +221,18 @@ namespace rendering
 			return nullptr;
         }
 
+		BufferObjectPtr IRenderingTest::createIndirectBuffer(uint32_t size, uint32_t stride)
+		{
+			BufferCreationInfo info;
+			info.allowUAV = true;
+			info.allowIndirect = true;
+			info.size = size;
+			info.stride = stride;
+			info.label = "IndirectBuffer";
+
+			return createBuffer(info);
+		}
+
 		BufferObjectPtr IRenderingTest::createFormatBuffer(ImageFormat format, uint32_t size, bool allowUAV)
 		{
 			BufferCreationInfo info;

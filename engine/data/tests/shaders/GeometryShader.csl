@@ -76,6 +76,7 @@ export shader SimpleTriangleVS
 	out vec4 Color;
 	out float Size;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = v.pos.xyz1;

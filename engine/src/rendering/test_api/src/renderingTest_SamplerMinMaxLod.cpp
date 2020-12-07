@@ -26,6 +26,15 @@ namespace rendering
             virtual void initialize() override final;            
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				switch (subTestIndex())
+				{
+				case 0: f << "Point"; break;
+				case 1: f << "Linear"; break;
+				}
+			}
+
         private:
             BufferObjectPtr m_vertexBuffer;
             ImageObjectPtr m_sampledImage;

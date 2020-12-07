@@ -26,7 +26,7 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
-            base::FastRandState m_random;
+            base::FastRandState m_random;			
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_ClearInsidePass);

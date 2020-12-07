@@ -13,6 +13,7 @@ export shader TestVS
 {
 	vertex Vertex2D v;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = v.pos.xy01;

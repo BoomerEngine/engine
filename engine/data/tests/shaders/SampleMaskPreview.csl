@@ -35,6 +35,7 @@ export shader PreviewVS
 
 export shader PreviewPS
 {
+	attribute(glflip)
 	void main()
 	{
 		gl_Target0 = textureLoadLod(Texture, gl_FragCoord.xy, 0);

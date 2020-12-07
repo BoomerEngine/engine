@@ -25,6 +25,14 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				if (subTestIndex() == 0)
+					f.append("NoThreads");
+				else
+					f.appendf("Threads{}", 1 << subTestIndex());
+			}
+
         private:
             BufferObjectPtr m_vertexBuffer;
             GraphicsPipelineObjectPtr m_shaders;

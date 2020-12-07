@@ -26,6 +26,16 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				switch (subTestIndex())
+				{
+					case 0: f << "LinearizeDepth"; break;
+					case 1: f << "ReconstructNormals"; break;
+					case 2: f << "SimpleSSAO"; break;
+				}
+			}
+
         private:
 			GraphicsPassLayoutObjectPtr m_scenePassLayout;
             GraphicsPipelineObjectPtr m_shaderScene;
@@ -174,7 +184,6 @@ namespace rendering
             SceneCamera camera;
 			camera.position = base::Vector3(-4.5f, 0.5f, 1.5f);
 			camera.rotation = base::Angles(10.0f, 0.0f, 0.0f).toQuat();
-			camera.flipY = m_colorBufferRTV->flipped();
 			camera.calcMatrices();
 
             //-----------

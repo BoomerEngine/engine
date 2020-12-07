@@ -336,6 +336,11 @@ namespace rendering
             template< typename T >
             INLINE BufferObjectPtr createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
 
+			// create indirect buffer, accessible from compute via UAV
+			BufferObjectPtr createIndirectBuffer(uint32_t size, uint32_t stride);
+
+			//--
+
             // create image
             ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData = nullptr);
 

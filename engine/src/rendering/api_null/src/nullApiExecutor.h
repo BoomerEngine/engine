@@ -36,11 +36,15 @@ namespace rendering
 				virtual void runClearDepthStencil(const command::OpClearDepthStencil &) override final;
 				virtual void runClearImage(const command::OpClearImage &) override final;
 				virtual void runClearBuffer(const command::OpClearBuffer&) override final;
-				virtual void runDraw(const command::OpDraw &) override final;
-				virtual void runDrawIndexed(const command::OpDrawIndexed &) override final;
-				virtual void runDispatch(const command::OpDispatch &) override final;
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier &) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier &) override final;
+
+				virtual void runDraw(const command::OpDraw&) override final;
+				virtual void runDrawIndexed(const command::OpDrawIndexed&) override final;
+				virtual void runDispatch(const command::OpDispatch&) override final;
+				virtual void runDrawIndirect(const command::OpDrawIndirect&) override final;
+				virtual void runDrawIndexedIndirect(const command::OpDrawIndexedIndirect&) override final;
+				virtual void runDispatchIndirect(const command::OpDispatchIndirect&) override final;
 
 				virtual void runSetViewportRect(const command::OpSetViewportRect& op) override final;
 				virtual void runSetScissorRect(const command::OpSetScissorRect& op) override final;

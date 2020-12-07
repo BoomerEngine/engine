@@ -54,6 +54,7 @@ namespace rendering
 				m_currentRenderState.common.scissorEnabled = false;
 				m_drawRenderStateMask |= State_ScissorEnabled;
 
+				//auto minCount = std::max<uint32_t>(m_pass.viewportCount, m_pass.colorCount);
 				for (uint32_t i = 0; i < m_pass.viewportCount; ++i)
 				{
 					const auto w = m_pass.width;
@@ -61,7 +62,9 @@ namespace rendering
 					GL_PROTECT(glViewportIndexedf(i, 0, 0, w, h));
 					GL_PROTECT(glDepthRangeIndexed(i, 0, 1));
 					GL_PROTECT(glScissorIndexed(i, 0, 0, w, h));
+					//GL_PROTECT(glColorMaski(i, true, true, true, true));
 				}
+				GL_PROTECT(glDisable(GL_SCISSOR_TEST));
 			}
 
 			void FrameExecutor::clearFrameBuffer(const FrameBuffer& fb)
@@ -70,13 +73,16 @@ namespace rendering
 				{
 					if (fb.color[i].viewID && fb.color[i].loadOp == LoadOp::Clear)
 					{
-						GL_PROTECT(glClearBufferfv(GL_COLOR, i, fb.color[i].clearColorValues));
+						static base::FastRandState rnd;
+						//GL_PROTECT(glClearBufferfv(GL_COLOR, i, fb.color[i].clearColorValues));
+						GL_PROTECT(glClearNamedFramebufferfv(m_pass.m_glFrameBuffer, GL_COLOR, i, (GLfloat*)&fb.color[i].clearColorValues));
 					}
 				}
 
 				if (fb.depth.viewID && fb.depth.loadOp == LoadOp::Clear)
 				{
-					GL_PROTECT(glClearBufferfi(GL_DEPTH_STENCIL, 0, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
+					GL_PROTECT(glClearNamedFramebufferfi(m_pass.m_glFrameBuffer, GL_DEPTH_STENCIL, 0, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
+					//GL_PROTECT(glClearBufferfi(GL_DEPTH_STENCIL, 0, GL_DEPTH_STENCIL, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
 				}
 			}
 
@@ -116,8 +122,12 @@ namespace rendering
 				{
 					if (auto* object = objects()->resolveStatic<api::Output>(m_activeSwapchain))
 						m_pass.m_valid = object->acquire();
-
+				
 					GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+					m_pass.m_glFrameBuffer = 0;
+
+					/*GLenum buffers[1] = { GL_COLOR_ATTACHMENT0 };
+					GL_PROTECT(glDrawBuffers(1, buffers));*/
 				}
 				else
 				{
@@ -127,15 +137,16 @@ namespace rendering
 						if (auto glFrameBuffer = cache()->buildFramebuffer(targets))
 						{
 							GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, glFrameBuffer));
-							m_pass.m_valid = true;
+							m_pass.m_glFrameBuffer = glFrameBuffer;
+							m_pass.m_valid = true;							
 						}
 					}
 				}
 
 				if (m_pass.m_valid)
 				{
-					clearFrameBuffer(op.frameBuffer);
 					resetViewport(op.frameBuffer);
+					clearFrameBuffer(op.frameBuffer);
 				}
 			}
 
@@ -144,7 +155,14 @@ namespace rendering
 				if (m_pass.m_valid)
 				{
 					GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+					m_pass.m_glFrameBuffer = 0;
 					m_pass.m_valid = false;
+				}
+
+				if (m_glIndirectBuffer)
+				{
+					GL_PROTECT(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
+					m_glIndirectBuffer = 0;
 				}
 
 				m_currentRenderState = StateValues();
@@ -509,6 +527,58 @@ namespace rendering
 				{
 					GL_PROTECT(glDispatchCompute(op.counts[0], op.counts[1], op.counts[2]));
 				}
+			}
+
+			bool FrameExecutor::prepareIndirectBuffer(ObjectID indirectBufferId)
+			{
+				auto* buffer = objects()->resolveStatic<Buffer>(indirectBufferId);;
+				DEBUG_CHECK_RETURN_EX_V(buffer, "Indirect buffer unloaded while command buffer was pending processing", false);
+				DEBUG_CHECK_RETURN_EX_V(buffer->setup().allowIndirect, "Buffer not meant for indirect drawing", false);
+
+				auto resolved = buffer->resolve();
+				if (m_glIndirectBuffer != resolved.glBuffer)
+				{
+					m_glIndirectBuffer = resolved.glBuffer;
+					GL_PROTECT(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_glIndirectBuffer));
+				}
+
+				return true;
+			}
+
+			void FrameExecutor::runDrawIndirect(const command::OpDrawIndirect& op)
+			{
+				auto* pso = objects()->resolveStatic<GraphicsPipeline>(op.pipelineObject);
+				DEBUG_CHECK_RETURN_EX(pso, "Shaders unloaded while command buffer was pending processing");
+
+				if (prepareDraw(pso, false) && prepareIndirectBuffer(op.argumentBuffer))
+				{
+					const auto glTopology = pso->staticRenderState().polygon.topology;
+					GL_PROTECT(glDrawArraysIndirect(glTopology, (void*)op.offset));
+				}
+			}
+
+			void FrameExecutor::runDrawIndexedIndirect(const command::OpDrawIndexedIndirect& op)
+			{
+				auto* pso = objects()->resolveStatic<GraphicsPipeline>(op.pipelineObject);
+				DEBUG_CHECK_RETURN_EX(pso, "Shaders unloaded while command buffer was pending processing");
+
+				if (prepareDraw(pso, true) && prepareIndirectBuffer(op.argumentBuffer))
+				{
+					GLenum indexType = 0;
+					ASSERT(m_geometry.indexFormat == ImageFormat::R16_UINT || m_geometry.indexFormat == ImageFormat::R32_UINT);
+					if (m_geometry.indexFormat == ImageFormat::R16_UINT)
+						indexType = GL_UNSIGNED_SHORT;
+					else if (m_geometry.indexFormat == ImageFormat::R32_UINT)
+						indexType = GL_UNSIGNED_INT;
+
+					const auto glTopology = pso->staticRenderState().polygon.topology;
+					GL_PROTECT(glDrawElementsIndirect(glTopology, indexType, (void*)op.offset));
+				}
+			}
+
+			void FrameExecutor::runDispatchIndirect(const command::OpDispatchIndirect& op)
+			{
+
 			}
 
 			static GLuint FlagsForResourceLayout(ResourceLayout layout, bool buffer)

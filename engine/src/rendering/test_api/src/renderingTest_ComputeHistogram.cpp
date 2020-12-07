@@ -27,6 +27,11 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				f.appendf("Image{}", subTestIndex());;
+			}
+
         private:
             static const auto NUM_BUCKETS = 256;
 

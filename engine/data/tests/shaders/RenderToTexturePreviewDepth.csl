@@ -30,6 +30,7 @@ export shader PreviewVS
 
 	out vec2 UV;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = v.pos.xyz1;

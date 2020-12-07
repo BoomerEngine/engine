@@ -26,14 +26,13 @@ namespace rendering
             float fov = 90.0f;	
             float zoom = 1.0f;
 			float farPlane = 50.0f;
-			bool flipY = false;
 
             SceneCamera();
 
 			void setupCubemap(const base::Vector3& pos, int face, float farPlane = 20.0f);
 			void setupDirectionalShadowmap(const base::Vector3& target, const base::Vector3& source, float zoom = 10.0f, float farPlane = 50.0f);
 
-            void calcMatrices();
+            void calcMatrices(bool flipCamera = false);
 
             base::Matrix m_WorldToCamera;
             base::Matrix m_CameraToScreen;

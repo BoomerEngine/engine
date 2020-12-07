@@ -204,6 +204,11 @@ namespace rendering
 				builtIn = shader::ShaderBuiltIn::PrimitiveID;
 				assignable = true;
 			}
+			else if (name == "gl_PrimitiveIDIn"_id)
+			{
+				type = m_library->typeLibrary().integerType(1);
+				builtIn = shader::ShaderBuiltIn::PrimitiveID;
+			}
 			else if (name == "gl_InvocationID"_id)
 			{
 				type = m_library->typeLibrary().integerType(1);

@@ -338,6 +338,33 @@ namespace rendering
 
     //--
 
+#pragma pack(push)
+#pragma pack(4)
+	struct GPUDispatchArguments
+	{
+		uint32_t groupCountX = 1;
+		uint32_t groupCountY = 1;
+		uint32_t groupCountZ = 1;
+	};
+
+	struct GPUDrawIndexedArguments
+	{
+		uint32_t indexCountPerInstance = 0;
+		uint32_t instanceCount = 0;
+		uint32_t startIndexLocation = 0;
+		uint32_t baseVertexLocation = 0;
+		uint32_t startInstanceLocation = 0;
+	};
+
+	struct GPUDrawArguments {
+		uint32_t vertexCountPerInstance = 0;
+		uint32_t instanceCount = 0;
+		uint32_t startVertexLocation = 0;
+		uint32_t startInstanceLocation = 0;
+	}; 
+#pragma pack(pop)
+
+
 } // rendering
 
 #include "renderingObjectID.h"

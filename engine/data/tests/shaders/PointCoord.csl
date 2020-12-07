@@ -17,6 +17,7 @@ export shader SimpleTriangleVS
 {
 	vertex Simple3DVertex v;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = v.pos.xyz1;

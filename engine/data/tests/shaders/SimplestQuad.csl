@@ -12,6 +12,7 @@ export shader TestVS
 {
 	out vec4 Color;
 	
+	attribute(glflip)
 	void main()
 	{
 		gl_Position.x = (gl_VertexID & 1) ? -0.5f : 0.5f;

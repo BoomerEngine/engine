@@ -37,6 +37,7 @@ state Lines
 attribute(state=Lines)
 export shader DrawVS
 {
+	attribute(glflip)
 	void main()
 	{
 		float histogramMinRange = intBitsToFloat(HistogramBuffer[NumBuckets+0]);

@@ -97,12 +97,14 @@ shader SceneVS
 	out vec3 WorldPosition;
 	out vec3 WorldNormal;
 	out vec2 UV;
+	out float VertexID;
 
 	void main()
 	{
 		WorldPosition = (LocalToWorld * v.pos.xyz1).xyz;
 		WorldNormal = (LocalToWorld * v.normal.xyz0).xyz;
 		UV = v.uv * UVScale;
+		VertexID = gl_VertexID;
 
 		gl_Position = Camera[0].WorldToScreen * WorldPosition.xyz1;
 	}

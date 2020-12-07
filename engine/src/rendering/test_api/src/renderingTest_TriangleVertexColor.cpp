@@ -33,7 +33,7 @@ namespace rendering
         };
 
         RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleVertexColor);
-            RTTI_METADATA(RenderingTestOrderMetadata).order(11);
+            RTTI_METADATA(RenderingTestOrderMetadata).order(13);
         RTTI_END_TYPE();
 
         //---       

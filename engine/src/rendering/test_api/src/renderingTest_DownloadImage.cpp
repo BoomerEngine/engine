@@ -90,6 +90,14 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				if (subTestIndex() == 0)
+					f.append("DownloadColor");
+				else
+					f.append("DownloadDepth");
+			}
+
         private:
             SimpleScenePtr m_scene;
             SceneCamera m_camera;
@@ -237,7 +245,6 @@ namespace rendering
 				SceneCamera camera;
 				camera.position = base::Vector3(-4.5f, 0.5f, 1.5f);
 				camera.rotation = base::Angles(10.0f, 0.0f, 0.0f).toQuat();
-				camera.flipY = m_colorBufferRTV->flipped();
 				camera.calcMatrices();
 
 				// render shit to render targets

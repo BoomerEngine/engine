@@ -59,6 +59,10 @@ RENDER_COMMAND_OPCODE(Draw) // draw non-indexed geometry
 RENDER_COMMAND_OPCODE(DrawIndexed) // draw indexed geometry
 RENDER_COMMAND_OPCODE(Dispatch) // dispatch a compute shader
 
+RENDER_COMMAND_OPCODE(DrawIndirect) // draw non-indexed geometry indirectly
+RENDER_COMMAND_OPCODE(DrawIndexedIndirect) // draw indexed geometry indirectly
+RENDER_COMMAND_OPCODE(DispatchIndirect) // dispatch a compute shader indirectly
+
 // -- SYNCHRONIZATION
 
 RENDER_COMMAND_OPCODE(ResourceLayoutBarrier) // create an resource layout transition barrier

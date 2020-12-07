@@ -26,6 +26,7 @@ export shader DrawVS
 		return 400.0f;
 	}
 
+	attribute(glflip)
 	void main()
 	{
 	    Color = v.color.xyz1;

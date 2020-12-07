@@ -43,6 +43,7 @@ export shader SimpleTriangleVS
 {
 	out vec4 Color;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = vec4(VertexPositions[gl_VertexID].x, 

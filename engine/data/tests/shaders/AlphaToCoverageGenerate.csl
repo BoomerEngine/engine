@@ -26,6 +26,7 @@ export shader SimpleVS
 	out vec2 UV;
 	out vec4 Color;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Position = v.pos.xyz1;

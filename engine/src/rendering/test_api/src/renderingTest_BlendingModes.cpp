@@ -26,6 +26,18 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				switch (subTestIndex())
+				{
+				case 0: f << "Add"; break;
+				case 1: f << "Subtract"; break;
+				case 2: f << "ReverseSubtract"; break;
+				case 3: f << "Min"; break;
+				case 4: f << "Max"; break;
+				}
+			}
+
         private:
             BufferObjectPtr m_backgroundBuffer;
 			BufferObjectPtr m_testBuffer;

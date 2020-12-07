@@ -80,6 +80,21 @@ namespace rendering
 			{
 			}
 
+			void FrameExecutor::runDrawIndirect(const command::OpDrawIndirect& op)
+			{
+
+			}
+
+			void FrameExecutor::runDrawIndexedIndirect(const command::OpDrawIndexedIndirect& op)
+			{
+
+			}
+
+			void FrameExecutor::runDispatchIndirect(const command::OpDispatchIndirect& op)
+			{
+
+			}
+
 			void FrameExecutor::runResourceLayoutBarrier(const command::OpResourceLayoutBarrier& op)
 			{
 			}

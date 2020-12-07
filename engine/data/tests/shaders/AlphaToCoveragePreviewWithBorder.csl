@@ -27,6 +27,7 @@ export shader PreviewPS
 {
 	in vec2 UV;
 
+	attribute(glflip)
 	void main()
 	{
 		gl_Target0 = textureLod(Texture, UV.xy, 0);

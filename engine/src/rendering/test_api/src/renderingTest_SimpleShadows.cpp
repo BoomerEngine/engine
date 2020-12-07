@@ -32,6 +32,17 @@ namespace rendering
 				outRotation = base::Angles(15.0f, 0.0f, 0.0f);
 			}
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				switch (subTestIndex())
+				{
+				case 0: f << "NoShadows"; break;
+				case 1: f << "Point"; break;
+				case 2: f << "PCF"; break;
+				case 3: f << "Poison"; break;
+				}
+			}
+
         private:
             SimpleScenePtr m_scene;
 
@@ -124,8 +135,7 @@ namespace rendering
             {
                 SceneCamera camera;
 				camera.setupDirectionalShadowmap(base::Vector3(0, 0, 0), m_scene->m_lightPosition);
-				camera.flipY = m_shadowMapRTV->flipped();
-                camera.calcMatrices();
+				camera.calcMatrices();
 
                 {
                     FrameBuffer fb;
@@ -164,10 +174,9 @@ namespace rendering
             {
                 SceneCamera camera;
                 camera.aspect = backBufferView->width() / (float) backBufferView->height();
-				camera.flipY = backBufferView->flipped();
-                camera.position = m_cameraPosition;
+				camera.position = m_cameraPosition;
 				camera.rotation = m_cameraAngles.toQuat();
-                camera.calcMatrices();
+                camera.calcMatrices(backBufferView->flipped());
 
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);

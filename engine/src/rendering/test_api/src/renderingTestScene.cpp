@@ -55,14 +55,14 @@ namespace rendering
 			rotation = (target - source).toRotator().toQuat();
 		}
 
-        void SceneCamera::calcMatrices()
+        void SceneCamera::calcMatrices(bool flipY)
         {
             //auto position = (fov == 0.0f) ? cameraTarget : cameraPosition;
             //auto rotation = (cameraTarget - cameraPosition).toRotator().toQuat();
 
             static base::Matrix CameraToView(base::Vector4(0, 1, 0, 0), base::Vector4(0, 0, -1, 0), base::Vector4(1, 0, 0, 0), base::Vector4(0, 0, 0, 1));
             static base::Matrix CameraToViewYFlip(base::Vector4(0, 1, 0, 0), base::Vector4(0, 0, 1, 0), base::Vector4(1, 0, 0, 0), base::Vector4(0, 0, 0, 1));
-            const base::Matrix ConvMatrix = flipY ? CameraToViewYFlip : CameraToView;
+            const base::Matrix& ConvMatrix = flipY ? CameraToViewYFlip : CameraToView;
 
             const base::Matrix ViewToCamera = ConvMatrix.inverted();
 
@@ -162,7 +162,8 @@ namespace rendering
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
-					
+					obj.m_params.UVScale = base::Vector2(10, 10);
+
 					auto texture = owner.loadImage2D("checker_d.png", true, true);
 					obj.m_params.Texture = texture->createSampledView();
                 }
@@ -312,6 +313,7 @@ namespace rendering
                     auto& obj = ret->m_objects.emplaceBack();
                     obj.m_mesh = mesh;
                     obj.m_params.DiffuseColor = base::Vector4::ONE();
+					obj.m_params.UVScale = base::Vector2(10, 10);
                     
 					auto texture = owner.loadImage2D("checker_d.png", true, true);
 					obj.m_params.Texture = texture->createSampledView();

@@ -151,13 +151,17 @@ namespace rendering
 				if (ret->configured)
 					return true;
 
-				for (uint32_t i=0; i<FrameBufferTargets::MAX_FRAMEBUFFER_TARGETS; ++i)
+				static base::FastRandState rnd;
+
+				base::InplaceArray<GLenum, 10> buffers;
+				for (uint32_t i = 0; i < FrameBufferTargets::MAX_FRAMEBUFFER_TARGETS; ++i)
 				{
 					const auto& image = ret->targets.images[i];
 					if (i && !image.glImageView)
 						break;
 
-					const auto glAttachmentType = FrameBufferTargets::glAttachmentNames[i];
+					auto glAttachmentType = FrameBufferTargets::glAttachmentNames[i];
+
 					if (image.glViewType == GL_RENDERBUFFER)
 					{
 						GL_PROTECT(glNamedFramebufferRenderbuffer(ret->glFrameBuffer, glAttachmentType, GL_RENDERBUFFER, image.glImageView));
@@ -174,11 +178,17 @@ namespace rendering
 					{
 						GL_PROTECT(glNamedFramebufferTexture(ret->glFrameBuffer, glAttachmentType, image.glImageView, image.firstMip));
 					}
+
+					if (i >= 1)
+						buffers.pushBack(glAttachmentType);
 				}
+
+				// specify color outputs
+				GL_PROTECT(glNamedFramebufferDrawBuffers(ret->glFrameBuffer, buffers.size(), buffers.typedData()));
 
 				// check the frame buffer
 				GLenum status = glCheckNamedFramebufferStatus(ret->glFrameBuffer, GL_FRAMEBUFFER);
-				DEBUG_CHECK_RETURN_EX_V(status == GL_FRAMEBUFFER_COMPLETE, 
+				DEBUG_CHECK_RETURN_EX_V(status == GL_FRAMEBUFFER_COMPLETE,
 					base::TempString("Framebuffer setup is not complete, error: {}", TranslateFramebufferError(status)), false);
 
 				// save as configured
@@ -188,7 +198,7 @@ namespace rendering
 
 			void ObjectCache::notifyImageDeleted(GLuint glImage)
 			{
-				// if we were tracking that image then delete all framebuffers it's in
+				// if we were tracking that image then delete all frame buffers it's in
 				CachedImageInfo* ret = nullptr;
 				if (m_imageMap.find(glImage, ret))
 				{

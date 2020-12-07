@@ -188,6 +188,7 @@ namespace rendering
             void opSetDepthClip(float minBounds, float maxBounds);
             
             //---
+			// drawing
 
             /// draw non-indexed geometry
             void opDraw(const GraphicsPipelineObject* po, uint32_t firstVertex, uint32_t vertexCount);
@@ -206,6 +207,18 @@ namespace rendering
 
 			/// dispatch compute shader, count is given in threads
 			void opDispatchThreads(const ComputePipelineObject* po, uint32_t threadCountX = 1, uint32_t threadCountY = 1, uint32_t threadCountZ = 1);
+
+			//---
+			// simple indirect drawing
+
+			// draw vertices indirectly (via data in gpu buffer)
+			void opDrawIndirect(const GraphicsPipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer);
+
+			// draw indexed vertices indirectly (via data in gpu buffer)
+			void opDrawIndexedIndirect(const GraphicsPipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer);
+
+			/// dispatch compute shader GROUPS indirectly
+			void opDispatchGroupsIndirect(const ComputePipelineObject* po, const BufferObject* buffer, uint32_t offsetInBuffer);
 
             //---
 			// inlined resource updates
@@ -387,6 +400,7 @@ namespace rendering
 			bool validateParameterBindings(const ShaderMetadata* meta);
             bool validateDrawVertexLayout(const ShaderMetadata* meta, uint32_t requiredVertexCount, uint32_t requiredInstanceCount);
 			bool validateDrawIndexLayout(uint32_t requiredElementCount);
+			bool validateIndirectDraw(const BufferObject* buffer, uint32_t offsetInBuffer, uint32_t commandStride);
 
 			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorInfo* layout, const DescriptorEntry* entries, uint32_t count);
             void* allocConstants(uint32_t size, const command::OpUploadConstants*& outCommand);

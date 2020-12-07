@@ -28,6 +28,15 @@ namespace rendering
             virtual void initialize() override final;
             virtual void render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
+			virtual void describeSubtest(base::IFormatStream& f) override
+			{
+				f.appendf("MSAA x{}", m_sampleCount);
+				if (m_useDepth)
+					f.append(" DepthTest");
+				if (m_showSamples)
+					f.append(" Zoom");
+			}
+
         private:
 			GraphicsPipelineObjectPtr m_shaderDraw;
 			GraphicsPipelineObjectPtr m_shaderPreview;

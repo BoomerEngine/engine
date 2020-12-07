@@ -141,13 +141,10 @@ namespace rendering
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_A, GL_ALPHA));
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_BASE_LEVEL, 0));
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAX_LEVEL, setup().numMips - 1));
-
-				// setup some more state :)
-				if (!setup().multisampled())
-				{
-					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-				}
+				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 			}
 
 			void Image::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)

@@ -475,6 +475,17 @@ namespace rendering
 					outBaseFormat = GL_BGRA;
 					break;
 
+				case GL_RGB10_A2UI:
+				case GL_RGB10_A2:
+					outBaseType = GL_RGBA;
+					outBaseFormat = GL_UNSIGNED_INT_2_10_10_10_REV;
+					break;
+
+				case GL_R11F_G11F_B10F:
+					outBaseType = GL_RGB;
+					outBaseFormat = GL_R11F_G11F_B10F;
+					break;
+
 				default:
 					FATAL_ERROR("Unknown format!");
 				}
