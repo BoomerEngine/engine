@@ -30,213 +30,219 @@ namespace rendering
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                base::canvas::GeometryBuilder b;
+				base::canvas::Geometry g;
 
-                CanvasGridBuilder grid(1, 12, 20, c.width(), c.height());
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
 
-                auto middleGray = base::FloatTo255(pow(0.5f, 1.0f / 2.2f));
+					b.antialiasing(true);
 
-                // WHITE
+					CanvasGridBuilder grid(1, 12, 20, c.width(), c.height());
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+					auto middleGray = base::FloatTo255(pow(0.5f, 1.0f / 2.2f));
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// WHITE
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                // middle gray
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::SolidColor(base::Color(middleGray, middleGray, middleGray, 1.0f)));
-                    b.fill();
-                    b.popTransform();
-                }
+					// middle gray
+					{
+						auto r = grid.cell();
 
-                // SRGB test
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::SolidColor(base::Color(middleGray, middleGray, middleGray, 1.0f)));
+						b.fill();
+						b.popTransform();
+					}
 
-                    auto lx = r.width() / 4;
-                    auto rx = 3 * r.width() / 4;
-                    for (int x = lx; x < rx; ++x)
-                    {
-                        b.beginPath();
-                        b.recti(x, 0, 1, r.height());
-                        b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color::WHITE : base::Color::BLACK));
-                        b.fill();
-                    }
+					// SRGB test
+					{
+						auto r = grid.cell();
 
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // RED
+						auto lx = r.width() / 4;
+						auto rx = 3 * r.width() / 4;
+						for (int x = lx; x < rx; ++x)
+						{
+							b.beginPath();
+							b.recti(x, 0, 1, r.height());
+							b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color::WHITE : base::Color::BLACK));
+							b.fill();
+						}
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// RED
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::RED));
-                    b.fill();
-                    b.popTransform();
-                }
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                // middle gray
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::RED));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::SolidColor(base::Color(middleGray, 0, 0)));
-                    b.fill();
-                    b.popTransform();
-                }
+					// middle gray
+					{
+						auto r = grid.cell();
 
-                // SRGB test
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::SolidColor(base::Color(middleGray, 0, 0)));
+						b.fill();
+						b.popTransform();
+					}
 
-                    auto lx = r.width() / 4;
-                    auto rx = 3 * r.width() / 4;
-                    for (int x = lx; x < rx; ++x)
-                    {
-                        b.beginPath();
-                        b.recti(x, 0, 1, r.height());
-                        b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(255, 0, 0) : base::Color::BLACK));
-                        b.fill();
-                    }
+					// SRGB test
+					{
+						auto r = grid.cell();
 
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // GREEN
+						auto lx = r.width() / 4;
+						auto rx = 3 * r.width() / 4;
+						for (int x = lx; x < rx; ++x)
+						{
+							b.beginPath();
+							b.recti(x, 0, 1, r.height());
+							b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(255, 0, 0) : base::Color::BLACK));
+							b.fill();
+						}
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// GREEN
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::GREEN));
-                    b.fill();
-                    b.popTransform();
-                }
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                // middle gray
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::GREEN));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::SolidColor(base::Color(0, middleGray, 0)));
-                    b.fill();
-                    b.popTransform();
-                }
+					// middle gray
+					{
+						auto r = grid.cell();
 
-                // SRGB test
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::SolidColor(base::Color(0, middleGray, 0)));
+						b.fill();
+						b.popTransform();
+					}
 
-                    auto lx = r.width() / 4;
-                    auto rx = 3 * r.width() / 4;
-                    for (int x = lx; x < rx; ++x)
-                    {
-                        b.beginPath();
-                        b.recti(x, 0, 1, r.height());
-                        b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(0, 255, 0) : base::Color::BLACK));
-                        b.fill();
-                    }
+					// SRGB test
+					{
+						auto r = grid.cell();
 
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // BLUE
+						auto lx = r.width() / 4;
+						auto rx = 3 * r.width() / 4;
+						for (int x = lx; x < rx; ++x)
+						{
+							b.beginPath();
+							b.recti(x, 0, 1, r.height());
+							b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(0, 255, 0) : base::Color::BLACK));
+							b.fill();
+						}
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// BLUE
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::BLUE));
-                    b.fill();
-                    b.popTransform();
-                }
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                // middle gray
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), base::Color::BLACK, base::Color::BLUE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.beginPath();
-                    b.recti(0, 0, r.width(), r.height());
-                    b.fillPaint(base::canvas::SolidColor(base::Color(0, 0, middleGray)));
-                    b.fill();
-                    b.popTransform();
-                }
+					// middle gray
+					{
+						auto r = grid.cell();
 
-                // SRGB test
-                {
-                    auto r = grid.cell();
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+						b.beginPath();
+						b.recti(0, 0, r.width(), r.height());
+						b.fillPaint(base::canvas::SolidColor(base::Color(0, 0, middleGray)));
+						b.fill();
+						b.popTransform();
+					}
 
-                    auto lx = r.width() / 4;
-                    auto rx = 3 * r.width() / 4;
-                    for (int x = lx; x < rx; ++x)
-                    {
-                        b.beginPath();
-                        b.recti(x, 0, 1, r.height());
-                        b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(0, 0, 255) : base::Color::BLACK));
-                        b.fill();
-                    }
+					// SRGB test
+					{
+						auto r = grid.cell();
 
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                c.place(b);
+						auto lx = r.width() / 4;
+						auto rx = 3 * r.width() / 4;
+						for (int x = lx; x < rx; ++x)
+						{
+							b.beginPath();
+							b.recti(x, 0, 1, r.height());
+							b.fillPaint(base::canvas::SolidColor((x & 1) ? base::Color(0, 0, 255) : base::Color::BLACK));
+							b.fill();
+						}
+
+						b.popTransform();
+					}
+				}
+
+                c.place(base::Vector2(0,0), g);
             }
         };
 

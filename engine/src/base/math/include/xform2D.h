@@ -32,6 +32,8 @@ namespace base
         INLINE XForm2D(const float* data); // requires 6 floats
         INLINE XForm2D(float t00, float t01, float t10, float t11, float tx, float ty);
         INLINE XForm2D(float tx, float ty); // position only
+		INLINE XForm2D(float tx, float ty, float s); // position + uniform scale
+		INLINE XForm2D(float tx, float ty, float sx, float sy); // position + scale
         INLINE XForm2D(const XForm2D& other) = default;
         INLINE XForm2D(XForm2D&& other) = default;
         INLINE XForm2D& operator=(const XForm2D& other) = default;
@@ -89,6 +91,9 @@ namespace base
 
         // build a rotation XForm
         static XForm2D BuildRotation(float cwAngleInRadians);
+
+		// build a rotation XForm around a given position (pivoted)
+		static XForm2D BuildRotationAround(float cwAngleInRadians, float tx, float ty);
 
         // buiild a scaling Xform
         static XForm2D BuildScale(float uniformScale);

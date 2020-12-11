@@ -97,7 +97,7 @@ namespace ui
 
         struct LayoutDisplayImage
         {
-            const base::image::Image* image = nullptr;
+            base::canvas::ImageEntry image;
             LayoutVerticalAlign valaign = LayoutVerticalAlign::Baseline;
             base::Color color;
             base::Vector2 pos;

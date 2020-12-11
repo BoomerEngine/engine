@@ -232,10 +232,10 @@ namespace ui
         RTTI_DECLARE_POOL(POOL_UI_CANVAS)
 
     public:
-        base::canvas::GeometryPtr shadow = nullptr; // rendered with parent clip rect
-        base::canvas::GeometryPtr background = nullptr; // rendered with widget client clip rect
-        base::canvas::GeometryPtr foreground = nullptr; // rendered with widget client clip rect
-        base::canvas::GeometryPtr overlay = nullptr; // rendered with parent clip rect
+        base::canvas::Geometry* shadow = nullptr; // rendered with parent clip rect
+        base::canvas::Geometry* background = nullptr; // rendered with widget client clip rect
+        base::canvas::Geometry* foreground = nullptr; // rendered with widget client clip rect
+        base::canvas::Geometry* overlay = nullptr; // rendered with parent clip rect
 
         ~ElementCachedGeometry();
     };
@@ -449,7 +449,7 @@ namespace ui
         /// expand item in all directions
         void expand();
 
-        //--
+		//--
 
         /// bind event, NOTE: event won't be called if owner dies 
         EventFunctionBinder bind(base::StringID name, IElement* owner = nullptr);
@@ -755,6 +755,9 @@ namespace ui
         virtual IElement* focusFindPrevSibling(IElement* childSelected);
 
         //--
+
+		/// get canvas storage of the renderer we are attached to
+		base::canvas::IStorage* canvasStorage() const;
 
         /// query next draw children
         virtual bool iterateDrawChildren(ElementDrawListToken& token) const;

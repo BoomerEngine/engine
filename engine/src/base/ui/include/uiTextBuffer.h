@@ -272,16 +272,16 @@ namespace ui
 
         bool m_modified;
 
-        base::canvas::GeometryPtr m_cachedCursorGeometry;
-        base::canvas::GeometryPtr m_cachedSelectionGeometry;
-        base::canvas::GeometryPtr m_cachedHighlightGeometry;
+        base::canvas::Geometry m_cachedCursorGeometry;
+        base::canvas::Geometry m_cachedSelectionGeometry;
+        base::canvas::Geometry m_cachedHighlightGeometry;
 
         Size m_totalSize;
 
         void generateChars(base::StringView txt, TChars& outChars) const;
         void generateLayout();
 
-        void generateRangeBlock(const ElementArea& drawArea, int start, int end, base::Color color, base::canvas::Geometry& outGeometry) const;
+        void generateRangeBlock(int start, int end, base::Color color, base::canvas::GeometryBuilder& builder) const;
 
         bool lookupGlyphs();
 

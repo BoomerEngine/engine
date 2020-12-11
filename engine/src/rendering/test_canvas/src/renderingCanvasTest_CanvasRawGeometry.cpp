@@ -13,6 +13,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
+#include "base/canvas/include/canvasStorage.h"
 
 namespace rendering
 {
@@ -25,13 +26,24 @@ namespace rendering
 
         public:
             base::NativeTimePoint m_lastUpdateTime;
-            base::image::ImagePtr m_lena;
+
+			base::canvas::ImageAtlasIndex m_atlas;
+			base::canvas::ImageEntry m_atlasEntry; 
 
             virtual void initialize() override
             {
                 m_lastUpdateTime.resetToNow();
-                m_lena = loadImage("lena.png");
+
+                auto lena = loadImage("lena.png");
+
+				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
+				m_atlasEntry = m_storage->registerImage(m_atlas, lena, true);
             }
+
+			virtual void shutdown() override
+			{
+				m_storage->destroyAtlas(m_atlas);
+			}
 
             static float CalcPlasma(float x, float y, float t)
             {
@@ -59,7 +71,7 @@ namespace rendering
 
                 const auto t = m_lastUpdateTime.timeTillNow().toSeconds();
 
-                base::Array<base::canvas::Canvas::RawVertex> vertices;
+                base::Array<base::canvas::Vertex> vertices;
                 base::Array<uint16_t> indices;
 
                 vertices.resize((GRID_SIZE + 1) * (GRID_SIZE + 1));
@@ -116,16 +128,14 @@ namespace rendering
                     }
                 }
 
-                auto style = base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings());
-                style.customUV = true;
+				{
+					auto style = base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).customUV());
 
-                {
-                    base::canvas::Canvas::RawGeometry geom;
-                    geom.vertices = vertices.typedData();
-                    geom.indices = indices.typedData();
-                    geom.numIndices = indices.size();
-                    c.place(style, geom);
-                }
+					base::canvas::Geometry geometry;
+					geometry.appendIndexedBatch(vertices.typedData(), indices.typedData(), indices.size(), base::canvas::Batch(), &style, m_storage);
+
+					c.place(base::Vector2(0, 0), geometry);
+				}
             }
         };
 

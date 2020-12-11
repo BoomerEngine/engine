@@ -84,6 +84,23 @@ namespace base
         return ret;
     }
 
+	XForm2D XForm2D::BuildRotationAround(float cwAngleInRadians, float tx, float ty)
+	{
+		XForm2D ret;
+
+		float c = std::cos(cwAngleInRadians);
+		float s = std::sin(cwAngleInRadians);
+		ret.t[0] = c;
+		ret.t[1] = s;
+		ret.t[2] = -s;
+		ret.t[3] = c;
+		float ox = ret.transformX(tx, ty);
+		float oy = ret.transformY(tx, ty);
+		ret.t[4] = tx - ox;
+		ret.t[5] = ty - oy;
+		return ret;
+	}
+
     XForm2D XForm2D::BuildScale(float uniformScale)
     {
         XForm2D ret;

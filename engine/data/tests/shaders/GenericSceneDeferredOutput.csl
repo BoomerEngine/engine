@@ -1,0 +1,24 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+#include "scene.h"
+
+export shader SceneGBufferPS : ScenePS
+{
+	void main()
+	{
+		gl_Target0 = texture(Texture, UV) * DiffuseColor;
+		gl_Target1 = length(Camera[0].Position - WorldPosition) * 0.1f;
+		gl_Target2 = (0.5f + 0.5f*WorldNormal.xyz1);
+
+		vec3 viewNormal = (Camera[0].WorldToScreen * WorldPosition.xyz0).xyz;
+		gl_Target3 = viewNormal.xy00;
+	}
+}
+
+export shader SceneVS;

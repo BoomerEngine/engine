@@ -67,18 +67,19 @@ namespace base
         /// helper class that build a renderable Geometry objects step-by-step
         /// the created Geometry objects are self contained and can be reused for rendering much later
         /// the whole point is to minimize CPU overhead when redrawing large and mostly static GUI
+		/// NOTE: data storage is required for using cached images and fonts
         class BASE_CANVAS_API GeometryBuilder : public base::NoCopy // should be instanced on the stack
         {
             RTTI_DECLARE_POOL(POOL_CANVAS)
 
         public:
-            GeometryBuilder(bool antiAlias = false);
+            GeometryBuilder(const IStorage* storage, Geometry& outGeometry);
             ~GeometryBuilder();
 
             //---
 
-            /// check if the builder contains no geometry
-            INLINE bool empty() const { return m_outGroups.empty(); }
+			/// get canvas data storage
+			INLINE const IStorage* storage() const { return m_storage; }
 
             /// get current fill rendering style
             INLINE const RenderStyle& fillStyle() const { return m_style.fillStyle; }
@@ -86,25 +87,21 @@ namespace base
             /// get current stroke rendering style
             INLINE const RenderStyle& strokeStyle() const { return m_style.strokeStyle; }
 
-            // Get the current XForm transform that is being applied to the geometry
+            // get the current XForm transform that is being applied to the geometry
             INLINE const XForm2D& transform() const { return m_transform; }
 
-            //---
-
-            /// reset, clear everything including the transform and states
-            void reset();
-
-            /// extract generated geometry into new geometry
-            void extract(Geometry& outGeometry);
-
-            /// extract generated geometry into new geometry, no reset
-            void extractNoReset(Geometry& outGeometry) const;
+			// current blend operation
+			INLINE BlendOp blending() const { return m_style.op; }
 
             //---
+
+			// reset builder - clear renderin state, transform and internal state
+			// NOTE: does not clear geometry in the output geometry
+			void reset();
 
             // Sets the composite operation
             // The blending modes are encoded into generated geometry (this way we can create whole background, content and frame in one go)
-            void compositeOperation(CompositeOperation op);
+            void blending(BlendOp op);
 
             //---
 
@@ -120,10 +117,10 @@ namespace base
             //---
 
             // Sets current stroke style to a solid color.
-            void strokeColor(const Color& color);
+            void strokeColor(const Color& color, float width = 1.0f);
 
             // Sets current stroke style to a paint, which can be a one of the gradients or a pattern.
-            void strokePaint(const RenderStyle& style);
+            void strokePaint(const RenderStyle& style, float width = 1.0f);
 
             // Sets current fill style to a solid color.
             void fillColor(const Color& color);
@@ -134,9 +131,6 @@ namespace base
             // Sets the miter limit of the stroke style.
             // Miter limit controls when a sharp corner is beveled.
             void miterLimit(float limit);
-
-            // Sets the stroke width of the stroke style.
-            void strokeWidth(float size);
 
             // Sets how the end of the line (cap) is drawn,
             // Can be one of: Butt (default), Round, Square.
@@ -149,6 +143,9 @@ namespace base
             // Sets the transparency applied to all rendered shapes.
             // Already transparent paths will get proportionally more transparent as well.
             void globalAlpha(float alpha);
+
+			// Toggle antialiasing on/off
+			void antialiasing(bool flag);
 
             //---
 
@@ -184,8 +181,24 @@ namespace base
             // Scales the current coordinate system.
             void scale(float x, float y);
 
-
             //---
+
+			// Set pivot point for style pattern application, default is 0,0
+			void stylePivot(float x, float y);
+
+			// Set pivot point for style pattern application, default is 0,0
+			void stylePivot(Vector2 offset);
+
+			// Reset style pivot (and the whole stack) back to 0,0
+			void resetStylePivot();
+
+			// Push current style pivod
+			void pushStylePivot();
+
+			// Pop style pivot
+			void popStylePivot();
+
+			//---
 
             //
             // Paths
@@ -273,13 +286,15 @@ namespace base
             // Sets the current sub-path winding, see NVGwinding and NVGsolidity.
             void pathWinding(Winding dir);
 
+			//--
+
             // Emit filled geometry
             void fill();
 
             // Emit stroke
             void stroke();
 
-            //---
+			//---
 
             // insert text from glyph buffer
             // NOTE: text is transformed by the current transform
@@ -296,26 +311,80 @@ namespace base
 
             //---
 
+			/// select custom renderer
+			void selectRenderer(uint8_t index, const void* data = nullptr, uint32_t dataSize = 0);
+
+			/// select custom renderer
+			template< typename T >
+			INLINE void selectRenderer(uint8_t index, const T& data)
+			{
+				static_assert(!std::is_pointer<T>::value, "Don't use pointer here");
+				selectRenderer(index, &data, sizeof(data));
+			}
+
+			/// select custom renderer
+			template< typename R >
+			INLINE void selectRenderer()
+			{
+				static const auto index = rendering::canvas::GetHandlerIndex<R>();
+				selectRenderer(index);
+			}
+
+			/// select custom renderer with data
+			template< typename R, typename... Args >
+			INLINE void selectRenderer(Args&& ... args)
+			{
+				const typename R::PrivateData data(std::forward< Args >(args)...);
+				static const auto index = rendering::canvas::GetHandlerIndex<R>();
+				selectRenderer(index, &data, sizeof(data));
+			}
+
+			//--
+
+			/// push current renderer on stack
+			void pushRenderer();
+
+			/// pop previously pushed custom renderer and return to the previous one (eventually return to the default one)
+			void popRenderer();
+
+			//--
+
         private:
             struct RenderState
-            {
+            {				
                 RenderStyle fillStyle;
                 RenderStyle strokeStyle;
-                int fillStyleIndex = -1;
-                int strokeStyleIndex = -1;
 
-                CompositeOperation op = CompositeOperation::SourceOver;
+				int cachedFillStyleIndex = -1;
+				int cachedStrokeStyleIndex = -1;
+
+				const ImageAtlasEntryInfo* cachedFillImage = nullptr;
+
+                BlendOp op = BlendOp::AlphaPremultiplied;
                 LineJoin lineJoint = LineJoin::Miter;
                 LineCap lineCap = LineCap::Butt;
                 float strokeWidth = 1.0f;
                 float miterLimit = 1.8f;
-                float alpha = 1.0f;;
+                float alpha = 1.0f;
+
+				bool antiAlias = false;
+				float antiAliasFringeWidth = 0.5f;
 
                 RenderState();
             };
 
-            bool m_antiAlias;
-            float m_antiAliasFringeWidth;
+			struct CustomRenderInfo
+			{
+				uint8_t index = 0; // default
+				uint8_t dataSize = 0;
+				uint16_t dataOffset = 0;
+			};
+
+			CustomRenderInfo m_customRenderer;
+
+			const IStorage* m_storage = nullptr;
+
+			bool m_transformInvertedValid = false;
             float m_distTollerance;
             float m_distTolleranceSquared;
             float m_tessTollerance;
@@ -323,7 +392,8 @@ namespace base
             XForm2D m_transform;
             XForm2D m_transformInverted;
             XForm2DClass m_transformClass;
-            bool m_transformInvertedValid;
+
+			Vector2 m_stylePivot;
 
             RenderState m_style;
 
@@ -335,46 +405,47 @@ namespace base
             static const uint32_t CMD_CLOSE = 3;
             static const uint32_t CMD_WINDING = 4;
 
-            typedef Array< float > TCommands;
+            typedef InplaceArray<float, 256> TCommands;
             TCommands m_commands;
 
             Vector2 m_prevPosition;
 
-            typedef Array<RenderVertex> TVertices;
-            TVertices m_outVertices;
+			Array<Vertex>& m_outVertices;
+			Array<Batch>& m_outBatches;
+			Array<Attributes>& m_outAttributes;
+			Array<uint8_t>& m_outRendererData;
 
-            typedef Array<RenderPath> TPaths;
-            TPaths m_outPaths;
+			Vector2& m_outVertexBoundsMin;
+			Vector2& m_outVertexBoundsMax;
 
-            typedef Array<RenderGlyph> TGlyphs;
-            TGlyphs m_outGlyphs;
-
-            typedef Array<RenderGroup> TGroup;
-            TGroup m_outGroups;
-
-            typedef Array<RenderStyle> TStyles;
-            typedef HashMap<RenderStyle, uint32_t> TStylesMap;
-            TStyles m_outStyles;
-            TStylesMap m_outStylesMap;
+			HashMap<Attributes, int> m_attributesMap;
 
             //--
 
             static const uint32_t NUM_STACK = 4;
             InplaceArray<XForm2D, NUM_STACK> m_transformStack;
             InplaceArray<RenderState, NUM_STACK> m_styleStack;
+			InplaceArray<Vector2, NUM_STACK> m_stylePivotStack;
+			InplaceArray<CustomRenderInfo, NUM_STACK> m_customRendererStack;
 
             //--
 
-            uint32_t cacheFillStyle();
-            uint32_t cacheStrokeStyle();
+            //uint32_t cacheFillStyle();
+            //uint32_t cacheStrokeStyle();
 
-            void beginGroup(uint32_t styleIndex, RenderGroup::Type type);
+            //void beginGroup(uint32_t styleIndex, ::Type type);
             void appendCommands(const float* vals, uint32_t numVals);
             void flattenPath(prv::PathCache& cache);
             void cacheInvertexTransform();
 
-            void applyPaintXForm(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style);
+			int mapStyle(const RenderStyle& style, float width);
+
+            void applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color);
+			void applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex);
+			void applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style, const ImageAtlasEntryInfo* image);
         };
+
+		//--
 
     } // canvas
 } // base

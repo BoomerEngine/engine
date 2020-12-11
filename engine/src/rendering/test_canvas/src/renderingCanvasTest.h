@@ -60,9 +60,12 @@ namespace rendering
         public:
             ICanvasTest();
 
+			base::canvas::IStorage* m_storage = nullptr;
+
             bool processInitialization();
 
             virtual void initialize() {};
+			virtual void shutdown() {};
             virtual void render(base::canvas::Canvas& canvas) {};
             virtual void update(float dt) {};
             virtual void processInput(const base::input::BaseEvent& evt) {};

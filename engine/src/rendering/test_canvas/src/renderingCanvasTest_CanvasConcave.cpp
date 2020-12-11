@@ -32,36 +32,39 @@ namespace rendering
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                base::canvas::GeometryBuilder builder;
+				base::canvas::Geometry g;
+				{
+					CanvasGridBuilder grid(2, 2, 20, 1024, 1024);
+					base::canvas::GeometryBuilder builder(m_storage, g);
 
-                CanvasGridBuilder grid(2, 2, 20, 1024, 1024);
-                {
-                    auto r = grid.cell();
+					{
+						auto r = grid.cell();
 
-                    auto cx = r.centerX();
-                    auto cy = r.centerY();
-                    auto rad = r.width() / 2;
+						auto cx = r.centerX();
+						auto cy = r.centerY();
+						auto rad = r.width() / 2;
 
-                    builder.beginPath();
+						builder.beginPath();
 
-                    for (uint32_t i = 0; i <= 36; ++i)
-                    {
-                        auto f = TWOPI * (i / 36.0f);
-                        auto pr = (i & 1) ? rad : rad / 4;
-                        auto px = cx + std::cos(f) * pr;
-                        auto py = cy + std::sin(f) * pr;
+						for (uint32_t i = 0; i <= 36; ++i)
+						{
+							auto f = TWOPI * (i / 36.0f);
+							auto pr = (i & 1) ? rad : rad / 4;
+							auto px = cx + std::cos(f) * pr;
+							auto py = cy + std::sin(f) * pr;
 
-                        if (i == 0)
-                            builder.moveTo(px, py);
-                        else
-                            builder.lineTo(px, py);
-                    }
+							if (i == 0)
+								builder.moveTo(px, py);
+							else
+								builder.lineTo(px, py);
+						}
 
-                    builder.fillColor(base::Color::WHITE);
-                    builder.fill();
-                }
+						builder.fillColor(base::Color::WHITE);
+						builder.fill();
+					}
+				}
 
-                c.place(builder);
+				c.place(base::Vector2(0, 0), g);
             }
         };
 

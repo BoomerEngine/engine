@@ -9,88 +9,107 @@
 #pragma once
 
 #include "base/containers/include/rectAllocator.h"
-#include "rendering/device/include/renderingImageView.h"
+#include "base/image/include/imageDynamicAtlas.h"
+#include "base/canvas/include/canvasStorage.h"
 
 namespace rendering
 {
     namespace canvas
     {
+		///----
+
+#pragma pack(push)
+#pragma pack(4)
+		struct GPUCanvasImageInfo
+		{
+			base::Vector2 uvMin;
+			base::Vector2 uvMax;
+			base::Vector2 uvScale;
+			base::Vector2 uvInvScale;
+		};
+#pragma pack(pop)
 
         ///---
 
-        /// entry in the canvas image cache
-        struct CanvasImageCacheEntry
-        {
-            const base::image::Image* m_image;
-            base::Vector2 m_uvOffset;
-            base::Vector2 m_uvScale;
-            base::Point m_placement;
-            uint8_t m_layerIndex = 0;
-            bool m_needsWrapping = false;
-        };
-
-        /// a simple image cache for canvas rendering
+        /// GPU array texture based image atlas
         class RENDERING_CANVAS_API CanvasImageCache : public base::NoCopy
         {
         public:
-            CanvasImageCache(ImageFormat imageFormat, uint32_t size, uint32_t initialPageCount);
+			CanvasImageCache(IDevice* dev, ImageFormat imageFormat, uint32_t size, uint32_t pageCount, uint32_t maxEntries = INDEX_MAX);
             ~CanvasImageCache();
 
+			//--
+
+			// atlas image
+			INLINE const ImageSampledViewPtr& atlasView() const { return m_atlasImageSRV; }
+
+			// buffer with image informations (mainly UV wrapping)
+			INLINE const BufferStructuredViewPtr& atlasInfo() const { return m_atlasInfoBufferSRV; }
+
             //--
 
-            // the texture with all the images
-            INLINE const ImageView& view() const { return m_image; }
+			// register image
+			base::canvas::ImageEntry registerImage(const base::image::Image* ptr, bool supportWrapping, int additionalPixelBorder);
+
+			// unregister image
+			void unregisterImage(base::canvas::ImageEntry entry);
+
+			// find image data
+			const base::canvas::ImageAtlasEntryInfo* fetchImageData(uint32_t entryIndex) const;
 
             //--
 
-            // purge cache
-            void purge();
+			// send updates to GPU texture
+			void flushUpdate(command::CommandWriter& cmd);
 
-            // cache images in our atlas pages
-            // NOTE: atlas may be reallocated AT WORST
-            bool cacheImages(command::CommandWriter& cmd, CanvasImageCacheEntry* entries, uint32_t numEntries);
+			//--
 
         private:
-            struct ImagePlacement
-            {
-                uint32_t m_lastVersion;
-                uint16_t m_pageIndex;
-                bool m_supportsWrapping;
-                base::Point m_placement;
-                base::Point m_size;
-                base::Vector2 m_uvOffset;
-                base::Vector2 m_uvScale;
-            };
+			uint16_t m_maxEntries = 0;
 
-            base::Array<base::RectAllocator> m_pageAllocators;
+			float m_invAtlasWidth = 0.0f;
+			float m_invAtlasHeight = 0.0f;
 
-            base::HashMap<uint32_t, ImagePlacement> m_imageEntries;
+			ImageObjectPtr m_atlasImage;
+			ImageSampledViewPtr m_atlasImageSRV;
 
-            uint32_t m_size;
+			BufferObjectPtr m_atlasInfoBuffer;
+			BufferStructuredViewPtr m_atlasInfoBufferSRV;
 
-            float m_invAtlasWidth;
-            float m_invAtlasHeight;
+			uint16_t m_dirtyEntryInfoMin = 0;
+			uint16_t m_dirtyEntryInfoMax = 0;
 
-            ImageObjectPtr m_object;
-            ImageView m_image;
+			//--
 
-            uint32_t m_numPages;
-            ImageFormat m_format;
+			struct Entry
+			{
+				base::image::ImagePtr data;
 
-            //--
+				uint8_t supportWrapping = 0;
+				uint8_t additionalPixelBorder = 0;
+				
+				base::canvas::ImageAtlasEntryInfo placement;
+			};
 
-            static base::image::ImagePtr CreateWrapEnabledImage(const base::image::ImageView& src, uint32_t margins);
+			struct Page
+			{
+				base::image::DynamicAtlas image;
+				base::Rect dirtyRect;
 
-            //--
+				Page(uint32_t size);
+			};
 
-            bool findPlacement(uint32_t width, uint32_t height, bool needsWrapping, ImagePlacement& outPlacement);
-            void entryFromPlacement(const ImagePlacement& placement, CanvasImageCacheEntry& entry);
+			base::Array<Page> m_pages;
 
-            bool reinitializeWithImages(CanvasImageCacheEntry* entries, uint32_t numEntries, base::Array<CanvasImageCacheEntry*>& outEntriesToCopyToImage);
-            bool placeImages(CanvasImageCacheEntry* entries, uint32_t numEntries, base::Array<CanvasImageCacheEntry*>& outEntriesToCopyToImage);
+			base::Array<uint16_t> m_freeEntryIndices;
+			base::Array<Entry> m_entries;            
 
-            void destroyImage();
-            bool createImage(uint32_t pageCount);
+			//--
+
+			bool allocateEntryIndex(uint32_t& outIndex);
+			bool placeImage(const Entry& source, base::canvas::ImageAtlasEntryInfo& outPlacement);
+
+			//--
         };
 
         ///---

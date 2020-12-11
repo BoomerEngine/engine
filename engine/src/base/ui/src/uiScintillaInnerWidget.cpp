@@ -451,8 +451,9 @@ namespace Scintilla
         Paint(surf, Scintilla::FromRect(rect));
 
         // render geometry into canvas
-        canvas.placement(std::round(drawArea.absolutePosition().x), std::round(drawArea.absolutePosition().y));
-        surf->render(canvas);
+		const int x = (int)std::round(drawArea.absolutePosition().x);
+		const int y = (int)std::round(drawArea.absolutePosition().y);
+        surf->render(x, y, canvas);
 
         // cleanup
         delete surf;

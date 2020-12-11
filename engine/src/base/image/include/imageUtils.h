@@ -37,6 +37,9 @@ namespace base
         /// Convert channel count from one image to other, for new channels values are suck from defaults
         extern BASE_IMAGE_API void ConvertChannels(const ImageView& src, const ImageView& dest, const void* defaults = nullptr);
 
+		/// Create image with different number of channels
+		extern BASE_IMAGE_API ImagePtr ConvertChannels(const ImageView& src, uint8_t destChannelCount, const void* defaults = nullptr);
+
         ///----------------------------
 
         /// Swap/Replicate channel contents, operation is done in place

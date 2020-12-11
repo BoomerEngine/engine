@@ -1,0 +1,59 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+struct GPUChunkInfo
+{
+	vec2 offset;
+	vec2 size;
+
+	uint firstIndex;
+	uint numTriangles;
+	uint firstVertex;
+	uint color;
+};
+
+//--
+
+descriptor DrawDesc
+{
+	attribute(readonly, format=r32f) Buffer DrawInstances;
+	attribute(readonly, layout=GPUChunkInfo) Buffer DrawInstances;
+}
+
+//--
+
+export shader GeometryPS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader GeometryVS
+{
+	out vec4 Color;
+
+	vertex SimpleVertex3D v;
+
+	attribute(glflip)
+	void main()
+	{
+		uint vertexColor = DrawInstances[gl_InstanceID].color;
+
+		vec2 pos = (v.pos * DrawInstances[gl_InstanceID].size) + DrawInstances[gl_InstanceID].offset;
+
+		gl_Position = vec4(pos, 0.5, 1.0);
+		Color = unpackUnorm4x8(vertexColor) * v.color;
+	}
+}
+
+//--

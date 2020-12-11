@@ -17,7 +17,8 @@
 namespace ui
 {
 
-    GeometryBuilder::GeometryBuilder()
+    GeometryBuilder::GeometryBuilder(const base::canvas::IStorage* storage, base::canvas::Geometry& outGeometry)
+		: base::canvas::GeometryBuilder(storage, outGeometry)
     {
         m_currentVerticalAlignment = base::font::FontAlignmentVertical::Top;
         m_currentHorizontalAlignment = base::font::FontAlignmentHorizontal::Left;

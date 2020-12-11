@@ -359,7 +359,7 @@ namespace rendering
 				}
 			}
 
-			void StateValues::apply(const StateValues& base, StateMask bits, StateMask& changed)
+			void StateValues::applyMasked(const StateValues& base, StateMask bits, StateMask& changed)
 			{
 				auto mask = bits.word;
 				while (mask)
@@ -652,12 +652,6 @@ namespace rendering
 				{
 					common.blendingEnabled = setup.common.blendingEnabled;
 					outChanged |= State_BlendEnabled;
-				}
-
-				if (setup.mask.test(GraphicRenderStatesBit::StencilEnabled))
-				{
-					stencil.enabled = setup.common.stencilEnabled;
-					outChanged |= State_StencilEnabled;
 				}
 
 				if (setup.mask.test(GraphicRenderStatesBit::ScissorEnabled))

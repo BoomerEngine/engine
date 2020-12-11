@@ -167,6 +167,11 @@ namespace ui
         }
     }
 
+	base::canvas::IStorage* Renderer::canvasStorage() const
+	{
+		return m_stash->canvasStorage();
+	}
+
     void Renderer::attachWindow(Window* window)
     {
         if (window)
@@ -868,22 +873,27 @@ namespace ui
 
                     info.hitCache->reset(windowArea);
 
-                    auto canvasWidth = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
-                    auto canvasHeight = std::max<uint32_t>(1, std::ceilf(windowArea.size().y));
-                    base::canvas::Canvas canvas(canvasWidth, canvasHeight, nullptr, -windowArea.absolutePosition().x, -windowArea.absolutePosition().y);
-                    info.window->render(canvas, *info.hitCache, windowArea);
+					{
+						PC_SCOPE_LVL1(RenderCanvasContent);
+						m_native->windowRenderContent(info.nativeId, windowArea.size(), false, [this, windowArea, &info](base::canvas::Canvas& canvas)
+							{
+								info.window->render(canvas, *info.hitCache, windowArea);
 
-                    if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
-                    {
-                        const auto pos = m_currentInputAction->element()->cachedDrawArea().absolutePosition();
-                        canvas.placement(pos.x, pos.y);
-                        m_currentInputAction->onRender(canvas);
-                    }
+								if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
+								{
+									const auto pos = m_currentInputAction->element()->cachedDrawArea().absolutePosition();
+									m_currentInputAction->onRender(canvas);
+								}
+							});
+					}
 
-                    {
-                        PC_SCOPE_LVL1(RenderCanvasContent);
-                        m_native->windowRenderContent(info.nativeId, windowArea.size(), false, canvas);
-                    }
+					/*base::canvas::Canvas::Setup setup;
+					setup.width = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
+					setup.height = std::max<uint32_t>(1, std::ceilf(windowArea.size().y));
+					setup.pixelOffset.x = -windowArea.absolutePosition().x;
+					setup.pixelOffset.y = -windowArea.absolutePosition().y;
+
+					base::canvas::Canvas canvas(setup);*/
                 }
                 else
                 {
@@ -1518,6 +1528,8 @@ namespace ui
 
     void Renderer::nativeWindowForceRedraw(NativeWindowID id)
     {
+		PC_SCOPE_LVL1(RenderForceRedraw);
+
         for (auto& info : m_windows)
         {
             if (info.nativeId == id)
@@ -1533,7 +1545,18 @@ namespace ui
                     //TRACE_INFO("ForcedRedrawSize: [{}x{}]", windowArea.size().x, windowArea.size().y);
                     //base::Sleep(200);
 
-                    auto canvasWidth = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
+					m_native->windowRenderContent(info.nativeId, windowArea.size(), true, [this, windowArea, &info](base::canvas::Canvas& canvas)
+						{
+							info.window->render(canvas, *info.hitCache, windowArea);
+
+							if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
+							{
+								const auto pos = m_currentInputAction->element()->cachedDrawArea().absolutePosition();
+								m_currentInputAction->onRender(canvas);
+							}
+						});
+
+                    /*auto canvasWidth = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
                     auto canvasHeight = std::max<uint32_t>(1, std::ceilf(windowArea.size().y));
                     base::canvas::Canvas canvas(canvasWidth, canvasHeight, nullptr, -windowArea.absolutePosition().x, -windowArea.absolutePosition().y);
                     info.window->render(canvas, *info.hitCache, windowArea);
@@ -1541,7 +1564,7 @@ namespace ui
                     {
                         PC_SCOPE_LVL1(RenderCanvasContent);
                         m_native->windowRenderContent(info.nativeId, windowArea.size(), true, canvas);
-                    }
+                    }*/
                 }
             }
         }

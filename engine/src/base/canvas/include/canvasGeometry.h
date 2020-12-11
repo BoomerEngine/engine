@@ -34,188 +34,90 @@ namespace base
 {
     namespace canvas
     {
-        /// raster composite operation - determines how pixels are mixed
-        /// implemented using classical blending scheme
-        enum class CompositeOperation : uint8_t
-        {
-            // Src=One, Dest=Zero
-            // No blending, values are copied directly
-            Copy,
+		//--
 
-            // Src=SrcAlpha, Dest=1-SrcAlpha
-            // Typical alpha blending, user SourceOver if possible - it's better
-            Blend,
+#pragma pack(push)
+#pragma pack(4)
+		struct Attributes
+		{
+			Vector2 base;
+			Vector2 extent;
+			Color innerColor;
+			Color outerColor;
+			float radius = 0.0f;
+			float feather = 0.0f;
+			float lineWidth = 0.0f;
 
-            // Src=One, Dest=1-SrcAlpha
-            // Composition of premultiplied alpha images
-            SourceOver,
+			//--
 
-            // Src=DestAlpha, Dest=Zero
-            SourceIn,
+			bool operator==(const Attributes& other) const;
+			bool operator!=(const Attributes& other) const;
 
-            // Src=1-DestAlpha, Dest=Zero
-            SourceOut,
+			static uint32_t CalcHash(const Attributes& style);
 
-            // Src=DestAlpha, Dest=1-SrcAlpha
-            SourceAtop,
+		private:
+			uint32_t _padding0 = 0;
+		};
+#pragma pack(pop)
 
-            // Src=1-DestAlpha, Dest=One
-            DestinationOver,
+		static_assert(sizeof(Attributes) == 40, "Make sure there are no holes");
 
-            // Src=Zero, Dest=SrcAlpha
-            DestinationIn,
+		//--
 
-            // Src=Zero, Dest=1-SrcAlpha
-            DestinationOut,
-
-            // Src=1-DestAlpha, Src=SrcAlpha
-            DestinationAtop,
-
-            // Addtive blending
-            // Src=One, Dest=One
-            Addtive,
-
-            // XOR mode
-            // Src=1-DestAlpha, Dest=1-SrcAlpha
-            Xor,
-
-            MAX,
-        };
-
-        //// rendering vertex for canvas data
-        TYPE_ALIGN(4, struct) RenderVertex
-        {
-            Vector2 pos;
-            Vector2 uv;
-            Vector2 paintUV; // encoded UV inside the paint brush at the time of rendering
-        };
-
-        //// polygon (closed collection of vertices)
-        //// has optional strong and filling
-        struct RenderPath
-        {
-            uint32_t fillVertexCount = 0;
-            RenderVertex* fillVertices = nullptr;
-            uint32_t strokeVertexCount = 0;
-            RenderVertex* strokeVertices = nullptr;
-        };
-
-        /// text glyph
-        /// placement is in local space
-        /// glyphs are allocated in the texture during actual rendering
-        struct RenderGlyph
-        {
-            const font::Glyph* glyph = nullptr;
-
-            Vector2 coords[4]; // vertex positions for the glyph (4 because we may be rotated)
-            Vector2 uvMin; // uv for the glyph- assigned in prepareGlyphsForRendering
-            Vector2 uvMax; // uv for the glyph- assigned in prepareGlyphsForRendering
-            Color color; // modulation color
-            uint8_t page; // page for the glyph - assigned in prepareGlyphsForRendering
-        };
-        
-        /// a renderable group of polygons
-        /// collection of polygons sharing the same style
-        /// NOTE: this is the input for the rendering
-        struct RenderGroup
-        {
-            enum class Type : uint8_t
-            {
-                Fill,
-                Stoke,
-                Triangle,
-                Glyphs,
-            };
-
-            uint16_t styleIndex = 0;
-            CompositeOperation op = CompositeOperation::SourceOver;
-            Type type = Type::Fill;
-            bool convex = false;
-
-            RenderPath* paths = nullptr;
-            uint32_t numPaths = 0; // paths (if any - if not set than we render the vertices "raw")
-
-            RenderVertex* vertices = nullptr; // all vertices used by the group
-            uint32_t numVertices = 0; // number of vertices used by the group
-
-            RenderGlyph* glyphs = nullptr; // rendering glyphs
-            uint32_t numGlyphs = 0; // number of glyphs
-
-            //float fringeWidth = 0.0f; // AA
-            //float strokeWidth = 1.0f; // Strokes only
-
-            Vector2 vertexBoundsMin;
-            Vector2 vertexBoundsMax;
-        };
-
-        /// cached renderable geometry helper class
-        /// separated from main canvas to allow ekhm, caching
-        /// main use is to specify this container when using the path builder
-        /// a cached geometry can be submitted to the canvas multiple times at fraction of the cost
-        /// needed mainly for the UI project
-        class BASE_CANVAS_API Geometry : public base::IReferencable
+        /// Simple structure to hold renderable canvas geometry (vertices + draw commands)
+		/// Can be placed (instanced) in canvas with a custom transformation
+		/// NOTE: data cached here depends on the particular UVs and atlas placements or images in the storage!
+        struct BASE_CANVAS_API Geometry
         {
             RTTI_DECLARE_POOL(POOL_CANVAS)
 
         public:
             Geometry();
-            Geometry(Geometry&& other) = default;
-            ~Geometry();
-
-            Geometry& operator=(Geometry&& other) = default;
-
-            //--
-
-            INLINE bool empty() const { return m_vertices.empty() && m_glyphs.empty(); }
-
-            INLINE uint32_t numVertices() const { return m_vertices.size(); }
-
-            INLINE uint32_t numPaths() const { return m_paths.size(); }
-
-            INLINE uint32_t numGroups() const { return m_groups.size(); }
-            INLINE const RenderGroup* groups() const { return m_groups.typedData(); }
-
-            INLINE uint64_t glyphPagesMask() const { return m_usedGlyphCachePages; }
-
-            INLINE uint32_t numStyles() const { return m_styles.size(); }
-            INLINE const RenderStyle* styles() const { return m_styles.typedData(); }
-
-            //--
-             
-            INLINE const Vector2& boundsMin() const { return m_vertexBoundsMin; }
-            INLINE const Vector2& boundsMax() const { return m_vertexBoundsMax; }
+			Geometry(const Geometry& other);
+			Geometry(Geometry&& other);
+			Geometry& operator=(const Geometry& other);
+			Geometry& operator=(Geometry&& other);
+			~Geometry();
 
             //--
 
-            // remove all geometry from this container but do not free the memory
-            void reset();
+            INLINE bool empty() const { return batches.empty(); }
+			INLINE operator bool() const { return !batches.empty(); }
 
-            // prepare glyphs for rendering - make sure glyphs are in cache and assign UVs if needed
-            void prepareGlyphsForRendering();
+            //--
 
-        private:
-            typedef Array<RenderVertex> TVertices;
-            typedef Array<RenderPath> TPaths;
-            typedef Array<RenderGroup> TGroups;
-            typedef Array<RenderGlyph> TGlyphs;
-            typedef Array<RenderStyle> TStyles;
+			// reset geometry without freeing memory
+			void reset();
 
-            TVertices m_vertices;
-            TPaths m_paths;
-            TGroups m_groups;
-            TGlyphs m_glyphs;
-            TStyles m_styles;
+			// count used memory
+			uint32_t calcMemorySize() const;
 
-            Vector2 m_vertexBoundsMin;
-            Vector2 m_vertexBoundsMax;
+			//--
 
-            uint32_t m_glyphCacheVersion;
-            uint64_t m_usedGlyphCachePages;
-           
-            void calcBounds();
+			Vector2 boundsMin;
+			Vector2 boundsMax;
 
-            friend class GeometryBuilder;
+			Array<Vertex> vertices;
+			Array<Batch> batches;
+			Array<Attributes> attributes;
+			Array<uint8_t> customData;
+
+			//--
+			
+			// directly append a batch to the geometry
+			void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr, const IStorage* storage = nullptr);
+
+			// directly append a batch to the geometry indexed triangle list batch to the geometry
+			void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr, const IStorage* storage = nullptr);
+
+			//--
+
+		private:
+			int appendStyle(const RenderStyle& style);
+			void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style, const IStorage* storage);
         };
+
+		//--
 
     } // canvas
 } // base

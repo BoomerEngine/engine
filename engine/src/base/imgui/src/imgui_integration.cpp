@@ -254,18 +254,18 @@ namespace ImGui
         ImGui::NewFrame();
     }
 
-    void EndCanvasFrame(base::canvas::Canvas& c)
+    void EndCanvasFrame(base::canvas::Canvas& c, const base::XForm2D& placement)
     {
         ImGui::Render();
-        ImGui::RenderToCanvas(ImGui::GetDrawData(), c);
+        ImGui::RenderToCanvas(ImGui::GetDrawData(), c, placement);
     }
 
     static_assert(sizeof(ImDrawIdx) == sizeof(uint16_t), "Expected ImGui to use 16-bit indices");
 
-    void RenderToCanvas(const ImDrawData* data, base::canvas::Canvas& c)
+    void RenderToCanvas(const ImDrawData* data, base::canvas::Canvas& c, const base::XForm2D& placement)
     {
-        auto transform = c.transform();
-        c.placement(0.0f, 0.0f);
+        //auto transform = c.transform();
+        //c.placement(0.0f, 0.0f);
 
         bool hasScissorRect = false;
         base::Vector4 currentScissorRect;
@@ -273,9 +273,6 @@ namespace ImGui
         for (uint32_t i = 0; i < data->CmdListsCount; ++i)
         {
             const auto* list = data->CmdLists[i];
-
-            // prepare geometry
-            static_assert(sizeof(base::canvas::Canvas::RawVertex) == sizeof(ImDrawVert), "Something does not match");
 
             // collect draw operations
             for (const auto& srcCommand : list->CmdBuffer)
@@ -303,16 +300,42 @@ namespace ImGui
                 }
                 else
                 {
-                    base::canvas::Canvas::RawGeometry rawGeometry;
-                    rawGeometry.indices = list->IdxBuffer.Data + srcCommand.IdxOffset;
-                    rawGeometry.numIndices = srcCommand.ElemCount;
-                    rawGeometry.vertices = (base::canvas::Canvas::RawVertex*) list->VtxBuffer.Data;
+					static base::Mutex GTempVertexArrayLock;
+					static base::canvas::Geometry GTempGeometry;
 
-                    const auto op = base::canvas::CompositeOperation::Blend; // ImGui does not support premultiplied alpha
-                    const auto& image = IconRegistry::GetInstance().getImage(srcCommand.TextureId);
-                    auto style = srcCommand.TextureId ? base::canvas::ImagePattern(image, base::canvas::ImagePatternSettings()) : base::canvas::SolidColor(base::Color::WHITE);
-                    style.customUV = true; // in ImGui we always use custom UV that are computed by the system
-                    c.place(style, rawGeometry, 0, nullptr, op);
+					auto lock = CreateLock(GTempVertexArrayLock);
+
+					GTempGeometry.reset();
+					GTempGeometry.vertices.reserve(srcCommand.ElemCount);
+					GTempGeometry.batches.reserve(1);
+
+					auto* writeVertexPtr = GTempGeometry.vertices.allocateUninitialized(srcCommand.ElemCount);
+					const auto* indexReadPtr = list->IdxBuffer.Data + srcCommand.IdxOffset;
+					const auto* indexReadEndPtr = indexReadPtr + srcCommand.ElemCount;
+					const auto* vertexReadPtr = (const ImDrawVert*) list->VtxBuffer.Data;
+					
+					while (indexReadPtr < indexReadEndPtr)
+					{
+						const auto& vertexData = vertexReadPtr[*indexReadEndPtr++];
+						writeVertexPtr->color = vertexData.col;
+						writeVertexPtr->pos.x = vertexData.pos.x;
+						writeVertexPtr->pos.y = vertexData.pos.y;
+						writeVertexPtr->uv.x = vertexData.uv.x;
+						writeVertexPtr->uv.y = vertexData.uv.y;
+						writeVertexPtr->imageEntryIndex = 0;
+						writeVertexPtr->imagePageIndex = 0;
+						writeVertexPtr->attributeFlags = 0;
+						writeVertexPtr->attributeIndex = 0;
+						writeVertexPtr++;
+					}
+
+					auto& batch = GTempGeometry.batches.emplaceBack();
+					batch.atlasIndex = 0;
+					batch.rendererIndex = 0;
+					batch.type = base::canvas::BatchType::FillConvex;
+					batch.op = base::canvas::BlendOp::AlphaPremultiplied; // ImGui does not support premultiplied alpha;
+
+					c.place(placement, GTempGeometry);
                 }
             }
         }

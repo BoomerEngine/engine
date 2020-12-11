@@ -31,83 +31,86 @@ namespace rendering
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                base::canvas::GeometryBuilder b;
-
                 CanvasGridBuilder grid(4, 4, 20, 1024, 1024);
 
-                // triangle
-                {
-                    auto r = grid.cell();
+				base::canvas::Geometry g;
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
 
-                    b.beginPath();
-                    b.moveToi(r.centerX(), r.top());
-                    b.lineToi(r.right(), r.bottom());
-                    b.lineToi(r.left(), r.bottom());
-                    b.fillColor(base::Color::RED);
-                    b.fill();
-                }
+					// triangle
+					{
+						auto r = grid.cell();
 
-                // square
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.moveToi(r.centerX(), r.top());
+						b.lineToi(r.right(), r.bottom());
+						b.lineToi(r.left(), r.bottom());
+						b.fillColor(base::Color::RED);
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.rect(r);
-                    b.fillColor(base::Color::GREEN);
-                    b.fill();
-                }
+					// square
+					{
+						auto r = grid.cell();
 
-                // rounded square
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.rect(r);
+						b.fillColor(base::Color::GREEN);
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.roundedRect(r, 20);
-                    b.fillColor(base::Color::BLUE);
-                    b.fill();
-                }
+					// rounded square
+					{
+						auto r = grid.cell();
 
-                // circle
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRect(r, 20);
+						b.fillColor(base::Color::BLUE);
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.circlei(r.centerX(), r.centerY(), r.width() / 2);
-                    b.fillColor(base::Color::CYAN);
-                    b.fill();
-                }
+					// circle
+					{
+						auto r = grid.cell();
 
-                // horizontal ellipse
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.circlei(r.centerX(), r.centerY(), r.width() / 2);
+						b.fillColor(base::Color::CYAN);
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.ellipsei(r.centerX(), r.centerY(), r.width() / 2, 10);
-                    b.fillColor(base::Color::YELLOW);
-                    b.fill();
-                }
+					// horizontal ellipse
+					{
+						auto r = grid.cell();
 
-                // vertical ellipse
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.ellipsei(r.centerX(), r.centerY(), r.width() / 2, 10);
+						b.fillColor(base::Color::YELLOW);
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.ellipsei(r.centerX(), r.centerY(), 10, r.height() / 2);
-                    b.fillColor(base::Color(255, 127, 0));
-                    b.fill();
-                }
+					// vertical ellipse
+					{
+						auto r = grid.cell();
 
-                // arc
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.ellipsei(r.centerX(), r.centerY(), 10, r.height() / 2);
+						b.fillColor(base::Color(255, 127, 0));
+						b.fill();
+					}
 
-                    b.beginPath();
-                    b.arci(r.centerX(), r.centerY(), r.width() / 2, 0.0f, PI, base::canvas::Winding::CW);
-                    b.fillColor(base::Color::GRAY);
-                    b.fill();
-                }
+					// arc
+					{
+						auto r = grid.cell();
 
-                c.place(b);
+						b.beginPath();
+						b.arci(r.centerX(), r.centerY(), r.width() / 2, 0.0f, PI, base::canvas::Winding::CW);
+						b.fillColor(base::Color::GRAY);
+						b.fill();
+					}
+				}
+
+                c.place(base::canvas::Placement(0,0), g);
             }
         };
 

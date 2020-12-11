@@ -559,20 +559,20 @@ namespace ui
 
                     if (region.imageName)
                     {
-                        if (auto image = stash.loadImage(region.imageName).acquire())
+                        if (auto image = stash.loadImage(region.imageName))
                         {
                             auto& displayImage = outData.images.emplaceBack();
                             displayImage.image = image;
                             displayImage.pos.x = std::floorf(lineX);
-                            displayImage.pos.y = baseY - image->height();
+                            displayImage.pos.y = baseY - image.height;
                             displayImage.color = color;
                             displayImage.valaign = region.valign;
-                            lineX += image->width();
+                            lineX += image.width;
 
                             if (region.valign == LayoutVerticalAlign::Baseline)
-                                lineTextAscender = std::max<float>(lineTextAscender, image->height());
+                                lineTextAscender = std::max<float>(lineTextAscender, image.height);
                             else
-                                lineImageMaxHeight = std::max<float>(lineImageMaxHeight, image->height());
+                                lineImageMaxHeight = std::max<float>(lineImageMaxHeight, image.height);
                         }
                     }
                     else
@@ -641,9 +641,9 @@ namespace ui
                         else if (image.valaign == LayoutVerticalAlign::Top)
                             image.pos.y = baseY;
                         else if (image.valaign == LayoutVerticalAlign::Middle)
-                            image.pos.y = baseY + (lineTotalHeight - image.image->height()) / 2.0f;
+                            image.pos.y = baseY + (lineTotalHeight - image.image.height) / 2.0f;
                         else if (image.valaign == LayoutVerticalAlign::Bottom)
-                            image.pos.y = baseY + lineTotalHeight - image.image->height();
+                            image.pos.y = baseY + lineTotalHeight - image.image.height;
                     }
                 }
 
@@ -730,14 +730,14 @@ namespace ui
                     b.pushTransform();
                     b.translate(icon.pos.x, icon.pos.y);
 
-                    auto width = icon.image->width();
-                    auto height = icon.image->height();
+                    auto width = icon.image.width;
+                    auto height = icon.image.height;
                     
                     auto imageStyle = base::canvas::ImagePattern(icon.image, base::canvas::ImagePatternSettings());
                     imageStyle.innerColor = imageStyle.outerColor = icon.color;
                     b.fillPaint(imageStyle);
                     b.beginPath();
-                    b.compositeOperation(base::canvas::CompositeOperation::SourceOver);
+                    b.blending(base::canvas::BlendOp::AlphaPremultiplied);
                     b.rect(0, 0, width, height);
                     b.fill();
 

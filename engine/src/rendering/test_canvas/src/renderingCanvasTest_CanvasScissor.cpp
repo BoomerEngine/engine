@@ -28,10 +28,9 @@ namespace rendering
             {             
             }
 
-            static void BuildGeometry(base::MTRandState & rng, float canvasW, float canvasH, base::canvas::Geometry& outGeometry)
+            void buildGeometry(base::MTRandState & rng, float canvasW, float canvasH, base::canvas::Geometry& outGeometry)
             {
-
-                base::canvas::GeometryBuilder b;
+                base::canvas::GeometryBuilder b(m_storage, outGeometry);
 
                 for (int i = 0; i < 200; ++i)
                 {
@@ -50,8 +49,6 @@ namespace rendering
                     b.fillPaint(base::canvas::LinearGradienti(0, 0, w, h, startColor, endColor));
                     b.fill();
                 }
-
-                b.extract(outGeometry);
             }
 
             virtual void render(base::canvas::Canvas& c) override
@@ -65,9 +62,9 @@ namespace rendering
                     m_drawCanvasHeight = c.height();
 
                     base::MTRandState rng;
-                    BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[0]);
-                    BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[1]);
-                    BuildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[2]);
+                    buildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[0]);
+                    buildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[1]);
+                    buildGeometry(rng, m_drawCanvasWidth, m_drawCanvasHeight, m_drawGeometry[2]);
                 }
 
                 // place geometry
@@ -86,7 +83,7 @@ namespace rendering
                         auto offsetY = ey + (ey * 0.9f) * sinf(phaseOffset + m_time * 0.05f * speedScale) - (cy * 0.5f);
 
                         c.scissorRect(offsetX, offsetY, cx, cy);
-                        c.place(m_drawGeometry[i]);
+                        c.place(base::Vector2(0,0), m_drawGeometry[i]);
                     }
                 }
             }

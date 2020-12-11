@@ -638,7 +638,7 @@ namespace ui
 
     void VirtualArea::renderGridBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
+        //canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
 
         if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
         {
@@ -653,9 +653,10 @@ namespace ui
 
                 if (alphaScale < 1.0f)
                 {
-                    auto tempRenderStyle = renderStyle;
-                    tempRenderStyle.image = nullptr;
-                    canvas.customQuad(tempRenderStyle, 0.0f, 0.0f, drawArea.size().x, drawArea.size().y, 0, 0, 1, 1);
+					base::canvas::Canvas::QuadSetup quad;
+					quad.x1 = drawArea.size().x;
+					quad.y1 = drawArea.size().y;
+					canvas.quad(drawArea.absolutePosition(), quad);
                 }
 
                 if (alphaScale > 0.0f)
@@ -663,17 +664,19 @@ namespace ui
                     renderStyle.innerColor.a *= alphaScale;
                     renderStyle.outerColor.a *= alphaScale;
 
-                    auto imageSize = (float)renderStyle.image->width();
+                    auto imageSize = (float)renderStyle.image.width;
 
-                    auto sizeX = drawArea.size().x;
-                    auto sizeY = drawArea.size().y;
+					base::canvas::Canvas::QuadSetup quad;
+					quad.x1 = drawArea.size().x;
+					quad.y1 = drawArea.size().y;
+                    quad.u0 = (0.0f - m_viewOffset.x * m_viewInvScale) / imageSize;
+                    quad.v0 = (0.0f - m_viewOffset.y * m_viewInvScale) / imageSize;
+                    quad.u1 = quad.u0 + (quad.x1 * m_viewInvScale) / imageSize;
+                    quad.v1 = quad.v0 + (quad.y1 * m_viewInvScale) / imageSize;
+					quad.op = base::canvas::BlendOp::AlphaPremultiplied; // TODO: copy
+					quad.image = renderStyle.image;
 
-                    float u0 = (0.0f - m_viewOffset.x * m_viewInvScale) / imageSize;
-                    float v0 = (0.0f - m_viewOffset.y * m_viewInvScale) / imageSize;
-                    float u1 = u0 + (sizeX * m_viewInvScale) / imageSize;
-                    float v1 = v0 + (sizeY * m_viewInvScale) / imageSize;
-
-                    canvas.customQuad(renderStyle, 0.0f, 0.0f, drawArea.size().x, drawArea.size().y, u0, v0, u1, v1, base::Color::WHITE, base::canvas::CompositeOperation::SourceOver);
+					canvas.quad(drawArea.absolutePosition(), quad);
                 }
             }
         }
@@ -993,25 +996,28 @@ namespace ui
             const auto maxX = std::max<float>(minAbs.x, maxAbs.x);
             const auto maxY = std::max<float>(minAbs.y, maxAbs.y);
 
-            if (maxX > minX && maxY > minY)
-            {
-                base::canvas::GeometryBuilder builder;
+			if (maxX > minX&& maxY > minY)
+			{
+				base::canvas::Geometry geometry;
 
-                builder.strokeColor(m_selectionColor);
+				{
+					base::canvas::GeometryBuilder builder(nullptr, geometry);
 
-                auto fillColor = m_selectionColor;
-                fillColor.a = fillColor.a / 3;
-                builder.fillColor(fillColor);
+					builder.strokeColor(m_selectionColor);
 
-                builder.beginPath();
-                builder.rect(0, 0, maxX - minX, maxY - minY);
-                builder.fill();
-                builder.stroke();
+					auto fillColor = m_selectionColor;
+					fillColor.a = fillColor.a / 3;
+					builder.fillColor(fillColor);
+
+					builder.beginPath();
+					builder.rect(minX, minY, maxX, maxY);
+					builder.fill();
+					builder.stroke();
+				}
 
                 canvas.pushScissorRect();
                 canvas.scissorRect(m_area->cachedDrawArea().absolutePosition(), m_area->cachedDrawArea().size());
-                canvas.placement(minX, minY, 1.0f, 1.0f);
-                canvas.place(builder);
+				canvas.place(base::Vector2::ZERO(), geometry);
                 canvas.popScissorRect();
             }
         }

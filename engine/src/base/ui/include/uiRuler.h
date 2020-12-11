@@ -9,6 +9,7 @@
 #pragma once
 
 #include "uiElement.h"
+#include "base/canvas/include/canvasGeometry.h"
 
 namespace ui
 {
@@ -37,6 +38,10 @@ namespace ui
         float m_viewActiveRegionMin = 0.0;
         float m_viewActiveRegionMax = 0.0;
 
+		mutable base::canvas::Geometry m_geometry;
+
+		void generateGeometry(float width, float height) const;
+
         virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
     };
 
@@ -63,6 +68,10 @@ namespace ui
         float m_viewRegionMax = 0.0;
         float m_viewActiveRegionMin = 0.0;
         float m_viewActiveRegionMax = 0.0;
+
+		mutable base::canvas::Geometry m_geometry;
+
+		void generateGeometry(float width, float height) const;
 
         virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
     };

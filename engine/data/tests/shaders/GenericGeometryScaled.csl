@@ -1,0 +1,39 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+	ConstantBuffer
+	{
+		vec4 ScaleOffsetParams;
+	}
+}
+
+export shader GeometryPS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader GeometryVS
+{
+	vertex Simple3DVertex v;
+
+	out vec4 Color;
+
+	attribute(glflip)
+	void main()
+	{
+		vec2 pos = v.pos.xy * ScaleOffsetParams.xy + ScaleOffsetParams.zw;
+		gl_Position = vec4(pos.xy, 0.5, 1);
+		Color = v.color;
+	}
+}

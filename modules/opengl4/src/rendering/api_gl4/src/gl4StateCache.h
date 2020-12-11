@@ -108,6 +108,13 @@ namespace rendering
 					return *this;
 				}
 
+				INLINE StateMask operator|(const StateMask& other) const
+				{
+					StateMask ret;
+					ret.word = word | other.word;
+					return ret;
+				}
+
 				INLINE StateMask& operator-=(const StateMask& other)
 				{
 					word &= ~other.word;
@@ -218,7 +225,7 @@ namespace rendering
 
 				void apply(StateMask mask) const;
 
-				void apply(const StateValues& base, StateMask mask, StateMask& outChanged);
+				void applyMasked(const StateValues& base, StateMask mask, StateMask& outChanged);
 
 				void apply(const GraphicsRenderStatesSetup& setup, StateMask& outChanged);
 			};

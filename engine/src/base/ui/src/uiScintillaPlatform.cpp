@@ -135,9 +135,19 @@ namespace Scintilla
         return static_cast<const FontInfo*>(f.GetID());
     }
 
+	SurfaceImpl::Buffer::Buffer(const base::canvas::IStorage* storage)
+		: builder(storage, data)
+	{}
+
+	void SurfaceImpl::Buffer::reset()
+	{
+		data.reset();
+		builder.reset();		
+	}
+
     //----------------- SurfaceImpl --------------------------------------------------------------------
 
-    SurfaceImpl::SurfaceImpl()
+    SurfaceImpl::SurfaceImpl(const base::canvas::IStorage* storage)
         : initialized(false)
         , unicodeMode(true)
         , collected(true)
@@ -145,18 +155,22 @@ namespace Scintilla
         , verticalDeviceResolution(0)
         , x(0)
         , y(0)
-    {
-        m_geometryData = base::RefNew<base::canvas::Geometry>();
+	{
+		m_displayBuffer = new Buffer(storage);
+		m_buildBuffer = new Buffer(storage);
+
         Release();
     }
 
     SurfaceImpl::~SurfaceImpl()
     {
+		delete m_displayBuffer;
+		delete m_buildBuffer;
     }
 
     void SurfaceImpl::clear()
     {
-        m_geometryData->reset();
+		m_buildBuffer->reset();
         collected = true;
         x = 0;
         y = 0;
@@ -171,15 +185,16 @@ namespace Scintilla
         return initialized;
     }
 
-    void SurfaceImpl::render(base::canvas::Canvas& canvas)
+    void SurfaceImpl::render(int x, int y, base::canvas::Canvas& canvas)
     {
-        if (!collected)
-        {
-            m_geometryBuilder.extract(*m_geometryData);
-            collected = true;
-        }
+		if (!collected)
+		{
+			std::swap(m_buildBuffer, m_displayBuffer);
+			m_buildBuffer->reset();
+			collected = true;
+		}
 
-        canvas.place(*m_geometryData);
+		canvas.place(base::canvas::Placement(x, y), m_displayBuffer->data);
     }
 
     void SurfaceImpl::Init(WindowID)
@@ -213,12 +228,12 @@ namespace Scintilla
 
     void SurfaceImpl::PenColour(ColourDesired fore)
     {
-        m_geometryBuilder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+		m_buildBuffer->builder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
     }
 
     void SurfaceImpl::FillColour(const ColourDesired &back)
     {
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
     }
 
     int SurfaceImpl::LogPixelsY()
@@ -239,10 +254,10 @@ namespace Scintilla
 
     void SurfaceImpl::LineTo(int x_, int y_)
     {
-        m_geometryBuilder.beginPath();
-        m_geometryBuilder.moveTo(x, y);
-        m_geometryBuilder.lineTo(x_, y_);
-        m_geometryBuilder.stroke();
+        m_buildBuffer->builder.beginPath();
+        m_buildBuffer->builder.moveTo(x, y);
+        m_buildBuffer->builder.lineTo(x_, y_);
+        m_buildBuffer->builder.stroke();
 
         collected = false;
         x = x_;
@@ -252,28 +267,28 @@ namespace Scintilla
     void SurfaceImpl::Polygon(Scintilla::Point *pts, size_t npts, ColourDesired fore, ColourDesired back)
     {
         // set colors
-        m_geometryBuilder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
 
         // draw path
         {
-            m_geometryBuilder.beginPath();
+            m_buildBuffer->builder.beginPath();
 
             for (size_t i = 0; i < npts; i++)
             {
                 if (i == 0)
-                    m_geometryBuilder.moveTo(pts[i].x, pts[i].y);
+                    m_buildBuffer->builder.moveTo(pts[i].x, pts[i].y);
                 else
-                    m_geometryBuilder.lineTo(pts[i].x, pts[i].y);
+                    m_buildBuffer->builder.lineTo(pts[i].x, pts[i].y);
             }
 
-            m_geometryBuilder.closePath();
+            m_buildBuffer->builder.closePath();
         }
 
 
         // draw
-        m_geometryBuilder.fill();
-        m_geometryBuilder.stroke();
+        m_buildBuffer->builder.fill();
+        m_buildBuffer->builder.stroke();
 
         // require collection
         collected = false;
@@ -281,14 +296,14 @@ namespace Scintilla
 
     void SurfaceImpl::RectangleDraw(PRectangle rc, ColourDesired fore, ColourDesired back)
     {
-        m_geometryBuilder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
 
-        m_geometryBuilder.beginPath();
-        m_geometryBuilder.rect(ToRect(rc));
+        m_buildBuffer->builder.beginPath();
+        m_buildBuffer->builder.rect(ToRect(rc));
 
-        m_geometryBuilder.fill();
-        m_geometryBuilder.stroke();
+        m_buildBuffer->builder.fill();
+        m_buildBuffer->builder.stroke();
 
         // require collection
         collected = false;
@@ -296,10 +311,10 @@ namespace Scintilla
 
     void SurfaceImpl::FillRectangle(PRectangle rc, ColourDesired back)
     {
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
-        m_geometryBuilder.beginPath();
-        m_geometryBuilder.rect(ToRect(rc));
-        m_geometryBuilder.fill();
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.beginPath();
+        m_buildBuffer->builder.rect(ToRect(rc));
+        m_buildBuffer->builder.fill();
 
         // require collection
         collected = false;
@@ -314,14 +329,14 @@ namespace Scintilla
 
     void SurfaceImpl::RoundedRectangle(PRectangle rc, ColourDesired fore, ColourDesired back)
     {
-        m_geometryBuilder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
 
-        m_geometryBuilder.beginPath();
-        m_geometryBuilder.roundedRect(ToRect(rc), 4.0f);
+        m_buildBuffer->builder.beginPath();
+        m_buildBuffer->builder.roundedRect(ToRect(rc), 4.0f);
 
-        m_geometryBuilder.fill();
-        m_geometryBuilder.stroke();
+        m_buildBuffer->builder.fill();
+        m_buildBuffer->builder.stroke();
 
         // require collection
         collected = false;
@@ -330,8 +345,8 @@ namespace Scintilla
     void Scintilla::SurfaceImpl::AlphaRectangle(PRectangle rc, int cornerSize, ColourDesired fill, int alphaFill, ColourDesired outline, int alphaOutline, int /*flags*/)
     {
         // set colors
-        m_geometryBuilder.strokeColor(base::Color(outline.GetRed(), outline.GetGreen(), outline.GetBlue(), alphaOutline));
-        m_geometryBuilder.fillColor(base::Color(fill.GetRed(), fill.GetGreen(), fill.GetBlue(), alphaFill));
+        m_buildBuffer->builder.strokeColor(base::Color(outline.GetRed(), outline.GetGreen(), outline.GetBlue(), alphaOutline));
+        m_buildBuffer->builder.fillColor(base::Color(fill.GetRed(), fill.GetGreen(), fill.GetBlue(), alphaFill));
 
         // Set the Fill color to match
         PRectangle rcFill = rc;
@@ -340,9 +355,9 @@ namespace Scintilla
             // A simple rectangle, no rounded corners
             if ((fill == outline) && (alphaFill == alphaOutline))
             {
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.rect(ToRect(rcFill));
-                m_geometryBuilder.fill();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.rect(ToRect(rcFill));
+                m_buildBuffer->builder.fill();
             }
             else
             {
@@ -351,32 +366,32 @@ namespace Scintilla
                 rcFill.right -= 1.0;
                 rcFill.bottom -= 1.0;
 
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.rect(ToRect(rcFill));
-                m_geometryBuilder.fill();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.rect(ToRect(rcFill));
+                m_buildBuffer->builder.fill();
 
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.rect(ToRect(rc));
-                m_geometryBuilder.stroke();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.rect(ToRect(rc));
+                m_buildBuffer->builder.stroke();
             }
         }
         else
         {
             if ((fill == outline) && (alphaFill == alphaOutline))
             {
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.roundedRect(ToRect(rcFill), (float)cornerSize);
-                m_geometryBuilder.fill();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.roundedRect(ToRect(rcFill), (float)cornerSize);
+                m_buildBuffer->builder.fill();
             }
             else
             {
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.roundedRect(ToRect(rcFill), (float)cornerSize-1.0f);
-                m_geometryBuilder.fill();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.roundedRect(ToRect(rcFill), (float)cornerSize-1.0f);
+                m_buildBuffer->builder.fill();
 
-                m_geometryBuilder.beginPath();
-                m_geometryBuilder.roundedRect(ToRect(rc), (float)cornerSize);
-                m_geometryBuilder.stroke();
+                m_buildBuffer->builder.beginPath();
+                m_buildBuffer->builder.roundedRect(ToRect(rc), (float)cornerSize);
+                m_buildBuffer->builder.stroke();
             }
         }
 
@@ -396,14 +411,14 @@ namespace Scintilla
 
     void SurfaceImpl::Ellipse(PRectangle rc, ColourDesired fore, ColourDesired back)
     {
-        m_geometryBuilder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
-        m_geometryBuilder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
+        m_buildBuffer->builder.strokeColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+        m_buildBuffer->builder.fillColor(base::Color(back.GetRed(), back.GetGreen(), back.GetBlue()));
 
-        m_geometryBuilder.beginPath();
-        m_geometryBuilder.ellipse(ToRect(rc));
+        m_buildBuffer->builder.beginPath();
+        m_buildBuffer->builder.ellipse(ToRect(rc));
 
-        m_geometryBuilder.fill();
-        m_geometryBuilder.stroke();
+        m_buildBuffer->builder.fill();
+        m_buildBuffer->builder.stroke();
 
         // require collection
         collected = false;
@@ -445,10 +460,10 @@ namespace Scintilla
             auto yOffest = floor(ybase - Ascent(font_));
 
             // render
-            m_geometryBuilder.fillColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
-            m_geometryBuilder.translate(xOffset, yOffest);
-            m_geometryBuilder.print(glyphs);
-            m_geometryBuilder.translate(-xOffset, -yOffest);
+            m_buildBuffer->builder.fillColor(base::Color(fore.GetRed(), fore.GetGreen(), fore.GetBlue()));
+            m_buildBuffer->builder.translate(xOffset, yOffest);
+            m_buildBuffer->builder.print(glyphs);
+            m_buildBuffer->builder.translate(-xOffset, -yOffest);
 
             // require collection
             collected = false;
@@ -576,7 +591,7 @@ namespace Scintilla
 
     Surface *Surface::Allocate(int)
     {
-        return new SurfaceImpl();
+        return new SurfaceImpl(nullptr);
     }
 
     //----------------- Window -------------------------------------------------------------------------

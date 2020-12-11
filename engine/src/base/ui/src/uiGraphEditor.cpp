@@ -233,7 +233,7 @@ namespace ui
         TBaseClass::handleHoverLeave(absolutePosition);
     }
 
-    void GenerateConnectionGeometry(const Position& sourcePos, const base::Vector2& sourceDir, const Position& targetPos, const base::Vector2& targetDir, float width, float pixelScale, bool startArrow, bool endArrow, base::canvas::GeometryBuilder& builder)
+    void GenerateConnectionGeometry(const Position& sourcePos, const base::Vector2& sourceDir, const Position& targetPos, const base::Vector2& targetDir, base::Color linkColor, float width, float pixelScale, bool startArrow, bool endArrow, base::canvas::GeometryBuilder& builder)
     {
         // curve params
         auto dist = std::max<float>(std::fabsf(sourcePos.x - targetPos.x), std::fabsf(sourcePos.y - targetPos.y));
@@ -241,7 +241,7 @@ namespace ui
 
         // main curve
         builder.beginPath();
-        builder.strokeWidth(width * pixelScale);
+        builder.strokeColor(linkColor, width * pixelScale);
         builder.moveTo(sourcePos);
         builder.bezierTo(sourcePos + (sourceDir * offset), targetPos + (targetDir * offset), targetPos);
         //builder.lineTo(targetPos);
@@ -290,7 +290,8 @@ namespace ui
                 , m_lastAbsolutePoint(initialPoint)
                 , m_sourceSocket(sourceSocket)
                 , m_editor(editor)
-            {}
+            {
+			}
 
             virtual void onFinished() override
             {
@@ -353,14 +354,16 @@ namespace ui
                         canvas.pushScissorRect();
                         if (canvas.scissorRect(m_editor->cachedDrawArea().absolutePosition(), m_editor->cachedDrawArea().size()))
                         {
-                            base::canvas::GeometryBuilder builder;
-                            builder.strokeColor(validSourceSocket->info().m_linkColor);
+							base::canvas::Geometry geometry;
 
-                            const auto pixelWidth = m_editor->cachedStyleParams().pixelScale;
-                            GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, 4.0f, pixelWidth, false, false, builder);
+							{
+								base::canvas::GeometryBuilder builder(nullptr, geometry);
 
-                            canvas.placement(0, 0);
-                            canvas.place(builder);
+								const auto pixelWidth = m_editor->cachedStyleParams().pixelScale;
+								GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, validSourceSocket->info().m_linkColor, 4.0f, pixelWidth, false, false, builder);
+							}
+
+							canvas.place(base::canvas::Placement(), geometry);
                         }
                         canvas.popScissorRect();
                     }
@@ -464,8 +467,6 @@ namespace ui
     void GraphEditor::renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         TBaseClass::renderCustomOverlayElements(hitCache, outerArea, outerClipArea, canvas, mergedOpacity);
-
-        canvas.placement(0, 0);
 
         // TODO: culling!!!
         for (auto* node : m_nodesMap.values())

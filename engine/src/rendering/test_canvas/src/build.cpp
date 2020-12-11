@@ -6,7 +6,7 @@
 * [# dependency: base_* #]
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
-* [# dependency: rendering_api_* #]
+* [# dependency: rendering_api_gl4 #]
 * [# dependency: assets_image_loader #]
 * [# devonly #]
 * [# app #]

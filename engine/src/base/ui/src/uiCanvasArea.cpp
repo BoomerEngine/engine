@@ -206,7 +206,7 @@ namespace ui
                 x += drawArea.left();
                 y += drawArea.top();
 
-                canvas.placement(x, y, m_viewScale.x, m_viewScale.y);
+                //canvas.placement(x, y, m_viewScale.x, m_viewScale.y);
                 elem->element->render(this, x, y, m_viewScale.x, m_viewScale.y, canvas, mergedOpacity);
             }
         }
@@ -439,29 +439,30 @@ namespace ui
                         totalAreaHeight += metrics.lineHeight;
                     }
 
-                    base::canvas::GeometryBuilder b;
+					base::canvas::Geometry geometry;
 
-                    b.fillColor(base::Color(70,70,70,70));
-                    b.strokeColor(base::Color(255, 255, 255, 255));
-                    b.beginPath();
-                    b.roundedRect(50, 50, totalAreaWidth + 40, totalAreaHeight + 40, 15.0f);
-                    b.fill();
-                    b.stroke();
+					{
+						base::canvas::GeometryBuilder b(canvasStorage(), geometry);
 
-                    for (uint32_t i = 0; i < m_statusMessages.size(); ++i)
-                    {
-                        const auto& msg = m_statusMessages[i];
+						b.fillColor(base::Color(70, 70, 70, 70));
+						b.strokeColor(base::Color(255, 255, 255, 255));
+						b.beginPath();
+						b.roundedRect(50, 50, totalAreaWidth + 40, totalAreaHeight + 40, 15.0f);
+						b.fill();
+						b.stroke();
 
-                        b.pushTransform();
-                        b.translate(50 + 20, 50 + 20 + linePos[i]);
-                        b.fillColor(msg.color);
-                        b.print(fonts->normal, size, msg.text, -1, 0);
-                    }
+						for (uint32_t i = 0; i < m_statusMessages.size(); ++i)
+						{
+							const auto& msg = m_statusMessages[i];
 
-                    const auto placement = canvas.transform();
-                    canvas.placement(drawArea.left(), drawArea.top());
-                    canvas.place(b);
-                    canvas.placement(placement);
+							b.pushTransform();
+							b.translate(50 + 20, 50 + 20 + linePos[i]);
+							b.fillColor(msg.color);
+							b.print(fonts->normal, size, msg.text, -1, 0);
+						}
+					}
+
+                    canvas.place(drawArea.absolutePosition(), geometry);
                 }
             }
         }

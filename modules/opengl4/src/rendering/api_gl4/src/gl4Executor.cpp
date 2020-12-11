@@ -662,7 +662,6 @@ namespace rendering
 
 					m_currentRenderState.apply(m_drawRenderStateMask); // set states to api
 					m_passRenderStateMask |= m_drawRenderStateMask; // those states will have to be reset when pass ends
-					m_drawRenderStateMask = StateMask();
 				}
 			}
 
@@ -672,9 +671,8 @@ namespace rendering
 				{
 					PC_SCOPE_LVL2(ResetPassRenderStates);
 
-					StateMask changedStates;
-					m_currentRenderState.apply(StateValues::DEFAULT_STATES(), m_passRenderStateMask, changedStates); // reset all modified states to their default values
-					m_currentRenderState.apply(changedStates); // apply to pipeline
+					m_currentRenderState = StateValues::DEFAULT_STATES();
+					m_currentRenderState.apply(m_passRenderStateMask);
 				}
 			}
 
@@ -765,7 +763,8 @@ namespace rendering
 
 			bool FrameExecutor::prepareDraw(GraphicsPipeline* pso, bool usesIndices)
 			{
-				m_currentRenderState.apply(pso->staticRenderState(), pso->staticRenderStateMask(), m_drawRenderStateMask);
+				const auto updateMask = pso->staticRenderStateMask() | m_drawRenderStateMask; // we need to make sure we reset also states changes so far
+				m_currentRenderState.applyMasked(pso->staticRenderState(), updateMask, m_drawRenderStateMask);
 
 				flushDrawRenderStates();
 

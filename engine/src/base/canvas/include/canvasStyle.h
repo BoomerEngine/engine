@@ -35,37 +35,42 @@ namespace base
 {
     namespace canvas
     {
+
+		//--
+
         /// canvas geometry rendering state
         /// contains ALL informations necessary for rendering the object
         struct BASE_CANVAS_API RenderStyle
         {
-            XForm2D xform; // transforms from input vertex space to PaintUV space that is used internally
-            bool xformNeeded = false;
+            XForm2D xform;
 
             Vector2 base;
             Vector2 extent;
-            Vector2 uvMin;
-            Vector2 uvMax;
 
-            float radius = 1.0f;
-            float feather = 0.0f;
-            Color innerColor = Color::WHITE;
-            Color outerColor = Color::WHITE;
-            bool wrapU = false;
-            bool wrapV = false;
-            bool customUV = false;
+			float radius = 0.0f;
+			float feather = 0.0f;
+			float margin = 0.0f;
 
-            const base::image::Image* image = nullptr;
+			ImageEntry image;
 
-            uint64_t hash = 0;
+			Color innerColor = Color::WHITE;
+			Color outerColor = Color::WHITE;
 
-            void recomputeHash(); // call when changing style
-            
-            bool operator==(const RenderStyle& other) const;
-            bool operator!=(const RenderStyle& other) const;
+            bool wrapU:1;
+            bool wrapV:1;
+            bool customUV:1;
+			bool xformNeeded:1;
+			bool attributesNeeded : 1;
 
-            INLINE static uint32_t CalcHash(const RenderStyle& style) { return style.hash; }
+			//--
+
+			RenderStyle();
+
+            //bool operator==(const RenderStyle& other) const;
+            //bool operator!=(const RenderStyle& other) const;
         };
+
+		//--
 
         // Supported render style: linear gradient, box gradient, radial gradient and image pattern.
         // These can be used as paints for strokes and fills.
@@ -95,8 +100,9 @@ namespace base
         extern BASE_CANVAS_API RenderStyle RadialGradienti(int cx, int cy, int inr, int outr, const Color& icol, const Color& ocol);
 
         // image projection settings
-        struct ImagePatternSettings
+        struct BASE_CANVAS_API ImagePatternSettings
         {
+			ImageEntry m_image;
             float m_angle = 0.0f; // rotation around pivot
             float m_offsetX = 0.0f;
             float m_offsetY = 0.0f;
@@ -106,30 +112,38 @@ namespace base
             float m_pivotY = 0.0f;
             bool m_wrapU = false;
             bool m_wrapV = false;
+			bool m_customUV = false; // use UVs in the vertices, not the ones computed from style
             uint8_t m_alpha = 255;
-
-            Rect m_rect; // sub-rectangle that should be used instead of the whole image            
+			uint8_t m_margin = 0;
 
             INLINE ImagePatternSettings() {};
+			INLINE ImagePatternSettings(const ImageEntry& image) : m_image(image) {};
             INLINE ImagePatternSettings& scale(float s) { m_scaleX = s; m_scaleY = s; return *this; }
             INLINE ImagePatternSettings& offset(float x, float y) { m_offsetX = x; m_offsetY = y;  return *this; }
             INLINE ImagePatternSettings& angle(float a) { m_angle = a;  return *this; }
             INLINE ImagePatternSettings& pivot(float x, float y) { m_pivotX = x; m_pivotY = y; return *this; }
-            INLINE ImagePatternSettings& rect(const Rect& rect) { m_rect = rect; return *this; }
             INLINE ImagePatternSettings& alpha(uint8_t alpha) { m_alpha = alpha; return *this; }
             INLINE ImagePatternSettings& wrap() { m_wrapU = m_wrapV = true; return *this; }
             INLINE ImagePatternSettings& clamp() { m_wrapU = m_wrapV = false; return *this; }
-            INLINE ImagePatternSettings& wrapU(bool u) { m_wrapU = u; return *this; }
-            INLINE ImagePatternSettings& wrapV(bool u) { m_wrapV = u; return *this; }
+            INLINE ImagePatternSettings& wrapU(bool u = true) { m_wrapU = u; return *this; }
+            INLINE ImagePatternSettings& wrapV(bool u = true) { m_wrapV = u; return *this; }
+			INLINE ImagePatternSettings& customUV(bool flag = true) { m_customUV = flag; return *this; }
+			INLINE ImagePatternSettings& image(ImageEntry img) { m_image = img; return *this; }
+			INLINE ImagePatternSettings& margin(uint8_t m) { m_margin = m; return *this; }
+
+			XForm2D calcPixelToUVTransform() const;
         };
 
         // Creates and returns an image patter. Parameters (ox,oy) specify the left-top location of the image pattern,
         // (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render.
         // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
-        extern BASE_CANVAS_API RenderStyle ImagePattern(const base::image::Image* image, const ImagePatternSettings& pattern);
+        extern BASE_CANVAS_API RenderStyle ImagePattern(ImageEntry image, const ImagePatternSettings& pattern);
+		extern BASE_CANVAS_API RenderStyle ImagePattern(const ImagePatternSettings& pattern);
 
         // Create a style with solid paint color
         extern BASE_CANVAS_API RenderStyle SolidColor(const Color& color);
+
+		//--
 
     } // canvas
 } // base

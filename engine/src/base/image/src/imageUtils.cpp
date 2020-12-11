@@ -188,6 +188,13 @@ namespace base
             }
         }
 
+		ImagePtr ConvertChannels(const ImageView& src, uint8_t destChannelCount, const void* defaults /*= nullptr*/)
+		{
+			auto ret = RefNew<Image>(src.format(), destChannelCount, src.width(), src.height(), src.depth());
+			ConvertChannels(src, ret->view(), defaults);
+			return ret;
+		}
+
         //---
 
         template< typename T >

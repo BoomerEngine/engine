@@ -1,0 +1,58 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+/*struct GPUDrawIndexedArguments {
+	uint indexCountPerInstance;
+	uint instanceCount;
+	uint startIndexLocation;
+	uint baseVertexLocation;
+	uint startInstanceLocation;
+};*/
+
+struct GPUDrawArguments {
+	uint vertexCountPerInstance;
+	uint instanceCount;
+	uint startVertexLocation;
+	uint startInstanceLocation;
+}; 
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        uint VersPerSize;
+    }
+
+	attribute(readonly, uav, format=r32ui) Buffer TempBuffer;
+	//attribute(uav, layout=GPUDrawIndexedArguments) Buffer OutputCommands;
+	attribute(uav, layout=GPUDrawArguments) Buffer OutputCommands;
+}
+
+export shader GenerateCS
+{	
+	attribute(local_size_x=1,local_size_y=1,local_size_z=1)
+	void main()
+	{
+		uint finalInstanceCount = TempBuffer[0];
+
+		//--
+
+		uint command = 0;
+		/*OutputCommands[command].indexCountPerInstance = (VersPerSize * VersPerSize * 6);
+		OutputCommands[command].instanceCount = finalInstanceCount;
+		OutputCommands[command].startIndexLocation = 0;
+		OutputCommands[command].baseVertexLocation = 0;
+		OutputCommands[command].startInstanceLocation = 0;*/
+
+		OutputCommands[command].vertexCountPerInstance = (VersPerSize * VersPerSize * 6);
+		OutputCommands[command].instanceCount = finalInstanceCount;
+		OutputCommands[command].startVertexLocation = 0;
+		OutputCommands[command].startInstanceLocation = 0;
+
+		//--
+	}
+}

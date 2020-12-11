@@ -1078,16 +1078,22 @@ namespace ui
         }
     }
 
-    extern void GenerateConnectionGeometry(const Position& sourcePos, const base::Vector2& sourceDir, const Position& targetPos, const base::Vector2& targetDir, float width, float pixelScale, bool startArrow, bool endArrow, base::canvas::GeometryBuilder& builder);
+    extern void GenerateConnectionGeometry(const Position& sourcePos, const base::Vector2& sourceDir, 
+		const Position& targetPos, const base::Vector2& targetDir, 
+		base::Color color, float width, float pixelScale, bool startArrow, bool endArrow, base::canvas::GeometryBuilder& builder);
 
     void GraphEditorBlockNode::drawConnections(const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        const auto pixelWidth = cachedStyleParams().pixelScale;
+		base::canvas::Geometry geometry;
+
+		const auto pixelWidth = cachedStyleParams().pixelScale;
         if (pixelWidth > 0.15f)
         {
             if (auto editor = base::rtti_cast<GraphEditor>(parent()))
             {
-                for (const auto& socket : m_layout.sockets.values())
+				base::canvas::GeometryBuilder builder(nullptr, geometry);
+
+				for (const auto& socket : m_layout.sockets.values())
                 {
                     for (const auto& con : socket.ptr->connections())
                     {
@@ -1110,11 +1116,8 @@ namespace ui
                                 const auto maxY = std::max<float>(sourcePos.y, targetPos.y);
                                 if (maxX >= outerClipArea.left() && minX <= outerClipArea.right() && maxY >= outerClipArea.top() && minY <= outerClipArea.bottom())
                                 {
-                                    base::canvas::GeometryBuilder builder;
-                                    builder.strokeColor(con->first()->info().m_linkColor);
-
-                                    GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, 2.0f, pixelWidth, false, false, builder);
-                                    canvas.place(builder);
+                                    GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, 
+										con->first()->info().m_linkColor, 2.0f, pixelWidth, false, false, builder);
                                 }
                             }
                         }
@@ -1122,6 +1125,8 @@ namespace ui
                 }
             }
         }
+
+		canvas.place(base::canvas::Placement(), geometry, mergedOpacity);
     }
 
     //--

@@ -18,9 +18,10 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
-#include "rendering/canvas/include/renderingCanvasRenderingService.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/canvas/include/renderingCanvasRenderer.h"
+#include "rendering/canvas/include/renderingCanvasStorage.h"
 #include "base/app/include/launcherPlatform.h"
 
 namespace rendering
@@ -38,7 +39,12 @@ namespace rendering
 
         void CanvasTestProject::cleanup()
         {
-            m_currentTest.reset();
+			if (m_currentTest)
+			{
+				m_currentTest->shutdown();
+				m_currentTest.reset();
+			}
+
             m_renderingOutput.reset();
         }
 
@@ -100,6 +106,10 @@ namespace rendering
             if (!createRenderingOutput())
                 return false;
 
+			// create the canvas storage
+			auto dev = base::GetService<DeviceService>()->device();
+			m_storage = base::RefNew<rendering::canvas::CanvasStorage>(dev);
+
             return true;
         }
 
@@ -142,14 +152,90 @@ namespace rendering
 
             // initialize the test
             auto testCase = testClass.m_testClass->create<ICanvasTest>();
-            if (!testCase || !testCase->processInitialization())
+            if (!testCase)
             {
                 TRACE_ERROR("Failed to initialize test '{}'", testClass.m_testClass->name());
                 return nullptr;
             }
 
+			testCase->m_storage = m_storage;
+
+			if (!testCase->processInitialization())
+			{
+				TRACE_ERROR("Failed to initialize test '{}'", testClass.m_testClass->name());
+				testCase->shutdown();
+				return nullptr;
+			}
+
             return testCase;
         }
+
+		void CanvasTestProject::updateTitleBar()
+		{
+			const auto scale = (100 + m_pixelScaleTest) / 100.0f;
+
+			// set the window caption
+			auto testName = m_testClasses[m_currentTestCaseIndex].m_testName;
+			m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Canvas Tests - {} x{} {}", 
+				testName, Prec(scale, 2), m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
+		}
+
+		void CanvasTestProject::processInput()
+		{
+			if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
+			{
+				while (auto evt = inputContext->pull())
+				{
+					if (auto keyEvt = evt->toKeyEvent())
+					{
+						if (keyEvt->pressedOrRepeated())
+						{
+							if (keyEvt->keyCode() == base::input::KeyCode::KEY_ESCAPE)
+							{
+								m_exitRequested = true;
+								break;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT)
+							{
+								if (m_pendingTestCaseIndex <= 0)
+									m_pendingTestCaseIndex = m_testClasses.size() - 1;
+								else
+									m_pendingTestCaseIndex -= 1;
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_RIGHT)
+							{
+								m_pendingTestCaseIndex += 1;
+								if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
+									m_pendingTestCaseIndex = 0;
+							}		
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_EQUAL)
+							{
+								if (keyEvt->keyMask().isShiftDown())
+									m_pixelScaleTest += 1;
+								else
+									m_pixelScaleTest += 10;
+								updateTitleBar();
+							}
+							else if (keyEvt->keyCode() == base::input::KeyCode::KEY_MINUS)
+							{
+								if (keyEvt->keyMask().isShiftDown())
+									m_pixelScaleTest -= 1;
+								else
+									m_pixelScaleTest -= 10;
+
+								if (m_pixelScaleTest < -99)
+									m_pixelScaleTest = 99;
+
+								updateTitleBar();
+							}
+						}
+					}
+
+					if (m_currentTest)
+						m_currentTest->processInput(*evt);
+				}
+			}
+		}
 
         void CanvasTestProject::update()
         {
@@ -168,61 +254,24 @@ namespace rendering
                 return;
             }
 
-            // pump window messages
-            //m_windowFactory->pumpMessages();
-
-            // get input
-            //auto& inputBuffer = base::GetService<base::input::InputService>()->events();
-
-            // process events
-            if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
-            {
-                while (auto evt = inputContext->pull())
-                {
-                    if (auto keyEvt  = evt->toKeyEvent())
-                    {
-                        if (keyEvt->pressed())
-                        {
-                            if (keyEvt->keyCode() == base::input::KeyCode::KEY_ESCAPE)
-                            {
-                                m_exitRequested = true;
-                                break;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_LEFT)
-                            {
-                                if (m_pendingTestCaseIndex <= 0)
-                                    m_pendingTestCaseIndex = m_testClasses.size() - 1;
-                                else
-                                    m_pendingTestCaseIndex -= 1;
-                            }
-                            else if (keyEvt->keyCode() == base::input::KeyCode::KEY_RIGHT)
-                            {
-                                m_pendingTestCaseIndex += 1;
-                                if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
-                                    m_pendingTestCaseIndex = 0;
-                            }
-                        }
-                    }
-
-                    if (m_currentTest)
-                        m_currentTest->processInput(*evt);
-                }
-            }
+			// update input
+			processInput();
 
             // navigate to other test
             if (m_pendingTestCaseIndex != m_currentTestCaseIndex)
             {
                 // close current test
-                if (m_currentTest)
-                    m_currentTest.reset();
+				if (m_currentTest)
+				{
+					m_currentTest->shutdown();
+					m_currentTest.reset();
+				}
 
                 // initialize new test
                 m_currentTestCaseIndex = m_pendingTestCaseIndex;
                 m_currentTest = initializeTest(m_currentTestCaseIndex);
 
-                // set the window caption
-                auto testName = m_testClasses[m_currentTestCaseIndex].m_testName;
-                m_renderingOutput->window()->windowSetTitle(base::TempString("Boomer Engine Canvas Tests - {} {}", testName, m_currentTest ? "" : "(FAILED TO INITIALIZE)"));
+				updateTitleBar();
             }
 
             // render canvas on GPU
@@ -232,27 +281,34 @@ namespace rendering
 
                 if (const auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-                    // use canvas of the same size as output window
-                    base::canvas::Canvas canvas(output.width, output.height);
+					// clear frame buffer
+					{
+						FrameBuffer fb;
+						fb.color[0].view(output.color).clear(0.2, 0.2f, 0.2f, 1.0f);
+						fb.depth.view(output.depth).clearDepth().clearStencil();
+						cmd.opBeingPass(m_renderingOutput->layout(), fb);
+						cmd.opEndPass();
+					}
 
-                    // render to canvas
-                    if (m_currentTest)
-                        m_currentTest->render(canvas);
+					// create canvas renderer
+					rendering::canvas::CanvasRenderer::Setup setup;
+					setup.width = output.width;
+					setup.height = output.height;
+					setup.backBufferColorRTV = output.color;
+					setup.backBufferDepthRTV = output.depth;
+					setup.backBufferLayout = m_renderingOutput->layout();
+					setup.pixelScale = (100 + m_pixelScaleTest) / 100.0f;
 
-                    // set frame buffer
-                    FrameBuffer fb;
-                    fb.color[0].view(output.color).clear(0.2, 0.2f, 0.2f, 1.0f);
-                    fb.depth.view(output.depth).clearDepth().clearStencil();
-                    cmd.opBeingPass(fb);
+					// render test to canvas
+					{
+						rendering::canvas::CanvasRenderer canvas(setup, m_storage);
 
-                    // render canvas to command buffer
-                    canvas::CanvasRenderingParams renderingParams;
-                    renderingParams.frameBufferWidth = output.width;
-                    renderingParams.frameBufferHeight = output.height;
-                    base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
+						if (m_currentTest)
+							m_currentTest->render(canvas);
 
-                    // finish pass
-                    cmd.opEndPass();
+						cmd.opAttachChildCommandBuffer(canvas.finishRecording());
+					}
+
 
                     // swap
                     cmd.opSwapOutput(m_renderingOutput);

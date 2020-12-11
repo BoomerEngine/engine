@@ -20,6 +20,7 @@ namespace base
             Vector2 uvStart;
             Vector2 uvEnd;
             Rect placement;
+			Rect dirtyRect;
 
             INLINE DynamicAtlasEntry()
                 : uvStart(0, 0)
@@ -34,7 +35,7 @@ namespace base
         class BASE_IMAGE_API DynamicAtlas : public base::NoCopy
         {
         public:
-            DynamicAtlas(uint32_t width, uint32_t height, uint8_t numChannels=1, uint32_t pixelSpacing=1, PixelFormat format = PixelFormat::Uint8_Norm);
+            DynamicAtlas(uint32_t width, uint32_t height, uint8_t numChannels=1, PixelFormat format = PixelFormat::Uint8_Norm);
             ~DynamicAtlas();
 
             ///--
@@ -50,18 +51,17 @@ namespace base
             void reset();
 
             /// place an image inside the atlas, returns false if the atlas is full
-            bool placeImage(const ImageView& sourceImage, DynamicAtlasEntry& outEntry);
+            bool placeImage(const ImageView& sourceImage, uint32_t padding, bool supportWrapping, DynamicAtlasEntry& outEntry);
 
         private:
             ImagePtr m_image; // image area
             UniquePtr<RectAllocator> m_spaceAllocator; // allocator for the sub-space in the image
 
-            uint32_t m_width;
-            uint32_t m_height;
-            uint32_t m_pixelSpacing;
+            uint32_t m_width = 0;
+            uint32_t m_height = 0;
 
-            float m_invWidth;
-            float m_invHeight;
+            float m_invWidth = 0.0f;
+            float m_invHeight = 0.0f;
         };
 
         //--

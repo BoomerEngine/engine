@@ -298,6 +298,7 @@ namespace ui
                     else if (imageFlags & IMAGE_Y_STRETCH)
                         params.m_scaleY = sy / ey;
 
+					auto image = base::canvas::ImageEntry();
                     auto renderStyle = base::canvas::ImagePattern(image, params);
                     renderStyle.innerColor = innerColor;
                     renderStyle.outerColor = outerColor;

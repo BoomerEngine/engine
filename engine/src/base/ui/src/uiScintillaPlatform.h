@@ -26,7 +26,7 @@ namespace Scintilla
     class SurfaceImpl : public Surface
     {
     public:
-        SurfaceImpl();
+        SurfaceImpl(const base::canvas::IStorage* storage);
         ~SurfaceImpl() override;
 
         //--
@@ -35,7 +35,7 @@ namespace Scintilla
         void clear();
 
         // render into canvas collector
-        void render(base::canvas::Canvas& canvas);
+        void render(int x, int y, base::canvas::Canvas& canvas);
 
         //--
 
@@ -90,8 +90,18 @@ namespace Scintilla
         int codePage;
         int verticalDeviceResolution;
 
-        base::canvas::GeometryBuilder m_geometryBuilder;
-        base::RefPtr<base::canvas::Geometry> m_geometryData;
+		struct Buffer
+		{
+			base::canvas::Geometry data;
+			base::canvas::GeometryBuilder builder;
+
+			Buffer(const base::canvas::IStorage* storage);
+
+			void reset();
+		};
+
+		Buffer* m_displayBuffer = nullptr;
+		Buffer* m_buildBuffer = nullptr;
 
         void ResetStyles();
         void FillColour(const ColourDesired &back);

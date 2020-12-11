@@ -1,0 +1,138 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+struct GPUChunkInfo	{
+	vec2 offset = 0.0f;
+	vec2 size = 0.0f;
+
+	uint firstIndex;
+	uint numTriangles; // 3 indices per triangle starting at firstIndex
+	uint firstVertex; // added to each index
+	uint color;
+};
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+        uint VersPerSize;
+		uint TrianglesPerQuad;
+		uint QuadsPerSize;
+		uint VertexStride;
+
+		vec2 occluderPos;
+		float occluderSize;
+		uint _Padding2;
+    }
+
+    attribute(readonly, layout=GPUChunkInfo) Buffer InputChunks;
+	attribute(readonly, format=r32ui) Buffer InputIndexBuffer;
+	attribute(readonly, format=r32f) Buffer InputVertexBuffer;
+
+	attribute(coherent, uav, format=r32ui) Buffer TempBuffer;
+
+	attribute(uav, layout=GPUChunkInfo) Buffer OutputChunks;
+	attribute(uav, format=r32ui) Buffer OutputIndexBuffer;
+
+	// 0 - number of generated instances
+}
+
+export shader GenerateCS
+{	
+	//shared uint GeneratedChunkIndex;
+
+	shared uint shared_LocalIndexOffset;
+
+	attribute(local_size_x=16,local_size_y=8,local_size_z=1)
+	void main()
+	{
+		uint triangleIndex = gl_LocalInvocationID.x + (gl_LocalInvocationID.y * 16); // 8*8 quads -> 64 quads, 128 triangles
+		uint chunkIndex = gl_GlobalInvocationID.z;
+
+		//--
+
+		// general visibility
+		bool chunkVisible = false;
+		vec2 chunkCenter = InputChunks[chunkIndex].offset + InputChunks[chunkIndex].size * 0.5f;
+		if (length(chunkCenter - occluderPos) > occluderSize)
+			chunkVisible = true;
+
+		//--
+
+		memoryBarrier();
+
+		uint chunkMaxIndexCount = VersPerSize * VersPerSize * 6;
+		if (gl_LocalInvocationID.x==0 && gl_LocalInvocationID.y==0)
+		{
+			if (chunkVisible)
+			{
+				// allocated index space
+				uint chunkGlobalIndexOffset = atomicAdd(TempBuffer[1], chunkMaxIndexCount);
+				shared_LocalIndexOffset = chunkGlobalIndexOffset;
+
+				// export chunk
+				{
+					uint instanceIndex = atomicAdd(TempBuffer[0], 1);
+					OutputChunks[instanceIndex] = InputChunks[chunkIndex];
+					OutputChunks[instanceIndex].firstIndex = chunkGlobalIndexOffset;
+					//OutputChunks[instanceIndex].color = packUnorm4x8(vec4(0,0,gl_GlobalInvocationID.z / 1024.0f,1.0f));
+				}
+			}
+		}
+
+		//--
+
+		barrier();
+		memoryBarrier();
+		memoryBarrierShared();
+
+		//--
+
+		// export indices
+		if (chunkVisible)
+		{
+			uint chunkBaseIndex = InputChunks[chunkIndex].firstIndex;
+			uint index0 = InputIndexBuffer[chunkBaseIndex + triangleIndex*3 + 0];
+			uint index1 = InputIndexBuffer[chunkBaseIndex + triangleIndex*3 + 1];
+			uint index2 = InputIndexBuffer[chunkBaseIndex + triangleIndex*3 + 2];
+
+			vec2 pos0, pos1, pos2;
+			uint chunkBaseVertex = InputChunks[chunkIndex].firstVertex;
+			pos0.x = InputVertexBuffer[(chunkBaseVertex + index0) * VertexStride + 0];
+			pos0.y = InputVertexBuffer[(chunkBaseVertex + index0) * VertexStride + 1];
+			pos1.x = InputVertexBuffer[(chunkBaseVertex + index1) * VertexStride + 0];
+			pos1.y = InputVertexBuffer[(chunkBaseVertex + index1) * VertexStride + 1];
+			pos2.x = InputVertexBuffer[(chunkBaseVertex + index2) * VertexStride + 0];
+			pos2.y = InputVertexBuffer[(chunkBaseVertex + index2) * VertexStride + 1];
+			pos0 = InputChunks[chunkIndex].offset + (InputChunks[chunkIndex].size * pos0);
+			pos1 = InputChunks[chunkIndex].offset + (InputChunks[chunkIndex].size * pos1);
+			pos2 = InputChunks[chunkIndex].offset + (InputChunks[chunkIndex].size * pos2);
+
+			bool visible = true;
+			if (length(pos0 - occluderPos) < occluderSize) visible = false;
+			if (length(pos1 - occluderPos) < occluderSize) visible = false;
+			if (length(pos2 - occluderPos) < occluderSize) visible = false;
+
+			if (visible)
+			{
+				uint newLocalIndexOffset = atomicAdd(shared_LocalIndexOffset, 3);
+				OutputIndexBuffer[newLocalIndexOffset+0] = index0;
+				OutputIndexBuffer[newLocalIndexOffset+1] = index1;
+				OutputIndexBuffer[newLocalIndexOffset+2] = index2;
+			}
+			/*else
+			{
+				uint newLocalIndexOffset = chunkGlobalIndexOffset + triangleIndex*3;
+				OutputIndexBuffer[newLocalIndexOffset+0] = 0;
+				OutputIndexBuffer[newLocalIndexOffset+1] = 0;
+				OutputIndexBuffer[newLocalIndexOffset+2] = 0;
+			}*/
+		}
+
+		//--
+	}
+}

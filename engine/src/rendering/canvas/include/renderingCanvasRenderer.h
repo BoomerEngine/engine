@@ -9,108 +9,60 @@
 #pragma once
 
 #include "base/canvas/include/canvas.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/system/include/mutex.h"
-
-#include "rendering/device/include/renderingConstantsView.h"
-#include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingDeviceObject.h"
-
-#include "base/containers/include/rectAllocator.h"
-
-#include "renderingCanvasRendererCustomBatchHandler.h"
 
 namespace rendering
 {
     namespace canvas
     {
-
         ///---
-
-        class CanvasImageCache;
-        struct CanvasShaderParams;
-        struct CanvasImageCacheEntry;
 
         /// canvas renderer - hosts all necessary shaders and data to render canvas
         /// NOTE: this class must be externally synchronized as it's single thread only
-        class RENDERING_CANVAS_API CanvasRenderer : public base::NoCopy
+        class RENDERING_CANVAS_API CanvasRenderer : public base::canvas::Canvas
         {
-            RTTI_DECLARE_POOL(POOL_CANVAS)
+			RTTI_DECLARE_VIRTUAL_CLASS(CanvasRenderer, base::canvas::Canvas);
 
         public:
-            CanvasRenderer();
-            virtual ~CanvasRenderer();
+			struct Setup : public base::canvas::Canvas::Setup
+			{
+				RenderTargetView* backBufferColorRTV = nullptr;
+				RenderTargetView* backBufferDepthRTV = nullptr;
+				GraphicsPassLayoutObject* backBufferLayout = nullptr;
+			};
 
-            /// render canvas content into current render pass 
-            void render(command::CommandWriter& cmd, const base::canvas::Canvas& canvas, const CanvasRenderingParams& params);
+			CanvasRenderer(const Setup& setup, const CanvasStorage* storage);
+            ~CanvasRenderer();
 
-        private:
-            base::UniquePtr<CanvasImageCache> m_alphaImageCache; // fonts other "iconic" white stuff
-            base::UniquePtr<CanvasImageCache> m_rgbaImageCache; // images
-            
-            base::Array<CanvasShaderParams> m_paramDataStorage;
-            base::Array<CanvasImageCacheEntry> m_colorImages;
-            base::Array<CanvasImageCacheEntry> m_alphaImages;
+			//--
 
-            ICanvasRendererCustomBatchHandler** m_customHandlersFlatList;
-            base::Array<base::RefPtr<ICanvasRendererCustomBatchHandler>> m_customHandlers;
+			void finishPass();
+			void startPass();
 
-            BufferObjectPtr m_vertexBuffer;
-            BufferObjectPtr m_indexBuffer;
-            BufferObjectPtr m_paramBuffer;
+			//--
 
-            void handleDeviceReset();
-            void packParameters(const base::canvas::Canvas::Params& params, CanvasShaderParams& outParams) const;
+			/// extract generated command buffer chain (may be big if it includes rendering to 3d viewports)
+			command::CommandBuffer* finishRecording();
 
-            //--
+			//--
 
-            struct Batch
-            {
-                uint32_t firstIndex = 0;
-                uint32_t numIndices = 0;
-                uint32_t numPayloads = 0;
-                uint32_t firstPayload = 0;
-                uint16_t customDrawer = 0;
+		private:
+			virtual void flushInternal(const base::canvas::Vertex* vertices, uint32_t numVertices, 
+				const base::canvas::Attributes* attributes, uint32_t numAttributes,
+				const void* data, uint32_t dataSize,
+				const base::canvas::Batch* batches, uint32_t numBatches) override final;
 
-                base::canvas::CompositeOperation blendOp = base::canvas::CompositeOperation::SourceOver;
-                base::canvas::Canvas::BatchType shader = base::canvas::Canvas::BatchType::ConvexFill;
-            };
+			command::CommandWriter* m_commandBufferWriter;
+			const CanvasStorage* m_storage;
 
-            class BatchCollector
-            {
-            public:
-                BatchCollector();
+			int m_currentAtlasIndex = -1;
 
-                void push(const base::canvas::Canvas::Batch& b);
-                void finish();
+			bool m_inPass = false;
 
-                INLINE const base::Array<Batch>& batches() const { return m_batches; }
-                INLINE const base::Array<CanvasCustomBatchPayload>& payloads() const { return m_customPayloads; }
+			RenderTargetView* m_backBufferColorRTV = nullptr;
+			RenderTargetView* m_backBufferDepthRTV = nullptr;
+			GraphicsPassLayoutObject* m_backBufferLayout = nullptr;
 
-            private:
-                base::canvas::Canvas::BatchType m_currentShader = base::canvas::Canvas::BatchType::ConvexFill;
-                base::canvas::CompositeOperation m_currentOp = base::canvas::CompositeOperation::SourceOver;;
-
-                base::InplaceArray<Batch, 512> m_batches;
-                base::InplaceArray<CanvasCustomBatchPayload, 512> m_customPayloads;
-
-                uint32_t m_currentStartIndex = 0;
-                uint32_t m_currentStartPayload = 0;
-                uint32_t m_currentIndexCount = 0;
-                int m_currentCustomHandlerType = 0;
-            };
-
-            //--
-
-            void render(command::CommandWriter& cmd, const base::canvas::Canvas& geometry, const ImageView& colorTarget, const ImageView& depthTarget) const;
-
-            //--
-
-            void createDeviceResources();
-            void destroyDeviceResources();
-            void createCustomHandlers();
-
-            IDevice* m_api = nullptr;
+			base::Matrix m_canvasToScreen;
         };
 
         //--

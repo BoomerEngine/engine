@@ -29,6 +29,8 @@ namespace rendering
             virtual void update() override;
 
             //--
+			
+			base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
 
             base::RefPtr<ICanvasTest> m_currentTest;
             int m_currentTestCaseIndex;
@@ -36,8 +38,11 @@ namespace rendering
 
             OutputObjectPtr m_renderingOutput;
             bool m_exitRequested;
+			int m_pixelScaleTest = 0;
 
             bool createRenderingOutput();
+			void updateTitleBar();
+			void processInput();
 
             //--
 

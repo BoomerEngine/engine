@@ -1,0 +1,42 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+struct GPUDrawIndirectArguments {
+	uint VertexCountPerInstance;
+	uint InstanceCount;
+	uint StartVertexLocation;
+	uint StartInstanceLocation;
+};
+
+descriptor TestParams
+{
+    ConstantBuffer
+    {
+		float Time;
+        uint SideCount;        
+    }
+
+    attribute(uav, layout=GPUDrawIndirectArguments) Buffer DrawParameters;
+}
+
+export shader GenerateCS
+{	
+	attribute(local_size_x=32)
+	void main()
+	{
+        uint callIndex = gl_GlobalInvocationID.x;
+
+		float frac = (callIndex / (float)SideCount) * TWOPI;
+		int count = SideCount * (0.5f + 0.4f * cos(frac + Time * 0.3));
+		count = clamp(count, 0, SideCount);
+
+		DrawParameters[callIndex].VertexCountPerInstance = 6 * count;
+		DrawParameters[callIndex].InstanceCount = 1;
+		DrawParameters[callIndex].StartVertexLocation = 0;
+		DrawParameters[callIndex].StartInstanceLocation = 0;
+	}
+}

@@ -12,11 +12,23 @@ attribute(packing=vertex) struct CanvasVertex
 {
     attribute(offset=0) vec2 pos;
     attribute(offset=8) vec2 uv;
-	attribute(offset=16) vec2 paintUV;
-	attribute(offset=24) vec2 clipUV;
-    attribute(offset=32, format=rgba8) vec4 color;
-	attribute(offset=36) float batchID;
+	attribute(offset=16) vec2 clipUV;
+    attribute(offset=24, format=rgba8) vec4 color;
+	attribute(offset=28, format=rg16ui) vec2 attributesPacked; // index + flags
+	attribute(offset=32, format=rg16ui) vec2 imageInfoPacked; // entry index + page index
 }
+
+struct CanvasAttributes
+{
+	vec2 base;
+	vec2 extent;
+	uint innerColor;
+	uint outerColor;
+	float radius;
+	float feather;
+	float lineWidth;
+	uint _paddng0;
+};
 
 sampler CanvasSampler
 {
@@ -29,52 +41,39 @@ sampler CanvasSampler
 	MaxLod = 0,
 }
 
-setup CanvasDefault
+state CanvasDefault
 {
-	DepthEnabled = true,
+	DepthEnabled = false,
 	DepthWriteEnabled = false,
-	StencilEnabled = true,
+	PrimitiveTopology = TriangleList,
+	//FillMode = Line,
 }
 
-struct CanvasRenderStyle
+struct CanvasImageEntry
 {
-	vec4 InnerCol;
-	vec4 OuterCol;
-	
-	vec2 Base;
-	vec2 _Padding4;
-	
-	vec2 Extent;
-	vec2 ExtentInv;
-	
-	vec2 UVBias;
-	vec2 UVScale;
-	vec2 UVMin;
-	vec2 UVMax;
-	
-	float FeatherHalf;
-	float FeatherInv;
-	float Radius;
-	float Feather;
-	
-	uint TextureType;
-	uint TextureLayer;
-	uint ShaderType;
-	uint WrapType;
+	vec2 uvMin;
+	vec2 uvMax;
+	vec2 uvScale;
+	vec2 uvInvScale;
 }
 	
-descriptor CanvasViewportParams
+descriptor CanvasDesc
 {
 	ConstantBuffer
 	{
 		mat4 CanvasToScreen;
+
+		uint CanvasWidth;
+		uint CanvasHeight;
+		uint _Padding0;
+		uint _Padding1;
 	}
 
-	attribute(layout=CanvasRenderStyle) Buffer RenderStyles;
+	attribute(layout=CanvasAttributes) Buffer Attributes;	
+	attribute(layout=CanvasImageEntry) Buffer AtlasImageEntries;
 
-	sampler LocalSampler;
-	attribute(sampler=LocalSampler) Texture2DArray AlphaTextureAtlas;
-	attribute(sampler=CanvasSampler) Texture2DArray ColorTextureAtlas;
+	attribute(sampler=CanvasSampler) Texture2DArray AtlasTexture;
+	attribute(sampler=CanvasSampler) Texture2DArray GlyphTexture;
 }
 
 //--
@@ -86,54 +85,71 @@ shader CanvasVS
 
 	out vec2 CanvasPosition;
 	out vec2 CanvasUV;
-	out vec2 CanvasPaintUV;
 	out vec2 CanvasClipUV;
 	out vec4 CanvasColor;
-	out float CanvasBatchID;
 
+	out float CanvasAttributesIndex;
+	out float CanvasAttributesFlags;
+	out float CanvasImageIndex;
+	out float CanvasImagePage;
+	
+	attribute(glflip)
 	void main()
 	{
 		CanvasPosition = v.pos;
 		CanvasUV = v.uv;
-		CanvasPaintUV = v.paintUV;
 		CanvasClipUV = v.clipUV;
 		CanvasColor = v.color;
-		CanvasBatchID = v.batchID;
+
+		//CanvasAttributesPacked = uintBitsToFloat(v.attributesPacked);
+		//CanvasImageEntryPacked = uintBitsToFloat(v.imageInfoPacked);
+
+		CanvasAttributesIndex = v.attributesPacked.x;
+		CanvasAttributesFlags = v.attributesPacked.y;
+		CanvasImageIndex = v.imageInfoPacked.x;
+		CanvasImagePage = v.imageInfoPacked.y;
+
+		CanvasAttributesIndex = v.attributesPacked.x;
+		CanvasAttributesFlags = v.attributesPacked.y;
+		CanvasImageIndex = v.imageInfoPacked.x;
+		CanvasImagePage = v.imageInfoPacked.y;
 
 		gl_Position = v.pos.xy01 * CanvasToScreen;
-//#if FLIP_Y
-//		gl_Position.y = -gl_Position.y;
-//#endif
 	}
 }
 
 //----
 
 // common pixel shader
-attribute(setup=CanvasDefault)
+attribute(state=CanvasDefault)
 shader CanvasPS
 {
+	const uint MASK_FILL = 1; // we are a fill
+	const uint MASK_STROKE = 2; // we are a stroke
+	const uint MASK_GLYPH = 4; // we are a glyph
+	const uint MASK_HAS_IMAGE = 8; // we have image
+	const uint MASK_HAS_WRAP_U = 16; // do U wrapping
+	const uint MASK_HAS_WRAP_V = 32; // do V wrapping
+	const uint MASK_HAS_FRINGE = 64; // we have an extra fringe extrusion
+	const uint MASK_IS_CONVEX = 128; // what we are rendering is convex
+
 	in vec2 CanvasPosition;
 	in vec2 CanvasUV;
-	in vec2 CanvasPaintUV;
 	in vec2 CanvasClipUV;
 	in vec4 CanvasColor;
-	in float CanvasBatchID;
+	in float CanvasParam;
 
-	float CalcRoundRect(vec2 pt, vec2 ext, float rad)
-	{
-		vec2 ext2 = ext - rad.xx;
-		vec2 d = abs(pt) - ext2;
-		return min(max(d.x,d.y),0.0) + length(max(d,vec2(0))) - rad;
-	}
+	//attribute(flat) in float CanvasAttributesPacked;
+	//attribute(flat) in float CanvasImageEntryPacked;
+
+	attribute(flat) in float CanvasAttributesIndex;
+	attribute(flat) in float CanvasAttributesFlags;
+	attribute(flat) in float CanvasImageIndex;
+	attribute(flat) in float CanvasImagePage;
 
 	float CalcScissorMask(vec2 pos)
 	{
-		//return 1.0f;
-
-		//vec2 sc = (1.0 - abs(CanvasClipUV.xy)) * 32768.0; // mask that is > 0 inside < 0 outside
 		vec2 sc = 1.0 - abs(CanvasClipUV.xy); // mask that is > 0 inside < 0 outside
-
 		//return saturate(sc.x) * saturate(sc.y); // bring back to 1 inside, 0 outside + merge X and Y
 		return all(sc.xy >= 0.0);
 	}
@@ -144,17 +160,12 @@ shader CanvasPS
 		return min(1.0, (1.0-abs(CanvasUV.x*2.0-1))*strokeMul) * min(1.0, CanvasUV.y);
 	}*/
 
-	float WrapRange(bool wrap, float x, float xmin, float xmax)
+	float WrapRange(bool wrap, float v, float vmin, float vmax, float vrange, float vinvrange)
 	{
 		if (wrap)
-		{
-			float range = xmax - xmin;
-			return xmin + (x - xmin) % range;
-		}
+			return vmin + frac(v * vinvrange) * vrange;
 		else
-		{
-			return max(xmin, min(xmax, x));
-		}
+			return clamp(v, vmin, vmax);
 	}
 
 	// http://alex.vlachos.com/graphics/Alex_Vlachos_Advanced_VR_Rendering_GDC2015.pdf
@@ -168,6 +179,119 @@ shader CanvasPS
 
 		//linearColor.xyz += sqrt(linearColor.xyz) * dither * 2;
 		return linearColor;
+	}
+
+	// calculate rounded rect SDF
+	float CalcRoundRect(vec2 pt, vec2 ext, float rad)
+	{
+		vec2 ext2 = ext - rad.xx;
+		vec2 d = abs(pt) - ext2;
+		return min(max(d.x, d.y), 0.0) + length(max(d, vec2(0))) - rad;
+	}
+
+	// calculate line width
+	float CalcLineHalfWidth()
+	{
+		//uint idx = floatBitsToUint(CanvasAttributesIndex);
+		uint idx = (uint)CanvasAttributesIndex;
+		if (idx > 0)
+			return Attributes[idx - 1].lineWidth * 0.5f;
+		else
+			return 0.5f;
+	}
+
+	// calculate color for a style
+	vec4 CalcStyleColor(uint idx, vec2 pt)
+	{
+		CanvasAttributes style = Attributes[idx - 1];
+
+		float r = CalcRoundRect(pt, style.extent, style.radius);
+		float d = saturate((r + style.feather * 0.5) / style.feather);
+		return lerp(unpackUnorm4x8(style.innerColor), unpackUnorm4x8(style.outerColor), d);
+	}
+
+	// calculate UV for image sampling
+	vec2 CalcImageUV(vec2 pt, uint imageIndex, bool wrapU, bool wrapV, out float alpha)
+	{
+		vec2 uvMin = AtlasImageEntries[imageIndex].uvMin;
+		vec2 uvMax = AtlasImageEntries[imageIndex].uvMax;
+		vec2 uvScale = AtlasImageEntries[imageIndex].uvScale;
+		vec2 uvInvScale = AtlasImageEntries[imageIndex].uvInvScale;
+
+		if (wrapU)
+		{
+			pt.x = uvMin.x + frac(pt.x * uvInvScale.x) * uvScale.x;
+		}
+		else if (pt.x < uvMin.x)
+		{
+			pt.x = uvMin.x;
+			alpha = 0;
+		}
+		else if (pt.x > uvMax.x)
+		{
+			pt.x = uvMax.x;
+			alpha = 0;
+		}
+
+		if (wrapV)
+		{
+			pt.y = uvMin.y + frac(pt.y * uvInvScale.y) * uvScale.y;
+		}
+		else if (pt.y < uvMin.y)
+		{
+			pt.y = uvMin.y;
+			alpha = 0;
+		}
+		else if (pt.y > uvMax.y)
+		{
+			pt.y = uvMax.y;
+			alpha = 0;
+		}
+
+		return pt;
+	}
+
+	// calculate image color
+	vec4 CalcImageColor(vec2 uv, uint pageIndex)
+	{
+		return textureLod(AtlasTexture, vec3(uv, pageIndex), 0);
+	}
+
+	// calculate glyph color
+	vec4 CalcGlyphColor(vec2 uv, uint pageIndex)
+	{
+		float alpha = textureLod(GlyphTexture, vec3(uv, pageIndex), 0).r;
+		return vec4(1, 1, 1, alpha);
+	}
+
+	// unpack flags
+	uint UnpackFlags()
+	{
+		return CanvasAttributesFlags;
+	}
+
+	// compute basic color at given UV
+	vec4 ComputeColorAt(vec2 uv)
+	{
+		uint flags = UnpackFlags();
+		vec4 color = vec4(1, 1, 1, 1);
+
+		// apply color style, only if we have attributes
+		if (CanvasAttributesIndex)
+			color *= CalcStyleColor(CanvasAttributesIndex, uv);
+
+		// apply image
+		if (flags & MASK_HAS_IMAGE) {
+			float alpha = 1.0;
+			vec2 imageUV = CalcImageUV(uv, CanvasImageIndex, flags & MASK_HAS_WRAP_U, flags & MASK_HAS_WRAP_V, alpha);
+			color *= CalcImageColor(imageUV, CanvasImagePage) * alpha;
+		}
+		// apply glyph
+		else if (flags & MASK_GLYPH) {
+			color *= CalcGlyphColor(uv, CanvasImagePage);
+		}
+
+		return color;
 	}
 
 }

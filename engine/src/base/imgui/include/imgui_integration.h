@@ -32,7 +32,7 @@ namespace ImGui
     IMGUI_API void BeginCanvasFrame(base::canvas::Canvas& c);
 
     // End frame and send it to canvas for rendering
-    IMGUI_API void EndCanvasFrame(base::canvas::Canvas& c);
+    IMGUI_API void EndCanvasFrame(base::canvas::Canvas& c, const base::XForm2D& placement = base::XForm2D::IDENTITY());
 
     //--
     // Internal helpers: called by functions above
@@ -43,7 +43,7 @@ namespace ImGui
     // BoomerEngine integration - render collected content on canvas
     // NOTE: since it's a normal canvas operation any way additional transformation and alpha value may be provided
     // NOTE: setting transform to NULL will skip vertex transform
-    IMGUI_API void RenderToCanvas(const ImDrawData* data, base::canvas::Canvas& c);
+    IMGUI_API void RenderToCanvas(const ImDrawData* data, base::canvas::Canvas& c, const base::XForm2D& placement);
 
     //--
 

@@ -13,6 +13,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
+#include "../../../base/canvas/include/canvasStorage.h"
 
 namespace rendering
 {
@@ -24,173 +25,184 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasTexture, ICanvasTest);
 
         public:
+			base::canvas::ImageAtlasIndex m_atlas;
+			base::canvas::ImageEntry m_atlasEntry;
+
+			base::NativeTimePoint m_time;
+
             virtual void initialize() override
             {
-                m_lena = loadImage("lena.png");
-                m_time.resetToNow();
+				m_time.resetToNow();
+
+				auto lena = loadImage("lena.png");
+
+				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
+				m_atlasEntry = m_storage->registerImage(m_atlas, lena, true);
             }
+
+			virtual void shutdown() override
+			{
+				m_storage->destroyAtlas(m_atlas);
+			}
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                base::canvas::GeometryBuilder b;
+				base::canvas::Geometry g;
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
 
-                CanvasGridBuilder grid(3, 3, 30, 1024, 1024);
+					CanvasGridBuilder grid(3, 3, 30, 1024, 1024);
 
-                float time = m_time.timeTillNow().toSeconds();
+					float time = m_time.timeTillNow().toSeconds();
 
-                // simple image
-                {
-                    auto r = grid.cell();
+					// simple image
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings()));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(m_atlasEntry));
+						b.fill();
+					}
 
-                // scaled image pattern
-                {
-                    auto r = grid.cell();
+					// scaled image pattern
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(2.0f)));
-                    b.fill();                    
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f)));
+						b.fill();
+					}
 
-                // scaled image pattern with offset
-                {
-                    auto r = grid.cell();
+					// scaled image pattern with offset
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(2.0f).offset(20.f, 20.0f)));
-                    b.fill();                    
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).offset(20.f, 20.0f)));
+						b.fill();
+					}
 
-                // scaled image rotated with no pivot
-                {
-                    auto r = grid.cell();
+					// scaled image rotated with no pivot
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(2.0f).angle(1.0f * time)));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).angle(1.0f * time)));
+						b.fill();
+					}
 
-                // scaled image rotated around center
-                {
-                    auto r = grid.cell();
+					// scaled image rotated around center
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    float cx = m_lena->width() / 2;
-                    float cy = m_lena->height() / 2;
+						float cx = m_atlasEntry.width / 2;
+						float cy = m_atlasEntry.height / 2;
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(2.0f).pivot(cx,cy).angle(1.0f * time)));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time)));
+						b.fill();
+					}
 
-                // scaled image rotated around center
-                {
-                    auto r = grid.cell();
+					// scaled image rotated around center
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    float cx = m_lena->width();
-                    float cy = m_lena->height();
+						float cx = m_atlasEntry.width;
+						float cy = m_atlasEntry.height;
 
-                    float ox = (m_lena->width() / 1.5f) - r.width();
-                    float oy = (m_lena->height() / 1.5f) - r.height();
+						float ox = (m_atlasEntry.width / 1.5f) - r.width();
+						float oy = (m_atlasEntry.height / 1.5f) - r.height();
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(1.5f).pivot(cx, cy).offset(-ox,-oy).angle(1.0f * time)));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time)));
+						b.fill();
+					}
 
-                // scaled image rotated with no pivot
-                {
-                    auto r = grid.cell();
+					// scaled image rotated with no pivot
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(3.0f).angle(-1.0f * time).wrap()));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(3.0f).angle(-1.0f * time).wrap()));
+						b.fill();
+					}
 
-                // scaled image rotated around center
-                {
-                    auto r = grid.cell();
+					// scaled image rotated around center
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    float cx = m_lena->width() / 2;
-                    float cy = m_lena->height() / 2;
+						float cx = m_atlasEntry.width / 2;
+						float cy = m_atlasEntry.height / 2;
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(2.0f).pivot(cx, cy).angle(1.0f * time).wrap()));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time).wrap()));
+						b.fill();
+					}
 
-                // scaled image rotated around center
-                {
-                    auto r = grid.cell();
+					// scaled image rotated around center
+					{
+						auto r = grid.cell();
 
-                    b.resetTransform();
-                    b.translatei(r.left(), r.top());
+						b.resetTransform();
+						b.translatei(r.left(), r.top());
 
-                    float cx = m_lena->width();
-                    float cy = m_lena->height();
+						float cx = m_atlasEntry.width;
+						float cy = m_atlasEntry.height;
 
-                    float ox = (m_lena->width() / 1.5f) - r.width();
-                    float oy = (m_lena->height() / 1.5f) - r.height();
+						float ox = (m_atlasEntry.width / 1.5f) - r.width();
+						float oy = (m_atlasEntry.height / 1.5f) - r.height();
 
-                    b.compositeOperation(base::canvas::CompositeOperation::Copy);
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::ImagePattern(m_lena, base::canvas::ImagePatternSettings().scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time).wrap()));
-                    b.fill();
-                }
+						b.blending(base::canvas::BlendOp::Copy);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time).wrap()));
+						b.fill();
+					}
+				}
 
-
-                c.placement(0.0f, 0.0f, c.width() / 1024.0f, c.height() / 1024.0f);
-                c.place(b);
+				//c.placement(0.0f, 0.0f, c.width() / 1024.0f, c.height() / 1024.0f);
+				c.place(base::Vector2(0,0), g);
             }
-
-        private:
-            base::image::ImagePtr m_lena;
-            base::NativeTimePoint m_time;
-            //base::image::ImagePtr m_lena;
         };
 
         RTTI_BEGIN_TYPE_CLASS(SceneTest_CanvasTexture);

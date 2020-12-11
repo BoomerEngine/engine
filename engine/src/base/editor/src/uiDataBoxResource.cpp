@@ -148,7 +148,7 @@ namespace ui
                     image::ImageRef imageRef;
                     if (managedFile)
                         imageRef = managedFile->typeThumbnail();
-                    m_thumbnail->image(imageRef);
+                    //m_thumbnail->image(imageRef);
                     m_currentFile = managedFile;
                 }
 
@@ -175,7 +175,7 @@ namespace ui
             }
             else if (ret.code == DataViewResultCode::ErrorManyValues)
             {
-                m_thumbnail->image(nullptr);
+                m_thumbnail->image(""_id);
                 m_thumbnail->visibility(true);
 
                 m_name->text("<multiple values>");

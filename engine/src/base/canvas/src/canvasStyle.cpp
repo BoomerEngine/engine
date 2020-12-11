@@ -39,12 +39,21 @@ namespace base
     {
         //--
 
-        bool RenderStyle::operator==(const RenderStyle& other) const
+		RenderStyle::RenderStyle()
+			: wrapU(0)
+			, wrapV(0)
+			, customUV(0)
+			, xformNeeded(0)
+			, attributesNeeded(0)
+		{
+		}
+
+        /*bool RenderStyle::operator==(const RenderStyle& other) const
         {
-            return (extent == other.extent) && (base == other.base) && (radius == other.radius) && 
+            return (key == other.key) && (extent == other.extent) && (base == other.base) && (radius == other.radius) && 
                 (wrapU == other.wrapU) && (wrapV == other.wrapV) && (customUV == other.customUV) &&
-                (feather == other.feather) && (innerColor == other.innerColor) && (outerColor == other.outerColor) && (image == other.image) &&
-                (uvMin == other.uvMin) && (uvMax == other.uvMax);
+				(feather == other.feather) && (innerColor == other.innerColor) && (outerColor == other.outerColor) && (image == other.image);
+                //(uvMin == other.uvMin) && (uvMax == other.uvMax);
         }
 
         bool RenderStyle::operator!=(const RenderStyle& other) const
@@ -52,31 +61,29 @@ namespace base
             return !operator==(other);
         }
 
-        void RenderStyle::recomputeHash()
-        {
-            CRC64 crc;
+		uint64_t RenderStyle::ComputeKey(const RenderStyle& style)
+		{
+			CRC64 crc;
 
-            crc << radius;
-            crc << feather;
-            crc << innerColor.toNative();
-            crc << outerColor.toNative();
+			crc << style.radius;
+			crc << style.feather;
+			crc << style.innerColor.toNative();
+			crc << style.outerColor.toNative();
+			crc << style.image;
 
-            if (image)
-            {
-                crc << wrapU;
-                crc << wrapV;
-                crc << customUV;
+			if (style.image)
+			{
+				crc << style.wrapU;
+				crc << style.wrapV;
+				crc << style.customUV;
+				crc << style.base.x;
+				crc << style.base.x;
+				crc << style.extent.y;
+				crc << style.extent.y;
+			}
 
-                crc.append(&base, sizeof(base));
-                crc.append(&extent, sizeof(extent));
-                crc.append(&uvMin, sizeof(uvMin));
-                crc.append(&uvMax, sizeof(uvMax));
-
-                crc << image->runtimeUniqueId();
-            }
-            
-            hash = crc.crc();
-        }
+			return crc;
+		}*/
 
         //--
         
@@ -99,6 +106,8 @@ namespace base
             auto dxdl = (dl > 0.001f) ? (dx / dl) : Vector2(0, 1);
 
             RenderStyle ret;
+			ret.xformNeeded = true;
+			ret.attributesNeeded = true;
             ret.xform.t[0] = dxdl.y; 
             ret.xform.t[1] = -dxdl.x;
             ret.xform.t[2] = dxdl.x;
@@ -106,14 +115,12 @@ namespace base
             ret.xform.t[4] = start.x - dxdl.x*large;
             ret.xform.t[5] = start.y - dxdl.y*large;
             ret.xform = ret.xform.inverted();
-            ret.xformNeeded = true;
             ret.extent.x = large;
             ret.extent.y = large + dl*0.5f;
             ret.radius = 0.0f;
             ret.feather = std::max(1.0f, dl);
             ret.innerColor = icol;
-            ret.outerColor = ocol;
-            ret.recomputeHash();
+            ret.outerColor = ocol;           
             return ret;
         }
 
@@ -125,14 +132,14 @@ namespace base
         RenderStyle BoxGradient(const Vector2& pos, float w, float h, float r, float f, const Color& icol, const Color& ocol)
         {
             RenderStyle ret;
-            ret.extent = Vector2(w, h) * 0.5f;
+			ret.xformNeeded = true;
+			ret.attributesNeeded = true;
+			ret.extent = Vector2(w, h) * 0.5f;
             ret.xform = XForm2D::BuildTranslation(-(pos + ret.extent));
-            ret.xformNeeded = true;
             ret.radius = r;
             ret.feather = std::max(1.0f, f);
             ret.innerColor = icol;
             ret.outerColor = ocol;
-            ret.recomputeHash();
             return ret;
         }
 
@@ -152,15 +159,15 @@ namespace base
             auto f = (outr - inr);
 
             RenderStyle ret;
-            ret.xform = XForm2D::BuildTranslation(-center);
-            ret.xformNeeded = true;
+			ret.xformNeeded = true;
+			ret.attributesNeeded = true;
+			ret.xform = XForm2D::BuildTranslation(-center);
             ret.extent = Vector2(r, r);
             ret.radius = r;
             ret.feather = std::max(1.0f, f);
             ret.innerColor = icol;
             ret.outerColor = ocol;
-            ret.recomputeHash();
-            return ret;
+			return ret;
         }
 
         RenderStyle RadialGradient(float cx, float cy, float inr, float outr, const Color& icol, const Color& ocol)
@@ -173,89 +180,64 @@ namespace base
             return RadialGradient((float)cx, (float)cy, (float)inr, (float)outr, icol, ocol);
         }
 
-        RenderStyle ImagePattern(const base::image::Image* image, const ImagePatternSettings& pattern)
+		XForm2D ImagePatternSettings::calcPixelToUVTransform() const
+		{
+			XForm2D ret;
+
+			float ox = m_offsetX;
+			float oy = m_offsetY;
+
+			ret.identity();
+
+			ret *= XForm2D::BuildTranslation(-ox, -oy);
+			ret *= XForm2D::BuildScale(m_scaleX, m_scaleY);
+
+			if (m_angle)
+			{
+				if (m_pivotX || m_pivotY)
+				{
+					// TODO: compute final params directly in one go
+					ret *= XForm2D::BuildTranslation(-m_pivotX, -m_pivotY);
+					ret *= XForm2D::BuildRotation(m_angle);
+					ret *= XForm2D::BuildTranslation(m_pivotX, m_pivotY);
+				}
+				else
+				{
+					ret *= XForm2D::BuildRotation(m_angle);
+				}
+			}
+
+			return ret;
+		}
+
+		RenderStyle ImagePattern(const ImagePatternSettings& pattern)
+		{
+			if (!pattern.m_image)
+				return SolidColor(Color::WHITE);
+
+			RenderStyle ret;
+			ret.attributesNeeded = false; // images are stored in vertices any way, don't need to have extra style for that
+			ret.xformNeeded = true;
+			ret.image = pattern.m_image;
+			ret.innerColor = Color(255, 255, 255, pattern.m_alpha);
+			ret.outerColor = Color(255, 255, 255, pattern.m_alpha);
+			ret.base.x = 0.0f;
+			ret.base.y = 0.0f;
+			ret.extent.x = pattern.m_image.width;
+			ret.extent.y = pattern.m_image.height;
+			ret.wrapU = pattern.m_wrapU;
+			ret.wrapV = pattern.m_wrapV;
+			ret.customUV = pattern.m_customUV;
+			ret.margin = pattern.m_margin;
+			ret.xform = pattern.calcPixelToUVTransform();
+			return ret;
+		}
+
+        RenderStyle ImagePattern(ImageEntry image, const ImagePatternSettings& pattern)
         {
-            if (!image)
-                return SolidColor(Color::WHITE);
-
-            RenderStyle ret;
-            ret.image = image;
-            ret.innerColor = Color(255, 255, 255, pattern.m_alpha);
-            ret.outerColor = Color(255, 255, 255, pattern.m_alpha);
-
-            float ox = pattern.m_offsetX;
-            float oy = pattern.m_offsetY;
-
-            // pixel->uv
-            {
-                ret.xformNeeded = true;
-
-                ret.xform.identity();
-
-                // TODO: compute final params directly in one go
-                ret.xform *= XForm2D::BuildTranslation(-ox, -oy);
-                ret.xform *= XForm2D::BuildScale(pattern.m_scaleX, pattern.m_scaleY);
-
-                ret.xform *= XForm2D::BuildTranslation(-pattern.m_pivotX, -pattern.m_pivotY);
-                ret.xform *= XForm2D::BuildRotation(pattern.m_angle);
-                ret.xform *= XForm2D::BuildTranslation(pattern.m_pivotX, pattern.m_pivotY);                
-            }
-
-            // uv wrapping
-            ret.wrapU = pattern.m_wrapU;
-            ret.wrapV = pattern.m_wrapV;
-
-            ret.extent.x = image->width();
-            ret.extent.y = image->height();
-
-            // uv calculation
-            if (pattern.m_rect.empty())
-            {
-                ret.base.x = 0.0f;// 0.5f * image->invWidth();
-                ret.base.y = 0.0f;//0.5f * image->invHeight();
-
-                if (pattern.m_wrapU)
-                {
-                    ret.uvMin.x = 0.0f;
-                    ret.uvMax.x = 1.0f;
-                }
-                else
-                {
-                    ret.uvMin.x = 0.5f * image->invWidth();
-                    ret.uvMax.x = 1.0f - 0.5f * image->invWidth();
-                }
-
-                if (pattern.m_wrapV)
-                {
-                    ret.uvMin.y = 0.0f;
-                    ret.uvMax.y = 1.0f;
-                }
-                else
-                {
-                    ret.uvMin.y = 0.5f * image->invHeight();
-                    ret.uvMax.y = 1.0f - 0.5f * image->invHeight();
-                }
-            }
-            else
-            {
-                ret.base.x = (pattern.m_rect.min.x + 0.5f) * image->invWidth();
-                ret.base.y = (pattern.m_rect.min.y + 0.5f)* image->invHeight();
-                
-                //ret.extent.x = pattern.m_rect.width();// pattern.m_rect.width();
-                //ret.extent.y = pattern.m_rect.height();// pattern.m_rect.height();
-                ret.uvMin.x = (pattern.m_rect.min.x + 0.5f) * image->invWidth();
-                ret.uvMin.y = (pattern.m_rect.min.y + 0.5f) * image->invHeight();
-                ret.uvMax.x = (pattern.m_rect.max.x + 0.5f) * image->invWidth();
-                ret.uvMax.y = (pattern.m_rect.max.y + 0.5f) * image->invHeight();
-
-                /*ret.uvMin.x = (pattern.m_rect.min.x + 0.0f) * image->invWidth();
-                ret.uvMin.y = (pattern.m_rect.min.y + 0.0f) * image->invHeight();
-                ret.uvMax.x = (pattern.m_rect.max.x + 0.0f) * image->invWidth();
-                ret.uvMax.y = (pattern.m_rect.max.y + 0.0f) * image->invHeight();*/
-            }
-
-            ret.recomputeHash();
-            return ret;
+			ImagePatternSettings ret = pattern;
+			ret.m_image = image;
+			return ImagePattern(ret);
         }        
 
         RenderStyle SolidColor(const Color& color)
@@ -265,9 +247,10 @@ namespace base
             ret.feather = 1.0f;
             ret.outerColor = color;
             ret.innerColor = color;
-            ret.recomputeHash();
             return ret;
         }
+
+		//--
 
     } // canvas
 } // base

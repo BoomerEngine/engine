@@ -23,13 +23,13 @@ namespace ui
 
     public:
         Image();
-        Image(const base::image::ImageRef& customImage);
+        Image(base::canvas::ImageEntry customImage);
         Image(base::StringID iconName);
 
         //--
 
         // set image to display, sets the "image" style
-        void image(const base::image::ImageRef& ptr);
+        void image(base::canvas::ImageEntry ptr);
         void image(base::StringID iconName);
 
         // set image scaling, if not specified the styles are used
@@ -42,7 +42,6 @@ namespace ui
         virtual void computeSize(Size& outSize) const override;
         virtual void prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
         virtual void prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         mutable Size m_imageSize;        
     };

@@ -1,0 +1,134 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+descriptor TestParams
+{
+    Texture2D Texture;
+}
+
+shader SimpleTrianglePS
+{
+	in vec2 UV;
+	in vec4 Color;
+	const uint NumSamples = 1;
+	const float AlphaThreshold = 0.5f;
+	
+    vec2 CalcSamplePos(vec2 uv, int sampleIndex)
+    {
+        vec2 du = vec2(1.0f / 1024.0f, 0.0f);
+        vec2 dv = vec2(0.0f, 1.0f / 1024.0f);
+
+        vec2 delta = CalcSampleOffset(NumSamples, sampleIndex);
+        return uv + (delta.x * du) + (delta.y * dv);
+    }
+
+	void main()
+	{
+		vec3 color = texture(Texture, UV).rgb;
+        float alpha  = texture(Texture, UV).a;
+
+		if (NumSamples == 1)
+		{
+			if (alpha < AlphaThreshold)
+				discard;
+		}
+		else
+		{
+
+		    int mask = 0;
+		    for (int i=0; i<NumSamples; i += 1)
+		    {
+                vec2 localUV = CalcSamplePos(UV, i);
+                float localAlpha = texture(Texture, localUV).a;
+                if (localAlpha >= AlphaThreshold)
+                    mask |= (1 << i);
+		    }
+
+		    if (mask == 0)
+		        discard;
+
+            gl_SampleMask = mask;
+		}
+		
+        gl_Target0 = color.xyz1;
+	}
+}
+
+shader SimpleTriangleVS
+{
+	vertex Simple3DVertex v;
+	in vec4 VertexColor;
+
+	out vec4 Color;
+	out vec2 UV;
+
+	attribute(glflip)
+void main()
+	{
+		gl_Position = v.pos.xyz1;
+		UV = v.uv;
+		Color = v.color;
+	}
+}
+
+pipeline Test
+{	
+	void setup()
+	{
+		state.pass.color0.format = 'RGBA8_UNORM';
+		state.pass.color0.loadOp = 'Clear';
+		state.pass.color0.storeOp = 'Store';
+	}
+
+	void draw()
+	{
+		state.vertex.program = program<SimpleTriangleVS> {};
+		state.pixel.program = program<SimpleTrianglePS> { NumSamples = SAMPLES };
+	}
+}
+
+///---
+
+shader PreviewVS
+{
+	void main()
+	{
+		gl_Position.x  = (gl_VertexID & 1) ? 1.0f : -1.0f;
+		gl_Position.y  = (gl_VertexID & 2) ? 1.0f : -1.0f;
+		gl_Position.z = 1.0f;
+		gl_Position.w = 1.0f;
+	}
+}
+
+shader PreviewPS
+{
+	void main()
+	{
+		// load resolved value
+		gl_Target0 = textureLoadLod(Texture, gl_FragCoord.xy, 0);
+	}
+}
+
+pipeline Preview
+{	
+	void setup()
+	{
+		state.pass.color0.format = 'RGBA8_UNORM';
+		state.pass.color0.loadOp = 'Clear';
+		state.pass.color0.storeOp = 'Store';
+	}
+
+	void draw()
+	{
+		state.vertex.topology = 'TriangleStrip';
+		state.vertex.program = program<PreviewVS> {};
+		state.pixel.program = program<PreviewPS> {};
+	}
+}
+
+export graphics Test;
+export graphics Preview.draw;

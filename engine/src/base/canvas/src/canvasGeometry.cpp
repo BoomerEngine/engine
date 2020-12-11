@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "canvasGeometry.h"
-#include "canvasGlyphCache.h"
+#include "canvasStorage.h"
 
 // The Canvas class is heavily based on nanovg project by Mikko Mononen
 // Adaptations were made to fit the rest of the source code in here
@@ -35,93 +35,253 @@ namespace base
 {
     namespace canvas
     {
-        //---
 
-        RTTI_BEGIN_TYPE_ENUM(CompositeOperation);
-            RTTI_ENUM_OPTION(Copy);
-            RTTI_ENUM_OPTION(Blend);
-            RTTI_ENUM_OPTION(SourceOver);
-            RTTI_ENUM_OPTION(SourceIn);
-            RTTI_ENUM_OPTION(SourceOut);
-            RTTI_ENUM_OPTION(SourceAtop);
-            RTTI_ENUM_OPTION(DestinationOver);
-            RTTI_ENUM_OPTION(DestinationIn);
-            RTTI_ENUM_OPTION(DestinationOut);
-            RTTI_ENUM_OPTION(DestinationAtop);
-            RTTI_ENUM_OPTION(Addtive);
-            RTTI_ENUM_OPTION(Xor);
-        RTTI_END_TYPE();
+		//---
 
-        //---
+		bool Attributes::operator==(const Attributes& other) const
+		{
+			return 0 == memcmp(this, &other, sizeof(other));
+		}
+
+		bool Attributes::operator!=(const Attributes& other) const
+		{
+			return !operator==(other);
+		}
+
+		uint32_t Attributes::CalcHash(const Attributes& style)
+		{
+			return base::CRC32().append(&style, sizeof(style));
+		}
+
+		//---
 
         Geometry::Geometry()
-            : m_vertexBoundsMin(FLT_MAX, FLT_MAX)
-            , m_vertexBoundsMax(-FLT_MAX, -FLT_MAX)
-            , m_glyphCacheVersion(0)
-            , m_usedGlyphCachePages(0)
+			: boundsMin(FLT_MAX, FLT_MAX)
+			, boundsMax(-FLT_MAX, -FLT_MAX)
         {}
 
         Geometry::~Geometry()
-        {}
+        {
+		}
+
+		Geometry::Geometry(const Geometry& other)
+			: boundsMin(other.boundsMin)
+			, boundsMax(other.boundsMax)
+			, batches(other.batches)
+			, vertices(other.vertices)
+			, attributes(other.attributes)
+		{}
+
+		Geometry::Geometry(Geometry&& other)
+			: boundsMin(other.boundsMin)
+			, boundsMax(other.boundsMax)
+			, batches(std::move(other.batches))
+			, vertices(std::move(other.vertices))
+			, attributes(std::move(other.attributes))
+		{
+			other.boundsMin = Vector2(FLT_MAX, FLT_MAX);
+			other.boundsMax = Vector2(-FLT_MAX, -FLT_MAX);
+		}
+
+		Geometry& Geometry::operator=(const Geometry& other)
+		{
+			if (this != &other)
+			{
+				boundsMin = other.boundsMin;
+				boundsMax = other.boundsMax;
+				vertices = other.vertices;
+				batches = other.batches;
+				attributes = other.attributes;
+			}
+
+			return *this;
+		}
+
+		Geometry& Geometry::operator=(Geometry&& other)
+		{
+			if (this != &other)
+			{
+				vertices = std::move(other.vertices);
+				batches = std::move(other.batches);
+				attributes = std::move(other.attributes);
+
+				boundsMin = other.boundsMin;
+				boundsMax = other.boundsMax;
+				other.boundsMin = Vector2(FLT_MAX, FLT_MAX);
+				other.boundsMax = Vector2(-FLT_MAX, -FLT_MAX);
+			}
+
+			return *this;
+		}
 
         void Geometry::reset()
         {
-            m_vertexBoundsMin = Vector2(FLT_MAX, FLT_MAX);
-            m_vertexBoundsMax = Vector2(-FLT_MAX, -FLT_MAX);
+            boundsMin = Vector2(FLT_MAX, FLT_MAX);
+            boundsMax = Vector2(-FLT_MAX, -FLT_MAX);
 
-            m_glyphCacheVersion = 0;
-            m_usedGlyphCachePages = 0;
-
-            m_vertices.reset();
-            m_paths.reset();
-            m_groups.reset();
-            m_glyphs.reset();
-            m_styles.reset();
+			attributes.reset();
+            vertices.reset();
+			batches.reset();
         }
 
-        void Geometry::prepareGlyphsForRendering()
-        {
-            if (!m_glyphs.empty())
-            {
-                auto& cache = GlyphCache::GetInstance();
-
-                if (cache.beingUpdate(m_glyphCacheVersion))
-                {
-                    m_usedGlyphCachePages = 0;
-
-                    for (auto& group : m_groups)
-                    {
-                        auto* g = group.glyphs;
-                        auto* endG = group.glyphs + group.numGlyphs;
-                        while (g < endG)
-                        {
-                            auto mappedGlyph = cache.mapGlyph(*g->glyph);
-
-                            g->uvMin = mappedGlyph.uvStart;
-                            g->uvMax = mappedGlyph.uvEnd;
-                            g->page = mappedGlyph.pageIndex;
-
-                            m_usedGlyphCachePages |= 1ULL << mappedGlyph.pageIndex;
-                            
-                            ++g;
-                        }
-                    }
-
-                    DEBUG_CHECK_EX(0 != m_usedGlyphCachePages, "Geometry has glyphs but no glyph pages were referenced");
-
-                    cache.endUpdate();
-                }
-            }
-        }
-
-		void Geometry::calcBounds()
+		uint32_t Geometry::calcMemorySize() const
 		{
-            for (auto& g : m_groups)
-            {
-                m_vertexBoundsMin = Min(m_vertexBoundsMin, g.vertexBoundsMin);
-                m_vertexBoundsMax = Max(m_vertexBoundsMax, g.vertexBoundsMax);
-            }
+			uint32_t ret = 0;
+			ret += vertices.dataSize();
+			ret += batches.dataSize();
+			ret += attributes.dataSize();
+			ret += customData.dataSize();
+			return ret;
 		}
+
+		//--
+
+		extern void BuildAttributesFromStyle(const RenderStyle& style, float width, Attributes& outAttributes);
+
+		int Geometry::appendStyle(const RenderStyle& style)
+		{
+			int styleIndex = 0;
+			if (!style.attributesNeeded)
+				return 0;
+
+			Attributes attr;
+			BuildAttributesFromStyle(style, 1.0f, attr);
+
+			for (auto i : attributes.indexRange())
+				if (attributes[i] == attr)
+					return i + 1;
+
+			attributes.pushBack(attr);
+			return attributes.size();			
+		}
+
+		void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style, const IStorage* storage)
+		{			
+			auto* vertexPtr = vertices + numVertices;
+
+			const auto* imageEntry = (storage && style.image) ? storage->findRenderDataForAtlasEntry(style.image) : nullptr;
+
+			auto attributesIndex = appendStyle(style);
+			/*if (attributesIndex == 0)
+			{
+				auto* vertex = vertices;
+				while (vertex < vertexPtr)
+				{
+					vertex->color = style.innerColor;
+					++vertex;
+				}
+			}
+			else*/
+
+			{
+				auto flags = Vertex::MASK_FILL;
+
+				int imagePage = 0;
+				if (imageEntry)
+				{
+					flags |= Vertex::MASK_HAS_IMAGE;
+					imagePage = imageEntry->pageIndex;
+				}
+
+				auto* vertex = vertices;
+				while (vertex < vertexPtr)
+				{
+					vertex->attributeIndex = attributesIndex;
+					vertex->attributeFlags = flags;
+					vertex->imageEntryIndex = style.image.entryIndex;
+					vertex->imagePageIndex = imagePage;
+					++vertex;
+				}
+			}
+
+			if (style.customUV)
+			{
+				if (imageEntry)
+				{
+					auto uvScale = imageEntry->uvMax - imageEntry->uvOffset;
+
+					auto* vertex = vertices;
+					while (vertex < vertexPtr)
+					{
+						vertex->uv.x = (vertex->uv.x * uvScale.x) + imageEntry->uvOffset.x;
+						vertex->uv.y = (vertex->uv.y * uvScale.y) + imageEntry->uvOffset.y;
+						++vertex;
+					}
+				}
+			}
+			else if (imageEntry)
+			{
+				auto* vertex = vertices;
+				while (vertex < vertexPtr)
+				{
+					vertex->uv.x = (style.xform.transformX(vertex->pos.x, vertex->pos.y) * imageEntry->uvScale.x) + imageEntry->uvOffset.x;
+					vertex->uv.y = (style.xform.transformX(vertex->pos.x, vertex->pos.y) * imageEntry->uvScale.y) + imageEntry->uvOffset.y;
+					++vertex;
+				}
+			}
+			else
+			{
+				auto* vertex = vertices;
+				while (vertex < vertexPtr)
+				{
+					vertex->uv.x = style.xform.transformX(vertex->pos.x, vertex->pos.y);
+					vertex->uv.y = style.xform.transformX(vertex->pos.x, vertex->pos.y);
+					++vertex;
+				}
+			}
+		}
+
+		void Geometry::appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup, const RenderStyle* style, const IStorage* storage)
+		{
+			if (!vertices || !numVertices)
+				return;
+
+			auto firstVertexIndex = this->vertices.size();
+			auto* localVertices = this->vertices.allocateUninitialized(numVertices);
+			memcpy(localVertices, vertices, sizeof(Vertex) * numVertices);
+
+			if (style)
+				applyStyle(localVertices, numVertices, *style, storage);
+
+			auto& batch = batches.emplaceBack(setup);
+			batch.vertexOffset = firstVertexIndex;
+		}
+
+		void Geometry::appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup, const RenderStyle* style, const IStorage* storage)
+		{
+			if (!vertices || !indices || !numIndices)
+				return;
+
+			auto firstVertexIndex = this->vertices.size();
+			auto* localVertices = this->vertices.allocateUninitialized(numIndices);
+			{
+				auto* vertex = localVertices;
+				const auto* readPtr = indices;
+				const auto* readEndPtr = indices + numIndices;
+				while (readPtr < readEndPtr)
+					*vertex++ = vertices[*readPtr++];
+			}
+
+			if (style)
+				applyStyle(localVertices, numIndices, *style, storage);
+
+			auto& batch = batches.emplaceBack(setup);
+			batch.atlasIndex = style ? style->image.atlasIndex : 0;
+			batch.vertexOffset = firstVertexIndex;
+			batch.vertexCount = numIndices;
+		}
+
+		//--
+
+		uint32_t ImageEntry::CalcHash(const ImageEntry& entry)
+		{
+			CRC32 crc;
+			crc << entry.atlasIndex;
+			crc << entry.entryIndex;
+			return crc;
+		}
+
+		//--
 
     } // canvas
 } // base

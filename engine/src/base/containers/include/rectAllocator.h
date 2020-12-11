@@ -30,7 +30,7 @@ namespace base
         //! reset allocator, a size of the region must be specified
         void reset(uint32_t width, uint32_t height);
 
-        //! resize the allocator in the horizontal direction, new size must be bigger
+        //! resize the allocator without resetting existing allocations, new size must be bigger
         void resize(uint32_t width, uint32_t height);
 
         //--

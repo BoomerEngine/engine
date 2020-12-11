@@ -17,6 +17,7 @@
 
 #include "base/graph/include/graphBlock.h"
 #include "base/graph/include/graphSocket.h"
+#include "base/canvas/include/canvasGeometry.h"
 
 namespace ui
 {

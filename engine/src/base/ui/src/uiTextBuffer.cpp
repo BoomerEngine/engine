@@ -34,10 +34,6 @@ namespace ui
         , m_wrapWidth(0)
         , m_finalGlyph(0)
     {
-        m_cachedCursorGeometry = base::RefNew<base::canvas::Geometry>();
-        m_cachedSelectionGeometry = base::RefNew<base::canvas::Geometry>();
-        m_cachedHighlightGeometry = base::RefNew<base::canvas::Geometry>();
-
         m_chars.reserve(128);
         generateLayout();
     }
@@ -115,9 +111,9 @@ namespace ui
 
     void TextBuffer::invalidateGeometry()
     {
-        m_cachedCursorGeometry->reset();
-        m_cachedSelectionGeometry->reset();
-        m_cachedHighlightGeometry->reset();
+        m_cachedCursorGeometry.reset();
+        m_cachedSelectionGeometry.reset();
+        m_cachedHighlightGeometry.reset();
 
         for (auto& ch : m_chars)
             ch.glyph = nullptr;
@@ -410,7 +406,7 @@ namespace ui
     {
         m_selectionStartPos = 0;
         m_selectionEndPos = 0;
-        m_cachedSelectionGeometry->reset();
+        m_cachedSelectionGeometry.reset();
     }
 
     void TextBuffer::moveCursor(CursorNavigation pos, bool extendSelection)
@@ -439,7 +435,7 @@ namespace ui
             m_selectionStartPos = m_cursorPos.m_char;
 
         // invalidate selection rendering
-        m_cachedSelectionGeometry->reset();
+        m_cachedSelectionGeometry.reset();
     }
 
     void TextBuffer::deleteSelection()
@@ -457,7 +453,7 @@ namespace ui
         {
             m_selectionStartPos = newStart;
             m_selectionEndPos = newEnd;
-            m_cachedSelectionGeometry->reset();
+            m_cachedSelectionGeometry.reset();
         }
     }
 
@@ -493,7 +489,7 @@ namespace ui
     {
         m_highlightStartPos = 0;
         m_highlightEndPos = 0;
-        m_cachedHighlightGeometry->reset();
+        m_cachedHighlightGeometry.reset();
     }
 
     void TextBuffer::highlight(int start, int end)
@@ -502,7 +498,7 @@ namespace ui
         {
             m_highlightStartPos = 0;
             m_highlightEndPos = 0;
-            m_cachedHighlightGeometry->reset();
+            m_cachedHighlightGeometry.reset();
         }
     }
 
@@ -515,10 +511,8 @@ namespace ui
         builder.print(m_postfixChars.typedData(), m_postfixChars.size(), sizeof(CharInfo));
     }
 
-    void TextBuffer::generateRangeBlock(const ElementArea& drawArea, int start, int end, base::Color color, base::canvas::Geometry& outGeometry) const
+    void TextBuffer::generateRangeBlock(int start, int end, base::Color color, base::canvas::GeometryBuilder& builder) const
     {
-        base::canvas::GeometryBuilder builder;
-
         auto rangeStart = std::clamp(std::min(start, end), 0, m_lastPos);
         auto rangeEnd = std::clamp(std::max(start, end), 0, m_lastPos);
         if (rangeEnd > rangeStart)
@@ -552,32 +546,32 @@ namespace ui
                 builder.fill();
             }
         }
-
-        builder.extract(outGeometry);
     }
 
     void TextBuffer::renderSelection(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         // generate geometry if needed
-        if (m_cachedSelectionGeometry->empty())
-            generateRangeBlock(drawArea, m_selectionStartPos, m_selectionEndPos, m_selectionColor, *m_cachedSelectionGeometry);
+		if (m_cachedSelectionGeometry.empty())
+		{
+			base::canvas::GeometryBuilder builder(nullptr, m_cachedSelectionGeometry);
+			generateRangeBlock(m_selectionStartPos, m_selectionEndPos, m_selectionColor, builder);
+		}
 
         // draw the selection
-        canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-        canvas.alphaMultiplier(mergedOpacity);
-        canvas.place(*m_cachedSelectionGeometry);
+		canvas.place(drawArea.absolutePosition(), m_cachedSelectionGeometry, mergedOpacity);
     }
 
     void TextBuffer::renderHighlight(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         // generate geometry if needed
-        if (m_cachedHighlightGeometry->empty())
-            generateRangeBlock(drawArea, m_highlightStartPos, m_highlightEndPos, m_hightlightColor, *m_cachedHighlightGeometry);
+		if (m_cachedHighlightGeometry.empty())
+		{
+			base::canvas::GeometryBuilder builder(nullptr, m_cachedHighlightGeometry);
+			generateRangeBlock(m_highlightStartPos, m_highlightEndPos, m_hightlightColor, builder);
+		}
 
         // draw the highlight
-        canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-        canvas.alphaMultiplier(mergedOpacity);
-        canvas.place(*m_cachedHighlightGeometry);
+		canvas.place(drawArea.absolutePosition(), m_cachedHighlightGeometry, mergedOpacity);
     }
 
     void TextBuffer::renderCursor(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
@@ -585,24 +579,20 @@ namespace ui
         const auto& glyph = (m_cursorPos.m_char < m_lastPos) ? m_chars[m_cursorPos.m_char] : m_finalGlyph;
 
         // generate the cursor geometry
-        if (m_cachedCursorGeometry->empty())
+        if (m_cachedCursorGeometry.empty())
         {
-            base::canvas::GeometryBuilder builder;
+            base::canvas::GeometryBuilder builder(nullptr, m_cachedCursorGeometry);
 
             builder.strokeColor(m_textColor);
             builder.beginPath();
             builder.moveTo(0.5f, 0.0f);
             builder.lineTo(0.5f, m_finalGlyph.m_bounds.m_boxMax.y - m_finalGlyph.m_bounds.m_boxMin.y);
             builder.stroke();
-
-            builder.extract(*m_cachedCursorGeometry);
         }
 
         // draw the cursor
-        auto cursorArea = drawArea.offset(glyph.m_bounds.m_boxMin);
-        canvas.placement(cursorArea.absolutePosition().x, cursorArea.absolutePosition().y);
-        canvas.alphaMultiplier(mergedOpacity);
-        canvas.place(*m_cachedCursorGeometry);
+        auto cursorPos = drawArea.absolutePosition() + glyph.m_bounds.m_boxMin;
+        canvas.place(cursorPos, m_cachedCursorGeometry, mergedOpacity);
     }
 
     bool TextBuffer::lookupGlyphs()
@@ -769,9 +759,9 @@ namespace ui
         ASSERT(m_rows.size() >= 1);
 
         // reset cached geometries
-        m_cachedCursorGeometry->reset();
-        m_cachedSelectionGeometry->reset();
-        m_cachedHighlightGeometry->reset();
+        m_cachedCursorGeometry.reset();
+        m_cachedSelectionGeometry.reset();
+        m_cachedHighlightGeometry.reset();
     }
 
 } // ui

@@ -1,0 +1,78 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+#include "common.h"
+
+//--
+
+struct GPUChunkInfo
+{
+	vec2 offset;
+	vec2 size;
+
+	uint firstIndex;
+	uint numTriangles;
+	uint firstVertex;
+	uint color;
+};
+
+//--
+
+descriptor DrawDesc
+{
+	ConstantBuffer
+	{
+		uint VertexStride;
+	};
+
+	attribute(readonly, layout=GPUChunkInfo) Buffer DrawChunks;
+	attribute(readonly, format=r32ui) Buffer DrawIndexBuffer;
+	attribute(readonly, format=r32f) Buffer InputVertexBuffer;
+}
+
+//--
+
+export shader GeometryPS
+{
+	in vec4 Color;
+
+	void main()
+	{
+		gl_Target0 = Color;
+	}
+}
+
+export shader GeometryVS
+{
+	out vec4 Color;
+
+	attribute(glflip)
+	void main()
+	{
+		uint indexElement = gl_VertexID + DrawChunks[gl_InstanceID].firstIndex;
+		uint baseVertexIndex = DrawChunks[gl_InstanceID].firstVertex;
+		uint vertexIndex = DrawIndexBuffer[indexElement] + baseVertexIndex;
+
+		//--
+
+		vec2 vertexPos;
+		vertexPos.x = InputVertexBuffer[vertexIndex*VertexStride + 0];
+		vertexPos.y = InputVertexBuffer[vertexIndex*VertexStride + 1];
+
+		vec2 worldPos = (vertexPos * DrawChunks[gl_InstanceID].size) + DrawChunks[gl_InstanceID].offset;
+		gl_Position = vec4(worldPos, 0.5, 1.0);
+
+		//--
+
+		uint instanceColor = DrawChunks[gl_InstanceID].color;
+		uint vertexColor = floatBitsToUint(InputVertexBuffer[vertexIndex*VertexStride + 5]);
+
+		Color = unpackUnorm4x8(vertexColor) * unpackUnorm4x8(instanceColor);
+
+		//--
+	}
+}
+
+//--

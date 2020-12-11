@@ -44,6 +44,26 @@ namespace base
         t[5] = ty;
     }
 
+	INLINE XForm2D::XForm2D(float tx, float ty, float s)
+	{
+		t[0] = s;
+		t[1] = 0.0f;
+		t[2] = 0.0f;
+		t[3] = s;
+		t[4] = tx;
+		t[5] = ty;
+	}
+
+	INLINE XForm2D::XForm2D(float tx, float ty, float sx, float sy)
+	{
+		t[0] = sx;
+		t[1] = 0.0f;
+		t[2] = 0.0f;
+		t[3] = sy;
+		t[4] = tx;
+		t[5] = ty;
+	}
+
     INLINE XForm2D& XForm2D::identity()
     {
         t[0] = 1.0f; t[1] = 0.0f;

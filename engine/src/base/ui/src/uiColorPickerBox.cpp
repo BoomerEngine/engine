@@ -129,51 +129,39 @@ namespace ui
         recomputeGeometry(m_rectSize);
     }
 
+	void ColorPickerLSBox::rebuildCursorGeometry(const Size& size)
+	{
+		const float x = size.x * m_value.y;
+		const float y = size.y * m_value.z;
+		const float r = size.y * 0.025f;
+
+		base::canvas::GeometryBuilder builder(nullptr, m_cursorGeometry);
+
+		base::Vector3 circleColor;
+		HSVtoRGB(base::Vector3(m_value.x, m_value.y, m_value.z), circleColor);
+
+		if (m_value.z > 0.5f)
+			builder.strokeColor(base::Color::BLACK, 2.0f);
+		else
+			builder.strokeColor(base::Color::WHITE, 2.0f);
+
+		builder.fillColor(base::Color::FromVectorLinear(circleColor));
+		builder.beginPath();
+		builder.circle(x, y, r);
+		builder.fill();
+		builder.stroke();
+	}
+
     void ColorPickerLSBox::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        if (m_rectSize != drawArea.size())
-            recomputeGeometry(drawArea.size());
+		if (m_rectSize != drawArea.size())
+		{
+			recomputeGeometry(drawArea.size());
+			rebuildCursorGeometry(drawArea.size());
+		}
 
-        auto style = base::canvas::SolidColor(base::Color::WHITE);
-        style.customUV = true;
-
-        {
-            base::canvas::Canvas::RawGeometry geom;
-            geom.vertices = m_vertices.typedData();
-            geom.indices = m_indices.typedData();
-            geom.numIndices = m_indices.size();
-
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(style, geom);
-        }
-
-        //if (m_hue >= 0.0f)
-        {
-            const float x = drawArea.size().x * m_value.y;
-            const float y = drawArea.size().y * m_value.z;
-            const float r = drawArea.size().y * 0.025f;
-
-            base::canvas::GeometryBuilder builder;
-
-            base::Vector3 circleColor;
-            HSVtoRGB(base::Vector3(m_value.x, m_value.y, m_value.z), circleColor);
-
-            if (m_value.z > 0.5f)
-                builder.strokeColor(base::Color::BLACK);
-            else
-                builder.strokeColor(base::Color::WHITE);
-            builder.fillColor(base::Color::FromVectorLinear(circleColor));
-            builder.beginPath();
-            builder.strokeWidth(2.0f);
-            builder.circle(x, y, r);
-            builder.fill();
-            builder.stroke();
-
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.place(builder);
-        }
+		canvas.place(drawArea.absolutePosition(), m_colorRectGeometry, mergedOpacity);
+        canvas.place(drawArea.absolutePosition(), m_cursorGeometry, mergedOpacity);
 
         TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);        
     }
@@ -227,13 +215,16 @@ namespace ui
 
         m_rectSize = size;
 
-        m_vertices.reset();
-        m_indices.reset();
-        m_vertices.resize((GRID_SIZE + 1) * (GRID_SIZE + 1));
-        m_indices.resize(GRID_SIZE * GRID_SIZE * 6);
+		base::Array<base::canvas::Vertex> tempVertices;
+		tempVertices.resize((GRID_SIZE + 1) * (GRID_SIZE + 1));
+
+		m_colorRectGeometry.reset();
+		m_colorRectGeometry.vertices.reserve(GRID_SIZE * GRID_SIZE * 6);
+		m_colorRectGeometry.boundsMin = base::Vector2(0, 0);
+		m_colorRectGeometry.boundsMax = size;
 
         {
-            auto* writeV = m_vertices.typedData();
+            auto* writeV = tempVertices.typedData();
 
             for (uint32_t y = 0; y <= GRID_SIZE; ++y)
             {
@@ -264,7 +255,7 @@ namespace ui
         }
 
         {
-            auto* writeI = m_indices.typedData();
+			auto* writeI = m_colorRectGeometry.vertices.allocateUninitialized(GRID_SIZE * GRID_SIZE * 6);
 
             for (uint32_t y = 0; y < GRID_SIZE; ++y)
             {
@@ -273,16 +264,21 @@ namespace ui
 
                 for (uint32_t x = 0; x < GRID_SIZE; ++x, writeI += 6, prevLine += 1, curLine += 1)
                 {
-                    writeI[0] = prevLine + 0;
-                    writeI[1] = prevLine + 1;
-                    writeI[2] = curLine + 0;
+                    writeI[0] = tempVertices[prevLine + 0];
+                    writeI[1] = tempVertices[prevLine + 1];
+                    writeI[2] = tempVertices[curLine + 0];
 
-                    writeI[3] = prevLine + 1;
-                    writeI[4] = curLine + 1;
-                    writeI[5] = curLine + 0;
+                    writeI[3] = tempVertices[prevLine + 1];
+                    writeI[4] = tempVertices[curLine + 1];
+                    writeI[5] = tempVertices[curLine + 0];
                 }
             }
         }
+
+		{
+			auto& batch = m_colorRectGeometry.batches.emplaceBack();
+			batch.vertexCount = GRID_SIZE * GRID_SIZE * 6;
+		}
     }
 
     //---
@@ -330,43 +326,8 @@ namespace ui
         if (m_rectSize != drawArea.size())
             recomputeGeometry(drawArea.size());
 
-        auto style = base::canvas::SolidColor(base::Color::WHITE);
-        style.customUV = true;
-
-        {
-            base::canvas::Canvas::RawGeometry geom;
-            geom.vertices = m_vertices.typedData();
-            geom.indices = m_indices.typedData();
-            geom.numIndices = m_indices.size();
-
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(style, geom);
-        }
-
-        if (m_hue >= 0.0f)
-        {
-            const float x = drawArea.size().x * (m_hue / 360.0f);
-            const float y = drawArea.size().y / 2.0f;
-            const float r = drawArea.size().y * 0.2f;
-
-            base::canvas::GeometryBuilder builder;
-
-            base::Vector3 circleColor;
-            HSVtoRGB(base::Vector3(m_hue, 1.0f, 1.0f), circleColor);
-
-            builder.strokeColor(base::Color::BLACK);
-            builder.fillColor(base::Color::FromVectorLinear(circleColor));
-            builder.beginPath();
-            builder.strokeWidth(2.0f);
-            builder.circle(x, y, r);
-            builder.fill();
-            builder.stroke();
-
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.place(builder);
-        }
+		canvas.place(drawArea.absolutePosition(), m_colorBarGeometry, mergedOpacity);
+		canvas.place(drawArea.absolutePosition(), m_cursorGeometry, mergedOpacity);
 
         TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
     }
@@ -409,59 +370,98 @@ namespace ui
         }
     }
 
+	void ColorPickerHueBar::rebuildCursorGeometry(const Size& size)
+	{
+		const float x = size.x * (m_hue / 360.0f);
+		const float y = size.y / 2.0f;
+		const float r = size.y * 0.2f;
+
+		base::canvas::GeometryBuilder builder(nullptr, m_cursorGeometry);
+
+		base::Vector3 circleColor;
+		HSVtoRGB(base::Vector3(m_hue, 1.0f, 1.0f), circleColor);
+
+		builder.strokeColor(base::Color::BLACK, 2.0f);
+		builder.fillColor(base::Color::FromVectorLinear(circleColor));
+		builder.beginPath();
+		builder.circle(x, y, r);
+		builder.fill();
+		builder.stroke();
+	}
+
     void ColorPickerHueBar::recomputeGeometry(const Size& size)
     {
         static const uint32_t GRID_SIZE = 36;
 
+		m_colorBarGeometry.reset();
+		m_colorBarGeometry.vertices.reserve(GRID_SIZE * 6);
+		m_colorBarGeometry.boundsMin = base::Vector2(0, 0);
+		m_colorBarGeometry.boundsMax = size;
+
         m_rectSize = size;
 
-        m_vertices.reset();
-        m_indices.reset();
-        m_vertices.resize(2*(GRID_SIZE + 1));
-        m_indices.resize(GRID_SIZE * 6);
-
         {
-            auto* writeV = m_vertices.typedData();
+            auto* writeV = m_colorBarGeometry.vertices.allocateUninitialized(GRID_SIZE * 6);
 
-            for (uint32_t y = 0; y <= 1; ++y)
+			base::Color color0;
+
+			float x0 = 0.0f;
+			const float y0 = 0.0f;
+			const float y1 = size.y;
+
+            for (uint32_t x = 0; x <= GRID_SIZE; ++x)
             {
-                const float fy = y;
-                for (uint32_t x = 0; x <= GRID_SIZE; ++x, ++writeV)
-                {
-                    const float fx = x / (float)GRID_SIZE;
+                const float fx = x / (float)GRID_SIZE;
 
-                    base::Vector3 cornerColor;
-                    HSVtoRGB(base::Vector3(fx * 360.0f, 1.0f, 1.0f), cornerColor);
+                base::Vector3 cornerColor;
+                HSVtoRGB(base::Vector3(fx * 360.0f, 1.0f, 1.0f), cornerColor);
 
-                    writeV->pos.x = fx * size.x;
-                    writeV->pos.y = fy * size.y;
-                    writeV->uv.x = fx;
-                    writeV->uv.y = fy;
-                    writeV->color = base::Color::FromVectorLinear(cornerColor);
-                }
+				const auto color1 = base::Color::FromVectorLinear(cornerColor);
+				const float x1 = fx * size.x;
+				if (x > 0)
+				{
+					writeV->pos.x = x0;
+					writeV->pos.y = y0;
+					writeV->color = color0;
+					writeV++;
+
+					writeV->pos.x = x1;
+					writeV->pos.y = y0;
+					writeV->color = color1;
+					writeV++;
+
+					writeV->pos.x = x1;
+					writeV->pos.y = y1;
+					writeV->color = color1;
+					writeV++;
+
+					// --
+
+					writeV->pos.x = x0;
+					writeV->pos.y = y0;
+					writeV->color = color0;
+					writeV++;
+
+					writeV->pos.x = x1;
+					writeV->pos.y = y1;
+					writeV->color = color1;
+					writeV++;
+
+					writeV->pos.x = x0;
+					writeV->pos.y = y1;
+					writeV->color = color0;
+					writeV++;
+				}
+
+				x0 = x1;
+				color0 = color1;
             }
         }
 
-        {
-            auto* writeI = m_indices.typedData();
-
-            for (uint32_t y = 0; y < 1; ++y)
-            {
-                uint16_t prevLine = y * (GRID_SIZE + 1);
-                uint16_t curLine = prevLine + (GRID_SIZE + 1);
-
-                for (uint32_t x = 0; x < GRID_SIZE; ++x, writeI += 6, prevLine += 1, curLine += 1)
-                {
-                    writeI[0] = prevLine + 0;
-                    writeI[1] = prevLine + 1;
-                    writeI[2] = curLine + 0;
-
-                    writeI[3] = prevLine + 1;
-                    writeI[4] = curLine + 1;
-                    writeI[5] = curLine + 0;
-                }
-            }
-        }
+		{
+			auto& batch = m_colorBarGeometry.batches.emplaceBack();
+			batch.vertexCount = GRID_SIZE * 6;
+		}
     }
 
 

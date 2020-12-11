@@ -45,12 +45,15 @@ namespace ui
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        base::Array<base::canvas::Canvas::RawVertex> m_vertices;
-        base::Array<uint16_t> m_indices;
+		base::canvas::Geometry m_colorRectGeometry;
+		base::canvas::Geometry m_cursorGeometry;
+
         Size m_rectSize;
 
         void recomputeGeometry(const Size& size);
         void updateFromPosition(const Position& pos);
+
+		void rebuildCursorGeometry(const Size& size);
 
         friend class ColorPickerLSBoxInputAction;
     };
@@ -74,19 +77,21 @@ namespace ui
         void hue(float h);
 
     private:
-        float m_hue;
+        float m_hue = 0.0;
 
         virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        base::Array<base::canvas::Canvas::RawVertex> m_vertices;
-        base::Array<uint16_t> m_indices;
+		base::canvas::Geometry m_cursorGeometry;
+		base::canvas::Geometry m_colorBarGeometry;
         Size m_rectSize;
 
         void recomputeGeometry(const Size& size);
         void updateFromPosition(const Position& pos);
+
+		void rebuildCursorGeometry(const Size& size);
 
         friend class ColorPickerHueBarInputAction;
     };

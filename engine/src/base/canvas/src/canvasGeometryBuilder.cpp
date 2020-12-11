@@ -37,6 +37,7 @@
 #include "base/font/include/fontGlyph.h"
 #include "base/font/include/fontGlyphBuffer.h"
 #include "base/font/include/fontInputText.h"
+#include "canvasStorage.h"
 
 namespace base
 {
@@ -44,22 +45,32 @@ namespace base
     {
         //--
 
-        ConfigProperty<bool> cvAntiAliasEnabled("Engine.Canvas", "EnableAntiAlias", true);
+        ConfigProperty<bool> cvAntiAliasAllowed("Engine.Canvas", "AllowAntiAlias", false);
+		ConfigProperty<bool> cvAntiAliasForced("Engine.Canvas", "ForceAntiAlias", false);
         ConfigProperty<float> cvTessTollerance("Engine.Canvas", "TesselationTollerance", 0.25f);
         ConfigProperty<float> cvDistTollerance("Engine.Canvas", "DistanceTollerance", 0.01f);
         ConfigProperty<float> cvLineFringeWidth("Engine.Canvas", "FringeWidth", 1.0f);
 
         //--
 
-        GeometryBuilder::GeometryBuilder(bool aantiAlias)
-            : m_antiAlias(aantiAlias & cvAntiAliasEnabled.get())
-            , m_antiAliasFringeWidth(cvLineFringeWidth.get())
-            , m_distTollerance(cvDistTollerance.get())
-            , m_tessTollerance(cvTessTollerance.get())
+		GeometryBuilder::GeometryBuilder(const IStorage* storage, Geometry& outGeometry)
+			: m_storage(storage)
+			, m_distTollerance(cvDistTollerance.get())
+			, m_tessTollerance(cvTessTollerance.get())
+			, m_outVertices(outGeometry.vertices)
+			, m_outBatches(outGeometry.batches)
+			, m_outAttributes(outGeometry.attributes)
+			, m_outRendererData(outGeometry.customData)
+			, m_outVertexBoundsMin(outGeometry.boundsMin)
+			, m_outVertexBoundsMax(outGeometry.boundsMax)
         {
+			outGeometry.reset();
+
             m_distTolleranceSquared = m_distTollerance * m_distTollerance;
             m_pathCache = new prv::PathCache(m_distTollerance, m_tessTollerance);
-            reset();
+			
+			m_style.antiAliasFringeWidth = cvLineFringeWidth.get();
+			m_style.antiAlias = cvAntiAliasForced.get() && cvAntiAliasAllowed.get();
         }
 
         GeometryBuilder::~GeometryBuilder()
@@ -86,108 +97,14 @@ namespace base
 
             // reset command buffer
             m_commands.reset();
-            m_commands.reserve(256);
             m_prevPosition = Vector2::ZERO();
 
-            // styles
-            m_outStyles.reserve(32);
-            m_outStylesMap.reserve(32);
-
-            // reset output data
-            m_outStylesMap.reset();
-            m_outVertices.reset();
-            m_outGlyphs.reset();
-            m_outPaths.reset();
-            m_outGroups.reset();
+			// reset style pivot
+			m_stylePivot = Vector2::ZERO();
+			m_stylePivotStack.reset();
         }
-
-        void GeometryBuilder::extractNoReset(Geometry& outGeometry) const
-        {
-            // nothing to extract
-            if (m_outGroups.empty())
-                return;
-
-            // reset output
-            outGeometry.reset();
-
-            // copy vertices
-            auto absoluteVertices  = outGeometry.m_vertices.allocateUninitialized(m_outVertices.size());
-            memcpy(absoluteVertices, m_outVertices.typedData(), outGeometry.m_vertices.dataSize());
-
-            // copy paths
-            auto absolutePaths  = outGeometry.m_paths.allocateUninitialized(m_outPaths.size());
-            memcpy(absolutePaths, m_outPaths.typedData(), outGeometry.m_paths.dataSize());
-
-            // copy glyphs
-            auto absoluteGlyphs  = outGeometry.m_glyphs.allocateUninitialized(m_outGlyphs.size());
-            memcpy(absoluteGlyphs, m_outGlyphs.typedData(), outGeometry.m_glyphs.dataSize());
-
-            // copy styles
-            outGeometry.m_styles = m_outStyles;
-
-            // fix up pointers
-            for (uint32_t i = 0; i < m_outPaths.size(); ++i)
-            {
-                auto& outPath = absolutePaths[i];
-
-                if (outPath.fillVertexCount > 0)
-                    outPath.fillVertices = absoluteVertices + (uint64_t)outPath.fillVertices;
-
-                if (outPath.strokeVertexCount > 0)
-                    outPath.strokeVertices = absoluteVertices + (uint64_t)outPath.strokeVertices;
-            }
-
-            // copy and fix groups
-            auto absoluteGroups  = outGeometry.m_groups.allocateUninitialized(m_outGroups.size());
-            memzero(absoluteGroups, m_outGroups.dataSize());
-
-            for (uint32_t i = 0; i < m_outGroups.size(); ++i)
-            {
-                auto& outGroup = absoluteGroups[i];
-                outGroup = m_outGroups[i];
-
-                if (outGroup.numPaths > 0)
-                    outGroup.paths = absolutePaths + (uint64_t)outGroup.paths;
-                else
-                    outGroup.paths = nullptr;
-
-                if (outGroup.numVertices > 0)
-                    outGroup.vertices = absoluteVertices + (uint64_t)outGroup.vertices;
-                else
-                    outGroup.vertices = nullptr;
-
-                if (outGroup.numGlyphs > 0)
-                    outGroup.glyphs = absoluteGlyphs + (uint64_t)outGroup.glyphs;
-                else
-                    outGroup.glyphs = nullptr;
-            }
-
-            // update bounds
-            outGeometry.calcBounds();
-
-            // cache all referenced glyphs
-            outGeometry.prepareGlyphsForRendering();
-        }
-
-        void GeometryBuilder::extract(Geometry& outGeometry)
-        {
-            // extract the geometry
-            extractNoReset(outGeometry);
-
-            // reset command buffer
-            m_commands.clear();
-            m_commands.reserve(256);
-
-            // reset output data
-            m_outVertices.reset();
-            m_outGlyphs.reset();
-            m_outPaths.reset();
-            m_outGroups.reset();
-            m_outStyles.reset();
-            m_outStylesMap.reset();
-        }
-
-        void GeometryBuilder::compositeOperation(CompositeOperation op)
+		
+        void GeometryBuilder::blending(BlendOp op)
         {
             m_style.op = op;
         }
@@ -211,38 +128,73 @@ namespace base
             m_style = RenderState();
         }
 
-        void GeometryBuilder::strokeColor(const Color& color)
+		void BuildAttributesFromStyle(const RenderStyle& style, float width, Attributes& outAttributes)
+		{
+			outAttributes.base = style.base;
+			outAttributes.extent = style.extent;
+			outAttributes.innerColor = style.innerColor;
+			outAttributes.outerColor = style.outerColor;
+			outAttributes.radius = style.radius;
+			outAttributes.feather = style.feather;
+			outAttributes.lineWidth = width;
+		}
+
+		int GeometryBuilder::mapStyle(const RenderStyle& style, float width)
+		{
+			if (!style.attributesNeeded && width == 1.0f)
+				return 0;
+
+			Attributes attributes;
+			BuildAttributesFromStyle(style, width, attributes);
+
+			// quick mapping for few styles (most common case)
+			if (m_outAttributes.size() <= 4)
+				for (auto i : m_outAttributes.indexRange())
+					if (m_outAttributes[i] == attributes)
+						return i + 1;
+
+			// use map
+			int index = 0;
+			if (m_attributesMap.find(attributes, index))
+				return index;
+
+			m_outAttributes.pushBack(attributes);
+			m_attributesMap[attributes] = m_outAttributes.size();
+			return m_outAttributes.size();			
+		}
+
+        void GeometryBuilder::strokeColor(const Color& color, float width)
         {
             m_style.strokeStyle = SolidColor(color);
-            m_style.strokeStyleIndex = -1;
+			m_style.strokeWidth = width;
+			m_style.cachedStrokeStyleIndex = mapStyle(m_style.strokeStyle, width);
         }
 
-        void GeometryBuilder::strokePaint(const RenderStyle& style)
+        void GeometryBuilder::strokePaint(const RenderStyle& style, float width)
         {
             m_style.strokeStyle = style;
-            m_style.strokeStyleIndex = -1;
+			m_style.strokeWidth = width;
+			m_style.cachedStrokeStyleIndex = mapStyle(style, width);
         }
 
         void GeometryBuilder::fillColor(const Color& color)
         {
             m_style.fillStyle = SolidColor(color);
-            m_style.fillStyleIndex = -1;
+			m_style.cachedFillStyleIndex = 0; // don't need style for solid color
         }
 
         void GeometryBuilder::fillPaint(const RenderStyle& style)
         {
-            m_style.fillStyle = style;
-            m_style.fillStyleIndex = -1;
+			if (m_style.fillStyle.image != style.image)
+				m_style.cachedFillImage = nullptr;
+
+			m_style.cachedFillStyleIndex = mapStyle(style, 1.0f);
+			m_style.fillStyle = style;
         }
 
         void GeometryBuilder::miterLimit(float limit)
         {
             m_style.miterLimit = limit;
-        }
-
-        void GeometryBuilder::strokeWidth(float size)
-        {
-            m_style.strokeWidth = size;
         }
 
         void GeometryBuilder::lineCap(LineCap capStyle)
@@ -259,6 +211,11 @@ namespace base
         {
             m_style.alpha = alpha;
         }
+
+		void GeometryBuilder::antialiasing(bool flag)
+		{
+			m_style.antiAlias = (flag || cvAntiAliasForced.get()) && cvAntiAliasAllowed.get();
+		}
 
         void GeometryBuilder::resetTransform()
         {
@@ -359,69 +316,88 @@ namespace base
             m_transformClass = m_transform.classify();
             m_transformInvertedValid = false;
         }
+		
+		//--
+
+		void GeometryBuilder::stylePivot(float x, float y)
+		{
+			m_stylePivot.x = x;
+			m_stylePivot.y = y;
+		}
+
+		void GeometryBuilder::stylePivot(Vector2 offset)
+		{
+			m_stylePivot = offset;
+		}
+
+		void GeometryBuilder::resetStylePivot()
+		{
+			m_stylePivot = Vector2::ZERO();
+			m_stylePivotStack.reset();
+		}
+
+		void GeometryBuilder::pushStylePivot()
+		{
+			m_stylePivotStack.pushBack(m_stylePivot);
+		}
+
+		void GeometryBuilder::popStylePivot()
+		{
+			if (!m_stylePivotStack.empty())
+			{ 
+				m_stylePivot = m_stylePivotStack.back();
+				m_stylePivotStack.popBack();
+			}
+			else
+			{
+				m_stylePivot = Vector2::ZERO();
+			}
+		}
+
+		//--
 
         void GeometryBuilder::beginPath()
         {
             m_commands.clear();
         }
 
+		void GeometryBuilder::pushRenderer()
+		{
+			m_customRendererStack.pushBack(m_customRenderer);
+		}
 
-        uint32_t GeometryBuilder::cacheFillStyle()
-        {
-            if (m_style.fillStyleIndex == -1)
-            {
-                uint32_t index = 0;
-                if (!m_outStylesMap.find(m_style.fillStyle, index))
-                {
-                    index = m_outStyles.size();
-                    m_outStylesMap[m_style.fillStyle] = index;
-                    m_outStyles.emplaceBack(m_style.fillStyle);
-                }
-                else
-                {
-                    DEBUG_CHECK(m_outStyles[index] == m_style.fillStyle);
-                }
-                
-                m_style.fillStyleIndex = index;
-            }
+		void GeometryBuilder::popRenderer()
+		{
+			if (!m_customRendererStack.empty())
+			{
+				m_customRenderer = m_customRendererStack.back();
+				m_customRendererStack.popBack();
+			}
+			else
+			{
+				m_customRenderer = CustomRenderInfo();
+			}
+		}
 
-            return m_style.fillStyleIndex;
-        }
+		void GeometryBuilder::selectRenderer(uint8_t index, const void* data /*= nullptr*/, uint32_t dataSize /*= 0*/)
+		{
+			m_customRenderer.index = index;
 
-        uint32_t GeometryBuilder::cacheStrokeStyle()
-        {
-            if (m_style.strokeStyleIndex == -1)
-            {
-                uint32_t index = 0;
-                if (!m_outStylesMap.find(m_style.strokeStyle, index))
-                {
-                    index = m_outStyles.size();
-                    m_outStyles.emplaceBack(m_style.strokeStyle);
-                    m_outStylesMap[m_style.strokeStyle] = index;
-                }
-                else
-                {
-                    DEBUG_CHECK(m_outStyles[index] == m_style.strokeStyle);
-                }
+			if (data && dataSize)
+			{
+				m_customRenderer.dataSize = dataSize;
+				m_customRenderer.dataOffset = m_outRendererData.size();
 
-                m_style.strokeStyleIndex = index;
-            }
-
-            return m_style.strokeStyleIndex;
-        }
-
-        void GeometryBuilder::beginGroup(uint32_t styleIndex, RenderGroup::Type type)
-        {
-            RenderGroup newGroup;
-            newGroup.type = type;
-            newGroup.paths = (RenderPath*)(uint64_t)m_outPaths.size(); // an index, finalized during final copying
-            newGroup.numPaths = 0;
-            newGroup.vertices = (RenderVertex *)(uint64_t)m_outVertices.size(); // an index, finalized during final copying
-            newGroup.numVertices = 0;
-            newGroup.op = m_style.op;
-            newGroup.styleIndex = styleIndex;
-            m_outGroups.pushBack(newGroup);
-        }
+				const auto alignedSize = Align<uint32_t>(dataSize, 16);
+				auto* ptr = m_outRendererData.allocateUninitialized(alignedSize);
+				memcpy(ptr, data, dataSize);
+			}
+			else
+			{
+				m_customRenderer.dataSize = 0;
+				m_customRenderer.dataOffset = 0;
+			}
+		}
 
         void GeometryBuilder::appendCommands(const float* vals, uint32_t numVals)
         {
@@ -966,7 +942,7 @@ namespace base
             class OutputVertexWriter : public base::NoCopy
             {
             public:
-                INLINE OutputVertexWriter(Array<RenderVertex>& arr, uint32_t maxVertices)
+                INLINE OutputVertexWriter(Array<Vertex>& arr, uint32_t maxVertices)
                     : m_arr(arr)
                     , m_numWritten(0)
                     , m_boundsMin(FLT_MAX, FLT_MAX)
@@ -990,34 +966,54 @@ namespace base
                     m_arr.resize(actualWrittenCount);
                 }
 
-                INLINE RenderVertex* currentPtr() const
+                INLINE Vertex* currentPtr() const
                 {
                     return m_curVertex;
                 }
 
-                INLINE RenderVertex* startVertexIndexMarker() const
+				INLINE Vertex* startVertex()
+				{
+					return m_startVertex;
+				}
+
+                INLINE uint32_t startVertexIndex() const
                 {
-                    auto baseVertex  = m_arr.typedData();
-                    return (RenderVertex*)(m_startVertex - baseVertex);
+                    return m_startVertex - m_arr.typedData();
                 }
 
-                INLINE RenderVertex* startVertex() const
-                {
-                    return m_startVertex;
-                }
-
-                INLINE void add(float x, float y, float u=0.5f, float v=1.0f)
+                INLINE void add(float x, float y, float u, float v, uint8_t flags)
                 {
                     ASSERT(m_curVertex < m_endVertex);
                     m_curVertex->pos.x = x;
                     m_curVertex->pos.y = y;
                     m_curVertex->uv.x = u;
                     m_curVertex->uv.y = v;
+					m_curVertex->attributeIndex = 0;
+					m_curVertex->attributeFlags = flags;
+					m_curVertex->imagePageIndex = 0;
+					m_curVertex->imageEntryIndex = 0;
                     m_boundsMin = Min(m_boundsMin, m_curVertex->pos);
                     m_boundsMax = Max(m_boundsMax, m_curVertex->pos);
                     ++m_curVertex;
                     ++m_numWritten;
                 }
+
+				INLINE void add(float x, float y, uint8_t flags)
+				{
+					ASSERT(m_curVertex < m_endVertex);
+					m_curVertex->pos.x = x;
+					m_curVertex->pos.y = y;
+					m_curVertex->uv.x = 0.5;
+					m_curVertex->uv.y = 1.0f;
+					m_curVertex->attributeFlags = flags;
+					m_curVertex->attributeIndex = 0;
+					m_curVertex->imagePageIndex = 0;
+					m_curVertex->imageEntryIndex = 0;
+					m_boundsMin = Min(m_boundsMin, m_curVertex->pos);
+					m_boundsMax = Max(m_boundsMax, m_curVertex->pos);
+					++m_curVertex;
+					++m_numWritten;
+				}
 
                 INLINE uint32_t finishAndGetCount()
                 {
@@ -1032,15 +1028,15 @@ namespace base
                 INLINE const Vector2& boundsMax() const { return m_boundsMax; }
 
             private:
-                RenderVertex* m_startVertex; // current batch
-                RenderVertex* m_curVertex; // current vertex
-                RenderVertex* m_endVertex; // absolute
+				Vertex* m_startVertex; // current batch
+				Vertex* m_curVertex; // current vertex
+				Vertex* m_endVertex; // absolute
                 uint32_t m_numWritten;
                  
                 Vector2 m_boundsMin;
                 Vector2 m_boundsMax;
 
-                Array<RenderVertex>& m_arr;
+                Array<Vertex>& m_arr;
             };
 
             static INLINE void ChooseBevel(bool bevel, const prv::PathPoint& p0, const prv::PathPoint& p1, float w, Vector2& out0, Vector2& out1)
@@ -1057,7 +1053,7 @@ namespace base
                 }
             }
 
-            static void AddBevelJoin(OutputVertexWriter& vertexWriter, const prv::PathPoint& p0, const prv::PathPoint& p1, float lw, float rw, float lu, float ru, float fringe)
+            static void AddBevelJoin(OutputVertexWriter& vertexWriter, const prv::PathPoint& p0, const prv::PathPoint& p1, float lw, float rw, float w, uint8_t flags, float alpha)
             {
                 auto dl0 = p0.d.prep();
                 auto dl1 = p1.d.prep();
@@ -1067,70 +1063,70 @@ namespace base
                     Vector2 l0, l1;
                     ChooseBevel(p1.flags.test(prv::PointTypeFlag::InnerBevel), p0, p1, lw, l0, l1);
 
-                    vertexWriter.add(l0.x, l0.y, lu, 1.0f);
-                    vertexWriter.add(p1.pos.x - dl0.x * rw, p1.pos.y - dl0.y * rw, ru, 1.0f);
+					vertexWriter.add(l0.x, l0.y, alpha, -w, flags);
+					vertexWriter.add(p1.pos.x - dl0.x * rw, p1.pos.y - dl0.y * rw, alpha, w, flags);
 
-                    if (p1.flags.test(prv::PointTypeFlag::Bevel))
-                    {
-                        vertexWriter.add(l0.x, l0.y, lu, 1.0f);
-                        vertexWriter.add(p1.pos.x - dl0.x*rw, p1.pos.y - dl0.y * rw, ru, 1);
+					if (p1.flags.test(prv::PointTypeFlag::Bevel))
+					{
+						vertexWriter.add(l0.x, l0.y, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x - dl0.x * rw, p1.pos.y - dl0.y * rw, alpha, w, flags);
 
-                        vertexWriter.add(l1.x, l1.y, lu, 1.0f);
-                        vertexWriter.add(p1.pos.x - dl1.x * rw, p1.pos.y - dl1.y * rw, ru, 1.0f);
-                    }
-                    else
-                    {
-                        auto r0 = p1.pos - p1.dm * rw;
+						vertexWriter.add(l1.x, l1.y, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x - dl1.x * rw, p1.pos.y - dl1.y * rw, alpha, w, flags);
+					}
+					else
+					{
+						auto r0 = p1.pos - p1.dm * rw;
 
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1);
-                        vertexWriter.add(p1.pos.x - dl0.x*rw, p1.pos.y - dl0.y * rw, ru, 1);
+						vertexWriter.add(p1.pos.x, p1.pos.y, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x - dl0.x * rw, p1.pos.y - dl0.y * rw, alpha, w, flags);
 
-                        vertexWriter.add(r0.x, r0.y, ru, 1);
-                        vertexWriter.add(r0.x, r0.y, ru, 1);
+						vertexWriter.add(r0.x, r0.y, alpha, -w, flags);
+						vertexWriter.add(r0.x, r0.y, alpha, w, flags);
 
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1);
-                        vertexWriter.add(p1.pos.x - dl1.x *rw, p1.pos.y - dl1.y * rw, ru, 1);
-                    }
+						vertexWriter.add(p1.pos.x, p1.pos.y, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x - dl1.x * rw, p1.pos.y - dl1.y * rw, alpha, w, flags);
+					}
 
-                    vertexWriter.add(l1.x, l1.y, lu, 1);
-                    vertexWriter.add(p1.pos.x - dl1.x*rw, p1.pos.y - dl1.y * rw, ru, 1);
-                }
-                else
-                {
-                    Vector2 r0, r1;
-                    ChooseBevel(p1.flags.test(prv::PointTypeFlag::InnerBevel), p0, p1, -rw, r0, r1);
+					vertexWriter.add(l1.x, l1.y, alpha, -w, flags);
+					vertexWriter.add(p1.pos.x - dl1.x * rw, p1.pos.y - dl1.y * rw, alpha, w, flags);
+				}
+				else
+				{
+					Vector2 r0, r1;
+					ChooseBevel(p1.flags.test(prv::PointTypeFlag::InnerBevel), p0, p1, -rw, r0, r1);
 
-                    vertexWriter.add(p1.pos.x + dl0.x *lw, p1.pos.y + dl0.y * lw, lu, 1);
-                    vertexWriter.add(r0.x, r0.y, ru, 1);
+					vertexWriter.add(p1.pos.x + dl0.x * lw, p1.pos.y + dl0.y * lw, alpha, -w, flags);
+					vertexWriter.add(r0.x, r0.y, alpha, w, flags);
 
-                    if (p1.flags.test(prv::PointTypeFlag::Bevel))
-                    {
-                        vertexWriter.add(p1.pos.x + dl0.x * lw, p1.pos.y + dl0.y*lw, lu, 1.0f);
-                        vertexWriter.add(r0.x, r0.y, ru, 1.0f);
+					if (p1.flags.test(prv::PointTypeFlag::Bevel))
+					{
+						vertexWriter.add(p1.pos.x + dl0.x * lw, p1.pos.y + dl0.y * lw, alpha, -w, flags);
+						vertexWriter.add(r0.x, r0.y, alpha, w, flags);
 
-                        vertexWriter.add(p1.pos.x + dl1.x *lw, p1.pos.y + dl1.y * lw, lu, 1.0f);
-                        vertexWriter.add(r1.x, r1.y, ru, 1.0f);
-                    }
-                    else
-                    {
-                        auto l0 = p1.pos + p1.dm*lw;
+						vertexWriter.add(p1.pos.x + dl1.x * lw, p1.pos.y + dl1.y * lw, alpha, -w, flags);
+						vertexWriter.add(r1.x, r1.y, alpha, w, flags);
+					}
+					else
+					{
+						auto l0 = p1.pos + p1.dm * lw;
 
-                        vertexWriter.add(p1.pos.x + dl0.x*lw, p1.pos.y + dl0.y * lw, lu, 1.0f);
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f);
+						vertexWriter.add(p1.pos.x + dl0.x * lw, p1.pos.y + dl0.y * lw, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x, p1.pos.y, alpha, w, flags);
+						 
+						vertexWriter.add(l0.x, l0.y, alpha, -w, flags);
+						vertexWriter.add(l0.x, l0.y, alpha, w, flags);
 
-                        vertexWriter.add(l0.x, l0.y, lu, 1.0f);
-                        vertexWriter.add(l0.x, l0.y, lu, 1.0f);
+						vertexWriter.add(p1.pos.x + dl1.x * lw, p1.pos.y + dl1.y * lw, alpha, -w, flags);
+						vertexWriter.add(p1.pos.x, p1.pos.y, alpha, w, flags);
+					}
 
-                        vertexWriter.add(p1.pos.x + dl1.x*lw, p1.pos.y + dl1.y * lw, lu, 1.0f);
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f);
-                    }
-
-                    vertexWriter.add(p1.pos.x + dl1.x*lw, p1.pos.y + dl1.y * lw, lu, 1.0f);
-                    vertexWriter.add(r1.x, r1.y, ru, 1.0f);
+					vertexWriter.add(p1.pos.x + dl1.x * lw, p1.pos.y + dl1.y * lw, alpha, -w, flags);
+					vertexWriter.add(r1.x, r1.y, alpha, w, flags);
                 }
             }
 
-            static void AddRoundJoin(OutputVertexWriter& vertexWriter, const prv::PathPoint& p0, const prv::PathPoint& p1, float lw, float rw, float lu, float ru, uint32_t ncap, float fringe)
+            static void AddRoundJoin(OutputVertexWriter& vertexWriter, const prv::PathPoint& p0, const prv::PathPoint& p1, float lw, float rw, float lu, float ru, uint32_t ncap, float fringe, uint8_t flags)
             {
                 auto dl0 = p0.d.prep();
                 auto dl1 = p1.d.prep();
@@ -1144,8 +1140,8 @@ namespace base
                     auto a1 = atan2(-dl1.y, -dl1.x);
                     if (a1 > a0) a1 -= TWOPI;
 
-                    vertexWriter.add(l0.x, l0.y, lu, 1.0f);
-                    vertexWriter.add(p1.pos.x - dl0.x *rw, p1.pos.y - dl0.y * rw, ru, 1.0f);
+                    vertexWriter.add(l0.x, l0.y, lu, 1.0f, flags);
+                    vertexWriter.add(p1.pos.x - dl0.x *rw, p1.pos.y - dl0.y * rw, ru, 1.0f, flags);
 
                     auto count = std::clamp<int>((int)ceil(((a0 - a1) / PI) * ncap), 2, ncap);
                     for (int i = 0; i < count; i++)
@@ -1155,12 +1151,12 @@ namespace base
                         float rx = p1.pos.x + cos(a) * rw;
                         float ry = p1.pos.y + sin(a) * rw;
 
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f);
-                        vertexWriter.add(rx, ry, ru, 1.0f);
+                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f, flags);
+                        vertexWriter.add(rx, ry, ru, 1.0f, flags);
                     }
 
-                    vertexWriter.add(l1.x, l1.y, lu, 1.0f);
-                    vertexWriter.add(p1.pos.x - dl1.x*rw, p1.pos.y - dl1.y * rw, ru, 1.0f);
+                    vertexWriter.add(l1.x, l1.y, lu, 1.0f, flags);
+                    vertexWriter.add(p1.pos.x - dl1.x*rw, p1.pos.y - dl1.y * rw, ru, 1.0f, flags);
                 }
                 else
                 {
@@ -1171,8 +1167,8 @@ namespace base
                     auto a1 = atan2(dl1.y, dl1.x);
                     if (a1 < a0) a1 += TWOPI;
 
-                    vertexWriter.add(p1.pos.x + dl0.x*rw, p1.pos.y + dl0.y * rw, lu, 1.0f);
-                    vertexWriter.add(r0.x, r0.y, ru, 1.0f);
+                    vertexWriter.add(p1.pos.x + dl0.x*rw, p1.pos.y + dl0.y * rw, lu, 1.0f, flags);
+                    vertexWriter.add(r0.x, r0.y, ru, 1.0f, flags);
 
                     auto count = std::clamp<int>((int)ceil(((a0 - a1) / PI) * ncap), 2, ncap);
                     for (int i = 0; i < count; i++)
@@ -1182,36 +1178,36 @@ namespace base
                         float lx = p1.pos.x + cos(a) * lw;
                         float ly = p1.pos.y + sin(a) * lw;
 
-                        vertexWriter.add(lx, ly, lu, 1.0f);
-                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f);
+                        vertexWriter.add(lx, ly, lu, 1.0f, flags);
+                        vertexWriter.add(p1.pos.x, p1.pos.y, 0.5f, 1.0f, flags);
                     }
 
-                    vertexWriter.add(p1.pos.x + dl1.x*rw, p1.pos.y + dl1.y * rw, lu, 1.0f);
-                    vertexWriter.add(r1.x, r1.y, ru, 1.0f);
+                    vertexWriter.add(p1.pos.x + dl1.x*rw, p1.pos.y + dl1.y * rw, lu, 1.0f, flags);
+                    vertexWriter.add(r1.x, r1.y, ru, 1.0f, flags);
                 }
             }
 
-            static void AddButtCapStart(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, float d, float aa)
+            static void AddButtCapStart(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, float d, float aa, uint8_t flags, float alpha)
             {
                 auto p = point.pos - dv*d;
                 auto dl = dv.prep();
-                vertexWriter.add(p.x + (dl.x * w) - (dv.x * aa), p.y + (dl.y * w) - (dv.y * aa), 0, 0);
-                vertexWriter.add(p.x - (dl.x * w) - (dv.x * aa), p.y - (dl.y * w) - (dv.y * aa), 0, 0);
-                vertexWriter.add(p.x + (dl.x * w), p.y + dl.y * w, 0, 1);
-                vertexWriter.add(p.x - (dl.x * w), p.y - dl.y * w, 1, 1);
+                vertexWriter.add(p.x + (dl.x * w) - (dv.x * aa), p.y + (dl.y * w) - (dv.y * aa), alpha * 0.5f, -w, flags);
+                vertexWriter.add(p.x - (dl.x * w) - (dv.x * aa), p.y - (dl.y * w) - (dv.y * aa), alpha * 0.5f, w, flags);
+                vertexWriter.add(p.x + (dl.x * w), p.y + dl.y * w, alpha, -w, flags);
+                vertexWriter.add(p.x - (dl.x * w), p.y - dl.y * w, alpha, w, flags);
             }
 
-            static void AddButtCapEnd(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, float d, float aa)
+            static void AddButtCapEnd(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, float d, float aa, uint8_t flags, float alpha)
             {
                 auto p = point.pos + dv*d;
                 auto dl = dv.prep();
-                vertexWriter.add(p.x + (dl.x * w), p.y + (dl.y * w), 0, 1);
-                vertexWriter.add(p.x - (dl.x * w), p.y - (dl.y * w), 0, 1);
-                vertexWriter.add(p.x + (dl.x * w) + (dv.x * aa), p.y + (dl.y * w) + (dv.y * aa), 0, 0);
-                vertexWriter.add(p.x - (dl.x * w) + (dv.x * aa), p.y - (dl.y * w) + (dv.y * aa), 1, 0);
+                vertexWriter.add(p.x + (dl.x * w), p.y + (dl.y * w), alpha, -w, flags);
+                vertexWriter.add(p.x - (dl.x * w), p.y - (dl.y * w), alpha, w, flags);
+                vertexWriter.add(p.x + (dl.x * w) + (dv.x * aa), p.y + (dl.y * w) + (dv.y * aa), alpha*0.5f, -w, flags);
+                vertexWriter.add(p.x - (dl.x * w) + (dv.x * aa), p.y - (dl.y * w) + (dv.y * aa), alpha*0.5f, w, flags);
             }
 
-            static void AddRoundCapStart(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, uint32_t ncap, float aa)
+            static void AddRoundCapStart(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, uint32_t ncap, float aa, uint8_t flags)
             {
                 auto p = point.pos;
                 auto dl = dv.prep();
@@ -1223,20 +1219,20 @@ namespace base
 
                     auto px = p.x - dl.x*ax - dv.x*ay;
                     auto py = p.y - dl.y*ax - dv.y*ay;
-                    vertexWriter.add(px,py, 0, 1);
-                    vertexWriter.add(p.x, p.y, 0.5f, 1);
+                    vertexWriter.add(px,py, 0, 1, flags);
+                    vertexWriter.add(p.x, p.y, 0.5f, 1, flags);
                 }
-                vertexWriter.add(p.x + dl.x *w, p.y + dl.y * w, 0, 1);
-                vertexWriter.add(p.x - dl.x *w, p.y - dl.y * w, 0, 1);
+                vertexWriter.add(p.x + dl.x *w, p.y + dl.y * w, 0, 1, flags);
+                vertexWriter.add(p.x - dl.x *w, p.y - dl.y * w, 0, 1, flags);
             }
 
-            static void AddRoundCapEnd(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, uint32_t ncap, float aa)
+            static void AddRoundCapEnd(OutputVertexWriter& vertexWriter, const prv::PathPoint& point, const Vector2 dv, float w, uint32_t ncap, float aa, uint8_t flags)
             {
                 auto p = point.pos;
                 auto dl = dv.prep();
 
-                vertexWriter.add(p.x + dl.x *w, p.y + dl.y * w, 0, 1);
-                vertexWriter.add(p.x - dl.x *w, p.y - dl.y * w, 1, 1);
+                vertexWriter.add(p.x + dl.x *w, p.y + dl.y * w, 0, 1, flags);
+                vertexWriter.add(p.x - dl.x *w, p.y - dl.y * w, 1, 1, flags);
                 for (uint32_t i = 0; i < ncap; i++)
                 {
                     auto a = i / (float)(ncap - 1) * PI;
@@ -1245,8 +1241,8 @@ namespace base
 
                     auto px = p.x - dl.x*ax + dv.x*ay;
                     auto py = p.y - dl.y*ax + dv.y*ay;
-                    vertexWriter.add(p.x, p.y, 0.5f, 1);
-                    vertexWriter.add(px, py, 0, 1);
+                    vertexWriter.add(p.x, p.y, 0.5f, 1, flags);
+                    vertexWriter.add(px, py, 0, 1, flags);
                 }
             }
 
@@ -1266,54 +1262,95 @@ namespace base
 
         } // helper
 
-        void GeometryBuilder::applyPaintXForm(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style)
+		void GeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style, const ImageAtlasEntryInfo* image)
+		{
+			if (style.xformNeeded)
+			{
+				// make sure inverse transform is up to date
+				cacheInvertexTransform();
+
+				//auto paintXform = m_transform.inverted() * style.xform.inverted();
+				auto paintXform = m_transformInverted * style.xform;
+
+				auto* writePtr = m_outVertices.typedData() + firstVertex;
+				auto* writeEndPtr = writePtr + numVertices;
+
+				if (image)
+				{
+					while (writePtr < writeEndPtr)
+					{
+						writePtr->uv.x = (paintXform.transformX(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * image->uvScale.x) + image->uvOffset.x;
+						writePtr->uv.y = (paintXform.transformY(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * image->uvScale.y) + image->uvOffset.y;
+						writePtr->imagePageIndex = image->pageIndex;
+						writePtr->imageEntryIndex = style.image.entryIndex;
+						++writePtr;
+					}
+				}
+				else
+				{
+					while (writePtr < writeEndPtr)
+					{
+						writePtr->uv.x = paintXform.transformX(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y);
+						writePtr->uv.y = paintXform.transformY(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y);
+						writePtr->imagePageIndex = 0;
+						writePtr->imageEntryIndex = 0;
+						++writePtr;
+					}
+				}
+			}
+		}
+
+		void GeometryBuilder::applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex)
+		{
+			auto* writePtr = m_outVertices.typedData() + firstVertex;
+			auto* writeEndPtr = writePtr + numVertices;
+			while (writePtr < writeEndPtr)
+			{
+				writePtr->attributeIndex = attributesIndex;
+				++writePtr;
+			}
+		}
+
+        void GeometryBuilder::applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color)
         {
-            // compute final paint UV, skip for solid color shapes
-            if (style.xformNeeded)
+            auto* writePtr = m_outVertices.typedData() + firstVertex;
+            auto* writeEndPtr = writePtr + numVertices;
+            while (writePtr < writeEndPtr)
             {
-                // make sure inverse transform is up to date
-                cacheInvertexTransform();
-
-                //auto paintXform = m_transform.inverted() * style.xform.inverted();
-                auto paintXform = m_transformInverted * style.xform;
-
-                auto* writePtr = m_outVertices.typedData() + firstVertex;
-                auto* writeEndPtr = writePtr + numVertices;
-                while (writePtr < writeEndPtr)
-                {
-                    writePtr->paintUV.x = paintXform.transformX(writePtr->pos.x, writePtr->pos.y);
-                    writePtr->paintUV.y = paintXform.transformY(writePtr->pos.x, writePtr->pos.y);
-                    ++writePtr;
-                }
+				writePtr->color = color;
+                ++writePtr;
             }
         }
 
         void GeometryBuilder::stroke()
         {
-            // initial count of paths and vertices, used to calculate the total resources used in a render group
-            auto firstPath = m_outPaths.size();
-            auto firstVertex = m_outVertices.size();
-
             // compute the rendering scale, related to current transformation
             // strokes are affected by the scale setting
             float scaleFactor = helper::CalcAverageScale(m_transform);
 
-            // compute and limit the stoke width
-            auto strokeRenderStyleIndex = cacheStrokeStyle();
-
             // If the stroke width is less than pixel size, use alpha to emulate coverage.
             // Since coverage is area, scale by alpha*alpha.
             float alphaScale = 1.0f;
+			float rawFringeWidth = m_style.antiAlias ? m_style.antiAliasFringeWidth : 0.0f;
             float rawStrokeWidth = std::clamp<float>(m_style.strokeWidth * scaleFactor, 0.0f, 200.0f);
-            if (rawStrokeWidth < m_antiAliasFringeWidth)
-            {
-                float alpha = std::clamp<float>(rawStrokeWidth / m_antiAliasFringeWidth, 0.0f, 1.0f);
-                alphaScale = alpha * alpha;
-                rawStrokeWidth = m_antiAliasFringeWidth;
-            }
+			float halfOriginalStrokeWidth = m_style.antiAlias ? rawStrokeWidth * 0.5f : 0.0f;
+			if (rawStrokeWidth < 1.0f)
+			{
+				if (rawStrokeWidth < m_style.antiAliasFringeWidth && m_style.antiAlias)
+				{
+					float alpha = std::clamp<float>(rawStrokeWidth / m_style.antiAliasFringeWidth, 0.0f, 1.0f);
+					alphaScale = alpha * alpha;
+					rawStrokeWidth = m_style.antiAliasFringeWidth;
+				}
+				else
+				{
+					rawStrokeWidth = 1.0f;
+				}
+			}
 
-            // apply global alpha
-            beginGroup(strokeRenderStyleIndex, RenderGroup::Type::Stoke);
+			// determine vertex mask
+			auto flags = Vertex::MASK_STROKE;
+			flags |= (rawFringeWidth > 0.0f) ? Vertex::MASK_HAS_FRINGE : 0;
 
             // convert the commands into list of points and path segments
             m_pathCache->reset();
@@ -1323,10 +1360,11 @@ namespace base
             m_pathCache->computeDeltas();
 
             // calculate joints, note: the fringe width is half of the stroke width
-            const float halfStrokeWidth = (rawStrokeWidth + (m_antiAlias ? m_antiAliasFringeWidth : 0.0f)) * 0.5f;
+			const float halfStrokeWidth = (rawStrokeWidth * 0.5f) + rawFringeWidth;
             m_pathCache->computeJoints(halfStrokeWidth, m_style.lineJoint, m_style.miterLimit);
 
             // allocate output vertices
+			auto firstVertex = m_outVertices.size();
             auto numVertices = m_pathCache->computeStrokeVertexCount(m_style.lineJoint, m_style.lineCap, halfStrokeWidth) * 2;
             helper::OutputVertexWriter vertexWriter(m_outVertices, numVertices);
 
@@ -1336,12 +1374,7 @@ namespace base
             // convert the generated path data into renderable path data
             for (auto& path : m_pathCache->paths)
             {
-                auto srcPtr  = m_pathCache->points.typedData() + path.first;
-
-                // create output path element in the generated geometry
-                RenderPath renderPath;
-                renderPath.fillVertices = nullptr;
-                renderPath.fillVertexCount = 0;
+                auto srcPtr = m_pathCache->points.typedData() + path.first;
 
                 // looping or not
                 const prv::PathPoint* p0 = path.closed ? (srcPtr + path.count - 1) : (srcPtr);
@@ -1355,11 +1388,11 @@ namespace base
                     auto d = (p1->pos - p0->pos).normalized();
 
                     if (m_style.lineCap == LineCap::Butt)
-                        helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, -m_antiAliasFringeWidth*0.5f, m_antiAliasFringeWidth);
+                        helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, -rawFringeWidth, rawFringeWidth, flags, alphaScale);
                     else if (m_style.lineCap == LineCap::Square)
-                        helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, halfStrokeWidth - m_antiAliasFringeWidth, m_antiAliasFringeWidth);
+                        helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, halfStrokeWidth - rawFringeWidth, rawFringeWidth, flags, alphaScale);
                     else if (m_style.lineCap == LineCap::Round)
-                        helper::AddRoundCapStart(vertexWriter, *p0, d, halfStrokeWidth, numCapVerts, m_antiAliasFringeWidth);
+                        helper::AddRoundCapStart(vertexWriter, *p0, d, halfStrokeWidth, numCapVerts, rawFringeWidth, flags);
                 }
 
                 // add internal vertices
@@ -1368,14 +1401,14 @@ namespace base
                     if ((p1->flags.test(prv::PointTypeFlag::Bevel)) || (p1->flags.test(prv::PointTypeFlag::InnerBevel)))
                     {
                         if (m_style.lineJoint == LineJoin::Round)
-                            helper::AddRoundJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, 0.0f, 1.0f, numCapVerts, m_antiAliasFringeWidth);
+                            helper::AddRoundJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, 0.0f, 1.0f, numCapVerts, rawFringeWidth, flags);
                         else
-                            helper::AddBevelJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, 0.0f, 1.0f, m_antiAliasFringeWidth);
+                            helper::AddBevelJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, halfStrokeWidth, flags, alphaScale);
                     }
                     else
                     {
-                        vertexWriter.add(p1->pos.x + p1->dm.x * halfStrokeWidth, p1->pos.y + p1->dm.y * halfStrokeWidth, 0.0f, 1.0f);
-                        vertexWriter.add(p1->pos.x - p1->dm.x * halfStrokeWidth, p1->pos.y - p1->dm.y * halfStrokeWidth, 1.0f, 1.0f);
+						vertexWriter.add(p1->pos.x + p1->dm.x * halfStrokeWidth, p1->pos.y + p1->dm.y * halfStrokeWidth, alphaScale, -halfStrokeWidth, flags);
+                        vertexWriter.add(p1->pos.x - p1->dm.x * halfStrokeWidth, p1->pos.y - p1->dm.y * halfStrokeWidth, alphaScale, halfStrokeWidth, flags);
                     }
                 }
 
@@ -1384,187 +1417,258 @@ namespace base
                 {
                     // create loop
                     auto writtenVerts  = vertexWriter.startVertex();
-                    vertexWriter.add(writtenVerts[0].pos.x, writtenVerts[0].pos.y, 0.0f, 1.0f);
-                    vertexWriter.add(writtenVerts[1].pos.x, writtenVerts[1].pos.y, 1.0f, 1.0f);
+                    vertexWriter.add(writtenVerts[0].pos.x, writtenVerts[0].pos.y, alphaScale, -halfStrokeWidth, flags);
+                    vertexWriter.add(writtenVerts[1].pos.x, writtenVerts[1].pos.y, alphaScale, halfStrokeWidth, flags);
                 }
                 else
                 {
                     auto d = (p1->pos - p0->pos).normalized();
 
                     if (m_style.lineCap == LineCap::Butt)
-                        helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, -m_antiAliasFringeWidth*0.5f, m_antiAliasFringeWidth);
+                        helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, -rawFringeWidth, rawFringeWidth, flags, alphaScale);
                     else if (m_style.lineCap == LineCap::Square)
-                        helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, halfStrokeWidth - m_antiAliasFringeWidth, m_antiAliasFringeWidth);
+                        helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, halfStrokeWidth - rawFringeWidth, rawFringeWidth, flags, alphaScale);
                     else if (m_style.lineCap == LineCap::Round)
-                        helper::AddRoundCapEnd(vertexWriter, *p1, d, halfStrokeWidth, numCapVerts, m_antiAliasFringeWidth);
+                        helper::AddRoundCapEnd(vertexWriter, *p1, d, halfStrokeWidth, numCapVerts, rawFringeWidth, flags);
                 }
 
-                // finalize stroke part
-                renderPath.strokeVertices = vertexWriter.startVertexIndexMarker();
-                renderPath.strokeVertexCount = vertexWriter.finishAndGetCount();
-
-                // emit the path
-                m_outPaths.pushBack(renderPath);
+                // emit a drawable primitive
+				auto& prim = m_outBatches.emplaceBack();
+				prim.atlasIndex = 0;
+				prim.op = m_style.op;
+				prim.packing = BatchPacking::TriangleStrip;
+				prim.type = BatchType::FillConvex;
+				prim.vertexOffset = vertexWriter.startVertexIndex();
+				prim.vertexCount = vertexWriter.finishAndGetCount();
             }
 
             // reclaim unused vertices
             ((BaseArray*)&m_outVertices)->changeSize(firstVertex + vertexWriter.numWrittenVertices());
 
-            // calculate the paint UV for all emitted vertices
-            applyPaintXForm(firstVertex, vertexWriter.numWrittenVertices(), m_style.strokeStyle);
+            // apply color from paint style to all vertices
+			applyPaintColor(firstVertex, vertexWriter.numWrittenVertices(), (m_style.cachedStrokeStyleIndex == 0) ? m_style.strokeStyle.innerColor : Color::WHITE);
+			applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedStrokeStyleIndex);
 
-            // update last group with proper path count
-            m_outGroups.back().numPaths = m_outPaths.size() - firstPath;
-            m_outGroups.back().numVertices = vertexWriter.numWrittenVertices();
-            //m_outGroups.back().fringeWidth = m_device.fringeWidth;
-            //m_outGroups.back().strokeWidth = strokeWidth;
-            m_outGroups.back().vertexBoundsMin = vertexWriter.boundsMin();
-            m_outGroups.back().vertexBoundsMax = vertexWriter.boundsMax();
+			// merge bounds
+			m_outVertexBoundsMin = Min(m_outVertexBoundsMin, vertexWriter.boundsMin());
+			m_outVertexBoundsMax = Max(m_outVertexBoundsMax, vertexWriter.boundsMax());
         }
 
         void GeometryBuilder::fill()
         {
-            // initial count of paths and vertices, used to calculate the total resources used in a render group
-            auto firstPath = m_outPaths.size();
-            auto firstVertex = m_outVertices.size();
-
-            // start group with fill render settings
-            auto renderStateIndex = cacheFillStyle();
-            beginGroup(renderStateIndex, RenderGroup::Type::Fill);
-
             // convert the commands into list of points and path segments
             m_pathCache->reset();
             flattenPath(*m_pathCache);
+
+			// cache image
+			if (m_style.fillStyle.image && !m_style.cachedFillImage && m_storage)
+				m_style.cachedFillImage = m_storage->findRenderDataForAtlasEntry(m_style.fillStyle.image);
+			else if (!m_style.fillStyle.image || !m_storage)
+				m_style.cachedFillImage = nullptr;
 
             // calculate inner deltas and other data, preparing path to be used
             m_pathCache->computeDeltas();
 
             // calculate joints, some special magic for MSAA mode
-            auto fringe = m_antiAlias ? m_antiAliasFringeWidth : 0.0f;
+            auto fringe = m_style.antiAlias ? m_style.antiAliasFringeWidth : 0.0f;
             auto hasFringe = fringe > 0.0f;
             m_pathCache->computeJoints(fringe, LineJoin::Miter, 2.4f);
 
             // allocate output vertices
             bool convex = m_pathCache->paths.size() == 1 && m_pathCache->paths[0].convex;
+			auto firstVertex = m_outVertices.size();
             auto numVertices = m_pathCache->computeFillVertexCount(hasFringe) + (convex ? 0 : 4);
             helper::OutputVertexWriter vertexWriter(m_outVertices, numVertices);
 
+			// flags in case we have image
+			uint16_t imageFlags = 0;
+			if (m_style.cachedFillImage)
+			{
+				imageFlags = Vertex::MASK_HAS_IMAGE;
+				if (m_style.fillStyle.wrapU)
+					imageFlags |= Vertex::MASK_HAS_WRAP_U;
+				if (m_style.fillStyle.wrapV)
+					imageFlags |= Vertex::MASK_HAS_WRAP_V;
+			}
+
             // convert the generated path data into renderable path data
-            for (auto& path : m_pathCache->paths)
-            {
-                auto srcPtr  = m_pathCache->points.typedData() + path.first;
+			for (auto& path : m_pathCache->paths)
+			{
+				auto srcPtr = m_pathCache->points.typedData() + path.first;
 
-                // create output path element in the generated geometry
-                RenderPath renderPath;
+				// determine vertex flags
+				auto polyFlags = Vertex::MASK_FILL;
+				polyFlags |= convex ? (imageFlags | Vertex::MASK_IS_CONVEX) : 0;
 
-                // Calculate shape vertices.
-                auto woff = 0.5f * m_antiAliasFringeWidth;
-                if (hasFringe)
-                {
-                    auto lastPoint  = srcPtr + path.count - 1;
-                    auto curPoint  = srcPtr;
-                    for (uint32_t j = 0; j < path.count; ++j, lastPoint = curPoint++)
-                    {
-                        if (curPoint->flags.test(prv::PointTypeFlag::Bevel))
-                        {
-                            auto dl0 = lastPoint->d.prep();
-                            auto dl1 = curPoint->d.prep();
-                            if (curPoint->flags.test(prv::PointTypeFlag::Left))
-                            {
-                                vertexWriter.add(curPoint->pos.x + curPoint->dm.x * woff, curPoint->pos.y + curPoint->dm.y * woff);
-                            }
-                            else
-                            {
-                                vertexWriter.add(curPoint->pos.x + dl0.x * woff, curPoint->pos.y + dl0.y * woff);
-                                vertexWriter.add(curPoint->pos.x + dl1.x * woff, curPoint->pos.y + dl1.y * woff);
-                            }
-                        }
-                        else
-                        {
-                            vertexWriter.add(curPoint->pos.x + curPoint->dm.x * woff, curPoint->pos.y + curPoint->dm.y * woff);
-                        }
-                    }
-                }
-                else // no fringe
-                {
-                    for (uint32_t j = 0; j < path.count; ++j)
-                        vertexWriter.add(srcPtr[j].pos.x, srcPtr[j].pos.y);
-                }
+				// Calculate shape vertices.
+				auto woff = 0.5f * fringe;
+				if (hasFringe)
+				{
+					auto lastPoint = srcPtr + path.count - 1;
+					auto curPoint = srcPtr;
+					for (uint32_t j = 0; j < path.count; ++j, lastPoint = curPoint++)
+					{
+						if (curPoint->flags.test(prv::PointTypeFlag::Bevel))
+						{
+							auto dl0 = lastPoint->d.prep();
+							auto dl1 = curPoint->d.prep();
+							if (curPoint->flags.test(prv::PointTypeFlag::Left))
+							{
+								vertexWriter.add(curPoint->pos.x + curPoint->dm.x * woff, curPoint->pos.y + curPoint->dm.y * woff, polyFlags);
+							}
+							else
+							{
+								vertexWriter.add(curPoint->pos.x + dl0.x * woff, curPoint->pos.y + dl0.y * woff, polyFlags);
+								vertexWriter.add(curPoint->pos.x + dl1.x * woff, curPoint->pos.y + dl1.y * woff, polyFlags);
+							}
+						}
+						else
+						{
+							vertexWriter.add(curPoint->pos.x + curPoint->dm.x * woff, curPoint->pos.y + curPoint->dm.y * woff, polyFlags);
+						}
+					}
+				}
+				else // no fringe
+				{
+					for (uint32_t j = 0; j < path.count; ++j)
+						vertexWriter.add(srcPtr[j].pos.x, srcPtr[j].pos.y, polyFlags);
+				}
 
-                // setup fill part
-                renderPath.fillVertices = vertexWriter.startVertexIndexMarker();
-                renderPath.fillVertexCount = vertexWriter.finishAndGetCount();
+				// setup fill part
+				if (convex)
+				{
+					auto& prim = m_outBatches.emplaceBack();
+					prim.op = m_style.op;
+					prim.packing = BatchPacking::TriangleFan;
+					prim.type = BatchType::FillConvex;
+					prim.vertexOffset = vertexWriter.startVertexIndex();
+					prim.vertexCount = vertexWriter.finishAndGetCount();
+					prim.atlasIndex = m_style.fillStyle.image.atlasIndex;
+					prim.rendererIndex = m_customRenderer.index;
+					prim.renderDataOffset = m_customRenderer.dataOffset;
+					prim.renderDataSize = m_customRenderer.dataSize;
+				}
+				else
+				{
+					auto& prim = m_outBatches.emplaceBack();
+					prim.op = BlendOp::Copy;
+					prim.packing = BatchPacking::TriangleFan;
+					prim.type = BatchType::ConcaveMask;
+					prim.atlasIndex = 0; // mask does not require any particular atlas
+					prim.rendererIndex = 0; // mask is always drawn with default renderer
+					prim.vertexOffset = vertexWriter.startVertexIndex();
+					prim.vertexCount = vertexWriter.finishAndGetCount();
+				}
+			}
 
-                // render additional stroke to cover for the fringe
-                if (hasFringe)
-                {
-                    float lw = fringe + woff;
-                    float rw = fringe - woff;
-                    float lu = 0;
-                    float ru = 1;
-
-                    // Create only half a fringe for convex shapes so that
-                    // the shape can be rendered without stenciling.
-                    if (m_pathCache->isConvex())
-                    {
-                        lw = woff;  // This should generate the same vertex as fill inset above.
-                        lu = 0.5f;  // Set outline fade at middle.
-                    }
-
-                    // Looping
-                    auto lastPoint  = srcPtr + path.count - 1;
-                    auto curPoint  = srcPtr;
-                    for (uint32_t j = 0; j < path.count; ++j, lastPoint == curPoint++)
-                    {
-                        if (curPoint->flags.test(prv::PointTypeFlag::Bevel) || curPoint->flags.test(prv::PointTypeFlag::InnerBevel))
-                        {
-                            helper::AddBevelJoin(vertexWriter, *lastPoint, *curPoint, lw, rw, lu, ru, fringe);
-                        }
-                        else
-                        {
-                            vertexWriter.add(curPoint->pos.x + (curPoint->dm.x * lw), curPoint->pos.y + (curPoint->dm.y * lw), lu, 1.0f);
-                            vertexWriter.add(curPoint->pos.x - (curPoint->dm.x * rw), curPoint->pos.y - (curPoint->dm.y * rw), ru, 1.0f);
-                        }
-                    }
-
-                    // Loop it
-                    vertexWriter.add(vertexWriter.startVertex()[0].pos.x, vertexWriter.startVertex()[0].pos.y, lu, 1.0f);
-                    vertexWriter.add(vertexWriter.startVertex()[1].pos.x, vertexWriter.startVertex()[1].pos.y, ru, 1.0f);
-
-                    // export stroke data
-                    renderPath.strokeVertices = vertexWriter.startVertexIndexMarker();
-                    renderPath.strokeVertexCount = vertexWriter.finishAndGetCount();
-                }
-
-                // emit the path
-                m_outPaths.pushBack(renderPath);
-            }
+			// update bounds
+			const auto& vertexBoundsMin = vertexWriter.boundsMin();
+			const auto& vertexBoundsMax = vertexWriter.boundsMax();
+			m_outVertexBoundsMin = Min(m_outVertexBoundsMin, vertexBoundsMin);
+			m_outVertexBoundsMax = Max(m_outVertexBoundsMax, vertexBoundsMax);
 
             // extra vertices for concave masking
-            if (!convex)
-            {
-                const auto& vertexBoundsMin = vertexWriter.boundsMin();
-                const auto& vertexBoundsMax = vertexWriter.boundsMax();
+			if (!convex)
+			{
+				// write the vertices for the concave masking
+				auto flags = Vertex::MASK_FILL | Vertex::MASK_IS_CONVEX | imageFlags;
 
-                // write the vertices for the concave masking
-                vertexWriter.add(vertexBoundsMin.x, vertexBoundsMin.y, 0.0f, 0.0f);
-                vertexWriter.add(vertexBoundsMax.x, vertexBoundsMin.y, 1.0f, 0.0f);
-                vertexWriter.add(vertexBoundsMax.x, vertexBoundsMax.y, 1.0f, 1.0f);
-                vertexWriter.add(vertexBoundsMin.x, vertexBoundsMax.y, 0.0f, 1.0f);
-            }
+				auto firstQuadVertex = vertexWriter.numWrittenVertices() + firstVertex;
+				vertexWriter.add(vertexBoundsMin.x, vertexBoundsMin.y, 0.0f, 0.0f, flags);
+				vertexWriter.add(vertexBoundsMax.x, vertexBoundsMin.y, 1.0f, 0.0f, flags);
+				vertexWriter.add(vertexBoundsMax.x, vertexBoundsMax.y, 1.0f, 1.0f, flags);
+				vertexWriter.add(vertexBoundsMin.x, vertexBoundsMax.y, 0.0f, 1.0f, flags);
+
+				// generate the concave fill pass
+				auto& prim = m_outBatches.emplaceBack();
+				prim.op = m_style.op;
+				prim.packing = BatchPacking::Quads;
+				prim.type = BatchType::FillConcave;
+				prim.rendererIndex = m_customRenderer.index;
+				prim.renderDataOffset = m_customRenderer.dataOffset;
+				prim.renderDataSize = m_customRenderer.dataSize;
+				prim.vertexOffset = vertexWriter.startVertexIndex();
+				prim.vertexCount = vertexWriter.finishAndGetCount();
+
+				// apply the UV calculation only on the 4 vertices
+				applyPaintUV(firstQuadVertex, 4, m_style.fillStyle, m_style.cachedFillImage);
+				applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedFillStyleIndex);
+			}
+			else
+			{
+				// apply the UV calculation only on all vertices
+				applyPaintUV(firstVertex, vertexWriter.numWrittenVertices(), m_style.fillStyle, m_style.cachedFillImage);
+				applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedFillStyleIndex);
+			}
+
+			// render additional stroke to cover for the fringe
+			// NOTE: this is only supported for styles without image
+			if (hasFringe && !m_style.cachedFillImage)
+			{
+				const auto mask = Vertex::MASK_STROKE | Vertex::MASK_HAS_FRINGE;
+
+				// we need it for each path element
+				const auto firstFringeVertex = vertexWriter.numWrittenVertices() + firstVertex;
+				for (auto& path : m_pathCache->paths)
+				{
+					auto srcPtr = m_pathCache->points.typedData() + path.first;
+
+					// Calculate shape vertices.
+					auto woff = 0.5f * fringe;
+					float lw = fringe + woff;
+					float rw = fringe - woff;
+					float lu = 0;
+					float ru = 1;
+
+					// Create only half a fringe for convex shapes so that
+					// the shape can be rendered without stenciling.
+					if (m_pathCache->isConvex())
+					{
+						lw = woff;  // This should generate the same vertex as fill inset above.
+						lu = 0.5f;  // Set outline fade at middle.
+					}
+
+					// Looping
+					auto lastPoint = srcPtr + path.count - 1;
+					auto curPoint = srcPtr;
+					for (uint32_t j = 0; j < path.count; ++j, lastPoint == curPoint++)
+					{
+						if (curPoint->flags.test(prv::PointTypeFlag::Bevel) || curPoint->flags.test(prv::PointTypeFlag::InnerBevel))
+						{
+							helper::AddBevelJoin(vertexWriter, *lastPoint, *curPoint, lw, rw, 1.0f, mask, 1.0f);
+						}
+						else
+						{
+							vertexWriter.add(curPoint->pos.x + (curPoint->dm.x * lw), curPoint->pos.y + (curPoint->dm.y * lw), lu, 1.0f, mask);
+							vertexWriter.add(curPoint->pos.x - (curPoint->dm.x * rw), curPoint->pos.y - (curPoint->dm.y * rw), ru, 1.0f, mask);
+						}
+					}
+
+					// Loop it
+					vertexWriter.add(vertexWriter.startVertex()[0].pos.x, vertexWriter.startVertex()[0].pos.y, lu, 1.0f, mask);
+					vertexWriter.add(vertexWriter.startVertex()[1].pos.x, vertexWriter.startVertex()[1].pos.y, ru, 1.0f, mask);
+
+					// export stroke data using the fill style
+					{
+						auto& prim = m_outBatches.emplaceBack();
+						prim.op = m_style.op;
+						prim.packing = BatchPacking::TriangleStrip;
+						prim.type = BatchType::FillConvex;
+						prim.atlasIndex = 0; // fringe does not require image atlas as it's only used when there's no image
+						prim.rendererIndex = m_customRenderer.index;
+						prim.renderDataOffset = m_customRenderer.dataOffset;
+						prim.renderDataSize = m_customRenderer.dataSize;
+						prim.vertexOffset = vertexWriter.startVertexIndex();
+						prim.vertexCount = vertexWriter.finishAndGetCount();						
+					}
+				}
+			}
 
             // reclaim unused vertices
             ((BaseArray*)&m_outVertices)->changeSize(firstVertex + vertexWriter.numWrittenVertices());
 
             // calculate the paint UV for all emitted vertices
-            applyPaintXForm(firstVertex, vertexWriter.numWrittenVertices(), m_style.fillStyle);
-
-            // update last group with proper path count
-            m_outGroups.back().convex = convex;
-            m_outGroups.back().numPaths = m_outPaths.size() - firstPath;
-            m_outGroups.back().numVertices = vertexWriter.numWrittenVertices();
-            m_outGroups.back().vertexBoundsMin = vertexWriter.boundsMin();
-            m_outGroups.back().vertexBoundsMax = vertexWriter.boundsMax();
+			applyPaintColor(firstVertex, vertexWriter.numWrittenVertices(), (m_style.cachedFillStyleIndex == 0) ? m_style.fillStyle.innerColor : Color::WHITE);
         }
 
         void GeometryBuilder::print(const font::Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
@@ -1608,15 +1712,14 @@ namespace base
 
         void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
         {
-            // initial count of glyphs
-            auto firstGlyph = m_outGlyphs.size();
+			DEBUG_CHECK_RETURN_EX(m_storage != nullptr, "Cannot print without bound storage");
+			DEBUG_CHECK_RETURN_EX(numGlyphs < 10000, "Text is to large to be sensibly printed");
 
-            // start group with fill render settings
-            auto renderState = cacheFillStyle();
-            beginGroup(renderState, RenderGroup::Type::Glyphs);
+			// allocate output space
+			auto firstVertex = m_outVertices.size();
+			auto writeVertex = m_outVertices.allocateUninitialized(numGlyphs * 4);
 
-            // allocate glyphs
-            auto firstWriteGlyph  = m_outGlyphs.allocateUninitialized(numGlyphs);
+			// convert glyphs to vertices
             auto readPtr  = (const font::GlyphBufferEntry*)glyphEntries;
             Vector2 boundsMin(FLT_MAX, FLT_MAX);
             Vector2 boundsMax(-FLT_MAX, -FLT_MAX);
@@ -1637,51 +1740,81 @@ namespace base
                 float endX = offsetX + sizeX;
                 float endY = offsetY + sizeY;
 
-                // transform, if needed
-                firstWriteGlyph->glyph = srcGlyph.glyph;
-                if (m_transformClass & XForm2DClass::HasScaleRotation)
-                {
-                    firstWriteGlyph->coords[0].x = m_transform.transformX(offsetX, offsetY);
-                    firstWriteGlyph->coords[0].y = m_transform.transformY(offsetX, offsetY);
-                    firstWriteGlyph->coords[1].x = m_transform.transformX(endX, offsetY);
-                    firstWriteGlyph->coords[1].y = m_transform.transformY(endX, offsetY);
-                    firstWriteGlyph->coords[2].x = m_transform.transformX(endX, endY);
-                    firstWriteGlyph->coords[2].y = m_transform.transformY(endX, endY);
-                    firstWriteGlyph->coords[3].x = m_transform.transformX(offsetX, endY);
-                    firstWriteGlyph->coords[3].y = m_transform.transformY(offsetX, endY);
-                }
-                else
-                {
-                    firstWriteGlyph->coords[0].x = offsetX;
-                    firstWriteGlyph->coords[0].y = offsetY;
-                    firstWriteGlyph->coords[1].x = endX;
-                    firstWriteGlyph->coords[1].y = offsetY;
-                    firstWriteGlyph->coords[2].x = endX;
-                    firstWriteGlyph->coords[2].y = endY;
-                    firstWriteGlyph->coords[3].x = offsetX;
-                    firstWriteGlyph->coords[3].y = endY;
-                }
+				// resolve glyph UV placement
+				if (const auto* placement = m_storage->findRenderDataForGlyph(srcGlyph.glyph))
+				{
+					if (m_transformClass & XForm2DClass::HasScaleRotation)
+					{
+						writeVertex[0].pos.x = m_transform.transformX(offsetX, offsetY);
+						writeVertex[0].pos.y = m_transform.transformY(offsetX, offsetY);
+						writeVertex[1].pos.x = m_transform.transformX(endX, offsetY);
+						writeVertex[1].pos.y = m_transform.transformY(endX, offsetY);
+						writeVertex[2].pos.x = m_transform.transformX(endX, endY);
+						writeVertex[2].pos.y = m_transform.transformY(endX, endY);
+						writeVertex[3].pos.x = m_transform.transformX(offsetX, endY);
+						writeVertex[3].pos.y = m_transform.transformY(offsetX, endY);
+					}
+					else
+					{
+						writeVertex[0].pos.x = offsetX;
+						writeVertex[0].pos.y = offsetY;
+						writeVertex[1].pos.x = endX;
+						writeVertex[1].pos.y = offsetY;
+						writeVertex[2].pos.x = endX;
+						writeVertex[2].pos.y = endY;
+						writeVertex[3].pos.x = offsetX;
+						writeVertex[3].pos.y = endY;
+					}
 
-                firstWriteGlyph->page = 0;
-                firstWriteGlyph->color = srcGlyph.color;
-                firstWriteGlyph->uvMin = Vector2::ZERO();
-                firstWriteGlyph->uvMax = Vector2::ZERO();
+					// write UVs
+					writeVertex[0].uv.x = placement->uvOffset.x;
+					writeVertex[0].uv.y = placement->uvOffset.y;
+					writeVertex[1].uv.x = placement->uvMax.x;
+					writeVertex[1].uv.y = placement->uvOffset.y;
+					writeVertex[2].uv.x = placement->uvMax.x;
+					writeVertex[2].uv.y = placement->uvMax.y;
+					writeVertex[3].uv.x = placement->uvOffset.x;
+					writeVertex[3].uv.y = placement->uvMax.y;
 
-                // update bounds
-                boundsMin = Min(boundsMin, firstWriteGlyph->coords[0]);
-                boundsMax = Max(boundsMax, firstWriteGlyph->coords[2]);
+					// write common data
+					for (int i = 0; i < 4; ++i)
+					{
+						writeVertex[i].color = srcGlyph.color;
+						writeVertex[i].imageEntryIndex = 0;
+						writeVertex[i].imagePageIndex = placement->pageIndex;
+						writeVertex[i].attributeIndex = 0;
+						writeVertex[i].attributeFlags = Vertex::MASK_GLYPH; // glyph
+					}
 
-                ++firstWriteGlyph;
-                ++numGlyphsWritten;
+					// update bounds
+					boundsMin = Min(boundsMin, writeVertex[0].pos);
+					boundsMax = Max(boundsMax, writeVertex[2].pos);
+
+					// counts
+					writeVertex += 4;
+					numGlyphsWritten += 1;
+				}
             }
 
-            // update last group with proper path count
-            m_outGroups.back().numGlyphs = numGlyphsWritten;
-            m_outGroups.back().glyphs = (RenderGlyph*)(uint64_t)firstGlyph;
-            //m_outGroups.back().fringeWidth = m_device.fringeWidth;
-            m_outGroups.back().vertexBoundsMin = boundsMin;
-            m_outGroups.back().vertexBoundsMax = boundsMax;
+			// create output batch
+			{
+				auto& prim = m_outBatches.emplaceBack();
+				prim.op = m_style.op;
+				prim.packing = BatchPacking::Quads;
+				prim.type = BatchType::FillConvex;
+				prim.atlasIndex = 0; // we don't need atlas for text
+				prim.rendererIndex = m_customRenderer.index;
+				prim.renderDataOffset = m_customRenderer.dataOffset;
+				prim.renderDataSize = m_customRenderer.dataSize;
+				prim.vertexOffset = firstVertex;
+				prim.vertexCount = numGlyphsWritten * 4;;
+			}
+
+			// reclaim unused vertices
+			((BaseArray*)&m_outVertices)->changeSize(firstVertex + numGlyphsWritten * 4);
         }
+
+		//--
 
     } // canvas
 } // base

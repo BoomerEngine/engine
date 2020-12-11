@@ -67,6 +67,17 @@ namespace ui
 
     ElementCachedGeometry::~ElementCachedGeometry()
     {
+		delete shadow;
+		shadow = nullptr;
+
+		delete background;
+		background = nullptr;
+
+		delete foreground;
+		foreground = nullptr;
+
+		delete overlay;
+		overlay = nullptr;
     }
 
     //---
@@ -1478,6 +1489,11 @@ namespace ui
         return false;
     }
 
+	base::canvas::IStorage* IElement::canvasStorage() const
+	{
+		return renderer()->canvasStorage();
+	}
+
     void IElement::prepareStyle(StyleStack& stack, float pixelScale, bool allChildren)
     {
         if (parentElement() != nullptr)
@@ -1773,8 +1789,7 @@ namespace ui
 
                     builder.beginPath();
                     prepareBoundaryGeometry(drawArea, pixelScale, builder, borderWidth * 0.5f);
-                    builder.strokePaint(style);
-                    builder.strokeWidth(borderWidth);
+                    builder.strokePaint(style, borderWidth);
                     builder.stroke();
                 }
                 else
@@ -1788,14 +1803,12 @@ namespace ui
                         auto style = base::canvas::SolidColor(*borderStylePtr);
                         adjustBorderStyle(style, borderWidth);
 
-                        builder.strokePaint(style);
-
                         if (borderLeft > 0.0f)
                         {
                             builder.beginPath();
                             builder.moveTo(drawArea.left() + (borderLeft/2.0f), drawArea.top());
                             builder.lineTo(drawArea.left() + (borderLeft / 2.0f), drawArea.bottom());
-                            builder.strokeWidth(borderLeft);
+							builder.strokePaint(style, borderLeft);
                             builder.stroke();
                         }
 
@@ -1804,7 +1817,7 @@ namespace ui
                             builder.beginPath();
                             builder.moveTo(drawArea.left(), drawArea.top() + (borderTop/2.0f));
                             builder.lineTo(drawArea.right(), drawArea.top() + (borderTop / 2.0f));
-                            builder.strokeWidth(borderTop);
+							builder.strokePaint(style, borderTop);
                             builder.stroke();
                         }
 
@@ -1813,7 +1826,7 @@ namespace ui
                             builder.beginPath();
                             builder.moveTo(drawArea.right() - (borderRight/2.0f), drawArea.top());
                             builder.lineTo(drawArea.right() - (borderRight / 2.0f), drawArea.bottom());
-                            builder.strokeWidth(borderRight);
+							builder.strokePaint(style, borderRight);
                             builder.stroke();
                         }
 
@@ -1822,7 +1835,7 @@ namespace ui
                             builder.beginPath();
                             builder.moveTo(drawArea.left(), drawArea.bottom() - (borderBottom/2.0f));
                             builder.lineTo(drawArea.right(), drawArea.bottom() - (borderBottom / 2.0f));
-                            builder.strokeWidth(borderBottom);
+							builder.strokePaint(style, borderBottom);
                             builder.stroke();
                         }
                     }
@@ -1844,59 +1857,25 @@ namespace ui
     void IElement::renderShadow(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         if (m_cachedGeometry && m_cachedGeometry->shadow)
-        {
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(*m_cachedGeometry->shadow);
-        }
+            canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->shadow, mergedOpacity);
     }
 
     void IElement::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         if (m_cachedGeometry && m_cachedGeometry->foreground)
-        {
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(*m_cachedGeometry->foreground);
-        }
+			canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->foreground, mergedOpacity);
     }
 
     void IElement::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         if (m_cachedGeometry && m_cachedGeometry->background)
-        {
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(*m_cachedGeometry->background);
-        }
+			canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->background, mergedOpacity);
     }
 
     void IElement::renderOverlay(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         if (m_cachedGeometry && m_cachedGeometry->overlay)
-        {
-            canvas.alphaMultiplier(mergedOpacity);
-            canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-            canvas.place(*m_cachedGeometry->overlay);
-        }
-    }
-
-    static void CacheGeometry(base::canvas::GeometryBuilder& geometry, base::canvas::GeometryPtr& outGeoemtryPtr)
-    {
-        if (geometry.empty())
-        {
-            outGeoemtryPtr.reset();
-        }
-        else
-        {
-            if (!outGeoemtryPtr)
-                outGeoemtryPtr = base::RefNew<base::canvas::Geometry>();
-
-            outGeoemtryPtr->reset();
-
-            geometry.extract(*outGeoemtryPtr);
-            outGeoemtryPtr->prepareGlyphsForRendering();
-        }
+			canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->overlay, mergedOpacity);
     }
 
     std::atomic<uint32_t> GStatGeometryRebuild = 0;
@@ -1905,16 +1884,30 @@ namespace ui
     {
         GStatGeometryRebuild += 1;
 
-        // TODO: thread safety !
-        static base::canvas::GeometryBuilder ShadowGeometry;
-        static base::canvas::GeometryBuilder BackgroundGeometry;
-        static base::canvas::GeometryBuilder ForegroundGeometry;
-        static base::canvas::GeometryBuilder OverlayGeometry;
+		if (!m_cachedGeometry)
+			m_cachedGeometry = new ElementCachedGeometry();
 
-        ShadowGeometry.reset();
-        BackgroundGeometry.reset();
-        ForegroundGeometry.reset();
-        OverlayGeometry.reset();
+		if (!m_cachedGeometry->shadow)
+			m_cachedGeometry->shadow = new base::canvas::Geometry();
+
+		if (!m_cachedGeometry->background)
+			m_cachedGeometry->background = new base::canvas::Geometry;
+
+		if (!m_cachedGeometry->foreground)
+			m_cachedGeometry->foreground = new base::canvas::Geometry;
+
+		if (!m_cachedGeometry->overlay)
+			m_cachedGeometry->overlay = new base::canvas::Geometry;
+
+		m_cachedGeometry->shadow->reset();
+		m_cachedGeometry->background->reset();
+		m_cachedGeometry->foreground->reset();
+		m_cachedGeometry->overlay->reset();
+
+        base::canvas::GeometryBuilder ShadowGeometry(renderer()->canvasStorage(), *m_cachedGeometry->shadow);
+        base::canvas::GeometryBuilder BackgroundGeometry(renderer()->canvasStorage(), *m_cachedGeometry->background);
+        base::canvas::GeometryBuilder ForegroundGeometry(renderer()->canvasStorage(), *m_cachedGeometry->foreground);
+        base::canvas::GeometryBuilder OverlayGeometry(renderer()->canvasStorage(), *m_cachedGeometry->overlay);
 
         // prepare shadow geometry
         prepareShadowGeometry(drawArea, cachedStyleParams().pixelScale, ShadowGeometry);
@@ -1922,25 +1915,13 @@ namespace ui
         prepareForegroundGeometry(drawArea, cachedStyleParams().pixelScale, ForegroundGeometry);
         prepareOverlayGeometry(drawArea, cachedStyleParams().pixelScale, OverlayGeometry);
 
-        // create the cached geometry container only if we have geometry (many layout items don't)
+        /*// create the cached geometry container only if we have geometry (many layout items don't)
         if (ShadowGeometry.empty() && BackgroundGeometry.empty() && ForegroundGeometry.empty() && OverlayGeometry.empty())
         {
             // remove container
             delete m_cachedGeometry;
             m_cachedGeometry = nullptr;
-        }
-        else
-        {
-            // create new container
-            if (!m_cachedGeometry)
-                m_cachedGeometry = new ElementCachedGeometry;
-
-            // extract geometries
-            CacheGeometry(ShadowGeometry, m_cachedGeometry->shadow);
-            CacheGeometry(BackgroundGeometry, m_cachedGeometry->background);
-            CacheGeometry(ForegroundGeometry, m_cachedGeometry->foreground);
-            CacheGeometry(OverlayGeometry, m_cachedGeometry->overlay);
-        }
+        }*/
 
         // update cache params
         m_cachedGeometrySize = drawArea.size(); // WE ASSUME that the geometry only depends on size

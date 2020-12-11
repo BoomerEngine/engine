@@ -23,9 +23,9 @@ namespace ui
     Image::Image()
     {}
 
-    Image::Image(const base::image::ImageRef& img)
+    Image::Image(base::canvas::ImageEntry entry)
     {
-        image(img);
+        image(entry);
     }
 
     Image::Image(base::StringID iconName)
@@ -33,14 +33,18 @@ namespace ui
         image(iconName);
     }
 
-    void Image::image(const base::image::ImageRef& img)
+    void Image::image(base::canvas::ImageEntry customImage)
     {
-        if (img)
+        if (customImage)
         {
             style::ImageReference imageStyle;
-            imageStyle.image = img;
+            imageStyle.canvasImage = customImage;
             customStyle("image"_id, imageStyle);
         }
+		else
+		{
+			removeCustomStyle("image"_id);
+		}
     }
 
     void Image::image(base::StringID iconName)
@@ -51,6 +55,10 @@ namespace ui
             imageStyle.name = iconName;
             customStyle("image"_id, imageStyle);
         }
+		else
+		{
+			removeCustomStyle("image"_id);
+		}
     }
 
     void Image::imageScale(float same)
@@ -155,10 +163,10 @@ namespace ui
                 imageSettings.m_scaleX = (float)image->width() / std::max<float>(1.0f, m_imageSize.x);
                 imageSettings.m_scaleY = (float)image->height() / std::max<float>(1.0f, m_imageSize.y);
 
-                auto style = base::canvas::ImagePattern(image, imageSettings);
+                /*auto style = base::canvas::ImagePattern(image, imageSettings);
 
                 if (const auto* colorStylePtr = evalStyleValueIfPresentPtr<base::Color>("color"_id))
-                    style.innerColor = style.outerColor = *colorStylePtr;
+                    style.innerColor = style.outerColor = *colorStylePtr;*/
 
                 float ox = std::max<float>(0.0f, drawArea.size().x - m_imageSize.x) * 0.5f;
                 float oy = std::max<float>(0.0f, drawArea.size().y - m_imageSize.y) * 0.5f;
@@ -168,35 +176,13 @@ namespace ui
                     builder.translate(ox, oy);
                     builder.beginPath();
                     builder.rect(0, 0, m_imageSize.x, m_imageSize.y);
-                    builder.fillPaint(style);
+                    //builder.fillPaint(style);
                     builder.fill();
                     builder.popTransform();
                 }
             }
         }
-    }
-
-    bool Image::handleTemplateProperty(base::StringView name, base::StringView value)
-    {
-        if (name == "src")
-        {
-            if (auto img = base::LoadResource<base::image::Image>(value))
-                image(img);
-
-            return true;
-        }
-        else if (name == "scale")
-        {
-            float scale = 1.0f;
-            if (base::MatchResult::OK != value.match(scale))
-                return false;
-
-            imageScale(scale);
-            return true;
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
-    }
+    }    
 
     //--
 

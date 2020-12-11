@@ -9,14 +9,17 @@
 #include "build.h"
 #include "renderingCanvasTest.h"
 
+#include "rendering/device/include/renderingCommandWriter.h"
+#include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
+#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingDescriptor.h"
+
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-
-#include "rendering/device/include/renderingShaderLibrary.h"
-#include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/canvas/include/renderingCanvasRendererCustomBatchHandler.h"
+#include "base/canvas/include/canvasStorage.h"
+#include "base/font/include/font.h"
 
 namespace rendering
 {
@@ -25,28 +28,55 @@ namespace rendering
 
         //--
 
-        base::res::StaticResource<ShaderLibrary> resCanvasCustomHandlerTestShaders("/engine/shaders/canvas/canvas_mandelbrot.fx");
+        base::res::StaticResource<ShaderFile> resCanvasSimpleOutlineShader("/engine/shaders/canvas/canvas_sprite_outline.fx");
 
         /// custom rendering handler
-        class SceneTest_MandelbrotCustomRenderer : public rendering::canvas::ICanvasRendererCustomBatchHandler
+        class SceneTest_SimpleSpriteOutline : public rendering::canvas::ICanvasSimpleBatchRenderer
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_MandelbrotCustomRenderer, rendering::canvas::ICanvasRendererCustomBatchHandler);
+            RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SimpleSpriteOutline, rendering::canvas::ICanvasSimpleBatchRenderer);
 
         public:
-            virtual void initialize(IDevice* drv) override final
-            {
-            }
+			struct PrivateData
+			{
+				base::Color color = base::Color::WHITE;
+				float radius = 1.0f;
 
-            virtual void render(command::CommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) override
-            {
-                if (auto shader = resCanvasCustomHandlerTestShaders.loadAndGet())
-                {
-                    cmd.opDrawIndexed(shader, 0, firstIndex, numIndices);
-                }
-            }
-        };
+				INLINE PrivateData() {};
+				INLINE PrivateData(base::Color _color, float _radius)
+					: color(_color)
+					, radius(_radius)
+				{}
+			};
 
-        RTTI_BEGIN_TYPE_CLASS(SceneTest_MandelbrotCustomRenderer);
+			virtual ShaderFilePtr loadMainShaderFile() override final
+			{
+				return resCanvasSimpleOutlineShader.loadAndGet();
+			}
+
+			virtual void render(command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override
+			{
+				const auto* params = (PrivateData*)data.customData;
+
+				struct
+				{
+					base::Color color;
+					float radius;
+					float invRadiusMinOne;
+				} consts;
+
+				consts.color = params->color;
+				consts.radius = params->radius;
+				consts.invRadiusMinOne = (params->radius > 1.0f) ? 1.0f / (params->radius - 1.0f) : 0.0f;
+
+				DescriptorEntry desc[1];
+				desc[0].constants(consts);
+				cmd.opBindDescriptor("OutlineParameters"_id, desc);
+
+				TBaseClass::render(cmd, data, firstVertex, numVertices);
+			}
+		};
+
+        RTTI_BEGIN_TYPE_CLASS(SceneTest_SimpleSpriteOutline);
         RTTI_END_TYPE();
 
         //--
@@ -57,73 +87,103 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasCustomDrawer, ICanvasTest);
 
         public:
-            virtual void initialize() override
-            {
-                m_time.resetToNow();
-            }
+			base::canvas::ImageAtlasIndex m_atlas;
+			base::canvas::ImageEntry m_testImages[3];
+			base::FontPtr m_font;
 
-            static void SetupQuad(base::canvas::Canvas::RawVertex* vertices, uint16_t* indices, float x, float y, float w, float h, float u0, float v0, float u1, float v1)
-            {
-                vertices[0].pos.x = x;
-                vertices[0].pos.y = y;
-                vertices[1].pos.x = x + w;
-                vertices[1].pos.y = y;
-                vertices[2].pos.x = x + w;
-                vertices[2].pos.y = y + h;
-                vertices[3].pos.x = x;
-                vertices[3].pos.y = y + h;
+			virtual void initialize() override
+			{
+				m_font = loadFont("aileron_regular.otf");
+				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
 
-                vertices[0].color = base::Color::WHITE;
-                vertices[1].color = base::Color::WHITE;
-                vertices[2].color = base::Color::WHITE;
-                vertices[3].color = base::Color::WHITE;
+				m_testImages[0] = m_storage->registerImage(m_atlas, loadImage("tree.png"));
+				m_testImages[1] = m_storage->registerImage(m_atlas, loadImage("sign.png"));
+				m_testImages[2] = m_storage->registerImage(m_atlas, loadImage("crate.png"));
+			}
 
-                vertices[0].uv.x = u0;
-                vertices[0].uv.y = v0;
-                vertices[1].uv.x = u1;
-                vertices[1].uv.y = v0;
-                vertices[2].uv.x = u1;
-                vertices[2].uv.y = v1;
-                vertices[3].uv.x = u0;
-                vertices[3].uv.y = v1;
-
-                indices[0] = 0;
-                indices[1] = 1;
-                indices[2] = 2;
-                indices[3] = 0;
-                indices[4] = 2;
-                indices[5] = 3;
-            }
+			virtual void shutdown() override
+			{
+				m_storage->destroyAtlas(m_atlas);
+			}
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                float time = m_time.timeTillNow().toSeconds();
+				const auto margin = 7.0f;
 
-                const float u0 = -2.0f;
-                const float v0 = -2.0f;
-                const float u1 = 2.0f;
-                const float v1 = 2.0f;
+				base::canvas::Geometry g;
 
-                base::canvas::Canvas::RawVertex vertices[4];
-                uint16_t indices[6];
-                SetupQuad(vertices, indices, 100.0f, 100.0f, 512.0f, 512.0f, u0, v0, u1, v1);
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
 
-                auto style = base::canvas::SolidColor(base::Color::WHITE);
-                style.customUV = true;
+					static float t = 0.0f;
+					t += 0.05f;
+					float width = 5.0f + 4.0 * cos(t);
 
-                {
-                    const auto customDrawerId = rendering::canvas::GetHandlerIndex<SceneTest_MandelbrotCustomRenderer>();
+					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::MAGENTA, width);
 
-                    base::canvas::Canvas::RawGeometry geom;
-                    geom.vertices = vertices;
-                    geom.indices = indices;
-                    geom.numIndices = 6;
-                    c.place(style, geom, customDrawerId);
-                }
+					{
+						auto pattern = base::canvas::ImagePattern(m_testImages[0]);
+						b.fillPaint(pattern);
+						b.beginPath();
+						b.stylePivot(100, 100);
+						b.rect(100-margin, 100 -margin, m_testImages[0].width + 2.0f* margin, m_testImages[0].height + 2.0f * margin);
+						b.fill();
+					}
+
+					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::RED, 1.0f);
+
+					{
+						auto pattern = base::canvas::ImagePattern(m_testImages[2]);
+						b.fillPaint(pattern);
+						b.beginPath();
+						b.stylePivot(500, 300);
+						b.rect(500 - margin, 300 - margin, m_testImages[2].width + 2.0f * margin, m_testImages[2].height + 2.0f * margin);
+						b.fill();
+					}
+				}
+
+				c.place(base::Vector2(0, 0), g);
+
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
+
+					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::YELLOW, 5.0f);
+
+					{
+						auto pattern = base::canvas::ImagePattern(m_testImages[1]);
+						b.fillPaint(pattern);
+						b.beginPath();
+						b.rect(-margin, -margin, m_testImages[1].width + 2.0f * margin, m_testImages[1].height + 2.0f * margin);
+						b.fill();
+					}
+				}
+
+				float w = m_testImages[1].width;
+				float h = m_testImages[1].height;
+				static float a = 0.0;
+				a += 0.01f;
+
+				XForm2D pos = XForm2D::BuildRotationAround(a, w * 0.5f, h * 0.5f);
+				c.place(pos + Vector2(500, 100), g);
+
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
+
+					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::CYAN, 2.0f);
+					b.print(m_font, 70.0f, "Outline #%$&");
+				}
+
+				c.place(Vector2(100, 400), g);
+
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
+
+					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::GREEN, 4.0f);
+					b.print(m_font, 230.0f, "Outline #%$&");
+				}
+
+				c.place(Vector2(100, 600), g);
             }
-
-        private:
-            base::NativeTimePoint m_time;
         };
 
         RTTI_BEGIN_TYPE_CLASS(SceneTest_CanvasCustomDrawer);

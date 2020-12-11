@@ -197,6 +197,11 @@ namespace ui
             return ElementArea(left, top, right, bottom);
         }
 
+		INLINE base::XForm2D placement() const
+		{
+			return base::XForm2D(m_absolutePosition.x, m_absolutePosition.y);
+		}
+
     private:
         Position m_absolutePosition;
         Size m_size;

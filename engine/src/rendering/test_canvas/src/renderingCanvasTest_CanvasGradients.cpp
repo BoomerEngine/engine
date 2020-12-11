@@ -29,185 +29,189 @@ namespace rendering
 
             virtual void render(base::canvas::Canvas& c) override
             {
-                base::canvas::GeometryBuilder b;
+				base::canvas::Geometry g;
 
-                CanvasGridBuilder grid(4, 4, 20, c.width(), c.height());
+				{
+					base::canvas::GeometryBuilder b(m_storage, g);
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+					CanvasGridBuilder grid(4, 4, 20, c.width(), c.height());
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::LinearGradienti(0, 0, r.width(), r.height(), base::Color::RED, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::LinearGradienti(0, 0, r.width(), r.height(), base::Color::RED, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::LinearGradienti(r.width(), 0, 0, r.height(), base::Color::RED, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::LinearGradienti(r.width(), 0, 0, r.height(), base::Color::RED, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::LinearGradienti(r.width(), r.height() / 2, 0, r.height() / 2, base::Color::RED, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // linear gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::LinearGradienti(r.width(), r.height() / 2, 0, r.height() / 2, base::Color::RED, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// linear gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::LinearGradienti(r.width() / 2, 0, r.width() / 2, r.height(), base::Color::RED, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // box gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::LinearGradienti(r.width() / 2, 0, r.width() / 2, r.height(), base::Color::RED, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// box gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 50, base::Color::GREEN, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // box gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 50, base::Color::GREEN, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// box gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 0, base::Color::GREEN, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // box gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 0, base::Color::GREEN, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// box gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 50, base::Color::GREEN, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // box gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 50, base::Color::GREEN, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// box gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 0, base::Color::GREEN, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // circle gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 0, base::Color::GREEN, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// circle gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 20, 80, base::Color::BLUE, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // circle gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 20, 80, base::Color::BLUE, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// circle gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 0, 80, base::Color::BLUE, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // circle gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 0, 80, base::Color::BLUE, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// circle gradient
+					{
+						auto r = grid.cell();
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 20, base::Color::BLUE, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                // circle gradient
-                {
-                    auto r = grid.cell();
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 20, base::Color::BLUE, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
 
-                    b.pushTransform();
-                    b.translatei(r.left(), r.top());
+					// circle gradient
+					{
+						auto r = grid.cell();
 
-                    static float rot = 0.0f;
-                    rot += 0.001f;
-                    b.translate(r.width() / 2, r.height() / 2);
-                    b.rotate(rot);
-                    b.translate(-r.width() / 2, -r.height() / 2);
+						b.pushTransform();
+						b.translatei(r.left(), r.top());
 
-                    b.beginPath();
-                    b.roundedRecti(0, 0, r.width(), r.height(), 20);
-                    b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 0, base::Color::BLUE, base::Color::WHITE));
-                    b.fill();
-                    b.popTransform();
-                }
+						static float rot = 0.0f;
+						rot += 0.001f;
+						b.translate(r.width() / 2, r.height() / 2);
+						b.rotate(rot);
+						b.translate(-r.width() / 2, -r.height() / 2);
 
-                c.place(b);
+						b.beginPath();
+						b.roundedRecti(0, 0, r.width(), r.height(), 20);
+						b.fillPaint(base::canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 0, base::Color::BLUE, base::Color::WHITE));
+						b.fill();
+						b.popTransform();
+					}
+				}
+
+                c.place(base::Vector2(0,0), g);
             }
         };
 

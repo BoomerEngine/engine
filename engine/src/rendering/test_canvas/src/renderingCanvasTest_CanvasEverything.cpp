@@ -20,6 +20,7 @@
 #include "base/font/include/fontGlyphCache.h"
 #include "base/containers/include/utf8StringFunctions.h"
 #include "base/font/include/fontGlyph.h"
+#include "base/canvas/include/canvasStorage.h"
 #include "base/input/include/inputStructures.h"
 
 #ifdef PLATFORM_MSVC
@@ -675,11 +676,14 @@ namespace rendering
 
         public:
             virtual void initialize() override;
+			virtual void shutdown() override;
             virtual void render(base::canvas::Canvas& canvas) override;
             virtual void processInput(const base::input::BaseEvent& evt) override;
 
         private:
-            base::Array<base::image::ImagePtr> m_images;
+			base::canvas::ImageAtlasIndex m_atlas;
+			base::Array<base::canvas::ImageEntry> m_images;
+
             FontHelper m_fontHelper;
 
             base::canvas::Geometry m_staticGeometry;
@@ -692,24 +696,24 @@ namespace rendering
 
         void SceneTest_CanvasEverything::initialize()
         {
-            m_images.pushBack(loadImage("image1.png"));
-            m_images.pushBack(loadImage("image2.png"));
-            m_images.pushBack(loadImage("image3.png"));
-            m_images.pushBack(loadImage("image4.png"));
-            m_images.pushBack(loadImage("image5.png"));
-            m_images.pushBack(loadImage("image6.png"));
-            m_images.pushBack(loadImage("image7.png"));
-            m_images.pushBack(loadImage("image8.png"));
-            m_images.pushBack(loadImage("image9.png"));
-            m_images.pushBack(loadImage("image10.png"));
-            m_images.pushBack(loadImage("image11.png"));
-            m_images.pushBack(loadImage("image12.png"));
+			m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
+
+			for (uint32_t i = 0; i < 12; ++i)
+			{
+				const auto img = loadImage(base::TempString("image{}.png", i+1));
+				m_images.pushBack(m_storage->registerImage(m_atlas, img));
+			}
 
             m_fontHelper.init(*this);
 
             m_mouseX = 100.0f;
             m_mouseY = 100.0f;
         }
+
+		void SceneTest_CanvasEverything::shutdown()
+		{
+			m_storage->destroyAtlas(m_atlas);
+		}
 
         void SceneTest_CanvasEverything::processInput(const base::input::BaseEvent& evt)
         {
@@ -768,7 +772,7 @@ namespace rendering
             for (int i = 1; i < 6; i++)
                 vg.bezierTo(sx[i - 1] + dx*0.5f, sy[i - 1] + 2, sx[i] - dx*0.5f, sy[i] + 2, sx[i], sy[i] + 2);
             vg.strokeColor(MakeColorLinear(0, 0, 0, 32));
-            vg.strokeWidth(3.0f);
+            ////vg.strokeWidth(3.0f);
             vg.stroke();
 
             vg.beginPath();
@@ -776,7 +780,7 @@ namespace rendering
             for (int i = 1; i < 6; i++)
                 vg.bezierTo(sx[i - 1] + dx*0.5f, sy[i - 1], sx[i] - dx*0.5f, sy[i], sx[i], sy[i]);
             vg.strokeColor(MakeColorLinear(0, 160, 192, 255));
-            vg.strokeWidth(3.0f);
+            ////vg.strokeWidth(3.0f);
             vg.stroke();
 
             // Graph sample pos
@@ -799,7 +803,7 @@ namespace rendering
             vg.fillColor(MakeColorLinear(220, 220, 220, 255));
             vg.fill();
 
-            vg.strokeWidth(1.0f);
+            //vg.strokeWidth(1.0f);
         }
 
         static void DrawEyes(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, float mx, float my, float t)
@@ -886,7 +890,7 @@ namespace rendering
             vg.fillColor(MakeColorLinear(255, 255, 255, 32));
             vg.fill();
 
-            vg.strokeWidth(lineWidth);
+            //vg.strokeWidth(lineWidth);
             for (i = 0; i < 3; i++) {
                 vg.lineCap(caps[i]);
                 vg.strokeColor(MakeColorLinear(0, 0, 0, 255));
@@ -986,9 +990,9 @@ namespace rendering
             return nvgHSLA(h, s, l, 255);
         }
 
+#pragma warning(disable: 4101)
         static void DrawColorwheel(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, float t)
         {
-            int i;
             float r0, r1, ax, ay, bx, by, cx, cy, aeps, r;
             float hue = sin(t * 0.12f);
             base::canvas::RenderStyle paint;
@@ -1006,7 +1010,7 @@ namespace rendering
             r0 = r1 - 20.0f;
             aeps = 0.5f / r1;   // half a pixel arc length in radians (2pi cancels out).
 
-            for (i = 0; i < 6; i++) {
+            for (int i = 0; i < 6; i++) {
                 float a0 = (float)i / 6.0f * PI * 2.0f - aeps;
                 float a1 = (float)(i + 1.0f) / 6.0f * PI * 2.0f + aeps;
                 vg.beginPath();
@@ -1026,7 +1030,7 @@ namespace rendering
             vg.circle(cx, cy, r0 - 0.5f);
             vg.circle(cx, cy, r1 + 0.5f);
             vg.strokeColor(MakeColorLinear(0, 0, 0, 64));
-            vg.strokeWidth(1.0f);
+            //vg.strokeWidth(1.0f);
             vg.stroke();
 
             // Selector
@@ -1035,7 +1039,7 @@ namespace rendering
             vg.rotate(hue*PI * 2);
 
             // Marker on
-            vg.strokeWidth(2.0f);
+            //vg.strokeWidth(2.0f);
             vg.beginPath();
             vg.rect(r0 - 1.0f, -3.0f, r1 - r0 + 2.0f, 6.0f);
             vg.strokeColor(MakeColorLinear(255, 255, 255, 192));
@@ -1072,7 +1076,7 @@ namespace rendering
             // Select circle on triangle
             ax = cos(120.0f * DEG2RAD) * r*0.3f;
             ay = sin(120.0f * DEG2RAD) * r*0.4f;
-            vg.strokeWidth(2.0f);
+            //vg.strokeWidth(2.0f);
             vg.beginPath();
             vg.circle(ax, ay, 5.0f);
             vg.strokeColor(MakeColorLinear(255, 255, 255, 192));
@@ -1117,7 +1121,7 @@ namespace rendering
                     vg.lineCap(caps[i]);
                     vg.lineJoin(joins[0]);
 
-                    vg.strokeWidth(s*0.3f);
+                    //vg.strokeWidth(s*0.3f);
                     vg.strokeColor(MakeColorLinear(0, 0, 0, 160));
                     vg.beginPath();
                     vg.moveTo(fx + pts[0], fy + pts[1]);
@@ -1129,7 +1133,7 @@ namespace rendering
                     vg.lineCap(base::canvas::LineCap::Butt);
                     vg.lineJoin(base::canvas::LineJoin::Bevel);
 
-                    vg.strokeWidth(1.0f);
+                    //vg.strokeWidth(1.0f);
                     vg.strokeColor(MakeColorLinear(0, 192, 255, 255));
                     vg.beginPath();
                     vg.moveTo(fx + pts[0], fy + pts[1]);
@@ -1418,7 +1422,7 @@ namespace rendering
 
             for (i = 0; i < 20; i++) {
                 float w = (i + 0.5f)*0.1f;
-                vg.strokeWidth(w);
+                //vg.strokeWidth(w);
                 vg.beginPath();
                 vg.moveTo(x, y);
                 vg.lineTo(x + width, y + width*0.3f);
@@ -1430,7 +1434,7 @@ namespace rendering
         }
 #pragma warning (disable: 4101)
 
-        static void DrawThumbnailsUnclip(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, const base::Array<base::image::ImagePtr>& images, float t)
+        static void DrawThumbnailsUnclip(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, const base::Array<base::canvas::ImageEntry>& images, float t)
         {
             base::canvas::RenderStyle shadowPaint;
             float cornerRadius = 3.0f;
@@ -1449,7 +1453,7 @@ namespace rendering
             vg.popTransform();
         }
 
-        static void DrawThumbnails(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, const base::Array<base::image::ImagePtr>& images, float t)
+        static void DrawThumbnails(base::canvas::GeometryBuilder& vg, float x, float y, float w, float h, const base::Array<base::canvas::ImageEntry>& images, float t)
         {
             //t *= 0.05f;
 
@@ -1491,8 +1495,8 @@ namespace rendering
                 ty = y + 10;
                 tx += (i % 2) * (thumb + 10);
                 ty += (i / 2) * (thumb + 10);
-                imgw = images[i]->width();
-                imgh = images[i]->height();
+                imgw = images[i].width;
+                imgh = images[i].height;
                 if (imgw < imgh) {
                     iw = thumb;
                     ih = iw * (float)imgh / (float)imgw;
@@ -1533,7 +1537,7 @@ namespace rendering
                 vg.beginPath();
                 //vg.roundedRect((int)tx + 0.5f, (int)ty + 0.5f, thumb - 1, thumb - 1, 4 - 0.5f);
                 vg.roundedRect((int)tx + 0.5f, (int)ty + 0.5f, thumb - 1, thumb - 1, 4 - 0.5f);
-                vg.strokeWidth(1.0f);
+                //vg.strokeWidth(1.0f);
                 vg.strokeColor(MakeColorLinear(255, 255, 255, 192));
                 vg.stroke();
             }
@@ -1741,16 +1745,16 @@ namespace rendering
 
                 if (m_staticGeometry.empty())
                 {
-                    base::canvas::GeometryBuilder b;
+                    base::canvas::GeometryBuilder b(m_storage, m_staticGeometry);
 
                     // Widgets
                     DrawWindow(m_fontHelper, b, "Widgets `n Stuff", 50, 50, 300, 400);
                     float x = 60;
                     float y = 95;
-                    DrawSearchBox(m_fontHelper, b, "Search", x, y, 280, 25);
-                    y += 40;
-                    DrawDropDown(m_fontHelper, b, "Effects", x, y, 280, 28);
-                    popy = y + 14;
+					DrawSearchBox(m_fontHelper, b, "Search", x, y, 280, 25);
+					y += 40;
+					DrawDropDown(m_fontHelper, b, "Effects", x, y, 280, 28);
+					popy = y + 14;
                     y += 45;
 
                     // Form
@@ -1775,40 +1779,50 @@ namespace rendering
                     DrawButton(m_fontHelper, b, 0, "Cancel", x + 170, y, 110, 28, MakeColorLinear(0, 0, 0, 0));
 
                     DrawWidths(b, 10, 50, 30);
-
-                    b.extract(m_staticGeometry);
                 }
 
-                c.place(m_staticGeometry);
+                c.place(base::Vector2(0,0), m_staticGeometry);
 
                 {
-                    base::canvas::GeometryBuilder b;
-//
-                    DrawGraph(b, 0, h / 2, w, h / 2, t);
-                    DrawEyes(b, w - 250.0f, 50.0f, 150.0f, 100.0f, mx, my, t);
-                    DrawCaps(b, 10, 300, 30);
-                    DrawColorwheel(b, w - 300.0f, h - 300.0f, 250.0f, 250.0f, t);
-                    DrawLines(b, 120.0f, h - 50.0f, 600, 50, t);
+					base::canvas::Geometry g;
+					{
+						base::canvas::GeometryBuilder b(m_storage, g);
 
-                    c.place(b);
+						DrawGraph(b, 0, h / 2, w, h / 2, t);
+						DrawEyes(b, w - 250.0f, 50.0f, 150.0f, 100.0f, mx, my, t);
+						DrawCaps(b, 10, 300, 30);
+						DrawColorwheel(b, w - 300.0f, h - 300.0f, 250.0f, 250.0f, t);
+						DrawLines(b, 120.0f, h - 50.0f, 600, 50, t);
+
+						c.place(base::Vector2(0,0), g);
+					}
                 }
 
-                {
-                    base::canvas::GeometryBuilder b;
-                    DrawThumbnails(b, 365, popy - 30, 160, 300, m_images, t);
-                    base::canvas::GeometryBuilder b2;
-                    DrawThumbnailsUnclip(b2, 365, popy - 30, 160, 300, m_images, t);
+				{
+					base::canvas::Geometry g, g2;
+					{
+						base::canvas::GeometryBuilder b(m_storage, g);
+						DrawThumbnails(b, 365, popy - 30, 160, 300, m_images, t);
+					}
+					{
+						base::canvas::GeometryBuilder b2(m_storage, g2);
+						DrawThumbnailsUnclip(b2, 365, popy - 30, 160, 300, m_images, t);
+					}
 
-                    c.place(b2);
-                    c.scissorRect(365, popy - 30, 160, 300);
-                    c.place(b);
-                    c.resetScissorRect();
-                }
+					c.place(base::Vector2(0,0), g2);
+					c.scissorRect(365, popy - 30, 160, 300);
+					c.place(base::Vector2(0, 0), g);
+					c.resetScissorRect();
+				}
+
 
                 {
-                    base::canvas::GeometryBuilder b;
-                    DrawParagraph(b, m_fontHelper, w - 450, 50, 150, 100, mx, my);
-                    c.place(b);
+					base::canvas::Geometry g;
+					{
+						base::canvas::GeometryBuilder b(m_storage, g);
+						//DrawParagraph(b, m_fontHelper, w - 450, 50, 150, 100, mx, my);
+					}
+                    c.place(base::Vector2(0,0), g);
                 }
             }
         }

@@ -1,0 +1,59 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//---
+
+#include "common.h"
+#include "scene.h"
+
+export shader SceneVS;
+export shader ScenePS;
+
+//--
+
+descriptor TestParams
+{
+	ConstantBuffer
+	{
+		uint NumViewports;
+	}
+}
+
+export shader SceneGS
+{
+	in vec3[] WorldPosition;
+	in vec3[] WorldNormal;
+	in vec2[] UV;
+	in float[] VertexID;
+
+	attribute(binding=WorldPosition) out vec3 WorldPositionOut;
+	attribute(binding=WorldNormal) out vec3 WorldNormalOut;
+	attribute(binding=UV) out vec2 UVOut;
+
+	attribute(input=triangles, output=triangle_strip, max_vertices=3)
+	void main()
+	{
+		int viewportIndex = gl_PrimitiveIDIn % NumViewports;
+		//int vertexID = (int)min(VertexID[0], min(VertexID[1], VertexID[2]));
+		//int vertexID = VertexID[0];
+		//int viewportIndex = vertexID % NumViewports;
+
+		for (int i=0; i<3; i += 1)
+		{
+			WorldPositionOut = WorldPosition[i];
+			WorldNormalOut = WorldNormal[i];
+			UVOut = UV[i];
+
+			gl_Position = Camera[0].WorldToScreen * WorldPosition[i].xyz1;
+			gl_ViewportIndex = viewportIndex;
+
+			EmitVertex();
+		}
+
+		EndPrimitive();
+	}
+}
+
+//--
