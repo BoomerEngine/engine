@@ -30,8 +30,6 @@ namespace rendering
 
             //--
 			
-			base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
-
             base::RefPtr<ICanvasTest> m_currentTest;
             int m_currentTestCaseIndex;
             int m_pendingTestCaseIndex;

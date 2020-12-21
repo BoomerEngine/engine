@@ -26,7 +26,7 @@ namespace Scintilla
     class SurfaceImpl : public Surface
     {
     public:
-        SurfaceImpl(const base::canvas::IStorage* storage);
+        SurfaceImpl();
         ~SurfaceImpl() override;
 
         //--
@@ -95,7 +95,7 @@ namespace Scintilla
 			base::canvas::Geometry data;
 			base::canvas::GeometryBuilder builder;
 
-			Buffer(const base::canvas::IStorage* storage);
+			Buffer();
 
 			void reset();
 		};

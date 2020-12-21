@@ -41,7 +41,15 @@ namespace rendering
             {
                 if (entry->type == MaterialDataLayoutParameterType::Color)
                 {
-                    return CodeChunk(CodeChunkType::Numerical4, base::TempString("{}.{}", compiler.dataLayout()->descriptorName(), entry->name), true);
+					if (compiler.context().bindlessTextures)
+					{
+
+					}
+					else
+					{
+						const auto& layout = compiler.dataLayout()->discreteDataLayout();
+						return CodeChunk(CodeChunkType::Numerical4, base::TempString("{}.{}", layout.descriptorName, entry->name), true);
+					}
                 }
             }
 

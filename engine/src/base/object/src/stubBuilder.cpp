@@ -42,7 +42,6 @@ namespace base
 		}			
 
 		m_stubsToDestroy.reset();
-		m_mem.clear();
 	}
 
 	IStub* StubBuilder::createStub(StubTypeValue id)

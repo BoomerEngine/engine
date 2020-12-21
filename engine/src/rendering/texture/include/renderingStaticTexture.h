@@ -57,7 +57,7 @@ namespace rendering
         //--
 
         // ITexture interface
-        virtual ImageView view() const override final;
+        virtual ImageSampledViewPtr view() const override final;
 
         //--
 
@@ -69,7 +69,7 @@ namespace rendering
         //--
 
         rendering::ImageObjectPtr m_object;
-        rendering::ImageView m_mainView;
+        rendering::ImageSampledViewPtr m_mainView;
 
         //--
 

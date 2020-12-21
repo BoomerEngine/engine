@@ -553,7 +553,7 @@ namespace ui
         // generate geometry if needed
 		if (m_cachedSelectionGeometry.empty())
 		{
-			base::canvas::GeometryBuilder builder(nullptr, m_cachedSelectionGeometry);
+			base::canvas::GeometryBuilder builder(m_cachedSelectionGeometry);
 			generateRangeBlock(m_selectionStartPos, m_selectionEndPos, m_selectionColor, builder);
 		}
 
@@ -566,7 +566,7 @@ namespace ui
         // generate geometry if needed
 		if (m_cachedHighlightGeometry.empty())
 		{
-			base::canvas::GeometryBuilder builder(nullptr, m_cachedHighlightGeometry);
+			base::canvas::GeometryBuilder builder(m_cachedHighlightGeometry);
 			generateRangeBlock(m_highlightStartPos, m_highlightEndPos, m_hightlightColor, builder);
 		}
 
@@ -581,7 +581,7 @@ namespace ui
         // generate the cursor geometry
         if (m_cachedCursorGeometry.empty())
         {
-            base::canvas::GeometryBuilder builder(nullptr, m_cachedCursorGeometry);
+            base::canvas::GeometryBuilder builder(m_cachedCursorGeometry);
 
             builder.strokeColor(m_textColor);
             builder.beginPath();

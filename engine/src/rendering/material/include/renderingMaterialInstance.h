@@ -67,6 +67,7 @@ namespace rendering
 
         // IMaterial
         virtual MaterialDataProxyPtr dataProxy() const override final;
+		virtual MaterialTemplateProxyPtr templateProxy() const override final;
         virtual const MaterialTemplate* resolveTemplate() const override final;
 
         virtual bool checkParameterOverride(base::StringID name) const override final;

@@ -30,7 +30,8 @@ namespace game
 
     private:
         rendering::TexturePtr m_texture;
-        rendering::ShaderLibraryRef m_shader;
+        rendering::ShaderDataPtr m_shader;
+		rendering::GraphicsPipelineObjectPtr m_shaderPSO;
 
         float m_effectTime = 0.0f;
     };

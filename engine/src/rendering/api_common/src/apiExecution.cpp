@@ -492,18 +492,9 @@ namespace rendering
 				ExtractPassAttachment(m_pass, i, target, att);
 			}
 
-			// determine on the area
-			if (op.frameBuffer.area.empty())
-			{
-				m_pass.area.min.x = 0;
-				m_pass.area.min.y = 0;
-				m_pass.area.max.x = m_pass.width;
-				m_pass.area.max.y = m_pass.height;
-			}
-			else
-			{
-				m_pass.area = op.frameBuffer.area;
-			}
+			// remember the draw area - this is out initial viewport and scissor rect
+			ASSERT(!op.renderArea.empty());
+			m_pass.area = op.renderArea;
 
 			// use given pass layout
 			m_activePassLayout = op.passLayoutId;

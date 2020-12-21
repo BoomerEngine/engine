@@ -12,9 +12,10 @@
 #include "renderingMaterialRuntimeService.h"
 #include "renderingMaterialRuntimeLayout.h"
 #include "renderingMaterialRuntimeProxy.h"
+#include "renderingMaterialRuntimeTemplate.h"
 #include "renderingMaterialRuntimeTechnique.h"
 
-#include "rendering/device/include/renderingShaderLibrary.h"
+#include "rendering/device/include/renderingShaderData.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/object/include/rttiDataView.h"
 #include "base/resource/include/resourceTags.h"
@@ -44,14 +45,6 @@ namespace rendering
 
     ///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialPrecompiledStaticTechnique)
-        RTTI_PROPERTY(setup);
-        RTTI_PROPERTY(renderStates);
-        RTTI_PROPERTY(shader);
-    RTTI_END_TYPE();
-
-    ///---
-
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IMaterialTemplateDynamicCompiler);
     RTTI_END_TYPE();
 
@@ -59,6 +52,12 @@ namespace rendering
     {}
 
     ///---
+
+	RTTI_BEGIN_TYPE_CLASS(MaterialPrecompiledStaticTechnique)
+		RTTI_PROPERTY(setup);
+		RTTI_PROPERTY(renderStates);
+		RTTI_PROPERTY(shader);
+	RTTI_END_TYPE();
 
     MaterialPrecompiledStaticTechnique::MaterialPrecompiledStaticTechnique()
     {}
@@ -90,10 +89,8 @@ namespace rendering
             m_compiler->parent(this);
 
         rebuildParameterMap();
-        registerLayout();
-        createDataProxy();
-
-        m_techniqueMap.reserve(32);
+		createTemplateProxy();
+		createDataProxy();
     }
 
     MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, MaterialSortGroup sortGroup, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques)
@@ -106,18 +103,13 @@ namespace rendering
                 tech.shader->parent(this);
 
         rebuildParameterMap();
-        registerLayout();
+		createTemplateProxy();
         createDataProxy();
-
-        m_techniqueMap.reserve(32);
     }
 
     MaterialTemplate::~MaterialTemplate()
     {
-        TRACE_INFO("Releasing material template '{}'", key());
-        m_techniqueMap.clear();
         m_compiler.reset();
-        TRACE_INFO("Released material template '{}'", key());
     }
 
     const MaterialTemplateParamInfo* MaterialTemplate::findParameterInfo(base::StringID name) const
@@ -132,28 +124,10 @@ namespace rendering
     void MaterialTemplate::onPostLoad()
     {
         TBaseClass::onPostLoad();
+
         rebuildParameterMap();
-        registerLayout();
         createDataProxy();
-    }
-
-    void MaterialTemplate::registerLayout()
-    {
-        base::Array<MaterialDataLayoutEntry> layoutEntries;
-        layoutEntries.reserve(m_parameters.size());
-
-        for (const auto& param : m_parameters)
-        { 
-            auto& entry = layoutEntries.emplaceBack();
-            entry.name = param.name;
-            entry.type = param.parameterType;
-        }
-
-        // TODO: optimize layout/order
-
-        std::sort(layoutEntries.begin(), layoutEntries.end(), [](const MaterialDataLayoutEntry& a, MaterialDataLayoutEntry& b) { return a.name.view() < b.name.view(); });
-
-        m_dataLayout = base::GetService<MaterialService>()->registerDataLayout(std::move(layoutEntries));
+		createTemplateProxy();
     }
 
     void MaterialTemplate::rebuildParameterMap()
@@ -164,57 +138,28 @@ namespace rendering
             m_parametersMap[m_parameters[i].name] = i;
     }
 
+	///---
+
+	RTTI_BEGIN_TYPE_ENUM(MeshVertexFormat);
+		RTTI_ENUM_OPTION(PositionOnly);
+		RTTI_ENUM_OPTION(Static);
+		RTTI_ENUM_OPTION(StaticEx);
+		RTTI_ENUM_OPTION(Skinned4);
+		RTTI_ENUM_OPTION(Skinned4Ex);
+	RTTI_END_TYPE();
+
+	base::StringID MeshVertexFormatBindPointName(MeshVertexFormat format)
+	{
+		return base::StringID(base::TempString("Vertex{}", format));
+	}
+
     ///---
-
-    MaterialTechniquePtr MaterialTemplate::fetchTechnique(const MaterialCompilationSetup& setup)
-    {
-        const auto key = setup.key();
-
-        // look in dynamic list
-        auto lock = base::CreateLock(m_techniqueMapLock);
-        auto& ret = m_techniqueMap[key];
-        if (!ret)
-        {
-            ret = base::RefNew<MaterialTechnique>(setup);
-
-            // lookup in precompiled list
-            bool valid = false;
-            for (const auto& techniqe : m_precompiledTechniques)
-            {
-                const auto techniqueKey = techniqe.setup.key();
-                if (key == techniqueKey)
-                {
-                    auto compiledTechnique = new MaterialCompiledTechnique;
-                    compiledTechnique->shader = techniqe.shader;
-                    compiledTechnique->dataLayout = m_dataLayout;
-                    compiledTechnique->renderStates = techniqe.renderStates;
-                    ret->pushData(compiledTechnique);
-                    valid = true;
-                    break;
-                }
-            }
-
-            // try to compile dynamically
-            if (!valid)
-            {
-                if (m_compiler)
-                {
-                    m_compiler->requestTechniqueComplation(path().view(), ret);
-                }
-                else
-                {
-                    TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", path(), setup, key);
-                }
-            }
-        }
-
-        return ret;
-    }
 
     RTTI_BEGIN_TYPE_CLASS(MaterialCompilationSetup);
         RTTI_PROPERTY(pass);
         RTTI_PROPERTY(vertexFormat);
-        RTTI_PROPERTY(vertexFetchMode);
+        RTTI_PROPERTY(bindlessTextures);
+		RTTI_PROPERTY(meshletsVertices);
         RTTI_PROPERTY(msaa);
     RTTI_END_TYPE();
 
@@ -224,8 +169,9 @@ namespace rendering
         uint8_t bitCount = 0;
 #define MERGE_BITS(data, num) { ret |= (uint32_t)(data) << bitCount; bitCount += num; }
         MERGE_BITS(msaa ? 1 : 0, 1);
-        MERGE_BITS(vertexFormat, 3);
-        MERGE_BITS(vertexFetchMode, 1);
+		MERGE_BITS(bindlessTextures, 1);
+		MERGE_BITS(meshletsVertices, 1);
+		MERGE_BITS(vertexFormat, 3);
         MERGE_BITS(pass, 3);
 #undef MERGE_BITS
         return ret;
@@ -236,9 +182,10 @@ namespace rendering
         f.appendf("PASS={}", pass);
         f.appendf(" VERTEX={}", vertexFormat);
 
-        if (vertexFetchMode)
-            f.appendf(" FETCH={}", vertexFetchMode);
-
+		if (meshletsVertices)
+			f.append(" MESHLET");
+		if (bindlessTextures)
+			f.append(" BINDLESS");
         if (msaa)
             f.append(" MSAA");
     }
@@ -250,10 +197,15 @@ namespace rendering
         return m_dataProxy;
     }
 
-    const MaterialTemplate* MaterialTemplate::resolveTemplate() const
-    {
-        return this;
-    }
+	MaterialTemplateProxyPtr MaterialTemplate::templateProxy() const
+	{
+		return m_templateProxy;
+	}
+
+	const MaterialTemplate* MaterialTemplate::resolveTemplate() const
+	{
+		return nullptr;
+	}
 
     bool MaterialTemplate::checkParameterOverride(base::StringID name) const
     {
@@ -357,8 +309,15 @@ namespace rendering
     void MaterialTemplate::createDataProxy()
     {
         DEBUG_CHECK_EX(!m_dataProxy, "Data proxy for material template should be immutable");
-        m_dataProxy = base::RefNew<MaterialDataProxy>(this, false, *this); // NOTE: we DO NOT keep extra ref here
+		DEBUG_CHECK_EX(m_templateProxy, "Missing template proxy");
+        m_dataProxy = base::RefNew<MaterialDataProxy>(m_templateProxy);
     }
+
+	void MaterialTemplate::createTemplateProxy()
+	{
+		DEBUG_CHECK_EX(!m_templateProxy, "Template proxy for material template should be immutable");
+		m_templateProxy = base::RefNew<MaterialTemplateProxy>(path(), m_parameters, m_sortGroup, m_compiler, m_precompiledTechniques);
+	}
 
     ///---
 

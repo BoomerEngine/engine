@@ -25,6 +25,8 @@ namespace rendering
 
             virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
             virtual void handleExternalCloseRequest() override;
+
+			base::canvas::DynamicAtlasPtr m_honklerAtlas;
         };
 
         //--

@@ -65,7 +65,7 @@ namespace rendering
 			return ret;
 		}
 
-		bool IBaseDevice::initialize(const base::app::CommandLine& cmdLine)
+		bool IBaseDevice::initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 		{
 			// create window manager
 			m_windows = createOptimalWindowManager(cmdLine);
@@ -88,7 +88,7 @@ namespace rendering
 			}
 
 			// start the runtime thread
-			if (!thread->startThread(cmdLine))
+			if (!thread->startThread(cmdLine, outCaps))
 			{
 				TRACE_ERROR("Rendering API failed to start internal thread");
 
@@ -137,10 +137,10 @@ namespace rendering
 		void IBaseDevice::sync(bool flush)
 		{
 			PC_SCOPE_LVL1(DriverSync);
-			m_windows->updateWindows();
+			if (!flush)
+				m_windows->updateWindows();
 			m_thread->sync(flush);
 		}
-
 
 		//--
 
@@ -177,6 +177,7 @@ namespace rendering
 				DEBUG_CHECK_RETURN_EX_V(layoutObj, "Layout for created swapchain not created", nullptr);
 
 				auto* output = new Output(m_thread, swapchain);
+				swapchain->windowInterface()->windowBindOwner(output->handle());
 				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface(), layoutObj);
 			}
 

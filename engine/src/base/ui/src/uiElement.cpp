@@ -1489,11 +1489,6 @@ namespace ui
         return false;
     }
 
-	base::canvas::IStorage* IElement::canvasStorage() const
-	{
-		return renderer()->canvasStorage();
-	}
-
     void IElement::prepareStyle(StyleStack& stack, float pixelScale, bool allChildren)
     {
         if (parentElement() != nullptr)
@@ -1904,10 +1899,10 @@ namespace ui
 		m_cachedGeometry->foreground->reset();
 		m_cachedGeometry->overlay->reset();
 
-        base::canvas::GeometryBuilder ShadowGeometry(renderer()->canvasStorage(), *m_cachedGeometry->shadow);
-        base::canvas::GeometryBuilder BackgroundGeometry(renderer()->canvasStorage(), *m_cachedGeometry->background);
-        base::canvas::GeometryBuilder ForegroundGeometry(renderer()->canvasStorage(), *m_cachedGeometry->foreground);
-        base::canvas::GeometryBuilder OverlayGeometry(renderer()->canvasStorage(), *m_cachedGeometry->overlay);
+        base::canvas::GeometryBuilder ShadowGeometry(*m_cachedGeometry->shadow);
+        base::canvas::GeometryBuilder BackgroundGeometry(*m_cachedGeometry->background);
+        base::canvas::GeometryBuilder ForegroundGeometry(*m_cachedGeometry->foreground);
+        base::canvas::GeometryBuilder OverlayGeometry(*m_cachedGeometry->overlay);
 
         // prepare shadow geometry
         prepareShadowGeometry(drawArea, cachedStyleParams().pixelScale, ShadowGeometry);

@@ -210,13 +210,16 @@ namespace rendering
 					auto* copiable = obj->toCopiable();
 					ASSERT(copiable != nullptr);
 
-					// flush data
-					job->copyStartedTimestamp.resetToNow();
-					flushStagingArea(job->stagingArea);
+					if (job->stagingArea)
+					{
+						// flush data
+						job->copyStartedTimestamp.resetToNow();
+						flushStagingArea(job->stagingArea);
 
-					// initialize the target resource from the staging data that was not filled by job
-					copiable->initializeFromStaging(job->stagingArea);
-					job->copyFinishedTimestamp.resetToNow();
+						// initialize the target resource from the staging data that was not filled by job
+						copiable->initializeFromStaging(job->stagingArea);
+						job->copyFinishedTimestamp.resetToNow();
+					}
 				}
 				else
 				{
@@ -227,8 +230,11 @@ namespace rendering
 				job->sourceData->notifyFinshed(true);
 
 				// release the staging area
-				releaseStagingArea(job->stagingArea);
-				job->stagingArea = nullptr;
+				if (job->stagingArea)
+				{
+					releaseStagingArea(job->stagingArea);
+					job->stagingArea = nullptr;
+				}
 
 				// print final stats
 				{

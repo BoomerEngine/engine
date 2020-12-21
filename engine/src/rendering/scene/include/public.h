@@ -8,12 +8,13 @@
 
 #include "rendering_scene_glue.inl"
 
-#include "rendering/device/include/renderingImageView.h"
-
 namespace rendering
 {
     namespace scene
     {
+		///---
+
+		static const uint32_t MAX_CASCADES = 4;
 
         ///---
 
@@ -27,28 +28,9 @@ namespace rendering
         class IFrameInspector;
 
         //--
-
-        /// render target "wrapper"
-        struct RenderTarget
-        {
-            ImageView view; // render target, may be way bigger than what we need
-            base::Rect rect; // our space in that render target
-
-            INLINE RenderTarget() {}
-
-            INLINE RenderTarget(ImageView view_, uint32_t width, uint32_t height)
-                : view(view_)
-                , rect(0, 0, width, height)
-            {}
-
-            INLINE RenderTarget(ImageView view_, const base::Rect& rect_)
-                : view(view_)
-                , rect(rect_)
-            {}
-        };
-
-        //--
  
+		struct FrameCompositionTarget;
+
         struct FrameParams;
         struct FrameParams_Capture;
 
@@ -58,7 +40,6 @@ namespace rendering
         typedef base::RefPtr<CameraContext> CameraContextPtr;
 
         class DebugGeometry;
-        class DebugGeometryScreen;
 
         enum class DebugFont : uint8_t
         {
@@ -71,35 +52,15 @@ namespace rendering
 
         //--
 
-        typedef uint32_t ObjectRenderID;
-        //typedef uint16_t MaterialTemplateID;
-
         class MaterialCachedTemplate;
         typedef base::RefPtr<MaterialCachedTemplate> MaterialCachedTemplatePtr;
-
-        struct ProxyBaseDesc;
 
         class Scene;
         typedef base::RefPtr<Scene> ScenePtr;
 
-        class SceneObjectRegistry;
-        struct SceneObjectCullingEntry;
-
         struct Command;
 
         class Selectable;
-
-        struct IProxy;
-        class IProxyHandler;
-
-        struct ProxyHandle
-        {
-            uint32_t index = 0;
-            uint32_t generation = 0;
-
-            INLINE operator bool() const { return generation != 0; }
-            INLINE void reset() { generation = 0; }
-        };
 
         class MaterialCache;
         struct MaterialCacheEntry;
@@ -114,52 +75,29 @@ namespace rendering
 
         struct FilterFlags;
 
-        //--
+		//--
 
-        enum class FrameViewType : uint8_t
-        {
-            MainColor, // main color view (or derivatives)
-            GlobalCascades, // view for global cascades - only shadow casting fragments should be collected
-            SelectionRect, // selection rect capture
+		class FrameRenderingService;
+		class FrameViewMain;
+		class FrameViewCascades;
+		class FrameViewSelection;
+		
+		//--
 
-            MAX,
-        };
+		class IObjectManager;
 
-        enum class ProxyType : uint8_t
-        {
-            None = 0, // just here to make 0 indicate invalid proxy type
-            Mesh = 1,
+		enum class ObjectType : uint8_t
+		{
+			Mesh,
+		};
+		
+		class IObjectProxy;
+		typedef base::RefPtr<IObjectProxy> ObjectProxyPtr;
 
-            MAX,
-        };
+		class ObjectProxyMesh;
+		typedef base::RefPtr<ObjectProxyMesh> ObjectProxyMeshPtr;
 
-        enum class FragmentHandlerType : uint8_t
-        {
-            None = 0, // just here to make 0 indicate invalid fragment type
-            Mesh = 1,
-
-            MAX,
-        };
-
-        enum class FragmentDrawBucket : uint8_t
-        {
-            OpaqueNotMoving, // true static geometry, no masking
-            Opaque, // opaque that might be moving
-            OpaqueMasked,
-
-            DebugSolid,
-            DebugOverlay,
-
-            ShadowDepth0,
-            ShadowDepth1,
-            ShadowDepth2,
-            ShadowDepth3,
-
-            Transparent,
-            SelectionOutline,
-
-            MAX,
-        };
+		//--
 
     } // scene
 } // rendering

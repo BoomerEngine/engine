@@ -16,7 +16,7 @@
 #include "rendering/material/include/renderingMaterialRuntimeLayout.h"
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
-#include "rendering/compiler/include/renderingShaderLibraryCompiler.h"
+#include "rendering/compiler/include/renderingShaderCompiler.h"
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/parser/include/textToken.h"
@@ -56,6 +56,59 @@ namespace rendering
 
     //--
 
+	static void GatherDefinesForCompilationSetup(const MaterialCompilationSetup& setup, base::HashMap<base::StringID, base::StringBuf>& outDefines)
+	{
+		switch (setup.pass)
+		{
+			case MaterialPass::DepthPrepass: outDefines["MAT_PASS_DEPTH_PREPASS"_id] = "1"; break;
+			case MaterialPass::Wireframe: outDefines["MAT_PASS_WIREFRAME"_id] = "1"; break;
+			case MaterialPass::ConstantColor: outDefines["MAT_PASS_CONST_COLOR"_id] = "1"; break;
+			case MaterialPass::SelectionFragments: outDefines["MAT_PASS_SELECTION"_id] = "1"; break;
+			case MaterialPass::Forward: outDefines["MAT_PASS_FORWARD"_id] = "1"; break;
+			case MaterialPass::ShadowDepth: outDefines["MAT_PASS_SHADOW_DEPTH"_id] = "1"; break;
+			case MaterialPass::MaterialDebug: outDefines["MAT_PASS_MATERIAL_DEBUG"_id] = "1"; break;
+			default: ASSERT(!"Add define");
+		}
+
+		switch (setup.vertexFormat)
+		{
+			case MeshVertexFormat::PositionOnly: 
+				outDefines["MAT_VERTEX_POSITION_ONLY"_id] = "1";
+				break;
+
+			case MeshVertexFormat::Static: 
+				outDefines["MAT_VERTEX_STATIC"_id] = "1";
+				break;
+
+			case MeshVertexFormat::StaticEx: 
+				outDefines["MAT_VERTEX_STATIC"_id] = "1";
+				outDefines["MAT_VERTEX_SECOND_UV"_id] = "1";
+				break;
+
+			case MeshVertexFormat::Skinned4: 
+				outDefines["MAT_VERTEX_SKINNED"_id] = "1";
+				outDefines["MAT_VERTEX_NUM_BONES"_id] = "4";
+				break;
+
+			case MeshVertexFormat::Skinned4Ex: 
+				outDefines["MAT_VERTEX_SKINNED"_id] = "1";
+				outDefines["MAT_VERTEX_SECOND_UV"_id] = "1";
+				outDefines["MAT_VERTEX_NUM_BONES"_id] = "4";
+				break;
+		}
+
+		if (setup.bindlessTextures)
+			outDefines["MAT_BINDLESS"_id] = "1";
+
+		if (setup.bindlessTextures)
+			outDefines["MAT_MESHLET"_id] = "1";
+
+		if (setup.bindlessTextures)
+			outDefines["MSAA"_id] = "1";
+	}
+
+	//--
+
     MaterialCompiledTechnique* CompileTechnique(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, base::parser::IErrorReporter& err, base::parser::IIncludeHandler& includes)
     {
         base::ScopeTimer timer;
@@ -86,8 +139,12 @@ namespace rendering
         compiler.assembleFinalShaderCode(finalText, renderStates);
         const auto generationTime = timer.timeElapsed();
 
+		// add global defines to material compilation context based on the context (so the hard-written includes can change based on compilation settings)
+		base::HashMap<base::StringID, base::StringBuf> defines;
+		GatherDefinesForCompilationSetup(setup, defines);
+
         // create the local cooker - so we can load includes
-        const auto shader = compiler::CompileShaderLibrary(finalText.view(), contextName, &includes, err, "GLSL"_id);
+        const auto shader = compiler::CompileShader(finalText.view(), contextName, base::TempString("{}", setup), &includes, err, &defines);
         if (!shader)
         {
             TRACE_ERROR("Failed to compile shader codef from material graph '{}'", contextName);
@@ -190,14 +247,14 @@ namespace rendering
             base::StringBuf absolutePath;
             if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
             {
-                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.c_str(), loc.line(), "", message.data());
+                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.c_str(), loc.line(), "", "", message.data());
 
                 if (!m_firstErrorPrinted)
                     TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
             }
             else
             {
-                base::logging::Log::Print(base::logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", message.data());
+                base::logging::Log::Print(base::logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", "", message.data());
 
                 if (!m_firstErrorPrinted)
                     TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
@@ -215,9 +272,9 @@ namespace rendering
             {
                 base::StringBuf absolutePath;
                 if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.c_str(), loc.line(), "", message.data());
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.c_str(), loc.line(), "", "", message.data());
                 else
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", message.data());
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", "", message.data());
             }
             else
             {

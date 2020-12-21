@@ -33,7 +33,7 @@ namespace rendering
     //--
 
     MaterialPixelStageCompiler::MaterialPixelStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context)
-        : MaterialStageCompiler(dataLayout, ShaderType::Pixel, materialPath, context)
+        : MaterialStageCompiler(dataLayout, ShaderStage::Pixel, materialPath, context)
     {}
 
     CodeChunk MaterialPixelStageCompiler::vertexData(MaterialVertexDataType typeV)
@@ -138,7 +138,7 @@ namespace rendering
     //--
 
     MaterialVertexStageCompiler::MaterialVertexStageCompiler(const MaterialDataLayout* dataLayout, base::StringView materialPath, const MaterialCompilationSetup& context, const MaterialPixelStageCompiler& ps)
-        : MaterialStageCompiler(dataLayout, ShaderType::Vertex, materialPath, context)
+        : MaterialStageCompiler(dataLayout, ShaderStage::Vertex, materialPath, context)
         , m_ps(ps)
     {
     }
@@ -338,59 +338,63 @@ namespace rendering
         , m_vs(layout, materialPath, context, m_ps)
         , m_dataLayout(layout)
         , m_debugPath(materialPath)
+		, m_setup(context)
     {
     }
 
     void MaterialMeshGeometryCompiler::printMaterialDescriptor(base::StringBuilder& builder) const
     {
-        if (m_dataLayout && !m_dataLayout->descriptorLayout().empty())
+		if (!m_dataLayout || m_setup.bindlessTextures)
+			return;
+
+		const auto& layout = m_dataLayout->discreteDataLayout();
+		if (layout.empty())
+			return;
+
+		builder.appendf("descriptor {} {\n", layout.descriptorName);
+
+        // constants
+        if (layout.constantDataSize > 0)
         {
-            builder.appendf("descriptor {} {\n", m_dataLayout->descriptorName());
+            builder.appendf("  ConstantBuffer {\n");
 
-            // constants
-            if (m_dataLayout->descriptorLayout().constantDataSize > 0)
+            for (const auto& entry : layout.constantBufferEntries)
             {
-                builder.appendf("  ConstantBuffer {\n");
+                builder.appendf("    attribute(offset={}) ", entry.dataOffset);
 
-                for (const auto& entry : m_dataLayout->descriptorLayout().constantBufferEntries)
+                switch (entry.type)
                 {
-                    builder.appendf("    attribute(offset={}) ", entry.dataOffset);
-
-                    switch (entry.type)
-                    {
-                        case MaterialDataLayoutParameterType::Float: builder.append("float"); break;
-                        case MaterialDataLayoutParameterType::Vector2: builder.append("vec2"); break;
-                        case MaterialDataLayoutParameterType::Vector3: builder.append("vec3"); break;
-                        case MaterialDataLayoutParameterType::Vector4: builder.append("vec4"); break;
-                        case MaterialDataLayoutParameterType::Color: builder.append("vec4"); break;
-                    }
-
-                    builder.appendf(" {};\n", entry.name);
+                    case MaterialDataLayoutParameterType::Float: builder.append("float"); break;
+                    case MaterialDataLayoutParameterType::Vector2: builder.append("vec2"); break;
+                    case MaterialDataLayoutParameterType::Vector3: builder.append("vec3"); break;
+                    case MaterialDataLayoutParameterType::Vector4: builder.append("vec4"); break;
+                    case MaterialDataLayoutParameterType::Color: builder.append("vec4"); break;
                 }
 
-                builder.appendf("  }\n");
+                builder.appendf(" {};\n", entry.name);
             }
 
-            // textures
-            for (const auto& resource : m_dataLayout->descriptorLayout().resourceEntries)
-            {
-                switch (resource.viewType)
-                {
-                    case ImageViewType::View1D: builder.append("  Texture1D "); break;
-                    case ImageViewType::View1DArray: builder.append("  Texture1DArray "); break;
-                    case ImageViewType::View2D: builder.append("  Texture2D "); break;
-                    case ImageViewType::View2DArray: builder.append("  Texture2DArray "); break;
-                    case ImageViewType::ViewCube: builder.append("  TextureCube "); break;
-                    case ImageViewType::ViewCubeArray: builder.append("  TextureCubeArray "); break;
-                    case ImageViewType::View3D: builder.append("  Texture3D "); break;
-                }
-
-                builder.appendf("{};\n", resource.name);
-            }
-
-
-            builder.appendf("}\n");
+            builder.appendf("  }\n");
         }
+
+        // textures
+        for (const auto& resource : layout.resourceEntries)
+        {
+            switch (resource.viewType)
+            {
+                case ImageViewType::View1D: builder.append("  Texture1D "); break;
+                case ImageViewType::View1DArray: builder.append("  Texture1DArray "); break;
+                case ImageViewType::View2D: builder.append("  Texture2D "); break;
+                case ImageViewType::View2DArray: builder.append("  Texture2DArray "); break;
+                case ImageViewType::ViewCube: builder.append("  TextureCube "); break;
+                case ImageViewType::ViewCubeArray: builder.append("  TextureCubeArray "); break;
+                case ImageViewType::View3D: builder.append("  Texture3D "); break;
+            }
+
+            builder.appendf("{};\n", resource.name);
+        }
+
+        builder.appendf("}\n");
     }
 
     void MaterialMeshGeometryCompiler::assembleFinalShaderCode(base::StringBuilder& outStr, const MaterialTechniqueRenderStates& renderStates) const

@@ -9,9 +9,9 @@
 #include "build.h"
 
 #include "canvas.h"
+#include "canvasService.h"
 #include "canvasGeometry.h"
 #include "canvasGeometryBuilder.h"
-#include "canvasStorage.h"
 
 namespace base
 {
@@ -40,18 +40,12 @@ namespace base
 
 		//--
 
-		RTTI_BEGIN_TYPE_ABSTRACT_CLASS(Canvas);
-		RTTI_END_TYPE();
-
-        //--
-
-        Canvas::Canvas(const Setup& setup, const IStorage* storage)
+        Canvas::Canvas(const Setup& setup)
             : m_width(setup.width)
             , m_height(setup.height)
             , m_pixelOffset(setup.pixelOffset)
             , m_pixelScale(setup.pixelScale)
             , m_clearColor(0,0,0,0) // 0 alpha - not used
-			, m_storage(storage)
         {
 			m_pixelOffset.x = std::round(m_pixelOffset.x);
 			m_pixelOffset.y = std::round(m_pixelOffset.y);
@@ -61,9 +55,13 @@ namespace base
             updateScissorRect();
         }
 
+		Canvas::Canvas(uint32_t width, uint32_t height)
+			: Canvas(Setup{ width, height })
+		{			
+		}
+
         Canvas::~Canvas()
         {
-			DEBUG_CHECK_EX(m_numLocalVertices == 0 && m_numLocalBatches == 0, "Canvas destroyed with non flushed geometry");
         }
 
         void Canvas::updatePixelTransform()
@@ -284,6 +282,11 @@ namespace base
 			}
         }
 
+		void Canvas::place(float x, float y, const Geometry& geometry, float alpha /*= 1.0f*/)
+		{
+			place(Placement(x, y), geometry, alpha);
+		}
+
 		void Canvas::place(const Placement& placement, const Geometry& geometry, float alpha)
 		{
 			if (alpha > 0.0f)
@@ -293,17 +296,20 @@ namespace base
 
 				//if (TestClip(m_scissorRect, globalMax, globalMax))
 				{
-					if ((m_numLocalAttributes + geometry.attributes.size() > MAX_LOCAL_ATTRIBUTES) ||
-						(m_numLocalData + geometry.customData.size() > MAX_LOCAL_DATA))
-						flush();
+					const auto firstAttributeIndex = m_gatheredAttributes.size();
+					if (!geometry.attributes.empty())
+					{
+						auto* writePtr = m_gatheredAttributes.allocateUninitialized(geometry.attributes.size());
+						memcpy(writePtr, geometry.attributes.typedData(), geometry.attributes.dataSize());
+					}
 
-					const auto firstAttributeIndex = m_numLocalAttributes;
-					memcpy(m_localAttributes + firstAttributeIndex, geometry.attributes.typedData(), geometry.attributes.dataSize());
-					m_numLocalAttributes += geometry.attributes.size();
-
-					const auto firstDataOffset = base::Align<uint32_t>(m_numLocalData, 16);
-					memcpy(m_localData + firstDataOffset, geometry.customData.typedData(), geometry.customData.dataSize());
-					m_numLocalData = firstDataOffset + geometry.customData.dataSize();
+					const auto firstDataOffset = m_gatheredData.size();
+					if (!geometry.customData.empty())
+					{
+						auto writeSize = Align<uint32_t>(16, geometry.customData.dataSize());
+						auto* writePtr = m_gatheredData.allocateUninitialized(writeSize);
+						memcpy(writePtr, geometry.customData.typedData(), geometry.customData.dataSize());
+					}
 
 					const auto* vertices = geometry.vertices.typedData();
 					for (const auto& batch : geometry.batches)
@@ -366,30 +372,17 @@ namespace base
 			if (numVertices <= 2 || !vertices)
 				return;
 
+			// collect masks so we know what needs to be flushed
+			m_usedGlyphPagesMask |= batch.glyphPageMask;
+			if (batch.atlasIndex)
+				m_usedAtlasMask |= 1LLU << batch.atlasIndex;
+
 			// compute target vertex count
 			const auto targetVertexCount = CalcFlattenedVertexCount(numVertices, batch.packing);
-
-			// should we flush? we have to do it only if the renderer or active atlas changes
-			// NOTE: we don't have to flush on fonts
-			{
-				bool shouldFlush = false;
-
-				auto minNeededBatches = 1 + (numVertices / MAX_LOCAL_VERTICES);
-				if (m_numLocalBatches + minNeededBatches >= MAX_LOCAL_BATCHES)
-					shouldFlush = true;
-				if (m_numLocalVertices + targetVertexCount >= MAX_LOCAL_VERTICES)
-					shouldFlush = true;
-
-				if (shouldFlush)
-				{
-					flush();
-
-					DEBUG_CHECK_RETURN_EX(targetVertexCount <= MAX_LOCAL_VERTICES, "Geometry to big to put in canvas");
-				}
-			}
+			DEBUG_CHECK_RETURN_EX(targetVertexCount <= MAX_LOCAL_VERTICES, "To many vertices in one batch");
 
 			// reader and writer pointers
-			auto* writePtr = m_localVertices + m_numLocalVertices;
+			auto* writePtr = m_tempVertices;
 			const auto* writeEndPtr = writePtr + targetVertexCount;
 			const auto* readPtr = vertices;
 			const auto* readEndPtr = vertices + numVertices;
@@ -488,41 +481,25 @@ namespace base
 			ASSERT(writePtr == writeEndPtr);
 
 			// place batch
-			auto& outBatch = m_localBatches[m_numLocalBatches++];
+			auto& outBatch = m_gatheredBatches.emplaceBack();
 			outBatch.type = batch.type;
 			outBatch.atlasIndex = batch.atlasIndex;
 			outBatch.rendererIndex = batch.rendererIndex;
 			outBatch.op = batch.op;
-			outBatch.vertexOffset = m_numLocalVertices;
+			outBatch.vertexOffset = m_gatheredVertices.size();
 			outBatch.vertexCount = targetVertexCount;
 			outBatch.renderDataOffset = firstDataOffset + batch.renderDataOffset;
 			outBatch.renderDataSize = batch.renderDataSize;
-			m_numLocalVertices += targetVertexCount;			
-		}
 
-		void Canvas::flush()
-		{
-			PC_SCOPE_LVL1(CanvasFlush);
-
-			if (m_numLocalBatches && m_numLocalVertices)
-			{
-				flushInternal(m_localVertices, m_numLocalVertices, 
-					m_localAttributes, m_numLocalAttributes,
-					m_localData, m_numLocalData,
-					m_localBatches, m_numLocalBatches);
-
-				m_numLocalBatches = 0;
-				m_numLocalAttributes = 0;
-				m_numLocalVertices = 0;
-				m_numLocalData = 0;
-			}
-		}
+			// push vertices as well
+			m_gatheredVertices.writeLarge(m_tempVertices, sizeof(Vertex)* targetVertexCount);
+		}		
 
         //---
 
         void Canvas::quad(const Placement& placement, const QuadSetup& setup)
         {
-			base::canvas::Vertex v[4];
+			canvas::Vertex v[4];
 			v[0].pos.x = (int)std::round(setup.x0);
 			v[0].pos.y = (int)std::round(setup.y0);
 			v[1].pos.x = (int)std::round(setup.x1);
@@ -532,7 +509,9 @@ namespace base
 			v[3].pos.x = (int)std::round(setup.x0);
 			v[3].pos.y = (int)std::round(setup.y1);
 
-			const auto* image = (setup.image && m_storage) ? m_storage->findRenderDataForAtlasEntry(setup.image) : nullptr;
+			static const auto* service = GetService<CanvasService>();
+
+			const auto* image = setup.image ? service->findRenderDataForAtlasEntry(setup.image) : nullptr;
 			if (image)
 			{ 
 				v[0].uv.x = (setup.u0 * image->uvScale.x) + image->uvOffset.x;

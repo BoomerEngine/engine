@@ -34,7 +34,7 @@ namespace rendering
             {
 				base::canvas::Geometry g;
 				{
-					base::canvas::GeometryBuilder builder(m_storage, g);
+					base::canvas::GeometryBuilder builder(g);
 					builder.antialiasing(true);
 
 					const float strokeSizes[] = { 1.0f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 15.0f, 20.0f };

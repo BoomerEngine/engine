@@ -197,6 +197,7 @@ namespace rendering
             FrameBuffer frameBuffer;
 			ObjectID passLayoutId;
 			uint8_t viewportCount = 1;
+			base::Rect renderArea;
             bool hasResourceTransitions = false; // set if we have any layout transition while in this pass
         };
 
@@ -214,6 +215,12 @@ namespace rendering
 			uint16_t sourceSlice = 0;
 			uint16_t destSlice = 0;
         };
+
+		RENDER_DECLARE_OPCODE_DATA(ClearFrameBuffer)
+		{
+			FrameBuffer frameBuffer;
+			base::Rect customArea;
+		};
 
         RENDER_DECLARE_OPCODE_DATA(ClearPassRenderTarget)
         {

@@ -11,9 +11,19 @@
 
 //--
 
+sampler BlitSampler
+{
+	MinFilter=Linear,
+	MagFilter=Linear,
+	MipFilter=None,
+	AddressU=Clamp,
+	AddressV=Clamp,
+	AddressW=Clamp,
+}
+
 descriptor CanvasRenderingPanelIntegrationParams
 {
-	Texture2D PreviewTexture;
+	attribute(sampler=BlitSampler) Texture2D PreviewTexture;
 }
 
 export shader CanvasVS; // use standard shader

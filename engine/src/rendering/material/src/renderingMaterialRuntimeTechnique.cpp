@@ -30,6 +30,9 @@ namespace rendering
     RTTI_PROPERTY(depthWrite);
     RTTI_END_TYPE();
 
+	MaterialTechniqueRenderStates::MaterialTechniqueRenderStates()
+	{}
+
     ///---
 
     static MaterialCompiledTechnique theEmptyTechnique;
@@ -41,24 +44,28 @@ namespace rendering
 
     ///---
 
+	static std::atomic<uint32_t> GMaterialTechniqueID = 1;
+
     MaterialTechnique::MaterialTechnique(const MaterialCompilationSetup& setup)
         : m_setup(setup)
-    {}
+    {
+		m_id = GMaterialTechniqueID++;
+	}
 
     MaterialTechnique::~MaterialTechnique()
     {
-        if (auto* expiredState = m_state.exchange(nullptr))
-            m_expiredStates.pushBack(expiredState);
+        if (auto* expiredState = m_data.exchange(nullptr))
+            m_expiredData.pushBack(expiredState);
 
-        m_expiredStates.clearPtr();
+        m_expiredData.clearPtr();
     }
 
     void MaterialTechnique::pushData(MaterialCompiledTechnique* newState)
     {
         if (newState)
         {
-            if (auto* expiredState = m_state.exchange(newState))
-                m_expiredStates.pushBack(expiredState);
+            if (auto* expiredState = m_data.exchange(newState))
+				m_expiredData.pushBack(expiredState);
         }
     }
 

@@ -8,13 +8,13 @@
 
 #include "build.h"
 #include "renderingFrameRenderer.h"
-#include "renderingFrameView.h"
 
 namespace rendering
 {
     namespace scene
     {
 
+#if 0
         //--
 
         class RENDERING_SCENE_API FrameView_Selection : public FrameView
@@ -34,6 +34,7 @@ namespace rendering
         };
 
         //--
+#endif
 
     } // scene
 } // rendering

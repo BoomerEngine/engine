@@ -13,6 +13,8 @@
 #include "streamOpcodeReader.h"
 #include "rttiDataView.h"
 #include "dataView.h"
+
+#include "base/containers/include/bitUtils.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/xml/include/xmlWrappers.h"
 

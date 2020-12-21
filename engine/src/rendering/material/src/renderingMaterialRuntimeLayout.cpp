@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingMaterialRuntimeLayout.h"
-#include "rendering/device/include/renderingConstantsView.h"
 
 namespace rendering
 {
@@ -25,28 +24,27 @@ namespace rendering
 
     ///---
 
-    MaterialDataLayout::MaterialDataLayout(MaterialDataLayoutID id, uint64_t key, base::Array<MaterialDataLayoutEntry>&& entries)
+    MaterialDataLayout::MaterialDataLayout(MaterialDataLayoutID id, base::Array<MaterialDataLayoutEntry>&& entries)
         : m_entries(std::move(entries))
         , m_id(id)
     {
-        // name descriptor based on the layout ID
-        m_descriptorName = base::StringID(base::TempString("MaterialData{}", Hex(key)));
-
-        buildDescriptorLayout();
+		BuildDescriptorLayout(m_entries, m_discreteDataLayout);
+		BuildBindlessLayout(m_entries, m_bindlessDataLayout);
     }
 
-    void MaterialDataLayout::buildDescriptorLayout()
-    {
-        // reset
-        m_descriptor.constantDataSize = 0;
-        m_descriptor.descriptorSize = 0;
-        m_descriptor.constantBufferEntries.reset();
-        m_descriptor.resourceEntries.reset();
+	void MaterialDataLayout::BuildDescriptorLayout(const base::Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutDescriptor& outLayout)
+	{
+		outLayout.constantDataSize = 0;
+		outLayout.descriptorSize = 0;
+		outLayout.constantBufferEntries.reset();
+		outLayout.resourceEntries.reset();
 
-        // extract constant buffer entries
-        for (const auto& entry : m_entries)
+		base::StringBuilder txt;
+
+		base::InplaceArray<DeviceObjectViewType, 20> resourceTypes;
+        for (const auto& entry : entries)
         {
-            const auto remainderLeftInVector = 16 - (m_descriptor.constantDataSize % 16);
+            const auto remainderLeftInVector = 16 - (outLayout.constantDataSize % 16);
 
             uint32_t dataSize = 0;
             uint32_t dataAlign = 4;
@@ -82,6 +80,13 @@ namespace rendering
 
                 case MaterialDataLayoutParameterType::Texture2D:
                 {
+					txt << "T";
+					auto& resourceEntry = outLayout.resourceEntries.emplaceBack();
+					resourceEntry.name = entry.name;
+					resourceEntry.type = entry.type;
+					resourceEntry.viewType = ImageViewType::View2D;
+
+					resourceTypes.pushBack(DeviceObjectViewType::SampledImage);
                     break;
                 }
             }
@@ -89,52 +94,100 @@ namespace rendering
             // store
             if (dataSize != 0)
             {
-                auto& descEntry = m_descriptor.constantBufferEntries.emplaceBack();
+                auto& descEntry = outLayout.constantBufferEntries.emplaceBack();
                 descEntry.name = entry.name;
                 descEntry.type = entry.type;
                 descEntry.dataSize = dataSize;
-                descEntry.dataOffset = base::Align(m_descriptor.constantDataSize, dataAlign);
-                m_descriptor.constantDataSize = descEntry.dataOffset + descEntry.dataSize;
+                descEntry.dataOffset = base::Align(outLayout.constantDataSize, dataAlign);
+				outLayout.constantDataSize = descEntry.dataOffset + descEntry.dataSize;
             }
         }
-
-        // ordered list of view types (for descriptor)
-        base::InplaceArray<ObjectViewType, 20> layoutViewTypes;
 
         // if we have constants leave space for constant buffer
-        if (m_descriptor.constantDataSize > 0)
-        {
-            m_descriptor.descriptorSize += sizeof(ConstantsView);
-            layoutViewTypes.pushBack(ObjectViewType::Constants);
-        }
+		uint32_t descriptorEntryIndex = 0;
+		if (outLayout.constantDataSize > 0)
+		{
+			txt << "C";
+			resourceTypes.insert(0, DeviceObjectViewType::ConstantBuffer);
+			descriptorEntryIndex = 1;
+		}
 
-        // pack resource entries
-        for (const auto& entry : m_entries)
-        {
-            switch (entry.type)
-            {
-                case MaterialDataLayoutParameterType::Texture2D:
-                {
-                    auto& resourceEntry = m_descriptor.resourceEntries.emplaceBack();
-                    resourceEntry.descriptorDataOffset = base::Align<uint32_t>(m_descriptor.descriptorSize, 4);
-                    resourceEntry.name = entry.name;
-                    resourceEntry.type = entry.type;
-                    resourceEntry.viewType = ImageViewType::View2D;
-
-                    m_descriptor.descriptorSize = resourceEntry.descriptorDataOffset + sizeof(ImageView);
-                    layoutViewTypes.pushBack(ObjectViewType::Image);
-                }
-            }
-        }
+		// assign descriptor entries
+		for (auto& entry : outLayout.resourceEntries)
+			entry.descriptorEntryIndex = descriptorEntryIndex++;
 
         // build descriptor layout
-        m_descriptor.layoutId = ParametersLayoutID::FromObjectTypes(layoutViewTypes.typedData(), layoutViewTypes.size());
+		if (!resourceTypes.empty())
+		{
+			outLayout.descriptorName = base::StringID(base::TempString("MaterialData{}", txt));
+			outLayout.descriptorID = DescriptorID::FromTypes(resourceTypes.typedData(), resourceTypes.size());
+		}
     }
 
-    void MaterialDataLayout::print(const base::IFormatStream& f) const
-    {
-        // TODO
-    }
+	void MaterialDataLayout::BuildBindlessLayout(const base::Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutBindless& outLayout)
+	{
+		outLayout.constantDataSize = 0;
+		outLayout.constantBufferEntries.reset();
+
+		base::StringBuilder txt;
+
+		base::InplaceArray<DeviceObjectViewType, 20> resourceTypes;
+		for (const auto& entry : entries)
+		{
+			const auto remainderLeftInVector = 16 - (outLayout.constantDataSize % 16);
+
+			uint32_t dataSize = 0;
+			uint32_t dataAlign = 4;
+			switch (entry.type)
+			{
+				case MaterialDataLayoutParameterType::Float:
+				{
+					dataSize = 4;
+					break;
+				}
+
+				case MaterialDataLayoutParameterType::Vector2:
+				{
+					if (remainderLeftInVector < 8) dataAlign = 16;
+					dataSize = 8;
+					break;
+				}
+
+				case MaterialDataLayoutParameterType::Vector3:
+				{
+					if (remainderLeftInVector < 12) dataAlign = 16;
+					dataSize = 12;
+					break;
+				}
+
+				case MaterialDataLayoutParameterType::Color:
+				case MaterialDataLayoutParameterType::Vector4:
+				{
+					dataAlign = 16;
+					dataSize = 16;
+					break;
+				}
+
+				case MaterialDataLayoutParameterType::Texture2D:
+				{
+					dataAlign = 4;
+					dataSize = 4;
+					break;
+				}
+			}
+
+			// store
+			if (dataSize != 0)
+			{
+				auto& descEntry = outLayout.constantBufferEntries.emplaceBack();
+				descEntry.name = entry.name;
+				descEntry.type = entry.type;
+				descEntry.dataSize = dataSize;
+				descEntry.dataOffset = base::Align(outLayout.constantDataSize, dataAlign);
+				outLayout.constantDataSize = descEntry.dataOffset + descEntry.dataSize;
+			}
+		}
+	}
 
     ///---
 

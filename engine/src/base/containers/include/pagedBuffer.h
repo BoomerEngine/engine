@@ -99,7 +99,6 @@ namespace base
         uint32_t m_alignment = 0;
 
         uint64_t m_numBytes = 0; // total element count so far
-        int m_bytesLeftOnPage = 0; // elements left to write on current page, all other pages are full
 
         uint8_t* m_writeStartPtr = nullptr; // start of page
 

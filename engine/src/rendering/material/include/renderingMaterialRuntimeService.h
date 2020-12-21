@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingBufferView.h"
-#include "rendering/device/include/renderingImageView.h"
 #include "rendering/device/include/renderingManagedBuffer.h"
 #include "rendering/device/include/renderingManagedBufferWithAllocator.h"
 #include "base/app/include/localService.h"
@@ -55,7 +53,7 @@ namespace rendering
 
         /// register material data layout, returns unique ID
         /// NOTE: layouts are never unregistered (we don't have that many)
-        const MaterialDataLayout* registerDataLayout(base::Array<MaterialDataLayoutEntry>&& entries);
+        const MaterialDataLayout* registerDataLayout( base::Array<MaterialDataLayoutEntry>&& entries);
 
         //--
 
@@ -81,6 +79,11 @@ namespace rendering
         void unregisterMaterialProxyChangeListener(IMaterialDataProxyListener* listener);
 
         //--
+
+		/// query texture's bindless index, NOTE: texture must be registered first
+		MaterialBindlessTextureID queryBindlessTextureId(const base::res::IResource& res) const;
+
+		//--
 
     private:
         virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;

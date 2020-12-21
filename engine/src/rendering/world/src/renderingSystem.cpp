@@ -11,6 +11,7 @@
 #include "renderingSystem.h"
 #include "rendering/scene/include/renderingScene.h"
 #include "rendering/scene/include/renderingFrameParams.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace rendering
 {
@@ -28,11 +29,9 @@ namespace rendering
 
     bool RenderingSystem::handleInitialize(base::world::World& scene)
     {
-        rendering::scene::SceneSetupInfo setup;
-        setup.name = "World";
-        setup.type = rendering::scene::SceneType::Game; // TODO!
+		const auto sceneType = rendering::scene::SceneType::Game; // TODO!
+		m_scene = base::RefNew<rendering::scene::Scene>(sceneType);
 
-        m_scene = base::RefNew<rendering::scene::Scene>(setup);
         return true;
     }
 
@@ -43,8 +42,7 @@ namespace rendering
 
     void RenderingSystem::handleRendering(rendering::scene::FrameParams& info)
     {
-        auto& entry = info.scenes.scenesToDraw.emplaceBack();
-        entry.scenePtr = m_scene;
+        info.scenes.mainScenePtr = m_scene;
     }
 
     ///---

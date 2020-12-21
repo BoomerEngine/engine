@@ -22,6 +22,7 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiWindowPopup.h"
+#include "base/canvas/include/canvasAtlas.h"
 
 namespace rendering
 {
@@ -34,6 +35,8 @@ namespace rendering
         {
             customMinSize(300, 300);
             layoutMode(ui::LayoutMode::Vertical);
+
+			m_honklerAtlas = base::RefNew<base::canvas::DynamicAtlas>(2048, 1);
             
             static bool canEdit = true;
 
@@ -350,8 +353,9 @@ namespace rendering
 
                     if (i == 1)
                     {
-                        auto data = base::LoadResource<base::image::Image>("/editor/interface/images/honkler.png");
-                        auto image = elem->createChild<ui::Image>(data);
+                        auto data = base::LoadResource<base::image::Image>("/editor/interface/images/honkler.png").acquire();
+						auto entry = m_honklerAtlas->registerImage(data);
+                        auto image = elem->createChild<ui::Image>(entry);
                     }
                     else if (i == 2)
                     {

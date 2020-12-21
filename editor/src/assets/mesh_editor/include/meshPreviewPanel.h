@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/ui/include/renderingFullScenePanel.h"
+#include "rendering/ui_viewport/include/renderingFullScenePanel.h"
 
 namespace ed
 {
@@ -71,7 +71,7 @@ namespace ed
         MeshPreviewPanelSettings m_previewSettings;
         base::HashMap<base::StringID, rendering::MaterialPtr> m_previewMaterials;
 
-        base::Array<rendering::scene::ProxyHandle> m_proxies;
+        base::Array<rendering::scene::ObjectProxyPtr> m_proxies;
 
         base::Box m_lastBounds;
 

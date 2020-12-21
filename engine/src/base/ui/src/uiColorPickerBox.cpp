@@ -135,7 +135,7 @@ namespace ui
 		const float y = size.y * m_value.z;
 		const float r = size.y * 0.025f;
 
-		base::canvas::GeometryBuilder builder(nullptr, m_cursorGeometry);
+		base::canvas::GeometryBuilder builder(m_cursorGeometry);
 
 		base::Vector3 circleColor;
 		HSVtoRGB(base::Vector3(m_value.x, m_value.y, m_value.z), circleColor);
@@ -376,7 +376,7 @@ namespace ui
 		const float y = size.y / 2.0f;
 		const float r = size.y * 0.2f;
 
-		base::canvas::GeometryBuilder builder(nullptr, m_cursorGeometry);
+		base::canvas::GeometryBuilder builder(m_cursorGeometry);
 
 		base::Vector3 circleColor;
 		HSVtoRGB(base::Vector3(m_hue, 1.0f, 1.0f), circleColor);

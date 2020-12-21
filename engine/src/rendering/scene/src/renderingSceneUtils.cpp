@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "renderingSceneUtils.h"
+#include "renderingFrameCamera.h"
 
 namespace rendering
 {
@@ -16,7 +17,7 @@ namespace rendering
 
         //---
 
-        void CalcGPUCameraInfo(GPUCameraInfo& outInfo, const Camera& camera, const Camera* prevCamera /*= nullptr*/)
+        void CalcGPUSingleCamera(GPUCameraInfo& outInfo, const Camera& camera, const Camera* prevCamera /*= nullptr*/)
         {
             // get the camera for given layer
             outInfo.CameraForward = camera.directionForward();
@@ -78,23 +79,7 @@ namespace rendering
 
             }
         }
-
-        //---
-
-        void BindSingleCamera(command::CommandWriter& cmd, const Camera& camera, const Camera* prevFrameCamera /*= nullptr*/)
-        {
-            struct
-            {
-                ConstantsView params;
-            }  desc;
-
-            GPUCameraInfo data;
-            CalcGPUCameraInfo(data, camera, prevFrameCamera);
-
-            desc.params = cmd.opUploadConstants(data);
-            cmd.opBindParametersInline("CameraParams"_id, desc);
-        }
-
+        
         //---
 
     } // scene

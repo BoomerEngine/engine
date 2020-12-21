@@ -12,15 +12,6 @@
 
 namespace rendering
 {
-    ///---
-
-    RTTI_BEGIN_TYPE_ENUM(MeshVertexFormat);
-        RTTI_ENUM_OPTION(PositionOnly);
-        RTTI_ENUM_OPTION(Static);
-        RTTI_ENUM_OPTION(StaticEx);
-        RTTI_ENUM_OPTION(Skinned4);
-        RTTI_ENUM_OPTION(Skinned4Ex);
-    RTTI_END_TYPE();
 
     ///---
 

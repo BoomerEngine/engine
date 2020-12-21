@@ -8,9 +8,6 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingImageView.h"
-#include "rendering/device/include/renderingParametersView.h"
-
 namespace rendering
 {
     //---
@@ -19,6 +16,8 @@ namespace rendering
     struct RENDERING_MATERIAL_API MaterialTechniqueRenderStates
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialTechniqueRenderStates);
+
+		MaterialTechniqueRenderStates();
 
         MaterialBlendMode blendMode = MaterialBlendMode::Opaque;
         bool alphaToCoverage = false;
@@ -37,7 +36,7 @@ namespace rendering
         RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE)
 
     public:
-        ShaderLibraryPtr shader;
+		ShaderDataPtr shader;
         MaterialTechniqueRenderStates renderStates;
 
         const MaterialDataLayout* dataLayout = nullptr;
@@ -57,17 +56,14 @@ namespace rendering
         MaterialTechnique(const MaterialCompilationSetup& setup);
         virtual ~MaterialTechnique();
 
+		/// unique technique ID
+		INLINE uint32_t id() const { return m_id; }
+
         /// get the setup used to create this technique
         INLINE const MaterialCompilationSetup& setup() const { return m_setup; }
 
-        //--
-
-        // get the render states for this technique
-        INLINE const MaterialCompiledTechnique& state() const
-        {
-            auto* data = m_state.load();
-            return data ? *data : MaterialCompiledTechnique::EMPTY();
-        }
+        // get the PSO for the material technique
+		INLINE const MaterialCompiledTechnique* data() const { return m_data.load(); }
 
         //--
 
@@ -77,12 +73,12 @@ namespace rendering
         //--
 
     private:
-        std::atomic<MaterialCompiledTechnique*> m_state = nullptr;
-        //mutable std::atomic<uint32_t> m_used = 0;
+		MaterialCompilationSetup m_setup;
 
-        MaterialCompilationSetup m_setup;
+		std::atomic<MaterialCompiledTechnique*> m_data = nullptr;
+		base::Array<MaterialCompiledTechnique*> m_expiredData;
 
-        base::Array<MaterialCompiledTechnique*> m_expiredStates;
+		uint32_t m_id = 0;
     };
 
     //---

@@ -75,6 +75,41 @@ namespace rendering
 		return base::RefNew<FenceCompletionCallback>(fence, count);
 	}
 
+	//--
+
+	RTTI_BEGIN_TYPE_ENUM(DeviceGeometryTier);
+		RTTI_ENUM_OPTION(Tier0_Legacy);
+		RTTI_ENUM_OPTION(Tier1_LowEnd);
+		RTTI_ENUM_OPTION(Tier2_Meshlets);
+		RTTI_ENUM_OPTION(Tier3_BindlessMeshlets);
+		RTTI_ENUM_OPTION(Tier4_MeshShaders);
+	RTTI_END_TYPE();
+
+	//--
+
+	RTTI_BEGIN_TYPE_ENUM(DeviceTransparencyTier);
+	RTTI_ENUM_OPTION(Tier0_Legacy);
+	RTTI_ENUM_OPTION(Tier1_MRTBlending);
+	RTTI_ENUM_OPTION(Tier2_ROV);
+	RTTI_END_TYPE();
+
+	//--
+
+	RTTI_BEGIN_TYPE_ENUM(DeviceRaytracingTier);
+		RTTI_ENUM_OPTION(Tier0_NoSupport);
+		RTTI_ENUM_OPTION(Tier1_Basic);
+		RTTI_ENUM_OPTION(Tier2_Full);
+	RTTI_END_TYPE();
+
+	//--
+
+	RTTI_BEGIN_TYPE_CLASS(DeviceCaps);
+		RTTI_PROPERTY(geometry);
+		RTTI_PROPERTY(transparency);
+		RTTI_PROPERTY(raytracing);
+		RTTI_PROPERTY(vramSize);
+	RTTI_END_TYPE();
+
     //--
 
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDevice);

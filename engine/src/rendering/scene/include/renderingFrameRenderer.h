@@ -9,9 +9,7 @@
 #pragma once
 
 #include "renderingFrameParams.h"
-#include "renderingSceneCulling.h"
 
-#include "rendering/device/include/renderingParametersView.h"
 #include "rendering/scene/include/renderingFrameCamera.h"
 #include "rendering/device/include/renderingFramebuffer.h"
 
@@ -29,7 +27,39 @@ namespace rendering
         ///---
 
         struct FragmentRenderContext;
-        class FrameView;
+		struct FrameCompositionTarget;
+		class FrameResources;
+
+        ///---
+
+        struct FrameViewRecorder
+        {
+            FrameViewRecorder(FrameViewRecorder* parentView);
+
+            void finishRendering(); // waits for all posted fences
+            void postFence(base::fibers::WaitCounter fence, bool localFence=false);
+
+        private:
+            FrameViewRecorder* m_parentView = nullptr;
+
+            base::SpinLock m_fenceListLock;
+            base::Array<base::fibers::WaitCounter> m_fences;
+        };
+
+		///---
+
+		class FrameHelperDebug;
+		class FrameHelperCompose;
+
+		class FrameHelper : public base::NoCopy
+		{
+		public:
+			FrameHelper(IDevice* dev);
+			~FrameHelper();
+
+			const FrameHelperDebug* debug = nullptr;
+			const FrameHelperCompose* compose = nullptr;
+		};
 
         ///---
 
@@ -37,7 +67,7 @@ namespace rendering
         class RENDERING_SCENE_API FrameRenderer : public base::NoCopy
         {
         public:
-            FrameRenderer(const FrameParams& frame, const FrameSurfaceCache& surfaces);
+            FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers);
             ~FrameRenderer();
 
             //--
@@ -46,13 +76,13 @@ namespace rendering
 
             INLINE const FrameParams& frame() const { return m_frame; }
 
-            INLINE const FrameSurfaceCache& surfaces() const { return m_surfaces; }
+			INLINE const FrameCompositionTarget& target() const { return m_target; }
+
+            INLINE const FrameResources& resources() const { return m_resources; }
+			INLINE const FrameHelper& helpers() const { return m_helpers; }
 
             INLINE const FrameStats& frameStats() const { return m_frameStats; } // frame only stats
             INLINE const SceneStats& scenesStats() const { return m_mergedSceneStats; } // merged from all scenes
-
-            INLINE uint32_t targetWidth() const { return m_frame.resolution.finalCompositionWidth; }
-            INLINE uint32_t targetHeight() const { return m_frame.resolution.finalCompositionHeight; }
 
             INLINE uint32_t width() const { return m_frame.resolution.width; }
             INLINE uint32_t height() const { return m_frame.resolution.height; }
@@ -68,29 +98,23 @@ namespace rendering
 
             //--
 
+
+            void bindFrameParameters(command::CommandWriter& cmd) const;
+
         private:
             bool m_msaa = false;
 
             base::mem::LinearAllocator m_allocator;
 
             const FrameParams& m_frame;
-            const FrameSurfaceCache& m_surfaces;
-            
-            struct SceneData
-            {
-                ParametersView params;
-                SceneStats stats;
-                Scene* scene = nullptr; // TODO: should be const
-            };
-
-            base::InplaceArray<SceneData, 10> m_scenes;
+			const FrameCompositionTarget& m_target;
+			const FrameResources& m_resources;
+			const FrameHelper& m_helpers;
 
             FrameStats m_frameStats;
             SceneStats m_mergedSceneStats;
-            
-            //--
 
-            friend class FrameView;
+            //--
         };
 
         ///---

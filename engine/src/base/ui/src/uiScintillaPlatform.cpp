@@ -135,8 +135,8 @@ namespace Scintilla
         return static_cast<const FontInfo*>(f.GetID());
     }
 
-	SurfaceImpl::Buffer::Buffer(const base::canvas::IStorage* storage)
-		: builder(storage, data)
+	SurfaceImpl::Buffer::Buffer()
+		: builder(data)
 	{}
 
 	void SurfaceImpl::Buffer::reset()
@@ -147,7 +147,7 @@ namespace Scintilla
 
     //----------------- SurfaceImpl --------------------------------------------------------------------
 
-    SurfaceImpl::SurfaceImpl(const base::canvas::IStorage* storage)
+    SurfaceImpl::SurfaceImpl()
         : initialized(false)
         , unicodeMode(true)
         , collected(true)
@@ -156,8 +156,8 @@ namespace Scintilla
         , x(0)
         , y(0)
 	{
-		m_displayBuffer = new Buffer(storage);
-		m_buildBuffer = new Buffer(storage);
+		m_displayBuffer = new Buffer();
+		m_buildBuffer = new Buffer();
 
         Release();
     }
@@ -591,7 +591,7 @@ namespace Scintilla
 
     Surface *Surface::Allocate(int)
     {
-        return new SurfaceImpl(nullptr);
+        return new SurfaceImpl();
     }
 
     //----------------- Window -------------------------------------------------------------------------

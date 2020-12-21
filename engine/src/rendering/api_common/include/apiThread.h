@@ -51,7 +51,7 @@ namespace rendering
 			//--
 
 			// start device thread, initializes API
-			bool startThread(const base::app::CommandLine& cmdLine);
+			bool startThread(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps);
 
 			// finish device thread, closes API
 			void stopThread();
@@ -186,7 +186,7 @@ namespace rendering
 
 			virtual ObjectRegistry* createOptimalObjectRegistry(const base::app::CommandLine& cmdLine);
 
-			virtual bool threadStartup(const base::app::CommandLine& cmdLine); // called on thread to initialize API
+			virtual bool threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps); // called on thread to initialize API
 			virtual void threadFinish(); // called on thread to initialize API
 
 			void threadFunc();

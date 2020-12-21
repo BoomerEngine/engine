@@ -18,145 +18,147 @@ namespace rendering
     {
         //--
 
-        DebugDrawer::DebugDrawer(DebugGeometry& dg, DebugGeometryType type, const base::Matrix& localToWorld /*= base::Matrix::IDENTITY()*/)
+        DebugDrawerBase::DebugDrawerBase(DebugGeometry& dg, const base::Matrix& localToWorld /*= base::Matrix::IDENTITY()*/)
             : m_geometry(dg)
-            , m_geometryType(type)
         {
+			m_baseVertexIndex = m_geometry.vertices().size();
+
             m_localToWorld = localToWorld;
             m_localToWorldSet = (localToWorld != base::Matrix::IDENTITY());
         }
 
-        DebugDrawer::~DebugDrawer()
+        DebugDrawerBase::~DebugDrawerBase()
         {
             flush();
         }
 
-        void DebugDrawer::flush()
+		void DebugDrawerBase::changeGeometryType(DebugGeometryType type)
+		{
+			if (m_batchState.geometryType != type)
+			{
+				flush();
+				m_batchState.geometryType = type;
+			}
+		}
+
+        void DebugDrawerBase::flush()
         {
             if (!m_indicesData.empty())
             {
                 DebugGeometryElementSrc src;
-                src.type = m_geometryType;
-                src.sourceVerticesData = &m_verticesData;
-                src.sourceVerticesDataEx = &m_verticesExData;
-                src.sourceIndicesData = &m_indicesData;
-                m_geometry.pushElement(src);
+                src.type = m_batchState.geometryType;
+				src.firstIndex = m_geometry.vertices().size();
+				src.firstVertex = m_geometry.indices().size();
+                src.sourceVerticesData = m_verticesData.typedData();
+                src.sourceIndicesData = m_indicesData.typedData();
+				src.numIndices = m_indicesData.size();
+				src.numVeritices = m_verticesData.size();
+                m_geometry.push(src);
 
-                m_indicesData.clear();
-                m_verticesData.clear();
-                m_verticesExData.clear();
+                m_indicesData.reset();
+                m_verticesData.reset();
             }
         }
 
-        void DebugDrawer::localToWorld(const base::Matrix& localToWorld)
+        void DebugDrawerBase::localToWorld(const base::Matrix& localToWorld)
         {
             m_localToWorld = localToWorld;
             m_localToWorldSet = (localToWorld != base::Matrix::IDENTITY());
         }
 
-        void DebugDrawer::appendControlVertices(uint32_t count, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride/*= nullptr*/)
+		void DebugDrawerBase::selectable(Selectable selectable)
+		{
+			if (m_batchState.selectable != selectable)
+			{
+				flush();
+				m_batchState.selectable = selectable;
+			}
+		}
+
+		void DebugDrawerBase::image(ImageSampledView* view)
+		{
+			if (m_batchState.image != view)
+			{
+				flush();
+				m_batchState.image = AddRef(view);
+			}
+		}
+
+        uint32_t DebugDrawerBase::appendVertices(const DebugVertex* vertex, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/)
         {
-            DEBUG_CHECK(m_verticesExData.size() == m_verticesData.size());
-
-            while (count > 0)
-            {
-                uint32_t numAdded = 0;
-                auto* writePtr = m_verticesExData.allocateBatch(count, numAdded);
-
-                if (sizeOverride || subSelectionIDOverride)
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i, ++writePtr)
-                    {
-                        writePtr->subSelectionId = subSelectionIDOverride ? *subSelectionIDOverride : m_subSelectionId;
-                        writePtr->size = sizeOverride ? *sizeOverride : m_size;
-                        writePtr->depthBias = m_depthBias;
-                        writePtr->paramsId = m_currentParamsId;
-                    }
-                }
-                else
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i, ++writePtr)
-                    {
-                        writePtr->subSelectionId = m_subSelectionId;
-                        writePtr->size = m_size;
-                        writePtr->depthBias = m_depthBias;
-                        writePtr->paramsId = m_currentParamsId;
-                    }
-                }
-
-                count -= numAdded;
-            }
-        }
-
-        uint32_t DebugDrawer::appendVertices(const DebugVertex* vertex, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/)
-        {
-            // remember the first vertex index
-            auto firstVertex = m_verticesData.size();
-            appendControlVertices(numVertices, sizeOverride, subSelectionIDOverride);
+            const auto firstVertex = m_verticesData.size();
 
             // upload vertices
-            auto readPtr = vertex;
-            uint32_t numLeft = numVertices;
-            while (numLeft > 0)
-            {
-                // allocate space in the buffer
-                uint32_t numAdded = 0;
-                DebugVertex* writePtr = m_verticesData.allocateBatch(numLeft, numAdded);
+            const auto* readPtr = vertex;
+			const auto* readEndPtr = vertex + numVertices;
+			auto* writePtr = m_verticesData.allocateUninitialized(numVertices);
+			if (m_localToWorldSet)
+			{
+				while (readPtr < readEndPtr)
+				{
+					writePtr->p = m_localToWorld.transformPoint(readPtr->p);
+					writePtr->c = readPtr->c;
+					writePtr->t = readPtr->t;
 
-                if (m_localToWorldSet)
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        writePtr->p = m_localToWorld.transformPoint(readPtr->p);
-                        writePtr->c = readPtr->c;
-                        writePtr->t = readPtr->t;
+					++readPtr;
+					++writePtr;
+				}
+			}
+			else
+			{
+				while (readPtr < readEndPtr)
+				{
+					writePtr->p = readPtr->p;
+					writePtr->c = readPtr->c;
+					writePtr->t = readPtr->t;
 
-                        ++readPtr;
-                        ++writePtr;
-                    }
-                }
-                else
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        writePtr->p = readPtr->p;
-                        writePtr->c = readPtr->c;
-                        writePtr->t = readPtr->t;
+					++readPtr;
+					++writePtr;
+				}
+			}
 
-                        ++readPtr;
-                        ++writePtr;
-                    }
-                }
-
-                numLeft -= numAdded;
-            }
-
-            // return the index of the first vertex added so it can be added to the index buffer entries
             return firstVertex;
         }
 
-        uint32_t DebugDrawer::appendVertices(const base::Vector2* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
+        uint32_t DebugDrawerBase::appendVertices(const base::Vector2* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
         {
-            // remember the first vertex index
             auto firstVertex = m_verticesData.size();
-            appendControlVertices(numVertices, sizeOverride, subSelectionIDOverride);
 
-            // color to write
             const auto color = colorOverride ? *colorOverride : m_color;
 
-            // upload vertices
-            auto readPtr = points;
-            uint32_t numLeft = numVertices;
-            while (numLeft > 0)
+			const auto* readPtr = points;
+			const auto* readEndPtr = points + numVertices;
+			auto* writePtr = m_verticesData.allocateUninitialized(numVertices);
+			while (readPtr < readEndPtr)
+			{
+				writePtr->p.x = readPtr->x;
+				writePtr->p.y = readPtr->y;
+				writePtr->p.z = 0.5f;
+				writePtr->c = color;
+				writePtr->t.x = 0.0f;
+				writePtr->t.y = 0.0f;
+
+				++readPtr;
+				++writePtr;
+			}
+
+            return firstVertex;
+        }
+
+        uint32_t DebugDrawerBase::appendVertices(const base::Vector3* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
+        {
+            auto firstVertex = m_verticesData.size();
+
+            const auto color = colorOverride ? *colorOverride : m_color;
+
+			const auto* readPtr = points;
+			const auto* readEndPtr = points + numVertices;
+			auto* writePtr = m_verticesData.allocateUninitialized(numVertices);
+            if (m_localToWorldSet)
             {
-                // allocate space in the buffer
-                uint32_t numAdded = 0;
-                DebugVertex* writePtr = m_verticesData.allocateBatch(numLeft, numAdded);
-                for (uint32_t i = 0; i < numAdded; ++i)
+				while (readPtr < readEndPtr)
                 {
-                    writePtr->p.x = readPtr->x;
-                    writePtr->p.y = readPtr->y;
-                    writePtr->p.z = 0.5f;
+                    writePtr->p = m_localToWorld.transformPoint(*readPtr);
                     writePtr->c = color;
                     writePtr->t.x = 0.0f;
                     writePtr->t.y = 0.0f;
@@ -164,247 +166,141 @@ namespace rendering
                     ++readPtr;
                     ++writePtr;
                 }
+            }
+            else
+            {
+				while (readPtr < readEndPtr)
+                {
+                    writePtr->p = *readPtr;
+                    writePtr->c = color;
+                    writePtr->t.x = 0.0f;
+                    writePtr->t.y = 0.0f;
 
-                numLeft -= numAdded;
+                    ++readPtr;
+                    ++writePtr;
+                }
             }
 
-            // return the index of the first vertex added so it can be added to the index buffer entries
             return firstVertex;
         }
 
-        uint32_t DebugDrawer::appendVertices(const base::Vector3* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
+		uint32_t DebugDrawerBase::appendIndices(const uint32_t* indices, uint32_t numIndices, uint32_t firstVertex)
         {
-            // remember the first vertex index
-            auto firstVertex = m_verticesData.size();
-            appendControlVertices(numVertices, sizeOverride, subSelectionIDOverride);
+			auto firstIndex = m_indicesData.size();
 
-            // color to write
-            const auto color = colorOverride ? *colorOverride : m_color;
+			auto* writePtr = m_indicesData.allocateUninitialized(numIndices);
+			for (uint32_t i = 0; i < numIndices; ++i)
+				*writePtr++ = indices[i] + firstVertex;
 
-            // upload vertices
-            auto readPtr = points;
-            uint32_t numLeft = numVertices;
-            while (numLeft > 0)
-            {
-                // allocate space in the buffer
-                uint32_t numAdded = 0;
-                DebugVertex* writePtr = m_verticesData.allocateBatch(numLeft, numAdded);
-
-                if (m_localToWorldSet)
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        writePtr->p = m_localToWorld.transformPoint(*readPtr);
-                        writePtr->c = color;
-                        writePtr->t.x = 0.0f;
-                        writePtr->t.y = 0.0f;
-
-                        ++readPtr;
-                        ++writePtr;
-                    }
-                }
-                else
-                {
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        writePtr->p = *readPtr;
-                        writePtr->c = color;
-                        writePtr->t.x = 0.0f;
-                        writePtr->t.y = 0.0f;
-
-                        ++readPtr;
-                        ++writePtr;
-                    }
-                }
-
-                numLeft -= numAdded;
-            }
-
-            // return the index of the first vertex added so it can be added to the index buffer entries
-            return firstVertex;
+			return firstIndex;
         }
 
-        void DebugDrawer::appendIndices(const uint32_t* indices, uint32_t numIndices, uint32_t firstVertex)
+		uint32_t DebugDrawerBase::appendIndices(const uint16_t* indices, uint32_t numIndices, uint32_t firstVertex)
         {
-            auto readPtr = indices;
-            uint32_t numLeft = numIndices;
-            while (numLeft > 0)
-            {
-                // allocate space in the buffer
-                uint32_t numAdded = 0;
-                uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-                for (uint32_t i = 0; i < numAdded; ++i)
-                    *writePtr++ = *readPtr++ + firstVertex;
+			auto firstIndex = m_indicesData.size();
 
-                numLeft -= numAdded;
-            }
+			auto* writePtr = m_indicesData.allocateUninitialized(numIndices);
+			for (uint32_t i = 0; i < numIndices; ++i)
+				*writePtr++ = indices[i] + firstVertex;
+
+			return firstIndex;
         }
 
-        void DebugDrawer::appendIndices(const uint16_t* indices, uint32_t numIndices, uint32_t firstVertex)
+		uint32_t DebugDrawerBase::appendAutoPointIndices(uint32_t firstVertex, uint32_t numVertices)
         {
-            auto readPtr = indices;
-            uint32_t numLeft = numIndices;
-            while (numLeft > 0)
-            {
-                // allocate space in the buffer
-                uint32_t numAdded = 0;
-                uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-                for (uint32_t i = 0; i < numAdded; ++i)
-                    *writePtr++ = (uint32_t)*readPtr++ + firstVertex;
+			auto firstIndex = m_indicesData.size();
 
-                numLeft -= numAdded;
-            }
+			auto* writePtr = m_indicesData.allocateUninitialized(numVertices);
+			for (uint32_t i = 0; i < numVertices; ++i)
+				*writePtr++ = firstVertex + i;
+
+			return firstIndex;
         }
 
-        void DebugDrawer::appendAutoPointIndices(uint32_t firstVertex, uint32_t numVertices)
+		uint32_t DebugDrawerBase::appendAutoLineLoopIndices(uint32_t firstVertex, uint32_t numVertices)
         {
-            if (numVertices >= 1)
-            {
-                uint32_t counter = 0;
-                uint32_t numLeft = numVertices;
-                while (numLeft > 0)
-                {
-                    // allocate space in the buffer
-                    uint32_t numAdded = 0;
-                    uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        *writePtr++ = firstVertex + counter;
-                        counter += 1;
-                    }
+			auto firstIndex = m_indicesData.size();
 
-                    numLeft -= numAdded;
-                }
-            }
+			auto* writePtr = m_indicesData.allocateUninitialized(numVertices * 2);
+
+			auto last = firstVertex + numVertices - 1;
+			for (uint32_t i = 0; i < numVertices; ++i)
+			{
+				*writePtr++ = last;
+				*writePtr++ = firstVertex + i;
+				last = firstVertex + i;
+			}
+
+			return firstIndex;
         }
 
-        void DebugDrawer::appendAutoLineLoopIndices(uint32_t firstVertex, uint32_t numVertices)
+		uint32_t DebugDrawerBase::appendAutoLineListIndices(uint32_t firstVertex, uint32_t numVertices)
         {
-            if (numVertices >= 2)
-            {
-                auto numLineVertices = numVertices * 2;
+			auto firstIndex = m_indicesData.size();
 
-                uint32_t counter = 0;
-                uint32_t numLeft = numLineVertices;
-                while (numLeft > 0)
-                {
-                    // allocate space in the buffer
-                    uint32_t numAdded = 0;
-                    uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                    {
-                        if (0 == (counter & 1))
-                            *writePtr++ = firstVertex + (counter / 2);
-                        else
-                            *writePtr++ = firstVertex + (((counter / 2) + 1) % numVertices);
+			auto* writePtr = m_indicesData.allocateUninitialized(numVertices);
+			for (uint32_t i = 0; i < numVertices; ++i)
+				*writePtr++ = firstVertex + i;
 
-                        ++counter;
-                    }
-
-                    numLeft -= numAdded;
-                }
-            }
+			return firstIndex;
         }
 
-        void DebugDrawer::appendAutoLineListIndices(uint32_t firstVertex, uint32_t numVertices)
+		uint32_t DebugDrawerBase::appendAutoTriangleFanIndices(uint32_t firstVertex, uint32_t numVertices, bool swap)
+		{
+			auto firstIndex = m_indicesData.size();
+
+			if (numVertices > 2)
+			{
+				uint32_t numTrianglesVertices = (numVertices - 2) * 3;
+
+				auto* writePtr = m_indicesData.allocateUninitialized(numTrianglesVertices);
+				for (uint32_t i = 2; i < numVertices; ++i)
+				{
+					if (swap)
+					{
+						*writePtr++ = firstVertex + i;
+						*writePtr++ = firstVertex + i - 1;
+						*writePtr++ = firstVertex + 0;
+					}
+					else
+					{
+						*writePtr++ = firstVertex + 0;
+						*writePtr++ = firstVertex + i - 1;
+						*writePtr++ = firstVertex + i;
+					}
+				}
+			}
+
+			return firstIndex;
+		}
+
+        uint32_t DebugDrawerBase::appendAutoTriangleListIndices(uint32_t firstVertex, uint32_t numVertices, bool swap)
         {
-            if (numVertices > 0)
-            {
-                uint32_t counter = 0;
-                uint32_t numLeft = numVertices;
-                while (numLeft > 0)
-                {
-                    // allocate space in the buffer
-                    uint32_t numAdded = 0;
-                    uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-                    for (uint32_t i = 0; i < numAdded; ++i)
-                        *writePtr++ = firstVertex + counter++;
+			auto firstIndex = m_indicesData.size();
 
-                    numLeft -= numAdded;
-                }
-            }
-        }
+			if (numVertices >= 3)
+			{
+				auto numTriangles = (numVertices / 3);
 
-        void DebugDrawer::appendAutoTriangleFanIndices(uint32_t firstVertex, uint32_t numVertices, bool swap)
-        {
-            if (numVertices > 0)
-            {
-                uint32_t numTrianglesVertices = (numVertices - 2) * 3;
+				auto* writePtr = m_indicesData.allocateUninitialized(numTriangles * 3);
+				if (swap)
+				{
+					uint32_t index = firstVertex;
+					for (uint32_t i = 0; i < numTriangles; ++i, index += 3)
+					{
+						*writePtr++ = index + 2;
+						*writePtr++ = index + 1;
+						*writePtr++ = index + 0;
+					}
+				}
+				else
+				{
+					for (uint32_t i = 0; i < numVertices; ++i)
+						*writePtr++ = firstVertex + i;
+				}
+			}
 
-                uint32_t counter = 0;
-                uint32_t numLeft = numTrianglesVertices;
-                while (numLeft > 0)
-                {
-                    // allocate space in the buffer
-                    uint32_t numAdded = 0;
-                    uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-
-                    if (swap)
-                    {
-                        for (uint32_t i = 0; i < numAdded; ++i)
-                        {
-                            switch (counter % 3)
-                            {
-                            case 0: *writePtr++ = firstVertex + 2 + (counter / 3); break;
-                            case 1: *writePtr++ = firstVertex + 1 + (counter / 3); break;
-                            case 2: *writePtr++ = firstVertex; break;
-                            }
-                            ++counter;
-                        }
-                    }
-                    else
-                    {
-                        for (uint32_t i = 0; i < numAdded; ++i)
-                        {
-                            switch (counter % 3)
-                            {
-                            case 0: *writePtr++ = firstVertex; break;
-                            case 1: *writePtr++ = firstVertex + 1 + (counter / 3); break;
-                            case 2: *writePtr++ = firstVertex + 2 + (counter / 3); break;
-                            }
-                            ++counter;
-                        }
-                    }
-
-                    numLeft -= numAdded;
-                }
-            }
-        }
-
-        void DebugDrawer::appendAutoTriangleListIndices(uint32_t firstVertex, uint32_t numVertices, bool swap)
-        {
-            if (numVertices > 0)
-            {
-                uint32_t counter = 0;
-                uint32_t numLeft = numVertices;
-                while (numLeft > 0)
-                {
-                    // allocate space in the buffer
-                    uint32_t numAdded = 0;
-                    uint32_t* writePtr = m_indicesData.allocateBatch(numLeft, numAdded);
-
-                    if (swap)
-                    {
-                        for (uint32_t i = 0; i < numAdded; ++i)
-                        {
-                            switch (counter % 3)
-                            {
-                            case 0: *writePtr++ = firstVertex + (counter / 3) + 2; break;
-                            case 1: *writePtr++ = firstVertex + (counter / 3) + 1; break;
-                            case 2: *writePtr++ = firstVertex + (counter / 3) + 0; break;
-                            }
-                            ++counter;
-                        }
-                    }
-                    else
-                    {
-                        for (uint32_t i = 0; i < numAdded; ++i)
-                            *writePtr++ = firstVertex + counter++;
-                    }
-
-                    numLeft -= numAdded;
-                }
-            }
+			return firstIndex;
         }
 
         //--
@@ -500,7 +396,7 @@ namespace rendering
                 base::InplaceArray<base::Vector3, NumVertices> m_vertices;
                 base::InplaceArray<uint16_t, NumVertices * 2> m_indices;
 
-                void flush(DebugDrawer& dg)
+                void flush(DebugDrawerBase& dg)
                 {
                     if (!m_vertices.empty())
                     {
@@ -548,7 +444,7 @@ namespace rendering
                 base::InplaceArray<base::Vector3, NumVertices> m_vertices;
                 base::InplaceArray<uint16_t, NumVertices*2> m_indices;
 
-                void flush(DebugDrawer& dg)
+                void flush(DebugDrawerBase& dg)
                 {
                     if (!m_vertices.empty())
                     {
@@ -599,67 +495,81 @@ namespace rendering
         
         //--
 
-        DebugLineDrawer::DebugLineDrawer(DebugGeometry& dg, const base::Matrix& localToWorld)
-            : DebugDrawer(dg, DebugGeometryType::Lines, localToWorld)
+        DebugDrawer::DebugDrawer(DebugGeometry& dg, const base::Matrix& localToWorld)
+            : DebugDrawerBase(dg, localToWorld)
         {}
 
-        void DebugLineDrawer::line(const base::Vector3& a, const base::Vector3& b)
+        void DebugDrawer::line(const base::Vector3& a, const base::Vector3& b)
         {
-            base::Vector3 verts[2] = { a,b };
+			changeGeometryType(DebugGeometryType::Lines);
+
+			base::Vector3 verts[2] = { a,b };
             
             auto base = appendVertices(verts, 2);
             appendAutoLineListIndices(base, 2);
         }
 
-        void DebugLineDrawer::lines(const base::Vector2* points, uint32_t numPoints)
+        void DebugDrawer::lines(const base::Vector2* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints & ~1);
                 appendAutoLineListIndices(base, numPoints & ~1);
             }
         }
 
-        void DebugLineDrawer::lines(const base::Vector3* points, uint32_t numPoints)
+        void DebugDrawer::lines(const base::Vector3* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints & ~1);
                 appendAutoLineListIndices(base, numPoints & ~1);
             }
         }
 
-        void DebugLineDrawer::lines(const DebugVertex* points, uint32_t numPoints)
+        void DebugDrawer::lines(const DebugVertex* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints & ~1);
                 appendAutoLineListIndices(base, numPoints & ~1);
             }
         }
 
-        void DebugLineDrawer::loop(const base::Vector2* points, uint32_t numPoints)
+        void DebugDrawer::loop(const base::Vector2* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints);
                 appendAutoLineLoopIndices(base, numPoints);
             }
         }
 
-        void DebugLineDrawer::loop(const base::Vector3* points, uint32_t numPoints)
+        void DebugDrawer::loop(const base::Vector3* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints);
                 appendAutoLineLoopIndices(base, numPoints);
             }
         }
 
-        void DebugLineDrawer::loop(const DebugVertex* points, uint32_t numPoints)
+        void DebugDrawer::loop(const DebugVertex* points, uint32_t numPoints)
         {
             if (numPoints >= 2)
             {
+				changeGeometryType(DebugGeometryType::Lines);
+
                 auto base = appendVertices(points, numPoints);
                 appendAutoLineLoopIndices(base, numPoints);
             }
@@ -708,14 +618,15 @@ namespace rendering
             }
         }
 
-        void DebugLineDrawer::arrow(const base::Vector3& start, const base::Vector3& end)
+        void DebugDrawer::arrow(const base::Vector3& start, const base::Vector3& end)
         {
             base::InplaceArray<DebugVertex, 20> vertices;
             MakeArrow(start, end, m_color, vertices);
+
             lines(vertices.typedData(), vertices.size());
         }
 
-        void DebugLineDrawer::axes(const base::Matrix& additionalTransform, float length /*= 0.5f*/)
+        void DebugDrawer::axes(const base::Matrix& additionalTransform, float length /*= 0.5f*/)
         {
             auto o = additionalTransform.translation();
             auto x = additionalTransform.column(0).xyz().normalized();
@@ -724,7 +635,7 @@ namespace rendering
             axes(o, x, y, z, length);
         }
 
-        void DebugLineDrawer::axes(const base::Vector3& origin, const base::Vector3& x, const base::Vector3& y, const base::Vector3& z, float length /*= 0.5f*/)
+        void DebugDrawer::axes(const base::Vector3& origin, const base::Vector3& x, const base::Vector3& y, const base::Vector3& z, float length /*= 0.5f*/)
         {
             base::InplaceArray<DebugVertex, 64> vertices;
             MakeArrow(origin, origin + x * length, base::Color::RED, vertices);
@@ -733,7 +644,7 @@ namespace rendering
             lines(vertices.typedData(), vertices.size());
         }
 
-        void DebugLineDrawer::brackets(const base::Vector3* corners, float length /*= 0.1f*/)
+        void DebugDrawer::brackets(const base::Vector3* corners, float length /*= 0.1f*/)
         {
             // compute the direction vectors
             auto dirX = corners[1] - corners[0];
@@ -767,40 +678,42 @@ namespace rendering
             lines(vertices.typedData(), vertices.size());
         }
 
-        void DebugLineDrawer::brackets(const base::Box& box, float length /*= 0.1f*/)
+        void DebugDrawer::brackets(const base::Box& box, float length /*= 0.1f*/)
         {
             base::Vector3 corners[8];
             box.corners(corners);
             brackets(corners, length);
         }
 
-        void DebugLineDrawer::box(const base::Vector3* corners)
+        void DebugDrawer::wireBox(const base::Vector3* corners)
         {
+			changeGeometryType(DebugGeometryType::Lines);
+
             auto firstVertex = appendVertices(corners, 8);
             const uint16_t indices[] = { 0,4,1,5,2,6,3,7,0,1,1,3,3,2,2,0,4,5,5,7,7,6,6,4 };
             appendIndices(indices, ARRAY_COUNT(indices), firstVertex);
         }
 
-        void DebugLineDrawer::box(const base::Vector3& boxMin, const base::Vector3& boxMax)
+        void DebugDrawer::wireBox(const base::Vector3& boxMin, const base::Vector3& boxMax)
         {
             base::Vector3 corners[8];
             base::Box(boxMin, boxMax).corners(corners);
-            box(corners);
+			wireBox(corners);
         }
 
-        void DebugLineDrawer::box(const base::Box& drawBox)
+        void DebugDrawer::wireBox(const base::Box& drawBox)
         {
             base::Vector3 corners[8];
             drawBox.corners(corners);
-            box(corners);
+			wireBox(corners);
         }
 
-        void DebugLineDrawer::sphere(const base::Vector3& center, float radius)
+        void DebugDrawer::wireSphere(const base::Vector3& center, float radius)
         {
-            capsule(center, radius, 0.0f);
+            wireCapsule(center, radius, 0.0f);
         }
 
-        void DebugLineDrawer::capsule(const base::Vector3& center, float radius, float halfHeight)
+        void DebugDrawer::wireCapsule(const base::Vector3& center, float radius, float halfHeight)
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -855,7 +768,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugLineDrawer::cylinder(const base::Vector3& center1, const base::Vector3& center2, float radius1, float radius2)
+        void DebugDrawer::wireCylinder(const base::Vector3& center1, const base::Vector3& center2, float radius1, float radius2)
         {
             helper::WireBuilder<1024> tris;
 
@@ -891,7 +804,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugLineDrawer::cone(const base::Vector3& top, const base::Vector3& dir, float radius, float angleDeg)
+        void DebugDrawer::wireCone(const base::Vector3& top, const base::Vector3& dir, float radius, float angleDeg)
         {
             helper::WireBuilder<1024> tris;
 
@@ -927,7 +840,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugLineDrawer::plane(const base::Vector3& pos, const base::Vector3& normal, float size /*= 10.0f*/, int gridSize /*= 10*/)
+        void DebugDrawer::wirePlane(const base::Vector3& pos, const base::Vector3& normal, float size /*= 10.0f*/, int gridSize /*= 10*/)
         {
             auto side = base::Vector3::EX();
             if (normal.largestAxis() == 0)
@@ -958,7 +871,7 @@ namespace rendering
             lines(vertices.typedData(), vertices.size());
         }
 
-        void DebugLineDrawer::frustum(const base::Matrix& frustumMatrix, float farPlaneScale /*= 1.0f*/)
+        void DebugDrawer::wireFrustum(const base::Matrix& frustumMatrix, float farPlaneScale /*= 1.0f*/)
         {
             helper::WireBuilder<256> tris;
 
@@ -989,7 +902,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugLineDrawer::circle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
+        void DebugDrawer::wireCircle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -1043,7 +956,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugLineDrawer::rect(float x, float y, float w, float h)
+        void DebugDrawer::wireRect(float x, float y, float w, float h)
         {
             DebugVertex v[4];
             v[0].pos(x, y).uv(0.0f, 0.0f).color(m_color);
@@ -1055,12 +968,12 @@ namespace rendering
             appendAutoLineLoopIndices(firstVertex, 4);
         }
 
-        void DebugLineDrawer::recti(int x0, int  y0, int  w, int  h)
+        void DebugDrawer::wireRecti(int x0, int  y0, int  w, int  h)
         {
-            rect((float)x0, (float)y0, (float)w, (float)h);
+            wireRect((float)x0, (float)y0, (float)w, (float)h);
         }
 
-        void DebugLineDrawer::bounds(float x0, float y0, float x1, float y1)
+        void DebugDrawer::wireBounds(float x0, float y0, float x1, float y1)
         {
             DebugVertex v[4];
             v[0].pos(x0, y0).uv(0.0f, 0.0f).color(m_color);
@@ -1072,102 +985,98 @@ namespace rendering
             appendAutoLineLoopIndices(firstVertex, 4);
         }
 
-        void DebugLineDrawer::boundsi(int  x0, int  y0, int  x1, int  y1)
+        void DebugDrawer::wireBoundsi(int  x0, int  y0, int  x1, int  y1)
         {
-            bounds((float)x0, (float)y0, (float)x1, (float)y1);
+            wireBounds((float)x0, (float)y0, (float)x1, (float)y1);
         }
 
         //--
 
-        DebugSpriteDrawer::DebugSpriteDrawer(DebugGeometry& dg, const base::Matrix& localToWorld /*= base::Matrix::IDENTITY()*/)
-            : DebugDrawer(dg, DebugGeometryType::Sprite, localToWorld)
-        {}
-
-        void DebugSpriteDrawer::image(const base::image::ImagePtr& image)
+        void DebugDrawer::polygon(const base::Vector2* points, uint32_t numPoints, bool swap)
         {
+			changeGeometryType(DebugGeometryType::Solid);
 
-        }
-
-        void DebugSpriteDrawer::sprite(const base::Vector3& pos)
-        {
-
-        }
-
-        void DebugSpriteDrawer::sprites(const base::Vector3* positions, uint32_t count)
-        {
-
-        }
-
-        //--
-
-        DebugSolidDrawer::DebugSolidDrawer(DebugGeometry& dg, const base::Matrix& localToWorld /*= base::Matrix::IDENTITY()*/)
-            : DebugDrawer(dg, DebugGeometryType::Solid, localToWorld)
-        {}
-
-        void DebugSolidDrawer::polygon(const base::Vector2* points, uint32_t numPoints, bool swap)
-        {
             auto firstVertex = appendVertices(points, numPoints);
             appendAutoTriangleFanIndices(firstVertex, numPoints, swap);
         }
 
-        void DebugSolidDrawer::polygon(const base::Vector3* points, uint32_t numPoints, bool swap)
+        void DebugDrawer::polygon(const base::Vector3* points, uint32_t numPoints, bool swap)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(points, numPoints);
             appendAutoTriangleFanIndices(firstVertex, numPoints, swap);
         }
 
-        void DebugSolidDrawer::polygon(const DebugVertex* points, uint32_t numPoints, bool swap)
+        void DebugDrawer::polygon(const DebugVertex* points, uint32_t numPoints, bool swap)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(points, numPoints);
             appendAutoTriangleFanIndices(firstVertex, numPoints, swap);
         }
 
-        void DebugSolidDrawer::indexedTris(const base::Vector2* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
+        void DebugDrawer::indexedTris(const base::Vector2* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(points, numPoints);
             appendIndices(indices, numIndices, firstVertex);
         }
 
-        void DebugSolidDrawer::indexedTris(const base::Vector3* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
+        void DebugDrawer::indexedTris(const base::Vector3* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(points, numPoints);
             appendIndices(indices, numIndices, firstVertex);
         }
 
-        void DebugSolidDrawer::indexedTris(const DebugVertex* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
+        void DebugDrawer::indexedTris(const DebugVertex* points, uint32_t numPoints, const uint32_t* indices, uint32_t numIndices)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(points, numPoints);
             appendIndices(indices, numIndices, firstVertex);
         }
 
-        void DebugSolidDrawer::box(const base::Vector3* corners)
+        void DebugDrawer::solidBox(const base::Vector3* corners)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(corners, 8);
             const uint16_t indices[] = { 2,1,0,2,3,1, 6,4,5,7,6,5, 4,2,0,6,2,4, 3,5,1,7,5,3, 6,3,2,6,7,3,  1,4,0,5,4,1 };
             appendIndices(indices, ARRAY_COUNT(indices), firstVertex);
         }
 
-        void DebugSolidDrawer::box(const base::Vector3& boxMin, const base::Vector3& boxMax)
+        void DebugDrawer::solidBox(const base::Vector3& boxMin, const base::Vector3& boxMax)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             base::Vector3 corners[8];
             base::Box(boxMin, boxMax).corners(corners);
-            box(corners);
+            solidBox(corners);
         }
 
-        void DebugSolidDrawer::box(const base::Box& drawBox)
+        void DebugDrawer::solidBox(const base::Box& drawBox)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             base::Vector3 corners[8];
             drawBox.corners(corners);
-            box(corners);
+            solidBox(corners);
         }
 
-        void DebugSolidDrawer::sphere(const base::Vector3& center, float radius)
+        void DebugDrawer::solidSphere(const base::Vector3& center, float radius)
         {
-            capsule(center, radius, 0.0f);
+			changeGeometryType(DebugGeometryType::Solid);
+			solidCapsule(center, radius, 0.0f);
         }
 
-        void DebugSolidDrawer::capsule(const base::Vector3& center, float radius, float halfHeight)
+        void DebugDrawer::solidCapsule(const base::Vector3& center, float radius, float halfHeight)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
             auto topCenter = center + base::Vector3(0.0f, 0.0f, halfHeight);
@@ -1221,9 +1130,11 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugSolidDrawer::cylinder(const base::Vector3& center1, const base::Vector3& center2, float radius1, float radius2)
+        void DebugDrawer::solidCylinder(const base::Vector3& center1, const base::Vector3& center2, float radius1, float radius2)
         {
             helper::TriBuilder<1024> tris;
+
+			changeGeometryType(DebugGeometryType::Solid);
 
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -1264,9 +1175,11 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugSolidDrawer::cone(const base::Vector3& top, const base::Vector3& dir, float radius, float angleDeg)
+        void DebugDrawer::solidCone(const base::Vector3& top, const base::Vector3& dir, float radius, float angleDeg)
         {
             helper::TriBuilder<512> tris;
+
+			changeGeometryType(DebugGeometryType::Solid);
 
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -1306,7 +1219,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugSolidDrawer::plane(const base::Vector3& pos, const base::Vector3& normal, float size /*= 10.0f*/, int gridSize /*= 10*/)
+        void DebugDrawer::solidPlane(const base::Vector3& pos, const base::Vector3& normal, float size /*= 10.0f*/, int gridSize /*= 10*/)
         {
             auto side = base::Vector3::EX();
             if (normal.largestAxis() == 0)
@@ -1326,11 +1239,13 @@ namespace rendering
             verts[2].pos(pos + maxX + maxY).uv(1.0f, 1.0f).color(m_color);
             verts[3].pos(pos + minX + maxY).uv(0.0f, 1.0f).color(m_color);
 
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto base = appendVertices(verts, 4);
             appendAutoTriangleFanIndices(base, 4);
         }
 
-        void DebugSolidDrawer::frustum(const base::Matrix& frustumMatrix, float farPlaneScale /*= 1.0f*/)
+        void DebugDrawer::solidFrustum(const base::Matrix& frustumMatrix, float farPlaneScale /*= 1.0f*/)
         {
             helper::TriBuilder<256> tris;
 
@@ -1355,7 +1270,7 @@ namespace rendering
             appendIndices(indices, ARRAY_COUNT(indices), base);
         }
 
-        void DebugSolidDrawer::circle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
+        void DebugDrawer::solidCircle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -1409,7 +1324,7 @@ namespace rendering
             tris.flush(*this);
         }
 
-        void DebugSolidDrawer::rect(float x, float y, float w, float h)
+        void DebugDrawer::solidRect(float x, float y, float w, float h)
         {
             DebugVertex v[4];
             v[0].pos(x, y).uv(0.0f, 0.0f).color(m_color);
@@ -1417,16 +1332,18 @@ namespace rendering
             v[2].pos(x + w, y + h).uv(1.0f, 1.0f).color(m_color);
             v[3].pos(x, y + h).uv(0.0f, 1.0f).color(m_color);
 
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(v, 4);
             appendAutoTriangleFanIndices(firstVertex, 4);
         }
 
-        void DebugSolidDrawer::recti(int x0, int  y0, int  w, int  h)
+        void DebugDrawer::solidRecti(int x0, int  y0, int  w, int  h)
         {
-            rect((float)x0, (float)y0, (float)w, (float)h);
+            solidRect((float)x0, (float)y0, (float)w, (float)h);
         }
 
-        void DebugSolidDrawer::bounds(float x0, float y0, float x1, float y1)
+        void DebugDrawer::solidBounds(float x0, float y0, float x1, float y1)
         {
             DebugVertex v[4];
             v[0].pos(x0, y0).uv(0.0f, 0.0f).color(m_color);
@@ -1434,13 +1351,15 @@ namespace rendering
             v[2].pos(x1, y1).uv(1.0f, 1.0f).color(m_color);
             v[3].pos(x0, y1).uv(0.0f, 1.0f).color(m_color);
 
+			changeGeometryType(DebugGeometryType::Solid);
+
             auto firstVertex = appendVertices(v, 4);
             appendAutoTriangleFanIndices(firstVertex, 4);
         }
 
-        void DebugSolidDrawer::boundsi(int  x0, int  y0, int  x1, int  y1)
+        void DebugDrawer::solidBoundsi(int  x0, int  y0, int  x1, int  y1)
         {
-            bounds((float)x0, (float)y0, (float)x1, (float)y1);
+            solidBounds((float)x0, (float)y0, (float)x1, (float)y1);
         }
 
         //--
@@ -1479,12 +1398,12 @@ namespace rendering
 
                 struct TextPage
                 {
-                    base::PagedBuffer<DebugVertex> m_vertices;
-                    base::PagedBuffer<uint32_t> m_indices;
+                    //base::PagedBuffer<DebugVertex> m_vertices;
+                    //base::PagedBuffer<uint32_t> m_indices;
 
                     TextPage()
-                        : m_vertices(POOL_TEMP)
-                        , m_indices(POOL_TEMP)
+                        //: m_vertices(POOL_TEMP)
+                        //, m_indices(POOL_TEMP)
                     {}
                 };
 
@@ -1525,7 +1444,7 @@ namespace rendering
                     for (uint32_t i = 0; i < m_pageCount; ++i)
                     {
                         auto& page = m_pageData[i];
-                        if (!page.m_vertices.empty())
+                        //if (!page.m_vertices.empty())
                         {
                             /*auto g = frame.allocator().create<FrameGeometry>();
                             g->layer = FrameGeometryRenderingLayer::Screen;
@@ -1544,8 +1463,7 @@ namespace rendering
             };
         }
 
-
-        base::Point DebugSolidDrawer::textSize(base::StringView txt, DebugFont font /*= DebugFont::Normal*/)
+        base::Point MeasureDebugText(base::StringView txt, DebugFont font /*= DebugFont::Normal*/)
         {
             if (auto fontPtr = helper::GetFont(font))
                 return fontPtr->measure(txt);
@@ -1553,8 +1471,10 @@ namespace rendering
                 return base::Point::ZERO();
         }
 
-        base::Point DebugSolidDrawer::text(int x, int y, base::StringView txt, const DebugTextParams& params /*= DebugTextParams()*/)
+        base::Point DebugDrawer::text(int x, int y, base::StringView txt, const DebugTextParams& params /*= DebugTextParams()*/)
         {
+			changeGeometryType(DebugGeometryType::Solid);
+
             if (auto fontPtr = helper::GetFont(params._font))
             {
                 // compute glyph placements and the whole text size

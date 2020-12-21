@@ -9,8 +9,6 @@
 #include "build.h"
 
 #include "materialPreviewPanel.h"
-#include "rendering/scene/include/renderingSceneProxy.h"
-#include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/material/include/renderingMaterial.h"
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/scene/include/renderingScene.h"
@@ -19,6 +17,7 @@
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
 #include "base/ui/include/uiToolBar.h"
+#include "rendering/scene/include/renderingSceneObjects.h"
 
 namespace ed
 {
@@ -113,7 +112,7 @@ namespace ed
     {
         if (m_previewProxy)
         {
-            renderingScene()->proxyDestroy(m_previewProxy);
+            renderingScene()->dettachProxy(m_previewProxy);
             m_previewProxy.reset();
         }
     }
@@ -177,21 +176,20 @@ namespace ed
 
                 if (mesh)
                 {
-                    rendering::scene::ProxyMeshDesc desc;
+                    rendering::scene::ObjectProxyMesh::Setup desc;
                     desc.mesh = mesh;
-                    desc.autoHideDistanceOverride = 10000.0f;
                     desc.forcedLodLevel = 0;
-                    desc.forceMaterial = m_material.acquire()->dataProxy();
-                    desc.meshBounds = mesh->bounds();
+                    desc.forceMaterial = m_material.acquire();
+
+					auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc);
 
                     const auto minZ = mesh->bounds().min.z;
                     const auto offset = base::Vector3(0, 0, -minZ);
-                    desc.localToScene.translation(offset);
+                    proxy->m_localToWorld.translation(offset);
 
-                    // register proxy
-                    m_previewProxy = renderingScene()->proxyCreate(desc);
+					m_previewProxy = proxy;
+					renderingScene()->attachProxy(m_previewProxy);
 
-                    // zoom out
                     setupCameraAroundBounds(mesh->bounds() + offset);
                 }
             }

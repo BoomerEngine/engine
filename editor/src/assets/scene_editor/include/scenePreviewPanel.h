@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/ui/include/renderingFullScenePanel.h"
+#include "rendering/ui_viewport/include/renderingFullScenePanel.h"
 #include "assets/gizmos/include/gizmoGroup.h"
 
 namespace ed

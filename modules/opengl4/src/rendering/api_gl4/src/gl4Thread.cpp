@@ -165,7 +165,7 @@ namespace rendering
 
 			}
 
-			bool Thread::threadStartup(const base::app::CommandLine& cmdLine)
+			bool Thread::threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 			{
 				// initialize the extension library
 				auto ret = glewInit();
@@ -210,7 +210,7 @@ namespace rendering
 				m_constantBufferAlignment = m_uniformPool->bufferAlignment();
 				m_constantBufferSize = m_uniformPool->bufferSize();
 
-				return IBaseThread::threadStartup(cmdLine);
+				return IBaseThread::threadStartup(cmdLine, outCaps);
 			}
 
 			void Thread::threadFinish()

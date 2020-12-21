@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "renderingCanvasRenderer.h"
 #include "renderingCanvasBatchRenderer.h"
 
 #include "rendering/device/include/renderingShaderData.h"
@@ -63,7 +62,7 @@ namespace rendering
 			return false;
 		}
 
-		bool ICanvasSimpleBatchRenderer::initialize(CanvasStorage* owner, IDevice* drv)
+		bool ICanvasSimpleBatchRenderer::initialize(IDevice* drv)
 		{
 			// load mask shader
 			if (!LoadShader(resCanvasShaderMask.loadAndGet(), m_shaderMask))
@@ -77,7 +76,7 @@ namespace rendering
 			return true;
 		}
 
-		void ICanvasSimpleBatchRenderer::prepareForLayout(const CanvasRenderStates& renderStates, GraphicsPassLayoutObject* pass)
+		void ICanvasSimpleBatchRenderer::prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass)
 		{
 			if (m_activeShaderGroup && m_activeShaderGroup->layoutKey == pass->key())
 				return;

@@ -357,7 +357,7 @@ namespace ui
 							base::canvas::Geometry geometry;
 
 							{
-								base::canvas::GeometryBuilder builder(nullptr, geometry);
+								base::canvas::GeometryBuilder builder(geometry);
 
 								const auto pixelWidth = m_editor->cachedStyleParams().pixelScale;
 								GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, validSourceSocket->info().m_linkColor, 4.0f, pixelWidth, false, false, builder);

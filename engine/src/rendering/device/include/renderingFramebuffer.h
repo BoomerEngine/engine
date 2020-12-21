@@ -138,12 +138,11 @@ namespace rendering
 
         FrameBufferColorAttachmentInfo color[MAX_COLOR_TARGETS];
         FrameBufferDepthAttachmentInfo depth;
-		base::Rect area; // initial render area, if empty the whole area of render targets is used
 
         //--
 
         void print(base::IFormatStream& f) const;
-        bool validate() const;
+        bool validate(uint32_t* outWidth=nullptr, uint32_t* outHeight = nullptr, uint32_t* outSampleCount=nullptr) const;
 
         uint8_t validColorSurfaces() const;
 		uint8_t samples() const;

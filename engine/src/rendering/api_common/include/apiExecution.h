@@ -171,7 +171,7 @@ namespace rendering
 
 			bool m_valid = false;
 
-			uint32_t m_glFrameBuffer = 0;
+			//uint32_t m_glFrameBuffer = 0;
 
 			uint8_t samples = 0;
 			uint32_t width = 0;

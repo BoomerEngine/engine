@@ -586,7 +586,7 @@ namespace ed
     void SceneContentDataNode::handleDebugRender(rendering::scene::FrameParams& frame) const
     {
         // TEMPSHIT
-        rendering::scene::DebugLineDrawer dd(frame.geometry.solid);
+        rendering::scene::DebugDrawer dd(frame.geometry.solid);
         dd.axes(cachedLocalToWorldMatrix(), 0.1f);
     }
 

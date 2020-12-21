@@ -15,8 +15,8 @@
 #include "base/image/include/image.h"
 #include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
+#include "base/canvas/include/canvasAtlas.h"
 #include "base/resource/include/resourcePath.h"
-#include "base/canvas/include/canvasStorage.h"
 
 namespace ui
 {
@@ -29,21 +29,15 @@ namespace ui
 
     //---
 
-    DataStash::DataStash(const StyleLibraryRef& mainStyles, base::canvas::IStorage* canvasStorage)
+    DataStash::DataStash(const StyleLibraryRef& mainStyles)
         : m_styles(mainStyles)
-		, m_canvasStorage(AddRef(canvasStorage))
     {
-		// create main atlas for UI icons
-		m_mainIconAtlasIndex = m_canvasStorage->createAtlas(1024, 1, "UIIcons");
+		m_mainIconAtlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
     }
 
     DataStash::~DataStash()
     {
-		if (m_mainIconAtlasIndex)
-		{
-			m_canvasStorage->destroyAtlas(m_mainIconAtlasIndex);
-			m_mainIconAtlasIndex = 0;
-		}
+		m_mainIconAtlas.reset();
     }
 
     void DataStash::onPropertyChanged(base::StringView path)
@@ -73,7 +67,7 @@ namespace ui
 
 	void DataStash::conditionalRebuildAtlases()
 	{
-		m_canvasStorage->conditionalRebuild();
+		
 	}
 
 	base::canvas::ImageEntry DataStash::cacheImage(const base::image::Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
@@ -81,9 +75,9 @@ namespace ui
 		if (const auto* ret = m_imagePtrMap.find(img))
 			return *ret;
 
-		if (img && m_mainIconAtlasIndex)
+		if (img)
 		{
-			if (auto entry = m_canvasStorage->registerImage(m_mainIconAtlasIndex, img, supportWrapping, additionalPadding))
+			if (auto entry = m_mainIconAtlas->registerImage(img, supportWrapping, additionalPadding))
 			{
 				m_imagePtrMap[img] = entry;
 				return entry;
@@ -98,7 +92,7 @@ namespace ui
 		if (const auto* ret = m_imageMap.find(key))
 			return *ret;
 
-		if (key && m_mainIconAtlasIndex)
+		if (key)
 		{
 			for (const auto& searchPath : m_imageSearchPaths)
 			{	

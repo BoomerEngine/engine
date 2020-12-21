@@ -12,7 +12,7 @@
 #include "gizmoGroup.h"
 
 #include "base/ui/include/uiInputAction.h"
-#include "rendering/ui/include/cameraViewportSetup.h"
+#include "rendering/ui_viewport/include/cameraViewportSetup.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
@@ -133,7 +133,7 @@ namespace ed
                     auto startPos = space.calcAbsolutePositionForLocal(base::Vector3::ZERO()).approximate();
                     auto endPos = space.calcAbsolutePositionForLocal(m_lastComputedTransform.T).approximate();
 
-                    rendering::scene::DebugLineDrawer dd(frame.geometry.overlay);
+                    rendering::scene::DebugDrawer dd(frame.geometry.overlay);
                     dd.color(base::Color::WHITE);
                     dd.line(startPos, endPos);
                 }

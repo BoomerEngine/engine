@@ -11,13 +11,19 @@
 #include "base/containers/include/refcounted.h"
 #include "base/containers/include/staticStructurePool.h"
 #include "renderingSceneStats.h"
+#include "base/containers/include/queue.h"
 
 namespace rendering
 {
     namespace scene
     {
 
-        ///--
+		///--
+
+		struct FrameViewMainRecorder;
+		struct FrameViewMainParams;
+
+		///--
 
         // scene type
         enum class SceneType : uint8_t
@@ -27,105 +33,111 @@ namespace rendering
             EditorPreview, // in-editor small preview scene
         };
 
-        // scene setup
-        struct SceneSetupInfo
-        {
-            SceneType type = SceneType::Game; // type of scene
-            base::StringBuf name; // context name, in editor this is the name of the asset, for debugging mostly
-            base::Matrix sceneToWorld; // placement of the scene in the abstract world space, scenes don't have to be rooted at 0,0,0
-        };
+		///--
 
-        ///--
+		// shared object flags
+		enum class ObjectProxyFlagBit : uint8_t
+		{
+			Attached,
+			Visible,
+			Selected,
+			CastShadows,
+			ReceivesShadows,
+			ForceTwoSided,
+			ForceTwoSidedShadows,
+			ForceShadowsOnly,
+		};
+
+		typedef base::BitFlagsBase<ObjectProxyFlagBit, uint32_t> ObjectProxyFlags;
+
+		///--
+
+		/// public wrapper for the object
+		class RENDERING_SCENE_API IObjectProxy : public base::IReferencable
+		{
+			RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IObjectProxy);
+			RTTI_DECLARE_POOL(POOL_RENDERING_PROXY);
+
+		public:
+			virtual ~IObjectProxy();
+
+			virtual ObjectType type() const = 0;
+			virtual bool attached() const = 0;
+		};
+
+		///--
 
         // a rendering scene - container for objects of various sorts
         class RENDERING_SCENE_API Scene : public base::IReferencable
         {
         public:
-            Scene(const SceneSetupInfo& setup);
+            Scene(SceneType type);
+			virtual ~Scene();
 
             //--
 
             // type of the scene
             INLINE const SceneType type() const { return m_type; }
 
-            // get list of proxy handlers
-            INLINE const IProxyHandler* const* proxyHandlers() const { return &m_proxyHandlers[0]; }
-
-            // get list of fragment handlers
-            INLINE const IFragmentHandler* const* fragmentHandlers() const { return &m_fragmentHandlers[0]; }
-
-            // get global object/culling table
-            INLINE const SceneObjectRegistry& objects() const { return *m_objects; }
-            INLINE SceneObjectRegistry& objects() { return *m_objects; }
-
-            /// get last rendering stats
-            INLINE const SceneStats& stats() const { return m_stats; }
-                       
             //--
+			// COMMANDS: all are buffered
 
-            /// lock scene for rendering, no modifications to scene are possible when scene is locked
-            bool lockForRendering();
+			/// attach proxy to scene, proxy will be rendered on next scene render
+			void attachProxy(IObjectProxy* proxy);
 
-            /// unlock scene after rendering is done
-            void unlockAfterRendering(SceneStats&& updatedStats);
+			/// detach proxy from scene
+			void dettachProxy(IObjectProxy* proxy);
 
-            /// is the scene locked for rendering ? (DEBUG ONLY)
-            INLINE bool lockedForRendering() const { return m_lockCount.load() > 0; }
+			/// move object to other place
+			void moveProxy(IObjectProxy* proxy, const base::Matrix& localToWorld);
 
-            //--
+			/// toggle proxy flags
+			void changeProxyFlags(IObjectProxy* proxy, ObjectProxyFlags clearFlag, ObjectProxyFlags setFlag);
 
-            /// create a proxy in the scene based on a description
-            /// NOTE: can't be called during rendering
-            ProxyHandle proxyCreate(const ProxyBaseDesc& desc);
-
-            /// destroy proxy from the scene
-            void proxyDestroy(ProxyHandle handle);
-
-            /// run a command on a proxy
-            void proxyCommand(ProxyHandle handle, const Command& command);
-
-            //--
-
-            // prepare scene for rendering, update all required GPU side data
-            void prepareForRendering(command::CommandWriter& cmd);
+			//--
 
         private:
-            virtual ~Scene();
+			//--
+
+			IDevice* m_device = nullptr;
 
             SceneType m_type = SceneType::Game;
-            base::StringBuf m_name;
 
-            std::atomic<int> m_lockCount = 0;
+			//--
 
-            IProxyHandler* m_proxyHandlers[(uint8_t)ProxyType::MAX];
-            IFragmentHandler* m_fragmentHandlers[(uint8_t)FragmentHandlerType::MAX];
+			std::atomic<bool> m_commandQueueSceneLockedFlag = false;
+			base::SpinLock m_commandQueueLock;
+			base::Queue<Command*> m_commandQueue;
+           
+			//--
 
-            //--
+			void scheduleCommand(Command* command);
+			void runCommand(Command* command);
 
-            base::UniquePtr<SceneObjectRegistry> m_objects;
+			//--
 
-            //---
+			base::Array<IObjectManager*> m_managers;
 
-            struct ProxyEntry
-            {
-                uint32_t generationIndex = 0;
-                IProxy* proxy = nullptr;
-                ProxyType type = ProxyType::None;
-            };
+			//--
 
-            uint32_t m_proxyGenerationIndex = 1;
-            base::StaticStructurePool<ProxyEntry> m_proxyTable;
+			void createManagers();
+			void destroyManagers();
 
-            //--
+			//--
 
-            SceneStats m_stats; // last scene rendering stats
+			void renderLock();
+			void renderUnlock();
+			void renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame);
 
-            //--
+			void prepare(command::CommandWriter& cmd, const FrameRenderer& frame);
 
-            void destroyAllProxies();
+			friend class FrameRenderingService;
+			friend class FrameViewMain;
+			friend class FrameViewCascades;
+			friend class FrameViewSelection;
+			friend class FrameRenderer;
 
-            void createProxyHandlers();
-            void createFragmentHandlers();
+			//--
         };
 
         ///--

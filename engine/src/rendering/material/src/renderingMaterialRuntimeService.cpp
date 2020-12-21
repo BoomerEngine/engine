@@ -80,6 +80,13 @@ namespace rendering
         dispatchMaterialProxyChanges();
     }
 
+	//--
+
+	MaterialBindlessTextureID MaterialService::queryBindlessTextureId(const base::res::IResource& res) const
+	{
+		return 0; // for now
+	}
+
     //--
 
     void MaterialService::prepareForFrame(command::CommandWriter& cmd)
@@ -141,16 +148,13 @@ namespace rendering
 
     void MaterialService::notifyMaterialProxyChanged(MaterialDataProxy* currentProxy, const MaterialDataProxyPtr& newProxy)
     {
-        if (newProxy && currentProxy)
-        {
-            DEBUG_CHECK_EX(newProxy != currentProxy, "Proxy should not change to itself");
-            DEBUG_CHECK_EX(newProxy->materialTemplate() != currentProxy->materialTemplate(), "Proxy should not change if it has the same material template");
+		DEBUG_CHECK_RETURN_EX(newProxy && currentProxy, "Invalid proxy change");
+        DEBUG_CHECK_RETURN_EX(newProxy != currentProxy, "Proxy should not change to itself");
+		DEBUG_CHECK_RETURN_EX(newProxy->templateProxy() != currentProxy->templateProxy(), "Proxy should not change if it has the same material template");
 
-            if (newProxy != currentProxy && newProxy->materialTemplate() != currentProxy->materialTemplate())
-            {
-                auto lock = base::CreateLock(m_changedMaterialProxiesLock);
-                m_changedMaterialProxies[currentProxy] = newProxy;
-            }
+        {
+            auto lock = base::CreateLock(m_changedMaterialProxiesLock);
+            m_changedMaterialProxies[currentProxy] = newProxy;
         }
     }
 
@@ -178,7 +182,7 @@ namespace rendering
 
         // create 
         auto id = m_dataLayouts.size();
-        auto layout = base::RefNew<MaterialDataLayout>(id, key, std::move(entries));
+        auto layout = base::RefNew<MaterialDataLayout>(id, std::move(entries));
         m_dataLayouts.pushBack(layout);
         m_dataLayoutsMap[key] = layout;
         TRACE_SPAM("Registred material layout ID {}:\n", id, *layout);

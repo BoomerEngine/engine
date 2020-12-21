@@ -9,16 +9,20 @@
 #include "build.h"
 #include "gameHost.h"
 #include "gameScreen_Splash.h"
+
 #include "rendering/texture/include/renderingTexture.h"
-#include "rendering/device/include/renderingShaderLibrary.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingFramebuffer.h"
+#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingShader.h"
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingShaderData.h"
 
 namespace game
 {
     //---
 
-    static base::res::StaticResource<rendering::ShaderLibrary> resShaderSplash("/engine/shaders/effects/loading_splash_cube.fx");
+    static base::res::StaticResource<rendering::ShaderFile> resShaderSplash("/engine/shaders/effects/loading_splash_cube.fx");
 
     //---
 
@@ -29,7 +33,9 @@ namespace game
     Screen_Splash::Screen_Splash()
     {
         m_effectTime = 0.0f;
-        m_shader = resShaderSplash.loadAndGetAsRef();
+
+        if (const auto data = resShaderSplash.loadAndGet())
+			m_shader = AddRef(data->rootShader());
     }
 
     Screen_Splash::~Screen_Splash()
@@ -47,17 +53,9 @@ namespace game
 
     struct SpashScreenParams
     {
-        struct Constants
-        {
-            float screenSizeX = 0;
-            float screenSizeY = 0;
-            float screenInvSizeX = 0;
-            float screenInvSizeY = 0;
-            float time = 0.0f;
-            float fade = 1.0f;
-        };
+       
 
-        rendering::ConstantsView consts;
+        //rendering::ConstantsView consts;
         //ImageView source;
     };
 
@@ -70,18 +68,25 @@ namespace game
         if (auto shader = resShaderSplash.loadAndGet())
         {
             rendering::FrameBuffer fb;
-            fb.color[0].rt = hostViewport.backBufferColor;
+            fb.color[0].view(hostViewport.backBufferColor);
             fb.color[0].loadOp = rendering::LoadOp::DontCare;
             fb.color[0].storeOp = rendering::StoreOp::Store;
+			fb.depth.view(hostViewport.backBufferDepth);
 
-            rendering::FrameBufferViewportState viewport;
-            viewport.minDepthRange = 0.0f;
-            viewport.maxDepthRange = 1.0f;
-            viewport.viewportRect = base::Rect(0, 0, hostViewport.width, hostViewport.height);
+            base::Rect viewport = base::Rect(0, 0, hostViewport.width, hostViewport.height);
 
-            cmd.opBeingPass(fb, 1, &viewport);
+            cmd.opBeingPass(hostViewport.backBufferLayout, fb, 1, viewport);
 
-            SpashScreenParams::Constants data;
+			struct
+			{
+				float screenSizeX = 0;
+				float screenSizeY = 0;
+				float screenInvSizeX = 0;
+				float screenInvSizeY = 0;
+				float time = 0.0f;
+				float fade = 1.0f;
+			} data;
+
             data.screenSizeX = hostViewport.width;
             data.screenSizeY = hostViewport.height;
             data.screenInvSizeX = 1.0f / hostViewport.width;
@@ -89,13 +94,15 @@ namespace game
             data.fade = hostViewport.fadeLevel;
             data.time = m_effectTime;
 
-            SpashScreenParams params;
-            params.consts = cmd.opUploadConstants(data);
-            //params.source = source;
-            cmd.opBindParametersInline("SpashScreenParams"_id, params);
+			if (!m_shaderPSO)
+				m_shaderPSO = m_shader->deviceShader()->createGraphicsPipeline(hostViewport.backBufferLayout);
 
-            cmd.opSetPrimitiveType(rendering::PrimitiveTopology::TriangleStrip);
-            cmd.opDraw(shader, 0, 4);
+			rendering::DescriptorEntry desc[1];
+			desc[0].constants(data);
+			cmd.opBindDescriptor("SpashScreenParams"_id, desc);
+
+//            cmd.opSetPrimitiveType(rendering::PrimitiveTopology::TriangleStrip);
+            cmd.opDraw(m_shaderPSO, 0, 4);
 
             cmd.opEndPass();
         }

@@ -83,11 +83,6 @@ namespace rendering
 
 		//--
 
-		void WindowNull::windowAbandon()
-		{
-			m_callback = nullptr;
-		}
-
 		void WindowNull::windowMinimize()
 		{
 			DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
@@ -295,6 +290,11 @@ namespace rendering
 			}
 		}
 
+		void WindowNull::windowBindOwner(ObjectID id)
+		{
+			m_owner = id;
+		}
+
 		base::input::ContextPtr WindowNull::windowGetInputContext()
 		{
 			return nullptr;
@@ -321,11 +321,6 @@ namespace rendering
 
 			for (auto* window : m_windows)
 				window->update();
-		}
-
-		void WindowManagerNull::bindWindowOwner(uint64_t handle, ObjectID owner)
-		{
-
 		}
 
 		uint64_t WindowManagerNull::createWindow(const OutputInitInfo& initInfo)

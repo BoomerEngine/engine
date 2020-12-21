@@ -37,7 +37,7 @@ namespace rendering
 
 			virtual base::Point maxRenderTargetSize() const override;
 
-			virtual bool initialize(const base::app::CommandLine& cmdLine) override;
+			virtual bool initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override;
 			virtual void shutdown() override;
 			virtual void sync(bool flush) override;
 

@@ -74,42 +74,44 @@ namespace rendering
             base::mem::LinearAllocator mem(POOL_SHADER_COMPILATION);
             base::ScopeTimer timer;
 
-            // setup preprocessor
-            base::parser::TextFilePreprocessor parser(mem, *includeHandler, err, base::parser::ICommentEater::StandardComments(), parser::GetShaderLanguageDefinition());
+			{
+				// setup preprocessor
+				base::parser::TextFilePreprocessor parser(mem, *includeHandler, err, base::parser::ICommentEater::StandardComments(), parser::GetShaderLanguageDefinition());
 
-            // inject given defines
-            if (nullptr != defines)
-            {
-                for (uint32_t i = 0; i < defines->size(); ++i)
-                {
-                    parser.defineSymbol(defines->keys()[i].view(), defines->values()[i]);
-                    TRACE_DEEP("Defined static shader permutation '{}' = '{}'", defines->keys()[i], defines->values()[i]);
-                }
-            }
+				// inject given defines
+				if (nullptr != defines)
+				{
+					for (uint32_t i = 0; i < defines->size(); ++i)
+					{
+						parser.defineSymbol(defines->keys()[i].view(), defines->values()[i]);
+						TRACE_DEEP("Defined static shader permutation '{}' = '{}'", defines->keys()[i], defines->values()[i]);
+					}
+				}
 
-            // process the code into tokens
-			// NOTE: may fail if undefined symbols are encountered
-            if (!parser.processContent(code, contextPath))
-                return false;
+				// process the code into tokens
+				// NOTE: may fail if undefined symbols are encountered
+				if (!parser.processContent(code, contextPath))
+					return false;
 
-            // parse and compile code
-            CommandErrorForwarder errForwarder(err);
-            TypeLibrary typeLibrary(mem);
-            CodeLibrary codeLibrary(mem, typeLibrary);
-            if (!codeLibrary.parseContent(parser.tokens(), err))
-                return false;
+				// parse and compile code
+				CommandErrorForwarder errForwarder(err);
+				TypeLibrary typeLibrary(mem);
+				CodeLibrary codeLibrary(mem, typeLibrary);
+				if (!codeLibrary.parseContent(parser.tokens(), err))
+					return false;
 
-			// assemble final data
-			AssembledShader data;
-			if (!AssembleShaderStubs(mem, codeLibrary, data, contextPath, contextOptions, err))
-				return false;
-			
-            // prints stats
-			TRACE_INFO("Compiled shader file '{}' in {}, used {} ({} allocs). Generated {} of data",
-				contextPath, TimeInterval(timer.timeElapsed()), MemSize(mem.totalUsedMemory()), mem.numAllocations(), MemSize(data.blob.size()));
+				// assemble final data
+				AssembledShader data;
+				if (!AssembleShaderStubs(mem, codeLibrary, data, contextPath, contextOptions, err))
+					return false;
 
-			// create the data object
-            return base::RefNew<ShaderData>(data.blob, data.metadata);
+				// prints stats
+				TRACE_INFO("Compiled shader file '{}' in {}, used {} ({} allocs). Generated {} of data",
+					contextPath, TimeInterval(timer.timeElapsed()), MemSize(mem.totalUsedMemory()), mem.numAllocations(), MemSize(data.blob.size()));
+
+				// create the data object
+				return base::RefNew<ShaderData>(data.blob, data.metadata);
+			}
         }
        
         //--

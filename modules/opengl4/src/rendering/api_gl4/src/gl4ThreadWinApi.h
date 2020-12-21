@@ -70,7 +70,7 @@ namespace rendering
 				HWND m_hFakeHWND = NULL;
 				HDC m_hActiveDC = NULL;
 
-				virtual bool threadStartup(const base::app::CommandLine& cmdLine) override final;
+				virtual bool threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
 				virtual void threadFinish() override final;
 			};
 

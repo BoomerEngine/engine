@@ -24,6 +24,7 @@ namespace ui
     public:
         Image();
         Image(base::canvas::ImageEntry customImage);
+        Image(const base::image::ImageRef& customImage);
         Image(base::StringID iconName);
 
         //--
@@ -42,6 +43,8 @@ namespace ui
         virtual void computeSize(Size& outSize) const override;
         virtual void prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
         virtual void prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+
+		base::canvas::ImageEntry acquireImageEntry() const;
 
         mutable Size m_imageSize;        
     };

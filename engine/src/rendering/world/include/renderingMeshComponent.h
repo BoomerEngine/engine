@@ -90,7 +90,7 @@ namespace rendering
 
         //--
 
-        virtual scene::ProxyHandle handleCreateProxy(scene::Scene* scene) const override;
+        virtual scene::ObjectProxyPtr handleCreateProxy(scene::Scene* scene) const override;
 
         //--
 

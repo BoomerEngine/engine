@@ -46,7 +46,7 @@ namespace ed
     {
         hitTest(true);
 
-		m_icon = createChild<ui::Image>();// file->typeThumbnail());
+		m_icon = createChild<ui::Image>(file->typeThumbnail());
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(size, size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -116,7 +116,7 @@ namespace ed
     {
         hitTest(true);
 
-		m_icon = createChild<ui::Image>();// dir->typeThumbnail());
+		m_icon = createChild<ui::Image>(dir->typeThumbnail());
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(size, size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -147,7 +147,7 @@ namespace ed
     {
         hitTest(true);
 
-		m_icon = createChild<ui::Image>();// placeholder->typeThumbnail());
+		m_icon = createChild<ui::Image>(placeholder->typeThumbnail());
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(size, size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -206,7 +206,7 @@ namespace ed
     {
         hitTest(true);
 
-		m_icon = createChild<ui::Image>();// placeholder->typeThumbnail());
+		m_icon = createChild<ui::Image>(placeholder->typeThumbnail());
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(size, size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);

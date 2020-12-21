@@ -105,20 +105,14 @@ namespace rendering
         if (auto* meshChunkService = base::GetService<MeshService>())
         {
             for (auto& chunk : m_chunks)
-                chunk.renderId = meshChunkService->registerChunkData(chunk);
+                chunk.proxy = meshChunkService->createChunkProxy(chunk);
         }
     }
 
     void Mesh::unregisterChunks()
     {
-        if (auto* meshChunkService = base::GetService<MeshService>())
-        {
-            for (auto& chunk : m_chunks)
-            {
-                meshChunkService->unregisterChunkData(chunk.renderId);
-                chunk.renderId = 0;
-            }
-        }
+        for (auto& chunk : m_chunks)
+			chunk.proxy.reset();
     }
 
     void Mesh::onPostLoad()

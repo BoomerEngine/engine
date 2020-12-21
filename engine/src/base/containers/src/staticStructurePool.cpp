@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "staticStructurePool.h"
+#include "bitUtils.h"
 
 namespace base
 {

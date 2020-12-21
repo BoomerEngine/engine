@@ -10,89 +10,80 @@
 
 namespace rendering
 {
-    namespace scene
-    {
-        //--
+	namespace scene
+	{
+		//--
 
-        // command code
-        enum class CommandCode : uint8_t
-        {
-#define RENDER_SCENE_COMMAND(x) x,
-#include "renderingSceneCommandCodes.inl"
-#undef RENDER_SCENE_COMMAND
-            MAX,
-        };
+		struct Command;
+		class ICommandDispatcher;
 
-        ///--
+		//--
 
-        /// a command to be executed on the proxy
-        struct Command
-        {
-        public:
-            INLINE Command(CommandCode code)
-                : m_commandCode(code)
-            {}
+#define RENDER_SCENE_COMMAND(x) struct Command##x;
+#include "renderingSceneCommands.inl"
 
-            INLINE CommandCode code() const
-            {
-                return m_commandCode;
-            }
+		/// dispatcher for update commands
+		class RENDERING_SCENE_API ICommandDispatcher : public base::NoCopy
+		{
+		public:
+			virtual ~ICommandDispatcher();
 
-        private:
-            CommandCode m_commandCode;
-        };
+#define RENDER_SCENE_COMMAND(x) virtual void run(const Command##x& op);
+#include "renderingSceneCommands.inl"
+		};
 
-        ///--
+		//--
 
-        /// a command to be executed on the proxy
-        template< CommandCode opcode >
-        struct CommandT : public Command
-        {
-            static const CommandCode CODE = opcode;
+		/// a command to be executed on the proxy
+		struct Command
+		{
+		public:
+			virtual ~Command();
+			ObjectProxyPtr proxy;
 
-            INLINE CommandT() 
-                : Command(CODE)
-            {}
-        };
+			virtual void run(ICommandDispatcher& dispatch) const = 0;
+		};
 
-        //--
+		/// a command to be executed on the proxy
+		template< typename T >
+		struct CommandT : public Command
+		{
+		public:
+			virtual void run(ICommandDispatcher& dispatch) const override final
+			{
+				dispatch.run(static_cast<const T&>(*this));
+			}
+		};
 
-#define RENDER_DECLARE_COMMAND_DATA(op_) struct RENDERING_SCENE_API Command##op_ : public CommandT<CommandCode::op_>
+		//--
 
-        RENDER_DECLARE_COMMAND_DATA(Nop)
-        {
-        };
+#define RENDER_SCENE_DECLARE_UPDATE_COMMAND(x) struct Command##x : public CommandT<Command##x>
 
-        RENDER_DECLARE_COMMAND_DATA(MoveProxy)
-        {
-            base::Matrix localToScene;
-        };
+		//--
 
-        RENDER_DECLARE_COMMAND_DATA(EffectSelectionHighlight)
-        {
-            bool flag = false;
-        };
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(AttachObject)
+		{
+		};
 
-#undef RENDER_DECLARE_COMMAND_DATA
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(DetachObject)
+		{
+		};
 
-        ///--
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(SetLocalToWorld)
+		{
+			base::Matrix localToWorld;
+		};
 
-        // command dispatcher interfaces - can accept and execute commands
-        class RENDERING_SCENE_API ICommandDispatcher : public base::NoCopy
-        {
-        public:
-            virtual ~ICommandDispatcher();
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(SetFlag)
+		{
+			ObjectProxyFlags setFlags;
+			ObjectProxyFlags clearFlags;
+		};
 
-            // run a command
-            void handleCommand(Scene* scene, IProxy* proxy, const Command& cmd);
+#undef RENDER_SCENE_DECLARE_UPDATE_COMMAND
 
-#define RENDER_SCENE_COMMAND(op_) virtual void run##op_(Scene* scene, IProxy* proxy, const Command##op_& cmd);
-#include "renderingSceneCommandCodes.inl"
-#undef RENDER_SCENE_COMMAND
-        };
+		//--
 
-        ///--
-
-    } // scene
+	} // scene
 } // rendering
 

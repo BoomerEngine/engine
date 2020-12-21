@@ -11,7 +11,7 @@
 #include "gizmoGroup.h"
 #include "gizmoReferenceSpace.h"
 
-#include "rendering/ui/include/cameraViewportSetup.h"
+#include "rendering/ui_viewport/include/cameraViewportSetup.h"
 #include "base/ui/include/uiInputAction.h"
 
 namespace ed

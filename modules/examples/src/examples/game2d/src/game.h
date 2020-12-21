@@ -16,6 +16,17 @@ namespace example
 
     ///--
 
+	// 2D game viewport
+	struct GameViewport
+	{
+		uint32_t width = 0;
+		uint32_t height = 0;
+		
+		const rendering::RenderTargetView* colorTarget = nullptr;
+		const rendering::RenderTargetView* depthTarget = nullptr;
+		const rendering::GraphicsPassLayoutObject* passLayout = nullptr;
+	};
+
     // 2D game class
     class Game : public IReferencable
     {
@@ -24,7 +35,7 @@ namespace example
 
         void tick(float dt);
         void debug();
-        void render(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget);
+        void render(CommandWriter& cmd, const GameViewport& viewport);
         bool handleInput(const BaseEvent& evt);
         
     private:

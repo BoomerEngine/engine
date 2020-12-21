@@ -13,7 +13,6 @@
 #include "scenePreviewPanel.h"
 
 #include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
@@ -61,7 +60,8 @@ namespace ed
     {
         TBaseClass::handleRender(frame);
 
-        frame.scenes.scenesToDraw.clear();
+		frame.scenes.mainScenePtr = nullptr;
+		frame.scenes.backgroundScenePtr = nullptr;
 
         if (m_container)
         {

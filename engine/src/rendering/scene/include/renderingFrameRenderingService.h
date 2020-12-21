@@ -20,6 +20,19 @@ namespace rendering
 
         struct SceneStats;
         struct FrameStats;
+		class FrameResources;
+		class FrameHelper;
+
+		///---
+
+		/// composition target for the frame
+		struct FrameCompositionTarget
+		{
+			const RenderTargetView* targetColorRTV = nullptr;
+			const RenderTargetView* targetDepthRTV = nullptr;
+			const GraphicsPassLayoutObject* targetLayout = nullptr;
+			base::Rect targetRect;
+		};
 
         ///---
 
@@ -35,7 +48,7 @@ namespace rendering
             //--
 
             /// render command buffers for rendering given frame
-            command::CommandBuffer* renderFrame(const FrameParams& frame, const ImageView& targetView, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
+            command::CommandBuffer* renderFrame(const FrameParams& frame, const FrameCompositionTarget& target, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
 
             //--
 
@@ -44,7 +57,8 @@ namespace rendering
             virtual void onShutdownService() override final;
             virtual void onSyncUpdate() override final;
 
-            FrameSurfaceCache* m_surfaceCache = nullptr;
+			FrameResources* m_sharedResources = nullptr;
+			FrameHelper* m_sharedHelpers = nullptr;
         };
 
         ///---

@@ -35,18 +35,16 @@ namespace rendering
             bool handleInputEvent(const base::input::BaseEvent& evt);
             bool handleAppInputEvent(const base::input::BaseEvent& evt);
 
-            void prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height);
-            void prepareCanvasCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height);
+            void prepareSceneCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target);
+            void prepareCanvasCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target);
             void renderCanvas(base::canvas::Canvas& c);
             void renderGui();
-
-            //--
-
-            ImGuiContext* m_imgui = nullptr;
-
+            
             //--
 
             SimpleCamera m_camera;
+
+			ImGui::ImGUICanvasHelper* m_imguiHelper = nullptr;
 
             base::NativeTimePoint m_lastUpdateTime;
             double m_lastGameTime;

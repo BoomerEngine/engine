@@ -8,6 +8,14 @@
 
 #include "base_canvas_glue.inl"
 
+namespace rendering
+{
+	namespace command
+	{
+		class CommandWriter;
+	}
+}
+
 namespace base
 {
     namespace canvas
@@ -42,9 +50,17 @@ namespace base
         struct Geometry;
         class GeometryBuilder;
 
-		class Canvas;
+		class ICanvasAtlasSync;
 
-		class IStorage;
+		class Canvas;
+		class CanvasService;
+
+		class IAtlas;
+
+		class DynamicAtlas;
+		typedef RefPtr<DynamicAtlas> DynamicAtlasPtr;
+
+		class GlyphCache;
 
 		struct ImageAtlasEntryInfo;
 
@@ -128,9 +144,22 @@ namespace base
 			BlendOp op = BlendOp::AlphaPremultiplied;
 			uint8_t atlasIndex = 0;
 
+			uint64_t glyphPageMask = 0;
+
 			uint16_t renderDataOffset = 0;
 			uint8_t renderDataSize = 0;
 			uint8_t rendererIndex = 0;
+		};
+
+		//--
+
+		struct ImageAtlasEntryInfo
+		{
+			Vector2 uvOffset;
+			Vector2 uvScale;
+			Vector2 uvMax;
+			char pageIndex = -1; // -1 - not placed
+			bool wrap = false;
 		};
 
 		//--

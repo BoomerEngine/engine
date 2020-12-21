@@ -40,9 +40,6 @@ namespace rendering
 			// create output window interface
 			virtual uint64_t createWindow(const OutputInitInfo& initInfo) = 0;
 
-			// bind window to owner
-			virtual void bindWindowOwner(uint64_t handle, ObjectID owner) = 0;
-
 			// request to close window, by handle
 			// NOTE: can be called on any thread but window is deleted only on main thread
 			virtual void closeWindow(uint64_t handle) = 0;

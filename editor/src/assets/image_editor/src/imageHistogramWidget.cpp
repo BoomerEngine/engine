@@ -205,29 +205,26 @@ namespace ed
         {
             for (auto& hist : m_histograms)
             {
-                base::canvas::GeometryBuilder b;
-                b.compositeOperation(canvas::CompositeOperation::Addtive);
-                b.beginPath();
-                b.moveTo(0.0f, yBase);
+				base::canvas::GeometryBuilder b(hist.geometry);
+				b.blending(canvas::BlendOp::Addtive);
+				b.beginPath();
+				b.moveTo(0.0f, yBase);
 
-                const auto numSamples = hist.collapsedBuckets.size();
-                const auto xScale = width / (double)numSamples;
+				const auto numSamples = hist.collapsedBuckets.size();
+				const auto xScale = width / (double)numSamples;
 
-                for (uint32_t i = 0; i < numSamples; ++i)
-                {
-                    const auto& data = hist.collapsedBuckets.typedData()[i];
+				for (uint32_t i = 0; i < numSamples; ++i)
+				{
+					const auto& data = hist.collapsedBuckets.typedData()[i];
 
-                    auto y = std::clamp<double>(yBase + data.bucketValue * yScale, yTop, yBase);
-                    auto x = i * xScale;
-                    b.lineTo(x, y);
-                }
-                b.lineTo(width, yBase);
-                b.lineTo(0.0f, yBase);
-                b.fillColor(hist.color);
-                b.fill();
-
-                hist.geometry = base::RefNew<base::canvas::Geometry>();
-                b.extract(*hist.geometry);
+					auto y = std::clamp<double>(yBase + data.bucketValue * yScale, yTop, yBase);
+					auto x = i * xScale;
+					b.lineTo(x, y);
+				}
+				b.lineTo(width, yBase);
+				b.lineTo(0.0f, yBase);
+				b.fillColor(hist.color);
+				b.fill();
             }
         }
     }
@@ -312,26 +309,27 @@ namespace ed
             cacheHistogramGeometry();
         }
 
-        canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
-
         for (const auto& hist : m_histograms)
         {
             if (hist.geometry)
             {
-                canvas.place(*hist.geometry);
+				canvas.place(drawArea.absolutePosition(), hist.geometry);
             }
         }
 
         if (m_hoverPositionX >= 0 && !m_histograms.empty())
         {
-            base::canvas::GeometryBuilder b;
-            b.beginPath();
-            b.moveTo(m_hoverPositionX, 0);
-            b.lineTo(m_hoverPositionX, drawArea.size().y);
-            b.strokeColor(base::Color::WHITE);
-            b.stroke();
+			base::canvas::Geometry g;
+			{
+				base::canvas::GeometryBuilder b(g);
+				b.beginPath();
+				b.moveTo(m_hoverPositionX, 0);
+				b.lineTo(m_hoverPositionX, drawArea.size().y);
+				b.strokeColor(base::Color::WHITE);
+				b.stroke();
+			}
 
-            canvas.place(b);
+            canvas.place(drawArea.absolutePosition(), g);
         }
     }
 

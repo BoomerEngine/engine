@@ -30,6 +30,7 @@ namespace rendering
 				virtual void runBeginBlock(const command::OpBeginBlock &) override final;
 				virtual void runEndBlock(const command::OpEndBlock &) override final;
 				virtual void runResolve(const command::OpResolve &) override final;
+				virtual void runClearFrameBuffer(const command::OpClearFrameBuffer&) override final;
 				virtual void runClearPassRenderTarget(const command::OpClearPassRenderTarget &) override final;
 				virtual void runClearPassDepthStencil(const command::OpClearPassDepthStencil &) override final;
 				virtual void runClearRenderTarget(const command::OpClearRenderTarget &) override final;

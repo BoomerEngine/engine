@@ -241,7 +241,11 @@ namespace rendering
 		, m_firstSlice(setup.firstSlice)
 		, m_numMips(setup.numMips)
 		, m_numSlices(setup.numSlices)
-	{}
+	{
+		m_width = std::max<uint32_t>(1, img->width() >> setup.firstMip);
+		m_height = std::max<uint32_t>(1, img->height() >> setup.firstMip);
+		m_depth = std::max<uint32_t>(1, img->depth() >> setup.firstMip);
+	}
 
 	ImageSampledView::~ImageSampledView()
 	{}

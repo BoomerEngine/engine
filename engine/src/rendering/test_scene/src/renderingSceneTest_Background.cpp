@@ -43,9 +43,16 @@ namespace rendering
 
             virtual void setupFrame(scene::FrameParams& frame) override
             {
+                frame.clear.clearColor = m_clearColor;
+
+                if (m_currentBackgroundMode == "NoClear"_id)
+                    frame.clear.clear = false;
+                else
+                    frame.clear.clear = true;
+
                 /*frame.setup("Mode"_id, "Main"_id);
                 frame.setup("ClearMode"_id, m_currentBackgroundMode);
-                frame.setup("ClearColor"_id, base::Color::FromVectorLinear(m_clearColor));
+                frame.setup("ClearColor"_id, base::Color::FromVectorLinear());
                 frame.setup("CheckerColorA"_id, base::Color::FromVectorLinear(m_checkerColorA));
                 frame.setup("CheckerColorB"_id, base::Color::FromVectorLinear(m_checkerColorB));
                 frame.setup("CheckerSize"_id, m_checkerSize);

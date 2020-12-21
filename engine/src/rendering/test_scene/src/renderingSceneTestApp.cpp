@@ -14,15 +14,15 @@
 #include "base/input/include/inputContext.h"
 #include "base/input/include/inputStructures.h"
 #include "base/canvas/include/canvas.h"
+#include "base/app/include/launcherPlatform.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
-#include "rendering/canvas/include/renderingCanvasRenderingService.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "base/app/include/launcherPlatform.h"
-#include "../../scene/include/renderingFrameRenderingService.h"
+#include "rendering/scene/include/renderingFrameRenderingService.h"
+#include "rendering/canvas/include/renderingCanvasService.h"
 
 namespace rendering
 {
@@ -41,12 +41,8 @@ namespace rendering
         {
             m_currentTest.reset();
 
-            if (m_imgui)
-            {
-                ImGui::SetCurrentContext(nullptr);
-                ImGui::DestroyContext(m_imgui);
-                m_imgui = nullptr;
-            }
+			delete m_imguiHelper;
+			m_imguiHelper = nullptr;
 
             m_renderingOutput.reset();
         }
@@ -109,8 +105,7 @@ namespace rendering
             if (!createRenderingOutput())
                 return false;
 
-            m_imgui = ImGui::CreateContext();
-            ImGui::SetCurrentContext(m_imgui);
+			m_imguiHelper = new ImGui::ImGUICanvasHelper();
 
             m_lastUpdateTime.resetToNow();
             return true;
@@ -128,6 +123,7 @@ namespace rendering
             setup.m_width = viewportWidth;
             setup.m_height = viewportHeight;
             setup.m_windowTitle = "Boomer Engine Scene Tests";
+            setup.m_windowInputContextGameMode = false;
 			setup.m_windowAllowFullscreenToggle = true;
             setup.m_class = OutputClass::Window;
 
@@ -222,8 +218,14 @@ namespace rendering
 
                 if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-                    prepareSceneCommandBuffers(cmd, output.color, output.depth, output.width, output.height);
-                    prepareCanvasCommandBuffers(cmd, output.color, output.depth, output.width, output.height);
+					scene::FrameCompositionTarget target;
+					target.targetColorRTV = output.color;
+					target.targetDepthRTV = output.depth;
+					target.targetLayout = output.layout;
+					target.targetRect = base::Rect(0, 0, output.width, output.height);
+
+                    prepareSceneCommandBuffers(cmd, target);
+                    prepareCanvasCommandBuffers(cmd, target);
 
                     cmd.opSwapOutput(m_renderingOutput);
                 }
@@ -238,8 +240,6 @@ namespace rendering
                 m_currentTest->update(dt);
 
             m_camera.update(dt);
-
-            ImGui::GetIO().DeltaTime = dt;
         }
 
         bool SceneTestProject::handleAppInputEvent(const base::input::BaseEvent& evt)
@@ -293,7 +293,7 @@ namespace rendering
             if (handleAppInputEvent(evt))
                 return true;
 
-            if (ImGui::ProcessInputEvent(m_imgui, evt))
+            if (m_imguiHelper->processInput(evt))
                 return true;
 
             if (m_camera.processInput(evt))
@@ -311,11 +311,11 @@ namespace rendering
                 handleInputEvent(*evt);
         }
         
-        void SceneTestProject::prepareSceneCommandBuffers(command::CommandWriter& cmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height)
+        void SceneTestProject::prepareSceneCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target)
         {
             // use simple camera position
             scene::CameraSetup cameraSetup;
-            cameraSetup.aspect = color.width() / (float)color.height();
+            cameraSetup.aspect = target.targetRect.width() / (float)target.targetRect.height();
             m_camera.calculateRenderData(cameraSetup);
 
             // calculate camera matrices
@@ -323,18 +323,20 @@ namespace rendering
             camera.setup(cameraSetup);
 
             // prepare and render frame
-            scene::FrameParams frame(color.width(), color.height(), camera);
+            scene::FrameParams frame(target.targetRect.width(), target.targetRect.height(), camera);
             if (m_currentTest)
                 m_currentTest->setupFrame(frame);
 
+			// setup target
+
             // generate command buffers
-            if (auto sceneRenderingCommands = base::GetService<scene::FrameRenderingService>()->renderFrame(frame, color))
+            if (auto sceneRenderingCommands = base::GetService<scene::FrameRenderingService>()->renderFrame(frame, target))
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
         static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf");
 
-        static void Print(base::canvas::Canvas& c, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16, 
+        static void Print(base::canvas::Canvas& c, float x, float y, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16,
             base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold=false)
         {
             if (auto font = resDefaultFont.loadAndGet())
@@ -348,68 +350,62 @@ namespace rendering
                 assemblyParams.horizontalAlignment = align;
                 font->renderText(params, assemblyParams, base::font::FontInputText(text.c_str()), glyphs);
 
-                base::canvas::GeometryBuilder b;
-                b.fillColor(color);
-                b.print(glyphs);
-                c.place(b);
+				base::canvas::Geometry g;
+				{
+					base::canvas::GeometryBuilder b(g);
+					b.fillColor(color);
+					b.print(glyphs);
+				}
+
+                c.place(base::Vector2(x,y), g);
             }
         }
 
-        void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& parentCmd, const ImageView& color, const ImageView& depth, uint32_t width, uint32_t height)
+        void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target)
         {
-            base::canvas::Canvas canvas(color.width(), color.height());
-            renderCanvas(canvas);
+			base::canvas::Canvas canvas(target.targetRect.width(), target.targetRect.height());
+			renderCanvas(canvas);
 
-            command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
+			// set frame buffer
+			FrameBuffer fb;
+			fb.color[0].view(target.targetColorRTV);
+			fb.depth.view(target.targetDepthRTV).clearDepth().clearStencil();
+			cmd.opBeingPass(target.targetLayout, fb);
 
-            // set frame buffer
-            FrameBuffer fb;
-            fb.color[0].view(color);// .clear(0.2, 0.2f, 0.2f, 1.0f);
-            fb.depth.view(depth).clearDepth().clearStencil();
-            cmd.opBeingPass(fb);
+			// render canvas to command buffer
+			base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
 
-            // render canvas to command buffer
-            canvas::CanvasRenderingParams renderingParams;
-            renderingParams.frameBufferWidth = color.width();
-            renderingParams.frameBufferHeight = depth.height();
-            base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
-
-            // finish pass
-            cmd.opEndPass();
+			// finish pass
+			cmd.opEndPass();
         }
 
         void SceneTestProject::renderCanvas(base::canvas::Canvas& canvas)
         {
             // Local stuff
             {
-                canvas.placement(canvas.width() - 20, canvas.height() - 60);
-                Print(canvas,
+                Print(canvas, canvas.width() - 20, canvas.height() - 60,
                     base::TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(m_camera.position().x, 2), Prec(m_camera.position().y, 2), Prec(m_camera.position().z, 2)),
                     base::Color::WHITE, 16, base::font::FontAlignmentHorizontal::Right);
 
-                canvas.placement(canvas.width() - 20, canvas.height() - 40);
-                Print(canvas,
+                Print(canvas, canvas.width() - 20, canvas.height() - 40,
                     base::TempString("Camera Rotation: [P={}, Y={}]", Prec(m_camera.rotation().pitch, 1), Prec(m_camera.rotation().yaw, 1)),
                     base::Color::WHITE, 16, base::font::FontAlignmentHorizontal::Right);
 
                 if (!m_timeAdvance)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, canvas.width() - 20, 20,
                         base::TempString("PAUSED"),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier > 0)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, canvas.width() - 20, 20,
                         base::TempString("Time x{} faster", 1ULL << m_timeMultiplier),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier < 0)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, canvas.width() - 20, 20,
                         base::TempString("Time x{} slower", 1ULL << (-m_timeMultiplier)),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
@@ -417,9 +413,9 @@ namespace rendering
 
             // ImGui
             {
-                ImGui::BeginCanvasFrame(canvas);
+				m_imguiHelper->beginFrame(canvas, 0.01f);
                 renderGui();
-                ImGui::EndCanvasFrame(canvas);
+				m_imguiHelper->endFrame(canvas);
             }
         }
 

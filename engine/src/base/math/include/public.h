@@ -8,7 +8,7 @@
 #pragma once
 
 // STD headers
-#include <cmath>
+#include <math.h>
 
 // Glue code
 #include "base_math_glue.inl"

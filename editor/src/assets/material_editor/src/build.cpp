@@ -9,7 +9,7 @@
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_material #]
 * [# dependency: rendering_material_graph #]
-* [# dependency: rendering_ui #]
+* [# dependency: rendering_ui_viewport #]
 * [# devonly #]
 ***/
 

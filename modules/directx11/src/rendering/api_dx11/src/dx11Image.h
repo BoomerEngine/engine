@@ -34,13 +34,18 @@ namespace rendering
 
 				//--
 
-				virtual IBaseImageView* createView_ClientApi(const IBaseImageView::Setup& setup) override final;
+				virtual IBaseImageView* createSampledView_ClientApi(const IBaseImageView::Setup& setup) override final;
+				virtual IBaseImageView* createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) override final;
 				virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) override final;
 
 				//--
 
-				virtual void applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area) override final;
+				virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) override final;
+				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
+				virtual void downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range) override final;
+				virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
+				virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
 
 				//--
 

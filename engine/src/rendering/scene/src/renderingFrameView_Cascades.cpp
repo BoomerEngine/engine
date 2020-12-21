@@ -9,15 +9,9 @@
 #include "build.h"
 #include "renderingScene.h"
 #include "renderingSceneUtils.h"
-#include "renderingSceneFragment.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameCameraContext.h"
-#include "renderingFrameSurfaceCache.h"
 #include "renderingFrameParams.h"
-#include "renderingFrameView.h"
-#include "renderingSceneCulling.h"
-#include "renderingSceneProxy.h"
-#include "renderingSceneFragmentList.h"
 #include "renderingFrameView_Cascades.h"
 
 namespace rendering
@@ -28,8 +22,127 @@ namespace rendering
 
         const base::ConfigProperty<float> cvCascadesMinAngla("Rendering.Cascades", "MinAngle", 10.0f);
 
+		//---
+
+#pragma pack(push)
+#pragma pack(4)
+		struct GPUCascadeInfo
+		{
+			base::Matrix ShadowTransform;
+			base::Vector4 ShadowOffsetsX;
+			base::Vector4 ShadowOffsetsY;
+			base::Vector4 ShadowHalfSizes;
+			base::Vector4 ShadowParams[4];
+			base::Vector4 ShadowPoissonOffsetAndBias;
+			base::Vector4 ShadowTextureSize;
+			base::Vector4 ShadowFadeScales;
+			base::Vector4 ShadowDepthRanges;
+			uint32_t ShadowQuality;
+		};
+#pragma pack(pop)
+
+		CascadeData::CascadeData()
+		{}
+
+		void PackCascadeData(const CascadeData& src, GPUCascadeInfo& outData)
+		{
+			memset(&outData, 0, sizeof(outData)); // just in case we don't set some fields
+
+			if (src.numCascades)
+			{
+				// everything is calculated with respect to cascade 0
+				// instead of storing 4 matrices we store one and 2D offset/scale factors for easier cascade selection
+				auto basePos = src.cascades[0].camera.position();
+				auto baseRight = src.cascades[0].camera.directionRight();
+				auto baseUp = -src.cascades[0].camera.directionUp();
+				auto baseTransform = src.cascades[0].camera.worldToScreen();
+
+				// calculate sub pixel offset for Poisson offsets
+				//auto cameraSubPixelOffsetX = 0.0f;
+				//auto cameraSubPixelOffsetY = 0.0f;
+				//auto subPixelOffsetXY = cameraSubPixelOffsetY * m_shadowMapResolution * 32 + cameraSubPixelOffsetX * 32;
+
+				// Initialize the constants that will be set to mark the cascades placement
+				float paramOffsetsRight[MAX_CASCADES] = { 0.f, 0.f, 0.f, 0.f };
+				float paramOffsetsUp[MAX_CASCADES] = { 0.f, 0.f, 0.f, 0.f };
+				float paramHalfSizes[MAX_CASCADES] = { 999, 999, 999, 999 };
+				float paramDepthRanges[MAX_CASCADES] = { 1.f, 1.f, 1.f, 1.f };
+				for (uint32_t i = 0; i < src.numCascades; ++i)
+				{
+					auto& camera = src.cascades[i].camera;
+
+					auto cameraOffset = camera.position() - basePos;
+					paramOffsetsRight[i] = base::Dot(baseRight, cameraOffset);
+					paramOffsetsUp[i] = base::Dot(baseUp, cameraOffset);
+					paramHalfSizes[i] = 0.5f * camera.zoom();
+					paramDepthRanges[i] = camera.farPlane() - camera.nearPlane();
+				}
+
+				// normalize parameters
+				auto paramsScale = 1.0f / paramHalfSizes[0];
+				for (uint32_t i = 0; i < src.numCascades; ++i)
+				{
+					paramOffsetsRight[i] *= paramsScale;
+					paramOffsetsUp[i] *= paramsScale;
+					paramHalfSizes[i] *= paramsScale;
+				}
+
+				// setup final fade
+				const auto resolution = 1024;// src.numCascades cascadeShadowMap.width();
+				auto fadeCascadeIndex = std::max<int>(0, (int)src.numCascades - 1);
+				auto fadeRangeInner = paramHalfSizes[fadeCascadeIndex] * (100.f / resolution);
+				auto fadeRangeOuter = 0.05f;
+
+				// pack constants
+				outData.ShadowTransform = baseTransform.transposed();
+				outData.ShadowTextureSize = base::Vector4(resolution, 1.0f / resolution, 0.0f, 0.0f);
+				outData.ShadowOffsetsX = base::Vector4(paramOffsetsRight[0], paramOffsetsRight[1], paramOffsetsRight[2], paramOffsetsRight[3]);
+				outData.ShadowOffsetsY = base::Vector4(paramOffsetsUp[0], paramOffsetsUp[1], paramOffsetsUp[2], paramOffsetsUp[3]);
+				outData.ShadowHalfSizes = base::Vector4(paramHalfSizes[0], paramHalfSizes[1], paramHalfSizes[2], paramHalfSizes[3]);
+				outData.ShadowFadeScales = base::Vector4(src.cascades[0].edgeFade, src.cascades[1].edgeFade, src.cascades[2].edgeFade, src.cascades[3].edgeFade);
+				outData.ShadowDepthRanges = base::Vector4(paramDepthRanges[0], paramDepthRanges[1], paramDepthRanges[2], paramDepthRanges[3]);
+				outData.ShadowPoissonOffsetAndBias = base::Vector4();
+				outData.ShadowPoissonOffsetAndBias.z = (float)src.numCascades;
+				outData.ShadowQuality = 0;
+
+				for (uint32_t i = 0; i < 4; ++i)
+				{
+					auto halfSegSize = (paramHalfSizes[i] > SMALL_EPSILON) ? 2.0f * paramHalfSizes[i] : 1.0f;
+
+					// CPU precompute. This will allow use MAD in shader
+					outData.ShadowParams[i].x = -(paramOffsetsRight[i] - paramHalfSizes[i]) / halfSegSize;    // shadow map center.x
+					outData.ShadowParams[i].y = -(paramOffsetsUp[i] - paramHalfSizes[i]) / halfSegSize;    // shadow map center.y
+					outData.ShadowParams[i].z = 1.0f / halfSegSize;
+
+					// prevent filter size to be smaller than one pixel
+					float minFilterTexelSize = 1.0f / static_cast<float>(resolution);
+					outData.ShadowParams[i].w = std::max<float>(minFilterTexelSize, src.cascades[i].filterScale);
+				}
+			}
+			else
+			{
+
+			}
+		}
+
+		/*void BindShadowsData(command::CommandWriter& cmd, const CascadeData& cascades)
+		{
+			struct
+			{
+				GPUCascadeInfo cascades;
+			} consts;
+
+			PackCascadeData(cascades, consts.cascades);
+
+			DescriptorEntry desc[2];
+			desc[0].constants(&consts);
+			desc[1] = cascades.cascadesAtlasSRV;
+			cmd.opBindDescriptor("ShadowParams"_id, desc);
+		}*/
+
         //---
 
+#if 0
         FrameView_CascadeShadows::FrameView_CascadeShadows(const FrameRenderer& frame, const CascadeData& data)
             : FrameView(frame, FrameViewType::GlobalCascades, data.cascadeShadowMap.width(), data.cascadeShadowMap.height())
             , m_cascadeData(data)
@@ -259,96 +372,7 @@ namespace rendering
                 }
             }
         }
-
-        //--
-
-        void PackCascadeData(const CascadeData& src, GPUCascadeInfo& outData)
-        {
-            memset(&outData, 0, sizeof(outData)); // just in case we don't set some fields
-
-            if (src.numCascades)
-            {
-                // everything is calculated with respect to cascade 0
-                // instead of storing 4 matrices we store one and 2D offset/scale factors for easier cascade selection
-                auto basePos = src.cascades[0].camera.position();
-                auto baseRight = src.cascades[0].camera.directionRight();
-                auto baseUp = -src.cascades[0].camera.directionUp();
-                auto baseTransform = src.cascades[0].camera.worldToScreen();
-
-                // calculate sub pixel offset for Poisson offsets
-                //auto cameraSubPixelOffsetX = 0.0f;
-                //auto cameraSubPixelOffsetY = 0.0f;
-                //auto subPixelOffsetXY = cameraSubPixelOffsetY * m_shadowMapResolution * 32 + cameraSubPixelOffsetX * 32;
-
-                // Initialize the constants that will be set to mark the cascades placement
-                float paramOffsetsRight[MAX_CASCADES] = { 0.f, 0.f, 0.f, 0.f };
-                float paramOffsetsUp[MAX_CASCADES] = { 0.f, 0.f, 0.f, 0.f };
-                float paramHalfSizes[MAX_CASCADES] = { 999, 999, 999, 999 };
-                float paramDepthRanges[MAX_CASCADES] = { 1.f, 1.f, 1.f, 1.f };
-                for (uint32_t i = 0; i < src.numCascades; ++i)
-                {
-                    auto& camera = src.cascades[i].camera;
-
-                    auto cameraOffset = camera.position() - basePos;
-                    paramOffsetsRight[i] = base::Dot(baseRight, cameraOffset);
-                    paramOffsetsUp[i] = base::Dot(baseUp, cameraOffset);
-                    paramHalfSizes[i] = 0.5f * camera.zoom();
-                    paramDepthRanges[i] = camera.farPlane() - camera.nearPlane();
-                }
-
-                // normalize parameters
-                auto paramsScale = 1.0f / paramHalfSizes[0];
-                for (uint32_t i = 0; i < src.numCascades; ++i)
-                {
-                    paramOffsetsRight[i] *= paramsScale;
-                    paramOffsetsUp[i] *= paramsScale;
-                    paramHalfSizes[i] *= paramsScale;
-                }
-
-                // setup final fade
-                const auto resolution = src.cascadeShadowMap.width();
-                auto fadeCascadeIndex = std::max<int>(0, (int)src.numCascades - 1);
-                auto fadeRangeInner = paramHalfSizes[fadeCascadeIndex] * (100.f / resolution);
-                auto fadeRangeOuter = 0.05f;
-
-                // pack constants
-                outData.ShadowTransform = baseTransform.transposed();
-                outData.ShadowTextureSize = base::Vector4(resolution, 1.0f / resolution, 0.0f, 0.0f);
-                outData.ShadowOffsetsX = base::Vector4(paramOffsetsRight[0], paramOffsetsRight[1], paramOffsetsRight[2], paramOffsetsRight[3]);
-                outData.ShadowOffsetsY = base::Vector4(paramOffsetsUp[0], paramOffsetsUp[1], paramOffsetsUp[2], paramOffsetsUp[3]);
-                outData.ShadowHalfSizes = base::Vector4(paramHalfSizes[0], paramHalfSizes[1], paramHalfSizes[2], paramHalfSizes[3]);
-                outData.ShadowFadeScales = base::Vector4(src.cascades[0].edgeFade, src.cascades[1].edgeFade, src.cascades[2].edgeFade, src.cascades[3].edgeFade);
-                outData.ShadowDepthRanges = base::Vector4(paramDepthRanges[0], paramDepthRanges[1], paramDepthRanges[2], paramDepthRanges[3]);
-                outData.ShadowPoissonOffsetAndBias = base::Vector4();
-                outData.ShadowPoissonOffsetAndBias.z = (float)src.numCascades;
-                outData.ShadowQuality = 0;
-
-                for (uint32_t i = 0; i < 4; ++i)
-                {
-                    auto halfSegSize = (paramHalfSizes[i] > SMALL_EPSILON) ? 2.0f * paramHalfSizes[i] : 1.0f;
-
-                    // CPU precompute. This will allow use MAD in shader
-                    outData.ShadowParams[i].x = -(paramOffsetsRight[i] - paramHalfSizes[i]) / halfSegSize;    // shadow map center.x
-                    outData.ShadowParams[i].y = -(paramOffsetsUp[i] - paramHalfSizes[i]) / halfSegSize;    // shadow map center.y
-                    outData.ShadowParams[i].z = 1.0f / halfSegSize;
-
-                    // prevent filter size to be smaller than one pixel
-                    float minFilterTexelSize = 1.0f / static_cast<float>(resolution);
-                    outData.ShadowParams[i].w = std::max<float>(minFilterTexelSize, src.cascades[i].filterScale);
-                }
-            }
-            else
-            {
-
-            }
-        }
-
-        //--
-
-        LightingData::LightingData()
-        {
-            globalShadowMaskAO = ImageView::DefaultWhite();
-        }
+#endif
 
         //--
 

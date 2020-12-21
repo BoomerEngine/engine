@@ -12,25 +12,44 @@
 
 //--
 
+sampler BlitSampler
+{
+	MinFilter=Linear,
+	MagFilter=Linear,
+	MipFilter=None,
+	AddressU=Clamp,
+	AddressV=Clamp,
+	AddressW=Clamp,
+}
+
+state BlitQuadState
+{
+	PrimitiveTopology = TriangleStrip,
+}
+
 descriptor BlitParams
 {
     ConstantBuffer
 	{
-		ivec4 TargetOffsetSize;
-		vec2 TargetToSourceScale;
-		vec2 SourceInvRTSize;
+		ivec2 TargetPixelOffset;
+		vec2 TargetInvPixelScale;
+
+		vec2 SourceOffset;
+		vec2 SourceExtents;
+
 		float Gamma;
+		float Padding;
 	}
 	
-    Texture2D Source;
+    attribute(sampler=BlitSampler) Texture2D Source;
 }
 
 export shader BlitPS
 {
 	void main()
     {
-		vec2 sourcePixel = (gl_FragCoord.xy - TargetOffsetSize.xy) * TargetToSourceScale.xy; // in pixels
-		vec2 sourceUV = (sourcePixel + 0.0f) * SourceInvRTSize;
+		vec2 sourcePixel = saturate((gl_FragCoord.xy - TargetPixelOffset.xy) * TargetInvPixelScale.xy);
+		vec2 sourceUV = SourceOffset + (SourceExtents * sourcePixel);
 
 		vec4 val = textureLod(Source, sourceUV, 0);
 
@@ -39,8 +58,10 @@ export shader BlitPS
 	}
 }
 
+attribute(state=BlitQuadState)
 export shader BlitVS
 {
+	attribute(glflip)
 	void main()
 	{
 		gl_Position.x = (gl_VertexID & 1) ? -1.0f : 1.0f;

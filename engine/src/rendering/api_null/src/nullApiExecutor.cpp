@@ -44,6 +44,11 @@ namespace rendering
 			{
 			}
 
+			void FrameExecutor::runClearFrameBuffer(const command::OpClearFrameBuffer& op)
+			{
+
+			}
+
 			void FrameExecutor::runClearPassRenderTarget(const command::OpClearPassRenderTarget& op)
 			{
 			}

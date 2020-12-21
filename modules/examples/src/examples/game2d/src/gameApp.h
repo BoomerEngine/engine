@@ -12,6 +12,7 @@ namespace example
 {
 
     class Game;
+	struct GameViewport;
 
     // 2D game example app
     class GameApp : public IApplication
@@ -28,7 +29,7 @@ namespace example
         void updateWindow();
 
         void renderFrame();
-        void renderNonGameOverlay(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget);
+        void renderNonGameOverlay(CommandWriter& cmd, const GameViewport& vp);
 
         bool processInput(const BaseEvent& evt);
 
@@ -44,7 +45,9 @@ namespace example
 
         bool shouldCaptureInput();
 
-        ImGuiContext* m_imgui = nullptr;
+		ImGui::ImGUICanvasHelper* m_imguiHelper = nullptr;
+
+		base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
 
         bool m_paused = false;
         float m_timeScale = 1.0f;

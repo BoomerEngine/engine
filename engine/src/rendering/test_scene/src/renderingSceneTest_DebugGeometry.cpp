@@ -52,25 +52,25 @@ namespace rendering
 
             void drawSpites(scene::DebugGeometry& debugGeometry, base::Vector3& rowPos)
             {
-                scene::DebugSpriteDrawer dd(debugGeometry);
+                scene::DebugDrawer dd(debugGeometry);
 
                 dd.color(base::Color::RED);
-                dd.size(16.0f);
-                dd.sprite(base::Vector3(0.0f, -1.0f, 0.0f));
+                //dd.size(16.0f);
+                //dd.sprite(base::Vector3(0.0f, -1.0f, 0.0f));
 
                 dd.color(base::Color::BLUE);
-                dd.size(32.0f);
-                dd.sprite(base::Vector3(0.0f, 1.0f, 0.0f));
+                //dd.size(32.0f);
+                //dd.sprite(base::Vector3(0.0f, 1.0f, 0.0f));
 
                 dd.color(base::Color::WHITE);
-                dd.size(32.0f);
+                //dd.size(32.0f);
                 //dd.texture(resIconPointLight.loadAndGet() ? resIconPointLight.loadAndGet()->getRenderingObject() : nullptr);
-                dd.sprite(base::Vector3::ZERO());
+                //dd.sprite(base::Vector3::ZERO());
             }
 
             void drawLines(scene::DebugGeometry& debugGeometry, base::Vector3& rowPos)
             {
-                scene::DebugLineDrawer dd(debugGeometry);
+                scene::DebugDrawer dd(debugGeometry);
 
                 // initial shift
                 base::Vector3 pos = rowPos - base::Vector3::EY() * SEPARATION * 2.0f;
@@ -108,14 +108,14 @@ namespace rendering
                     const auto start = pos + base::Vector3(0, 0, 0.5f);
                     pos += base::Vector3::EY() * SEPARATION;
 
-                    dd.size(10.0f);
+                    //dd.size(10.0f);
                     dd.color(base::Color::BLUE);
                     dd.line(start - base::Vector3(0, 0, 0.5f), start + base::Vector3(0, 0, 0.5f));
                     dd.color(base::Color::RED);
                     dd.line(start - base::Vector3(0.5f, 0, 0), start + base::Vector3(0.5f, 0, 0));
                     dd.color(base::Color::GREEN);
                     dd.line(start - base::Vector3(0, 0.5f, 0), start + base::Vector3(0, 0.5f, 0));
-                    dd.size(1.0f);
+                    //dd.size(1.0f);
                 }
 
                 // polygon
@@ -144,7 +144,7 @@ namespace rendering
 
             void drawWireShapes(scene::DebugGeometry& debugGeometry, base::Vector3& rowPos)
             {
-                scene::DebugLineDrawer dd(debugGeometry);
+                scene::DebugDrawer dd(debugGeometry);
 
                 // initial shift
                 base::Vector3 pos = rowPos - base::Vector3::EY() * SEPARATION * 3.5f;
@@ -155,7 +155,7 @@ namespace rendering
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
                     const auto extents = base::Vector3(0.4f, 0.4f, 0.4f);
                     dd.color(base::Color::CYAN);
-                    dd.box(base::Box(center - extents, center + extents));
+                    dd.wireBox(base::Box(center - extents, center + extents));
 
                     dd.color(base::Color::RED);
                     dd.brackets(base::Box(center - extents * 1.1f, center + extents * 1.1f));
@@ -167,7 +167,7 @@ namespace rendering
                 {
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
                     dd.color(base::Color::YELLOW);
-                    dd.sphere(center, 0.4f);
+                    dd.wireSphere(center, 0.4f);
                     pos += base::Vector3::EY() * SEPARATION;
                 }
 
@@ -175,7 +175,7 @@ namespace rendering
                 {
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
                     dd.color(base::Color::MAGENTA);
-                    dd.capsule(center, 0.4f, 0.3f);
+                    dd.wireCapsule(center, 0.4f, 0.3f);
                     pos += base::Vector3::EY() * SEPARATION;
                 }
 
@@ -184,7 +184,7 @@ namespace rendering
                     const auto top = pos + base::Vector3(0, 0, 0.9f);
                     const auto bottom = pos + base::Vector3(0, 0, 0.1f);
                     dd.color(base::Color(255, 128, 64));
-                    dd.cylinder(bottom, top, 0.2f, 0.4f);
+                    dd.wireCylinder(bottom, top, 0.2f, 0.4f);
                     pos += base::Vector3::EY() * SEPARATION;
                 }
 
@@ -192,11 +192,11 @@ namespace rendering
                 {
                     const auto top = pos + base::Vector3(0, 0, 0.9f);
                     dd.color(base::Color::BLUE);
-                    dd.cone(top, base::Vector3(0, 0, -1.0f), 0.8f, 10.0f);
+                    dd.wireCone(top, base::Vector3(0, 0, -1.0f), 0.8f, 10.0f);
                     dd.color(base::Color::GREEN);
-                    dd.cone(top, base::Vector3(0, 0, -1.0f), 0.8f, 45.0f);
+                    dd.wireCone(top, base::Vector3(0, 0, -1.0f), 0.8f, 45.0f);
                     dd.color(base::Color::RED);
-                    dd.cone(top, base::Vector3(0, 0, -1.0f), 0.8f, 85.0f);
+                    dd.wireCone(top, base::Vector3(0, 0, -1.0f), 0.8f, 85.0f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -205,11 +205,11 @@ namespace rendering
                 {
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
                     dd.color(base::Color::BLUE);
-                    dd.plane(center, base::Vector3::EZ(), 0.5f);
+                    dd.wirePlane(center, base::Vector3::EZ(), 0.5f);
                     dd.color(base::Color::GREEN);
-                    dd.plane(center, base::Vector3::EY(), 0.5f);
+                    dd.wirePlane(center, base::Vector3::EY(), 0.5f);
                     dd.color(base::Color::RED);
-                    dd.plane(center, base::Vector3::EX(), 0.5f);
+                    dd.wirePlane(center, base::Vector3::EX(), 0.5f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -218,11 +218,11 @@ namespace rendering
                 {
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
                     dd.color(base::Color::BLUE);
-                    dd.circle(center, base::Vector3::EZ(), 0.5f);
+                    dd.wireCircle(center, base::Vector3::EZ(), 0.5f);
                     dd.color(base::Color::GREEN);
-                    dd.circle(center, base::Vector3::EY(), 0.5f);
+                    dd.wireCircle(center, base::Vector3::EY(), 0.5f);
                     dd.color(base::Color::RED);
-                    dd.circle(center, base::Vector3::EX(), 0.5f);
+                    dd.wireCircle(center, base::Vector3::EX(), 0.5f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -232,16 +232,16 @@ namespace rendering
                     const auto center = pos + base::Vector3(0, 0, 0.1f);
                     float z = 0.0f;
                     dd.color(base::Color::CYAN);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -170.0f, 170.0f);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -170.0f, 170.0f);
                     z += 0.3f;
                     dd.color(base::Color::MAGENTA);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
                     z += 0.3f;
                     dd.color(base::Color::YELLOW);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
                     z += 0.3f;
                     dd.color(base::Color::BLACK);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
                     z += 0.3f;
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -249,8 +249,7 @@ namespace rendering
 
             void drawSolidShapes(scene::DebugGeometry& debugGeometry, base::Vector3& rowPos)
             {
-                scene::DebugSolidDrawer dd(debugGeometry);
-                scene::DebugLineDrawer dl(debugGeometry);
+                scene::DebugDrawer dd(debugGeometry);
 
                 // initial shift
                 base::Vector3 pos = rowPos - base::Vector3::EY() * SEPARATION * 3.5f;
@@ -262,10 +261,10 @@ namespace rendering
                     const auto extents = base::Vector3(0.4f, 0.4f, 0.4f);
 
                     dd.color(base::Color::CYAN);
-                    dd.box(base::Box(center - extents, center + extents));
+                    dd.solidBox(base::Box(center - extents, center + extents));
 
-                    dl.color(base::Color::WHITE);
-                    dl.box(base::Box(center - extents, center + extents));
+                    dd.color(base::Color::WHITE);
+                    dd.wireBox(base::Box(center - extents, center + extents));
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -275,10 +274,10 @@ namespace rendering
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
 
                     dd.color(base::Color(200, 200, 50));
-                    dd.sphere(center, 0.4f);
+                    dd.solidSphere(center, 0.4f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.sphere(center, 0.4f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireSphere(center, 0.4f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -288,10 +287,10 @@ namespace rendering
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
 
                     dd.color(base::Color::MAGENTA);
-                    dd.capsule(center, 0.4f, 0.3f);
+                    dd.solidCapsule(center, 0.4f, 0.3f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.capsule(center, 0.4f, 0.3f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireCapsule(center, 0.4f, 0.3f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -302,10 +301,10 @@ namespace rendering
                     const auto bottom = pos + base::Vector3(0, 0, 0.1f);
 
                     dd.color(base::Color(255, 128, 64));
-                    dd.cylinder(bottom, top, 0.5f, 0.3f);
+                    dd.solidCylinder(bottom, top, 0.5f, 0.3f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.cylinder(bottom, top, 0.5f, 0.3f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireCylinder(bottom, top, 0.5f, 0.3f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -318,30 +317,30 @@ namespace rendering
                         const auto dir = base::Vector3(1, 0, 3).normalized();
 
                         dd.color(base::Color::BLUE);
-                        dd.cone(top, dir, 0.8f, 24.0f);
+                        dd.solidCone(top, dir, 0.8f, 24.0f);
 
-                        dl.color(base::Color::WHITE);
-                        dl.cone(top, dir, 0.8f, 24.0f);
+                        dd.color(base::Color::WHITE);
+                        dd.wireCone(top, dir, 0.8f, 24.0f);
                     }
 
                     {
                         const auto dir = base::Vector3(-1, -1, 3).normalized();
 
                         dd.color(base::Color::GREEN);
-                        dd.cone(top, dir, 0.8f, 16.0f);
+                        dd.solidCone(top, dir, 0.8f, 16.0f);
 
-                        dl.color(base::Color::WHITE);
-                        dl.cone(top, dir, 0.8f, 16.0f);
+                        dd.color(base::Color::WHITE);
+                        dd.wireCone(top, dir, 0.8f, 16.0f);
                     }
 
                     {
                         const auto dir = base::Vector3(-1, 2, 3).normalized();
 
                         dd.color(base::Color::RED);
-                        dd.cone(top, dir, 0.8f, 8.0f);
+                        dd.solidCone(top, dir, 0.8f, 8.0f);
 
-                        dl.color(base::Color::WHITE);
-                        dl.cone(top, dir, 0.8f, 8.0f);
+                        dd.color(base::Color::WHITE);
+                        dd.wireCone(top, dir, 0.8f, 8.0f);
                     }
 
                     pos += base::Vector3::EY() * SEPARATION;
@@ -355,22 +354,22 @@ namespace rendering
                         const auto dir = base::Vector3(-3, 0, 1).normalized();
 
                         dd.color(base::Color::BLUE);
-                        dd.plane(top, dir, 0.8f, 1);
+                        dd.solidPlane(top, dir, 0.8f, 1);
 
-                        dl.color(base::Color::WHITE);
-                        dl.plane(top, dir, 0.8f, 2);
+                        dd.color(base::Color::WHITE);
+                        dd.wirePlane(top, dir, 0.8f, 2);
 
                         dd.color(base::Color::GREEN);
-                        dd.plane(top, dir, 0.6f, 1);
+                        dd.solidPlane(top, dir, 0.6f, 1);
 
-                        dl.color(base::Color::WHITE);
-                        dl.plane(top, dir, 0.6f, 2);
+                        dd.color(base::Color::WHITE);
+                        dd.wirePlane(top, dir, 0.6f, 2);
 
                         dd.color(base::Color::RED);
-                        dd.plane(top, dir, 0.4f, 1);
+                        dd.solidPlane(top, dir, 0.4f, 1);
 
-                        dl.color(base::Color::WHITE);
-                        dl.plane(top, dir, 0.4f, 2);
+                        dd.color(base::Color::WHITE);
+                        dd.wirePlane(top, dir, 0.4f, 2);
                     }
 
                     pos += base::Vector3::EY() * SEPARATION;
@@ -381,16 +380,16 @@ namespace rendering
                     const auto center = pos + base::Vector3(0, 0, 0.5f);
 
                     dd.color(base::Color::BLUE);
-                    dd.circle(center, base::Vector3::EZ(), 0.5f);
+                    dd.solidCircle(center, base::Vector3::EZ(), 0.5f);
                     dd.color(base::Color::GREEN);
-                    dd.circle(center, base::Vector3::EY(), 0.5f);
+                    dd.solidCircle(center, base::Vector3::EY(), 0.5f);
                     dd.color(base::Color::RED);
-                    dd.circle(center, base::Vector3::EX(), 0.5f);
+                    dd.solidCircle(center, base::Vector3::EX(), 0.5f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.circle(center, base::Vector3::EZ(), 0.5f);
-                    dl.circle(center, base::Vector3::EY(), 0.5f);
-                    dl.circle(center, base::Vector3::EX(), 0.5f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireCircle(center, base::Vector3::EZ(), 0.5f);
+                    dd.wireCircle(center, base::Vector3::EY(), 0.5f);
+                    dd.wireCircle(center, base::Vector3::EX(), 0.5f);
 
                     pos += base::Vector3::EY() * SEPARATION;
                 }
@@ -401,56 +400,52 @@ namespace rendering
                     float z = 0.0f;
 
                     dd.color(base::Color::CYAN);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -70.0f, 170.0f);
+                    dd.solidCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -70.0f, 170.0f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -70.0f, 170.0f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -70.0f, 170.0f);
 
                     z += 0.3f;
 
                     dd.color(base::Color::MAGENTA);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
+                    dd.solidCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
+                    dd.color(base::Color::WHITE);
+					dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -100.0f, 100.0f);
 
                     z += 0.3f;
 
                     dd.color(base::Color::YELLOW);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
+                    dd.solidCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
+                    dd.color(base::Color::WHITE);
+					dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -30.0f, 30.0f);
 
                     z += 0.3f;
 
                     dd.color(base::Color::BLACK);
-                    dd.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
+                    dd.solidCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
 
-                    dl.color(base::Color::WHITE);
-                    dl.circle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
+                    dd.color(base::Color::WHITE);
+                    dd.wireCircle(center + base::Vector3(0.0f, 0.0f, z), base::Vector3::EZ(), 0.4f, -5.0f, 5.0f);
 
                     z += 0.3f;
                     pos += base::Vector3::EY() * SEPARATION;
                 }
-
-                dd.flush();
-                dl.flush();
             }
 
             void drawSceenShapes(scene::DebugGeometry& debugGeometry, base::Vector2& rowPos)
             {
-                scene::DebugSolidDrawer dd(debugGeometry);
-                scene::DebugLineDrawer dl(debugGeometry);
+                scene::DebugDrawer dd(debugGeometry);
 
                 dd.color(base::Color::RED);
-                dd.rect(10, 10, 100, 100);
-                dl.color(base::Color::WHITE);
-                dl.rect(10, 10, 100, 100);
+                dd.solidRect(10, 10, 100, 100);
+                dd.color(base::Color::WHITE);
+                dd.wireRect(10, 10, 100, 100);
 
                 dd.color(base::Color::WHITE);
                 //dd.texture(resLena.loadAndGet() ? resLena.loadAndGet()->getRenderingObject() : nullptr);
-                dd.rect(120, 10, 256, 256);
+                dd.solidRect(120, 10, 256, 256);
 
                 dd.color(base::Color::WHITE);
                 dd.text(10, 150, "Hello World!");

@@ -57,22 +57,22 @@ namespace physics
                 else if (0 != (code & physx::PxErrorCode::eINVALID_PARAMETER))
                 {
                     //TRACE_ERROR(base::TempString("{}({}): Error: {}", file, line, message));
-                    base::logging::Log::Print(base::logging::OutputLevel::Info, file, line, nullptr, message);
+                    base::logging::Log::Print(base::logging::OutputLevel::Info, file, line, nullptr, nullptr, message);
                 }
                 else if (0 != (code & physx::PxErrorCode::eINVALID_OPERATION))
                 {
                     //TRACE_ERROR(base::TempString("{}({}): Error: {}", file, line, message));
-                    base::logging::Log::Print(base::logging::OutputLevel::Error, file, line, nullptr, message);
+                    base::logging::Log::Print(base::logging::OutputLevel::Error, file, line, nullptr, nullptr, message);
                 }
                 else if (0 != (code & physx::PxErrorCode::eDEBUG_WARNING))
                 {
                     //TRACE_WARNING(base::TempString("{}({}): Warning: {}", file, line, message));
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, file, line, nullptr, message);
+                    base::logging::Log::Print(base::logging::OutputLevel::Warning, file, line, nullptr, nullptr, message);
                 }
                 else if (0 != (code & physx::PxErrorCode::eDEBUG_INFO))
                 {
                     //TRACE_INFO(base::TempString("{}({}): {}", file, line, message));
-                    base::logging::Log::Print(base::logging::OutputLevel::Info, file, line, nullptr, message);
+                    base::logging::Log::Print(base::logging::OutputLevel::Info, file, line, nullptr, nullptr, message);
                 }
             }
         };

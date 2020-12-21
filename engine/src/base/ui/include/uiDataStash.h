@@ -18,7 +18,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataStash, base::IObject);
 
     public:
-        DataStash(const StyleLibraryRef& mainStyles, base::canvas::IStorage* canvasStorage);
+        DataStash(const StyleLibraryRef& mainStyles);
         virtual ~DataStash();
 
         //----
@@ -26,8 +26,8 @@ namespace ui
         // get the main styling sheet
         INLINE const StyleLibraryRef& styles() const { return m_styles; }
 
-		// get canvas data storage (images)
-		INLINE base::canvas::IStorage* canvasStorage() const { return m_canvasStorage; }
+		// get main atlas
+		INLINE base::canvas::DynamicAtlas* mainAtlas() const { return m_mainIconAtlas; };
 
         // styles version
         INLINE uint32_t stylesVersion() const { return m_stylesVersion; }
@@ -59,8 +59,7 @@ namespace ui
         StyleLibraryRef m_styles;
         uint32_t m_stylesVersion = 1;
 
-		base::canvas::ImageAtlasIndex m_mainIconAtlasIndex = 0;
-		base::RefPtr<base::canvas::IStorage> m_canvasStorage;
+		base::RefPtr<base::canvas::DynamicAtlas> m_mainIconAtlas;
 
         base::HashMap<base::StringID, base::canvas::ImageEntry> m_imageMap;
 		base::HashMap<const base::image::Image*, base::canvas::ImageEntry> m_imagePtrMap;

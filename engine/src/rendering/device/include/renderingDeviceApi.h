@@ -203,7 +203,7 @@ namespace rendering
         virtual base::Point maxRenderTargetSize() const = 0;
 
         /// initialize the rendering device, can fail obviously and it should be handled gracefully
-        virtual bool initialize(const base::app::CommandLine& cmdLine) = 0;
+        virtual bool initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) = 0;
 
         /// close the rendering driver, must be called before deletion
         virtual void shutdown() = 0;

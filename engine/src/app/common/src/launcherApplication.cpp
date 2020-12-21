@@ -8,7 +8,6 @@
 #include "launcherApplication.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingDeviceObject.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "base/app/include/configProperty.h"

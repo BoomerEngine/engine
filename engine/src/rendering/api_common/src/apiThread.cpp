@@ -87,7 +87,7 @@ namespace rendering
             TRACE_INFO("Device thread closed");
         }        
 
-		bool IBaseThread::startThread(const base::app::CommandLine& cmdLine)
+		bool IBaseThread::startThread(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 		{
 			base::ThreadSetup setup;
 			setup.m_priority = base::ThreadPriority::AboveNormal;
@@ -98,9 +98,9 @@ namespace rendering
 			m_thread.init(setup);
 
 			bool status = true;
-			run([this, &status, &cmdLine]()
+			run([this, &status, &cmdLine, &outCaps]()
 				{
-					status = threadStartup(cmdLine);
+					status = threadStartup(cmdLine, outCaps);
 				});
 
 			return status;			
@@ -111,7 +111,7 @@ namespace rendering
 			return new ObjectRegistry(this);
 		}
 
-		bool IBaseThread::threadStartup(const base::app::CommandLine& cmdLine)
+		bool IBaseThread::threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 		{
 			DEBUG_CHECK_EX(base::GetCurrentThreadID() == m_threadId, "This function should be called on rendering thread");
 
@@ -196,7 +196,7 @@ namespace rendering
 			PC_SCOPE_LVL0(FrameSync);
 
 			// update windows
-			m_windows->updateWindows();
+			//m_windows->updateWindows();
 
 			// wait if previous cleanup job has not yet finished
 			if (!m_frameSync.empty())
@@ -208,8 +208,7 @@ namespace rendering
 			m_syncQueues.cpuQueue->signalNotifications(newFrameIndex);
 
 			// create new signal
-			const auto newFrameSignal = Fibers::GetInstance().createCounter("FrameSync", 1);
-			m_frameSync = newFrameSignal;
+			auto newFrameSignal = Fibers::GetInstance().createCounter("FrameSync", 1);
 
 			// push a cleanup job to release objects from frames that were completed
 			pushJob([this, newFrameIndex, newFrameSignal, flush]()
@@ -227,7 +226,13 @@ namespace rendering
 					Fibers::GetInstance().signalCounter(newFrameSignal);
 					//m_cleanupSync.release();
 				});
-            
+
+			// wait for flush or not :)
+			if (flush)
+				Fibers::GetInstance().waitForCounterAndRelease(newFrameSignal);
+			else
+				m_frameSync = newFrameSignal;
+			
             // notify if elapsed time is outstandingly long
             auto elapsedTime = timer.milisecondsElapsed();
             if (elapsedTime > 150.0f)

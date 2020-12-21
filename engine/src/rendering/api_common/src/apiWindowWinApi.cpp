@@ -50,7 +50,7 @@ namespace rendering
 			m_inputContext.reset();
 		}
 
-		void WindowWinApi::bindOwner(ObjectID id)
+		void WindowWinApi::windowBindOwner(ObjectID id)
 		{
 			m_owner = id;
 		}
@@ -78,8 +78,16 @@ namespace rendering
 			m_numFramesStarted++;
 
 			// ok, we can render
-			outWidth = clientWidth;
-			outHeight = clientHeight;
+			if (m_duringSizeMove)
+			{
+				outWidth = m_lastSizeMoveRect.width();
+				outHeight = m_lastSizeMoveRect.height();
+			}
+			else
+			{
+				outWidth = clientWidth;
+				outHeight = clientHeight;
+			}
 			return true;
 		}
 
@@ -582,6 +590,10 @@ namespace rendering
 					rect.max.x = data->x + data->cx;
 					rect.max.y = data->y + data->cy;                    
 
+					GetClientRect(m_hWnd, (RECT*)&m_lastSizeMoveRect);
+					m_lastSizeMoveRect = rect;
+					TRACE_INFO("Sizing size: [{}x{}]", m_lastSizeMoveRect.width(), m_lastSizeMoveRect.height());
+
 					if (m_callback)
 						m_callback->onOutputWindowPlacementChanged(m_owner, rect, m_currentPixelScale, m_duringSizeMove);
 
@@ -592,6 +604,7 @@ namespace rendering
 				{
 					TRACE_INFO("WM_ENTERSIZEMOVE");
 					m_duringSizeMove = true;
+					GetClientRect(m_hWnd, (RECT*)&m_lastSizeMoveRect);
 					break;
 				}
 
@@ -669,12 +682,6 @@ namespace rendering
 		}
 
 		//--
-
-		void WindowWinApi::windowAbandon()
-		{
-			m_callback = nullptr;
-			SetWindowLongPtr(m_hWnd, GWLP_USERDATA, 0);
-		}
 
 		void WindowWinApi::windowMinimize()
 		{
@@ -1042,7 +1049,7 @@ namespace rendering
 				auto closedWindow = std::move(m_windowsToCloseOnMainThread);
 				m_windowsLock.release();
 
-				for (auto hwnd : m_windowsToCloseOnMainThread)
+				for (auto hwnd : closedWindow)
 					closeWindow(hwnd);
 			}
 
@@ -1085,15 +1092,6 @@ namespace rendering
 			}
 
 			return 0;
-		}
-
-		void WindowManagerWinApi::bindWindowOwner(uint64_t handle, ObjectID owner)
-		{
-			auto lock = CreateLock(m_windowsLock);
-
-			for (auto wnd : m_windows)
-				if (wnd->handle() == (HWND)handle)
-					wnd->bindOwner(owner);
 		}
 
 		void WindowManagerWinApi::closeWindow(uint64_t handle)

@@ -325,7 +325,7 @@ namespace rendering
     class RENDERING_MATERIAL_GRAPH_API MaterialStageCompiler : public base::StringBuilder
     {
     public:
-        MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView materialPath, const MaterialCompilationSetup& context);
+        MaterialStageCompiler(const MaterialDataLayout* dataLayout, ShaderStage stage, base::StringView materialPath, const MaterialCompilationSetup& context);
 
         // get compilation context
         INLINE const MaterialCompilationSetup& context() const { return m_context; }
@@ -334,7 +334,7 @@ namespace rendering
         INLINE base::StringView path() const { return m_materialPath; }
 
         // get the shader stage
-        INLINE ShaderType stage() const { return m_stage; }
+        INLINE ShaderStage stage() const { return m_stage; }
 
         // data layout
         INLINE const MaterialDataLayout* dataLayout() const { return m_dataLayout; }
@@ -379,7 +379,7 @@ namespace rendering
         base::StringBuf m_materialPath;
 
         uint32_t m_autoNameCounter = 1;
-        ShaderType m_stage;
+		ShaderStage m_stage;
 
         const MaterialDataLayout* m_dataLayout = nullptr;
 

@@ -22,8 +22,11 @@ namespace rendering
 			class CopyQueue : public IBaseCopyQueue
 			{
 			public:
-				CopyQueue(Thread* owner, CopyPool* pool, ObjectRegistry* objects);
+				CopyQueue(Thread* owner, ObjectRegistry* objects);
 				virtual ~CopyQueue();
+
+				virtual bool schedule(IBaseCopiableObject* ptr, const ISourceDataProvider* sourceData) override final;
+				virtual void update(uint64_t frameIndex) override final;
 			};
 
 			//---

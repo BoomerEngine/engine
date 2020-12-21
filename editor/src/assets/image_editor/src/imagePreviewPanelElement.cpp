@@ -9,8 +9,6 @@
 #include "build.h"
 #include "imagePreviewPanelElements.h"
 
-#include "rendering/device/include/renderingShaderLibrary.h"
-#include "rendering/canvas/include/renderingCanvasRendererCustomBatchHandler.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -25,9 +23,9 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
+    //base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
 
-    struct CanvasCheckersData
+    /*struct CanvasCheckersData
     {
         base::Rect validRect;
         base::Vector4 colorA;
@@ -69,11 +67,11 @@ namespace ed
     };
 
     RTTI_BEGIN_TYPE_CLASS(CanvasCheckersHandler);
-    RTTI_END_TYPE();
+    RTTI_END_TYPE();*/
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
+    /*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
 
     struct CanvasImagePreviewData
     {
@@ -118,11 +116,11 @@ namespace ed
     };
 
     RTTI_BEGIN_TYPE_CLASS(CanvasImagePreviewHandler);
-    RTTI_END_TYPE();
+    RTTI_END_TYPE();*/
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
+    /*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
 
     struct CanvasTextureCompressionPreviewParams
     {
@@ -180,11 +178,11 @@ namespace ed
     };
 
     RTTI_BEGIN_TYPE_CLASS(CanvasTextureCompressionPreviewHandler);
-    RTTI_END_TYPE();
+    RTTI_END_TYPE();*/
 
     //--
 
-    base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
+    /*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
 
     /// custom rendering handler
     class CanvasImagePixelGridHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler
@@ -221,8 +219,7 @@ namespace ed
     };
 
     RTTI_BEGIN_TYPE_CLASS(CanvasImagePixelGridHandler);
-    RTTI_END_TYPE();
-
+    RTTI_END_TYPE();*/
 
     //--
 
@@ -301,14 +298,14 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ImagePreviewElement);
     RTTI_END_TYPE();
 
-    ImagePreviewElement::ImagePreviewElement(rendering::ImageView view, rendering::ImageView sourceView)
-        : m_view(view)
-        , m_sourceView(sourceView)
+    ImagePreviewElement::ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView)
+        : m_view(AddRef(view))
+        , m_sourceView(AddRef(sourceView))
     {}
 
-    ImagePreviewElement::ImagePreviewElement(rendering::ImageView view, int mipIndex /*= 0*/, int sliceIndex /*= 0*/)
-        : m_view(view)
-        , m_sourceView(view)
+    ImagePreviewElement::ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex /*= 0*/, int sliceIndex /*= 0*/)
+        : m_view(AddRef(view))
+        , m_sourceView(AddRef(view))
         , m_mipIndex(mipIndex)
         , m_sliceIndex(sliceIndex)
     {}    
@@ -321,8 +318,8 @@ namespace ed
     {
         //auto width = std::max<uint32_t>(1, m_view.width() >> m_mip);
         //auto height = std::max<uint32_t>(1, m_view.height() >> m_mip);
-        auto width = m_view.width();
-        auto height = m_view.height();
+        auto width = m_view->image()->width();
+        auto height = m_view->image()->height();
 
         outCanvasSizeAtCurrentScale.x = width * sx;
         outCanvasSizeAtCurrentScale.y = height * sy;
@@ -335,7 +332,7 @@ namespace ed
 
     void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        if (!m_settings)
+        /*if (!m_settings)
             return;
 
         //auto width = std::max<uint32_t>(1, m_view.width() >> m_mip);
@@ -418,14 +415,14 @@ namespace ed
 
         const auto style = base::canvas::SolidColor(base::Color::WHITE);
         const auto op = m_settings->premultiply ? base::canvas::CompositeOperation::SourceOver : base::canvas::CompositeOperation::Blend;
-        canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(tileData), op);
+        canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(tileData), op);*/
     }
 
     //--
 
     void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const base::Rect& activeImageArea, float colorFrac)
     {
-        if (!activeImageArea.empty())
+        /*if (!activeImageArea.empty())
         {
             base::Color color = base::Color::GRAY;
             color.a = base::FloatTo255(colorFrac);
@@ -470,7 +467,7 @@ namespace ed
             const auto style = base::canvas::SolidColor(base::Color::WHITE);
             const auto op = base::canvas::CompositeOperation::Blend;
             canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(activeImageArea), op);
-        }
+        }*/
     }
 
     //--

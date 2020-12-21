@@ -442,7 +442,7 @@ namespace ui
 					base::canvas::Geometry geometry;
 
 					{
-						base::canvas::GeometryBuilder b(canvasStorage(), geometry);
+						base::canvas::GeometryBuilder b(geometry);
 
 						b.fillColor(base::Color(70, 70, 70, 70));
 						b.strokeColor(base::Color(255, 255, 255, 255));

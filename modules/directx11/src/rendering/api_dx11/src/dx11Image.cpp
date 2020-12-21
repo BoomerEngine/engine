@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: api\objects\image #]
+* [# filter: api\objects #]
 ***/
 
 #include "build.h"
@@ -31,7 +31,12 @@ namespace rendering
 
 			//--
 
-			IBaseImageView* Image::createView_ClientApi(const IBaseImageView::Setup& setup)
+			IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
+			{
+				return new ImageAnyView(owner(), this, setup);
+			}
+
+			IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
 			{
 				return new ImageAnyView(owner(), this, setup);
 			}
@@ -48,7 +53,27 @@ namespace rendering
 
 			//--
 
-			void Image::applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area)
+			void Image::initializeFromStaging(IBaseCopyQueueStagingArea* data)
+			{
+
+			}
+
+			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Image::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+
+			}
+
+			void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
 
 			}
@@ -56,7 +81,7 @@ namespace rendering
 			//--
 
 			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup)
-				: IBaseImageView(owner, setup.writable ? ObjectType::ImageWritableView : ObjectType::ImageView, img, setup)
+				: IBaseImageView(owner, ObjectType::ImageWritableView, img, setup)
 			{}
 
 			ImageAnyView::~ImageAnyView()

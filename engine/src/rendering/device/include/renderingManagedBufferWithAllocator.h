@@ -16,8 +16,7 @@ namespace rendering
 
     struct ManagedBufferBlock
     {
-        uint32_t bufferIndex = 0;
-        uint32_t bufferOffset = 0;
+        uint32_t dataOffset = 0;
         uint32_t dataSize = 0;
         MemoryBlock block = nullptr;
     };
@@ -30,7 +29,7 @@ namespace rendering
         RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
 
     public:
-        ManagedBufferWithAllocator(const BufferCreationInfo& info, uint32_t alignment, float growthFactor = 2.0f, uint64_t maxSize = 0);
+        ManagedBufferWithAllocator(IDevice* dev, const BufferCreationInfo& info, uint32_t alignment);
         ~ManagedBufferWithAllocator();
 
         //---
@@ -48,7 +47,7 @@ namespace rendering
 
         //---
 
-        /// allocate place in the buffer
+        /// allocate place in the buffer, does not update content
         bool allocateBlock(uint32_t dataSize, ManagedBufferBlock& outBlock);
 
         /// allocate place in the buffer and upload data there
@@ -65,14 +64,8 @@ namespace rendering
 
         base::BlockPool m_bufferAllocator;
         base::SpinLock m_bufferAllocatorLock;
-        uint32_t m_bufferIndex = 1;
 
-        uint32_t m_alignment;
-
-        float m_growthFactor = 2.0f;
-        uint64_t m_maxSize;
-
-        IDevice* m_api = nullptr;
+        uint32_t m_alignment = 0;
 
         base::Mutex m_lock;
 

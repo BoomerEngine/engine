@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/ui/include/uiElement.h"
+#include "rendering/device/include/renderingResources.h"
 
 namespace ed
 {
@@ -29,10 +30,10 @@ namespace ed
     //--
 
     // histogram computation pending job
-    class ASSETS_IMAGE_EDITOR_API ImageHistogramPendingData : public base::IReferencable
+    class ASSETS_IMAGE_EDITOR_API ImageHistogramPendingData : public rendering::IDownloadDataSink
     {
     public:
-        ImageHistogramPendingData(const rendering::DownloadBufferPtr& data, uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel);
+        ImageHistogramPendingData(uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel);
         ~ImageHistogramPendingData();
 
         // get the computed histogram data, valid only after some time
@@ -41,11 +42,14 @@ namespace ed
     private:
         base::SpinLock m_lock;
         base::RefPtr<ImageHistogramData> m_data;
-        rendering::DownloadBufferPtr m_downloadBuffer; // as downloaded from GPU
 
         uint32_t m_totalPixelCount = 0;
         uint32_t m_numBuckets = 0;
         uint8_t m_channel = 0;
+
+		//--
+
+		virtual void processRetreivedData(rendering::IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final;
     };
 
     //--
@@ -59,7 +63,7 @@ namespace ed
     };
 
     /// compute histogram from rendering image, uses GPU compute shaders
-    extern ASSETS_IMAGE_EDITOR_API base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageView& view, const ImageComputationSettings& settings);
+    extern ASSETS_IMAGE_EDITOR_API base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageSampledView* view, const ImageComputationSettings& settings);
 
     //--
 

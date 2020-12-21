@@ -1091,7 +1091,7 @@ namespace ui
         {
             if (auto editor = base::rtti_cast<GraphEditor>(parent()))
             {
-				base::canvas::GeometryBuilder builder(nullptr, geometry);
+				base::canvas::GeometryBuilder builder(geometry);
 
 				for (const auto& socket : m_layout.sockets.values())
                 {

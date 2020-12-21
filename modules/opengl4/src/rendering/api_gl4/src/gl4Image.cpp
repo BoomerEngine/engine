@@ -294,13 +294,13 @@ namespace rendering
 					const auto mipHeight = setup().calcMipHeight(atom.mip);
 					const auto mipDepth = setup().calcMipDepth(atom.mip);
 
-					const auto pixelSize = GetImageFormatInfo(setup().format).bitsPerPixel / 8;
+					const auto byteOffset = (atom.internalOffset * GetImageFormatInfo(setup().format).bitsPerPixel) / 8;
 					//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
 
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, atom.internalOffset / pixelSize));
+					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, byteOffset));
 
 					GLenum glBaseFormat = 0; // GL_RGBA
 					GLenum glBaseType = 0; // GL_FLOAT

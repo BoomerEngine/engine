@@ -42,17 +42,17 @@ namespace example
         return false;
     }
     
-    void Game::render(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget)
+    void Game::render(CommandWriter& cmd, const GameViewport& viewport)
     {
         FrameBuffer fb;
-        fb.color[0].view(colorTarget).clear(0.2, 0.2f, 0.2f, 1.0f); // comment the "clear" to save on fill rate
-        fb.depth.view(depthTarget).clearDepth().clearStencil();
-        cmd.opBeingPass(fb);
+        fb.color[0].view(viewport.colorTarget).clear(0.2, 0.2f, 0.2f, 1.0f); // comment the "clear" to save on fill rate
+        fb.depth.view(viewport.depthTarget).clearDepth().clearStencil();
+        cmd.opBeingPass(viewport.passLayout, fb);
 
-        scrollView(width, height);
+        scrollView(viewport.width, viewport.height);
 
-        renderBackground(cmd, width, height, colorTarget.width(), colorTarget.height());
-        renderLevel(cmd, width, height, colorTarget.width(), colorTarget.height());
+        renderBackground(cmd, viewport.width, viewport.height, viewport.colorTarget->width(), viewport.colorTarget->height());
+        renderLevel(cmd, viewport.width, viewport.height, viewport.colorTarget->width(), viewport.colorTarget->height());
 
         cmd.opEndPass();
     }

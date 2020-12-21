@@ -63,9 +63,15 @@ namespace rendering
         Quads,
     };
 
-    //--
+	//--
 
-    typedef uint16_t MeshChunkRenderID;
+	enum class MeshServiceTier : uint8_t
+	{
+		SeparateBuffers, // each chunk is in separate VB/IB
+		Bindless, // chunks are managed in one buffer
+	};
+
+    //--
 
     struct MeshChunk;
     struct MeshMaterial;
@@ -82,6 +88,15 @@ namespace rendering
     typedef base::RefPtr<Mesh> MeshPtr;
     typedef base::res::Ref<Mesh> MeshRef;
     typedef base::res::AsyncRef<Mesh> MeshAsyncRef;
+
+	class IMeshChunkProxy;
+	typedef base::RefPtr<IMeshChunkProxy> MeshChunkProxyPtr;
+
+	class MeshChunkProxy_Meshlets;
+	typedef base::RefPtr<MeshChunkProxy_Meshlets> MeshChunkProxyMeshletsPtr;
+
+	class MeshChunkProxy_Standalone;
+	typedef base::RefPtr<MeshChunkProxy_Standalone> MeshChunkProxyStandalonePtr;
 
     //--
 

@@ -8,56 +8,12 @@
 
 #include "build.h"
 #include "renderingSceneStats.h"
-#include "rendering/device/include/renderingShaderLibrary.h"
 #include "base/imgui/include/imgui.h"
 
 namespace rendering
 {
     namespace scene
     {
-        //--
-
-        SceneCullingProxyStats::SceneCullingProxyStats()
-        {}
-
-        void SceneCullingProxyStats::merge(const SceneCullingProxyStats& other)
-        {
-            numTestedProxies += other.numTestedProxies;
-            numCollectedProxies += other.numCollectedProxies;
-        }
-
-        //--
-
-        SceneFragmentStats::SceneFragmentStats()
-        {}
-
-        void SceneFragmentStats::merge(const SceneFragmentStats& other)
-        {
-            numFragments += other.numFragments;
-        }
-
-        //--
-
-        SceneFragmentBucketStats::SceneFragmentBucketStats()
-        {}
-
-        void SceneFragmentBucketStats::merge(const SceneFragmentBucketStats& other)
-        {
-            for (uint32_t i = 0; i < ARRAY_COUNT(types); ++i)
-                types[i].merge(other.types[i]);
-        }
-
-        //--
-
-        SceneCullingStats::SceneCullingStats()
-        {}
-
-        void SceneCullingStats::merge(const SceneCullingStats& view)
-        {
-            for (uint32_t i = 0; i < ARRAY_COUNT(proxies); ++i)
-                proxies[i].merge(view.proxies[i]);
-        }
-
         //--
 
         SceneViewStats::SceneViewStats()
@@ -71,10 +27,10 @@ namespace rendering
             cullingTime += view.cullingTime;
             fragmentsTime += view.fragmentsTime;
 
-            culling.merge(view.culling);
+            /*culling.merge(view.culling);
 
             for (uint32_t i = 0; i < ARRAY_COUNT(buckets); ++i)
-                buckets[i].merge(view.buckets[i]);
+                buckets[i].merge(view.buckets[i]);*/
         }
 
         SceneStats::SceneStats()
@@ -88,36 +44,10 @@ namespace rendering
         void SceneStats::merge(const SceneStats& other)
         {
             numScenes += other.numScenes;
-            for (uint32_t i = 0; i < ARRAY_COUNT(views); ++i)
-                views[i].merge(other.views[i]);
+            /*for (uint32_t i = 0; i < ARRAY_COUNT(views); ++i)
+                views[i].merge(other.views[i]);*/
         }
-
-        //--
-
-        FrameFragmentRenderStats::FrameFragmentRenderStats()
-        {}
-
-        void FrameFragmentRenderStats::merge(const FrameFragmentRenderStats& other)
-        {
-            numBursts += other.numBursts;
-            numFragments += other.numFragments;
-            numDrawBaches += other.numDrawBaches;
-            numDrawTriangles += other.numDrawTriangles;
-        }
-
-        //--
-
-        FrameFragmentBucketStats::FrameFragmentBucketStats()
-        {}
-
-        void FrameFragmentBucketStats::merge(const FrameFragmentBucketStats& other)
-        {
-            auto lock = CreateLock(mergeLock);
-
-            for (uint32_t i = 0; i < ARRAY_COUNT(types); ++i)
-                types[i].merge(other.types[i]);
-        }
-
+        
         //--
 
         FrameViewStats::FrameViewStats()
@@ -130,8 +60,8 @@ namespace rendering
             numViews += other.numViews;
             recordTime += other.recordTime;
 
-            for (uint32_t i = 0; i < ARRAY_COUNT(buckets); ++i)
-                buckets[i].merge(other.buckets[i]);
+            /*for (uint32_t i = 0; i < ARRAY_COUNT(buckets); ++i)
+                buckets[i].merge(other.buckets[i]);*/
         }
 
         //--
@@ -146,8 +76,8 @@ namespace rendering
 
         void FrameStats::merge(const FrameStats& other)
         {
-            for (uint32_t i = 0; i < ARRAY_COUNT(views); ++i)
-                views[i].merge(other.views[i]);
+            /*for (uint32_t i = 0; i < ARRAY_COUNT(views); ++i)
+                views[i].merge(other.views[i]);*/
         }
 
         //--
@@ -165,26 +95,6 @@ namespace rendering
             MergedStats(const MergedStats<T>& other) = delete;
             MergedStats& operator=(const MergedStats<T>& other) = delete;
         };
-
-        static const char* ProxyName(int type)
-        {
-            return base::reflection::GetEnumValueName((ProxyType)type);
-        }
-
-        static const char* FragmentName(int type)
-        {
-            return base::reflection::GetEnumValueName((FragmentHandlerType)type);
-        }
-
-        static const char* ViewTypeName(int type)
-        {
-            return base::reflection::GetEnumValueName((FrameViewType)type);
-        }
-
-        static const char* BucketName(int type)
-        {
-            return base::reflection::GetEnumValueName((FragmentDrawBucket)type);
-        }
         
         struct StaticGUISettings
         {
@@ -196,7 +106,7 @@ namespace rendering
 
         static StaticGUISettings GGuiSettings;
 
-        void RenderStatsGuid(const SceneCullingProxyStats& stat)
+        /*void RenderStatsGuid(const SceneCullingProxyStats& stat)
         {
             //ImGui::SetNextItemWidth(300);
             //ImGui::ProgressBar(frac, ImVec2(-1, 0), base::TempString("{} / {}", MemSize(size), MemSize(max)));
@@ -312,12 +222,12 @@ namespace rendering
             {
                 RenderStatsGui(mergedFrameBuckets, mergedSceneBuckets);
             }
-        }
+        }*/
 
         void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneStats)
         {
-            MergedStats<FrameViewStats> mergedFrameViews(frameStats.views);
-            MergedStats<SceneViewStats> mergedSceneViews(mergedSceneStats.views);
+            //MergedStats<FrameViewStats> mergedFrameViews(frameStats.views);
+            //MergedStats<SceneViewStats> mergedSceneViews(mergedSceneStats.views);
 
             ImGui::Checkbox("PerViews", &GGuiSettings.breakDownPerViewType);
             ImGui::SameLine();
@@ -335,22 +245,22 @@ namespace rendering
                 ImGui::TextColored(ImVec4(0.5, 1, 1, 1), "All views");
                 if (opened)
                 {
-                    RenderStatsGui(mergedFrameViews, mergedSceneViews);
+                    //RenderStatsGui(mergedFrameViews, mergedSceneViews);
                     ImGui::TreePop();
                 }
 
-                for (uint32_t i = 0; i < NUM_VIEW_TYPES; i++)
+                /*for (uint32_t i = 0; i < NUM_VIEW_TYPES; i++)
                 {
                     if (ImGui::TreeNode(ViewTypeName(i)))
                     {
                         RenderStatsGui(frameStats.views[i], mergedSceneStats.views[i]);
                         ImGui::TreePop();
                     }
-                }
+                }*/
             }
             else
             {
-                RenderStatsGui(mergedFrameViews, mergedSceneViews);
+                //RenderStatsGui(mergedFrameViews, mergedSceneViews);
             }
         }
 

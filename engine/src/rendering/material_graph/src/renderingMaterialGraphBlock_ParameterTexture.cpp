@@ -40,7 +40,15 @@ namespace rendering
             {
                 if (entry->type == MaterialDataLayoutParameterType::Texture2D)
                 {
-                    return CodeChunk(CodeChunkType::TextureResource, base::TempString("{}.{}", compiler.dataLayout()->descriptorName(), entry->name), true);
+					if (compiler.context().bindlessTextures)
+					{
+
+					}
+					else
+					{
+						const auto& layout = compiler.dataLayout()->discreteDataLayout();
+						return CodeChunk(CodeChunkType::TextureResource, base::TempString("{}.{}", layout.descriptorName, entry->name), true);
+					}
                 }
             }
             

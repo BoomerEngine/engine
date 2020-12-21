@@ -34,7 +34,7 @@ namespace rendering
 				//--
 
 			private:
-				virtual bool initialize(const base::app::CommandLine& cmdLine) override final;
+				virtual bool initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
 				virtual void shutdown() override final;
 
 				virtual IBaseThread* createOptimalThread(const base::app::CommandLine& cmdLine) override final;

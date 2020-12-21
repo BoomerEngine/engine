@@ -82,7 +82,27 @@ namespace rendering
 
 			//--
 
-			void Buffer::applyCopyAtoms(const base::Array<ResourceCopyAtom>& atoms, Frame* frame, const StagingArea& area)
+			void Buffer::initializeFromStaging(IBaseCopyQueueStagingArea* data)
+			{
+
+			}
+
+			void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Buffer::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
+			{
+
+			}
+
+			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+			{
+			
+			}
+
+			void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
 
 			}

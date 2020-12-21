@@ -147,7 +147,7 @@ namespace rendering
 		return 1;
 	}
 
-    bool FrameBuffer::validate() const
+    bool FrameBuffer::validate(uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/, uint32_t* outSampleCount /*= nullptr*/) const
     {
         int w = -1;
         int h = -1;
@@ -178,13 +178,34 @@ namespace rendering
             }
         }
 
-        if (depth && !first)
+        if (depth)
         {
-            DEBUG_CHECK_RETURN_V(w == depth.width, false);
-            DEBUG_CHECK_RETURN_V(h == depth.height, false);
-            DEBUG_CHECK_RETURN_V(s == depth.samples, false);
-            DEBUG_CHECK_RETURN_V(l == depth.slices, false);
+            if (first)
+            {
+                w = depth.width;
+                h = depth.height;
+                s = depth.samples;
+                l = depth.slices;
+                first = false;
+            }
+            else
+            {
+                DEBUG_CHECK_RETURN_V(w == depth.width, false);
+                DEBUG_CHECK_RETURN_V(h == depth.height, false);
+                DEBUG_CHECK_RETURN_V(s == depth.samples, false);
+                DEBUG_CHECK_RETURN_V(l == depth.slices, false);
+            }
         }
+
+		if (first)
+			return false; // empty FB is not supported now
+
+		if (outWidth)
+			*outWidth = w;
+		if (outHeight)
+			*outHeight = h;
+		if (outSampleCount)
+			*outSampleCount = s;
 
         return true;
     }

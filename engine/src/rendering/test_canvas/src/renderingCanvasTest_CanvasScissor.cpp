@@ -30,7 +30,7 @@ namespace rendering
 
             void buildGeometry(base::MTRandState & rng, float canvasW, float canvasH, base::canvas::Geometry& outGeometry)
             {
-                base::canvas::GeometryBuilder b(m_storage, outGeometry);
+                base::canvas::GeometryBuilder b(outGeometry);
 
                 for (int i = 0; i < 200; ++i)
                 {

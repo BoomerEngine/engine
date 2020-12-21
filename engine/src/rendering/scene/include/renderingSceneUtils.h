@@ -98,7 +98,7 @@ namespace rendering
         ///---
 
         // bind single camera data
-        extern RENDERING_SCENE_API void BindSingleCamera(command::CommandWriter& cmd, const Camera& camera, const Camera* prevFrameCamera = nullptr);
+        //extern RENDERING_SCENE_API void BindSingleCamera(command::CommandWriter& cmd, const Camera& camera, const Camera* prevFrameCamera = nullptr);
 
         ///--
 

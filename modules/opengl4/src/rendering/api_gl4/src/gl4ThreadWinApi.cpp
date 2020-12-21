@@ -89,7 +89,7 @@ namespace rendering
 			{
 			}
 
-			bool ThreadWinApi::threadStartup(const base::app::CommandLine& cmdLine)
+			bool ThreadWinApi::threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 			{
 				// get the handle to dummy window
 				m_hFakeHWND = (HWND)m_windows->offscreenWindow();
@@ -175,7 +175,7 @@ namespace rendering
 				TRACE_INFO("OpenGL context initialized");
 
 				// pass to lower-level initialization
-				return Thread::threadStartup(cmdLine);
+				return Thread::threadStartup(cmdLine, outCaps);
 			}
 
 			void ThreadWinApi::threadFinish()

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/ui/include/uiElement.h"
+#include "base/canvas/include/canvasGeometry.h"
 
 namespace ed
 {
@@ -51,7 +52,7 @@ namespace ed
             base::StringView caption;
             base::Array<CollapsedBucket> collapsedBuckets;
             uint32_t collapsedBucketsMaxValue = 0;
-            base::RefPtr<base::canvas::Geometry> geometry;
+            base::canvas::Geometry geometry;
         };
 
         double m_histogramMin = 0.0;

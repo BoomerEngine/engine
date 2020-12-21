@@ -97,7 +97,7 @@ namespace application
             m_allErrors.clearPtr();
         }
 
-        virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* context, const char* text) override final
+        virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override final
         {
             if (level == logging::OutputLevel::Warning)
                 m_numWarnings += 1;
@@ -135,7 +135,7 @@ namespace application
                 {
                     TRACE_ERROR("Captured {} errors:", m_allErrors.size());
                     for (const auto* msg : m_allErrors)
-                        logging::Log::Print(logging::OutputLevel::Error, msg->file.c_str(), msg->line, msg->context.c_str(), msg->text.c_str());
+                        logging::Log::Print(logging::OutputLevel::Error, msg->file.c_str(), msg->line, "", msg->context.c_str(), msg->text.c_str());
                 }
             }
 

@@ -19,9 +19,7 @@ namespace rendering
         base::ConfigProperty<int> cvFrameDefaultMSAALevel("Rendering.Viewport", "DefaultMSAA", 0);
 
         FrameParams_Resolution::FrameParams_Resolution(uint32_t width_, uint32_t height_)
-            : finalCompositionWidth(width_)
-            , finalCompositionHeight(height_)
-            , width(width_)
+            : width(width_)
             , height(height_)
         {
             width = (uint32_t)std::clamp<float>(std::roundf(cvFrameResolutionScaleFactor.get() * width_), 0.0f, 32738.0f);
@@ -61,6 +59,15 @@ namespace rendering
         FrameParams_Camera::FrameParams_Camera(const Camera& camera_)
             : camera(camera_)
         {
+        }
+
+        //--
+
+        base::ConfigProperty<base::Color> cvFrameDefaultClearColor("Rendering", "DefaultClearcolor", base::Color(50,50,50,255));
+
+        FrameParams_Clear::FrameParams_Clear()
+        {
+            clearColor = cvFrameDefaultClearColor.get().toVectorLinear();
         }
 
         //--
@@ -147,10 +154,6 @@ namespace rendering
         //--
 
         FrameParams_DebugGeometry::FrameParams_DebugGeometry()
-            : solid(DebugGeometryLayer::SceneSolid)
-            , transparent(DebugGeometryLayer::SceneTransparent)
-            , overlay(DebugGeometryLayer::Overlay)
-            , screen(DebugGeometryLayer::Screen)
         {}
 
         //--

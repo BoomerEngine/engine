@@ -39,6 +39,19 @@ namespace rendering
 		DEBUG_CHECK_EX(m_device == nullptr, "Device not closed properly");
     }
 
+	static base::SpecificClassType<IDevice> FindDeviceClass(base::StringView name)
+	{
+		base::Array<base::SpecificClassType<IDevice>> deviceClasses;
+		RTTI::GetInstance().enumClasses(deviceClasses);
+
+		for (const auto& deviceClass : deviceClasses)
+			if (auto deviceNameMetadata = deviceClass->findMetadata<DeviceNameMetadata>())
+				if (name == deviceNameMetadata->name())
+					return deviceClass;
+
+		return nullptr;
+	}
+
     base::app::ServiceInitializationResult DeviceService::onInitializeService(const base::app::CommandLine &cmdLine)
     {
         // read the name of the device from config
@@ -52,21 +65,34 @@ namespace rendering
             TRACE_INFO("Using commandline specified rendering device '{}'", deviceToInitializeName);
         }
 
-        // find the device class
-        m_device = createAndInitializeDevice(deviceToInitializeName, cmdLine);
-        if (!m_device)
-        {
-            TRACE_WARNING("Unable to start '{}', using NULL device", deviceToInitializeName);
+		// find device class
+		const auto deviceClass = FindDeviceClass(deviceToInitializeName);
+		if (!deviceClass)
+		{
+			TRACE_ERROR("Unknown device class '{}'", deviceToInitializeName);
+			return base::app::ServiceInitializationResult::FatalError;
+		}
 
-            m_device = createAndInitializeDevice("Null", cmdLine);
-            if (!m_device)
-            {
-                TRACE_ERROR("Null rendering device nto found or disabled. Exiting.");
-                return base::app::ServiceInitializationResult::FatalError;
-            }
-        }
+		// initialize the device
+		auto device = deviceClass->createPointer<IDevice>();
+		if (!device->initialize(cmdLine, m_caps))
+		{
+			TRACE_ERROR("Failed to initialize rendering device");
+			device->shutdown();
+			delete device;
+
+			return base::app::ServiceInitializationResult::FatalError;
+		}
+
+		// print caps
+		TRACE_INFO("Rendering device '{}' initialized", device->name());
+		TRACE_INFO("Device geometry tier: {}", m_caps.geometry);
+		TRACE_INFO("Device transparency tier: {}", m_caps.transparency);
+		TRACE_INFO("Device raytracing tier: {}", m_caps.raytracing);
+		TRACE_INFO("Device VRAm size: {}", MemSize(m_caps.vramSize));
 
 		// create default objects
+		m_device = device;
 		m_globals = new DeviceGlobalObjects(m_device);
 
         // canvas renderer initialized
@@ -103,34 +129,6 @@ namespace rendering
 
         // sync with the rendering thread and GPU, with optional flush
         m_device->sync(cvSyncRenderingDeviceEveryFrame.get());
-    }
-
-    //--
-    
-    IDevice* DeviceService::createAndInitializeDevice(base::StringView deviceName, const base::app::CommandLine& cmdLine) const
-    {
-        base::Array<base::SpecificClassType<IDevice>> deviceClasses;
-        RTTI::GetInstance().enumClasses(deviceClasses);
-
-        for (const auto& deviceClass : deviceClasses)
-        {
-            if (auto deviceNameMetadata = deviceClass->findMetadata<DeviceNameMetadata>())
-            {
-                if (deviceName == deviceNameMetadata->name())
-                {
-                    if (auto device = deviceClass->createPointer<IDevice>())
-                    {
-                        if (device->initialize(cmdLine))
-                            return device;
-
-                        device->shutdown();
-                        delete device;
-                    }
-                }
-            }
-        }
-
-        return nullptr;
     }
 
     //--

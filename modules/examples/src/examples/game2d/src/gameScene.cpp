@@ -17,17 +17,15 @@ namespace example
         RTTI_PROPERTY(m_image);
     RTTI_END_TYPE();
 
-    GameSpriteAsset::GameSpriteAsset(const ImageRef& ptr, float scale, bool circle)
-        : m_image(ptr)
+    GameSpriteAsset::GameSpriteAsset(const base::canvas::IStorage* storage, ImageEntry image, StringView name, float scale, bool circle)
+        : m_image(image)
+		, m_storage(storage)
         , m_size(1,1)
         , m_scale(scale)
         , m_circle(circle)
-        , m_name("Sprite")
+        , m_name(name ? name : "Sprite")
     {
         buildGeometry();
-
-        if (auto image = ptr.acquire())
-            m_name = StringBuf(image->key().fileStem());
     }
 
     void GameSpriteAsset::setupSnapBottom()
@@ -80,7 +78,7 @@ namespace example
             fillSettings.m_wrapU = true;
         }
 
-        auto fillStyle = ImagePattern(m_image.acquire(), fillSettings);
+        auto fillStyle = ImagePattern(m_image, fillSettings);
         builder.fillPaint(fillStyle);
 
         builder.beginPath();
@@ -101,25 +99,17 @@ namespace example
 
     void GameSpriteAsset::buildGeometry()
     {
-        m_geometry[0] = RefNew<Geometry>();
-        m_geometry[1] = RefNew<Geometry>();
+        m_size.x = m_image.width * m_scale;
+        m_size.y = m_image.height * m_scale;
 
-        if (auto image = m_image.acquire())
         {
-            m_size.x = image->width() * m_scale;
-            m_size.y = image->height() * m_scale;
+            GeometryBuilder builder(m_storage, m_geometry[0]);
+            buildGeometry(builder, false);
+        }
 
-            {
-                GeometryBuilder builder;
-                buildGeometry(builder, false);
-                builder.extract(*m_geometry[0]);
-            }
-
-            {
-                GeometryBuilder builder;
-                buildGeometry(builder, true);
-                builder.extract(*m_geometry[1]);
-            }
+        {
+			GeometryBuilder builder(m_storage, m_geometry[1]);
+			buildGeometry(builder, true);
         }
     }
 
@@ -128,7 +118,7 @@ namespace example
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GameSpriteSequenceAsset);
     RTTI_END_TYPE();
 
-    GameSpriteSequenceAsset::GameSpriteSequenceAsset(StringView baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
+    GameSpriteSequenceAsset::GameSpriteSequenceAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, StringView baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
         : m_fps(fps)
     {
         for (uint32_t i = 1; i < numFrames; ++i)
@@ -138,7 +128,9 @@ namespace example
             for (int j=0; j<downsample; ++j)
                 image = Downsampled(image->view(), DownsampleMode::AverageWithAlphaWeight, ColorSpace::SRGB);
 
-            auto frameAsset = RefNew<GameSpriteAsset>(image);
+			auto imageEntry = storage->registerImage(atlasIndex, image);
+
+            auto frameAsset = RefNew<GameSpriteAsset>(storage, "", imageEntry);
             frameAsset->setupSnapBottom(); // HACK
 
             m_frameAssets.pushBack(frameAsset);
@@ -195,23 +187,24 @@ namespace example
         if (m_asset)
         {
             const auto placement = XForm2D::BuildRotation(rot).translation(pos);
-            canvas.placement(placement);
-            canvas.place(m_asset->geometry());
+            canvas.place(placement, m_asset->geometry());
         }
 
         if (m_renderBBox)
         {
-            GeometryBuilder builder;
-            builder.strokeColor(Color::YELLOW);
+			Geometry g;
+			{
+				GeometryBuilder builder(nullptr, g);
+				builder.strokeColor(Color::YELLOW);
 
-            Vector2 tl, br;
-            bounds(tl, br);
-            builder.beginPath();
-            builder.rect(tl, br);
-            builder.stroke();
+				Vector2 tl, br;
+				bounds(tl, br);
+				builder.beginPath();
+				builder.rect(tl, br);
+				builder.stroke();
+			}
 
-            canvas.placement(0,0);
-            canvas.place(builder);
+            canvas.place(0, 0, g);
         }
     }
 
@@ -235,7 +228,7 @@ namespace example
         RTTI_PROPERTY(m_tileImages);
     RTTI_END_TYPE();
 
-    GameTerrianAsset::GameTerrianAsset(float tileSize, StringView baseDepotPath, uint32_t numTiles)
+    GameTerrianAsset::GameTerrianAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, float tileSize, StringView baseDepotPath, uint32_t numTiles)
         : m_tileSize(tileSize)
     {
         m_tileImages.resize(numTiles);
@@ -250,9 +243,9 @@ namespace example
     {
         if (c && c <= m_tileImages.lastValidIndex())
         {
-            if (const auto image = m_tileImages[c].acquire())
+            if (const auto image = m_tileImages[c])
             {
-                const auto scale = m_tileSize / image->width();
+                const auto scale = m_tileSize / image.width;
 
                 const auto fillSettings = base::canvas::ImagePatternSettings().scale(scale);
                 const auto fillStyle = ImagePattern(image, fillSettings);
@@ -478,13 +471,26 @@ namespace example
             obj->render(canvas);
     }
 
-    void GameSceneLayer::render(CommandWriter& cmd, Vector2 center, uint32_t width, uint32_t height, uint32_t outputWidth, uint32_t outputHeight) const
+    void GameSceneLayer::render(CommandWriter& cmd, Vector2 center, const GameViewport& vp) const
     {
         float screenCenterX = width / 2.0f;
         float screenCenterY = height / 2.0f;
 
         float canvasOffsetX = center.x - screenCenterX;
         float canvasOffsetY = 0;// center.y - screenCenterY;
+
+		rendering::canvas::CanvasRenderer::Setup setup;
+		setup.width = width;
+		setup.height = height;
+		setup.backBufferColorRTV = vp.colorTarget;
+		setup.backBufferDepthRTV = vp.depthTarget;
+		setup.backBufferLayout = vp.passLayout;
+		setup.pixelScale = 1.0f;
+
+		// render test to canvas
+		{
+			rendering::canvas::CanvasRenderer canvas(setup, m_storage);
+
 
         Canvas canvas(width, height, nullptr, -canvasOffsetX, -canvasOffsetY, 1.0f); // TODO: DPI
         canvas.scissorBounds(canvasOffsetX, 0.0f, canvasOffsetX + width, height);

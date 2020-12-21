@@ -130,7 +130,7 @@ namespace ui
         virtual void windowUpdate(NativeWindowID id) = 0;
 
         /// render collected content into the window
-        virtual void windowRenderContent(NativeWindowID id, const Size& size, bool forcedPaint, const std::function<void(base::canvas::Canvas& canvas)>& drawFunc) = 0;
+        virtual void windowRenderContent(NativeWindowID id, const ui::ElementArea& area, bool forcedPaint, const base::canvas::Canvas& canvas) = 0;
 
         /// set mouse capture mode
         virtual void windowSetCapture(NativeWindowID id, int mode) = 0;
@@ -170,9 +170,6 @@ namespace ui
 
         // data stash for icons/templates other assets usable in UI
         INLINE DataStash& stash() const { return *m_stash; }
-
-		// get the canvas data storage
-		base::canvas::IStorage* canvasStorage() const;
 
 		// get list of all windows
         INLINE const base::Array<WindowPtr>& windows() const { return m_windowList; }

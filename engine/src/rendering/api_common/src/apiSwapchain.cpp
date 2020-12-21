@@ -68,10 +68,11 @@ namespace rendering
 
 		void IBaseWindowedSwapchain::disconnect_ClientApi()
 		{
-			ASSERT(m_disconnected.exchange(1) == 0);
-
-			if (m_windowManager)
-				m_windowManager->disconnectWindow(m_windowHandle);
+			if (m_disconnected.exchange(1) == 0)
+			{
+				if (m_windowManager)
+					m_windowManager->disconnectWindow(m_windowHandle);
+			}
 		}
 
 		bool IBaseWindowedSwapchain::prepare_ClientApi(SwapchainState& outState)

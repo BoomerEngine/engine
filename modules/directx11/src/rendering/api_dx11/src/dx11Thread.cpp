@@ -10,9 +10,7 @@
 
 #include "dx11Device.h"
 #include "dx11Thread.h"
-#include "dx11FrameFence.h"
 #include "dx11CopyQueue.h"
-#include "dx11CopyPool.h"
 #include "dx11ObjectCache.h"
 #include "dx11TransientBuffer.h"
 #include "dx11Swapchain.h"
@@ -53,7 +51,7 @@ namespace rendering
 
 			//--
 
-			bool Thread::threadStartup(const base::app::CommandLine& cmdLine)
+			bool Thread::threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 			{
 				// determine device type
 				D3D_DRIVER_TYPE deviceType = D3D_DRIVER_TYPE_HARDWARE;
@@ -118,7 +116,7 @@ namespace rendering
 				m_dxDevice = dxDevice;
 				m_dxDeviceContext = dxDeviceContext;
 
-				return IBaseThread::threadStartup(cmdLine);
+				return IBaseThread::threadStartup(cmdLine, outCaps);
 			}
 
 			void Thread::threadFinish()
@@ -130,6 +128,58 @@ namespace rendering
 			}
 
 			//--
+
+			void Thread::insertGpuFrameFence_Thread(uint64_t frameIndex)
+			{
+				D3D11_QUERY_DESC desc;
+				memzero(&desc, sizeof(desc));
+				desc.Query = D3D11_QUERY_EVENT;
+
+				ID3D11Query* dxQuery = nullptr;
+				DX_PROTECT(m_dxDevice->CreateQuery(&desc, &dxQuery));
+
+				//--
+
+				auto lock = CreateLock(m_fencesLock);
+				ASSERT_EX(frameIndex > m_fencesLastFrame, "Unexpected frame index, no fence will be added");
+
+				FrameFence fence;
+				fence.frameIndex = frameIndex;
+				fence.dxQuery = dxQuery;
+
+				m_fences.push(fence);
+				m_fencesLastFrame = frameIndex;
+			}
+
+			bool Thread::checkGpuFrameFence_Thread(uint64_t& outFrameIndex)
+			{
+				auto lock = CreateLock(m_fencesLock);
+
+				if (!m_fences.empty())
+				{
+					while (m_fences.size() < 2)
+					{
+						auto& topFence = m_fences.top();
+
+						BOOL data = FALSE;
+						HRESULT hRet = m_dxDeviceContext->GetData(topFence.dxQuery, &data, sizeof(data), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+						if (hRet != S_FALSE)
+						{
+							if (hRet != S_OK)
+							{
+								TRACE_ERROR("Frame fence failed with return code {}", hRet);
+							}
+
+							outFrameIndex = topFence.frameIndex;
+							topFence.dxQuery->Release();
+							m_fences.pop();
+							return true;
+						}
+					}
+				}
+
+				return false;
+			}
 
 			void Thread::syncGPU_Thread()
 			{
@@ -166,13 +216,13 @@ namespace rendering
 				}
 			}
 
-			void Thread::execute_Thread(Frame& frame, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, RuntimeDataAllocations& data)
+			void Thread::execute_Thread(uint64_t frameIndex, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, const FrameExecutionData& data)
 			{
-				FrameExecutor executor(this, &frame, &stats);
-				executor.prepare(data);
-				executor.execute(masterCommandBuffer);
+				//FrameExecutor executor(this, &stats);
+				//executor.prepare(data);
+				//executor.execute(masterCommandBuffer);
 			}
-
+			
 			IBaseSwapchain* Thread::createOptimalSwapchain(const OutputInitInfo& info)
 			{
 				if (info.m_class == OutputClass::Window)
@@ -277,30 +327,19 @@ namespace rendering
 				return new GraphicsPassLayout(this, info);
 			}
 
-			IBaseFrameFence* Thread::createOptimalFrameFence()
+			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)
 			{
-				D3D11_QUERY_DESC desc;
-				memzero(&desc, sizeof(desc));
-				desc.Query = D3D11_QUERY_EVENT;
-
-				ID3D11Query* dxQuery = nullptr;
-				DX_PROTECT(m_dxDevice->CreateQuery(&desc, &dxQuery));
-				
-				return new FrameFence(m_dxDeviceContext, dxQuery);
+				return nullptr;
 			}
+
+			/*D3D11_QUERY_DESC desc;
+			memzero(&desc, sizeof(desc));
+			desc.Query = D3D11_QUERY_EVENT;
+
+			ID3D11Query* dxQuery = nullptr;
+			DX_PROTECT(m_dxDevice->CreateQuery(&desc, &dxQuery));*/
 
 			//--
-
-			IBaseStagingPool* Thread::createOptimalStagingPool(uint32_t size, uint32_t pageSize, const base::app::CommandLine& cmdLine)
-			{
-				return new CopyPool(size, pageSize);
-			}
-
-			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
-			{
-				auto* pool = static_cast<CopyPool*>(copyPool());
-				return new CopyQueue(this, pool, objectRegistry());
-			}
 
 			ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
 			{
@@ -312,19 +351,14 @@ namespace rendering
 				return new ObjectCache(this);
 			}
 
+			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
+			{
+				return new CopyQueue(this, m_objectRegistry);
+			}
+
 			IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
 			{
 				return new BackgroundQueue(this);
-			}
-
-			IBaseTransientBufferPool* Thread::createOptimalTransientStagingPool(const base::app::CommandLine& cmdLine)
-			{
-				return new TransientBufferPool(this, TransientBufferType::Staging);
-			}
-
-			IBaseTransientBufferPool* Thread::createOptimalTransientConstantPool(const base::app::CommandLine& cmdLine)
-			{
-				return new TransientBufferPool(this, TransientBufferType::Constants);
 			}
 
 			//--

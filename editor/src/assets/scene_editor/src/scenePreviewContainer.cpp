@@ -14,7 +14,6 @@
 #include "sceneContentStructure.h"
 
 #include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 

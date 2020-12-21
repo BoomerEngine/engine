@@ -36,14 +36,12 @@ namespace rendering
 
 			//--
 
-			void bindOwner(ObjectID id);
 			bool prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight);
 			void disconnectWindow();
 			void update();
 
 			//--
 
-			virtual void windowAbandon() override;
 			virtual void windowMinimize() override;
 			virtual void windowMaximize() override;
 			virtual void windowRestore() override;
@@ -69,6 +67,7 @@ namespace rendering
 			virtual void windowSetAlpha(float alpha) override;
 			virtual void windowCancelCloseRequest() override;
 			virtual base::input::ContextPtr windowGetInputContext() override;
+			virtual void windowBindOwner(ObjectID id) override;
 
 			//--
 
@@ -107,6 +106,8 @@ namespace rendering
 			uint32_t m_numLastFramesRendered = 0;
 			base::NativeTimePoint m_nextFPSCapture;
 
+			base::Rect m_lastSizeMoveRect;
+
 			//--
 
 			base::Mutex m_windowLock;
@@ -135,7 +136,6 @@ namespace rendering
 			virtual uint64_t offscreenWindow() override final;
 			virtual void updateWindows() override final;
 			virtual uint64_t createWindow(const OutputInitInfo& initInfo) override final;
-			virtual void bindWindowOwner(uint64_t handle, ObjectID owner) override final;
 			virtual void closeWindow(uint64_t handle) override final;
 			virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
 			virtual void disconnectWindow(uint64_t handle) override final;

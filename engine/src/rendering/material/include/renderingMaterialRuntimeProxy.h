@@ -8,19 +8,56 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingImageView.h"
-#include "rendering/device/include/renderingParametersView.h"
 #include "renderingMaterialRuntimeLayout.h"
 
 namespace rendering
 {
+	//---
+
+	/// binding points data (descriptors)
+	struct MaterialDataDescriptor : public base::NoCopy
+	{
+		RTTI_DECLARE_POOL(POOL_MATERIAL_DATA);
+
+	public:
+		~MaterialDataDescriptor();
+
+		uint8_t* constantData = nullptr; // TODO: double buffer if needed
+		uint32_t constantDataSize = 0;
+
+		base::StringID descriptorName;
+		DescriptorID descriptorID;
+		DescriptorEntry* descriptorData = nullptr; // resource views (we reference)
+		uint32_t descriptorCount = 0;
+
+		static MaterialDataDescriptor* Create(const MaterialDataLayoutDescriptor& layout, const IMaterial& source);
+	};
+
+	//---
+
+	// bindless data (textures are saved as IDs in constant buffer)
+	struct MaterialDataBindless : public base::NoCopy
+	{
+		RTTI_DECLARE_POOL(POOL_MATERIAL_DATA);
+
+	public:
+		~MaterialDataBindless();
+
+		uint8_t* constantData = nullptr; // TODO: double buffer if needed
+		uint32_t constantDataSize = 0;
+
+		static MaterialDataBindless* Create(const MaterialDataLayoutBindless& layout, const IMaterial& source);
+	};
+
     //---
 
     // proxy for material's rendering data
     class RENDERING_MATERIAL_API MaterialDataProxy : public base::IReferencable
     {
+		RTTI_DECLARE_POOL(POOL_MATERIAL_DATA);
+
     public:
-        MaterialDataProxy(const MaterialTemplate* materialTemplate, bool keepRef, const IMaterial& dataSource);
+        MaterialDataProxy(const MaterialTemplateProxy* materialTemplate);
         ~MaterialDataProxy();
 
         //--
@@ -31,39 +68,49 @@ namespace rendering
         // sort group for this material proxy, NOTE: never updated, a new proxy must be created as if we changed the template (usually the template DOES change)
         INLINE MaterialSortGroup sortGroup() const { return m_sortGroup; }
 
+		// template proxy we got created for
+		INLINE const MaterialTemplateProxy* templateProxy() const { return m_template; }
+
         // data layout for the material data proxy
         INLINE const MaterialDataLayout* layout() const { return m_layout; };
-
-        // get the material template used as a base
-        INLINE const MaterialTemplateWeakPtr& materialTemplate() const { return m_materialTemplate; }
 
         //--
 
         // update data in data proxy
         void update(const IMaterial& dataSource);
 
-        // upload descriptor to recorded command buffer
-        ParametersView upload(command::CommandWriter& cmd) const;
-
         //--
+
+		// bind material descriptor
+		void bindDescriptor(command::CommandWriter& cmd) const;
+
+		// write bindless data to provided memory
+		void writeBindlessData(void* ptr) const;
+
+		//--
 
     private:
         MaterialDataProxyID m_id;
+
         MaterialSortGroup m_sortGroup = MaterialSortGroup::Opaque;
+
         const MaterialDataLayout* m_layout = nullptr;
+        MaterialTemplateProxyPtr m_template;
 
-        MaterialTemplateWeakPtr m_materialTemplate;
-        MaterialTemplatePtr m_materialTemplateOwnedRef;
+		//--
 
-        base::SpinLock m_constantDataLock;
-        uint8_t* m_constantData = nullptr; // TODO: double buffer if needed
-        uint32_t m_constantDataSize = 0;
-        uint8_t* m_descriptorData = nullptr; // resource views
-        uint32_t m_descriptorDataSize = 0;
+		std::atomic<MaterialDataBindless*> m_bindlessData = nullptr;
+		std::atomic<MaterialDataDescriptor*> m_descriptorData = nullptr;
 
-        ParametersLayoutID m_descriptorLayoutID;
+		//--
 
-        base::Array<base::res::ResourcePtr> m_usedResources;
+		base::SpinLock m_prevDataLock;
+		base::Array<MaterialDataBindless*> m_prevBindlessData;
+		base::Array<MaterialDataDescriptor*> m_prevDescriptorData;
+
+		void clanupOldData();
+
+		//--
     };
 
     //---

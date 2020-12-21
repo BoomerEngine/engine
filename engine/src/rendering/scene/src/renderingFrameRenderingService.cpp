@@ -10,14 +10,15 @@
 #include "renderingFrameParams.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameRenderingService.h"
-#include "renderingFrameSurfaceCache.h"
+#include "renderingFrameResources.h"
+#include "renderingSceneUtils.h"
+#include "renderingScene.h"
+
+#include "renderingFrameView_Main.h"
+//#include "renderingFrameView_Selection.h"
 
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
-#include "renderingFrameView.h"
-#include "renderingFrameView_Main.h"
-#include "renderingFrameView_Selection.h"
-#include "renderingSceneUtils.h"
 
 namespace rendering
 {
@@ -40,14 +41,19 @@ namespace rendering
         {
             auto device = base::GetService<DeviceService>()->device();
 
-            m_surfaceCache = new FrameSurfaceCache(device);
+            m_sharedResources = new FrameResources(device);
+            m_sharedHelpers = new FrameHelper(device);
+
             return base::app::ServiceInitializationResult::Finished;
         }
 
         void FrameRenderingService::onShutdownService()
         {
-            delete m_surfaceCache;
-            m_surfaceCache = nullptr;
+            delete m_sharedHelpers;
+            m_sharedHelpers = nullptr;
+
+            delete m_sharedResources;
+			m_sharedResources = nullptr;
         }
 
         void FrameRenderingService::onSyncUpdate()
@@ -55,74 +61,79 @@ namespace rendering
 
         }
 
-        command::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const ImageView& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
+        command::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const FrameCompositionTarget& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
         {
             PC_SCOPE_LVL0(RenderFrame);
-
-            // no rendering possible without surfaces
-            if (!m_surfaceCache)
-                return nullptr;
 
             // adjust surfaces to support the requires resolution
             const auto requiredWidth = frame.resolution.width;
             const auto requiredHeight = frame.resolution.height;
-            const auto targetWidth = frame.resolution.finalCompositionWidth;
-            const auto targetHeight = frame.resolution.finalCompositionHeight;
-            if (!m_surfaceCache->adjust(requiredWidth, requiredHeight))
-                return nullptr;
+			m_sharedResources->adjust(requiredWidth, requiredHeight);
 
-            {
-                command::CommandWriter cmd("RenderFrame");
+			// rendering block
+			command::CommandWriter cmd("RenderFrame");
 
+			{
+				FrameRenderer renderer(frame, targetView, *m_sharedResources, *m_sharedHelpers);
+
+                renderer.prepareFrame(cmd);
+
+                if (frame.capture.mode == FrameCaptureMode::SelectionRect)
                 {
-                    FrameRenderer renderer(frame, *m_surfaceCache);
+                    if (frame.capture.sink)
                     {
-                        renderer.prepareFrame(cmd);
-
-                        if (frame.capture.mode == FrameCaptureMode::Disabled)
-                        {
-                            // render main camera view
-                            FrameView_Main view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullColorRT, m_surfaceCache->m_sceneFullDepthRT, frame.mode);
-                            view.render(cmd);
-
-                            // post process the result
-                            FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
-
-                            // regardless of the rendering mode draw the depth buffer with selected fragments so we can compose a selection outline
-                            if (frame.filters & FilterBit::PostProcesses_SelectionHighlight || frame.filters & FilterBit::PostProcesses_SelectionOutline)
-                            {
-                                command::CommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
-
-                                BindSingleCamera(localCmd, frame.camera.camera);
-
-                                const auto selectionDepthBufferRT = renderer.surfaces().m_sceneSelectionDepthRT;
-                                RenderDepthSelection(localCmd, view, selectionDepthBufferRT);
-
-                                VisualizeSelectionOutline(localCmd, view.width(), view.height(), targetView, m_surfaceCache->m_sceneFullDepthRT, m_surfaceCache->m_sceneSelectionDepthRT, frame.selectionOutline);
-                            }
-
-                            // draw overlay fragments
-                            RenderOverlay(cmd, view, targetView);
-
-                        }
-                        else if (frame.capture.mode == FrameCaptureMode::SelectionRect && frame.capture.dataBuffer)
-                        {
-                            FrameView_Selection view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullDepthRT, frame.capture.area, frame.capture.dataBuffer);
-                            view.render(cmd);
-                        }
-
-                        renderer.finishFrame();
+                        //FrameView_Selection view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullDepthRT, frame.capture.area, frame.capture.dataBuffer);
+                        //view.render(cmd);
                     }
+                }
+                else if (frame.mode == FrameRenderMode::Default)
+                {
+                    FrameViewMain::Setup setup;
+                    setup.camera = frame.camera.camera;
+                    setup.colorTarget = targetView.targetColorRTV;
+                    setup.depthTarget = targetView.targetDepthRTV;
+                    setup.viewport = targetView.targetRect;
 
-                    if (outFrameStats)
-                        outFrameStats->merge(renderer.frameStats());
-
-                    if (outMergedStateStats)
-                        outMergedStateStats->merge(renderer.scenesStats());
+                    FrameViewMain view(renderer, setup);
+                    view.render(cmd);
                 }
 
-                return cmd.release();
+                {
+                    /*// render main camera view
+                    
+
+                    // post process the result
+                    FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
+
+                    // regardless of the rendering mode draw the depth buffer with selected fragments so we can compose a selection outline
+                    if (frame.filters & FilterBit::PostProcesses_SelectionHighlight || frame.filters & FilterBit::PostProcesses_SelectionOutline)
+                    {
+                        command::CommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
+
+                        BindSingleCamera(localCmd, frame.camera.camera);
+
+                        const auto selectionDepthBufferRT = renderer.surfaces().m_sceneSelectionDepthRT;
+                        RenderDepthSelection(localCmd, view, selectionDepthBufferRT);
+
+                        VisualizeSelectionOutline(localCmd, view.width(), view.height(), targetView, m_surfaceCache->m_sceneFullDepthRT, m_surfaceCache->m_sceneSelectionDepthRT, frame.selectionOutline);
+                    }*/
+
+                    // draw overlay fragments
+                    //RenderOverlay(cmd, view, targetView);
+                }
+
+                renderer.finishFrame();
+
+                if (outFrameStats)
+                    outFrameStats->merge(renderer.frameStats());
+
+                if (outMergedStateStats)
+                    outMergedStateStats->merge(renderer.scenesStats());
             }
+
+			
+
+			return cmd.release();
         }
         
         //--

@@ -12,261 +12,243 @@
 #include "base/canvas/include/canvas.h"
 #include "base/input/include/inputStructures.h"
 #include "base/image/include/imageUtils.h"
+#include "base/canvas/include/canvasService.h"
+#include "base/canvas/include/canvasAtlas.h"
 
 namespace ImGui
 {
     //--
 
-    class IconRegistry : public base::ISingleton
+	ImGUICanvasHelper::ImGUICanvasHelper()
+	{
+		m_searchPaths.emplaceBack("/engine/icons");
+
+		m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
+
+		m_context = ImGui::CreateContext();
+
+		m_context->IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		m_context->IO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+		m_context->IO.KeyMap[ImGuiKey_Tab] = (int)base::input::KeyCode::KEY_TAB;
+		m_context->IO.KeyMap[ImGuiKey_LeftArrow] = (int)base::input::KeyCode::KEY_LEFT;
+		m_context->IO.KeyMap[ImGuiKey_RightArrow] = (int)base::input::KeyCode::KEY_RIGHT;
+		m_context->IO.KeyMap[ImGuiKey_UpArrow] = (int)base::input::KeyCode::KEY_UP;
+		m_context->IO.KeyMap[ImGuiKey_DownArrow] = (int)base::input::KeyCode::KEY_DOWN;
+		m_context->IO.KeyMap[ImGuiKey_PageUp] = (int)base::input::KeyCode::KEY_PRIOR;
+		m_context->IO.KeyMap[ImGuiKey_PageDown] = (int)base::input::KeyCode::KEY_NEXT;
+		m_context->IO.KeyMap[ImGuiKey_Home] = (int)base::input::KeyCode::KEY_HOME;
+		m_context->IO.KeyMap[ImGuiKey_End] = (int)base::input::KeyCode::KEY_END;
+		m_context->IO.KeyMap[ImGuiKey_Insert] = (int)base::input::KeyCode::KEY_INSERT;
+		m_context->IO.KeyMap[ImGuiKey_Delete] = (int)base::input::KeyCode::KEY_DELETE;
+		m_context->IO.KeyMap[ImGuiKey_Backspace] = (int)base::input::KeyCode::KEY_BACK;
+		m_context->IO.KeyMap[ImGuiKey_Space] = (int)base::input::KeyCode::KEY_SPACE;
+		m_context->IO.KeyMap[ImGuiKey_Enter] = (int)base::input::KeyCode::KEY_RETURN;
+		m_context->IO.KeyMap[ImGuiKey_Escape] = (int)base::input::KeyCode::KEY_ESCAPE;
+		m_context->IO.KeyMap[ImGuiKey_KeyPadEnter] = (int)base::input::KeyCode::KEY_NAVIGATION_ACCEPT;
+		m_context->IO.KeyMap[ImGuiKey_A] = (int)base::input::KeyCode::KEY_A;
+		m_context->IO.KeyMap[ImGuiKey_C] = (int)base::input::KeyCode::KEY_C;
+		m_context->IO.KeyMap[ImGuiKey_V] = (int)base::input::KeyCode::KEY_V;
+		m_context->IO.KeyMap[ImGuiKey_X] = (int)base::input::KeyCode::KEY_X;
+		m_context->IO.KeyMap[ImGuiKey_Y] = (int)base::input::KeyCode::KEY_Y;
+		m_context->IO.KeyMap[ImGuiKey_Z] = (int)base::input::KeyCode::KEY_Z;
+
+		/*ImVec4* colors = m_context->Style.Colors;
+		colors[ImGuiCol_WindowBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.0f);
+		colors[ImGuiCol_Border] = ImVec4(0.39f, 0.39f, 0.39f, 1.0f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.27f, 0.29f, 0.29f, 1.0f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.0f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.30f, 0.32f, 0.33f, 1.00f);
+		//colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.43f, 0.69f, 0.80f);
+		//colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.32f, 0.33f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.27f, 0.29f, 0.29f, 1.0f);
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.21f, 0.22f, 0.23f, 1.00f);
+		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.30f, 0.31f, 0.32f, 1.0f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.00f);
+		colors[ImGuiCol_Header] = ImVec4(0.36f, 0.38f, 0.39f, 1.0f);
+		colors[ImGuiCol_Tab] = ImVec4(0.26f, 0.27f, 0.27f, 1.0f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.0f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.31f, 0.32f, 0.33f, 1.00f);
+		colors[ImGuiCol_TabUnfocused] = ImVec4(0.26f, 0.27f, 0.27f, 1.0f);
+		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.31f, 0.32f, 0.33f, 1.00f);
+		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);*/
+
+		m_context->Style.FrameBorderSize = 1;
+
+		prepareCanvasImages();
+	}
+
+	ImGUICanvasHelper::~ImGUICanvasHelper()
+	{
+		ImGui::DestroyContext(m_context);
+		m_context = nullptr;
+
+		m_atlas.reset();
+	}
+
+	bool ImGUICanvasHelper::processInput(const base::input::BaseEvent& evt)
+	{
+		auto& io = m_context->IO;
+		if (const auto* keyEvent = evt.toKeyEvent())
+		{
+			if (keyEvent->pressedOrRepeated())
+			{
+				io.KeyCtrl = keyEvent->keyMask().isCtrlDown();
+				io.KeyShift = keyEvent->keyMask().isShiftDown();
+				io.KeyAlt = keyEvent->keyMask().isAltDown();
+				io.KeysDown[(uint32_t)keyEvent->keyCode()] = true;
+			}
+			else if (keyEvent->released())
+			{
+				io.KeysDown[(uint32_t)keyEvent->keyCode()] = false;
+			}
+
+			return io.WantCaptureKeyboard;
+		}
+		else if (const auto* moveEvent = evt.toMouseMoveEvent())
+		{
+			if (moveEvent->isCaptured())
+			{
+				io.MousePos.x += moveEvent->delta().x;
+				io.MousePos.y += moveEvent->delta().y;
+			}
+			else
+			{
+				io.MousePos.x = moveEvent->windowPosition().x;
+				io.MousePos.y = moveEvent->windowPosition().y;
+			}
+
+			io.MouseWheel += moveEvent->delta().z / 10.0f;
+			return io.WantCaptureMouse;
+		}
+		else if (const auto* mouseClick = evt.toMouseClickEvent())
+		{
+			int index = -1;
+			switch (mouseClick->keyCode())
+			{
+				case base::input::KeyCode::KEY_MOUSE0: index = 0; break;
+				case base::input::KeyCode::KEY_MOUSE1: index = 1; break;
+				case base::input::KeyCode::KEY_MOUSE2: index = 2; break;
+				case base::input::KeyCode::KEY_MOUSE3: index = 3; break;
+				case base::input::KeyCode::KEY_MOUSE4: index = 4; break;
+			}
+
+			if (index != -1)
+			{
+				if (mouseClick->type() == base::input::MouseEventType::DoubleClick || mouseClick->type() == base::input::MouseEventType::Click)
+				{
+					io.MouseDown[index] = true;
+				}
+				else if (mouseClick->type() == base::input::MouseEventType::Release)
+				{
+					io.MouseDown[index] = false;
+				}
+			}
+
+			return io.WantCaptureMouse;
+		}
+		else if (const auto* charEvent = evt.toCharEvent())
+		{
+			io.AddInputCharacter(charEvent->scanCode());
+			return io.WantTextInput;
+		}
+
+		return false;
+	}
+
+	void ImGUICanvasHelper::addIconSearchPath(base::StringView path)
+	{
+		if (path && !m_searchPaths.contains(path))
+		{
+			if (path.endsWith("/"))
+				m_searchPaths.emplaceBack(path.leftPart(path.length() - 1));
+			else
+				m_searchPaths.emplaceBack(path);
+		}
+	}
+
+	ImTextureID ImGUICanvasHelper::registerImage(const base::image::ImagePtr& loadedImage)
+	{
+		if (auto ret = m_atlas->registerImage(loadedImage))
+		{
+			m_imageUVRanges.prepareWith(ret.entryIndex + 1);
+
+			if (const auto* data = m_atlas->findRenderDataForAtlasEntry(ret.entryIndex))
+			{
+				m_imageUVRanges[ret.entryIndex].uvMin = data->uvOffset;
+				m_imageUVRanges[ret.entryIndex].uvScale = (data->uvMax - data->uvOffset);
+			}
+
+			return ret.entryIndex;
+		}
+
+		return 0;
+	}
+
+    ImTextureID ImGUICanvasHelper::loadIcon(base::StringView name)
     {
-        DECLARE_SINGLETON(IconRegistry);
-
-    public:
-        IconRegistry()
+        ImTextureID ret = 0;
+        if (!m_iconMap.find(name, ret))
         {
-            m_searchPaths.emplaceBack("/engine/icons");
-            m_defaultImage = base::RefNew<base::image::Image>(16, 16, base::Color::GRAY);
-            m_imageList.reserve(1024);
-            m_imageList.pushBack(m_defaultImage); // ID 0
-        }
-
-        void addSearchPath(base::StringView path)
-        {
-            if (path && !m_searchPaths.contains(path))
+            // look in the search paths
+            base::image::ImagePtr loadedImage;
+            for (const auto& path : m_searchPaths)
             {
-                if (path.endsWith("/"))
-                    m_searchPaths.emplaceBack(path.leftPart(path.length() - 1));
-                else
-                    m_searchPaths.emplaceBack(path);
-            }
-        }
-
-        base::image::ImagePtr getImage(ImTextureID id)
-        {
-            if (id < m_imageList.size())
-                return m_imageList[id];
-            return m_defaultImage;
-        }
-
-        ImVec2 getImageSize(ImTextureID id)
-        {
-            if (id < m_imageList.size())
-            {
-                auto image = m_imageList[id];
-                return ImVec2(image->width(), image->height());
-            }
-            return ImVec2(16,16);
-        }
-
-        ImTextureID registerImage(const base::image::ImagePtr& loadedImage)
-        {
-            auto ret = m_imageList.size();
-            m_imageList.pushBack(loadedImage);
-            return ret;
-        }
-
-        ImTextureID loadIcon(base::StringView name)
-        {
-            ImTextureID ret = 0;
-            if (!m_iconMap.find(name, ret))
-            {
-                // look in the search paths
-                base::image::ImagePtr loadedImage;
-                for (const auto& path : m_searchPaths)
+                loadedImage = base::LoadResource<base::image::Image>(base::TempString("{}/{}.png", path, name)).acquire();
+                if (loadedImage)
                 {
-                    loadedImage = base::LoadResource<base::image::Image>(base::TempString("{}/{}.png", path, name)).acquire();
-                    if (loadedImage)
-                    {
-                        TRACE_INFO("ImGui: Loaded '{}' from '{}'", name, path);
-                        break;
-                    }
-                }
-
-                // create empty image so we don't return nulls
-                if (!loadedImage)
-                {
-                    TRACE_WARNING("ImGui: Missing icon '{}'", name);
-                    m_iconMap[base::StringBuf(name)] = 0;
-                }
-                else
-                {
-                    ret = registerImage(loadedImage);
-                    m_iconMap[base::StringBuf(name)] = ret;
+                    TRACE_INFO("ImGui: Loaded '{}' from '{}'", name, path);
+                    break;
                 }
             }
 
-            return ret;
-        }
-
-    private:
-        base::Array<base::StringBuf> m_searchPaths;
-        base::Array<base::image::ImagePtr> m_imageList;
-        base::HashMap<base::StringBuf, ImTextureID> m_iconMap;
-        base::image::ImagePtr m_defaultImage;
-
-        virtual void deinit() override
-        {
-            m_searchPaths.clear();
-            m_iconMap.clear();
-        }
-    };
-
-    //--
-
-    bool ProcessInputEvent(ImGuiIO& io, const base::input::BaseEvent& evt)
-    {
-        if (const auto* keyEvent = evt.toKeyEvent())
-        {
-            if (keyEvent->pressedOrRepeated())
+            // create empty image so we don't return nulls
+            if (!loadedImage)
             {
-                io.KeyCtrl = keyEvent->keyMask().isCtrlDown();
-                io.KeyShift = keyEvent->keyMask().isShiftDown();
-                io.KeyAlt = keyEvent->keyMask().isAltDown();
-                io.KeysDown[(uint32_t)keyEvent->keyCode()] = true;
-            }
-            else if (keyEvent->released())
-            {
-                io.KeysDown[(uint32_t)keyEvent->keyCode()] = false;
-            }
-
-            return io.WantCaptureKeyboard;
-        }
-        else if (const auto* moveEvent = evt.toMouseMoveEvent())
-        {
-            if (moveEvent->isCaptured())
-            {
-                io.MousePos.x += moveEvent->delta().x;
-                io.MousePos.y += moveEvent->delta().y;
+                TRACE_WARNING("ImGui: Missing icon '{}'", name);
+                m_iconMap[base::StringBuf(name)] = 0;
             }
             else
             {
-                io.MousePos.x = moveEvent->windowPosition().x;
-                io.MousePos.y = moveEvent->windowPosition().y;
+                ret = registerImage(loadedImage);
+                m_iconMap[base::StringBuf(name)] = ret;
             }
-
-            io.MouseWheel += moveEvent->delta().z / 10.0f;
-            return io.WantCaptureMouse;
-        }
-        else if (const auto* mouseClick = evt.toMouseClickEvent())
-        {
-            int index = -1;
-            switch (mouseClick->keyCode())
-            {
-                case base::input::KeyCode::KEY_MOUSE0: index = 0; break;
-                case base::input::KeyCode::KEY_MOUSE1: index = 1; break;
-                case base::input::KeyCode::KEY_MOUSE2: index = 2; break;
-                case base::input::KeyCode::KEY_MOUSE3: index = 3; break;
-                case base::input::KeyCode::KEY_MOUSE4: index = 4; break;
-            }
-
-            if (index != -1)
-            {
-                if (mouseClick->type() == base::input::MouseEventType::DoubleClick || mouseClick->type() == base::input::MouseEventType::Click)
-                {
-                    io.MouseDown[index] = true;
-                }
-                else if (mouseClick->type() == base::input::MouseEventType::Release)
-                {
-                    io.MouseDown[index] = false;
-                }
-            }
-
-            return io.WantCaptureMouse;
-        }
-        else if (const auto* charEvent = evt.toCharEvent())
-        {
-            io.AddInputCharacter(charEvent->scanCode());
-            return io.WantTextInput;
         }
 
-        return false;
+        return ret;
     }
 
-    bool ProcessInputEvent(ImGuiContext* ctx, const base::input::BaseEvent& evt)
-    {
-        return ProcessInputEvent(ctx->IO, evt);
-    }
+	void ImGUICanvasHelper::beginFrame(base::canvas::Canvas& c, float dt)
+	{
+		//ImGui::SetCurrentFont(ImGui::GetFont(ImGui::Font::Default));
+		m_context->IO.DeltaTime = dt;
+		
+		m_context->IO.DisplaySize.x = c.width();
+		m_context->IO.DisplaySize.y = c.height();
+		m_context->IO.DisplayFramebufferScale.x = c.pixelScale();
+		m_context->IO.DisplayFramebufferScale.y = c.pixelScale();
 
-    void BeginCanvasFrame(base::canvas::Canvas& c)
-    {
-        ImGui::PrepareCanvasImages(ImGui::GetIO());
+		ImGui::SetCurrentContext(m_context);
+		ImGui::NewFrame();
+	}
 
-        //ImGui::SetCurrentFont(ImGui::GetFont(ImGui::Font::Default));
+	void ImGUICanvasHelper::endFrame(base::canvas::Canvas& c, const base::XForm2D& placement)
+	{
+		ImGui::Render();
+		renderToCanvas(ImGui::GetDrawData(), c, placement);
+		ImGui::SetCurrentContext(nullptr);
+	}
 
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-        ImGui::GetIO().KeyMap[ImGuiKey_Tab] = (int)base::input::KeyCode::KEY_TAB;
-        ImGui::GetIO().KeyMap[ImGuiKey_LeftArrow] = (int)base::input::KeyCode::KEY_LEFT;
-        ImGui::GetIO().KeyMap[ImGuiKey_RightArrow] = (int)base::input::KeyCode::KEY_RIGHT;
-        ImGui::GetIO().KeyMap[ImGuiKey_UpArrow] = (int)base::input::KeyCode::KEY_UP;
-        ImGui::GetIO().KeyMap[ImGuiKey_DownArrow] = (int)base::input::KeyCode::KEY_DOWN;
-        ImGui::GetIO().KeyMap[ImGuiKey_PageUp] = (int)base::input::KeyCode::KEY_PRIOR;
-        ImGui::GetIO().KeyMap[ImGuiKey_PageDown] = (int)base::input::KeyCode::KEY_NEXT;
-        ImGui::GetIO().KeyMap[ImGuiKey_Home] = (int)base::input::KeyCode::KEY_HOME;
-        ImGui::GetIO().KeyMap[ImGuiKey_End] = (int)base::input::KeyCode::KEY_END;
-        ImGui::GetIO().KeyMap[ImGuiKey_Insert] = (int)base::input::KeyCode::KEY_INSERT;
-        ImGui::GetIO().KeyMap[ImGuiKey_Delete] = (int)base::input::KeyCode::KEY_DELETE;
-        ImGui::GetIO().KeyMap[ImGuiKey_Backspace] = (int)base::input::KeyCode::KEY_BACK;
-        ImGui::GetIO().KeyMap[ImGuiKey_Space] = (int)base::input::KeyCode::KEY_SPACE;
-        ImGui::GetIO().KeyMap[ImGuiKey_Enter] = (int)base::input::KeyCode::KEY_RETURN;
-        ImGui::GetIO().KeyMap[ImGuiKey_Escape] = (int)base::input::KeyCode::KEY_ESCAPE;
-        ImGui::GetIO().KeyMap[ImGuiKey_KeyPadEnter] = (int)base::input::KeyCode::KEY_NAVIGATION_ACCEPT;
-        ImGui::GetIO().KeyMap[ImGuiKey_A] = (int)base::input::KeyCode::KEY_A;
-        ImGui::GetIO().KeyMap[ImGuiKey_C] = (int)base::input::KeyCode::KEY_C;
-        ImGui::GetIO().KeyMap[ImGuiKey_V] = (int)base::input::KeyCode::KEY_V;
-        ImGui::GetIO().KeyMap[ImGuiKey_X] = (int)base::input::KeyCode::KEY_X;
-        ImGui::GetIO().KeyMap[ImGuiKey_Y] = (int)base::input::KeyCode::KEY_Y;
-        ImGui::GetIO().KeyMap[ImGuiKey_Z] = (int)base::input::KeyCode::KEY_Z;
-
-        ImVec4* colors = ImGui::GetStyle().Colors;
-        /*colors[ImGuiCol_WindowBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
-        colors[ImGuiCol_PopupBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.0f);
-        colors[ImGuiCol_Border] = ImVec4(0.39f, 0.39f, 0.39f, 1.0f);
-        colors[ImGuiCol_FrameBg] = ImVec4(0.27f, 0.29f, 0.29f, 1.0f);
-        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.0f);
-        colors[ImGuiCol_TitleBg] = ImVec4(0.30f, 0.32f, 0.33f, 1.00f);
-        //colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.43f, 0.69f, 0.80f);
-        //colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.32f, 0.33f, 1.00f);
-        colors[ImGuiCol_TitleBgActive] = ImVec4(0.27f, 0.29f, 0.29f, 1.0f);
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
-        colors[ImGuiCol_MenuBarBg] = ImVec4(0.21f, 0.22f, 0.23f, 1.00f);
-        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.00f);
-        colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-        colors[ImGuiCol_Button] = ImVec4(0.30f, 0.31f, 0.32f, 1.0f);
-        colors[ImGuiCol_ButtonHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.00f);
-        colors[ImGuiCol_Header] = ImVec4(0.36f, 0.38f, 0.39f, 1.0f);
-        colors[ImGuiCol_Tab] = ImVec4(0.26f, 0.27f, 0.27f, 1.0f);
-        colors[ImGuiCol_TabHovered] = ImVec4(0.29f, 0.43f, 0.69f, 1.0f);
-        colors[ImGuiCol_TabActive] = ImVec4(0.31f, 0.32f, 0.33f, 1.00f);
-        colors[ImGuiCol_TabUnfocused] = ImVec4(0.26f, 0.27f, 0.27f, 1.0f);
-        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.31f, 0.32f, 0.33f, 1.00f);
-
-        colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);*/
-
-        ImGui::GetStyle().FrameBorderSize = 1;
-
-        ImGui::GetIO().DisplaySize.x = c.width();
-        ImGui::GetIO().DisplaySize.y = c.height();
-        ImGui::GetIO().DisplayFramebufferScale.x = c.pixelScale();
-        ImGui::GetIO().DisplayFramebufferScale.y = c.pixelScale();
-
-        ImGui::NewFrame();
-    }
-
-    void EndCanvasFrame(base::canvas::Canvas& c, const base::XForm2D& placement)
-    {
-        ImGui::Render();
-        ImGui::RenderToCanvas(ImGui::GetDrawData(), c, placement);
-    }
+	//--
 
     static_assert(sizeof(ImDrawIdx) == sizeof(uint16_t), "Expected ImGui to use 16-bit indices");
 
-    void RenderToCanvas(const ImDrawData* data, base::canvas::Canvas& c, const base::XForm2D& placement)
+    void ImGUICanvasHelper::renderToCanvas(const ImDrawData* data, base::canvas::Canvas& c, const base::XForm2D& placement)
     {
-        //auto transform = c.transform();
-        //c.placement(0.0f, 0.0f);
-
         bool hasScissorRect = false;
         base::Vector4 currentScissorRect;
 
@@ -314,26 +296,31 @@ namespace ImGui
 					const auto* indexReadEndPtr = indexReadPtr + srcCommand.ElemCount;
 					const auto* vertexReadPtr = (const ImDrawVert*) list->VtxBuffer.Data;
 					
+					auto uvMin = m_imageUVRanges[srcCommand.TextureId].uvMin;
+					auto uvScale = m_imageUVRanges[srcCommand.TextureId].uvScale;
+
 					while (indexReadPtr < indexReadEndPtr)
 					{
-						const auto& vertexData = vertexReadPtr[*indexReadEndPtr++];
+						const auto& vertexData = vertexReadPtr[*indexReadPtr++];
 						writeVertexPtr->color = vertexData.col;
-						writeVertexPtr->pos.x = vertexData.pos.x;
-						writeVertexPtr->pos.y = vertexData.pos.y;
-						writeVertexPtr->uv.x = vertexData.uv.x;
-						writeVertexPtr->uv.y = vertexData.uv.y;
+						writeVertexPtr->pos.x = vertexData.pos.x - 0.5f;
+						writeVertexPtr->pos.y = vertexData.pos.y - 0.5f;
+						writeVertexPtr->uv.x = (vertexData.uv.x * uvScale.x) + uvMin.x;
+						writeVertexPtr->uv.y = (vertexData.uv.y * uvScale.y) + uvMin.y;
 						writeVertexPtr->imageEntryIndex = 0;
 						writeVertexPtr->imagePageIndex = 0;
-						writeVertexPtr->attributeFlags = 0;
+						writeVertexPtr->attributeFlags = base::canvas::Vertex::MASK_FILL | base::canvas::Vertex::MASK_HAS_IMAGE;
 						writeVertexPtr->attributeIndex = 0;
 						writeVertexPtr++;
 					}
 
 					auto& batch = GTempGeometry.batches.emplaceBack();
-					batch.atlasIndex = 0;
+					batch.atlasIndex = m_atlas->index();
 					batch.rendererIndex = 0;
+					batch.vertexOffset = 0;
+					batch.vertexCount = GTempGeometry.vertices.size();
 					batch.type = base::canvas::BatchType::FillConvex;
-					batch.op = base::canvas::BlendOp::AlphaPremultiplied; // ImGui does not support premultiplied alpha;
+					batch.op = base::canvas::BlendOp::AlphaPremultiplied;
 
 					c.place(placement, GTempGeometry);
                 }
@@ -344,6 +331,22 @@ namespace ImGui
             c.popScissorRect();
     }
     
+	void ImGUICanvasHelper::prepareCanvasImages()
+	{
+		// get data
+		unsigned char* pixels;
+		int width, height, bytes_per_pixel;
+		m_context->IO.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
+
+		base::image::ImageView sourceView(base::image::NATIVE_LAYOUT, base::image::PixelFormat::Uint8_Norm, bytes_per_pixel, pixels, width, height);
+		auto canvasImage = base::RefNew<base::image::Image>(sourceView);
+
+		auto canvasImageId = registerImage(canvasImage);
+		m_context->IO.Fonts->SetTexID(canvasImageId);
+	}
+
+	//--
+
     void* ImGuiAlloc(size_t size)
     {
         return base::mem::GlobalPool<POOL_IMGUI>::Alloc(size, 4);
@@ -356,23 +359,7 @@ namespace ImGui
 
     //--
 
-
-
-    void AddIconSearchPath(base::StringView path)
-    {
-        IconRegistry::GetInstance().addSearchPath(path);
-    }
-
-    ImTextureID RegisterImage(const base::image::ImagePtr& image)
-    {
-        return IconRegistry::GetInstance().registerImage(image);
-    }
-
-    ImTextureID LoadIcon(base::StringView name)
-    {
-        return IconRegistry::GetInstance().loadIcon(name);
-    }
-
+#if 0
     ImVec2 DrawImage(ImTextureID user_texture_id, float ox /*= 0.0f*/, float oy /*= 0.0*/, const ImVec4& tint_col /*= ImVec4(1, 1, 1, 1)*/)
     {
         auto imin = ImGui::GetCursorScreenPos();
@@ -424,6 +411,7 @@ namespace ImGui
 
         return ret;
     }
+#endif
 
     bool IsKeyDown(const base::input::KeyCode code)
     {
@@ -538,25 +526,6 @@ namespace ImGui
 
         draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg, height * 0.5f);
         draw_list->AddCircleFilled(ImVec2(p.x + radius + t * (width - radius * 2.0f), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
-    }
-
-    //--
-
-    void PrepareCanvasImages(ImGuiIO& io)
-    {
-        if (!io.Fonts->TexID)
-        {
-            // get data
-            unsigned char* pixels;
-            int width, height, bytes_per_pixel;
-            io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
-
-            base::image::ImageView sourceView(base::image::NATIVE_LAYOUT, base::image::PixelFormat::Uint8_Norm, bytes_per_pixel, pixels, width, height);
-            auto canvasImage = base::RefNew<base::image::Image>(sourceView);
-
-            auto canvasImageId = IconRegistry::GetInstance().registerImage(canvasImage);
-            io.Fonts->SetTexID(canvasImageId);
-        }
     }
 
     //--

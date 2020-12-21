@@ -10,7 +10,6 @@
 
 #include "base/ui/include/uiElement.h"
 #include "base/ui/include/uiCanvasArea.h"
-#include "rendering/device/include/renderingImageView.h"
 
 namespace ed
 {
@@ -40,8 +39,8 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ImagePreviewElement, IImagePreviewElement);
 
     public:
-        ImagePreviewElement(rendering::ImageView view, rendering::ImageView sourceView);
-        ImagePreviewElement(rendering::ImageView view, int mipIndex=0, int sliceIndex=0);
+        ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView);
+        ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
         ~ImagePreviewElement();
 
         virtual void configure(const ImagePreviewPanelSettings& settings) override;
@@ -51,8 +50,8 @@ namespace ed
         void mip(int mip);
 
     protected:
-        rendering::ImageView m_view;
-        rendering::ImageView m_sourceView;
+		rendering::ImageSampledViewPtr m_view;
+		rendering::ImageSampledViewPtr m_sourceView;
 
         int m_mipIndex = 0;
         int m_sliceIndex = 0;

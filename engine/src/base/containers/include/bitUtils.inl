@@ -8,6 +8,16 @@
 
 #pragma once
 
+
+#ifdef PLATFORM_MSVC
+static INLINE uint32_t  __builtin_ctzll(uint64_t val)
+{
+    unsigned long ret = 0;
+    _BitScanForward64(&ret, val);
+    return ret;
+}
+#endif
+
 namespace base
 {
 
@@ -51,15 +61,6 @@ namespace base
 			return bits == 0 ? 0 : (uint32_t)__builtin_ctzll(bits);
 #endif
 		}
-#endif
-
-#ifdef PLATFORM_MSVC
-        static INLINE uint32_t  __builtin_ctzll(uint64_t val)
-        {
-            unsigned long ret = 0;
-            _BitScanForward64(&ret, val);
-            return ret;
-        }
 #endif
 
 		struct BitTable

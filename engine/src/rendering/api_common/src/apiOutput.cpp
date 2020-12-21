@@ -36,9 +36,6 @@ namespace rendering
 
 		Output::~Output()
 		{
-			m_colorRTV.release();
-			m_depthRTV.release();
-
 			delete m_colorTarget;
 			m_colorTarget = nullptr;
 
@@ -56,17 +53,14 @@ namespace rendering
 			if (!m_swapchain->prepare_ClientApi(state))
 				return false;
 
-			// recreate ?
-			if (state != m_lastSwapchainState)
+			DEBUG_CHECK_RETURN_EX_V(state.width && state.height, "Invalid swapchain size", false);
+
+			outViewport.x = state.width;
+			outViewport.y = state.height;
+
+			if (outColorRT)
 			{
-				TRACE_INFO("Recreating render targets for swapchain {}", state);
-
-				m_colorRTV.reset();
-				m_depthRTV.reset();
-
-				m_lastSwapchainState = state;
-
-				if (state.width && state.height)
+				if (state.colorFormat != ImageFormat::UNKNOWN)
 				{
 					RenderTargetView::Setup setup;
 					setup.firstSlice = 0;
@@ -79,41 +73,53 @@ namespace rendering
 					setup.arrayed = false;
 					setup.flipped = true;
 					setup.swapchain = true;
+					setup.format = state.colorFormat;
+					setup.depth = false;
 
-					if (state.colorFormat != ImageFormat::UNKNOWN)
-					{
-						setup.format = state.colorFormat;
-						setup.depth = false;
-						m_colorRTV = base::RefNew<RenderTargetView>(m_colorTarget->handle(), owningObject, owner()->objectRegistry(), setup);
-					}
-
-					if (state.depthFormat != ImageFormat::UNKNOWN)
-					{
-						setup.format = state.depthFormat;
-						setup.depth = true;
-						m_depthRTV = base::RefNew<RenderTargetView>(m_depthTarget->handle(), owningObject, owner()->objectRegistry(), setup);
-					}
+					*outColorRT = base::RefNew<RenderTargetView>(m_colorTarget->handle(), owningObject, owner()->objectRegistry(), setup);
+				}
+				else
+				{
+					*outColorRT = nullptr;
 				}
 			}
 
-			if (!m_lastSwapchainState.width || !m_lastSwapchainState.height)
-				return false;
-
-			outViewport.x = m_lastSwapchainState.width;
-			outViewport.y = m_lastSwapchainState.height;
-
-			if (outColorRT)
-				*outColorRT = m_colorRTV;
-
 			if (outDepthRT)
-				*outDepthRT = m_depthRTV;
+			{
+				if (state.depthFormat != ImageFormat::UNKNOWN)
+				{
+					RenderTargetView::Setup setup;
+					setup.firstSlice = 0;
+					setup.numSlices = 1;
+					setup.width = state.width;
+					setup.height = state.height;
+					setup.samples = state.samples;
+					setup.msaa = state.samples > 1;
+					setup.mip = 0;
+					setup.arrayed = false;
+					setup.flipped = true;
+					setup.swapchain = true;
+					setup.format = state.depthFormat;
+					setup.depth = true;
+
+					*outDepthRT = base::RefNew<RenderTargetView>(m_depthTarget->handle(), owningObject, owner()->objectRegistry(), setup);
+				}
+				else
+				{
+					*outDepthRT = nullptr;
+				}
+			}
 
 			return true;
 		}
 
+		void Output::disconnect_ClientApi()
+		{
+			m_swapchain->disconnect_ClientApi();
+		}
+
 		void Output::disconnectFromClient()
 		{
-			TRACE_INFO("Disconnected swapchain {}, some rendering may still happen", m_lastSwapchainState);
 			m_swapchain->disconnect_ClientApi();
 		}
 
@@ -140,6 +146,12 @@ namespace rendering
 
 			return false;
         }
+
+		void OutputObjectProxy::disconnect()
+		{
+			if (auto* obj = resolveInternalApiObject<Output>())
+				return obj->disconnect_ClientApi();
+		}
 
         //--
 

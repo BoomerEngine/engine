@@ -10,7 +10,6 @@
 
 #include "base/ui/include/uiElement.h"
 #include "base/ui/include/uiCanvasArea.h"
-#include "rendering/device/include/renderingImageView.h"
 #include "assets/image_texture/include/imageCompression.h"
 
 namespace ed
@@ -121,7 +120,7 @@ namespace ed
         //--
 
         // bind a generic texture view
-        void bindImageView(const rendering::ImageView& image, rendering::ImageContentColorSpace knownColorSpace = rendering::ImageContentColorSpace::Auto);
+        void bindImageView(const rendering::ImageSampledView* image, rendering::ImageContentColorSpace knownColorSpace = rendering::ImageContentColorSpace::Auto);
 
         //--
 
@@ -144,8 +143,8 @@ namespace ed
         uint32_t m_numImageSlices = 0;
         uint32_t m_numImageMips = 0;
 
-        rendering::ImageView m_mainImage;
-        rendering::ImageView m_sourceImage;
+		rendering::ImageSampledViewPtr m_mainImageSRV;
+		rendering::ImageSampledViewPtr m_sourceImageSRV;
 
         base::Array<base::RefPtr<ImagePreviewElement>> m_mainImagePreviewElements;
 

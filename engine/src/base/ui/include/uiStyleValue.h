@@ -134,8 +134,9 @@ namespace ui
 
 
             base::StringID name; // icon name to be loaded from data stash
-			base::canvas::ImageEntry canvasImage; // not saved
             base::image::ImageRef image; // locally stored
+
+			mutable base::canvas::ImageEntry canvasImage; // not saved
 
             //--
 

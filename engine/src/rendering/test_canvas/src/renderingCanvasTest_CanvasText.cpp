@@ -45,7 +45,7 @@ namespace rendering
 
 				base::canvas::Geometry g;
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 					b.fillColor(color);
 					b.print(glyphs);
 				}

@@ -17,8 +17,9 @@ namespace game
         // NOTE: may change
         uint32_t width = 0;
         uint32_t height = 0;
-        rendering::ImageView backBufferColor;
-        rendering::ImageView backBufferDepth;
+        const rendering::RenderTargetView* backBufferColor = nullptr;
+		const rendering::RenderTargetView* backBufferDepth = nullptr;
+		const rendering::GraphicsPassLayoutObject* backBufferLayout = nullptr;
 
         float fadeLevel = 1.0f;
     };

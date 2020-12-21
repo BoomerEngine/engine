@@ -24,9 +24,6 @@ namespace rendering
             uint32_t width = 0; // width of the internal rendering targets, may be different than composition size
             uint32_t height = 0; // height of the internal rendering targets, may be different than composition size
 
-            uint32_t finalCompositionWidth = 0; // final, composition width then rendering to final render target
-            uint32_t finalCompositionHeight = 0; // final, composition width then rendering to final render target
-
             uint8_t msaaLevel = 1; // disabled
 
             FrameParams_Resolution(uint32_t width_, uint32_t height_);
@@ -43,6 +40,17 @@ namespace rendering
             CameraContext* cameraContext = nullptr;
 
             FrameParams_Camera(const Camera& camera);
+        };
+
+        ///---
+
+        // clear color
+        struct RENDERING_SCENE_API FrameParams_Clear
+        {
+            bool clear = true;
+            base::Vector4 clearColor;
+
+            FrameParams_Clear();
         };
 
         ///---
@@ -74,8 +82,7 @@ namespace rendering
         {
             FrameCaptureMode mode; // capture mode
             base::Rect area; // area to capture, can be used with both the image and buffer capture
-            DownloadBufferPtr dataBuffer; // output data buffer
-            DownloadImagePtr imageBuffer; // output image buffer (NOTE: only direct image captures)
+            DownloadDataSinkPtr sink; // output sink for data download
 
             FrameParams_Capture(); // assigns global (config) defaults
         };
@@ -207,12 +214,10 @@ namespace rendering
         /// collected scenes to render
         struct RENDERING_SCENE_API FrameParams_Scenes
         {
-            struct SceneToDraw
-            {
-                Scene* scenePtr = nullptr;
-            };
+			// NOTE: all scenes use the same camera setup
 
-            base::InplaceArray<SceneToDraw, 12> scenesToDraw; // collected scenes to draw
+			Scene* backgroundScenePtr = nullptr; // rendered after main scene's opaque objects but before transparencies
+            Scene* mainScenePtr = nullptr; // main scene
 
             FrameParams_Scenes();
         };
@@ -285,6 +290,7 @@ namespace rendering
 
             FrameParams_Time time;
             FrameParams_Camera camera;
+            FrameParams_Clear clear;
             FrameParams_Resolution resolution;
             FrameParams_Capture capture;
             FrameParams_GlobalLighting globalLighting;

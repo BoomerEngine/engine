@@ -41,8 +41,8 @@ namespace rendering
 				virtual void insertGpuFrameFence_Thread(uint64_t frameIndex) override final;
 				virtual bool checkGpuFrameFence_Thread(uint64_t& outCompletedFrameIndex) override final;
 
-				virtual bool threadStartup(const base::app::CommandLine& cmdLine); // called on thread to initialize API
-				virtual void threadFinish(); // called on thread to initialize API
+				virtual bool threadStartup(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override; // called on thread to initialize API
+				virtual void threadFinish() override; // called on thread to initialize API
 
 				//--
 

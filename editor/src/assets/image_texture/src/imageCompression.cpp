@@ -1152,7 +1152,8 @@ namespace rendering
         creationInfo.allowShaderReads = true;
         creationInfo.label = "PreviewTexture";
 
-        base::InplaceArray<rendering::SourceData, 128> sourceData;
+		//rendering::SourceDataProviderBuffer sourceData;
+        /*base::InplaceArray<, 128> ;
         sourceData.resize(creationInfo.numMips * creationInfo.numSlices);
 
         auto* writePtr = sourceData.typedData();
@@ -1171,10 +1172,10 @@ namespace rendering
                     writePtr->size = sourceMip.dataSize;
                 }
             }
-        }
+        }*/
 
         auto device = base::GetService<DeviceService>()->device();
-        return device->createImage(creationInfo, sourceData.typedData());
+		return device->createImage(creationInfo);// sourceData.typedData());
     }
 
     //--

@@ -21,10 +21,10 @@
 
 namespace rendering
 {
-    namespace scene
-    {
-        struct FrameParams;
-    }
+	namespace scene
+	{
+		struct FrameParams;
+	}
 }
 
 namespace ui

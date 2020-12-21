@@ -13,7 +13,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-#include "base/canvas/include/canvasStorage.h"
+#include "base/canvas/include/canvasAtlas.h"
 
 namespace rendering
 {
@@ -27,7 +27,7 @@ namespace rendering
         public:
             base::NativeTimePoint m_lastUpdateTime;
 
-			base::canvas::ImageAtlasIndex m_atlas;
+			base::RefPtr<base::canvas::DynamicAtlas> m_atlas;
 			base::canvas::ImageEntry m_atlasEntry; 
 
             virtual void initialize() override
@@ -36,13 +36,13 @@ namespace rendering
 
                 auto lena = loadImage("lena.png");
 
-				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
-				m_atlasEntry = m_storage->registerImage(m_atlas, lena, true);
+				m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
+				m_atlasEntry = m_atlas->registerImage(lena, true);
             }
 
 			virtual void shutdown() override
 			{
-				m_storage->destroyAtlas(m_atlas);
+				m_atlas.reset();
 			}
 
             static float CalcPlasma(float x, float y, float t)
@@ -132,7 +132,7 @@ namespace rendering
 					auto style = base::canvas::ImagePattern(base::canvas::ImagePatternSettings(m_atlasEntry).customUV());
 
 					base::canvas::Geometry geometry;
-					geometry.appendIndexedBatch(vertices.typedData(), indices.typedData(), indices.size(), base::canvas::Batch(), &style, m_storage);
+					geometry.appendIndexedBatch(vertices.typedData(), indices.typedData(), indices.size(), base::canvas::Batch(), &style);
 
 					c.place(base::Vector2(0, 0), geometry);
 				}

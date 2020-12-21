@@ -60,6 +60,10 @@ namespace rendering
 
         //--
 
+        CommandWriter::CommandWriter(std::nullptr_t)
+        {
+        }
+
         CommandWriter::CommandWriter(CommandBuffer* buffer, base::StringView scopeName /*= base::StringView()*/)
         {
             attachBuffer(buffer);
@@ -210,6 +214,7 @@ namespace rendering
             {
                 ret.width = size.x;
                 ret.height = size.y;
+				ret.layout = output->layout();
 
                 auto op = allocCommand<OpAcquireOutput>();
                 op->output = output->id();
@@ -232,14 +237,10 @@ namespace rendering
             auto op  = allocCommand<OpTriggerCapture>();
         }
 
-        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount)
-        {
-			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
-            DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
-			DEBUG_CHECK_RETURN_EX(viewportCount <= 16, "To many viewports");
-
-            auto frameBufferValid = frameBuffer.validate();
-            DEBUG_CHECK_RETURN_EX(frameBufferValid , "Cannot enter a pass with invalid frame buffer");
+		bool CommandWriter::validateFrameBuffer(const FrameBuffer& frameBuffer, const GraphicsPassLayoutObject* layout, uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/)
+		{
+			auto frameBufferValid = frameBuffer.validate(outWidth, outHeight);
+			DEBUG_CHECK_RETURN_EX_V(frameBufferValid, "Cannot enter a pass with invalid frame buffer", false);
 
 			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
 			{
@@ -249,16 +250,16 @@ namespace rendering
 					const auto expectedFormat = layout->layout().color[i].format;
 					if (expectedFormat != ImageFormat::UNKNOWN)
 					{
-						DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Color target {} in frame buffer has layout {} but {} is expected by pass layout", i, format, expectedFormat));
+						DEBUG_CHECK_RETURN_EX_V(expectedFormat == format, base::TempString("Color target {} in frame buffer has layout {} but {} is expected by pass layout", i, format, expectedFormat), false);
 					}
 					else
 					{
-						DEBUG_CHECK_RETURN_EX(ImageFormat::UNKNOWN == format, base::TempString("Color target {} in frame buffer is bound with format '{}' but pass layout expects it's not", i, format));
+						DEBUG_CHECK_RETURN_EX_V(ImageFormat::UNKNOWN == format, base::TempString("Color target {} in frame buffer is bound with format '{}' but pass layout expects it's not", i, format), false);
 					}
 				}
 				else
 				{
-					DEBUG_CHECK_RETURN_EX(layout->layout().color[i].format == ImageFormat::UNKNOWN, base::TempString("Color target {} in frame buffer is not specified but it's expected by pass layout", i));
+					DEBUG_CHECK_RETURN_EX_V(layout->layout().color[i].format == ImageFormat::UNKNOWN, base::TempString("Color target {} in frame buffer is not specified but it's expected by pass layout", i), false);
 				}
 			}
 
@@ -268,19 +269,19 @@ namespace rendering
 				const auto expectedFormat = layout->layout().depth.format;
 				if (expectedFormat != ImageFormat::UNKNOWN)
 				{
-					DEBUG_CHECK_RETURN_EX(expectedFormat == format, base::TempString("Depth target in frame buffer has layout {} but {} is expected by pass layout", format, expectedFormat));
+					DEBUG_CHECK_RETURN_EX_V(expectedFormat == format, base::TempString("Depth target in frame buffer has layout {} but {} is expected by pass layout", format, expectedFormat), false);
 				}
 				else
 				{
-					DEBUG_CHECK_RETURN_EX(ImageFormat::UNKNOWN == format, base::TempString("Deth target in frame buffer is bound with format '{}' but pass layout expects it's not", format));
+					DEBUG_CHECK_RETURN_EX_V(ImageFormat::UNKNOWN == format, base::TempString("Deth target in frame buffer is bound with format '{}' but pass layout expects it's not", format), false);
 				}
 			}
 			else
 			{
-				DEBUG_CHECK_RETURN_EX(layout->layout().depth.format == ImageFormat::UNKNOWN, "Depth target in frame buffer is not specified but it's expected by pass layout");
+				DEBUG_CHECK_RETURN_EX_V(layout->layout().depth.format == ImageFormat::UNKNOWN, "Depth target in frame buffer is not specified but it's expected by pass layout", false);
 			}
 
-			DEBUG_CHECK_RETURN_EX(frameBuffer.samples() == layout->layout().samples, base::TempString("Frame buffer has {} samples per pixel while layout expects {}", frameBuffer.samples(), layout->layout().samples));
+			DEBUG_CHECK_RETURN_EX_V(frameBuffer.samples() == layout->layout().samples, base::TempString("Frame buffer has {} samples per pixel while layout expects {}", frameBuffer.samples(), layout->layout().samples), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
@@ -301,13 +302,40 @@ namespace rendering
 			}
 #endif
 
+			return true;
+		}
+
+        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount, const base::Rect& drawArea)
+        {
+			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
+            DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
+			DEBUG_CHECK_RETURN_EX(viewportCount <= 16, "To many viewports");
+
+			uint32_t width = 0, height = 0;
+			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer, layout, &width, &height), "Invalid frame buffer");          
+
 			//--
+
+			if (!drawArea.empty())
+			{
+				DEBUG_CHECK_RETURN_EX(drawArea.min.x >= 0, "Invalid draw area");
+				DEBUG_CHECK_RETURN_EX(drawArea.max.x <= (int)width, "Invalid draw area");
+				DEBUG_CHECK_RETURN_EX(drawArea.min.y >= 0, "Invalid draw area");
+				DEBUG_CHECK_RETURN_EX(drawArea.max.y <= (int)height, "Invalid draw area");
+			}
 
             auto op = allocCommand<OpBeginPass>();
             op->frameBuffer = frameBuffer;
 			op->passLayoutId = layout->id();
             op->hasResourceTransitions = false;
 			op->viewportCount = viewportCount;
+
+			if (!drawArea.empty())
+				op->renderArea = drawArea;
+			else
+				op->renderArea = base::Rect(0, 0, width, height);
+
+			m_currentPassLayout = AddRef(layout);
 
             m_currentPass = op;
             m_currentPassRts = frameBuffer.validColorSurfaces();
@@ -320,10 +348,36 @@ namespace rendering
             DEBUG_CHECK_RETURN(!m_isChildBufferWithParentPass);// , "Cannot end pass that started in parent command buffer");
 
             auto op = allocCommand<OpEndPass>();
+			m_currentPassLayout.reset();
             m_currentPass = nullptr;
 			m_currentPassViewports = 0;
 			m_currentPassRts = 0;
         }
+
+		void CommandWriter::opClearFrameBuffer(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, const base::Rect* area/* = nullptr*/)
+		{
+			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
+			DEBUG_CHECK_RETURN_EX(!m_currentPass, "Cannot clear pass inside another pass");
+
+			uint32_t width = 0, height = 0;
+			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer, layout), "Invalid frame buffer");
+
+			if (area)
+			{
+				DEBUG_CHECK_RETURN_EX(!area->empty(), "Empty clear area");
+				DEBUG_CHECK_RETURN_EX(area->min.x >= 0, "Invalid clear area");
+				DEBUG_CHECK_RETURN_EX(area->max.x <= (int)width, "Invalid clear area");
+				DEBUG_CHECK_RETURN_EX(area->min.y >= 0, "Invalid clear area");
+				DEBUG_CHECK_RETURN_EX(area->max.y <= (int)height, "Invalid clear area");
+			}
+
+			auto op = allocCommand<OpClearFrameBuffer>();
+			op->frameBuffer = frameBuffer;
+			if (area)
+				op->customArea = *area;
+			else
+				op->customArea = base::Rect(0, 0, width, height);
+		}
 
         //--
 

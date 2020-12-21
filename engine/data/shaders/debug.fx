@@ -16,14 +16,6 @@ attribute(packing=vertex) struct DebugVertex
     attribute(format=rgba8) float4 color;
 }
 
-attribute(packing=vertex) struct DebugVertexEx
-{
-    uint subSelectionID;
-    uint paramsID;
-    int depthBias;
-    float size; // sprites and lines
-}
-
 descriptor DebugFragmentPass
 {
     ConstantBuffer
@@ -39,14 +31,9 @@ descriptor DebugFragmentPass
 export shader DebugFragmentVS
 {
     vertex DebugVertex v;
-    vertex DebugVertexEx o;
 
     out vec2 UV;
     out vec4 Color;
-    out float Size;
-    out float PixelDepth;
-    out uint ParamsID;
-    out uint SubSelectableID;
    
     void main()
     {
@@ -54,11 +41,6 @@ export shader DebugFragmentVS
 
         UV = v.uv;
         Color = v.color;
-
-        ParamsID = o.paramsID;
-        SubSelectableID = o.subSelectionID;
-        PixelDepth = gl_Position.w;
-        Size = o.size;
 
         // TODO: z-bias
     }

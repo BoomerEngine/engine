@@ -9,24 +9,277 @@
 #include "build.h"
 #include "renderingScene.h"
 #include "renderingSceneUtils.h"
-#include "renderingSceneFragment.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameCameraContext.h"
-#include "renderingFrameSurfaceCache.h"
 #include "renderingFrameParams.h"
-#include "renderingFrameView.h"
-#include "renderingSceneCulling.h"
-#include "renderingSceneProxy.h"
-#include "renderingSceneFragmentList.h"
+#include "renderingFrameResources.h"
+
 #include "renderingFrameView_Main.h"
 #include "renderingFrameView_Cascades.h"
+#include "renderingFrameHelper_Compose.h"
+#include "renderingFrameHelper_Debug.h"
+
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingImage.h"
 
 namespace rendering
 {
     namespace scene
     {
+		//---
 
+		FrameViewMainRecorder::FrameViewMainRecorder()
+            : FrameViewRecorder(nullptr)
+			, viewBegin(nullptr)
+			, viewEnd(nullptr)
+			, depthPrePassStatic(nullptr)
+			, depthPrePassOther(nullptr)
+			, forwardSolid(nullptr)
+			, forwardMasked(nullptr)
+			, forwardTransparent(nullptr)
+			, selectionOutline(nullptr)
+            , sceneOverlay(nullptr)
+		{}
+
+		//---
+
+		FrameViewMain::FrameViewMain(const FrameRenderer& frame, const Setup& setup)
+			: m_frame(frame)
+			, m_setup(setup)
+		{}
+
+		FrameViewMain::~FrameViewMain()
+		{
+
+		}
+
+		void FrameViewMain::render(command::CommandWriter& cmd)
+		{
+            // initialize the scaffolding of the view
+            FrameViewMainRecorder rec;
+            initializeCommandStreams(cmd, rec);
+
+            // render main scene into the pre-created command buffers
+			if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+				scene->renderMainView(rec, *this, m_frame);
+
+            // TODO: render background
+
+            // render debug fragments
+            if (m_frame.frame().filters & FilterBit::DebugGeometry)
+            {
+
+
+            }
+
+            // wait for all recording jobs to finish
+            rec.finishRendering();
+		}
+
+        void FrameViewMain::initializeCommandStreams(command::CommandWriter& cmd, FrameViewMainRecorder& rec)
+        {
+            // view start 
+            rec.viewBegin.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+            // TODO: reproject previous frame depth for occlusion culling
+
+            // bind camera params
+            bindCamera(cmd);
+
+            // depth pre-pass
+            {
+                FrameBuffer fb;
+                fb.depth.view(m_frame.resources().sceneFullDepthRTV).clearDepth(1.0f).clearStencil(0);
+                fb.depth.loadOp = LoadOp::Clear;
+                fb.depth.storeOp = StoreOp::Store;
+
+                cmd.opBeingPass(m_frame.resources().sceneFullDepthPrePassLayout, fb);
+
+                rec.depthPrePassStatic.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                // TODO: capture depth
+
+                rec.depthPrePassOther.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                cmd.opEndPass();
+            }
+
+            // TODO: capture depth for this-frame occlusion culling
+
+            // wait for cascades
+
+            // bind lighting params
+
+            // main forward pass
+            {
+                FrameBuffer fb;
+                fb.depth.view(m_frame.resources().sceneFullDepthRTV);
+                fb.depth.loadOp = LoadOp::Keep;
+                fb.depth.storeOp = StoreOp::Store;
+                fb.color[0].view(m_frame.resources().sceneFullColorRTV);
+                fb.color[0].storeOp = StoreOp::Store;
+
+                if (m_frame.frame().clear.clear)
+                {
+                    fb.color[0].loadOp = LoadOp::Clear; // TODO: do not clear if we have background scene
+                    fb.color[0].clear(m_frame.frame().clear.clearColor);
+                }
+                else
+                {
+                    fb.color[0].loadOp = LoadOp::Keep;
+                }
+
+                //fb.color[0].clear(0.5f, 0.5f, 0.5f, 1.0f);
+
+                cmd.opBeingPass(m_frame.resources().sceneFullColorPassLayout, fb);
+
+                rec.forwardSolid.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                rec.forwardMasked.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                // TODO: capture color buffer for refractions
+
+                rec.forwardTransparent.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                cmd.opEndPass();
+            }
+
+            // view end
+            rec.viewEnd.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+            // selection outline depth
+            {
+                FrameBuffer fb;
+                fb.depth.view(m_frame.resources().sceneOutlineDepthRTV).clearDepth(1.0f).clearStencil(0);
+
+                cmd.opBeingPass(m_frame.resources().sceneFullDepthPrePassLayout, fb);
+
+                rec.selectionOutline.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                cmd.opEndPass();
+            }
+
+            // overlay
+            {
+                FrameBuffer fb;
+                fb.color[0].view(m_frame.resources().sceneFullColorRTV);
+                fb.color[0].loadOp = LoadOp::Keep; // TODO: do not clear if we have background scene
+                fb.color[0].storeOp = StoreOp::Store;
+
+                cmd.opBeingPass(m_frame.resources().sceneFullColorOverlayLayout, fb);
+
+                rec.sceneOverlay.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+                cmd.opEndPass();
+            }
+
+            // resolve color
+            {
+                cmd.opTransitionLayout(m_frame.resources().sceneFullColor, ResourceLayout::RenderTarget, ResourceLayout::ResolveSource);
+                cmd.opTransitionLayout(m_frame.resources().sceneResolvedColor, ResourceLayout::ShaderResource, ResourceLayout::ResolveDest);
+
+                cmd.opResolve(m_frame.resources().sceneFullColor, m_frame.resources().sceneResolvedColor);
+
+                cmd.opTransitionLayout(m_frame.resources().sceneFullColor, ResourceLayout::ResolveSource, ResourceLayout::RenderTarget);
+                cmd.opTransitionLayout(m_frame.resources().sceneResolvedColor, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
+            }
+
+            // resolve depth
+            {
+                //cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::DepthWrite, ResourceLayout::ResolveSource);
+                //cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ShaderResource, ResourceLayout::ResolveDest);
+                //cmd.opResolve(m_frame.resources().sceneFullDepth, m_frame.resources().sceneResolvedDepth);
+                //cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::ResolveSource, ResourceLayout::DepthWrite);
+                //cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
+            }
+
+            // present
+            {
+                FrameHelperCompose::Setup setup;
+                setup.gameWidth = m_frame.width();
+                setup.gameHeight = m_frame.height();
+                setup.gameView = m_frame.resources().sceneResolvedColorSRV;
+                setup.presentTarget = m_setup.colorTarget;
+                setup.presentRect = m_setup.viewport;
+                m_frame.helpers().compose->finalCompose(cmd, setup);
+            }
+        }
+
+        void FrameViewMain::bindCamera(command::CommandWriter& cmd)
+        {
+            GPUCameraInfo cameraParams;
+            CalcGPUSingleCamera(cameraParams, m_frame.frame().camera.camera);
+
+            DescriptorEntry desc[1];
+            desc[0].constants(cameraParams);
+            cmd.opBindDescriptor("CameraParams"_id, desc);
+        }
+
+		void FrameViewMain::renderFragments(Scene* scene, FrameViewMainRecorder& rec)
+		{
+		}
+
+		/*{
+			struct
+			{
+				GPUCameraInfo camera;
+				GPUFrameParameters frame;
+			} viewConsts;
+
+			GPUCameraInfo data;
+			CalcGPUCameraInfo(data, camera, prevFrameCamera);
+
+
+
+		}*/
+
+#if 0
         //---
+
+		FrameViewMain::FrameViewMain(const FrameRenderer& frame, const Setup& setup)
+			: m_frame(frame)
+			, m_setup(setup)
+		{}
+
+		FrameViewMain::~FrameViewMain()
+		{
+		}
+
+		void FrameViewMain::render(command::CommandWriter& cmd)
+		{
+			FrameViewMainParams params;
+
+			// TODO: emit the light probe rendering requests
+			// TODO: emit the light shadow map rendering requests
+			params.globalLighting = frame.frame().globalLighting;
+			//lightingData.globalShadowMaskAO = frame.surfaces().m_globalAOShadowMaskRT;
+
+			// render cascades
+			if (frame.frame().filters & FilterBit::CascadeShadows)
+			{
+				/*// calculate cascades
+				cascades.cascadeShadowMap = frame.surfaces().m_cascadesShadowDepthRT;
+				CalculateCascadeSettings(frame().globalLighting.globalLightDirection, m_camera, frame.frame().cascades, cascades);
+
+				// render cascades
+				// TODO: fiber
+				if (cascades.numCascades)
+				{
+					FrameView_CascadeShadows cascadeView(renderer(), cascades);
+					cascadeView.render(parentCmd);
+				}*/
+			}
+
+			// bind all global view descriptors before branching into rendering pass command lists
+			//BindSingleCamera(cmd, m_camera);
+			//BindShadowsData(cmd, cascades);
+
+			// create command buffer writers
+
+
+		}
+
+		//---
 
         FrameView_Main::FrameView_Main(const FrameRenderer& frame, const Camera& camera, ImageView colorTarget, ImageView depthTarget, FrameRenderMode mode /*= FrameRenderMode::Default*/)
             : FrameView(frame, FrameViewType::MainColor, frame.frame().resolution.width, frame.frame().resolution.height)
@@ -145,6 +398,7 @@ namespace rendering
         }
 
         //--
+#endif
 
     } // scene
 } // rendering

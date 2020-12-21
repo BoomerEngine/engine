@@ -336,6 +336,92 @@ namespace rendering
     class DescriptorID;
     class DescriptorInfo;
 
+	//--
+
+	// general device tier
+	enum class DeviceGeometryTier : uint8_t
+	{
+		// absolute low-end
+		//  - no compute shaders on rendering/post processing
+		//  - meshes in separate buffers
+		//  - textures/constants bound for each draw call
+		//  - materials will be simplified
+		Tier0_Legacy, 
+
+		// non-bindless cur-gen
+		//  - compute shaders but not for geometry processing
+		//  - meshes in separate buffers
+		//  - textures/constants bound for each draw call
+		Tier1_LowEnd,
+
+		// cur-gen with some bindless processing
+		//  - compute shaders used for geometry processing
+		//  - meshes in one buffer
+		//  - textures/constants still bound separatelly
+		Tier2_Meshlets,
+
+		// bindless rendering (mesh lests)
+		//  - meshest using compute shaders
+		//  - source mesh data in one buffer
+		//  - material parameters passes without binding to each drawcall
+		Tier3_BindlessMeshlets,
+
+		// next-gen tier with mesh/task shaders
+		//  - meshlets using task/mesh shaders (no intermeddiate buffers)
+		//  - source mesh data in one buffer
+		//  - material parameters passes without binding to each drawcall
+		Tier4_MeshShaders,
+	};
+
+	//--
+
+	// transparency rendering tier
+	enum class DeviceTransparencyTier : uint8_t
+	{
+		// no special support for anything, transparencies must be rendered back to front
+		Tier0_Legacy,
+
+		// support for enough processing power to do a MRT blending
+		// minimal geometry tier: Tier1_LowEnd
+		Tier1_MRTBlending,
+
+		// support for ROV (rasterization ordered views) that allow for programable blending
+		// minimal geometry tier: Tier2_Meshlets
+		Tier2_ROV,
+	};
+
+	//--
+
+	// raytracing tier
+	enum class DeviceRaytracingTier : uint8_t
+	{
+		// no support
+		Tier0_NoSupport,
+
+		// some basic mostly emulated support (RTX 10xx, no DLSS)
+		// not good enough for real game but can be used for in-editor preview
+		// minimal geometry tier: Tier3_BindlessMeshlets
+		Tier1_Basic,
+
+		// full support with DLSS
+		Tier2_Full,
+	};
+
+	//--
+
+	// device capatiblities
+	struct RENDERING_DEVICE_API DeviceCaps
+	{
+		RTTI_DECLARE_NONVIRTUAL_CLASS(DeviceCaps);
+
+	public:
+		DeviceGeometryTier geometry = DeviceGeometryTier::Tier0_Legacy;
+		DeviceTransparencyTier transparency = DeviceTransparencyTier::Tier0_Legacy;
+		DeviceRaytracingTier raytracing = DeviceRaytracingTier::Tier0_NoSupport;
+
+		uint64_t vramSize = 0;		
+	};
+
     //--
 
 #pragma pack(push)

@@ -115,7 +115,7 @@ namespace rendering
 							else if (element.number > 0)
 							{
 								const auto staticSamplerIndex = element.number - 1;
-								ASSERT(staticSamplerIndex >= 0 && staticSamplerIndex <= descriptor.elements.lastValidIndex());
+								ASSERT(staticSamplerIndex >= 0 && staticSamplerIndex <= staticSamplers.lastValidIndex());
 								bindingElement.samplerSlotIndex = -1; // use static sampler
 								bindingElement.glStaticSampler = staticSamplerIndex;
 							}

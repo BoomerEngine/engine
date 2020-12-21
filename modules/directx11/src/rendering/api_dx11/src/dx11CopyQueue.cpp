@@ -9,7 +9,6 @@
 #include "build.h"
 #include "dx11Thread.h"
 #include "dx11CopyQueue.h"
-#include "dx11CopyPool.h"
 
 namespace rendering
 {
@@ -20,13 +19,21 @@ namespace rendering
 
 	        //--
 
-			CopyQueue::CopyQueue(Thread* owner, CopyPool* pool, ObjectRegistry* objects)
-				: IBaseCopyQueue(owner, pool, objects)
+			CopyQueue::CopyQueue(Thread* owner, ObjectRegistry* objects)
+				: IBaseCopyQueue(owner, objects)
 			{
-
 			}
 
 			CopyQueue::~CopyQueue()
+			{
+			}
+
+			bool CopyQueue::schedule(IBaseCopiableObject* ptr, const ISourceDataProvider* sourceData)
+			{
+				return true;
+			}
+
+			void CopyQueue::update(uint64_t frameIndex)
 			{
 
 			}

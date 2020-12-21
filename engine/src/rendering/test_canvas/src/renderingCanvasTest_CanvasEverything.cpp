@@ -20,8 +20,8 @@
 #include "base/font/include/fontGlyphCache.h"
 #include "base/containers/include/utf8StringFunctions.h"
 #include "base/font/include/fontGlyph.h"
-#include "base/canvas/include/canvasStorage.h"
 #include "base/input/include/inputStructures.h"
+#include "base/canvas/include/canvasAtlas.h"
 
 #ifdef PLATFORM_MSVC
 #pragma warning (disable: 4706) // assignment within conditional expression
@@ -681,7 +681,7 @@ namespace rendering
             virtual void processInput(const base::input::BaseEvent& evt) override;
 
         private:
-			base::canvas::ImageAtlasIndex m_atlas;
+			base::RefPtr<base::canvas::DynamicAtlas> m_atlas;
 			base::Array<base::canvas::ImageEntry> m_images;
 
             FontHelper m_fontHelper;
@@ -696,12 +696,12 @@ namespace rendering
 
         void SceneTest_CanvasEverything::initialize()
         {
-			m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
+			m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
 
 			for (uint32_t i = 0; i < 12; ++i)
 			{
 				const auto img = loadImage(base::TempString("image{}.png", i+1));
-				m_images.pushBack(m_storage->registerImage(m_atlas, img));
+				m_images.pushBack(m_atlas->registerImage(img));
 			}
 
             m_fontHelper.init(*this);
@@ -712,7 +712,7 @@ namespace rendering
 
 		void SceneTest_CanvasEverything::shutdown()
 		{
-			m_storage->destroyAtlas(m_atlas);
+			m_atlas.reset();
 		}
 
         void SceneTest_CanvasEverything::processInput(const base::input::BaseEvent& evt)
@@ -1745,7 +1745,7 @@ namespace rendering
 
                 if (m_staticGeometry.empty())
                 {
-                    base::canvas::GeometryBuilder b(m_storage, m_staticGeometry);
+                    base::canvas::GeometryBuilder b(m_staticGeometry);
 
                     // Widgets
                     DrawWindow(m_fontHelper, b, "Widgets `n Stuff", 50, 50, 300, 400);
@@ -1786,7 +1786,7 @@ namespace rendering
                 {
 					base::canvas::Geometry g;
 					{
-						base::canvas::GeometryBuilder b(m_storage, g);
+						base::canvas::GeometryBuilder b(g);
 
 						DrawGraph(b, 0, h / 2, w, h / 2, t);
 						DrawEyes(b, w - 250.0f, 50.0f, 150.0f, 100.0f, mx, my, t);
@@ -1801,11 +1801,11 @@ namespace rendering
 				{
 					base::canvas::Geometry g, g2;
 					{
-						base::canvas::GeometryBuilder b(m_storage, g);
+						base::canvas::GeometryBuilder b(g);
 						DrawThumbnails(b, 365, popy - 30, 160, 300, m_images, t);
 					}
 					{
-						base::canvas::GeometryBuilder b2(m_storage, g2);
+						base::canvas::GeometryBuilder b2(g2);
 						DrawThumbnailsUnclip(b2, 365, popy - 30, 160, 300, m_images, t);
 					}
 
@@ -1819,7 +1819,7 @@ namespace rendering
                 {
 					base::canvas::Geometry g;
 					{
-						base::canvas::GeometryBuilder b(m_storage, g);
+						base::canvas::GeometryBuilder b(g);
 						//DrawParagraph(b, m_fontHelper, w - 450, 50, 150, 100, mx, my);
 					}
                     c.place(base::Vector2(0,0), g);

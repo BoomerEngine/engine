@@ -9,7 +9,6 @@
 #pragma once
 
 #include "renderingMeshFormat.h"
-#include "rendering/device/include/renderingParametersView.h"
 
 namespace rendering
 {
@@ -20,7 +19,7 @@ namespace rendering
     {
         RTTI_DECLARE_NONVIRTUAL_CLASS(MeshChunk);
 
-        MeshChunkRenderID renderId = 0; // assigned on load
+		MeshChunkProxyPtr proxy; // runtime
 
         MeshVertexFormat vertexFormat;
 
@@ -138,7 +137,7 @@ namespace rendering
         // get used bones
         //INLINE const base::Array<base::StringID>& boneRefs() const { return m_materialRefs; }
 
-        // chunks
+        // raw data chunk
         INLINE const base::Array<MeshChunk>& chunks() const { return m_chunks; }
 
         // detail levels

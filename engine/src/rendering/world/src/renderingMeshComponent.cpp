@@ -12,8 +12,8 @@
 #include "renderingSystem.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/scene/include/renderingSceneProxyDesc.h"
 #include "rendering/scene/include/renderingScene.h"
+#include "rendering/scene/include/renderingSceneObjects.h"
 
 namespace rendering
 {
@@ -90,25 +90,32 @@ namespace rendering
         }
     }
 
-    scene::ProxyHandle MeshComponent::handleCreateProxy(scene::Scene* scene) const
+    scene::ObjectProxyPtr MeshComponent::handleCreateProxy(scene::Scene* scene) const
     {
         if (const auto meshData = m_mesh.acquire())
         {
-            rendering::scene::ProxyMeshDesc desc;
-            desc.forcedLodLevel = m_forceDetailLevel;
-            desc.castsShadows = m_castShadows;
-            desc.receiveShadows = m_receiveShadows;
-            desc.localToScene = localToWorld();
-            desc.color = m_color;
-            desc.colorEx = m_colorEx;
-            desc.mesh = meshData;
-            desc.meshBounds = meshData->bounds();
-            desc.selected = selected();
-            desc.selectable = selectable();
-            return scene->proxyCreate(desc);
+			scene::ObjectProxyMesh::Setup setup;
+			setup.forcedLodLevel = m_forceDetailLevel;
+			setup.mesh = meshData;
+
+			if (auto proxy = scene::ObjectProxyMesh::Compile(setup))
+			{
+				if (m_castShadows)
+					proxy->m_flags |= scene::ObjectProxyFlagBit::CastShadows;
+				if (m_receiveShadows)
+					proxy->m_flags |= scene::ObjectProxyFlagBit::ReceivesShadows;
+				if (selected())
+					proxy->m_flags |= scene::ObjectProxyFlagBit::Selected;
+
+				proxy->m_color = m_color;
+				proxy->m_colorEx = m_colorEx;
+				proxy->m_localToWorld = localToWorld();
+
+				return proxy;
+			}
         }
 
-        return scene::ProxyHandle();
+		return nullptr;
     }
 
     base::Box MeshComponent::calcBounds() const

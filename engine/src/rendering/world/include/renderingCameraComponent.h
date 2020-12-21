@@ -13,7 +13,7 @@
 
 namespace rendering
 {
-
+	/*
     //--
 
     struct RENDERING_WORLD_API CameraRenderingContext
@@ -35,7 +35,7 @@ namespace rendering
         rendering::ImageView backBufferDepth;
 
         CameraRenderingTarget();
-    };
+    };*/
 
     //--
 
@@ -73,7 +73,7 @@ namespace rendering
         ///---
 
         /// render world from this camera
-        void render(const CameraRenderingContext& context, const CameraRenderingTarget& target);
+        //void render(const CameraRenderingContext& context, const CameraRenderingTarget& target);
 
         ///---
 

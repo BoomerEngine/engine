@@ -35,6 +35,7 @@ namespace rendering
 				virtual void runBeginBlock(const command::OpBeginBlock &) override final;
 				virtual void runEndBlock(const command::OpEndBlock &) override final;
 				virtual void runResolve(const command::OpResolve &) override final;
+				virtual void runClearFrameBuffer(const command::OpClearFrameBuffer&) override final;
 				virtual void runClearPassRenderTarget(const command::OpClearPassRenderTarget &) override final;
 				virtual void runClearPassDepthStencil(const command::OpClearPassDepthStencil &) override final;
 				virtual void runClearRenderTarget(const command::OpClearRenderTarget &) override final;
@@ -99,8 +100,7 @@ namespace rendering
 				bool resolveFrameBufferRenderTarget(const FrameBufferAttachmentInfo& fb, ResolvedImageView& outTarget) const;
 				bool resolveFrameBufferRenderTargets(const FrameBuffer& fb, FrameBufferTargets& outTargets) const;
 
-				void clearFrameBuffer(const FrameBuffer& fb);
-				void resetViewport(const FrameBuffer& fb);
+				void resetViewport(const FrameBuffer& fb, const base::Rect& rect);
             };
 
 			//---

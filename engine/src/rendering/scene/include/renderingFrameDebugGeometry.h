@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingImageView.h"
 #include "base/containers/include/pagedBuffer.h"
+#include "renderingSelectable.h"
 
 namespace rendering
 {
@@ -80,17 +80,6 @@ namespace rendering
 
         ///----
 
-
-        struct DebugVertexEx
-        {
-            uint32_t subSelectionId = 0;
-            uint32_t paramsId = 0;
-            int depthBias = 0; // in "step" units
-            float size = 0.0f; // pixel size for sprites, line thickness for lines
-        };
-
-        ///----
-
         /// rendering layer for frame geometry
         enum class DebugGeometryLayer : uint8_t
         {
@@ -117,14 +106,14 @@ namespace rendering
             uint32_t numIndices = 0;
             uint32_t firstVertex = 0;
             uint32_t numVeritices = 0;
+
+			Selectable selectable;
         };
 
-        struct DebugGeometryElementSrc
+        struct DebugGeometryElementSrc : public DebugGeometryElement
         {
-            DebugGeometryType type = DebugGeometryType::Solid;
-            const base::PagedBuffer<uint32_t>* sourceIndicesData = nullptr;
-            const base::PagedBuffer<DebugVertex>* sourceVerticesData = nullptr;
-            const base::PagedBuffer<DebugVertexEx>* sourceVerticesDataEx = nullptr;
+            const uint32_t* sourceIndicesData = nullptr; // can be empty
+            const DebugVertex* sourceVerticesData = nullptr;
         };
 
         //--
@@ -133,21 +122,22 @@ namespace rendering
         class DebugGeometry : public base::NoCopy
         {
         public:
-            DebugGeometry(DebugGeometryLayer layer = DebugGeometryLayer::SceneSolid);
-            ~DebugGeometry();
+            DebugGeometry();
 
             //--
 
             // buffers
-            INLINE const base::PagedBuffer<uint32_t>& indices() const { return m_indicesData; }
-            INLINE const base::PagedBuffer<DebugVertex>& vertices() const { return m_verticesData; }
-            INLINE const base::PagedBuffer<DebugVertexEx>& verticesEx() const { return m_verticesDataEx; }
-            INLINE const base::PagedBuffer<DebugGeometryElement>& elements() const { return m_elements; }
+            INLINE const base::PagedBufferTyped<uint32_t>& indices() const { return m_indices; }
+            INLINE const base::PagedBufferTyped<DebugVertex>& vertices() const { return m_vertices; }
+            INLINE const base::Array<DebugGeometryElement>& elements() const { return m_elements; }
                       
             //--
 
+			// clear collector
+			void clear();
+
             // push new element
-            void pushElement(const DebugGeometryElementSrc& source, const DebugVertexEx& defaultDebugVertex = DebugVertexEx());
+			void push(const DebugGeometryElementSrc& source);
 
             //--
 
@@ -156,10 +146,9 @@ namespace rendering
 
             //---
 
-            base::PagedBuffer<uint32_t> m_indicesData;
-            base::PagedBuffer<DebugVertex> m_verticesData;
-            base::PagedBuffer<DebugVertexEx> m_verticesDataEx;
-            base::PagedBuffer<DebugGeometryElement> m_elements;
+            base::PagedBufferTyped<uint32_t> m_indices;
+            base::PagedBufferTyped<DebugVertex> m_vertices;
+            base::InplaceArray<DebugGeometryElement, 1024> m_elements;
 
             //---
         };

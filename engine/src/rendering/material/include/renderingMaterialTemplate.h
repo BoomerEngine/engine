@@ -57,7 +57,7 @@ namespace rendering
 
         MaterialCompilationSetup setup;
         MaterialTechniqueRenderStates renderStates;
-        ShaderLibraryPtr shader;
+        ShaderDataPtr shader;
 
         MaterialPrecompiledStaticTechnique();
         ~MaterialPrecompiledStaticTechnique();
@@ -83,9 +83,6 @@ namespace rendering
         /// get the sort group for the material, usually determined from the type/flags on the output node in the graph
         INLINE MaterialSortGroup sortGroup() const { return m_sortGroup; }
 
-        /// get the data layout for ALL the materials that use this template
-        INLINE const MaterialDataLayout* dataLayout() const { return m_dataLayout; }
-
         /// get list of template parameters
         INLINE const base::Array<MaterialTemplateParamInfo>& parameters() const { return m_parameters; }
 
@@ -93,8 +90,9 @@ namespace rendering
 
         // IMaterial interface
         virtual MaterialDataProxyPtr dataProxy() const override final;
-        virtual const MaterialTemplate* resolveTemplate() const override final;
+		virtual MaterialTemplateProxyPtr templateProxy() const override final;
 
+		virtual const MaterialTemplate* resolveTemplate() const override final;
         virtual bool checkParameterOverride(base::StringID name) const override final;
         virtual bool resetParameter(base::StringID name) override final;
         virtual bool writeParameter(base::StringID name, const void* data, base::Type type, bool refresh = true) override final; // NOTE: writing to template is not supported (immutable resources and all...)
@@ -119,10 +117,7 @@ namespace rendering
         // describe parameter data
         base::DataViewResult describeParameterView(base::StringView paramName, base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const;
 
-        ///---
-
-        /// find/compile a rendering technique for given rendering settings
-        MaterialTechniquePtr fetchTechnique(const MaterialCompilationSetup& setup); 
+		///---
 
     protected:
         virtual void onPostLoad() override;
@@ -132,6 +127,9 @@ namespace rendering
         MaterialDataProxyPtr m_dataProxy;
         void createDataProxy();
 
+		MaterialTemplateProxyPtr m_templateProxy;
+		void createTemplateProxy();
+
         //--
 
         MaterialSortGroup m_sortGroup = MaterialSortGroup::Opaque;
@@ -139,22 +137,13 @@ namespace rendering
 
         //--
 
-        base::SpinLock m_techniqueMapLock;
-        base::HashMap<uint32_t, MaterialTechniquePtr> m_techniqueMap;
-
         base::Array<MaterialPrecompiledStaticTechnique> m_precompiledTechniques;
-
-        base::RefPtr<IMaterialTemplateDynamicCompiler> m_compiler;
+		base::RefPtr<IMaterialTemplateDynamicCompiler> m_compiler;
 
         //--
 
         void rebuildParameterMap();
         base::HashMap<base::StringID, uint16_t> m_parametersMap; // NOTE: indices in m_parameters
-
-        //--
-
-        void registerLayout();
-        const MaterialDataLayout* m_dataLayout = nullptr;
 
         //--
     };

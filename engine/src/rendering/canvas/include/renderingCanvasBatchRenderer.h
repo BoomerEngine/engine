@@ -39,10 +39,10 @@ namespace rendering
 			//--
 
 			/// prepare rendering for given pass layout
-			virtual void prepareForLayout(const CanvasRenderStates& renderStates, GraphicsPassLayoutObject* pass) = 0;
+			virtual void prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass) = 0;
 
             /// initialize handler, may allocate resources, load shaders, etc
-            virtual bool initialize(CanvasStorage* owner, IDevice* drv) = 0;
+            virtual bool initialize(IDevice* drv) = 0;
 
 			//--
 
@@ -51,7 +51,6 @@ namespace rendering
 				uint32_t width = 0;
 				uint32_t height = 0;
 
-				const base::canvas::Vertex* vertices = nullptr;
 				const void* customData = nullptr;
 
 				const BufferObject* vertexBuffer = nullptr;
@@ -80,8 +79,8 @@ namespace rendering
 			virtual ShaderFilePtr loadMainShaderFile() = 0;
 
 		protected:
-			virtual bool initialize(CanvasStorage* owner, IDevice* drv) override final;
-			virtual void prepareForLayout(const CanvasRenderStates& renderStates, GraphicsPassLayoutObject* pass) override final;
+			virtual bool initialize(IDevice* drv) override final;
+			virtual void prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass) override final;
 			virtual void render(command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override;
 
 			static const auto MAX_BLEND_OPS = (int)base::canvas::BlendOp::MAX;

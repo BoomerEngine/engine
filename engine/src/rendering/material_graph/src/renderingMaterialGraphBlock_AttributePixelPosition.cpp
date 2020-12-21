@@ -27,7 +27,7 @@ namespace rendering
 
         virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
         {
-            if (compiler.stage() == ShaderType::Pixel)
+            if (compiler.stage() == ShaderStage::Pixel)
                 return CodeChunk(CodeChunkType::Numerical2, "(gl_FragCoord.xy)");
             else
                 return base::Vector2(0.0f, 0.0f);

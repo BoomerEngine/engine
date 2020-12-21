@@ -10,10 +10,10 @@
 #include "meshPreviewPanel.h"
 
 #include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingSceneProxyDesc.h"
-#include "rendering/scene/include/renderingFrameDebug.h"
-#include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/mesh/include/renderingMesh.h"
+#include "rendering/scene/include/renderingSceneObjects.h"
+#include "rendering/scene/include/renderingFrameParams.h"
+#include "rendering/scene/include/renderingFrameDebug.h"
 
 namespace ed
 {
@@ -99,9 +99,9 @@ namespace ed
         {
             if (m_previewSettings.showBounds)
             {
-                rendering::scene::DebugLineDrawer lines(frame.geometry.solid);
+                rendering::scene::DebugDrawer lines(frame.geometry.solid);
                 lines.color(base::Color::YELLOW);
-                lines.box(m_mesh->bounds());
+                lines.wireBox(m_mesh->bounds());
             }
         }
     }
@@ -137,7 +137,7 @@ namespace ed
     void MeshPreviewPanel::destroyPreviewElements()
     {
         for (const auto& proxy : m_proxies)
-            renderingScene()->proxyDestroy(proxy);
+            renderingScene()->dettachProxy(proxy);
         m_proxies.clear();
     }
 
@@ -147,12 +147,10 @@ namespace ed
 
         if (m_mesh)
         {
-            rendering::scene::ProxyMeshDesc desc;
+			rendering::scene::ObjectProxyMesh::Setup desc;
             desc.mesh = m_mesh;
-            desc.selectable = rendering::scene::Selectable(42, 0);
             desc.forcedLodLevel = m_previewSettings.forceLod;
-            desc.meshBounds = m_mesh->bounds();
-
+			
             bool drawSplit = (m_previewSettings.isolateMaterials || m_previewSettings.highlightMaterials) && !m_previewSettings.selectedMaterials.empty();
             if (drawSplit)
             {
@@ -161,19 +159,32 @@ namespace ed
                     for (auto materialName : m_previewSettings.selectedMaterials.keys())
                         desc.excludedMaterialMask.insert(materialName);
 
-                    m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+					if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+					{
+						renderingScene()->attachProxy(proxy);
+						m_proxies.pushBack(proxy);
+					}
                 }
 
-                desc.selected = m_previewSettings.highlightMaterials;
-                desc.excludedMaterialMask.clear();
-                for (auto materialName : m_previewSettings.selectedMaterials.keys())
-                    desc.selectiveMaterialMask.insert(materialName);
+				desc.excludedMaterialMask.clear();
 
-                m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+				for (auto materialName : m_previewSettings.selectedMaterials.keys())
+					desc.selectiveMaterialMask.insert(materialName);
+
+				if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+				{
+					proxy->m_flags.configure(rendering::scene::ObjectProxyFlagBit::Selected, m_previewSettings.highlightMaterials);
+					m_proxies.pushBack(proxy);
+				}
             }
             else
             {
-                m_proxies.pushBack(renderingScene()->proxyCreate(desc));
+				if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+				{
+					proxy->m_selectable = rendering::scene::Selectable(42, 0);
+					renderingScene()->attachProxy(proxy);
+					m_proxies.pushBack(proxy);
+				}
             }
         }
     }

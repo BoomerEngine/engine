@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/ui/include/renderingFullScenePanel.h"
+#include "rendering/ui_viewport/include/renderingFullScenePanel.h"
 
 namespace ed
 {
@@ -55,7 +55,7 @@ namespace ed
     private:
         MaterialPreviewPanelSettings m_previewSettings;
 
-        rendering::scene::ProxyHandle m_previewProxy;
+        rendering::scene::ObjectProxyPtr m_previewProxy;
         rendering::MaterialRef m_material;
 
         void destroyVisualization();

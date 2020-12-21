@@ -28,6 +28,7 @@
 //
 
 #include "build.h"
+#include "canvasService.h"
 #include "canvasStyle.h"
 #include "canvasGeometry.h"
 #include "canvasGeometryBuilder.h"
@@ -37,7 +38,6 @@
 #include "base/font/include/fontGlyph.h"
 #include "base/font/include/fontGlyphBuffer.h"
 #include "base/font/include/fontInputText.h"
-#include "canvasStorage.h"
 
 namespace base
 {
@@ -53,9 +53,8 @@ namespace base
 
         //--
 
-		GeometryBuilder::GeometryBuilder(const IStorage* storage, Geometry& outGeometry)
-			: m_storage(storage)
-			, m_distTollerance(cvDistTollerance.get())
+		GeometryBuilder::GeometryBuilder(Geometry& outGeometry)
+			: m_distTollerance(cvDistTollerance.get())
 			, m_tessTollerance(cvTessTollerance.get())
 			, m_outVertices(outGeometry.vertices)
 			, m_outBatches(outGeometry.batches)
@@ -939,7 +938,7 @@ namespace base
         namespace helper
         {
             // helper class for writing output vertices
-            class OutputVertexWriter : public base::NoCopy
+            class OutputVertexWriter : public NoCopy
             {
             public:
                 INLINE OutputVertexWriter(Array<Vertex>& arr, uint32_t maxVertices)
@@ -1461,9 +1460,10 @@ namespace base
             flattenPath(*m_pathCache);
 
 			// cache image
-			if (m_style.fillStyle.image && !m_style.cachedFillImage && m_storage)
-				m_style.cachedFillImage = m_storage->findRenderDataForAtlasEntry(m_style.fillStyle.image);
-			else if (!m_style.fillStyle.image || !m_storage)
+			static const auto* service = GetService<CanvasService>();
+			if (m_style.fillStyle.image && !m_style.cachedFillImage)
+				m_style.cachedFillImage = service->findRenderDataForAtlasEntry(m_style.fillStyle.image);
+			else if (!m_style.fillStyle.image)
 				m_style.cachedFillImage = nullptr;
 
             // calculate inner deltas and other data, preparing path to be used
@@ -1712,8 +1712,9 @@ namespace base
 
         void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
         {
-			DEBUG_CHECK_RETURN_EX(m_storage != nullptr, "Cannot print without bound storage");
 			DEBUG_CHECK_RETURN_EX(numGlyphs < 10000, "Text is to large to be sensibly printed");
+
+			static const auto* service = GetService<CanvasService>();
 
 			// allocate output space
 			auto firstVertex = m_outVertices.size();
@@ -1724,7 +1725,8 @@ namespace base
             Vector2 boundsMin(FLT_MAX, FLT_MAX);
             Vector2 boundsMax(-FLT_MAX, -FLT_MAX);
             uint32_t numGlyphsWritten = 0;
-            for (uint32_t i = 0; i < numGlyphs; ++i, readPtr = base::OffsetPtr(readPtr, dataStride))
+			uint64_t glyphPageMask = 0;
+            for (uint32_t i = 0; i < numGlyphs; ++i, readPtr = OffsetPtr(readPtr, dataStride))
             {
                 auto& srcGlyph = *readPtr;
 
@@ -1741,7 +1743,7 @@ namespace base
                 float endY = offsetY + sizeY;
 
 				// resolve glyph UV placement
-				if (const auto* placement = m_storage->findRenderDataForGlyph(srcGlyph.glyph))
+				if (const auto* placement = service->findRenderDataForGlyph(srcGlyph.glyph))
 				{
 					if (m_transformClass & XForm2DClass::HasScaleRotation)
 					{
@@ -1790,6 +1792,10 @@ namespace base
 					boundsMin = Min(boundsMin, writeVertex[0].pos);
 					boundsMax = Max(boundsMax, writeVertex[2].pos);
 
+					// collect masks
+					if (placement->pageIndex != -1)
+						glyphPageMask |= 1ULL << placement->pageIndex;
+
 					// counts
 					writeVertex += 4;
 					numGlyphsWritten += 1;
@@ -1808,6 +1814,7 @@ namespace base
 				prim.renderDataSize = m_customRenderer.dataSize;
 				prim.vertexOffset = firstVertex;
 				prim.vertexCount = numGlyphsWritten * 4;;
+				prim.glyphPageMask = glyphPageMask;
 			}
 
 			// reclaim unused vertices

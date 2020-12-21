@@ -21,12 +21,13 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
-#include "rendering/canvas/include/renderingCanvasRenderingService.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/scene/include/renderingFrameRenderingService.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameCameraContext.h"
+#include "rendering/canvas/include/renderingCanvasStorage.h"
+#include "rendering/canvas/include/renderingCanvasRenderer.h"
 
 namespace game
 {
@@ -46,12 +47,10 @@ namespace game
             m_currentTest.reset();
             m_cameraContext.reset();
 
-            if (m_imgui)
-            {
-                ImGui::SetCurrentContext(nullptr);
-                ImGui::DestroyContext(m_imgui);
-                m_imgui = nullptr;
-            }
+			delete m_imguiHelper;
+			m_imguiHelper = nullptr;
+
+			m_storage.reset();
 
             m_renderingOutput.reset();
         }
@@ -114,8 +113,10 @@ namespace game
             if (!createRenderingOutput())
                 return false;
 
-            m_imgui = ImGui::CreateContext();// ImGui::GetSharedFontAtlas());
-            ImGui::SetCurrentContext(m_imgui);
+			auto dev = base::GetService<DeviceService>()->device();
+			m_storage = base::RefNew<rendering::canvas::CanvasStorage>(dev);
+
+			m_imguiHelper = new ImGui::ImGUICanvasHelper(m_storage);
 
             m_cameraContext = base::RefNew<rendering::scene::CameraContext>();
 
@@ -229,8 +230,13 @@ namespace game
 
                 if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-                    prepareSceneCommandBuffers(cmd, output.color, output.depth, output.width, output.width);
-                    prepareCanvasCommandBuffers(cmd, output.color, output.depth, output.height, output.height);
+					rendering::scene::FrameCompositionTarget target;
+					target.targetColorRTV = output.color;
+					target.targetDepthRTV = output.depth;
+					target.targetRect = base::Rect(0, 0, output.width, output.height);
+
+					prepareSceneCommandBuffers(cmd, target);
+					prepareCanvasCommandBuffers(cmd, target);
 
                     cmd.opSwapOutput(m_renderingOutput);
                 }
@@ -310,7 +316,7 @@ namespace game
 
             if (base::DebugPagesVisible())
             {
-                if (ImGui::ProcessInputEvent(m_imgui, evt))
+                if (m_imguiHelper->processInput(evt))
                     return true;
             }
             else
@@ -331,13 +337,9 @@ namespace game
             context.requestCapture(shouldCapture ? 2 : 0);
         }
         
-        void SceneTestProject::prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height)
+        void SceneTestProject::prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::scene::FrameCompositionTarget& target)
         {
-            rendering::scene::FrameParams frame(width, height, rendering::scene::Camera());
-            frame.resolution.width = width;
-            frame.resolution.height = height;
-            frame.resolution.finalCompositionWidth = width;
-            frame.resolution.finalCompositionHeight = height;
+            rendering::scene::FrameParams frame(target.targetRect.width(), target.targetRect.height(), rendering::scene::Camera());
             frame.filters = rendering::scene::FilterFlags::DefaultGame();
             frame.mode = rendering::scene::FrameRenderMode::Default;
             frame.time.engineRealTime = m_lastGameTime;
@@ -351,13 +353,13 @@ namespace game
             m_lastSceneStats.reset();
 
             // generate command buffers
-            if (auto sceneRenderingCommands = base::GetService<rendering::scene::FrameRenderingService>()->renderFrame(frame, color, &m_lastFrameStats, &m_lastSceneStats))
+            if (auto sceneRenderingCommands = base::GetService<rendering::scene::FrameRenderingService>()->renderFrame(frame, target, &m_lastFrameStats, &m_lastSceneStats))
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
         static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf");
 
-        static void Print(base::canvas::Canvas& c, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16, 
+        static void Print(base::canvas::Canvas& c, const rendering::canvas::CanvasStorage& storage, float x, float y, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16,
             base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold=false)
         {
             if (auto font = resDefaultFont.loadAndGet())
@@ -371,34 +373,39 @@ namespace game
                 assemblyParams.horizontalAlignment = align;
                 font->renderText(params, assemblyParams, base::font::FontInputText(text.c_str()), glyphs);
 
-                base::canvas::GeometryBuilder b;
-                b.fillColor(color);
-                b.print(glyphs);
-                c.place(b);
+				base::canvas::Geometry g;
+				{
+					base::canvas::GeometryBuilder b(&storage, g);
+					b.fillColor(color);
+					b.print(glyphs);
+				}
+
+				c.place(base::Vector2(x, y), g);
             }
         }
 
-        void SceneTestProject::prepareCanvasCommandBuffers(rendering::command::CommandWriter& parentCmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height)
+        void SceneTestProject::prepareCanvasCommandBuffers(rendering::command::CommandWriter& parentCmd, const rendering::scene::FrameCompositionTarget& target)
         {
-            base::canvas::Canvas canvas(color.width(), color.height());
-            renderCanvas(canvas);
 
-            rendering::command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
+			// create canvas renderer
+			rendering::canvas::CanvasRenderer::Setup setup;
+			setup.width = target.targetRect.width();
+			setup.height = target.targetRect.height();
+			setup.backBufferColorRTV = target.targetColorRTV;
+			setup.backBufferDepthRTV = target.targetDepthRTV;
+			setup.backBufferLayout = m_renderingOutput->layout();
+			setup.pixelScale = 1.0f;
 
-            // set frame buffer
-            rendering::FrameBuffer fb;
-            fb.color[0].view(color);// .clear(0.2, 0.2f, 0.2f, 1.0f);
-            fb.depth.view(depth).clearDepth().clearStencil();
-            cmd.opBeingPass(fb);
+			// render test to canvas
+			{
+				rendering::canvas::CanvasRenderer canvas(setup, m_storage);
+				renderCanvas(canvas);
 
-            // render canvas to command buffer
-            rendering::canvas::CanvasRenderingParams renderingParams;
-            renderingParams.frameBufferWidth = color.width();
-            renderingParams.frameBufferHeight = depth.height();
-            base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
-
-            // finish pass
-            cmd.opEndPass();
+				{
+					rendering::command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
+					cmd.opAttachChildCommandBuffer(canvas.finishRecording());
+				}
+			}
         }
 
         base::ConfigProperty<bool> cvShowSceneStats("DebugPage.Rendering.FrameStats", "IsVisible", false);
@@ -407,15 +414,13 @@ namespace game
         {
             // Local stuff
             {
-                canvas.placement(canvas.width() - 20, canvas.height() - 60);
-                Print(canvas,
+                Print(canvas, *m_storage, canvas.width() - 20, canvas.height() - 60,
                     base::TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(m_lastCamera.position().x, 2), Prec(m_lastCamera.position().y, 2), Prec(m_lastCamera.position().z, 2)),
                     base::Color::WHITE, 16, base::font::FontAlignmentHorizontal::Right);
 
                 if (base::DebugPagesVisible())
                 {
-                    canvas.placement(canvas.width() - 20, canvas.height() - 40);
-                    Print(canvas,
+                    Print(canvas, *m_storage, canvas.width() - 20, canvas.height() - 40,
                         base::TempString("DEBUG GUI ENABLED"),
                         base::Color::RED, 16, base::font::FontAlignmentHorizontal::Right);
                 }
@@ -427,22 +432,19 @@ namespace game
 
                 if (!m_timeAdvance)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, *m_storage, canvas.width() - 20, 20,
                         base::TempString("PAUSED"),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier > 0)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, *m_storage, canvas.width() - 20, 20,
                         base::TempString("Time x{} faster", 1ULL << m_timeMultiplier),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier < 0)
                 {
-                    canvas.placement(canvas.width() - 20, 20);
-                    Print(canvas,
+                    Print(canvas, *m_storage, canvas.width() - 20, 20,
                         base::TempString("Time x{} slower", 1ULL << (-m_timeMultiplier)),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
@@ -451,7 +453,7 @@ namespace game
             // ImGui
             if (base::DebugPagesVisible())
             {
-                ImGui::BeginCanvasFrame(canvas);
+				m_imguiHelper->beginFrame(canvas, 0.01f);
 
                 base::DebugPagesRender();
 
@@ -464,7 +466,7 @@ namespace game
                     ImGui::End();
                 }
 
-                ImGui::EndCanvasFrame(canvas);
+				m_imguiHelper->endFrame(canvas);
             }
         }
 

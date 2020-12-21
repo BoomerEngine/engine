@@ -10,7 +10,7 @@
 #include "gizmoHelpers.h"
 #include "gizmoReferenceSpace.h"
 
-#include "rendering/ui/include/cameraViewportSetup.h"
+#include "rendering/ui_viewport/include/cameraViewportSetup.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
@@ -75,7 +75,7 @@ namespace ed
     {
         if (m_cachedPointsValid)
         {
-            rendering::scene::DebugLineDrawer dd(frame.geometry.overlay);
+            rendering::scene::DebugDrawer dd(frame.geometry.overlay);
             dd.color(lineColor);
             dd.lines(m_cachedRenderPoints.typedData(), m_cachedRenderPoints.size());
         }

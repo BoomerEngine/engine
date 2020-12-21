@@ -93,11 +93,24 @@ namespace rendering
 		// get number of slices in the view
 		INLINE uint32_t slices() const { return m_numSlices; }
 
+		// get width of the top mip in the view
+		INLINE uint32_t width() const { return m_width; }
+
+		// get height of the top mip in the view
+		INLINE uint32_t height() const { return m_height; }
+
+		// get depth of the top mip in the view
+		INLINE uint32_t depth() const { return m_depth; }
+
 	private:
 		uint8_t m_firstMip = 0;
 		uint8_t m_numMips = 0;
 		uint32_t m_firstSlice = 0;
 		uint32_t m_numSlices = 0;
+
+		uint32_t m_width = 0;
+		uint32_t m_height = 0;
+		uint32_t m_depth = 0;
 	};
 
     //--

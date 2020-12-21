@@ -42,8 +42,8 @@ namespace rendering
     extern const base::Color::ColorVal COLOR_SOCKET_ALPHA;
     extern const base::Color::ColorVal COLOR_SOCKET_TEXTURE;
     extern const base::Color::ColorVal COLOR_SOCKET_CUBE;
-
-    ///---
+	
+	///---
 
 } // rendering
 

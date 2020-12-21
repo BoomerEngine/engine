@@ -700,7 +700,7 @@ namespace rendering
 
     //--
 
-    MaterialStageCompiler::MaterialStageCompiler(const MaterialDataLayout* dataLayout, rendering::ShaderType stage, base::StringView materialPath, const MaterialCompilationSetup& context)
+    MaterialStageCompiler::MaterialStageCompiler(const MaterialDataLayout* dataLayout, ShaderStage stage, base::StringView materialPath, const MaterialCompilationSetup& context)
         : m_stage(stage)
         , m_materialPath(materialPath)
         , m_dataLayout(dataLayout)

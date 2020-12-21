@@ -35,13 +35,15 @@ namespace game
             bool handleInputEvent(const base::input::BaseEvent& evt);
             bool handleAppInputEvent(const base::input::BaseEvent& evt);
 
-            void prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height);
-            void prepareCanvasCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::ImageView& color, const rendering::ImageView& depth, uint32_t width, uint32_t height);
+            void prepareSceneCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::scene::FrameCompositionTarget& target);
+            void prepareCanvasCommandBuffers(rendering::command::CommandWriter& cmd, const rendering::scene::FrameCompositionTarget& target);
             void renderCanvas(base::canvas::Canvas& c);
 
             //--
 
-            ImGuiContext* m_imgui = nullptr;
+			ImGui::ImGUICanvasHelper* m_imguiHelper = nullptr;
+
+			base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
 
             //--
 

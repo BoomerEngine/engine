@@ -53,6 +53,9 @@ namespace rendering
 			// prepare output for rendering - called from any thread, should return current state
 			bool prepare_ClientApi(IDeviceObject* owningObject, RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport);
 
+			// disconnect window from client side callbacks
+			void disconnect_ClientApi();
+
 			//--
 
 			// acquire surface from owned swapchain
@@ -66,13 +69,8 @@ namespace rendering
 		protected:
 			IBaseSwapchain* m_swapchain = nullptr;
 
-			SwapchainState m_lastSwapchainState;
-
 			OutputRenderTarget* m_colorTarget = nullptr;
 			OutputRenderTarget* m_depthTarget = nullptr;
-
-			RenderTargetViewPtr m_colorRTV;
-			RenderTargetViewPtr m_depthRTV;
 
 			//--
 
@@ -88,6 +86,7 @@ namespace rendering
 			OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window, GraphicsPassLayoutObject* layout);
 
 			virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) override final;
+			virtual void disconnect() override final;
 		};
 
         //--

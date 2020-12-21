@@ -40,8 +40,16 @@ namespace rendering
             if (const auto* entry = compiler.findParamEntry(name()))
             {
                 if (entry->type == MaterialDataLayoutParameterType::Float)
-                {
-                    return CodeChunk(CodeChunkType::Numerical1, base::TempString("{}.{}", compiler.dataLayout()->descriptorName(), entry->name), true);
+				{
+					if (compiler.context().bindlessTextures)
+					{
+
+					}
+					else
+					{
+						const auto& layout = compiler.dataLayout()->discreteDataLayout();
+						return CodeChunk(CodeChunkType::Numerical1, base::TempString("{}.{}", layout.descriptorName, entry->name), true);
+					}
                 }
             }
 

@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/resource/include/resource.h"
-#include "rendering/device/include/renderingParametersView.h"
 
 namespace rendering
 {
@@ -26,9 +25,13 @@ namespace rendering
 
         ///---
 
-        // data proxy for this material - contains everything required to render this material
+		// template proxy for this material - represents rendering techniques needed to render this material
+		// NOTE: the proxy pointer itself may be updated during the lifetime of the material - especially if it reloads or base template changes
+		virtual MaterialDataProxyPtr dataProxy() const = 0;
+
+        // data proxy for this material - contains parameters required to render this material
         // NOTE: the proxy pointer itself may be updated during the lifetime of the material - especially if it reloads or base template changes
-        virtual MaterialDataProxyPtr dataProxy() const = 0;
+        virtual MaterialTemplateProxyPtr templateProxy() const = 0;
 
         ///---
 

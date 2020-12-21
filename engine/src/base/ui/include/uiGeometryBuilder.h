@@ -18,7 +18,7 @@ namespace ui
     class BASE_UI_API GeometryBuilder : public base::canvas::GeometryBuilder
     {
     public:
-        GeometryBuilder(const base::canvas::IStorage* storage, base::canvas::Geometry& outGeometry);
+        GeometryBuilder(base::canvas::Geometry& outGeometry);
 
         //---
 

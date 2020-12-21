@@ -172,14 +172,13 @@ namespace example
     void GamePlayer::render(Canvas& canvas)
     {
         const auto placement = XForm2D::BuildRotation(rot).translation(pos + Vector2(0,13)); // HACK
-        canvas.placement(placement);
 
         if (m_state == 0)
-            canvas.place(m_assets->idle->geometry(m_timeInState, m_flip));
+            canvas.place(placement, m_assets->idle->geometry(m_timeInState, m_flip));
         else if (m_state == 1)
-            canvas.place(m_assets->walk->geometry(m_timeInState, m_flip));
+            canvas.place(placement, m_assets->walk->geometry(m_timeInState, m_flip));
         else if (m_state == 2)
-            canvas.place(m_assets->run->geometry(m_timeInState, m_flip));
+            canvas.place(placement, m_assets->run->geometry(m_timeInState, m_flip));
     }
 
     void GamePlayer::debug()

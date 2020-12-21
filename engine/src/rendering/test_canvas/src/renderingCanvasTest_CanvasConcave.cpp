@@ -35,7 +35,7 @@ namespace rendering
 				base::canvas::Geometry g;
 				{
 					CanvasGridBuilder grid(2, 2, 20, 1024, 1024);
-					base::canvas::GeometryBuilder builder(m_storage, g);
+					base::canvas::GeometryBuilder builder(g);
 
 					{
 						auto r = grid.cell();

@@ -32,6 +32,7 @@ RENDER_COMMAND_OPCODE(BeginPass) // bind a set of render targets (frame buffer) 
 RENDER_COMMAND_OPCODE(EndPass) // finish rendering to render targets, optionally resolve frame MSAA render targets to a NON-MSAA ones
 RENDER_COMMAND_OPCODE(Resolve) // resolve MSAA texture into non-MSAA stuff
 
+RENDER_COMMAND_OPCODE(ClearFrameBuffer) // clear whole frame buffer
 RENDER_COMMAND_OPCODE(ClearPassRenderTarget) // fill current color buffer (bound to pass)
 RENDER_COMMAND_OPCODE(ClearPassDepthStencil) // fill current depth/stencil buffer (bound to pass)
 

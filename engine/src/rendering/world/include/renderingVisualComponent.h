@@ -35,10 +35,10 @@ namespace rendering
         ///--
 
     protected:
-        scene::ProxyHandle m_proxy;
+        scene::ObjectProxyPtr m_proxy;
         scene::Selectable m_selectable;
 
-        virtual scene::ProxyHandle handleCreateProxy(scene::Scene* scene) const = 0;
+        virtual scene::ObjectProxyPtr handleCreateProxy(scene::Scene* scene) const = 0;
 
         virtual void handleAttach(base::world::World* scene) override;
         virtual void handleDetach(base::world::World* scene) override;

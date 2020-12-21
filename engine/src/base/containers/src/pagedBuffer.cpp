@@ -110,17 +110,15 @@ namespace base
         }
 
 		// second easy case: there's some memory on the page
-        if (m_bytesLeftOnPage > 0)
+		const auto bytesLeftOnPage = m_writeEndPtr - m_writePtr;
+        if (bytesLeftOnPage > 0)
         {
-			DEBUG_CHECK_EX(elementSize > 1, "Invalid element size"); // 1 is excluded because it's the first case
-
-			auto maxElmentsInThisPage = m_bytesLeftOnPage / elementSize;
+			auto maxElmentsInThisPage = bytesLeftOnPage / elementSize;
 			if (maxElmentsInThisPage > 0)
 			{
 				outNumAllocated = maxElmentsInThisPage * elementSize;
 				m_writePtr = m_writeEndPtr;
 				m_numBytes += outNumAllocated;
-				m_bytesLeftOnPage -= outNumAllocated; // we may have non zero space left, just not enough for a next element
 				return ret;
 			}
         }

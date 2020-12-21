@@ -28,6 +28,7 @@
 
 #include "rendering/texture/include/renderingStaticTexture.h"
 #include "rendering/texture/include/renderingTexture.h"
+#include "rendering/device/include/renderingImage.h"
 #include "base/editor/include/managedFileNativeResource.h"
 
 namespace ed
@@ -101,7 +102,7 @@ namespace ed
         {
             if (auto view = data->view())
             {
-                const auto numChannels = rendering::GetImageFormatInfo(view.format()).numComponents;
+                const auto numChannels = rendering::GetImageFormatInfo(view->image()->format()).numComponents;
 
                 for (int i = 0; i < std::min<int>(numChannels, 3); ++i)
                 {

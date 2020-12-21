@@ -8,11 +8,9 @@
 
 #pragma once
 
-#include "rendering/device/include/renderingParametersLayoutID.h"
-#include "rendering/device/include/renderingBufferView.h"
-#include "rendering/device/include/renderingImageView.h"
 #include "rendering/device/include/renderingManagedBuffer.h"
 #include "rendering/device/include/renderingManagedBufferWithAllocator.h"
+#include "rendering/device/include/renderingDescriptorID.h"
 
 #include "base/app/include/localService.h"
 #include "base/containers/include/blockPool.h"
@@ -57,20 +55,31 @@ namespace rendering
         MaterialDataLayoutParameterType type;
         base::StringID name;
         ImageViewType viewType;
-        uint32_t descriptorDataOffset = 0;
+        uint32_t descriptorEntryIndex = 0;
     };
 
-    /// entry in the constant buffer
+    /// layout information for standard binding
     struct MaterialDataLayoutDescriptor
     {
         base::Array<MaterialDataLayoutConstantBufferEntry> constantBufferEntries;
-        base::Array< MaterialDataLayoutDescriptorResourceEntry> resourceEntries;
+        base::Array<MaterialDataLayoutDescriptorResourceEntry> resourceEntries;
         uint32_t constantDataSize = 0;
         uint32_t descriptorSize = 0;
-        ParametersLayoutID layoutId;
+
+		base::StringID descriptorName;
+		DescriptorID descriptorID;
 
         INLINE bool empty() const { return constantDataSize == 0 && descriptorSize == 0; }
     };
+
+	/// layout information for bindless binding
+	struct MaterialDataLayoutBindless
+	{
+		base::Array<MaterialDataLayoutConstantBufferEntry> constantBufferEntries;
+		uint32_t constantDataSize = 0;
+
+		INLINE bool empty() const { return constantDataSize == 0; }
+	};
 
     //--
 
@@ -80,33 +89,33 @@ namespace rendering
     class RENDERING_MATERIAL_API MaterialDataLayout : public base::IReferencable
     {
     public:
-        MaterialDataLayout(MaterialDataLayoutID id, uint64_t key, base::Array<MaterialDataLayoutEntry>&& entries);
+        MaterialDataLayout(MaterialDataLayoutID id, base::Array<MaterialDataLayoutEntry>&& entries);
 
-        // unique ID of the layout, NOTE: same entry layout will generate same layout ID
+		//--
+
+        // unique ID of the layout, NOTE: same order of entries will generate same layout ID
         INLINE MaterialDataLayoutID id() const { return m_id; }
 
-        // unique descriptor name that matches this layout
-        INLINE const base::StringID descriptorName() const { return m_descriptorName; }
+		// get the layout entries
+		INLINE const base::Array<MaterialDataLayoutEntry>& entries() const { return m_entries; }
 
-        // get the layout entries
-        INLINE const base::Array<MaterialDataLayoutEntry>& entries() const { return m_entries; }
+        // get descriptor for discrete resource binding
+        INLINE const MaterialDataLayoutDescriptor& discreteDataLayout() const { return m_discreteDataLayout; }
 
-        // get descriptor for direct binding
-        INLINE const MaterialDataLayoutDescriptor& descriptorLayout() const { return m_descriptor; }
+		// get descriptor for bindless resource binding
+		INLINE const MaterialDataLayoutBindless& bindlessDataLayout() const { return m_bindlessDataLayout; }
 
-        //--
-
-        // print layout
-        void print(const base::IFormatStream& f) const;
+		//--
 
     private:
         base::Array<MaterialDataLayoutEntry> m_entries;
-        base::StringID m_descriptorName;
         MaterialDataLayoutID m_id;
 
-        MaterialDataLayoutDescriptor m_descriptor;
+		MaterialDataLayoutDescriptor m_discreteDataLayout;
+		MaterialDataLayoutBindless m_bindlessDataLayout;
 
-        void buildDescriptorLayout();
+        static void BuildDescriptorLayout(const base::Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutDescriptor& outLayout);
+		static void BuildBindlessLayout(const base::Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutBindless& outLayout);
     };
 
     //---

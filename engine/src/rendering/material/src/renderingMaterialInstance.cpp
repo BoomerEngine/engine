@@ -130,6 +130,17 @@ namespace rendering
         return fallbackTemplate->dataProxy();
     }
 
+	MaterialTemplateProxyPtr MaterialInstance::templateProxy() const
+	{
+		if (auto base = m_baseMaterial.acquire())
+			if (auto proxy = base->templateProxy())
+				return proxy;
+
+		auto fallbackTemplate = resFallbackMaterial.loadAndGet();
+		DEBUG_CHECK_EX(fallbackTemplate, "Failed to load fallback material template, rendering pipeline is seriously broken");
+		return fallbackTemplate->templateProxy();
+	}
+
     const MaterialTemplate* MaterialInstance::resolveTemplate() const
     {
         if (auto base = m_baseMaterial.acquire())
@@ -395,20 +406,19 @@ namespace rendering
     void MaterialInstance::createMaterialProxy()
     {
         // resolve the base template that will be used to create the material proxy
-        if (const auto* baseTemplate = resolveTemplate())
+        if (const auto baseProxy = templateProxy())
         {
-            // check if can just update it
-            if (m_dataProxy && m_dataProxy->materialTemplate() == baseTemplate && m_dataProxy->layout() == baseTemplate->dataLayout())
-            {
-                m_dataProxy->update(*this);
-            }
-            else
-            {
-                auto oldProxy = m_dataProxy;
-                m_dataProxy = base::RefNew<MaterialDataProxy>(baseTemplate, true, *this); // we keep extra ref on the template
+			// create data proxy if template changes
+			auto oldProxy = m_dataProxy;
+			if (!m_dataProxy || m_dataProxy->templateProxy() != baseProxy)
+				m_dataProxy = base::RefNew<MaterialDataProxy>(baseProxy);
 
+			// push new data
+            m_dataProxy->update(*this);
+
+			// if we changed the proxy inform the world about it
+			if (oldProxy && oldProxy != m_dataProxy)
                 base::GetService<MaterialService>()->notifyMaterialProxyChanged(oldProxy, m_dataProxy);
-            }
         }
     }
 

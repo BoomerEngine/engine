@@ -756,9 +756,6 @@ namespace ui
 
         //--
 
-		/// get canvas storage of the renderer we are attached to
-		base::canvas::IStorage* canvasStorage() const;
-
         /// query next draw children
         virtual bool iterateDrawChildren(ElementDrawListToken& token) const;
 

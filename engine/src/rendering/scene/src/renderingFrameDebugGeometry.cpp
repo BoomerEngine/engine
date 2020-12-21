@@ -17,60 +17,40 @@ namespace rendering
         //--
 
         static base::mem::PageAllocator GDebugGeometryPayloadAllocator(POOL_DEBUG_GEOMETRY, 256 << 20, 8, 64);
-        static base::mem::PageAllocator GDebugGeometrySmallPayloadAllocator(POOL_DEBUG_GEOMETRY, 64 << 10, 16, 256);
         static base::mem::PageAllocator GDebugGeometryStructureAllocator(POOL_DEBUG_GEOMETRY, 16 << 10, 64, 64);
 
         //--
 
-        DebugGeometry::DebugGeometry(DebugGeometryLayer layer)
-            : m_verticesData((layer == DebugGeometryLayer::SceneSolid) ? GDebugGeometryPayloadAllocator : GDebugGeometrySmallPayloadAllocator)
-            , m_verticesDataEx((layer == DebugGeometryLayer::SceneSolid) ? GDebugGeometryPayloadAllocator : GDebugGeometrySmallPayloadAllocator)
-            , m_indicesData((layer == DebugGeometryLayer::SceneSolid) ? GDebugGeometryPayloadAllocator : GDebugGeometrySmallPayloadAllocator)
-            , m_elements(GDebugGeometryStructureAllocator)
-            , m_layer(layer)
+        DebugGeometry::DebugGeometry()
+            : m_vertices(GDebugGeometryPayloadAllocator)
+            , m_indices(GDebugGeometryPayloadAllocator)
+            //, m_elements(GDebugGeometryStructureAllocator)
         {
         }
 
-        DebugGeometry::~DebugGeometry()
+		void DebugGeometry::clear()
+		{
+			m_indices.clear();
+			m_vertices.clear();
+			m_elements.clear();
+		}
+
+        void DebugGeometry::push(const DebugGeometryElementSrc& source)
         {
-        }
+            DEBUG_CHECK_RETURN_EX(source.sourceVerticesData, "No data");
 
-        void DebugGeometry::pushElement(const DebugGeometryElementSrc& source, const DebugVertexEx& defaultDebugVertex)
-        {
-            DEBUG_CHECK(source.sourceIndicesData && source.sourceVerticesData);
+			auto& element = m_elements.emplaceBack();
+			element.type = source.type;
+			element.firstVertex = m_vertices.size();
+			element.numIndices = source.numIndices;
+			element.firstIndex = m_indices.size();
+			element.numVeritices = source.numIndices;
 
-            if (source.sourceIndicesData && source.sourceVerticesData)
-            {
-                const auto numIndices = source.sourceIndicesData->size();
-                const auto numVertices = source.sourceVerticesData->size();
-                if (numIndices && numVertices)
-                {
-                    auto* element = m_elements.allocSingle();
-                    element->type = source.type;
-                    element->firstVertex = m_verticesData.size();
-                    element->numIndices = numIndices;
-                    element->firstIndex = m_indicesData.size();
-                    element->numVeritices = numVertices;
+			if (source.sourceVerticesData)
+				m_vertices.writeLarge(source.sourceVerticesData, source.numVeritices * sizeof(DebugVertex));
 
-                    m_verticesData.append(*source.sourceVerticesData);
-
-                    DEBUG_CHECK_EX(!source.sourceVerticesDataEx || source.sourceVerticesDataEx->size() == numVertices, "Invalid data count for secondary vertex stream");
-                    if (source.sourceVerticesDataEx && source.sourceVerticesDataEx->size() == numVertices)
-                        m_verticesDataEx.append(*source.sourceVerticesDataEx);
-                    else
-                        m_verticesDataEx.fill(&defaultDebugVertex, numVertices);
-
-                    {
-                        auto vertexOffset = element->firstVertex;
-                        source.sourceIndicesData->forEach([vertexOffset](const uint32_t& index)
-                            {
-                                const_cast<uint32_t&>(index) += vertexOffset;
-                            });
-                    }
-
-                    m_indicesData.append(*source.sourceIndicesData);
-                }
-            }
+			if (source.sourceIndicesData)
+				m_indices.writeLarge(source.sourceIndicesData, source.numIndices * sizeof(uint32_t));
         }
 
         //--

@@ -48,7 +48,7 @@ namespace ui
 		const auto viewScale = width / (maxVal - minVal);
 		const auto viewOffset = -minVal * viewScale;
 
-		base::canvas::GeometryBuilder b(canvasStorage(), m_geometry);
+		base::canvas::GeometryBuilder b(m_geometry);
 
 		base::Color backgroundColor = base::Color::DARKGRAY;
 		if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
@@ -181,7 +181,7 @@ namespace ui
 		const auto viewScale = height / (maxVal - minVal);
 		const auto viewOffset = -minVal * viewScale;
 
-		base::canvas::GeometryBuilder b(canvasStorage(), m_geometry);
+		base::canvas::GeometryBuilder b(m_geometry);
 
 		base::Color backgroundColor = base::Color::DARKGRAY;
 		if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))

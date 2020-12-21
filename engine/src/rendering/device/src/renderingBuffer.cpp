@@ -24,6 +24,7 @@ namespace rendering
         , m_flags(setup.flags)
         , m_layout(setup.layout)
     {
+		DEBUG_CHECK_EX(m_size > 0, "Invalid buffer size");
         DEBUG_CHECK_EX(!id.empty(), "Invalid objects can't be used to create pseudo-valid looking views");
         DEBUG_CHECK_EX(!m_stride || (0 == (m_size % m_stride)), "Buffer size must be multiple of stride");
 

@@ -18,10 +18,10 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
-#include "rendering/canvas/include/renderingCanvasRenderingService.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/ui/include/renderingWindowRenderer.h"
+#include "rendering/ui_host/include/renderingWindowRenderer.h"
+
 #include "base/app/include/launcherPlatform.h"
 #include "base/ui/include/uiStyleLibrary.h"
 #include "base/ui/include/uiDataStash.h"
@@ -45,9 +45,15 @@ namespace rendering
             if (!styles)
                 return false;
 
-            m_nativeRenderer.create();
+			auto dev = base::GetService<DeviceService>();
+			if (!dev)
+				return false;
+
+			m_nativeRenderer.create();
+
             m_dataStash = base::RefNew<ui::DataStash>(styles);
             m_dataStash->addIconSearchPath("/engine/icons/");
+
             m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
             m_lastUpdateTime.resetToNow();
 

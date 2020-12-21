@@ -9,15 +9,9 @@
 #include "build.h"
 #include "renderingScene.h"
 #include "renderingSceneUtils.h"
-#include "renderingSceneFragment.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameCameraContext.h"
-#include "renderingFrameSurfaceCache.h"
 #include "renderingFrameParams.h"
-#include "renderingFrameView.h"
-#include "renderingSceneCulling.h"
-#include "renderingSceneProxy.h"
-#include "renderingSceneFragmentList.h"
 #include "renderingFrameView_Selection.h"
 
 namespace rendering
@@ -25,6 +19,7 @@ namespace rendering
     namespace scene
     {
 
+#if 0
         //---
 
         FrameView_Selection::FrameView_Selection(const FrameRenderer& frame, const Camera& camera, ImageView depthTarget, const base::Rect& captureRect, const DownloadBufferPtr& captureData)
@@ -122,6 +117,7 @@ namespace rendering
         }
 
         //--
+#endif
 
     } // scene
 } // rendering

@@ -68,7 +68,7 @@ namespace rendering
         if (m_proxy)
         {
             if (auto* scene = system<RenderingSystem>())
-                scene->scene()->proxyDestroy(m_proxy);
+                scene->scene()->dettachProxy(m_proxy);
 
             m_proxy.reset();
         }
@@ -82,9 +82,7 @@ namespace rendering
         {
             if (auto* scene = system<RenderingSystem>())
             {
-                rendering::scene::CommandMoveProxy cmd;
-                cmd.localToScene = localToWorld();
-                scene->scene()->proxyCommand(m_proxy, cmd);
+                scene->scene()->moveProxy(m_proxy, localToWorld());
             }
         }
     }
@@ -97,9 +95,14 @@ namespace rendering
         {
             if (auto* scene = system<RenderingSystem>())
             {
-                rendering::scene::CommandEffectSelectionHighlight cmd;
-                cmd.flag = selected();
-                scene->scene()->proxyCommand(m_proxy, cmd);
+				rendering::scene::ObjectProxyFlags clearFlags, setFlags;
+
+				if (selected())
+					setFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
+				else
+					clearFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
+
+                scene->scene()->changeProxyFlags(m_proxy, clearFlags, setFlags);
             }
         }
     }

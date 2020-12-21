@@ -60,8 +60,6 @@ namespace rendering
         public:
             ICanvasTest();
 
-			base::canvas::IStorage* m_storage = nullptr;
-
             bool processInitialization();
 
             virtual void initialize() {};

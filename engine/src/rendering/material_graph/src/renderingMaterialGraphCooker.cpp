@@ -14,7 +14,7 @@
 #include "renderingMaterialGraphTechniqueCompiler.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
 #include "rendering/mesh/include/renderingMeshFormat.h"
-#include "rendering/compiler/include/renderingShaderLibraryCompiler.h"
+#include "rendering/compiler/include/renderingShaderCompiler.h"
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceCooker.h"
 #include "base/resource/include/resourceTags.h"
@@ -73,17 +73,39 @@ namespace rendering
         MeshVertexFormat::StaticEx,
     };
 
+	const bool BOOL_STATE[] =
+	{
+		false,
+		true,
+	};
+
     static void GatherMaterialPermutations(base::Array<MaterialCompilationSetup>& outSetupList)
     {
         for (auto pass : PERM_PASS_LIST)
         {
             for (auto vertexFormat : PERM_VERTEX_LIST)
             {
-                auto& setup = outSetupList.emplaceBack();
-                setup.vertexFormat = (int)vertexFormat;
-                setup.pass = pass;
-                setup.vertexFetchMode = 0;
-                setup.msaa = false;
+				for (auto msaa : BOOL_STATE)
+				{
+					for (auto bindless : BOOL_STATE)
+					{
+						auto& setup = outSetupList.emplaceBack();
+						setup.msaa = msaa;
+						setup.vertexFormat = vertexFormat;
+						setup.pass = pass;
+						setup.bindlessTextures = bindless;
+
+						if (vertexFormat == MeshVertexFormat::Static || vertexFormat == MeshVertexFormat::StaticEx)
+						{
+							auto& setup = outSetupList.emplaceBack();
+							setup.msaa = msaa;
+							setup.vertexFormat = vertexFormat;
+							setup.pass = pass;
+							setup.bindlessTextures = bindless;
+							setup.meshletsVertices = true;
+						}
+					}
+				}                
             }
         }
     }
@@ -145,8 +167,8 @@ namespace rendering
                 TRACE_INFO("Gathered {} permutations for material {}", setupCollection.size(), importPath);
 
                 // forward include requests and errors to cooker
-                compiler::ShaderLibraryCookerIncludeHandler includeHandler(cooker);
-                compiler::ShaderLibraryCookerErrorReporter errorHandler(cooker);
+                compiler::ShaderCompilerDefaultIncludeHandler includeHandler(cooker);
+                compiler::ShaderCompilerDefaultErrorReporter errorHandler(cooker);
 
                 bool validTechniques = true;
 

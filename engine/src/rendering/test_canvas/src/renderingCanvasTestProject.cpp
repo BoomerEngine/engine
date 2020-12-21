@@ -10,19 +10,19 @@
 #include "renderingCanvasTest.h"
 #include "renderingCanvasTestProject.h"
 
-#include "base/app/include/application.h"
-#include "base/input/include/inputContext.h"
-#include "base/input/include/inputStructures.h"
-#include "base/canvas/include/canvas.h"
-
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/canvas/include/renderingCanvasRenderer.h"
-#include "rendering/canvas/include/renderingCanvasStorage.h"
+#include "rendering/canvas/include/renderingCanvasService.h"
+
+#include "base/app/include/application.h"
 #include "base/app/include/launcherPlatform.h"
+#include "base/input/include/inputContext.h"
+#include "base/input/include/inputStructures.h"
+#include "base/canvas/include/canvas.h"
+
 
 namespace rendering
 {
@@ -106,10 +106,6 @@ namespace rendering
             if (!createRenderingOutput())
                 return false;
 
-			// create the canvas storage
-			auto dev = base::GetService<DeviceService>()->device();
-			m_storage = base::RefNew<rendering::canvas::CanvasStorage>(dev);
-
             return true;
         }
 
@@ -157,8 +153,6 @@ namespace rendering
                 TRACE_ERROR("Failed to initialize test '{}'", testClass.m_testClass->name());
                 return nullptr;
             }
-
-			testCase->m_storage = m_storage;
 
 			if (!testCase->processInitialization())
 			{
@@ -274,41 +268,32 @@ namespace rendering
 				updateTitleBar();
             }
 
-            // render canvas on GPU
+			// render canvas on GPU
             // allocate command buffer
             {
                 command::CommandWriter cmd("Test");
 
                 if (const auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
-					// clear frame buffer
+					base::canvas::Canvas canvas(output.width, output.height);;
+
+					// render test to canvas
+					if (m_currentTest)
+						m_currentTest->render(canvas);
+
+					// render canvas to window
 					{
 						FrameBuffer fb;
 						fb.color[0].view(output.color).clear(0.2, 0.2f, 0.2f, 1.0f);
 						fb.depth.view(output.depth).clearDepth().clearStencil();
+
 						cmd.opBeingPass(m_renderingOutput->layout(), fb);
+
+						static auto* service = base::GetService<rendering::canvas::CanvasRenderService>();
+						service->render(cmd, canvas);
+
 						cmd.opEndPass();
 					}
-
-					// create canvas renderer
-					rendering::canvas::CanvasRenderer::Setup setup;
-					setup.width = output.width;
-					setup.height = output.height;
-					setup.backBufferColorRTV = output.color;
-					setup.backBufferDepthRTV = output.depth;
-					setup.backBufferLayout = m_renderingOutput->layout();
-					setup.pixelScale = (100 + m_pixelScaleTest) / 100.0f;
-
-					// render test to canvas
-					{
-						rendering::canvas::CanvasRenderer canvas(setup, m_storage);
-
-						if (m_currentTest)
-							m_currentTest->render(canvas);
-
-						cmd.opAttachChildCommandBuffer(canvas.finishRecording());
-					}
-
 
                     // swap
                     cmd.opSwapOutput(m_renderingOutput);

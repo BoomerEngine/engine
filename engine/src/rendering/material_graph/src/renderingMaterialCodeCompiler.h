@@ -79,6 +79,7 @@ namespace rendering
 
     private:
         base::StringBuf m_debugPath;
+		MaterialCompilationSetup m_setup;
 
         void printMaterialDescriptor(base::StringBuilder& builder) const;
     };

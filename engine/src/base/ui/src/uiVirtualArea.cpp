@@ -1001,7 +1001,7 @@ namespace ui
 				base::canvas::Geometry geometry;
 
 				{
-					base::canvas::GeometryBuilder builder(nullptr, geometry);
+					base::canvas::GeometryBuilder builder(geometry);
 
 					builder.strokeColor(m_selectionColor);
 

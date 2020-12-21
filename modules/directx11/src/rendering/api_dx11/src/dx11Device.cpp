@@ -39,7 +39,7 @@ namespace rendering
 				return "DX11";
 			}
 
-			bool Device::initialize(const base::app::CommandLine& cmdLine)
+			bool Device::initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
 			{
 				m_dxgi = new DXGIHelper();
 				if (!m_dxgi->initialize(cmdLine))
@@ -48,7 +48,7 @@ namespace rendering
 					return false;
 				}
 
-				return TBaseClass::initialize(cmdLine);
+				return TBaseClass::initialize(cmdLine, outCaps);
 			}
 
 			void Device::shutdown()

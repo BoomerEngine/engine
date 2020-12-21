@@ -18,7 +18,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-#include "base/canvas/include/canvasStorage.h"
+#include "base/canvas/include/canvasAtlas.h"
 #include "base/font/include/font.h"
 
 namespace rendering
@@ -87,23 +87,23 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasCustomDrawer, ICanvasTest);
 
         public:
-			base::canvas::ImageAtlasIndex m_atlas;
+			base::RefPtr<base::canvas::DynamicAtlas> m_atlas;
 			base::canvas::ImageEntry m_testImages[3];
 			base::FontPtr m_font;
 
 			virtual void initialize() override
 			{
 				m_font = loadFont("aileron_regular.otf");
-				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
+				m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
 
-				m_testImages[0] = m_storage->registerImage(m_atlas, loadImage("tree.png"));
-				m_testImages[1] = m_storage->registerImage(m_atlas, loadImage("sign.png"));
-				m_testImages[2] = m_storage->registerImage(m_atlas, loadImage("crate.png"));
+				m_testImages[0] = m_atlas->registerImage(loadImage("tree.png"));
+				m_testImages[1] = m_atlas->registerImage(loadImage("sign.png"));
+				m_testImages[2] = m_atlas->registerImage(loadImage("crate.png"));
 			}
 
 			virtual void shutdown() override
 			{
-				m_storage->destroyAtlas(m_atlas);
+				m_atlas.reset();
 			}
 
             virtual void render(base::canvas::Canvas& c) override
@@ -113,7 +113,7 @@ namespace rendering
 				base::canvas::Geometry g;
 
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 
 					static float t = 0.0f;
 					t += 0.05f;
@@ -145,7 +145,7 @@ namespace rendering
 				c.place(base::Vector2(0, 0), g);
 
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 
 					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::YELLOW, 5.0f);
 
@@ -167,7 +167,7 @@ namespace rendering
 				c.place(pos + Vector2(500, 100), g);
 
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 
 					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::CYAN, 2.0f);
 					b.print(m_font, 70.0f, "Outline #%$&");
@@ -176,7 +176,7 @@ namespace rendering
 				c.place(Vector2(100, 400), g);
 
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 
 					b.selectRenderer<SceneTest_SimpleSpriteOutline>(base::Color::GREEN, 4.0f);
 					b.print(m_font, 230.0f, "Outline #%$&");

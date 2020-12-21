@@ -19,11 +19,8 @@ namespace rendering
 
     //---
 
-    ManagedBufferWithAllocator::ManagedBufferWithAllocator(const BufferCreationInfo& info, uint32_t alignment, float growthFactor /*= 2.0f*/, uint64_t maxSize /*= 0*/)
+    ManagedBufferWithAllocator::ManagedBufferWithAllocator(IDevice* dev, const BufferCreationInfo& info, uint32_t alignment)
         : m_alignment(alignment)
-        , m_growthFactor(growthFactor)
-        , m_maxSize(maxSize)
-        , m_api(base::GetService<DeviceService>()->device())
     {
         auto creationInfo = info;
 
@@ -33,7 +30,7 @@ namespace rendering
         creationInfo.allowCopies = true;
         creationInfo.allowDynamicUpdate = true;
 
-        m_bufferObject = m_api->createBuffer(creationInfo);
+        m_bufferObject = dev->createBuffer(creationInfo);
     }
 
     ManagedBufferWithAllocator::~ManagedBufferWithAllocator()
@@ -42,7 +39,7 @@ namespace rendering
         {
             ManagedBufferBlock ret;
             ret.block = pendingUpload->block;
-            ret.bufferOffset = pendingUpload->offset;
+            ret.dataOffset = pendingUpload->offset;
             ret.dataSize = pendingUpload->size;
             freeBlock(ret);
             //m_bufferAllocator.freeBlock(pendingUpload->block);
@@ -136,8 +133,7 @@ namespace rendering
 
         // return block
         outBlock.block = allocatedBlock;
-        outBlock.bufferIndex = m_bufferIndex;
-        outBlock.bufferOffset = base::BlockPool::GetBlockOffset(allocatedBlock);
+        outBlock.dataOffset = base::BlockPool::GetBlockOffset(allocatedBlock);
         outBlock.dataSize = dataSize;
         return true;
     }
@@ -170,8 +166,7 @@ namespace rendering
 
         // return block
         outBlock.block = allocatedBlock;
-        outBlock.bufferIndex = m_bufferIndex;
-        outBlock.bufferOffset = base::BlockPool::GetBlockOffset(allocatedBlock);
+        outBlock.dataOffset = base::BlockPool::GetBlockOffset(allocatedBlock);
         outBlock.dataSize = data.size();
         return true;
     }
@@ -180,10 +175,6 @@ namespace rendering
     {
         // invalid block to free
         if (!block.block || !block.dataSize)
-            return;
-
-        // invalid version, block was already freed
-        if (block.bufferIndex != m_bufferIndex)
             return;
 
         auto lock = CreateLock(m_pendingFreesLock);

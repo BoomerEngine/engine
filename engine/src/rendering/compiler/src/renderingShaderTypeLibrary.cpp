@@ -551,12 +551,6 @@ namespace rendering
 
         TypeLibrary::~TypeLibrary()
         {
-            for (auto ptr : m_compositeTypes)
-                ptr->~CompositeType();
-
-            m_compositeTypeMap.clear();
-            m_compositeTypes.clear();
-
             for (auto ptr : m_resourceTables)
                 ptr->~ResourceTable();
 

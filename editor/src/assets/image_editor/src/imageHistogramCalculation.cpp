@@ -9,13 +9,10 @@
 #include "build.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
-#include "rendering/device/include/renderingConstantsView.h"
-#include "rendering/device/include/renderingBufferView.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingShaderLibrary.h"
 
 namespace ed
 {
@@ -25,9 +22,8 @@ namespace ed
 
     //---
 
-    ImageHistogramPendingData::ImageHistogramPendingData(const rendering::DownloadBufferPtr& data, uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel)
+    ImageHistogramPendingData::ImageHistogramPendingData(uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel)
         : m_totalPixelCount(totalPixelCount)
-        , m_downloadBuffer(data)
         , m_numBuckets(numBuckets)
         , m_channel(channel)
     {
@@ -37,38 +33,29 @@ namespace ed
     {
     }
 
+	void ImageHistogramPendingData::processRetreivedData(rendering::IDownloadAreaObject* area, const void* untypedDataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info)
+	{
+		const auto expectedSize = (2 + m_numBuckets) * sizeof(uint32_t);
+		if (expectedSize == dataSize)
+		{
+			const auto* dataPtr = (const uint32_t*)untypedDataPtr;
+
+			m_data = base::RefNew<ImageHistogramData>();
+			m_data->channel = m_channel;
+			m_data->totalPixelCount = m_totalPixelCount;
+			m_data->minValue = reinterpret_cast<const float&>(dataPtr[0]);
+			m_data->maxValue = reinterpret_cast<const float&>(dataPtr[1]);
+			m_data->maxBucketValue = 0;
+			memcpy(m_data->buckets.allocate(m_numBuckets), dataPtr + 2, sizeof(uint32_t) * m_numBuckets);
+
+			for (auto val : m_data->buckets)
+				m_data->maxBucketValue = std::max<uint32_t>(val, m_data->maxBucketValue);
+		}
+	}
+
     const base::RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfReady()
     {
         auto lock = CreateLock(m_lock);
-
-        if (!m_data)
-        {
-            if (m_downloadBuffer && m_downloadBuffer->isReady())
-            {
-                if (auto data = m_downloadBuffer->data())
-                {
-                    const auto expectedSize = (2 + m_numBuckets) * sizeof(uint32_t);
-                    auto dataSize = data.size();
-                    DEBUG_CHECK_EX(dataSize == expectedSize, "Downloaded histogram data does not have proper size");
-                    if (expectedSize == dataSize)
-                    {
-                        auto* dataPtr = (const uint32_t*)data.data();
-
-                        m_data = base::RefNew<ImageHistogramData>();
-                        m_data->channel = m_channel;
-                        m_data->totalPixelCount = m_totalPixelCount;
-                        m_data->minValue = reinterpret_cast<const float&>(dataPtr[0]);
-                        m_data->maxValue = reinterpret_cast<const float&>(dataPtr[1]);
-                        m_data->maxBucketValue = 0;
-                        memcpy(m_data->buckets.allocate(m_numBuckets), dataPtr + 2, sizeof(uint32_t) * m_numBuckets);
-
-                        for (auto val : m_data->buckets)
-                            m_data->maxBucketValue = std::max<uint32_t>(val, m_data->maxBucketValue);
-                    }
-                }
-            }
-        }
-
         return m_data;
     }
     
@@ -78,7 +65,7 @@ namespace ed
 
     //--
 
-    struct ComputeHistogramConstants
+ /*  struct ComputeHistogramConstants
     {
         uint32_t imageWidth = 0;
         uint32_t imageHeight = 0;
@@ -92,9 +79,9 @@ namespace ed
         rendering::ImageView InputImage;
         rendering::BufferView MinMax;
         rendering::BufferView Buckets;
-    };
+    };*/
 
-    base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageView& view, const ImageComputationSettings& settings)
+    base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageSampledView* view, const ImageComputationSettings& settings)
     {
         /*if (view.empty())
             return nullptr;

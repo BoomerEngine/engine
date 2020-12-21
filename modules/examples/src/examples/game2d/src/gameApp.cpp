@@ -23,8 +23,10 @@ namespace example
         if (!createWindow())
             return false;
 
-        m_imgui = ImGui::CreateContext();
-        ImGui::SetCurrentContext(m_imgui);
+		auto dev = base::GetService<DeviceService>()->device();
+		m_storage = base::RefNew<rendering::canvas::CanvasStorage>(dev);
+
+		m_imguiHelper = new ImGui::ImGUICanvasHelper(m_storage);
 
         m_game = RefNew<Game>();
         return true;
@@ -34,12 +36,8 @@ namespace example
     {
         m_game.reset();
 
-        if (m_imgui)
-        {
-            ImGui::SetCurrentContext(nullptr);
-            ImGui::DestroyContext(m_imgui);
-            m_imgui = nullptr;
-        }
+		delete m_imguiHelper;
+		m_imguiHelper = nullptr;
 
         m_renderingOutput.reset();
     }
@@ -144,36 +142,38 @@ namespace example
 
         // pass to game or debug panels
         if (DebugPagesVisible())
-            return ImGui::ProcessInputEvent(m_imgui, evt);
+            return m_imguiHelper->processInput(evt);
         else
             return m_game->handleInput(evt);
     }
        
-    void GameApp::renderNonGameOverlay(CommandWriter& cmd, uint32_t width, uint32_t height, const rendering::ImageView& colorTarget, const rendering::ImageView& depthTarget)
+    void GameApp::renderNonGameOverlay(CommandWriter& cmd, const GameViewport& vp)
     {
-        FrameBuffer fb;
-        fb.color[0].view(colorTarget); // no clear
-        fb.depth.view(depthTarget).clearDepth().clearStencil();
-        cmd.opBeingPass(fb);
-
         if (DebugPagesVisible())
         {
-            base::canvas::Canvas canvas(width, height);
+			rendering::canvas::CanvasRenderer::Setup setup;
+			setup.width = vp.width;
+			setup.height = vp.height;
+			setup.backBufferColorRTV = vp.colorTarget;
+			setup.backBufferDepthRTV = vp.depthTarget;
+			setup.backBufferLayout = vp.passLayout;
+			setup.pixelScale = 1.0f;
 
-            {
-                ImGui::BeginCanvasFrame(canvas);
-                DebugPagesRender();
-                m_game->debug();
-                ImGui::EndCanvasFrame(canvas);
-            }
+			// render test to canvas
+			{
+				rendering::canvas::CanvasRenderer canvas(setup, m_storage);
 
-            CanvasRenderingParams renderingParams;
-            renderingParams.frameBufferWidth = width;
-            renderingParams.frameBufferHeight = height;
-            base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
+				// ImGui
+				{
+					m_imguiHelper->beginFrame(canvas, 0.01f);
+					DebugPagesRender();
+					m_game->debug();
+					m_imguiHelper->endFrame(canvas);
+				}
+
+				cmd.opAttachChildCommandBuffer(canvas.finishRecording());
+			}
         }
-
-        cmd.opEndPass();
     }
 
     void GameApp::renderFrame()
@@ -182,9 +182,16 @@ namespace example
 
         if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
-            m_game->render(cmd, output.width, output.height, output.color, output.depth);
+			GameViewport vp;
+			vp.width = output.width;
+			vp.height = output.height;
+			vp.colorTarget = output.color;
+			vp.depthTarget = output.depth;
+			vp.passLayout = output.layout;
 
-            renderNonGameOverlay(cmd, output.width, output.height, output.color, output.depth);
+			m_game->render(cmd, vp);
+
+			renderNonGameOverlay(cmd, vp);
 
             cmd.opSwapOutput(m_renderingOutput);
         }

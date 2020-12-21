@@ -14,7 +14,6 @@
 
 #include "rendering/device/include/renderingFramebuffer.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/canvas/include/renderingCanvasRenderingService.h"
 
 #include "base/imgui/include/debugPageService.h"
 #include "base/canvas/include/canvas.h"
@@ -93,11 +92,11 @@ namespace game
             rendering::FrameBuffer fb;
             fb.color[0].view(viewport.backBufferColor); // no clear
             fb.depth.view(viewport.backBufferDepth).clearDepth().clearStencil();
-            cmd.opBeingPass(fb);
+            cmd.opBeingPass(viewport.backBufferLayout, fb);
 
             if (base::DebugPagesVisible())
             {
-                base::canvas::Canvas canvas(viewport.width, viewport.height);
+                /*base::canvas::Canvas canvas(viewport.width, viewport.height);
 
                 {
                     ImGui::BeginCanvasFrame(canvas);
@@ -109,7 +108,7 @@ namespace game
                 rendering::canvas::CanvasRenderingParams renderingParams;
                 renderingParams.frameBufferWidth = viewport.width;
                 renderingParams.frameBufferHeight = viewport.height;
-                base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);
+                base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);*/
             }
 
             cmd.opEndPass();
@@ -147,7 +146,7 @@ namespace game
         // pass to game or debug panels
         if (base::DebugPagesVisible())
         {
-            ImGui::ProcessInputEvent(m_imgui, evt);
+            //ImGui::ProcessInputEvent(m_imgui, evt);
             return true;
         }
 

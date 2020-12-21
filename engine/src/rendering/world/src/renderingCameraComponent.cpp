@@ -14,7 +14,7 @@ namespace rendering
 {
     //--
 
-    RTTI_BEGIN_TYPE_CLASS(CameraRenderingContext);
+    /*RTTI_BEGIN_TYPE_CLASS(CameraRenderingContext);
         RTTI_BIND_NATIVE_COPY(CameraRenderingContext);
         RTTI_BIND_NATIVE_CTOR_DTOR(CameraRenderingContext);
     RTTI_END_TYPE();
@@ -34,7 +34,7 @@ namespace rendering
     RTTI_END_TYPE();
 
     CameraRenderingTarget::CameraRenderingTarget()
-    {}
+    {}*/
 
     //--
 
@@ -53,19 +53,19 @@ namespace rendering
     CameraComponent::~CameraComponent()
     {}
 
-    void CameraComponent::render(const CameraRenderingContext& context, const CameraRenderingTarget& target)
+    /*void CameraComponent::render(const CameraRenderingContext& context, const CameraRenderingTarget& target)
     {
         if (auto* world = this->world())
         {
 
         }
 
-        /*outParams.position = absoluteTransform().position();
+       *outParams.position = absoluteTransform().position();
         outParams.rotation = absoluteTransform().rotation();
         outParams.fov = m_fov;
         outParams.forceNearPlane = m_forceNearPlane;
-        outParams.forceFarPlane = m_forceFarPlane;*/
-    }
+        outParams.forceFarPlane = m_forceFarPlane;
+    }*/
 
     ///--
 

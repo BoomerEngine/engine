@@ -11,6 +11,8 @@
 #include "base/resource/include/resourceTags.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
+#include "rendering/device/include/renderingResources.h"
 
 namespace rendering
 {
@@ -71,12 +73,62 @@ namespace rendering
         createDeviceResources();
     }
 
-    rendering::ImageView StaticTexture::view() const
+    rendering::ImageSampledViewPtr StaticTexture::view() const
     {
-        return m_mainView ? m_mainView : ImageView::DefaultGrayLinear();
+        return m_mainView ? m_mainView : rendering::Globals().TextureGray;
     }
 
     //--
+
+	class StaticTextureSourceDataProvider : public rendering::ISourceDataProvider
+	{
+	public:
+		StaticTextureSourceDataProvider(base::Buffer data, const base::Array<StaticTextureMip>& mips, base::StringBuf path, ImageFormat format, base::fibers::WaitCounter loadingFence = base::fibers::WaitCounter())
+			: m_data(data)
+			, m_mips(mips)
+			, m_path(path)
+			, m_format(format)
+			, m_fence(loadingFence)
+		{}
+
+		virtual void notifyFinshed(bool success) override final
+		{
+			if (!m_fence.empty())
+			{
+				Fibers::GetInstance().signalCounter(m_fence);
+				m_fence = base::fibers::WaitCounter();
+			}
+		}
+
+		virtual void print(base::IFormatStream& f) const override final
+		{
+			f.appendf("StaticTexture '{}'", m_path);
+		}
+
+		virtual void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		{
+			DEBUG_CHECK(m_mips.size() == atoms.size());
+
+			const auto numCopiableAtoms = std::min<uint32_t>(atoms.size(), m_mips.size());
+			for (uint32_t i = 0; i<numCopiableAtoms; ++i)
+			{
+				const auto& mip = m_mips[i];
+				const auto& atom = atoms[i];
+
+				//DEBUG_CHECK(atom.targetDataSize == mip.dataSize);
+				const auto copySize = std::min<uint32_t>(atom.targetDataSize, mip.dataSize);
+				memcpy(atom.targetDataPtr, m_data.data() + mip.dataOffset, copySize);
+			}
+		}
+
+	private:
+		base::Buffer m_data;
+		base::Array<StaticTextureMip> m_mips; // mip map data
+		base::StringBuf m_path;
+		ImageFormat m_format;
+
+		base::fibers::WaitCounter m_fence;
+	};
 
     void StaticTexture::createDeviceResources()
     {
@@ -99,30 +151,13 @@ namespace rendering
                     info.allowShaderReads = true;
                     info.label = base::StringBuf(base::TempString("{}", path()));
 
-                    base::InplaceArray<rendering::SourceData, 128> sourceData;
-                    sourceData.resize(info.numMips * info.numSlices);
+					auto fence = Fibers::GetInstance().createCounter("StaticTextureInit", 1);
+					auto data = base::RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path(), m_info.format, fence);
 
-                    auto* writePtr = sourceData.typedData();
-                    for (uint32_t i = 0; i < info.numSlices; ++i)
-                    {
-                        for (uint32_t j = 0; j < info.numMips; ++j, ++writePtr)
-                        {
-                            auto sourceMipIndex = (i * m_info.mips) + j;
-                            if (sourceMipIndex < m_mips.size())
-                            {
-                                const auto& sourceMip = m_mips[sourceMipIndex];
-                                DEBUG_CHECK_EX(!sourceMip.streamed, "Streaming not yet supported");
+					if (m_object = device->createImage(info, data))
+						m_mainView = m_object->createSampledView();
 
-                                const auto* dataPtr = m_persistentPayload.data() + sourceMip.dataOffset;
-                                writePtr->data = m_persistentPayload;
-                                writePtr->offset = sourceMip.dataOffset;
-                                writePtr->size = sourceMip.dataSize;
-                            }
-                        }
-                    }
-
-                    if (m_object = device->createImage(info, sourceData.typedData()))
-                        m_mainView = m_object->view().createSampledView(ObjectID::DefaultTrilinearSampler(false));
+					Fibers::GetInstance().waitForCounterAndRelease(fence);
                 }
             }
         }
@@ -131,7 +166,7 @@ namespace rendering
     void StaticTexture::destroyDeviceResources()
     {
         m_object.reset();
-        m_mainView = ImageView();
+		m_mainView.reset();
     }
 
     //--

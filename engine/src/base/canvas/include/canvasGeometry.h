@@ -105,16 +105,16 @@ namespace base
 			//--
 			
 			// directly append a batch to the geometry
-			void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr, const IStorage* storage = nullptr);
+			void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
 
 			// directly append a batch to the geometry indexed triangle list batch to the geometry
-			void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr, const IStorage* storage = nullptr);
+			void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
 
 			//--
 
 		private:
 			int appendStyle(const RenderStyle& style);
-			void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style, const IStorage* storage);
+			void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style);
         };
 
 		//--

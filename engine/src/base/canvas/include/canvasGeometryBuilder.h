@@ -68,18 +68,15 @@ namespace base
         /// the created Geometry objects are self contained and can be reused for rendering much later
         /// the whole point is to minimize CPU overhead when redrawing large and mostly static GUI
 		/// NOTE: data storage is required for using cached images and fonts
-        class BASE_CANVAS_API GeometryBuilder : public base::NoCopy // should be instanced on the stack
+        class BASE_CANVAS_API GeometryBuilder : public NoCopy // should be instanced on the stack
         {
             RTTI_DECLARE_POOL(POOL_CANVAS)
 
         public:
-            GeometryBuilder(const IStorage* storage, Geometry& outGeometry);
+            GeometryBuilder(Geometry& outGeometry);
             ~GeometryBuilder();
 
             //---
-
-			/// get canvas data storage
-			INLINE const IStorage* storage() const { return m_storage; }
 
             /// get current fill rendering style
             INLINE const RenderStyle& fillStyle() const { return m_style.fillStyle; }
@@ -152,13 +149,13 @@ namespace base
             // Resets current transform to a identity matrix.
             void resetTransform();
 
-            // push current ransform onto stack
+            // push current transform onto stack
             void pushTransform();
 
             // pop transform from stack
             void popTransform();
            
-            // Premultiplies current coordinate system by specified matrix.
+            // Multiply current coordinate system (from left side) by specified matrix.
             void transform(float a, float b, float c, float d, float e, float f);
 
             // Translates current coordinate system.
@@ -192,7 +189,7 @@ namespace base
 			// Reset style pivot (and the whole stack) back to 0,0
 			void resetStylePivot();
 
-			// Push current style pivod
+			// Push current style pivot
 			void pushStylePivot();
 
 			// Pop style pivot
@@ -230,12 +227,12 @@ namespace base
             void lineTo(float x, float y);
             void lineTo(const Vector2& pos);
 
-            // Adds cubic bezier segment from last point in the path via two control points to the specified point.
+            // Adds cubic Bezier segment from last point in the path via two control points to the specified point.
             void bezierToi(int c1x, int c1y, int c2x, int c2y, int x, int y);
             void bezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y);
             void bezierTo(const Vector2& c1, const Vector2& c2, const Vector2& pos);
 
-            // Adds quadratic bezier segment from last point in the path via a control point to the specified point.
+            // Adds quadratic Bezier segment from last point in the path via a control point to the specified point.
             void quadTo(float cx, float cy, float x, float y);
             void quadTo(const Vector2& c, const Vector2& pos);
 
@@ -381,8 +378,6 @@ namespace base
 			};
 
 			CustomRenderInfo m_customRenderer;
-
-			const IStorage* m_storage = nullptr;
 
 			bool m_transformInvertedValid = false;
             float m_distTollerance;

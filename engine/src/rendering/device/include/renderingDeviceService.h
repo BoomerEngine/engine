@@ -33,6 +33,9 @@ namespace rendering
         /// NOTE: once created the device is never recreated
         INLINE IDevice* device() const { return m_device; }
 
+		/// device caps
+		INLINE const DeviceCaps& caps() const { return m_caps; }
+
 		/// get global object (common textures, samplers and other resources)
 		INLINE const DeviceGlobalObjects& globals() const { return *m_globals; }
 
@@ -55,9 +58,9 @@ namespace rendering
 
 		DeviceGlobalObjects* m_globals = nullptr;
 
-		//--
+		DeviceCaps m_caps;
 
-        IDevice* createAndInitializeDevice(base::StringView name, const base::app::CommandLine& cmdLine) const;
+		//--
     };
 
     //---

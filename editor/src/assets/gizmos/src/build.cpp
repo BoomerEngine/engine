@@ -7,7 +7,7 @@
 * [# dependency: base_editor #]
 * [# dependency: base_ui #]
 * [# dependency: rendering_canvas #]
-* [# dependency: rendering_ui #]
+* [# dependency: rendering_ui_viewport #]
 * [# devonly #]
 ***/
 

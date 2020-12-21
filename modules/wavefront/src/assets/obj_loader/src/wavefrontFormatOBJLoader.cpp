@@ -64,12 +64,12 @@ namespace wavefront
             uint32_t lineCount = 0;
             uint32_t firstLine = 0;
 
-            base::PagedBuffer<Position> parsedPositions;
-            base::PagedBuffer<UV> parsedUVs;
-            base::PagedBuffer<Normal> parsedNormals;
-            base::PagedBuffer<Color> parsedColors;
-            base::PagedBuffer<uint32_t> parsedFaceIndices;
-            base::PagedBuffer<Face> parsedFaces;
+            base::PagedBufferTyped<Position> parsedPositions;
+            base::PagedBufferTyped<UV> parsedUVs;
+            base::PagedBufferTyped<Normal> parsedNormals;
+            base::PagedBufferTyped<Color> parsedColors;
+            base::PagedBufferTyped<uint32_t> parsedFaceIndices;
+            base::PagedBufferTyped<Face> parsedFaces;
 
             INLINE bool empty() const { return startPtr >= endPtr || 0 == lineCount; }
             INLINE void init(const char* ptr, uint32_t line) { startPtr = ptr; firstLine = line; }
@@ -86,12 +86,12 @@ namespace wavefront
             uint32_t parsedFaceIndicesOffset = 0;
             uint32_t parsedFacesOffset = 0;
 
-            base::PagedBuffer<Position> parsedPositions;
-            base::PagedBuffer<UV> parsedUVs;
-            base::PagedBuffer<Normal> parsedNormals;
-            base::PagedBuffer<Color> parsedColors;
-            base::PagedBuffer<uint32_t> parsedFaceIndices;
-            base::PagedBuffer<Face> parsedFaces;
+            base::PagedBufferTyped<Position> parsedPositions;
+            base::PagedBufferTyped<UV> parsedUVs;
+            base::PagedBufferTyped<Normal> parsedNormals;
+            base::PagedBufferTyped<Color> parsedColors;
+            base::PagedBufferTyped<uint32_t> parsedFaceIndices;
+            base::PagedBufferTyped<Face> parsedFaces;
         };
 
         struct WorkGroupQueue
@@ -306,7 +306,7 @@ namespace wavefront
                             }
                             else
                             {
-                                group.parsedFaceIndices.write(numericalIndices.typedData(), numericalIndices.size());
+                                group.parsedFaceIndices.writeLarge(numericalIndices.typedData(), numericalIndices.size());
 
                                 auto* f = group.parsedFaces.allocSingle();
                                 f->attributeMask = validAttributeMask;

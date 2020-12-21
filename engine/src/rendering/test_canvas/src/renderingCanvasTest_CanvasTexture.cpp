@@ -13,7 +13,7 @@
 #include "base/canvas/include/canvasGeometry.h"
 #include "base/canvas/include/canvas.h"
 #include "base/canvas/include/canvasStyle.h"
-#include "../../../base/canvas/include/canvasStorage.h"
+#include "base/canvas/include/canvasAtlas.h"
 
 namespace rendering
 {
@@ -25,7 +25,8 @@ namespace rendering
             RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasTexture, ICanvasTest);
 
         public:
-			base::canvas::ImageAtlasIndex m_atlas;
+			base::RefPtr<base::canvas::DynamicAtlas> m_atlas;
+
 			base::canvas::ImageEntry m_atlasEntry;
 
 			base::NativeTimePoint m_time;
@@ -36,20 +37,20 @@ namespace rendering
 
 				auto lena = loadImage("lena.png");
 
-				m_atlas = m_storage->createAtlas(1024, 1, "TestAtlas");
-				m_atlasEntry = m_storage->registerImage(m_atlas, lena, true);
+				m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
+				m_atlasEntry = m_atlas->registerImage(lena, true);
             }
 
 			virtual void shutdown() override
 			{
-				m_storage->destroyAtlas(m_atlas);
+				m_atlas.reset();
 			}
 
             virtual void render(base::canvas::Canvas& c) override
             {
 				base::canvas::Geometry g;
 				{
-					base::canvas::GeometryBuilder b(m_storage, g);
+					base::canvas::GeometryBuilder b(g);
 
 					CanvasGridBuilder grid(3, 3, 30, 1024, 1024);
 

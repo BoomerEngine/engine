@@ -97,8 +97,8 @@ namespace rendering
         /// get input context for the window
         virtual base::input::ContextPtr windowGetInputContext() = 0;
 
-        /// abandon window - remove all communication from outside world
-        virtual void windowAbandon() = 0;
+		/// bind owner to window
+		virtual void windowBindOwner(ObjectID id) = 0;
     };
 
     
@@ -181,6 +181,9 @@ namespace rendering
 		/// Query output status and rendering parameters (format/resolution)
         /// NOTE: if this function returns false than output is dead (closed/lost) and has to be recreated
         virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) = 0;
+
+		/// Disconnect external callback
+		virtual void disconnect() = 0;
 
         //--
 

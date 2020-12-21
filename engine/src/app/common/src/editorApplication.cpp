@@ -12,6 +12,7 @@
 #include "base/ui/include/uiStyleLibrary.h"
 #include "base/ui/include/uiDataStash.h"
 #include "base/ui/include/uiRenderer.h"
+#include "rendering/device/include/renderingDeviceService.h"
 
 namespace application
 {
@@ -23,10 +24,17 @@ namespace application
         if (!styles)
             return false;
 
+		auto dev = base::GetService<DeviceService>();
+		if (!dev)
+			return false;
+
         m_nativeRenderer.create();
+
         m_dataStash = base::RefNew<ui::DataStash>(styles);
         m_dataStash->addIconSearchPath("/editor/interface/icons/");
+
         m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
+
         m_lastUpdateTime.resetToNow();
 
         auto* service = base::GetService<ed::Editor>();

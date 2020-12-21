@@ -8,7 +8,7 @@
 
 #include "base/app/include/application.h"
 #include "rendering/device/include/renderingOutput.h"
-#include "rendering/ui/include/renderingWindowRenderer.h"
+#include "rendering/ui_host/include/renderingWindowRenderer.h"
 
 namespace application
 {

@@ -10,7 +10,6 @@
 #include "dx11Executor.h"
 #include "dx11Thread.h"
 
-#include "rendering/api_common/include/apiFrame.h"
 #include "rendering/api_common/include/apiExecution.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 
@@ -23,8 +22,8 @@ namespace rendering
 
 			//--
 
-			FrameExecutor::FrameExecutor(Thread* thread, Frame* frame, PerformanceStats* stats)
-				: IFrameExecutor(thread, frame, stats)
+			FrameExecutor::FrameExecutor(Thread* thread, PerformanceStats* stats)
+				: IFrameExecutor(thread, stats)
 				, m_dxDevice(thread->device())
 				, m_dxDeviceContext(thread->deviceContext())
 			{
@@ -80,18 +79,6 @@ namespace rendering
 			void FrameExecutor::runClearBuffer(const command::OpClearBuffer& op)
 			{
 
-			}
-
-			void FrameExecutor::runDownload(const command::OpDownload& op)
-			{
-			}
-
-			void FrameExecutor::runUpdate(const command::OpUpdate& op)
-			{
-			}
-
-			void FrameExecutor::runCopy(const command::OpCopy& op)
-			{
 			}
 
 			void FrameExecutor::runDraw(const command::OpDraw& op)

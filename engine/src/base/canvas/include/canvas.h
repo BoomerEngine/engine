@@ -14,6 +14,14 @@
 #include "base/containers/include/pagedBuffer.h"
 #include "base/memory/include/linearAllocator.h"
 
+namespace rendering
+{
+	namespace canvas
+	{
+		class CanvasRenderService;
+	}
+}
+
 namespace base
 {
     namespace canvas
@@ -63,15 +71,13 @@ namespace base
 			bool simple = true;
 			bool noScale = true;
 		};
-
+		
 		//--
 
-        /// canvas renderer, integrates canvas system with external rendering
+        /// canvas renderer, collects final vertices and batches for rendering a 2D stuff
         /// NOTE: this class is VERY HEAVY and should be not instanced hastily
-		/// NOTE: this class is ABSTRACT - actual canvas renderer will derive from this
-		class BASE_CANVAS_API Canvas : public base::NoCopy
+		class BASE_CANVAS_API Canvas : public NoCopy
 		{
-			RTTI_DECLARE_VIRTUAL_ROOT_CLASS(Canvas);
 			RTTI_DECLARE_POOL(POOL_CANVAS);
 
 		public:
@@ -83,7 +89,8 @@ namespace base
 				float pixelScale = 1.0f;
 			};
 
-			Canvas(const Setup& setup, const IStorage* storage);
+			Canvas(const Setup& setup);
+			Canvas(uint32_t width, uint32_t height);
 			~Canvas();
 
 			// get width of the currently bound target to the geometry collector
@@ -107,9 +114,6 @@ namespace base
 
 			// clear color we want to have the whole output filled before drawing this canvas, mainly used to speed up ui rendering
 			INLINE const Color& clearColor() const { return m_clearColor; }
-
-			// get image storage
-			INLINE const IStorage* storage() const { return m_storage; }
 
 			//--
 
@@ -163,12 +167,10 @@ namespace base
 
 			///---
 
-			/// flush all geometry not yet rendered
-			void flush();
-
 			/// draw geometry into the canvas at given ABSOLUTE placement, will bake it on the fly - SLOW
 			/// NOTE: all vertices in the geometry will be transformed by the provided placement (+ the canvas "global" pixel offset/scale)
 			void place(const Placement& pos, const Geometry& geometry, float alpha = 1.0f);
+			void place(float x, float y, const Geometry& geometry, float alpha = 1.0f);
 
 			//--
 
@@ -184,8 +186,8 @@ namespace base
 				float v1 = 1.0f;
 
 				uint8_t renderer = 0;
-				base::Color color = base::Color::WHITE;
-				base::canvas::BlendOp op = base::canvas::BlendOp::AlphaPremultiplied;
+				Color color = Color::WHITE;
+				canvas::BlendOp op = canvas::BlendOp::AlphaPremultiplied;
 
 				ImageEntry image;
 			};
@@ -209,13 +211,14 @@ namespace base
 			uint32_t m_width = 0;
 			uint32_t m_height = 0;
 
-			const IStorage* m_storage = nullptr;
-
 			Vector2 m_pixelOffset;
 			float m_pixelScale = 1.0f;
 			XForm2D m_pixelTransform;
 
 			uint8_t m_currentRenderer = 0;
+
+			uint64_t m_usedAtlasMask = 0;
+			uint64_t m_usedGlyphPagesMask = 0;
 
 			Color m_clearColor;
 
@@ -241,25 +244,19 @@ namespace base
 
 			//--
 
-			uint32_t m_numLocalVertices = 0;
-			uint32_t m_numLocalBatches = 0;
-			uint32_t m_numLocalAttributes = 0;
-			uint32_t m_numLocalData = 0;
+			Vertex m_tempVertices[MAX_LOCAL_VERTICES];
 
-			Vertex m_localVertices[MAX_LOCAL_VERTICES];
-			Batch m_localBatches[MAX_LOCAL_BATCHES];
-			Attributes m_localAttributes[MAX_LOCAL_ATTRIBUTES];
-			uint8_t m_localData[MAX_LOCAL_DATA];
+			PagedBufferTyped<Vertex> m_gatheredVertices;
+			base::InplaceArray<Batch, MAX_LOCAL_BATCHES> m_gatheredBatches;
+			base::InplaceArray<Attributes, MAX_LOCAL_BATCHES> m_gatheredAttributes;
+			base::InplaceArray<uint8_t, MAX_LOCAL_BATCHES> m_gatheredData;
 
 			void placeInternal(const Placement& placement, const Vertex* vertices, uint32_t numVertices, uint32_t firstAttributeIndex, uint32_t firstDataOffset, const Batch& batchInfo, float alpha);
 			void placeVertex(const Placement& placement, const Vertex* src, Vertex*& dest, uint32_t firstAttributeIndex);
 
-		protected:
-			// render geometry
-			virtual void flushInternal(const Vertex* vertices, uint32_t numVertices, 
-				const Attributes* attributes, uint32_t numAttributes,
-				const void* customData, uint32_t numCustomData,
-				const Batch* batches, uint32_t numBatches) = 0;
+			//--
+
+			friend class rendering::canvas::CanvasRenderService;
 		};
 
 		//--

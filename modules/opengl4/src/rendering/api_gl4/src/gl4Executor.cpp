@@ -48,42 +48,44 @@ namespace rendering
            
             //--
 
-			void FrameExecutor::resetViewport(const FrameBuffer& fb)
+			void FrameExecutor::resetViewport(const FrameBuffer& fb, const base::Rect& rect)
 			{
 				DEBUG_CHECK(m_currentRenderState.common.scissorEnabled == false);
 				m_currentRenderState.common.scissorEnabled = false;
 				m_drawRenderStateMask |= State_ScissorEnabled;
 
-				//auto minCount = std::max<uint32_t>(m_pass.viewportCount, m_pass.colorCount);
+				GL_PROTECT(glEnable(GL_SCISSOR_TEST));
+
 				for (uint32_t i = 0; i < m_pass.viewportCount; ++i)
 				{
-					const auto w = m_pass.width;
-					const auto h = m_pass.height;
-					GL_PROTECT(glViewportIndexedf(i, 0, 0, w, h));
+					const float x = rect.left();
+					const float y = (int)m_pass.height - rect.top() - rect.height();
+					const float w = rect.width();
+					const float h = rect.height();
+
+					GL_PROTECT(glViewportIndexedf(i, x, y, w, h));
 					GL_PROTECT(glDepthRangeIndexed(i, 0, 1));
-					GL_PROTECT(glScissorIndexed(i, 0, 0, w, h));
+					GL_PROTECT(glScissorIndexed(i, x, y, w, h));
 					//GL_PROTECT(glColorMaski(i, true, true, true, true));
 				}
-				GL_PROTECT(glDisable(GL_SCISSOR_TEST));
-			}
 
-			void FrameExecutor::clearFrameBuffer(const FrameBuffer& fb)
-			{
 				for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
 				{
 					if (fb.color[i].viewID && fb.color[i].loadOp == LoadOp::Clear)
 					{
 						static base::FastRandState rnd;
-						//GL_PROTECT(glClearBufferfv(GL_COLOR, i, fb.color[i].clearColorValues));
-						GL_PROTECT(glClearNamedFramebufferfv(m_pass.m_glFrameBuffer, GL_COLOR, i, (GLfloat*)&fb.color[i].clearColorValues));
+						GL_PROTECT(glClearBufferfv(GL_COLOR, i, fb.color[i].clearColorValues));
+						//GL_PROTECT(glClearNamedFramebufferfv(m_pass.m_glFrameBuffer, GL_COLOR, i, (GLfloat*)&fb.color[i].clearColorValues));
 					}
 				}
 
 				if (fb.depth.viewID && fb.depth.loadOp == LoadOp::Clear)
 				{
-					GL_PROTECT(glClearNamedFramebufferfi(m_pass.m_glFrameBuffer, GL_DEPTH_STENCIL, 0, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
-					//GL_PROTECT(glClearBufferfi(GL_DEPTH_STENCIL, 0, GL_DEPTH_STENCIL, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
+					//GL_PROTECT(glClearNamedFramebufferfi(m_pass.m_glFrameBuffer, GL_DEPTH_STENCIL, 0, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
+					GL_PROTECT(glClearBufferfi(GL_DEPTH_STENCIL, 0, fb.depth.clearDepthValue, fb.depth.clearStencilValue));
 				}
+
+				GL_PROTECT(glDisable(GL_SCISSOR_TEST));
 			}
 
 			bool FrameExecutor::resolveFrameBufferRenderTarget(const FrameBufferAttachmentInfo& fb, ResolvedImageView& outTarget) const
@@ -124,7 +126,7 @@ namespace rendering
 						m_pass.m_valid = object->acquire();
 				
 					GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-					m_pass.m_glFrameBuffer = 0;
+					//m_pass.m_glFrameBuffer = 0;
 
 					/*GLenum buffers[1] = { GL_COLOR_ATTACHMENT0 };
 					GL_PROTECT(glDrawBuffers(1, buffers));*/
@@ -137,17 +139,14 @@ namespace rendering
 						if (auto glFrameBuffer = cache()->buildFramebuffer(targets))
 						{
 							GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, glFrameBuffer));
-							m_pass.m_glFrameBuffer = glFrameBuffer;
+							//m_pass.m_glFrameBuffer = glFrameBuffer;
 							m_pass.m_valid = true;							
 						}
 					}
 				}
 
 				if (m_pass.m_valid)
-				{
-					resetViewport(op.frameBuffer);
-					clearFrameBuffer(op.frameBuffer);
-				}
+					resetViewport(op.frameBuffer, op.renderArea);
 			}
 
 			void FrameExecutor::runEndPass(const command::OpEndPass& op)
@@ -155,7 +154,7 @@ namespace rendering
 				if (m_pass.m_valid)
 				{
 					GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-					m_pass.m_glFrameBuffer = 0;
+					//m_pass.m_glFrameBuffer = 0;
 					m_pass.m_valid = false;
 				}
 
@@ -390,6 +389,48 @@ namespace rendering
 					for (uint32_t k = 0; k < op.numRects; ++k, ++rect)
 						ClearImageRect3(imageResolved, *rect, op.clearFlags & 1, op.clearFlags & 2, op.depthValue, op.stencilValue);
 				}
+			}
+
+			static bool IsSwapchain(const FrameBuffer& fb)
+			{
+				if (fb.depth.swapchain)
+					return true;
+				for (const auto& color : fb.color)
+					if (color.swapchain)
+						return true;
+
+				return false;
+			}
+
+			void FrameExecutor::runClearFrameBuffer(const command::OpClearFrameBuffer& op)
+			{
+				bool valid = false;
+				if (IsSwapchain(op.frameBuffer))
+				{
+					if (auto* object = objects()->resolveStatic<api::Output>(m_activeSwapchain))
+					{
+						if (object->acquire())
+						{
+							GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+							valid = true;
+						}
+					}					
+				}
+				else
+				{
+					FrameBufferTargets targets;
+					if (resolveFrameBufferRenderTargets(op.frameBuffer, targets))
+					{
+						if (auto glFrameBuffer = cache()->buildFramebuffer(targets))
+						{
+							GL_PROTECT(glBindFramebuffer(GL_FRAMEBUFFER, glFrameBuffer));
+							valid = true;
+						}
+					}
+				}
+
+				if (valid)
+					resetViewport(op.frameBuffer, op.customArea);
 			}
 
 			void FrameExecutor::runClearBuffer(const command::OpClearBuffer& op)

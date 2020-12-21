@@ -13,26 +13,19 @@ namespace example
 {
     //---
 
-    static base::res::StaticResource<ShaderLibrary> resSkyShader("/examples/canvas/shaders/plasma_sky.fx");
+    static base::res::StaticResource<ShaderFile> resSkyShader("/examples/canvas/shaders/plasma_sky.fx");
 
-    struct SkyParams
+    void RenderSky(CommandWriter& cmd, GraphicsPassLayoutObject* pass, uint32_t width, uint32_t height, Vector2 center, float time)
     {
-        struct Constants
-        {
-            int targetSizeX = 1;
-            int targetSizeY = 1;
-            float centerX = 0.0f;
-            float centerY = 0.0f;
-            float time = 0.0f;
-        };
+		struct
+		{
+			int targetSizeX = 1;
+			int targetSizeY = 1;
+			float centerX = 0.0f;
+			float centerY = 0.0f;
+			float time = 0.0f;
+		} data;
 
-        ConstantsView consts;
-    };
-
-
-    void RenderSky(CommandWriter& cmd, uint32_t width, uint32_t height, Vector2 center, float time)
-    {
-        SkyParams::Constants data;
         data.targetSizeX = width;
         data.targetSizeY = height;
         data.centerX = center.x;
@@ -43,12 +36,15 @@ namespace example
 
         if (auto shader = resSkyShader.loadAndGet())
         {
-            SkyParams params;
-            params.consts = cmd.opUploadConstants(data);
-            cmd.opBindParametersInline("SkyParams"_id, params);
+			if (auto root = shader->rootShader())
+			{
+				DescriptorEntry desc[1];
+				desc[0].constants(data);
+				cmd.opBindDescriptor("SkyParams"_id, desc);
 
-            cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
-            cmd.opDraw(shader, 0, 4);
+				//cmd.opSetPrimitiveType(PrimitiveTopology::TriangleStrip);
+				//cmd.opDraw(shader, 0, 4);
+			}
         }
     }
 

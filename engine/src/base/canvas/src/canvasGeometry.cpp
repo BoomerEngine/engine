@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "canvasGeometry.h"
-#include "canvasStorage.h"
+#include "canvasService.h"
 
 // The Canvas class is heavily based on nanovg project by Mikko Mononen
 // Adaptations were made to fit the rest of the source code in here
@@ -50,7 +50,7 @@ namespace base
 
 		uint32_t Attributes::CalcHash(const Attributes& style)
 		{
-			return base::CRC32().append(&style, sizeof(style));
+			return CRC32().append(&style, sizeof(style));
 		}
 
 		//---
@@ -155,11 +155,12 @@ namespace base
 			return attributes.size();			
 		}
 
-		void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style, const IStorage* storage)
+		void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style)
 		{			
 			auto* vertexPtr = vertices + numVertices;
 
-			const auto* imageEntry = (storage && style.image) ? storage->findRenderDataForAtlasEntry(style.image) : nullptr;
+			static const auto* service = GetService<CanvasService>();
+			const auto* imageEntry = style.image ? service->findRenderDataForAtlasEntry(style.image) : nullptr;
 
 			auto attributesIndex = appendStyle(style);
 			/*if (attributesIndex == 0)
@@ -231,7 +232,7 @@ namespace base
 			}
 		}
 
-		void Geometry::appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup, const RenderStyle* style, const IStorage* storage)
+		void Geometry::appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup, const RenderStyle* style)
 		{
 			if (!vertices || !numVertices)
 				return;
@@ -241,13 +242,13 @@ namespace base
 			memcpy(localVertices, vertices, sizeof(Vertex) * numVertices);
 
 			if (style)
-				applyStyle(localVertices, numVertices, *style, storage);
+				applyStyle(localVertices, numVertices, *style);
 
 			auto& batch = batches.emplaceBack(setup);
 			batch.vertexOffset = firstVertexIndex;
 		}
 
-		void Geometry::appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup, const RenderStyle* style, const IStorage* storage)
+		void Geometry::appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup, const RenderStyle* style)
 		{
 			if (!vertices || !indices || !numIndices)
 				return;
@@ -263,7 +264,7 @@ namespace base
 			}
 
 			if (style)
-				applyStyle(localVertices, numIndices, *style, storage);
+				applyStyle(localVertices, numIndices, *style);
 
 			auto& batch = batches.emplaceBack(setup);
 			batch.atlasIndex = style ? style->image.atlasIndex : 0;

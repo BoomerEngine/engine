@@ -16,19 +16,6 @@ namespace rendering
 
     //---
 
-    enum class MeshVertexFormat : uint8_t
-    {
-        PositionOnly, // position only vertex stream, limited use as shadow mesh
-        Static, // static vertex, most common - UV + tangent space
-        StaticEx, // static vertex with color and second UV
-        Skinned4, // 4 bone skinning
-        Skinned4Ex, // 4 bone skinning with color and extra UV
-
-        MAX,
-    };
-
-    //---
-
     struct MeshVertexStreamInfo
     {
         base::StringView name; // binding name
