@@ -12,12 +12,6 @@ namespace rendering
 {
     namespace canvas
     {
-		//--
-
-        class CanvasStorage;
-		class CanvasRenderer;
-
-		//--
 	
     } // canvas
 } // rendering

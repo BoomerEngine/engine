@@ -40,7 +40,7 @@ namespace rendering
 			GraphicsRenderStatesSetup setup;
 			setup.scissor(true);
 
-            m_shaders = loadGraphicsShader("GenericScreenQuad.csl", outputLayoutNoDepth(), &setup);
+            m_shaders = loadGraphicsShader("GenericScreenQuad.csl", &setup);
         }
 
         static void DrawRecursivePattern(command::CommandWriter& cmd, const GraphicsPipelineObject* func, uint32_t depth, uint32_t left, uint32_t top, uint32_t width, uint32_t height)
@@ -80,7 +80,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.5f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             {
                 /*auto minX = 64;

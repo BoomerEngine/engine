@@ -40,7 +40,7 @@ namespace ui
     private:
         base::Vector3 m_value;
 
-        virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
@@ -79,7 +79,7 @@ namespace ui
     private:
         float m_hue = 0.0;
 
-        virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;

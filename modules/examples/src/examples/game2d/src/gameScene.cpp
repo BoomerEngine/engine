@@ -8,23 +8,23 @@
 
 #include "build.h"
 #include "gameScene.h"
+#include "game.h"
 
 namespace example
 {
     //---
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GameSpriteAsset);
-        RTTI_PROPERTY(m_image);
+        //RTTI_PROPERTY(m_image);
     RTTI_END_TYPE();
 
-    GameSpriteAsset::GameSpriteAsset(const base::canvas::IStorage* storage, ImageEntry image, StringView name, float scale, bool circle)
-        : m_image(image)
-		, m_storage(storage)
-        , m_size(1,1)
+    GameSpriteAsset::GameSpriteAsset(base::canvas::DynamicAtlas* atlas, const base::image::ImageRef& image, float scale, bool circle)
+        : m_size(1,1)
         , m_scale(scale)
         , m_circle(circle)
-        , m_name(name ? name : "Sprite")
+        , m_name("Sprite")
     {
+        m_image = atlas->registerImage(image.acquire());
         buildGeometry();
     }
 
@@ -103,12 +103,12 @@ namespace example
         m_size.y = m_image.height * m_scale;
 
         {
-            GeometryBuilder builder(m_storage, m_geometry[0]);
+            GeometryBuilder builder(m_geometry[0]);
             buildGeometry(builder, false);
         }
 
         {
-			GeometryBuilder builder(m_storage, m_geometry[1]);
+			GeometryBuilder builder(m_geometry[1]);
 			buildGeometry(builder, true);
         }
     }
@@ -118,7 +118,7 @@ namespace example
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GameSpriteSequenceAsset);
     RTTI_END_TYPE();
 
-    GameSpriteSequenceAsset::GameSpriteSequenceAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, StringView baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
+    GameSpriteSequenceAsset::GameSpriteSequenceAsset(base::canvas::DynamicAtlas* atlas, StringView baseDepotPath, uint32_t numFrames, float fps, int downsample /*= 0*/)
         : m_fps(fps)
     {
         for (uint32_t i = 1; i < numFrames; ++i)
@@ -128,9 +128,7 @@ namespace example
             for (int j=0; j<downsample; ++j)
                 image = Downsampled(image->view(), DownsampleMode::AverageWithAlphaWeight, ColorSpace::SRGB);
 
-			auto imageEntry = storage->registerImage(atlasIndex, image);
-
-            auto frameAsset = RefNew<GameSpriteAsset>(storage, "", imageEntry);
+            auto frameAsset = RefNew<GameSpriteAsset>(atlas, image);
             frameAsset->setupSnapBottom(); // HACK
 
             m_frameAssets.pushBack(frameAsset);
@@ -194,7 +192,7 @@ namespace example
         {
 			Geometry g;
 			{
-				GeometryBuilder builder(nullptr, g);
+				GeometryBuilder builder(g);
 				builder.strokeColor(Color::YELLOW);
 
 				Vector2 tl, br;
@@ -225,17 +223,18 @@ namespace example
     //--
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GameTerrianAsset)
-        RTTI_PROPERTY(m_tileImages);
+        //RTTI_PROPERTY(m_tileImages);
     RTTI_END_TYPE();
 
-    GameTerrianAsset::GameTerrianAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, float tileSize, StringView baseDepotPath, uint32_t numTiles)
+    GameTerrianAsset::GameTerrianAsset(base::canvas::DynamicAtlas* atlas, float tileSize, StringView baseDepotPath, uint32_t numTiles)
         : m_tileSize(tileSize)
     {
         m_tileImages.resize(numTiles);
 
         for (uint32_t i = 1; i < numTiles; ++i)
         {
-            m_tileImages[i] = LoadResource<Image>(TempString("{}/{}.png", baseDepotPath, i));
+            if (auto image = LoadResource<Image>(TempString("{}/{}.png", baseDepotPath, i)))
+                m_tileImages[i] = atlas->registerImage(image.acquire(), false, 0);
         }
     }
 
@@ -247,7 +246,7 @@ namespace example
             {
                 const auto scale = m_tileSize / image.width;
 
-                const auto fillSettings = base::canvas::ImagePatternSettings().scale(scale);
+                const auto fillSettings = base::canvas::ImagePatternSettings().scale(scale).wrapU(false).wrapV(false);
                 const auto fillStyle = ImagePattern(image, fillSettings);
                 builder.fillPaint(fillStyle);
 
@@ -381,8 +380,7 @@ namespace example
         if (!m_geometry)
             buildGeometry();
 
-        canvas.placement(0,0);
-        canvas.place(*m_geometry);
+        canvas.place(0, 0, m_geometry);
     }
 
     void GameTerrain::invalidateGeometry()
@@ -404,7 +402,7 @@ namespace example
 
     void GameTerrain::buildGeometry()
     {
-        GeometryBuilder builder;
+        GeometryBuilder builder(m_geometry);
 
         if (m_asset)
         {
@@ -419,9 +417,6 @@ namespace example
                 }
             }
         }
-
-        m_geometry = RefNew<Geometry>();
-        builder.extract(*m_geometry);
     }
 
     void GameTerrain::debug()
@@ -471,7 +466,7 @@ namespace example
             obj->render(canvas);
     }
 
-    void GameSceneLayer::render(CommandWriter& cmd, Vector2 center, const GameViewport& vp) const
+    void GameSceneLayer::render(CommandWriter& cmd, Vector2 center, uint32_t width, uint32_t height, uint32_t outputWidth, uint32_t outputHeight) const
     {
         float screenCenterX = width / 2.0f;
         float screenCenterY = height / 2.0f;
@@ -479,27 +474,18 @@ namespace example
         float canvasOffsetX = center.x - screenCenterX;
         float canvasOffsetY = 0;// center.y - screenCenterY;
 
-		rendering::canvas::CanvasRenderer::Setup setup;
-		setup.width = width;
-		setup.height = height;
-		setup.backBufferColorRTV = vp.colorTarget;
-		setup.backBufferDepthRTV = vp.depthTarget;
-		setup.backBufferLayout = vp.passLayout;
-		setup.pixelScale = 1.0f;
+        Canvas::Setup setup;
+        setup.width = width;
+        setup.height = height;
+        setup.pixelOffset.x = -canvasOffsetX;
+        setup.pixelOffset.y = -canvasOffsetY;
+        setup.pixelScale = 1.0f;
 
-		// render test to canvas
-		{
-			rendering::canvas::CanvasRenderer canvas(setup, m_storage);
-
-
-        Canvas canvas(width, height, nullptr, -canvasOffsetX, -canvasOffsetY, 1.0f); // TODO: DPI
+        Canvas canvas(setup);
         canvas.scissorBounds(canvasOffsetX, 0.0f, canvasOffsetX + width, height);
         render(canvas);
 
-        CanvasRenderingParams params;
-        params.frameBufferWidth = outputWidth;
-        params.frameBufferHeight = outputHeight;
-        GetService<CanvasRenderingService>()->render(cmd, canvas, params);
+        GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
     }
 
     void GameSceneLayer::debug(int index)

@@ -83,7 +83,7 @@ namespace rendering
 			m_sampledImageSRV = m_sampledImage->createSampledView();
 
             m_filterMode = subTestIndex() ? MipmapFilterMode::Linear : MipmapFilterMode::Nearest;
-            m_shader = loadGraphicsShader("SamplerFiltering.csl", outputLayoutNoDepth());
+            m_shader = loadGraphicsShader("SamplerFiltering.csl");
         }
 
         void RenderingTest_SamplerMinMaxLod::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -91,7 +91,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
             {

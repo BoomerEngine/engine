@@ -59,10 +59,6 @@ namespace rendering
 			RenderTargetViewPtr m_cubeMapDepthSeparateRTV[6];
 			RenderTargetViewPtr m_cubeMapDepthArrayRTV;
 
-			GraphicsPassLayoutObjectPtr m_cubeMapPassLayout;
-			GraphicsPassLayoutObjectPtr m_shadowMapPassLayout;
-			GraphicsPassLayoutObjectPtr m_renderToCubeMapLayout;
-
             GraphicsPipelineObjectPtr m_shaderDrawToShadowMap;
 			GraphicsPipelineObjectPtr m_shaderDrawToReflectionCube;
 			GraphicsPipelineObjectPtr m_shaderDrawToReflectionCubeGS;
@@ -93,10 +89,6 @@ namespace rendering
 			m_sceneSphere = CreateSphereScene(*this, m_reflectionCenter, 0.3f);
 
 			{
-				GraphicsPassLayoutSetup setup;
-				setup.depth.format = ImageFormat::D32;
-				m_shadowMapPassLayout = createPassLayout(setup);
-
 				GraphicsRenderStatesSetup render;
 				render.depth(true);
 				render.depthWrite(true);
@@ -105,22 +97,17 @@ namespace rendering
 				render.depthBias(true);
 				render.depthBiasValue(500);
 				render.depthBiasSlope(1.0f);
-				m_shaderDrawToShadowMap = loadGraphicsShader("GenericScene.csl", m_shadowMapPassLayout, &render);
+				m_shaderDrawToShadowMap = loadGraphicsShader("GenericScene.csl", &render);
 			}
 
 			{
-				GraphicsPassLayoutSetup setup;
-				setup.depth.format = ImageFormat::D32;
-				setup.color[0].format = ImageFormat::RGBA8_UNORM;
-				m_renderToCubeMapLayout = createPassLayout(setup);
-
 				GraphicsRenderStatesSetup render;
 				render.depth(true);
 				render.depthWrite(true);
 				render.depthFunc(CompareOp::Less);
 				render.cull(false);
-				m_shaderDrawToReflectionCube = loadGraphicsShader("GenericScenePoisonShadows.csl", m_renderToCubeMapLayout, &render);
-				m_shaderDrawToReflectionCubeGS = loadGraphicsShader("GenericScenePoisonShadowsGS.csl", m_renderToCubeMapLayout, &render);
+				m_shaderDrawToReflectionCube = loadGraphicsShader("GenericScenePoisonShadows.csl", &render);
+				m_shaderDrawToReflectionCubeGS = loadGraphicsShader("GenericScenePoisonShadowsGS.csl", &render);
 			}
 
 			{
@@ -128,7 +115,7 @@ namespace rendering
 				render.depth(true);
 				render.depthWrite(true);
 				render.depthFunc(CompareOp::LessEqual);
-				m_shaderScene = loadGraphicsShader("GenericScenePoisonShadows.csl", outputLayoutWithDepth(), &render);
+				m_shaderScene = loadGraphicsShader("GenericScenePoisonShadows.csl", &render);
 				//m_shaderScene = loadGraphicsShader("GenericScene.csl", m_shadowMapPassLayout, &render);
 			}
 
@@ -137,7 +124,7 @@ namespace rendering
 				render.depth(true);
 				render.depthWrite(true);
 				render.depthFunc(CompareOp::LessEqual);
-				m_shaderReflection = loadGraphicsShader("GenericSceneReflection.csl", outputLayoutWithDepth(), &render);
+				m_shaderReflection = loadGraphicsShader("GenericSceneReflection.csl", &render);
 				//m_shaderScene = loadGraphicsShader("GenericScene.csl", m_shadowMapPassLayout, &render);
 			}
 
@@ -248,7 +235,7 @@ namespace rendering
                     FrameBuffer fb;
                     fb.depth.view(m_shadowMapRTV).clearDepth(1.0f).clearStencil(0);
 
-                    cmd.opBeingPass(m_shadowMapPassLayout, fb);
+                    cmd.opBeingPass(fb);
                     m_scene->draw(cmd, m_shaderDrawToShadowMap, camera);
 					m_sceneSphere->draw(cmd, m_shaderDrawToShadowMap, camera);
                     cmd.opEndPass();
@@ -301,7 +288,7 @@ namespace rendering
 					fb.depth.view(m_cubeMapDepthSeparateRTV[i]).clearDepth(1.0f).clearStencil(0);
 
 					{
-						cmd.opBeingPass(m_renderToCubeMapLayout, fb);
+						cmd.opBeingPass(fb);
 
 						SceneCamera camera;
 						camera.setupCubemap(m_reflectionCenter, i);
@@ -321,7 +308,7 @@ namespace rendering
 				fb.depth.view(m_cubeMapDepthArrayRTV).clearDepth(1.0f).clearStencil(0);
 
 				{
-					cmd.opBeingPass(m_renderToCubeMapLayout, fb);
+					cmd.opBeingPass(fb);
 
 					SceneCamera cameras[6];
 					for (uint32_t i = 0; i < 6; ++i)
@@ -357,7 +344,7 @@ namespace rendering
 				fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);
 				fb.depth.view(backBufferDepth).clearDepth(1.0f).clearStencil(0);
 
-				cmd.opBeingPass(outputLayoutWithDepth(), fb);
+				cmd.opBeingPass(fb);
 
 				// render scene
 				m_scene->draw(cmd, m_shaderScene, camera);

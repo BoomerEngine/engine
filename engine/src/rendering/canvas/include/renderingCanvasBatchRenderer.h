@@ -38,11 +38,8 @@ namespace rendering
 
 			//--
 
-			/// prepare rendering for given pass layout
-			virtual void prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass) = 0;
-
             /// initialize handler, may allocate resources, load shaders, etc
-            virtual bool initialize(IDevice* drv) = 0;
+            virtual bool initialize(const CanvasRenderStates& renderStates, IDevice* drv) = 0;
 
 			//--
 
@@ -79,25 +76,16 @@ namespace rendering
 			virtual ShaderFilePtr loadMainShaderFile() = 0;
 
 		protected:
-			virtual bool initialize(IDevice* drv) override final;
-			virtual void prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass) override final;
+			virtual bool initialize(const CanvasRenderStates& renderStates, IDevice* drv) override final;
 			virtual void render(command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override;
+
+			virtual const GraphicsPipelineObject* selectShader(command::CommandWriter& cmd, const RenderData& data) const;
 
 			static const auto MAX_BLEND_OPS = (int)base::canvas::BlendOp::MAX;
 
-			struct ShaderGroup
-			{
-				uint64_t layoutKey = 0;
-
-				GraphicsPipelineObjectPtr m_mask;
-				GraphicsPipelineObjectPtr m_standardFill[MAX_BLEND_OPS];
-				GraphicsPipelineObjectPtr m_maskedFill[MAX_BLEND_OPS];
-
-				const GraphicsPipelineObject* selectShader(command::CommandWriter& cmd, const RenderData& data) const;
-			};
-
-			const ShaderGroup* m_activeShaderGroup = nullptr;
-			base::InplaceArray<ShaderGroup, 2> m_shaderGroups;
+			GraphicsPipelineObjectPtr m_mask;
+			GraphicsPipelineObjectPtr m_standardFill[MAX_BLEND_OPS];
+			GraphicsPipelineObjectPtr m_maskedFill[MAX_BLEND_OPS];
 
 			ShaderObjectPtr m_shaderFill;
 			ShaderObjectPtr m_shaderMask;

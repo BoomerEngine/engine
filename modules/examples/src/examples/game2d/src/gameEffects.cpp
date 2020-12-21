@@ -15,7 +15,7 @@ namespace example
 
     static base::res::StaticResource<ShaderFile> resSkyShader("/examples/canvas/shaders/plasma_sky.fx");
 
-    void RenderSky(CommandWriter& cmd, GraphicsPassLayoutObject* pass, uint32_t width, uint32_t height, Vector2 center, float time)
+    void RenderSky(CommandWriter& cmd, uint32_t width, uint32_t height, Vector2 center, float time)
     {
 		struct
 		{

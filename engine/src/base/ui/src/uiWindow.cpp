@@ -183,7 +183,7 @@ namespace ui
         }
     }
 
-    void Window::render(base::canvas::Canvas& canvas, HitCache& hitCache, const ElementArea& nativeArea)
+    void Window::render(base::canvas::Canvas& canvas, HitCache& hitCache, DataStash& stash, const ElementArea& nativeArea)
     {
         PC_SCOPE_LVL1(RenderWindow);
 
@@ -191,7 +191,7 @@ namespace ui
         canvas.scissorRect(nativeArea.absolutePosition(), nativeArea.size());
 
         // render into provided area
-        IElement::render(hitCache, nativeArea, nativeArea, canvas, 1.0f, nullptr);
+        IElement::render(hitCache, stash, nativeArea, nativeArea, canvas, 1.0f, nullptr);
     }
 
     void Window::handleExternalCloseRequest()
@@ -199,9 +199,9 @@ namespace ui
         requestClose();
     }
 
-    void Window::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void Window::renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 
         //if (mergedOpacity)
 
@@ -209,7 +209,7 @@ namespace ui
             canvas.clearColor(m_clearColor);
     }
 
-    void Window::prepareBackgroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void Window::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
         if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
         {
@@ -221,7 +221,7 @@ namespace ui
             else
             {
                 m_clearColorHack = false;
-                TBaseClass::prepareBackgroundGeometry(drawArea, pixelScale, builder);
+                TBaseClass::prepareBackgroundGeometry(stash, drawArea, pixelScale, builder);
             }
         }
     }

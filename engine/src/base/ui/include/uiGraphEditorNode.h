@@ -180,15 +180,15 @@ namespace ui
         virtual void updateActualPosition(const base::Vector2& pos) override;
 
         virtual void computeSize(Size& outSize) const override;
-        virtual void prepareBoundaryGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset) const override;
-        virtual void prepareBackgroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual void prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual void renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity);
+        virtual void prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset) const override;
+        virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
         virtual bool adjustBackgroundStyle(base::canvas::RenderStyle& outStyle, float& outBorderWidth) const override;
         virtual bool adjustBorderStyle(base::canvas::RenderStyle& outStyle, float& outBorderWidth) const override;
 
-        void prepareBlockOutline(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const;
+        void prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const;
         Size computeLayoutWithTitle(const Size& innerContentSize, float innerPadding, GraphEditorNodeInternalLayout& outLayout) const;
         Size computeLayoutNoTitle(const Size& innerContentSize, float innerPadding, bool adjustForSlant, GraphEditorNodeInternalLayout& outLayout) const;
         Size computeLayoutCircleLike(const Size& innerContentSize, float innerPadding, GraphEditorNodeInternalLayout& outLayout) const;

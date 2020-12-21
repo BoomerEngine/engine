@@ -57,7 +57,6 @@ namespace ui
 			uint32_t width = 0;
 			uint32_t height = 0;
 
-			const rendering::GraphicsPassLayoutObject* passLayout = nullptr;
 			const rendering::RenderTargetView* colorBuffer = nullptr;
 			const rendering::RenderTargetView* depthBuffer = nullptr;
 			const rendering::scene::FrameParams_Capture* capture = nullptr;
@@ -89,7 +88,7 @@ namespace ui
         base::Point m_renderTargetOffset = base::Point(0, 0);
         int m_renderTargetZoom = 0;
 
-        virtual void renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
 		//--
 
@@ -98,7 +97,6 @@ namespace ui
 		rendering::RenderTargetViewPtr m_colorSurfaceRTV;
 		rendering::ImageSampledViewPtr m_colorSurfaceSRV;
 		rendering::RenderTargetViewPtr m_depthSurfaceRTV;
-		rendering::GraphicsPassLayoutObjectPtr m_passLayout;
 
 		base::canvas::Geometry* m_quadGeometry;
 

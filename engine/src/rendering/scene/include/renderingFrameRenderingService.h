@@ -30,7 +30,6 @@ namespace rendering
 		{
 			const RenderTargetView* targetColorRTV = nullptr;
 			const RenderTargetView* targetDepthRTV = nullptr;
-			const GraphicsPassLayoutObject* targetLayout = nullptr;
 			base::Rect targetRect;
 		};
 

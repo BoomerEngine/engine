@@ -109,7 +109,7 @@ namespace rendering
 			GraphicsRenderStatesSetup setup;
 			setup.primitiveTopology(PrimitiveTopology::PointList);
 
-            m_shaders = loadGraphicsShader("UniformBufferRead.csl", outputLayoutNoDepth(), &setup);
+            m_shaders = loadGraphicsShader("UniformBufferRead.csl", &setup);
         }
 
         void RenderingTest_UniformBufferRead::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -117,7 +117,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             
 			DescriptorEntry desc[1];
 			desc[0] = m_constantView;

@@ -108,14 +108,10 @@ namespace rendering
 
 	//--
 
-	struct GraphicsPassLayoutSetup;	
 	struct GraphicsRenderStatesSetup;
 
 	class GraphicsRenderStatesObject;
 	typedef base::RefPtr<GraphicsRenderStatesObject> GraphicsRenderStatesObjectPtr;
-
-	class GraphicsPassLayoutObject;
-	typedef base::RefPtr<GraphicsPassLayoutObject> GraphicsPassLayoutObjectPtr;
 
 	class GraphicsPipelineObject;
 	typedef base::RefPtr<GraphicsPipelineObject> GraphicsPipelineObjectPtr;
@@ -301,6 +297,23 @@ namespace rendering
         Mesh,
 
         MAX,
+    };
+
+    //--
+
+	// how is stuff loaded into the RT
+    enum class LoadOp : uint8_t
+    {
+        Keep, // keep data that exists in the memory
+        Clear, // clear the attachment when binding
+        DontCare, // we don't care (fastest, can produce artifacts if all pixels are not written)
+    };
+
+    // how is stuff stored to memory after pass ends
+    enum class StoreOp : uint8_t
+    {
+        Store, // store the data into the memory
+        DontCare, // we don't care (allows to use Discard)
     };
 
     //--

@@ -31,7 +31,6 @@ namespace rendering
             uint32_t height = 0;
             RenderTargetViewPtr color; // NOTE: rt size may be bigger than window size
             RenderTargetViewPtr depth; // NOTE: may be null (some windows only have color surface)
-			GraphicsPassLayoutObjectPtr layout; // layout of the returned back buffer (formats + msaa)
 
             INLINE AcquiredOutput() {}
             INLINE operator bool() const { return width != 0 && height != 0; }
@@ -56,7 +55,6 @@ namespace rendering
 		struct StashedFrameBuffer
 		{
 			//FrameBuffer fb;
-			const GraphicsPassLayoutObject* layout = nullptr;
 			uint8_t numViewports = 0;
 			base::InplaceArray<base::Rect, 1> viewports;
 			base::InplaceArray<base::Vector2, 1> depthRanges;
@@ -91,21 +89,18 @@ namespace rendering
             
             //--
 
-			/// get current render target layout
-			INLINE GraphicsPassLayoutObject* currentPassLayout() const { return m_currentPassLayout; }
-
             // bind a frame buffer for pixel rendering, only one frame buffer can be bound at any given time
             // NOTE: draw commands only work when there is bound pass
             // NOTE: starting a pass resets ALL of the active graphics render states (blending, depth, stencil, etc...)
 			// NOTE: starting a pass resets all viewports and scissor states to full render target area unless specified differently in the frame buffer
 			// NOTE: number of viewports must be known at the beginning of the pess
-            void opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount = 1, const base::Rect& drawArea = base::Rect::EMPTY());
+            void opBeingPass(const FrameBuffer& frameBuffer, uint8_t viewportCount = 1, const base::Rect& drawArea = base::Rect::EMPTY());
 
             // finish rendering to a frame buffer, optionally resolve MSSA targets into non-MSAA ones
             void opEndPass();
 
 			// clear given frame buffer without the whole hassle of "being/end pass"
-			void opClearFrameBuffer(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, const base::Rect* area = nullptr);
+			void opClearFrameBuffer(const FrameBuffer& frameBuffer, const base::Rect* area = nullptr);
 
             /// fill current color render target to single color
             void opClearPassRenderTarget(uint32_t index, const base::Vector4& color);
@@ -373,8 +368,6 @@ namespace rendering
             uint8_t* m_writeEndPtr = nullptr;
             CommandBuffer* m_writeBuffer = nullptr;
 
-			GraphicsPassLayoutObjectPtr m_currentPassLayout;
-
             OpBeginPass* m_currentPass = nullptr;
             uint8_t m_numOpenedBlocks = 0;
             uint8_t m_currentPassRts = 0;
@@ -422,7 +415,7 @@ namespace rendering
             bool validateDrawVertexLayout(const ShaderMetadata* meta, uint32_t requiredVertexCount, uint32_t requiredInstanceCount);
 			bool validateDrawIndexLayout(uint32_t requiredElementCount);
 			bool validateIndirectDraw(const BufferObject* buffer, uint32_t offsetInBuffer, uint32_t commandStride);
-			bool validateFrameBuffer(const FrameBuffer& fb, const GraphicsPassLayoutObject* layout, uint32_t* outWidth=nullptr, uint32_t* outHeight = nullptr);
+			bool validateFrameBuffer(const FrameBuffer& fb, uint32_t* outWidth=nullptr, uint32_t* outHeight = nullptr);
 
 			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorInfo* layout, const DescriptorEntry* entries, uint32_t count);
             void* allocConstants(uint32_t size, const command::OpUploadConstants*& outCommand);

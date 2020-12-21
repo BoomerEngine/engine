@@ -46,8 +46,8 @@ namespace rendering
 
         void RenderingTest_FormatBufferWrite::initialize()
         {
-            m_shaderGenerate = loadGraphicsShader("FormatBufferWriteGenerate.csl", outputLayoutNoDepth());
-            m_shaderTest = loadGraphicsShader("FormatBufferWriteTest.csl", outputLayoutNoDepth());
+            m_shaderGenerate = loadGraphicsShader("FormatBufferWriteGenerate.csl");
+            m_shaderTest = loadGraphicsShader("FormatBufferWriteTest.csl");
 
             m_tempBuffer = createStorageBuffer(2 * sizeof(base::Vector4) * MAX_ELEMENTS);
 			m_tempBufferUAV = m_tempBuffer->createWritableView(ImageFormat::RGBA32F);
@@ -59,7 +59,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             float yScale = 0.05f;
             for (float y = -1.0f; y < 1.0f; y += yScale)

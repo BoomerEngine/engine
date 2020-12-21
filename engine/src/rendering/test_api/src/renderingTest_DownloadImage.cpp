@@ -116,8 +116,6 @@ namespace rendering
 			RenderTargetViewPtr m_depthBufferRTV;
 			ImageSampledViewPtr m_depthBufferSRV;
 
-			GraphicsPassLayoutObjectPtr m_renderToTextureLayout;
-
 			ImageObjectPtr m_displayImage;
 			ImageSampledViewPtr m_displayImageSRV;
 
@@ -142,20 +140,14 @@ namespace rendering
         {
 			m_showDepth = subTestIndex() & 1;
 
-			GraphicsPassLayoutSetup setup;
-			setup.depth.format = ImageFormat::D24S8;
-			setup.color[0].format = ImageFormat::RGBA8_UNORM;
-
-			m_renderToTextureLayout = createPassLayout(setup);
-
 			GraphicsRenderStatesSetup render;
 			render.depth(true);
 			render.depthWrite(true);
 			render.depthFunc(CompareOp::LessEqual);
 
             // load shaders
-            m_shaderDraw = loadGraphicsShader("GenericScene.csl", m_renderToTextureLayout, &render);
-			m_shaderPreview = loadGraphicsShader("GenericGeometryWithTexture.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("GenericScene.csl", &render);
+			m_shaderPreview = loadGraphicsShader("GenericGeometryWithTexture.csl");
 
             // load scene
             m_scene = CreateTeapotScene(*this);
@@ -260,7 +252,7 @@ namespace rendering
 					fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0.0f);
 				}
 
-				cmd.opBeingPass(m_renderToTextureLayout, fb);
+				cmd.opBeingPass(fb);
 				m_scene->draw(cmd, m_shaderDraw, camera);
 				cmd.opEndPass();
 			}
@@ -327,7 +319,7 @@ namespace rendering
 			// render preview
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             {
 				DescriptorEntry desc[1];
 				desc[0] = m_displayImageSRV;

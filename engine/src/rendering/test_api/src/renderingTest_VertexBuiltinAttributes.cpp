@@ -65,7 +65,7 @@ namespace rendering
         {
             GenerateTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, NUM_ELEMENTS, m_indexedTriList);
             m_indexedTriList.createBuffers(*this);
-            m_shaders = loadGraphicsShader("VertexBuiltinAttributes.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("VertexBuiltinAttributes.csl");
         }
 
         void RenderingTest_VertexBuiltinAttributes::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -73,7 +73,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			struct
 			{

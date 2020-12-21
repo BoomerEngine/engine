@@ -13,7 +13,6 @@
 #include "gl4CopyQueue.h"
 #include "gl4ObjectCache.h"
 #include "gl4Executor.h"
-#include "gl4GraphicsPassLayout.h"
 #include "gl4Shaders.h"
 #include "gl4Sampler.h"
 #include "gl4Image.h"
@@ -365,11 +364,6 @@ namespace rendering
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
 				return new Shaders(this, data);
-			}
-
-			IBaseGraphicsPassLayout* Thread::createOptimalPassLayout(const GraphicsPassLayoutSetup& info)
-			{
-				return new GraphicsPassLayout(this, info);
 			}
 
 			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)

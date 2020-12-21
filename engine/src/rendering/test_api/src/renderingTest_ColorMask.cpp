@@ -76,7 +76,7 @@ namespace rendering
 				GraphicsRenderStatesSetup setup;
 				setup.colorMask(0, 1U << i);
 
-				m_shader[i] = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+				m_shader[i] = loadGraphicsShader("SimpleVertexColor.csl", &setup);
 			}
         }
 
@@ -85,7 +85,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
 			for (uint32_t i=0; i<4; ++i)

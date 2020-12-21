@@ -78,7 +78,7 @@ namespace rendering
 
         void RenderingTest_GeometryShader::initialize()
         {
-            m_shaders = loadGraphicsShader("GeometryShader.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("GeometryShader.csl");
 
             // generate test geometry
             base::Array<Simple3DVertex> vertices;
@@ -92,7 +92,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);

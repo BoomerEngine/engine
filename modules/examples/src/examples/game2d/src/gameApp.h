@@ -47,8 +47,6 @@ namespace example
 
 		ImGui::ImGUICanvasHelper* m_imguiHelper = nullptr;
 
-		base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
-
         bool m_paused = false;
         float m_timeScale = 1.0f;
 

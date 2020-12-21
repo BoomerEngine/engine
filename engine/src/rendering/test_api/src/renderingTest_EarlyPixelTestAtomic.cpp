@@ -74,21 +74,21 @@ namespace rendering
 				setup.depth(true);
 				setup.depthWrite(true);
 				setup.depthFunc(CompareOp::Less);
-				m_shaderOccluder = loadGraphicsShader("EarlyFragmentTestsOccluder.csl", outputLayoutWithDepth(), &setup);
-				m_shaderGenerateA = loadGraphicsShader("EarlyFragmentTestsGenerateNormal.csl", outputLayoutWithDepth(), &setup);
-				m_shaderGenerateB = loadGraphicsShader("EarlyFragmentTestsGenerateEarlyTests.csl", outputLayoutWithDepth(), &setup);
+				m_shaderOccluder = loadGraphicsShader("EarlyFragmentTestsOccluder.csl", &setup);
+				m_shaderGenerateA = loadGraphicsShader("EarlyFragmentTestsGenerateNormal.csl", &setup);
+				m_shaderGenerateB = loadGraphicsShader("EarlyFragmentTestsGenerateEarlyTests.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::LineStrip);
-				m_shaderDraw = loadGraphicsShader("EarlyFragmentTestsDraw.csl", outputLayoutWithDepth(), &setup);
+				m_shaderDraw = loadGraphicsShader("EarlyFragmentTestsDraw.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::LineStrip);
-				m_shaderClearVS = loadGraphicsShader("EarlyFragmentTestsClearVS.csl", outputLayoutWithDepth(), &setup);
+				m_shaderClearVS = loadGraphicsShader("EarlyFragmentTestsClearVS.csl", &setup);
 			}
 
 			{
@@ -152,7 +152,7 @@ namespace rendering
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
             fb.depth.view(depth).clearDepth(1.0f).clearStencil(0);
 
-            cmd.opBeingPass(outputLayoutWithDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			// clear
 			if (m_clearMode == 0)

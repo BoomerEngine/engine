@@ -52,7 +52,7 @@ namespace rendering
 			m_displayImage = createChecker2D(1024, 64, false, base::Color::WHITE, base::Color::LIGHTSLATEGRAY);
 			m_displayImageSRV = m_displayImage->createReadOnlyView();
 
-            m_shaders = loadGraphicsShader("TextureLoad.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("TextureLoad.csl");
         }
 
         void RenderingTest_ImageCopyRect::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -102,7 +102,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry desc[1];
 			desc[0] = m_displayImageSRV;

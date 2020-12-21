@@ -36,9 +36,6 @@ namespace rendering
 
 			ShaderObjectPtr m_drawShader;
 
-			GraphicsPassLayoutObjectPtr m_passStandard;
-			GraphicsPassLayoutObjectPtr m_passOverlay;
-
             GraphicsRenderStatesObjectPtr m_renderStatesSolidTriangles;
             GraphicsRenderStatesObjectPtr m_renderStatesSolidLines;
             GraphicsRenderStatesObjectPtr m_renderStatesTransparentTriangles;

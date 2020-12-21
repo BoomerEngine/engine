@@ -135,8 +135,8 @@ namespace rendering
 
         //--
 
-        OutputObjectProxy::OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window, GraphicsPassLayoutObject* layout)
-            : rendering::IOutputObject(id, impl, flipped, window, layout)
+        OutputObjectProxy::OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window)
+            : rendering::IOutputObject(id, impl, flipped, window)
         {}
 
         bool OutputObjectProxy::prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport)

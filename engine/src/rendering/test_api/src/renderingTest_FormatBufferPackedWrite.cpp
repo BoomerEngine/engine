@@ -64,8 +64,8 @@ namespace rendering
 
             m_vertexBuffer = createVertexBuffer(vertices.dataSize(), vertices.data());
 
-            m_shaderGenerate = loadGraphicsShader("FormatBufferPackedWriteGenerate.csl", outputLayoutNoDepth());
-            m_shaderDraw = loadGraphicsShader("FormatBufferPackedWriteTest.csl", outputLayoutNoDepth());
+            m_shaderGenerate = loadGraphicsShader("FormatBufferPackedWriteGenerate.csl");
+            m_shaderDraw = loadGraphicsShader("FormatBufferPackedWriteTest.csl");
 
             m_tempBuffer = createStorageBuffer(4 * SIDE_RESOLUTION * SIDE_RESOLUTION);
 			m_tempBufferSRV = m_tempBuffer->createView(ImageFormat::RG16F);
@@ -88,7 +88,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             {
 				DescriptorEntry desc[2];

@@ -20,8 +20,8 @@ namespace rendering
 
 			//--
 
-			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates)
-				: IBaseGraphicsPipeline(owner, shaders, passLayout, mergedRenderStates)
+			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
+				: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
 			{
 			}
 

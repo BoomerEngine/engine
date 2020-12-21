@@ -89,29 +89,13 @@ namespace rendering
 
 			m_quadVertices = createVertexBuffer(sizeof(Simple3DVertex) * 6, nullptr);
 
-			{
-				GraphicsPassLayoutSetup layout;
-				layout.color[0] = output->layout()->layout().color[0];
-				layout.depth = output->layout()->layout().depth;
-				m_outputLayoutWithDepth = createPassLayout(layout);
-			}
-
-			{
-				GraphicsPassLayoutSetup layout;
-				layout.color[0] = output->layout()->layout().color[0];
-				//layout.depth = output->layout()->layout().depth;
-				m_outputLayoutNoDepth = createPassLayout(layout);
-			}
-
-            initialize();
+			initialize();
 
             return !m_hasErrors;
         }
 
-        GraphicsPipelineObjectPtr IRenderingTest::loadGraphicsShader(base::StringView partialPath, const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesSetup* states /*= nullptr*/, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
+        GraphicsPipelineObjectPtr IRenderingTest::loadGraphicsShader(base::StringView partialPath, const GraphicsRenderStatesSetup* states /*= nullptr*/, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
         {
-			DEBUG_CHECK_RETURN_EX_V(passLayout, "Pass layout must be specified", nullptr);
-
 			// load shader
 			auto res = base::LoadResource<ShaderFile>(base::TempString("/engine/tests/shaders/{}", partialPath)).acquire();
 			if (!res)
@@ -140,7 +124,7 @@ namespace rendering
 				renderStates = createRenderStates(*states);
 
 			// create the PSO
-            return shader->deviceShader()->createGraphicsPipeline(passLayout, renderStates);
+            return shader->deviceShader()->createGraphicsPipeline(renderStates);
         }
 
 		ComputePipelineObjectPtr IRenderingTest::loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
@@ -188,27 +172,6 @@ namespace rendering
 			}
 
 			reportError("Failed to create render states");
-			return nullptr;
-		}
-
-		GraphicsPassLayoutObjectPtr IRenderingTest::createPassLayout(const GraphicsPassLayoutSetup& setup)
-		{
-			const auto key = setup.key();
-
-			GraphicsPassLayoutObjectPtr ret;
-			if (m_passLayoutsMap.find(key, ret))
-			{
-				DEBUG_CHECK(ret->layout() == setup);
-				return ret;
-			}
-
-			if (auto ret = m_device->createGraphicsPassLayout(setup))
-			{
-				m_passLayoutsMap[key] = ret;
-				return ret;
-			}
-
-			reportError("Failed to create pass layout");
 			return nullptr;
 		}
 
@@ -416,7 +379,10 @@ namespace rendering
 				for (const auto& atom : atoms)
 				{
 					const auto& data = m_data[atom.slice].m_mipmaps[atom.mip];
-					memcpy(atom.targetDataPtr, data->data(), atom.targetDataSize);
+
+                    base::image::ImageView targetView(base::image::NATIVE_LAYOUT, data->format(), data->channels(), atom.targetDataPtr, data->width(), data->height(), data->depth());
+                    base::image::Copy(data->view(), targetView);
+					//memcpy(atom.targetDataPtr, data->data(), atom.targetDataSize);
 				}
 			}
 

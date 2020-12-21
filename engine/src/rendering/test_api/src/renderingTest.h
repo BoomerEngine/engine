@@ -11,7 +11,6 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingShaderFile.h"
-#include "rendering/device/include/renderingGraphicsPassLayout.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
 #include "rendering/device/include/renderingFramebuffer.h"
 #include "rendering/device/include/renderingDescriptor.h"
@@ -256,12 +255,6 @@ namespace rendering
             // sub test
             INLINE uint32_t subTestIndex() const { return m_subTestIndex; }
 
-			// default (viewport) output layout
-			INLINE const GraphicsPassLayoutObject* outputLayoutNoDepth() const { return m_outputLayoutNoDepth; }
-
-			// default (viewport) output layout
-			INLINE const GraphicsPassLayoutObject* outputLayoutWithDepth() const { return m_outputLayoutWithDepth; }
-
             //--
 
             // prepare test
@@ -288,7 +281,7 @@ namespace rendering
             //--
 
 			// load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
-            GraphicsPipelineObjectPtr loadGraphicsShader(base::StringView partialPath, const GraphicsPassLayoutObject* pass, const GraphicsRenderStatesSetup* states = nullptr, const ShaderSelector& extraSelectors = ShaderSelector());
+            GraphicsPipelineObjectPtr loadGraphicsShader(base::StringView partialPath, const GraphicsRenderStatesSetup* states = nullptr, const ShaderSelector& extraSelectors = ShaderSelector());
 
 			// load shaders, NOTE: uses short path based in the engine/test/shaders/ directory
 			ComputePipelineObjectPtr loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors = ShaderSelector());
@@ -306,9 +299,6 @@ namespace rendering
 
 			// create render states
 			GraphicsRenderStatesObjectPtr createRenderStates(const GraphicsRenderStatesSetup& setup);
-
-			// create pass layout
-			GraphicsPassLayoutObjectPtr createPassLayout(const GraphicsPassLayoutSetup& setup);
 
             // create buffer
             BufferObjectPtr createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* initializationData = nullptr);
@@ -384,7 +374,6 @@ namespace rendering
             base::SpinLock m_allLoadedResourcesLock;
             base::Array<base::res::ResourcePtr> m_allLoadedResources;
             
-			base::HashMap<uint64_t, GraphicsPassLayoutObjectPtr> m_passLayoutsMap;
 			base::HashMap<uint64_t, GraphicsRenderStatesObjectPtr> m_renderStatesMap;
 
             bool m_hasErrors;
@@ -392,8 +381,6 @@ namespace rendering
             IDevice* m_device;
 
             BufferObjectPtr m_quadVertices;
-			GraphicsPassLayoutObjectPtr m_outputLayoutWithDepth;
-			GraphicsPassLayoutObjectPtr m_outputLayoutNoDepth;
 
             bool loadCubemapSide(base::Array<TextureSlice>& outSlices, base::StringView assetFile, bool createMipmaps /*= false*/);
         };

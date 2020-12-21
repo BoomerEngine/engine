@@ -34,11 +34,10 @@ namespace rendering
 	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IOutputObject);
 	RTTI_END_TYPE();
 
-    IOutputObject::IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window, GraphicsPassLayoutObject* layout)
+    IOutputObject::IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window)
         : IDeviceObject(id, impl)
         , m_flipped(flipped)
         , m_window(window)
-		, m_layout(AddRef(layout))
     {}
 
     ///--

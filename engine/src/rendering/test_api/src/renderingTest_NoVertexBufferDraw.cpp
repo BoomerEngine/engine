@@ -163,7 +163,7 @@ namespace rendering
 			{
 				case 0:
 				{
-					m_shaders = loadGraphicsShader("NoVertexBufferDraw.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("NoVertexBufferDraw.csl");
 					m_storageVerticesView = m_storageVertices->createView(ImageFormat::RGBA32F);
 					m_storageColorsView = m_storageColors->createView(ImageFormat::RGBA32F);
 					break;
@@ -171,7 +171,7 @@ namespace rendering
 
 				case 1:
 				{
-					m_shaders = loadGraphicsShader("NoVertexBufferDrawUAV.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("NoVertexBufferDrawUAV.csl");
 					m_storageVerticesView = m_storageVertices->createWritableView(ImageFormat::RGBA32F);
 					m_storageColorsView = m_storageColors->createWritableView(ImageFormat::RGBA32F);
 					break;
@@ -179,7 +179,7 @@ namespace rendering
 
 				case 2:
 				{
-					m_shaders = loadGraphicsShader("NoVertexBufferDrawStructured.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("NoVertexBufferDrawStructured.csl");
 					m_storageVerticesView = m_storageVertices->createStructuredView();
 					m_storageColorsView = m_storageColors->createStructuredView();
 					break;
@@ -187,7 +187,7 @@ namespace rendering
 
 				case 3:
 				{
-					m_shaders = loadGraphicsShader("NoVertexBufferDrawStructuredUAV.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("NoVertexBufferDrawStructuredUAV.csl");
 					m_storageVerticesView = m_storageVertices->createWritableStructuredView();
 					m_storageColorsView = m_storageColors->createWritableStructuredView();
 					break;
@@ -200,7 +200,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry params[2];
 			params[0] = m_storageVerticesView;

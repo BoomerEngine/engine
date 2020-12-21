@@ -161,7 +161,7 @@ namespace rendering
 		RTTI_DECLARE_VIRTUAL_CLASS(IOutputObject, IDeviceObject);
 
     public:
-        IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window, GraphicsPassLayoutObject* layout);
+        IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window);
 
         //--
 
@@ -171,10 +171,6 @@ namespace rendering
         /// get the "window like" interface for given output, allows for tighter UI integration
         /// NOTE: callable and usable from main thread only and valid only for outputs with windows
         INLINE INativeWindowInterface* window() const { return m_window; }
-
-		/// get render target layout of the output swapchain (does not change once created)
-		/// this can be used to create graphics PSO compatible with this output
-		INLINE const GraphicsPassLayoutObjectPtr& layout() const { return m_layout; }
 
         //--
 
@@ -190,8 +186,6 @@ namespace rendering
     private:
         INativeWindowInterface* m_window = nullptr;
         bool m_flipped = false;
-
-		GraphicsPassLayoutObjectPtr m_layout;
     };
 
     //---

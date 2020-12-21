@@ -117,7 +117,7 @@ namespace rendering
 					setup.cull(j != 0);
 					setup.cullFrontFace(FACE_MODES[i]);
 					setup.cullMode(CULL_MODES[j]);
-					m_testShader[i][j] = loadGraphicsShader("FrontFacing.csl", outputLayoutNoDepth(), &setup);
+					m_testShader[i][j] = loadGraphicsShader("FrontFacing.csl", &setup);
 				}
 			}
         }
@@ -127,7 +127,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
 			int pos = 0;

@@ -43,8 +43,6 @@ namespace rendering
 			RenderTargetViewPtr m_depthBufferRTV;
 			ImageSampledViewPtr m_depthBufferSRV;
 
-			GraphicsPassLayoutObjectPtr m_renderToTextureLayout;
-
             static const uint32_t SIZE = 512;
         };
 
@@ -56,14 +54,11 @@ namespace rendering
 
         void RenderingTest_RenderToMultipleTextures::initialize()
         {
-			GraphicsPassLayoutSetup setup;
-			setup.depth.format = ImageFormat::D24S8;
-			setup.color[0].format = ImageFormat::RGB10_A2_UNORM; // color
-			setup.color[1].format = ImageFormat::R32F; // depth
-			setup.color[2].format = ImageFormat::R11FG11FB10F; // normal
-			setup.color[3].format = ImageFormat::RG16F; // normal
-
-			m_renderToTextureLayout = createPassLayout(setup);
+			ImageFormat formats[4];
+			formats[0] = ImageFormat::RGB10_A2_UNORM; // color
+            formats[1] = ImageFormat::R32F; // depth
+            formats[2] = ImageFormat::R11FG11FB10F; // normal
+            formats[3] = ImageFormat::RG16F; // normal
 
 			GraphicsRenderStatesSetup render;
 			render.depth(true);
@@ -71,8 +66,8 @@ namespace rendering
 			render.depthFunc(CompareOp::LessEqual);
 
             // load shaders
-            m_shaderDraw = loadGraphicsShader("GenericSceneDeferredOutput.csl", m_renderToTextureLayout, &render);
-            m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("GenericSceneDeferredOutput.csl", &render);
+            m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl");
 
             // load scene
             m_scene = CreateTeapotScene(*this);
@@ -83,7 +78,7 @@ namespace rendering
 				rendering::ImageCreationInfo colorBuffer;
 				colorBuffer.allowRenderTarget = true;
 				colorBuffer.allowShaderReads = true;
-				colorBuffer.format = setup.color[i].format;
+				colorBuffer.format = formats[i];
 				colorBuffer.width = SIZE;
 				colorBuffer.height = SIZE;
 				m_colorBuffer[i] = createImage(colorBuffer);
@@ -126,7 +121,7 @@ namespace rendering
 				fb.color[3].view(m_colorBufferRTV[3]).clear(base::Vector4(0.0f, 0.0f, 0.0f, 1.0f));
 				fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0.0f);
 
-                cmd.opBeingPass(m_renderToTextureLayout, fb);
+                cmd.opBeingPass(fb);
                 m_scene->draw(cmd, m_shaderDraw, camera);
                 cmd.opEndPass();
             }
@@ -141,7 +136,7 @@ namespace rendering
 			// render preview
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             {
 				DescriptorEntry desc[1];
 				desc[0] = m_colorBufferSRV[0];

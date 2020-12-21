@@ -55,8 +55,6 @@ namespace rendering
 			RenderTargetViewPtr m_depthBufferRTV;
 			ImageSampledViewPtr m_depthBufferSRV;
 
-			GraphicsPassLayoutObjectPtr m_renderToTextureLayout;
-
 			base::FastRandState m_rnd;
 
             static const uint32_t SIZE = 512;
@@ -74,26 +72,18 @@ namespace rendering
 			m_showDepth = subTestIndex() & 1;
 			m_externalClear = subTestIndex() >= 2;
 
-			GraphicsPassLayoutSetup setup;
-			setup.depth.format = ImageFormat::D24S8;
-			setup.depth.loadOp = m_externalClear ? LoadOp::Keep : LoadOp::Clear;
-			setup.color[0].format = ImageFormat::RGBA8_UNORM;
-			setup.color[0].loadOp = m_externalClear ? LoadOp::Keep : LoadOp::Clear;
-
-			m_renderToTextureLayout = createPassLayout(setup);
-
 			GraphicsRenderStatesSetup render;
 			render.depth(true);
 			render.depthWrite(true);
 			render.depthFunc(CompareOp::LessEqual);
 
             // load shaders
-            m_shaderDraw = loadGraphicsShader("GenericScene.csl", m_renderToTextureLayout, &render);
+            m_shaderDraw = loadGraphicsShader("GenericScene.csl", &render);
 
             if (m_showDepth)
-                m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewDepth.csl", outputLayoutNoDepth());
+                m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewDepth.csl");
             else
-                m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl", outputLayoutNoDepth());
+                m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl");
 
             // load scene
             m_scene = CreateTeapotScene(*this);
@@ -182,7 +172,7 @@ namespace rendering
 					fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0.0f);
 				}
 
-                cmd.opBeingPass(m_renderToTextureLayout, fb);
+                cmd.opBeingPass(fb);
                 m_scene->draw(cmd, m_shaderDraw, camera);
                 cmd.opEndPass();
             }
@@ -194,7 +184,7 @@ namespace rendering
 			// render preview
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             {
 				DescriptorEntry desc[1];
 				desc[0] = m_showDepth ? m_depthBufferSRV : m_colorBufferSRV;

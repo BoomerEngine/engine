@@ -58,7 +58,7 @@ namespace rendering
 
         void RenderingTest_MultipleImageUpdates::initialize()
         {
-            m_shaders = loadGraphicsShader("MultipleImageUpdates.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("MultipleImageUpdates.csl");
 
             // generate test geometry
             {
@@ -84,7 +84,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			// skip ahead some numbers
 			base::FastRandState rng;

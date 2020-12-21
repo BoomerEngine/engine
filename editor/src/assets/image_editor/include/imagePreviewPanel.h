@@ -74,8 +74,8 @@ namespace ed
     private:
         ImagePreviewPanelSettings m_previewSettings;
 
-        virtual void renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual void renderBackground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
         virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 

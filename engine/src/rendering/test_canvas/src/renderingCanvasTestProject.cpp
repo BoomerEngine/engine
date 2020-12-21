@@ -287,7 +287,7 @@ namespace rendering
 						fb.color[0].view(output.color).clear(0.2, 0.2f, 0.2f, 1.0f);
 						fb.depth.view(output.depth).clearDepth().clearStencil();
 
-						cmd.opBeingPass(m_renderingOutput->layout(), fb);
+						cmd.opBeingPass(fb);
 
 						static auto* service = base::GetService<rendering::canvas::CanvasRenderService>();
 						service->render(cmd, canvas);

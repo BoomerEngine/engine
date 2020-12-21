@@ -63,7 +63,7 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shader = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth());
+            m_shader = loadGraphicsShader("SimpleVertexColor.csl");
         }
 
         void RenderingTest_TriangleVertexColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -71,7 +71,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
             cmd.opDraw(m_shader, 0, 9);
             cmd.opEndPass();

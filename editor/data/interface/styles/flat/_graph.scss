@@ -6,6 +6,7 @@
 VirtualArea {
 
 	background: image("images/graph_grid.png", wrap, color.scale($window-background, 120%));
+	//background: image("images/file.png", wrap, color.scale($window-background, 120%));
 	vertical-align: expand;
 	horizontal-align: expand;
 

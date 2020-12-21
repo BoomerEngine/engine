@@ -189,6 +189,8 @@ namespace base
 				Color color = Color::WHITE;
 				canvas::BlendOp op = canvas::BlendOp::AlphaPremultiplied;
 
+				bool wrap = false;
+
 				ImageEntry image;
 			};
 

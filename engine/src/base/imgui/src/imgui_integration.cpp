@@ -22,6 +22,7 @@ namespace ImGui
 	ImGUICanvasHelper::ImGUICanvasHelper()
 	{
 		m_searchPaths.emplaceBack("/engine/icons");
+        m_searchPaths.emplaceBack("/editor/interface/icons/");
 
 		m_atlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
 

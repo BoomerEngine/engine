@@ -23,10 +23,7 @@ namespace example
         if (!createWindow())
             return false;
 
-		auto dev = base::GetService<DeviceService>()->device();
-		m_storage = base::RefNew<rendering::canvas::CanvasStorage>(dev);
-
-		m_imguiHelper = new ImGui::ImGUICanvasHelper(m_storage);
+		m_imguiHelper = new ImGui::ImGUICanvasHelper();
 
         m_game = RefNew<Game>();
         return true;
@@ -151,28 +148,17 @@ namespace example
     {
         if (DebugPagesVisible())
         {
-			rendering::canvas::CanvasRenderer::Setup setup;
-			setup.width = vp.width;
-			setup.height = vp.height;
-			setup.backBufferColorRTV = vp.colorTarget;
-			setup.backBufferDepthRTV = vp.depthTarget;
-			setup.backBufferLayout = vp.passLayout;
-			setup.pixelScale = 1.0f;
+            base::canvas::Canvas canvas(vp.width, vp.height);
 
-			// render test to canvas
+			// ImGui
 			{
-				rendering::canvas::CanvasRenderer canvas(setup, m_storage);
-
-				// ImGui
-				{
-					m_imguiHelper->beginFrame(canvas, 0.01f);
-					DebugPagesRender();
-					m_game->debug();
-					m_imguiHelper->endFrame(canvas);
-				}
-
-				cmd.opAttachChildCommandBuffer(canvas.finishRecording());
+				m_imguiHelper->beginFrame(canvas, 0.01f);
+				DebugPagesRender();
+				m_game->debug();
+				m_imguiHelper->endFrame(canvas);
 			}
+
+            base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
         }
     }
 
@@ -187,7 +173,6 @@ namespace example
 			vp.height = output.height;
 			vp.colorTarget = output.color;
 			vp.depthTarget = output.depth;
-			vp.passLayout = output.layout;
 
 			m_game->render(cmd, vp);
 

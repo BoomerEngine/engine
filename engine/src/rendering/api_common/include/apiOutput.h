@@ -83,7 +83,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API OutputObjectProxy : public rendering::IOutputObject
 		{
 		public:
-			OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window, GraphicsPassLayoutObject* layout);
+			OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window);
 
 			virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) override final;
 			virtual void disconnect() override final;

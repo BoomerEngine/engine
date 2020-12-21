@@ -877,7 +877,7 @@ namespace ui
 					setup.pixelOffset.y = -windowArea.absolutePosition().y;
 
 					base::canvas::Canvas canvas(setup);
-					info.window->render(canvas, *info.hitCache, windowArea);
+					info.window->render(canvas, *info.hitCache, *m_stash, windowArea);
 
 					if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
 					{
@@ -1544,7 +1544,7 @@ namespace ui
 					setup.pixelOffset.y = -windowArea.absolutePosition().y;
 
 					base::canvas::Canvas canvas(setup);
-					info.window->render(canvas, *info.hitCache, windowArea);
+					info.window->render(canvas, *info.hitCache, *m_stash, windowArea);
 
 					if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
 					{

@@ -141,10 +141,14 @@ namespace rendering
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_SWIZZLE_A, GL_ALPHA));
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_BASE_LEVEL, 0));
 				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAX_LEVEL, setup().numMips - 1));
-				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-				GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+            
+				if (!setup().multisampled())
+				{
+                    GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+                    GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+				}
 			}
 
 			void Image::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
@@ -294,13 +298,13 @@ namespace rendering
 					const auto mipHeight = setup().calcMipHeight(atom.mip);
 					const auto mipDepth = setup().calcMipDepth(atom.mip);
 
-					const auto byteOffset = (atom.internalOffset * GetImageFormatInfo(setup().format).bitsPerPixel) / 8;
+					const auto pixelOffset = (atom.internalOffset * 8) / GetImageFormatInfo(setup().format).bitsPerPixel;
 					//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
 
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, byteOffset));
+					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, pixelOffset));
 
 					GLenum glBaseFormat = 0; // GL_RGBA
 					GLenum glBaseType = 0; // GL_FLOAT

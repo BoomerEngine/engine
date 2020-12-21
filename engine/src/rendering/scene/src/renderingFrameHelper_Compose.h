@@ -37,19 +37,8 @@ namespace rendering
 			void finalCompose(command::CommandWriter& cmd, const Setup& setup) const;
 
 		private:
-			struct Technique
-			{
-				ImageFormat format;
-
-				GraphicsPipelineObjectPtr pso;
-				GraphicsPassLayoutObjectPtr layout;
-			};
-
-			mutable base::InplaceArray<Technique, 4> m_techniques;
-
 			ShaderObjectPtr m_blitShaders;
-
-			const Technique* fetchTechnique(ImageFormat colorFormat) const;
+            GraphicsPipelineObjectPtr m_blitShadersPSO;
 
 			//--
 

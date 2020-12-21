@@ -161,8 +161,8 @@ namespace ui
 
         void renderStatusMessages(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) const;
 
-        virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual bool handleMouseWheel(const base::input::MouseMovementEvent& evt, float delta) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
     };

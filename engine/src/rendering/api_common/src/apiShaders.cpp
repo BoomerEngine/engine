@@ -12,7 +12,6 @@
 #include "apiThread.h"
 #include "apiGraphicsPipeline.h"
 #include "apiComputePipeline.h"
-#include "apiGraphicsPassLayout.h"
 #include "apiGraphicsRenderStates.h"
 
 #include "rendering/device/include/renderingShaderData.h"
@@ -49,13 +48,8 @@ namespace rendering
 			: ShaderObject(id, impl, metadata)
 		{}
 
-		GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats)
+		GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsRenderStatesObject* renderStats)
 		{
-			DEBUG_CHECK_RETURN_V(passLayout != nullptr, nullptr);
-
-			auto resolvedPassLayout = passLayout->resolveInternalApiObject<IBaseGraphicsPassLayout>();
-			DEBUG_CHECK_RETURN_V(resolvedPassLayout != nullptr, nullptr);
-
 			GraphicsRenderStatesSetup mergedStates = metadata()->renderStates;
 
 			if (renderStats)
@@ -64,18 +58,44 @@ namespace rendering
 					mergedStates.apply(apiRenderStates->setup());
 			}
 
+			const auto key = mergedStates.key();
+
+			auto lock = CreateLock(m_lock);
+
+			base::RefWeakPtr<GraphicsPipelineObject> psoRef;
+			if (m_pipelineObjectMap.find(key, psoRef))
+				if (auto pso = psoRef.lock())
+					return pso;
+
 			if (auto* obj = resolveInternalApiObject<IBaseShaders>())
-				if (auto* view = obj->createGraphicsPipeline_ClientApi(resolvedPassLayout, mergedStates))
-					return base::RefNew<rendering::GraphicsPipelineObject>(view->handle(), owner(), passLayout, renderStats, this);
+			{
+				if (auto* view = obj->createGraphicsPipeline_ClientApi(mergedStates))
+				{
+					auto ret = base::RefNew<rendering::GraphicsPipelineObject>(view->handle(), owner(), renderStats, this);
+					m_pipelineObjectMap[key] = ret;
+					return ret;
+				}
+			}
 
 			return nullptr;
 		}
 
 		ComputePipelineObjectPtr ShadersObjectProxy::createComputePipeline()
 		{
+			auto lock = CreateLock(m_lock);
+
+			if (auto ret = m_compilePipelineObject.lock())
+				return ret;
+
 			if (auto* obj = resolveInternalApiObject<IBaseShaders>())
+			{
 				if (auto* view = obj->createComputePipeline_ClientApi())
-					return base::RefNew<rendering::ComputePipelineObject>(view->handle(), owner(), this);
+				{
+					auto ret = base::RefNew<rendering::ComputePipelineObject>(view->handle(), owner(), this);
+					m_compilePipelineObject = ret;
+					return ret;
+				}
+			}
 
 			return nullptr;
 		}

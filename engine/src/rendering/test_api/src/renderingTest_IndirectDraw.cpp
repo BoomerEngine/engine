@@ -77,7 +77,7 @@ namespace rendering
 				m_indirectBufferUAV = m_indirectBuffer->createWritableStructuredView();
 			}
 
-            m_drawShader = loadGraphicsShader("GenericGeometryScaled.csl", outputLayoutNoDepth());
+            m_drawShader = loadGraphicsShader("GenericGeometryScaled.csl");
 			m_generateShader = loadComputeShader("ComputeGenerateSimpleDrawIndirect.csl");
         }
 
@@ -112,7 +112,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             
 			const auto size = 2.0f / SIZE;
 

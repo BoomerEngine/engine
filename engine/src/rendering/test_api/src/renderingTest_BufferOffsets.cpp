@@ -98,7 +98,7 @@ namespace rendering
 			GraphicsRenderStatesSetup states;
 			states.primitiveTopology(PrimitiveTopology::TriangleList);
 
-            m_shaders = loadGraphicsShader("BufferOffsets.csl", outputLayoutNoDepth(), &states);
+            m_shaders = loadGraphicsShader("BufferOffsets.csl", &states);
         }
 
         void RenderingTest_BufferOffsets::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -106,7 +106,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             //cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
             cmd.opBindIndexBuffer(m_indexedTriList.m_indexBuffer, rendering::ImageFormat::R16_UINT);

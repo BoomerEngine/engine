@@ -28,8 +28,6 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth) override final;
 
         private:
-			GraphicsPassLayoutObjectPtr m_renderToTextureLayout;
-
             GraphicsPipelineObjectPtr m_shaderDraw;
 			GraphicsPipelineObjectPtr m_shaderGenerate;
 
@@ -53,15 +51,8 @@ namespace rendering
         {
             m_sampleCount = 1 << subTestIndex();
 
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.samples = m_sampleCount;
-				setup.color[0].format = ImageFormat::RGBA8_UNORM;
-				m_renderToTextureLayout = createPassLayout(setup);
-			}
-
-            m_shaderDraw = loadGraphicsShader("SampleMaskPreview.csl", outputLayoutNoDepth());
-			m_shaderGenerate = loadGraphicsShader(base::TempString("SampleMaskGenerate{}.csl", subTestIndex()), m_renderToTextureLayout);
+            m_shaderDraw = loadGraphicsShader("SampleMaskPreview.csl");
+			m_shaderGenerate = loadGraphicsShader(base::TempString("SampleMaskGenerate{}.csl", subTestIndex()));
         }
 
         void RenderingTest_SampleMask::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -96,7 +87,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(m_colorBufferRTV).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(m_renderToTextureLayout, fb);
+                cmd.opBeingPass(fb);
 
                 drawQuad(cmd, m_shaderGenerate, -0.9f, -0.9f, 1.8f, 1.8f);
 
@@ -116,7 +107,7 @@ namespace rendering
             {
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
 				DescriptorEntry entry[1];
 				entry[0] = m_resolvedColorBufferSRV;

@@ -105,8 +105,8 @@ namespace rendering
 
         void RenderingTest_FlatAttribute::initialize()
         {
-            m_shaderNormal = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth());
-            m_shaderFlat = loadGraphicsShader("FlatAttribute.csl", outputLayoutNoDepth());
+            m_shaderNormal = loadGraphicsShader("GenericGeometry.csl");
+            m_shaderFlat = loadGraphicsShader("FlatAttribute.csl");
 
             float y = -0.9f;
             float ystep = 0.48f;
@@ -132,7 +132,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             m_indexedTriList1.draw(cmd, m_shaderNormal);
             m_indexedTriList2.draw(cmd, m_shaderFlat);

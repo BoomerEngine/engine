@@ -9,7 +9,6 @@
 #include "build.h"
 
 #include "apiGraphicsPipeline.h"
-#include "apiGraphicsPassLayout.h"
 #include "apiGraphicsRenderStates.h"
 #include "apiShaders.h"
 
@@ -19,9 +18,8 @@ namespace rendering
     {
 		//--
 
-		IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates)
+		IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
 			: IBaseObject(owner, ObjectType::GraphicsPipelineObject)
-			, m_passLayout(passLayout)
 			, m_mergedRenderStates(mergedRenderStates)
 			, m_shaders(shaders)
 		{
@@ -29,7 +27,6 @@ namespace rendering
 
 			base::CRC64 crc;
 			crc << m_shaders->key();
-			crc << m_passLayout->key();
 			crc << m_mergedRenderStatesKey;
 			m_key = crc;
 		}

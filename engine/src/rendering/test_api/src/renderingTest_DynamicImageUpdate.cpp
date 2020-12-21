@@ -66,7 +66,7 @@ namespace rendering
             m_sampledImage = createImage(info);
 			m_sampledImageSRV = m_sampledImage->createSampledView();
             
-            m_shaders = loadGraphicsShader("GenericGeometryWithTexture.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("GenericGeometryWithTexture.csl");
 
             m_stage = base::RefNew<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, IMAGE_SIZE, IMAGE_SIZE);
             base::image::Fill(m_stage->view(), &base::Vector4::ZERO());
@@ -127,7 +127,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry desc[1];
 			desc[0] = m_sampledImageSRV;

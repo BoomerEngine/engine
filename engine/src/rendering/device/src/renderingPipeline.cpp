@@ -28,29 +28,13 @@ namespace rendering
 	GraphicsRenderStatesObject::~GraphicsRenderStatesObject()
 	{}
 
-    //--
-
-	RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphicsPassLayoutObject);
-	RTTI_END_TYPE();
-
-	GraphicsPassLayoutObject::GraphicsPassLayoutObject(ObjectID id, IDeviceObjectHandler* impl, const GraphicsPassLayoutSetup& layout, uint64_t key)
-		: IDeviceObject(id, impl)
-		, m_layout(layout)
-		, m_key(key)
-	{}
-
-	GraphicsPassLayoutObject::~GraphicsPassLayoutObject()
-	{
-	}
-
 	//--
 
 	RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphicsPipelineObject);
 	RTTI_END_TYPE();
 
-	GraphicsPipelineObject::GraphicsPipelineObject(ObjectID id, IDeviceObjectHandler* impl, const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats, const ShaderObject* shaders)
+	GraphicsPipelineObject::GraphicsPipelineObject(ObjectID id, IDeviceObjectHandler* impl, const GraphicsRenderStatesObject* renderStats, const ShaderObject* shaders)
 		: IDeviceObject(id, impl)
-		, m_passLayout(AddRef(passLayout))
 		, m_renderStats(AddRef(renderStats))
 		, m_shaders(AddRef(shaders))
 	{}

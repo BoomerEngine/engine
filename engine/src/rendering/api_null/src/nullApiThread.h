@@ -42,7 +42,6 @@ namespace rendering
 				virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info) override final;
 				virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
 				virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
-				virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) override final;
 				virtual IBaseDownloadArea* createOptimalDownloadArea(uint32_t size) override final;
 
 				virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) override final;

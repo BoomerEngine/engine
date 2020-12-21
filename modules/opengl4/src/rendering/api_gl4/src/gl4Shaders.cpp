@@ -39,14 +39,11 @@ namespace rendering
 				}
 			}
 
-			IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup)
+			IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup)
 			{
-				DEBUG_CHECK_RETURN_V(passLayout != nullptr, nullptr);
 				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Vertex), "Shader bundle has no vertex shader", nullptr);
 				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Pixel), "Shader bundle has no pixel shader", nullptr);
-
-				auto* localPassLayout = static_cast<const GraphicsPassLayout*>(passLayout);
-				return new GraphicsPipeline(owner(), this, localPassLayout, setup);
+				return new GraphicsPipeline(owner(), this, setup);
 			}
 
 			IBaseComputePipeline* Shaders::createComputePipeline_ClientApi()

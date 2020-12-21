@@ -9,6 +9,8 @@
 #include "build.h"
 #include "uiStyleValue.h"
 #include "uiElementLayout.h"
+#include "uiDataStash.h"
+
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/utf8StringFunctions.h"
 #include "base/resource/include/resourceReferenceType.h"
@@ -251,7 +253,7 @@ namespace ui
             return ret;
         }
 
-        base::canvas::RenderStyle RenderStyle::evaluate(float pixelScale, const ElementArea& area) const
+        base::canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const
         {
             switch (type)
             {
@@ -298,8 +300,10 @@ namespace ui
                     else if (imageFlags & IMAGE_Y_STRETCH)
                         params.m_scaleY = sy / ey;
 
-					auto image = base::canvas::ImageEntry();
-                    auto renderStyle = base::canvas::ImagePattern(image, params);
+                    if (image && !cachedImageEntry)
+                        cachedImageEntry = stash.cacheImage(image, params.m_wrapU || params.m_wrapV);
+
+                    auto renderStyle = base::canvas::ImagePattern(cachedImageEntry, params);
                     renderStyle.innerColor = innerColor;
                     renderStyle.outerColor = outerColor;
                     return renderStyle;

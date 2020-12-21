@@ -20,7 +20,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GamePlayerAssets, base::IObject);
 
     public:
-        GamePlayerAssets(StringView baseDepotFolder);
+        GamePlayerAssets(base::canvas::DynamicAtlas* atlas, StringView baseDepotFolder);
 
         GameSpriteSequenceAssetPtr idle;
         GameSpriteSequenceAssetPtr walk;

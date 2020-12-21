@@ -41,8 +41,6 @@ namespace rendering
 			RenderTargetViewPtr m_depthBufferRTV;
 			ImageSampledViewPtr m_depthBufferSRV;
 
-			GraphicsPassLayoutObjectPtr m_renderToTextureLayout;
-
 			uint32_t m_numViewportsPerSide = 1;
 			uint32_t m_numViewports = 1;
 
@@ -61,20 +59,14 @@ namespace rendering
 			m_numViewportsPerSide = 1 + subTestIndex();
 			m_numViewports = m_numViewportsPerSide * m_numViewportsPerSide;
 
-			GraphicsPassLayoutSetup setup;
-			setup.depth.format = ImageFormat::D24S8;
-			setup.color[0].format = ImageFormat::RGBA8_UNORM;
-
-			m_renderToTextureLayout = createPassLayout(setup);
-
 			GraphicsRenderStatesSetup render;
 			render.depth(true);
 			render.depthWrite(true);
 			render.depthFunc(CompareOp::LessEqual);
 
             // load shaders
-            m_shaderDraw = loadGraphicsShader("GenericSceneViewportIndexGS.csl", m_renderToTextureLayout, &render);
-            m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("GenericSceneViewportIndexGS.csl", &render);
+            m_shaderPreview = loadGraphicsShader("RenderToTexturePreviewColor.csl");
 
             // load scene
             m_scene = CreateTeapotScene(*this);
@@ -129,7 +121,7 @@ namespace rendering
 				fb.color[0].view(m_colorBufferRTV).clear(base::Vector4(0.2f, 0.2f, 0.2f, 1.0f));
 				fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0.0f);
 
-                cmd.opBeingPass(m_renderToTextureLayout, fb, m_numViewports);
+                cmd.opBeingPass(fb, m_numViewports);
 
 				{
 					const auto viewportSize = SIZE / m_numViewportsPerSide;
@@ -156,7 +148,7 @@ namespace rendering
 			// render preview
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             {
 				DescriptorEntry desc[1];
 				desc[0] = m_colorBufferSRV;

@@ -120,9 +120,9 @@ namespace ui
         m_displayData->measure(outSize);
     }
 
-    void TextLabel::prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void TextLabel::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareShadowGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
     }
 
     namespace helper
@@ -221,9 +221,9 @@ namespace ui
         }*/
     }
 
-    void TextLabel::prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void TextLabel::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareForegroundGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 
         auto align = prv::LayoutHorizontalAlign::Left;
         switch (cachedLayoutParams().m_horizontalAlignment)

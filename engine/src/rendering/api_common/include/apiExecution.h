@@ -243,7 +243,6 @@ namespace rendering
 			base::InplaceArray<DescriptorState, 8> m_descriptorStateStack; // pushed descriptors (for child command buffer processing so nothing leaks)
 
 			ObjectID m_activeSwapchain;
-			ObjectID m_activePassLayout;
 			bool m_activeSwapchainAcquired = false;
 
 			//--

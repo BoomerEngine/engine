@@ -91,7 +91,7 @@ namespace Scintilla
         //--
 
         // ui implementation
-        virtual void renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual bool handleCursorQuery(const ui::ElementArea &area, const ui::Position &absolutePosition, base::input::CursorType &outCursorType) const override;
         virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea &area, const base::input::MouseClickEvent &evt) override;
         virtual bool handleMouseMovement(const base::input::MouseMovementEvent &evt) override;

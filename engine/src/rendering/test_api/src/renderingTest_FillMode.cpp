@@ -83,19 +83,19 @@ namespace rendering
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.fill(FillMode::Point);
-				m_shaderPoint = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+				m_shaderPoint = loadGraphicsShader("SimpleVertexColor.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.fill(FillMode::Line);
-				m_shaderLine = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+				m_shaderLine = loadGraphicsShader("SimpleVertexColor.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.fill(FillMode::Fill);
-				m_shaderFill = loadGraphicsShader("SimpleVertexColor.csl", outputLayoutNoDepth(), &setup);
+				m_shaderFill = loadGraphicsShader("SimpleVertexColor.csl", &setup);
 			}
         }
 
@@ -104,7 +104,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 
             int pos = 0;

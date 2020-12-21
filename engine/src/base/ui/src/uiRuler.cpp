@@ -137,9 +137,9 @@ namespace ui
 		}
 	}
 
-    void HorizontalRuler::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void HorizontalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 
         if (m_viewRegionMin < m_viewRegionMax && drawArea.size().x > 0.0f)
         {
@@ -271,9 +271,9 @@ namespace ui
 		}
 	}
 
-    void VerticalRuler::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void VerticalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 
         if (m_viewRegionMin < m_viewRegionMax && drawArea.size().y > 0.0f)
         {

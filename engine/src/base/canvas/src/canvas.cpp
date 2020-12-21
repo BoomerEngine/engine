@@ -514,17 +514,27 @@ namespace base
 			const auto* image = setup.image ? service->findRenderDataForAtlasEntry(setup.image) : nullptr;
 			if (image)
 			{ 
-				v[0].uv.x = (setup.u0 * image->uvScale.x) + image->uvOffset.x;
-				v[0].uv.y = (setup.v0 * image->uvScale.y) + image->uvOffset.y;
-				v[1].uv.x = (setup.u1 * image->uvScale.x) + image->uvOffset.x;
-				v[1].uv.y = (setup.v0 * image->uvScale.y) + image->uvOffset.y;
-				v[2].uv.x = (setup.u1 * image->uvScale.x) + image->uvOffset.x;
-				v[2].uv.y = (setup.v1 * image->uvScale.y) + image->uvOffset.y;
-				v[3].uv.x = (setup.u0 * image->uvScale.x) + image->uvOffset.x;
-				v[3].uv.y = (setup.v1 * image->uvScale.y) + image->uvOffset.y;
+				const auto uvScale = image->uvMax - image->uvOffset;
+
+				v[0].uv.x = (setup.u0 * uvScale.x) + image->uvOffset.x;
+				v[0].uv.y = (setup.v0 * uvScale.y) + image->uvOffset.y;
+				v[1].uv.x = (setup.u1 * uvScale.x) + image->uvOffset.x;
+				v[1].uv.y = (setup.v0 * uvScale.y) + image->uvOffset.y;
+				v[2].uv.x = (setup.u1 * uvScale.x) + image->uvOffset.x;
+				v[2].uv.y = (setup.v1 * uvScale.y) + image->uvOffset.y;
+				v[3].uv.x = (setup.u0 * uvScale.x) + image->uvOffset.x;
+				v[3].uv.y = (setup.v1 * uvScale.y) + image->uvOffset.y;
+                /*v[0].uv.x = setup.u0;
+                v[0].uv.y = setup.v0;
+                v[1].uv.x = setup.u1;
+                v[1].uv.y = setup.v0;
+                v[2].uv.x = setup.u1;
+                v[2].uv.y = setup.v1;
+                v[3].uv.x = setup.u0;
+                v[3].uv.y = setup.v1;*/
 
 				auto flags = Vertex::MASK_HAS_IMAGE | Vertex::MASK_FILL;
-				if (image->wrap)
+				if (image->wrap || setup.wrap)
 					flags |= Vertex::MASK_HAS_WRAP_U | Vertex::MASK_HAS_WRAP_V;
 
 				for (int i = 0; i < 4; ++i)
@@ -565,7 +575,7 @@ namespace base
 			batch.type = BatchType::FillConvex;
 			batch.packing = BatchPacking::Quads;
 			batch.op = setup.op;
-			placeInternal(placement, v, 6, 0, 0, batch, 1.0f);
+			placeInternal(placement, v, 4, 0, 0, batch, 1.0f);
         }
 
         //---

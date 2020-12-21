@@ -12,7 +12,6 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "renderingSelectable.h"
-#include "../../device/include/renderingGraphicsPassLayout.h"
 #
 namespace rendering
 {
@@ -32,8 +31,7 @@ namespace rendering
         {
 			// create the resources
 			createGlobalResources();
-			createPassLayouts();
-
+			
 			// create size dependent crap
 			// TODO: in full screen mode this may be an overkill
 			const auto maxWidth = m_device->maxRenderTargetSize().x;
@@ -110,36 +108,7 @@ namespace rendering
 			viewNormalUAV.reset();
 			viewNormalSRV.reset();
         }
-
-		void FrameResources::createPassLayouts()
-		{
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.color[0].format = sceneColorFormat;
-				setup.depth.format = sceneDepthFormat;
-				sceneFullColorPassLayout = m_device->createGraphicsPassLayout(setup);
-			}
-
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.depth.format = sceneDepthFormat;
-				sceneFullDepthPrePassLayout = m_device->createGraphicsPassLayout(setup);
-			}
-
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.color[0].format = velocityBufferFormat;
-				setup.depth.format = sceneDepthFormat;
-				sceneFullDepthPrePassWithVelocityBufferLayout = m_device->createGraphicsPassLayout(setup);
-			}
-
-			{
-                GraphicsPassLayoutSetup setup;
-                setup.color[0].format = sceneColorFormat;
-				sceneFullColorOverlayLayout = m_device->createGraphicsPassLayout(setup);
-			}
-		}
-
+		
 		void FrameResources::createViewportSurfaces(uint32_t width, uint32_t height)
         {
             ImageCreationInfo info;

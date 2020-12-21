@@ -93,7 +93,7 @@ namespace rendering
                 fb.depth.loadOp = LoadOp::Clear;
                 fb.depth.storeOp = StoreOp::Store;
 
-                cmd.opBeingPass(m_frame.resources().sceneFullDepthPrePassLayout, fb);
+                cmd.opBeingPass(fb);
 
                 rec.depthPrePassStatic.attachBuffer(cmd.opCreateChildCommandBuffer());
 
@@ -131,7 +131,7 @@ namespace rendering
 
                 //fb.color[0].clear(0.5f, 0.5f, 0.5f, 1.0f);
 
-                cmd.opBeingPass(m_frame.resources().sceneFullColorPassLayout, fb);
+                cmd.opBeingPass(fb);
 
                 rec.forwardSolid.attachBuffer(cmd.opCreateChildCommandBuffer());
 
@@ -152,7 +152,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.depth.view(m_frame.resources().sceneOutlineDepthRTV).clearDepth(1.0f).clearStencil(0);
 
-                cmd.opBeingPass(m_frame.resources().sceneFullDepthPrePassLayout, fb);
+                cmd.opBeingPass(fb);
 
                 rec.selectionOutline.attachBuffer(cmd.opCreateChildCommandBuffer());
 
@@ -166,7 +166,7 @@ namespace rendering
                 fb.color[0].loadOp = LoadOp::Keep; // TODO: do not clear if we have background scene
                 fb.color[0].storeOp = StoreOp::Store;
 
-                cmd.opBeingPass(m_frame.resources().sceneFullColorOverlayLayout, fb);
+                cmd.opBeingPass(fb);
 
                 rec.sceneOverlay.attachBuffer(cmd.opCreateChildCommandBuffer());
 

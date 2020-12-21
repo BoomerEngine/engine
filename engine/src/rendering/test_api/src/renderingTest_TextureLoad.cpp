@@ -42,9 +42,9 @@ namespace rendering
 			m_staticImage = loadImage2D("lena.png", false, true)->createReadOnlyView();
 
             if (subTestIndex() == 0)
-                m_shaders = loadGraphicsShader("TextureLoad.csl", outputLayoutNoDepth());
+                m_shaders = loadGraphicsShader("TextureLoad.csl");
             else
-                m_shaders = loadGraphicsShader("TextureLoadOffset.csl", outputLayoutNoDepth());
+                m_shaders = loadGraphicsShader("TextureLoadOffset.csl");
         }
 
         void RenderingTest_TextureLoad::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -52,7 +52,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry desc[1];
 			desc[0] = m_staticImage;

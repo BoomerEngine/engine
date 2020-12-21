@@ -62,9 +62,9 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
             }
 
-            m_shaderRed = loadGraphicsShader("TriangleDefineColorRed.csl", outputLayoutNoDepth());
-            m_shaderGreen = loadGraphicsShader("TriangleDefineColorGreen.csl", outputLayoutNoDepth());
-            m_shaderBlue = loadGraphicsShader("TriangleDefineColorBlue.csl", outputLayoutNoDepth());
+            m_shaderRed = loadGraphicsShader("TriangleDefineColorRed.csl");
+            m_shaderGreen = loadGraphicsShader("TriangleDefineColorGreen.csl");
+            m_shaderBlue = loadGraphicsShader("TriangleDefineColorBlue.csl");
         }
 
         void RenderingTest_TriangleDefineColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -72,7 +72,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("Vertex2D"_id, m_vertexBuffer);
             cmd.opDraw(m_shaderRed, 0, 3);
             cmd.opDraw(m_shaderGreen, 3, 3);

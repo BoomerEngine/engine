@@ -122,7 +122,7 @@ namespace ui
             fb.color[0].view(viewport.colorBuffer).clear(base::Vector4(0.1f, 0.1f, 0.2f, 1.0f));
             fb.depth.view(viewport.depthBuffer).clearDepth(1.0f).clearStencil(0);
 
-            cmd.opBeingPass(viewport.passLayout, fb);
+            cmd.opBeingPass(fb);
             cmd.opEndPass();
         }
 
@@ -133,14 +133,6 @@ namespace ui
 	void RenderingPanel::parepareRenderTargets(ViewportParams& viewport)
 	{
 		auto device = base::GetService<rendering::DeviceService>()->device();
-
-		if (!m_passLayout)
-		{
-			rendering::GraphicsPassLayoutSetup setup;
-			setup.color[0].format = rendering::ImageFormat::RGBA8_UNORM;
-			setup.depth.format = rendering::ImageFormat::D24S8;
-			m_passLayout = device->createGraphicsPassLayout(setup);
-		}
 
 		if (m_colorSurface && (viewport.width > m_colorSurface->width() || viewport.height > m_colorSurface->height()))
 		{
@@ -179,12 +171,11 @@ namespace ui
 		
 		viewport.colorBuffer = m_colorSurfaceRTV;
 		viewport.depthBuffer = m_depthSurfaceRTV;
-		viewport.passLayout = m_passLayout;
 	}
 
-    void RenderingPanel::renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void RenderingPanel::renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
 		// render area size
 		const auto renderWidth = (int)std::ceil(drawArea.size().x);

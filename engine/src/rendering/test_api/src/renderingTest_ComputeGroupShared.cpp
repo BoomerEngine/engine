@@ -37,7 +37,6 @@ namespace rendering
 			}
 
         private:
-			GraphicsPassLayoutObjectPtr m_scenePassLayout;
             GraphicsPipelineObjectPtr m_shaderScene;
             ComputePipelineObjectPtr m_shaderLinearizeDepth;
 			ComputePipelineObjectPtr m_shaderMinMaxDepth;
@@ -155,27 +154,19 @@ namespace rendering
             }
 
 			{
-				GraphicsPassLayoutSetup setup;
-				setup.samples = 1;
-				setup.depth.format = rendering::ImageFormat::D24S8;
-				setup.color[0].format = rendering::ImageFormat::RGBA8_UNORM;
-				m_scenePassLayout = createPassLayout(setup);
-			}
-
-			{
 				GraphicsRenderStatesSetup render;
 				render.depth(true);
 				render.depthWrite(true);
 				render.depthFunc(CompareOp::LessEqual);
 
-				m_shaderScene = loadGraphicsShader("GenericScene.csl", m_scenePassLayout, &render);
+				m_shaderScene = loadGraphicsShader("GenericScene.csl", &render);
 			}
 
             m_shaderLinearizeDepth = loadComputeShader("ComputeLinearizeDepth.csl");
             m_shaderMinMaxDepth = loadComputeShader("ComputeMinMaxDepth.csl");
             m_shaderNormalReconstruction = loadComputeShader("ComputeNormalReconstruction.csl");
             m_shaderSSAO = loadComputeShader("ComputeSSAO.csl");
-            m_shaderPreview = loadGraphicsShader("GenericGeometryWithTexture.csl", outputLayoutNoDepth());
+            m_shaderPreview = loadGraphicsShader("GenericGeometryWithTexture.csl");
         }
 
         void RenderingTest_ComputeGroupSharedMemory::render(command::CommandWriter& cmd, float frameIndex, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -202,7 +193,7 @@ namespace rendering
                 fb.color[0].view(m_colorBufferRTV).clear(0.2f, 0.2f, 0.2f, 1.0f);
                 fb.depth.view(m_depthBufferRTV).clearDepth().clearStencil();
 
-                cmd.opBeingPass(m_scenePassLayout, fb);
+                cmd.opBeingPass(fb);
                 m_scene->draw(cmd, m_shaderScene, camera);
                 cmd.opEndPass();
             }
@@ -306,7 +297,7 @@ namespace rendering
                 // render the preview quad
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
 				DescriptorEntry desc[1];
 				if (m_demo == 0)

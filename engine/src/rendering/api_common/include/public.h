@@ -31,7 +31,6 @@ namespace rendering
 		class IBaseImageView;
 		class IBaseSampler;
 		class IBaseShaders;
-		class IBaseGraphicsPassLayout;
 		class IBaseGraphicsRenderStates;
 		class IBaseVertexBindingLayout;
 		class IBaseDescriptorBindingLayout;

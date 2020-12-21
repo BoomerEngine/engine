@@ -102,7 +102,7 @@ namespace ui
 
             Size measure(float pixelScale) const;
 
-            base::canvas::RenderStyle evaluate(float pixelScale, const ElementArea& area) const;
+            base::canvas::RenderStyle evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const;
 
             //--
 
@@ -120,6 +120,8 @@ namespace ui
             base::Color outerColor = base::Color::WHITE;
 
             base::image::ImagePtr image; // locally stored
+
+            mutable base::canvas::ImageEntry cachedImageEntry;
         };
 
         //---

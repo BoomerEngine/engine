@@ -145,14 +145,14 @@ namespace rendering
 				GraphicsRenderStatesSetup setup;
 				setup.stencil(true);
 				setup.stencilAll(CompareOp::Always, StencilOp::Replace, StencilOp::Replace, StencilOp::Replace);
-				m_shaderBackground = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+				m_shaderBackground = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.stencil(true);
 				setup.stencilAll(CompareOp::Equal, StencilOp::Keep, StencilOp::Keep, StencilOp::Keep);
-				m_shaderPreview = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+				m_shaderPreview = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
 			for (uint32_t x = 0; x < NUM_OPS; ++x)
@@ -162,7 +162,7 @@ namespace rendering
 					GraphicsRenderStatesSetup setup;
 					setup.stencil(true);
 					setup.stencilAll(StencilFuncNames[subTestIndex()], StencilOpNames[x], StencilOp::Keep, StencilOpNames[y]);
-					m_shaderTest[x][y] = loadGraphicsShader("GenericGeometry.csl", outputLayoutWithDepth(), &setup);
+					m_shaderTest[x][y] = loadGraphicsShader("GenericGeometry.csl", &setup);
 				}
 			}
         }
@@ -173,7 +173,7 @@ namespace rendering
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
             fb.depth.view(backBufferDepthView).clearDepth(1.0f).clearStencil(0);
 
-            cmd.opBeingPass(outputLayoutWithDepth(), fb);
+            cmd.opBeingPass(fb);
 
             auto numOptions  = ARRAY_COUNT(StencilOpNames);
 

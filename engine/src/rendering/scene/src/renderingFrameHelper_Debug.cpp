@@ -50,19 +50,6 @@ namespace rendering
             m_drawShader = resDebugGeometryShader.loadAndGet()->rootShader()->deviceShader();
 
             {
-                GraphicsPassLayoutSetup setup;
-                setup.color[0].format = ImageFormat::RGBA16F;
-                setup.depth.format = ImageFormat::D24S8;
-                m_passStandard = api->createGraphicsPassLayout(setup);
-            }
-
-            {
-                GraphicsPassLayoutSetup setup;
-                setup.color[0].format = ImageFormat::RGBA16F;
-                m_passOverlay = api->createGraphicsPassLayout(setup);
-            }
-
-            {
                 GraphicsRenderStatesSetup setup;
                 setup.depth(true);
                 setup.depthWrite(true);

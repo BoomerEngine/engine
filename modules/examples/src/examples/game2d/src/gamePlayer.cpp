@@ -16,11 +16,11 @@ namespace example
     RTTI_BEGIN_TYPE_NATIVE_CLASS(GamePlayerAssets);
     RTTI_END_TYPE();
 
-    GamePlayerAssets::GamePlayerAssets(StringView baseDepotFolder)
+    GamePlayerAssets::GamePlayerAssets(base::canvas::DynamicAtlas* atlas, StringView baseDepotFolder)
     {
-        idle = RefNew<GameSpriteSequenceAsset>(TempString("{}/Idle", baseDepotFolder), 10, 15.0f, 2);
-        walk = RefNew<GameSpriteSequenceAsset>(TempString("{}/Walk", baseDepotFolder), 10, 15.0f, 2);
-        run = RefNew<GameSpriteSequenceAsset>(TempString("{}/Run", baseDepotFolder), 8, 15.0f, 2);
+        idle = RefNew<GameSpriteSequenceAsset>(atlas, TempString("{}/Idle", baseDepotFolder), 10, 15.0f, 2);
+        walk = RefNew<GameSpriteSequenceAsset>(atlas, TempString("{}/Walk", baseDepotFolder), 10, 15.0f, 2);
+        run = RefNew<GameSpriteSequenceAsset>(atlas, TempString("{}/Run", baseDepotFolder), 8, 15.0f, 2);
     }
 
     //---

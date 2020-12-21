@@ -74,7 +74,7 @@ namespace rendering
 			m_texelBufferUAV = m_texelBuffer->createWritableView(ImageFormat::RGBA8_UNORM);
 
             m_shaderGenerate = loadComputeShader("ComputeFillFormatBufferGenerate.csl");
-            m_shaderDraw = loadGraphicsShader("ComputeFillFormatBufferTest.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("ComputeFillFormatBufferTest.csl");
         }
 
         void RenderingTest_ComputeFillFormatBuffer::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -100,7 +100,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             {
 				DescriptorEntry desc[2];

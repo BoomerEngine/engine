@@ -367,7 +367,7 @@ namespace rendering
 					fb.color[0].clear(canvas.clearColor());
 
 				// set frame buffer
-				cmd.opBeingPass(output.layout, fb);
+				cmd.opBeingPass(fb);
 
 				// render canvas to command buffer
 				base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);

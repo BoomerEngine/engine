@@ -111,8 +111,8 @@ namespace ui
         // IElement
         virtual void computeLayout(ElementLayout& outLayout) override;
         virtual void computeSize(Size& outSize) const override;
-        virtual void prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         virtual bool handleCharEvent(const base::input::CharEvent& evt) override;

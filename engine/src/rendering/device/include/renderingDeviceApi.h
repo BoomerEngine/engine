@@ -243,9 +243,6 @@ namespace rendering
 		virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) = 0;
 
 		/// create pass layout state, NOTE: may return shared object
-		virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) = 0;
-
-		/// create pass layout state, NOTE: may return shared object
 		virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) = 0;
 
         //---

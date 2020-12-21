@@ -64,7 +64,7 @@ namespace rendering
         {
 			GraphicsRenderStatesSetup setup;
 			setup.primitiveTopology(PrimitiveTopology::PointList);
-            m_shaders = loadGraphicsShader("PointSize.csl", outputLayoutNoDepth(), &setup);
+            m_shaders = loadGraphicsShader("PointSize.csl", &setup);
 
             base::Array<Simple3DVertex> vertices;
             PrepareTestGeometry(-0.9f, -0.9f, 1.8f, 1.8f, 48, vertices);
@@ -77,7 +77,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
             cmd.opDraw(m_shaders, 0, m_vertexCount);

@@ -262,7 +262,7 @@ namespace rendering
 
 			//---
 
-            m_draw = loadGraphicsShader("SimpleMeshletDraw.csl", outputLayoutNoDepth());
+            m_draw = loadGraphicsShader("SimpleMeshletDraw.csl");
 			//m_generateShader = loadComputeShader("ComputeGenerateSimpleDrawIndirect.csl");
 			m_computeGenerateAll = loadComputeShader("SimpleMeshletGeneralteAllCS.csl");
 			m_computeFinalizeArgs = loadComputeShader("SimpleMeshletPrepareArgsCS.csl");
@@ -369,7 +369,7 @@ namespace rendering
 				FrameBuffer fb;
 				fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-				cmd.opBeingPass(outputLayoutNoDepth(), fb);
+				cmd.opBeingPass(fb);
 
 				struct
 				{

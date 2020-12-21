@@ -15,10 +15,12 @@
 #include "rendering/device/include/renderingFramebuffer.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-#include "base/imgui/include/debugPageService.h"
-#include "base/canvas/include/canvas.h"
 #include "base/app/include/launcherPlatform.h"
+#include "base/canvas/include/canvas.h"
 #include "base/input/include/inputStructures.h"
+#include "base/imgui/include/debugPageService.h"
+#include "base/imgui/include/imgui_integration.h"
+#include "rendering/canvas/include/renderingCanvasService.h"
 
 namespace game
 {
@@ -39,18 +41,13 @@ namespace game
         : m_type(type)
         , m_game(game)
     {
-        m_imgui = ImGui::CreateContext();
-        ImGui::SetCurrentContext(m_imgui);
+        m_imgui = new ImGui::ImGUICanvasHelper();
     }
 
     Host::~Host()
     {
-        if (m_imgui)
-        {
-            ImGui::SetCurrentContext(nullptr);
-            ImGui::DestroyContext(m_imgui);
-            m_imgui = nullptr;
-        }
+        delete m_imgui;
+        m_imgui = nullptr;
     }
     
     bool Host::update(double dt)
@@ -92,23 +89,20 @@ namespace game
             rendering::FrameBuffer fb;
             fb.color[0].view(viewport.backBufferColor); // no clear
             fb.depth.view(viewport.backBufferDepth).clearDepth().clearStencil();
-            cmd.opBeingPass(viewport.backBufferLayout, fb);
+            cmd.opBeingPass(fb);
 
             if (base::DebugPagesVisible())
             {
-                /*base::canvas::Canvas canvas(viewport.width, viewport.height);
+                base::canvas::Canvas canvas(viewport.width, viewport.height);
 
                 {
-                    ImGui::BeginCanvasFrame(canvas);
+                    m_imgui->beginFrame(canvas, 0.01f);
                     base::DebugPagesRender();
                     m_game->handleDebug();
-                    ImGui::EndCanvasFrame(canvas);
+                    m_imgui->endFrame(canvas);
                 }
 
-                rendering::canvas::CanvasRenderingParams renderingParams;
-                renderingParams.frameBufferWidth = viewport.width;
-                renderingParams.frameBufferHeight = viewport.height;
-                base::GetService<CanvasService>()->render(cmd, canvas, renderingParams);*/
+                base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
             }
 
             cmd.opEndPass();

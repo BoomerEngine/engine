@@ -63,9 +63,6 @@ namespace rendering
 
 			//---
 
-			// query current state
-			virtual void queryLayout(GraphicsPassLayoutSetup& outLayout) const = 0;
-
 			// acquire new image from swapchain
 			virtual bool acquire() = 0;
 
@@ -107,7 +104,6 @@ namespace rendering
 
 			virtual void disconnect_ClientApi() override;
 			virtual bool prepare_ClientApi(SwapchainState& outState) override;
-			virtual void queryLayout(GraphicsPassLayoutSetup& outLayout) const override;
 	
 		protected:
 			WindowManager* m_windowManager = nullptr;

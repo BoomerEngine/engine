@@ -39,7 +39,7 @@ namespace rendering
 
 				//--
 
-				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup) override;
+				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup) override;
 				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
 				//--

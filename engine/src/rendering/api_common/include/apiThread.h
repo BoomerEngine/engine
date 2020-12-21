@@ -99,9 +99,6 @@ namespace rendering
 			// create shaders
 			virtual IBaseShaders* createOptimalShaders(const ShaderData* data) = 0;
 
-			// create pass layout
-			virtual IBaseGraphicsPassLayout* createOptimalPassLayout(const GraphicsPassLayoutSetup& info) = 0;
-
 			// create download area
 			virtual IBaseDownloadArea* createOptimalDownloadArea(uint32_t size) = 0;
 

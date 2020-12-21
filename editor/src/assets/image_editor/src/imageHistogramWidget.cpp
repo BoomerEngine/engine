@@ -140,9 +140,9 @@ namespace ed
         m_histogramBucketMax = 1;
     }
 
-    void ImageHistogramWidget::renderBackground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ImageHistogramWidget::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
     }
 
     void ImageHistogramWidget::collapseHistogramBuckets(Histogram& h)
@@ -299,9 +299,9 @@ namespace ed
         }
     }
 
-    void ImageHistogramWidget::renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
         if (m_cachedHistogramGeometryRefSize != drawArea.size())
         {

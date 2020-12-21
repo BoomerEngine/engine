@@ -221,7 +221,6 @@ namespace rendering
 					scene::FrameCompositionTarget target;
 					target.targetColorRTV = output.color;
 					target.targetDepthRTV = output.depth;
-					target.targetLayout = output.layout;
 					target.targetRect = base::Rect(0, 0, output.width, output.height);
 
                     prepareSceneCommandBuffers(cmd, target);
@@ -370,7 +369,7 @@ namespace rendering
 			FrameBuffer fb;
 			fb.color[0].view(target.targetColorRTV);
 			fb.depth.view(target.targetDepthRTV).clearDepth().clearStencil();
-			cmd.opBeingPass(target.targetLayout, fb);
+			cmd.opBeingPass(fb);
 
 			// render canvas to command buffer
 			base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);

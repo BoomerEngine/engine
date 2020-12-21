@@ -82,7 +82,7 @@ namespace rendering
             m_sampledImage = createMipmapTest2D(1024, true);
 			m_sampledImageSRV = m_sampledImage->createSampledView();
             
-            m_shaders = loadGraphicsShader("GenericTexture.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("GenericTexture.csl");
         }
 
         void RenderingTest_Mipmaps::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -90,7 +90,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			{
 				DescriptorEntry desc[1];

@@ -149,9 +149,9 @@ namespace ui
         outSize = m_textBuffer->size();
     }
 
-    void EditBox::prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void EditBox::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareForegroundGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 
         // apply the padding to the text being built...
         auto innerArea = cachedLayoutParams().calcInnerAreaFromDrawArea(drawArea);
@@ -163,7 +163,7 @@ namespace ui
         builder.popTransform();
     }
 
-    void EditBox::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void EditBox::renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         auto innerArea = cachedLayoutParams().calcInnerAreaFromDrawArea(drawArea);
         m_textBuffer->renderHighlight(innerArea, canvas, mergedOpacity);
@@ -171,7 +171,7 @@ namespace ui
         if (isFocused())
             m_textBuffer->renderSelection(innerArea, canvas, mergedOpacity);
 
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity); // text
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity); // text
 
         if (isFocused())
         {

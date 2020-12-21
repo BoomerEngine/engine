@@ -24,7 +24,6 @@ namespace example
 		
 		const rendering::RenderTargetView* colorTarget = nullptr;
 		const rendering::RenderTargetView* depthTarget = nullptr;
-		const rendering::GraphicsPassLayoutObject* passLayout = nullptr;
 	};
 
     // 2D game class
@@ -52,6 +51,8 @@ namespace example
         GameTerrainPtr m_terrain;
         GameScenePtr m_scene;
         GamePlayerPtr m_player;
+
+        base::canvas::DynamicAtlasPtr m_atlas;
     };
 
     ///--

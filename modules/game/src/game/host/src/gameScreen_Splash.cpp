@@ -75,7 +75,7 @@ namespace game
 
             base::Rect viewport = base::Rect(0, 0, hostViewport.width, hostViewport.height);
 
-            cmd.opBeingPass(hostViewport.backBufferLayout, fb, 1, viewport);
+            cmd.opBeingPass(fb, 1, viewport);
 
 			struct
 			{
@@ -95,7 +95,7 @@ namespace game
             data.time = m_effectTime;
 
 			if (!m_shaderPSO)
-				m_shaderPSO = m_shader->deviceShader()->createGraphicsPipeline(hostViewport.backBufferLayout);
+				m_shaderPSO = m_shader->deviceShader()->createGraphicsPipeline();
 
 			rendering::DescriptorEntry desc[1];
 			desc[0].constants(data);

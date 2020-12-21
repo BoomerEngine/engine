@@ -50,7 +50,6 @@ namespace rendering
 			virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData) override;
 			virtual SamplerObjectPtr createSampler(const SamplerState& info) override;
 			virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) override;
-			virtual GraphicsPassLayoutObjectPtr createGraphicsPassLayout(const GraphicsPassLayoutSetup& info) override;
 			virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) override;
 
 			virtual void submitWork(command::CommandBuffer* masterCommandBuffer, bool background) override;

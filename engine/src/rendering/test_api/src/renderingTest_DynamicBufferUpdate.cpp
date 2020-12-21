@@ -80,7 +80,7 @@ namespace rendering
 			GraphicsRenderStatesSetup setup;
 			setup.primitiveTopology(PrimitiveTopology::LineStrip);
 
-            m_shaders = loadGraphicsShader("GenericGeometryTwoStreams.csl", outputLayoutNoDepth(), &setup);
+            m_shaders = loadGraphicsShader("GenericGeometryTwoStreams.csl", &setup);
         }
 
         void RenderingTest_DynamicBufferUpdate::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -101,7 +101,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opBindVertexBuffer("VertexStream0"_id,  m_vertexBuffer);
             cmd.opBindVertexBuffer("VertexStream1"_id, m_vertexColorBuffer);
             cmd.opDraw(m_shaders, 0, MAX_VERTICES); // loop

@@ -62,7 +62,7 @@ namespace rendering
 			return false;
 		}
 
-		bool ICanvasSimpleBatchRenderer::initialize(IDevice* drv)
+		bool ICanvasSimpleBatchRenderer::initialize(const CanvasRenderStates& renderStates, IDevice* drv)
 		{
 			// load mask shader
 			if (!LoadShader(resCanvasShaderMask.loadAndGet(), m_shaderMask))
@@ -73,38 +73,18 @@ namespace rendering
 			if (!LoadShader(loadMainShaderFile(), m_shaderFill))
 				return false;
 
-			return true;
-		}
-
-		void ICanvasSimpleBatchRenderer::prepareForLayout(const CanvasRenderStates& renderStates, const GraphicsPassLayoutObject* pass)
-		{
-			if (m_activeShaderGroup && m_activeShaderGroup->layoutKey == pass->key())
-				return;
-
-			for (const auto& shaders : m_shaderGroups)
-			{
-				if (shaders.layoutKey == pass->key())
-				{
-					m_activeShaderGroup = &shaders;
-					return;
-				}
-			}
-
-			auto& group = m_shaderGroups.emplaceBack();
-			group.layoutKey = pass->key();
-			group.m_mask = m_shaderMask->createGraphicsPipeline(pass, renderStates.m_mask);
+			m_mask = m_shaderMask->createGraphicsPipeline(renderStates.m_mask);
 
 			for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
 			{
-				group.m_standardFill[i] = m_shaderFill->createGraphicsPipeline(pass, renderStates.m_standardFill[i]);
-				group.m_maskedFill[i] = m_shaderFill->createGraphicsPipeline(pass, renderStates.m_maskedFill[i]);
+				m_standardFill[i] = m_shaderFill->createGraphicsPipeline(renderStates.m_standardFill[i]);
+				m_maskedFill[i] = m_shaderFill->createGraphicsPipeline(renderStates.m_maskedFill[i]);
 			}
 
-			m_activeShaderGroup = &group;
+			return true;
 		}
 
-
-		const GraphicsPipelineObject* ICanvasSimpleBatchRenderer::ShaderGroup::selectShader(command::CommandWriter& cmd, const RenderData& data) const
+		const GraphicsPipelineObject* ICanvasSimpleBatchRenderer::selectShader(command::CommandWriter& cmd, const RenderData& data) const
 		{
 			switch (data.batchType)
 			{
@@ -124,7 +104,7 @@ namespace rendering
 
 		void ICanvasSimpleBatchRenderer::render(command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const
 		{
-			if (const auto* shader = m_activeShaderGroup->selectShader(cmd, data))
+			if (const auto* shader = selectShader(cmd, data))
 				cmd.opDraw(shader, firstVertex, numVertices);
 		}
 		//--

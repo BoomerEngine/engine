@@ -53,6 +53,7 @@ namespace rendering
 
             m_dataStash = base::RefNew<ui::DataStash>(styles);
             m_dataStash->addIconSearchPath("/engine/icons/");
+            m_dataStash->addIconSearchPath("/editor/interface/icons/");
 
             m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
             m_lastUpdateTime.resetToNow();

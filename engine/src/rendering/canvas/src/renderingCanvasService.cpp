@@ -22,6 +22,7 @@
 #include "base/image/include/imageView.h"
 #include "base/canvas/include/canvasService.h"
 #include "base/canvas/include/canvas.h"
+#include "base/resource/include/resourceLoadingService.h"
 
 namespace rendering
 {
@@ -131,6 +132,7 @@ namespace rendering
 		RTTI_BEGIN_TYPE_CLASS(CanvasRenderService);
 			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<rendering::DeviceService>();
 			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<base::canvas::CanvasService>();
+			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<base::res::LoadingService>();
 		RTTI_END_TYPE();
 
 		//--
@@ -242,10 +244,6 @@ namespace rendering
 				cmd.opEndBlock();
 			}
 
-			for (auto* renderer : m_batchRenderers)
-				if (renderer)
-					renderer->prepareForLayout(*m_renderStates, cmd.currentPassLayout());
-
 			float scaleX = canvas.width();
 			float scaleY = canvas.height();
 			float offsetX = 0;
@@ -320,7 +318,7 @@ namespace rendering
 					{
 						// prepare render states
 						ICanvasBatchRenderer::RenderData data;
-						if (curBatchStart->atlasIndex > 0)
+						if (curBatchStart->atlasIndex > 0 && curBatchStart->atlasIndex <= m_imageCaches.lastValidIndex())
 						{
 							if (const auto* atlas = m_imageCaches[curBatchStart->atlasIndex])
 							{
@@ -452,7 +450,7 @@ namespace rendering
 
 			for (const auto& cls : batchHandlerClasses)
 				if (auto handler = cls->createPointer<ICanvasBatchRenderer>())
-					if (handler->initialize(m_device))
+					if (handler->initialize(*m_renderStates, m_device))
 						m_batchRenderers[cls->userIndex()] = handler;
 		}
 

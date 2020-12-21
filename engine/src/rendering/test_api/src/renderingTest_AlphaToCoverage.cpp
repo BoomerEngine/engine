@@ -29,7 +29,6 @@ namespace rendering
 			GraphicsPipelineObjectPtr m_shaderDraw;
 			GraphicsPipelineObjectPtr m_shaderDraw2;
 
-			GraphicsPassLayoutObjectPtr m_colorBufferPassLayout;
             ImageObjectPtr m_colorBuffer;
 			RenderTargetViewPtr m_colorBufferRTV;
 
@@ -53,21 +52,14 @@ namespace rendering
 
         void RenderingTest_AlphaToCoverage::initialize()
         {
-            m_shaderDraw = loadGraphicsShader("AlphaToCoveragePreview.csl", outputLayoutNoDepth());
-            m_shaderDraw2 = loadGraphicsShader("AlphaToCoveragePreviewWithBorder.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("AlphaToCoveragePreview.csl");
+            m_shaderDraw2 = loadGraphicsShader("AlphaToCoveragePreviewWithBorder.csl");
             
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.color[0].format = ImageFormat::RGBA8_UNORM;
-				setup.samples = 1 << (subTestIndex() / 2);
-				m_colorBufferPassLayout = createPassLayout(setup);
-			}
-
 			GraphicsRenderStatesSetup setup;
 			setup.alphaToCoverage(true);
 			setup.alphaToCoverageDither(subTestIndex() & 1);
 
-			m_shaderGenerate = loadGraphicsShader("AlphaToCoverageGenerate.csl", m_colorBufferPassLayout, &setup);
+			m_shaderGenerate = loadGraphicsShader("AlphaToCoverageGenerate.csl", &setup);
         }
 
         void RenderingTest_AlphaToCoverage::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -100,7 +92,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(m_colorBufferRTV).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(m_colorBufferPassLayout, fb);
+                cmd.opBeingPass(fb);
 
                 float w = 0.8f;
                 float h = 0.8f;
@@ -141,7 +133,7 @@ namespace rendering
             {
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
                 {
                     DescriptorEntry desc[1];

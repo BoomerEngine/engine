@@ -51,7 +51,7 @@ namespace rendering
 
         void RenderingTest_InlineParameters::initialize()
         {
-            m_shaders = loadGraphicsShader("InlineParameters.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("InlineParameters.csl");
 
             // create vertex buffer with a single triangle
             {
@@ -123,7 +123,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-			cmd.opBeingPass(outputLayoutNoDepth(), fb);
+			cmd.opBeingPass(fb);
 
 			// draw using ST or MT approach
 			if (subTestIndex() == 0)

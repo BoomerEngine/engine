@@ -31,8 +31,6 @@ namespace rendering
             virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView) override final;
 
         private:
-			GraphicsPassLayoutObjectPtr m_depthRenderPass;
-
             GraphicsPipelineObjectPtr m_shaderTest;
 			GraphicsPipelineObjectPtr m_shaderPreview;
 
@@ -106,14 +104,8 @@ namespace rendering
                 m_vertexCount = vertices.size();
             }
 
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.depth.format = rendering::ImageFormat::D24S8;
-				m_depthRenderPass = createPassLayout(setup);
-			}
-
-            m_shaderTest = loadGraphicsShader("DepthCompareSamplerDraw.csl", m_depthRenderPass);
-            m_shaderPreview = loadGraphicsShader("DepthCompareSamplerPreview.csl", outputLayoutNoDepth());
+            m_shaderTest = loadGraphicsShader("DepthCompareSamplerDraw.csl");
+            m_shaderPreview = loadGraphicsShader("DepthCompareSamplerPreview.csl");
         }
         
         void RenderingTest_DepthCompareSampler::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -138,7 +130,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.depth.view(m_depthBufferRTV).clearDepth(1.0f).clearStencil(0);
 
-                cmd.opBeingPass(m_depthRenderPass, fb);
+                cmd.opBeingPass(fb);
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
                 cmd.opDraw(m_shaderTest, 0, m_vertexCount);
                 cmd.opEndPass();
@@ -152,7 +144,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
                 float zRef = 0.5f + 0.5f * sinf(time);
 

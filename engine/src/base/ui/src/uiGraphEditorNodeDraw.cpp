@@ -735,7 +735,7 @@ namespace ui
 
     //--
 
-    void GraphEditorBlockNode::prepareBlockOutline(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const
+    void GraphEditorBlockNode::prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const
     {
         DEBUG_CHECK(m_layout.valid);
 
@@ -825,9 +825,9 @@ namespace ui
         }
     }
 
-    void GraphEditorBlockNode::prepareBoundaryGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset) const
+    void GraphEditorBlockNode::prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder, float inset) const
     {
-        prepareBlockOutline(drawArea, pixelScale, builder, inset, 0.0f);
+        prepareBlockOutline(stash, drawArea, pixelScale, builder, inset, 0.0f);
     }
 
     static void BuildSocketShape(base::graph::SocketShape shape, const base::Vector2& pos, const base::Vector2& size, base::graph::SocketPlacement dir, base::canvas::GeometryBuilder& builder)
@@ -951,10 +951,10 @@ namespace ui
         }
     }
 
-    void GraphEditorBlockNode::prepareBackgroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void GraphEditorBlockNode::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
         // block itself is rendered with normal style
-        TBaseClass::prepareBackgroundGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareBackgroundGeometry(stash, drawArea, pixelScale, builder);
 
         // title is rendered with title color
         // TODO: title style ?
@@ -962,7 +962,7 @@ namespace ui
         {
             builder.beginPath();
             builder.fillColor(m_layout.titleColor);
-            prepareBlockOutline(drawArea, pixelScale, builder, 0.0f, m_layout.titleSize.y);
+            prepareBlockOutline(stash, drawArea, pixelScale, builder, 0.0f, m_layout.titleSize.y);
             builder.fill();
         }
 
@@ -1014,7 +1014,7 @@ namespace ui
     extern ElementArea ArrangeElementLayout(const ElementArea& incomingInnerArea, const ElementLayout& layout, const Size& totalSize);
     extern ElementArea ArrangeAreaLayout(const ElementArea& incomingInnerArea, const Size& totalSize, ElementVerticalLayout verticalAlign, ElementHorizontalLayout horizontalAlign);
 
-    void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         // title bar
         if (cachedStyleParams().pixelScale > 0.4f)
@@ -1025,7 +1025,7 @@ namespace ui
                 {
                     auto titleArea = outerArea.verticalSlice(outerArea.top(), outerArea.top() + m_layout.titleSize.y);
                     auto titlePlacement = ArrangeElementLayout(titleArea, m_title->cachedLayoutParams(), m_layout.titleSize);
-                    m_title->render(hitCache, titlePlacement, outerClipArea, canvas, mergedOpacity, nullptr);
+                    m_title->render(hitCache, stash, titlePlacement, outerClipArea, canvas, mergedOpacity, nullptr);
                 }
                 else if (m_layout.clientSize.y > 0 && m_layout.clientSize.x > 0)
                 {
@@ -1033,7 +1033,7 @@ namespace ui
                         outerArea.left() + m_layout.clientOffset.x + m_layout.clientSize.x, outerArea.top() + m_layout.clientOffset.y + m_layout.clientSize.y);
 
                     auto titlePlacementArea = ArrangeAreaLayout(clientArea, m_title->cachedLayoutParams().calcTotalSize(), ElementVerticalLayout::Middle, ElementHorizontalLayout::Center);
-                    m_title->render(hitCache, titlePlacementArea, outerClipArea, canvas, mergedOpacity, nullptr);
+                    m_title->render(hitCache, stash, titlePlacementArea, outerClipArea, canvas, mergedOpacity, nullptr);
                 }
             }
         }
@@ -1051,16 +1051,16 @@ namespace ui
                 canvas.pushScissorRect();
                 if (canvas.scissorRect(payloadClipArea.left(), payloadClipArea.top(), payloadClipArea.size().x, payloadClipArea.size().y))
                 {
-                    m_payload->render(hitCache, payloadArea, payloadClipArea, canvas, mergedOpacity, nullptr);
+                    m_payload->render(hitCache, stash, payloadArea, payloadClipArea, canvas, mergedOpacity, nullptr);
                     canvas.popScissorRect();
                 }
             }
         }
     }
 
-    void GraphEditorBlockNode::prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void GraphEditorBlockNode::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareShadowGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 
         // socket shapes
         if (pixelScale >= 0.3f)

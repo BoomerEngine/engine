@@ -631,18 +631,18 @@ namespace ui
         }
     }
 
-    void VirtualArea::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void VirtualArea::renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
     }
 
-    void VirtualArea::renderGridBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         //canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
 
         if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
         {
-            auto renderStyle = shadowPtr->evaluate(cachedStyleParams().pixelScale, drawArea);
+            auto renderStyle = shadowPtr->evaluate(stash, cachedStyleParams().pixelScale, drawArea);
             if (renderStyle.image)
             {
                 renderStyle.customUV = true;
@@ -654,6 +654,7 @@ namespace ui
                 if (alphaScale < 1.0f)
                 {
 					base::canvas::Canvas::QuadSetup quad;
+                    quad.color = renderStyle.innerColor;
 					quad.x1 = drawArea.size().x;
 					quad.y1 = drawArea.size().y;
 					canvas.quad(drawArea.absolutePosition(), quad);
@@ -675,6 +676,9 @@ namespace ui
                     quad.v1 = quad.v0 + (quad.y1 * m_viewInvScale) / imageSize;
 					quad.op = base::canvas::BlendOp::AlphaPremultiplied; // TODO: copy
 					quad.image = renderStyle.image;
+                    quad.color = renderStyle.innerColor;
+                    quad.wrap = true;
+                    quad.renderer = 0;
 
 					canvas.quad(drawArea.absolutePosition(), quad);
                 }
@@ -682,11 +686,11 @@ namespace ui
         }
     }
 
-    void VirtualArea::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void VirtualArea::renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
        // TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
 
-        renderGridBackground(drawArea, canvas, mergedOpacity);
+        renderGridBackground(stash, drawArea, canvas, mergedOpacity);
         cacheSizes();
     }
 
@@ -695,9 +699,9 @@ namespace ui
         scale *= m_viewScale;// InvScale;
     }
 
-    void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderCustomOverlayElements(hitCache, outerArea, outerClipArea, canvas, mergedOpacity);
+        TBaseClass::renderCustomOverlayElements(hitCache, stash, outerArea, outerClipArea, canvas, mergedOpacity);
 
         processScheduledOffsetChange();
 
@@ -715,7 +719,7 @@ namespace ui
                 && viewPosition.y + viewSize.y >= outerClipArea.top() && viewPosition.y <= outerClipArea.bottom())
             {
                 const ElementArea elemDrawArea(viewPosition, viewSize);
-                elem->element->render(hitCache, elemDrawArea, outerClipArea, canvas, mergedOpacity, nullptr);
+                elem->element->render(hitCache, stash, elemDrawArea, outerClipArea, canvas, mergedOpacity, nullptr);
             }
         }
 

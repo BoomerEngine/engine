@@ -188,26 +188,26 @@ namespace rendering
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::LineList);
-				m_shadersLineList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+				m_shadersLineList = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::TriangleList);
-				m_shadersTriList = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+				m_shadersTriList = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::TriangleStrip);
-				m_shadersTriStrip = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+				m_shadersTriStrip = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.primitiveTopology(PrimitiveTopology::TriangleStrip);
 				setup.primitiveRestart(true);
-				m_shadersTriStripVertexRestart = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+				m_shadersTriStripVertexRestart = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
             float y = -0.9f;
@@ -248,7 +248,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             m_indexedLineList.draw(cmd, m_shadersLineList);
 			m_indexedTriList.draw(cmd, m_shadersTriList);

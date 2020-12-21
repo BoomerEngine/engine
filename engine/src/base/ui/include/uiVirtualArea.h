@@ -266,19 +266,19 @@ namespace ui
 
         void updateProxyPositionFor(VirtualAreaElement* elem);
 
-        void renderGridBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity);
+        void renderGridBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity);
 
         //--
 
-        virtual void renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual bool handleMouseWheel(const base::input::MouseMovementEvent& evt, float delta) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
 
         virtual bool iterateDrawChildren(ElementDrawListToken& token) const override;
-        virtual void renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
         virtual void adjustCustomOverlayElementsPixelScale(float& scale) const override;
 
         //--

@@ -48,7 +48,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).dontCare();
             
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			{
 				base::Vector4 clearColor;

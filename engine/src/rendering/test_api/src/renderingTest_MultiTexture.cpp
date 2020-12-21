@@ -87,7 +87,7 @@ namespace rendering
 			switch (subTestIndex())
 			{
 				case 0:
-					m_shaders = loadGraphicsShader("MultiTexture.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("MultiTexture.csl");
 					m_textureA = loadImage2D("lena.png")->createSampledView();
 					m_textureB = createChecker2D(256, 32, false)->createSampledView();
 					m_textureC = loadImage2D("sky_back.png")->createSampledView();
@@ -95,7 +95,7 @@ namespace rendering
 					break;
 
 				case 1:
-					m_shaders = loadGraphicsShader("MultiDynamicSamplers.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("MultiDynamicSamplers.csl");
 					m_textureA = loadImage2D("image2.png", true, true)->createSampledView();
 					m_textureB = m_textureA;
 					m_textureC = m_textureA;
@@ -108,7 +108,7 @@ namespace rendering
 					break;
 
 				case 2:
-					m_shaders = loadGraphicsShader("MultiStaticSamplers.csl", outputLayoutNoDepth());
+					m_shaders = loadGraphicsShader("MultiStaticSamplers.csl");
 					m_textureA = loadImage2D("image2.png", true, true)->createSampledView();
 					m_textureB = m_textureA;
 					m_textureC = m_textureA;
@@ -122,7 +122,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			if (subTestIndex() != 1)
 			{

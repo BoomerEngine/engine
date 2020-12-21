@@ -40,6 +40,7 @@ namespace rendering
 			: m_device(api)
 		{
 			m_blitShaders = resBlitShader.loadAndGet()->rootShader()->deviceShader();
+			m_blitShadersPSO = m_blitShaders->createGraphicsPipeline();
 		}
 
 		FrameHelperCompose::~FrameHelperCompose()
@@ -102,38 +103,20 @@ namespace rendering
 
 			//--
 
-			if (const auto* technique = fetchTechnique(setup.presentTarget->format()))
 			{
 				FrameBuffer fb;
 				fb.color[0].view(setup.presentTarget);
 
-				cmd.opBeingPass(technique->layout, fb, 1, setup.presentRect);
-				cmd.opDraw(technique->pso, 0, 4);
+				cmd.opBeingPass(fb, 1, setup.presentRect);
+				cmd.opDraw(m_blitShadersPSO, 0, 4);
 				cmd.opEndPass();
 			}
+
+			//--
 		}
 
         //---
 
-		const FrameHelperCompose::Technique* FrameHelperCompose::fetchTechnique(ImageFormat colorFormat) const
-		{
-			for (const auto& info : m_techniques)
-				if (info.format == colorFormat)
-					return &info;
-
-			auto& info = m_techniques.emplaceBack();
-			info.format = colorFormat;
-
-			GraphicsPassLayoutSetup setup;
-			setup.color[0].format = colorFormat;
-			setup.color[0].loadOp = LoadOp::Keep;
-			setup.color[0].storeOp = StoreOp::Store;
-			info.layout = m_device->createGraphicsPassLayout(setup);
-
-			info.pso = m_blitShaders->createGraphicsPipeline(info.layout);
-
-			return &info;
-		}
 
     } // scene
 } // rendering

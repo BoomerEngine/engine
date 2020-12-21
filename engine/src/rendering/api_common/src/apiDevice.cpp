@@ -17,7 +17,6 @@
 #include "apiShaders.h"
 #include "apiSampler.h"
 #include "apiImage.h"
-#include "apiGraphicsPassLayout.h"
 #include "apiGraphicsRenderStates.h"
 #include "apiDownloadArea.h"
 
@@ -170,15 +169,9 @@ namespace rendering
 		{
 			if (auto* swapchain = m_thread->createOptimalSwapchain(info))
 			{
-				GraphicsPassLayoutSetup passLayout;
-				swapchain->queryLayout(passLayout);
-
-				auto layoutObj = createGraphicsPassLayout(passLayout);
-				DEBUG_CHECK_RETURN_EX_V(layoutObj, "Layout for created swapchain not created", nullptr);
-
 				auto* output = new Output(m_thread, swapchain);
 				swapchain->windowInterface()->windowBindOwner(output->handle());
-				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface(), layoutObj);
+				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface());
 			}
 
 			return nullptr;
@@ -240,14 +233,6 @@ namespace rendering
 				return base::RefNew<DownloadAreaProxy>(obj->handle(), m_thread->objectRegistry(), size);
 
 			return nullptr;
-		}
-
-		GraphicsPassLayoutObjectPtr IBaseDevice::createGraphicsPassLayout(const GraphicsPassLayoutSetup& info)
-		{
-			auto* obj = m_thread->createOptimalPassLayout(info);
-			ASSERT_EX(obj != nullptr, "This should never fail");
-
-			return base::RefNew<GraphicsPassLayoutObject>(obj->handle(), m_thread->objectRegistry(), info, obj->key());
 		}
 
 		GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const GraphicsRenderStatesSetup& states)

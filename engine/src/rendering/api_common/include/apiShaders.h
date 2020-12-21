@@ -51,7 +51,7 @@ namespace rendering
 			//--
 
 			// create graphical rendering pipeline using these shaders that is compatible with given rendering pass and rendering states
-			virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& setup) = 0;
+			virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup) = 0;
 
 			// create graphical rendering pipeline using these shaders that is compatible with given rendering pass and rendering states
 			virtual IBaseComputePipeline* createComputePipeline_ClientApi() = 0;
@@ -77,8 +77,14 @@ namespace rendering
 		public:
 			ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata);
 
-			virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats) override;
+			virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsRenderStatesObject* renderStats) override;
 			virtual ComputePipelineObjectPtr createComputePipeline() override;
+
+		private:
+			base::SpinLock m_lock;
+
+			base::HashMap<uint64_t, base::RefWeakPtr<GraphicsPipelineObject>> m_pipelineObjectMap;
+			base::RefWeakPtr<ComputePipelineObject> m_compilePipelineObject;
 		};
 
 		//---

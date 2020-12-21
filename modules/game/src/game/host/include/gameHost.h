@@ -19,7 +19,6 @@ namespace game
         uint32_t height = 0;
         const rendering::RenderTargetView* backBufferColor = nullptr;
 		const rendering::RenderTargetView* backBufferDepth = nullptr;
-		const rendering::GraphicsPassLayoutObject* backBufferLayout = nullptr;
 
         float fadeLevel = 1.0f;
     };
@@ -76,7 +75,7 @@ namespace game
         HostType m_type;
         GamePtr m_game;
 
-        ImGuiContext* m_imgui = nullptr;
+        ImGui::ImGUICanvasHelper* m_imgui = nullptr;
         bool m_paused = false;
 
         bool processDebugInput(const base::input::BaseEvent& evt);

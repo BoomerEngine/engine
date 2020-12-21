@@ -60,7 +60,7 @@ namespace rendering
 			m_sampledImageSRV = m_sampledImage->createSampledView();
 			m_sampledImageUAV = m_sampledImage->createWritableView();
             
-            m_shaders = loadGraphicsShader("GenericGeometryWithTexture.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("GenericGeometryWithTexture.csl");
         }
 
         void RenderingTest_ImageClearRect::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -94,7 +94,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry desc[1];
 			desc[0] = m_sampledImageSRV;

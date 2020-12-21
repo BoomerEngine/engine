@@ -15,7 +15,6 @@
 #include "dx11TransientBuffer.h"
 #include "dx11Swapchain.h"
 #include "dx11Executor.h"
-#include "dx11GraphicsPassLayout.h"
 #include "dx11Shaders.h"
 #include "dx11Sampler.h"
 #include "dx11Image.h"
@@ -320,11 +319,6 @@ namespace rendering
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
 				return new Shaders(this, data);
-			}
-
-			IBaseGraphicsPassLayout* Thread::createOptimalPassLayout(const GraphicsPassLayoutSetup& info)
-			{
-				return new GraphicsPassLayout(this, info);
 			}
 
 			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)

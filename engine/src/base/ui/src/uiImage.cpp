@@ -155,9 +155,9 @@ namespace ui
         }
     }
 
-    void Image::prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void Image::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareShadowGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 
         // TODO: proper "drop shadow"
         /*if (const auto* imageStylePtr = evalStyleValueIfPresentPtr<style::RenderStyle>("image"_id))
@@ -187,9 +187,9 @@ namespace ui
         }*/
     }
 
-    void Image::prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
+    void Image::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const
     {
-        TBaseClass::prepareForegroundGeometry(drawArea, pixelScale, builder);
+        TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 
 		if (const auto imageEntry = acquireImageEntry())
         {

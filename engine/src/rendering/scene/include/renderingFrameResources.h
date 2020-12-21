@@ -49,11 +49,6 @@ namespace rendering
 			RenderTargetViewPtr sceneFullDepthRTV;
 			ImageReadOnlyViewPtr sceneFullDepthUAV;
 
-			GraphicsPassLayoutObjectPtr sceneFullDepthPrePassLayout;
-			GraphicsPassLayoutObjectPtr sceneFullDepthPrePassWithVelocityBufferLayout;
-			GraphicsPassLayoutObjectPtr sceneFullColorPassLayout;
-			GraphicsPassLayoutObjectPtr sceneFullColorOverlayLayout;
-
 			//--
 
 			ImageObjectPtr sceneResolvedColor; // resolved copy of scene color buffer, not multisampled
@@ -122,7 +117,6 @@ namespace rendering
             void destroyViewportSurfaces();
 
 			void createGlobalResources();
-			void createPassLayouts();
         };
 
         ///---

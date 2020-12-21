@@ -10,8 +10,6 @@
 #include "apiSwapchain.h"
 #include "apiWindow.h"
 
-#include "rendering/device/include/renderingGraphicsPassLayout.h"
-
 namespace rendering
 {
     namespace api
@@ -96,25 +94,6 @@ namespace rendering
 			outState.height = windowHeight;
 			outState.samples = m_samples;
 			return true;
-		}
-
-		void IBaseWindowedSwapchain::queryLayout(GraphicsPassLayoutSetup& outLayout) const
-		{
-			outLayout.samples = m_samples;
-
-			if (m_colorFormat != ImageFormat::UNKNOWN)
-			{
-				outLayout.color[0].format = m_colorFormat;
-				outLayout.color[0].loadOp = LoadOp::DontCare;
-				outLayout.color[0].storeOp = StoreOp::DontCare;
-			}
-
-			if (m_depthFormat != ImageFormat::UNKNOWN)
-			{
-				outLayout.depth.format = m_depthFormat;
-				outLayout.depth.loadOp = LoadOp::DontCare;
-				outLayout.depth.storeOp = StoreOp::DontCare;
-			}
 		}
 
 		//--

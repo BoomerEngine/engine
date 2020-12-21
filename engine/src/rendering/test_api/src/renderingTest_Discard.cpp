@@ -59,7 +59,7 @@ namespace rendering
                 m_vertexBuffer = createVertexBuffer(vertices);
             }
 
-            m_shaders = loadGraphicsShader("Discard.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("Discard.csl");
         }
 
         void RenderingTest_Discard::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -67,7 +67,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			const auto ScreenResolution = base::Vector2((float)backBufferView->width(), (float)backBufferView->height());
 

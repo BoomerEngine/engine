@@ -248,7 +248,7 @@ namespace example
         setupCamera(cmd, cameraPos, Vector3(0, 0, 0), 70.0f, aspect);
 
         // end pass rendering to that frame buffer
-        cmd.opBeingPass(m_renderingOutput->layout(), fb);
+        cmd.opBeingPass(fb);
 
         // bind buffers
         cmd.opBindVertexBuffer("BoxVertex"_id, m_vertexBuffer);
@@ -281,8 +281,7 @@ namespace example
 		if (auto shaderFile = LoadResource<ShaderFile>("/examples/shaders/simple_box_example.csl").acquire())
 		{
 			// create a PSO from the shader that's compatible with the layout we use for the window's render targets
-			if (const auto shader = shaderFile->rootShader())
-				m_shadersPSO = shader->deviceShader()->createGraphicsPipeline(m_renderingOutput->layout());
+            m_shadersPSO = shaderFile->rootShader()->deviceShader()->createGraphicsPipeline();
 		}
 
 		return m_shadersPSO;

@@ -48,10 +48,10 @@ namespace rendering
             m_cubeB = createColorCubemap(256)->createSampledView();
             m_cubeC = loadCubemap("sky")->createSampledView();
 
-            m_shaderDraw = loadGraphicsShader("TextureCubemapSampleDraw.csl", outputLayoutNoDepth());
-            m_shaderReference = loadGraphicsShader("TextureCubemapSampleReference.csl", outputLayoutNoDepth());
-            m_shaderError = loadGraphicsShader("TextureCubemapSampleError.csl", outputLayoutNoDepth());
-            m_shaderDrawY = loadGraphicsShader("TextureCubemapSampleDrawY.csl", outputLayoutNoDepth());
+            m_shaderDraw = loadGraphicsShader("TextureCubemapSampleDraw.csl");
+            m_shaderReference = loadGraphicsShader("TextureCubemapSampleReference.csl");
+            m_shaderError = loadGraphicsShader("TextureCubemapSampleError.csl");
+            m_shaderDrawY = loadGraphicsShader("TextureCubemapSampleDrawY.csl");
         }
 
         void RenderingTest_TextureCubemapSample::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -59,7 +59,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             auto height = 0.3f;
             auto margin = 0.05f;

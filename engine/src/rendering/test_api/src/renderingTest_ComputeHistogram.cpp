@@ -82,8 +82,8 @@ namespace rendering
                 m_testImage = loadImage2D("checker_n.png", false, true);
 
             // load shaders
-            m_drawImage = loadGraphicsShader("TextureSample.csl", outputLayoutNoDepth());
-            m_drawHistogram = loadGraphicsShader("HistogramDraw.csl", outputLayoutNoDepth());
+            m_drawImage = loadGraphicsShader("TextureSample.csl");
+            m_drawHistogram = loadGraphicsShader("HistogramDraw.csl");
             m_shaderFindRange = loadComputeShader("HistogramFindRange.csl");
 			m_shaderFindMax = loadComputeShader("HistogramFindMax.csl");
 			m_shaderComputeHistogram = loadComputeShader("HistogramCompute.csl");
@@ -264,7 +264,7 @@ namespace rendering
             {
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
                 // draw preview
                 {

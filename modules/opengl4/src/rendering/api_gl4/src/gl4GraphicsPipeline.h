@@ -9,7 +9,6 @@
 #pragma once
 
 #include "gl4Shaders.h"
-#include "gl4GraphicsPassLayout.h"
 #include "gl4StateCache.h"
 
 #include "rendering/api_common/include/apiGraphicsPipeline.h"
@@ -25,14 +24,13 @@ namespace rendering
 			class GraphicsPipeline : public IBaseGraphicsPipeline
 			{
 			public:
-				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates);
+				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
 				virtual ~GraphicsPipeline();
 
 				//--
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 				INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders())); }
-				INLINE const GraphicsPassLayout* passLayout() const { return static_cast<const GraphicsPassLayout*>(IBaseGraphicsPipeline::passLayout()); }
 
 				INLINE const StateValues& staticRenderState() const { return m_staticRenderStates; }
 				INLINE StateMask staticRenderStateMask() const { return m_staticRenderStateMask; }

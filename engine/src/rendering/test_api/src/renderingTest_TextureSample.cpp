@@ -44,10 +44,10 @@ namespace rendering
 
             switch (subTestIndex())
             {
-                case 0: m_shaders = loadGraphicsShader("TextureSample.csl", outputLayoutNoDepth()); break;
-                case 1: m_shaders = loadGraphicsShader("TextureSampleOffset.csl", outputLayoutNoDepth()); break;
-                case 2: m_shaders = loadGraphicsShader("TextureSampleBias.csl", outputLayoutNoDepth()); break;
-                case 3: m_shaders = loadGraphicsShader("TextureSampleLod.csl", outputLayoutNoDepth()); break;
+                case 0: m_shaders = loadGraphicsShader("TextureSample.csl"); break;
+                case 1: m_shaders = loadGraphicsShader("TextureSampleOffset.csl"); break;
+                case 2: m_shaders = loadGraphicsShader("TextureSampleBias.csl"); break;
+                case 3: m_shaders = loadGraphicsShader("TextureSampleLod.csl"); break;
             }
         }
 
@@ -56,7 +56,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			DescriptorEntry desc[1];
             desc[0] = m_sampledImage;

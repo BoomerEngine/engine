@@ -85,7 +85,7 @@ namespace rendering
 			m_imageUAV = m_image->createWritableView();
 
             m_shaderGenerate = loadComputeShader("ComputeFillTexture2DGenerate.csl");
-            m_shaderTest = loadGraphicsShader("ComputeFillTexture2DText.csl", outputLayoutNoDepth());
+            m_shaderTest = loadGraphicsShader("ComputeFillTexture2DText.csl");
         }
 
         void RenderingTest_ComputeFillTexture2D::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* depth)
@@ -121,7 +121,7 @@ namespace rendering
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
 				{
 					DescriptorEntry desc[1];

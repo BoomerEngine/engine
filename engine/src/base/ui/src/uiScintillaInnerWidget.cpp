@@ -434,9 +434,9 @@ namespace Scintilla
         outSize.y = 100;
     }
 
-    void ScintillaInnerWidget::renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ScintillaInnerWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
         // get the rendering size
         auto width = (int)drawArea.size().x;

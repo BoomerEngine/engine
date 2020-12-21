@@ -14,7 +14,6 @@
 #include "nullApiObjectCache.h"
 #include "nullApiSwapchain.h"
 #include "nullApiExecutor.h"
-#include "nullApiGraphicsPassLayout.h"
 #include "nullApiShaders.h"
 #include "nullApiSampler.h"
 #include "nullApiImage.h"
@@ -120,11 +119,6 @@ namespace rendering
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 			{
 				return new Shaders(this, data);
-			}
-
-			IBaseGraphicsPassLayout* Thread::createOptimalPassLayout(const GraphicsPassLayoutSetup& info)
-			{
-				return new GraphicsPassLayout(this, info);
 			}
 
 			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)

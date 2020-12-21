@@ -42,7 +42,7 @@ namespace ui
 
 		void generateGeometry(float width, float height) const;
 
-        virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
     };
 
     //--
@@ -73,7 +73,7 @@ namespace ui
 
 		void generateGeometry(float width, float height) const;
 
-        virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
     };
 
     //--

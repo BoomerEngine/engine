@@ -41,7 +41,7 @@ namespace rendering
 			setup.primitiveTopology(PrimitiveTopology::TriangleList);
 			setup.fill(FillMode::Line);
 
-            m_shaders = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &setup);
+            m_shaders = loadGraphicsShader("GenericGeometry.csl", &setup);
         }
 
         static void GenerateTempGeometry(float x, float y, float w, float h, float time, base::Array<Simple3DVertex>& outVertices, base::Array<uint16_t>& outIndices)
@@ -132,7 +132,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id,  vertexBuffer);
             cmd.opBindIndexBuffer(indexBuffer, ImageFormat::R16_UINT);

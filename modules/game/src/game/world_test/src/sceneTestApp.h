@@ -43,8 +43,6 @@ namespace game
 
 			ImGui::ImGUICanvasHelper* m_imguiHelper = nullptr;
 
-			base::RefPtr<rendering::canvas::CanvasStorage> m_storage;
-
             //--
 
             base::NativeTimePoint m_lastUpdateTime;

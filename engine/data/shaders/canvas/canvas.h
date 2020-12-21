@@ -220,7 +220,7 @@ shader CanvasPS
 
 		if (wrapU)
 		{
-			pt.x = uvMin.x + frac(pt.x * uvInvScale.x) * uvScale.x;
+			pt.x = uvMin.x + frac((pt.x - uvMin.x) * uvInvScale.x) * uvScale.x;
 		}
 		else if (pt.x < uvMin.x)
 		{
@@ -235,7 +235,7 @@ shader CanvasPS
 
 		if (wrapV)
 		{
-			pt.y = uvMin.y + frac(pt.y * uvInvScale.y) * uvScale.y;
+			pt.y = uvMin.y + frac((pt.y - uvMin.y) * uvInvScale.y) * uvScale.y;
 		}
 		else if (pt.y < uvMin.y)
 		{

@@ -464,9 +464,9 @@ namespace ui
         return true;
     }
         
-    void GraphEditor::renderCustomOverlayElements(HitCache& hitCache, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void GraphEditor::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderCustomOverlayElements(hitCache, outerArea, outerClipArea, canvas, mergedOpacity);
+        TBaseClass::renderCustomOverlayElements(hitCache, stash, outerArea, outerClipArea, canvas, mergedOpacity);
 
         // TODO: culling!!!
         for (auto* node : m_nodesMap.values())

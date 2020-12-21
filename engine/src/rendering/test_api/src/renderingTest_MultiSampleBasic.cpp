@@ -50,8 +50,6 @@ namespace rendering
 			RenderTargetViewPtr m_colorBufferRTV;
 			ImageSampledViewPtr m_colorBufferSRV;
 
-			GraphicsPassLayoutObjectPtr m_colorBufferPassLayout;
-
 			ImageObjectPtr m_resolvedColorBuffer;
 			ImageSampledViewPtr m_resolvedColorBufferSRV;
 
@@ -120,16 +118,6 @@ namespace rendering
             m_showSamples = subTestIndex() >= 11;
             m_sampleCount = 1 << (subTestIndex() % 5);
 
-			{
-				GraphicsPassLayoutSetup setup;
-				setup.samples = m_sampleCount;
-				setup.color[0].format = ImageFormat::RGBA8_UNORM;
-				if (m_useDepth)
-					setup.depth.format = ImageFormat::D24S8;
-
-				m_colorBufferPassLayout = createPassLayout(setup);
-			}
-
 			if (m_useDepth)
 			{
 				GraphicsRenderStatesSetup setup;
@@ -137,22 +125,22 @@ namespace rendering
 				setup.depthWrite(true);
 				setup.depthFunc(CompareOp::LessEqual);
 
-				m_shaderDraw = loadGraphicsShader("GenericGeometry.csl", m_colorBufferPassLayout, &setup);
+				m_shaderDraw = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 			else
 			{
 				GraphicsRenderStatesSetup setup;
 				setup.depth(false);
 
-				m_shaderDraw = loadGraphicsShader("GenericGeometry.csl", m_colorBufferPassLayout, &setup);
+				m_shaderDraw = loadGraphicsShader("GenericGeometry.csl", &setup);
 			}
 
-            m_shaderDraw2 = loadGraphicsShader("AlphaToCoveragePreviewWithBorder.csl", outputLayoutNoDepth());
+            m_shaderDraw2 = loadGraphicsShader("AlphaToCoveragePreviewWithBorder.csl");
 
             if (m_showSamples)
-                m_shaderPreview = loadGraphicsShader(base::TempString("MultiSampleTexturePreview{}.csl", subTestIndex() % 5), outputLayoutNoDepth());
+                m_shaderPreview = loadGraphicsShader(base::TempString("MultiSampleTexturePreview{}.csl", subTestIndex() % 5));
             else
-                m_shaderPreview = loadGraphicsShader("MultiSampleTexturePreviewMix.csl", outputLayoutNoDepth());
+                m_shaderPreview = loadGraphicsShader("MultiSampleTexturePreviewMix.csl");
 
             // generate test geometry
             {
@@ -212,7 +200,7 @@ namespace rendering
                 fb.depth.view(m_depthBufferRTV).clearDepth().clearStencil();
 
             {
-                cmd.opBeingPass(m_colorBufferPassLayout, fb );
+                cmd.opBeingPass(fb);
 
                 cmd.opBindVertexBuffer("Simple3DVertex"_id,  m_vertexBuffer);
                 cmd.opDraw(m_shaderDraw, 0, m_vertexCount);
@@ -232,7 +220,7 @@ namespace rendering
             {
                 FrameBuffer fb;
                 fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-                cmd.opBeingPass(outputLayoutNoDepth(), fb);
+                cmd.opBeingPass(fb);
 
 				if (m_showSamples)
 				{

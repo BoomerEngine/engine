@@ -464,12 +464,10 @@ namespace rendering
 
 		void IFrameExecutor::runBeginPass(const command::OpBeginPass& op)
 		{
-			ASSERT_EX(op.passLayoutId, "Invalid pass layout");
 			ASSERT_EX(op.frameBuffer.validate(), "Begin pass with invalid frame buffer should not be recorded");
 			ASSERT_EX(op.viewportCount >= 1 && op.viewportCount <= 16, "Invalid viewport count");
 			ASSERT_EX(!m_pass.passOp, "Theres already an active pass");
-			ASSERT_EX(!m_activePassLayout, "Theres already an active pass");
-
+			
 			// determine rendering area size as we go
 			memzero(&m_pass, sizeof(m_pass));
 
@@ -496,9 +494,6 @@ namespace rendering
 			ASSERT(!op.renderArea.empty());
 			m_pass.area = op.renderArea;
 
-			// use given pass layout
-			m_activePassLayout = op.passLayoutId;
-
 			// if rendering to swapchain surfaces make sure we acquire the output
 			// NOTE: this is done only at first rendering to those surfaces
 			if (m_pass.swapchain)
@@ -524,7 +519,6 @@ namespace rendering
 			DEBUG_CHECK_EX(m_pass.passOp, "No pass active");
 
 			m_pass = PassState();
-			m_activePassLayout = nullptr;
 		}
 
 		//--

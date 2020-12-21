@@ -23,7 +23,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GameSpriteAsset, base::IObject);
 
     public:
-        GameSpriteAsset(const base::canvas::IStorage* storage, ImageEntry image, StringView name, float scale = 1.0f, bool circle = false);
+        GameSpriteAsset(base::canvas::DynamicAtlas* atlas, const base::image::ImageRef& image, float scale = 1.0f, bool circle = false);
 
         INLINE const Vector2& size() const { return m_size; }
         INLINE const Geometry& geometry(bool flip=false) const { return m_geometry[flip ? 1 : 0]; }
@@ -42,8 +42,6 @@ namespace example
         Geometry m_geometry[2];
         StringBuf m_name;
 
-		const base::canvas::IStorage* m_storage = nullptr;
-
         virtual void onPropertyChanged(StringView path) override;
 
         void buildGeometry();
@@ -60,7 +58,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GameSpriteSequenceAsset, base::IObject);
 
     public:
-        GameSpriteSequenceAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, StringView baseDepotPath, uint32_t numFrames, float fps, int downsample=0);
+        GameSpriteSequenceAsset(base::canvas::DynamicAtlas* atlas, StringView baseDepotPath, uint32_t numFrames, float fps, int downsample=0);
 
         INLINE const Vector2& size() const { return m_size; }
 
@@ -125,7 +123,7 @@ namespace example
         RTTI_DECLARE_VIRTUAL_CLASS(GameTerrianAsset, base::IObject);
 
     public:
-        GameTerrianAsset(base::canvas::IStorage* storage, ImageAtlasIndex atlasIndex, float tileSize, StringView baseDepotPath, uint32_t numTiles);
+        GameTerrianAsset(base::canvas::DynamicAtlas* atlas, float tileSize, StringView baseDepotPath, uint32_t numTiles);
 
         INLINE float tileSize() const { return m_tileSize; }
 
@@ -133,7 +131,6 @@ namespace example
 
     private:
         Array<ImageEntry> m_tileImages;
-		base::canvas::IStorage* m_storage;
         float m_tileSize;
     };
 
@@ -210,7 +207,7 @@ namespace example
         void tick(float dt);
 
         void render(Canvas& canvas) const;
-        void render(CommandWriter& cmd, Vector2 center, const GameViewport& vp) const;
+        void render(CommandWriter& cmd, Vector2 center, uint32_t width, uint32_t height, uint32_t outputWidth, uint32_t outputHeight) const;
 
         void debug(int index);
 
@@ -221,7 +218,6 @@ namespace example
 
     private:
         Array<GameObjectPtr> m_objects;
-		base::canvas::IStorage* m_storage = nullptr;
     };
 
     //--

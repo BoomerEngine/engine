@@ -48,8 +48,8 @@ namespace ui
     protected:
         virtual void computeLayout(ElementLayout& outLayout) override;
         virtual void computeSize(Size& outSize) const override;
-        virtual void prepareShadowGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual void prepareForegroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
         virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
         //--

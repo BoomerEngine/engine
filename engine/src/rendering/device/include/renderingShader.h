@@ -32,7 +32,7 @@ namespace rendering
 
 		// create the graphics pipeline object with know pass layout and render states
 		// NOTE: this may start background shader compilation
-		virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsPassLayoutObject* passLayout, const GraphicsRenderStatesObject* renderStats = nullptr) = 0;
+		virtual GraphicsPipelineObjectPtr createGraphicsPipeline(const GraphicsRenderStatesObject* renderStats = nullptr) = 0;
 
 		// create the compute pipeline object
 		// NOTE: this may start background shader compilation

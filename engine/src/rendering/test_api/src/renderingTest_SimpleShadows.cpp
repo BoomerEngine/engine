@@ -50,8 +50,6 @@ namespace rendering
 			RenderTargetViewPtr m_shadowMapRTV;
 			ImageSampledViewPtr m_shadowMapSRV;
 
-			GraphicsPassLayoutObjectPtr m_shadowMapPassLayout;
-
             GraphicsPipelineObjectPtr m_shaderDrawToShadowMap;
 			GraphicsPipelineObjectPtr m_shaderScene;
 
@@ -71,10 +69,6 @@ namespace rendering
             m_scene = CreatePlatonicScene(*this);
 
 			{
-				GraphicsPassLayoutSetup setup;
-				setup.depth.format = ImageFormat::D32;
-				m_shadowMapPassLayout = createPassLayout(setup);
-
 				GraphicsRenderStatesSetup render;
 				render.depth(true);
 				render.depthWrite(true);
@@ -84,7 +78,7 @@ namespace rendering
 				render.depthBiasValue(500);
 				render.depthBiasSlope(1.0f);
 
-				m_shaderDrawToShadowMap = loadGraphicsShader("GenericScene.csl", m_shadowMapPassLayout, &render);
+				m_shaderDrawToShadowMap = loadGraphicsShader("GenericScene.csl", &render);
 			}
 
 			{
@@ -94,13 +88,13 @@ namespace rendering
 				render.depthFunc(CompareOp::LessEqual);
 
 				if (m_shadowMode == 0)
-					m_shaderScene = loadGraphicsShader("GenericScene.csl", outputLayoutWithDepth(), &render);
+					m_shaderScene = loadGraphicsShader("GenericScene.csl", &render);
 				else if (m_shadowMode == 1)
-					m_shaderScene = loadGraphicsShader("GenericScenePointShadows.csl", outputLayoutWithDepth(), &render);
+					m_shaderScene = loadGraphicsShader("GenericScenePointShadows.csl", &render);
 				else if (m_shadowMode == 2)
-					m_shaderScene = loadGraphicsShader("GenericSceneLinearShadows.csl", outputLayoutWithDepth(), &render);
+					m_shaderScene = loadGraphicsShader("GenericSceneLinearShadows.csl", &render);
 				else if (m_shadowMode == 3)
-					m_shaderScene = loadGraphicsShader("GenericScenePoisonShadows.csl", outputLayoutWithDepth(), &render);
+					m_shaderScene = loadGraphicsShader("GenericScenePoisonShadows.csl", &render);
 			}
         }
 
@@ -141,7 +135,7 @@ namespace rendering
                     FrameBuffer fb;
                     fb.depth.view(m_shadowMapRTV).clearDepth(1.0f).clearStencil(0);
 
-                    cmd.opBeingPass(m_shadowMapPassLayout, fb);
+                    cmd.opBeingPass(fb);
                     m_scene->draw(cmd, m_shaderDrawToShadowMap, camera);
                     cmd.opEndPass();
                 }
@@ -182,7 +176,7 @@ namespace rendering
                 fb.color[0].view(backBufferView).clear(0.0f, 0.0f, 0.2f, 1.0f);
                 fb.depth.view(backBufferDepth).clearDepth(1.0f).clearStencil(0);
 
-                cmd.opBeingPass(outputLayoutWithDepth(), fb);
+                cmd.opBeingPass(fb);
                 m_scene->draw(cmd, m_shaderScene, camera);
                 cmd.opEndPass();
             }

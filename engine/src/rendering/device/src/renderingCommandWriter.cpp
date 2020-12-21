@@ -214,7 +214,6 @@ namespace rendering
             {
                 ret.width = size.x;
                 ret.height = size.y;
-				ret.layout = output->layout();
 
                 auto op = allocCommand<OpAcquireOutput>();
                 op->output = output->id();
@@ -237,12 +236,12 @@ namespace rendering
             auto op  = allocCommand<OpTriggerCapture>();
         }
 
-		bool CommandWriter::validateFrameBuffer(const FrameBuffer& frameBuffer, const GraphicsPassLayoutObject* layout, uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/)
+		bool CommandWriter::validateFrameBuffer(const FrameBuffer& frameBuffer, uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/)
 		{
 			auto frameBufferValid = frameBuffer.validate(outWidth, outHeight);
 			DEBUG_CHECK_RETURN_EX_V(frameBufferValid, "Cannot enter a pass with invalid frame buffer", false);
 
-			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
+			/*for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
 			{
 				if (frameBuffer.color[i].viewPtr)
 				{
@@ -281,7 +280,7 @@ namespace rendering
 				DEBUG_CHECK_RETURN_EX_V(layout->layout().depth.format == ImageFormat::UNKNOWN, "Depth target in frame buffer is not specified but it's expected by pass layout", false);
 			}
 
-			DEBUG_CHECK_RETURN_EX_V(frameBuffer.samples() == layout->layout().samples, base::TempString("Frame buffer has {} samples per pixel while layout expects {}", frameBuffer.samples(), layout->layout().samples), false);
+			DEBUG_CHECK_RETURN_EX_V(frameBuffer.samples() == layout->layout().samples, base::TempString("Frame buffer has {} samples per pixel while layout expects {}", frameBuffer.samples(), layout->layout().samples), false);*/
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 			for (uint32_t i = 0; i < FrameBuffer::MAX_COLOR_TARGETS; ++i)
@@ -305,14 +304,13 @@ namespace rendering
 			return true;
 		}
 
-        void CommandWriter::opBeingPass(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, uint8_t viewportCount, const base::Rect& drawArea)
+        void CommandWriter::opBeingPass(const FrameBuffer& frameBuffer, uint8_t viewportCount, const base::Rect& drawArea)
         {
-			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
             DEBUG_CHECK_RETURN_EX(!m_currentPass, "Recursive passes are not allowed");
 			DEBUG_CHECK_RETURN_EX(viewportCount <= 16, "To many viewports");
 
 			uint32_t width = 0, height = 0;
-			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer, layout, &width, &height), "Invalid frame buffer");          
+			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer, &width, &height), "Invalid frame buffer");          
 
 			//--
 
@@ -326,7 +324,6 @@ namespace rendering
 
             auto op = allocCommand<OpBeginPass>();
             op->frameBuffer = frameBuffer;
-			op->passLayoutId = layout->id();
             op->hasResourceTransitions = false;
 			op->viewportCount = viewportCount;
 
@@ -334,8 +331,6 @@ namespace rendering
 				op->renderArea = drawArea;
 			else
 				op->renderArea = base::Rect(0, 0, width, height);
-
-			m_currentPassLayout = AddRef(layout);
 
             m_currentPass = op;
             m_currentPassRts = frameBuffer.validColorSurfaces();
@@ -348,19 +343,17 @@ namespace rendering
             DEBUG_CHECK_RETURN(!m_isChildBufferWithParentPass);// , "Cannot end pass that started in parent command buffer");
 
             auto op = allocCommand<OpEndPass>();
-			m_currentPassLayout.reset();
             m_currentPass = nullptr;
 			m_currentPassViewports = 0;
 			m_currentPassRts = 0;
         }
 
-		void CommandWriter::opClearFrameBuffer(const GraphicsPassLayoutObject* layout, const FrameBuffer& frameBuffer, const base::Rect* area/* = nullptr*/)
+		void CommandWriter::opClearFrameBuffer(const FrameBuffer& frameBuffer, const base::Rect* area/* = nullptr*/)
 		{
-			DEBUG_CHECK_RETURN_EX(layout, "Invalid layout specified");
 			DEBUG_CHECK_RETURN_EX(!m_currentPass, "Cannot clear pass inside another pass");
 
 			uint32_t width = 0, height = 0;
-			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer, layout), "Invalid frame buffer");
+			DEBUG_CHECK_RETURN_EX(validateFrameBuffer(frameBuffer), "Invalid frame buffer");
 
 			if (area)
 			{

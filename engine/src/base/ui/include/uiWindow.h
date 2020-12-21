@@ -232,13 +232,13 @@ namespace ui
         ElementWeakPtr m_modalOwner;
 
         void prepare(DataStash& stash, float nativePixelScale, bool initial=false, bool forceUpdate=false);
-        void render(base::canvas::Canvas& canvas, HitCache& hitCache, const ElementArea& nativeArea);
+        void render(base::canvas::Canvas& canvas, HitCache& hitCache, DataStash& stash, const ElementArea& nativeArea);
 
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const override;
-        virtual void prepareBackgroundGeometry(const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
-        virtual void renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+        virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, base::canvas::GeometryBuilder& builder) const override;
+        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
         bool handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const;
         static int QuerySizeCode(const ElementArea& area, const Position& absolutePosition);

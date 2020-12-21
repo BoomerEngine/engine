@@ -59,7 +59,7 @@ namespace rendering
 			setup.depthWrite(true);
 			setup.depthFunc(CompareOp::LessEqual);
 
-            m_shaders = loadGraphicsShader("ViewportDepthRange.csl", outputLayoutWithDepth(), &setup);
+            m_shaders = loadGraphicsShader("ViewportDepthRange.csl", &setup);
         }
 
         static void DrawGroup(command::CommandWriter& cmd, const GraphicsPipelineObject* func, float startX, float y, float startZ, float endZ, float size, uint32_t count, const base::Vector4& color)
@@ -103,7 +103,7 @@ namespace rendering
 			viewportRect.max.x = backBufferView->width();
 			viewportRect.max.y = backBufferView->height();
 
-            cmd.opBeingPass(outputLayoutWithDepth(), fb);
+            cmd.opBeingPass(fb);
 
             cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
 

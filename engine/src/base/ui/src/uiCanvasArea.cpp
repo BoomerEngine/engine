@@ -190,9 +190,9 @@ namespace ui
         }
     }
 
-    void CanvasArea::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void CanvasArea::renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
         processScheduledZoomChange();
 
@@ -214,9 +214,9 @@ namespace ui
         renderStatusMessages(drawArea, canvas, mergedOpacity);
     }
 
-    void CanvasArea::renderBackground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void CanvasArea::renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
     }
 
     void CanvasArea::processScheduledZoomChange()

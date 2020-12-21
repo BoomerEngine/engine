@@ -123,7 +123,7 @@ namespace rendering
             }
 
 			// background shader
-			m_backgroundShader = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth());
+			m_backgroundShader = loadGraphicsShader("GenericGeometry.csl");
 
             // load shaders
 			for (uint32_t i = 0; i < MAX_BLEND_MODES; ++i)
@@ -135,7 +135,7 @@ namespace rendering
 					states.blendOp(0, BlendFuncNames[subTestIndex()]);
 					states.blendFactor(0, BlendModesNames[i], BlendModesNames[j]);
 
-					m_testShader[i][j] = loadGraphicsShader("GenericGeometry.csl", outputLayoutNoDepth(), &states);
+					m_testShader[i][j] = loadGraphicsShader("GenericGeometry.csl", &states);
 				}
 			}
         }
@@ -145,7 +145,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
             auto numBlendModes  = ARRAY_COUNT(BlendModesNames);
             auto viewWidth = backBufferView->width() / numBlendModes;

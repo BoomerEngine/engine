@@ -10,7 +10,6 @@
 
 #include "base/containers/include/inplaceArray.h"
 #include "base/system/include/staticCRC.h"
-#include "renderingGraphicsPassLayout.h"
 
 namespace rendering
 {

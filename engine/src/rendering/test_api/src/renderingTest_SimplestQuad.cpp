@@ -39,7 +39,7 @@ namespace rendering
 
         void RenderingTest_SimplestQuad::initialize()
         {
-            m_shader = loadGraphicsShader("SimplestQuad.csl", outputLayoutNoDepth());
+            m_shader = loadGraphicsShader("SimplestQuad.csl");
         }
 
         void RenderingTest_SimplestQuad::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
@@ -47,7 +47,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
             cmd.opDraw(m_shader, 0, 4);
             cmd.opEndPass();
         }

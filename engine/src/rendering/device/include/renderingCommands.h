@@ -195,7 +195,6 @@ namespace rendering
         RENDER_DECLARE_OPCODE_DATA(BeginPass)
         {
             FrameBuffer frameBuffer;
-			ObjectID passLayoutId;
 			uint8_t viewportCount = 1;
 			base::Rect renderArea;
             bool hasResourceTransitions = false; // set if we have any layout transition while in this pass

@@ -9,7 +9,6 @@
 #pragma once
 
 #include "dx11Shaders.h"
-#include "dx11GraphicsPassLayout.h"
 
 #include "rendering/api_common/include/apiGraphicsPipeline.h"
 
@@ -24,14 +23,13 @@ namespace rendering
 			class GraphicsPipeline : public IBaseGraphicsPipeline
 			{
 			public:
-				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates);
+				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
 				virtual ~GraphicsPipeline();
 
 				//--
 
 				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders()); }
-				INLINE const GraphicsPassLayout* passLayout() const { return static_cast<const GraphicsPassLayout*>(IBaseGraphicsPipeline::passLayout()); }
 
 				//--				
 

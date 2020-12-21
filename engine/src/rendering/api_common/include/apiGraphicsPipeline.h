@@ -22,7 +22,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API IBaseGraphicsPipeline : public IBaseObject
 		{
 		public:
-			IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const IBaseGraphicsPassLayout* passLayout, const GraphicsRenderStatesSetup& mergedRenderStates);
+			IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
 			virtual ~IBaseGraphicsPipeline();
 
 			//--
@@ -40,9 +40,6 @@ namespace rendering
 			// shaders used to build the pipeline
 			INLINE const IBaseShaders* shaders() const { return m_shaders; }
 
-			// pass layout (render target formats)
-			INLINE const IBaseGraphicsPassLayout* passLayout() const { return m_passLayout; }
-
 			// rendering states
 			INLINE const GraphicsRenderStatesSetup& mergedRenderStates() const { return m_mergedRenderStates; }
 
@@ -52,7 +49,6 @@ namespace rendering
 			uint64_t m_key = 0;
 			
 			const IBaseShaders* m_shaders = nullptr;
-			const IBaseGraphicsPassLayout* m_passLayout = nullptr;
 			
 			GraphicsRenderStatesSetup m_mergedRenderStates;
 			uint64_t m_mergedRenderStatesKey;

@@ -92,7 +92,7 @@ namespace rendering
 				m_extraBufferSRV = m_extraBuffer->createView(ImageFormat::RGBA8_UNORM);
             }
 
-            m_shaders = loadGraphicsShader("FormatBufferPackedRead.csl", outputLayoutNoDepth());
+            m_shaders = loadGraphicsShader("FormatBufferPackedRead.csl");
         }
 
         void RenderingTest_FormatBufferPackedRead::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferViewDepth)
@@ -100,7 +100,7 @@ namespace rendering
             FrameBuffer fb;
             fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-            cmd.opBeingPass(outputLayoutNoDepth(), fb);
+            cmd.opBeingPass(fb);
 
 			struct
 			{

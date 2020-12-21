@@ -46,9 +46,9 @@ namespace ed
         m_previewSettings = settings;
     }
 
-    void ImagePreviewPanel::renderForeground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
         ui::Position minPos = ui::Position::INF();
         ui::Position maxPos = -ui::Position::INF();
@@ -126,9 +126,9 @@ namespace ed
         }
     }
 
-    void ImagePreviewPanel::renderBackground(const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ImagePreviewPanel::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
     }
 
     void ImagePreviewPanel::updateTooltip() const

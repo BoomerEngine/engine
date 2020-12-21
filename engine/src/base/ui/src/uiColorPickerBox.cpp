@@ -125,8 +125,12 @@ namespace ui
 
     void ColorPickerLSBox::hls(const base::Vector3& val)
     {
-        m_value = val;
-        recomputeGeometry(m_rectSize);
+        if (m_value != val)
+        {
+            m_value = val;
+            m_colorRectGeometry.reset();
+            m_cursorGeometry.reset();
+        }
     }
 
 	void ColorPickerLSBox::rebuildCursorGeometry(const Size& size)
@@ -152,18 +156,24 @@ namespace ui
 		builder.stroke();
 	}
 
-    void ColorPickerLSBox::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ColorPickerLSBox::renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
 		if (m_rectSize != drawArea.size())
 		{
-			recomputeGeometry(drawArea.size());
-			rebuildCursorGeometry(drawArea.size());
+            m_colorRectGeometry.reset();
+            m_cursorGeometry.reset();
 		}
+
+        if (m_colorRectGeometry.empty())
+            recomputeGeometry(drawArea.size());
+
+        if (m_cursorGeometry.empty())
+            rebuildCursorGeometry(drawArea.size());
 
 		canvas.place(drawArea.absolutePosition(), m_colorRectGeometry, mergedOpacity);
         canvas.place(drawArea.absolutePosition(), m_cursorGeometry, mergedOpacity);
 
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);        
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);        
     }
 
     InputActionPtr ColorPickerLSBox::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
@@ -204,6 +214,8 @@ namespace ui
 
             if (m_value.x >= 0.0f)
                 m_value.y = std::clamp<float>(pos.x - cachedDrawArea().left(), 0.0f, sizeX) / sizeX;
+
+            m_cursorGeometry.reset();
 
             call(EVENT_COLOR_SELECTED);
         }
@@ -256,6 +268,7 @@ namespace ui
 
         {
 			auto* writeI = m_colorRectGeometry.vertices.allocateUninitialized(GRID_SIZE * GRID_SIZE * 6);
+            memzero(writeI, sizeof(base::canvas::Vertex) * GRID_SIZE * GRID_SIZE * 6);
 
             for (uint32_t y = 0; y < GRID_SIZE; ++y)
             {
@@ -318,18 +331,32 @@ namespace ui
 
     void ColorPickerHueBar::hue(float h)
     {
-        m_hue = h;
+        if (m_hue != h)
+        {
+            m_colorBarGeometry.reset();
+            m_cursorGeometry.reset();
+            m_hue = h;
+        }
     }
 
-    void ColorPickerHueBar::renderForeground(const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+    void ColorPickerHueBar::renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         if (m_rectSize != drawArea.size())
+        {
+            m_cursorGeometry.reset();
+            m_colorBarGeometry.reset();
+        }
+
+        if (m_colorBarGeometry.empty())
             recomputeGeometry(drawArea.size());
+
+        if (m_cursorGeometry.empty())
+            rebuildCursorGeometry(m_rectSize);
 
 		canvas.place(drawArea.absolutePosition(), m_colorBarGeometry, mergedOpacity);
 		canvas.place(drawArea.absolutePosition(), m_cursorGeometry, mergedOpacity);
 
-        TBaseClass::renderForeground(drawArea, canvas, mergedOpacity);
+        TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
     }
 
     InputActionPtr ColorPickerHueBar::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
@@ -366,6 +393,7 @@ namespace ui
         if (sizeX > 0.0f)
         {
             m_hue = (std::clamp<float>(pos.x - cachedDrawArea().left(), 0.0f, sizeX) / sizeX) * 360.0f;
+            m_cursorGeometry.reset();
             call(EVENT_COLOR_SELECTED);
         }
     }
@@ -402,6 +430,7 @@ namespace ui
 
         {
             auto* writeV = m_colorBarGeometry.vertices.allocateUninitialized(GRID_SIZE * 6);
+            memzero(writeV, sizeof(base::canvas::Vertex) * GRID_SIZE * 6);
 
 			base::Color color0;
 
@@ -599,7 +628,7 @@ namespace ui
 
             {
                 auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:undo] Undo");
-                buttons->bind(EVENT_CLICKED) = [this]() {
+                button->bind(EVENT_CLICKED) = [this]() {
                     m_barR->value(m_initialColor.r);
                     m_barG->value(m_initialColor.g);
                     m_barB->value(m_initialColor.b);
