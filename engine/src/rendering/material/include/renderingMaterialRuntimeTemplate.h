@@ -21,7 +21,7 @@ namespace rendering
 		RTTI_DECLARE_POOL(POOL_MATERIAL_DATA);
 
     public:
-		MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, MaterialSortGroup sortGroup, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques);
+		MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques);
         virtual ~MaterialTemplateProxy();
 
         //--
@@ -29,13 +29,13 @@ namespace rendering
 		// data layout for the material template, compiled from parameters
 		INLINE const MaterialDataLayout* layout() const { return m_layout; };
 
-        // sort group for this material proxy, NOTE: never updated, a new proxy must be created as if we changed the template (usually the template DOES change)
-        INLINE MaterialSortGroup sortGroup() const { return m_sortGroup; }
+        // get metadata for the material
+        INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
 
         //--
 
 		/// find/compile a rendering technique for given rendering settings
-		MaterialTechniquePtr fetchTechnique(const MaterialCompilationSetup& setup);
+		MaterialTechniquePtr fetchTechnique(const MaterialCompilationSetup& setup) const;
 
 		//--
 
@@ -43,10 +43,11 @@ namespace rendering
 		//--
 
 		const MaterialDataLayout* m_layout = nullptr;
-		MaterialSortGroup m_sortGroup = MaterialSortGroup::Opaque;
+
+		MaterialTemplateMetadata m_metadata;
 
 		base::SpinLock m_techniqueMapLock;
-		base::HashMap<uint32_t, MaterialTechniquePtr> m_techniqueMap;
+		mutable base::HashMap<uint32_t, MaterialTechniquePtr> m_techniqueMap;
 
 		//--
 

@@ -562,7 +562,8 @@ namespace rendering
 
 				base::InplaceArray<const shader::StubFunctionParameter*, 10> parameters;
 				for (const auto* sourceParam : function->inputParameters())
-					parameters.pushBack(exportFunctionParameter(sourceParam));
+					if (!function->staticParameters().contains(sourceParam->name))
+						parameters.pushBack(exportFunctionParameter(sourceParam));
 				ret->parameters = m_builder.createArray(parameters);
 
 				{

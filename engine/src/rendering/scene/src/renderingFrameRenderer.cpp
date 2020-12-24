@@ -12,7 +12,6 @@
 #include "renderingFrameRenderingService.h"
 #include "renderingFrameCameraContext.h"
 #include "renderingFrameParams.h"
-#include "renderingSceneUtils.h"
 
 #include "renderingFrameHelper_Debug.h"
 #include "renderingFrameHelper_Compose.h"
@@ -25,6 +24,7 @@
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingImage.h"
+#include "renderingFrameView.h"
 
 namespace rendering
 {
@@ -106,85 +106,10 @@ namespace rendering
             return m_msaa;
         }        
 
-        static base::Point CovertMouseCoords(base::Point coords, const FrameRenderer& frame)
-        {
-            if (coords.x < 0 || coords.y < 0)
-                return base::Point(-1, -1);
-
-            auto ret = coords;
-
-            /*if (frame.verticalFlip())
-                ret.y = (frame.frame().resolution.height - 1) - ret.y;*/
-
-            return ret;
-        }
-
-#define MATERIAL_FLAG_DISABLE_COLOR 1
-#define MATERIAL_FLAG_DISABLE_LIGHTING 2
-#define MATERIAL_FLAG_DISABLE_TEXTURES 4
-#define MATERIAL_FLAG_DISABLE_NORMAL 8
-#define MATERIAL_FLAG_DISABLE_VERTEX_COLOR 16
-#define MATERIAL_FLAG_DISABLE_OBJECT_COLOR 32
-#define MATERIAL_FLAG_DISABLE_VERTEX_MOTION 64
-#define MATERIAL_FLAG_DISABLE_MASKING 128
-
-        static base::FastRandState GRenderingRandState;
-
         void FrameRenderer::bindFrameParameters(command::CommandWriter& cmd) const
         {
-            const auto& data = m_frame;
-
             GPUFrameParameters params;
-            memset(&params, 0, sizeof(params));
-
-            params.ViewportSize.x = data.resolution.width;
-            params.ViewportSize.y = data.resolution.height;
-            params.ViewportRTSize.x = m_target.targetColorRTV->width();
-            params.ViewportRTSize.y = m_target.targetColorRTV->height();
-            params.InvViewportSize.x = params.ViewportSize.x ? (1.0f / params.ViewportSize.x) : 0.0f;
-            params.InvViewportSize.y = params.ViewportSize.y ? (1.0f / params.ViewportSize.y) : 0.0f;
-            params.InvViewportRTSize.x = params.ViewportRTSize.x ? (1.0f / params.ViewportRTSize.x) : 0.0f;
-            params.InvViewportRTSize.y = params.ViewportRTSize.y ? (1.0f / params.ViewportRTSize.y) : 0.0f;
-
-            params.FrameIndex = data.index;
-            params.MSAASamples = 1;// view.multisampled() ? view.numSamples() : 0;
-
-            params.PseudoRandom[0] = GRenderingRandState.next();
-            params.PseudoRandom[1] = GRenderingRandState.next();
-            params.PseudoRandom[2] = GRenderingRandState.next();
-            params.PseudoRandom[3] = GRenderingRandState.next();
-
-            params.MaterialFlags = 0;
-            if (m_frame.filters & FilterBit::Material_DisableColorMap)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_COLOR;
-            if (m_frame.filters & FilterBit::Material_DisableLighting)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_LIGHTING;
-            if (m_frame.filters & FilterBit::Material_DisableTextures)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_TEXTURES;
-            if (m_frame.filters & FilterBit::Material_DisableNormals)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_NORMAL;
-            if (m_frame.filters & FilterBit::Material_DisableObjectColor)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_OBJECT_COLOR;
-            if (m_frame.filters & FilterBit::Material_DisableVertexColor)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_VERTEX_COLOR;
-            if (m_frame.filters & FilterBit::Material_DisableMasking)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_MASKING;
-            if (m_frame.filters & FilterBit::Material_DisableVertexMotion)
-                params.MaterialFlags |= MATERIAL_FLAG_DISABLE_VERTEX_MOTION;
-
-
-            //if (frame.verticalFlip())
-            //{
-              //  params.ScreenTopY = view.height()
-            //}
-            
-            params.DebugMousePos = CovertMouseCoords(data.debug.mouseHoverPixel, *this);
-            params.DebugMouseClickPos = CovertMouseCoords(data.debug.mouseClickedPixel, *this);
-
-            params.TimeOfDay = data.time.timeOfDay;
-            params.GameTime = data.time.gameTime;
-            params.EngineTime = data.time.engineRealTime;
-            params.DayNightFraction = data.time.dayNightFrac;
+            PackFrameParams(params, *this, m_target);
 
             DescriptorEntry desc[1];
             desc[0].constants(params);

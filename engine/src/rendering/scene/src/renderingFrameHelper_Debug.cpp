@@ -21,10 +21,12 @@
 #include "rendering/device/include/renderingShaderFile.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingShaderData.h"
+#include "rendering/device/include/renderingGraphicsStates.h"
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingShader.h"
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceStaticResource.h"
-#include "../../device/include/renderingGraphicsStates.h"
 
 namespace rendering
 {
@@ -33,7 +35,8 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderFile> resDebugGeometryShader("/engine/shaders/debug.fx");
+        static base::res::StaticResource<ShaderFile> resDebugGeometryShaderSolid("/engine/shaders/debugSolid.fx");
+        static base::res::StaticResource<ShaderFile> resDebugGeometryShaderLines("/engine/shaders/debugLines.fx");
 
         //---
 
@@ -47,7 +50,8 @@ namespace rendering
 		FrameHelperDebug::FrameHelperDebug(IDevice* api)
             : m_device(api)
 		{
-            m_drawShader = resDebugGeometryShader.loadAndGet()->rootShader()->deviceShader();
+            m_drawShaderLines = resDebugGeometryShaderLines.loadAndGet()->rootShader()->deviceShader();
+            m_drawShaderSolid = resDebugGeometryShaderSolid.loadAndGet()->rootShader()->deviceShader();
 
             {
                 GraphicsRenderStatesSetup setup;
@@ -56,10 +60,10 @@ namespace rendering
                 setup.depthFunc(CompareOp::LessEqual);
 
                 setup.primitiveTopology(PrimitiveTopology::TriangleList);
-                m_renderStatesSolidTriangles = api->createGraphicsRenderStates(setup);
+                m_renderStatesSolid.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
 
                 setup.primitiveTopology(PrimitiveTopology::LineList);
-                m_renderStatesSolidLines = api->createGraphicsRenderStates(setup);
+                m_renderStatesSolid.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
             }
 
             {
@@ -71,10 +75,10 @@ namespace rendering
                 setup.blendFactor(0, BlendFactor::One, BlendFactor::OneMinusSrcAlpha);
 
                 setup.primitiveTopology(PrimitiveTopology::TriangleList);
-                m_renderStatesTransparentTriangles = api->createGraphicsRenderStates(setup);
+                m_renderStatesTransparent.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
 
                 setup.primitiveTopology(PrimitiveTopology::LineList);
-                m_renderStatesTransparentLines = api->createGraphicsRenderStates(setup);
+                m_renderStatesTransparent.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
             }
 
             {
@@ -84,24 +88,31 @@ namespace rendering
                 setup.blendFactor(0, BlendFactor::One, BlendFactor::OneMinusSrcAlpha);
 
                 setup.primitiveTopology(PrimitiveTopology::TriangleList);
-                m_renderStatesOverlayTriangles = api->createGraphicsRenderStates(setup);
+                m_renderStatesOverlay.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
 
                 setup.primitiveTopology(PrimitiveTopology::LineList);
-                m_renderStatesOverlayLines = api->createGraphicsRenderStates(setup);
+                m_renderStatesOverlay.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
             }
 
             {
-               
-            }
+                GraphicsRenderStatesSetup setup;
+                setup.depth(false);
+                setup.blend(true);
+                setup.blendFactor(0, BlendFactor::One, BlendFactor::OneMinusSrcAlpha);
 
-          
+                setup.primitiveTopology(PrimitiveTopology::TriangleList);
+                m_renderStatesScreen.drawTriangles = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+
+                setup.primitiveTopology(PrimitiveTopology::LineList);
+                m_renderStatesScreen.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+            }
 		}
 
 		FrameHelperDebug::~FrameHelperDebug()
 		{
 		}
 
-        void FrameHelperDebug::ensureBufferSize(const FrameParams_DebugGeometry& geom)
+        void FrameHelperDebug::ensureBufferSize(const FrameParams_DebugGeometry& geom) const
         {
             uint32_t maxVertexSizeThisFrame = 0;
             maxVertexSizeThisFrame = std::max<uint32_t>(maxVertexSizeThisFrame, geom.solid.vertices().dataSize());
@@ -140,8 +151,29 @@ namespace rendering
             }
         }
 
-        void FrameHelperDebug::renderInternal(command::CommandWriter& cmd, const DebugGeometry& geom) const
+        DebugGeometryViewRecorder::DebugGeometryViewRecorder(FrameViewRecorder* parent)
+            : FrameViewRecorder(parent)
+            , solid(nullptr)
+            , transparent(nullptr)
+            , overlay(nullptr)
+            , screen(nullptr)
+        {}
+
+        void FrameHelperDebug::render(DebugGeometryViewRecorder& rec, const FrameParams_DebugGeometry& geom, const Camera* camera) const
         {
+            ensureBufferSize(geom);
+
+            renderInternal(rec.solid, camera, geom.solid, m_renderStatesSolid);
+            renderInternal(rec.transparent, camera, geom.transparent, m_renderStatesTransparent);
+            renderInternal(rec.overlay, camera, geom.overlay, m_renderStatesOverlay);
+            renderInternal(rec.screen, camera, geom.screen, m_renderStatesScreen);
+        }
+
+        void FrameHelperDebug::renderInternal(command::CommandWriter& cmd, const Camera* camera, const DebugGeometry& geom, const Shaders& shaders) const
+        {
+            if (geom.vertices().empty() || geom.indices().empty())
+                return;
+
             command::CommandWriterBlock block(cmd, "DebugGeometry");
 
             // upload vertices
@@ -164,177 +196,61 @@ namespace rendering
             cmd.opBindVertexBuffer("DebugVertex"_id, m_vertexBuffer);
             cmd.opBindIndexBuffer(m_indexBuffer, ImageFormat::R32_UINT);
 
-            /*// draw batches
-            if (auto shader = resDebugGeometryShader.loadAndGet())
+            // global params
             {
-                const auto vertexDataSize = geom.vertices().dataSize();
-                const auto vertexExDataSize = geom.verticesEx().dataSize();
-                const auto indicesDataSize = geom.indices().dataSize();
-                if (!indicesDataSize)
-                    return;
-
-                if (!buffers.ensureSize(vertexDataSize, vertexExDataSize, indicesDataSize))
-                    return;
-
-                command::CommandWriterBlock block(cmd, "DebugGeometry");
-
-                // upload buffers
+                struct
                 {
-                    PC_SCOPE_LVL1(DebugFragmentsCopyData);
-                    void* vertexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBuffer->view(), 0, vertexDataSize);
-                    geom.vertices().copy(vertexDataPtr, vertexDataSize);
-                    void* vertexExDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBufferEx->view(), 0, vertexExDataSize);
-                    geom.verticesEx().copy(vertexExDataPtr, vertexExDataSize);
-                    void* indexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.indexBuffer->view(), 0, indicesDataSize);
-                    geom.indices().copy(indexDataPtr, indicesDataSize);
-                }
+                    base::Matrix WorldToScreen;
+                    base::Vector3 CameraPosition;
+                    float _padding0;
+                } data;
 
-                // global params
-                {
-                    DebugFragmentParams::Constants consts;
-                    consts.WorldToScreen = view.frame().camera.camera.worldToScreen().transposed(); // TODO: jitter or not ?
-                    view.frame().camera.camera.worldToScreen();
+                data.WorldToScreen = camera->worldToScreen().transposed();
+                data.CameraPosition = camera->position();
 
-                    DebugFragmentParams params;
-                    params.Data = cmd.opUploadConstants(consts);
-                    //params.Texture = ImageView::DefaultWhite();
-                    //params.TextureArray = ImageView::DefaultWhite();
-                    cmd.opBindParametersInline("DebugFragmentPass"_id, params);
-                }
-
-                // bind geometry
-
-
-                // setup initial batch state
-                auto lastType = DebugGeometryType::Solid;
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-
-                // process fragments one by one
-                geom.elements().forEach([&cmd, &shader, &lastType](const DebugGeometryElement& entry)
-                    {
-                        // switch primitive type
-                        if (entry.type != lastType)
-                        {
-                            lastType = entry.type;
-
-                            switch (entry.type)
-                            {
-                            case scene::DebugGeometryType::Solid:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-                                break;
-
-                            case scene::DebugGeometryType::Lines:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::LineList);
-                                break;
-
-                            case scene::DebugGeometryType::Sprite:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
-                                break;
-                            }
-                        }
-
-                        // draw
-                        cmd.opDrawIndexed(shader, 0, entry.firstIndex, entry.numIndices);
-                    });
-
-                // reset state
-                cmd.opSetDepthBias(0.0f, 0.0f, 0.0f);
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-            }*/
-        }
-
-		void FrameHelperDebug::render(FrameViewRecorder& rec, const FrameParams_DebugGeometry& geom, const Setup& setup) const
-		{
-            PC_SCOPE_LVL0(RenderDebugFragments);
-
-#if 0
-            command::CommandWriter* solid = nullptr;
-            command::CommandWriter* transparent = nullptr;
-            command::CommandWriter* overlay = nullptr;
-
-
-
-            if (auto shader = resDebugGeometryShader.loadAndGet())
-            {
-                const auto vertexDataSize = geom.vertices().dataSize();
-                const auto vertexExDataSize = geom.verticesEx().dataSize();
-                const auto indicesDataSize = geom.indices().dataSize();
-                if (!indicesDataSize)
-                    return;
-
-                if (!buffers.ensureSize(vertexDataSize, vertexExDataSize, indicesDataSize))
-                    return;
-
-                command::CommandWriterBlock block(cmd, "DebugGeometry");
-
-                // upload buffers
-                {
-                    PC_SCOPE_LVL1(DebugFragmentsCopyData);
-                    void* vertexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBuffer->view(), 0, vertexDataSize);
-                    geom.vertices().copy(vertexDataPtr, vertexDataSize);
-                    void* vertexExDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.vertexBufferEx->view(), 0, vertexExDataSize);
-                    geom.verticesEx().copy(vertexExDataPtr, vertexExDataSize);
-                    void* indexDataPtr = cmd.opUpdateDynamicBufferPtr(buffers.indexBuffer->view(), 0, indicesDataSize);
-                    geom.indices().copy(indexDataPtr, indicesDataSize);
-                }
-
-                // global params
-                {
-                    DebugFragmentParams::Constants consts;
-                    consts.WorldToScreen = view.frame().camera.camera.worldToScreen().transposed(); // TODO: jitter or not ?
-                    view.frame().camera.camera.worldToScreen();
-
-                    DebugFragmentParams params;
-                    params.Data = cmd.opUploadConstants(consts);
-                    //params.Texture = ImageView::DefaultWhite();
-                    //params.TextureArray = ImageView::DefaultWhite();
-                    cmd.opBindParametersInline("DebugFragmentPass"_id, params);
-                }
-
-                // bind geometry
-
-                cmd.opBindVertexBuffer("DebugVertex"_id, buffers.vertexBuffer->view());
-                cmd.opBindVertexBuffer("DebugVertexEx"_id, buffers.vertexBufferEx->view());
-                cmd.opBindIndexBuffer(buffers.indexBuffer->view(), ImageFormat::R32_UINT);
-
-                // setup initial batch state
-                auto lastType = DebugGeometryType::Solid;
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-
-                // process fragments one by one
-                geom.elements().forEach([&cmd, &shader, &lastType](const DebugGeometryElement& entry)
-                    {
-                        // switch primitive type
-                        if (entry.type != lastType)
-                        {
-                            lastType = entry.type;
-
-                            switch (entry.type)
-                            {
-                            case scene::DebugGeometryType::Solid:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
-                                break;
-
-                            case scene::DebugGeometryType::Lines:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::LineList);
-                                break;
-
-                            case scene::DebugGeometryType::Sprite:
-                                cmd.opSetPrimitiveType(PrimitiveTopology::PointList);
-                                break;
-                            }
-                        }
-
-                        // draw
-                        cmd.opDrawIndexed(shader, 0, entry.firstIndex, entry.numIndices);
-                    });
-
-                // reset state
-                cmd.opSetDepthBias(0.0f, 0.0f, 0.0f);
-                cmd.opSetPrimitiveType(PrimitiveTopology::TriangleList);
+                DescriptorEntry desc[1];
+                desc[0].constants(data);
+                cmd.opBindDescriptor("DebugFragmentPass"_id, desc);
             }
-#endif
-		}
+
+            // process batches
+            const auto* batch = geom.elements().typedData();
+            const auto* batchEnd = batch + geom.elements().size();
+            while (batch < batchEnd)
+            {
+                const auto* startBatch = batch++;
+                auto expectedNextIndexStart = startBatch->firstIndex + startBatch->numIndices;
+
+                // find end of the range
+                if (1)
+                {
+                    while (batch < batchEnd)
+                    {
+                        if (batch->firstIndex != expectedNextIndexStart)
+                            break;
+                        /*if (batch->selectable != batch->selectable)
+                            break;*/
+                        if (batch->type != startBatch->type)
+                            break;
+
+                        expectedNextIndexStart = batch->firstIndex + batch->numIndices;
+                        batch += 1;
+                    }
+                }
+
+                // draw range
+                switch (startBatch->type)
+                {
+                    case DebugGeometryType::Lines:
+                        cmd.opDrawIndexed(shaders.drawLines, 0, startBatch->firstIndex, expectedNextIndexStart - startBatch->firstIndex);
+                        break;
+
+                    case DebugGeometryType::Solid:
+                        cmd.opDrawIndexed(shaders.drawTriangles, 0, startBatch->firstIndex, expectedNextIndexStart - startBatch->firstIndex);
+                        break;
+                }
+            }
+        }
 
         //---
 

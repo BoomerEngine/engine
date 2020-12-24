@@ -57,6 +57,7 @@ namespace rendering
 						const auto& vertexAttrib = vertexStream.elements[j];
 
 						const auto glFormat = TranslateImageFormat(vertexAttrib.format);
+						const auto& formatInfo = GetImageFormatInfo(vertexAttrib.format);
 
 						// convert to old school format
 						GLenum glBaseFormat = 0;
@@ -64,7 +65,17 @@ namespace rendering
 						GLboolean glFormatNormalized = GL_FALSE;
 						DecomposeVertexFormat(glFormat, glBaseFormat, glNumComponents, glFormatNormalized);
 
-						GL_PROTECT(glVertexArrayAttribFormat(m_glVertexLayout, attributeIndex, glNumComponents, glBaseFormat, glFormatNormalized, vertexAttrib.offset));
+
+						if (formatInfo.formatClass == ImageFormatClass::INT || formatInfo.formatClass == ImageFormatClass::UINT)
+						{
+							GL_PROTECT(glVertexArrayAttribIFormat(m_glVertexLayout, attributeIndex, glNumComponents, glBaseFormat, vertexAttrib.offset));
+						}
+						else
+						{
+                            GL_PROTECT(glVertexArrayAttribFormat(m_glVertexLayout, attributeIndex, glNumComponents, glBaseFormat, glFormatNormalized, vertexAttrib.offset));
+
+						}
+
 						GL_PROTECT(glVertexArrayAttribBinding(m_glVertexLayout, attributeIndex, i)); // attribute {attributeIndex} in buffer {i}
 						GL_PROTECT(glEnableVertexArrayAttrib(m_glVertexLayout, attributeIndex)); // we use consecutive attribute indices
 						attributeIndex += 1;

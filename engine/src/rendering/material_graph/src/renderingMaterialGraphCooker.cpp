@@ -131,11 +131,11 @@ namespace rendering
             }
 
             // find output node and read settings
-            auto sortGroup = MaterialSortGroup::Opaque;
+            MaterialTemplateMetadata metadata;
             const auto* outputBlock = sourceGraph->graph()->findOutputBlock();
             if (outputBlock)
             {
-                sortGroup = outputBlock->resolveSortGroup();
+                outputBlock->resolveMetadata(metadata);
             }
             else
             {
@@ -184,7 +184,6 @@ namespace rendering
                         auto& entry = precompiledTechniques.emplaceBack();
                         entry.setup = setup;
                         entry.shader = compiledTechnique->shader;
-                        entry.renderStates = compiledTechnique->renderStates;
 
                         delete compiledTechnique;
                     }
@@ -197,7 +196,7 @@ namespace rendering
                 if (!validTechniques)
                     return nullptr;
 
-                return base::RefNew<MaterialTemplate>(std::move(parameters), sortGroup, std::move(precompiledTechniques));
+                return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, std::move(precompiledTechniques), contextPath);
             }
             else
             {
@@ -212,7 +211,7 @@ namespace rendering
 
                 // create a version of material template that supports runtime compilation from the source graph
                 auto compiler = base::RefNew<MaterialTemplateGraphTechniqueCompiler>(graphCopy);
-                return base::RefNew<MaterialTemplate>(std::move(parameters), sortGroup, compiler);
+                return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, compiler, importPath);
             }
         }
     };

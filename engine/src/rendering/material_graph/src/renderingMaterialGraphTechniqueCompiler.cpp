@@ -154,8 +154,7 @@ namespace rendering
         // create a final data in a compiled technique and push it to the target technique we were requested to compile
         auto compiledTechnique = new MaterialCompiledTechnique;
         compiledTechnique->shader = shader;
-        compiledTechnique->dataLayout = dataLayout;
-        compiledTechnique->renderStates = renderStates;
+        //compiledTechnique->dataLayout = dataLayout;
 
         TRACE_INFO("Compiled '{} for '{}' in {} ({} code generation)", setup, contextName, timer, TimeInterval(generationTime));
         return compiledTechnique;
@@ -178,11 +177,11 @@ namespace rendering
     {
         // compile technique
         auto* compiledTechnique = CompileTechnique(m_contextName, m_graph, m_setup, *this, *this);
-        if (!compiledTechnique)
-            return false;
+        DEBUG_CHECK_RETURN_EX_V(compiledTechnique && compiledTechnique->shader, "Failed to compile material technique", false);
 
         // push new state to target technique, from now one this will be used for rendering
-        m_technique->pushData(compiledTechnique);
+        m_technique->pushData(compiledTechnique->shader);
+        delete compiledTechnique;
         return true;
     }
 

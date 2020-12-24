@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingScene.h"
-#include "renderingSceneUtils.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameCameraContext.h"
 #include "renderingFrameParams.h"
@@ -39,6 +38,7 @@ namespace rendering
 			, forwardTransparent(nullptr)
 			, selectionOutline(nullptr)
             , sceneOverlay(nullptr)
+            , screenOverlay(nullptr)
 		{}
 
 		//---
@@ -46,7 +46,19 @@ namespace rendering
 		FrameViewMain::FrameViewMain(const FrameRenderer& frame, const Setup& setup)
 			: m_frame(frame)
 			, m_setup(setup)
-		{}
+		{
+            // cache
+            m_camera = setup.camera;
+            m_viewport = base::Rect(0, 0, frame.frame().resolution.width, frame.frame().resolution.height);
+
+            // compute cascade pars and start rendering
+            if (m_frame.frame().filters & FilterBit::CascadeShadows)
+            {
+                const auto globalLightDir = m_frame.frame().globalLighting.globalLightDirection;
+                const auto globalCascadesResolution = m_frame.resources().cascadesShadowDepth->width();
+                CalculateCascadeSettings(globalLightDir, globalCascadesResolution, m_camera, m_frame.frame().cascades, m_cascades);
+            }
+        }
 
 		FrameViewMain::~FrameViewMain()
 		{
@@ -59,6 +71,8 @@ namespace rendering
             FrameViewMainRecorder rec;
             initializeCommandStreams(cmd, rec);
 
+            // start cascade rendering
+
             // render main scene into the pre-created command buffers
 			if (auto* scene = m_frame.frame().scenes.mainScenePtr)
 				scene->renderMainView(rec, *this, m_frame);
@@ -68,8 +82,12 @@ namespace rendering
             // render debug fragments
             if (m_frame.frame().filters & FilterBit::DebugGeometry)
             {
-
-
+                DebugGeometryViewRecorder debugRec(&rec);
+                debugRec.solid.attachBuffer(rec.forwardSolid.opCreateChildCommandBuffer(false));
+                debugRec.transparent.attachBuffer(rec.forwardTransparent.opCreateChildCommandBuffer(false));
+                debugRec.overlay.attachBuffer(rec.sceneOverlay.opCreateChildCommandBuffer(false));
+                debugRec.screen.attachBuffer(rec.screenOverlay.opCreateChildCommandBuffer(false));
+                m_frame.helpers().debug->render(debugRec, m_frame.frame().geometry, &m_camera);
             }
 
             // wait for all recording jobs to finish
@@ -88,12 +106,14 @@ namespace rendering
 
             // depth pre-pass
             {
+                command::CommandWriterBlock block(cmd, "DepthPrePass");
+
                 FrameBuffer fb;
                 fb.depth.view(m_frame.resources().sceneFullDepthRTV).clearDepth(1.0f).clearStencil(0);
                 fb.depth.loadOp = LoadOp::Clear;
                 fb.depth.storeOp = StoreOp::Store;
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(fb, 1, m_viewport);
 
                 rec.depthPrePassStatic.attachBuffer(cmd.opCreateChildCommandBuffer());
 
@@ -106,12 +126,31 @@ namespace rendering
 
             // TODO: capture depth for this-frame occlusion culling
 
-            // wait for cascades
+            // render cascades
+            FrameViewCascades viewCascades(m_frame, m_cascades);
+            viewCascades.render(cmd, &rec);
 
-            // bind lighting params
+            // shadow maps are readable now
+            cmd.opTransitionLayout(m_frame.resources().cascadesShadowDepth, ResourceLayout::DepthWrite, ResourceLayout::ShaderResource);
+
+            // compute global shadow mask
+            {
+                command::CommandWriterBlock block(cmd, "GlobalShadowMask");
+
+                base::Color clearColor = base::Color::WHITE;
+                cmd.opClearWritableImage(m_frame.resources().globalAOShadowMaskUAV, &clearColor);
+            }
+
+            // shadow mask is readable now
+            cmd.opTransitionLayout(m_frame.resources().globalAOShadowMask, ResourceLayout::UAV, ResourceLayout::ShaderResource);
+
+            // bind lighting params (NOTE: lighting data is not available in depth pass)
+            bindLighting(cmd);
 
             // main forward pass
             {
+                command::CommandWriterBlock block(cmd, "Forward");
+
                 FrameBuffer fb;
                 fb.depth.view(m_frame.resources().sceneFullDepthRTV);
                 fb.depth.loadOp = LoadOp::Keep;
@@ -131,15 +170,24 @@ namespace rendering
 
                 //fb.color[0].clear(0.5f, 0.5f, 0.5f, 1.0f);
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(fb, 1, m_viewport);
 
-                rec.forwardSolid.attachBuffer(cmd.opCreateChildCommandBuffer());
+                {
+                    command::CommandWriterBlock block(cmd, "Solid");
+                    rec.forwardSolid.attachBuffer(cmd.opCreateChildCommandBuffer());
+                }
 
-                rec.forwardMasked.attachBuffer(cmd.opCreateChildCommandBuffer());
+                {
+                    command::CommandWriterBlock block(cmd, "Masked");
+                    rec.forwardMasked.attachBuffer(cmd.opCreateChildCommandBuffer());
+                }
 
                 // TODO: capture color buffer for refractions
 
-                rec.forwardTransparent.attachBuffer(cmd.opCreateChildCommandBuffer());
+                {
+                    command::CommandWriterBlock block(cmd, "Transparent");
+                    rec.forwardTransparent.attachBuffer(cmd.opCreateChildCommandBuffer());
+                }
 
                 cmd.opEndPass();
             }
@@ -149,11 +197,14 @@ namespace rendering
 
             // selection outline depth
             {
+                command::CommandWriterBlock block(cmd, "Outline");
+
                 FrameBuffer fb;
                 fb.depth.view(m_frame.resources().sceneOutlineDepthRTV).clearDepth(1.0f).clearStencil(0);
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(fb, 1, m_viewport);
 
+                
                 rec.selectionOutline.attachBuffer(cmd.opCreateChildCommandBuffer());
 
                 cmd.opEndPass();
@@ -161,12 +212,14 @@ namespace rendering
 
             // overlay
             {
+                command::CommandWriterBlock block(cmd, "Overlay");
+
                 FrameBuffer fb;
                 fb.color[0].view(m_frame.resources().sceneFullColorRTV);
                 fb.color[0].loadOp = LoadOp::Keep; // TODO: do not clear if we have background scene
                 fb.color[0].storeOp = StoreOp::Store;
 
-                cmd.opBeingPass(fb);
+                cmd.opBeingPass(fb, 1, m_viewport);
 
                 rec.sceneOverlay.attachBuffer(cmd.opCreateChildCommandBuffer());
 
@@ -193,45 +246,65 @@ namespace rendering
                 //cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
             }
 
-            // present
+            // screen pass
             {
-                FrameHelperCompose::Setup setup;
-                setup.gameWidth = m_frame.width();
-                setup.gameHeight = m_frame.height();
-                setup.gameView = m_frame.resources().sceneResolvedColorSRV;
-                setup.presentTarget = m_setup.colorTarget;
-                setup.presentRect = m_setup.viewport;
-                m_frame.helpers().compose->finalCompose(cmd, setup);
+                command::CommandWriterBlock block(cmd, "Screen");
+
+                FrameBuffer fb;
+                fb.color[0].view(m_setup.colorTarget);
+                fb.depth.view(m_setup.depthTarget);
+
+                cmd.opBeingPass(fb, 1, m_setup.viewport);
+
+                // present
+                {
+                    FrameHelperCompose::Setup setup;
+                    setup.gameWidth = m_frame.width();
+                    setup.gameHeight = m_frame.height();
+                    setup.gameView = m_frame.resources().sceneResolvedColorSRV;
+                    setup.presentTarget = m_setup.colorTarget;
+                    setup.presentRect = m_setup.viewport;
+                    m_frame.helpers().compose->finalCompose(cmd, setup);
+                }
+
+                // screen overlay
+                {
+                    rec.screenOverlay.attachBuffer(cmd.opCreateChildCommandBuffer());
+                }
+
+                // end screen pass
+                cmd.opEndPass();
             }
         }
 
         void FrameViewMain::bindCamera(command::CommandWriter& cmd)
         {
             GPUCameraInfo cameraParams;
-            CalcGPUSingleCamera(cameraParams, m_frame.frame().camera.camera);
+            PackSingleCameraParams(cameraParams, m_frame.frame().camera.camera);
 
             DescriptorEntry desc[1];
             desc[0].constants(cameraParams);
             cmd.opBindDescriptor("CameraParams"_id, desc);
         }
 
-		void FrameViewMain::renderFragments(Scene* scene, FrameViewMainRecorder& rec)
-		{
-		}
+        void FrameViewMain::bindLighting(command::CommandWriter& cmd)
+        {
+            struct
+            {
+                GPULightingInfo lighting;
+                GPUCascadeInfo cascades;
+            } params;
 
-		/*{
-			struct
-			{
-				GPUCameraInfo camera;
-				GPUFrameParameters frame;
-			} viewConsts;
+            PackLightingParams(params.lighting, m_frame.frame().globalLighting);
+            PackCascadeParams(params.cascades, m_cascades);
 
-			GPUCameraInfo data;
-			CalcGPUCameraInfo(data, camera, prevFrameCamera);
+            DescriptorEntry desc[3];
+            desc[0].constants(params);
+            desc[1] = m_frame.resources().globalAOShadowMaskUAV_RO;
+            desc[2] = m_frame.resources().cascadesShadowDepthSRVArray;
+            cmd.opBindDescriptor("LightingParams"_id, desc);
 
-
-
-		}*/
+        }
 
 #if 0
         //---

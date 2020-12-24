@@ -42,6 +42,9 @@ namespace rendering
             // get general attributes (from parser)
             INLINE const AttributeList& attributes() const { return m_attributes; }
 
+            // get general attributes (from parser)
+            INLINE AttributeList& attributes() { return m_attributes; }
+
             // get program parameters
             typedef base::Array<DataParameter*> TParameters;
             INLINE const TParameters& parameters() const { return m_parameters; }

@@ -14,12 +14,24 @@
 
 namespace rendering
 {
+	///---
+
+	RTTI_BEGIN_TYPE_CLASS(MaterialTemplateMetadata);
+		RTTI_PROPERTY(hasVertexAnimation);
+		RTTI_PROPERTY(hasPixelDiscard);
+		RTTI_PROPERTY(hasTransparency);
+		RTTI_PROPERTY(hasLighting);
+		RTTI_PROPERTY(hasPixelReadback);
+	RTTI_END_TYPE();
+
+	MaterialTemplateMetadata::MaterialTemplateMetadata()
+	{}
  
     ///---
 
-	MaterialTemplateProxy::MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, MaterialSortGroup sortGroup, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
+	MaterialTemplateProxy::MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
 		: m_parameters(parameters)
-		, m_sortGroup(sortGroup)
+		, m_metadata(metadata)
 		, m_precompiledTechniques(precompiledTechniques)
 		, m_dynamicCompiler(compiler)
 		, m_contextName(contextName)
@@ -54,7 +66,7 @@ namespace rendering
 	}
 
 
-	MaterialTechniquePtr MaterialTemplateProxy::fetchTechnique(const MaterialCompilationSetup& setup)
+	MaterialTechniquePtr MaterialTemplateProxy::fetchTechnique(const MaterialCompilationSetup& setup) const
 	{
 		const auto key = setup.key();
 
@@ -65,8 +77,7 @@ namespace rendering
 		{
 			ret = base::RefNew<MaterialTechnique>(setup);
 
-			// lookup in precompiled list
-			bool valid = false;
+			/*// lookup in precompiled list
 			for (const auto& techniqe : m_precompiledTechniques)
 			{
 				const auto techniqueKey = techniqe.setup.key();
@@ -74,25 +85,20 @@ namespace rendering
 				{
 					auto compiledTechnique = new MaterialCompiledTechnique;
 					compiledTechnique->shader = techniqe.shader;
-					compiledTechnique->dataLayout = m_layout;
-					compiledTechnique->renderStates = techniqe.renderStates;
 					ret->pushData(compiledTechnique);
 					valid = true;
 					break;
 				}
-			}
+			}*/
 
 			// try to compile dynamically
-			if (!valid)
+			if (m_dynamicCompiler)
 			{
-				if (m_dynamicCompiler)
-				{
-					m_dynamicCompiler->requestTechniqueComplation(m_contextName, ret);
-				}
-				else
-				{
-					TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", m_contextName, setup, key);
-				}
+				m_dynamicCompiler->requestTechniqueComplation(m_contextName, ret);
+			}
+			else
+			{
+				TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", m_contextName, setup, key);
 			}
 		}
 

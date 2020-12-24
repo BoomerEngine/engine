@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "renderingScene.h"
-#include "renderingSceneUtils.h"
 #include "renderingFrameRenderer.h"
 #include "renderingFrameCameraContext.h"
 #include "renderingFrameParams.h"

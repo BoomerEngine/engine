@@ -135,6 +135,18 @@ namespace ed
         }        
     }
 
+    bool MaterialGraphEditor::save()
+    {
+        if (!TBaseClass::save())
+            return false;
+
+        m_previewTemplate = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()).acquire();
+
+        if (m_previewTemplate)
+            m_previewInstance->baseMaterial(m_previewTemplate);
+
+        return true;
+    }
 
     bool MaterialGraphEditor::initialize()
     {
@@ -150,9 +162,10 @@ namespace ed
         m_graphPalette->setRootClasses(m_graph->graph());
 
         m_previewInstance = base::RefNew<rendering::MaterialInstance>();
+        m_previewTemplate = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()).acquire();
 
-        if (auto existingMaterial = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()))
-            m_previewInstance->baseMaterial(existingMaterial);
+        if (m_previewTemplate)
+            m_previewInstance->baseMaterial(m_previewTemplate);
 
         m_previewPanel->bindMaterial(m_previewInstance);
         return true;

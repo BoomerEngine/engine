@@ -2,7 +2,7 @@
 * Boomer Engine v4 2015-2017
 * Written by Tomasz "Rex Dex" Jonarski
 *
-* Common math functions
+* Common vertex support for materials
 *
 ***/
 
@@ -10,68 +10,17 @@
 
 //----
 
-#define OBJECT_FLAG_SELECTED 1
-
 struct ObjectInfo
 {
-    float AutoHideDistance;
-    uint Flags; // per object flags
-    uint Color; // rgba8 packed
-    uint ColorEx; // rgba8 packed
-
+    mat4 LocalToScene; // transformation matrix
+    vec4 SceneBoundsCenter; // .w = free
     uint SelectionObjectID;
     uint SelectionSubObjectID;
     uint _Padding0;
     uint _Padding1;
-
-    vec4 SceneBoundsMin; // .w = free
-    vec4 SceneBoundsMax; // .w = size (length of max-min)
-    mat4 LocalToScene; // transformation matrix
 };
 
-descriptor ObjectBuffers
-{
-    attribute(layout=ObjectInfo) Buffer ObjectData;
-};
-
-//---- STATIC DATA
-
-struct MeshChunkInfo
-{
-    uint FirstWordInVertexBuffer;
-    uint NumWordsPerVertex;
-    uint FirstWordInIndexBuffer;
-    uint NumVertices;
-    uint NumIndices;
-	uint _padding0;
-	uint _padding1;
-	uint _padding2;
-	vec4 QuantizationOffset;
-	vec4 QuantizationScale;
-}
-
-descriptor MeshBuffers
-{
-    attribute(format = r32ui) Buffer MeshIndexData;
-    attribute(format = r32ui) Buffer MeshVertexData;
-    attribute(layout=MeshChunkInfo) Buffer MeshChunkData;
-}
-
-//--- RUNTIME DATA
-
-struct MeshDrawChunkInfo
-{
-    uint ObjectID;
-    uint MeshChunkID;
-    uint SubObjectID;
-};
-
-descriptor MeshDrawData
-{
-    attribute(layout=MeshDrawChunkInfo) Buffer MeshChunkDrawData;
-}
-
-//--
+//----
 
 vec3 UnpackPosition_11_11_10(uint data)
 {
@@ -115,21 +64,11 @@ vec2 UnpackHalf2(uint data)
     return unpackHalf2x16(data);
 }
 
+//----
+
 export shader MaterialVS
 {
-    uint CalcVertexOffsetInWords()
-    {
-        uint drawObjectIndex = gl_BaseInstance + gl_InstanceID;
-        MeshDrawChunkInfo drawObject = MeshChunkDrawData[drawObjectIndex];
 
-        uint indexDataOffsetInWords = MeshChunkData[drawObject.MeshChunkID].FirstWordInIndexBuffer;
-        uint indexOfVertex = MeshIndexData[indexDataOffsetInWords + gl_VertexID];
-
-        uint vertexStrideInWords = MeshChunkData[drawObject.MeshChunkID].NumWordsPerVertex;
-        uint vertexOffsetInWords = MeshChunkData[drawObject.MeshChunkID].FirstWordInVertexBuffer + (vertexStrideInWords * indexOfVertex);
-
-        return vertexOffsetInWords;
-    }
 }
 
-//--
+//----

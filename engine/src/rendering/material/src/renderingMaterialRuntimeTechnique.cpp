@@ -8,30 +8,17 @@
 
 #include "build.h"
 #include "renderingMaterialRuntimeTechnique.h"
+#include "rendering/device/include/renderingShaderData.h"
+#include "rendering/device/include/renderingShader.h"
+#include "rendering/device/include/renderingPipeline.h"
 
 namespace rendering
 {
  
     ///---
 
-    RTTI_BEGIN_TYPE_ENUM(MaterialBlendMode);
-    RTTI_ENUM_OPTION(Opaque);
-    RTTI_ENUM_OPTION(AlphaBlend);
-    RTTI_ENUM_OPTION(Addtive);
-    RTTI_ENUM_OPTION(Refractive);
-    RTTI_END_TYPE();
-
-    ///---
-
-    RTTI_BEGIN_TYPE_CLASS(MaterialTechniqueRenderStates);
-    RTTI_PROPERTY(blendMode);
-    RTTI_PROPERTY(twoSided);
-    RTTI_PROPERTY(depthTest);
-    RTTI_PROPERTY(depthWrite);
-    RTTI_END_TYPE();
-
-	MaterialTechniqueRenderStates::MaterialTechniqueRenderStates()
-	{}
+    MaterialTechniqueRenderStates::MaterialTechniqueRenderStates()
+    {}
 
     ///---
 
@@ -55,17 +42,22 @@ namespace rendering
     MaterialTechnique::~MaterialTechnique()
     {
         if (auto* expiredState = m_data.exchange(nullptr))
-            m_expiredData.pushBack(expiredState);
+            m_expiredData.pushBack(NoAddRef(expiredState));
 
-        m_expiredData.clearPtr();
+        m_expiredData.clear();
     }
 
-    void MaterialTechnique::pushData(MaterialCompiledTechnique* newState)
+    void MaterialTechnique::pushData(const ShaderData* newState)
     {
-        if (newState)
+        if (newState && newState->deviceShader())
         {
-            if (auto* expiredState = m_data.exchange(newState))
-				m_expiredData.pushBack(expiredState);
+            if (auto pso = newState->deviceShader()->createGraphicsPipeline())
+            {
+                pso->addRef();
+
+                if (auto* expiredState = m_data.exchange(pso.get()))
+                    m_expiredData.pushBack(NoAddRef(expiredState));
+            }
         }
     }
 

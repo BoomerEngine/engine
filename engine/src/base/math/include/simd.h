@@ -135,6 +135,8 @@ namespace base
         INLINE bool operator==(const SIMDQuad& v) const;
         INLINE bool operator!=(const SIMDQuad& v) const;
 
+        INLINE SIMDQuad& operator=(const SIMDQuad& v);
+
         INLINE float& operator[](uint32_t index); // component access - NOTE: goes through memory
         INLINE const float& operator[](uint32_t index) const;  // component access - NOTE: goes through memory
 

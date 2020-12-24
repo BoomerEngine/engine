@@ -12,10 +12,10 @@ attribute(packing=vertex) struct CanvasVertex
 {
     attribute(offset=0) vec2 pos;
     attribute(offset=8) vec2 uv;
-	attribute(offset=16) vec2 clipUV;
+    attribute(offset=16) vec2 clipUV;
     attribute(offset=24, format=rgba8) vec4 color;
-	attribute(offset=28, format=rg16ui) vec2 attributesPacked; // index + flags
-	attribute(offset=32, format=rg16ui) vec2 imageInfoPacked; // entry index + page index
+    attribute(offset=28, format=rg16ui) uvec2 attributesPacked; // index + flags
+    attribute(offset=32, format=rg16ui) uvec2 imageInfoPacked; // entry index + page index
 }
 
 struct CanvasAttributes
@@ -100,9 +100,6 @@ shader CanvasVS
 		CanvasUV = v.uv;
 		CanvasClipUV = v.clipUV;
 		CanvasColor = v.color;
-
-		//CanvasAttributesPacked = uintBitsToFloat(v.attributesPacked);
-		//CanvasImageEntryPacked = uintBitsToFloat(v.imageInfoPacked);
 
 		CanvasAttributesIndex = v.attributesPacked.x;
 		CanvasAttributesFlags = v.attributesPacked.y;

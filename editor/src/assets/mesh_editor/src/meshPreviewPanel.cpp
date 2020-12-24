@@ -160,10 +160,7 @@ namespace ed
                         desc.excludedMaterialMask.insert(materialName);
 
 					if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
-					{
-						renderingScene()->attachProxy(proxy);
 						m_proxies.pushBack(proxy);
-					}
                 }
 
 				desc.excludedMaterialMask.clear();
@@ -182,11 +179,13 @@ namespace ed
 				if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
 				{
 					proxy->m_selectable = rendering::scene::Selectable(42, 0);
-					renderingScene()->attachProxy(proxy);
 					m_proxies.pushBack(proxy);
 				}
             }
         }
+
+        for (auto& proxy : m_proxies)
+            renderingScene()->attachProxy(proxy);
     }
 
     //--

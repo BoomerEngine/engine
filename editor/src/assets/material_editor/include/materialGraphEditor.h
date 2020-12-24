@@ -38,6 +38,7 @@ namespace ed
     private:
         base::RefPtr<rendering::MaterialGraph> m_graph;
         base::RefPtr<rendering::MaterialInstance> m_previewInstance;
+        base::RefPtr<rendering::MaterialTemplate> m_previewTemplate;
 
         //---
 
@@ -61,6 +62,7 @@ namespace ed
         virtual bool checkGeneralDelete() const override;
 
         virtual bool initialize() override;
+        virtual bool save() override;
     };
 
 } // ed

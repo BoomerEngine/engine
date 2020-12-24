@@ -44,6 +44,7 @@ namespace rendering
 
             AttributeList& clear();
             AttributeList& add(base::StringID key, base::StringView txt = "");
+            AttributeList& merge(const AttributeList& attr);
 
             bool has(base::StringID key) const;
             base::StringView value(base::StringID key) const;

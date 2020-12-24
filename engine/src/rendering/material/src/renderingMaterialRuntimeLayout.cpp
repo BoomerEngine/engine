@@ -121,6 +121,7 @@ namespace rendering
 		{
 			outLayout.descriptorName = base::StringID(base::TempString("MaterialData{}", txt));
 			outLayout.descriptorID = DescriptorID::FromTypes(resourceTypes.typedData(), resourceTypes.size());
+			outLayout.descriptorSize = resourceTypes.size();
 		}
     }
 

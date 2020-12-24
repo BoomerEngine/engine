@@ -8,53 +8,59 @@
 
 #pragma once
 
+#include "renderingFrameView.h"
+#include "rendering/device/include/renderingCommandWriter.h"
+
 namespace rendering
 {
     namespace scene
     {
 
-		//--
+        //--
 
-		// info about single cascades
-		struct RENDERING_SCENE_API CascadeInfo
-		{
-			uint8_t cascadeIndex = 0;
-			float pixelSize = 1.0f;
-			float invPixelSize = 1.0f;
-			float edgeFade = 0.0f;
-			float filterScale = 0.0f;
-			float filterTexelSize = 0.0f;
-			float worldSpaceTexelSize = 0.0f;
+        /// command buffers to write to when recording shadow cascades
+        struct RENDERING_SCENE_API FrameViewCascadesRecorder : public FrameViewRecorder
+        {
+            struct CascadeSlice
+            {
+                command::CommandWriter solid;
+                command::CommandWriter masked;
 
-			float depthBiasConstant = 0.0f;
-			float depthBiasSlope = 0.0f;
+                CascadeSlice();
+            };
 
-			//ImageView m_dephtBuffer;
+            CascadeSlice slices[MAX_CASCADES];
 
-			Camera camera; // culling camera
-			Camera jitterCamera; // rendering camera (with jitter)
-		};
-
-		//--
-
-		struct RENDERING_SCENE_API CascadeData
-		{
-			uint8_t numCascades = 0;
-
-			CascadeInfo cascades[MAX_CASCADES];
-
-			ImageObjectPtr cascadesAtlas;
-			ImageSampledViewPtr cascadesAtlasSRV;
-			RenderTargetViewPtr cascadesAtlasRTVArray;
-			RenderTargetViewPtr cascadesAtlasRTV[MAX_CASCADES];
-
-			CascadeData();
-		};
+            FrameViewCascadesRecorder(FrameViewRecorder* parentView);
+        };
 
         //--
 
-        // calculate cascade settings that best match given camera 
-        //extern RENDERING_SCENE_API void CalculateCascadeSettings(const base::Vector3& lightDirection, const Camera& viewCamera, const FrameParams_ShadowCascades& setup, CascadeData& outData);
+        /// view for rendering shadow cascades
+        class RENDERING_SCENE_API FrameViewCascades : public base::NoCopy
+        {
+        public:
+            FrameViewCascades(const FrameRenderer& frame, const CascadeData& cascades);
+            ~FrameViewCascades();
+
+            void render(command::CommandWriter& cmd, FrameViewRecorder* parentView);
+
+            //--
+
+            INLINE const CascadeInfo& cascade(int index) const { return m_cascades.cascades[index]; }
+
+            //--
+
+        private:
+            const FrameRenderer& m_frame;
+            const CascadeData& m_cascades;
+
+            //--
+
+            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCascadesRecorder& rec);
+
+            //--
+        };
 
         //--
 

@@ -11,7 +11,6 @@
 #include "renderingFrameRenderer.h"
 #include "renderingFrameRenderingService.h"
 #include "renderingFrameResources.h"
-#include "renderingSceneUtils.h"
 #include "renderingScene.h"
 
 #include "renderingFrameView_Main.h"

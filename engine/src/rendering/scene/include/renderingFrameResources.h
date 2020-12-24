@@ -74,7 +74,8 @@ namespace rendering
 
 			ImageObjectPtr globalAOShadowMask; // screen size AO/shadow mask buffer
 			ImageWritableViewPtr globalAOShadowMaskUAV; // RGBA
-			ImageSampledViewPtr globalAOShadowMaskSRV; // RGBA
+			ImageReadOnlyViewPtr globalAOShadowMaskUAV_RO; // RGBA
+			//ImageSampledViewPtr globalAOShadowMaskSRV; // RGBA
 
 			//--
 

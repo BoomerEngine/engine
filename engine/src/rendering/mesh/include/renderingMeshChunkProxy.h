@@ -28,7 +28,7 @@ namespace rendering
 	//---
 
 	/// runtime proxy to part of renderable mesh's geometry
-	class IMeshChunkProxy : public base::IReferencable
+	class RENDERING_MESH_API IMeshChunkProxy : public base::IReferencable
 	{
 		RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IMeshChunkProxy);
 
@@ -45,8 +45,11 @@ namespace rendering
 			base::StringBuf debugLabel;
 		};
 
-		IMeshChunkProxy(const Setup& setup, MeshChunkType type);
+		IMeshChunkProxy(const Setup& setup, MeshChunkType type, MeshChunkID id);
 		virtual ~IMeshChunkProxy();
+
+		// get global mesh chunk ID
+		INLINE MeshChunkID id() const { return m_id; }
 
 		// chunk type
 		INLINE MeshChunkType type() const { return m_type; }
@@ -67,6 +70,8 @@ namespace rendering
 		INLINE const base::Vector3& quantizationScale() const { return m_quantizationScale; }
 
 	protected:
+		MeshChunkID m_id;
+
 		MeshChunkType m_type;
 		MeshVertexFormat m_format;
 		uint32_t m_indexCount = 0;
@@ -81,7 +86,7 @@ namespace rendering
 	//---
 
 	// standalone mesh chunk
-	class MeshChunkProxy_Standalone : public IMeshChunkProxy
+	class RENDERING_MESH_API MeshChunkProxy_Standalone : public IMeshChunkProxy
 	{
 		RTTI_DECLARE_VIRTUAL_CLASS(MeshChunkProxy_Standalone, IMeshChunkProxy);
 
@@ -98,7 +103,7 @@ namespace rendering
 
 		//--
 
-		MeshChunkProxy_Standalone(const Setup& setup);
+		MeshChunkProxy_Standalone(const Setup& setup, MeshChunkID id);
 		virtual ~MeshChunkProxy_Standalone();
 
 		// bind buffers related to this chunk
@@ -123,7 +128,7 @@ namespace rendering
 
 	/// meshlet mesh chunk, renderable using compute shaders mesh/task shaders
 	/// NOTE: this chunk is NOT renderable otherwise
-	class MeshChunkProxy_Meshlets : public IMeshChunkProxy
+	class RENDERING_MESH_API MeshChunkProxy_Meshlets : public IMeshChunkProxy
 	{
 		RTTI_DECLARE_VIRTUAL_CLASS(MeshChunkProxy_Meshlets, IMeshChunkProxy);
 
@@ -133,7 +138,7 @@ namespace rendering
 			MeshChunkSharedStorageAllocator allocataions;
 		};
 
-		MeshChunkProxy_Meshlets(const Setup& setup, MeshChunkSharedStorage* storage);
+		MeshChunkProxy_Meshlets(const Setup& setup, MeshChunkSharedStorage* storage, MeshChunkID id);
 		virtual ~MeshChunkProxy_Meshlets();
 
 		INLINE uint32_t vertexDataSize() const { return m_allocation.vertexDataSize(); }

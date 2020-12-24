@@ -227,6 +227,15 @@ namespace ui
 				v[3].pos.x = 0;
 				v[3].pos.y = renderHeight;
 
+                /*if (m_colorSurface->flippedY())
+                {
+                    float deltaY = (m_colorSurface->height() - renderHeight) * invV;
+                    v[0].uv.y += deltaY;
+                    v[1].uv.y += deltaY;
+                    v[2].uv.y += deltaY;
+                    v[3].uv.y += deltaY;
+                }*/
+
 				canvas.place(drawArea.absolutePosition(), *m_quadGeometry);
 			}
 		}

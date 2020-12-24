@@ -105,10 +105,7 @@ namespace base
             if (key() != other.key())
                 return false;
 
-            if (!key())
-                return m_handle == other.m_handle;
-
-            return true;
+            return m_handle == other.m_handle;
         }
 
         bool BaseReference::operator!=(const BaseReference& other) const

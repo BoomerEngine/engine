@@ -53,7 +53,7 @@ namespace rendering
             MiniStreamInfo("VertexTangent", MeshStreamType::Tangent_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
             MiniStreamInfo("VertexBitangent", MeshStreamType::Binormal_3F, ImageFormat::R11FG11FB10F, ImageFormat::R32_UINT, "UnpackNormalVector"),
             //MiniStreamInfo("VertexUV", MeshStreamType::TexCoord0_2F, ImageFormat::RG32F, ImageFormat::RG32F),
-            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG16F, ImageFormat::RG16F, "UnpackHalf2"),
+            MiniStreamInfo("VertexUV0", MeshStreamType::TexCoord0_2F, ImageFormat::RG16F, ImageFormat::R32_UINT, "UnpackHalf2"),
         }},
 
         { "StaticEx", {

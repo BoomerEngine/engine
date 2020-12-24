@@ -18,6 +18,8 @@ namespace rendering
 		Bindless, // textures ID and constants are in the same buffer
 	};
 
+    struct MaterialTemplateMetadata;
+
     class IMaterial;
     typedef base::RefPtr<IMaterial> MaterialPtr;
     typedef base::res::Ref<IMaterial> MaterialRef;
@@ -65,16 +67,6 @@ namespace rendering
 
     ///---
 
-    // blending mode to use for blend able materials, controls the render state
-    // NOTE: this makes material NOT leave depth and also makes it rendered in the transparent pass
-    enum class MaterialBlendMode : uint8_t
-    {
-        Opaque, // no blending
-        AlphaBlend, // transparent pass, classical alpha blending - PREMULTIPLIED
-        Addtive, // transparent pass, additive blending - NOT SORTED
-        Refractive, // refraction
-    };
-
     enum class MaterialPass : uint8_t
     {
         DepthPrepass, // depth pre pass, masked, outputs velocity buffer as well
@@ -86,14 +78,6 @@ namespace rendering
         MaterialDebug, // material debugging
 
         MAX,
-    };
-
-    enum class MaterialSortGroup : uint8_t
-    {
-        Opaque, // material is fully opaque, does not use masking
-        OpaqueMasked, // material does not use blending but uses discard (masking)
-        Transparent, // material requires blending, might or may not use masking
-        Refractive, // refractive material that requires readback of the color buffer
     };
 
 	///---

@@ -420,6 +420,8 @@ namespace rendering
 			DescriptorEntry* uploadDescriptor(DescriptorID layoutID, const DescriptorInfo* layout, const DescriptorEntry* entries, uint32_t count);
             void* allocConstants(uint32_t size, const command::OpUploadConstants*& outCommand);
 
+            void printActiveDescriptors();
+
 			void linkUpdate(OpUpdate* op);
         };
 

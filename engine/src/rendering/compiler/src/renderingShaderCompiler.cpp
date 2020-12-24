@@ -61,7 +61,14 @@ namespace rendering
             bool m_hasErrors;
         };
 
+		static bool IsTextFileShader(base::StringView path)
+		{
+			return path.endsWith(".h") || path.endsWith(".csl") || path.endsWith(".fx");
+		}
+
         //--
+
+		static base::Mutex GGlobalShaderCompilationMutex;
 
 		ShaderDataPtr CompileShader(
 			base::StringView code, // code to compile
@@ -71,6 +78,8 @@ namespace rendering
 			base::parser::IErrorReporter& err, // where to report any errors (ShaderCompilerDefaultErrorReporter in cooking)
 			base::HashMap<base::StringID, base::StringBuf>* defines)  // defines and their values
 		{
+            auto lock = CreateLock(GGlobalShaderCompilationMutex);
+
             base::mem::LinearAllocator mem(POOL_SHADER_COMPILATION);
             base::ScopeTimer timer;
 
@@ -86,6 +95,17 @@ namespace rendering
 						parser.defineSymbol(defines->keys()[i].view(), defines->values()[i]);
 						TRACE_DEEP("Defined static shader permutation '{}' = '{}'", defines->keys()[i], defines->values()[i]);
 					}
+				}
+
+				// write temp shader
+				base::StringBuf tempContextPath;
+				if (contextPath.empty() || !IsTextFileShader(contextPath))
+				{
+					static std::atomic<uint32_t> GTempShaderFileIndex = 1;
+					const auto& tempPath = base::io::SystemPath(base::io::PathCategory::LocalTempDir);
+					tempContextPath = base::TempString("{}tempSourceShader\\shader{}.fx", tempPath, GTempShaderFileIndex++);
+					base::io::SaveFileFromString(tempContextPath, code);
+					contextPath = tempContextPath;
 				}
 
 				// process the code into tokens

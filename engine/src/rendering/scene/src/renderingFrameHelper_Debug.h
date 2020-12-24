@@ -8,11 +8,23 @@
 
 #include "build.h"
 
+#include "rendering/device/include/renderingCommandWriter.h"
+
 namespace rendering
 {
     namespace scene
     {
 		//--
+
+        struct DebugGeometryViewRecorder : public FrameViewRecorder
+        {
+            command::CommandWriter solid;
+            command::CommandWriter transparent;
+            command::CommandWriter overlay;
+            command::CommandWriter screen;
+
+			DebugGeometryViewRecorder(FrameViewRecorder* parent);
+        };
 
 		class RENDERING_SCENE_API FrameHelperDebug : public base::NoCopy
 		{
@@ -20,43 +32,35 @@ namespace rendering
 			FrameHelperDebug(IDevice* api); // initialized to the max resolution of the device
 			~FrameHelperDebug();
 
-			struct Setup
-			{
-				const Camera* camera = nullptr;
-
-				command::CommandWriter* solid = nullptr;
-				command::CommandWriter* transparent = nullptr;
-				command::CommandWriter* overlay = nullptr;
-			};
-
-            void render(FrameViewRecorder& rec, const FrameParams_DebugGeometry& geom, const Setup& setup) const;
+            void render(DebugGeometryViewRecorder& rec, const FrameParams_DebugGeometry& geom, const Camera* camera) const;
 
 		private:
 			IDevice* m_device = nullptr;
 
-			ShaderObjectPtr m_drawShader;
+			ShaderObjectPtr m_drawShaderSolid;
+			ShaderObjectPtr m_drawShaderLines;
 
-            GraphicsRenderStatesObjectPtr m_renderStatesSolidTriangles;
-            GraphicsRenderStatesObjectPtr m_renderStatesSolidLines;
-            GraphicsRenderStatesObjectPtr m_renderStatesTransparentTriangles;
-            GraphicsRenderStatesObjectPtr m_renderStatesTransparentLines;
-            GraphicsRenderStatesObjectPtr m_renderStatesOverlayTriangles;
-            GraphicsRenderStatesObjectPtr m_renderStatesOverlayLines;
+			struct Shaders
+			{
+                GraphicsPipelineObjectPtr drawTriangles;
+                GraphicsPipelineObjectPtr drawLines;
+			};
 
-			GraphicsPipelineObjectPtr m_drawSolid;
-			GraphicsPipelineObjectPtr m_drawLines;
-
+			Shaders m_renderStatesSolid;
+			Shaders m_renderStatesTransparent;
+			Shaders m_renderStatesOverlay;
+			Shaders m_renderStatesScreen;
+			
 			//--
 
-			BufferObjectPtr m_vertexBuffer;
-			BufferObjectPtr m_indexBuffer;
+			mutable BufferObjectPtr m_vertexBuffer;
+			mutable BufferObjectPtr m_indexBuffer;
+			mutable uint32_t m_maxVertexDataSize = 0;
+			mutable uint32_t m_maxIndexDataSize = 0;
 
-			uint32_t m_maxVertexDataSize = 0;
-			uint32_t m_maxIndexDataSize = 0;
+			void ensureBufferSize(const FrameParams_DebugGeometry& geom) const;
 
-			void ensureBufferSize(const FrameParams_DebugGeometry& geom);
-
-			void renderInternal(command::CommandWriter& cmd, const DebugGeometry& geom) const;
+			void renderInternal(command::CommandWriter& cmd, const Camera* camera, const DebugGeometry& geom, const Shaders& shaders) const;
 
 			//--
 		};

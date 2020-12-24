@@ -84,7 +84,7 @@ namespace rendering
 
 		void IBaseCopyQueueWithStaging::update(uint64_t frameIndex)
 		{
-			finishCompletedJobs(frameIndex);
+			finishCompletedJobs();
 			tryStartPendingJobs();
 		}
 
@@ -159,7 +159,7 @@ namespace rendering
 				uint32_t index = 0;
 				while (index < m_pendingJobs.size())
 				{
-					const auto& job = m_pendingJobs[index];
+					const auto job = m_pendingJobs[index];
 					if (tryStartJob(job))
 					{
 						{
@@ -183,7 +183,7 @@ namespace rendering
 			}
 		}
 
-		void IBaseCopyQueueWithStaging::finishCompletedJobs(uint64_t frameIndex)
+		void IBaseCopyQueueWithStaging::finishCompletedJobs()
 		{
 			base::InplaceArray<base::RefPtr<Job>, 256> finishedJobs;
 

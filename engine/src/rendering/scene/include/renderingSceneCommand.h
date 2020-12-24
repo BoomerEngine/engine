@@ -69,12 +69,12 @@ namespace rendering
 		{
 		};
 
-		RENDER_SCENE_DECLARE_UPDATE_COMMAND(SetLocalToWorld)
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(MoveObject)
 		{
 			base::Matrix localToWorld;
 		};
 
-		RENDER_SCENE_DECLARE_UPDATE_COMMAND(SetFlag)
+		RENDER_SCENE_DECLARE_UPDATE_COMMAND(ChangeFlags)
 		{
 			ObjectProxyFlags setFlags;
 			ObjectProxyFlags clearFlags;

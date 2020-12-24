@@ -33,6 +33,7 @@ namespace rendering
 #define RENDER_SCENE_COMMAND(x) void ICommandDispatcher::run(const Command##x& op) {};
 #include "renderingSceneCommands.inl"
 #include "../../device/include/renderingDeviceService.h"
+#include "../../material/include/renderingMaterialRuntimeService.h"
 
         //----
 
@@ -53,6 +54,8 @@ namespace rendering
 			base::InplaceArray<base::SpecificClassType<IObjectManager>, 10> objectManagersClasses;
 			RTTI::GetInstance().enumClasses(objectManagersClasses);
 
+			static auto* materialService = base::GetService<MaterialService>();
+
 			for (const auto cls : objectManagersClasses)
 			{
 				auto manager = cls->createPointer<IObjectManager>();
@@ -61,13 +64,21 @@ namespace rendering
 				const auto index = (int)manager->objectType();
 				m_managers.prepareWith(index+1, nullptr);
 				m_managers[index] = manager;
+
+				materialService->registerMaterialProxyChangeListener(manager);
 			}
 		}
 
 		void Scene::destroyManagers()
 		{
+			static auto* materialService = base::GetService<MaterialService>();
+
 			for (auto* manager : m_managers)
+			{
+				materialService->unregisterMaterialProxyChangeListener(manager);
 				delete manager;
+			}
+
 			m_managers.clear();
 		}
 
@@ -116,6 +127,13 @@ namespace rendering
 			for (auto* manager : m_managers)
 				if (manager)
 					manager->render(cmd, view, frame);
+		}
+
+		void Scene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
+		{
+            for (auto* manager : m_managers)
+                if (manager)
+                    manager->render(cmd, view, frame);
 		}
 
 		void Scene::prepare(command::CommandWriter& cmd, const FrameRenderer& frame)

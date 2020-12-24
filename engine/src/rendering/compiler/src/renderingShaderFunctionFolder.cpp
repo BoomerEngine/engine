@@ -852,6 +852,12 @@ namespace rendering
             ret = m_mem.create<Function>(*original, &localArgs);
             m_foldedFunctionsMap[key] = ret; // add before folding to support recursion :P
 
+            {
+                auto& nameCounter = m_functionNameCounter[ret->name()];
+                if (nameCounter++ > 0)
+                    ret->m_name = base::StringID(base::TempString("{}{}", ret->m_name, nameCounter));
+            }
+
             ret->m_code = foldCode(ret, original->m_code, thisArgs, localArgs, err);
             return ret;
         }

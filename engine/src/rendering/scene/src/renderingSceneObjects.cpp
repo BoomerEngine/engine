@@ -13,6 +13,7 @@
 #include "rendering/mesh/include/renderingMeshChunkProxy.h"
 #include "rendering/material/include/renderingMaterial.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
+#include "rendering/material/include/renderingMaterialRuntimeTemplate.h"
 
 namespace rendering
 {
@@ -146,8 +147,9 @@ namespace rendering
 			allocator.add<ObjectProxyMeshChunk>(chunksToCreate.size());
 
 			auto* ret = allocator.allocate();
-			ret->numChunks = chunksToCreate.size();
-			ret->numLods = numLods;
+			ret->m_numChunks = 0;// chunksToCreate.size();
+			ret->m_numLods = numLods;
+			ret->m_localBox = setup.mesh->bounds();
 
 			// setup lod table
 			auto* lodTable = (ObjectProxyMeshLOD*) ret->lods();
@@ -188,15 +190,45 @@ namespace rendering
 						sourceMaterial = setup.mesh->materials()[chunk.materialIndex].material.get();
 
 					// use the fall back
-					//if (!sourceMaterial)
+
+					// if we still have no material don't render this chunk
+					if (!sourceMaterial)
+						continue;
 				}					
 
 				// setup chunk
 				chunkTable->data = chunk.proxy;				
 				chunkTable->lodMask = chunk.detailMask;
 				chunkTable->renderMask = chunk.renderMask;
-				chunkTable->material = sourceMaterial ? sourceMaterial->dataProxy() : nullptr;
+				chunkTable->material = sourceMaterial->dataProxy();
+				chunkTable->shader = sourceMaterial->templateProxy();
+				ASSERT_EX(chunkTable->material != nullptr, "Material without data proxy");
+                ASSERT_EX(chunkTable->shader != nullptr, "Material without shader");
+
+				// geometry flags
+				const auto& shaderMetadata = chunkTable->shader->metadata();
+				if (!shaderMetadata.hasTransparency)
+				{
+					if (!shaderMetadata.hasVertexAnimation && setup.staticGeometry)
+						chunkTable->depthPassType = 0;
+					else
+						chunkTable->depthPassType = 1;
+				}
+
+				// forward pass flags
+				if (shaderMetadata.hasTransparency)
+					chunkTable->forwardPassType = 2;
+				else if (shaderMetadata.hasPixelDiscard)
+					chunkTable->forwardPassType = 1;
+				else
+					chunkTable->forwardPassType = 0;
+
+				// write chunk
+				chunkTable += 1;
 			}
+
+			// count actually written chunks
+			ret->m_numChunks = (uint16_t)(chunkTable - ret->chunks());
 
 			return AddRef(ret);
 		}

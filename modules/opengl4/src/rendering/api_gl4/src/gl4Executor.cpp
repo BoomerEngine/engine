@@ -59,7 +59,8 @@ namespace rendering
 				for (uint32_t i = 0; i < m_pass.viewportCount; ++i)
 				{
 					const float x = rect.left();
-					const float y = (int)m_pass.height - rect.top() - rect.height();
+					//const float y = (int)m_pass.height - rect.top() - rect.height();
+					const float y = rect.top();
 					const float w = rect.width();
 					const float h = rect.height();
 
@@ -723,7 +724,8 @@ namespace rendering
 				ASSERT_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
 
 				const float x = op.rect.left();
-				const float y = (int)m_pass.height - op.rect.top() - op.rect.height();
+				//const float y = (int)m_pass.height - op.rect.top() - op.rect.height();
+				const float y = op.rect.top();
 				const float w = op.rect.width();
 				const float h = op.rect.height();
 
@@ -775,8 +777,8 @@ namespace rendering
 				ASSERT_EX(op.viewportIndex < m_pass.viewportCount, "Viewport was not enabled in pass");
 
 				const auto x = op.rect.left();
-				const auto y = (int)m_pass.height - op.rect.top() - op.rect.height();
-				//const auto y = op.rect.top();
+				//const auto y = (int)m_pass.height - op.rect.top() - op.rect.height();
+				const auto y = op.rect.top();
 				const auto w = op.rect.width();
 				const auto h = op.rect.height();
 

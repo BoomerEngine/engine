@@ -15,12 +15,10 @@ namespace rendering
     /// rendering state setup that the technique expects to have set
     struct RENDERING_MATERIAL_API MaterialTechniqueRenderStates
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialTechniqueRenderStates);
-
 		MaterialTechniqueRenderStates();
 
-        MaterialBlendMode blendMode = MaterialBlendMode::Opaque;
         bool alphaToCoverage = false;
+        bool alphaBlend = false;
         bool twoSided = false;
         bool depthTest = true;
         bool depthWrite = true;
@@ -37,10 +35,8 @@ namespace rendering
 
     public:
 		ShaderDataPtr shader;
-        MaterialTechniqueRenderStates renderStates;
-
-        const MaterialDataLayout* dataLayout = nullptr;
-
+        
+        
         //--
 
         static const MaterialCompiledTechnique& EMPTY();
@@ -63,20 +59,20 @@ namespace rendering
         INLINE const MaterialCompilationSetup& setup() const { return m_setup; }
 
         // get the PSO for the material technique
-		INLINE const MaterialCompiledTechnique* data() const { return m_data.load(); }
+		INLINE const GraphicsPipelineObject* pso() const { return m_data.load(); }
 
         //--
 
         // push new rendering shader to the technique
-        void pushData(MaterialCompiledTechnique* newState);
+        void pushData(const ShaderData* newState);
 
         //--
 
     private:
 		MaterialCompilationSetup m_setup;
 
-		std::atomic<MaterialCompiledTechnique*> m_data = nullptr;
-		base::Array<MaterialCompiledTechnique*> m_expiredData;
+		std::atomic<GraphicsPipelineObject*> m_data = nullptr;
+		base::Array<GraphicsPipelineObjectPtr> m_expiredData;
 
 		uint32_t m_id = 0;
     };

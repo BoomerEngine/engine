@@ -11,7 +11,8 @@
 #include "textParser.h"
 #include "textFilePreprocessor.h"
 
-#define TRACE_DEEP(...)
+//#define TRACE_DEEP(txt, ...) TRACE_INFO(txt, __VA_ARGS__)
+#define TRACE_DEEP(txt, ...) 
 
 namespace base
 {
@@ -627,7 +628,6 @@ namespace base
                     if (shouldExpandMacro(tokens, macro))
                     {
                         status &= expandMacro(macro, m_finalTokens);
-                        TRACE_DEEP("PostMacroExpansion: '{}'", m_finalTokens);
                     }
                     else
                         m_finalTokens.pushBack(tokens.popFront());
@@ -637,6 +637,15 @@ namespace base
                     tokens.popFront();
                 }
             }
+
+            /*{
+                const auto* token = m_finalTokens.head();
+                while (token)
+                {
+                    TRACE_DEEP("Token '{}'", *token);
+                    token = token->next();
+                }
+            }*/
 
             if (keepProcessing && m_currentIncludeStack.empty())
             {

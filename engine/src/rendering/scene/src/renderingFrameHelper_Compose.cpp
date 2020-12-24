@@ -81,10 +81,12 @@ namespace rendering
 			consts.sourceOffsetU = 0.0f;
 			consts.sourceExtentsU = gameSourceScaleX;
 
-			if (setup.gameView->image()->flippedY())
+			if (setup.presentTarget->flipped())
 			{
-                consts.sourceOffsetV = gameSourceScaleY;
-                consts.sourceExtentsV = -gameSourceScaleY;
+                //consts.sourceOffsetV = 1.0f - gameSourceScaleY;
+                //consts.sourceExtentsV = gameSourceScaleY;
+                consts.sourceOffsetV = 0.0f;
+                consts.sourceExtentsV = gameSourceScaleY;
 			}
 			else
 			{
@@ -104,12 +106,12 @@ namespace rendering
 			//--
 
 			{
-				FrameBuffer fb;
-				fb.color[0].view(setup.presentTarget);
+				//FrameBuffer fb;
+				//fb.color[0].view(setup.presentTarget);
 
-				cmd.opBeingPass(fb, 1, setup.presentRect);
+				//cmd.opBeingPass(fb, 1, setup.presentRect);
 				cmd.opDraw(m_blitShadersPSO, 0, 4);
-				cmd.opEndPass();
+				//cmd.opEndPass();
 			}
 
 			//--

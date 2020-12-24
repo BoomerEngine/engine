@@ -56,11 +56,27 @@ namespace rendering
         RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialPrecompiledStaticTechnique);
 
         MaterialCompilationSetup setup;
-        MaterialTechniqueRenderStates renderStates;
         ShaderDataPtr shader;
 
         MaterialPrecompiledStaticTechnique();
         ~MaterialPrecompiledStaticTechnique();
+    };
+
+    ///---
+
+    // material rendering flags
+    struct RENDERING_MATERIAL_API MaterialTemplateMetadata
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialTemplateMetadata);
+
+    public:
+        bool hasVertexAnimation = false; // vertices are moving
+        bool hasPixelDiscard = false; // material has masking
+        bool hasTransparency = false;  // material has transparency
+        bool hasLighting = false; // material has lighting
+        bool hasPixelReadback = false; // material is reading back the color (fake glass)
+
+        MaterialTemplateMetadata();
     };
 
 
@@ -74,14 +90,14 @@ namespace rendering
 
     public:
         MaterialTemplate();
-        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, MaterialSortGroup sortGroup, const MaterialTemplateDynamicCompilerPtr& compiler);
-        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, MaterialSortGroup sortGroup, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques); // soon
+        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::StringBuf& contextPath);
+        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques, const base::StringBuf& contextPath); // soon
         virtual ~MaterialTemplate();
 
         ///--
 
-        /// get the sort group for the material, usually determined from the type/flags on the output node in the graph
-        INLINE MaterialSortGroup sortGroup() const { return m_sortGroup; }
+        /// get the material template metadata
+        INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
 
         /// get list of template parameters
         INLINE const base::Array<MaterialTemplateParamInfo>& parameters() const { return m_parameters; }
@@ -132,13 +148,15 @@ namespace rendering
 
         //--
 
-        MaterialSortGroup m_sortGroup = MaterialSortGroup::Opaque;
+        MaterialTemplateMetadata m_metadata;
         base::Array<MaterialTemplateParamInfo> m_parameters;
 
         //--
 
         base::Array<MaterialPrecompiledStaticTechnique> m_precompiledTechniques;
 		base::RefPtr<IMaterialTemplateDynamicCompiler> m_compiler;
+
+        base::StringBuf m_contextPath;
 
         //--
 

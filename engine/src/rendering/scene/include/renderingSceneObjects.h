@@ -61,7 +61,10 @@ namespace rendering
 		{
 			MeshChunkProxyPtr data;
 			MaterialDataProxyPtr material;
+			MaterialTemplateProxyPtr shader;
 			uint8_t lodMask = 0;
+			char depthPassType = -1;
+			char forwardPassType = -1;
 			uint32_t renderMask = 0;
 		};
 
@@ -79,11 +82,15 @@ namespace rendering
 			ObjectProxyMesh();
 			virtual ~ObjectProxyMesh();
 
-			uint8_t numLods = 0;
-			uint16_t numChunks = 0;
+			uint8_t m_numLods = 0;
+			uint16_t m_numChunks = 0;
+
+			base::Box m_localBox;
 
 			inline const ObjectProxyMeshLOD* lods() const { return (const ObjectProxyMeshLOD*)(this + 1); }
-			inline const ObjectProxyMeshChunk* chunks() const { return (const ObjectProxyMeshChunk*)(lods() + numLods); }
+			inline const ObjectProxyMeshChunk* chunks() const { return (const ObjectProxyMeshChunk*)(lods() + m_numLods); }
+            inline ObjectProxyMeshLOD* lods() { return (ObjectProxyMeshLOD*)(this + 1); }
+            inline ObjectProxyMeshChunk* chunks() { return (ObjectProxyMeshChunk*)(lods() + m_numLods); }
 
 			// WARNING: packed data follows!
 			//
@@ -93,6 +100,7 @@ namespace rendering
 			struct Setup
 			{
 				char forcedLodLevel = -1;
+				bool staticGeometry = true;
 
 				const Mesh* mesh = nullptr;
 

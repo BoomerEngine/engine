@@ -40,6 +40,10 @@ namespace rendering
 		if (!deviceService)
 			base::app::ServiceInitializationResult::FatalError;
 
+		m_freeMeshChunkIDs.resize(65536);
+		for (uint32_t i = 0; i < m_freeMeshChunkIDs.size(); ++i)
+			m_freeMeshChunkIDs[i] = (m_freeMeshChunkIDs.size() - 1) - i;
+
 		m_device = deviceService->device();
 
 		m_meshletStorage = base::RefNew<MeshChunkSharedStorage>(m_device);
@@ -57,10 +61,25 @@ namespace rendering
 
 	//--
 
+	void MeshService::releaseMeshChunkId(MeshChunkID id)
+	{
+		auto lock = CreateLock(m_freeMeshChunkIDsLock);
+		m_freeMeshChunkIDs.pushBack(id);
+	}
+
 	MeshChunkProxyPtr MeshService::createChunkProxy(const MeshChunk& data, const base::StringBuf& debugLabel)
 	{
 		DEBUG_CHECK_RETURN_EX_V(data.indexCount && data.vertexCount, "Empty chunk", nullptr);
 		DEBUG_CHECK_RETURN_EX_V(data.unpackedIndexSize && data.unpackedVertexSize, "Nothing to allocate", nullptr);
+
+		// allocate ID
+		MeshChunkID id = 0;
+		{
+			auto lock = CreateLock(m_freeMeshChunkIDsLock);
+			DEBUG_CHECK_RETURN_EX_V(!m_freeMeshChunkIDs.empty(), "To many mesh chunks", nullptr);
+			id = m_freeMeshChunkIDs.back();
+			m_freeMeshChunkIDs.popBack();
+		}
 
 		// unpack vertex data
 		auto vertexData = data.packedVertexData;
@@ -79,10 +98,10 @@ namespace rendering
 		}
 
 		// create chunk from unpacked data
-		return createStandaloneProxy(data, vertexData, indexData, debugLabel);
+		return createStandaloneProxy(data, vertexData, indexData, debugLabel, id);
 	}
 
-	MeshChunkProxyStandalonePtr MeshService::createStandaloneProxy(const MeshChunk& data, const base::Buffer& vertexData, const base::Buffer& indexData, const base::StringBuf& debugLabel)
+	MeshChunkProxyStandalonePtr MeshService::createStandaloneProxy(const MeshChunk& data, const base::Buffer& vertexData, const base::Buffer& indexData, const base::StringBuf& debugLabel, MeshChunkID id)
 	{
 		BufferObjectPtr vertexBuffer;
 		BufferObjectPtr indexBuffer;
@@ -115,7 +134,7 @@ namespace rendering
 		setup.quantizationOffset = data.quantizationOffset;
 		setup.quantizationScale = data.quantizationScale;
 
-		return base::RefNew<MeshChunkProxy_Standalone>(setup);
+		return base::RefNew<MeshChunkProxy_Standalone>(setup, id);
 	}
 
 	//--
@@ -125,7 +144,7 @@ namespace rendering
 		m_meshletStorage->pushUpdates(cmd);
 	}
 
-	void MeshService::bindCommonMeshletData(command::CommandWriter& cmd) const
+	void MeshService::bindMeshData(command::CommandWriter& cmd) const
 	{
 		//m_meshletStorage->bin
 	}

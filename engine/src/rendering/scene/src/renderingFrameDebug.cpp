@@ -47,8 +47,8 @@ namespace rendering
             {
                 DebugGeometryElementSrc src;
                 src.type = m_batchState.geometryType;
-				src.firstIndex = m_geometry.vertices().size();
-				src.firstVertex = m_geometry.indices().size();
+				src.firstIndex = m_geometry.indices().size();
+				src.firstVertex = m_geometry.vertices().size();
                 src.sourceVerticesData = m_verticesData.typedData();
                 src.sourceIndicesData = m_indicesData.typedData();
 				src.numIndices = m_indicesData.size();
@@ -86,7 +86,7 @@ namespace rendering
 
         uint32_t DebugDrawerBase::appendVertices(const DebugVertex* vertex, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/)
         {
-            const auto firstVertex = m_verticesData.size();
+            const auto firstVertex = m_verticesData.size() + m_geometry.vertices().size();
 
             // upload vertices
             const auto* readPtr = vertex;
@@ -122,7 +122,7 @@ namespace rendering
 
         uint32_t DebugDrawerBase::appendVertices(const base::Vector2* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
         {
-            auto firstVertex = m_verticesData.size();
+            auto firstVertex = m_verticesData.size() + m_geometry.vertices().size();
 
             const auto color = colorOverride ? *colorOverride : m_color;
 
@@ -147,7 +147,7 @@ namespace rendering
 
         uint32_t DebugDrawerBase::appendVertices(const base::Vector3* points, uint32_t numVertices, const float* sizeOverride /*= nullptr*/, const uint32_t* subSelectionIDOverride /*= nullptr*/, const base::Color* colorOverride /*= nullptr*/)
         {
-            auto firstVertex = m_verticesData.size();
+            auto firstVertex = m_verticesData.size() + m_geometry.vertices().size();
 
             const auto color = colorOverride ? *colorOverride : m_color;
 
@@ -227,8 +227,8 @@ namespace rendering
 			for (uint32_t i = 0; i < numVertices; ++i)
 			{
 				*writePtr++ = last;
-				*writePtr++ = firstVertex + i;
-				last = firstVertex + i;
+                last = firstVertex + i;
+                *writePtr++ = last;
 			}
 
 			return firstIndex;
@@ -717,6 +717,8 @@ namespace rendering
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
+            changeGeometryType(DebugGeometryType::Lines);
+
             auto topCenter = center + base::Vector3(0.0f, 0.0f, halfHeight);
             auto bottomCenter = center + base::Vector3(0.0f, 0.0f, -halfHeight);
 
@@ -772,6 +774,8 @@ namespace rendering
         {
             helper::WireBuilder<1024> tris;
 
+            changeGeometryType(DebugGeometryType::Lines);
+
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
             // compute the cylinder direction
@@ -807,6 +811,8 @@ namespace rendering
         void DebugDrawer::wireCone(const base::Vector3& top, const base::Vector3& dir, float radius, float angleDeg)
         {
             helper::WireBuilder<1024> tris;
+
+            changeGeometryType(DebugGeometryType::Lines);
 
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
 
@@ -875,6 +881,8 @@ namespace rendering
         {
             helper::WireBuilder<256> tris;
 
+            changeGeometryType(DebugGeometryType::Lines);
+
             base::Vector3 frustumMin(-1.0f, -1.0f, 0.0f);
             base::Vector3 frustumMax(+1.0f, +1.0f, farPlaneScale);
 
@@ -905,6 +913,8 @@ namespace rendering
         void DebugDrawer::wireCircle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
+
+            changeGeometryType(DebugGeometryType::Lines);
 
             helper::WireBuilder<256> tris;
 
@@ -1265,6 +1275,8 @@ namespace rendering
                 unprojected[i] = base::Vector3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
             }
 
+            changeGeometryType(DebugGeometryType::Solid);
+
             uint16_t indices[] = { 0,1,3,0,3,2,  6,7,5,6,5,4, 5,7,3,5,3,1, 6,4,0,6,0,2, 5,1,0,5,0,4, 3,7,6,3,6,2 };
             auto base = appendVertices(unprojected, 8);
             appendIndices(indices, ARRAY_COUNT(indices), base);
@@ -1273,6 +1285,8 @@ namespace rendering
         void DebugDrawer::solidCircle(const base::Vector3& center, const base::Vector3& normal, float radius, float startAngle /*= 0.0f*/, float endAngle /*= 360.0*/)
         {
             auto& sphere = helper::GeoSphereBuilder::GetInstance();
+
+            changeGeometryType(DebugGeometryType::Solid);
 
             helper::TriBuilder<256> tris;
 

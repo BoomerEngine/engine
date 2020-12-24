@@ -76,8 +76,6 @@ namespace rendering
 			//--
 
 		protected:
-			
-
 			struct Job : public base::IReferencable
 			{
 				RTTI_DECLARE_POOL(POOL_API_RUNTIME);
@@ -122,7 +120,7 @@ namespace rendering
 
 			void tryStartPendingJobs();
 			bool tryStartJob(Job* job); // returns true if job is no longer pending
-			void finishCompletedJobs(uint64_t frameIndex);
+			void finishCompletedJobs();
 
 			void stop();
 

@@ -298,17 +298,17 @@ namespace rendering
 					const auto mipHeight = setup().calcMipHeight(atom.mip);
 					const auto mipDepth = setup().calcMipDepth(atom.mip);
 
-					const auto pixelOffset = (atom.internalOffset * 8) / GetImageFormatInfo(setup().format).bitsPerPixel;
-					//ASSERT_EX(view.offset % pixelSize == 0, "Unaligned staging data");
+					const void* dataOffset = (const void*)atom.internalOffset;
 
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
 					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, pixelOffset));
+					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0));
 
 					GLenum glBaseFormat = 0; // GL_RGBA
 					GLenum glBaseType = 0; // GL_FLOAT
-					DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType);
+					bool compressed = false;
+					DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType, &compressed);
 
 					// get texture type
 					switch (m_glViewType)
@@ -317,30 +317,52 @@ namespace rendering
 						GL_PROTECT(glTextureSubImage1D(m_glImage, atom.mip,
 							0,
 							mipWidth,
-							glBaseFormat, glBaseType, 0));
+							glBaseFormat, glBaseType, dataOffset));
 						break;
 
 					case GL_TEXTURE_2D:
-						GL_PROTECT(glTextureSubImage2D(m_glImage, atom.mip,
-							0, 0,
-							mipWidth, mipHeight,
-							glBaseFormat, glBaseType, 0));
+						if (compressed)
+						{
+                            GL_PROTECT(glCompressedTextureSubImage2D(m_glImage, atom.mip,
+                                0, 0,
+                                mipWidth, mipHeight,
+                                m_glFormat, 
+								atom.targetDataSize,
+								dataOffset));
+						}
+						else
+						{
+							GL_PROTECT(glTextureSubImage2D(m_glImage, atom.mip,
+								0, 0,
+								mipWidth, mipHeight,
+								glBaseFormat, glBaseType, dataOffset));
+						}
 						break;
 
 					case GL_TEXTURE_CUBE_MAP:
 					case GL_TEXTURE_CUBE_MAP_ARRAY:
 					case GL_TEXTURE_2D_ARRAY:
-						GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
-							0, 0, atom.slice,
-							mipWidth, mipHeight, 1,
-							glBaseFormat, glBaseType, 0));
+						if (compressed)
+						{
+                            GL_PROTECT(glCompressedTextureSubImage3D(m_glImage, atom.mip,
+                                0, 0, atom.slice,
+                                mipWidth, mipHeight, 1,
+                                m_glFormat, atom.targetDataSize, dataOffset));
+						}
+						else
+						{
+							GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
+								0, 0, atom.slice,
+								mipWidth, mipHeight, 1,
+								glBaseFormat, glBaseType, dataOffset));
+						}
 						break;
 
 					case GL_TEXTURE_3D:
 						GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
 							0, 0, 0,
 							mipWidth, mipHeight, mipDepth,
-							glBaseFormat, glBaseType, 0));
+							glBaseFormat, glBaseType, dataOffset));
 						break;
 
 					default:

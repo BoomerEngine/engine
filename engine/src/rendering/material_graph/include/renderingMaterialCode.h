@@ -29,8 +29,8 @@ namespace rendering
 
     enum class MaterialVertexDataType : uint8_t
     {
-        ObjectID, // id of the object (uint)
-        SubObjectID, // id of the sub-object (uint), usually a mesh chunk index
+        ObjectIndex, // id of the object (uint)
+        //SubObjectID, // id of the sub-object (uint), usually a mesh chunk index
 
         VertexPosition, // unpacked vertex position in object space
         VertexNormal, // unpacked vertex normal in object space

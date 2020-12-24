@@ -24,7 +24,8 @@ namespace rendering
 
     protected:
         virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
-        virtual MaterialSortGroup resolveSortGroup() const override;
+
+        virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const override final;
         virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
         virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
 
@@ -36,7 +37,7 @@ namespace rendering
         bool m_depthWrite = true; // can be set to false even for "solid" materials
         bool m_premultiplyAlpha = true;
         float m_maskThreshold = 0.5f;
-        MaterialBlendMode m_blendMode = MaterialBlendMode::Opaque;
+        bool m_transparent = false;
     };
 
     //--

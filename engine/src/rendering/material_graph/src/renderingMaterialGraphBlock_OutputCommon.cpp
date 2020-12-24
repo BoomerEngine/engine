@@ -12,6 +12,7 @@
 #include "renderingMaterialCode.h"
 
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
+#include "rendering/material/include/renderingMaterialTemplate.h"
 
 namespace rendering
 {
@@ -22,7 +23,7 @@ namespace rendering
         RTTI_PROPERTY(m_twoSided).editable("Material is two sided");
         RTTI_PROPERTY(m_depthWrite).editable("Material write to depth channel");
         RTTI_PROPERTY(m_maskThreshold).editable("Default masking threshold");
-        RTTI_PROPERTY(m_blendMode).editable("Blending mode");
+        RTTI_PROPERTY(m_transparent).editable("Enable blending");
         RTTI_PROPERTY(m_premultiplyAlpha).editable("In alpha blending mode premultiply output color by alpha");
         RTTI_CATEGORY("Masking");
         RTTI_PROPERTY(m_maskThreshold).editable("Default masking threshold");
@@ -38,28 +39,23 @@ namespace rendering
     {
     }
     
-    MaterialSortGroup MaterialGraphBlockOutputCommon::resolveSortGroup() const
+    void MaterialGraphBlockOutputCommon::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
     {
-        if (m_blendMode == MaterialBlendMode::Opaque)
-        {
-            if (hasConnectionOnSocket("Mask"_id))
-                return MaterialSortGroup::OpaqueMasked;
-            else
-                return MaterialSortGroup::Opaque;
-        }
+        if (m_transparent)
+            outMetadata.hasTransparency = true;
+
+        if (hasConnectionOnSocket("Mask"_id))
+            outMetadata.hasPixelDiscard = true;
         else
-        {
-            return MaterialSortGroup::Transparent;
-        }
+            outMetadata.hasPixelDiscard = false;
     }
 
     void MaterialGraphBlockOutputCommon::compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderStates) const
     {
         outRenderStates.twoSided = m_twoSided;
         outRenderStates.depthTest = true;
-        outRenderStates.depthWrite = (m_blendMode == MaterialBlendMode::Opaque);
-        outRenderStates.blendMode = m_blendMode;
-        outRenderStates.alphaToCoverage = (m_blendMode == MaterialBlendMode::Opaque) && hasConnectionOnSocket("Mask"_id) && m_maskAlphaToCoverage;
+        outRenderStates.depthWrite = !m_transparent;
+        outRenderStates.alphaToCoverage = !m_transparent && hasConnectionOnSocket("Mask"_id) && m_maskAlphaToCoverage;
 
         // do we allow masking ? some modes have masking disabled
         const auto allowMasking = (compiler.context().pass != MaterialPass::MaterialDebug) && (compiler.context().pass != MaterialPass::Wireframe);
@@ -100,16 +96,16 @@ namespace rendering
                 if (!outRenderStates.alphaToCoverage || !outRenderStates.depthWrite)
                     outRenderStates.earlyPixelTests = true;
 
-                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
-                const auto subObjectID = compiler.vertexData(MaterialVertexDataType::SubObjectID);
-                compiler.appendf("EmitSelection({},{});\n", objectID, subObjectID);
+                //const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
+                //const auto subObjectID = compiler.vertexData(MaterialVertexDataType::SubObjectID);
+                //compiler.appendf("EmitSelection({},{});\n", objectID, subObjectID);
                 compiler.appendf("gl_Target0 = vec4(0,0,0,0);\n");
                 break;
             }
 
             case MaterialPass::ConstantColor:
             {
-                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
+                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectIndex);
                 const auto constantColor = CodeChunk(CodeChunkType::Numerical4, base::TempString("UnpackColorRGBA4(ObjectData[{}].Color)", objectID));
                 compiler.appendf("gl_Target0 = vec4(0,1,1,1);\n", constantColor);
                 //compiler.appendf("gl_Target0 = {};\n", constantColor);
@@ -119,7 +115,7 @@ namespace rendering
             case MaterialPass::Wireframe:
             {
                 compiler.includeHeader("material/wireframe.h");
-                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
+                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectIndex);
                 const auto constantColor = CodeChunk(CodeChunkType::Numerical4, base::TempString("UnpackColorRGBA4(ObjectData[{}].Color)", objectID));
                 compiler.appendf("gl_Target0 = ({}.xyz * CalcEdgeFactor()).xyz1;\n", constantColor);
                 break;
@@ -137,46 +133,26 @@ namespace rendering
                 // selection effect
 
                 // write combined output
-                switch (outRenderStates.blendMode)
+                if (m_transparent)
                 {
-                    case MaterialBlendMode::Opaque:
-                    {
-                        if (outRenderStates.alphaToCoverage)
-                            compiler.appendf("gl_Target0 = vec4({}, {});\n", color, mask);
-                        else
-                            compiler.appendf("gl_Target0 = {}.xyz1;\n", color);
+                    DEBUG_CHECK(!outRenderStates.alphaToCoverage); // won't be supported
 
-                        if (compiler.debugCode())
-                            compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) gl_Target0.w = 1;\n");
-                        break;
-                    }
+                    const auto alpha = compiler.evalInput(this, "Opacity"_id, 1.0f).conform(1); // single scalar
 
-                    case MaterialBlendMode::Addtive:
-                    {
-                        DEBUG_CHECK(!outRenderStates.alphaToCoverage); // won't be supported
-                        compiler.appendf("gl_Target0 = {}.xyz1;\n", color); // no premultiplied shit
-                        break;
-                    }
+                    if (m_premultiplyAlpha)
+                        compiler.appendf("gl_Target0 = vec4({} * {}, {});\n", color, alpha, alpha);
+                    else
+                        compiler.appendf("gl_Target0 = vec4({}, {});\n", color, alpha);
+                }
+                else
+                {
+                    if (outRenderStates.alphaToCoverage)
+                        compiler.appendf("gl_Target0 = vec4({}, {});\n", color, mask);
+                    else
+                        compiler.appendf("gl_Target0 = {}.xyz1;\n", color);
 
-                    case MaterialBlendMode::AlphaBlend:
-                    {
-                        DEBUG_CHECK(!outRenderStates.alphaToCoverage); // won't be supported
-
-                        const auto alpha = compiler.evalInput(this, "Opacity"_id, 1.0f).conform(1); // single scalar
-
-                        if (m_premultiplyAlpha)
-                            compiler.appendf("gl_Target0 = vec4({} * {}, {});\n", color, alpha, alpha);
-                        else 
-                            compiler.appendf("gl_Target0 = vec4({}, {});\n", color, alpha);
-                        break;
-                    }
-
-                    case MaterialBlendMode::Refractive:
-                    {
-                        DEBUG_CHECK(!outRenderStates.alphaToCoverage); // won't be supported
-                        compiler.appendf("gl_Target0 = {}.xyz1;\n", color); // no premultiplied shit
-                        break;
-                    }
+                    if (compiler.debugCode())
+                        compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) gl_Target0.w = 1;\n");
                 }
 
                 break;

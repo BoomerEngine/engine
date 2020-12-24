@@ -76,6 +76,8 @@ namespace rendering
     struct MeshChunk;
     struct MeshMaterial;
 
+    typedef uint16_t MeshChunkID;
+
     class MeshRenderChunkPayload;
     typedef base::RefPtr<MeshRenderChunkPayload> MeshRenderChunkPayloadPtr;
 

@@ -213,6 +213,9 @@ namespace rendering
 				if (sourceData)
 					m_thread->copyQueue()->schedule(obj, sourceData);
 
+				if (setup.flags.test(ImageViewFlag::RenderTarget))
+					setup.flags |= ImageViewFlag::FlippedY;
+
 				return base::RefNew<ImageObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
 			}
 

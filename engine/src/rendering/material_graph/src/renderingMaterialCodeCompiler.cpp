@@ -102,6 +102,45 @@ namespace rendering
 
     void MaterialPixelStageCompiler::assembleFinalShaderCode(base::StringBuilder& outStr, const MaterialTechniqueRenderStates& renderStates) const
     {
+        outStr.append("state MaterialStates {\n");
+
+        outStr.appendf("   DepthEnabled = {},\n", renderStates.depthTest);
+        outStr.appendf("   DepthWriteEnabled = {},\n", renderStates.depthWrite);
+
+        if (renderStates.depthTest)
+        {
+            if (renderStates.earlyPixelTests)
+                outStr.append("   DepthFunc = Equal,\n");
+            else
+                outStr.append("   DepthFunc = LessEqual,\n");
+        }
+
+        if (renderStates.twoSided)
+        {
+            outStr.append("   CullEnabled = false,\n");
+        }
+        else
+        {
+            outStr.append("   CullEnabled = true,\n");
+            outStr.append("   CullMode = Back,\n");
+        }
+
+        if (renderStates.alphaBlend)
+        {
+            outStr.append("   BlendingEnabled = true,\n");
+            outStr.append("   BlendColorSrc0 = One,\n");
+            outStr.append("   BlendAlphaSrc0 = One,\n");
+            outStr.append("   BlendColorDest0 = OneMinusSrcAlpha,\n");
+            outStr.append("   BlendAlphaDest0 = OneMinusSrcAlpha,\n");            
+        }
+        else
+        {
+            outStr.append("   BlendingEnabled = false,\n");
+        }        
+
+        outStr.append("}\n\n");
+        
+        outStr.append("attribute(state=MaterialStates)\n");        
         outStr.append("shader MaterialPS {\n");
 
         // print VS->PS imports
@@ -160,6 +199,53 @@ namespace rendering
 
     void MaterialVertexStageCompiler::assembleFinalShaderCode(base::StringBuilder& outStr) const
     {
+        const auto vertexFormat = context().vertexFormat;
+        const auto& vertexFormatInfo = GetMeshVertexFormatInfo(vertexFormat);
+        if (!context().meshletsVertices)
+        {
+            outStr.appendf("attribute(packing=vertex) struct {} {\n", MeshVertexFormatBindPointName(vertexFormat));
+
+
+            for (uint32_t i=0; i<vertexFormatInfo.numStreams; ++i)
+            {
+                const auto& vertexStream = vertexFormatInfo.streams[i];
+
+                outStr.appendf("    attribute(offset={}) ", vertexStream.dataOffset);
+
+                const auto numOutComponents = GetImageFormatInfo(vertexStream.readFormat).numComponents;
+                const auto formatClass = GetImageFormatInfo(vertexStream.readFormat).formatClass;
+
+                if (formatClass == ImageFormatClass::UINT)
+                {
+                    if (numOutComponents == 1)
+                        outStr.append("uint ");
+                    else
+                        outStr.appendf("uvec{} ", numOutComponents);
+                }
+                else if (formatClass == ImageFormatClass::INT)
+                {
+                    if (numOutComponents == 1)
+                        outStr.append("int ");
+                    else
+                        outStr.appendf("ivec{} ", numOutComponents);
+                }
+                else if (formatClass == ImageFormatClass::FLOAT)
+                {
+                    if (numOutComponents == 1)
+                        outStr.append("float ");
+                    else
+                        outStr.appendf("vec{} ", numOutComponents);
+                }
+
+                if (vertexStream.readFunction.empty())
+                    outStr.appendf("Raw{};\n", vertexStream.name);
+                else
+                    outStr.appendf("Raw{};\n", vertexStream.name);
+            }
+
+            outStr.append("}\n\n");
+        }
+
         outStr.append("shader MaterialVS {\n");
 
         // print the outputs to pixel shader
@@ -167,11 +253,23 @@ namespace rendering
             auto dataStreams = m_ps.vertexData();
             std::sort(dataStreams.begin(), dataStreams.end(), [](MaterialVertexDataType a, MaterialVertexDataType b) { return (int)a < (int)b; });
 
-            for (const auto data : dataStreams)
+            if (!dataStreams.empty())
             {
-                const auto& info = GetMaterialVertexDataInfo(data);
-                outStr.appendf("  out {} {};\n", info.shaderType, info.name);
+                for (const auto data : dataStreams)
+                {
+                    const auto& info = GetMaterialVertexDataInfo(data);
+                    outStr.appendf("  out {} {};\n", info.shaderType, info.name);
+                }
+
+                outStr.append("\n");
             }
+        }
+
+        // vertex input
+        if (!context().meshletsVertices)
+        {
+            outStr.appendf("  vertex {} v;\n", MeshVertexFormatBindPointName(vertexFormat));
+            outStr.append("\n");
         }
 
         outStr.append("  void main() {\n");
@@ -192,7 +290,7 @@ namespace rendering
         // internally we will also need world position to compute the gl_Position
         requestedData.pushBackUnique(MaterialVertexDataType::WorldPosition);
         requestedData.pushBackUnique(MaterialVertexDataType::VertexPosition);
-        requestedData.pushBackUnique(MaterialVertexDataType::ObjectID);
+        requestedData.pushBackUnique(MaterialVertexDataType::ObjectIndex);
 
         // print variables for all streams that are not outputs
         for (const auto data : requestedData)
@@ -213,21 +311,73 @@ namespace rendering
             }
         }
 
-        // access draw object
-        outStr.append("  uint drawObjectIndex = gl_BaseInstance + gl_InstanceID;\n");
-        outStr.append("  ObjectID = MeshChunkDrawData[drawObjectIndex].ObjectID;\n");
-
-        // unpack vertex attributes
-        const auto vertexFormat = (MeshVertexFormat)context().vertexFormat;
-        const auto& vertexFormatInfo = GetMeshVertexFormatInfo(vertexFormat);
-        if (vertexFormatInfo.numStreams)
+        // generate either bindless vertex access or a classical vertex attributes
+        if (context().meshletsVertices)
         {
-            outStr.append("    uint vertexOffsetInWords = CalcVertexOffsetInWords();\n");
+            // access draw object
+            outStr.append("    ObjectIndex = FetchObjectIndex();\n");
+
+            // unpack vertex attributes
+            if (vertexFormatInfo.numStreams)
+            {
+                outStr.append("    uint vertexOffsetInWords = CalcVertexOffsetInWords();\n");
+
+                for (uint32_t i = 0; i < vertexFormatInfo.numStreams; ++i)
+                {
+                    const auto& vertexStream = vertexFormatInfo.streams[i];
+                    auto dataWordIndex = vertexStream.dataOffset / 4;
+
+                    // if nothing needs the stream don't read it
+                    bool isStreamRequested = false;
+                    for (const auto data : requestedData)
+                    {
+                        if (GetMaterialVertexDataInfo(data).name == vertexStream.name)
+                        {
+                            isStreamRequested = true;
+                            break;
+                        }
+                    }
+
+                    if (vertexStream.readFunction.empty())
+                    {
+                        const auto numOutComponents = GetImageFormatInfo(vertexStream.readFormat).numComponents;
+                        for (uint32_t j = 0; j < numOutComponents; ++j)
+                        {
+                            if (isStreamRequested)
+                            {
+                                const base::StringView compNames[] = { "x","y","z","w" };
+                                outStr.appendf("    {}.{} = uintBitsToFloat(MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, compNames[j], dataWordIndex);
+                            }
+                            dataWordIndex += 1;
+                        }
+                    }
+                    else if (vertexStream.readFormat == ImageFormat::RG32_UINT)
+                    {
+                        if (isStreamRequested)
+                            outStr.appendf("    {} = {}(MeshVertexData[vertexOffsetInWords + {}], MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, vertexStream.readFunction, dataWordIndex, dataWordIndex + 1);
+                        dataWordIndex += 2;
+                    }
+                    else if (vertexStream.readFormat == ImageFormat::R32_UINT || vertexStream.readFormat == ImageFormat::RG16F)
+                    {
+                        if (isStreamRequested)
+                            outStr.appendf("    {} = {}(MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, vertexStream.readFunction, dataWordIndex);
+                        dataWordIndex += 1;
+                    }
+                    else
+                    {
+                        TRACE_ERROR("Unknown unpacking format for '{}'", vertexStream.name);
+                    }
+                }              
+            }
+        }
+        else
+        {
+            // access draw object
+            outStr.append("    ObjectIndex = gl_InstanceID;\n");
 
             for (uint32_t i = 0; i < vertexFormatInfo.numStreams; ++i)
             {
                 const auto& vertexStream = vertexFormatInfo.streams[i];
-                auto dataWordIndex = vertexStream.dataOffset / 4;
 
                 // if nothing needs the stream don't read it
                 bool isStreamRequested = false;
@@ -240,79 +390,39 @@ namespace rendering
                     }
                 }
 
-                if (vertexStream.readFunction.empty())
+                if (isStreamRequested)
                 {
-                    const auto numOutComponents = GetImageFormatInfo(vertexStream.readFormat).numComponents;
-                    for (uint32_t j = 0; j < numOutComponents; ++j)
-                    {
-                        if (isStreamRequested)
-                        {
-                            const base::StringView compNames[] = { "x","y","z","w" };
-                            outStr.appendf("    {}.{} = uintBitsToFloat(MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, compNames[j], dataWordIndex);
-                        }
-                        dataWordIndex += 1;
-                    }
+                    if (vertexStream.readFunction.empty())
+                        outStr.appendf("    {} = v.Raw{};\n", vertexStream.name, vertexStream.name);
+                    else if (vertexStream.readFormat == ImageFormat::RG32_UINT)
+                        outStr.appendf("    {} = {}(v.Raw{}.x, v.Raw{}.y);\n", vertexStream.name, vertexStream.readFunction, vertexStream.name, vertexStream.name);
+                    else
+                        outStr.appendf("    {} = {}(v.Raw{});\n", vertexStream.name, vertexStream.readFunction, vertexStream.name);
                 }
-                else if (vertexStream.readFormat == ImageFormat::RG32_UINT)
-                {
-                    if (isStreamRequested)
-                        outStr.appendf("    {} = {}(MeshVertexData[vertexOffsetInWords + {}], MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, vertexStream.readFunction, dataWordIndex, dataWordIndex + 1);
-                    dataWordIndex += 2;
-                }
-                else if (vertexStream.readFormat == ImageFormat::R32_UINT || vertexStream.readFormat == ImageFormat::RG16F)
-                {
-                    if (isStreamRequested)
-                        outStr.appendf("    {} = {}(MeshVertexData[vertexOffsetInWords + {}]);\n", vertexStream.name, vertexStream.readFunction, dataWordIndex);
-                    dataWordIndex += 1;
-                }
-                else
-                {
-                    TRACE_ERROR("Unknown unpacking format for '{}'", vertexStream.name);
-                }
-            }
-
-            if (vertexFormatInfo.quantizedPosition)
-            {
-                outStr.append("    {\n");
-                outStr.append("      vec3 QuantizationOffset = MeshChunkData[MeshChunkDrawData[drawObjectIndex].MeshChunkID].QuantizationOffset.xyz;\n");
-                outStr.append("      vec3 QuantizationScale = MeshChunkData[MeshChunkDrawData[drawObjectIndex].MeshChunkID].QuantizationScale.xyz;\n");
-                outStr.append("      VertexPosition = (QuantizationScale * VertexPosition) + QuantizationOffset;\n");
-                outStr.append("    }\n");
             }
         }
 
+        // decompress quantized data
+        if (vertexFormatInfo.quantizedPosition)
+            outStr.append("    VertexPosition = DecompressQuantizedPosition(VertexPosition);\n");
+
         // calculate local to scene matrix
         {
-            outStr.append("    mat4 LocalToScene = ObjectData[ObjectID].LocalToScene;\n");
+            outStr.append("    mat4 LocalToScene = ObjectData[ObjectIndex].LocalToScene;\n");
         }
 
         // calculate world space stuff
         if (requestedData.contains(MaterialVertexDataType::WorldPosition))
-        {
             outStr.append("    WorldPosition = (LocalToScene * VertexPosition.xyz1).xyz;\n");
-            //outStr.append("    WorldPosition = VertexPosition.xyz;\n");
-        }
 
+        // export tangent space
         if (requestedData.contains(MaterialVertexDataType::WorldNormal))
-        {
             outStr.append("    WorldNormal = (LocalToScene * VertexNormal.xyz0).xyz;\n");
-        }
-
         if (requestedData.contains(MaterialVertexDataType::WorldTangent))
-        {
             outStr.append("    WorldTangent = (LocalToScene * VertexTangent.xyz0).xyz;\n");
-        }
-
         if (requestedData.contains(MaterialVertexDataType::WorldBitangent))
-        {
             outStr.append("    WorldBitangent = (LocalToScene * VertexBitangent.xyz0).xyz;\n");
-        }
-
-        if (requestedData.contains(MaterialVertexDataType::SubObjectID))
-        {
-            outStr.append("    SubObjectID = MeshChunkDrawData[drawObjectIndex].SubObjectID;\n");
-        }
-
+        
         // append custom code, this will mostly modify
         {
             outStr.append("    {\n");
@@ -380,15 +490,17 @@ namespace rendering
         // textures
         for (const auto& resource : layout.resourceEntries)
         {
+            builder.append("  attribute(sampler=DefaultMaterialTextureSampler) ");
+
             switch (resource.viewType)
             {
-                case ImageViewType::View1D: builder.append("  Texture1D "); break;
-                case ImageViewType::View1DArray: builder.append("  Texture1DArray "); break;
-                case ImageViewType::View2D: builder.append("  Texture2D "); break;
-                case ImageViewType::View2DArray: builder.append("  Texture2DArray "); break;
-                case ImageViewType::ViewCube: builder.append("  TextureCube "); break;
-                case ImageViewType::ViewCubeArray: builder.append("  TextureCubeArray "); break;
-                case ImageViewType::View3D: builder.append("  Texture3D "); break;
+                case ImageViewType::View1D: builder.append("Texture1D "); break;
+                case ImageViewType::View1DArray: builder.append("Texture1DArray "); break;
+                case ImageViewType::View2D: builder.append("Texture2D "); break;
+                case ImageViewType::View2DArray: builder.append("Texture2DArray "); break;
+                case ImageViewType::ViewCube: builder.append("TextureCube "); break;
+                case ImageViewType::ViewCubeArray: builder.append("TextureCubeArray "); break;
+                case ImageViewType::View3D: builder.append("Texture3D "); break;
             }
 
             builder.appendf("{};\n", resource.name);
@@ -406,6 +518,11 @@ namespace rendering
         {
             base::Array<base::StringBuf> includes;
             includes.pushBack("material/material.h");
+
+            if (m_ps.context().meshletsVertices)
+                includes.pushBack("material/vertex_bindless.h");
+            else
+                includes.pushBack("material/vertex_standard.h");
 
             for (const auto& path : m_ps.includes())
                 includes.pushBackUnique(path);

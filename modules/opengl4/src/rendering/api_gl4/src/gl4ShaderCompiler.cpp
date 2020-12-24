@@ -241,6 +241,13 @@ namespace rendering
 
 				if (!m_program->files.empty())
 					f << "\n";
+
+				if (m_program->renderStates)
+				{
+					f << "/* Expected render states:\n";
+					m_program->renderStates->states.print(f);
+					f << "*/\n\n";
+				}
 			}
 
 			void ShaderCodePrinter::printStageAttributes(base::StringBuilder& f)

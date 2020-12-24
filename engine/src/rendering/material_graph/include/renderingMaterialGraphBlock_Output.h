@@ -21,9 +21,9 @@ namespace rendering
 
     public:
         MaterialGraphBlockOutput();
-
-        // determine sort group for this material - static, can't depend on the particular technique
-        virtual MaterialSortGroup resolveSortGroup() const;
+        
+        // determine material metadata based on the output block
+        virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const;
 
         // compile the pixel shader side of the material block
         virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;

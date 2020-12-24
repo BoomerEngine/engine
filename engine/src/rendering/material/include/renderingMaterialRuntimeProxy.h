@@ -9,6 +9,7 @@
 #pragma once
 
 #include "renderingMaterialRuntimeLayout.h"
+#include "renderingMaterialTemplate.h"
 
 namespace rendering
 {
@@ -65,11 +66,11 @@ namespace rendering
         // get internal ID - note that IDs maybe reused
         INLINE MaterialDataProxyID id() const { return m_id; }
 
-        // sort group for this material proxy, NOTE: never updated, a new proxy must be created as if we changed the template (usually the template DOES change)
-        INLINE MaterialSortGroup sortGroup() const { return m_sortGroup; }
-
-		// template proxy we got created for
+        // template proxy we got created for
 		INLINE const MaterialTemplateProxy* templateProxy() const { return m_template; }
+
+		// get material template's metadata
+		INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
 
         // data layout for the material data proxy
         INLINE const MaterialDataLayout* layout() const { return m_layout; };
@@ -82,7 +83,7 @@ namespace rendering
         //--
 
 		// bind material descriptor
-		void bindDescriptor(command::CommandWriter& cmd) const;
+		void bind(command::CommandWriter& cmd) const;
 
 		// write bindless data to provided memory
 		void writeBindlessData(void* ptr) const;
@@ -92,7 +93,7 @@ namespace rendering
     private:
         MaterialDataProxyID m_id;
 
-        MaterialSortGroup m_sortGroup = MaterialSortGroup::Opaque;
+		const MaterialTemplateMetadata m_metadata; // copied from template
 
         const MaterialDataLayout* m_layout = nullptr;
         MaterialTemplateProxyPtr m_template;

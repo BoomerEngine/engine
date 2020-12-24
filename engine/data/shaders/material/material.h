@@ -11,12 +11,21 @@
 #include <math.h>
 #include <frame.h>
 #include <camera.h>
-#include <shadows.h>
 #include <lighting.h>
 #include <selection.h>
-#include "vertex.h"
 
 //--
+
+sampler DefaultMaterialTextureSampler
+{
+    MinFilter = Linear,
+    MagFilter = Linear,
+    MipFilter = Linear,
+    AddressU = Wrap,
+    AddressV = Wrap,
+    AddressW = Wrap,
+	MaxAnisotropy = 16,
+}
 
 export shader MaterialPS
 {

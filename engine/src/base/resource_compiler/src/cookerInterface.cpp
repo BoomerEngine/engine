@@ -338,7 +338,11 @@ namespace base
 
                         for (const auto& dep : metadata->sourceDependencies)
                             touchFile(dep.sourcePath);
-                   }
+                    }
+                    else
+                    {
+                        touchFile(key.path());
+                    }
                 }
             }
 

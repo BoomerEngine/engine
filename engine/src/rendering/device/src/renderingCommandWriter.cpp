@@ -399,8 +399,13 @@ namespace rendering
             CommandBuffer* ret = CommandBuffer::Alloc();
             ret->m_isChildCommandBuffer = true;
             ret->m_parentBufferBeginPass = m_currentPass;
-            if (inheritParameters)
-                ret->m_activeParameterBindings = m_currentParameterBindings;
+			if (inheritParameters)
+			{
+				ret->m_activeParameterBindings = m_currentParameterBindings;
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+				ret->m_activeParameterData = m_currentParameterData;
+#endif
+			}
 
             auto op = allocCommand<OpChildBuffer>();
             op->childBuffer = ret;
@@ -1026,6 +1031,23 @@ namespace rendering
             return true;
         }
 
+		void CommandWriter::printActiveDescriptors()
+		{
+			TRACE_INFO("There are currently '{}' bound descriptors:", m_currentParameterBindings.size());
+
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+			for (auto pair : m_currentParameterBindings.pairs())
+			{
+				const auto* data = m_currentParameterData.findSafe(pair.key, nullptr);
+				TRACE_INFO(" [{}]]: {} {}", pair.key, pair.value, data != nullptr ? "HAS DATA" : "NO DATA");
+			}
+#else
+            for (auto pair : m_currentParameterBindings.pairs())
+				TRACE_INFO(" [{}]]: {}", pair.key, pair.value);
+#endif
+
+		}
+
         bool CommandWriter::validateParameterBindings(const ShaderMetadata* meta)
         {
 #ifdef VALIDATE_DESCRIPTOR_BINDINGS
@@ -1034,6 +1056,8 @@ namespace rendering
 			for (const auto& desc : meta->descriptors)
             {
                 const auto* currentLayout = m_currentParameterBindings.find(desc.name);
+				if (!currentLayout)
+					printActiveDescriptors();
 				DEBUG_CHECK_RETURN_EX_V(currentLayout != nullptr, base::TempString("Selected shader requires descriptor '{}' that is not bound", desc.name), false);
 
                 DEBUG_CHECK_RETURN_EX_V(currentLayout->layout().size() == desc.elements.size(), base::TempString("Bound parameter layout '{}' requires {} elements but {} provided",
@@ -1050,6 +1074,9 @@ namespace rendering
 
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
 				const auto* descriptorEntries = (const DescriptorEntry*)m_currentParameterData.findSafe(desc.name, nullptr);
+
+                if (!descriptorEntries)
+                    printActiveDescriptors();
 				DEBUG_CHECK_RETURN_EX_V(descriptorEntries != nullptr, base::TempString("No actual descript data for descriptor '{}' found", desc.name), false);
 
 				for (auto i : desc.elements.indexRange())
@@ -1067,7 +1094,7 @@ namespace rendering
 							if (descriptorEntry.inlinedConstants.sourceDataPtr) // way more common to have inlined constants
 							{
 								DEBUG_CHECK_RETURN_V(!descriptorEntry.id, false);
-								DEBUG_CHECK_RETURN_EX_V(descriptorEntry.size == expectedElem.number, base::TempString("Constant buffer '{}' in descriptor '{}' is expected to be of size {} but {} bytes were given.",
+								DEBUG_CHECK_RETURN_EX_V(descriptorEntry.size >= expectedElem.number, base::TempString("Constant buffer '{}' in descriptor '{}' is expected to be of size {} but {} bytes were given.",
 									expectedElem.name, desc.name, expectedElem.number, descriptorEntry.size), false);
 							}
 							else

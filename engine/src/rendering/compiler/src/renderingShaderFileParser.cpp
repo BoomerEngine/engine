@@ -48,6 +48,13 @@ namespace rendering
             return *this;
         }
 
+        AttributeList& AttributeList::merge(const AttributeList& attr)
+        {
+            for (const auto& pair : attr.attributes.pairs())
+                add(pair.key, pair.value);
+            return *this;
+        }
+
         bool AttributeList::has(base::StringID key) const
         {
             return attributes.contains(key);

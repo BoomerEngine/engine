@@ -57,6 +57,7 @@ namespace rendering
             CodeLibrary& m_code;
 
             base::HashMap<FoldedFunctionKey, Function*> m_foldedFunctionsMap;
+            base::HashMap<base::StringID, uint32_t> m_functionNameCounter;
 
             CodeNode* foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, base::parser::IErrorReporter& err);
         };

@@ -74,7 +74,7 @@ namespace rendering
         {
             static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
             static_assert(!std::is_same<T, base::Variant>::value, "Variant should not be used here, use the real value or use the writeParameter");
-            return writeParameterRaw(name, &data, base::reflection::GetTypeObject<T>(), refresh);
+            return writeParameter(name, &data, base::reflection::GetTypeObject<T>(), refresh);
         }
 
         template< typename T >
@@ -82,7 +82,7 @@ namespace rendering
         {
             static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
             static_assert(!std::is_same<T, base::Variant>::value, "Variant should not be used here, use the real value or use the readParameter");
-            return readParameterRaw(name, &data, base::reflection::GetTypeObject<T>());
+            return readParameter(name, &data, base::reflection::GetTypeObject<T>());
         }
 
         //----

@@ -70,6 +70,18 @@ namespace rendering
     void StaticTexture::onPostLoad()
     {
         TBaseClass::onPostLoad();
+
+        const auto& format = GetImageFormatInfo(m_info.format);
+
+        for (const auto& mip : m_mips)
+        {
+            const auto minSize = format.compressed ? 4 : 1;
+            const auto expectedSize = ((std::max<uint32_t>(minSize, mip.width) * std::max<uint32_t>(minSize, mip.width) * mip.depth) * format.bitsPerPixel) / 8;
+
+            DEBUG_CHECK_EX(expectedSize == mip.dataSize, base::TempString("Static texture '{}' mipmap [{}x{}x{}] has unexpected size {} (expected {}), format {}",
+                path(), mip.width, mip.height, mip.depth, mip.dataSize, expectedSize, m_info.format));
+        }
+
         createDeviceResources();
     }
 

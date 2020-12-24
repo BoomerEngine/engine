@@ -110,7 +110,8 @@ namespace base
 
         bool DepotStructure::queryFileAbsolutePath(StringView fileSystemPath, StringBuf& outAbsolutePath) const
         {
-            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath), false);
+            if (!ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath))
+                return false;
 
             // resolve location
             StringBuf localFileSystemPath;

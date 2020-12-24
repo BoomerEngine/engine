@@ -698,6 +698,19 @@ namespace base
         return cmpNE(v).isAnySet();
     }
 
+    INLINE SIMDQuad& SIMDQuad::operator=(const SIMDQuad& v)
+    {
+#if defined(PLATFORM_SSE)
+        quad = v.quad;
+#else
+        floats[0] = v.floats[0];
+        floats[1] = v.floats[1];
+        floats[2] = v.floats[2];
+        floats[3] = v.floats[3];
+#endif
+        return *this;
+    }
+
     INLINE bool SIMDQuad::isNear2(const SIMDQuad& v, const SIMDQuad& eps) const
     {
         return (*this - v).squareLength2().cmpL(eps).isAllMaskSet(Mask_X);

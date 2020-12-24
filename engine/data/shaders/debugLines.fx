@@ -21,6 +21,7 @@ descriptor DebugFragmentPass
     ConstantBuffer
     {
         float4x4 WorldToScreen; // camera
+        vec4 _padding0;
     }
 
     //Texture2D CustomTexture; 

@@ -21,9 +21,9 @@ namespace rendering
     MaterialGraphBlockOutput::MaterialGraphBlockOutput()
     {}
 
-    MaterialSortGroup MaterialGraphBlockOutput::resolveSortGroup() const
+    void MaterialGraphBlockOutput::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
     {
-        return MaterialSortGroup::Opaque;
+        // nothing specific
     }
 
     CodeChunk MaterialGraphBlockOutput::compile(MaterialStageCompiler& compiler, base::StringID outputName) const

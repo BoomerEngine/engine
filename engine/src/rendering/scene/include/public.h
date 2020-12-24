@@ -78,10 +78,14 @@ namespace rendering
 		//--
 
 		class FrameRenderingService;
+
 		class FrameViewMain;
 		class FrameViewCascades;
 		class FrameViewSelection;
 		
+        struct FrameViewMainRecorder;
+        struct FrameViewCascadesRecorder;
+
 		//--
 
 		class IObjectManager;

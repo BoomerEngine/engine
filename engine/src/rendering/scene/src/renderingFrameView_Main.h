@@ -32,6 +32,7 @@ namespace rendering
 			command::CommandWriter forwardTransparent; // transparent objects
 			command::CommandWriter selectionOutline; // objects to render selection outline from
 			command::CommandWriter sceneOverlay; // objects to render as scene overlay
+			command::CommandWriter screenOverlay; // objects to render as screen overlay (at the screen resolution and after final composition)
 
 			FrameViewMainRecorder();
 		};
@@ -60,9 +61,18 @@ namespace rendering
 
 			//--
 
+			INLINE const Camera& visibilityCamera() const { return m_camera; }
+			INLINE const CascadeData& cascades() const { return m_cascades; }
+
+			//--
+
 		private:
 			const FrameRenderer& m_frame;
 			const Setup& m_setup;
+
+			base::Rect m_viewport;
+
+			Camera m_camera;
 
 			CascadeData m_cascades;
 
@@ -71,8 +81,7 @@ namespace rendering
 			void initializeCommandStreams(command::CommandWriter& cmd, FrameViewMainRecorder& rec);
 
 			void bindCamera(command::CommandWriter& cmd);
-			
-			void renderFragments(Scene* scene, FrameViewMainRecorder& rec);
+			void bindLighting(command::CommandWriter& cmd);
 		};
         
         //--

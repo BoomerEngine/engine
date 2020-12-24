@@ -882,6 +882,11 @@ namespace rendering
                         // create if missing
                         program = createProgram(elem->name, elem->location, elem->gatherAttributes());
                     }
+                    else
+                    {
+                        // merge attributes
+                        const_cast<Program*>(program)->attributes().merge(elem->gatherAttributes());
+                    }
                 }
                 else if (elem->type == parser::ElementType::Descriptor)
                 {

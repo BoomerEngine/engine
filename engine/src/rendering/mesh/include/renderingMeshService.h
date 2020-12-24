@@ -19,6 +19,7 @@ namespace rendering
 
 	//---
 
+    class IMeshChunkProxy;
 	class MeshChunkSharedStorage;
 
 	//---
@@ -41,8 +42,8 @@ namespace rendering
         /// upload changes to any internal data structures
         void uploadChanges(command::CommandWriter& cmd) const;
 
-        /// bind common meshlet buffers
-        void bindCommonMeshletData(command::CommandWriter& cmd) const;
+        /// bind mesh data buffers (chunk info)
+        void bindMeshData(command::CommandWriter& cmd) const;
 
         //--
 
@@ -57,9 +58,34 @@ namespace rendering
 
 		IDevice* m_device = nullptr;
 
+        //--
+
+        BufferObjectPtr m_chunkInfoBuffer;
+        BufferViewPtr m_chunkInfoBufferSRV;
+
+#pragma pack(push)
+#pragma pack(4)
+        struct GPUChunkInfo
+        {
+            base::Vector4 quantizationMin;
+            base::Vector4 quantizationMax;
+            uint32_t vertexDataOffset;
+            uint32_t indexDataOffset;
+        };
+#pragma pack(pop)
+
 		//--
 
-		MeshChunkProxyStandalonePtr createStandaloneProxy(const MeshChunk& data, const base::Buffer& vertexData, const base::Buffer& indexData, const base::StringBuf& debugLabel);
+        base::SpinLock m_freeMeshChunkIDsLock;
+        base::Array<MeshChunkID> m_freeMeshChunkIDs;
+
+        void releaseMeshChunkId(MeshChunkID id);
+
+        friend class IMeshChunkProxy;
+
+        //---
+
+		MeshChunkProxyStandalonePtr createStandaloneProxy(const MeshChunk& data, const base::Buffer& vertexData, const base::Buffer& indexData, const base::StringBuf& debugLabel, MeshChunkID id);
     };
 
     //---

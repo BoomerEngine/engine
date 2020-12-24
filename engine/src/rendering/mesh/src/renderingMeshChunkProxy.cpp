@@ -28,30 +28,36 @@ namespace rendering
 		RTTI_PROPERTY(m_vertexCount);
 	RTTI_END_TYPE();
 
-	IMeshChunkProxy::IMeshChunkProxy(const Setup& setup, MeshChunkType type)
+	IMeshChunkProxy::IMeshChunkProxy(const Setup& setup, MeshChunkType type, MeshChunkID id)
 		: m_type(type)
 		, m_format(setup.format)
 		, m_indexCount(setup.indexCount)
 		, m_vertexCount(setup.vertexCount)
+		, m_id(id)
 	{
+        m_quantizationOffset = setup.quantizationOffset;
+        m_quantizationScale = setup.quantizationScale;
 	}
 
 	IMeshChunkProxy::~IMeshChunkProxy()
-	{}
+	{
+	}
 
     //---
 
 	RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshChunkProxy_Standalone);
 	RTTI_END_TYPE();
 
-	MeshChunkProxy_Standalone::MeshChunkProxy_Standalone(const Setup& setup)
-		: IMeshChunkProxy(setup, MeshChunkType::Standalone)
+	MeshChunkProxy_Standalone::MeshChunkProxy_Standalone(const Setup& setup, MeshChunkID id)
+		: IMeshChunkProxy(setup, MeshChunkType::Standalone, id)
 		, m_vertexBuffer(setup.vertexBuffer)
 		, m_indexBuffer(setup.indexBuffer)
 		, m_offsetInVertexBuffer(setup.offsetInVertexBuffer)
 		, m_offsetInIndexBuffer(setup.offsetInIndexBuffer)
 		, m_vertexBufferStride(setup.vertexBufferStride)
-	{}
+		, m_vertexBindPoint(MeshVertexFormatBindPointName(setup.format))
+	{
+	}
 
 	MeshChunkProxy_Standalone::~MeshChunkProxy_Standalone()
 	{}
@@ -77,8 +83,8 @@ namespace rendering
 	RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshChunkProxy_Meshlets);
 	RTTI_END_TYPE();
 
-	MeshChunkProxy_Meshlets::MeshChunkProxy_Meshlets(const Setup& setup, MeshChunkSharedStorage* storage)
-		: IMeshChunkProxy(setup, MeshChunkType::Meshlets)
+	MeshChunkProxy_Meshlets::MeshChunkProxy_Meshlets(const Setup& setup, MeshChunkSharedStorage* storage, MeshChunkID id)
+		: IMeshChunkProxy(setup, MeshChunkType::Meshlets, id)
 		, m_allocation(setup.allocataions)
 		, m_storage(storage)
 	{}

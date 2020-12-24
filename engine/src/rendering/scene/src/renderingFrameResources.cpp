@@ -93,7 +93,8 @@ namespace rendering
 
 			globalAOShadowMask.reset();
 			globalAOShadowMaskUAV.reset();
-			globalAOShadowMaskSRV.reset();
+			//globalAOShadowMaskSRV.reset();
+			globalAOShadowMaskUAV_RO.reset();
 
 			velocityBuffer.reset();
 			velocityBufferRTV.reset();
@@ -180,7 +181,8 @@ namespace rendering
 
 				globalAOShadowMask = m_device->createImage(info);
 				globalAOShadowMaskUAV = globalAOShadowMask->createWritableView();
-				globalAOShadowMaskSRV = globalAOShadowMask->createSampledView();
+				globalAOShadowMaskUAV_RO = globalAOShadowMask->createReadOnlyView();
+				//globalAOShadowMaskSRV = globalAOShadowMask->createSampledView();
             }
 
             // linearized depth buffer

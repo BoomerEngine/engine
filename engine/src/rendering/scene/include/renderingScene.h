@@ -20,11 +20,6 @@ namespace rendering
 
 		///--
 
-		struct FrameViewMainRecorder;
-		struct FrameViewMainParams;
-
-		///--
-
         // scene type
         enum class SceneType : uint8_t
         {
@@ -128,6 +123,7 @@ namespace rendering
 			void renderLock();
 			void renderUnlock();
 			void renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame);
+			void renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame);
 
 			void prepare(command::CommandWriter& cmd, const FrameRenderer& frame);
 

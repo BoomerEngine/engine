@@ -25,15 +25,6 @@ namespace rendering
 
     ///---
 
-    RTTI_BEGIN_TYPE_ENUM(MaterialSortGroup);
-        RTTI_ENUM_OPTION(Opaque);
-        RTTI_ENUM_OPTION(OpaqueMasked);
-        RTTI_ENUM_OPTION(Transparent);
-        RTTI_ENUM_OPTION(Refractive);
-    RTTI_END_TYPE();
-
-    ///---
-
 	RTTI_BEGIN_TYPE_CLASS(MaterialTemplateParamInfo);
         RTTI_PROPERTY(name);
         RTTI_PROPERTY(category);
@@ -55,7 +46,6 @@ namespace rendering
 
 	RTTI_BEGIN_TYPE_CLASS(MaterialPrecompiledStaticTechnique)
 		RTTI_PROPERTY(setup);
-		RTTI_PROPERTY(renderStates);
 		RTTI_PROPERTY(shader);
 	RTTI_END_TYPE();
 
@@ -71,8 +61,9 @@ namespace rendering
         RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4mt");
         RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Material Template");
         RTTI_PROPERTY(m_parameters);
-        RTTI_PROPERTY(m_sortGroup);
+        RTTI_PROPERTY(m_metadata);
         RTTI_PROPERTY(m_compiler);
+        RTTI_PROPERTY(m_contextPath);
         RTTI_PROPERTY(m_precompiledTechniques);
     RTTI_END_TYPE();
 
@@ -80,10 +71,11 @@ namespace rendering
     {
     }
 
-    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, MaterialSortGroup sortGroup, const MaterialTemplateDynamicCompilerPtr& compiler)
+    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::StringBuf& contextPath)
         : m_parameters(std::move(params))
-        , m_sortGroup(sortGroup)
+        , m_metadata(metadata)
         , m_compiler(compiler)
+        , m_contextPath(contextPath)
     {
         if (m_compiler)
             m_compiler->parent(this);
@@ -93,10 +85,11 @@ namespace rendering
 		createDataProxy();
     }
 
-    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, MaterialSortGroup sortGroup, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques)
+    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques, const base::StringBuf& contextPath)
         : m_parameters(std::move(params))
-        , m_sortGroup(sortGroup)
+        , m_metadata(metadata)
         , m_precompiledTechniques(std::move(precompiledTechniques))
+        , m_contextPath(contextPath)
     {
         for (auto& tech : m_precompiledTechniques)
             if (tech.shader)
@@ -204,7 +197,7 @@ namespace rendering
 
 	const MaterialTemplate* MaterialTemplate::resolveTemplate() const
 	{
-		return nullptr;
+		return this;
 	}
 
     bool MaterialTemplate::checkParameterOverride(base::StringID name) const
@@ -316,7 +309,9 @@ namespace rendering
 	void MaterialTemplate::createTemplateProxy()
 	{
 		DEBUG_CHECK_EX(!m_templateProxy, "Template proxy for material template should be immutable");
-		m_templateProxy = base::RefNew<MaterialTemplateProxy>(path(), m_parameters, m_sortGroup, m_compiler, m_precompiledTechniques);
+
+        const auto contextPath = path() ? path() : m_contextPath;
+		m_templateProxy = base::RefNew<MaterialTemplateProxy>(contextPath, m_parameters, m_metadata, m_compiler, m_precompiledTechniques);
 	}
 
     ///---
