@@ -28,7 +28,7 @@ namespace ed
 {
     //--
 
-    static res::StaticResource<image::Image> resDirectoryTexture("/engine/thumbnails/directory.png");
+    static res::StaticResource<image::Image> resDirectoryTexture("/engine/thumbnails/directory.png", true);
 
     //--
 

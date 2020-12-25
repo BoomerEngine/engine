@@ -52,10 +52,8 @@ namespace rendering
 
     void MaterialGraphBlockOutputCommon::compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderStates) const
     {
+        // common states that are always set
         outRenderStates.twoSided = m_twoSided;
-        outRenderStates.depthTest = true;
-        outRenderStates.depthWrite = !m_transparent;
-        outRenderStates.alphaToCoverage = !m_transparent && hasConnectionOnSocket("Mask"_id) && m_maskAlphaToCoverage;
 
         // do we allow masking ? some modes have masking disabled
         const auto allowMasking = (compiler.context().pass != MaterialPass::MaterialDebug) && (compiler.context().pass != MaterialPass::Wireframe);
@@ -86,6 +84,7 @@ namespace rendering
             case MaterialPass::DepthPrepass:
             {
                 compiler.appendf("gl_Target0 = vec4(1,0,1,1);\n");
+
                 // TODO: velocities
                 break;
             }
@@ -123,9 +122,7 @@ namespace rendering
 
             case MaterialPass::Forward:
             {
-                // TODO: this seems fishy
-                if (!outRenderStates.alphaToCoverage || !outRenderStates.depthWrite)
-                    outRenderStates.earlyPixelTests = true;
+                outRenderStates.earlyPixelTests = true;
 
                 // compile the color output of the material
                 const auto color = compileMainColor(compiler, outRenderStates).conform(3);
@@ -133,27 +130,31 @@ namespace rendering
                 // selection effect
 
                 // write combined output
-                if (m_transparent)
-                {
-                    DEBUG_CHECK(!outRenderStates.alphaToCoverage); // won't be supported
-
-                    const auto alpha = compiler.evalInput(this, "Opacity"_id, 1.0f).conform(1); // single scalar
-
-                    if (m_premultiplyAlpha)
-                        compiler.appendf("gl_Target0 = vec4({} * {}, {});\n", color, alpha, alpha);
-                    else
-                        compiler.appendf("gl_Target0 = vec4({}, {});\n", color, alpha);
-                }
+                if (outRenderStates.alphaToCoverage)
+                    compiler.appendf("gl_Target0 = vec4({}, {});\n", color, mask);
                 else
-                {
-                    if (outRenderStates.alphaToCoverage)
-                        compiler.appendf("gl_Target0 = vec4({}, {});\n", color, mask);
-                    else
-                        compiler.appendf("gl_Target0 = {}.xyz1;\n", color);
+                    compiler.appendf("gl_Target0 = {}.xyz1;\n", color);
 
-                    if (compiler.debugCode())
-                        compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) gl_Target0.w = 1;\n");
-                }
+                if (compiler.debugCode())
+                    compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_MASKING)) gl_Target0.w = 1;\n");
+
+                break;
+            }
+
+            case MaterialPass::ForwardTransparent:
+            {
+                outRenderStates.alphaBlend = true;
+                outRenderStates.alphaToCoverage = false;
+                outRenderStates.depthWrite = false;
+                outRenderStates.earlyPixelTests = true;
+
+                const auto color = compileMainColor(compiler, outRenderStates).conform(3);
+                const auto alpha = compiler.evalInput(this, "Opacity"_id, 1.0f).conform(1); // single scalar
+
+                if (m_premultiplyAlpha)
+                    compiler.appendf("gl_Target0 = vec4({} * {}, {});\n", color, alpha, alpha);
+                else
+                    compiler.appendf("gl_Target0 = vec4({}, {});\n", color, alpha);
 
                 break;
             }

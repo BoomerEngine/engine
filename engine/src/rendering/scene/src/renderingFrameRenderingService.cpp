@@ -36,12 +36,22 @@ namespace rendering
         FrameRenderingService::~FrameRenderingService()
         {}
 
+        void FrameRenderingService::recreateHelpers()
+        {
+            auto device = base::GetService<DeviceService>()->device();
+
+            delete m_sharedHelpers;
+            m_sharedHelpers = new FrameHelper(device);
+        }
+
         base::app::ServiceInitializationResult FrameRenderingService::onInitializeService(const base::app::CommandLine& cmdLine)
         {
             auto device = base::GetService<DeviceService>()->device();
 
             m_sharedResources = new FrameResources(device);
             m_sharedHelpers = new FrameHelper(device);
+
+            m_reloadNotifier = [this]() { recreateHelpers(); };
 
             return base::app::ServiceInitializationResult::Finished;
         }

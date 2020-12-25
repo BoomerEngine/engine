@@ -49,7 +49,7 @@ namespace base
             // source depot structure we cook from
             INLINE depot::DepotStructure& depot() const { return *m_depot; }
 
-            //--
+        protected:
 
             // IResourceLoader
             virtual void update() override final;
@@ -57,37 +57,33 @@ namespace base
             virtual ResourceHandle loadResourceOnce(const ResourceKey& key) override final CAN_YIELD;
             virtual bool validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const override final;
             virtual depot::DepotStructure* queryUncookedDepot() const override final;
+            virtual void notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource) override final;
 
         private:
             UniquePtr<depot::DepotStructure> m_depot;
             UniquePtr<Cooker> m_cooker; // actual workhorse
 
+            //--
+
             UniquePtr<DependencyTracker> m_depTracker;
 
-            Queue<ResourceKey> m_pendingReloadQueue;
-            HashSet<ResourceKey> m_pendingReloadSet;
+            //--
 
-            ResourceKey m_resourceBeingReloadedKey;
-            ResourceHandle m_resourceBeingReloaded;
-            ResourceHandle m_reloadedResource;
-            bool m_reloadFinished = false;
-            SpinLock m_reloadLock;
+            struct PendingReload
+            {
+                ResourcePtr currentResource;
+                ResourcePtr newResource;
+            };
+
+            SpinLock m_pendingReloadQueueLock;
+            Queue<PendingReload> m_pendingReloadQueue;
+            
+            //--
 
             void checkChangedFiles();
 
-            ResourcePtr pickupNextResourceForReloading_NoLock();
-
-            void startReloading();
-            void processReloading(ResourceKey key);
-
-            bool tryFinishReloading(ResourcePtr& outReloadedResource, ResourcePtr& outNewResource);
-            void applyReloading(ResourcePtr currentResource, ResourcePtr newResource);
-
-            ResourcePtr loadInternal(ResourceKey key, bool normalLoading=true);
-            ResourcePtr loadInternalDirectly(ClassType resClass, StringView depothPath);
-
-            void updateDirectFileDependencies(ResourceKey key, StringView depothPath);
-            void updateEmptyFileDependencies(ResourceKey key, StringView depothPath);
+            bool popNextReload(PendingReload& outReload);
+            void applyReload(ResourcePtr currentResource, ResourcePtr newResource);
         };
 
         //--

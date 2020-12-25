@@ -18,6 +18,7 @@
 #include "base/object/include/rttiDataView.h"
 #include "base/object/include/dataViewNative.h"
 #include "base/resource/include/resourceTags.h"
+#include "base/object/include/objectGlobalRegistry.h"
 
 namespace base
 {
@@ -112,7 +113,7 @@ namespace rendering
     {
     }
 
-    static base::res::StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg");
+    static base::res::StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg", true);
 
     MaterialDataProxyPtr MaterialInstance::dataProxy() const
     {
@@ -362,10 +363,34 @@ namespace rendering
         createMaterialProxy();
     }
 
+    static bool IsBasedOnMaterial(const MaterialInstance* a, const IMaterial* base)
+    {
+        while (a)
+        {
+            if (a == base)
+                return true;
+            a = base::rtti_cast<MaterialInstance>(a->baseMaterial().acquire());
+        }
+
+        return false;
+    }
+
     void MaterialInstance::notifyDataChanged()
     {
         createMaterialProxy();
-        TBaseClass::notifyDataChanged();
+        //TBaseClass::notifyDataChanged();
+
+        base::ObjectGlobalRegistry::GetInstance().iterateAllObjects([this](IObject* obj)
+            {
+                if (auto* mi = base::rtti_cast<MaterialInstance>(obj))
+                {
+                    if (mi != this && IsBasedOnMaterial(mi, this))
+                    {
+                        mi->notifyDataChanged();
+                    }
+                }
+                return false;
+            });
     }
 
     void MaterialInstance::notifyBaseMaterialChanged()
@@ -378,6 +403,8 @@ namespace rendering
     void MaterialInstance::onPropertyChanged(base::StringView path)
     {
         auto orgPropName = path;
+
+        TRACE_INFO("OnPropertyChange at {}, prop '{}' base {}", this, path, m_baseMaterial.acquire().get());
 
         if (path == BASE_MATERIAL_NAME.view())
         {
@@ -426,6 +453,12 @@ namespace rendering
 
     bool MaterialInstance::onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource)
     {
+        if (currentResource->is<MaterialInstance>())
+        {
+            TRACE_INFO("SeenReloading at {}, cur base {} (reload {}->{}: {})", 
+                this, m_baseMaterial.acquire().get(), currentResource, newResource, newResource->path());
+        }
+
         bool ret = TBaseClass::onResourceReloading(currentResource, newResource);
 
         for (auto& param : m_parameters)

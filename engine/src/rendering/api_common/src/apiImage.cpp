@@ -29,8 +29,9 @@ namespace rendering
 
 		//--
 
-		IBaseImage::IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup)
+		IBaseImage::IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup, const ISourceDataProvider* initData)
 			: IBaseCopiableObject(owner, ObjectType::Image)
+			, m_initData(AddRef(initData))
 			, m_setup(setup)
 		{
 			if (m_setup.initialLayout == ResourceLayout::INVALID)
@@ -52,22 +53,6 @@ namespace rendering
 		IBaseImage::~IBaseImage()
 		{
 			base::mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_poolMemorySize);
-		}
-
-		void IBaseImage::computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const
-		{
-			outAtoms.reserve(m_setup.numMips * m_setup.numSlices);
-			for (uint32_t sliceIndex = 0; sliceIndex < m_setup.numSlices; ++sliceIndex)
-			{
-				for (uint32_t mipIndex = 0; mipIndex < m_setup.numMips; ++mipIndex)
-				{
-					auto& atom = outAtoms.emplaceBack();
-					atom.alignment = 256;
-					atom.size = m_setup.calcMipDataSize(mipIndex);
-					atom.mip = mipIndex;
-					atom.slice = sliceIndex;
-				}
-			}
 		}
 
 		//--

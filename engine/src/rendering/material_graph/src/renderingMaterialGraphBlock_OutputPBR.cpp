@@ -50,6 +50,7 @@ namespace rendering
         //builder.addSocket("ReflectionOffset"_id, MaterialInputSocket());
         //builder.addSocket("ReflectionAmount"_id, MaterialInputSocket());
         //builder.addSocket("GlobalReflection"_id, MaterialInputSocket());
+        builder.socket("Lighting Opacity"_id, MaterialInputSocket());
         builder.socket("Ambient Occlusion"_id, MaterialInputSocket());
     }
 
@@ -83,12 +84,15 @@ namespace rendering
         }
 
         auto result = compiler.var(base::Vector3(0, 0, 0));
+        auto resultBack = compiler.var(base::Vector3(0, 0, 0));
 
         if (m_applyAmbientOcclusion)
         {
             ambientOcclusion = compiler.var(ambientOcclusion);
             compiler.appendf("{} *= Lighting.SampleGlobalAmbientOcclusion(gl_FragCoord.xy);\n", ambientOcclusion);
         }
+
+        //--
 
         if (m_applyGlobalDirectionalLighting)
         {
@@ -98,10 +102,31 @@ namespace rendering
                 compiler.appendf("{} *= Lighting.SampleGlobalShadowMask(gl_FragCoord.xy);\n", shadowOcclusion);
 
             compiler.appendf("{} += Lighting.ComputeGlobalLighting(pbr, {});\n", result, shadowOcclusion);
+
+            if (m_twoSidedLighting)
+            {
+                compiler.appendf("pbr.shading_normal = -pbr.shading_normal;\n");
+                compiler.appendf("{} += Lighting.ComputeGlobalLighting(pbr, {});\n", resultBack, shadowOcclusion);
+            }
         }
 
         if (m_applyGlobalAmbient)
+        {
             compiler.appendf("{} += {} * Lighting.ComputeGlobalAmbient({}, {}, {});\n", result, color, worldPosition, worldNormal, ambientOcclusion);
+            /*
+            if (m_twoSidedLighting)
+                compiler.appendf("{} += {} * Lighting.ComputeGlobalAmbient({}, -{}, {});\n", resultBack, color, worldPosition, worldNormal, ambientOcclusion);*/
+        }
+
+        if (m_twoSidedLighting)
+        {
+            auto lightingBlend = compiler.evalInput(this, "Lighting Opacity"_id, base::Vector3(1.0f, 1.0f, 1.0f)).conform(3);
+            auto frontSideLighting = compiler.var(CodeChunk(CodeChunkType::Numerical3, base::TempString("gl_FrontFacing ? vec3(1) : {}", lightingBlend), false));
+            auto backSideLighting = compiler.var(CodeChunk(CodeChunkType::Numerical3, base::TempString("gl_FrontFacing ? {} : vec3(1)", lightingBlend), false));
+            compiler.appendf("{} = ({}*{}) + ({}*{});\n", result, result, frontSideLighting, resultBack, backSideLighting);
+        }
+
+        //--
 
         if (compiler.debugCode())
             compiler.appendf("if (Frame.CheckMaterialDebug(MATERIAL_FLAG_DISABLE_LIGHTING)) {} = {};\n", result, color);

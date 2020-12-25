@@ -78,12 +78,6 @@ namespace rendering
 			IBaseCopiableObject(IBaseThread* drv, ObjectType type);
 			virtual ~IBaseCopiableObject(); // called on rendering thread once all frames this object was used are done rendering
 
-			// measure size of the data required for staging this resource
-			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const = 0;
-
-			// apply copied content (in form of atoms) to this resource
-			virtual void initializeFromStaging(IBaseCopyQueueStagingArea* data) = 0;
-
 			// update from dynamic data
 			virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) = 0;
 

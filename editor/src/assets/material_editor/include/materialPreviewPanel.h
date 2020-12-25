@@ -48,7 +48,7 @@ namespace ed
         void previewSettings(const MaterialPreviewPanelSettings& settings);
         void previewShape(MaterialPreviewShape shape);
 
-        void bindMaterial(const rendering::MaterialRef& material);
+        void bindMaterial(const rendering::IMaterial* material);
 
         virtual void buildShapePopup(ui::MenuButtonContainer* menu);
 
@@ -56,7 +56,7 @@ namespace ed
         MaterialPreviewPanelSettings m_previewSettings;
 
         rendering::scene::ObjectProxyPtr m_previewProxy;
-        rendering::MaterialRef m_material;
+        rendering::MaterialPtr m_material;
 
         void destroyVisualization();
         void createVisualization();
@@ -68,8 +68,6 @@ namespace ed
 
         virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
         virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
-
-        virtual void onPropertyChanged(base::StringView path) override;
     };
     
     //--

@@ -60,7 +60,7 @@ namespace rendering
 
             renderChunkListStandalone(cmd.forwardSolid, collector.forwardLists[0].standaloneChunks, MaterialPass::Forward);
             renderChunkListStandalone(cmd.forwardMasked, collector.forwardLists[1].standaloneChunks, MaterialPass::Forward);
-			renderChunkListStandalone(cmd.forwardTransparent, collector.forwardLists[2].standaloneChunks, MaterialPass::Forward);
+			renderChunkListStandalone(cmd.forwardTransparent, collector.forwardLists[2].standaloneChunks, MaterialPass::ForwardTransparent);
 		}
 
 		void ObjectManagerMesh::render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
@@ -298,7 +298,10 @@ namespace rendering
 				while (chunk < chunkEnd)
 				{
 					if (PatchMaterialProxy(chunk->material, changedProxies))
+					{
 						chunk->shader = AddRef(chunk->material->templateProxy());
+						chunk->updatePassTypes();
+					}
 
 					++chunk;
 				}

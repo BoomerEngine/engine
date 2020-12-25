@@ -31,9 +31,6 @@ namespace ed
         bool showBlue = true;
         bool showAlpha = true;
 
-        int previewMode = 0;
-        float previewScale = 1.0f;
-
         bool allSlices = false;
         int selectedSlice = 0;
         int selectedMip = 0;

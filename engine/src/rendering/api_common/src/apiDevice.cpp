@@ -9,7 +9,6 @@
 #include "build.h"
 #include "apiDevice.h"
 #include "apiThread.h"
-#include "apiCopyQueue.h"
 #include "apiObjectRegistry.h"
 #include "apiWindow.h"
 #include "apiOutput.h"
@@ -183,11 +182,8 @@ namespace rendering
 			if (!validateBufferCreationSetup(info, setup))
 				return nullptr;
 
-			if (auto* obj = m_thread->createOptimalBuffer(info))
+			if (auto* obj = m_thread->createOptimalBuffer(info, sourceData))
 			{
-				if (sourceData)
-					m_thread->copyQueue()->schedule(obj, sourceData);
-
 				return base::RefNew<BufferObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
 			}
 
@@ -208,11 +204,8 @@ namespace rendering
 			if (!validateImageCreationSetup(info, setup))
 				return nullptr;
 
-			if (auto* obj = m_thread->createOptimalImage(info))
+			if (auto* obj = m_thread->createOptimalImage(info, sourceData))
 			{
-				if (sourceData)
-					m_thread->copyQueue()->schedule(obj, sourceData);
-
 				if (setup.flags.test(ImageViewFlag::RenderTarget))
 					setup.flags |= ImageViewFlag::FlippedY;
 

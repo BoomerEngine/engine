@@ -36,6 +36,8 @@ namespace rendering
 		, m_dynamicCompiler(compiler)
 		, m_contextName(contextName)
 	{
+		m_reloadNotifier = [this]() { discardCachedTechniques(); };
+
 		m_techniqueMap.reserve(32);
 		registerLayout();
 	}
@@ -44,6 +46,15 @@ namespace rendering
 	{
 		m_techniqueMap.clear();
 		m_dynamicCompiler.reset();
+	}
+
+	void MaterialTemplateProxy::discardCachedTechniques()
+	{
+		if (m_dynamicCompiler)
+		{
+			auto lock = base::CreateLock(m_techniqueMapLock);
+			m_techniqueMap.clear();
+		}
 	}
 
 	void MaterialTemplateProxy::registerLayout()

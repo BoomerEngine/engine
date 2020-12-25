@@ -185,7 +185,6 @@ namespace base
 				float u1 = 1.0f;
 				float v1 = 1.0f;
 
-				uint8_t renderer = 0;
 				Color color = Color::WHITE;
 				canvas::BlendOp op = canvas::BlendOp::AlphaPremultiplied;
 
@@ -195,7 +194,16 @@ namespace base
 			};
 
 			/// place a simple quad, mostly useful for custom renderer stuff/debug/simple effects etc
-			void quad(const Placement& placement, const QuadSetup& setup);
+			void quad(const Placement& placement, const QuadSetup& setup, uint8_t customRenderer = 0, const void* customData = nullptr, uint32_t customDataSize = 0);
+
+			/// custom renderer
+            template< typename R, typename... Args >
+            INLINE void quadEx(const Placement& placement, const QuadSetup& setup, Args&& ... args)
+            {
+                const typename R::PrivateData data(std::forward< Args >(args)...);
+                static const auto index = rendering::canvas::GetHandlerIndex<R>();
+				quad(placement, setup, index, &data, sizeof(data));
+            }
 
 			///---
 

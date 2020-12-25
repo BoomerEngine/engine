@@ -16,6 +16,9 @@ namespace base
 
     namespace res
     {
+        ///---
+
+        typedef base::GUID ResourceID;
 
         ///---
 
@@ -35,7 +38,7 @@ namespace base
 
             //--
 
-            ALWAYS_INLINE const StringBuf& path() const;
+            ALWAYS_INLINE const ResourceID& id() const;
             ALWAYS_INLINE SpecificClassType<IResource> cls() const;
 
             INLINE bool empty() const;
@@ -76,7 +79,7 @@ namespace base
             //--
 
         private:
-            StringBuf m_path;
+            ResourceID m_id;
             SpecificClassType<IResource> m_class;
         };
 

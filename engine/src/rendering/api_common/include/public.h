@@ -22,8 +22,6 @@ namespace rendering
 		class IBaseCopiableObject;
 		class IBaseFrameExecutor;
 		class IBaseObjectCache;
-		class IBaseCopyQueue;
-		class IBaseCopyQueueStagingArea;
 		class IBaseSwapchain;
 		class IBaseBuffer;
 		class IBaseBufferView;
@@ -98,17 +96,6 @@ namespace rendering
 			Staging,
 			Constants,
 			Geometry,
-		};
-
-		//--
-
-		struct StagingAtom
-		{
-			uint8_t mip = 0;
-			uint16_t slice = 0;
-
-			uint16_t alignment = 0;
-			uint32_t size = 0;
 		};
 
 		//--

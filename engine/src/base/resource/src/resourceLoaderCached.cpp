@@ -108,6 +108,10 @@ namespace base
 
                 // notify loader
                 notifyResourceLoaded(key, resource);
+
+                // post a reload
+                if (existingLoadedResource)
+                    notifyResourceReloaded(existingLoadedResource, resource);                
             }
             else
             {
@@ -157,31 +161,15 @@ namespace base
 
         //---
 
+        void IResourceLoaderCached::notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource)
+        {
+
+        }
+
         bool IResourceLoaderCached::validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const
         {
             return true;
         }
-
-        //---
-
-        /*void IResourceLoaderCached::feedListenerWithData(IResourceLoaderEventListener* listener)
-        {
-            auto lock = base::CreateLock(m_lock);
-
-            // loaded resources
-            m_loadedResources.forEach([listener](const ResourceKey& key, const RefWeakPtr<IResource>& val)
-                {
-                    if (auto resource = val.lock())
-                        listener->onResourceLoaded(key, resource);
-                    else
-                        listener->onResourceUnloaded(key);
-                });
-
-            // resources already loading
-            for (const auto& jobRef : m_loadingJobs.values())
-                if (auto job = jobRef.lock())
-                    listener->onResourceLoading(job->m_key);
-        }*/
 
         //---
 

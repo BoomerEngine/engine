@@ -22,8 +22,8 @@ namespace rendering
 
 			///---
 
-			Image::Image(Thread* drv, const ImageCreationInfo& setup)
-				: IBaseImage(drv, setup)
+			Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
+				: IBaseImage(drv, setup, sourceData)
 			{}
 
 			Image::~Image()
@@ -52,11 +52,6 @@ namespace rendering
 			}
 
 			//--
-
-			void Image::initializeFromStaging(IBaseCopyQueueStagingArea* data)
-			{
-
-			}
 
 			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
 			{

@@ -99,11 +99,12 @@ namespace ui
         class MouseCameraControlFreeFly : public IInputAction
         {
         public:
-            MouseCameraControlFreeFly(IElement* ptr, CameraController *owner, uint8_t mode, float speed)
+            MouseCameraControlFreeFly(IElement* ptr, CameraController *owner, uint8_t mode, float speed, float sensitivity)
                 : IInputAction(ptr)
                 , m_owner(owner)
                 , m_mode(mode)
                 , m_speed(speed)
+                , m_sensitivity(sensitivity)
                 , m_inputVelocity(0,0,0)
             {
                 memzero(m_movementKeys, sizeof(m_movementKeys));
@@ -175,8 +176,8 @@ namespace ui
                 }
                 else */if (m_mode == MoveMode_Look)
                 {
-                    deltaRot.pitch = evt.delta().y * 0.25f;
-                    deltaRot.yaw = evt.delta().x * 0.25f;
+                    deltaRot.pitch = evt.delta().y * 0.25f * m_sensitivity;
+                    deltaRot.yaw = evt.delta().x * 0.25f * m_sensitivity;
 
                     // compute 3D velocity
                     base::Vector3 cameraDirForward;
@@ -193,8 +194,8 @@ namespace ui
                     if (m_movementKeys[KEY_FAST]) cameraSpeed *= config::cvCameraFastMultiplier.get();
                     if (m_movementKeys[KEY_SLOW]) cameraSpeed *= config::cvCameraSlowMultiplier.get();
 
-                    deltaPos = cameraDirRight * evt.delta().x * 0.01f * cameraSpeed;
-                    deltaPos -= cameraDirUp * evt.delta().y * 0.01f * cameraSpeed;
+                    deltaPos = cameraDirRight * evt.delta().x * 0.01f * cameraSpeed * m_sensitivity;
+                    deltaPos -= cameraDirUp * evt.delta().y * 0.01f * cameraSpeed * m_sensitivity;
                 }
 
                 // apply movement to camera controller
@@ -272,6 +273,7 @@ namespace ui
             base::Point m_startPoint;
             bool m_movementKeys[KEY_MAX];
 
+            float m_sensitivity = 1.0f;
             float m_speed = 1.0f;
             uint8_t m_mode = 0;
         };
@@ -282,8 +284,9 @@ namespace ui
         class MouseCameraControlOrbitAroundPoint : public IInputAction
         {
         public:
-            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraController *owner, uint8_t mode)
+            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraController *owner, uint8_t mode, float sensitivity)
                 : IInputAction(ptr), m_owner(owner), m_mode(mode)
+                , m_sensitivity(sensitivity)
             {
                 const auto orbitCenter = owner->origin();
                 m_distance = owner->position().distance(orbitCenter);
@@ -338,8 +341,8 @@ namespace ui
             virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
             {
                 // rotate local reference frame
-                m_rotation.pitch = std::clamp<float>(m_rotation.pitch + evt.delta().y * 0.25f, -89.9f, 89.9f);
-                m_rotation.yaw += evt.delta().x * 0.25f;
+                m_rotation.pitch = std::clamp<float>(m_rotation.pitch + m_sensitivity * evt.delta().y * 0.25f, -89.9f, 89.9f);
+                m_rotation.yaw += m_sensitivity * evt.delta().x * 0.25f;
 
                 // calculate position and rotation of the camera
                 auto pos = m_owner->origin() - (m_distance * m_rotation.forward());
@@ -352,22 +355,23 @@ namespace ui
             CameraController *m_owner;
             base::Angles m_rotation;
 
-            float m_distance;
-            uint8_t m_mode;
+            float m_distance = 1.0f;;
+            float m_sensitivity = 1.0f;
+            uint8_t m_mode = 0;
         };
 
         //--
 
     } // helper
 
-    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float speed)
+    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float speed, float sensitivity)
     {
-        return base::RefNew<helper::MouseCameraControlFreeFly>(ptr, this, button, speed);
+        return base::RefNew<helper::MouseCameraControlFreeFly>(ptr, this, button, speed, sensitivity);
     }
 
-    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button)
+    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button, float sensitivity)
     {
-        return base::RefNew<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button);
+        return base::RefNew<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button, sensitivity);
     }
 
     void CameraController::moveTo(const base::AbsolutePosition& position, const base::Angles& rotation)

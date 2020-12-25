@@ -21,6 +21,7 @@ namespace base
         {
             // create the root directory
             m_sourceAssetRootDir = new TrackedDepotDir;
+            m_sourceAssetRootDir->depotPath = "/";
             m_sourceAssetDirs.pushBack(m_sourceAssetRootDir);
 
             // register to depot events

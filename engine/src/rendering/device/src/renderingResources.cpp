@@ -298,11 +298,12 @@ namespace rendering
 		DEBUG_CHECK((uint64_t)sourceOffset + (uint64_t)sourceSize <= (uint64_t)data.size());
 	}
 
-	void SourceDataProviderBuffer::writeSourceData(const base::Array<WriteAtom>& atoms) const
-	{
-		DEBUG_CHECK_RETURN_EX(atoms.size() == 1, "Unexpected atom count");
-		const auto copySize = std::min<uint32_t>(atoms[0].targetDataSize, m_sourceSize);
-		memcpy(atoms[0].targetDataPtr, m_data.data() + m_sourceOffset, copySize);
+    void SourceDataProviderBuffer::fetchSourceData(base::Array<SourceAtom>& outAtoms) const
+    {
+        auto& outSourceAtom = outAtoms.emplaceBack();
+        outSourceAtom.sourceDataSize = m_sourceSize;
+        outSourceAtom.sourceData = m_data.data() + m_sourceOffset;
+        outSourceAtom.m_buffer = m_data; // keep alive
 	}
 
 	//--

@@ -73,6 +73,9 @@ namespace ui
 
         bool calculateCurrentPixelUnderCursor(base::Point& outPixel) const;
 
+        base::Point m_renderTargetOffset = base::Point(0, 0);
+        int m_renderTargetZoom = 0;
+
     private:
         base::NativeTimePoint m_lastRenderTime;
         float m_renderRate; // default render rate
@@ -84,9 +87,6 @@ namespace ui
 
         base::Point m_lastClickPosition = base::Point(-1,-1);
         base::Point m_currentHoverPosition = base::Point(-1, -1);
-
-        base::Point m_renderTargetOffset = base::Point(0, 0);
-        int m_renderTargetZoom = 0;
 
         virtual void renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 

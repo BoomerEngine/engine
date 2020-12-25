@@ -76,7 +76,9 @@ namespace rendering
         for (const auto& mip : m_mips)
         {
             const auto minSize = format.compressed ? 4 : 1;
-            const auto expectedSize = ((std::max<uint32_t>(minSize, mip.width) * std::max<uint32_t>(minSize, mip.width) * mip.depth) * format.bitsPerPixel) / 8;
+            const auto alignedWidth = base::Align<uint32_t>(mip.width, minSize);
+            const auto alignedHeight = base::Align<uint32_t>(mip.height, minSize);
+            const auto expectedSize = ((alignedWidth * alignedHeight * mip.depth) * format.bitsPerPixel) / 8;
 
             DEBUG_CHECK_EX(expectedSize == mip.dataSize, base::TempString("Static texture '{}' mipmap [{}x{}x{}] has unexpected size {} (expected {}), format {}",
                 path(), mip.width, mip.height, mip.depth, mip.dataSize, expectedSize, m_info.format));
@@ -95,49 +97,41 @@ namespace rendering
 	class StaticTextureSourceDataProvider : public rendering::ISourceDataProvider
 	{
 	public:
-		StaticTextureSourceDataProvider(base::Buffer data, const base::Array<StaticTextureMip>& mips, base::StringBuf path, ImageFormat format, base::fibers::WaitCounter loadingFence = base::fibers::WaitCounter())
+		StaticTextureSourceDataProvider(base::Buffer data, const base::Array<StaticTextureMip>& mips, base::StringBuf path, ImageFormat format, uint32_t numMipsPerSlice)
 			: m_data(data)
 			, m_mips(mips)
+            , m_numMipsPerSlice(numMipsPerSlice)
 			, m_path(path)
 			, m_format(format)
-			, m_fence(loadingFence)
 		{}
-
-		virtual void notifyFinshed(bool success) override final
-		{
-			if (!m_fence.empty())
-			{
-				Fibers::GetInstance().signalCounter(m_fence);
-				m_fence = base::fibers::WaitCounter();
-			}
-		}
 
 		virtual void print(base::IFormatStream& f) const override final
 		{
 			f.appendf("StaticTexture '{}'", m_path);
 		}
 
-		virtual void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+        virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			DEBUG_CHECK(m_mips.size() == atoms.size());
+            for (auto index : m_mips.indexRange())
+            {
+                const auto& mip = m_mips[index];
 
-			const auto numCopiableAtoms = std::min<uint32_t>(atoms.size(), m_mips.size());
-			for (uint32_t i = 0; i<numCopiableAtoms; ++i)
-			{
-				const auto& mip = m_mips[i];
-				const auto& atom = atoms[i];
-
-				//DEBUG_CHECK(atom.targetDataSize == mip.dataSize);
-				const auto copySize = std::min<uint32_t>(atom.targetDataSize, mip.dataSize);
-				memcpy(atom.targetDataPtr, m_data.data() + mip.dataOffset, copySize);
-			}
+                auto& atom = outAtoms.emplaceBack();
+                atom.m_buffer = m_data;
+                atom.mip = index % m_numMipsPerSlice;
+                atom.slice = index / m_numMipsPerSlice;
+                atom.sourceDataSize = mip.dataSize;
+                atom.sourceData = m_data.data() + mip.dataOffset;
+            }
 		}
 
 	private:
 		base::Buffer m_data;
 		base::Array<StaticTextureMip> m_mips; // mip map data
 		base::StringBuf m_path;
+
 		ImageFormat m_format;
+        uint32_t m_numMipsPerSlice;
 
 		base::fibers::WaitCounter m_fence;
 	};
@@ -163,13 +157,9 @@ namespace rendering
                     info.allowShaderReads = true;
                     info.label = base::StringBuf(base::TempString("{}", path()));
 
-					auto fence = Fibers::GetInstance().createCounter("StaticTextureInit", 1);
-					auto data = base::RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path(), m_info.format, fence);
-
+					auto data = base::RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path(), m_info.format, info.numMips);
 					if (m_object = device->createImage(info, data))
 						m_mainView = m_object->createSampledView();
-
-					Fibers::GetInstance().waitForCounterAndRelease(fence);
                 }
             }
         }

@@ -45,7 +45,7 @@ namespace ed
 
     ///---
 
-    static res::StaticResource<image::Image> resFileIcon("/engine/thumbnails/file.png");
+    static res::StaticResource<image::Image> resFileIcon("/engine/thumbnails/file.png", true);
 
     ManagedFileFormat::ManagedFileFormat(StringView extension)
         : m_extension(extension)

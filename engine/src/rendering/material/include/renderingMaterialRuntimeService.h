@@ -10,6 +10,7 @@
 
 #include "rendering/device/include/renderingManagedBuffer.h"
 #include "rendering/device/include/renderingManagedBufferWithAllocator.h"
+
 #include "base/app/include/localService.h"
 #include "base/containers/include/blockPool.h"
 #include "base/containers/include/staticStructurePool.h"

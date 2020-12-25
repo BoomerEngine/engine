@@ -25,7 +25,7 @@ namespace base
         class BASE_RESOURCE_API IStaticResource : public base::NoCopy
         {
         public:
-            IStaticResource(const char* path, bool preload);
+            IStaticResource(const char* path, bool cache);
             virtual ~IStaticResource();
 
             /// get the resource path
@@ -36,10 +36,6 @@ namespace base
 
             /// get the loaded resource, valid only if loaded
             INLINE const ResourceHandle& loadedResource() const { return m_handle; }
-
-            /// should this resource be preloaded ?
-            INLINE bool isPreloaded() const { return m_isPreloaded; }
-
 
             //---
 
@@ -70,7 +66,7 @@ namespace base
             ResourceHandle m_handle;
             IStaticResource* m_next;
             IStaticResource* m_prev;
-            bool m_isPreloaded;
+            bool m_cached = false;
 
             friend class prv::StaticResourceRegistry;
         };
@@ -82,8 +78,8 @@ namespace base
         class StaticResource : public IStaticResource
         {
         public:
-            INLINE StaticResource(const char* path, bool preload=false)
-                : IStaticResource(path, preload)
+            INLINE StaticResource(const char* path, bool cache=false)
+                : IStaticResource(path, cache)
             {}
 
             /// load the resource and get the loaded object

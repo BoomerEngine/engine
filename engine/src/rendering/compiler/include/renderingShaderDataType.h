@@ -217,7 +217,7 @@ namespace rendering
             // is this atomic capable memory location ?
             INLINE bool isAtomic() const
             {
-                return m_flags.test(TypeFlags::Pointer);
+                return m_flags.test(TypeFlags::Atomic);
             }
 
             // is this a numerical type ? (float/int)

@@ -678,7 +678,6 @@ namespace ui
 					quad.image = renderStyle.image;
                     quad.color = renderStyle.innerColor;
                     quad.wrap = true;
-                    quad.renderer = 0;
 
 					canvas.quad(drawArea.absolutePosition(), quad);
                 }

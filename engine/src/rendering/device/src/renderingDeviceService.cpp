@@ -8,13 +8,14 @@
 
 #include "build.h"
 #include "renderingDeviceService.h"
-
-#include "base/app/include/localServiceContainer.h"
-#include "base/containers/include/hashSet.h"
-
 #include "renderingDeviceApi.h"
 #include "renderingOutput.h"
 #include "renderingDeviceGlobalObjects.h"
+#include "renderingShaderReloadNotifier.h"
+
+#include "base/app/include/localServiceContainer.h"
+#include "base/containers/include/hashSet.h"
+#include "base/input/include/inputStructures.h"
 
 namespace rendering
 {
@@ -129,6 +130,16 @@ namespace rendering
 
         // sync with the rendering thread and GPU, with optional flush
         m_device->sync(cvSyncRenderingDeviceEveryFrame.get());
+
+        // reload shaders ?
+        if (base::input::CheckInputKeyPressed(base::input::KeyCode::KEY_F11))
+            reloadShaders();
+    }
+
+    void DeviceService::reloadShaders()
+    {
+        m_device->sync(true);
+        ShaderReloadNotifier::NotifyAll();
     }
 
     //--

@@ -65,7 +65,10 @@ namespace rendering
 			uint8_t lodMask = 0;
 			char depthPassType = -1;
 			char forwardPassType = -1;
+			bool staticGeometry = false;
 			uint32_t renderMask = 0;
+
+			void updatePassTypes();
 		};
 
 		struct ObjectProxyMeshLOD

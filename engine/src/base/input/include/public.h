@@ -106,5 +106,17 @@ namespace base
         class ISystem;
         typedef base::RefPtr<ISystem> SystemPtr;
 
+        // quick and dirty global input state - fast prototyping and debug
+
+        //--
+
+        // is key down
+        extern BASE_INPUT_API bool CheckInputKeyState(KeyCode key);
+
+        // was key pressed (resets only when key is released)
+        extern BASE_INPUT_API bool CheckInputKeyPressed(KeyCode key);
+
+        //--
+
     } // input
 } // base

@@ -40,13 +40,12 @@ namespace rendering
 				//--
 
 				virtual IBaseSwapchain* createOptimalSwapchain(const OutputInitInfo& info) override final;
-				virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info) override final;
-				virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info) override final;
+				virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData) override final;
+				virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData) override final;
 				virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
 				virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
 				virtual IBaseDownloadArea* createOptimalDownloadArea(uint32_t size) override final;
 
-				virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) override final;
 				virtual IBaseObjectCache* createOptimalObjectCache(const base::app::CommandLine& cmdLine) override final;
 
 				virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine) override final;

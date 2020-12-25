@@ -12,7 +12,6 @@
 #include "apiObjectCache.h"
 #include "apiThread.h"
 #include "apiWindow.h"
-#include "apiCopyQueue.h"
 #include "apiExecution.h"
 #include "apiCapture.h"
 #include "apiBackgroundJobs.h"
@@ -124,9 +123,6 @@ namespace rendering
 			m_objectRegistry = AddRef(createOptimalObjectRegistry(cmdLine));
 			m_objectCache = createOptimalObjectCache(cmdLine);
 
-			// create copy queue and pool
-			m_copyQueue = createOptimalCopyQueue(cmdLine);
-
 			return true;
 		}
 
@@ -142,9 +138,6 @@ namespace rendering
 				delete m_objectCache;
 				m_objectCache = nullptr;
 			}
-
-			delete m_copyQueue;
-			m_copyQueue = nullptr;
 		}
 		
 		void IBaseThread::advanceFrame_Thread(uint64_t frameIndex)
@@ -154,10 +147,10 @@ namespace rendering
 			// if there was work submitted for the gpu insert a fence
 			if (auto prevFrameIndex = m_syncInfo.threadFrameIndex)
 			{
+                insertGpuFrameFence_Thread(prevFrameIndex);
 				// did we push anything ?
-				DEBUG_CHECK_EX(m_syncInfo.gpuStartedFrameIndex <= prevFrameIndex, "Frame skipping");
-				if (prevFrameIndex == m_syncInfo.gpuStartedFrameIndex)
-					insertGpuFrameFence_Thread(m_syncInfo.gpuStartedFrameIndex);
+				//DEBUG_CHECK_EX(m_syncInfo.gpuStartedFrameIndex <= prevFrameIndex, "Frame skipping");
+				//if (prevFrameIndex == m_syncInfo.gpuStartedFrameIndex)
 			}
 
 			// recording thread now reached new frame
@@ -183,7 +176,7 @@ namespace rendering
 			DeviceSyncInfo ret;
 			ret.cpuFrameIndex = m_syncInfo.cpuFrameIndex;
 			ret.threadFrameIndex = m_syncInfo.threadFrameIndex;
-			ret.gpuStartedFrameIndex = m_syncInfo.gpuStartedFrameIndex;
+			//ret.gpuStartedFrameIndex = m_syncInfo.gpuStartedFrameIndex;
 			ret.gpuFinishedFrameIndex = m_syncInfo.gpuFinishedFrameIndex;
 			return ret;
 		}
@@ -213,11 +206,13 @@ namespace rendering
 			// push a cleanup job to release objects from frames that were completed
 			pushJob([this, newFrameIndex, newFrameSignal, flush]()
 				{
+					//ASSERT_EX(m_syncInfo.gpuStartedFrameIndex <= newFrameIndex);
+                    //m_syncInfo.gpuStartedFrameIndex = newFrameIndex;
+
 					advanceFrame_Thread(newFrameIndex);
 
 					if (flush)
 					{
-						m_syncInfo.gpuStartedFrameIndex = newFrameIndex;
 						syncGPU_Thread();
 					}
 
@@ -273,8 +268,8 @@ namespace rendering
         {
 			ASSERT(ptr && ptr->canDelete());
 
-			TRACE_INFO("Scheduled {}({}) for deletion at frame {}, current recording: {}, sent to gpu: {}, finished on gpu: {}",
-				(void*)ptr, ptr->objectType(), m_syncInfo.cpuFrameIndex, m_syncInfo.threadFrameIndex, m_syncInfo.gpuStartedFrameIndex, m_syncInfo.gpuFinishedFrameIndex);
+			TRACE_INFO("Scheduled {}({}) for deletion at frame {}, current recording: {}, finished on gpu: {}",
+				(void*)ptr, ptr->objectType(), m_syncInfo.cpuFrameIndex, m_syncInfo.threadFrameIndex, m_syncInfo.gpuFinishedFrameIndex);
 
 			m_syncQueues.gpuQueue->registerNotification(m_syncInfo.cpuFrameIndex, [ptr]()
 				{
@@ -451,7 +446,7 @@ namespace rendering
 				execute_Thread(cpuFrameIndex, *stats, masterCommandBuffer, executionData);
 
 				// update the sync info after sending first payload for current frame
-				m_syncInfo.gpuStartedFrameIndex = cpuFrameIndex;
+				//m_syncInfo.gpuStartedFrameIndex = cpuFrameIndex;
 
                 // release command buffers to pool
                 masterCommandBuffer->release();
@@ -471,10 +466,6 @@ namespace rendering
 
             while (!m_requestExit)
             {
-				// start/finish any async copying
-				if (m_copyQueue)
-					m_copyQueue->update(m_syncInfo.threadFrameIndex);
-
 				// process "sync" version of the background job queue
 				if (m_backgroundQueue)
 					m_backgroundQueue->update();

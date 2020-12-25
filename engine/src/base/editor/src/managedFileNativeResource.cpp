@@ -123,6 +123,10 @@ namespace ed
         if (auto loaded = m_loadedResource.lock())
             return loaded;
 
+        // get mounting point for the asset
+        base::res::ResourceMountPoint mountPoint;
+        depot()->depot().queryFileMountPoint(depotPath(), mountPoint);
+
         // we can't be deleted
         DEBUG_CHECK_EX(!isDeleted(), "Trying to load contet from deleted file");
         if (!isDeleted())
@@ -145,6 +149,21 @@ namespace ed
                 m_loadedResource = loaded;
                 return loaded;
             }
+
+            // load bypassing the resource loader so we get fresh content from the file
+            /*if (auto file = depot()->depot().createFileAsyncReader(depotPath()))
+            {
+                res::FileLoadingContext loadingContext;
+                loadingContext.basePath = mountPoint.path();
+                loadingContext.resourceLoader = base::GetService<base::res::LoadingService>()->loader();
+
+                if (res::LoadFile(file, loadingContext))
+                {
+                    auto loadedResource = loadingContext.root<res::IResource>();
+                    m_loadedResource = loadedResource;
+                    return loadedResource;
+                }
+            }*/
 
             // fail
             TRACE_ERROR("ManagedFile: Failed to load content of '{}'", depotPath());

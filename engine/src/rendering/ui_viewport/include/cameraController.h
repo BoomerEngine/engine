@@ -55,10 +55,10 @@ namespace ui
         void processMouseWheel(const base::input::MouseMovementEvent& evt, float delta);
 
         /// process mouse event
-        InputActionPtr handleGeneralFly(IElement* owner, uint8_t button, float speed = 1.0f);
+        InputActionPtr handleGeneralFly(IElement* owner, uint8_t button, float speed = 1.0f, float sensitivity = 1.0f);
 
         /// process request for orbit around point
-        InputActionPtr handleOrbitAroundPoint(IElement* owner, uint8_t button);
+        InputActionPtr handleOrbitAroundPoint(IElement* owner, uint8_t button, float sensitivity = 1.0f);
 
         //--
 

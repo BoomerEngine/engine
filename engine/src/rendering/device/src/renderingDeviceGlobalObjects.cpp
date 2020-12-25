@@ -35,10 +35,10 @@ namespace rendering
 			f << "SourceProviderSingleColor";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			for (const auto& atom : atoms)
-			{
+			/*auto& atom = outAtoms.emplaceBack();
+
 				const auto numPixels = atom.targetDataSize / m_valueSize;
 				DEBUG_CHECK(atom.targetDataSize % m_valueSize == 0);
 
@@ -49,7 +49,7 @@ namespace rendering
 					memcpy(ptr, m_valueData, m_valueSize);
 					ptr += m_valueSize;
 				}
-			}
+			}*/
 		}
 
 	private:
@@ -74,9 +74,9 @@ namespace rendering
 			f << "SourceProviderCubemapDirectionColor";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			for (const auto& atom : atoms)
+			/*for (const auto& atom : atoms)
 			{
 				const auto numPixels = atom.targetDataSize / sizeof(base::Color);
 				DEBUG_CHECK(atom.targetDataSize % sizeof(base::Color) == 0);
@@ -88,7 +88,7 @@ namespace rendering
 
 				while (ptr < endPtr)
 					*ptr++ = writeValue;
-			}
+			}*/
 		}
 
 	private:
@@ -282,9 +282,9 @@ namespace rendering
 			f << "SourceProviderFloatNoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			base::FastRandState rnd;
+			/*base::FastRandState rnd;
 
 			for (const auto& atom : atoms)
 			{
@@ -298,7 +298,7 @@ namespace rendering
 
 				while (ptr < endPtr)
 					*ptr++ = rnd.range(m_min, m_max);
-			}
+			}*/
 		}
 
 	private:
@@ -318,9 +318,9 @@ namespace rendering
 			f << "SourceProviderRGBANoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			base::FastRandState rnd;
+			/*base::FastRandState rnd;
 
 			for (const auto& atom : atoms)
 			{
@@ -332,7 +332,7 @@ namespace rendering
 
 				while (ptr < endPtr)
 					*ptr++ = rnd.next();
-			}
+			}*/
 		}
 	};
 
@@ -347,9 +347,9 @@ namespace rendering
 			f << "SourceProviderRotationNoise";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			base::FastRandState rnd;
+			/*base::FastRandState rnd;
 
 			for (const auto& atom : atoms)
 			{
@@ -365,7 +365,7 @@ namespace rendering
 					*ptr++ = base::Float16Helper::Compress(cos(angle));
 					*ptr++ = base::Float16Helper::Compress(sin(angle));
 				}
-			}
+			}*/
 		}
 	};
 
@@ -380,9 +380,9 @@ namespace rendering
 			f << "SourceProviderHemiSpherePoints";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			base::FastRandState rnd;
+			/*base::FastRandState rnd;
 
 			for (const auto& atom : atoms)
 			{
@@ -400,7 +400,7 @@ namespace rendering
 					*ptr++ = base::Float16Helper::Compress(point.z);
 					*ptr++ = rnd.unit();
 				}
-			}
+			}*/
 		}
 	};
 
@@ -415,9 +415,9 @@ namespace rendering
 			f << "SourceProviderSpherePoints";
 		}
 
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 		{
-			base::FastRandState rnd;
+			/*base::FastRandState rnd;
 
 			for (const auto& atom : atoms)
 			{
@@ -435,7 +435,7 @@ namespace rendering
 					*ptr++ = base::Float16Helper::Compress(point.z);
 					*ptr++ = rnd.unit();
 				}
-			}
+			}*/
 		}
 	};
 	

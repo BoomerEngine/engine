@@ -15,147 +15,154 @@ namespace base
     {
         ///--
 
+        static void BuildKeyMapping(KeyCode* outKeyMapping)
+        {
+            outKeyMapping[VK_BACK] = KeyCode::KEY_BACK;
+            outKeyMapping[VK_TAB] = KeyCode::KEY_TAB;
+            outKeyMapping[VK_CLEAR] = KeyCode::KEY_CLEAR;
+            outKeyMapping[VK_RETURN] = KeyCode::KEY_RETURN;
+            outKeyMapping[VK_PAUSE] = KeyCode::KEY_PAUSE;
+            outKeyMapping[VK_CAPITAL] = KeyCode::KEY_CAPITAL;
+            outKeyMapping[VK_ESCAPE] = KeyCode::KEY_ESCAPE;
+            outKeyMapping[VK_CONVERT] = KeyCode::KEY_CONVERT;
+            outKeyMapping[VK_NONCONVERT] = KeyCode::KEY_NONCONVERT;
+            outKeyMapping[VK_ACCEPT] = KeyCode::KEY_ACCEPT;
+            outKeyMapping[VK_MODECHANGE] = KeyCode::KEY_MODECHANGE;
+            outKeyMapping[VK_SPACE] = KeyCode::KEY_SPACE;
+            outKeyMapping[VK_PRIOR] = KeyCode::KEY_PRIOR;
+            outKeyMapping[VK_NEXT] = KeyCode::KEY_NEXT;
+            outKeyMapping[VK_END] = KeyCode::KEY_END;
+            outKeyMapping[VK_HOME] = KeyCode::KEY_HOME;
+            outKeyMapping[VK_LEFT] = KeyCode::KEY_LEFT;
+            outKeyMapping[VK_UP] = KeyCode::KEY_UP;
+            outKeyMapping[VK_RIGHT] = KeyCode::KEY_RIGHT;
+            outKeyMapping[VK_DOWN] = KeyCode::KEY_DOWN;
+            outKeyMapping[VK_SELECT] = KeyCode::KEY_SELECT;
+            outKeyMapping[VK_PRINT] = KeyCode::KEY_PRINT;
+            outKeyMapping[VK_SNAPSHOT] = KeyCode::KEY_SNAPSHOT;
+            outKeyMapping[VK_INSERT] = KeyCode::KEY_INSERT;
+            outKeyMapping[VK_DELETE] = KeyCode::KEY_DELETE;
+            outKeyMapping[VK_HELP] = KeyCode::KEY_HELP;
+            outKeyMapping[VK_LWIN] = KeyCode::KEY_LWIN;
+            outKeyMapping[VK_RWIN] = KeyCode::KEY_RWIN;
+            outKeyMapping[VK_APPS] = KeyCode::KEY_APPS;
+            outKeyMapping[VK_SLEEP] = KeyCode::KEY_SLEEP;
+            outKeyMapping[VK_OEM_PLUS] = KeyCode::KEY_EQUAL;
+            outKeyMapping[VK_OEM_MINUS] = KeyCode::KEY_MINUS;
+            outKeyMapping[VK_OEM_COMMA] = KeyCode::KEY_COMMA;
+            outKeyMapping[VK_OEM_PERIOD] = KeyCode::KEY_PERIOD;
+            outKeyMapping[VK_OEM_1] = KeyCode::KEY_SEMICOLON;
+            outKeyMapping[VK_OEM_2] = KeyCode::KEY_BACKSLASH;
+            outKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
+            outKeyMapping[VK_OEM_4] = KeyCode::KEY_LBRACKET;
+            outKeyMapping[VK_OEM_5] = KeyCode::KEY_SLASH;
+            outKeyMapping[VK_OEM_6] = KeyCode::KEY_RBRACKET;
+            outKeyMapping[VK_OEM_7] = KeyCode::KEY_APOSTROPHE;
+            outKeyMapping[VK_NUMPAD0] = KeyCode::KEY_NUMPAD0;
+            outKeyMapping[VK_NUMPAD1] = KeyCode::KEY_NUMPAD1;
+            outKeyMapping[VK_NUMPAD2] = KeyCode::KEY_NUMPAD2;
+            outKeyMapping[VK_NUMPAD3] = KeyCode::KEY_NUMPAD3;
+            outKeyMapping[VK_NUMPAD4] = KeyCode::KEY_NUMPAD4;
+            outKeyMapping[VK_NUMPAD5] = KeyCode::KEY_NUMPAD5;
+            outKeyMapping[VK_NUMPAD6] = KeyCode::KEY_NUMPAD6;
+            outKeyMapping[VK_NUMPAD7] = KeyCode::KEY_NUMPAD7;
+            outKeyMapping[VK_NUMPAD8] = KeyCode::KEY_NUMPAD8;
+            outKeyMapping[VK_NUMPAD9] = KeyCode::KEY_NUMPAD9;
+            outKeyMapping[VK_MULTIPLY] = KeyCode::KEY_NUMPAD_MULTIPLY;
+            outKeyMapping[VK_ADD] = KeyCode::KEY_NUMPAD_ADD;
+            outKeyMapping[VK_SEPARATOR] = KeyCode::KEY_NUMPAD_SEPARATOR;
+            outKeyMapping[VK_SUBTRACT] = KeyCode::KEY_NUMPAD_SUBTRACT;
+            outKeyMapping[VK_DECIMAL] = KeyCode::KEY_NUMPAD_DECIMAL;
+            outKeyMapping[VK_DIVIDE] = KeyCode::KEY_NUMPAD_DIVIDE;
+            outKeyMapping[VK_LCONTROL] = KeyCode::KEY_LEFT_CTRL;
+            outKeyMapping[VK_RCONTROL] = KeyCode::KEY_RIGHT_CTRL;
+            outKeyMapping[VK_LSHIFT] = KeyCode::KEY_LEFT_SHIFT;
+            outKeyMapping[VK_RSHIFT] = KeyCode::KEY_RIGHT_SHIFT;
+            outKeyMapping[VK_LMENU] = KeyCode::KEY_LEFT_ALT;
+            outKeyMapping[VK_RMENU] = KeyCode::KEY_RIGHT_ALT;
+            outKeyMapping[VK_F1] = KeyCode::KEY_F1;
+            outKeyMapping[VK_F2] = KeyCode::KEY_F2;
+            outKeyMapping[VK_F3] = KeyCode::KEY_F3;
+            outKeyMapping[VK_F4] = KeyCode::KEY_F4;
+            outKeyMapping[VK_F5] = KeyCode::KEY_F5;
+            outKeyMapping[VK_F6] = KeyCode::KEY_F6;
+            outKeyMapping[VK_F7] = KeyCode::KEY_F7;
+            outKeyMapping[VK_F8] = KeyCode::KEY_F8;
+            outKeyMapping[VK_F9] = KeyCode::KEY_F9;
+            outKeyMapping[VK_F10] = KeyCode::KEY_F10;
+            outKeyMapping[VK_F11] = KeyCode::KEY_F11;
+            outKeyMapping[VK_F12] = KeyCode::KEY_F12;
+            outKeyMapping[VK_F13] = KeyCode::KEY_F13;
+            outKeyMapping[VK_F14] = KeyCode::KEY_F14;
+            outKeyMapping[VK_F15] = KeyCode::KEY_F15;
+            outKeyMapping[VK_F16] = KeyCode::KEY_F16;
+            outKeyMapping[VK_F17] = KeyCode::KEY_F17;
+            outKeyMapping[VK_F18] = KeyCode::KEY_F18;
+            outKeyMapping[VK_F19] = KeyCode::KEY_F19;
+            outKeyMapping[VK_F20] = KeyCode::KEY_F20;
+            outKeyMapping[VK_F21] = KeyCode::KEY_F21;
+            outKeyMapping[VK_F22] = KeyCode::KEY_F22;
+            outKeyMapping[VK_F23] = KeyCode::KEY_F23;
+            outKeyMapping[VK_F24] = KeyCode::KEY_F24;
+#if(_WIN32_WINNT >= 0x0604)
+            outKeyMapping[VK_NAVIGATION_VIEW] = KeyCode::KEY_NAVIGATION_VIEW;
+            outKeyMapping[VK_NAVIGATION_MENU] = KeyCode::KEY_NAVIGATION_MENU;
+            outKeyMapping[VK_NAVIGATION_UP] = KeyCode::KEY_NAVIGATION_UP;
+            outKeyMapping[VK_NAVIGATION_DOWN] = KeyCode::KEY_NAVIGATION_DOWN;
+            outKeyMapping[VK_NAVIGATION_LEFT] = KeyCode::KEY_NAVIGATION_LEFT;
+            outKeyMapping[VK_NAVIGATION_RIGHT] = KeyCode::KEY_NAVIGATION_RIGHT;
+            outKeyMapping[VK_NAVIGATION_ACCEPT] = KeyCode::KEY_NAVIGATION_ACCEPT;
+            outKeyMapping[VK_NAVIGATION_CANCEL] = KeyCode::KEY_NAVIGATION_CANCEL;
+#endif
+            outKeyMapping[VK_NUMLOCK] = KeyCode::KEY_NUMLOCK;
+            outKeyMapping[VK_SCROLL] = KeyCode::KEY_SCROLL;
+            outKeyMapping['0'] = KeyCode::KEY_0;
+            outKeyMapping['1'] = KeyCode::KEY_1;
+            outKeyMapping['2'] = KeyCode::KEY_2;
+            outKeyMapping['3'] = KeyCode::KEY_3;
+            outKeyMapping['4'] = KeyCode::KEY_4;
+            outKeyMapping['5'] = KeyCode::KEY_5;
+            outKeyMapping['6'] = KeyCode::KEY_6;
+            outKeyMapping['7'] = KeyCode::KEY_7;
+            outKeyMapping['8'] = KeyCode::KEY_8;
+            outKeyMapping['9'] = KeyCode::KEY_9;
+            outKeyMapping['A'] = KeyCode::KEY_A;
+            outKeyMapping['B'] = KeyCode::KEY_B;
+            outKeyMapping['C'] = KeyCode::KEY_C;
+            outKeyMapping['D'] = KeyCode::KEY_D;
+            outKeyMapping['E'] = KeyCode::KEY_E;
+            outKeyMapping['F'] = KeyCode::KEY_F;
+            outKeyMapping['G'] = KeyCode::KEY_G;
+            outKeyMapping['H'] = KeyCode::KEY_H;
+            outKeyMapping['I'] = KeyCode::KEY_I;
+            outKeyMapping['J'] = KeyCode::KEY_J;
+            outKeyMapping['K'] = KeyCode::KEY_K;
+            outKeyMapping['L'] = KeyCode::KEY_L;
+            outKeyMapping['M'] = KeyCode::KEY_M;
+            outKeyMapping['N'] = KeyCode::KEY_N;
+            outKeyMapping['O'] = KeyCode::KEY_O;
+            outKeyMapping['P'] = KeyCode::KEY_P;
+            outKeyMapping['Q'] = KeyCode::KEY_Q;
+            outKeyMapping['R'] = KeyCode::KEY_R;
+            outKeyMapping['S'] = KeyCode::KEY_S;
+            outKeyMapping['T'] = KeyCode::KEY_T;
+            outKeyMapping['U'] = KeyCode::KEY_U;
+            outKeyMapping['V'] = KeyCode::KEY_V;
+            outKeyMapping['W'] = KeyCode::KEY_W;
+            outKeyMapping['X'] = KeyCode::KEY_X;
+            outKeyMapping['Y'] = KeyCode::KEY_Y;
+            outKeyMapping['Z'] = KeyCode::KEY_Z;
+
+            outKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
+        }
+
+        ///--
+
         RawKeyboard::RawKeyboard(IContext* context)
             : GenericKeyboard(context)
         {
             memzero(&m_windowsKeyMapping, sizeof(m_windowsKeyMapping));
-            m_windowsKeyMapping[VK_BACK] = KeyCode::KEY_BACK;
-            m_windowsKeyMapping[VK_TAB] = KeyCode::KEY_TAB;
-            m_windowsKeyMapping[VK_CLEAR] = KeyCode::KEY_CLEAR;
-            m_windowsKeyMapping[VK_RETURN] = KeyCode::KEY_RETURN;
-            m_windowsKeyMapping[VK_PAUSE] = KeyCode::KEY_PAUSE;
-            m_windowsKeyMapping[VK_CAPITAL] = KeyCode::KEY_CAPITAL;
-            m_windowsKeyMapping[VK_ESCAPE] = KeyCode::KEY_ESCAPE;
-            m_windowsKeyMapping[VK_CONVERT] = KeyCode::KEY_CONVERT;
-            m_windowsKeyMapping[VK_NONCONVERT] = KeyCode::KEY_NONCONVERT;
-            m_windowsKeyMapping[VK_ACCEPT] = KeyCode::KEY_ACCEPT;
-            m_windowsKeyMapping[VK_MODECHANGE] = KeyCode::KEY_MODECHANGE;
-            m_windowsKeyMapping[VK_SPACE] = KeyCode::KEY_SPACE;
-            m_windowsKeyMapping[VK_PRIOR] = KeyCode::KEY_PRIOR;
-            m_windowsKeyMapping[VK_NEXT] = KeyCode::KEY_NEXT;
-            m_windowsKeyMapping[VK_END] = KeyCode::KEY_END;
-            m_windowsKeyMapping[VK_HOME] = KeyCode::KEY_HOME;
-            m_windowsKeyMapping[VK_LEFT] = KeyCode::KEY_LEFT;
-            m_windowsKeyMapping[VK_UP] = KeyCode::KEY_UP;
-            m_windowsKeyMapping[VK_RIGHT] = KeyCode::KEY_RIGHT;
-            m_windowsKeyMapping[VK_DOWN] = KeyCode::KEY_DOWN;
-            m_windowsKeyMapping[VK_SELECT] = KeyCode::KEY_SELECT;
-            m_windowsKeyMapping[VK_PRINT] = KeyCode::KEY_PRINT;
-            m_windowsKeyMapping[VK_SNAPSHOT] = KeyCode::KEY_SNAPSHOT;
-            m_windowsKeyMapping[VK_INSERT] = KeyCode::KEY_INSERT;
-            m_windowsKeyMapping[VK_DELETE] = KeyCode::KEY_DELETE;
-            m_windowsKeyMapping[VK_HELP] = KeyCode::KEY_HELP;
-            m_windowsKeyMapping[VK_LWIN] = KeyCode::KEY_LWIN;
-            m_windowsKeyMapping[VK_RWIN] = KeyCode::KEY_RWIN;
-            m_windowsKeyMapping[VK_APPS] = KeyCode::KEY_APPS;
-            m_windowsKeyMapping[VK_SLEEP] = KeyCode::KEY_SLEEP;
-            m_windowsKeyMapping[VK_OEM_PLUS] = KeyCode::KEY_EQUAL;
-            m_windowsKeyMapping[VK_OEM_MINUS] = KeyCode::KEY_MINUS;
-            m_windowsKeyMapping[VK_OEM_COMMA] = KeyCode::KEY_COMMA;
-            m_windowsKeyMapping[VK_OEM_PERIOD] = KeyCode::KEY_PERIOD;
-            m_windowsKeyMapping[VK_OEM_1] = KeyCode::KEY_SEMICOLON;
-            m_windowsKeyMapping[VK_OEM_2] = KeyCode::KEY_BACKSLASH;
-            m_windowsKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
-            m_windowsKeyMapping[VK_OEM_4] = KeyCode::KEY_LBRACKET;
-            m_windowsKeyMapping[VK_OEM_5] = KeyCode::KEY_SLASH;
-            m_windowsKeyMapping[VK_OEM_6] = KeyCode::KEY_RBRACKET;
-            m_windowsKeyMapping[VK_OEM_7] = KeyCode::KEY_APOSTROPHE;
-            m_windowsKeyMapping[VK_NUMPAD0] = KeyCode::KEY_NUMPAD0;
-            m_windowsKeyMapping[VK_NUMPAD1] = KeyCode::KEY_NUMPAD1;
-            m_windowsKeyMapping[VK_NUMPAD2] = KeyCode::KEY_NUMPAD2;
-            m_windowsKeyMapping[VK_NUMPAD3] = KeyCode::KEY_NUMPAD3;
-            m_windowsKeyMapping[VK_NUMPAD4] = KeyCode::KEY_NUMPAD4;
-            m_windowsKeyMapping[VK_NUMPAD5] = KeyCode::KEY_NUMPAD5;
-            m_windowsKeyMapping[VK_NUMPAD6] = KeyCode::KEY_NUMPAD6;
-            m_windowsKeyMapping[VK_NUMPAD7] = KeyCode::KEY_NUMPAD7;
-            m_windowsKeyMapping[VK_NUMPAD8] = KeyCode::KEY_NUMPAD8;
-            m_windowsKeyMapping[VK_NUMPAD9] = KeyCode::KEY_NUMPAD9;
-            m_windowsKeyMapping[VK_MULTIPLY] = KeyCode::KEY_NUMPAD_MULTIPLY;
-            m_windowsKeyMapping[VK_ADD] = KeyCode::KEY_NUMPAD_ADD;
-            m_windowsKeyMapping[VK_SEPARATOR] = KeyCode::KEY_NUMPAD_SEPARATOR;
-            m_windowsKeyMapping[VK_SUBTRACT] = KeyCode::KEY_NUMPAD_SUBTRACT;
-            m_windowsKeyMapping[VK_DECIMAL] = KeyCode::KEY_NUMPAD_DECIMAL;
-            m_windowsKeyMapping[VK_DIVIDE] = KeyCode::KEY_NUMPAD_DIVIDE;
-            m_windowsKeyMapping[VK_LCONTROL] = KeyCode::KEY_LEFT_CTRL;
-            m_windowsKeyMapping[VK_RCONTROL] = KeyCode::KEY_RIGHT_CTRL;
-            m_windowsKeyMapping[VK_LSHIFT] = KeyCode::KEY_LEFT_SHIFT;
-            m_windowsKeyMapping[VK_RSHIFT] = KeyCode::KEY_RIGHT_SHIFT;
-            m_windowsKeyMapping[VK_LMENU] = KeyCode::KEY_LEFT_ALT;
-            m_windowsKeyMapping[VK_RMENU] = KeyCode::KEY_RIGHT_ALT;
-            m_windowsKeyMapping[VK_F1] = KeyCode::KEY_F1;
-            m_windowsKeyMapping[VK_F2] = KeyCode::KEY_F2;
-            m_windowsKeyMapping[VK_F3] = KeyCode::KEY_F3;
-            m_windowsKeyMapping[VK_F4] = KeyCode::KEY_F4;
-            m_windowsKeyMapping[VK_F5] = KeyCode::KEY_F5;
-            m_windowsKeyMapping[VK_F6] = KeyCode::KEY_F6;
-            m_windowsKeyMapping[VK_F7] = KeyCode::KEY_F7;
-            m_windowsKeyMapping[VK_F8] = KeyCode::KEY_F8;
-            m_windowsKeyMapping[VK_F9] = KeyCode::KEY_F9;
-            m_windowsKeyMapping[VK_F10] = KeyCode::KEY_F10;
-            m_windowsKeyMapping[VK_F11] = KeyCode::KEY_F11;
-            m_windowsKeyMapping[VK_F12] = KeyCode::KEY_F12;
-            m_windowsKeyMapping[VK_F13] = KeyCode::KEY_F13;
-            m_windowsKeyMapping[VK_F14] = KeyCode::KEY_F14;
-            m_windowsKeyMapping[VK_F15] = KeyCode::KEY_F15;
-            m_windowsKeyMapping[VK_F16] = KeyCode::KEY_F16;
-            m_windowsKeyMapping[VK_F17] = KeyCode::KEY_F17;
-            m_windowsKeyMapping[VK_F18] = KeyCode::KEY_F18;
-            m_windowsKeyMapping[VK_F19] = KeyCode::KEY_F19;
-            m_windowsKeyMapping[VK_F20] = KeyCode::KEY_F20;
-            m_windowsKeyMapping[VK_F21] = KeyCode::KEY_F21;
-            m_windowsKeyMapping[VK_F22] = KeyCode::KEY_F22;
-            m_windowsKeyMapping[VK_F23] = KeyCode::KEY_F23;
-            m_windowsKeyMapping[VK_F24] = KeyCode::KEY_F24;
-#if(_WIN32_WINNT >= 0x0604)
-            m_windowsKeyMapping[VK_NAVIGATION_VIEW] = KeyCode::KEY_NAVIGATION_VIEW;
-            m_windowsKeyMapping[VK_NAVIGATION_MENU] = KeyCode::KEY_NAVIGATION_MENU;
-            m_windowsKeyMapping[VK_NAVIGATION_UP] = KeyCode::KEY_NAVIGATION_UP;
-            m_windowsKeyMapping[VK_NAVIGATION_DOWN] = KeyCode::KEY_NAVIGATION_DOWN;
-            m_windowsKeyMapping[VK_NAVIGATION_LEFT] = KeyCode::KEY_NAVIGATION_LEFT;
-            m_windowsKeyMapping[VK_NAVIGATION_RIGHT] = KeyCode::KEY_NAVIGATION_RIGHT;
-            m_windowsKeyMapping[VK_NAVIGATION_ACCEPT] = KeyCode::KEY_NAVIGATION_ACCEPT;
-            m_windowsKeyMapping[VK_NAVIGATION_CANCEL] = KeyCode::KEY_NAVIGATION_CANCEL;
-#endif
-            m_windowsKeyMapping[VK_NUMLOCK] = KeyCode::KEY_NUMLOCK;
-            m_windowsKeyMapping[VK_SCROLL] = KeyCode::KEY_SCROLL;
-            m_windowsKeyMapping['0'] = KeyCode::KEY_0;
-            m_windowsKeyMapping['1'] = KeyCode::KEY_1;
-            m_windowsKeyMapping['2'] = KeyCode::KEY_2;
-            m_windowsKeyMapping['3'] = KeyCode::KEY_3;
-            m_windowsKeyMapping['4'] = KeyCode::KEY_4;
-            m_windowsKeyMapping['5'] = KeyCode::KEY_5;
-            m_windowsKeyMapping['6'] = KeyCode::KEY_6;
-            m_windowsKeyMapping['7'] = KeyCode::KEY_7;
-            m_windowsKeyMapping['8'] = KeyCode::KEY_8;
-            m_windowsKeyMapping['9'] = KeyCode::KEY_9;
-            m_windowsKeyMapping['A'] = KeyCode::KEY_A;
-            m_windowsKeyMapping['B'] = KeyCode::KEY_B;
-            m_windowsKeyMapping['C'] = KeyCode::KEY_C;
-            m_windowsKeyMapping['D'] = KeyCode::KEY_D;
-            m_windowsKeyMapping['E'] = KeyCode::KEY_E;
-            m_windowsKeyMapping['F'] = KeyCode::KEY_F;
-            m_windowsKeyMapping['G'] = KeyCode::KEY_G;
-            m_windowsKeyMapping['H'] = KeyCode::KEY_H;
-            m_windowsKeyMapping['I'] = KeyCode::KEY_I;
-            m_windowsKeyMapping['J'] = KeyCode::KEY_J;
-            m_windowsKeyMapping['K'] = KeyCode::KEY_K;
-            m_windowsKeyMapping['L'] = KeyCode::KEY_L;
-            m_windowsKeyMapping['M'] = KeyCode::KEY_M;
-            m_windowsKeyMapping['N'] = KeyCode::KEY_N;
-            m_windowsKeyMapping['O'] = KeyCode::KEY_O;
-            m_windowsKeyMapping['P'] = KeyCode::KEY_P;
-            m_windowsKeyMapping['Q'] = KeyCode::KEY_Q;
-            m_windowsKeyMapping['R'] = KeyCode::KEY_R;
-            m_windowsKeyMapping['S'] = KeyCode::KEY_S;
-            m_windowsKeyMapping['T'] = KeyCode::KEY_T;
-            m_windowsKeyMapping['U'] = KeyCode::KEY_U;
-            m_windowsKeyMapping['V'] = KeyCode::KEY_V;
-            m_windowsKeyMapping['W'] = KeyCode::KEY_W;
-            m_windowsKeyMapping['X'] = KeyCode::KEY_X;
-            m_windowsKeyMapping['Y'] = KeyCode::KEY_Y;
-            m_windowsKeyMapping['Z'] = KeyCode::KEY_Z;
-
-            m_windowsKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
+            BuildKeyMapping(m_windowsKeyMapping);
 
             uint32_t keyboardDelay = 0, keyboardSpeed = 0;
             SystemParametersInfo(SPI_GETKEYBOARDDELAY, 0, &keyboardDelay, 0);
@@ -809,7 +816,73 @@ namespace base
             return 0;
         }
 
-        ///--
+        //---
+
+        class ReverseKeyMap
+        {
+        public:
+            KeyCode m_windowsKeyMapping[256];
+            DWORD m_reverseWindowsKeyMapping[(int)KeyCode::KEY_MAX];
+
+            bool m_reportedPressedState[(int)KeyCode::KEY_MAX];
+
+            ReverseKeyMap()
+            {
+                memzero(m_windowsKeyMapping, sizeof(m_windowsKeyMapping));
+                memzero(m_reverseWindowsKeyMapping, sizeof(m_reverseWindowsKeyMapping));
+                memzero(m_reportedPressedState, sizeof(m_reportedPressedState));
+
+                BuildKeyMapping(m_windowsKeyMapping);
+
+                for (uint32_t i = 0; i < ARRAY_COUNT(m_windowsKeyMapping); ++i)
+                {
+                    if (m_windowsKeyMapping[i] != KeyCode::KEY_INVALID)
+                        m_reverseWindowsKeyMapping[(int)m_windowsKeyMapping[i]] = i;
+                }
+            }
+
+            bool checkKeyDown(KeyCode key)
+            {
+                if (const auto dwVirtualKey = m_reverseWindowsKeyMapping[(int)key])
+                {
+                    auto down = (GetAsyncKeyState(dwVirtualKey) & 1) != 0;
+                    if (!down)
+                        m_reportedPressedState[(int)key] = false;
+
+                    return down;
+                }
+
+                return false;
+            }
+
+            bool checkKeyPressed(KeyCode key)
+            {
+                if (auto down = checkKeyDown(key))
+                {
+                    if (!m_reportedPressedState[(int)key])
+                    {
+                        m_reportedPressedState[(int)key] = true;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        };
+
+        static ReverseKeyMap GReverseKeyMap;
+
+        bool CheckInputKeyState(KeyCode key)
+        {
+            return GReverseKeyMap.checkKeyDown(key);
+        }
+
+        bool CheckInputKeyPressed(KeyCode key)
+        {
+            return GReverseKeyMap.checkKeyPressed(key);
+        }
+
+        //---
 
     } // input
 } // base

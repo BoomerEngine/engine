@@ -10,7 +10,6 @@
 
 #include "gl4Device.h"
 #include "gl4Thread.h"
-#include "gl4CopyQueue.h"
 #include "gl4ObjectCache.h"
 #include "gl4Executor.h"
 #include "gl4Shaders.h"
@@ -341,14 +340,14 @@ namespace rendering
 				return false;
 			}
 
-			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info)
+			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
 			{
-				return new Buffer(this, info);
+				return new Buffer(this, info, sourceData);
 			}
 
-			IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info)
+			IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
 			{
-				return new Image(this, info);
+				return new Image(this, info, sourceData);
 			}
 
 			IBaseSampler* Thread::createOptimalSampler(const SamplerState& state)
@@ -365,12 +364,7 @@ namespace rendering
 			{
 				return new Shaders(this, data);
 			}
-
-			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
-			{
-				return new CopyQueue(this, objectRegistry());
-			}
-
+			
 			ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
 			{
 				return new ObjectRegistry(this);

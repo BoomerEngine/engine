@@ -9,6 +9,7 @@
 //----
 
 #include <math.h>
+#include "tonemapping.h"
 
 //--
 
@@ -52,6 +53,8 @@ export shader BlitPS
 		vec2 sourceUV = SourceOffset + (SourceExtents * sourcePixel);
 
 		vec4 val = textureLod(Source, sourceUV, 0);
+
+		val.xyz = Tonemapping.whitePreservingLumaBasedReinhardToneMapping(val.xyz);
 
 		gl_Target0 = pow(val.xyz1, Gamma);
 		//gl_Target0 = sourceUV.xy01;

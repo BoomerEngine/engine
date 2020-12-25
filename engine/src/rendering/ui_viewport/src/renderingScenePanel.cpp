@@ -283,11 +283,12 @@ namespace ui
         public:
             typedef std::function<void(bool ctrl, bool shift, const base::Point & point)> TSelectionFunction;
 
-            SelectionClickInputHandler(IElement* ptr, CameraController* camera, const base::Point& startPoint, const TSelectionFunction& selectionFunc)
+            SelectionClickInputHandler(IElement* ptr, CameraController* camera, const base::Point& startPoint, const TSelectionFunction& selectionFunc, float sensitivity)
                 : IInputAction(ptr)
                 , m_startPoint(startPoint)
                 , m_selectionFunction(selectionFunc)
                 , m_camera(camera)
+                , m_sensitivity(sensitivity)
             {
             }
 
@@ -303,7 +304,7 @@ namespace ui
                 }
                 else if (evt.rightClicked())
                 {
-                    return m_camera->handleGeneralFly(element(), 3);
+                    return m_camera->handleGeneralFly(element(), 3, 1.0f, m_sensitivity);
                 }
                 else
                 {
@@ -324,6 +325,7 @@ namespace ui
             CameraController* m_camera;
             TSelectionFunction m_selectionFunction;
             base::Point m_startPoint;
+            float m_sensitivity = 1.0f;
         };
 
         //--
@@ -444,6 +446,8 @@ namespace ui
 
     InputActionPtr RenderingScenePanel::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
+        const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
+
         if (evt.keyMask().isCtrlDown() && evt.rightClicked())
         {
             auto rotateFunc = [this](float dp, float dy) { rotateGlobalLight(dp, dy); };
@@ -453,7 +457,7 @@ namespace ui
         {
             if (m_panelSettings.cameraForceOrbit)
             {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 1))
+                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 1, zoomScale))
                 {
                     m_renderInputAction = ret;
                     return ret;
@@ -473,7 +477,7 @@ namespace ui
                     // create a point selection mode
                     // NOTE: this can mutate into the camera movement
                     auto selectionFunc = [this](bool ctrl, bool shift, const base::Point& point) { handlePointSelection(ctrl, shift, point); };
-                    return base::RefNew<helper::SelectionClickInputHandler>(this, &m_cameraController, evt.absolutePosition(), selectionFunc);
+                    return base::RefNew<helper::SelectionClickInputHandler>(this, &m_cameraController, evt.absolutePosition(), selectionFunc, zoomScale);
                 }
             }
         }
@@ -481,7 +485,7 @@ namespace ui
         {
             if (m_panelSettings.cameraForceOrbit)
             {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 2))
+                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 2, zoomScale))
                 {
                     m_renderInputAction = ret;
                     return ret;
@@ -490,7 +494,7 @@ namespace ui
             else
             {
                 // go to the camera input directly
-                return m_cameraController.handleGeneralFly(this, 2);
+                return m_cameraController.handleGeneralFly(this, 2, 1.0f, zoomScale);
             }
         }
         else if (evt.midClicked())
@@ -504,7 +508,7 @@ namespace ui
                 if (queryWorldPositionUnderCursor(viewportPos, worldOrbitPosition))
                 {
                     //m_panelSettings.
-                    if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4))
+                    if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4, zoomScale))
                     {
                         m_renderInputAction = ret;
                         return ret;
@@ -513,7 +517,7 @@ namespace ui
             }
 
             // go to the camera input directly
-            return m_cameraController.handleGeneralFly(this, 4);
+            return m_cameraController.handleGeneralFly(this, 4, 1.0f, zoomScale);
         }
 
         return InputActionPtr();

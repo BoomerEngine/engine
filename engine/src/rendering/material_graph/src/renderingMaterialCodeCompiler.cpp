@@ -109,7 +109,7 @@ namespace rendering
 
         if (renderStates.depthTest)
         {
-            if (renderStates.earlyPixelTests)
+            if (renderStates.earlyPixelTests && !renderStates.alphaBlend)
                 outStr.append("   DepthFunc = Equal,\n");
             else
                 outStr.append("   DepthFunc = LessEqual,\n");

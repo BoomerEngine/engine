@@ -238,6 +238,15 @@ namespace ed
         return rendering::ImageContentColorSpace::Linear;
     }
 
+    bool StaticTextureEditor::save()
+    {
+        if (!TBaseClass::save())
+            return false;
+
+        base::LoadResource<rendering::StaticTexture>(file()->depotPath());
+        return true;
+    }
+
     void StaticTextureEditor::bindResource(const res::ResourcePtr& resource)
     {
         TBaseClass::bindResource(resource);

@@ -97,7 +97,7 @@ namespace base
             void processRawInput(HWND hWnd, HRAWINPUT hRawInput);
         };
 
-        ///---
+        //--
 
     } // input
 } // base

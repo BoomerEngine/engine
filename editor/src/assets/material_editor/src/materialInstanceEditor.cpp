@@ -59,6 +59,15 @@ namespace ed
         }
     }
 
+    bool MaterialInstanceEditor::save()
+    {
+        if (!TBaseClass::save())
+            return false;
+
+        base::LoadResource<rendering::MaterialInstance>(file()->depotPath());
+        return true;
+    }
+
     bool MaterialInstanceEditor::initialize()
     {
         if (!TBaseClass::initialize())

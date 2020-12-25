@@ -35,9 +35,6 @@ namespace rendering
 			virtual ~IBaseThread();
 
 			//--
-
-			// async copy queue
-			INLINE IBaseCopyQueue* copyQueue() const { return m_copyQueue; }
 			
 			// object registry - contains all public objects indexed via their handle (ObjectID)
 			INLINE ObjectRegistry* objectRegistry() const { return m_objectRegistry; }
@@ -88,10 +85,10 @@ namespace rendering
 			virtual IBaseSwapchain* createOptimalSwapchain(const OutputInitInfo& info) = 0;
 
 			// create buffer data object
-			virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info) = 0;
+			virtual IBaseBuffer* createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData) = 0;
 
 			// create image data object
-			virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info) = 0;
+			virtual IBaseImage* createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData) = 0;
 
 			// create sampler data 
 			virtual IBaseSampler* createOptimalSampler(const SamplerState& state) = 0;
@@ -130,7 +127,7 @@ namespace rendering
 			{
 				volatile uint32_t cpuFrameIndex;
 				volatile uint32_t threadFrameIndex;
-				volatile uint32_t gpuStartedFrameIndex;
+				//volatile uint32_t gpuStartedFrameIndex;
 				volatile uint32_t gpuFinishedFrameIndex;
 			} m_syncInfo;			
 
@@ -145,8 +142,6 @@ namespace rendering
 
 			
 			base::RefPtr<ObjectRegistry> m_objectRegistry = nullptr;
-
-			IBaseCopyQueue* m_copyQueue = nullptr;
 
 			IBaseObjectCache* m_objectCache = nullptr;
 
@@ -176,7 +171,6 @@ namespace rendering
 
 			//--
 
-			virtual IBaseCopyQueue* createOptimalCopyQueue(const base::app::CommandLine& cmdLine) = 0;
 			virtual IBaseObjectCache* createOptimalObjectCache(const base::app::CommandLine& cmdLine) = 0;
 
 			virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine) = 0;

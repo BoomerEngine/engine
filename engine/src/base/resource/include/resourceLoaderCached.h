@@ -45,6 +45,9 @@ namespace base
             /// Internal interface - check if internal resource can be used (ie. is still up to date)
             virtual bool validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const;
 
+            /// Internal interface - notify that new version of resource was loaded
+            virtual void notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource);
+
             //--
         
             struct LoadingJob : public IReferencable

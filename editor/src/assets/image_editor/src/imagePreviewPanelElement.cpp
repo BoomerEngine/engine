@@ -8,15 +8,20 @@
 
 #include "build.h"
 #include "imagePreviewPanelElements.h"
+#include "imagePreviewPanel.h"
 
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingDeviceApi.h"
+#include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
+#include "rendering/device/include/renderingShaderFile.h"
+
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/image/include/imageView.h"
 #include "base/ui/include/uiElement.h"
 #include "base/ui/include/uiTextLabel.h"
-#include "imagePreviewPanel.h"
 
 namespace ed
 {
@@ -71,52 +76,69 @@ namespace ed
 
     //--
 
-    /*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
-
-    struct CanvasImagePreviewData
-    {
-        base::Vector4 colorSelector;
-        rendering::ImageView texture;
-    };
+    base::res::StaticResource<rendering::ShaderFile> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
 
     /// custom rendering handler
-    class CanvasImagePreviewHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler
+    class CanvasImagePreviewHandler : public rendering::canvas::ICanvasSimpleBatchRenderer
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
+        RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, rendering::canvas::ICanvasSimpleBatchRenderer);
 
     public:
-        virtual void initialize(rendering::IDevice* drv) override final
+        struct PrivateData
         {
+            rendering::ImageSampledView* texture = nullptr;
+            bool showRed = true;
+            bool showGreen = true;
+            bool showBlue = true;
+            bool showAlpha = true;
+            bool pointFilter = false;
+            int mip = 0;
+            int slice = 0;
+            int colorSpace = 0; // 0-texture is in sRGB mode - output directly, 1-texture is linear, take gamma, 2-HDR with no tone mapping, 3-HDR with tonemapping
+            float colorSpaceScale = 1.0f;
+            int toneMapMode = 0;
+        };
+
+        virtual rendering::ShaderFilePtr loadMainShaderFile() override final
+        {
+            return resCanvasCustomHandlerPreview.loadAndGet();
         }
 
-        virtual void render(rendering::command::CommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) override
+        virtual void render(rendering::command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override
         {
-            if (auto shader = resCanvasCustomHandlerPreview.loadAndGet())
+            const auto& srcData = *(const PrivateData*)data.customData;
+
+            struct
             {
-                for (uint32_t i = 0; i < numPayloads; ++i)
-                {
-                    const auto& payload = payloads[i];
+                base::Vector4 colorSelector;
+                int mip = 0;
+                int colorSpace = 0; // 0-texture is in sRGB mode - output directly, 1-texture is linear, take gamma, 2-HDR with no tone mapping, 3-HDR with tonemapping
+                float colorSpaceScale = 1.0f;
+                int toneMapMode = 0;
+            } constants;
 
-                    const auto* config = (const CanvasImagePreviewData*)payload.data;
+            constants.colorSelector.x = srcData.showRed ? 1.0f : 0.0f;
+            constants.colorSelector.y = srcData.showGreen ? 1.0f : 0.0f;
+            constants.colorSelector.z = srcData.showBlue ? 1.0f : 0.0f;
+            constants.colorSelector.w = srcData.showAlpha ? 1.0f : 0.0f;
+            constants.mip = srcData.mip;
+            constants.colorSpace = srcData.colorSpace;
+            constants.colorSpaceScale = srcData.colorSpaceScale;
+            constants.toneMapMode = srcData.toneMapMode;
 
-                    struct
-                    {
-                        rendering::ConstantsView constants;
-                        rendering::ImageView texture;
-                    } params;
+            rendering::DescriptorEntry desc[3];
+            desc[0].constants(constants);
+            desc[1] = srcData.pointFilter ? rendering::Globals().SamplerClampPoint : rendering::Globals().SamplerClampBiLinear;
+            desc[2] = srcData.texture ? srcData.texture : rendering::Globals().TextureWhite;
 
-                    params.constants = cmd.opUploadConstants(&config->colorSelector, 16);
-                    params.texture = config->texture;
+            cmd.opBindDescriptor("ExtraParams"_id, desc);
 
-                    cmd.opBindParametersInline("CanvasImagePreviewParams"_id, params);
-                    cmd.opDrawIndexed(shader, 0, payload.firstIndex, payload.numIndices);
-                }
-            }
+            TBaseClass::render(cmd, data, firstVertex, numVertices);
         }
     };
 
     RTTI_BEGIN_TYPE_CLASS(CanvasImagePreviewHandler);
-    RTTI_END_TYPE();*/
+    RTTI_END_TYPE();
 
     //--
 
@@ -124,17 +146,7 @@ namespace ed
 
     struct CanvasTextureCompressionPreviewParams
     {
-        struct
-        {
-            base::Vector4 colorSelector;
-            int mip = 0;
-            int compareMode = 0;
-            float compareScale = 1.0f;
-            int colorSpace = 0; // 0-texture is in sRGB mode - output directly, 1-texture is linear, take gamma, 2-HDR with no tone mapping, 3-HDR with tonemapping
-            float colorSpaceScale = 1.0f;
-            int toneMapMode = 0;
-        } constants;
-
+        
         rendering::ImageView texture;
         rendering::ImageView texture2;
     };
@@ -332,90 +344,48 @@ namespace ed
 
     void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)
     {
-        /*if (!m_settings)
+        if (!m_settings || !m_view)
             return;
 
         //auto width = std::max<uint32_t>(1, m_view.width() >> m_mip);
         //auto height = std::max<uint32_t>(1, m_view.height() >> m_mip);
-        auto width = m_view.width();
-        auto height = m_view.height();
+        auto width = m_view->width();
+        auto height = m_view->height();
 
-        base::canvas::Canvas::RawVertex v[4];
-        v[0].uv.x = 0.0f;
-        v[0].uv.y = 0.0f;
-        v[1].uv.x = 1.0f;
-        v[1].uv.y = 0.0f;
-        v[2].uv.x = 1.0f;
-        v[2].uv.y = 1.0f;
-        v[3].uv.x = 0.0f;
-        v[3].uv.y = 1.0f;
-        v[0].color = base::Color::WHITE;
-        v[1].color = base::Color::WHITE;
-        v[2].color = base::Color::WHITE;
-        v[3].color = base::Color::WHITE;
-        v[0].pos.x = 0;
-        v[0].pos.y = 0;
-        v[1].pos.x = width;
-        v[1].pos.y = 0;
-        v[2].pos.x = width;
-        v[2].pos.y = height;
-        v[3].pos.x = 0;
-        v[3].pos.y = height;
+        base::canvas::Canvas::QuadSetup quad;
+        quad.x1 = sx * width;
+        quad.y1 = sy * height;
+        quad.op = m_settings->premultiply ? base::canvas::BlendOp::AlphaPremultiplied : base::canvas::BlendOp::AlphaBlend;
+        quad.wrap = false;
 
-        uint16_t i[6];
-        i[0] = 0;
-        i[1] = 1;
-        i[2] = 2;
-        i[3] = 0;
-        i[4] = 2;
-        i[5] = 3;
-
-        base::canvas::Canvas::RawGeometry geom;
-        geom.indices = i;
-        geom.vertices = v;
-        geom.numIndices = 6;
-
-        static const auto customDrawerId = rendering::canvas::GetHandlerIndex<CanvasTextureCompressionPreviewHandler>();
-
-        CanvasTextureCompressionPreviewParams tileData;
-        if (m_settings->pointFilter)
-        {
-            tileData.texture = m_view.createSampledView(rendering::ObjectID::DefaultPointSampler());
-            tileData.texture2 = m_sourceView.createSampledView(rendering::ObjectID::DefaultPointSampler());
-        }
-        else
-        {
-            tileData.texture = m_view.createSampledView(rendering::ObjectID::DefaultBilinearSampler());
-            tileData.texture2 = m_sourceView.createSampledView(rendering::ObjectID::DefaultBilinearSampler());
-        }
-        tileData.constants.compareMode = m_settings->previewMode;
-        tileData.constants.compareScale = m_settings->previewScale;
-        tileData.constants.mip = m_mipIndex;
-        tileData.constants.colorSelector.x = m_settings->showRed ? 1.0f : 0.0f;
-        tileData.constants.colorSelector.y = m_settings->showGreen ? 1.0f : 0.0f;
-        tileData.constants.colorSelector.z = m_settings->showBlue ? 1.0f : 0.0f;
-        tileData.constants.colorSelector.w = m_settings->showAlpha ? 1.0f : 0.0f;
+        CanvasImagePreviewHandler::PrivateData setup;
+        setup.texture = m_view;
+        setup.pointFilter = m_settings->pointFilter;
+        setup.showRed = m_settings->showRed;
+        setup.showGreen = m_settings->showGreen;
+        setup.showBlue = m_settings->showBlue;
+        setup.showAlpha = m_settings->showAlpha;
+        setup.mip = m_mipIndex;
+        setup.slice = m_sliceIndex;
 
         if (m_settings->colorSpace == rendering::ImageContentColorSpace::SRGB)
         {
-            tileData.constants.colorSpace = 1;
-            tileData.constants.colorSpaceScale = 1.0f;
+            setup.colorSpace = 1;
+            setup.colorSpaceScale = 1.0f;
         }
         else if (m_settings->colorSpace == rendering::ImageContentColorSpace::Linear)
         {
-            tileData.constants.colorSpace = 0;
-            tileData.constants.colorSpaceScale = 1.0f;
+            setup.colorSpace = 0;
+            setup.colorSpaceScale = 1.0f;
         }
         else if (m_settings->colorSpace == rendering::ImageContentColorSpace::HDR)
         {
-            tileData.constants.colorSpace = 2;
-            tileData.constants.toneMapMode = m_settings->toneMapMode;
-            tileData.constants.colorSpaceScale = m_settings->exposureAdj;
+            setup.colorSpace = 2;
+            setup.toneMapMode = m_settings->toneMapMode;
+            setup.colorSpaceScale = m_settings->exposureAdj;
         }
 
-        const auto style = base::canvas::SolidColor(base::Color::WHITE);
-        const auto op = m_settings->premultiply ? base::canvas::CompositeOperation::SourceOver : base::canvas::CompositeOperation::Blend;
-        canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(tileData), op);*/
+        canvas.quadEx<CanvasImagePreviewHandler>(base::canvas::Placement(x, y), quad, setup);
     }
 
     //--

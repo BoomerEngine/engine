@@ -146,23 +146,19 @@ namespace rendering
 	public:
 		virtual ~ISourceDataProvider();
 
-		struct WriteAtom
+		struct SourceAtom
 		{
-			uint8_t* targetDataPtr = nullptr;
-			uint32_t targetDataSize = 0;
-			uint32_t internalOffset = 0;
+			uint8_t* sourceData = nullptr;
+			uint32_t sourceDataSize = 0;
+
+            base::Buffer m_buffer;
 
 			uint8_t mip = 0;
 			uint16_t slice = 0;
 		};
 
-		// write initialization data into provided pointer(s), it's legal to take as much time as possible here
-		// NOTE: the most amazing thing about it this function is that it can wait happen in background (ie. disk loading is allowed here)
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const = 0;
-
-		// notify client that resource is not available for use, 
-		// this is called as soon as rendering knows that resource can be safely used in the frame recording
-		virtual void notifyFinshed(bool success) {};
+		// prepare source data
+		virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const = 0;
 
 		// get a debug information for this data, usually resource name, etc
 		virtual void print(base::IFormatStream& f) const {};
@@ -186,7 +182,7 @@ namespace rendering
 		INLINE const base::Buffer& data() const { return m_data; }
 
 		// upload buffer to GPU memory (copies the content from buffer if it fits)
-		virtual CAN_YIELD void writeSourceData(const base::Array<WriteAtom>& atoms) const override final;
+        virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override;
 
 	private:
 		base::Buffer m_data;

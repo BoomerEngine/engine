@@ -40,7 +40,9 @@ namespace rendering
 		RTTI_END_TYPE();
 
 		ICanvasSimpleBatchRenderer::ICanvasSimpleBatchRenderer()
-		{}
+		{
+			m_reloadNotifier = [this]() { loadShaders(); };
+		}
 
 		ICanvasSimpleBatchRenderer::~ICanvasSimpleBatchRenderer()
 		{}
@@ -62,25 +64,35 @@ namespace rendering
 			return false;
 		}
 
-		bool ICanvasSimpleBatchRenderer::initialize(const CanvasRenderStates& renderStates, IDevice* drv)
+		void ICanvasSimpleBatchRenderer::loadShaders()
 		{
 			// load mask shader
-			if (!LoadShader(resCanvasShaderMask.loadAndGet(), m_shaderMask))
-				return false;
-
-			// load main shader
-			ShaderDataPtr ptr;
-			if (!LoadShader(loadMainShaderFile(), m_shaderFill))
-				return false;
-
-			m_mask = m_shaderMask->createGraphicsPipeline(renderStates.m_mask);
-
-			for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
 			{
-				m_standardFill[i] = m_shaderFill->createGraphicsPipeline(renderStates.m_standardFill[i]);
-				m_maskedFill[i] = m_shaderFill->createGraphicsPipeline(renderStates.m_maskedFill[i]);
+				ShaderObjectPtr ptr;
+				if (LoadShader(resCanvasShaderMask.loadAndGet(), ptr))
+				{
+					m_mask = ptr->createGraphicsPipeline(m_renderStates->m_mask);
+				}
 			}
 
+            // load main shader
+			{
+				ShaderObjectPtr ptr;
+				if (LoadShader(loadMainShaderFile(), ptr))
+				{
+					for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
+					{
+						m_standardFill[i] = ptr->createGraphicsPipeline(m_renderStates->m_standardFill[i]);
+						m_maskedFill[i] = ptr->createGraphicsPipeline(m_renderStates->m_maskedFill[i]);
+					}
+				}
+			}
+		}
+
+		bool ICanvasSimpleBatchRenderer::initialize(const CanvasRenderStates& renderStates, IDevice* drv)
+		{
+			m_renderStates = &renderStates;
+			loadShaders();
 			return true;
 		}
 

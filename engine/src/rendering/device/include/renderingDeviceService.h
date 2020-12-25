@@ -61,6 +61,10 @@ namespace rendering
 		DeviceCaps m_caps;
 
 		//--
+
+        void reloadShaders();
+
+        //--
     };
 
     //---

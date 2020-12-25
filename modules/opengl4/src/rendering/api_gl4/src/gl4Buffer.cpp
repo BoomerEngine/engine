@@ -10,7 +10,6 @@
 #include "gl4Thread.h"
 #include "gl4Buffer.h"
 #include "gl4Utils.h"
-#include "gl4CopyQueue.h"
 #include "gl4DownloadArea.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
@@ -35,8 +34,8 @@ namespace rendering
 
 			//--
 
-			Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup)
-				: IBaseBuffer(drv, setup)
+			Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup, const ISourceDataProvider* sourceData)
+				: IBaseBuffer(drv, setup, sourceData)
 			{
 				m_glUsage = DetermineBestUsageFlag(setup);
 			}
@@ -64,8 +63,23 @@ namespace rendering
 				if (setup().label)
 					GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, setup().label.length(), setup().label.c_str()));
 
-				// setup data with buffer
-				GL_PROTECT(glNamedBufferStorage(m_glBuffer, setup().size, nullptr, m_glUsage));
+				// fetch source atoms
+				base::InplaceArray<ISourceDataProvider::SourceAtom, 1> sourceAtoms;
+                if (m_initData)
+                    m_initData->fetchSourceData(sourceAtoms);
+
+                // setup data with buffer
+				const void* sourceData = nullptr;
+				uint32_t sourceDataSize = 0;
+				if (sourceAtoms.size() >= 1)
+				{
+					sourceData = sourceAtoms[0].sourceData;
+					if (sourceData)
+						sourceDataSize = std::min<uint32_t>(sourceAtoms[0].sourceDataSize, setup().size);
+				}
+
+                // setup data with buffer
+                GL_PROTECT(glNamedBufferStorage(m_glBuffer, setup().size, sourceData, m_glUsage));
 			}
 
 			//--
@@ -135,19 +149,6 @@ namespace rendering
 				ret.offset = offset;
 				ret.size = size;
 				return ret;
-			}
-
-			void Buffer::initializeFromStaging(IBaseCopyQueueStagingArea* baseData)
-			{
-				PC_SCOPE_LVL1(BufferAsyncCopy);
-
-				ensureCreated();
-
-				const auto* data = static_cast<CopyQueueStagingArea*>(baseData);
-				for (const auto& atom : data->writeAtoms)
-				{
-					GL_PROTECT(glCopyNamedBufferSubData(data->glBuffer, m_glBuffer, atom.internalOffset, 0, atom.targetDataSize));
-				}
 			}
 
 			void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)

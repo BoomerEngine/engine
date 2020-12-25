@@ -100,6 +100,40 @@ namespace rendering
 			return m_flags.test(scene::ObjectProxyFlagBit::Attached);
 		}
 
+		//---
+
+		void ObjectProxyMeshChunk::updatePassTypes()
+		{
+			if (shader)
+			{
+				const auto& shaderMetadata = shader->metadata();
+				if (!shaderMetadata.hasTransparency)
+				{
+					if (!shaderMetadata.hasVertexAnimation && staticGeometry)
+						depthPassType = 0;
+					else
+						depthPassType = 1;
+				}
+				else
+				{
+					depthPassType = -1;
+				}
+
+				// forward pass flags
+				if (shaderMetadata.hasTransparency)
+					forwardPassType = 2;
+				else if (shaderMetadata.hasPixelDiscard)
+					forwardPassType = 1;
+				else
+					forwardPassType = 0;
+			}
+			else
+			{
+				depthPassType = -1;
+				forwardPassType = -1;
+			}
+		}
+
         //---
 
 		RTTI_BEGIN_TYPE_NATIVE_CLASS(ObjectProxyMesh);
@@ -202,26 +236,10 @@ namespace rendering
 				chunkTable->renderMask = chunk.renderMask;
 				chunkTable->material = sourceMaterial->dataProxy();
 				chunkTable->shader = sourceMaterial->templateProxy();
+				chunkTable->staticGeometry = setup.staticGeometry;
 				ASSERT_EX(chunkTable->material != nullptr, "Material without data proxy");
                 ASSERT_EX(chunkTable->shader != nullptr, "Material without shader");
-
-				// geometry flags
-				const auto& shaderMetadata = chunkTable->shader->metadata();
-				if (!shaderMetadata.hasTransparency)
-				{
-					if (!shaderMetadata.hasVertexAnimation && setup.staticGeometry)
-						chunkTable->depthPassType = 0;
-					else
-						chunkTable->depthPassType = 1;
-				}
-
-				// forward pass flags
-				if (shaderMetadata.hasTransparency)
-					chunkTable->forwardPassType = 2;
-				else if (shaderMetadata.hasPixelDiscard)
-					chunkTable->forwardPassType = 1;
-				else
-					chunkTable->forwardPassType = 0;
+				chunkTable->updatePassTypes();
 
 				// write chunk
 				chunkTable += 1;

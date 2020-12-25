@@ -43,6 +43,7 @@ namespace ed
         void createInterface();
 
         virtual bool initialize() override;
+        virtual bool save() override;
     };
 
 } // ed

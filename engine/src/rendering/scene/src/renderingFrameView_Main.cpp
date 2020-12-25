@@ -264,6 +264,7 @@ namespace rendering
                     setup.gameView = m_frame.resources().sceneResolvedColorSRV;
                     setup.presentTarget = m_setup.colorTarget;
                     setup.presentRect = m_setup.viewport;
+                    setup.gamma = 1.0f / 2.2f;
                     m_frame.helpers().compose->finalCompose(cmd, setup);
                 }
 

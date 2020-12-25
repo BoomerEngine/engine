@@ -23,8 +23,8 @@ namespace rendering
 
 			//--
 
-			Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup)
-				: IBaseBuffer(drv, setup)
+			Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup, const ISourceDataProvider* sourceData)
+				: IBaseBuffer(drv, setup, sourceData)
 			{
 			}
 
@@ -81,11 +81,6 @@ namespace rendering
 			}
 
 			//--
-
-			void Buffer::initializeFromStaging(IBaseCopyQueueStagingArea* data)
-			{
-
-			}
 
 			void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
 			{

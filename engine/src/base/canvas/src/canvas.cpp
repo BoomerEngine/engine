@@ -497,7 +497,7 @@ namespace base
 
         //---
 
-        void Canvas::quad(const Placement& placement, const QuadSetup& setup)
+        void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t customRenderer /*= 0*/, const void* customData /*= nullptr*/, uint32_t customDataSize /*= 0*/)
         {
 			canvas::Vertex v[4];
 			v[0].pos.x = (int)std::round(setup.x0);
@@ -571,10 +571,18 @@ namespace base
 
 			Batch batch;
 			batch.atlasIndex = setup.image.atlasIndex;
-			batch.rendererIndex = setup.renderer;
+			batch.rendererIndex = customRenderer;
 			batch.type = BatchType::FillConvex;
 			batch.packing = BatchPacking::Quads;
 			batch.op = setup.op;
+
+			if (customDataSize > 0 && customData)
+			{
+				batch.renderDataSize = customDataSize;
+				batch.renderDataOffset = m_gatheredData.size();
+				memcpy(m_gatheredData.allocateUninitialized(customDataSize), customData, customDataSize);
+			}
+
 			placeInternal(placement, v, 4, 0, 0, batch, 1.0f);
         }
 

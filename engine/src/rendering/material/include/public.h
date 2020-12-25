@@ -74,6 +74,7 @@ namespace rendering
         ConstantColor, // output constant object color
         SelectionFragments, // selection fragment gathering - may be masked, uses specialized shader
         Forward, // classic forward rendering with full lighting
+        ForwardTransparent, // classic forward rendering with full lighting
         ShadowDepth, // depth for shadow rendering
         MaterialDebug, // material debugging
 

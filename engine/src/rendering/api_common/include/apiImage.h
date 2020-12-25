@@ -56,7 +56,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API IBaseImage : public IBaseCopiableObject
 		{
 		public:
-			IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup);
+			IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup, const ISourceDataProvider* initData);
 			virtual ~IBaseImage();
 
 			static const auto STATIC_TYPE = ObjectType::Image;
@@ -73,16 +73,12 @@ namespace rendering
 			virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) = 0;
 			virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) = 0;
 
-			//---
+			//--
 
-			// generate default atoms for image (each mip and slice is copied separately)
-			// NOTE: default copying sucks for the lowest mips very badly :(
-			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const override;
-
-			//---
-
-		private:
+		protected:
 			ImageCreationInfo m_setup;
+
+			SourceDataProviderPtr m_initData;
 
 			PoolTag m_poolTag = POOL_API_STATIC_TEXTURES;
 			uint32_t m_poolMemorySize = 0;

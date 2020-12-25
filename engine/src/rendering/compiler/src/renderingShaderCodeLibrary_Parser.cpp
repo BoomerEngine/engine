@@ -1258,6 +1258,7 @@ namespace rendering
                         argParam->loc = param->location;
                         argParam->dataType = paramType;
                         argParam->scope = DataParameterScope::FunctionInput;
+                        argParam->assignable = true;
                         argParam->attributes = std::move(attributes);
                         functionArgs.pushBack(argParam);
                         functionArgsNames.pushBack(name);

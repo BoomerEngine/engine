@@ -68,7 +68,7 @@ namespace base
 
         bool ResourceAsyncRefType::referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const
         {
-            return true;
+            return false; // we never patch async handles as they don't contain actual resources
         }
 
         void ResourceAsyncRefType::readResourceRef(const void* data, res::BaseAsyncReference& outResRef) const

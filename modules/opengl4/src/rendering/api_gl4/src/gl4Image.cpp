@@ -13,7 +13,6 @@
 #include "gl4Buffer.h"
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
-#include "gl4CopyQueue.h"
 #include "gl4DownloadArea.h"
 
 namespace rendering
@@ -25,8 +24,8 @@ namespace rendering
 
 			///---
 
-			Image::Image(Thread* drv, const ImageCreationInfo& setup)
-				: IBaseImage(drv, setup)
+			Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
+				: IBaseImage(drv, setup, sourceData)
 			{
 				m_glViewType = TranslateTextureType(setup.view, setup.multisampled());
 				m_glFormat = TranslateImageFormat(setup.format);
@@ -148,6 +147,100 @@ namespace rendering
                     GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 					GL_PROTECT(glTextureParameteri(m_glImage, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+				}
+
+				// set initial data
+				if (m_initData)
+				{
+                    GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
+                    GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+                    GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0));
+
+                    base::InplaceArray<ISourceDataProvider::SourceAtom, 64> sourceAtoms;
+					sourceAtoms.reserve(setup().numMips * setup().numSlices);
+                    m_initData->fetchSourceData(sourceAtoms);
+
+                    for (const auto& atom : sourceAtoms)
+                    {
+                        const auto rowLength = setup().calcRowLength(atom.mip);
+
+                        const auto mipWidth = setup().calcMipWidth(atom.mip);
+                        const auto mipHeight = setup().calcMipHeight(atom.mip);
+                        const auto mipDepth = setup().calcMipDepth(atom.mip);
+
+                        GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
+                        GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
+                        
+                        GLenum glBaseFormat = 0; // GL_RGBA
+                        GLenum glBaseType = 0; // GL_FLOAT
+                        bool compressed = false;
+                        DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType, &compressed);
+
+                        // get texture type
+                        switch (m_glViewType)
+                        {
+                        case GL_TEXTURE_1D:
+                            GL_PROTECT(glTextureSubImage1D(m_glImage, atom.mip,
+                                0,
+                                mipWidth,
+                                glBaseFormat, glBaseType, 
+								atom.sourceData));
+                            break;
+
+                        case GL_TEXTURE_2D:
+                            if (compressed)
+                            {
+                                GL_PROTECT(glCompressedTextureSubImage2D(m_glImage, atom.mip,
+                                    0, 0,
+                                    mipWidth, mipHeight,
+                                    m_glFormat,
+                                    atom.sourceDataSize,
+									atom.sourceData));
+                            }
+                            else
+                            {
+                                GL_PROTECT(glTextureSubImage2D(m_glImage, atom.mip,
+                                    0, 0,
+                                    mipWidth, mipHeight,
+                                    glBaseFormat, glBaseType, 
+									atom.sourceData));
+                            }
+                            break;
+
+                        case GL_TEXTURE_CUBE_MAP:
+                        case GL_TEXTURE_CUBE_MAP_ARRAY:
+                        case GL_TEXTURE_2D_ARRAY:
+                            if (compressed)
+                            {
+                                GL_PROTECT(glCompressedTextureSubImage3D(m_glImage, atom.mip,
+                                    0, 0, atom.slice,
+                                    mipWidth, mipHeight, 1,
+                                    m_glFormat, 
+									atom.sourceDataSize, 
+									atom.sourceData));
+                            }
+                            else
+                            {
+                                GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
+                                    0, 0, atom.slice,
+                                    mipWidth, mipHeight, 1,
+                                    glBaseFormat, glBaseType, 
+									atom.sourceData));
+                            }
+                            break;
+
+                        case GL_TEXTURE_3D:
+                            GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
+                                0, 0, 0,
+                                mipWidth, mipHeight, mipDepth,
+                                glBaseFormat, glBaseType, 
+								atom.sourceData));
+                            break;
+
+                        default:
+                            FATAL_ERROR("Invalid texture type");
+                        }
+                    }
 				}
 			}
 
@@ -279,99 +372,6 @@ namespace rendering
 			}
 
 			//--
-
-			void Image::initializeFromStaging(IBaseCopyQueueStagingArea* baseData)
-			{
-				PC_SCOPE_LVL1(ImageAsyncCopy);
-
-				ensureCreated();
-
-				const auto* data = static_cast<CopyQueueStagingArea*>(baseData);
-
-				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, data->glBuffer));
-				
-				for (const auto& atom : data->writeAtoms)
-				{
-					const auto rowLength = setup().calcRowLength(atom.mip);
-
-					const auto mipWidth = setup().calcMipWidth(atom.mip);
-					const auto mipHeight = setup().calcMipHeight(atom.mip);
-					const auto mipDepth = setup().calcMipDepth(atom.mip);
-
-					const void* dataOffset = (const void*)atom.internalOffset;
-
-					GL_PROTECT(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, mipHeight));
-					GL_PROTECT(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0));
-
-					GLenum glBaseFormat = 0; // GL_RGBA
-					GLenum glBaseType = 0; // GL_FLOAT
-					bool compressed = false;
-					DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType, &compressed);
-
-					// get texture type
-					switch (m_glViewType)
-					{
-					case GL_TEXTURE_1D:
-						GL_PROTECT(glTextureSubImage1D(m_glImage, atom.mip,
-							0,
-							mipWidth,
-							glBaseFormat, glBaseType, dataOffset));
-						break;
-
-					case GL_TEXTURE_2D:
-						if (compressed)
-						{
-                            GL_PROTECT(glCompressedTextureSubImage2D(m_glImage, atom.mip,
-                                0, 0,
-                                mipWidth, mipHeight,
-                                m_glFormat, 
-								atom.targetDataSize,
-								dataOffset));
-						}
-						else
-						{
-							GL_PROTECT(glTextureSubImage2D(m_glImage, atom.mip,
-								0, 0,
-								mipWidth, mipHeight,
-								glBaseFormat, glBaseType, dataOffset));
-						}
-						break;
-
-					case GL_TEXTURE_CUBE_MAP:
-					case GL_TEXTURE_CUBE_MAP_ARRAY:
-					case GL_TEXTURE_2D_ARRAY:
-						if (compressed)
-						{
-                            GL_PROTECT(glCompressedTextureSubImage3D(m_glImage, atom.mip,
-                                0, 0, atom.slice,
-                                mipWidth, mipHeight, 1,
-                                m_glFormat, atom.targetDataSize, dataOffset));
-						}
-						else
-						{
-							GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
-								0, 0, atom.slice,
-								mipWidth, mipHeight, 1,
-								glBaseFormat, glBaseType, dataOffset));
-						}
-						break;
-
-					case GL_TEXTURE_3D:
-						GL_PROTECT(glTextureSubImage3D(m_glImage, atom.mip,
-							0, 0, 0,
-							mipWidth, mipHeight, mipDepth,
-							glBaseFormat, glBaseType, dataOffset));
-						break;
-
-					default:
-						FATAL_ERROR("Invalid texture type");
-					}
-				}
-
-				GL_PROTECT(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
-			}
 
 			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
 			{

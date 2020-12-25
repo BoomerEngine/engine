@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/canvas/include/canvas.h"
+#include "rendering/device/include/renderingShaderReloadNotifier.h"
 
 namespace rendering
 {
@@ -81,14 +82,17 @@ namespace rendering
 
 			virtual const GraphicsPipelineObject* selectShader(command::CommandWriter& cmd, const RenderData& data) const;
 
+			void loadShaders();
+
 			static const auto MAX_BLEND_OPS = (int)base::canvas::BlendOp::MAX;
 
 			GraphicsPipelineObjectPtr m_mask;
 			GraphicsPipelineObjectPtr m_standardFill[MAX_BLEND_OPS];
 			GraphicsPipelineObjectPtr m_maskedFill[MAX_BLEND_OPS];
 
-			ShaderObjectPtr m_shaderFill;
-			ShaderObjectPtr m_shaderMask;
+			const CanvasRenderStates* m_renderStates = nullptr;
+
+			ShaderReloadNotifier m_reloadNotifier;
 		};
 
         //---

@@ -11,6 +11,8 @@
 #include "renderingMaterialRuntimeLayout.h"
 #include "renderingMaterialTemplate.h"
 
+#include "rendering/device/include/renderingShaderReloadNotifier.h"
+
 namespace rendering
 {
     //---
@@ -57,6 +59,12 @@ namespace rendering
 		MaterialTemplateDynamicCompilerPtr m_dynamicCompiler;
 
 		base::StringBuf m_contextName;
+
+		//--
+
+        ShaderReloadNotifier m_reloadNotifier;
+
+		void discardCachedTechniques();
 
 		//--
 

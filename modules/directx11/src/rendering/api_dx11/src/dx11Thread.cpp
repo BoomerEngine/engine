@@ -10,7 +10,6 @@
 
 #include "dx11Device.h"
 #include "dx11Thread.h"
-#include "dx11CopyQueue.h"
 #include "dx11ObjectCache.h"
 #include "dx11TransientBuffer.h"
 #include "dx11Swapchain.h"
@@ -301,14 +300,14 @@ namespace rendering
 				return nullptr;
 			}
 
-			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info)
+			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
 			{
-				return new Buffer(this, info);
+				return new Buffer(this, info, sourceData);
 			}
 
-			IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info)
+			IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
 			{
-				return new Image(this, info);
+				return new Image(this, info, sourceData);
 			}
 
 			IBaseSampler* Thread::createOptimalSampler(const SamplerState& state)
@@ -343,11 +342,6 @@ namespace rendering
 			IBaseObjectCache* Thread::createOptimalObjectCache(const base::app::CommandLine& cmdLine)
 			{
 				return new ObjectCache(this);
-			}
-
-			IBaseCopyQueue* Thread::createOptimalCopyQueue(const base::app::CommandLine& cmdLine)
-			{
-				return new CopyQueue(this, m_objectRegistry);
 			}
 
 			IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)

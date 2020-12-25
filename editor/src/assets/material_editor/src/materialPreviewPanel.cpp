@@ -77,24 +77,11 @@ namespace ed
         }
     }
 
-    void MaterialPreviewPanel::onPropertyChanged(base::StringView path)
+    void MaterialPreviewPanel::bindMaterial(const rendering::IMaterial* material)
     {
-        TBaseClass::onPropertyChanged(path);
-
-        if (path == "material")
-        {
-            destroyVisualization();
-            createVisualization();
-        }
-    }
-
-    void MaterialPreviewPanel::bindMaterial(const rendering::MaterialRef& material)
-    {
-        if (m_material != material)
-        {
-            m_material = material;
-            onPropertyChanged("material");
-        }
+        destroyVisualization();
+        m_material = AddRef(material);
+        createVisualization();
     }
 
     bool MaterialPreviewPanel::computeContentBounds(base::Box& outBox) const
@@ -152,13 +139,14 @@ namespace ed
     base::res::StaticResource<rendering::Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
     base::res::StaticResource<rendering::Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
     base::res::StaticResource<rendering::Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
-    base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
+    //base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
+    base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
 
     void MaterialPreviewPanel::createVisualization()
     {
         destroyVisualization();
 
-        if (auto material = m_material.acquire())
+        if (auto material = m_material)
         {
             auto previewTemplate = material->resolveTemplate();
 
@@ -179,7 +167,7 @@ namespace ed
                     rendering::scene::ObjectProxyMesh::Setup desc;
                     desc.mesh = mesh;
                     desc.forcedLodLevel = 0;
-                    desc.forceMaterial = m_material.acquire();
+                    desc.forceMaterial = m_material;
 
 					auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc);
 

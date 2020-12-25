@@ -12,6 +12,8 @@
 #include "base/app/include/commandline.h"
 #include "base/system/include/rwLock.h"
 
+#include "rendering/device/include/renderingShaderReloadNotifier.h"
+
 namespace rendering
 {
     namespace scene
@@ -58,6 +60,10 @@ namespace rendering
 
 			FrameResources* m_sharedResources = nullptr;
 			FrameHelper* m_sharedHelpers = nullptr;
+
+            ShaderReloadNotifier m_reloadNotifier;
+
+            void recreateHelpers();
         };
 
         ///---

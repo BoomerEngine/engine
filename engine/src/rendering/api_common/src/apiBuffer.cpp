@@ -42,8 +42,9 @@ namespace rendering
 			return POOL_API_STORAGE_BUFFER;
 		}
 
-		IBaseBuffer::IBaseBuffer(IBaseThread* owner, const BufferCreationInfo& setup)
+		IBaseBuffer::IBaseBuffer(IBaseThread* owner, const BufferCreationInfo& setup, const ISourceDataProvider* initData)
 			: IBaseCopiableObject(owner, ObjectType::Buffer)
+			, m_initData(AddRef(initData))
 			, m_setup(setup)
 		{
 			m_poolTag = DetermineBestMemoryPool(setup);
@@ -53,13 +54,6 @@ namespace rendering
 		IBaseBuffer::~IBaseBuffer()
 		{
 			base::mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_setup.size);
-		}
-
-		void IBaseBuffer::computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const
-		{
-			auto& atom = outAtoms.emplaceBack();
-			atom.alignment = 256;
-			atom.size = m_setup.size;
 		}
 
 		//--

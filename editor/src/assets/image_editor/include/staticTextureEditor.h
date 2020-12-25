@@ -34,6 +34,7 @@ namespace ed
 
         //--
 
+        virtual bool save() override;
         virtual void bindResource(const res::ResourcePtr& resource) override;
 
     private:

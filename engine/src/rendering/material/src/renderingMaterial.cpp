@@ -51,12 +51,15 @@ namespace rendering
         {
             auto lock = base::CreateLock(m_runtimeDependenciesLock);
             m_runtimeDependencies.pushBackUnique(material);
+            TRACE_INFO("RegisterDependentMaterial at {}, child {}", this, material);
         }
     }
 
     void IMaterial::unregisterDependentMaterial(IMaterial* material)
     {
         auto lock = base::CreateLock(m_runtimeDependenciesLock);
+
+        TRACE_INFO("UnregisterDependentMaterial at {}, child {}", this, material);
 
         auto index = m_runtimeDependencies.find(material);
         if (index != INDEX_NONE)

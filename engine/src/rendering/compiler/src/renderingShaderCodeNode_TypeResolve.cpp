@@ -1058,6 +1058,11 @@ namespace rendering
 					node->m_op = OpCode::ParamRef;
 					node->m_extraData.m_paramRef = resolvedIdent.m_param;
 
+					if (resolvedIdent.m_param->scope == DataParameterScope::FunctionInput)
+					{
+						DEBUG_CHECK(resolvedIdent.m_param->assignable);
+					}
+
 					if (resolvedIdent.m_param->assignable)
 						node->m_dataType = resolvedIdent.m_param->dataType.makePointer();
 					else

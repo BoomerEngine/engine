@@ -116,7 +116,7 @@ namespace rendering
         if (index != INDEX_NONE)
             m_changingMaterialProxyListeners[index] = nullptr;
     }
-
+    
     void MaterialService::dispatchMaterialProxyChanges()
     {
         // get change list

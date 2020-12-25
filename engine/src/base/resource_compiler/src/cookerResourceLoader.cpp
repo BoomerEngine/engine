@@ -73,26 +73,29 @@ namespace base
             return m_depot.get();
         }
 
+        bool ResourceLoaderCooker::popNextReload(PendingReload& outReload)
+        {
+            auto lock = CreateLock(m_pendingReloadQueueLock);
+
+            if (m_pendingReloadQueue.empty())
+                return false;
+
+            outReload = m_pendingReloadQueue.top();
+            m_pendingReloadQueue.pop();
+            return true;
+        }
+
         void ResourceLoaderCooker::update()
         {
-            ASSERT_EX(Fibers::GetInstance().isMainThread(), "Reloading can only happen on main thread");
-            if (!Fibers::GetInstance().isMainThread())
-                return; // don't risk it even in release
+            DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Reloading can only happen on main thread");
 
             // check what files changed and add the resources that depend on those changed files to the reload queue
             checkChangedFiles();
 
-            // update reloading state
-            if (!m_resourceBeingReloaded)
-            {
-                startReloading();
-            }
-            else
-            {
-                ResourcePtr currentResource, newResource;
-                if (tryFinishReloading(currentResource, newResource))
-                    applyReloading(currentResource, newResource);
-            }
+            // apply reloads
+            PendingReload reload;
+            while (popNextReload(reload))
+                applyReload(reload.currentResource, reload.newResource);
         }
         
         //--
@@ -106,7 +109,7 @@ namespace base
             {
                 TRACE_INFO("Dependency tracker reported {} file(s) to reload", changedFiles.size());
 
-                // update reload queue
+                /*// update reload queue
                 {
                     auto lock = CreateLock(m_lock);
                     for (const auto& key : changedFiles)
@@ -140,272 +143,104 @@ namespace base
                         }
                         else
                         {
-                            TRACE_INFO("Resource '{}' not currently loaded, new version will be automaticall loaded on next resource load", key);
+                            TRACE_INFO("Resource '{}' not currently loaded, new version will be automatically loaded on next resource load", key);
                         }
                     }
-                }
+                }*/
             }
         }
 
-        ResourcePtr ResourceLoaderCooker::pickupNextResourceForReloading_NoLock()
+        void ResourceLoaderCooker::notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource)
         {
-            while (!m_pendingReloadQueue.empty())
+            DEBUG_CHECK_RETURN_EX(currentResource, "Invalid current resource");
+            DEBUG_CHECK_RETURN_EX(newResource, "Invalid target resource");
+
+            auto lock = CreateLock(m_pendingReloadQueueLock);
+
+            PendingReload info;
+            info.currentResource = currentResource;
+            info.newResource = newResource;
+            m_pendingReloadQueue.push(info);
+        }
+
+        void ResourceLoaderCooker::applyReload(ResourcePtr currentResource, ResourcePtr newResource)
+        {
+            DEBUG_CHECK_RETURN_EX(currentResource, "Invalid current resource");
+            DEBUG_CHECK_RETURN_EX(newResource, "Invalid target resource");
+
+            ScopeTimer timer;
+
+            TRACE_INFO("Applying reload to '{}'", currentResource->key());
+            currentResource->applyReload(newResource);
+
+            uint32_t numObjectsVisited = 0;
+            Array<ObjectPtr> affectedObjects;
+            ObjectGlobalRegistry::GetInstance().iterateAllObjects([&numObjectsVisited, &affectedObjects, &currentResource, &newResource](IObject* obj)
             {
-                // get the resource to reload
-                auto key = m_pendingReloadQueue.top();
+                    numObjectsVisited += 1;
 
-                // not in set
-                if (!m_pendingReloadSet.contains(key))
-                {
-                    TRACE_INFO("Resource '{}' is no longer scheduled for reloading", key);
-                    m_pendingReloadQueue.pop();
-                    continue;
-                }
+                    if (obj->onResourceReloading(currentResource, newResource))
+                        affectedObjects.pushBack(ObjectPtr(AddRef(obj)));
 
-                // get the current resource
-                ResourceHandle loadedResource;
-                {
-                    RefWeakPtr<IResource> loadedResourceWeak;
-                    m_loadedResources.find(key, loadedResourceWeak);
-                    loadedResource = loadedResourceWeak.lock();
-                }
+                    return false;
+            });
 
-                // resource is not loaded, reload may not needed
-                if (!loadedResource)
-                {
-                    RefWeakPtr<LoadingJob> loadingJobWeak;
-                    m_loadingJobs.find(key, loadingJobWeak);
-                    if (auto loadingJob = loadingJobWeak.lock())
-                    {
-                        // we are loading this resource, retry in future
-                        TRACE_INFO("Resource '{}' scheduled for reload is still loading", key);
-                        break;
-                    }
-                    else
-                    {
-                        // resource no longer loaded
-                        TRACE_INFO("Resource '{}' scheduled for reload is no longer loaded", key);
-                        m_pendingReloadSet.remove(key);
-                        m_pendingReloadQueue.pop();
-                        continue;
-                    }
-                }
+            for (const auto obj : affectedObjects)
+                obj->onResourceReloadFinished(currentResource, newResource);
 
-                // use this resource for reloading
-                return loadedResource;
-            }
+            IStaticResource::ApplyReload(currentResource, newResource);
 
-            // nothing to reload
-            return nullptr;
+            if (const auto depotPath = StringBuf(currentResource->key().path().view()))
+                DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);
+
+            TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->key(), timer, affectedObjects.size(), numObjectsVisited);
         }
 
-        void ResourceLoaderCooker::startReloading()
+        ResourceHandle ResourceLoaderCooker::loadResourceOnce(const ResourceKey& key)
         {
-            auto lock = CreateLock(m_lock);
+            SpecificClassType<IResource> cookedResourceClass;
 
-            // pick first resource from the reload queue
-            if (auto nextResourceToReload = pickupNextResourceForReloading_NoLock())
-            {
-                const auto key = nextResourceToReload->key();
-
-                // start reloading
-                DEBUG_CHECK(!m_resourceBeingReloaded);
-                DEBUG_CHECK(!m_reloadFinished);
-                m_resourceBeingReloadedKey = key;
-                m_resourceBeingReloaded = nextResourceToReload;
-                m_reloadedResource = nullptr;
-                m_reloadFinished = false;
-                m_pendingReloadSet.remove(key);
-                m_pendingReloadQueue.pop();
-
-                // start reloading
-                RunFiber("ResourceReload") << [this, key](FIBER_FUNC)
-                {
-                    processReloading(key);
-                };
-            }
-        }
-
-
-        void ResourceLoaderCooker::processReloading(ResourceKey key)
-        {
-            TRACE_INFO("Reloading of '{}' started", key);
-
-            // load the file
-            if (auto reloadedResource = loadInternal(key,false))
-            {
-                TRACE_INFO("Reloading of '{}' finished", key);
-
-                auto lock = CreateLock(m_reloadLock);
-                m_reloadedResource = reloadedResource;
-                m_reloadFinished = true;
-            }
-            else
-            {
-                TRACE_INFO("Reloading of '{}' failed", key);
-
-                auto lock = CreateLock(m_reloadLock);
-                m_reloadedResource = nullptr;
-                m_reloadFinished = true;
-            }
-        }
-
-        bool ResourceLoaderCooker::tryFinishReloading(ResourcePtr& outReloadedResource, ResourcePtr& outNewResource)
-        {
-            // finish reloading if it really did finish :)
-            auto lock = CreateLock(m_reloadLock);
-            if (m_reloadFinished)
-            {
-                outReloadedResource = m_resourceBeingReloaded;
-                outNewResource = m_reloadedResource;
-
-                if (m_reloadedResource)
-                {
-                    auto lock = CreateLock(m_lock);
-                    m_loadedResources[m_resourceBeingReloadedKey] = m_reloadedResource;
-                }
-
-                m_resourceBeingReloadedKey = ResourceKey();
-                m_reloadedResource.reset();
-                m_resourceBeingReloaded.reset();
-                m_reloadFinished = false;
-                return true;
-            }
-
-            // reloading still going
-            return false;
-        }
-
-        void ResourceLoaderCooker::applyReloading(ResourcePtr currentResource, ResourcePtr newResource)
-        {
-            if (currentResource && newResource)
-            {
-                ScopeTimer timer;
-
-                TRACE_INFO("Applying reload to '{}'", currentResource->key());
-                currentResource->applyReload(newResource);
-
-                uint32_t numObjectsVisited = 0;
-                Array<ObjectPtr> affectedObjects;
-                ObjectGlobalRegistry::GetInstance().iterateAllObjects([&numObjectsVisited, &affectedObjects, &currentResource, &newResource](IObject* obj)
-                {
-                        numObjectsVisited += 1;
-
-                        if (obj->onResourceReloading(currentResource, newResource))
-                            affectedObjects.pushBack(ObjectPtr(AddRef(obj)));
-
-                        return false;
-                });
-
-                for (const auto obj : affectedObjects)
-                    obj->onResourceReloadFinished(currentResource, newResource);
-
-                IStaticResource::ApplyReload(currentResource, newResource);
-
-                if (const auto depotPath = StringBuf(currentResource->key().path().view()))
-                    DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);
-
-                TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->key(), timer, affectedObjects.size(), numObjectsVisited);
-            }    
-        }
-
-        void ResourceLoaderCooker::updateEmptyFileDependencies(ResourceKey key, StringView depotPath)
-        {
-            InplaceArray<SourceDependency, 1> dependencies;
-
-            auto& dep = dependencies.emplaceBack();
-            dep.sourcePath = StringBuf(depotPath);
-
-            m_depTracker->notifyDependenciesChanged(key, dependencies);
-        }
-
-        void ResourceLoaderCooker::updateDirectFileDependencies(ResourceKey key, StringView depotPath)
-        {
-            io::TimeStamp fileTimeStamp;
-            if (m_depot->queryFileTimestamp(depotPath, fileTimeStamp))
-            {
-                InplaceArray<SourceDependency, 1> dependencies;
-
-                auto& dep = dependencies.emplaceBack();
-                dep.sourcePath = StringBuf(depotPath);
-                dep.timestamp = fileTimeStamp.value();
-
-                m_depTracker->notifyDependenciesChanged(key, dependencies);
-            }
-        }
-
-        ResourcePtr ResourceLoaderCooker::loadInternalDirectly(ClassType resClass, StringView filePath)
-        {
-            // load file content
-            if (auto file = m_depot->createFileAsyncReader(filePath))
-            {
-                ResourceMountPoint mountPoint;
-                m_depot->queryFileMountPoint(filePath, mountPoint);
-
-                FileLoadingContext context;
-                context.basePath = mountPoint.path();
-                context.resourceLoader = this;
-
-                if (LoadFile(file, context))
-                {
-                    if (const auto ret = context.root<IResource>())
-                        return ret;
-                }
-            }
-
-            return nullptr;
-        }
-
-        static ResourcePtr CreateValidStub(ClassType resClass)
-        {
-            TRACE_INFO("Creating stub for '{}'", resClass);
-
-            if (!resClass->isAbstract())
-                return resClass->create<IResource>();
-
-            // TODO: metadata
-
-            InplaceArray<ClassType, 10> resourceClasses;
-            RTTI::GetInstance().enumClasses(resClass, resourceClasses);
-            DEBUG_CHECK_EX(!resourceClasses.empty(), "Resource class with no actual implementation");
-
-            if (!resourceClasses.empty())
-                return resourceClasses[0]->create<IResource>();
-
-            return nullptr;
-        }
-
-        ResourcePtr ResourceLoaderCooker::loadInternal(ResourceKey key, bool normalLoading)
-        {
             // determine mount point of the resource
             ResourceMountPoint mountPoint;
             m_depot->queryFileMountPoint(key.path().view(), mountPoint);
 
-            // abstract class case
-            /*if (key.cls()->isAbstract())
-            {
-                const auto fileExtension = key.path().extension();
-                const auto resourceByExtension = IResource::FindResourceClassByExtension(fileExtension);
-                if (resourceByExtension)
-                    key = ResourceKey(key.path(), resourceByExtension);
-            }*/
-
-            // direct load 
+            // most common case is to directly load serialized data, check that first
             const auto fileLoadClass = IResource::FindResourceClassByExtension(key.extension());
             if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
-                const auto& depotPath = key.path();
-                if (const auto loadedRes = loadInternalDirectly(key.cls(), depotPath))
+                // load file content from serialized file
+                if (auto file = m_depot->createFileAsyncReader(key.path()))
                 {
-                    loadedRes->bindToLoader(this, key, mountPoint, false);
-                    updateDirectFileDependencies(key, depotPath);
-                    return loadedRes;
+                    FileLoadingContext context;
+                    context.basePath = mountPoint.path();
+                    context.resourceLoader = this;
+
+                    if (LoadFile(file, context))
+                    {
+                        if (const auto ret = context.root<IResource>())
+                        {
+                            ret->bindToLoader(this, key, mountPoint, false);
+                            
+                            io::TimeStamp fileTimeStamp;
+                            if (m_depot->queryFileTimestamp(key.path(), fileTimeStamp))
+                            {
+                                InplaceArray<SourceDependency, 1> dependencies;
+
+                                auto& dep = dependencies.emplaceBack();
+                                dep.sourcePath = StringBuf(key.path());
+                                dep.timestamp = fileTimeStamp.value();
+
+                                m_depTracker->notifyDependenciesChanged(key, dependencies);
+                            }
+
+                            return ret;
+                        }
+                    }
                 }
             }
 
-            // file can't be directly loaded, can we cook it ?
-            SpecificClassType<IResource> cookedResourceClass;
-            if (m_cooker->canCook(key, cookedResourceClass))
+            // we are not loading serialized data directly, we must have a ad-hoc cooker that can cook the resource from the source files
+            else if (m_cooker->canCook(key, cookedResourceClass))
             {
                 if (auto cookedFile = m_cooker->cook(key))
                 {
@@ -418,7 +253,7 @@ namespace base
                 }
             }
 
-            // create stub
+            /*// create stub
             if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
                 const auto& depotPath = key.path();
@@ -426,42 +261,33 @@ namespace base
                 stubRes->bindToLoader(this, key, mountPoint, true);
                 updateEmptyFileDependencies(key, depotPath);
                 return stubRes;
-            }
+            }*/
 
             // loading failed with no stub as there's no hope of recovery
             return nullptr;
         }
 
-        ResourceHandle ResourceLoaderCooker::loadResourceOnce(const ResourceKey& key)
-        {
-            // if we are loading the resource remove it from the queue
-            if (m_pendingReloadSet.remove(key))
-            {
-                TRACE_INFO("Resource '{}' was loaded again before reload queue was processed", key);
-            }
-
-            // load the resource
-            return loadInternal(key);
-        }
-
         bool ResourceLoaderCooker::validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const
         {
-            // resource did not generate a metadata file
-            if (!res->metadata() || res->metadata()->sourceDependencies.empty())
-                return true;
-
-            // check dependencies
-            for (const auto& dep : res->metadata()->sourceDependencies)
+            // check stored dependencies
+            if (res->metadata())
             {
-                io::TimeStamp fileTimeStamp;
-                m_depot->queryFileTimestamp(dep.sourcePath, fileTimeStamp);
-
-                if (fileTimeStamp.value() != dep.timestamp)
+                for (const auto& dep : res->metadata()->sourceDependencies)
                 {
-                    TRACE_WARNING("Dependency of file '{}' a file ({}) has changed. We will force resource to load a new version.", key, dep.sourcePath);
-                    return false;
+                    io::TimeStamp fileTimeStamp;
+                    m_depot->queryFileTimestamp(dep.sourcePath, fileTimeStamp);
+
+                    if (fileTimeStamp.value() != dep.timestamp)
+                    {
+                        TRACE_WARNING("Dependency of file '{}' a file ({}) has changed. We will force resource to load a new version.", key, dep.sourcePath);
+                        return false;
+                    }
                 }
             }
+
+            // check additional dependencies
+            if (!m_depTracker->checkUpToDate(key))
+                return false;
 
             // still valid
             return true;

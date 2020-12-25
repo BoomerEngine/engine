@@ -56,7 +56,7 @@ namespace rendering
 		class RENDERING_API_COMMON_API IBaseBuffer : public IBaseCopiableObject
 		{
 		public:
-			IBaseBuffer(IBaseThread* owner, const BufferCreationInfo& setup);
+			IBaseBuffer(IBaseThread* owner, const BufferCreationInfo& setup, const ISourceDataProvider* initData);
 			virtual ~IBaseBuffer();
 
 			static const auto STATIC_TYPE = ObjectType::Buffer;
@@ -76,12 +76,9 @@ namespace rendering
 
 			//--
 
-			// generate default atoms for buffer
-			virtual void computeStagingRequirements(base::Array<StagingAtom>& outAtoms) const override;
-
-			//--
-
 		protected:
+			SourceDataProviderPtr m_initData;
+
 			BufferCreationInfo m_setup;
 			PoolTag m_poolTag;
 		};

@@ -67,6 +67,14 @@ namespace rendering
 			case MaterialPass::Forward: outDefines["MAT_PASS_FORWARD"_id] = "1"; break;
 			case MaterialPass::ShadowDepth: outDefines["MAT_PASS_SHADOW_DEPTH"_id] = "1"; break;
 			case MaterialPass::MaterialDebug: outDefines["MAT_PASS_MATERIAL_DEBUG"_id] = "1"; break;
+
+            // HACKy
+            case MaterialPass::ForwardTransparent: 
+                outDefines["MAT_PASS_FORWARD"_id] = "1"; 
+                outDefines["MAT_PASS_FORWARD_TRANSPARENT"_id] = "1"; 
+                outDefines["MAT_TRANSPARENT"_id] = "1";
+                break;
+
 			default: ASSERT(!"Add define");
 		}
 

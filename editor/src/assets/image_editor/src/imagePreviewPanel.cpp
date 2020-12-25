@@ -577,8 +577,8 @@ namespace ed
         for (const auto& elem : m_mainImagePreviewElements)
             elem->configure(settings);
 
-        m_mipmapChoiceBox->visibility(settings.previewMode == 0);
-        m_sliceChoicebox->visibility(settings.previewMode == 0 && !settings.allSlices);
+        m_mipmapChoiceBox->visibility(true);
+        m_sliceChoicebox->visibility(!settings.allSlices);
         m_exposureControl->visibility(settings.colorSpace == rendering::ImageContentColorSpace::HDR);
         m_toneMapMode->visibility(settings.colorSpace == rendering::ImageContentColorSpace::HDR);
 

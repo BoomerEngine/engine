@@ -113,9 +113,9 @@ namespace base
             };
         } // prv
 
-        IStaticResource::IStaticResource(const char* path, bool preload)
+        IStaticResource::IStaticResource(const char* path, bool cache)
             : m_path(path)
-            , m_isPreloaded(preload)
+            , m_cached(cache)
             , m_next(nullptr)
             , m_prev(nullptr)
         {
@@ -149,6 +149,7 @@ namespace base
 
         ResourceHandle IStaticResource::loadAndGet()
         {
+            if (m_cached)
             {
                 auto lock = CreateLock(m_lock);
                 if (m_handle)
@@ -157,7 +158,7 @@ namespace base
 
             auto handle = prv::StaticResourceRegistry::GetInstance().load(resourceClass(), m_path);
 
-            if (handle)
+            if (handle && m_cached)
             {
                 auto lock = CreateLock(m_lock);
                 m_handle = handle;
