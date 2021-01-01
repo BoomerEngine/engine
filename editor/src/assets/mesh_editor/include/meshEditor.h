@@ -31,11 +31,8 @@ namespace ed
 
         INLINE MeshPreviewPanel* previewPanel() const { return m_previewPanel; }
 
-        INLINE rendering::MeshPtr mesh() const { return base::rtti_cast<rendering::Mesh>(resource()); }
-
         //--
 
-        virtual void bindResource(const res::ResourcePtr& resource) override;
         virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
 
     private:
@@ -49,6 +46,10 @@ namespace ed
 
         void createInterface();
         void updateMaterialHighlights();
+
+        virtual bool initialize() override;
+        
+        virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
     };
 
 } // ed

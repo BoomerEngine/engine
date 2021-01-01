@@ -38,7 +38,6 @@ namespace ed
 
         INLINE bool list() const { return m_list; } // display items in a flat list
         INLINE bool flat() const { return m_flat; } // flat view (flatten subdirectories)
-        INLINE bool locked() const { return m_locked; } // locked tab
 
         INLINE ManagedDepot* depot() const { return m_depot; }
 
@@ -48,9 +47,6 @@ namespace ed
         INLINE const StringBuf& filterName() const { return m_filterName; }
 
         //---
-
-        /// toggle the tab lock
-        void locked(bool isLocked);
 
         /// toggle the list flatten
         void flat(bool isFlattened);
@@ -90,13 +86,16 @@ namespace ed
         virtual void configLoad(const ui::ConfigBlock& block);
         virtual void configSave(const ui::ConfigBlock& block) const;
 
+        //--
+
+        void duplicateFile(ManagedFile* file);
+
     private:
         AssetBrowserContext m_context;
 
         ManagedDepot* m_depot = nullptr;
         ManagedDirectory* m_dir = nullptr;
 
-        bool m_locked = false;
         bool m_flat = false;
         bool m_list = false;
         uint32_t m_iconSize = 128;
@@ -111,8 +110,8 @@ namespace ed
         Array<ManagedDirectoryPlaceholderPtr> m_directoryPlaceholders;
         GlobalEventTable m_fileEvents;
 
-        void refreshFileList();
         void updateTitle();
+        void refreshFileList();
         void duplicateTab();
 
         bool showGenericContextMenu();
@@ -122,15 +121,15 @@ namespace ed
         void createNewFile(const ManagedFileFormat* format);
         bool importNewFile(const ManagedFileFormat* format);
 
+        void finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile);
+
         void finishFilePlaceholder(ManagedFilePlaceholderPtr ptr);
         void cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr);
         void finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
         void cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
 
         void buildNewAssetMenu(ui::MenuButtonContainer* menu);
-        void buildImportAssetMenu(ui::MenuButtonContainer* menu);
-
-        virtual void handleCloseRequest() override;        
+        void buildImportAssetMenu(ui::MenuButtonContainer* menu);        
     };
      
     //--

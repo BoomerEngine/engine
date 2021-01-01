@@ -180,7 +180,7 @@ namespace ui
         //---
 
         /// attach window to the system
-        void attachWindow(Window* window);
+        void attachWindow(Window* window, IElement* focusElement = nullptr);
 
         /// detach window from the system
         /// NOTE: window may be detached without being closed
@@ -262,7 +262,7 @@ namespace ui
         //--
 
         /// enter modal loop with given window, returns once the window is closed
-        void runModalLoop(Window* window);
+        void runModalLoop(Window* window, IElement* focusElement = nullptr);
 
         //--
 
@@ -278,6 +278,7 @@ namespace ui
         {
             WindowPtr window;
             NativeWindowID nativeId = (NativeWindowID)0;
+            ElementWeakPtr autoFocus;
             base::UniquePtr<HitCache> hitCache;
             bool closeAndRemove = false;
             bool resizable = false;

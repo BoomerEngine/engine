@@ -37,6 +37,9 @@ namespace base
             // get socket layout information
             INLINE const BlockSocketStyleInfo& info() const { return m_info; }
 
+            // is socket visible now ?
+            INLINE bool visible() const { return m_visible; }
+
             //--
             
             // do we have any connections ?
@@ -53,6 +56,10 @@ namespace base
 
             /// update socket information (placement, color, etc)
             void updateSocketInfo(const BlockSocketStyleInfo& info);
+
+            /// update socket visibility
+            /// NOTE: we don't allow sockets with no connections to go hidden
+            void updateVisibility(bool visible);
 
             //---
 
@@ -85,10 +92,12 @@ namespace base
             StringID  m_name;
             TConnections m_connections;
             BlockSocketStyleInfo m_info;
+            bool m_visible = true;
 
             //--
 
             void notifyConnectionsChanged();
+            void notifyLayoutChanged();
 
             //--
 

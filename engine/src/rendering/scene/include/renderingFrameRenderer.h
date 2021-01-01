@@ -50,6 +50,7 @@ namespace rendering
 
 		class FrameHelperDebug;
 		class FrameHelperCompose;
+        class FrameHelperOutline;
 
 		class FrameHelper : public base::NoCopy
 		{
@@ -59,6 +60,7 @@ namespace rendering
 
 			const FrameHelperDebug* debug = nullptr;
 			const FrameHelperCompose* compose = nullptr;
+            const FrameHelperOutline* outline = nullptr;
 		};
 
         ///---

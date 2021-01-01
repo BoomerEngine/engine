@@ -333,13 +333,6 @@ namespace ed
             fileName = fixedName;
         }
 
-        res::ResourceMountPoint mountPoint;
-        if (!depot()->depot().queryFileMountPoint(fileDepotPath, mountPoint))
-        {
-            TRACE_ERROR("Unable to create '{}' in '{}': no valid moutin point in depot", fileName, depotPath());
-            return nullptr;
-        }
-
         // file already exists, do not overwrite
         if (base::io::FileExists(TempString("{}{}", absolutePath(), fileName)))
         {
@@ -369,7 +362,6 @@ namespace ed
         // setup saving context
         res::FileSavingContext context;
         context.rootObject.pushBack(initialContent);
-        context.basePath = mountPoint.path();
 
         // save the file
         if (!res::SaveFile(writer, context))
@@ -484,6 +476,7 @@ namespace ed
         {
             auto newFile = CreateManagedFile(depot(), this, fileName);
             m_files.add(newFile);
+            managedFile = newFile;
         }
 
         // update file counts
@@ -492,6 +485,44 @@ namespace ed
         // report file event
         DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr(AddRef(managedFile)));
         return managedFile;
+    }
+
+
+    ManagedFile* ManagedDirectory::createFileCopy(StringView name, const ManagedFile* sourceFile)
+    {
+        DEBUG_CHECK_RETURN_EX_V(sourceFile, "No source data to load", nullptr);
+        DEBUG_CHECK_RETURN_EX_V(!sourceFile->isDeleted(), "Cannot duplicate deleted file", nullptr);
+
+        Buffer buffer;
+
+        {
+            // open source file
+            const auto reader = depot()->depot().createFileReader(sourceFile->depotPath());
+            if (!reader)
+            {
+                TRACE_ERROR("Unable to open file '{}'", sourceFile->depotPath());
+                return nullptr;
+            }
+
+            // allocate buffer
+            auto size = reader->size();
+            buffer = Buffer::Create(POOL_MANAGED_DEPOT, size);
+            if (!buffer)
+            {
+                TRACE_ERROR("Unable to load source content from '{}'", sourceFile->depotPath());
+                return nullptr;
+            }
+
+            // load content
+            if (size != reader->readSync(buffer.data(), size))
+            {
+                TRACE_ERROR("Unable to load source content from '{}', size {}", sourceFile->depotPath(), size);
+                return nullptr;
+            }
+        }
+
+        // store loaded content as new file
+        return createFile(name, buffer);
     }
 
     void ManagedDirectory::directoryNames(Array<StringBuf>& outDirectoryNames) const

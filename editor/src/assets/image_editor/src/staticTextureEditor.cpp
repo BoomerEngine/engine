@@ -238,24 +238,37 @@ namespace ed
         return rendering::ImageContentColorSpace::Linear;
     }
 
-    bool StaticTextureEditor::save()
+    bool StaticTextureEditor::initialize()
     {
-        if (!TBaseClass::save())
+        if (!TBaseClass::initialize())
             return false;
 
-        base::LoadResource<rendering::StaticTexture>(file()->depotPath());
-        return true;
-    }
-
-    void StaticTextureEditor::bindResource(const res::ResourcePtr& resource)
-    {
-        TBaseClass::bindResource(resource);
+        m_texture = rtti_cast<rendering::StaticTexture>(resource());
+        if (!m_texture)
+            return false;
 
         updateHistogram();
         updateImageInfoText();
 
         if (auto data = texture())
             m_previewPanel->bindImageView(data->view(), ConvertColorSpace(data->info().colorSpace));
+
+        return true;
+    }
+
+    void StaticTextureEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+    {
+        if (auto newTexture = rtti_cast<rendering::StaticTexture>(ptr))
+        {
+            m_texture = newTexture;
+
+            updateHistogram();
+            updateImageInfoText();
+
+            m_previewPanel->bindImageView(newTexture->view(), ConvertColorSpace(newTexture->info().colorSpace));
+
+            
+        }     
     }
 
     //---
@@ -273,14 +286,7 @@ namespace ed
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (auto loadedTexture = rtti_cast<rendering::StaticTexture>(nativeFile->loadContent()))
-                {
-                    auto ret = base::RefNew<StaticTextureEditor>(nativeFile);
-                    ret->bindResource(loadedTexture);
-                    return ret;
-                }
-            }
+                return base::RefNew<StaticTextureEditor>(nativeFile);
 
             return nullptr;
         }

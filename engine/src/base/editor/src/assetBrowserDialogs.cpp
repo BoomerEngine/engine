@@ -7,6 +7,8 @@
 ***/
 
 #include "build.h"
+#include "editorService.h"
+
 #include "managedFile.h"
 #include "managedDirectory.h"
 #include "managedItemCollection.h"
@@ -17,7 +19,9 @@
 
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiListView.h"
+#include "base/ui/include/uiSearchBar.h"
 #include "base/ui/include/uiButton.h"
+#include "base/ui/include/uiColumnHeaderBar.h"
 #include "base/io/include/ioSystem.h"
 
 namespace ed
@@ -42,11 +46,15 @@ namespace ed
         for (auto* file : files.files())
             fileList->addItem(file);
 
+        auto searchBar = window->createChild<ui::SearchBar>();
+
         auto listView = window->createChild<ui::ListView>();
         listView->columnCount(1);
         listView->model(fileList);
         listView->expand();
         listView->customInitialSize(500, 400);
+
+        searchBar->bindItemView(listView);
 
         auto buttons = window->createChild<ui::IElement>();
         buttons->layoutHorizontal();
@@ -301,7 +309,97 @@ namespace ed
             };
         }
 
-        window->runModal(owner);
+        window->runModal(owner, listView);
+    }
+
+    //--
+
+    ConfigProperty<base::Array<ui::SearchPattern>> cvFileListSearchFilter("Editor", "FileListSearchFilter", {});
+
+    void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile)
+    {
+        auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Opened files");
+        auto windowRef = window.get();
+
+        window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(); };
+        window->actions().bindShortcut("Cancel"_id, "Escape");
+
+        auto& depot = GetService<Editor>()->managedDepot();
+
+        auto fileList = RefNew<AssetPlainFilesSimpleListModel>();
+        for (const auto& editor : depot.openedEditorList())
+            if (auto* file = editor->file())
+                fileList->addFile(file, editor->tabLocked());
+
+        {
+            auto bar = window->createChild<ui::ColumnHeaderBar>();
+            bar->addColumn("", 30.0f, true, true, false);
+            bar->addColumn("", 30.0f, true, true, false);
+            bar->addColumn("Tags", 220.0f, false, false, true);
+            bar->addColumn("Name", 150.0f, false, true, true);
+            bar->addColumn("Directory", 600.0f, false, true, true);
+        }
+
+        auto searchBar = window->createChild<ui::SearchBar>();
+        searchBar->loadHistory(cvFileListSearchFilter.get());
+
+        auto listView = window->createChild<ui::ListView>();
+        listView->customPadding(10, 0, 10, 0);
+        listView->customInitialSize(700, 800);
+        listView->sort(0);
+        listView->expand();
+        listView->columnCount(5);
+        listView->model(fileList);
+
+        searchBar->bindItemView(listView);
+
+        listView->bind(ui::EVENT_ITEM_ACTIVATED) = [windowRef, listView, fileList]() {
+            if (auto item = listView->current())
+                if (auto file = fileList->file(item))
+                    if (file->open())
+                        windowRef->requestClose();
+        };
+        
+        if (focusFile)
+        {
+            if (auto item = fileList->index(focusFile))
+            {
+                listView->select(item);
+                listView->ensureVisible(item);
+            }
+        }
+
+        //--
+
+        auto buttons = window->createChild<ui::IElement>();
+        buttons->layoutHorizontal();
+        buttons->customPadding(5);
+        buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:cancel] Close all (discard)");
+            button->addStyleClass("red"_id);
+            button->bind(ui::EVENT_CLICKED) = [windowRef]() {
+                //windowRef->requestClose();
+            };
+        }
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:cancel] Close not modified");
+            button->bind(ui::EVENT_CLICKED) = [windowRef]() {
+                //windowRef->requestClose();
+            };
+        }
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Done");
+            button->bind(ui::EVENT_CLICKED) = [windowRef, searchBar]() {
+                searchBar->saveHistory(cvFileListSearchFilter.get());
+                windowRef->requestClose();
+            };
+        }
+
+        window->runModal(owner, searchBar);
     }
 
     //--

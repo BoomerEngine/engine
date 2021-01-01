@@ -48,8 +48,13 @@ namespace ui
         // add a simple tool button with direct action
         EventFunctionBinder createCallback(const ToolbarButtonSetup& setup);
 
+        // update caption on a button
+        void updateButtonCaption(base::StringID action, const ToolbarButtonSetup& setup);
+
     protected:
         Timer m_timerUpdateState;
+
+        base::HashMap<base::StringID, ButtonPtr> m_actionButtons;
 
         void updateButtonState();
 

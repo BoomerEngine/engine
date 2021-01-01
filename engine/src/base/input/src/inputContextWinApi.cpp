@@ -713,6 +713,13 @@ namespace base
                     break;
                 }
 
+                case WM_SYSCHAR:
+                {
+                    processed = true;
+                    return 0;
+                }
+
+                case WM_SYSKEYDOWN:
                 case WM_KEYDOWN:
                 {
                     if (!m_useRawInput)

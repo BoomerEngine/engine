@@ -13,7 +13,6 @@
 #include "gl4Buffer.h"
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
-#include "gl4DownloadArea.h"
 
 namespace rendering
 {
@@ -427,10 +426,8 @@ namespace rendering
 				}
 			}
 
-			void Image::downloadIntoArea(IBaseDownloadArea* baseArea, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
+			void Image::download(const DownloadArea* area, const ResourceCopyRange& range)
 			{
-				auto* area = static_cast<DownloadArea*>(baseArea);
-
 				// well, we will download empty data but still make sure texture is there
 				ensureCreated();
 
@@ -440,14 +437,13 @@ namespace rendering
 				// calculate params
 				const auto pixelSize = GetImageFormatInfo(setup().format).bitsPerPixel / 8;
 				const auto dataSize = range.image.sizeX * range.image.sizeY * range.image.sizeZ * pixelSize;
-				ASSERT(dataSize == sizeInArea);
 
 				// bind packing buffer
-				GL_PROTECT(glBindBuffer(GL_PIXEL_PACK_BUFFER, area->resolveBuffer()));
+				GL_PROTECT(glBindBuffer(GL_PIXEL_PACK_BUFFER, area->buffer()));
 				GL_PROTECT(glPixelStorei(GL_PACK_ALIGNMENT, 1));
 				GL_PROTECT(glPixelStorei(GL_PACK_ROW_LENGTH, range.image.sizeX));
 				GL_PROTECT(glPixelStorei(GL_PACK_IMAGE_HEIGHT, range.image.sizeY));
-				GL_PROTECT(glPixelStorei(GL_PACK_SKIP_PIXELS, offsetInArea / pixelSize));
+				GL_PROTECT(glPixelStorei(GL_PACK_SKIP_PIXELS, 0));
 
 				// download data
 				GLenum glBaseFormat = 0; // GL_RGBA

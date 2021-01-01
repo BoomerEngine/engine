@@ -438,7 +438,7 @@ namespace base
             }
 
             // generate path where we will store the compiled module
-            auto jitPath = GetJITModulePath(project->path());
+            auto jitPath = GetJITModulePath(project->path().str());
             TRACE_INFO("JIT: Scripts '{}' will be JITed into '{}'", project->path(), jitPath);
 
             // setup JIT compiler settings

@@ -2027,13 +2027,16 @@ namespace ui
             hitCache.enableHitTestCollection();
     }
 
-    ElementPtr IElement::queryTooltipElement(const Position& absolutePosition) const
+    ElementPtr IElement::queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const
     {
         if (auto tooltipStringPtr = evalStyleValueIfPresentPtr<base::StringBuf>("tooltip"_id))
         {
             auto tooltipText = *tooltipStringPtr;
             if (!tooltipText.empty())
+            {
+                outTooltipArea = cachedDrawArea();
                 return base::RefNew<TextLabel>(tooltipText);
+            }
         }
 
         return nullptr;

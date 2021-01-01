@@ -232,6 +232,7 @@ namespace rendering
 
 				// setup chunk
 				chunkTable->data = chunk.proxy;				
+				chunkTable->materialIndex = index;
 				chunkTable->lodMask = chunk.detailMask;
 				chunkTable->renderMask = chunk.renderMask;
 				chunkTable->material = sourceMaterial->dataProxy();

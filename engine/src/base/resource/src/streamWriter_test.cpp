@@ -378,7 +378,7 @@ TEST(StreamOpcodes, AsyncResourceRef)
     base::stream::OpcodeWriter writer(stream, references);
 
     res::AsyncRef<res::IResource> testRef;
-    testRef = base::res::ResourceKey("/test.txt", base::res::IResource::GetStaticClass());
+    testRef = base::res::ResourceKey(base::res::ResourcePath("/test.txt"), base::res::IResource::GetStaticClass());
 
     HelperWriteType(writer, testRef);
 
@@ -410,7 +410,7 @@ TEST(StreamOpcodes, SyncResourceRef)
     base::stream::OpcodeWriter writer(stream, references);
 
     res::Ref<res::IResource> testRef;
-    (*(res::BaseReference*) & testRef) = res::BaseReference(base::res::ResourceKey("/test.txt", base::res::IResource::GetStaticClass()));
+    (*(res::BaseReference*) & testRef) = res::BaseReference(base::res::ResourceKey(base::res::ResourcePath("/test.txt"), base::res::IResource::GetStaticClass()));
 
     HelperWriteType(writer, testRef);
 

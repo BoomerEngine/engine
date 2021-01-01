@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/resource/include/resourceMountPoint.h"
 #include "base/resource/include/resource.h"
 
 namespace base

@@ -47,7 +47,7 @@ namespace ui
     bool DockNotebook::tabHasCloseButton(IElement* tab)
     {
         if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
-            return dockPanel->hasCloseButton();
+            return dockPanel->tabHasCloseButton();
 
         return TBaseClass::tabHasCloseButton(tab);
     }
@@ -87,7 +87,7 @@ namespace ui
     base::StringBuf DockNotebook::tabTitle(IElement* tab)
     {
         if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
-            return dockPanel->title();
+            return dockPanel->compileTabTitleString();
 
         return TBaseClass::tabTitle(tab);
     }

@@ -62,7 +62,7 @@ namespace rendering
         crc << m_textureSearchPath.view();
         crc << m_depotSearchDepth;
         crc << m_sourceAssetsSearchDepth;
-        crc << m_templateDefault.key().view();
+        crc << m_templateDefault.key().path().view();
     }
 
     //--
@@ -161,7 +161,8 @@ namespace rendering
             if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, depotScanDepth))
             {
                 TRACE_INFO("Found '{}' at '{}'", assetPathToTexture, depotPath);
-                base::res::BaseReference textureRef(base::MakePath<StaticTexture>(depotPath));
+
+                base::res::BaseReference textureRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), StaticTexture::GetStaticClass()));
                 return textureRef.cast<StaticTexture>();
             }
         }
@@ -182,7 +183,7 @@ namespace rendering
                 importer.followupImport(foundTexturePath, depotPath);
 
                 // build a unloaded texture reference (so it can be saved)
-                base::res::BaseReference textureRef(base::MakePath<StaticTexture>(depotPath));
+                base::res::BaseReference textureRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), StaticTexture::GetStaticClass()));
                 return textureRef.cast<StaticTexture>();
             }
         }

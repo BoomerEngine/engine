@@ -121,6 +121,10 @@ namespace rendering
 					m_nextFPSCapture = base::NativeTimePoint::Now() + 1.0;
 					updateTitle_NoLock();
 				}
+
+				// update input context
+				if (m_inputContext)
+					m_inputContext->processState();
 			}
 		}
 
@@ -627,6 +631,9 @@ namespace rendering
 					TRACE_INFO("WM_SIZE: [{},{}]", LOWORD(lParam), HIWORD(lParam));
 					break;
 				}
+
+                case WM_SYSCHAR:
+                    return 0;
 
 				case WM_DPICHANGED:
 				{

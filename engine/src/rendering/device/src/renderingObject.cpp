@@ -94,19 +94,6 @@ namespace rendering
     SamplerObject::~SamplerObject()
     {}
 
-    //---
-
-	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDownloadAreaObject);
-	RTTI_END_TYPE();
-
-	IDownloadAreaObject::IDownloadAreaObject(ObjectID id, IDeviceObjectHandler* impl, uint32_t size)
-		: IDeviceObject(id, impl)
-		, m_size(size)
-	{}
-
-	IDownloadAreaObject::~IDownloadAreaObject()
-	{}
-
 	//---
 
 } // rendering

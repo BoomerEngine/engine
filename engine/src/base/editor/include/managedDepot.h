@@ -34,6 +34,10 @@ namespace ed
         /// get modified files
         INLINE const HashSet<ManagedFile*>& modifiedFiles() { return m_modifiedFiles; }
         INLINE const Array<ManagedFile*>& modifiedFilesList() { return m_modifiedFiles.keys(); }
+
+        /// get opened files
+        INLINE const HashSet<ResourceEditorPtr>& openedEditors() { return m_openedEditors; }
+        INLINE const Array<ResourceEditorPtr>& openedEditorList() { return m_openedEditors.keys(); }
         
         /// get bookmarked directories
         INLINE const HashSet<ManagedDirectory*>& bookmarkedDirectories() const { return m_bookmarkedDirectories; }
@@ -77,6 +81,9 @@ namespace ed
 
         // list of modified filed
         HashSet<ManagedFile*> m_modifiedFiles;
+
+        // list of file editors
+        HashSet<ResourceEditorPtr> m_openedEditors;
 
         // depot file loader
         depot::DepotStructure& m_depot;

@@ -215,6 +215,13 @@ namespace base
             markModified();
         }
 
+
+        void Block::handleSocketLayoutChanged()
+        {
+            if (auto container = graph())
+                container->notifyBlockLayoutChanged(this);
+        }
+
         //--
 
         bool Block::hasConnections() const

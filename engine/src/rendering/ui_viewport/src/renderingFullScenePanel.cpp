@@ -48,6 +48,23 @@ namespace ui
 
     //--
 
+    static base::StringView RenderModeString(rendering::scene::FrameRenderMode mode)
+    {
+        switch (mode)
+        {
+            case rendering::scene::FrameRenderMode::Default: return "[img:viewmode] Default";
+            case rendering::scene::FrameRenderMode::WireframeSolid: return "[img:cube] Solid Wireframe";
+            case rendering::scene::FrameRenderMode::WireframePassThrough: return "[img:wireframe] Wire Wireframe";
+            case rendering::scene::FrameRenderMode::DebugDepth: return "[img:order_front] Debug Depth";
+            case rendering::scene::FrameRenderMode::DebugLuminance: return "[img:lightbulb] Debug Luminance";
+            case rendering::scene::FrameRenderMode::DebugShadowMask: return "[img:shadow_on] Debug Shadowmask";
+            case rendering::scene::FrameRenderMode::DebugAmbientOcclusion: return "[img:shader] Debug Ambient Occlusion";
+            case rendering::scene::FrameRenderMode::DebugReconstructedViewNormals: return "[img:axis] Debug Normals";
+        }
+
+        return "";
+    }
+
     void RenderingFullScenePanel::createToolbarItems()
     {
         actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this](ui::Button* button)
@@ -71,7 +88,7 @@ namespace ui
         };
 
         toolbar()->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().caption("[img:eye] Filters"));
-        toolbar()->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption("[img:shader] Render mode"));
+        toolbar()->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(m_renderMode)));
         toolbar()->createSeparator();
     }
 
@@ -79,20 +96,33 @@ namespace ui
     {
         m_renderMode = mode;
         m_renderMaterialDebugChannelName = materialChannelName;
+
+        toolbar()->updateButtonCaption("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(m_renderMode)));
     }
+
+    static const rendering::scene::FrameRenderMode USER_SELECTABLE_RENDER_MODES[] = {
+        rendering::scene::FrameRenderMode::Default,
+        rendering::scene::FrameRenderMode::WireframeSolid,
+        rendering::scene::FrameRenderMode::WireframePassThrough,
+        rendering::scene::FrameRenderMode::DebugDepth,
+        rendering::scene::FrameRenderMode::DebugLuminance,
+        rendering::scene::FrameRenderMode::DebugShadowMask,
+        rendering::scene::FrameRenderMode::DebugReconstructedViewNormals,
+        rendering::scene::FrameRenderMode::DebugAmbientOcclusion,
+    };
 
     void RenderingFullScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
     {
-        // default modes
-        menu->createCallback("Default", "[img:viewmode]") = [this]() { configure(rendering::scene::FrameRenderMode::Default); };
-        menu->createCallback("Solid Wireframe", "[img:cube]") = [this]() { configure(rendering::scene::FrameRenderMode::WireframeSolid); };
-        menu->createCallback("Wire Wireframe", "[img:wireframe]") = [this]() { configure(rendering::scene::FrameRenderMode::WireframePassThrough); };
-        menu->createSeparator();
-        menu->createCallback("Debug depth", "[img:order_front]") = [this]() { configure(rendering::scene::FrameRenderMode::DebugDepth); };
-        menu->createCallback("Debug luminance", "[img:lightbulb]") = [this]() { configure(rendering::scene::FrameRenderMode::DebugLuminance); };
-        menu->createSeparator();
+        for (auto mode : USER_SELECTABLE_RENDER_MODES)
+        {
+            if (mode == rendering::scene::FrameRenderMode::DebugDepth)
+                menu->createSeparator();
 
-        // TODO: material debug
+            if (auto title = RenderModeString(mode))
+                menu->createCallback(RenderModeString(mode)) = [this, mode]() { configure(mode); };
+        }
+
+        menu->createSeparator();
     }
 
     void RenderingFullScenePanel::createFilterItem(base::StringView prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu)

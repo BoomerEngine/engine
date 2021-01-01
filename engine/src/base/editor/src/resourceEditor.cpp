@@ -21,8 +21,9 @@
 #include "base/ui/include/uiDockContainer.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiWindowPopup.h"
-#include "base/object/include/actionHistory.h"
 #include "base/ui/include/uiDockNotebook.h"
+#include "base/ui/include/uiElementConfig.h"
+#include "base/object/include/actionHistory.h"
 
 namespace ed
 {
@@ -46,17 +47,15 @@ namespace ed
         , m_file(file)
     {
         layoutVertical();
-        closeButton(true);
         createActions();
 
         // action history
         m_actionHistory = RefNew<ActionHistory>();
        
-        // set title
-        {
-            StringBuf baseTitle = TempString("[img:file_edit] {}", file->name());
-            title(baseTitle);
-        }
+        // set title and stuff for the tab
+        tabCloseButton(true);
+        tabIcon("file_edit");
+        tabTitle(file->name());
 
         // menu bar
         {
@@ -128,6 +127,16 @@ namespace ed
 
     ResourceEditor::~ResourceEditor()
     {}
+
+    void ResourceEditor::configLoad(const ui::ConfigBlock& block)
+    {
+        tabLocked(block.readOrDefault("TabLocked", false));        
+    }
+
+    void ResourceEditor::configSave(const ui::ConfigBlock& block) const
+    {
+        block.write("TabLocked", tabLocked());
+    }
 
     void ResourceEditor::createActions()
     {
@@ -236,7 +245,6 @@ namespace ed
 
     bool ResourceEditor::initialize()
     {
-        createAspects();
         return true;
     }
 
@@ -254,6 +262,12 @@ namespace ed
     }
 
     //--
+
+    void ResourceEditor::updateAspects()
+    {
+        for (auto& aspect : m_aspects)
+            aspect->update();
+    }
 
     void ResourceEditor::createAspects()
     {
@@ -303,6 +317,13 @@ namespace ed
             menu->createCallback("Close", "[img:cross]") = [this]() { m_file->close(); };
             menu->createSeparator();
 
+            // tab locking (prevents accidental close)
+            if (tabLocked())
+                menu->createCallback("Unlock", "[img:lock_open]") = [this]() { tabLocked(false); };
+            else
+                menu->createCallback("Lock", "[img:lock]") = [this]() { tabLocked(true); };
+            menu->createSeparator();
+
             // general file crap
             DepotMenuContext context;
             BuildDepotContextMenu(this, *menu, context, depotItems);
@@ -315,7 +336,7 @@ namespace ed
         return true;
     }
 
-    void ResourceEditor::handleCloseRequest()
+    void ResourceEditor::close()
     {
         m_file->close();
     }
@@ -422,11 +443,12 @@ namespace ed
         return true;
     }
 
-    void IResourceEditorAspect::close()
+    void IResourceEditorAspect::update()
     {
+
     }
 
-    void IResourceEditorAspect::resourceChanged()
+    void IResourceEditorAspect::close()
     {
     }
 

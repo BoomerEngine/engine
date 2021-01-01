@@ -8,9 +8,6 @@
 
 #pragma once
 
-#include "resourceMountPoint.h"
-#include "resourcePath.h"
-
 #include "base/object/include/rttiMetadata.h"
 
 namespace base

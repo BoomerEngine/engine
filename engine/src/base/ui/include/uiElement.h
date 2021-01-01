@@ -812,7 +812,7 @@ namespace ui
         //---
 
         /// query the tooltip element
-        virtual ElementPtr queryTooltipElement(const Position& absolutePosition) const;
+        virtual ElementPtr queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const;
 
         /// query the drag&drop data this element can produce
         /// NOTE: if this is not null than we will have a D&D action generated once we start dragging this time

@@ -58,7 +58,7 @@ namespace base
 
         //--
 
-        ImportQueue::ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, ImportSaverThread* saver, IImportQueueCallbacks* callbacks)
+        ImportQueue::ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, IImportOutput* saver, IImportQueueCallbacks* callbacks)
             : m_assets(assets)
             , m_loader(loader)
             , m_saver(saver)
@@ -159,7 +159,7 @@ namespace base
                 if (const auto currentMetadata = m_loader->loadExistingMetadata(job->info.depotFilePath))
                 {
                     const auto status = m_importer->checkStatus(job->info.depotFilePath, *currentMetadata, job->info.userConfig, progressTracker);
-                    if (status == ImportStatus::UpToDate)
+                    if (status == ImportStatus::UpToDate && !job->info.forceImport)
                     {
                         m_callbacks->queueJobFinished(job->info.depotFilePath, ImportStatus::UpToDate, timer.timeElapsed());
 
@@ -210,14 +210,17 @@ namespace base
             // follow up with resources that were imported last time
             if (importedResource && importedResource->metadata())
             {
-                for (const auto& followup : importedResource->metadata()->importFollowups)
+                if (job->info.followImports) // only follow if job wants it
                 {
-                    ImportJobInfo jobInfo;
-                    jobInfo.depotFilePath = followup.depotPath;
-                    jobInfo.assetFilePath = followup.sourceImportPath;
-                    jobInfo.externalConfig = followup.configuration;
-                    jobInfo.userConfig = nullptr; // no specific user configuration, will use the resource's one
-                    scheduleJob(jobInfo);
+                    for (const auto& followup : importedResource->metadata()->importFollowups)
+                    {
+                        ImportJobInfo jobInfo;
+                        jobInfo.depotFilePath = followup.depotPath;
+                        jobInfo.assetFilePath = followup.sourceImportPath;
+                        jobInfo.externalConfig = followup.configuration;
+                        jobInfo.userConfig = nullptr; // no specific user configuration, will use the resource's one
+                        scheduleJob(jobInfo);
+                    }
                 }
             }
 

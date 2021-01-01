@@ -310,45 +310,7 @@ namespace rendering
 
 	IDownloadDataSink::~IDownloadDataSink()
 	{}
-
-	//--
-
-	DownloadDataSinkBuffer::DownloadDataSinkBuffer()
-		: m_version(0)
-	{}
-
-	const uint8_t* DownloadDataSinkBuffer::retrieve(uint32_t& outSize, DownloadAreaObjectPtr& outArea) const
-	{
-		auto lock = base::CreateLock(m_lock);
-		if (m_area)
-		{
-			outSize = m_dataSize;
-			outArea = m_area;
-			return m_dataPtr;
-		}
-
-		return nullptr;
-	}
-
-	void DownloadDataSinkBuffer::processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info)
-	{
-		DownloadAreaObjectPtr oldArea;
-
-		{
-			auto lock = base::CreateLock(m_lock);
-			oldArea = std::move(m_area);
-
-			if (area)
-			{
-				m_area = AddRef(area);
-				m_dataPtr = (const uint8_t*) dataPtr;
-				m_dataSize = dataSize;
-			}
-		}
-
-		++m_version;
-	}
-
+	
 	//--
 
 } // rendering

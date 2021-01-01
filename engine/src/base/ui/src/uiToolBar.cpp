@@ -69,6 +69,23 @@ namespace ui
 
             but->bind(EVENT_CLICKED, this) = action;
             but->customStyle("action"_id, action);
+
+            m_actionButtons[action] = but;
+        }
+    }
+
+    void ToolBar::updateButtonCaption(base::StringID action, const ToolbarButtonSetup& setup)
+    {
+        ButtonPtr button;
+        m_actionButtons.find(action, button);
+
+        if (button)
+        {
+            if (const auto caption = base::rtti_cast<ui::TextLabel>(*button->childrenList()))
+            {
+                const auto captionString = RenderToolbarCaption(setup);
+                caption->text(captionString);
+            }
         }
     }
 

@@ -26,7 +26,7 @@
 #include "base/ui/include/uiDragDrop.h"
 #include "base/ui/include/uiCheckBox.h"
 
-#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceKey.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/object/include/dataViewNative.h"
 #include "base/object/include/rttiDataView.h"
@@ -57,7 +57,7 @@ namespace ed
         {
             if (auto materialTemplate = m_data->resolveTemplate())
             {
-                if (const auto fileName = materialTemplate->key().fileStem())
+                if (const auto fileName = materialTemplate->path().fileStem())
                 {
                     txt.appendf(" [tag:#888]{}[/tag]", fileName);
                 }

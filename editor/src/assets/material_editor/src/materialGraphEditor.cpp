@@ -46,6 +46,11 @@ namespace ed
     MaterialGraphEditor::~MaterialGraphEditor()
     {}
 
+    void MaterialGraphEditor::handleContentModified()
+    {
+        updatePreviewMaterial();
+    }
+
     void MaterialGraphEditor::handleGeneralCopy()
     {
         m_graphEditor->actionCopySelection();
@@ -135,19 +140,6 @@ namespace ed
         }        
     }
 
-    bool MaterialGraphEditor::save()
-    {
-        if (!TBaseClass::save())
-            return false;
-
-        m_previewTemplate = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()).acquire();
-
-        if (m_previewTemplate)
-            m_previewInstance->baseMaterial(m_previewTemplate);
-
-        return true;
-    }
-
     bool MaterialGraphEditor::initialize()
     {
         if (!TBaseClass::initialize())
@@ -157,18 +149,36 @@ namespace ed
         if (!m_graph)
             return false;
 
-        m_graph->resetModifiedFlag();
         m_graphEditor->bindGraph(m_graph);
         m_graphPalette->setRootClasses(m_graph->graph());
 
-        m_previewInstance = base::RefNew<rendering::MaterialInstance>();
-        m_previewTemplate = base::LoadResource<rendering::MaterialTemplate>(file()->depotPath()).acquire();
+        m_previewMaterial = base::RefNew<rendering::MaterialInstance>();
+        m_previewPanel->bindMaterial(m_previewMaterial);
 
-        if (m_previewTemplate)
-            m_previewInstance->baseMaterial(m_previewTemplate);
+        updatePreviewMaterial();
 
-        m_previewPanel->bindMaterial(m_previewInstance);
         return true;
+    }
+
+    bool MaterialGraphEditor::save()
+    {
+        if (!TBaseClass::save())
+            return false;
+
+        // load just saved material graph as a material template to force a reload
+        //const auto templateKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), rendering::MaterialTemplate::GetStaticClass());
+        const auto templateKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), rendering::IMaterial::GetStaticClass());
+        LoadResource(templateKey);
+
+        return true;
+    }
+
+    //--
+
+    void MaterialGraphEditor::updatePreviewMaterial()
+    {
+        auto previewTemplate = m_graph->createPreviewTemplate(TempString("{}.preview", nativeFile()->depotPath()));
+        m_previewMaterial->baseMaterial(previewTemplate);
     }
 
     void MaterialGraphEditor::handleChangedSelection()
@@ -182,7 +192,7 @@ namespace ed
         else
         {
             // if nothing is selected edit the graph itself
-            m_properties->bindData(m_previewInstance->createDataView());
+            m_properties->bindData(m_previewMaterial->createDataView());
         }
     }
 
@@ -202,14 +212,7 @@ namespace ed
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (auto loadedGraph = base::rtti_cast<rendering::MaterialGraph>(nativeFile->loadContent()))
-                {
-                    auto ret = base::RefNew<MaterialGraphEditor>(nativeFile);
-                    ret->bindResource(loadedGraph);
-                    return ret;
-                }
-            }
+                return base::RefNew<MaterialGraphEditor>(nativeFile);
 
             return nullptr;
         }

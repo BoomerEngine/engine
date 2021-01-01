@@ -159,12 +159,6 @@ namespace ed
         }
     }
 
-    void ScenePrefabEditor::bindResource(const res::ResourcePtr& resource)
-    {
-        TBaseClass::bindResource(resource);
-        recreateContent();
-    }
-
     void ScenePrefabEditor::refreshEditMode()
     {
         m_inspectorPanel->removeAllChildren();
@@ -287,14 +281,7 @@ namespace ed
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (auto mesh = base::rtti_cast<base::world::Prefab>(nativeFile->loadContent()))
-                {
-                    auto ret = base::RefNew<ScenePrefabEditor>(nativeFile);
-                    ret->bindResource(mesh);
-                    return ret;
-                }
-            }
+                return base::RefNew<ScenePrefabEditor>(nativeFile);
 
             return nullptr;
         }

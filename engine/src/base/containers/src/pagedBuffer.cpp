@@ -105,7 +105,7 @@ namespace base
         {
             m_writePtr = retEnd;
 			m_numBytes += memorySize;
-			outNumAllocated = memorySize; // all elements allocated
+			outNumAllocated = memorySize / elementSize; // all elements allocated
 			return ret;
         }
 
@@ -116,9 +116,9 @@ namespace base
 			auto maxElmentsInThisPage = bytesLeftOnPage / elementSize;
 			if (maxElmentsInThisPage > 0)
 			{
-				outNumAllocated = maxElmentsInThisPage * elementSize;
-				m_writePtr = m_writeEndPtr;
-				m_numBytes += outNumAllocated;
+				outNumAllocated = maxElmentsInThisPage;
+				m_writePtr += maxElmentsInThisPage * elementSize;
+				m_numBytes += maxElmentsInThisPage * elementSize;
 				return ret;
 			}
         }

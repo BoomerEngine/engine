@@ -25,6 +25,7 @@
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingImage.h"
 #include "renderingFrameView.h"
+#include "renderingFrameHelper_Outline.h"
 
 namespace rendering
 {
@@ -62,12 +63,14 @@ namespace rendering
 		{
 			debug = new FrameHelperDebug(dev);
 			compose = new FrameHelperCompose(dev);
+            outline = new FrameHelperOutline(dev);
 		}
 
 		FrameHelper::~FrameHelper()
 		{
 			delete debug;
 			delete compose;
+            delete outline;
 		}
 
         //--

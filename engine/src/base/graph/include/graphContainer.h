@@ -121,11 +121,13 @@ namespace base
             TBlocks m_blocks;
 
             // persistent data - filled in only when saving
-            mutable base::Array<PersistentConnection> m_persistentConnections;
+            base::Array<PersistentConnection> m_persistentConnections;
             //mutable base::Array<PersistentBlockState> m_persistentBlockState;
 
-            void capturePersistentData() const;
-            void applyPersistentData();
+            void applyConnections(const base::Array<PersistentConnection>& con);
+            void writePersistentConnections(stream::OpcodeWriter& writer) const;
+            void readPersistentConnections(stream::OpcodeReader& reader);
+
 
             //--
 
@@ -140,8 +142,10 @@ namespace base
             void notifyBlockConnectionsChanged(Block* block);
 
         protected:
-            virtual void onPreSave() const override;
             virtual void onPostLoad() override;
+
+            virtual void onReadBinary(stream::OpcodeReader& reader) override;
+            virtual void onWriteBinary(stream::OpcodeWriter& writer) const override;
 
             friend class Block;
             friend class Socket;

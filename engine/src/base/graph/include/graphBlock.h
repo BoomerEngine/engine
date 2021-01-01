@@ -161,6 +161,9 @@ namespace base
             /// called when block connections changed, allows internal cache to be updated
             virtual void handleConnectionsChanged();
 
+            /// called when existing sockets are hidden/shown
+            virtual void handleSocketLayoutChanged();
+
             /// rebuild block layout, posts OnLayoutChanged
             void rebuildLayout(bool postEvent=true);
 

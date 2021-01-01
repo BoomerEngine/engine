@@ -125,6 +125,11 @@ namespace rendering
             outStr.append("   CullMode = Back,\n");
         }
 
+        if (renderStates.fillLines)
+        {
+            outStr.append("   FillMode = Line,\n");
+        }
+
         if (renderStates.alphaBlend)
         {
             outStr.append("   BlendingEnabled = true,\n");

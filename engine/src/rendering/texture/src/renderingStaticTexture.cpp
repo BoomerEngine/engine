@@ -157,7 +157,7 @@ namespace rendering
                     info.allowShaderReads = true;
                     info.label = base::StringBuf(base::TempString("{}", path()));
 
-					auto data = base::RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path(), m_info.format, info.numMips);
+					auto data = base::RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path().str(), m_info.format, info.numMips);
 					if (m_object = device->createImage(info, data))
 						m_mainView = m_object->createSampledView();
                 }

@@ -226,8 +226,6 @@ namespace ui
 
         base::RefWeakPtr<ui::IInputAction> m_renderInputAction;
 
-		rendering::DownloadAreaObjectPtr m_downloadArea;
-
         ToolBarPtr m_toolbar;
         ToolBarPtr m_bottomToolbar;
     };

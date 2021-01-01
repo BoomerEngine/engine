@@ -69,9 +69,9 @@ namespace wavefront
     {
         TBaseClass::computeConfigurationKey(crc);
 
-        crc << m_templateUnlit.key().view();
-        crc << m_templateMasked.key().view();
-        crc << m_templateEmissive.key().view();
+        crc << m_templateUnlit.key().path().view();
+        crc << m_templateMasked.key().path().view();
+        crc << m_templateEmissive.key().path().view();
         crc << m_materialName.view();
         crc << m_bindingColor.view();
         crc << m_bindingMapColor.view();
@@ -155,7 +155,7 @@ namespace wavefront
                             }
                             else
                             {
-                                TRACE_WARNING("Unable to bind texture to parameter '{}' from template '{}' as its not a texture parameter", paramName, knownTemplate->key());
+                                TRACE_WARNING("Unable to bind texture to parameter '{}' from template '{}' as its not a texture parameter", paramName, knownTemplate->path());
                             }
                         }
                     }

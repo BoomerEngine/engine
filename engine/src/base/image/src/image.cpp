@@ -181,38 +181,6 @@ namespace base
             m_invDepth = 1.0f / m_depth;
         }
 
-        /*void Image::applyReload(const IResource& reloadedData)
-        {
-            auto& src = (Image&)reloadedData;
-
-            freePixels();
-
-            m_pixels = std::move(src.m_pixels);
-            m_format = src.m_format;
-            m_channels = src.m_channels;
-            m_width = src.m_width;
-            m_height = src.m_height;
-            m_depth = src.m_depth;
-            m_pixelPitch = src.m_pixelPitch;
-            m_rowPitch = src.m_rowPitch;
-            m_slicePitch = src.m_slicePitch;
-            m_invWidth = 1.0f / m_width;
-            m_invHeight = 1.0f / m_height;
-            m_invDepth = 1.0f / m_depth;
-
-            src.m_channels = 0;
-            src.m_width = 0;
-            src.m_height = 0;
-            src.m_depth = 0;
-            src.m_pixelPitch = 0;
-            src.m_rowPitch = 0;
-            src.m_slicePitch = 0;
-
-            invalidateRuntimeVersion();
-
-            TBaseClass::applyReload(reloadedData);
-        }*/
-
         //--
 
     } // base

@@ -21,11 +21,10 @@ namespace base
 
         //--
 
-        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, const ResourceMountPoint& depotMountPoint, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
+        LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
             : m_originalData(originalData)
             , m_importPath(importPath)
             , m_depotPath(depotPath)
-            , m_depotMountPoint(depotMountPoint)
             , m_externalProgressTracker(externalProgressTracker)
             , m_assetRepository(assetRepository)
             , m_configuration(configuration)
@@ -45,11 +44,6 @@ namespace base
         const StringBuf& LocalImporterInterface::queryResourcePath() const
         {
             return m_depotPath;
-        }
-
-        const ResourceMountPoint& LocalImporterInterface::queryResourceMountPoint() const
-        {
-            return m_depotMountPoint;
         }
 
         const StringBuf& LocalImporterInterface::queryImportPath() const
@@ -142,6 +136,11 @@ namespace base
                 return false;
 
             return m_depotChecker->depotFindFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath);
+        }
+
+        bool LocalImporterInterface::checkDepotFile(StringView depotPath) const
+        {
+            return m_depotChecker->depotFileExists(depotPath);
         }
 
         //--

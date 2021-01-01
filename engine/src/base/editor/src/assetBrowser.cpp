@@ -272,7 +272,7 @@ namespace ed
         // get the active tab and if it's not locked use it
         for (auto* tab : activeTabs)
         {
-            if (tab && !tab->locked())
+            if (tab && !tab->tabLocked())
             {
                 tab->directory(dir);
                 outTab = RefPtr<AssetBrowserTabFiles>(AddRef(tab));
@@ -283,7 +283,7 @@ namespace ed
         // get any non locked tab and change directory to new one
         for (auto* tab : fileTabs)
         {
-            if (!tab->locked())
+            if (!tab->tabLocked())
             {
                 tab->directory(dir);
                 m_dockContainer->activatePanel(tab);

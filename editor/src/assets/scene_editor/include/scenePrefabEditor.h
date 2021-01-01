@@ -32,7 +32,6 @@ namespace ed
         virtual bool initialize() override;
         virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
         virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
-        virtual void bindResource(const res::ResourcePtr& resource) override;
         virtual bool checkGeneralSave() const override;
         virtual void update() override;
         virtual bool save() override;

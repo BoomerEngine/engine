@@ -9,6 +9,7 @@
 #include "build.h"
 #include "uiDockPanel.h"
 #include "uiDockNotebook.h"
+#include "uiMessageBox.h"
 
 namespace ui
 {
@@ -31,7 +32,29 @@ namespace ui
     {
     }
 
-    void DockPanel::title(const base::StringBuf& titleString)
+    void DockPanel::tabLocked(bool flag)
+    {
+        if (m_locked != flag)
+        {
+            m_locked = flag;
+
+            if (auto notebook = findParent<DockNotebook>())
+                notebook->updateHeaderButtons();
+        }
+    }
+
+    void DockPanel::tabModified(bool flag)
+    {
+        if (m_modified != flag)
+        {
+            m_modified = flag;
+
+            if (auto notebook = findParent<DockNotebook>())
+                notebook->updateHeaderButtons();
+        }
+    }
+
+    void DockPanel::tabTitle(const base::StringBuf& titleString)
     {
         if (m_title != titleString)
         {
@@ -42,7 +65,19 @@ namespace ui
         }
     }
 
-    void DockPanel::closeButton(bool flag)
+    void DockPanel::tabIcon(const base::StringBuf& icon)
+    {
+        if (m_icon != icon)
+        {
+            m_icon = icon;
+
+            if (auto notebook = findParent<DockNotebook>())
+                notebook->updateHeaderButtons();
+        }
+    }
+
+
+    void DockPanel::tabCloseButton(bool flag)
     {
         if (m_hasCloseButton != flag)
         {
@@ -61,19 +96,37 @@ namespace ui
 
     void DockPanel::handleCloseRequest()
     {
+        if (m_locked)
+        {
+            ui::MessageBoxSetup setup;
+            setup.title("Close locked tab").yes().no().defaultNo().question();
+
+            base::StringBuilder txt;
+            txt.appendf("Tab '{}' is locked, close anyway?", m_title);
+            setup.message(txt.view());
+
+            if (ui::MessageButton::Yes != ui::ShowMessageBox(this, setup))
+                return;
+        }
+
         close();
     }
 
-    bool DockPanel::handleTemplateProperty(base::StringView name, base::StringView value)
+    base::StringBuf DockPanel::compileTabTitleString() const
     {
-        if (name == "title")
-        {
-            m_title = base::StringBuf(value);
-            m_id = m_title;
-            return true;
-        }
+        base::StringBuilder txt;
 
-        return TBaseClass::handleTemplateProperty(name, value);
+        if (m_locked)
+            txt << "[img:lock] ";
+        else if (m_icon)
+            txt.appendf("[img:{}] ", m_icon);
+
+        txt << m_title;
+
+        if (m_modified)
+            txt << "*";
+
+        return txt.toString();
     }
 
     //---

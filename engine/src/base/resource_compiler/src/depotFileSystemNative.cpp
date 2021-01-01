@@ -15,7 +15,7 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/containers/include/utf8StringFunctions.h"
-#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceKey.h"
 
 namespace base
 {

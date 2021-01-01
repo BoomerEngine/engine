@@ -81,9 +81,10 @@ namespace rendering
         struct RENDERING_SCENE_API FrameParams_Capture
         {
             FrameCaptureMode mode; // capture mode
-            base::Rect area; // area to capture, can be used with both the image and buffer capture
-            DownloadDataSinkPtr sink; // output sink for data download
+            base::Rect region; // area to capture, can be used with both the image and buffer capture
 
+            DownloadDataSinkPtr sink; // output sink for data download
+            
             FrameParams_Capture(); // assigns global (config) defaults
         };
 
@@ -272,7 +273,6 @@ namespace rendering
             DebugDepth, // visualize frame depth
             DebugLuminance, // visualize frame luminance
             DebugShadowMask, // visualize shadow mask buffer
-            DebugLinearizedDepth, // visualize linearized depth
             DebugReconstructedViewNormals, // visualize the reconstructed view-space normals
             DebugAmbientOcclusion, // visualize AO buffer
             DebugMaterial, // debug material channel - outputs specific material output instead of calculating whole material

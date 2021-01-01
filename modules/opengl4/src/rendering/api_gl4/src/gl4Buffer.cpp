@@ -10,7 +10,7 @@
 #include "gl4Thread.h"
 #include "gl4Buffer.h"
 #include "gl4Utils.h"
-#include "gl4DownloadArea.h"
+#include "gl4ObjectCache.h"
 
 #include "rendering/device/include/renderingDeviceApi.h"
 
@@ -167,16 +167,13 @@ namespace rendering
 				GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
 			}
 
-			void Buffer::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
+            void Buffer::download(const DownloadArea* area, const ResourceCopyRange& range)
 			{
 				ensureCreated();
 
-				auto glTargetBuffer = static_cast<DownloadArea*>(area)->resolveBuffer();
+				ASSERT(range.buffer.size <= area->size());
 
-				ASSERT(offsetInArea + sizeInArea <= area->size());
-				ASSERT(range.buffer.size == sizeInArea);
-
-				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, glTargetBuffer, range.buffer.offset, 0, range.buffer.size));
+				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, area->buffer(), range.buffer.offset, 0, range.buffer.size));
 			}
 
 			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)

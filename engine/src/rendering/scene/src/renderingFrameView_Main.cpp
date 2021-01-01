@@ -20,6 +20,7 @@
 
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingImage.h"
+#include "renderingFrameHelper_Outline.h"
 
 namespace rendering
 {
@@ -203,12 +204,14 @@ namespace rendering
                 fb.depth.view(m_frame.resources().sceneOutlineDepthRTV).clearDepth(1.0f).clearStencil(0);
 
                 cmd.opBeingPass(fb, 1, m_viewport);
-
                 
                 rec.selectionOutline.attachBuffer(cmd.opCreateChildCommandBuffer());
 
                 cmd.opEndPass();
             }
+
+            // make selection depth readable
+            cmd.opTransitionLayout(m_frame.resources().sceneOutlineDepth, ResourceLayout::DepthWrite, ResourceLayout::ShaderResource);
 
             // overlay
             {
@@ -239,11 +242,11 @@ namespace rendering
 
             // resolve depth
             {
-                //cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::DepthWrite, ResourceLayout::ResolveSource);
-                //cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ShaderResource, ResourceLayout::ResolveDest);
-                //cmd.opResolve(m_frame.resources().sceneFullDepth, m_frame.resources().sceneResolvedDepth);
-                //cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::ResolveSource, ResourceLayout::DepthWrite);
-                //cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
+                cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::DepthWrite, ResourceLayout::ResolveSource);
+                cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ShaderResource, ResourceLayout::ResolveDest);
+                cmd.opResolve(m_frame.resources().sceneFullDepth, m_frame.resources().sceneResolvedDepth);
+                cmd.opTransitionLayout(m_frame.resources().sceneFullDepth, ResourceLayout::ResolveSource, ResourceLayout::DepthRead);
+                cmd.opTransitionLayout(m_frame.resources().sceneResolvedDepth, ResourceLayout::ResolveDest, ResourceLayout::ShaderResource);
             }
 
             // screen pass
@@ -266,6 +269,21 @@ namespace rendering
                     setup.presentRect = m_setup.viewport;
                     setup.gamma = 1.0f / 2.2f;
                     m_frame.helpers().compose->finalCompose(cmd, setup);
+                }
+
+                // selection outline
+                {
+                    FrameHelperOutline::Setup setup;
+                    setup.presentRect = m_setup.viewport;
+                    setup.innerOpacity = m_frame.frame().selectionOutline.centerOpacity;
+                    setup.width = m_frame.frame().selectionOutline.outlineWidth;
+                    setup.primaryColor = m_frame.frame().selectionOutline.colorFront;
+                    setup.backgroundColor = m_frame.frame().selectionOutline.colorBack;
+                    setup.outlineDepth = m_frame.resources().sceneOutlineDepthSRV;
+                    setup.sceneDepth = m_frame.resources().sceneResolvedDepthSRV;
+                    setup.sceneWidth = m_frame.width();
+                    setup.sceneHeight = m_frame.height();
+                    m_frame.helpers().outline->drawOutlineEffect(cmd, setup);
                 }
 
                 // screen overlay

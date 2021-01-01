@@ -357,7 +357,7 @@ namespace ui
 
     //--
 
-    int Window::runModal(IElement* owner)
+    int Window::runModal(IElement* owner, IElement* windowFocus)
     {
         DEBUG_CHECK_RETURN_V(owner && owner->renderer(), 0);
 
@@ -368,7 +368,7 @@ namespace ui
         m_modalOwner = parentWindow;
         m_parentModalWindowHandle = owner->renderer()->queryWindowNativeHandle(parentWindow);
 
-        owner->renderer()->runModalLoop(this);
+        owner->renderer()->runModalLoop(this, windowFocus);
         return m_exitCode;
     }
 

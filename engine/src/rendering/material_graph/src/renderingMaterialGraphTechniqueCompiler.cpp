@@ -61,7 +61,8 @@ namespace rendering
 		switch (setup.pass)
 		{
 			case MaterialPass::DepthPrepass: outDefines["MAT_PASS_DEPTH_PREPASS"_id] = "1"; break;
-			case MaterialPass::Wireframe: outDefines["MAT_PASS_WIREFRAME"_id] = "1"; break;
+			case MaterialPass::WireframeSolid: outDefines["MAT_PASS_WIREFRAME"_id] = "1"; break;
+            case MaterialPass::WireframePassThrough: outDefines["MAT_PASS_WIREFRAME"_id] = "1"; break;
 			case MaterialPass::ConstantColor: outDefines["MAT_PASS_CONST_COLOR"_id] = "1"; break;
 			case MaterialPass::SelectionFragments: outDefines["MAT_PASS_SELECTION"_id] = "1"; break;
 			case MaterialPass::Forward: outDefines["MAT_PASS_FORWARD"_id] = "1"; break;

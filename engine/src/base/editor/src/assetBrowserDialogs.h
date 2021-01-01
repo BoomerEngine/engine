@@ -22,6 +22,9 @@ namespace ed
     /// show a modal window to save files, returns false if user pressed "cancel" otherwise returns true
     extern bool SaveDepotFiles(ui::IElement* owner, const ManagedFileCollection& files);
 
+    /// show a list of opened files, alows to switch to editor, close windows etc
+    extern void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile);
+
     //--
 
 } // ed

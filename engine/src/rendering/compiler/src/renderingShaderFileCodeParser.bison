@@ -179,7 +179,7 @@ variable_declaration_list
 variable_declaration
     : TOKEN_IDENT variable_init
     {
-		TRACE_INFO("Variable decl {}", $1.m_string);
+		//TRACE_INFO("Variable decl {}", $1.m_string);
         $$ = context.alloc<CodeNode>($1.m_location, OpCode::VariableDecl);
         $$.m_code->extraData().m_name = base::StringID($1.m_string);
         $$.m_code->extraData().m_castType = context.m_contextType;

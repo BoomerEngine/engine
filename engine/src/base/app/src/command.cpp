@@ -44,7 +44,7 @@ namespace base
         RTTI_BEGIN_TYPE_CLASS(CommandHelloMessage);
             RTTI_PROPERTY(startupTimestamp).metadata<replication::SetupMetadata>();
             RTTI_PROPERTY(localTimestamp).metadata<replication::SetupMetadata>();
-            RTTI_PROPERTY(connectionKey).metadata<replication::SetupMetadata>("maxLength:32");
+            RTTI_PROPERTY(connectionKey).metadata<replication::SetupMetadata>("maxLength:40");
         RTTI_END_TYPE();
 
         //--

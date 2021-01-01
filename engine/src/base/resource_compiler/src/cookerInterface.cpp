@@ -25,15 +25,13 @@ namespace base
 
         //--
 
-        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker)
+        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker)
             : m_referencePath(referenceFilePath)
-            , m_referenceMountingPoint(referenceMountingPoint)
             , m_externalProgressTracker(externalProgressTracker)
             , m_finalCooker(finalCooker)
             , m_depot(depot)
             , m_loader(dependencyLoader)
         {
-            m_referenceMountingPoint.translatePathToRelative(m_referencePath.view(), m_referencePathBase);
             queryContextName(queryResourcePath(), m_referenceContextName);
 
             if (m_referenceContextName.empty())
@@ -65,11 +63,6 @@ namespace base
         {
             return m_referenceContextName;
         }
-
-        const ResourceMountPoint& CookerInterface::queryResourceMountPoint() const
-        {
-            return m_referenceMountingPoint;
-        }       
 
         void CookerInterface::enumFiles(StringView systemPath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths, io::TimeStamp& outNewestTimeStamp)
         {
@@ -214,15 +207,8 @@ namespace base
             }
             else
             {
-                // find mount point for reference path
-                ResourceMountPoint referenceMountPoint;
-                if (m_depot.queryFileMountPoint(contextFileSystemPath, referenceMountPoint))
-                {
-                    StringBuf ret;
-                    referenceMountPoint.expandPathFromRelative(relativePath, ret);
-                    outResourcePath = ret;
-                    return true;
-                }
+                outResourcePath = StringBuf(relativePath);
+                return true;
             }
 
             return false;
@@ -332,6 +318,8 @@ namespace base
             {
                 if (ret = m_loader->loadResource(key))
                 {
+                    ASSERT(!ret->path().empty());
+
                     if (auto metadata = ret->metadata())
                     {
                         TRACE_INFO("Discovered {} dependencie(s) in the dependant resource '{}'", metadata->sourceDependencies.size(), key);
@@ -341,7 +329,7 @@ namespace base
                     }
                     else
                     {
-                        touchFile(key.path());
+                        touchFile(key.path().str());
                     }
                 }
             }

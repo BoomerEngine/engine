@@ -12,49 +12,45 @@
 
 namespace base
 {
-    class StringBuf;
-
     namespace res
     {
         ///---
 
-        typedef base::GUID ResourceID;
-
-        ///---
-
-        /// resource path + resource class
-        class BASE_RESOURCE_API ResourceKey
+        /// conformed resource path
+        class BASE_RESOURCE_API ResourcePath
         {
         public:
-            INLINE ResourceKey() {};
-            INLINE ResourceKey(const ResourceKey& other) = default;
-            INLINE ResourceKey(ResourceKey&& other);
-            INLINE ResourceKey(StringView path, SpecificClassType<IResource> classType);
-            INLINE ResourceKey& operator=(const ResourceKey& other) = default;
-            INLINE ResourceKey& operator=(ResourceKey&& other);
+            INLINE ResourcePath() {};
+            INLINE ResourcePath(const ResourcePath& other) = default;
+            INLINE ResourcePath(ResourcePath&& other);
+            INLINE ResourcePath& operator=(const ResourcePath& other) = default;
+            INLINE ResourcePath& operator=(ResourcePath&& other);
 
-            INLINE bool operator==(const ResourceKey& other) const;
-            INLINE bool operator!=(const ResourceKey& other) const;
+            ResourcePath(StringView path); // conforms the string to 
+
+            INLINE bool operator==(const ResourcePath& other) const;
+            INLINE bool operator!=(const ResourcePath& other) const;
 
             //--
 
-            ALWAYS_INLINE const ResourceID& id() const;
-            ALWAYS_INLINE SpecificClassType<IResource> cls() const;
+            ALWAYS_INLINE const StringBuf& str() const;
+            ALWAYS_INLINE uint64_t hash() const; // 64-bit unique hash (hopefully unique..)
 
             INLINE bool empty() const;
             INLINE bool valid() const; // only non empty paths are valid
 
             INLINE StringView view() const;
-
+                        
             INLINE operator bool() const;
 
-            INLINE static uint32_t CalcHash(const ResourceKey& key);
+            INLINE static uint32_t CalcHash(const ResourcePath& key);
 
-            // NOTE: all path parts are just string views into the path string!
-            INLINE StringView fileName() const; // lena.png
-            INLINE StringView fileStem() const; // lena
-            INLINE StringView extension() const; // png
-            INLINE StringView directories() const; // engine/textures/
+            //--
+
+            StringView fileName() const; // lena.png
+            StringView fileStem() const; // lena
+            StringView extension() const; // png
+            StringView basePath() const; // /engine/textures/
 
             //--
 
@@ -68,37 +64,17 @@ namespace base
 
             //--
 
-            /// build unique event key for this path (slow)
-            GlobalEventKey buildEventKey() const;
-
-            //--
-
             // empty key
-            static const ResourceKey& EMPTY();
+            static const ResourcePath& EMPTY();
 
             //--
 
         private:
-            ResourceID m_id;
-            SpecificClassType<IResource> m_class;
+            StringBuf m_string;
+            uint64_t m_hash = 0;
         };
 
     } // res
-
-    //--
-
-    // make resource path
-    INLINE res::ResourceKey MakePath(StringView path, SpecificClassType<res::IResource> classType)
-    {
-        return res::ResourceKey(path, classType);
-    }
-
-    // make resource path
-    template< typename T >
-    INLINE extern res::ResourceKey MakePath(StringView path)
-    {
-        return res::ResourceKey(path, T::GetStaticClass());
-    }
 
     //--
 

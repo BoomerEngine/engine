@@ -169,16 +169,17 @@ namespace ed
                     desc.forcedLodLevel = 0;
                     desc.forceMaterial = m_material;
 
-					auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc);
+                    if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+                    {
+                        const auto minZ = mesh->bounds().min.z;
+                        const auto offset = base::Vector3(0, 0, -minZ);
+                        proxy->m_localToWorld.translation(offset);
 
-                    const auto minZ = mesh->bounds().min.z;
-                    const auto offset = base::Vector3(0, 0, -minZ);
-                    proxy->m_localToWorld.translation(offset);
+                        m_previewProxy = proxy;
+                        renderingScene()->attachProxy(m_previewProxy);
 
-					m_previewProxy = proxy;
-					renderingScene()->attachProxy(m_previewProxy);
-
-                    setupCameraAroundBounds(mesh->bounds() + offset);
+                        setupCameraAroundBounds(mesh->bounds() + offset);
+                    }
                 }
             }
         }

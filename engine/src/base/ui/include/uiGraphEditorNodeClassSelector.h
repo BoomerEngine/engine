@@ -66,6 +66,9 @@ namespace ui
     private:
         ListView* m_list;
         base::RefPtr<BlockClassListModel> m_listModel;
+        SearchBarPtr m_searchBar;
+
+        virtual IElement* focusFindFirst() override;
 
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         void closeWithType(const BlockClassPickResult& result);

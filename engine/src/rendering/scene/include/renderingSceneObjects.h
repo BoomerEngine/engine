@@ -62,6 +62,7 @@ namespace rendering
 			MeshChunkProxyPtr data;
 			MaterialDataProxyPtr material;
 			MaterialTemplateProxyPtr shader;
+			uint16_t materialIndex = 0;
 			uint8_t lodMask = 0;
 			char depthPassType = -1;
 			char forwardPassType = -1;

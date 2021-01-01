@@ -89,6 +89,7 @@ namespace ui
         : m_timer(this)
     {
         layoutHorizontal();
+        allowFocusFromKeyboard(false);
         enableAutoExpand(true, false);
 
         {
@@ -150,6 +151,11 @@ namespace ui
             view->bindInputPropagationElement(nullptr);
     }
 
+    IElement* SearchBar::focusFindFirst()
+    {
+        return m_text;
+    }
+
     void SearchBar::bindItemView(ItemView* ptr)
     {
         if (auto view = m_itemView.lock())
@@ -164,12 +170,15 @@ namespace ui
 
     void SearchBar::loadHistory(const base::Array<SearchPattern>& history, bool setCurrent /*= true*/)
     {
-
+        if (!history.empty() && setCurrent)
+            m_currentSearchPattern = history.back();
     }
 
     void SearchBar::saveHistory(base::Array<SearchPattern>& outHistory) const
     {
-
+        outHistory.clear();
+        outHistory = m_history;
+        outHistory.pushBack(m_currentSearchPattern);
     }
 
     void SearchBar::searchPattern(const SearchPattern& pattern)
@@ -204,7 +213,7 @@ namespace ui
 
     bool SearchBar::handleExternalKeyEvent(const base::input::KeyEvent& evt)
     {
-        /*if (m_blockExternalKeyPropagation)
+        if (m_blockExternalKeyPropagation)
         {
             m_externalEventReceived = true;
             return false;
@@ -220,7 +229,7 @@ namespace ui
                 return elem->handleKeyEvent(evt);
             }
         }
-        */
+        
         return false;
     }
 

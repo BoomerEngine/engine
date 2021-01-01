@@ -140,6 +140,9 @@ namespace rendering
 			/// clear regions in writable buffer
 			void opClearWritableBufferRects(const BufferWritableView* bufferView, const void* clearValue = nullptr, const ResourceClearRect* rects = nullptr, uint32_t numRects = 0);
 
+            /// clear part of writable buffer
+            void opClearWritableBuffer(const BufferWritableStructuredView* bufferView, uint32_t firstElement = 0, uint32_t numElements = INDEX_MAX);
+
 			//--
 
             /// clear whole view of writable image with custom value of with zeros
@@ -334,7 +337,7 @@ namespace rendering
             //---
 
             /// download content of a resource (or part of it), downloaded data is forwarded to sink (usually 2 frames later)
-			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadAreaObject* area, uint32_t areaOffset, IDownloadDataSink* sink);
+			void opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink);
 
             //---
 

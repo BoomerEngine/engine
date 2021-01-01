@@ -12,7 +12,7 @@
 #include "base/resource/include/resourceCooker.h"
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/xml/include/xmlWrappers.h"
-#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceKey.h"
 
 namespace base
 {
@@ -83,7 +83,7 @@ namespace base
                     base::StringBuf depotPath;
                     if (cooker.queryResolvedPath(relativePath, cooker.queryResourcePath(), true, depotPath))
                     {
-                        files.emplaceBack(ResourceKey(depotPath, resourceClass));
+                        files.emplaceBack(ResourceKey(ResourcePath(depotPath), resourceClass));
                     }
                     else
                     {

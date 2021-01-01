@@ -311,7 +311,10 @@ namespace base
 
                         auto length  = value.length();
                         if (field.m_packing.m_maxLength && length > field.m_packing.m_maxLength)
+                        {
+                            TRACE_WARNING("Truncating string {} -> {} at field in {}. This may be undesired.", length, field.m_packing.m_maxLength, field.m_structModel->name());
                             length = field.m_packing.m_maxLength;
+                        }
 
                         w.writeAdaptiveNumber(length);
 

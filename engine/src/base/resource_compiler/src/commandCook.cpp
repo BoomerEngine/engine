@@ -10,7 +10,7 @@
 
 #include "base/app/include/command.h"
 #include "base/app/include/commandline.h"
-#include "base/resource/include/resourcePath.h"
+#include "base/resource/include/resourceKey.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/io/include/ioSystem.h"
@@ -97,7 +97,8 @@ namespace base
                 {
                     if (info.name.endsWith(seedFileExtension))
                     {
-                        outList.emplaceBack(TempString("{}{}", depotPath, info.name), SeedFile::GetStaticClass());
+                        const auto path = ResourcePath(TempString("{}{}", depotPath, info.name));
+                        outList.emplaceBack(path, SeedFile::GetStaticClass());
                     }
 
                     return false;
@@ -146,7 +147,7 @@ namespace base
                 // load
                 for (const auto& key : seedFilesLists)
                 {
-                    if (const auto seedFile = LoadResource<SeedFile>(key.path()).acquire())
+                    if (const auto seedFile = base::rtti_cast<SeedFile>(LoadResource(key).acquire()))
                     {
                         uint32_t numAdded = 0;
                         for (const auto& file : seedFile->files())
@@ -335,8 +336,8 @@ namespace base
             StringBuilder localPath;
             localPath << m_outputDir;
             localPath << "cooked/";
-            localPath << key.directories();
-            localPath << key.fileName();
+            localPath << key.path().basePath();
+            localPath << key.path().fileName();
             localPath << "." << loadExtension;
 
             outPath = localPath.toString();

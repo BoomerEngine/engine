@@ -17,7 +17,6 @@
 #include "apiSampler.h"
 #include "apiImage.h"
 #include "apiGraphicsRenderStates.h"
-#include "apiDownloadArea.h"
 
 #include "rendering/device/include/renderingPipeline.h"
 
@@ -220,14 +219,6 @@ namespace rendering
 			if (auto* obj = m_thread->createOptimalSampler(info))
 				return base::RefNew<SamplerObject>(obj->handle(), m_thread->objectRegistry());
 			
-			return nullptr;
-		}
-
-		DownloadAreaObjectPtr IBaseDevice::createDownloadArea(uint32_t size)
-		{
-			if (auto* obj = m_thread->createOptimalDownloadArea(size))
-				return base::RefNew<DownloadAreaProxy>(obj->handle(), m_thread->objectRegistry(), size);
-
 			return nullptr;
 		}
 

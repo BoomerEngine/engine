@@ -96,9 +96,6 @@ namespace rendering
 			// create shaders
 			virtual IBaseShaders* createOptimalShaders(const ShaderData* data) = 0;
 
-			// create download area
-			virtual IBaseDownloadArea* createOptimalDownloadArea(uint32_t size) = 0;
-
 			//-----
 
 			// sync GPU (stop all work), usually inserts a GPU fence and waits for it

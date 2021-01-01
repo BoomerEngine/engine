@@ -56,7 +56,9 @@ namespace rendering
         outRenderStates.twoSided = m_twoSided;
 
         // do we allow masking ? some modes have masking disabled
-        const auto allowMasking = (compiler.context().pass != MaterialPass::MaterialDebug) && (compiler.context().pass != MaterialPass::Wireframe);
+        const auto allowMasking = (compiler.context().pass != MaterialPass::MaterialDebug) 
+            && (compiler.context().pass != MaterialPass::WireframeSolid)
+            && (compiler.context().pass != MaterialPass::WireframePassThrough);
 
         // simple case masking
         // TODO: integrate the "msaa" flag so alpha-to-coverage is not emitted when in non-mass output
@@ -91,15 +93,20 @@ namespace rendering
 
             case MaterialPass::SelectionFragments:
             {
-                // TODO: this seems fishy
-                if (!outRenderStates.alphaToCoverage || !outRenderStates.depthWrite)
-                    outRenderStates.earlyPixelTests = true;
+                outRenderStates.earlyPixelTests = true;
 
-                //const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectID);
-                //const auto subObjectID = compiler.vertexData(MaterialVertexDataType::SubObjectID);
-                //compiler.appendf("EmitSelection({},{});\n", objectID, subObjectID);
-                compiler.appendf("gl_Target0 = vec4(0,0,0,0);\n");
+                const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectIndex);
+                const auto worldPos = compiler.vertexData(MaterialVertexDataType::WorldPosition);
+                compiler.appendf("EmitSelection({},{});\n", objectID, worldPos);
+                compiler.appendf("gl_Target0 = vec4(0.2,0.5,1,1);\n");
                 break;
+            }
+
+            case MaterialPass::WireframePassThrough:
+            {
+                outRenderStates.fillLines = true;
+                outRenderStates.twoSided = true;
+                // PASS THROUGH
             }
 
             case MaterialPass::ConstantColor:
@@ -111,7 +118,7 @@ namespace rendering
                 break;
             }
 
-            case MaterialPass::Wireframe:
+            case MaterialPass::WireframeSolid:
             {
                 compiler.includeHeader("material/wireframe.h");
                 const auto objectID = compiler.vertexData(MaterialVertexDataType::ObjectIndex);

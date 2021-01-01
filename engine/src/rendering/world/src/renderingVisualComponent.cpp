@@ -60,7 +60,12 @@ namespace rendering
         DEBUG_CHECK_RETURN(!m_proxy);
 
         if (auto* scene = system<RenderingSystem>())
+        {
             m_proxy = handleCreateProxy(scene->scene());
+
+            if (m_proxy)
+                scene->scene()->attachProxy(m_proxy);
+        }
     }
 
     void IVisualComponent::destroyRenderingProxy()

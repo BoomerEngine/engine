@@ -11,12 +11,16 @@
 #include "renderingMaterialGraphBlock.h"
 #include "renderingMaterialGraphBlock_Parameter.h"
 #include "renderingMaterialGraphBlock_Output.h"
+#include "renderingMaterialGraphTechniqueCacheService.h"
 
-#include "base/resource/include/resourceFactory.h" 
-#include "base/graph/include/graphSocket.h" 
 #include "renderingMaterialGraphBlock_OutputUnlit.h"
+
+#include "rendering/material/include/renderingMaterialTemplate.h"
+
+#include "base/graph/include/graphSocket.h" 
 #include "base/object/include/rttiDataView.h"
 #include "base/resource/include/resourceTags.h"
+#include "base/resource/include/resourceFactory.h" 
 
 namespace rendering
 {
@@ -151,6 +155,73 @@ namespace rendering
 
     MaterialGraph::~MaterialGraph()
     {
+    }
+
+    //--
+
+    /// material compiler based on preview graph
+    class PreviewGraphTechniqueCompiler : public rendering::IMaterialTemplateDynamicCompiler
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(PreviewGraphTechniqueCompiler, IMaterialTemplateDynamicCompiler);
+
+    public:
+        PreviewGraphTechniqueCompiler()
+        {}
+
+        PreviewGraphTechniqueCompiler(const MaterialGraphContainerPtr& graph)
+            : m_graph(graph)
+        {
+        }
+
+        virtual void requestTechniqueComplation(base::StringView contextName, MaterialTechnique* technique) override final
+        {
+            base::GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_graph, technique);
+        }
+
+    private:
+        MaterialGraphContainerPtr m_graph;
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(PreviewGraphTechniqueCompiler);
+        RTTI_PROPERTY(m_graph);
+    RTTI_END_TYPE();
+
+
+    //--
+
+    MaterialTemplatePtr MaterialGraph::createPreviewTemplate(base::StringView label) const
+    {
+        // find output node and read settings
+        MaterialTemplateMetadata metadata;
+        if (const auto* outputBlock = m_graph->findOutputBlock())
+            outputBlock->resolveMetadata(metadata);
+
+        // enumerate parameters
+        base::Array<MaterialTemplateParamInfo> parameters;
+        parameters.reserve(m_graph->parameters().size());
+
+        for (const auto& block : m_graph->parameters())
+        {
+            if (block->name() && block->dataType())
+            {
+                auto& outInfo = parameters.emplaceBack();
+                outInfo.name = block->name();
+                outInfo.category = block->category() ? block->category() : "Material parameters"_id;
+                outInfo.type = block->dataType();
+                outInfo.parameterType = block->parameterType();
+                outInfo.defaultValue = base::Variant(block->dataType(), block->dataValue());
+            }
+        }
+
+        // copy the graph
+        auto graphCopy = base::rtti_cast<MaterialGraphContainer>(m_graph->clone());
+        DEBUG_CHECK_EX(graphCopy, "Failed to make a copy of source graph");
+        if (!graphCopy)
+            return nullptr;
+
+        // create a version of material template that supports runtime compilation from the source graph
+        auto compiler = base::RefNew<PreviewGraphTechniqueCompiler>(graphCopy);
+        return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, compiler, base::StringBuf(label));
     }
 
     //---

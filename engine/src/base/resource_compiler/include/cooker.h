@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/resource/include/resourceMountPoint.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceCooker.h"
 
@@ -79,10 +78,7 @@ namespace base
 
             bool findBestCooker(const ResourceKey& key, CookableClass& outBestCooker) const;
 
-            ResourcePtr cookUsingCooker(ResourceKey key, const ResourceMountPoint& mountPoint, const CookableClass& recipe) const;
-            //Cooker::Result cookFromTextFormat(ResourceKey key, const ResourceMountPoint& mountPoint) const;
-
-
+            ResourcePtr cookUsingCooker(ResourceKey key, const CookableClass& recipe) const;
         };
 
         //--

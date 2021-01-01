@@ -17,6 +17,7 @@
 #include "resource.h"
 #include "resourceLoader.h"
 #include "resourcePath.h"
+#include "resourceKey.h"
 #include "resourceTags.h"
 #include "resourceFileSaver.h"
 #include "resourceFileLoader.h"
@@ -166,7 +167,7 @@ public:
         {
             auto obj = RefNew<tests::TestResource>();
             obj->m_data = "This is another resource";
-            ((res::BaseReference&)obj->m_ref) = res::BaseReference(res::ResourceKey(RES_A, tests::TestResource::GetStaticClass()));
+            ((res::BaseReference&)obj->m_ref) = res::BaseReference(res::ResourceKey(res::ResourcePath(RES_A), tests::TestResource::GetStaticClass()));
             m_loader->addObjectResource(RES_B, obj);
         }
 
@@ -208,22 +209,6 @@ private:
     RefPtr<tests::SimpleRawLoader> m_loader;
 };
 
-/*TEST_F(ResourceFixture, ResourceLocatedInDepot)
-{
-    res::ResourceMountPoint mountPoint;
-    EXPECT_TRUE(rawLoader().supportsLoading(RES_A, tests::TestResource::GetStaticClass(), mountPoint)) << "This resource should be found";
-    EXPECT_FALSE(rawLoader().supportsLoading(RES_A, res::IResource::GetStaticClass(), mountPoint)) << "This resource should be not be found because of wrong class";
-    EXPECT_FALSE(rawLoader().supportsLoading(RES_MISSING, tests::TestResource::GetStaticClass(), mountPoint)) << "This resource should not be found";
-}*/
-
-/*TEST_F(ResourceFixture, TokenForMissingResourceNotCreated)
-{
-auto token = loader().issueLoadingRequest(RES_MISSING);
-ASSERT_TRUE(token != nullptr) << "Token should be returned";
-ASSERT_TRUE(token->hasFinished()) << "Failed resources should be marked right away";
-ASSERT_TRUE(token->hasFailed()) << "Token should be invalid";
-}*/
-
 TEST_F(ResourceFixture, ResourceLoads)
 {
     auto resource = loader().loadResource<tests::TestResource>(RES_A);
@@ -256,7 +241,7 @@ TEST_F(ResourceFixture, ResourceLoadsWithImports)
     //auto other = resource->stub.peak();
     //ASSERT_TRUE(!!other) << "Other object is missing";
     //ASSERT_TRUE(other->data == "This is a resource test");
-    ASSERT_STREQ(RES_A, resource->m_ref.key().view().data());
+    ASSERT_STREQ(RES_A, resource->m_ref.key().path().view().data());
 }
 
 //----

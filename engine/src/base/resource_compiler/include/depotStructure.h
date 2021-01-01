@@ -11,7 +11,6 @@
 #include "base/system/include/atomic.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceMountPoint.h"
 #include "depotFileSystem.h"
 
 namespace base
@@ -30,11 +29,11 @@ namespace base
         class BASE_RESOURCE_COMPILER_API DepotFileSystem : public base::NoCopy
         {
         public:
-            DepotFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
+            DepotFileSystem(StringView mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
             ~DepotFileSystem();
 
             // prefix path in the depot, must end in / or be empty for root
-            INLINE const res::ResourceMountPoint& mountPoint() const { return m_mountPoint; }
+            INLINE const StringBuf& mountPoint() const { return m_mountPoint; }
 
             // file system handler
             INLINE IFileSystem& fileSystem() const { return *m_fileSystem; }
@@ -44,7 +43,7 @@ namespace base
 
         private:
             // prefix path in the depot, must end in / or be empty for root
-            res::ResourceMountPoint m_mountPoint;
+            StringBuf m_mountPoint;
 
             // file system handler
             UniquePtr<IFileSystem> m_fileSystem;
@@ -84,7 +83,7 @@ namespace base
             //---
 
             /// attach a file system as a particular directory in the root (note: no nested path support!)
-            void attachFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
+            void attachFileSystem(StringView mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type);
 
             /// detach all project file systems
             void detachProjectFileSystems();
@@ -100,9 +99,6 @@ namespace base
 
             /// get the file information
             bool queryFileTimestamp(StringView fileSystemPath, io::TimeStamp& outTimestamp) const;
-
-            /// get the mount point path for given file system path
-            bool queryFileMountPoint(StringView fileSystemPath, res::ResourceMountPoint& outMountPoint) const;
 
             /// if the file is loaded from a physical file query it's path
             /// NOTE: is present only for files physically on disk, not in archives or over the network
@@ -208,8 +204,6 @@ namespace base
             void registerFileSystemBinding(const DepotFileSystem* fs);
 
             bool translatePath(StringView fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly = false) const;
-
-            bool processFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fs, DepotFileSystemType type);
 
             bool findFileInternal(DepotPathAppendBuffer& path, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
             bool findFileInternal(const DepotFileSystem* fs, DepotPathAppendBuffer& path, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;

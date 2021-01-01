@@ -211,7 +211,7 @@ namespace rendering
         crc << m_flipTangent;
         crc << m_flipBitangent;
 
-        crc << m_templateDefault.key().view();
+        crc << m_templateDefault.key().path().view();
     }
 
     //--

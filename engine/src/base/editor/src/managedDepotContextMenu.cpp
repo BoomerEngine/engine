@@ -8,16 +8,20 @@
 
 #include "build.h"
 
+#include "editorService.h"
+
 #include "managedDirectory.h"
 #include "managedFile.h"
 #include "managedFileFormat.h"
 #include "managedItemCollection.h"
 #include "managedDepotContextMenu.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "assetBrowserDialogs.h"
-#include "editorService.h"
-#include "base/io/include/ioSystem.h"
 #include "managedFileNativeResource.h"
+
+#include "assetBrowserDialogs.h"
+#include "assetBrowserTabFiles.h"
+
+#include "base/ui/include/uiMenuBar.h"
+#include "base/io/include/ioSystem.h"
 
 namespace ed
 {
@@ -83,6 +87,16 @@ namespace ed
         base::GetService<Editor>()->mainWindow().addReimportFiles(filesToReimport);
     }
 
+    void CopyDepotItems(ui::IElement* owner, const Array<ManagedItem*>& item)
+    {
+
+    }
+
+    void CutDepotItems(ui::IElement* owner, const Array<ManagedItem*>& item)
+    {
+
+    }
+
     void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, const DepotMenuContext& context, const Array<ManagedItem*>& items)
     {
         Array<ManagedFile*> files;
@@ -92,15 +106,15 @@ namespace ed
         // Save/Open/Close
         {
             Array<ManagedFile*> openableFiles;
-            Array<ManagedFile*> closableFiles;
+            //Array<ManagedFile*> closableFiles;
             Array<ManagedFile*> saveableFiles;
 
             for (auto* file : files)
             {
                 if (file->canOpen() && !file->opened())
                     openableFiles.pushBack(file);
-                if (file->opened())
-                    closableFiles.pushBack(file);
+                //if (file->opened())
+                  //  closableFiles.pushBack(file);
                 if (file->opened() && file->isModified())
                     saveableFiles.pushBack(file);
             }
@@ -111,8 +125,8 @@ namespace ed
             if (!saveableFiles.empty())
                 menu.createCallback("Save", "[img:save]", "Shift+Ctrl+S") = [saveableFiles, owner]() { SaveDepotFiles(owner, saveableFiles); };
 
-            if (!closableFiles.empty())
-                menu.createCallback("Close", "[img:cross]", "Ctrl+F4") = [closableFiles, owner]() { CloseDepotFiles(owner, closableFiles); };
+            //if (!closableFiles.empty())
+              //  menu.createCallback("Close", "[img:cross]", "Ctrl+F4") = [closableFiles, owner]() { CloseDepotFiles(owner, closableFiles); };
 
             menu.createSeparator();
         }
@@ -138,6 +152,17 @@ namespace ed
                 }
             }
 
+            if (dirs.empty() && files.size() == 1 && context.tab)
+            {
+                auto tab = context.tab;
+                auto file = files[0];
+
+                menu.createCallback("Duplicate...", "[img:page_arrange]") = [owner, file, tab]() {
+                    tab->duplicateFile(file);
+                };
+                menu.createSeparator();
+            }
+
             {
                 bool canDelete = false;
                 for (auto* file : files)
@@ -158,9 +183,36 @@ namespace ed
                     }
                 }
 
-                if (canDelete)
+                bool canCopy = false;
+                for (auto* file : files)
                 {
+                    if (!file->isDeleted())
+                    {
+                        canCopy = true;
+                        break;
+                    }
+                }
+
+                for (auto* dir : dirs)
+                {
+                    if (!dir->isDeleted())
+                    {
+                        canCopy = true;
+                        break;
+                    }
+                }
+
+                if (canDelete || canCopy)
+                {
+                    if (canDelete)
                     menu.createCallback("Delete", "[img:delete]") = [items, owner]() { DeleteDepotItems(owner, items); };
+
+                    if (canCopy)
+                        menu.createCallback("Copy", "[img:copy]") = [items, owner]() { CopyDepotItems(owner, items); };
+
+                    if (canDelete && canCopy)
+                        menu.createCallback("Cut", "[img:cut]") = [items, owner]() { CutDepotItems(owner, items); };
+
                     menu.createSeparator();
                 }
             }

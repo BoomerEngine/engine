@@ -87,11 +87,16 @@ namespace ui
         ViewItem* item = nullptr;
         if (findViewElement(index, item))
         {
-            if (!item->m_unadjustedCachedArea.empty())
+            /*if (!item->m_unadjustedCachedArea.empty())
             {
-                auto scrollPos = Position(-horizontalScrollOffset(), -verticalScrollOffset());
-                scrollToMakeAreaVisible(item->m_unadjustedCachedArea.offset(scrollPos));
-            }
+                //auto scrollPos = Position(-horizontalScrollOffset(), -verticalScrollOffset());
+                //scrollToMakeAreaVisible(item->m_unadjustedCachedArea.offset(scrollPos));
+            }*/
+
+            if (item->m_content)
+                scrollToMakeElementVisible(item->m_content);
+            else if (item->m_innerContent)
+                scrollToMakeElementVisible(item->m_innerContent);
         }
     }
 
@@ -546,10 +551,10 @@ namespace ui
         {
             if (!m_displayList.empty())
             {
-                if (mode == ItemNavigationDirection::Home || mode == ItemNavigationDirection::Left || mode == ItemNavigationDirection::Up || mode == ItemNavigationDirection::PageUp)
-                    return m_displayList.head()->m_index;
-                else
+                if (mode == ItemNavigationDirection::End)
                     return m_displayList.tail()->m_index;
+                else
+                    return m_displayList.head()->m_index;
             }
 
             return ModelIndex();
@@ -796,13 +801,18 @@ namespace ui
         return TBaseClass::handleContextMenu(area, absolutePosition);
     }
 
-    ElementPtr ItemView::queryTooltipElement(const Position& absolutePosition) const
+    ElementPtr ItemView::queryTooltipElement(const Position& absolutePosition, ui::ElementArea& outArea) const
     {
-        if (auto index = indexAtPoint(absolutePosition))
-            if (auto tooltip = m_model->tooltip(const_cast<ItemView*>(this), index))
+        if (const auto* item = itemAtPoint(absolutePosition))
+        {
+            if (auto tooltip = m_model->tooltip(const_cast<ItemView*>(this), item->m_index))
+            {
+                outArea = item->m_content->cachedDrawArea();
                 return tooltip;
+            }
+        }
 
-        return TBaseClass::queryTooltipElement(absolutePosition);
+        return TBaseClass::queryTooltipElement(absolutePosition, outArea);
     }
 
     DragDropDataPtr ItemView::queryDragDropData(const base::input::BaseKeyFlags& keys, const Position& position) const

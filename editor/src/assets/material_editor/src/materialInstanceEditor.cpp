@@ -73,8 +73,12 @@ namespace ed
         if (!TBaseClass::initialize())
             return false;
 
-        m_previewPanel->bindMaterial(materialInstance());
-        m_properties->bindData(materialInstance()->createDataView());
+        m_instance = rtti_cast<rendering::MaterialInstance>(resource());
+        if (!m_instance)
+            return false;
+
+        m_previewPanel->bindMaterial(m_instance);
+        m_properties->bindData(m_instance->createDataView());
         return true;
     }
 
@@ -94,15 +98,8 @@ namespace ed
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (auto loadedGraph = base::rtti_cast<rendering::MaterialInstance>(nativeFile->loadContent()))
-                {
-                    auto ret = base::RefNew<MaterialInstanceEditor>(nativeFile);
-                    ret->bindResource(loadedGraph);
-                    return ret;
-                }
-            }
-
+                return base::RefNew<MaterialInstanceEditor>(nativeFile);
+                
             return nullptr;
         }
     };

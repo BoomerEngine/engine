@@ -36,6 +36,7 @@ namespace base
             //RTTI_PROPERTY(m_connections); // Connections are not saved here, they are saved in the graph
             RTTI_PROPERTY(m_name);
             RTTI_PROPERTY(m_info);
+            RTTI_PROPERTY(m_visible);
         RTTI_END_TYPE();
 
         //--
@@ -47,6 +48,7 @@ namespace base
             : m_name(name)
             , m_info(info)
         {
+            m_visible = m_info.m_visibleByDefault;
         }
 
         Socket::~Socket()
@@ -55,6 +57,12 @@ namespace base
         Block* Socket::block() const
         {
             return rtti_cast<Block>(parent());
+        }
+
+        void Socket::notifyLayoutChanged()
+        {
+            if (auto block = this->block())
+                block->handleSocketLayoutChanged();
         }
 
         void Socket::notifyConnectionsChanged()
@@ -90,6 +98,18 @@ namespace base
                     target->removeAllConnectionsToSocket(this);
 
             notifyConnectionsChanged();
+        }
+
+        void Socket::updateVisibility(bool visible)
+        {
+            if (!visible && !m_connections.empty())
+                return;
+
+            if (m_visible != visible)
+            {
+                m_visible = visible;
+                notifyLayoutChanged();
+            }
         }
 
         void Socket::removeAllConnectionsToSocket(const Socket* to)
@@ -195,6 +215,10 @@ namespace base
             // add connection to both lists
             m_connections.pushBack(connection);
             to->m_connections.pushBack(connection);
+
+            // show all sockets
+            updateVisibility(true);
+            to->updateVisibility(true);
 
             // notify
             notifyConnectionsChanged();

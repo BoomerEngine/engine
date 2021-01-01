@@ -28,29 +28,30 @@ namespace ui
         layoutVertical();
         enableAutoExpand(true, true);
 
-        auto header = createInternalChildWithType<>("NotebookHeader"_id);
+        auto outsideArea = createInternalChildWithType<>("NotebookHeaderArea"_id);
+        outsideArea->layoutHorizontal();
+        outsideArea->customHorizontalAligment(ElementHorizontalLayout::Expand);
+        outsideArea->customVerticalAligment(ElementVerticalLayout::Bottom);
+        m_headerTotalArea = outsideArea;
+
+        auto header = outsideArea->createChildWithType<ScrollArea>("NotebookHeader"_id, ScrollMode::None, ScrollMode::Hidden);// TODO: Auto);
+        header->layoutHorizontal();
         header->customHorizontalAligment(ElementHorizontalLayout::Expand);
         header->customVerticalAligment(ElementVerticalLayout::Middle);
-        header->layoutHorizontal();
+        m_headerScrollArea = header;
+        //header->customProportion(1.0f);
 
         if (m_flags.test(NotebookFlagBit::TabListPopupButton))
         {
-            m_button = header->createChildWithType<Button>("NotebookHeaderPopupButton"_id, ButtonModeBit::EventOnClick);
-            m_button->customHorizontalAligment(ElementHorizontalLayout::Left);
-            m_button->customVerticalAligment(ElementVerticalLayout::Bottom);
+            m_headerTotalArea = header->createChildWithType<Button>("NotebookHeaderPopupButton"_id, ButtonModeBit::EventOnClick);
+            m_headerTotalArea->customHorizontalAligment(ElementHorizontalLayout::Left);
+            m_headerTotalArea->customVerticalAligment(ElementVerticalLayout::Bottom);
+        }
 
-            m_header = header->createChildWithType<ScrollArea>("NotebookHeaderBar"_id);
-            m_header->layoutHorizontal();
-            m_header->customHorizontalAligment(ElementHorizontalLayout::Expand);
-            m_header->customVerticalAligment(ElementVerticalLayout::Bottom);
-        }
-        else
-        {
-            m_header = header->createChildWithType<ScrollArea>("NotebookHeaderBar"_id);
-            m_header->layoutHorizontal();
-            m_header->customHorizontalAligment(ElementHorizontalLayout::Expand);
-            m_header->customVerticalAligment(ElementVerticalLayout::Bottom);
-        }
+        m_header = header->createChildWithType<>("NotebookHeaderBar"_id);
+        m_header->layoutHorizontal();
+        m_header->customHorizontalAligment(ElementHorizontalLayout::Left);
+        m_header->customVerticalAligment(ElementVerticalLayout::Bottom);
 
         m_container = createInternalChildWithType<>("NotebookContainer"_id);
         m_container->customHorizontalAligment(ElementHorizontalLayout::Expand);
@@ -59,6 +60,24 @@ namespace ui
 
     Notebook::~Notebook()
     {}
+
+    void Notebook::attachHeaderElement(IElement* element)
+    {
+        DEBUG_CHECK_RETURN_EX(element, "Invalid element");
+        DEBUG_CHECK_RETURN_EX(element->parent() == nullptr, "Element already part of a hierarchy");
+        DEBUG_CHECK_RETURN_EX(!m_customHeaderElements.contains(element), "Element already in header");
+
+        m_customHeaderElements.pushBack(element);
+        m_headerTotalArea->attachChild(element);
+    }
+
+    void Notebook::dettachHeaderElement(IElement* element)
+    {
+        if (m_customHeaderElements.remove(element))
+        {
+            m_headerTotalArea->detachChild(element);
+        }
+    }
 
     void Notebook::removeAllTabs()
     {
@@ -107,6 +126,8 @@ namespace ui
                 {
                     const auto& button = m_buttons[tabIndex];
                     button->addStyleClass("active"_id);
+
+                    m_headerScrollArea->scrollToMakeElementVisible(button);
                 }
 
                 m_activeTab->visibility(true);
@@ -200,11 +221,17 @@ namespace ui
 
     ButtonPtr Notebook::createHeaderButtonForTab(IElement* tab)
     {
-        auto tabButton = m_header->createChildWithType<Button>("NotebookHeaderTabButton"_id, ButtonModeBit::EventOnClick);
+        auto tabButtonFlags = { ButtonModeBit::EventOnClick, ButtonModeBit::SecondEventOnMiddleClick };
+        auto tabButton = m_header->createChildWithType<Button>("NotebookHeaderTabButton"_id, tabButtonFlags);
         tabButton->bind(EVENT_CLICKED, this) = [this](Button* tabButton)
         {
             if (auto* newTab = tabForButton(tabButton))
                 this->tab(newTab);
+        };
+        tabButton->bind(EVENT_CLICKED_SECONDARY, this) = [this](Button* tabButton)
+        {
+            if (auto* newTab = tabForButton(tabButton))
+                tabHandleCloseRequest(newTab);
         };
 
         tabButton->createNamedChild<TextLabel>("Title"_id, tabTitle(tab));

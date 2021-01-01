@@ -223,18 +223,18 @@ namespace rendering
 			{
 				const auto maxWidth = m_device->maxRenderTargetSize().x;
 				const auto maxHeight = m_device->maxRenderTargetSize().y;
-				m_maxSelectables = maxWidth * maxHeight * 2;
+				maxSelectables = maxWidth * maxHeight * 2;
 
 				BufferCreationInfo bufferInfo;
 				bufferInfo.label = "SelectableCaptureBuffer";
 				bufferInfo.stride = sizeof(EncodedSelectable);
-				bufferInfo.size = bufferInfo.stride * m_maxSelectables;
+				bufferInfo.size = bufferInfo.stride * maxSelectables;
 				bufferInfo.allowShaderReads = true;
 				bufferInfo.allowUAV = true;
 				bufferInfo.allowCopies = true;
 
-				m_selectablesBuffer = m_device->createBuffer(bufferInfo);
-				m_selectablesBufferUAV = m_selectablesBuffer->createWritableStructuredView();
+				selectablesBuffer = m_device->createBuffer(bufferInfo);
+				selectablesBufferUAV = selectablesBuffer->createWritableStructuredView();
 			}
 
             // yay, now we can support such resolution

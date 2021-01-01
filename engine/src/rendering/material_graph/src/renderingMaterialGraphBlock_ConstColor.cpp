@@ -25,6 +25,7 @@ namespace rendering
         virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
         {
             builder.socket("RGB"_id, MaterialOutputSocket().swizzle("xyz"_id));
+            builder.socket("RGBA"_id, MaterialOutputSocket().hiddenByDefault());
             builder.socket("R"_id, MaterialOutputSocket().swizzle("x"_id).hiddenByDefault().color(COLOR_SOCKET_RED));
             builder.socket("G"_id, MaterialOutputSocket().swizzle("y"_id).hiddenByDefault().color(COLOR_SOCKET_GREEN));
             builder.socket("B"_id, MaterialOutputSocket().swizzle("z"_id).hiddenByDefault().color(COLOR_SOCKET_BLUE));

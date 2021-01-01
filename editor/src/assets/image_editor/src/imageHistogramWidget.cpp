@@ -247,7 +247,7 @@ namespace ed
         return TBaseClass::handleHoverLeave(absolutePosition);
     }
 
-    ui::ElementPtr ImageHistogramWidget::queryTooltipElement(const ui::Position& absolutePosition) const
+    ui::ElementPtr ImageHistogramWidget::queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const
     {
         if (m_histograms.empty())
             return nullptr;
@@ -255,6 +255,7 @@ namespace ed
         auto text = base::RefNew<ui::TextLabel>();
         m_activeTooltip = text.weak();
 
+        outArea = cachedDrawArea();
         updateTooltip();
 
         return text;

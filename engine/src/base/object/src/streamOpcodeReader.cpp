@@ -27,9 +27,10 @@ namespace base
 
         //--
 
-        OpcodeReader::OpcodeReader(const OpcodeResolvedReferences& refs, const void* data, uint64_t size, bool safeLayout)
+        OpcodeReader::OpcodeReader(const OpcodeResolvedReferences& refs, const void* data, uint64_t size, bool safeLayout, uint32_t version)
             : m_refs(refs)
             , m_protectedStream(safeLayout)
+            , m_version(version)
         {
             m_base = (const uint8_t*)data;
             m_cur = m_base;

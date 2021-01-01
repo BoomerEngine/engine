@@ -13,6 +13,9 @@
 
 namespace ed
 {
+    //--
+
+    DECLARE_UI_EVENT(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, res::ResourceConfigurationPtr);
 
     //--
 

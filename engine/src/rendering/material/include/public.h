@@ -70,7 +70,8 @@ namespace rendering
     enum class MaterialPass : uint8_t
     {
         DepthPrepass, // depth pre pass, masked, outputs velocity buffer as well
-        Wireframe, // wireframe view, can be either solid or wire-only 
+        WireframeSolid, // solid wireframe view, fast and nice
+        WireframePassThrough, // transparent wireframe view, slow and aliased
         ConstantColor, // output constant object color
         SelectionFragments, // selection fragment gathering - may be masked, uses specialized shader
         Forward, // classic forward rendering with full lighting

@@ -340,7 +340,7 @@ namespace rendering
                     {
                         if (paramInfo->value.type() != templateParamInfo.type)
                         {
-                            TRACE_INFO("Changed type for parameter '{}' from '{}' to '{}', dropping it", templateParamInfo.name, paramInfo->value.type(), templateParamInfo.type);
+                            //TRACE_INFO("Changed type for parameter '{}' from '{}' to '{}', dropping it", templateParamInfo.name, paramInfo->value.type(), templateParamInfo.type);
                             m_parameters.eraseUnordered(paramInfo - m_parameters.typedData());
                         }
                     }
@@ -404,7 +404,7 @@ namespace rendering
     {
         auto orgPropName = path;
 
-        TRACE_INFO("OnPropertyChange at {}, prop '{}' base {}", this, path, m_baseMaterial.acquire().get());
+        //TRACE_INFO("OnPropertyChange at {}, prop '{}' base {}", this, path, m_baseMaterial.acquire().get());
 
         if (path == BASE_MATERIAL_NAME.view())
         {

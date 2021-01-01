@@ -12,9 +12,11 @@ namespace ed
 {
     //--
 
+    class AssetBrowserTabFiles;
+
     struct DepotMenuContext
     {
-        //AssetBrowserTabFiles* tab = nullptr; // only if we are inside the tab
+        AssetBrowserTabFiles* tab = nullptr; // only if we are inside the tab
         ManagedDirectory* contextDirectory = nullptr;
     };
 

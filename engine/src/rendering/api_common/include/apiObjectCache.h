@@ -105,6 +105,7 @@ namespace rendering
 			IBaseDescriptorBindingLayout* resolveDescriptorBindingLayout(const ShaderMetadata* metadata);
 
 			//--
+
         private:
             IBaseThread* m_owner;
 

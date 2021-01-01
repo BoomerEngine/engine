@@ -31,39 +31,66 @@ namespace ui
         // get panel ID (for saving layout, panels without ID are not saved)
         INLINE const base::StringBuf& id() const { return m_id; }
 
+        // get panel icon
+        INLINE const base::StringBuf& tabIcon() const { return m_icon; }
+
         // get panel title text
-        INLINE const base::StringBuf& title() const { return m_title; }
+        INLINE const base::StringBuf& tabTitle() const { return m_title; }
 
         /// should this panel be visible in the layout ?
-        INLINE bool visibleInLayout() const { return m_visibleInLayout; }
+        INLINE bool tabVisibleInLayout() const { return m_visibleInLayout; }
 
         /// should we display the close button
-        INLINE bool hasCloseButton() const { return m_hasCloseButton; }
+        INLINE bool tabHasCloseButton() const { return m_hasCloseButton; }
+
+        /// is tab locked (will show message when user wants to close it)
+        INLINE bool tabLocked() const { return m_locked; }
+
+        /// general (user controled) modified flag (adds a *)
+        INLINE bool tabModified() const { return m_modified; }
 
         //--
 
         // change title
-        void title(const base::StringBuf& titleString);
+        void tabTitle(const base::StringBuf& titleString);
+
+        // change icon
+        void tabIcon(const base::StringBuf& icon);
 
         // toggle the close button
-        void closeButton(bool flag);
+        void tabCloseButton(bool flag);
 
-        // remove this panel from thatever tab it's in
-        void close();
+        // toggle lock state of the tab
+        void tabLocked(bool flag);
+
+        // toggle modified state
+        void tabModified(bool flag);
+
+        // remove this panel from whatever tab it's in
+        virtual void close();
 
         // request closing of this dock panel
         virtual void handleCloseRequest();
 
+        //--
+
+        // compile a title string
+        virtual base::StringBuf compileTabTitleString() const;
+
+        //--
+
     private:
-        base::StringBuf m_title;
         base::StringBuf m_id;
+
+        base::StringBuf m_title;
+        base::StringBuf m_icon;
         bool m_hasCloseButton = true;
         bool m_visibleInLayout = true;
+        bool m_locked = false;
+        bool m_modified = false;
 
         friend class DockNotebook;
         friend class DockLayoutNode;
-
-        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
     };
     
     //---

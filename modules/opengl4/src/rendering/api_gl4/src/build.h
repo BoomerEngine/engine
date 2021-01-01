@@ -40,6 +40,7 @@ namespace rendering
 			class CopyQueue;
 			class UniformBufferPool;
 			class ObjectCache;
+            class DownloadArea;
 
 			class Buffer;
 			class Image;

@@ -106,18 +106,31 @@ namespace ed
         menu->createAction("MeshPreview.ShowBounds"_id, "Show bounds", "cube");
     }
 
-    void MeshEditor::bindResource(const res::ResourcePtr& resource)
+    bool MeshEditor::initialize()
     {
-        TBaseClass::bindResource(resource);
+        if (!TBaseClass::initialize())
+            return false;
 
-        if (m_structurePanel)
-            m_structurePanel->bindResource(mesh());
+        if (auto mesh = rtti_cast<rendering::Mesh>(resource()))
+        {
+            m_structurePanel->bindResource(mesh);
+            m_previewPanel->previewMesh(mesh);
+            m_materialsPanel->bindResource(mesh);
+        }
 
-        if (m_previewPanel)
-            m_previewPanel->previewMesh(mesh());
+        return true;
+    }
 
-        if (m_materialsPanel)
-            m_materialsPanel->bindResource(mesh());
+    void MeshEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+    {
+        if (auto mesh = rtti_cast<rendering::Mesh>(ptr))
+        {
+            m_structurePanel->bindResource(mesh);
+            m_previewPanel->previewMesh(mesh);
+            m_materialsPanel->bindResource(mesh);
+        }
+
+        TBaseClass::handleLocalReimport(ptr);
     }
 
     void MeshEditor::updateMaterialHighlights()
@@ -146,14 +159,7 @@ namespace ed
         virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
         {
             if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (auto mesh = base::rtti_cast<rendering::Mesh>(nativeFile->loadContent()))
-                {
-                    auto ret = base::RefNew<MeshEditor>(nativeFile);
-                    ret->bindResource(mesh);
-                    return ret;
-                }
-            }
+                return base::RefNew<MeshEditor>(nativeFile);
 
             return nullptr;
         }

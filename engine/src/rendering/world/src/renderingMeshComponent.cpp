@@ -110,6 +110,7 @@ namespace rendering
 				proxy->m_color = m_color;
 				proxy->m_colorEx = m_colorEx;
 				proxy->m_localToWorld = localToWorld();
+                proxy->m_selectable = selectable();
 
 				return proxy;
 			}

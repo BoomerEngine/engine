@@ -286,8 +286,9 @@ namespace base
             bool DynamicArrayType::removeArrayElement(const void* data, uint32_t index) const
             {
                 auto arr  = (BaseArray*)data;
-                if (index >= arr->size())
-                    return false;
+                auto size = arr->size();
+                DEBUG_CHECK_RETURN_EX_V(index < size, "Invalid array index", nullptr);
+
 
                 m_helper->eraseRange(arr, innerType(), index, 1);
                 return true;
@@ -296,8 +297,8 @@ namespace base
             bool DynamicArrayType::createArrayElement(void* data, uint32_t index) const
             {
                 auto arr  = (BaseArray*)data;
-                if (index > arr->size())
-                    return false;
+                auto size = arr->size();
+                DEBUG_CHECK_RETURN_EX_V(index <= size, "Invalid array index", nullptr);
 
                 m_helper->insertRange(arr, innerType(), index, 1);
                 return true;
@@ -308,8 +309,7 @@ namespace base
                 auto arr  = (const BaseArray*)data;
 
                 auto size = arr->size();
-                if (index >= size)
-                    return nullptr;
+                DEBUG_CHECK_RETURN_EX_V(index < size, "Invalid array index", nullptr);
 
                 auto elemSize = innerType()->size();
                 return (const uint8_t*)arr->data() + (index * elemSize);
@@ -320,8 +320,7 @@ namespace base
                 auto arr  = (BaseArray*)data;
 
                 auto size = arr->size();
-                if (index >= size)
-                    return nullptr;
+                DEBUG_CHECK_RETURN_EX_V(index < size, "Invalid array index", nullptr);
 
                 auto elemSize = innerType()->size();
                 return (uint8_t*)arr->data() + (index * elemSize);

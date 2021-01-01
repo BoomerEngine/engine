@@ -159,8 +159,11 @@ namespace ed
                     for (auto materialName : m_previewSettings.selectedMaterials.keys())
                         desc.excludedMaterialMask.insert(materialName);
 
-					if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
-						m_proxies.pushBack(proxy);
+                    if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+                    {
+                        proxy->m_selectable = rendering::scene::Selectable(42, 0);
+                        m_proxies.pushBack(proxy);
+                    }
                 }
 
 				desc.excludedMaterialMask.clear();
@@ -171,6 +174,7 @@ namespace ed
 				if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
 				{
 					proxy->m_flags.configure(rendering::scene::ObjectProxyFlagBit::Selected, m_previewSettings.highlightMaterials);
+                    proxy->m_selectable = rendering::scene::Selectable(42, 0);
 					m_proxies.pushBack(proxy);
 				}
             }

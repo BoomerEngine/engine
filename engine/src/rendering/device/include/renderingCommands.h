@@ -394,6 +394,14 @@ namespace rendering
 			// payload contains clear data (up to 16 bytes)
 		};
 
+        RENDER_DECLARE_OPCODE_DATA(ClearStructuredBuffer)
+        {
+            ObjectID view; // writable view!
+            uint32_t firstElement = 0;
+            uint32_t numElements = 0;            
+            uint32_t stride = 0;
+        };
+
 		RENDER_DECLARE_OPCODE_DATA(ClearImage)
 		{
 			ObjectID view; // writable view!
@@ -427,10 +435,7 @@ namespace rendering
         RENDER_DECLARE_OPCODE_DATA(Download)
         {
             ObjectID id;
-			ObjectID areaId;
-			uint32_t offsetInArea = 0;
-			uint32_t sizeInArea = 0;
-			IDownloadAreaObject* area = nullptr;
+            uint32_t dataSize = 0;
 			IDownloadDataSink* sink = nullptr;
 			ResourceCopyRange range;
         };

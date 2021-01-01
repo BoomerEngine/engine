@@ -25,32 +25,6 @@ namespace base
     namespace depot
     {
 
-        bool DepotStructure::queryFileMountPoint(StringView fileSystemPath, res::ResourceMountPoint& outMountPoint) const
-        {
-            DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AnyAbsolutePath), false);
-
-            // look at mounted file systems looking for one that can service loading
-            for (auto dep  : m_fileSystemsPtrs)
-            {
-                // last one, always matches
-                if (dep->mountPoint().root())
-                {
-                    outMountPoint = res::ResourceMountPoint::ROOT();
-                    return true;
-                }
-
-                // try match
-                if (dep->mountPoint().containsPath(fileSystemPath))
-                {
-                    outMountPoint = dep->mountPoint();
-                    return true;
-                }
-            }
-
-            // not found
-            return false;
-        }
-
         bool DepotStructure::queryFilePlacement(StringView fileSystemPath, const IFileSystem*& outFileSystem, StringBuf& outFileSystemPath, bool physicalOnly /*= false*/) const
         {
             DEBUG_CHECK_RETURN_V(ValidateDepotPath(fileSystemPath, DepotPathClass::AbsoluteFilePath), false);
@@ -65,8 +39,9 @@ namespace base
                 // try match
                 if (!physicalOnly || dep->fileSystem().isWritable())
                 {
-                    if (dep->mountPoint().translatePathToRelative(fileSystemPath, outFileSystemPath))
+                    if (fileSystemPath.beginsWith(dep->mountPoint()))
                     {
+                        outFileSystemPath = base::StringBuf(fileSystemPath.subString(dep->mountPoint().length()));
                         outFileSystem = &dep->fileSystem();
                         return true;
                     }
@@ -141,8 +116,7 @@ namespace base
                     if (!relativePath.empty() && (INDEX_NONE == relativePath.findStr("..")))
                     {
                         // use the shortest path (best mount point)
-                        StringBuf fileSystemPath;
-                        dep->mountPoint().expandPathFromRelative(relativePath, fileSystemPath);
+                        StringBuf fileSystemPath = TempString("{}{}", dep->mountPoint(), relativePath);
                         if (bestFileSystemPath.empty() || fileSystemPath.length() < bestFileSystemPath.length())
                         {
                             bestFileSystemPath = fileSystemPath;

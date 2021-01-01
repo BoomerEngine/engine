@@ -55,7 +55,7 @@ namespace ed
         , m_fileEvents(this)
     {
         layoutVertical();
-        closeButton(true);
+        tabCloseButton(true);
 
         // toolbar
         {
@@ -143,10 +143,10 @@ namespace ed
 
         actions().bindCommand("AssetBrowserTab.Lock"_id) = [this]()
         {
-            locked(!locked());
+            tabLocked(!tabLocked());
         };
 
-        actions().bindToggle("AssetBrowserTab.Lock"_id) = [this]() { return locked(); };
+        actions().bindToggle("AssetBrowserTab.Lock"_id) = [this]() { return tabLocked(); };
 
         //--
 
@@ -198,40 +198,10 @@ namespace ed
         m_filesModel.reset();
     }
 
-    void AssetBrowserTabFiles::handleCloseRequest()
-    {
-        if (locked())
-        {
-            ui::MessageBoxSetup setup;
-            setup.title("Close locked tab").yes().no().defaultNo().question();
-
-            StringBuilder txt;
-            txt.appendf("Tab '{}' is locked, close anyway?", directory()->name());
-            setup.message(txt.view());
-
-            if (ui::MessageButton::Yes != ui::ShowMessageBox(this, setup))
-                return;
-        }
-
-        close();
-    }
-
     void AssetBrowserTabFiles::updateTitle()
     {
-        StringBuilder ret;
-
-        if (m_locked)
-            ret << "[img:lock] ";
-        else
-            ret << "[img:table] ";
-
-        if (m_dir)
-            ret << m_dir->name();
-
-        if (m_flat)
-            ret << " (Flat)";
-
-        title(ret.toString());
+        tabTitle(m_dir ? m_dir->name() : "Tab");
+        tabIcon("table");
     }
 
     ManagedItem* AssetBrowserTabFiles::selectedItem() const
@@ -252,15 +222,6 @@ namespace ed
     Array<ManagedItem*> AssetBrowserTabFiles::selectedItems() const
     {
         return m_filesModel->items(m_files->selection().keys());
-    }
-
-    void AssetBrowserTabFiles::locked(bool isLocked)
-    {
-        if (m_locked != isLocked)
-        {
-            m_locked = isLocked;
-            updateTitle();
-        }
     }
 
     void AssetBrowserTabFiles::flat(bool isFlattened)
@@ -342,7 +303,7 @@ namespace ed
         {
             copyTab->flat(flat());
             copyTab->list(list());
-            copyTab->locked(locked());
+            copyTab->tabLocked(tabLocked());
 
             copyTab->directory(m_dir);
             copyTab->selectItems(selectedItems());
@@ -387,7 +348,7 @@ namespace ed
 
     void AssetBrowserTabFiles::configSave(const ui::ConfigBlock& block) const
     {
-        block.write("Locked", m_locked);
+        block.write("Locked", tabLocked());
         block.write("Flat", m_flat);
         block.write("List", m_list);
 
@@ -419,7 +380,7 @@ namespace ed
 
     void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
     {
-        m_locked = block.readOrDefault("Locked", false);
+        bool locked = block.readOrDefault("Locked", false);
         m_flat = block.readOrDefault("Flat", false);
 
         list(block.readOrDefault("List", false));
@@ -456,6 +417,7 @@ namespace ed
                 m_files->select(m_filesModel->first());
         }
 
+        tabLocked(locked);
         updateTitle();
     }
 
@@ -585,6 +547,49 @@ namespace ed
                             cancelFilePlaceholder(file);
                     };
                 }
+            }
+        }
+    }
+
+    void AssetBrowserTabFiles::duplicateFile(ManagedFile* sourceFile)
+    {
+        DEBUG_CHECK_RETURN_EX(sourceFile != nullptr, "Nothing to duplicate")
+
+        const auto initialFileName = m_dir->adjustFileName(TempString("{}_copy", sourceFile->name().view().fileStem()));
+        if (const auto addHocFile = base::RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, &sourceFile->fileFormat()))
+        {
+            if (auto index = m_filesModel->addAdHocElement(addHocFile))
+            {
+                selectItem(addHocFile);
+
+                auto addHocFileRef = addHocFile.weak();
+
+                m_filePlaceholders.pushBack(addHocFile);
+                m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED) = [this, addHocFileRef, sourceFile]()
+                {
+                    if (auto file = addHocFileRef.lock())
+                        finishFileDuplicate(file, sourceFile);
+                };
+                m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED) = [this, addHocFileRef]()
+                {
+                    if (auto file = addHocFileRef.lock())
+                        cancelFilePlaceholder(file);
+                };
+            }
+        }
+    }
+
+    void AssetBrowserTabFiles::finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile)
+    {
+        m_fileEvents.unbind(ptr->eventKey());
+        m_filesModel->removeAdHocElement(ptr);
+
+        if (m_filePlaceholders.remove(ptr))
+        {
+            const auto fileName = ptr->name();
+            if (auto file = m_dir->createFileCopy(fileName, sourceFile))
+            {
+                selectItem(file);
             }
         }
     }

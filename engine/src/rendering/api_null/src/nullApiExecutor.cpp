@@ -73,6 +73,11 @@ namespace rendering
 			{
 			}
 
+			void FrameExecutor::runClearStructuredBuffer(const command::OpClearStructuredBuffer&)
+			{
+
+			}
+
 			void FrameExecutor::runDraw(const command::OpDraw& op)
 			{
 			}
@@ -105,6 +110,10 @@ namespace rendering
 			}
 
 			void FrameExecutor::runUAVBarrier(const command::OpUAVBarrier& op)
+			{
+			}
+
+			void FrameExecutor::runDownload(const command::OpDownload& op)
 			{
 			}
 

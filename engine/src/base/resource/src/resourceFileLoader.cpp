@@ -10,7 +10,7 @@
 #include "resourceFileTables.h"
 #include "resourceFileLoader.h"
 #include "resourceLoader.h"
-#include "resourcePath.h"
+#include "resourceKey.h"
 #include "resource.h"
 
 #include "base/io/include/ioAsyncFileHandle.h"
@@ -150,7 +150,7 @@ namespace base
 
                     RunChildFiber("LoadImport") << [&entry, &context, &allLoadedSignal](FIBER_FUNC)
                     {
-                        const auto key = ResourceKey(entry.path, entry.type.cast<IResource>());
+                        const auto key = ResourceKey(ResourcePath(entry.path), entry.type.cast<IResource>());
                         entry.loaded = context.resourceLoader->loadResource(key);
                         if (!entry.loaded)
                             TRACE_WARNING("Loader: Missing reference to file '{}'", key);
@@ -212,6 +212,15 @@ namespace base
 
                 auto obj = classType->create<IObject>();
                 resolvedReferences.objects[i] = obj;
+
+                if (context.resourceLoader && context.resourceLoadPath)
+                {
+                    if (i == 0 && obj->cls()->is<res::IResource>())
+                    {
+                        auto* resource = static_cast<res::IResource*>(obj.get());
+                        resource->bindToLoader(context.resourceLoader, context.resourceLoadPath);
+                    }
+                }
 
                 if (parentObject)
                     obj->parent(parentObject);
@@ -353,7 +362,7 @@ namespace base
                         }
 
                         // read the crap
-                        stream::OpcodeReader reader(resolvedReferences, objectData, objectDataSize, protectedFileLayout);
+                        stream::OpcodeReader reader(resolvedReferences, objectData, objectDataSize, protectedFileLayout, tables.header()->version);
                         object->onReadBinary(reader);
                     }
                 }
@@ -466,7 +475,7 @@ namespace base
                 if (const auto resourceClass = info.type.cast<IResource>())
                 {
                     auto& outEntry = outDependencies.emplaceBack();
-                    outEntry.key = ResourceKey(info.path, resourceClass);
+                    outEntry.key = ResourceKey(ResourcePath(info.path), resourceClass);
                     outEntry.loaded = info.loaded;
                 }
             }
@@ -479,7 +488,6 @@ namespace base
         MetadataPtr LoadFileMetadata(io::IAsyncFileHandle* file, const FileLoadingContext& context)
         {
             FileLoadingContext loadingContext;
-            loadingContext.basePath = context.basePath;
             loadingContext.loadSpecificClass = Metadata::GetStaticClass();
 
             if (!LoadFile(file, loadingContext))

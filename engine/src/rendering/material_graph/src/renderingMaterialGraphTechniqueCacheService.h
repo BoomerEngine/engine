@@ -18,7 +18,7 @@ namespace rendering
     class MaterialTechniqueCompiler;
 
     // local service for compiling techniques for materials, only reason it's a service is that we need to observer the depot
-    class  MaterialTechniqueCacheService : public base::app::ILocalService
+    class MaterialTechniqueCacheService : public base::app::ILocalService
     {
         RTTI_DECLARE_VIRTUAL_CLASS(MaterialTechniqueCacheService, base::app::ILocalService);
 

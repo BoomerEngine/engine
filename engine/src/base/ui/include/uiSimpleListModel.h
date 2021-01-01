@@ -42,7 +42,7 @@ namespace ui
         {
             for (const auto& elem : m_elements)
                 if (elem->data == data)
-                    return ModelIndex(this, elem);
+                    return elem->index;
 
             return ModelIndex();
         }
@@ -55,10 +55,12 @@ namespace ui
             {
                 if (elem->data == data)
                 {
+                    auto index = elem->index;
+
                     m_elements.eraseUnordered(i);
                     count += 1;
 
-                    notifyItemRemoved(ModelIndex(), ModelIndex(this, elem));
+                    notifyItemRemoved(ModelIndex(), index);
 
                     if (!all)
                         break;

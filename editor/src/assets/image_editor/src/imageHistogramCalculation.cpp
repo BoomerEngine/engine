@@ -33,7 +33,7 @@ namespace ed
     {
     }
 
-	void ImageHistogramPendingData::processRetreivedData(rendering::IDownloadAreaObject* area, const void* untypedDataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info)
+	void ImageHistogramPendingData::processRetreivedData(const void* untypedDataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info)
 	{
 		const auto expectedSize = (2 + m_numBuckets) * sizeof(uint32_t);
 		if (expectedSize == dataSize)

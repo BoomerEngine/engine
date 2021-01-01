@@ -31,7 +31,7 @@ namespace ui
             verticalScrollMode(vmode);
 
         if (hmode != ScrollMode::None)
-            horizontalScrollMode(vmode);
+            horizontalScrollMode(hmode);
     }
 
     bool ScrollArea::handleMouseWheel(const base::input::MouseMovementEvent& evt, float delta)
@@ -54,6 +54,9 @@ namespace ui
         {
             if (m_verticalScrollMode != ScrollMode::None && m_verticalScrollBar)
                 return ((IElement*)m_verticalScrollBar.get())->handleMouseWheel(evt, delta);
+
+            else if (m_horizontalScrollMode != ScrollMode::None && m_horizontalScrollBar)
+                return ((IElement*)m_horizontalScrollBar.get())->handleMouseWheel(evt, delta);
         }
 
         return TBaseClass::handleMouseWheel(evt, delta);
@@ -149,7 +152,7 @@ namespace ui
         }
     }
 
-    void ScrollArea::scrollOffset(const Position& offset)
+    void ScrollArea::scrollOffset(const Position& offset) const
     {
         if (offset.x != m_scrollOffset.x)
         {
@@ -168,7 +171,12 @@ namespace ui
         }
     }
 
-    void ScrollArea::scrollToMakeAreaVisible(const ElementArea& showArea)
+    void ScrollArea::scrollToMakeElementVisible(IElement* element)
+    {
+        m_requestedScrollToElement = element;
+    }
+
+    void ScrollArea::scrollToMakeAreaVisible(const ElementArea& showArea) const
     {
         if (!showArea.empty())
         {
@@ -197,10 +205,19 @@ namespace ui
         }
     }
 
+    void ScrollArea::computeSize(Size& outSize) const
+    {
+        TBaseClass::computeSize(outSize);
+
+        /*auto hasVerticalScrollbar = m_scrollBarState & 2;
+        if (m_horizontalScrollBar && hasVerticalScrollbar)
+            outSize.y += m_horizontalScrollBar->cachedLayoutParams().calcTotalSize().y;*/
+    }
+
     void ScrollArea::arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const
     {
         // short-circuit for cases when no scrollbars are enabled
-        if (m_verticalScrollMode == ScrollMode::None && m_verticalScrollMode == ScrollMode::None)
+        if (m_verticalScrollMode == ScrollMode::None && m_horizontalScrollMode == ScrollMode::None)
         {
             TBaseClass::arrangeChildren(innerArea, clipArea, outArrangedChildren, dynamicSizing);
             return;
@@ -269,8 +286,23 @@ namespace ui
         // adjust the scroll positions so they are in range
         auto maxX = std::max<float>(0.0f, totalUsedSize.x - usableInnerArea.size().x);
         auto maxY = std::max<float>(0.0f, totalUsedSize.y - usableInnerArea.size().y);
-        m_scrollOffset.x = std::clamp<float>(m_scrollOffset.x, 0.0f, maxY);
+        m_scrollOffset.x = std::clamp<float>(m_scrollOffset.x, 0.0f, maxX);
         m_scrollOffset.y = std::clamp<float>(m_scrollOffset.y, 0.0f, maxY);
+
+        // if we requested to scroll to given element and it has the proper area computed finally then do the scrolling
+        if (m_requestedScrollToElement)
+        {
+            if (auto element = m_requestedScrollToElement.lock())
+            {
+                const auto area = element->cachedDrawArea();
+                if (!area.empty())
+                {
+                    scrollToMakeAreaVisible(area);
+                }
+            }
+
+            m_requestedScrollToElement.reset();
+        }
 
         // ok, adjust the positions of the bars
         if (m_verticalScrollBar)
@@ -283,6 +315,7 @@ namespace ui
                 outArrangedChildren.add(m_verticalScrollBar, usableInnerArea.horizontalSice(usableInnerArea.right(), usableInnerArea.right() + m_verticalScrollBar->cachedLayoutParams().calcTotalSize().x), clipArea);
 
         }
+
         if (m_horizontalScrollBar)
         {
             m_horizontalScrollBar->scrollAreaSize(totalUsedSize.x);

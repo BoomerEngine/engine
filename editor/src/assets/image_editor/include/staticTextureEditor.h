@@ -30,14 +30,16 @@ namespace ed
 
         INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
 
-        INLINE rendering::StaticTexturePtr texture() const { return rtti_cast<rendering::StaticTexture>(resource()); }
+        INLINE const rendering::StaticTexturePtr& texture() const { return m_texture; }
 
         //--
 
-        virtual bool save() override;
-        virtual void bindResource(const res::ResourcePtr& resource) override;
+        virtual bool initialize() override;
+        virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
 
     private:
+        rendering::StaticTexturePtr m_texture;
+
         ImageHistogramWidget* m_colorHistogram;
         ImageHistogramWidget* m_lumHistogram;
 

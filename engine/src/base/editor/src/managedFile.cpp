@@ -32,6 +32,7 @@
 #include "base/resource/include/resourceFileSaver.h"
 #include "base/resource_compiler/include/importFileService.h"
 #include "base/ui/include/uiMessageBox.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -194,13 +195,18 @@ namespace ed
         if (!editor->initialize())
             return false;
 
+        // initialize the additional generic aspects once the normal editor was initialized
+        editor->createAspects();
+
         // load the general editor config
-        //auto config = GetService<Editor>()->
+        const auto configBlock = GetService<Editor>()->config().path(depotPath());
+        editor->configLoad(configBlock);
 
         // attach editor to main window and select it
         // TODO: great place to load config for where should the editor window be placed
         m_editor = editor;
         mainWindow.attachMainTab(editor, activate);
+        depot()->m_openedEditors.insert(editor);
         return true;
     }
 
@@ -242,6 +248,8 @@ namespace ed
                     return false;
                 }
             }
+
+            depot()->m_openedEditors.remove(m_editor);
 
             auto& mainWindow = GetService<Editor>()->mainWindow();
             mainWindow.detachMainTab(m_editor);

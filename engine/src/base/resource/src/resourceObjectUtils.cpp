@@ -62,6 +62,9 @@ namespace base
             loadContext.resourceLoader = loader;
             loadContext.mutatedRootClass = mutatedClass;
 
+            if (auto srcResource = rtti_cast<res::IResource>(object))
+                loadContext.resourceLoadPath = srcResource->path();
+
             if (LoadFile(reader, loadContext))
             {
                 if (auto loaded = loadContext.root<IObject>())

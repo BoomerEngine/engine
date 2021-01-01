@@ -37,8 +37,7 @@ namespace ed
 
     private:
         base::RefPtr<rendering::MaterialGraph> m_graph;
-        base::RefPtr<rendering::MaterialInstance> m_previewInstance;
-        base::RefPtr<rendering::MaterialTemplate> m_previewTemplate;
+        base::RefPtr<rendering::MaterialInstance> m_previewMaterial;
 
         //---
 
@@ -48,9 +47,11 @@ namespace ed
 
         ui::DataInspectorPtr m_properties;
 
+        void updatePreviewMaterial();
         void createInterface();
         void handleChangedSelection();
 
+        virtual void handleContentModified() override;
         virtual void handleGeneralCopy() override;
         virtual void handleGeneralCut() override;
         virtual void handleGeneralPaste() override;

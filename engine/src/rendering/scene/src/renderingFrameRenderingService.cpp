@@ -14,7 +14,8 @@
 #include "renderingScene.h"
 
 #include "renderingFrameView_Main.h"
-//#include "renderingFrameView_Selection.h"
+#include "renderingFrameView_Wireframe.h"
+#include "renderingFrameView_CaptureSelection.h"
 
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
@@ -89,11 +90,25 @@ namespace rendering
 
                 if (frame.capture.mode == FrameCaptureMode::SelectionRect)
                 {
-                    if (frame.capture.sink)
-                    {
-                        //FrameView_Selection view(renderer, frame.camera.camera, m_surfaceCache->m_sceneFullDepthRT, frame.capture.area, frame.capture.dataBuffer);
-                        //view.render(cmd);
-                    }
+                    FrameViewCaptureSelection::Setup setup;
+                    setup.camera = frame.camera.camera;
+                    setup.viewport = targetView.targetRect;
+                    setup.captureRegion = frame.capture.region;
+                    setup.captureSink = frame.capture.sink;
+
+                    FrameViewCaptureSelection view(renderer, setup);
+                    view.render(cmd);
+                }
+                else if (frame.mode == FrameRenderMode::WireframePassThrough || frame.mode == FrameRenderMode::WireframeSolid)
+                {
+                    FrameViewWireframe::Setup setup;
+                    setup.camera = frame.camera.camera;
+                    setup.colorTarget = targetView.targetColorRTV;
+                    setup.depthTarget = targetView.targetDepthRTV;
+                    setup.viewport = targetView.targetRect;
+
+                    FrameViewWireframe view(renderer, setup);
+                    view.render(cmd);
                 }
                 else if (frame.mode == FrameRenderMode::Default)
                 {

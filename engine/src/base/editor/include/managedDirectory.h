@@ -192,6 +192,9 @@ namespace ed
 
         /// create an empty file of given type in the file system
         ManagedFile* createFile(StringView name, const ManagedFileFormat& format);
+
+        /// copy file
+        ManagedFile* createFileCopy(StringView name, const ManagedFile* sourceFile);
             
         ///---
 

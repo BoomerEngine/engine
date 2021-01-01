@@ -34,6 +34,8 @@ namespace rendering
 
 				for (auto id : m_samplerMap.values())
 					GL_PROTECT(glDeleteSamplers(1, &id));
+
+				m_freeDownloadAreas.clear();
 			}
 
 			IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
@@ -352,6 +354,79 @@ namespace rendering
 			}
 
 			//--
+
+			DownloadArea::DownloadArea(uint32_t size)
+				: m_size(size)
+			{
+				// create buffer
+				GL_PROTECT(glCreateBuffers(1, &m_glBuffer));
+
+				// label the object
+				const base::StringView label = "DownloadArea";
+				GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, label.length(), label.data()));
+
+				// setup data with buffer
+				GL_PROTECT(glNamedBufferStorage(m_glBuffer, m_size, nullptr, GL_CLIENT_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT | GL_MAP_COHERENT_BIT));
+
+				// persistently map the buffer
+				GL_PROTECT(m_ptr = (uint8_t*)glMapNamedBufferRange(m_glBuffer, 0, m_size, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+				ASSERT_EX(m_ptr != nullptr, "Buffer mapping failed");
+			}
+
+            DownloadArea::~DownloadArea()
+            {
+                if (m_ptr)
+                {
+					GL_PROTECT(glUnmapNamedBuffer(m_glBuffer));
+					m_ptr = nullptr;
+                }
+
+                if (m_glBuffer)
+                {
+                    GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
+                    m_glBuffer = 0;
+                }
+            }
+
+
+			//--
+
+			DownloadArea* ObjectCache::allocateDownloadArea(uint32_t size)
+			{
+				int bestAreaIndex = -1;
+				DownloadArea* bestArea = nullptr;
+				uint32_t bestAreaSize = 0;
+
+				for (auto index : m_freeDownloadAreas.indexRange())
+				{
+					auto* area = m_freeDownloadAreas[index];
+					if (area->size() >= size)
+					{
+						if (!bestArea || area->size() < bestAreaSize)
+						{
+							bestAreaIndex = index;
+							bestAreaSize = area->size();
+							bestArea = area;
+						}
+					}
+				}
+
+				if (bestArea)
+				{
+					m_freeDownloadAreas.erase(bestAreaIndex);
+					return bestArea;
+				}
+
+				const auto alignedSize = base::Align<uint32_t>(size, 256 << 10);
+				return new DownloadArea(alignedSize);
+			}
+
+			void ObjectCache::freeDownloadArea(DownloadArea* area)
+			{
+				m_freeDownloadAreas.pushBack(area);
+			}
+
+			//-
 
 		} // gl4
 	} // api

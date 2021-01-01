@@ -80,6 +80,8 @@ namespace ui
         virtual bool handleExternalKeyEvent(const base::input::KeyEvent& evt) override;
         virtual bool handleExternalCharEvent(const base::input::CharEvent& evt) override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+
+        virtual IElement* focusFindFirst() override;
     };
 
     ///---

@@ -16,7 +16,6 @@
 #include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
 #include "base/canvas/include/canvasAtlas.h"
-#include "base/resource/include/resourcePath.h"
 
 namespace ui
 {

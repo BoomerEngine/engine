@@ -999,7 +999,7 @@ namespace ui
             const auto maxX = std::max<float>(minAbs.x, maxAbs.x);
             const auto maxY = std::max<float>(minAbs.y, maxAbs.y);
 
-			if (maxX > minX&& maxY > minY)
+			if (maxX > minX && maxY > minY)
 			{
 				base::canvas::Geometry geometry;
 

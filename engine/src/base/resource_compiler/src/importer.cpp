@@ -259,7 +259,7 @@ namespace base
             // TODO: add a change for importer to test resource and check if it's up to date without the need for reimporting
 
             // create import interface
-            LocalImporterInterface importerInterface(m_assets, m_depotChecker, existingData, info.assetFilePath, info.depotFilePath, ResourceMountPoint(), progress, importConfig);
+            LocalImporterInterface importerInterface(m_assets, m_depotChecker, existingData, info.assetFilePath, info.depotFilePath, progress, importConfig);
             const auto importedResource = importer->importResource(importerInterface);
 
             // regardless if we produced asset or not never return anything if we got canceled

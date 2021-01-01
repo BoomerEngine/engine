@@ -473,6 +473,24 @@ namespace rendering
 				}
 			}
 
+			void FrameExecutor::runClearStructuredBuffer(const command::OpClearStructuredBuffer& op)
+			{
+                auto* bufferViewPtr = objects()->resolveStatic<BufferUntypedView>(op.view);
+                ASSERT_EX(bufferViewPtr, "Object was removed while command buffer was waiting for submission");
+                ASSERT_EX(bufferViewPtr->setup().writable, "Non writable view");
+
+                auto bufferResolved = bufferViewPtr->buffer()->resolve();
+                DEBUG_CHECK_RETURN_EX(bufferResolved, "Internal OOM"); // OOM between recording and execution
+
+				uint8_t clearData[32];
+				memzero(clearData, sizeof(clearData));
+
+				auto bufferOffset = bufferViewPtr->setup().offset + (op.firstElement * op.stride);
+				auto bufferSize = op.numElements * op.stride;
+
+                GL_PROTECT(glClearNamedBufferSubData(bufferResolved.glBuffer, GL_R32UI, bufferOffset, bufferSize, GL_RED, GL_UNSIGNED_INT, clearData));
+			}
+
 			void FrameExecutor::runClearImage(const command::OpClearImage& op)
 			{
 				auto* imageViewPtr = objects()->resolveSpecfic<ImageAnyView>(op.view, ObjectType::ImageWritableView);
@@ -503,6 +521,38 @@ namespace rendering
 				}
 			}
 			
+            void FrameExecutor::runDownload(const command::OpDownload& op)
+            {
+                auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
+                DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
+
+                auto sinkPtr = DownloadDataSinkPtr(AddRef(op.sink));
+				auto objectCache = cache();
+
+				if (auto* destArea = objectCache->allocateDownloadArea(op.dataSize))
+				{
+					if (destObject->objectType() == ObjectType::Buffer)
+					{
+						auto* destBuffer = static_cast<Buffer*>(destObject);
+						destBuffer->download(destArea, op.range);
+					}
+                    else if (destObject->objectType() == ObjectType::Image)
+                    {
+                        auto* destImage = static_cast<Image*>(destObject);
+						destImage->download(destArea, op.range);
+                    }
+
+                    thread()->registerCurrentFrameGPUComplectionCallback([destArea, sinkPtr, op, objectCache]() {
+						sinkPtr->processRetreivedData(destArea->ptr(), op.dataSize, op.range);
+						objectCache->freeDownloadArea(destArea);
+                        });
+				}
+				else
+				{
+					op.sink->processRetreivedData(nullptr, 0, op.range);
+				}
+            }
+
 			void FrameExecutor::runDraw(const command::OpDraw& op)
 			{
 				auto* pso = objects()->resolveStatic<GraphicsPipeline>(op.pipelineObject);

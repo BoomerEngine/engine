@@ -20,6 +20,11 @@ namespace base
 
         //--
 
+        IImportOutput::~IImportOutput()
+        {}
+
+        //--
+
         ImportSaverThread::ImportSaverThread(depot::DepotStructure& depot)
             : m_saveThreadSemaphore(0, INT_MAX)
             , m_saveThreadRequestExit(0)

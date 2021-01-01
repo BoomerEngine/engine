@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <base/resource/include/resourceMountPoint.h>
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceMetadata.h"
 
@@ -20,14 +19,13 @@ namespace base
         class CookerInterface : public IResourceCookerInterface
         {
         public:
-            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, const ResourceMountPoint& referenceMountingPoint, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
+            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
             virtual ~CookerInterface();
 
             virtual bool checkCancelation() const override final;
             virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
             virtual const StringBuf& queryResourcePath() const override final;
-            virtual const ResourceMountPoint& queryResourceMountPoint() const override final;
             virtual const StringBuf& queryResourceContextName() const override final;
             virtual bool queryResolvedPath(StringView relativePath, StringView contextFileSystemPath, bool isLocal, StringBuf& outFileSystemPath) override final;
             virtual bool queryContextName(StringView fileSystemPath, StringBuf& contextName) override final;
@@ -51,10 +49,8 @@ namespace base
             INLINE const TReportedDependencies& generatedDependencies() const { return m_dependencies; }
 
         private:
-            ResourceMountPoint m_referenceMountingPoint;
             StringBuf m_referencePath;
             StringBuf m_referenceContextName;
-            StringBuf m_referencePathBase;
 
             const depot::DepotStructure& m_depot;
             IResourceLoader* m_loader;

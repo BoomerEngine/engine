@@ -40,8 +40,8 @@ namespace base
         {
             m_handle = ptr;
 
-            if (ptr)
-                m_key = ptr->key();
+            if (ptr && ptr->path())
+                m_key = ResourceKey(ptr->path(), ptr->cls().cast<IResource>());
         }
 
         BaseReference::BaseReference(BaseReference&& other)
@@ -84,12 +84,12 @@ namespace base
             m_key = ResourceKey();
         }
 
-        void BaseReference::set(const ResourceHandle& object)
+        void BaseReference::set(const ResourceHandle& ptr)
         {
-            m_handle = object;
+            m_handle = ptr;
 
-            if (object)
-                m_key = object->key();
+            if (ptr && ptr->path()) 
+                m_key = ResourceKey(ptr->path(), ptr->cls().cast<IResource>());
             else
                 m_key = ResourceKey();
         }

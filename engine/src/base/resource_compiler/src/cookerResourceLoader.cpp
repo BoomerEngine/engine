@@ -13,8 +13,7 @@
 
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceMetadata.h"
-#include "base/resource/include/resourcePath.h"
-#include "base/resource/include/resourceMountPoint.h"
+#include "base/resource/include/resourceKey.h"
 #include "base/resource/include/resourceStaticResource.h"
 #include "base/object/include/objectGlobalRegistry.h"
 #include "base/io/include/ioSystem.h"
@@ -170,8 +169,8 @@ namespace base
 
             ScopeTimer timer;
 
-            TRACE_INFO("Applying reload to '{}'", currentResource->key());
-            currentResource->applyReload(newResource);
+            TRACE_INFO("Applying reload to '{}'", currentResource->path());
+            //currentResource->applyReload(newResource);
 
             uint32_t numObjectsVisited = 0;
             Array<ObjectPtr> affectedObjects;
@@ -190,44 +189,38 @@ namespace base
 
             IStaticResource::ApplyReload(currentResource, newResource);
 
-            if (const auto depotPath = StringBuf(currentResource->key().path().view()))
+            if (const auto depotPath = currentResource->path().str())
                 DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);
 
-            TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->key(), timer, affectedObjects.size(), numObjectsVisited);
+            TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->path(), timer, affectedObjects.size(), numObjectsVisited);
         }
 
         ResourceHandle ResourceLoaderCooker::loadResourceOnce(const ResourceKey& key)
         {
             SpecificClassType<IResource> cookedResourceClass;
 
-            // determine mount point of the resource
-            ResourceMountPoint mountPoint;
-            m_depot->queryFileMountPoint(key.path().view(), mountPoint);
-
             // most common case is to directly load serialized data, check that first
-            const auto fileLoadClass = IResource::FindResourceClassByExtension(key.extension());
+            const auto fileLoadClass = IResource::FindResourceClassByExtension(key.path().extension());
             if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
                 // load file content from serialized file
-                if (auto file = m_depot->createFileAsyncReader(key.path()))
+                if (auto file = m_depot->createFileAsyncReader(key.path().view()))
                 {
                     FileLoadingContext context;
-                    context.basePath = mountPoint.path();
+                    context.resourceLoadPath = key.path();
                     context.resourceLoader = this;
 
                     if (LoadFile(file, context))
                     {
                         if (const auto ret = context.root<IResource>())
                         {
-                            ret->bindToLoader(this, key, mountPoint, false);
-                            
                             io::TimeStamp fileTimeStamp;
-                            if (m_depot->queryFileTimestamp(key.path(), fileTimeStamp))
+                            if (m_depot->queryFileTimestamp(key.path().view(), fileTimeStamp))
                             {
                                 InplaceArray<SourceDependency, 1> dependencies;
 
                                 auto& dep = dependencies.emplaceBack();
-                                dep.sourcePath = StringBuf(key.path());
+                                dep.sourcePath = key.path().str();
                                 dep.timestamp = fileTimeStamp.value();
 
                                 m_depTracker->notifyDependenciesChanged(key, dependencies);
@@ -244,7 +237,7 @@ namespace base
             {
                 if (auto cookedFile = m_cooker->cook(key))
                 {
-                    cookedFile->bindToLoader(this, key, mountPoint, false);
+                    cookedFile->bindToLoader(this, key.path());
 
                     if (cookedFile->metadata())
                         m_depTracker->notifyDependenciesChanged(key, cookedFile->metadata()->sourceDependencies);

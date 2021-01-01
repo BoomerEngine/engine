@@ -209,7 +209,7 @@ namespace ui
 
         /// Show window as modal window on given owner, owner must have valid renderer
         /// This function returns the exit code the window was closed with
-        int runModal(IElement* owner);
+        int runModal(IElement* owner, IElement* windowFocus = nullptr);
 
         //--
 

@@ -108,7 +108,8 @@ namespace ui
         {
             for (const auto& socket : block.sockets())
             {
-                if (socket->info().m_visibleByDefault)
+                //if (socket->info().m_visibleByDefault)
+                if (socket->visible())
                 {
                     switch (socket->info().m_placement)
                     {

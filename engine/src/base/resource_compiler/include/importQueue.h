@@ -22,7 +22,7 @@ namespace base
         //--
 
         class Importer;
-        class ImportSaverThread;
+        class IImportOutput;
         class ImportQueueDepotChecker;
         struct ImportJobInfo;
 
@@ -67,7 +67,7 @@ namespace base
         class BASE_RESOURCE_COMPILER_API ImportQueue : public NoCopy
         {
         public:
-            ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, ImportSaverThread* saver, IImportQueueCallbacks* callbacks);
+            ImportQueue(SourceAssetRepository* assets, IImportDepotLoader* loader, IImportOutput* saver, IImportQueueCallbacks* callbacks);
             ~ImportQueue();
 
             //--
@@ -84,7 +84,7 @@ namespace base
 
         private:
             IImportDepotLoader* m_loader = nullptr;
-            ImportSaverThread* m_saver = nullptr;
+            IImportOutput* m_saver = nullptr;
             SourceAssetRepository* m_assets = nullptr;
 
             UniquePtr<ImportQueueDepotChecker> m_importerDepotChecker;

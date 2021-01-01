@@ -16,6 +16,7 @@
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiImage.h"
 #include "base/ui/include/uiEditBox.h"
+#include "base/ui/include/uiMessageBox.h"
 #include "base/resource/include/resourceMetadata.h"
 
 namespace ed
@@ -149,11 +150,39 @@ namespace ed
 
     void AssetFileImportWidget::cmdReimport()
     {
-        if (m_file)
+        DEBUG_CHECK_RETURN_EX(m_file, "No file to reimport");
+
+        if (!m_checker || m_checker->status() == res::ImportStatus::Checking)
+            return;
+
+        auto setup = ui::MessageBoxSetup().question().yes().no().defaultNo().title("Update imported asset");
+        if (m_checker->status() == res::ImportStatus::UpToDate)
         {
-            auto config = CloneObject(m_config, nullptr);
-            base::GetService<Editor>()->mainWindow().addReimportFile(m_file, config, true);
+            if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Resource is up to date, update any way?")))
+                return;
         }
+        else if (m_checker->status() == res::ImportStatus::NotImportable)
+        {
+            if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Asset seems to be not importable any more, update any way?")))
+                return;
+        }
+        else if (m_checker->status() == res::ImportStatus::MissingAssets)
+        {
+            if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Seems like some source files are missing, update any way?")))
+                return;
+        }
+        else if (m_checker->status() != res::ImportStatus::Checking)
+        {
+            if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Checking for asset state has not finished yet, update any way?")))
+                return;
+        }
+        else if (m_checker->status() != res::ImportStatus::NotUpToDate)
+        {
+            if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Asset is not a valid state to be imported, update any way?")))
+                return;
+        }
+
+        call(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, m_config);
     }
 
     void AssetFileImportWidget::cmdSaveConfiguration()

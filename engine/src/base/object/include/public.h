@@ -289,7 +289,11 @@ namespace base
 
     static const uint32_t VER_ABSOLUTE_DEPOT_PATHS = 2;
 
-    static const uint32_t VER_CURRENT = 2;
+    static const uint32_t VER_THREAD_SAFE_GRAPHS = 3;
+
+    //--
+
+    static const uint32_t VER_CURRENT = VER_THREAD_SAFE_GRAPHS;
 }
 
 //---

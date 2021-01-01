@@ -37,12 +37,12 @@ namespace rendering
     static inline const base::Color COLOR_VECTOR = base::Color::CORAL;
     static inline const base::Color COLOR_GENERIC = base::Color(255, 128, 64); // classic*/
 
-    const base::Color::ColorVal COLOR_SOCKET_RED = base::Color(200, 70, 70).toABGR();
-    const base::Color::ColorVal COLOR_SOCKET_GREEN = base::Color(70, 200, 70).toABGR();;
-    const base::Color::ColorVal COLOR_SOCKET_BLUE = base::Color(70, 70, 200).toABGR();;
-    const base::Color::ColorVal COLOR_SOCKET_ALPHA = base::Color(130, 130, 130).toABGR();;
-    const base::Color::ColorVal COLOR_SOCKET_TEXTURE = base::Color(150, 100, 180).toABGR();;
-    const base::Color::ColorVal COLOR_SOCKET_CUBE = base::Color(225, 100, 80).toABGR();;
+    const base::Color::ColorVal COLOR_SOCKET_RED = base::Color(200, 70, 70).toRGBA();
+    const base::Color::ColorVal COLOR_SOCKET_GREEN = base::Color(70, 200, 70).toRGBA();
+    const base::Color::ColorVal COLOR_SOCKET_BLUE = base::Color(70, 70, 200).toRGBA();
+    const base::Color::ColorVal COLOR_SOCKET_ALPHA = base::Color(130, 130, 130).toRGBA();
+    const base::Color::ColorVal COLOR_SOCKET_TEXTURE = base::Color(150, 100, 180).toRGBA();
+    const base::Color::ColorVal COLOR_SOCKET_CUBE = base::Color(225, 100, 80).toRGBA();
 
     ///---
 

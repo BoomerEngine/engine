@@ -114,13 +114,8 @@ namespace base
 
         bool Cooker::findBestCooker(const ResourceKey& key, CookableClass& outBestCooker) const
         {
-            // get mount point for the resource path
-            ResourceMountPoint mountPoint;
-            if (!m_depot.queryFileMountPoint(key.path(), mountPoint))
-                return false;
-
             // get the extension of the path we want to load from
-            auto pathExtension = key.extension();
+            auto pathExtension = key.path().extension();
             if (pathExtension.empty())
                 return false;
 
@@ -206,7 +201,7 @@ namespace base
         static bool SelfCookingResource(ResourceKey key)
         {
             const auto loadExtension = IResource::GetResourceExtensionForClass(key.cls());
-            const auto fileExtension = key.extension();
+            const auto fileExtension = key.path().extension();
             return loadExtension == fileExtension;
         }
 
@@ -215,39 +210,29 @@ namespace base
             PC_SCOPE_LVL0(CookResource);
             ASSERT_EX(key, "Invalid resource key");
 
-            // get mount point for the resource path
-            ResourceMountPoint mountPoint;
-            if (m_depot.queryFileMountPoint(key.path(), mountPoint))
+            // find best cooker for the job
+            CookableClass info;
+            if (findBestCooker(key, info) && info.cookerClass)
             {
-                // find best cooker for the job
-                CookableClass info;
-                if (findBestCooker(key, info) && info.cookerClass)
-                {
-                    return cookUsingCooker(key, mountPoint, info);
-                }
-                else  if (SelfCookingResource(key))
-                {
-                    return m_loader->loadResource(key);
-                }
-                else
-                {
-                    TRACE_ERROR("No cooker found for resource '{}'", key);
-                    return nullptr;
-                }
+                return cookUsingCooker(key, info);
+            }
+            else  if (SelfCookingResource(key))
+            {
+                return m_loader->loadResource(key);
             }
             else
             {
-                TRACE_ERROR("No mount point found for resource '{}', is the path inside the depot?", key);
+                TRACE_ERROR("No cooker found for resource '{}'", key);
                 return nullptr;
             }
         }
 
-        ResourcePtr Cooker::cookUsingCooker(ResourceKey key, const ResourceMountPoint& mountPoint, const CookableClass& recipe) const
+        ResourcePtr Cooker::cookUsingCooker(ResourceKey key, const CookableClass& recipe) const
         {
             ASSERT(recipe.cookerClass != nullptr);
             ASSERT(recipe.targetResourceClass != nullptr);
 
-            CookerInterface helperInterface(m_depot, m_loader, key.path(), mountPoint, m_finalCooker, m_externalProgressTracker);
+            CookerInterface helperInterface(m_depot, m_loader, key.path().str(), m_finalCooker, m_externalProgressTracker);
 
             // cook the resource
             auto cooker = recipe.cookerClass->create<IResourceCooker>();

@@ -95,6 +95,16 @@ namespace ui
         // detach tab element, calls detachTab with default parameters
         virtual void detachChild(IElement* childElement) override final;
 
+        //--
+
+        // attach a custom header element (usually a drop down button)
+        void attachHeaderElement(IElement* element);
+
+        // detach custom header telement
+        void dettachHeaderElement(IElement* element);
+
+        //--
+
     private:
         virtual void computeSize(Size& outSize) const override; // biggest size of all tabs
 
@@ -103,6 +113,8 @@ namespace ui
 
         base::Array<IElement*> m_tabs; 
 
+        base::Array<IElement*> m_customHeaderElements;
+
         mutable base::Array<IElement*> m_tempTabs;
 
         NotebookFlags m_flags;
@@ -110,7 +122,11 @@ namespace ui
         ButtonPtr createHeaderButtonForTab(IElement* tab);
         void updateHeaderButtonData(Button* button, IElement* tab);
 
+        ElementPtr m_headerTotalArea;
+
         ElementPtr m_header;
+        ScrollAreaPtr m_headerScrollArea;
+
         ElementPtr m_container;
         ButtonPtr m_button;
 

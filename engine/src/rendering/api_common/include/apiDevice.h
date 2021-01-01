@@ -49,7 +49,6 @@ namespace rendering
 			virtual ShaderObjectPtr createShaders(const ShaderData* shaders) override;
 			virtual ImageObjectPtr createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData) override;
 			virtual SamplerObjectPtr createSampler(const SamplerState& info) override;
-			virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) override;
 			virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) override;
 
 			virtual void submitWork(command::CommandBuffer* masterCommandBuffer, bool background) override;

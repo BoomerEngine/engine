@@ -76,6 +76,8 @@ namespace ui
         base::Point m_renderTargetOffset = base::Point(0, 0);
         int m_renderTargetZoom = 0;
 
+        void renderCaptureScene(const rendering::scene::FrameParams_Capture* capture);
+
     private:
         base::NativeTimePoint m_lastRenderTime;
         float m_renderRate; // default render rate

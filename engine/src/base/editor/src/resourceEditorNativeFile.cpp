@@ -10,6 +10,8 @@
 #include "resourceEditorNativeFile.h"
 #include "managedFile.h"
 #include "managedFileNativeResource.h"
+#include "base/resource/include/resourceLoadingService.h"
+#include "base/ui/include/uiMessageBox.h"
 
 namespace ed
 {
@@ -22,33 +24,83 @@ namespace ed
     ResourceEditorNativeFile::ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags)
         : ResourceEditor(file, flags)
         , m_nativeFile(file)
-    {}
+    {
+    }
 
     ResourceEditorNativeFile::~ResourceEditorNativeFile()
     {}
 
-    void ResourceEditorNativeFile::bindResource(const res::ResourcePtr& resource)
+    void ResourceEditorNativeFile::handleContentModified()
     {
-        if (m_resource)
-            m_resourceEvents.unbind(m_resource->eventKey());
 
-        m_resource = resource;
-        m_nativeFile->modify(false);
+    }
 
-        for (auto& aspect : aspects())
-            aspect->resourceChanged();
+    void ResourceEditorNativeFile::handleLocalReimport(const res::ResourcePtr& ptr)
+    {
+    }
 
-        // in case the edited resource get's reloaded rebind this editor to the new resource
-        // NOTE: handled in the file itself
-        /*m_resourceEvents.bind(m_resource->eventKey(), EVENT_RESOURCE_RELOADED) = [this](res::ResourcePtr reloadedResource)
+    void ResourceEditorNativeFile::applyLocalReimport(const res::ResourcePtr& ptr)
+    {
+        m_resourceEvents.clear();
+
+        if (ptr)
         {
-            bindResource(reloadedResource);
-        };*/
+            m_resourceEvents.bind(ptr->eventKey(), EVENT_RESOURCE_MODIFIED) = [this]() {
+                m_nativeFile->modify(true);
+                handleContentModified();
+            };
+
+            m_nativeFile->modify(true);
+            m_resource = ptr;
+
+            handleLocalReimport(ptr);
+
+            updateAspects();
+        }
+    }
+
+    bool ResourceEditorNativeFile::initialize()
+    {
+        if (!TBaseClass::initialize())
+            return false;
+
+        auto content = m_nativeFile->loadContent();
+        if (!content)
+        {
+            TRACE_ERROR("Unable to load resource '{}'", nativeFile()->depotPath());
+            return false;
+        }
+
+        if (!content->is(nativeFile()->resourceClass()))
+        {
+            TRACE_ERROR("Loaded resource '{}' is not of expected class '{}' but it a '{}'", nativeFile()->depotPath(), nativeFile()->resourceClass(), content->cls());
+            return false;
+        }
+
+        m_resource = content;
+
+        m_resourceEvents.clear();
+        m_resourceEvents.bind(m_resource->eventKey(), EVENT_RESOURCE_MODIFIED) = [this]() {
+            m_nativeFile->modify(true);
+            handleContentModified();
+        };
+
+        return true;
     }
 
     bool ResourceEditorNativeFile::save()
     {
-        return m_nativeFile->storeContent();
+        if (!m_nativeFile->storeContent(m_resource))
+            return false;
+
+        auto loadingService = base::GetService<base::res::LoadingService>();
+        auto resoureKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), nativeFile()->resourceClass());
+        if (!loadingService->loadResource(resoureKey))
+        {
+            TRACE_WARNING("Reloading of '{}' impossible after save", nativeFile()->depotPath());
+        }
+
+        return true;
     }
 
     void ResourceEditorNativeFile::cleanup()

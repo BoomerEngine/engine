@@ -15,7 +15,6 @@
 #include "apiOutput.h"
 #include "apiImage.h"
 #include "apiBuffer.h"
-#include "apiDownloadArea.h"
 
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingCommands.h"
@@ -316,33 +315,6 @@ namespace rendering
 				descriptor.dataPtr = op.data;
 				descriptor.layoutPtr = op.layout;
 				m_dirtyDescriptors = true;
-			}
-		}
-
-		void IFrameExecutor::runDownload(const command::OpDownload& op)
-		{
-			auto destObject = objects()->resolveStatic(op.id, ObjectType::Unknown);
-			DEBUG_CHECK_RETURN_EX(destObject, "Destination object lost before command buffer was run (waited more than one frame for submission)");
-
-			auto* destCopiable = destObject->toCopiable();
-			DEBUG_CHECK_RETURN_EX(destCopiable, "Destination object is not copiable");
-
-			auto* destArea = objects()->resolveStatic<IBaseDownloadArea>(op.areaId);
-			DEBUG_CHECK_RETURN_EX(destArea, "Destination area is invalid");
-
-			destCopiable->downloadIntoArea(destArea, op.offsetInArea, op.sizeInArea, op.range);
-
-			{
-				auto areaPtr = DownloadAreaObjectPtr(AddRef(op.area));
-				auto sinkPtr = DownloadDataSinkPtr(AddRef(op.sink));
-				auto size = op.sizeInArea;
-				auto offset = op.offsetInArea;
-				auto range = op.range;
-
-				thread()->registerCurrentFrameGPUComplectionCallback([areaPtr, sinkPtr, size, offset, range]() {
-					const auto* dataPtr = areaPtr->memoryPointer() + offset;
-					sinkPtr->processRetreivedData(areaPtr, dataPtr, size, range);
-					});
 			}
 		}
 

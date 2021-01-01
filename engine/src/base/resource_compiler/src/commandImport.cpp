@@ -103,11 +103,7 @@ namespace base
             {
                 if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
-                    base::res::ResourceMountPoint mountPoint;
-                    m_depot.queryFileMountPoint(depotPath, mountPoint);
-
                     FileLoadingContext context;
-                    context.basePath = mountPoint.path();
                     return base::res::LoadFileMetadata(fileReader, context);
                 }
 
@@ -118,11 +114,7 @@ namespace base
             {
                 if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
                 {
-                    base::res::ResourceMountPoint mountPoint;
-                    m_depot.queryFileMountPoint(depotPath, mountPoint);
-
                     FileLoadingContext context;
-                    context.basePath = mountPoint.path();
                     if (base::res::LoadFile(fileReader, context))
                     {
                         if (const auto ret = context.root<IResource>())

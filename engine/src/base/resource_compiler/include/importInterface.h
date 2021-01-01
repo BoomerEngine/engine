@@ -61,9 +61,6 @@ namespace base
             /// get the path to the resource being imported, this is a depot path
             virtual const StringBuf& queryResourcePath() const = 0;
 
-            /// get the mount point for cooked resource, this is the base directory of the package the resource is at
-            virtual const ResourceMountPoint& queryResourceMountPoint() const = 0;
-
             /// get the path to the source data
             virtual const StringBuf& queryImportPath() const = 0;
 
@@ -107,6 +104,9 @@ namespace base
 
             // same as findSourceFile but finds files in depot
             virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const = 0;
+
+            // check if depot file exists
+            virtual bool checkDepotFile(StringView depotPath) const = 0;
 
             //--
 

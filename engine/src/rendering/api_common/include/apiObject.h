@@ -81,9 +81,6 @@ namespace rendering
 			// update from dynamic data
 			virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) = 0;
 
-			// download parts into download area
-			virtual void downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range) = 0;
-
 			// copy content from a buffer
 			virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) = 0;
 
@@ -100,5 +97,5 @@ namespace rendering
 
 		//--
 
-    } // gl4
+    } // api
 } // rendering

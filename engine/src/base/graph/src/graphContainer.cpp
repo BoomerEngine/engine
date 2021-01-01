@@ -12,6 +12,9 @@
 #include "graphSocket.h"
 #include "graphConnection.h"
 #include "graphObserver.h"
+#include "base/object/include/streamOpcodeReader.h"
+#include "base/object/include/streamOpcodeWriter.h"
+#include "base/reflection/include/reflectionTypeName.h"
 //#include "graphViewNative.h"
 
 namespace base
@@ -258,13 +261,56 @@ namespace base
             }
         } //helper
 
-        void Container::onPreSave() const
+        void Container::onReadBinary(stream::OpcodeReader& reader)
         {
-            // process base object
-            TBaseClass::onPreSave();
+            TBaseClass::onReadBinary(reader);
 
-            // make sure the persistent connection table is up to date before saving
-            capturePersistentData();
+            if (reader.version() >= VER_THREAD_SAFE_GRAPHS)
+                readPersistentConnections(reader);
+        }
+
+        void Container::onWriteBinary(stream::OpcodeWriter& writer) const
+        {
+            TBaseClass::onWriteBinary(writer);
+            writePersistentConnections(writer);
+        }
+
+        void Container::readPersistentConnections(stream::OpcodeReader& reader)
+        {
+            m_persistentConnections.reset();
+
+            base::rtti::TypeSerializationContext context;
+            const auto dataType = base::reflection::GetTypeObject<base::Array<PersistentConnection>>();
+            dataType->readBinary(context, reader, &m_persistentConnections);
+        }
+
+        void Container::writePersistentConnections(stream::OpcodeWriter& writer) const
+        {
+            // prepare block mapping
+            // NOTE: this must match the way the blocks are stored
+            base::HashMap<const Block*, int> blockMapping;
+            blockMapping.reserve(m_blocks.size());
+            for (uint32_t i = 0; i < m_blocks.size(); ++i)
+                blockMapping.set(m_blocks[i].get(), i);
+
+            // reserve memory
+            base::Array<PersistentConnection> persistentConnections;
+            persistentConnections.reset();
+            persistentConnections.reserve(m_blocks.size() * 2);
+                
+            // gather connections
+            for (auto& block : m_blocks)
+                helper::ExtractConnections(block, blockMapping, persistentConnections);
+
+            // status
+            TRACE_INFO("Captured {} connections for saving from {} blocks", persistentConnections.size(), m_blocks.size());
+
+            // save data
+            {
+                base::rtti::TypeSerializationContext context;
+                const auto dataType = base::reflection::GetTypeObject<base::Array<PersistentConnection>>();
+                dataType->writeBinary(context, writer, &persistentConnections, nullptr);
+            }
         }
 
         void Container::onPostLoad()
@@ -282,53 +328,23 @@ namespace base
             }
 
             // apply the stored connections to blocks
-            applyPersistentData();
-
-            // we don't need the persistent data any more
-            m_persistentConnections.reset();
-           // m_persistentBlockState.reset();
+            if (!m_persistentConnections.empty())
+            {
+                applyConnections(m_persistentConnections);
+                m_persistentConnections.clear();
+            }
 
             // remove deleted/invalid blocks from the list
             m_blocks.removeUnorderedAll(nullptr);
         }
 
-        void Container::capturePersistentData() const
-        {
-            // prepare block mapping
-            // NOTE: this must match the way the blocks are stored
-            base::HashMap<const Block*, int> blockMapping;
-            blockMapping.reserve(m_blocks.size());
-            for (uint32_t i=0; i<m_blocks.size(); ++i)
-                blockMapping.set(m_blocks[i].get(), i);
-
-            // reserve memory
-            m_persistentConnections.reset();
-            m_persistentConnections.reserve(m_blocks.size() * 2);
-            //m_persistentBlockState.reset();
-            //m_persistentBlockState.reserve(m_blocks.size());
-
-            // gather connections
-            for (auto& block : m_blocks)
-            {
-                // capture block connection
-                helper::ExtractConnections(block, blockMapping, m_persistentConnections);
-
-                // capture block state
-                //auto& info = m_persistentBlockState.emplaceBack();
-                //info.placement = block->position();
-            }
-
-            // status
-            TRACE_INFO("Captured {} connections for saving from {} blocks", m_persistentConnections.size(), m_blocks.size());
-        }
-
-        void Container::applyPersistentData()
+        void Container::applyConnections(const base::Array<PersistentConnection>& persistentConnections)
         {
             // apply the persistent connections to the sockets
             uint32_t numFailedConnections = 0;
-            for (uint32_t i=0; i<m_persistentConnections.size(); ++i)
+            for (uint32_t i = 0; i < persistentConnections.size(); ++i)
             {
-                auto& con = m_persistentConnections[i];
+                auto& con = persistentConnections[i];
 
                 // validate first block index
                 if (con.firstBlockIndex >= m_blocks.size())
@@ -357,7 +373,7 @@ namespace base
                 else if (!firstBlock)
                 {
                     TRACE_ERROR("Persistent connection {} uses first block index {} (class '{}') that has no layout", i,
-                                con.firstBlockIndex, firstBlock->cls()->name().c_str());
+                        con.firstBlockIndex, firstBlock->cls()->name().c_str());
                     numFailedConnections += 1;
                     continue;
                 }
@@ -373,7 +389,7 @@ namespace base
                 else if (!secondBlock)
                 {
                     TRACE_ERROR("Persistent connection {} uses second block index {} (class '{}') that has no layout", i,
-                                con.secondBlockIndex, secondBlock->cls()->name().c_str());
+                        con.secondBlockIndex, secondBlock->cls()->name().c_str());
                     numFailedConnections += 1;
                     continue;
 
@@ -384,7 +400,7 @@ namespace base
                 if (!firstSocket)
                 {
                     TRACE_ERROR("Persistent connection {} uses socket '{}' in first block index {} (class '{}') that no longer exists", i,
-                                con.firstSocketName.c_str(), con.firstBlockIndex, firstBlock->cls()->name().c_str());
+                        con.firstSocketName.c_str(), con.firstBlockIndex, firstBlock->cls()->name().c_str());
                     numFailedConnections += 1;
                     continue;
                 }
@@ -394,7 +410,7 @@ namespace base
                 if (!secondSocket)
                 {
                     TRACE_ERROR("Persistent connection {} uses socket '{}' in second block index {} (class '{}') that no longer exists", i,
-                                con.secondSocketName.c_str(), con.secondBlockIndex, secondBlock->cls()->name().c_str());
+                        con.secondSocketName.c_str(), con.secondBlockIndex, secondBlock->cls()->name().c_str());
                     numFailedConnections += 1;
                     continue;
                 }
@@ -403,8 +419,8 @@ namespace base
                 if (!Socket::CanConnect(*firstSocket, *secondSocket))
                 {
                     TRACE_ERROR("Persistent connection {} between socket '{}' in block index {} (class '{}') and socket '{}' in block index {} (class '{}') is no longer possible", i,
-                                con.firstSocketName.c_str(), con.firstBlockIndex, firstBlock->cls()->name().c_str(),
-                                con.secondSocketName.c_str(), con.secondBlockIndex, secondBlock->cls()->name().c_str());
+                        con.firstSocketName.c_str(), con.firstBlockIndex, firstBlock->cls()->name().c_str(),
+                        con.secondSocketName.c_str(), con.secondBlockIndex, secondBlock->cls()->name().c_str());
                     numFailedConnections += 1;
                     continue;
                 }
@@ -413,22 +429,8 @@ namespace base
                 firstSocket->connectTo(secondSocket);
             }
 
-            // apply the block positions
-            /*for (uint32_t i=0; i<m_persistentBlockState.size(); ++i)
-            {
-                auto& info = m_persistentBlockState[i];
-                if (i < m_blocks.size())
-                {
-                    auto& block = m_blocks[i];
-                    if (block)
-                    {
-                        block->position(info.placement);
-                    }
-                }
-            }*/
-
             // stats
-            TRACE_INFO("Restored {} persistent connections ({} failed)", m_persistentConnections.size(), numFailedConnections);
+            TRACE_INFO("Restored {} persistent connections ({} failed)", persistentConnections.size(), numFailedConnections);
         }
 
         //--

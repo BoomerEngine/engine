@@ -23,9 +23,6 @@ namespace base
             // NOTE: final version of loading code does not support the protected stream
             bool protectedStream = true;
 
-            // base path (mount point) can be used to make resource paths relative
-            StringBuf basePath;
-
             //--
 
             // root object to save

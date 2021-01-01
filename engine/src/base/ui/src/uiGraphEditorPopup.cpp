@@ -33,6 +33,43 @@ namespace ui
                     actionRemoveBlockConnections(node->block());
                 };
                 menu.createSeparator();
+
+                bool hasUnconnectedSockets = false;
+                auto showSocketsPopup = base::RefNew<MenuButtonContainer>();
+                //auto hideSocketsPopup = base::RefNew<MenuButtonContainer>();
+
+                for (const auto& socket : block->sockets())
+                {
+                    if (!socket->visible())
+                    {
+                        showSocketsPopup->createCallback(base::TempString("Show '{}'", socket->name())) = [this, socket]()
+                        {
+                            socket->updateVisibility(true);
+                        };
+                    }
+                    else if (socket->info().m_hiddableByUser)
+                    {
+                        hasUnconnectedSockets = true;
+                    }
+                }
+
+                if (auto popup = showSocketsPopup->convertToPopup())
+                {
+                    menu.createSubMenu(popup, "Show hidden socket");
+                }
+
+                if (hasUnconnectedSockets)
+                {
+                    menu.createCallback("Hide unused sockets") = [this, block]() {
+                        for (const auto& socket : block->sockets())
+                        {
+                            if (socket->visible() && socket->info().m_hiddableByUser && !socket->hasConnections())
+                                socket->updateVisibility(false);
+                        }
+                    };
+                }
+
+                menu.createSeparator();
             }
         }
     }
@@ -52,6 +89,14 @@ namespace ui
             menu.createCallback("Cut connections", "[img:cut]") = [this, socket]() {
                 actionCutSocketConnections(socket);
             };
+        }
+        else if (socket->info().m_hiddableByUser)
+        {
+            menu.createCallback("Hide") = [this, socket]() {
+                socket->updateVisibility(false);
+            };
+
+            menu.createSeparator();
         }
 
         if (!m_connectionClipboard.empty())

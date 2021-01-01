@@ -30,9 +30,10 @@
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockNotebook.h"
 #include "base/ui/include/uiDockContainer.h"
+#include "base/ui/include/uiElementConfig.h"
+#include "base/ui/include/uiButton.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource_compiler/include/importFileList.h"
-#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -64,8 +65,34 @@ namespace ed
     {
         customMinSize(1200, 900);
 
+        auto showFileListFunc = [this]() {
+            ManagedFile* activeFile = nullptr;
+            m_dockArea->iterateSpecificPanels<ResourceEditor>([&activeFile](ResourceEditor* editor)
+                {
+                    if (editor->file())
+                    {
+                        activeFile = editor->file();
+                        return true;
+                    }
+
+                    return false;
+                }, ui::DockPanelIterationMode::ActiveOnly);
+
+            ShowOpenedFilesList(this, activeFile);
+        };
+
         m_dockArea = createChild<ui::DockContainer>();
         m_dockArea->layout().notebook()->styleType("FileNotebook"_id);
+
+        auto listButton = base::RefNew<ui::Button>("[img:page_zoom] Files");
+        listButton->styleType("BackgroundButton"_id);
+        listButton->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        listButton->customMargins(ui::Offsets(5, 0, 5, 0));
+        m_dockArea->layout().notebook()->attachHeaderElement(listButton);
+
+        listButton->bind(ui::EVENT_CLICKED) = showFileListFunc;
+        actions().bindCommand("ShowFileList"_id) = showFileListFunc;
+        actions().bindShortcut("ShowFileList"_id, "Alt+Shift+O");
     }
 
     MainWindow::~MainWindow()
@@ -148,6 +175,18 @@ namespace ed
                 });
 
             block.write("OpenedFiles", openedFilePaths);
+        }
+
+        // save resource editor configs
+        {
+            auto& config = GetService<Editor>()->config();
+
+            m_dockArea->iterateSpecificPanels<ResourceEditor>([&config](ResourceEditor* editor)
+                {
+                    const auto configBlock = config.path(editor->file()->depotPath());
+                    editor->configSave(configBlock);
+                    return false;
+                }, ui::DockPanelIterationMode::All);
         }
     }
 

@@ -318,7 +318,7 @@ namespace ui
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
         virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const base::input::MouseClickEvent &evt) override;
         virtual bool handleContextMenu(const ui::ElementArea &area, const ui::Position &absolutePosition) override final;
-        virtual ElementPtr queryTooltipElement(const Position& absolutePosition) const override;
+        virtual ElementPtr queryTooltipElement(const Position& absolutePosition, ui::ElementArea& outArea) const override;
         virtual DragDropDataPtr queryDragDropData(const base::input::BaseKeyFlags& keys, const Position& position) const override;
         virtual DragDropHandlerPtr handleDragDrop(const DragDropDataPtr& data, const Position& entryPosition) override;
         virtual void handleDragDropGenericCompletion(const DragDropDataPtr& data, const Position& entryPosition) override;

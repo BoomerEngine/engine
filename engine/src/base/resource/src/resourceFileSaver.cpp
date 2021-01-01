@@ -103,8 +103,6 @@ namespace base
                     ret->object = AddRef(object);
                     ret->parent = nullptr;
                     m_objectMap[object] = ret;
-
-                    object->onPreSave();
                 }
 
                 return ret;

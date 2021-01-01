@@ -96,10 +96,10 @@ namespace rendering
 
 			//-
 
-            BufferObjectPtr m_selectablesBuffer; // capture buffer for selection
-			BufferWritableStructuredViewPtr m_selectablesBufferUAV; // export buffer for selection
+            BufferObjectPtr selectablesBuffer; // capture buffer for selection
+			BufferWritableStructuredViewPtr selectablesBufferUAV; // export buffer for selection
 
-            uint32_t m_maxSelectables = 0; // maximum number of selectable fragments we can capture
+            uint32_t maxSelectables = 0; // maximum number of selectable fragments we can capture
 
 			//--
 

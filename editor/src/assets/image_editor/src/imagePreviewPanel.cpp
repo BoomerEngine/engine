@@ -253,7 +253,7 @@ namespace ed
         updateTooltip();
     }
 
-    ui::ElementPtr ImagePreviewPanel::queryTooltipElement(const ui::Position& absolutePosition) const
+    ui::ElementPtr ImagePreviewPanel::queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const
     {
         if (!m_previewPixelValid)
             return nullptr;
@@ -272,6 +272,8 @@ namespace ed
         auto text = list->createChild<ui::TextLabel>();
         color->customMargins(6.0f);
         m_activeTooltipText = text;
+
+        outArea = cachedDrawArea();
 
         updateTooltip();
 

@@ -10,7 +10,7 @@
 
 
 #ifdef PLATFORM_MSVC
-static INLINE uint32_t  __builtin_ctzll(uint64_t val)
+static INLINE int  __builtin_ctzll(unsigned __int64 val)
 {
     unsigned long ret = 0;
     _BitScanForward64(&ret, val);

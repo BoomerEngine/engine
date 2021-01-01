@@ -10,8 +10,6 @@
 
 #include "versionControl.h"
 
-#include "base/resource/include/resourceMountPoint.h"
-
 namespace ed
 {
 

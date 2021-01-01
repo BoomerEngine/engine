@@ -17,11 +17,9 @@
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingShaderFile.h"
 #include "rendering/device/include/renderingImage.h"
 #include "rendering/device/include/renderingDescriptor.h"
-#include "rendering/device/include/renderingShader.h"
-#include "rendering/device/include/renderingShaderData.h"
+#include "rendering/device/include/renderingShaderStaticPermutation.h"
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceStaticResource.h"
@@ -32,15 +30,14 @@ namespace rendering
     {
 		//---
 
-		static base::res::StaticResource<ShaderFile> resBlitShader("/engine/shaders/screen/final_copy.fx");
+		static StaticShaderPermutation resBlitShader("/engine/shaders/screen/final_copy.fx");
 
         //---
 
 		FrameHelperCompose::FrameHelperCompose(IDevice* api)
 			: m_device(api)
 		{
-			m_blitShaders = resBlitShader.loadAndGet()->rootShader()->deviceShader();
-			m_blitShadersPSO = m_blitShaders->createGraphicsPipeline();
+			m_blitShadersPSO = resBlitShader.loadGraphicsPSO();
 		}
 
 		FrameHelperCompose::~FrameHelperCompose()

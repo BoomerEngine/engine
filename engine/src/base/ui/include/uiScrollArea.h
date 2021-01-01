@@ -43,10 +43,14 @@ namespace ui
         void horizontalScrollMode(ScrollMode mode);
 
         // set new scroll offset
-        void scrollOffset(const Position& offset);
+        void scrollOffset(const Position& offset) const;
 
         // ensure given area is visible
-        void scrollToMakeAreaVisible(const ElementArea& area);
+        void scrollToMakeAreaVisible(const ElementArea& area) const;
+
+        // ensure area of given element will be visible
+        void scrollToMakeElementVisible(IElement* element);
+
 
     protected:
         ScrollMode m_verticalScrollMode = ScrollMode::None;
@@ -57,11 +61,14 @@ namespace ui
         mutable base::RefPtr<Scrollbar> m_verticalScrollBar;
         mutable base::RefPtr<Scrollbar> m_horizontalScrollBar;
 
+        mutable ElementWeakPtr m_requestedScrollToElement;
+
         ///
 
         virtual bool handleMouseWheel(const base::input::MouseMovementEvent& evt, float delta) override;
         virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
         virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
+        virtual void computeSize(Size& outSize) const override;
     };
 
     //--

@@ -55,6 +55,28 @@ namespace rendering
 
 			//---
 
+			// persistently mapped CPU readable memory used to download data from GPU
+            class DownloadArea : public base::NoCopy
+            {
+				RTTI_DECLARE_POOL(POOL_API_BACKING_STORAGE);
+
+            public:
+                DownloadArea(uint32_t size);
+                virtual ~DownloadArea();
+
+				INLINE GLuint buffer() const { return m_glBuffer; }
+				INLINE const uint8_t* ptr() const { return m_ptr; }
+				INLINE uint32_t size() const { return m_size; }
+
+            private:
+                GLuint m_glBuffer = 0;
+
+				const uint8_t* m_ptr = nullptr;
+				uint32_t m_size = 0;
+            };
+
+			//---
+
 			class ObjectCache : public IBaseObjectCache
 			{
 			public:
@@ -88,6 +110,14 @@ namespace rendering
 
 				//--
 
+				// allocate download area that can accommodate at least given bytes
+				DownloadArea* allocateDownloadArea(uint32_t size);
+
+				// release previously used download area
+				void freeDownloadArea(DownloadArea* area);
+
+				//--
+
 			private:	
 				struct CachedFramebuffer : public base::IReferencable
 				{
@@ -113,6 +143,10 @@ namespace rendering
 
 				void linkImage(GLuint image, CachedFramebuffer* ret);
 				bool configureFramebuffer(CachedFramebuffer* ret);
+
+				//--
+
+				base::Array<DownloadArea*> m_freeDownloadAreas;
 
 				//--
 

@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/containers/include/hashMap.h"
-
 namespace base
 {
     namespace res
@@ -17,97 +15,67 @@ namespace base
 
         //--
 
-        INLINE ResourceKey::ResourceKey(ResourceKey&& other)
-            : m_class(other.m_class)
-            , m_path(std::move(other.m_path))
+        INLINE ResourcePath::ResourcePath(ResourcePath&& other)
+            : m_string(std::move(other.m_string))
+            , m_hash(other.m_hash)
         {
-            other.m_class = nullptr;
+            other.m_hash = 0;
         }
 
-        INLINE ResourceKey::ResourceKey(StringView path, SpecificClassType<IResource> classType)
-            : m_class(classType)
-            , m_path(path)
-        {
-            ASSERT_EX(classType != nullptr && !path.empty(), "Invalid initialization");
-            ASSERT_EX(path.empty() || ValidateDepotPath(path, DepotPathClass::AbsoluteFilePath), "Invalid file path used in initialization");
-        }
-
-        INLINE ResourceKey& ResourceKey::operator=(ResourceKey&& other)
+        INLINE ResourcePath& ResourcePath::operator=(ResourcePath&& other)
         {
             if (this != &other)
             {
-                m_class = other.m_class;
-                m_path = std::move(other.m_path);
-                other.m_class = nullptr;
+                m_string = std::move(other.m_string);
+                m_hash = other.m_hash;
+                other.m_hash = 0;
             }
             return *this;
         }
 
-        INLINE bool ResourceKey::operator==(const ResourceKey& other) const
+        INLINE bool ResourcePath::operator==(const ResourcePath& other) const
         {
-            return (m_path == other.m_path) && (m_class == other.m_class);
+            return (m_hash == other.m_hash) && (m_string == other.m_string);
         }
 
-        INLINE bool ResourceKey::operator!=(const ResourceKey& other) const
+        INLINE bool ResourcePath::operator!=(const ResourcePath& other) const
         {
             return !operator==(other);
         }
 
-        INLINE bool ResourceKey::empty() const
+        INLINE bool ResourcePath::empty() const
         {
-            return m_class == nullptr || m_path.empty();
+            return m_string.empty();
         }
 
-        INLINE bool ResourceKey::valid() const
+        INLINE bool ResourcePath::valid() const
         {
             return !empty();
         }
 
-        INLINE ResourceKey::operator bool() const
+        INLINE ResourcePath::operator bool() const
         {
             return !empty();
         }
 
-        ALWAYS_INLINE const StringBuf& ResourceKey::path() const
+        ALWAYS_INLINE const StringBuf& ResourcePath::str() const
         {
-            return m_path;
+            return m_string;
         }
 
-        ALWAYS_INLINE SpecificClassType<IResource> ResourceKey::cls() const
+        ALWAYS_INLINE uint64_t ResourcePath::hash() const
         {
-            return m_class;
+            return m_hash;
         }
 
-        INLINE StringView ResourceKey::view() const
+        INLINE StringView ResourcePath::view() const
         {
-            return m_path.view();
+            return m_string;
         }
 
-        INLINE uint32_t ResourceKey::CalcHash(const ResourceKey& key)
+        INLINE uint32_t ResourcePath::CalcHash(const ResourcePath& key)
         {
-            return StringBuf::CalcHash(key.m_path);
-        }
-
-        //--
-
-        INLINE StringView ResourceKey::fileName() const
-        {
-            return m_path.view().afterLastOrFull("/");
-        }
-
-        INLINE StringView ResourceKey::fileStem() const
-        {
-            return fileName().beforeFirstOrFull(".");
-        }
-
-        INLINE StringView ResourceKey::extension() const
-        {
-            return fileName().afterFirst(".");
-        }
-
-        INLINE StringView ResourceKey::directories() const
-        {
-            return m_path.view().beforeLast("/");
+            return key.m_hash;
         }
 
         //--

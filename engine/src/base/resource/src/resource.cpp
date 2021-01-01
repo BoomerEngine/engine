@@ -12,6 +12,7 @@
 #include "resourceClassLookup.h"
 #include "resourceCookingInterface.h"
 #include "resourceMetadata.h"
+#include "resourceKey.h"
 #include "resourceTags.h"
 
 namespace base
@@ -40,27 +41,20 @@ namespace base
         {
             if (auto loader = m_loader.lock())
             {
-                TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), key());
-                loader->notifyResourceUnloaded(m_key);
+                TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
+
+                const auto key = ResourceKey(path(), cls().cast<IResource>());
+                loader->notifyResourceUnloaded(key);
             }
         }
 
-        void IResource::applyReload(const base::res::ResourceHandle& reloaded)
-        {
-            DEBUG_CHECK_EX(!m_reloadedData, TempString("Resource '{}' is already reloaded with new data", key()));
-            DEBUG_CHECK_EX(key() == reloaded->key(), TempString("Resource '{}' is being reloaded with data of mismatched key '{}'", key(), reloaded->key()));
-            DEBUG_CHECK_EX(reloaded != m_reloadedData, TempString("Resource '{}' reloaded with the same data", key()));
-            m_reloadedData = reloaded;
-
-            DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
-        }
+        //DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
 
         void IResource::metadata(const MetadataPtr& data)
         {
             DEBUG_CHECK_EX(!data->parent(), "Metadata is already parented");
             m_metadata = data;
             m_metadata->parent(this);
-            m_modified = false;
         }
 
         void IResource::markModified()
@@ -72,35 +66,16 @@ namespace base
             TBaseClass::markModified();
 
             // mark as modified only if we are standalone resource
-            if (key() && parent() == nullptr)
+            if (!parent() && m_path)
             {
-                // mark as modified
-                if (!m_modified && !key().empty())
-                {
-                    TRACE_INFO("Resource '{}' marked as modified");
-                }
-                m_modified = true;
-
-                // notify any object based users of this resource that it has been modified
                 auto selfRef = ResourcePtr(AddRef(this));
                 DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
             }
         }
 
-
         void IResource::invalidateRuntimeVersion()
         {
             m_runtimeVersion += 1;
-        }
-
-        void IResource::resetModifiedFlag()
-        {
-            if (m_modified && !key().empty())
-            {
-                TRACE_INFO("Resource '{}' no longer modified", key());
-            }
-
-            m_modified = false;
         }
 
         //--
@@ -163,20 +138,13 @@ namespace base
             return false;
         }
 
-        RefPtr<IResourceLoader> IResource::loader() const
+        void IResource::bindToLoader(IResourceLoader* loader, const ResourcePath& path)
         {
-            return m_loader.lock();
-        }
+            DEBUG_CHECK_RETURN_EX(m_loader == nullptr, "Resource already has a loader");
+            DEBUG_CHECK_RETURN_EX(!m_path, "Resource already has a loading path");
 
-        void IResource::bindToLoader(IResourceLoader* loader, const ResourceKey& key, const ResourceMountPoint& mountPoint, bool stub)
-        {
-            ASSERT_EX(m_loader == nullptr, "Resource already has a loader");
-
-            // create the loading fence, it will allow loading of other resources to wait for this resource to load
-            m_stub = stub;
             m_loader = loader;
-            m_mountPoint = mountPoint;
-            m_key = key;
+            m_path = path;
         }
 
         //--

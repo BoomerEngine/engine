@@ -239,9 +239,6 @@ namespace rendering
         /// create a sampler
         virtual SamplerObjectPtr createSampler(const SamplerState& info) = 0;
 
-		/// create download area of given size (NOTE: area is reusable)
-		virtual DownloadAreaObjectPtr createDownloadArea(uint32_t size) = 0;
-
 		/// create pass layout state, NOTE: may return shared object
 		virtual GraphicsRenderStatesObjectPtr createGraphicsRenderStates(const GraphicsRenderStatesSetup& states) = 0;
 

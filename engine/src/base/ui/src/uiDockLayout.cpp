@@ -66,7 +66,7 @@ namespace ui
     bool DockLayoutNode::hasAnythingVisible() const
     {
         for (const auto& panel : m_panels)
-            if (panel->visibleInLayout())
+            if (panel->tabVisibleInLayout())
                 return true;
 
         if (m_topNode && m_topNode->hasAnythingVisible())
@@ -160,7 +160,7 @@ namespace ui
         else if (mode == DockPanelIterationMode::VisibleOnly)
         {
             for (const auto& panel : m_panels)
-                if (panel->visibleInLayout() && enumFunc(panel))
+                if (panel->tabVisibleInLayout() && enumFunc(panel))
                     return true;
         }
         else if (mode == DockPanelIterationMode::ActiveOnly)
@@ -214,7 +214,7 @@ namespace ui
 
         // rebuild center notebook with tabs that are valid
         for (const auto& panel : m_panels)
-            if (panel->visibleInLayout())
+            if (panel->tabVisibleInLayout())
                 m_notebook->attachTab(panel, nullptr, panel == selectedPanel);
 
         ElementPtr ret;
@@ -336,10 +336,10 @@ namespace ui
             auto selfRef = base::RefWeakPtr<DockLayoutNode>(this);
             for (auto* panel : persistentPanels)
             {
-                const auto visible = panel->visibleInLayout();
+                const auto visible = panel->tabVisibleInLayout();
                 const auto icon = visible ? "[img:tick]" : "";
                 const auto panelRef = base::RefWeakPtr<DockPanel>(panel);
-                menu->createCallback(panel->title(), icon) = [selfRef, visible, panelRef]()
+                menu->createCallback(panel->compileTabTitleString(), icon) = [selfRef, visible, panelRef]()
                 {
                     if (auto node = selfRef.lock())
                         if (auto panel = panelRef.lock())

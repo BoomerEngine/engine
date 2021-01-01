@@ -75,6 +75,11 @@ namespace ed
 
         //--
 
+        virtual void configLoad(const ui::ConfigBlock& block) override;
+        virtual void configSave(const ui::ConfigBlock& block) const override;
+
+        //--
+
         // file the standard menu with editor related options
         virtual void fillFileMenu(ui::MenuButtonContainer* menu);
         virtual void fillEditMenu(ui::MenuButtonContainer* menu);
@@ -99,6 +104,8 @@ namespace ed
         virtual bool checkGeneralPaste() const;
         virtual bool checkGeneralDelete() const;
 
+        void updateAspects();
+
     private:
         ManagedFile* m_file = nullptr; // file being edited
 
@@ -120,7 +127,11 @@ namespace ed
         bool showTabContextMenu(const ui::Position& pos);
 
         MainWindow* findMainWindow() const;
-        virtual void handleCloseRequest() override final;
+        virtual void close() override final;
+
+        //--
+
+        friend class ManagedFile;
     };
 
     ///---
@@ -137,22 +148,19 @@ namespace ed
         //---
 
         // editor we are bound to
-        INLINE ResourceEditor* editor() const { return m_editor; }
+        INLINE ResourceEditor* editor() const { return rtti_cast<ResourceEditor>(parent()); }
 
         //---
 
         // initialize on given editor, should return true if we can operate or false if we cant
-        // NOTE: this is usually called AFTER all main UI for the editor was created and the inital resource data was loaded
+        // NOTE: this is usually called AFTER all main UI for the editor was created and the initial resource data was loaded
         virtual bool initialize(ResourceEditor* editor);
 
         // called when editor is closed
         virtual void close();
 
-        // resource being edited in the editor has been changed (usually a reload happened)
-        virtual void resourceChanged();
-
-    private:
-        ResourceEditor* m_editor;
+        // update aspect 
+        virtual void update();
     };
 
     ///---

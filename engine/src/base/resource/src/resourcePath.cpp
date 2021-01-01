@@ -9,10 +9,6 @@
 #include "build.h"
 #include "resource.h"
 #include "resourcePath.h"
-#include "resourcePathCache.h"
-
-#include "base/memory/include/linearAllocator.h"
-#include "base/containers/include/inplaceArray.h"
 #include "base/containers/include/utf8StringFunctions.h"
 
 namespace base
@@ -21,69 +17,78 @@ namespace base
     {
         //---
 
-        RTTI_BEGIN_CUSTOM_TYPE(ResourceKey);
+        RTTI_BEGIN_CUSTOM_TYPE(ResourcePath);
+            RTTI_BIND_NATIVE_COPY(ResourcePath);
+            RTTI_BIND_NATIVE_COMPARE(ResourcePath);
+            RTTI_BIND_NATIVE_CTOR_DTOR(ResourcePath);
         RTTI_END_TYPE();
 
-        const ResourceKey& ResourceKey::EMPTY()
+        ResourcePath::ResourcePath(StringView path)
         {
-            static ResourceKey theEmptyKey;
-            return theEmptyKey;
+            if (!path.empty())
+            {
+                DEBUG_CHECK_RETURN_EX(ValidateDepotPath(path, DepotPathClass::AnyFilePath), "Path is not a valid depot path");
+
+                m_string = StringBuf(path);
+
+                auto* ch = (char*)m_string.c_str();
+                auto* chEnd = ch + m_string.length();
+                while (ch < chEnd)
+                {
+                    *ch = tolower(*ch);
+                    ++ch;
+                }
+
+                if (m_string != path)
+                    TRACE_WARNING("Conformed resource path '{}' -> '{}'", path, m_string);
+            }
         }
 
-        void ResourceKey::print(IFormatStream& f) const
+        const ResourcePath& ResourcePath::EMPTY()
+        {
+            static ResourcePath theEmptyPath;
+            return theEmptyPath;
+        }
+
+        void ResourcePath::print(IFormatStream& f) const
+        {
+            if (m_string.empty())
+                f << m_string;
+            else
+                f << "empty";
+        }
+
+        //--
+
+        StringView ResourcePath::fileName() const
+        {
+            DEBUG_CHECK_RETURN_EX_V(!m_string.view().endsWith("/"), "No file name", "");
+            return m_string.view().afterLastOrFull("/");
+        }
+
+        StringView ResourcePath::fileStem() const
+        {
+            return fileName().beforeFirstOrFull(".");
+        }
+
+        StringView ResourcePath::extension() const
+        {
+            return fileName().afterFirst(".");
+        }
+
+        StringView ResourcePath::basePath() const
         {
             if (!empty())
             {
-                if (m_class->shortName())
-                    f << m_class->shortName();
-                else
-                    f << m_class->name();
+                const auto pos = m_string.view().findLastChar('/');
+                DEBUG_CHECK_RETURN_EX_V(pos != INDEX_NONE, "Non empty path must have path separator somewhere", "");
 
-                f << "$";
-                f << m_path;
-            }
-            else
-            {
-                f << "null";
-            }
-        }
-
-        GlobalEventKey ResourceKey::buildEventKey() const
-        {
-            StringBuilder tempString;
-            print(tempString);
-            return MakeSharedEventKey(tempString.view());
-        }
-
-        bool ResourceKey::Parse(StringView path, ResourceKey& outKey)
-        {
-            if (path.empty() || path == "null")
-            {
-                outKey = ResourceKey();
-                return true;
+                return m_string.view().leftPart(pos + 1); // include the "/"
             }
 
-            auto index = path.findFirstChar(':');
-            if (index == INDEX_NONE)
-                return false;
-
-            auto className = path.leftPart(index);
-            auto classNameStringID = StringID::Find(className);
-            if (classNameStringID.empty())
-                return false; // class "StringID" is not known - ie class was never registered
-
-            auto resourceClass = RTTI::GetInstance().findClass(classNameStringID).cast<IResource>();
-            if (!resourceClass)
-                return false;
-
-            auto pathPart = path.subString(index + 1);
-            if (pathPart.empty())
-                return false;
-
-            outKey.m_class = resourceClass;
-            outKey.m_path = StringBuf(pathPart);
-            return true;
+            return "";
         }
+
 
     } // res
 

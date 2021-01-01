@@ -49,7 +49,6 @@ namespace rendering
             RTTI_ENUM_OPTION(DebugLuminance);
             RTTI_ENUM_OPTION(DebugShadowMask);
             RTTI_ENUM_OPTION(DebugAmbientOcclusion);
-            RTTI_ENUM_OPTION(DebugLinearizedDepth);
             RTTI_ENUM_OPTION(DebugReconstructedViewNormals);
             RTTI_ENUM_OPTION(DebugMaterial);
         RTTI_END_TYPE();

@@ -23,7 +23,7 @@ namespace ed
 
     public:
         /// resource class this file can be loaded into (shorthandl for fileFormat().nativeResoureClass())
-        INLINE const SpecificClassType<res::IResource>& resourceClass() const { return m_resourceNativeClass; }
+        INLINE SpecificClassType<res::IResource> resourceClass() const { return m_resourceNativeClass; }
 
     public:
         ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
@@ -44,15 +44,12 @@ namespace ed
         res::ResourcePtr loadContent();
 
         // save resource back to file, resets the modified flag
-        bool storeContent();
+        bool storeContent(const res::ResourcePtr& content);
 
         // discard loaded content, usually done when deleting file
         void discardContent();
 
         //--
-
-        // modifying native file has few extra steps
-        virtual void modify(bool flag) override;
 
         // is the file in use
         virtual bool inUse() const override;
@@ -60,13 +57,7 @@ namespace ed
     protected:
         SpecificClassType<res::IResource> m_resourceNativeClass;
 
-        res::ResourcePtr m_modifiedResource; // set only when the file get's modified to hold on to modifieddata
-        res::ResourceWeakPtr m_loadedResource; // can be used to retrieve data
-
         GlobalEventTable m_fileEvents;
-
-        virtual bool onResourceReloading(base::res::IResource* currentResource, base::res::IResource* newResource) override;
-        virtual void onResourceReloadFinished(base::res::IResource* currentResource, base::res::IResource* newResource) override;
     };
 
     //---

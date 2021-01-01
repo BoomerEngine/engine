@@ -38,6 +38,9 @@ namespace ed
 
         res::ResourceConfigurationPtr m_config;
 
+        void inplaceReimport();
+        bool inplaceReimportWorker(IProgressTracker& progress);
+
         bool m_configChanged = false;
     };
 

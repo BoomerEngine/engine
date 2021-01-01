@@ -80,10 +80,6 @@ namespace base
 
         //---
 
-        // Called before object is saved, last time to update stuff
-        // NOTE: modified properties should be mutable
-        virtual void onPreSave() const;
-
         // Called after object and all child objects were loaded and before the object is returned from job
         virtual void onPostLoad();
 

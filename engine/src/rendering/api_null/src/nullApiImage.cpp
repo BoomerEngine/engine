@@ -58,11 +58,6 @@ namespace rendering
 
 			}
 
-			void Image::downloadIntoArea(IBaseDownloadArea* area, uint32_t offsetInArea, uint32_t sizeInArea, const ResourceCopyRange& range)
-			{
-
-			}
-
 			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
 			{
 

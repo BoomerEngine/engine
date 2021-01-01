@@ -39,6 +39,8 @@ namespace rendering
 			virtual void prepare(command::CommandWriter& cmd, IDevice* dev, const FrameRenderer& frame) override final;
 			virtual void render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) override final;
 			virtual void render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) override final;
+			virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) override final;
+			virtual void render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) override final;
 
 			//--
 
@@ -84,6 +86,7 @@ namespace rendering
                 const MaterialTemplateProxy* shader = nullptr;
                 const MaterialDataProxy* material = nullptr;
 				const MeshChunkProxy_Standalone* chunk = nullptr;
+				uint16_t materialIndex = 0;
 			};
 
 			base::HashMap<ObjectProxyMesh*, LocalObject> m_localObjects;
@@ -101,15 +104,35 @@ namespace rendering
 			{
 				VisibleChunkList depthLists[2];
 				VisibleChunkList forwardLists[3];
+				VisibleChunkList selectionOutlineList;
 
 				void prepare(uint32_t totalChunkCount);
 			};
 
+            struct VisibleWireframeViewCollector
+            {
+                VisibleChunkList mainList;
+				VisibleChunkList selectionOutlineList;
+
+                void prepare(uint32_t totalChunkCount);
+            };
+
+            struct VisibleCaptureCollector
+            {
+                VisibleChunkList mainList;
+
+                void prepare(uint32_t totalChunkCount);
+            };
+
 			VisibleMainViewCollector m_cacheViewMain;
+			VisibleWireframeViewCollector m_cacheViewWireframe;
+			VisibleCaptureCollector m_cacheCaptureView;
 
 			//--
 
 			void collectMainViewChunks(const FrameViewMain& view, VisibleMainViewCollector& outCollector) const;
+			void collectWireframeViewChunks(const FrameViewWireframe& view, VisibleWireframeViewCollector& outCollector) const;
+			void collectSelectionChunks(const FrameViewCaptureSelection& view, VisibleCaptureCollector& outCollector) const;
 			void renderChunkListStandalone(command::CommandWriter& cmd, const base::Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const;
 
 			//--

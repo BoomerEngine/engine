@@ -117,3 +117,25 @@ Button {
         border-color: color.scale($button-background, $disable-scale);
     }
 }
+
+BackgroundButton {
+	margin-left: 2em;
+	margin-right: 2em;
+	padding: 5em 2em 5em 2em;
+	background: #0004;
+	border-width: 1em;
+	border-color: #FFFFFF20;
+	border-radius: 3em;
+
+	> TextLabel {
+		color: #AAA;
+	}
+
+	&:hover {
+		background: color.scale($action-blue-color, 85%);
+
+		> TextLabel {
+			color: #FFF;
+		}
+	}
+}

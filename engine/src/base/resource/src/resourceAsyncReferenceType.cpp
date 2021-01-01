@@ -120,7 +120,7 @@ namespace base
             {
                 const auto resourceClass = resData->type.cast<res::IResource>();
                 if (resourceClass && resourceClass->is(m_resourceClass))
-                    loadedKey = res::ResourceKey(resData->path, resourceClass);
+                    loadedKey = res::ResourceKey(res::ResourcePath(resData->path), resourceClass);
             }
 
             *(res::BaseAsyncReference*)data = loadedKey;
@@ -131,7 +131,7 @@ namespace base
             auto& ptr = *(const res::BaseAsyncReference*) data;
             if (!ptr.empty())
             {
-                const auto fileExt = ptr.key().extension();
+                const auto fileExt = ptr.key().path().extension();
                 const auto classByExtension = IResource::FindResourceClassByExtension(fileExt);
 
                 node.writeAttribute("path", ptr.key().path().view());

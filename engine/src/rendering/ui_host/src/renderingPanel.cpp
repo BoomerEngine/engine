@@ -173,6 +173,22 @@ namespace ui
 		viewport.depthBuffer = m_depthSurfaceRTV;
 	}
 
+    void RenderingPanel::renderCaptureScene(const rendering::scene::FrameParams_Capture* capture)
+    {
+        const auto renderWidth = (int)std::ceil(cachedDrawArea().size().x);
+        const auto renderHeight = (int)std::ceil(cachedDrawArea().size().y);
+        if (renderWidth && renderHeight)
+        {
+            ViewportParams params;
+            params.width = renderWidth;
+            params.height = renderHeight;
+            params.capture = capture;
+
+            parepareRenderTargets(params);
+            renderContent(params);
+        }
+    }
+
     void RenderingPanel::renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
     {
         TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);

@@ -37,7 +37,7 @@ namespace ed
         virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
         virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 
-        virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition) const override;
+        virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const override;
 
         struct CollapsedBucket
         {

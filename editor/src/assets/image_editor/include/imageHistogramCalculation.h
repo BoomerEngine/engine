@@ -49,7 +49,7 @@ namespace ed
 
 		//--
 
-		virtual void processRetreivedData(rendering::IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final;
+		virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final;
     };
 
     //--

@@ -52,10 +52,12 @@ export shader MaterialPS
 	
 	//--
 
-	void EmitSelection(uint objectId, uint subObjectId)
+	void EmitSelection(uint objectId, vec3 worldPosition)
 	{
 		uint selectableId = ObjectData[objectId].SelectionObjectID;
-		SelectionGatherPS.EmitSelection(selectableId, subObjectId, 0.0f);
+		uint subId = ObjectData[objectId].SelectionSubObjectID;
+		float dist = length(CameraPosition - worldPosition);
+		SelectionGatherPS.EmitSelection(selectableId, subId, dist);
 	}
 
 	//--

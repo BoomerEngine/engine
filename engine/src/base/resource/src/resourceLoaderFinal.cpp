@@ -88,7 +88,7 @@ namespace base
             if (!entryTable || entryTable->empty())
                 return false;
 
-            const auto loadingExt = key.extension();
+            const auto loadingExt = key.path().extension();
             for (const auto& entry : *entryTable)
                 if (entry.extension == loadingExt)
                     return loadingExt;
@@ -131,16 +131,11 @@ namespace base
                     if (auto reader = base::io::OpenForAsyncReading(filePath))
                     {
                         FileLoadingContext context;
-                        // context.knownMainFileSize = 0;
+                        context.resourceLoader = this;
+                        context.resourceLoadPath = key.path();
 
                         if (LoadFile(reader, context))
-                        {
-                            if (const auto ret = context.root<IResource>())
-                            {
-                                ret->bindToLoader(this, key, ResourceMountPoint(), false);
-                                return ret;
-                            }
-                        }
+                            return context.root<IResource>();
                     }
                 }
             }

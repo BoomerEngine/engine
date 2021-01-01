@@ -96,22 +96,25 @@ namespace base
             resizeArrayElements(data, size);
 
             // get element pointers
-            auto* writePtr = (uint8_t*)arrayElementData(data, 0);
-            auto writeStride = m_innerType->size();
-
-            // read elements
-			auto capacity = maxArrayCapacity(data);
-			for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
+            if (size)
             {
-                if (i < capacity)
+                auto* writePtr = (uint8_t*)arrayElementData(data, 0);
+                auto writeStride = m_innerType->size();
+
+                // read elements
+                auto capacity = maxArrayCapacity(data);
+                for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
                 {
-                    m_innerType->readBinary(typeContext, file, writePtr);
-                }
-                else
-                {
-                    // read and discard the elements that won't fit into the array
-                    DataHolder holder(m_innerType);
-                    m_innerType->readBinary(typeContext, file, holder.data());
+                    if (i < capacity)
+                    {
+                        m_innerType->readBinary(typeContext, file, writePtr);
+                    }
+                    else
+                    {
+                        // read and discard the elements that won't fit into the array
+                        DataHolder holder(m_innerType);
+                        m_innerType->readBinary(typeContext, file, holder.data());
+                    }
                 }
             }
 

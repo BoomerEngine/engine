@@ -24,6 +24,7 @@ namespace rendering
         bool depthWrite = true;
         bool earlyPixelTests = false;
         bool hasVertexOffset = false;
+        bool fillLines = false;
     };
 
     ///---

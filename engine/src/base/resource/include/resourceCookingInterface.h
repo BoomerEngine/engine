@@ -37,9 +37,6 @@ namespace base
             /// get the context path of the resource being cooked (usually it's an absolute file path)
             virtual const StringBuf& queryResourceContextName() const = 0;
 
-            /// get the mount point for cooked resource, this is the base directory of the package the resource is at
-            virtual const ResourceMountPoint& queryResourceMountPoint() const = 0;
-
             /// discover paths in directory, makes a complex dependency on the
             virtual bool discoverResolvedPaths(StringView relativePath, bool recurse, StringView extension, Array<StringBuf>& outFileSystemPaths) = 0;
 
@@ -91,7 +88,8 @@ namespace base
             template< typename T >
             CAN_YIELD INLINE RefPtr<T> loadDependencyResource(StringView resourcePath)
             {
-                return rtti_cast<T>(loadDependencyResource(MakePath<T>(resourcePath)));
+                const auto key = ResourceKey(ResourcePath(resourcePath), T::GetStaticClass());
+                return rtti_cast<T>(loadDependencyResource(key));
             }
         };
 

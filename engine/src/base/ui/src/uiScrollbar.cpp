@@ -63,14 +63,14 @@ namespace ui
                 m_forwardButton = createNamedChild<Button>("right"_id, "");
             }
 
-            m_backwardButton->bind(EVENT_CLICKED, this) = [](Scrollbar* bar)
+            m_backwardButton->bind(EVENT_CLICKED, this) = [this]()
             {
-                bar->scrollPosition(bar->scrollPosition() - bar->m_smallStepSize);
+                scrollPosition(scrollPosition() - m_smallStepSize);
             };
 
-            m_forwardButton->bind(EVENT_CLICKED, this) = [](Scrollbar* bar)
+            m_forwardButton->bind(EVENT_CLICKED, this) = [this]()
             {
-                bar->scrollPosition(bar->scrollPosition() + bar->m_smallStepSize);
+                scrollPosition(scrollPosition() + m_smallStepSize);
             };
         }
     }

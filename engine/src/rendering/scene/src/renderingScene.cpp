@@ -100,12 +100,19 @@ namespace rendering
 
 		void Scene::moveProxy(IObjectProxy* proxy, const base::Matrix& localToWorld)
 		{
-
+            auto* cmd = new CommandMoveObject;
+            cmd->proxy = AddRef(proxy);
+			cmd->localToWorld = localToWorld;
+            scheduleCommand(cmd);
 		}
 
 		void Scene::changeProxyFlags(IObjectProxy* proxy, ObjectProxyFlags clearFlag, ObjectProxyFlags setFlag)
 		{
-
+            auto* cmd = new CommandChangeFlags;
+            cmd->proxy = AddRef(proxy);
+			cmd->clearFlags = clearFlag;
+			cmd->setFlags = setFlag;
+            scheduleCommand(cmd);
 		}
 
         //--
@@ -130,6 +137,20 @@ namespace rendering
 		}
 
 		void Scene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
+		{
+            for (auto* manager : m_managers)
+                if (manager)
+                    manager->render(cmd, view, frame);
+		}
+
+		void Scene::renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame)
+		{
+            for (auto* manager : m_managers)
+                if (manager)
+                    manager->render(cmd, view, frame);
+		}
+
+		void Scene::renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame)
 		{
             for (auto* manager : m_managers)
                 if (manager)

@@ -310,7 +310,7 @@ namespace rendering
 	{
 		DEBUG_CHECK_EX(!m_templateProxy, "Template proxy for material template should be immutable");
 
-        const auto contextPath = path() ? path() : m_contextPath;
+        const auto& contextPath = path() ? path().str() : m_contextPath;
 		m_templateProxy = base::RefNew<MaterialTemplateProxy>(contextPath, m_parameters, m_metadata, m_compiler, m_precompiledTechniques);
 	}
 

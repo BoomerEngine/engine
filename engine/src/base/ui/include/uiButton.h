@@ -15,6 +15,7 @@ namespace ui
     //--
 
     DECLARE_UI_EVENT(EVENT_CLICKED, bool)
+    DECLARE_UI_EVENT(EVENT_CLICKED_SECONDARY, bool)
 
     //--
 
@@ -34,6 +35,8 @@ namespace ui
         EventOnClickRelease = FLAG(7), // reports event on click + release on same item (this is what the majority of Button are using)
         EventOnClickReleaseAnywhere = FLAG(8), // reports event on click + release even if the release event is not done while hovering the item
         EventOnDoubleClick = FLAG(9), // report event on double-click 
+
+        SecondEventOnMiddleClick = FLAG(10), // hacky flag that a second even should be generated on middle click
 
         EVENT_MASK = EventOnClick | EventOnClickRelease | EventOnClickReleaseAnywhere | EventOnDoubleClick
     };
@@ -83,6 +86,7 @@ namespace ui
         void inputActionFinished();
 
         virtual void clicked();
+        virtual void clickedSecondary();
 
         friend class ButtonInputAction;
     };

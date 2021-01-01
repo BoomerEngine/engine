@@ -7,19 +7,23 @@
 ***/
 
 #include "build.h"
+#include "editorService.h"
+#include "assetBrowser.h"
+#include "managedFile.h"
+#include "managedFileFormat.h"
+#include "managedItem.h"
+#include "managedDirectory.h"
+
+#include "base/object/include/rttiDataView.h"
+#include "base/resource/include/resourceReferenceType.h"
+#include "base/resource/include/resourceAsyncReferenceType.h"
+
 #include "base/ui/include/uiDataBox.h"
 #include "base/ui/include/uiButton.h"
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiColorPickerBox.h"
 #include "base/ui/include/uiImage.h"
-
-#include "base/object/include/rttiDataView.h"
-#include "base/resource/include/resourceReferenceType.h"
-#include "editorService.h"
-#include "managedFile.h"
-#include "managedFileFormat.h"
-#include "assetBrowser.h"
-#include "base/resource/include/resourceAsyncReferenceType.h"
+#include "base/ui/include/uiEditBox.h"
 
 namespace ui
 {
@@ -55,7 +59,9 @@ namespace ui
                 rightContainer->customMargins(ui::Offsets(5, 5, 5, 5));
 
                 {
-                    m_name = rightContainer->createChild<ui::TextLabel>();
+                    auto flags = { ui::EditBoxFeatureBit::AcceptsEnter };
+                    m_name = rightContainer->createChild<ui::EditBox>(flags);
+                    m_name->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
                     m_name->hitTest(ui::HitTestState::Enabled);
                     m_name->customMargins(0, 0, 0, 4);
                 }
@@ -95,6 +101,23 @@ namespace ui
                     }
                 }
             }
+
+            m_name->bind(ui::EVENT_TEXT_ACCEPTED) = [this]()
+            {
+                auto fileName = m_name->text();
+
+                if (ValidateFileName(fileName))
+                {
+                    if (m_currentFile)
+                    {
+                        auto dirPath = m_currentFile->parentDirectory()->depotPath();
+                        auto extension = m_currentFile->fileFormat().extension();
+
+                        if (auto* newFile = GetService<ed::Editor>()->managedDepot().findManagedFile(TempString("{}{}.{}", dirPath, fileName, extension)))
+                            changeFile(newFile);
+                    }
+                }
+            };
 
             /*m_thumbnail->OnClick = [this](UI_CALLBACK)
             {
@@ -142,7 +165,7 @@ namespace ui
 
             if (ret.code == DataViewResultCode::OK)
             {
-                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(key.path());
+                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(key.path().view());
                 if (managedFile != m_currentFile)
                 {
                     image::ImageRef imageRef;
@@ -155,7 +178,7 @@ namespace ui
                 // set file name
                 if (key)
                 {
-                    fileName = key.fileName();
+                    fileName = key.path().fileStem();
                     fileFound = (managedFile != nullptr);
                 }
                 else
@@ -167,6 +190,7 @@ namespace ui
                 // update file name
                 m_name->text(fileName);
                 m_name->tooltip(filePath);
+                m_name->enable(key);
 
                 // show ui elements
                 m_buttonShowInBrowser->visibility(true);
@@ -179,6 +203,7 @@ namespace ui
                 m_thumbnail->visibility(true);
 
                 m_name->text("<multiple values>");
+                m_name->enable(false);
                 m_name->tooltip("");
 
                 m_buttonShowInBrowser->visibility(false);
@@ -186,7 +211,9 @@ namespace ui
             }
             else
             {
-                m_name->text(TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                //m_name->text(TempString("[tag:#F00][img:error] {}[/tag]", ret));
+                m_name->text("<error>");
+                m_name->enable(false);
                 m_name->tooltip("");
 
                 m_buttonBar->visibility(false);
@@ -215,7 +242,14 @@ namespace ui
 
         //--
 
-        ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+        virtual ui::DragDropDataPtr queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::Position& position) const override
+        {
+            if (m_currentFile)
+                return RefNew<ed::AssetBrowserFileDragDrop>(m_currentFile);
+            return nullptr;
+        }
+
+        virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override
         {
             // can we handle this data ?
             auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
@@ -229,7 +263,7 @@ namespace ui
             return nullptr;
         }
 
-        void DataBoxResource::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+        virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override
         {
             auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
             if (fileData)
@@ -248,7 +282,7 @@ namespace ui
                     auto resPath = newFile->depotPath();
                     if (!resPath.empty())
                     {
-                        const auto key = res::ResourceKey(resPath, m_resourceClass);
+                        const auto key = res::ResourceKey(res::ResourcePath(resPath), m_resourceClass);
 
                         // load the file
                         if (m_async)
@@ -307,7 +341,7 @@ namespace ui
 
     protected:
         ui::ImagePtr m_thumbnail;
-        ui::TextLabelPtr m_name;
+        ui::EditBoxPtr m_name;
         ui::ElementPtr m_buttonBar;
         ui::ElementPtr m_buttonShowInBrowser;
 

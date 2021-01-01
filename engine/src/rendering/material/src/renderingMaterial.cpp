@@ -18,7 +18,8 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_ENUM(MaterialPass);
         RTTI_ENUM_OPTION(DepthPrepass);
-        RTTI_ENUM_OPTION(Wireframe);
+        RTTI_ENUM_OPTION(WireframeSolid);
+        RTTI_ENUM_OPTION(WireframePassThrough);
         //RTTI_ENUM_OPTION(ConstantColor);
         RTTI_ENUM_OPTION(SelectionFragments);
         //RTTI_ENUM_OPTION(NoLighting);
@@ -51,7 +52,7 @@ namespace rendering
         {
             auto lock = base::CreateLock(m_runtimeDependenciesLock);
             m_runtimeDependencies.pushBackUnique(material);
-            TRACE_INFO("RegisterDependentMaterial at {}, child {}", this, material);
+            //TRACE_INFO("RegisterDependentMaterial at {}, child {}", this, material);
         }
     }
 
@@ -59,7 +60,7 @@ namespace rendering
     {
         auto lock = base::CreateLock(m_runtimeDependenciesLock);
 
-        TRACE_INFO("UnregisterDependentMaterial at {}, child {}", this, material);
+        //TRACE_INFO("UnregisterDependentMaterial at {}, child {}", this, material);
 
         auto index = m_runtimeDependencies.find(material);
         if (index != INDEX_NONE)

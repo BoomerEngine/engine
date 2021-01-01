@@ -29,13 +29,12 @@ namespace ed
 
         INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
 
-        INLINE rendering::MaterialInstancePtr materialInstance() const { return base::rtti_cast<rendering::MaterialInstance>(resource()); }
+        INLINE const rendering::MaterialInstancePtr& materialInstance() const { return m_instance; }
 
         //--
 
     private:
-
-        //---
+        rendering::MaterialInstancePtr m_instance;
 
         base::RefPtr<MaterialPreviewPanel> m_previewPanel;
         ui::DataInspectorPtr m_properties;

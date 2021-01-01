@@ -103,13 +103,13 @@ namespace ui
         : PopupWindow(ui::WindowFeatureFlagBit::DEFAULT_POPUP_DIALOG, "Create block")
     {
         // filter
-        auto filterBar = createChild<ui::SearchBar>();
+        m_searchBar = createChild<ui::SearchBar>();
 
         // list of types
         m_list = createChild<ui::ListView>();
         m_list->customInitialSize(500, 400);
         m_list->expand();
-        filterBar->bindItemView(m_list);
+        m_searchBar->bindItemView(m_list);
 
         // buttons
         {
@@ -136,6 +136,11 @@ namespace ui
         {
             closeIfValidTypeSelected();
         };
+    }
+
+    IElement* BlockClassPickerBox::focusFindFirst()
+    {
+        return m_searchBar;
     }
 
     bool BlockClassPickerBox::handleKeyEvent(const base::input::KeyEvent & evt)

@@ -306,7 +306,7 @@ namespace wavefront
                             }
                             else
                             {
-                                group.parsedFaceIndices.writeLarge(numericalIndices.typedData(), numericalIndices.size());
+                                group.parsedFaceIndices.writeLarge(numericalIndices.data(), numericalIndices.dataSize());
 
                                 auto* f = group.parsedFaces.allocSingle();
                                 f->attributeMask = validAttributeMask;
@@ -700,7 +700,7 @@ namespace wavefront
 
                     if (oredFaceAttributeMask != andedFaceAttributeMask)
                     {
-                        TRACE_ERROR("Chunk {}.{}.{} has inconsident Type face attributes in each face {} != {}", job->objectName, job->groupName, job->materialName,
+                        TRACE_ERROR("Chunk {}.{}.{} has inconsistent Type face attributes in each face {} != {}", job->objectName, job->groupName, job->materialName,
                             andedFaceAttributeMask, oredFaceAttributeMask);
                         continue;
                     }
@@ -710,9 +710,9 @@ namespace wavefront
                     else
                         chunk.commonFaceVertexCount = 0;
 
-                    if (chunk.numFaceIndices % totalVertexCount != 0)
+                    if ((chunk.numFaceIndices % totalVertexCount) != 0)
                     {
-                        TRACE_ERROR("Chunk {}.{}.{} has inconsident number of face attributes in each face ({} face indices, {} face vertices)", job->objectName, job->groupName, job->materialName,
+                        TRACE_ERROR("Chunk {}.{}.{} has inconsistent number of face attributes in each face ({} face indices, {} face vertices)", job->objectName, job->groupName, job->materialName,
                             chunk.numFaceIndices, totalVertexCount);
                         continue;
                     }

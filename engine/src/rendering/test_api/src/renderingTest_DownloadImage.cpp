@@ -43,19 +43,17 @@ namespace rendering
 				auto lock = base::CreateLock(m_lock);
 
 				base::image::ImageView srcView(base::image::NATIVE_LAYOUT, base::image::PixelFormat::Uint8_Norm, 4, 
-					m_state.dataPtr, m_state.region.image.sizeX, m_state.region.image.sizeY);
+					m_state.data.data(), m_state.region.image.sizeX, m_state.region.image.sizeY);
 
-				ASSERT(srcView.dataSize() == m_state.dataSize);
+				ASSERT(srcView.dataSize() == m_state.data.size());
 				return srcView;
 			}
 
-			virtual void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) override final
+			virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) override final
 			{
 				{
 					auto lock = base::CreateLock(m_lock);
-					m_state.area = AddRef(area);
-					m_state.dataPtr = dataPtr;
-					m_state.dataSize = dataSize;
+					m_state.data = base::Buffer::Create(POOL_TEMP, dataSize, 16, dataPtr);
 					m_state.region = info;
 				}
 
@@ -67,13 +65,9 @@ namespace rendering
 
 			struct
 			{
-				DownloadAreaObjectPtr area;
 				ResourceCopyRange region;
-
-				uint32_t dataSize = 0;
-				const void* dataPtr = nullptr;
+				base::Buffer data;
 			} m_state;
-
 
 			std::atomic<bool> m_ready = false;
 
@@ -120,7 +114,6 @@ namespace rendering
 			ImageSampledViewPtr m_displayImageSRV;
 
 			base::RefPtr<TestDownloadSink> m_downloadSink;
-			DownloadAreaObjectPtr m_downloadArea;
 
 			base::FastRandState m_rnd;
 
@@ -186,8 +179,6 @@ namespace rendering
 
 			m_stage = base::RefNew<base::image::Image>(base::image::PixelFormat::Uint8_Norm, 4, SIZE, SIZE);
 			base::image::Fill(m_stage->view(), &base::Vector4::ZERO());
-
-			m_downloadArea = device()->createDownloadArea(m_stage->view().dataSize());
         }
 
 		void RenderingTest_DownloadImage::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -305,13 +296,13 @@ namespace rendering
 				if (m_showDepth)
 				{
 					cmd.opTransitionLayout(m_depthBuffer, ResourceLayout::ShaderResource, ResourceLayout::CopySource);
-					cmd.opDownloadData(m_depthBuffer, srcRange, m_downloadArea, 0, m_downloadSink);
+					cmd.opDownloadData(m_depthBuffer, srcRange, m_downloadSink);
 					cmd.opTransitionLayout(m_depthBuffer, ResourceLayout::CopySource, ResourceLayout::ShaderResource);
 				}
 				else
 				{
 					cmd.opTransitionLayout(m_colorBuffer, ResourceLayout::ShaderResource, ResourceLayout::CopySource);
-					cmd.opDownloadData(m_colorBuffer, srcRange, m_downloadArea, 0, m_downloadSink);
+					cmd.opDownloadData(m_colorBuffer, srcRange, m_downloadSink);
 					cmd.opTransitionLayout(m_colorBuffer, ResourceLayout::CopySource, ResourceLayout::ShaderResource);
 				}
 			}

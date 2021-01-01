@@ -10,8 +10,6 @@
 
 #include "versionControl.h"
 
-#include "base/resource/include/resourceMountPoint.h"
-
 namespace ed
 {
     //---
@@ -41,10 +39,6 @@ namespace ed
         /// get depot file path of this file
         /// NOTE: file path is constructed on demand (not a cheap call)
         virtual StringBuf depotPath() const;
-
-        /// get the mounting point for this resource, returns the path to the nearest package mount
-        /// ie, for engine/textures/checker_d.png this returns engine/ as this is where the package resides
-        virtual res::ResourceMountPoint mountPoint() const;
 
         /// resolve absolute file path for this file, valid only for files coming from disk
         virtual StringBuf absolutePath() const;

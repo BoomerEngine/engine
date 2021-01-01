@@ -16,8 +16,8 @@ struct ObjectInfo
     vec4 SceneBoundsCenter; // .w = free
     uint SelectionObjectID;
     uint SelectionSubObjectID;
-    uint _Padding0;
-    uint _Padding1;
+    uint Color;
+    uint ColorEx;
 };
 
 //----

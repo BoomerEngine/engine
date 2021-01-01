@@ -30,13 +30,13 @@ namespace base
 
         IResourceLoaderCached::~IResourceLoaderCached()
         {
-            for (auto& weakRef : m_loadedResources.values())
+            /*for (auto& weakRef : m_loadedResources.values())
             {
                 auto resource = weakRef.lock();
                 if (resource)
                     resource->m_loader = nullptr;
             }
-
+            */
             m_loadedResources.clear();
         }
 
@@ -95,6 +95,8 @@ namespace base
             // ask the raw loader to load the content of the resource
             if (auto resource = loadResourceOnce(key))
             {
+                ASSERT(resource->path() == key.path());
+                    
                 // add for safe keeping so we can return it
                 // NOTE: we may decide to reuse the same resource, but it does not change the logic here
                 {

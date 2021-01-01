@@ -207,39 +207,7 @@ namespace rendering
 		virtual base::StringView debugLabel() const { return ""; }
 
 		// data was retrieved from GPU, do whatever you want with it, if you don't consume it already hold on to the "area" it's in
-		virtual void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) = 0;
-	};
-
-	//--
-
-	// simple (aka. BAD EXMAPLE) sink that keeps the retrieved data in a buffer for later inspection
-	class RENDERING_DEVICE_API DownloadDataSinkBuffer : public IDownloadDataSink
-	{
-	public:
-		DownloadDataSinkBuffer();
-
-		/// get the buffer version, initially it's zero, increments after each processRetreivedData call (so the sink can be reused)
-		INLINE uint32_t version() const { return m_version; }
-
-		//--
-
-		// retrieve pointer to data
-		const uint8_t* retrieve(uint32_t& outSize, DownloadAreaObjectPtr& outArea) const;
-
-		//--
-
-	protected:
-		std::atomic<uint32_t> m_version = 0; // changed after each new upload
-
-		base::SpinLock m_lock;
-
-		DownloadAreaObjectPtr m_area;
-		uint32_t m_dataSize = 0;
-		const uint8_t* m_dataPtr = nullptr;
-
-		//--
-
-		virtual CAN_YIELD void processRetreivedData(IDownloadAreaObject* area, const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) override final;
+		virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const ResourceCopyRange& info) = 0;
 	};
 
 	//--

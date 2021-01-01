@@ -167,7 +167,7 @@ namespace ui
         }
     }
 
-    void Renderer::attachWindow(Window* window)
+    void Renderer::attachWindow(Window* window, IElement* focusElement)
     {
         if (window)
         {
@@ -181,6 +181,7 @@ namespace ui
 
                 auto& entry = m_windows.emplaceBack();
                 entry.window = ptr;
+                entry.autoFocus = focusElement;
             }
         }
     }
@@ -218,7 +219,7 @@ namespace ui
 
     }
 
-    void Renderer::runModalLoop(Window* window)
+    void Renderer::runModalLoop(Window* window, IElement* focusElement)
     {
         DEBUG_CHECK_EX(window, "No window to run modal loop for");
 
@@ -226,7 +227,7 @@ namespace ui
 
         {
             Renderer childRenderer(m_stash, m_native);
-            childRenderer.attachWindow(window);
+            childRenderer.attachWindow(window, focusElement);
 
             // loop until we request the window to close
             base::NativeTimePoint timeDelta;
@@ -532,7 +533,21 @@ namespace ui
             DEBUG_CHECK_EX(window.nativeId != 0, "Unable to create native window, we will retry next frame");
             if (window.nativeId)
             {
-                focus(window.window);
+                auto first = window.autoFocus.unsafe();
+
+                if (!first)
+                    first = window.window->focusFindFirst();
+
+                while (first)
+                {
+                    auto deeper = first->focusFindFirst();
+                    if (!deeper || deeper == first)
+                        break;
+                    first = deeper;
+                }
+
+                if (first)
+                    focus(first);
             }
         }
     }
@@ -979,10 +994,11 @@ namespace ui
                 // allow element to handle it
                 if (!it->handleHoverDuration(m_lastHoverUpdatePosition))
                 {
-                    if (auto tooltip = it->queryTooltipElement(m_lastHoverUpdatePosition))
+                    ElementArea tooltipArea;
+                    if (auto tooltip = it->queryTooltipElement(m_lastHoverUpdatePosition, tooltipArea))
                     {
                         m_currentTooltipOwner = it.ptr();
-                        m_currentTooltipOwnerArea = it->cachedDrawArea();
+                        m_currentTooltipOwnerArea = tooltipArea;
 
                         m_currentTooltip = base::RefNew<PopupWindow>();
                         m_currentTooltip->styleType("Tooltip"_id);
@@ -1383,14 +1399,18 @@ namespace ui
             if (processInputActionResult(m_currentInputAction->onKeyEvent(evt)))
                 return;
 
+        //TRACE_INFO("KeyEvent: {} {} {}", evt.pressed(), evt.released(), evt.keyCode());
+
         // send the preview event to the controls in the reverse order
         // NOTE: the preview is not sent to the focused element
         // handle preview - back to front
         bool handled = false;
         for (ElementParentToChildIterator it(m_currentFocusElement); it; ++it)
         {
+            //TRACE_INFO("Preview at {} ({})", *it, it->cls()->name());
             if (m_currentFocusElement != *it && it->previewKeyEvent(evt))
             {
+                //TRACE_INFO("PreviewHandled at {} ({})", *it, it->cls()->name());
                 handled = true;
                 break;
             }
@@ -1401,8 +1421,10 @@ namespace ui
         {
             for (ElementChildToParentIterator it(m_currentFocusElement); it; ++it)
             {
+                //TRACE_INFO("Process at {} ({})", *it, it->cls()->name());
                 if (it->handleKeyEvent(evt))
                 {
+                    //TRACE_INFO("Handled at {} ({})", *it, it->cls()->name());
                     handled = true;
                     break;
                 }

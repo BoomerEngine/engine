@@ -18,7 +18,6 @@
 #include "nullApiImage.h"
 #include "nullApiBuffer.h"
 #include "nullApiBackgroundQueue.h"
-#include "nullApiDownloadArea.h"
 
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiSwapchain.h"
@@ -108,11 +107,6 @@ namespace rendering
 			IBaseSampler* Thread::createOptimalSampler(const SamplerState& state)
 			{
 				return new Sampler(this, state);
-			}
-
-			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)
-			{
-				return new DownloadArea(this, size);
 			}
 
 			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)

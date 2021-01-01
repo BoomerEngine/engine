@@ -82,6 +82,7 @@ namespace rendering
 
     RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_SamplerTexture);
         RTTI_METADATA(base::graph::BlockInfoMetadata).title("SamplerTexture").group("Samplers");
+        RTTI_METADATA(base::graph::BlockTitleColorMetadata).color(COLOR_SOCKET_TEXTURE);
         RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialSampler");
         RTTI_PROPERTY(m_fallbackValue).editable();
     RTTI_END_TYPE();

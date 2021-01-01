@@ -311,6 +311,7 @@ namespace ed
             auto menu = RefNew<ui::MenuButtonContainer>();
             DepotMenuContext context;
             context.contextDirectory = files->directory();
+            context.tab = files;
             BuildDepotContextMenu(view, *menu, context, depotItems);
 
             if (menu->childrenList())

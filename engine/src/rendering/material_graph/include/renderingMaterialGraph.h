@@ -68,6 +68,13 @@ namespace rendering
         /// get the editable graph
         INLINE const MaterialGraphContainerPtr& graph() const { return m_graph; }
 
+        //--
+
+        // create ad-hoc preview template for this material graph
+        MaterialTemplatePtr createPreviewTemplate(base::StringView label) const;
+
+        //--
+
     private:
         MaterialGraphContainerPtr m_graph;
 

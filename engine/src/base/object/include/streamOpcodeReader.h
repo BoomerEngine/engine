@@ -48,8 +48,15 @@ namespace base
         class BASE_OBJECT_API OpcodeReader : public NoCopy
         {
         public:
-            OpcodeReader(const OpcodeResolvedReferences& refs, const void* data, uint64_t size, bool safeLayout);
+            OpcodeReader(const OpcodeResolvedReferences& refs, const void* data, uint64_t size, bool safeLayout, uint32_t version);
             ~OpcodeReader();
+
+            //--
+
+            // stream version
+            INLINE uint32_t version() const { return m_version; }
+
+            //--
 
             /// get data pointer (reads the OpValue)
             INLINE const void* pointer(uint64_t size);
@@ -116,6 +123,7 @@ namespace base
             const uint8_t* m_base = nullptr;
 
             bool m_protectedStream = false;
+            uint32_t m_version = 0;
 
             const OpcodeResolvedReferences& m_refs;
 

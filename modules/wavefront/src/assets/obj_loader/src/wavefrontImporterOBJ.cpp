@@ -83,9 +83,9 @@ namespace wavefront
         crc << allowThreads;
         crc << flipUV;
 
-        crc << m_templateUnlit.key().view();
-        crc << m_templateMasked.key().view();
-        crc << m_templateEmissive.key().view();
+        crc << m_templateUnlit.key().path().view();
+        crc << m_templateMasked.key().path().view();
+        crc << m_templateEmissive.key().path().view();
     }
 
     //--
@@ -571,10 +571,14 @@ namespace wavefront
         auto colors = data.colors();
 
         // validate
+        for (const auto* sourceChunk : sourceChunks)
         {
-            const auto* f = data.faces();
-            const auto* fi = data.faceIndices();
-            const auto numFaces = data.numFaces();
+            const auto* f = data.faces() + sourceChunk->firstFace;
+            DEBUG_CHECK(sourceChunk->firstFace + sourceChunk->numFaces <= data.numFaces());
+            const auto* fi = data.faceIndices() + sourceChunk->firstFaceIndex;
+            const auto* maxFi = fi + sourceChunk->numFaceIndices;
+            DEBUG_CHECK(sourceChunk->firstFaceIndex + sourceChunk->numFaceIndices <= data.numFaceIndices());
+            const auto numFaces = sourceChunk->numFaces;
             for (uint32_t i=0; i<numFaces; ++f, ++i)
             { 
                 uint8_t numAttributes = 0;
@@ -586,6 +590,8 @@ namespace wavefront
 
                 for (uint32_t j = 0; j < f->numVertices; ++j)
                 {
+                    DEBUG_CHECK(fi < maxFi);
+
                     if (f->attributeMask & 1)
                     {
                         const auto index = *fi++;
@@ -886,7 +892,7 @@ namespace wavefront
 
                 auto ret = base::RefNew<rendering::MaterialInstance>();
 
-                base::res::BaseReference baseMaterialRef(base::MakePath<rendering::MaterialInstance>(materialDepotPath));
+                base::res::BaseReference baseMaterialRef(base::res::ResourceKey(base::res::ResourcePath(materialDepotPath), rendering::MaterialInstance::GetStaticClass()));
                 ret->baseMaterial(baseMaterialRef.cast<rendering::MaterialInstance>());
 
                 return ret;
@@ -896,6 +902,23 @@ namespace wavefront
         // resolve the path to the material library
         if (cfg.m_materialImportMode != rendering::MeshMaterialImportMode::DontImport)
         {
+            // check if the imported material already exists
+            const auto depotPath = BuildMaterialDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
+            if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportAll)
+            {
+                if (importer.checkDepotFile(depotPath))
+                {
+                    TRACE_INFO("Existing material file found at '{}'", depotPath);
+
+                    auto ret = base::RefNew<rendering::MaterialInstance>();
+
+                    base::res::BaseReference baseMaterialRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), rendering::MaterialInstance::GetStaticClass()));
+                    ret->baseMaterial(baseMaterialRef.cast<rendering::MaterialInstance>());
+
+                    return ret;
+                }
+            }
+
             const auto materialImportConfig = base::RefNew<MTLMaterialImportConfig>();
             materialImportConfig->m_materialName = base::StringBuf(name);
             materialImportConfig->m_textureImportMode = cfg.m_textureImportMode;
@@ -928,7 +951,6 @@ namespace wavefront
                 if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportAll || cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportMissing)
                 {
                     // build depot path for the imported texture
-                    const auto depotPath = BuildMaterialDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
                     TRACE_INFO("Material '{}' found in library '{}' will be improted as '{}'", name, resolvedMaterialLibraryPath, depotPath);
 
                     // emit the follow-up import, no extra config at the moment
@@ -936,7 +958,8 @@ namespace wavefront
 
                     // build a unloaded material reference (so it can be saved)
                     auto ret = base::RefNew<rendering::MaterialInstance>();
-                    base::res::BaseReference materialRef(base::MakePath<rendering::MaterialInstance>(depotPath));
+
+                    base::res::BaseReference materialRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), rendering::MaterialInstance::GetStaticClass()));
                     ret->baseMaterial(materialRef.cast<rendering::MaterialInstance>());
                     return ret;
                 }

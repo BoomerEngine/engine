@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "resourcePath.h"
+#include "resourceKey.h"
 
 namespace base
 {

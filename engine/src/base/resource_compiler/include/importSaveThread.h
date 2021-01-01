@@ -18,11 +18,23 @@ namespace base
     {
         //--
 
-        /// importer saving thread, saves back to depot
-        class BASE_RESOURCE_COMPILER_API ImportSaverThread : public NoCopy
+        /// importer output
+        class BASE_RESOURCE_COMPILER_API IImportOutput : public NoCopy
         {
             RTTI_DECLARE_POOL(POOL_IMPORT)
 
+        public:
+            virtual ~IImportOutput();
+
+            /// schedule new content for saving
+            virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) = 0;
+        };
+
+        //--
+
+        /// importer saving thread, saves back to depot
+        class BASE_RESOURCE_COMPILER_API ImportSaverThread : public IImportOutput
+        {
         public:
             ImportSaverThread(depot::DepotStructure& depot);
             ~ImportSaverThread(); // note: will kill all jobs
@@ -31,7 +43,7 @@ namespace base
             void waitUntilDone();
 
             /// schedule new content for saving
-            bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath);
+            virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) override final;
 
         private:
             struct SaveJob : public NoCopy

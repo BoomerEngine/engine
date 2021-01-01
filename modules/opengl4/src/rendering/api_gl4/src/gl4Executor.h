@@ -41,7 +41,9 @@ namespace rendering
 				virtual void runClearRenderTarget(const command::OpClearRenderTarget &) override final;
 				virtual void runClearDepthStencil(const command::OpClearDepthStencil &) override final;
 				virtual void runClearBuffer(const command::OpClearBuffer &) override final;
+				virtual void runClearStructuredBuffer(const command::OpClearStructuredBuffer&) override final;
 				virtual void runClearImage(const command::OpClearImage &) override final;
+                virtual void runDownload(const command::OpDownload&) override final;
 
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier&) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier&) override final;

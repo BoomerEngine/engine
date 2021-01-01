@@ -208,9 +208,6 @@ namespace rendering
 	class IDownloadDataSink;
 	typedef base::RefPtr<IDownloadDataSink> DownloadDataSinkPtr;
 
-	class IDownloadAreaObject;
-	typedef base::RefPtr<IDownloadAreaObject> DownloadAreaObjectPtr;
-	
 	///---
 
 	// NOTE: always memzero!

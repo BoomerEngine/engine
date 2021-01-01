@@ -37,7 +37,6 @@ namespace rendering
 			void finalCompose(command::CommandWriter& cmd, const Setup& setup) const;
 
 		private:
-			ShaderObjectPtr m_blitShaders;
             GraphicsPipelineObjectPtr m_blitShadersPSO;
 
 			//--

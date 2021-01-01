@@ -12,6 +12,7 @@
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingResources.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingSelectable.h"
@@ -163,7 +164,7 @@ namespace ui
         if (depth == 1.0f) // far plane, nothing rendered here
             return false;
 
-        // convert to screen coords
+        // convert to screen coordinates
         float sx = -1.0f + 2.0f * (x / (float)(m_width - 1));
         float sy = -1.0f + 2.0f * (y / (float)(m_height - 1));
 
@@ -834,6 +835,54 @@ namespace ui
 
     //--
 
+    class EncodedSelectionDataSink : public rendering::IDownloadDataSink
+    {
+    public:
+        EncodedSelectionDataSink()
+        {
+            m_fence = Fibers::GetInstance().createCounter("WaitForSelectionData", 1);
+        }
+
+        virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final
+        {
+            auto maxEntires = range_cast<uint32_t>(dataSize / sizeof(rendering::scene::EncodedSelectable));
+
+            m_selectionRect = base::Rect();
+            m_selectables.clear();
+            m_selectables.reserve(maxEntires);
+
+            // get the raw data
+            const auto* ptr = (const rendering::scene::EncodedSelectable*)dataPtr;
+
+            // process the raw data
+            auto selectionRect = base::Rect::EMPTY();
+            for (uint32_t i = 0; i < maxEntires; ++i, ++ptr)
+            {
+                if (*ptr)
+                {
+                    m_selectables.pushBack(*ptr);
+                    m_selectionRect.merge(ptr->x, ptr->y);
+                }
+            }
+
+            Fibers::GetInstance().signalCounter(m_fence, 1);
+        }
+
+        base::RefPtr<RenderingPanelSelectionQuery> waitAndFetch()
+        {
+            Fibers::GetInstance().waitForCounterAndRelease(m_fence);
+            return base::RefNew<RenderingPanelSelectionQuery>(m_selectionRect, std::move(m_selectables));
+        }
+
+    private:
+        base::Array<rendering::scene::EncodedSelectable> m_selectables;
+        base::Rect m_selectionRect;
+
+        base::fibers::WaitCounter m_fence;
+    };
+
+    //--
+
     base::RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const base::Rect& area)
     {
         // render area not cached
@@ -849,56 +898,24 @@ namespace ui
             return nullptr;
 
         // prepare capture context for frame rendering
-        auto captureBuffer = base::RefNew<rendering::DownloadDataSinkBuffer>();
+        auto captureBuffer = base::RefNew<EncodedSelectionDataSink>();
 
         // prepare capture settings
         rendering::scene::FrameParams_Capture capture;
-        capture.area = base::Rect(captureAreaMinX, captureAreaMinY, captureAreaMaxX, captureAreaMaxY);
+        capture.region = base::Rect(captureAreaMinX, captureAreaMinY, captureAreaMaxX, captureAreaMaxY);
         capture.sink = captureBuffer;
         capture.mode = rendering::scene::FrameCaptureMode::SelectionRect;
 
-        // flush rendering
-        base::GetService<DeviceService>()->sync();
-
         // render the frame
-        //renderInternal(&capture);
+        renderCaptureScene(&capture);
 
-        // flush rendering
+        // flush gpu
+        base::GetService<DeviceService>()->sync();
+        base::GetService<DeviceService>()->sync();
         base::GetService<DeviceService>()->sync();
 
-        // no data
-		uint32_t retrievedSize = 0;
-		rendering::DownloadAreaObjectPtr retrievedArea = nullptr;
-		const auto* retrievedData = captureBuffer->retrieve(retrievedSize, retrievedArea);
-        if (!retrievedData)
-        {
-            TRACE_WARNING("No data extracted into selection buffer");
-            return nullptr;
-        }
-
-        // get the raw data
-        auto maxEntires = range_cast<uint32_t>(retrievedSize / sizeof(rendering::scene::EncodedSelectable));
-        const auto* ptr = (const rendering::scene::EncodedSelectable*)retrievedData;
-
-        // process the raw data
-        base::Array<rendering::scene::EncodedSelectable> allSelectables;
-        allSelectables.reserve(maxEntires);
-        auto selectionRect = base::Rect::EMPTY();
-        for (uint32_t i = 0; i < maxEntires; ++i, ++ptr)
-        {
-            if (*ptr)
-            {
-                allSelectables.pushBack(*ptr);
-                selectionRect.merge(ptr->x, ptr->y);
-            }
-        }
-
-        // no data
-        if (allSelectables.empty())
-            return nullptr;
-
-        // create wrapper
-        return base::RefNew<RenderingPanelSelectionQuery>(capture.area, std::move(allSelectables));
+        // wait for data and return it
+        return captureBuffer->waitAndFetch();        
     }
 
     bool RenderingScenePanel::queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition)
@@ -920,25 +937,24 @@ namespace ui
         auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
         // prepare capture context for frame rendering
-        auto captureImage = base::RefNew<rendering::DownloadDataSinkBuffer>();
+        //auto captureImage = base::RefNew<rendering::DownloadDataSinkBuffer>();
 
         // prepare capture settings
         rendering::scene::FrameParams_Capture capture;
-        capture.area = base::Rect(0, 0, renderAreaWidth, renderAreaHeight);
-        capture.sink = captureImage;
+        capture.region = base::Rect(0, 0, renderAreaWidth, renderAreaHeight);
+        //capture.sink = captureImage;
         capture.mode = rendering::scene::FrameCaptureMode::DepthRect;
 
         // render the frame
         //renderInternalScene(cachedDrawArea().size(), captureContext);
 
 		uint32_t retrievedSize = 0;
-		rendering::DownloadAreaObjectPtr retrievedArea = nullptr;
-		const auto* retrievedData = captureImage->retrieve(retrievedSize, retrievedArea);
-		if (!retrievedData)
+		//const auto* retrievedData = captureImage->retrieve(retrievedSize, retrievedArea);
+		/*if (!retrievedData)
 		{
 			TRACE_WARNING("No data extracted into depth buffer");
 			return nullptr;
-		}
+		}*/
 
 		// create depth image
 		base::image::ImagePtr depthImage;
@@ -967,8 +983,8 @@ namespace ui
 
         // create frame and render scene content into it
         rendering::scene::FrameParams frame(viewport.width, viewport.height, camera);
-        /*if (capture)
-            frame.capture = *capture;*/
+        if (viewport.capture)
+            frame.capture = *viewport.capture;
 
         // setup params
         frame.index = m_frameIndex++;

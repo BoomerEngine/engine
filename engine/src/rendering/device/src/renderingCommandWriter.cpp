@@ -705,6 +705,23 @@ namespace rendering
 			}
         }
 
+		void CommandWriter::opClearWritableBuffer(const BufferWritableStructuredView* bufferView, uint32_t firstElement /*= 0*/, uint32_t numElements /*= INDEX_MAX*/)
+		{
+            DEBUG_CHECK_RETURN_EX(bufferView != nullptr, "Missing buffer");
+			DEBUG_CHECK_RETURN_EX(firstElement * bufferView->stride() < bufferView->size(), "Invalid first element");
+			DEBUG_CHECK_RETURN_EX((firstElement + numElements) * bufferView->stride() <= bufferView->size(), "Invalid clear range");
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+            DEBUG_CHECK_RETURN(ensureResourceState(bufferView->object(), ResourceLayout::UAV));
+#endif
+
+            auto op = allocCommand<OpClearStructuredBuffer>();
+            op->view = bufferView->viewId();
+			op->stride = bufferView->stride();
+			op->firstElement = firstElement;
+			op->numElements = numElements;
+		}
+
 		void CommandWriter::opClearWritableImageRects(const ImageWritableView* imageView, const void* clearValue /*= nullptr*/, const ResourceClearRect* rects /*= nullptr*/, uint32_t numRects /*= 0*/)
 		{
 			DEBUG_CHECK_RETURN_EX(imageView != nullptr, "Missing image");
@@ -2116,11 +2133,10 @@ namespace rendering
 
         //---
 
-		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadAreaObject* area, uint32_t areaOffset, IDownloadDataSink* sink)
+		void CommandWriter::opDownloadData(const IDeviceObject* obj, const ResourceCopyRange& range, IDownloadDataSink* sink)
 		{
 			DEBUG_CHECK_RETURN(obj);
 			DEBUG_CHECK_RETURN(sink);
-			DEBUG_CHECK_RETURN(area);
 
 			if (const auto* image = base::rtti_cast<ImageObject>(obj))
 			{
@@ -2164,15 +2180,11 @@ namespace rendering
 
 				auto op = allocCommand<OpDownload>();
 				op->id = obj->id();
-				op->areaId = area->id();
+				op->dataSize = dataSize;
 				op->range = range;
-				op->offsetInArea = areaOffset;
-				op->sizeInArea = dataSize;
 				op->sink = sink;
-				op->area = area;
 
 				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
-				m_writeBuffer->m_downloadAreas.pushBack(AddRef(area));
 			}
 			else if (const auto* buffer = base::rtti_cast<BufferObject>(obj))
 			{
@@ -2185,14 +2197,11 @@ namespace rendering
 
 				auto op = allocCommand<OpDownload>();
 				op->id = obj->id();
-				op->areaId = area->id();
-				op->offsetInArea = areaOffset;
-				op->sizeInArea = range.buffer.size;
+				op->dataSize = range.buffer.size;
 				op->range = range;
 				op->sink = sink;
 
 				m_writeBuffer->m_downloadSinks.pushBack(AddRef(sink));
-				m_writeBuffer->m_downloadAreas.pushBack(AddRef(area));
 			}
 		}
 

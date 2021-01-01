@@ -52,7 +52,7 @@ namespace base
 
            //--
 
-        DepotFileSystem::DepotFileSystem(const res::ResourceMountPoint& mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
+        DepotFileSystem::DepotFileSystem(StringView mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
             : m_mountPoint(mountPoint)
             , m_fileSystem(std::move(fileSystem))
             , m_type(type)
@@ -123,20 +123,10 @@ namespace base
                             const auto moduleDepotPath = moduleDepothPathBuilder.toString(false);
                             TRACE_INFO("Depot path for module '{}' resolved to '{}'", modulePath, moduleDepotPath);
 
-                            // parse the mount point path
-                            const auto depotMountPoint = res::ResourceMountPoint(depotPath);
-
                             // add the file system
                             auto fileSystemType = DepotFileSystemType::Engine;
                             auto projectFileSystem = CreateUniquePtr<FileSystemNative>(moduleDepotPath, !readonly, this);
-                            if (!processFileSystem(depotMountPoint, std::move(projectFileSystem), fileSystemType))
-                            {
-                                TRACE_ERROR("Failed to mount engine file system from '{}' to '{}'", moduleDepotPath, depotPath);
-                            }
-                            else
-                            {
-                                TRACE_INFO("Attached '{}' from '{}'", depotPath, moduleDepotPath);
-                            }
+                            attachFileSystem(depotPath, std::move(projectFileSystem), fileSystemType);
                         }
                     }
                     else
@@ -180,30 +170,27 @@ namespace base
         void DepotStructure::registerFileSystemBinding(const DepotFileSystem* fs)
         {
             auto& mountPoint = fs->mountPoint();
-            if (!mountPoint.root())
-            {
-                auto& prefixPath = mountPoint.path();
-                ASSERT(prefixPath.endsWith("/"));
+            ASSERT(!mountPoint.empty());
+            ASSERT(mountPoint.endsWith("/"));
 
-                auto shorterPath = prefixPath.leftPart(prefixPath.length()-1);
+            auto shorterPath = mountPoint.leftPart(mountPoint.length()-1);
 
-                auto basePrefixPath = shorterPath.stringBeforeLast("/");
-                if (!basePrefixPath.empty())
-                    basePrefixPath = TempString("{}/", basePrefixPath);
+            auto basePrefixPath = shorterPath.stringBeforeLast("/");
+            if (!basePrefixPath.empty())
+                basePrefixPath = TempString("{}/", basePrefixPath);
 
-                auto mountDirectoryName = shorterPath.stringAfterLast("/", true);
-                ASSERT(!mountDirectoryName.empty());
+            auto mountDirectoryName = shorterPath.stringAfterLast("/", true);
+            ASSERT(!mountDirectoryName.empty());
 
-                auto& entry = m_fileSystemsAtDirectory[basePrefixPath].emplaceBack();
-                entry.name = mountDirectoryName;
-                entry.fileSystem = fs;
-            }
+            auto& entry = m_fileSystemsAtDirectory[basePrefixPath].emplaceBack();
+            entry.name = mountDirectoryName;
+            entry.fileSystem = fs;
         }
 
-        void DepotStructure::attachFileSystem(const res::ResourceMountPoint& depotMountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
+        void DepotStructure::attachFileSystem(StringView mountPoint, UniquePtr<IFileSystem> fileSystem, DepotFileSystemType type)
         {
             // create wrapper
-            auto depotWrapper = CreateUniquePtr<DepotFileSystem>(depotMountPoint, std::move(fileSystem), type);
+            auto depotWrapper = CreateUniquePtr<DepotFileSystem>(mountPoint, std::move(fileSystem), type);
             m_fileSystems.pushBack(std::move(depotWrapper));
             m_fileSystemsPtrs.pushBack(m_fileSystems.back().get());
 
@@ -318,8 +305,7 @@ namespace base
             {
                 if (&ptr->fileSystem() == fs)
                 {
-                    StringBuf fullPath;
-                    ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+                    StringBuf fullPath = TempString("{}{}", ptr->mountPoint(), rawFilePath);
 
                     TRACE_INFO("File {} was reported as changed", fullPath);
                     DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_CHANGED, fullPath);
@@ -335,8 +321,7 @@ namespace base
             {
                 if (&ptr->fileSystem() == fs)
                 {
-                    StringBuf fullPath;
-                    ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+                    StringBuf fullPath = TempString("{}{}", ptr->mountPoint(), rawFilePath);
 
                     TRACE_INFO("File {} was reported as added", fullPath);
                     DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_ADDED, fullPath);
@@ -352,8 +337,7 @@ namespace base
             {
                 if (&ptr->fileSystem() == fs)
                 {
-                    StringBuf fullPath;
-                    ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+                    StringBuf fullPath = TempString("{}{}", ptr->mountPoint(), rawFilePath);
 
                     TRACE_INFO("File {} was reported as removed", fullPath);
                     DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_REMOVED, fullPath);
@@ -369,8 +353,7 @@ namespace base
             {
                 if (&ptr->fileSystem() == fs)
                 {
-                    StringBuf fullPath;
-                    ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+                    StringBuf fullPath = TempString("{}{}", ptr->mountPoint(), rawFilePath);
 
                     TRACE_INFO("Directory {} was reported as added", fullPath);
                     DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_ADDED, fullPath);
@@ -386,8 +369,7 @@ namespace base
             {
                 if (&ptr->fileSystem() == fs)
                 {
-                    StringBuf fullPath;
-                    ptr->mountPoint().expandPathFromRelative(rawFilePath, fullPath);
+                    StringBuf fullPath = TempString("{}{}", ptr->mountPoint(), rawFilePath);
 
                     TRACE_INFO("Directory {} was reported as removed", fullPath);
                     DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_REMOVED, fullPath);
@@ -395,73 +377,6 @@ namespace base
                     break;
                 }
             }
-        }
-
-        //---
-
-        bool DepotStructure::processFileSystem(const res::ResourceMountPoint& depotMountPoint, UniquePtr<IFileSystem> fs, DepotFileSystemType type)
-        {
-            // no file system
-            if (!fs)
-                return false;
-
-            /*// load the manifest from the file system
-            auto manifest = helper::LoadManifest(*fs, mountPath);
-            if (manifest)
-            {
-                StringBuilder buf;
-
-                if (manifest->globalID())
-                    buf.appendf("ID: {} ", manifest->globalID());
-                if (manifest->version())
-                    buf.appendf("Version: {} ", manifest->version());
-                if (manifest->description())
-                    buf.append(manifest->description());
-
-                // keep the manifest around
-                TRACE_INFO("Found manifest for '{}' {}", mountPath, buf.c_str());
-                m_manifests.pushBack(manifest);
-
-                // process dependencies
-                for (auto& dep : manifest->dependencies())
-                {
-                    if (!dep.prefixPath.empty())
-                    {
-                        // create the combined path
-                        auto mergedMountPath = helper::CombineMountPaths(mountPath, dep.prefixPath);
-
-                        // request a file system
-                        if (dep.provider)
-                        {
-                            auto fileSystem = dep.provider->createFileSystem(this);
-                            if (fileSystem)
-                            {
-                                // attach
-                                attachFileSystem(mergedMountPath, std::move(fileSystem), type);
-                            }
-                            else
-                            {
-                                TRACE_ERROR("Unable to create file system for bind point '{}'", mergedMountPath);
-                            }
-                        }
-                        else
-                        {
-                            TRACE_ERROR("Missing file system provider for bind point '{}'", mergedMountPath);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                TRACE_INFO("No manifest at '{}'", mountPath);
-            }*/
-
-            // finally, attach file system to the loader
-            // NOTE: we are attached after our dependencies to make sure the path filtering can be done in a simple way
-            attachFileSystem(depotMountPoint, std::move(fs), type);
-
-            // mounted
-            return true;
         }
 
         //--

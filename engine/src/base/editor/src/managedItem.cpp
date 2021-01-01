@@ -46,13 +46,6 @@ namespace ed
         return ret;
     }
 
-    res::ResourceMountPoint ManagedItem::mountPoint() const
-    {
-        res::ResourceMountPoint mountPoint;
-        m_depot->depot().queryFileMountPoint(depotPath(), mountPoint);
-        return mountPoint;
-    }
-
     static bool IsValidChar(wchar_t ch)
     {
         if (ch <= 31)

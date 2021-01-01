@@ -81,10 +81,13 @@ namespace rendering
 
 		class FrameViewMain;
 		class FrameViewCascades;
-		class FrameViewSelection;
+		class FrameViewCaptureSelection;
+        class FrameViewWireframe;
 		
         struct FrameViewMainRecorder;
         struct FrameViewCascadesRecorder;
+        struct FrameViewWireframeRecorder;
+        struct FrameViewCaptureSelectionRecorder;
 
 		//--
 

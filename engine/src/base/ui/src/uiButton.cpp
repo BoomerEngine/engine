@@ -154,6 +154,11 @@ namespace ui
                     return base::RefNew<ButtonInputAction>(this, area);
                 }
             }
+            else if (evt.midClicked())
+            {
+                clickedSecondary();
+                return IInputAction::CONSUME();
+            }
         }
         return InputActionPtr();
     }
@@ -188,6 +193,11 @@ namespace ui
 
         // pass to handler
         call(EVENT_CLICKED, m_toggled);
+    }
+
+    void Button::clickedSecondary()
+    {
+        call(EVENT_CLICKED_SECONDARY, m_toggled);
     }
 
     //--

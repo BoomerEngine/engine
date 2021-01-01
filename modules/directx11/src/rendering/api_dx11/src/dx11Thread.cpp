@@ -320,11 +320,6 @@ namespace rendering
 				return new Shaders(this, data);
 			}
 
-			IBaseDownloadArea* Thread::createOptimalDownloadArea(uint32_t size)
-			{
-				return nullptr;
-			}
-
 			/*D3D11_QUERY_DESC desc;
 			memzero(&desc, sizeof(desc));
 			desc.Query = D3D11_QUERY_EVENT;

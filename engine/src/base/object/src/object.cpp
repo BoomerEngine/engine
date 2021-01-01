@@ -147,10 +147,6 @@ namespace base
         return cls().is(objectClass);
     }
 
-    void IObject::onPreSave() const
-    {
-    }
-
     void IObject::onPostLoad()
     {
     }
@@ -311,7 +307,6 @@ namespace base
     void IObject::onPropertyChanged(StringView path)
     {
         markModified();
-        TRACE_INFO("OnPropertyChanged prop '{}', this 0x{}", path, Hex((uint64_t)this));
 
         static const auto stringType = RTTI::GetInstance().findType("StringBuf"_id);
         StringBuf stringPath(path);

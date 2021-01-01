@@ -23,9 +23,12 @@ namespace base
             StringBuf assetFilePath;
             StringBuf depotFilePath;
 
-            // NOTE: configs must be free-objects (not parented to existing hierarchy)
+            // NOTE: configuration objects must be free-objects (not parented to existing hierarchy)
             mutable ResourceConfigurationPtr externalConfig; // follow-up import configuration 
             ResourceConfigurationPtr userConfig; // user given configuration
+
+            bool followImports = true; // any resource import can spawn other imports
+            bool forceImport = false;
         };
 
         //--

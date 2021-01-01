@@ -124,13 +124,17 @@ namespace rendering
 			void renderUnlock();
 			void renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame);
 			void renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame);
+			void renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame);
+			void renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame);
 
 			void prepare(command::CommandWriter& cmd, const FrameRenderer& frame);
 
 			friend class FrameRenderingService;
 			friend class FrameViewMain;
 			friend class FrameViewCascades;
+			friend class FrameViewWireframe;
 			friend class FrameViewSelection;
+			friend class FrameViewCaptureSelection;
 			friend class FrameRenderer;
 
 			//--
