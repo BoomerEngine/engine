@@ -205,9 +205,6 @@ namespace rendering
 
 			if (auto* obj = m_thread->createOptimalImage(info, sourceData))
 			{
-				if (setup.flags.test(ImageViewFlag::RenderTarget))
-					setup.flags |= ImageViewFlag::FlippedY;
-
 				return base::RefNew<ImageObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
 			}
 

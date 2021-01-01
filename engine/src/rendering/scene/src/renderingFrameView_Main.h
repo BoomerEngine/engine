@@ -50,6 +50,7 @@ namespace rendering
 				const RenderTargetView* colorTarget = nullptr; // NOTE: can be directly a back buffer!
 				const RenderTargetView* depthTarget = nullptr;
 				base::Rect viewport; // NOTE: does not have to start at 0,0 !!!
+				bool flippedY = false;
 			};
 
 			//--

@@ -228,7 +228,44 @@ namespace game
 					target.targetDepthRTV = output.depth;
 					target.targetRect = base::Rect(0, 0, output.width, output.height);
 
-					prepareSceneCommandBuffers(cmd, target);
+                    if (output.color->flipped())
+                    {
+                        if (m_flippedColorTarget && (m_flippedColorTarget->width() != output.color->width() || m_flippedColorTarget->height() != output.color->height()))
+                        {
+                            m_flippedColorTarget.reset();
+                            m_flippedDepthTarget.reset();
+                        }
+
+                        if (!m_flippedColorTarget)
+                        {
+                            rendering::ImageCreationInfo info;
+                            info.allowRenderTarget = true;
+                            info.width = output.color->width();
+                            info.height = output.color->height();
+                            info.format = output.color->format();
+                            info.label = "FlippedColorOutput";
+                            m_flippedColorTarget = base::GetService<DeviceService>()->device()->createImage(info);
+                            m_flippedColorTargetRTV = m_flippedColorTarget->createRenderTargetView();
+
+                            info.format = output.depth->format();
+                            m_flippedDepthTarget = base::GetService<DeviceService>()->device()->createImage(info);
+                            m_flippedDepthTargetRTV = m_flippedDepthTarget->createRenderTargetView();
+                        }
+
+                        rendering::scene::FrameCompositionTarget flippedTarget;
+                        flippedTarget.targetColorRTV = m_flippedColorTargetRTV;
+                        flippedTarget.targetDepthRTV = m_flippedDepthTargetRTV;
+                        flippedTarget.targetRect = base::Rect(0, 0, output.width, output.height);
+
+                        prepareSceneCommandBuffers(cmd, flippedTarget);
+
+                        cmd.opCopyRenderTarget(m_flippedColorTargetRTV, output.color, 0, 0, true);
+                    }
+                    else
+                    {
+                        prepareSceneCommandBuffers(cmd, target);
+                    }
+
 					prepareCanvasCommandBuffers(cmd, target);
 
                     cmd.opSwapOutput(m_renderingOutput);
@@ -242,8 +279,6 @@ namespace game
         {
             if (m_currentTest)
                 m_currentTest->update(dt);
-
-            ImGui::GetIO().DeltaTime = dt;
         }
 
         bool SceneTestProject::handleAppInputEvent(const base::input::BaseEvent& evt)
@@ -350,7 +385,7 @@ namespace game
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
-        static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf");
+        static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf", true);
 
         static void Print(base::canvas::Canvas& c, float x, float y, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16,
             base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold=false)

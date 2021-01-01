@@ -47,6 +47,7 @@ RENDER_COMMAND_OPCODE(ClearStructuredBuffer) // clear any buffer with any data
 RENDER_COMMAND_OPCODE(Download) // download data from GPU resource back to the CPU side
 RENDER_COMMAND_OPCODE(Update) // update content of the dynamic resource (image, buffer mostly)
 RENDER_COMMAND_OPCODE(Copy) // copy data between buffers and images
+RENDER_COMMAND_OPCODE(CopyRenderTarget) // copy data between two render targets (non-resolve)
 
 // -- DRAWING
 

@@ -135,6 +135,8 @@ namespace rendering
 			void collectSelectionChunks(const FrameViewCaptureSelection& view, VisibleCaptureCollector& outCollector) const;
 			void renderChunkListStandalone(command::CommandWriter& cmd, const base::Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const;
 
+			void sortChunksByBatch(base::Array<VisibleStandaloneChunk>& chunks) const;
+
 			//--
         };
 

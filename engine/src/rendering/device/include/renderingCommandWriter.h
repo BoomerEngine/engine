@@ -108,8 +108,7 @@ namespace rendering
             /// fill current depth/stencil render target to given depth value
             void opClearPassDepthStencil(float depth, uint8_t stencil, bool doClearDepth = true, bool doClearStencil = true);
 
-            /// resolve a MSAA source into a non-msaa destination, average selected samples, for depth targets we can only select one sample
-			/// NOTE: we are resolving resources, not views
+            /// resolve MSAA source into NON-MSAA desination (strictly for MSAA!)
             void opResolve(const ImageObject* msaaSource, const ImageObject* nonMsaaDest, uint8_t sourceMip = 0, uint8_t destMip = 0, uint16_t sourceSlice = 0, uint16_t destSlice = 0);
 
             //---
@@ -298,6 +297,9 @@ namespace rendering
 
 			/// copy data between image and buffer
 			void opCopyImageToBuffer(const ImageObject* src, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, const BufferObject* dest, uint32_t destOffset, uint8_t mipIndex = 0, uint32_t sliceIndex = 0);
+
+            /// copy render target content
+            void opCopyRenderTarget(const RenderTargetView* source, const RenderTargetView* dest, uint16_t sourceSlice = 0, uint16_t destSlice = 0, bool flipY = false, base::Rect sourceRect = base::Rect(), base::Rect destRect = base::Rect());
 
 			//--
 

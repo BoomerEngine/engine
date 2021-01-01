@@ -96,7 +96,7 @@ namespace game
 
             {
                 auto componentTemplate = base::RefNew<rendering::MeshComponentTemplate>();
-                componentTemplate->mesh(mesh->key());
+                componentTemplate->mesh(rendering::MeshAsyncRef(mesh->path()));
                 //componentTemplate->placement(placement);
                 componentTemplate->color(color);
 

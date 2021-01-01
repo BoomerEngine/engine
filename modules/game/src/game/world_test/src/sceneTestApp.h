@@ -65,6 +65,12 @@ namespace game
             rendering::scene::FrameStats m_lastFrameStats;
             rendering::scene::SceneStats m_lastSceneStats;
 
+            rendering::ImageObjectPtr m_flippedColorTarget;
+            rendering::RenderTargetViewPtr m_flippedColorTargetRTV;
+
+            rendering::ImageObjectPtr m_flippedDepthTarget;
+            rendering::RenderTargetViewPtr m_flippedDepthTargetRTV;
+
             bool createRenderingOutput();
             bool shouldCaptureInput();
 

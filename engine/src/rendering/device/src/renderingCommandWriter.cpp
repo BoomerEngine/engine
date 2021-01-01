@@ -882,50 +882,120 @@ namespace rendering
 			return src == dest;
 		}
 
+		void CommandWriter::opCopyRenderTarget(const RenderTargetView* source, const RenderTargetView* dest, uint16_t sourceSlice /*= 0*/, uint16_t destSlice /*= 0*/, bool flipY /*= false*/, base::Rect sourceRect /*= base::Rect()*/, base::Rect destRect /*= base::Rect()*/)
+		{
+			DEBUG_CHECK_RETURN_EX(source, "Invalid source");
+			DEBUG_CHECK_RETURN_EX(dest, "Invalid destination");
+			DEBUG_CHECK_RETURN_EX(source != dest, "Can resolve to the same resource");
+			DEBUG_CHECK_RETURN_EX(source->samples() == dest->samples(), "Destination and source should have sample sample count");
+			DEBUG_CHECK_RETURN_EX(FormatsComaptibleForResolve(source->format(), dest->format()), "Source and Destination must have the same or compatible format");
+
+			DEBUG_CHECK_RETURN_EX(sourceSlice < source->slices(), "Invalid source mip index");
+			DEBUG_CHECK_RETURN_EX(destSlice < dest->slices(), "Invalid dest mip index");
+
+			if (sourceRect.empty())
+			{
+				sourceRect = base::Rect(0, 0, source->width(), source->height());
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_EX(sourceRect.min.x >= 0, "Invalid source rectangle");
+				DEBUG_CHECK_RETURN_EX(sourceRect.min.y >= 0, "Invalid source rectangle");
+				DEBUG_CHECK_RETURN_EX(sourceRect.max.x <= source->width(), "Invalid source rectangle");
+				DEBUG_CHECK_RETURN_EX(sourceRect.max.y <= source->height(), "Invalid source rectangle");
+			}
+
+			if (destRect.empty())
+			{
+				destRect = base::Rect(0, 0, dest->width(), dest->height());
+			}
+			else
+			{
+				DEBUG_CHECK_RETURN_EX(destRect.min.x >= 0, "Invalid destination rectangle");
+				DEBUG_CHECK_RETURN_EX(destRect.min.y >= 0, "Invalid destination rectangle");
+				DEBUG_CHECK_RETURN_EX(destRect.max.x <= dest->width(), "Invalid destination rectangle");
+				DEBUG_CHECK_RETURN_EX(destRect.max.y <= dest->height(), "Invalid destination rectangle");
+			}
+
+			DEBUG_CHECK_RETURN_EX(sourceRect.width() == destRect.width(), "Source and destination areas don't match");
+			DEBUG_CHECK_RETURN_EX(sourceRect.height() == destRect.height(), "Source and destination areas don't match");
+
+#ifdef VALIDATE_RESOURCE_LAYOUTS
+			//if (!source->swapchain())
+			{
+				SubImageRegion srcRegion;
+				srcRegion.firstMip = source->mip();
+				srcRegion.firstSlice = source->firstSlice() + sourceSlice;
+				srcRegion.numMips = 1;
+				srcRegion.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(source->object(), ResourceLayout::RenderTarget, &srcRegion));
+			}
+
+			//if (!dest->swapchain())
+			{
+				SubImageRegion destRegion;
+				destRegion.firstMip = dest->mip();
+				destRegion.firstSlice = dest->firstSlice() + destSlice;
+				destRegion.numMips = 1;
+				destRegion.numSlices = 1;
+				DEBUG_CHECK_RETURN(ensureResourceState(dest->object(), ResourceLayout::RenderTarget, &destRegion));
+			}
+#endif
+
+			auto op = allocCommand<OpCopyRenderTarget>();
+			op->sourceView = source->viewId();
+			op->destView = dest->viewId();
+			op->sourceSlice = sourceSlice;
+			op->destSlice = destSlice;
+			op->sourceRect = sourceRect;
+			op->destRect = destRect;
+			op->flipY = flipY;
+		}
+
         void CommandWriter::opResolve(const ImageObject* msaaSource, const ImageObject* nonMsaaDest, uint8_t sourceMip /*= 0*/, uint8_t destMip /*= 0*/, uint16_t sourceSlice /*= 0*/, uint16_t destSlice /*= 0*/)
         {
-            DEBUG_CHECK_RETURN_EX(msaaSource , "Invalid source");
+            DEBUG_CHECK_RETURN_EX(msaaSource, "Invalid source");
             DEBUG_CHECK_RETURN_EX(nonMsaaDest, "Invalid destination");
-			DEBUG_CHECK_RETURN_EX(msaaSource != nonMsaaDest, "Can resolve to the same resource");
+            DEBUG_CHECK_RETURN_EX(msaaSource != nonMsaaDest, "Can resolve to the same resource");
             //DEBUG_CHECK_RETURN_EX(msaaSource->multisampled() && msaaSource->samples() > 1, "Source should be multisampled");
             DEBUG_CHECK_RETURN_EX(!nonMsaaDest->multisampled(), "Destination should not be multisampled");
             DEBUG_CHECK_RETURN_EX(FormatsComaptibleForResolve(msaaSource->format(), nonMsaaDest->format()), "Source and Destination must have the same format");
             DEBUG_CHECK_RETURN_EX(msaaSource->width() == nonMsaaDest->width() && msaaSource->height() == nonMsaaDest->height(), "Source and Destination must have the same size");
 
-			DEBUG_CHECK_RETURN_EX(msaaSource->type() == ImageViewType::View2D || msaaSource->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
-			DEBUG_CHECK_RETURN_EX(nonMsaaDest->type() == ImageViewType::View2D || nonMsaaDest->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
+            DEBUG_CHECK_RETURN_EX(msaaSource->type() == ImageViewType::View2D || msaaSource->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
+            DEBUG_CHECK_RETURN_EX(nonMsaaDest->type() == ImageViewType::View2D || nonMsaaDest->type() == ImageViewType::View2DArray, "Only 2D images are supported for resolve");
 
-			DEBUG_CHECK_RETURN_EX(sourceMip < msaaSource->mips(), "Invalid source mip index");
-			DEBUG_CHECK_RETURN_EX(destMip < nonMsaaDest->mips(), "Invalid dest mip index");
-			DEBUG_CHECK_RETURN_EX(sourceSlice < msaaSource->slices(), "Invalid source mip index");
-			DEBUG_CHECK_RETURN_EX(destSlice < nonMsaaDest->slices(), "Invalid dest mip index");
+            DEBUG_CHECK_RETURN_EX(sourceMip < msaaSource->mips(), "Invalid source mip index");
+            DEBUG_CHECK_RETURN_EX(destMip < nonMsaaDest->mips(), "Invalid dest mip index");
+            DEBUG_CHECK_RETURN_EX(sourceSlice < msaaSource->slices(), "Invalid source mip index");
+            DEBUG_CHECK_RETURN_EX(destSlice < nonMsaaDest->slices(), "Invalid dest mip index");
 
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
-			{
-				SubImageRegion srcRegion;
-				srcRegion.firstMip = sourceMip;
-				srcRegion.firstSlice = sourceSlice;
-				srcRegion.numMips = 1;
-				srcRegion.numSlices = 1;
-				DEBUG_CHECK_RETURN(ensureResourceState(msaaSource, ResourceLayout::ResolveSource, &srcRegion));
+            {
+                SubImageRegion srcRegion;
+                srcRegion.firstMip = sourceMip;
+                srcRegion.firstSlice = sourceSlice;
+                srcRegion.numMips = 1;
+                srcRegion.numSlices = 1;
+                DEBUG_CHECK_RETURN(ensureResourceState(msaaSource, ResourceLayout::ResolveSource, &srcRegion));
 
-				SubImageRegion destRegion;
-				destRegion.firstMip = destMip;
-				destRegion.firstSlice = destSlice;
-				destRegion.numMips = 1;
-				destRegion.numSlices = 1;
-				DEBUG_CHECK_RETURN(ensureResourceState(nonMsaaDest, ResourceLayout::ResolveDest, &destRegion));
-			}
+                SubImageRegion destRegion;
+                destRegion.firstMip = destMip;
+                destRegion.firstSlice = destSlice;
+                destRegion.numMips = 1;
+                destRegion.numSlices = 1;
+                DEBUG_CHECK_RETURN(ensureResourceState(nonMsaaDest, ResourceLayout::ResolveDest, &destRegion));
+            }
 #endif
 
             auto op = allocCommand<OpResolve>();
             op->source = msaaSource->id();
             op->dest = nonMsaaDest->id();
-			op->sourceMip = sourceMip;
-			op->sourceSlice = sourceSlice;
-			op->destMip = destMip;
-			op->destSlice = destSlice;            
+            op->sourceMip = sourceMip;
+            op->sourceSlice = sourceSlice;
+            op->destMip = destMip;
+            op->destSlice = destSlice;
         }
 
         void CommandWriter::opBindVertexBuffer(base::StringID bindpoint, const BufferObject* buffer, uint32_t offset /*= 0*/)
@@ -1581,6 +1651,19 @@ namespace rendering
 				}
 
 				return entry;
+			}
+			else if (const auto* outputObject = base::rtti_cast<IOutputObject>(obj))
+			{
+                auto* entry = (ResourceCurrentStateTrackingRecord*)allocMemory(sizeof(ResourceCurrentStateTrackingRecord));
+                memzero(entry, sizeof(ResourceCurrentStateTrackingRecord));
+                entry->numSubResources = 1;
+                entry->tracksSubResources = false;
+                entry->numImageMips = 1;
+                entry->numImageSlices = 1;
+                entry->subResources[0].currentLayout = ResourceLayout::RenderTarget;
+                entry->subResources[0].firstKnownLayout = ResourceLayout::RenderTarget;
+
+                return entry;
 			}
 
 			ASSERT(!"Unknown object type for layout tracking");

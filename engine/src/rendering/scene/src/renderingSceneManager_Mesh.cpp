@@ -57,6 +57,15 @@ namespace rendering
 
 			collectMainViewChunks(view, collector);
 
+			sortChunksByBatch(collector.depthLists[0].standaloneChunks);
+			sortChunksByBatch(collector.depthLists[1].standaloneChunks);
+
+            sortChunksByBatch(collector.forwardLists[0].standaloneChunks);
+            sortChunksByBatch(collector.forwardLists[1].standaloneChunks);
+			sortChunksByBatch(collector.forwardLists[2].standaloneChunks);
+
+			sortChunksByBatch(collector.selectionOutlineList.standaloneChunks);
+
 			renderChunkListStandalone(cmd.depthPrePassStatic, collector.depthLists[0].standaloneChunks, MaterialPass::DepthPrepass);
 			renderChunkListStandalone(cmd.depthPrePassOther, collector.depthLists[1].standaloneChunks, MaterialPass::DepthPrepass);
 
@@ -80,6 +89,9 @@ namespace rendering
 
             collectWireframeViewChunks(view, collector);
 
+            sortChunksByBatch(collector.mainList.standaloneChunks);
+			sortChunksByBatch(collector.selectionOutlineList.standaloneChunks);
+
 			const auto solid = (frame.frame().mode == FrameRenderMode::WireframeSolid);
 			if (solid)
 			{
@@ -101,6 +113,8 @@ namespace rendering
             auto& collector = m_cacheCaptureView;
 
             collectSelectionChunks(view, collector);
+
+			sortChunksByBatch(collector.mainList.standaloneChunks);
 
             renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
             renderChunkListStandalone(cmd.mainFragments, collector.mainList.standaloneChunks, MaterialPass::SelectionFragments);
@@ -361,20 +375,21 @@ namespace rendering
 		};
 #pragma pack(pop)
 
-        void ObjectManagerMesh::renderChunkListStandalone(command::CommandWriter& cmd, const base::Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const
-        {
-            const auto* objects = m_localObjects.values().typedData();
-
-			// TODO: replace with segmentations as any particular order is not required, just grouping
-			auto sortableChunks = const_cast<base::Array<VisibleStandaloneChunk>&>(chunks);
-			std::sort(sortableChunks.begin(), sortableChunks.end(), [](const VisibleStandaloneChunk& a, const VisibleStandaloneChunk& b)
-				{
+		void ObjectManagerMesh::sortChunksByBatch(base::Array<VisibleStandaloneChunk>& chunks) const
+		{
+            std::sort(chunks.begin(), chunks.end(), [](const VisibleStandaloneChunk& a, const VisibleStandaloneChunk& b)
+                {
                     if (a.shader != b.shader)
                         return a.shader < b.shader;
                     if (a.material != b.material)
                         return a.material < b.material;
                     return a.chunk < b.chunk;
-				});
+                });
+		}
+
+        void ObjectManagerMesh::renderChunkListStandalone(command::CommandWriter& cmd, const base::Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const
+        {
+            const auto* objects = m_localObjects.values().typedData();
 
 			// last bound data
             const MaterialTemplateProxy* lastBoundShader = nullptr;

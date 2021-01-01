@@ -119,7 +119,6 @@ namespace base
                     {
                         m_repeatKey.m_nextRepeatTime = m_repeatKey.m_nextRepeatTime + m_keyRepeatPeriod;
                         m_repeatKey.m_maxRepeat += 1;
-                        TRACE_INFO("Repeat key reached with key {}, {}", m_repeatKey.m_keyCode, m_repeatKey.m_maxRepeat);
 
                         auto evt = base::RefNew<KeyEvent>(DeviceType::Keyboard, m_id, m_repeatKey.m_keyCode, true, true, m_repeatKey.m_keyMask);
                         m_context->inject(evt);

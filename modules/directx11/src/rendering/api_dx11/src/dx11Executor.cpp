@@ -111,6 +111,11 @@ namespace rendering
 
 			}
 
+			void FrameExecutor::runCopyRenderTarget(const command::OpCopyRenderTarget& op)
+			{
+
+			}
+
 			//--
 
 			void FrameExecutor::runSetViewportRect(const command::OpSetViewportRect& op)

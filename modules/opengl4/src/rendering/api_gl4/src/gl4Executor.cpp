@@ -183,6 +183,59 @@ namespace rendering
 				GL_PROTECT(glPopDebugGroup());
 			}
 
+			void FrameExecutor::runCopyRenderTarget(const command::OpCopyRenderTarget& op)
+			{
+				// get source frame buffer
+				bool depthResolve = false;
+				GLuint glFrameBuffers[2] = { 0,0 };
+				for (int i = 0; i < 2; ++i)
+				{
+					const auto& view = (i == 0) ? op.sourceView : op.destView;
+					if (auto viewObject = objects()->resolveStatic(view, ObjectType::Unknown))
+					{
+						if (viewObject->objectType() == ObjectType::RenderTargetView)
+						{
+							auto* rtv = static_cast<ImageAnyView*>(viewObject);
+
+							depthResolve |= GetImageFormatInfo(rtv->setup().format).formatClass == ImageFormatClass::DEPTH;
+							const auto targetIndex = depthResolve ? 0 : 1;
+
+							FrameBufferTargets frameBuffer;
+							frameBuffer.images[targetIndex] = rtv->resolve();
+							frameBuffer.images[targetIndex].firstSlice += op.sourceSlice;
+							frameBuffer.images[targetIndex].numSlices = 1;
+							frameBuffer.images[targetIndex].numMips = 1;
+
+							glFrameBuffers[i] = cache()->buildFramebuffer(frameBuffer);
+
+						}
+						else if (viewObject->objectType() == ObjectType::OutputRenderTargetView)
+						{
+							glFrameBuffers[i] = 0;
+						}
+						else
+						{
+							DEBUG_CHECK(!"Invalid source view");
+							return;
+						}
+					}
+				}
+
+                //--
+
+                {
+                    const auto resolveBit = depthResolve ? GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
+
+					auto destY0 = op.flipY ? (op.destRect.max.y-1) : op.destRect.min.y;
+					auto destY1 = op.flipY ? (op.destRect.min.x-1) : op.destRect.max.y;
+
+                    GL_PROTECT(glBlitNamedFramebuffer(glFrameBuffers[0], glFrameBuffers[1],
+                        op.sourceRect.min.x, op.sourceRect.min.y, op.sourceRect.max.x, op.sourceRect.max.y,
+						op.destRect.min.x, destY0, op.destRect.max.x, destY1,
+                        resolveBit, GL_NEAREST));
+                }
+			}
+
 			void FrameExecutor::runResolve(const command::OpResolve& op)
 			{
 				// TODO: depth surface

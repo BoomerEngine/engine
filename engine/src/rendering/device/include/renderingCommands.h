@@ -215,6 +215,17 @@ namespace rendering
 			uint16_t destSlice = 0;
         };
 
+        RENDER_DECLARE_OPCODE_DATA(CopyRenderTarget)
+        {
+            ObjectID sourceView;
+            ObjectID destView;
+            uint16_t sourceSlice = 0;
+            uint16_t destSlice = 0;
+            base::Rect sourceRect;
+            base::Rect destRect;
+            bool flipY = false;
+        };
+
 		RENDER_DECLARE_OPCODE_DATA(ClearFrameBuffer)
 		{
 			FrameBuffer frameBuffer;

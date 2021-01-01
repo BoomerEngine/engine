@@ -551,13 +551,16 @@ namespace ed
 
     void Editor::updateResourceEditors()
     {
-        m_mainWindow->layout().iteratePanels([this](ui::DockPanel* panel) -> bool
-            {
-                if (auto* resourceEditor = rtti_cast<ResourceEditor>(panel))
-                    resourceEditor->update();
+        if (m_mainWindow)
+        {
+            m_mainWindow->layout().iteratePanels([this](ui::DockPanel* panel) -> bool
+                {
+                    if (auto* resourceEditor = rtti_cast<ResourceEditor>(panel))
+                        resourceEditor->update();
 
-                return false;
-            }, ui::DockPanelIterationMode::All);
+                    return false;
+                }, ui::DockPanelIterationMode::All);
+        }
     }
 
     //--

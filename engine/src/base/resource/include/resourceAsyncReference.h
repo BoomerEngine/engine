@@ -110,8 +110,8 @@ namespace base
                     set(key);
             }
 
-            INLINE AsyncRef(StringView path)
-                : BaseAsyncReference(MakePath<T>(path))
+            INLINE AsyncRef(const ResourcePath& path)
+                : BaseAsyncReference(ResourceKey(path, T::GetStaticClass()))
             {}
 
             INLINE bool operator==(const AsyncRef<T>& other) const { return BaseAsyncReference::operator==(other); }

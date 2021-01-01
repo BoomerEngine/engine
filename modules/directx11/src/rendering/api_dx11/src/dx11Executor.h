@@ -43,6 +43,7 @@ namespace rendering
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier &) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier &) override final;
                 virtual void runDownload(const command::OpDownload&) override final;
+				virtual void runCopyRenderTarget(const command::OpCopyRenderTarget&) override final;
 
 				virtual void runSetViewportRect(const command::OpSetViewportRect& op) override final;
 				virtual void runSetScissorRect(const command::OpSetScissorRect& op) override final;

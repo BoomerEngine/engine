@@ -44,6 +44,7 @@ namespace rendering
 				virtual void runClearStructuredBuffer(const command::OpClearStructuredBuffer&) override final;
 				virtual void runClearImage(const command::OpClearImage &) override final;
                 virtual void runDownload(const command::OpDownload&) override final;
+				virtual void runCopyRenderTarget(const command::OpCopyRenderTarget&) override final;
 
 				virtual void runResourceLayoutBarrier(const command::OpResourceLayoutBarrier&) override final;
 				virtual void runUAVBarrier(const command::OpUAVBarrier&) override final;

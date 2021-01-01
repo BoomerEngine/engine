@@ -30,15 +30,18 @@ namespace rendering
         {
             if (const auto* key = evt.toKeyEvent())
             {
-                float value = key->pressed() ? 1.0f : -1.0f;
-                switch (key->keyCode())
+                if (key->pressed() || key->released())
                 {
-                    case base::input::KeyCode::KEY_A: m_buttonLeftRight -= value; return true;
-                    case base::input::KeyCode::KEY_D: m_buttonLeftRight += value; return true;
-                    case base::input::KeyCode::KEY_W: m_buttonForwardBackward += value; return true;
-                    case base::input::KeyCode::KEY_S: m_buttonForwardBackward -= value; return true;
-                    case base::input::KeyCode::KEY_Q: m_buttonUpDown -= value; return true;
-                    case base::input::KeyCode::KEY_E: m_buttonUpDown += value; return true;
+                    float value = key->pressed() ? 1.0f : -1.0f;
+                    switch (key->keyCode())
+                    {
+                        case base::input::KeyCode::KEY_A: m_buttonLeftRight -= value; return true;
+                        case base::input::KeyCode::KEY_D: m_buttonLeftRight += value; return true;
+                        case base::input::KeyCode::KEY_W: m_buttonForwardBackward += value; return true;
+                        case base::input::KeyCode::KEY_S: m_buttonForwardBackward -= value; return true;
+                        case base::input::KeyCode::KEY_Q: m_buttonUpDown -= value; return true;
+                        case base::input::KeyCode::KEY_E: m_buttonUpDown += value; return true;
+                    }
                 }
             }
             else if (const auto* axis = evt.toAxisEvent())
