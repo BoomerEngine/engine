@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "rendering/ui_viewport/include/renderingFullScenePanel.h"
+#include "rendering/ui_viewport/include/renderingScenePanel.h"
 
 namespace ed
 {
@@ -35,9 +35,9 @@ namespace ed
     //--
 
     // a preview panel for the material
-    class ASSETS_MATERIAL_EDITOR_API MaterialPreviewPanel : public ui::RenderingFullScenePanelWithScene
+    class ASSETS_MATERIAL_EDITOR_API MaterialPreviewPanel : public ui::RenderingSimpleScenePanel
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialPreviewPanel, ui::RenderingFullScenePanelWithScene);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialPreviewPanel, ui::RenderingSimpleScenePanel);
 
     public:
         MaterialPreviewPanel();

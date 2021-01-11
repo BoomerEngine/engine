@@ -39,14 +39,17 @@ namespace ed
 
     MaterialPreviewPanel::MaterialPreviewPanel()
     {
-        m_panelSettings.cameraForceOrbit = true;
+        //m_panelSettings.cameraForceOrbit = true;
         m_panelSettings.drawInternalGrid = true;
         m_panelSettings.drawInternalWorldAxis = false;
         m_panelSettings.drawInternalCameraAxis = false;
         m_panelSettings.drawInternalCameraData = false;
 
-        const auto rotation = base::Angles(35.0f, 50.0f, 0.0f);
-        setupCamera(rotation, rotation.forward() * -2.0f);
+        auto settings = cameraSettings();
+        settings.mode = ui::CameraMode::OrbitPerspective;
+        settings.rotation = base::Angles(35.0f, 50.0f, 0.0f);
+        settings.position = settings.rotation.forward() * -2.0f;
+        cameraSettings(settings);
 
         createToolbarItems();
     }
@@ -99,7 +102,7 @@ namespace ed
     {
         if (m_previewProxy)
         {
-            renderingScene()->dettachProxy(m_previewProxy);
+            scene()->dettachProxy(m_previewProxy);
             m_previewProxy.reset();
         }
     }
@@ -176,9 +179,9 @@ namespace ed
                         proxy->m_localToWorld.translation(offset);
 
                         m_previewProxy = proxy;
-                        renderingScene()->attachProxy(m_previewProxy);
+                        scene()->attachProxy(m_previewProxy);
 
-                        setupCameraAroundBounds(mesh->bounds() + offset);
+                        focusOnBounds(mesh->bounds() + offset, 1.0f, nullptr);
                     }
                 }
             }

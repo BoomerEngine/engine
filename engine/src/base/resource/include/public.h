@@ -19,6 +19,10 @@ DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_RELOADED)
 
 namespace base
 {
+    class ObjectIndirectTemplate;
+    typedef RefPtr<ObjectIndirectTemplate> ObjectIndirectTemplatePtr;
+    typedef RefWeakPtr<ObjectIndirectTemplate> ObjectIndirectTemplateWeakPtr;
+
     namespace res
     {
         class PathResolver;
@@ -144,7 +148,10 @@ namespace base
 
     //--
 
+    // extract list of resources used by given object (and child objects)
+    extern BASE_RESOURCE_API void ExtractUsedResources(const IObject* object, HashMap<res::ResourceKey, uint32_t>& outResourceCounts);
 
+    //--
 
 } // base
 

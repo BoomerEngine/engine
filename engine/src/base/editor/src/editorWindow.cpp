@@ -183,7 +183,7 @@ namespace ed
 
             m_dockArea->iterateSpecificPanels<ResourceEditor>([&config](ResourceEditor* editor)
                 {
-                    const auto configBlock = config.path(editor->file()->depotPath());
+                    const auto configBlock = config.tag(editor->file()->depotPath());
                     editor->configSave(configBlock);
                     return false;
                 }, ui::DockPanelIterationMode::All);

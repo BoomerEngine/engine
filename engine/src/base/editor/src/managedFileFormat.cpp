@@ -147,6 +147,34 @@ namespace ed
         return nullptr;
     }
 
+    void ManagedFileFormat::printTags(IFormatStream& f, StringView separator) const
+    {
+        for (const auto& tag : tags())
+        {
+            f.appendf("[tag:{}]", tag.color);
+
+            if (tag.baked)
+                f.appendf("[img:cog] ");
+            else
+                f.appendf("[img:file_empty_edit] ");
+
+            if (tag.color.luminanceSRGB() > 0.5f)
+            {
+                f << "[color:#000]";
+                f << tag.name;
+                f << "[/color]";
+            }
+            else
+            {
+                f << tag.name;
+            }
+
+            f << "[/tag]";
+
+            f << separator;
+        }
+    }
+
     const image::ImageRef& ManagedFileFormat::thumbnail() const
     {
         // load thumbnail for this type file

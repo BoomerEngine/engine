@@ -21,13 +21,14 @@ namespace rendering
     //--
 
     RTTI_BEGIN_TYPE_CLASS(MeshComponent);
-        RTTI_PROPERTY(m_mesh);
-        RTTI_PROPERTY(m_castShadows);
-        RTTI_PROPERTY(m_receiveShadows);
-        RTTI_PROPERTY(m_forceDetailLevel);
-        RTTI_PROPERTY(m_forcedDistance);
-        RTTI_PROPERTY(m_color);
-        RTTI_PROPERTY(m_colorEx);
+        RTTI_CATEGORY("Mesh");
+        RTTI_PROPERTY(m_castShadows).overriddable().editable("Should mesh cast shadows");
+        RTTI_PROPERTY(m_receiveShadows).overriddable().editable("Should mesh receive shadows");
+        RTTI_PROPERTY(m_forceDetailLevel).overriddable().editable("Force single LOD of the mesh");
+        RTTI_PROPERTY(m_forceDistance).overriddable().editable("Force visibility distance for mesh");
+        RTTI_CATEGORY("Effects");
+        RTTI_PROPERTY(m_color).overriddable().editable("General effect color");
+        RTTI_PROPERTY(m_colorEx).overriddable().editable("Secondary effect color");
     RTTI_END_TYPE();
 
     MeshComponent::MeshComponent()
@@ -70,8 +71,11 @@ namespace rendering
     void MeshComponent::forceDistance(float distance)
     {
         const auto dist = (uint16_t)std::clamp<float>(distance, 0, 32767.0f); // leave higher bits for something in the future
-        m_forcedDistance = dist;
-        recreateRenderingProxy(); // TODO: maybe that's to harsh ?
+        if (dist != m_forceDistance)
+        {
+            m_forceDistance = dist;
+            recreateRenderingProxy(); // TODO: maybe that's to harsh ?
+        }
     }
 
     void MeshComponent::color(base::Color color)
@@ -79,6 +83,7 @@ namespace rendering
         if (m_color != color)
         {
             m_color = color;
+            recreateRenderingProxy(); // TODO: maybe that's to harsh ?
         }
     }
 
@@ -87,6 +92,7 @@ namespace rendering
         if (m_colorEx != color)
         {
             m_colorEx = color;
+            recreateRenderingProxy(); // TODO: maybe that's to harsh ?
         }
     }
 
@@ -139,6 +145,31 @@ namespace rendering
             m_mesh = mesh;
             recreateRenderingProxy();
         }
+    }
+
+    //--
+
+    static base::res::StaticResource<Mesh> resDefaultMesh("/engine/meshes/box.v4mesh", true);
+
+    void MeshComponent::queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const
+    {
+        TBaseClass::queryTemplateProperties(outTemplateProperties);
+        outTemplateProperties.prop<MeshAsyncRef>("Mesh"_id, "mesh"_id, MeshAsyncRef(), base::rtti::PropertyEditorData().comment("Mesh to render").primaryResource());
+    }
+
+    bool MeshComponent::initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties)
+    {
+        if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
+            return false;
+
+        MeshAsyncRef meshRef;
+        templateProperties.compileValue("mesh"_id, meshRef);
+
+        m_mesh = meshRef.load();
+        if (!m_mesh)
+            m_mesh = resDefaultMesh.loadAndGetAsRef();
+
+        return true;
     }
 
     //--

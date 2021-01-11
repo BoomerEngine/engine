@@ -16,6 +16,8 @@ namespace base
 {
     RTTI_BEGIN_CUSTOM_TYPE(Transform);
         RTTI_TYPE_TRAIT().noDestructor().fastCopyCompare();
+        RTTI_BIND_NATIVE_COPY(Transform);
+        RTTI_BIND_NATIVE_COMPARE(Transform);
         RTTI_BIND_NATIVE_BINARY_SERIALIZATION(Transform);
     RTTI_END_TYPE();
 

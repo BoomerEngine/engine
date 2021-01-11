@@ -12,7 +12,6 @@
 #include "uiTrackBar.h"
 #include "uiDragger.h"
 #include "base/object/include/rttiDataView.h"
-#include "base/reflection/include/propertyDecorators.h"
 
 namespace ui
 {
@@ -227,13 +226,14 @@ namespace ui
             CalcDragValueT(*(const uint64_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint64_t*)result.data());
     }
 
-    DataBoxNumberText::DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView units)
+    DataBoxNumberText::DataBoxNumberText(base::Type type, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, bool draggerWrap, base::StringView units)
         : m_type(type)
         , m_rangeEnabled(rangeEnabled)
         , m_typeInteger(!IsFloatingPointType(type))
         , m_numFractionalDigits(numDigits)
         , m_rangeMin(rangeMin)
         , m_rangeMax(rangeMax)
+        , m_dragWrap(draggerWrap)
     {
         layoutHorizontal();
 
@@ -457,7 +457,7 @@ namespace ui
                 info.dataType == base::reflection::GetTypeObject<uint32_t>() ||
                 info.dataType == base::reflection::GetTypeObject<uint64_t>())
             {
-                bool rangeEnabled = false;
+                /*bool rangeEnabled = false;
                 bool dragEnabled = false;
                 bool dragWrapEnabled = false;
                 bool trackBarEnabled = false;
@@ -491,15 +491,17 @@ namespace ui
                     {
                         units = unitsData->text;
                     }
-                }
+                }*/
 
+                auto numDigits = info.editorData.m_digits;
                 if (!IsFloatingPointType(info.dataType))
                     numDigits = 0;
 
-                if (trackBarEnabled)
-                    return base::RefNew<DataBoxNumberTrackBar>(info.dataType, numDigits, rangeMin, rangeMax, true);
+                if (info.editorData.m_widgetSlider)
+                    return base::RefNew<DataBoxNumberTrackBar>(info.dataType, numDigits, info.editorData.m_rangeMin, info.editorData.m_rangeMax, true);
                 else
-                    return base::RefNew<DataBoxNumberText>(info.dataType, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units);
+                    return base::RefNew<DataBoxNumberText>(info.dataType, numDigits, info.editorData.rangeEnabled(), 
+                        info.editorData.m_rangeMin, info.editorData.m_rangeMax, info.editorData.m_widgetDrag, info.editorData.m_widgetDragWrap, info.editorData.m_units);
             }
 
             return nullptr;

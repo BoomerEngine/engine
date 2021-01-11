@@ -31,7 +31,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataBoxVector, IDataBox);
 
     public:
-        DataBoxVector(base::Type type, int numComps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, base::StringView units, const CompInfo* comps, bool vertical)
+        DataBoxVector(base::Type type, int numComps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool dragger, bool draggerWrap, base::StringView units, const CompInfo* comps, bool vertical)
             : m_comps(comps)
         {
             if (vertical)
@@ -44,7 +44,7 @@ namespace ui
                     inner->layoutHorizontal();
 
                     inner->createNamedChild<TextLabel>("X"_id, comps[0].caption);
-                    m_componentX = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentX = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 2)
@@ -53,7 +53,7 @@ namespace ui
                     inner->layoutHorizontal();
 
                     inner->createNamedChild<TextLabel>("Y"_id, comps[1].caption);
-                    m_componentY = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentY = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 3)
@@ -62,7 +62,7 @@ namespace ui
                     inner->layoutHorizontal();
 
                     inner->createNamedChild<TextLabel>("Z"_id, comps[2].caption);
-                    m_componentZ = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentZ = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 4)
@@ -71,7 +71,7 @@ namespace ui
                     inner->layoutHorizontal();
 
                     inner->createNamedChild<TextLabel>("W"_id, comps[3].caption);
-                    m_componentW = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentW = inner->createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
             }
             else
@@ -81,25 +81,25 @@ namespace ui
                 if (numComps >= 1)
                 {
                     createNamedChild<TextLabel>("X"_id, comps[0].caption);
-                    m_componentX = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentX = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 2)
                 {
                     createNamedChild<TextLabel>("Y"_id, comps[1].caption);
-                    m_componentY = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentY = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 3)
                 {
                     createNamedChild<TextLabel>("Z"_id, comps[2].caption);
-                    m_componentZ = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentZ = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
 
                 if (numComps >= 4)
                 {
                     createNamedChild<TextLabel>("W"_id, comps[3].caption);
-                    m_componentW = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, units);
+                    m_componentW = createChild<DataBoxNumberText>(type, numDigits, rangeEnabled, rangeMin, rangeMax, dragger, draggerWrap, units);
                 }
             }
         }
@@ -200,7 +200,7 @@ namespace ui
                 else if (info.dataType == base::reflection::GetTypeObject<base::Vector4>())
                     numComps = 4;
 
-                bool rangeEnabled = false;
+                /*bool rangeEnabled = false;
                 bool dragEnabled = false;
                 bool dragWrapEnabled = false;
                 int numDigits = 2;
@@ -229,13 +229,14 @@ namespace ui
                     {
                         units = unitsData->text;
                     }
-                }
+                }*/
 
-                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), numComps, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
+                const auto& ed = info.editorData;
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), numComps, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
             }
             else if (info.dataType == base::reflection::GetTypeObject<base::Point>())
             {
-                bool rangeEnabled = false;
+                /*bool rangeEnabled = false;
                 bool dragEnabled = false;
                 bool dragWrapEnabled = false;
                 double rangeMin = -DBL_MAX;
@@ -259,13 +260,14 @@ namespace ui
                     {
                         units = unitsData->text;
                     }
-                }
+                }*/
 
-                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<int>(), 2, 0, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, VECTOR_COMPS, verticalLayout);
+                const auto& ed = info.editorData;
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<int>(), 2, 0, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
             }
             else if (info.dataType == base::reflection::GetTypeObject<base::Angles>())
             {
-                bool rangeEnabled = true;
+                /*bool rangeEnabled = true;
                 double rangeMin = -360.0f;
                 double rangeMax = 360.0f;
                 bool dragEnabled = true;
@@ -294,9 +296,10 @@ namespace ui
                     {
                         units = unitsData->text;
                     }
-                }
+                }*/
 
-                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), 3, numDigits, rangeEnabled, rangeMin, rangeMax, dragEnabled, units, ANGLE_COMPS, verticalLayout);
+                const auto& ed = info.editorData;
+                return base::RefNew<DataBoxVector>(base::reflection::GetTypeObject<float>(), 3, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, ANGLE_COMPS, verticalLayout);
             }
 
             return nullptr;

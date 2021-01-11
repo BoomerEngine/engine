@@ -41,10 +41,11 @@ namespace ed
         {
             SceneContentDataNodePtr node;
             SceneContentDataNodePtr parent;
-            Transform initialLocalTransform;
+            EulerTransform initialLocalTransform;
             AbsoluteTransform initialWorldTransform;
+            AbsoluteTransform initialParentWorldTransform;
 
-            AbsoluteTransform lastTransform;
+            EulerTransform lastTransform;
         };
 
         GizmoReferenceSpace m_referenceSpace;
@@ -62,7 +63,7 @@ namespace ed
     class ASSETS_SCENE_EDITOR_API SceneEditModeDefaultTransformDragger : public IReferencable
     {
     public:
-        SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const HashSet<SceneContentDataNode*>* filterSet, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep);
+        SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep);
 
         void cancel();
         void step(int stepDelta);
@@ -73,14 +74,12 @@ namespace ed
     private:
         struct CapturedNode
         {
-            int parentDragNode = -1;
-
             SceneContentDataNodePtr node;
             EulerTransform initialLocalTransform;
-            Transform initialLocalTransformQuat;
             AbsoluteTransform initialWorldTransform;
+            AbsoluteTransform initialParentWorldTransform;
 
-            AbsoluteTransform calculatedTransform;
+            EulerTransform calculatedTransform;
         };
 
         SceneEditMode_Default* m_mode = nullptr;

@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: mesh #]
+* [# filter: import #]
 ***/
 
 #include "build.h"
@@ -51,21 +51,10 @@ namespace wavefront
         RTTI_CATEGORY("Selective import");
         RTTI_PROPERTY(objectFilter).editable("Import only those objects").overriddable();
         RTTI_PROPERTY(groupFilter).editable("Import only those groups").overriddable();
-        RTTI_CATEGORY("Base material");
-        RTTI_PROPERTY(m_templateUnlit).editable("Base material to use with illumMode < 2").overriddable();
-        RTTI_PROPERTY(m_templateMasked).editable("Base material to use with mask (map_d) is defined").overriddable();
-        RTTI_PROPERTY(m_templateEmissive).editable("Base material to use with emissive map (map_e) is defined").overriddable();
     RTTI_END_TYPE();
-
-    static base::res::StaticResource<rendering::IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
-    static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialBase("/engine/materials/std_pbr.v4mg");
-    static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialBase("/engine/materials/std_pbr_emissive.v4mg");
 
     OBJMeshImportConfig::OBJMeshImportConfig()
     {
-        m_templateUnlit = resUnlitMaterialBase.asyncRef();
-        m_templateMasked = resMaskedMaterialBase.asyncRef();
-        m_templateEmissive = resEmissiveMaterialBase.asyncRef();
     }
 
     void OBJMeshImportConfig::computeConfigurationKey(CRC64& crc) const
@@ -82,10 +71,6 @@ namespace wavefront
         crc << forceTriangles;
         crc << allowThreads;
         crc << flipUV;
-
-        crc << m_templateUnlit.key().path().view();
-        crc << m_templateMasked.key().path().view();
-        crc << m_templateEmissive.key().path().view();
     }
 
     //--
@@ -264,15 +249,21 @@ namespace wavefront
         return GroupBuildModelType::Visual;
     }
 
-    static void PrepareGroupBuildList(const FormatOBJ& data, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, bool forceTriangles, GroupBuildModelList& outModelList)
+    static void PrepareGroupBuildList(const FormatOBJ& data, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, base::StringView objectFilter, base::StringView groupFilter, bool forceTriangles, GroupBuildModelList& outModelList)
     {
         outModelList.models.reserve(data.groups().size());
 
         for (auto& obj : data.objects())
         {
+            if (!objectFilter.empty() && 0 != objectFilter.caseCmp(obj.name))
+                continue;
+
             for (uint32_t i = 0; i < obj.numGroups; ++i)
             {
                 auto& group = data.groups().typedData()[obj.firstGroup + i];
+
+                if (!groupFilter.empty() && 0 != groupFilter.caseCmp(group.name))
+                    continue;
 
                 uint8_t lodIndex = 0;
                 auto groupType = DetermineModelType(group.name, lodIndex);
@@ -293,7 +284,7 @@ namespace wavefront
 
     //--
 
-    static base::Box CalculateGeometryBounds(const FormatOBJ& data, const base::Matrix& assetToEngine)
+    static base::Box CalculateGeometryBounds(const FormatOBJ& data, const GroupBuildModelList& buildList, const base::Matrix& assetToEngine)
     {
         struct PerChunkBox
         {
@@ -304,10 +295,17 @@ namespace wavefront
 
         base::Array<PerChunkBox> jobs;
         jobs.reserve(data.chunks().size());
-        for (const auto& chunk : data.chunks())
+
+        for (const auto& model : buildList.models)
         {
-            auto& job = jobs.emplaceBack();
-            job.chunk = &chunk;
+            for (const auto& group : model.groups)
+            {
+                for (const auto* chunk : group.sourceChunks)
+                {
+                    auto& job = jobs.emplaceBack();
+                    job.chunk = chunk;
+                }
+            }
         }
 
         RunFiberForFeach<PerChunkBox>("ComputeChunkBounds", jobs, -2, [&assetToEngine, &data](PerChunkBox& job)
@@ -328,11 +326,17 @@ namespace wavefront
                 float maxY = -FLT_MAX;
                 float maxZ = -FLT_MAX;
 
+                const float validBounds = 1000000.0f;
+
                 while (face < faceEnd)
                 {
                     for (uint32_t i = 0; i < face->numVertices; ++i)
                     {
                         auto pos = assetToEngine.transformPoint(positions[faceIndices[0]]);
+
+                        DEBUG_CHECK(pos.x >= -validBounds && pos.x <= validBounds);
+                        DEBUG_CHECK(pos.y >= -validBounds && pos.y <= validBounds);
+                        DEBUG_CHECK(pos.z >= -validBounds && pos.z <= validBounds);
 
                         minX = std::min<float>(minX, pos.x);
                         minY = std::min<float>(minY, pos.y);
@@ -352,9 +356,7 @@ namespace wavefront
                     //count += face->numVertices;
                     face += 1;
                 }
-
-
-                const float validBounds = 1000000.0f;
+                
                 if (minX < -validBounds || minY < -validBounds || minZ < -validBounds || maxX > validBounds || maxY > validBounds || maxZ > validBounds)
                 {
                     job.valid = false;
@@ -820,7 +822,7 @@ namespace wavefront
         return TempString("{}.{}", fileName, ext);
     }
 
-    static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
+    void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
     {
         f << "/";
 
@@ -831,7 +833,7 @@ namespace wavefront
         }
     }
 
-    static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
+    void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
     {
         base::InplaceArray<base::StringView, 10> pathParts;
         path.slice("/\\", false, pathParts);
@@ -863,7 +865,7 @@ namespace wavefront
         }
     }
 
-    static base::StringBuf BuildMaterialDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
+    base::StringBuf BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
     {
         base::InplaceArray<base::StringView, 20> pathParts;
         GlueDepotPath(referenceDepotPath, true, pathParts);
@@ -903,7 +905,7 @@ namespace wavefront
         if (cfg.m_materialImportMode != rendering::MeshMaterialImportMode::DontImport)
         {
             // check if the imported material already exists
-            const auto depotPath = BuildMaterialDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
+            const auto depotPath = BuildAssetDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
             if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportAll)
             {
                 if (importer.checkDepotFile(depotPath))
@@ -924,10 +926,6 @@ namespace wavefront
             materialImportConfig->m_textureImportMode = cfg.m_textureImportMode;
             materialImportConfig->m_depotSearchDepth = cfg.m_depotSearchDepth;
             materialImportConfig->m_sourceAssetsSearchDepth = cfg.m_sourceAssetsSearchDepth;
-            materialImportConfig->m_templateDefault = cfg.m_templateDefault;
-            materialImportConfig->m_templateEmissive = cfg.m_templateEmissive;
-            materialImportConfig->m_templateMasked = cfg.m_templateMasked;
-            materialImportConfig->m_templateUnlit = cfg.m_templateUnlit;
 
             // make the search paths ABSOLUTE with respect to current path
             bool pathValid = base::ApplyRelativePath(importer.queryResourcePath(), cfg.m_textureImportPath, materialImportConfig->m_textureImportPath);
@@ -1165,13 +1163,16 @@ namespace wavefront
 
         ///--
 
-        // calculate the mesh boundary
-        rendering::MeshInitData exportData;
-        exportData.bounds = CalculateGeometryBounds(*sourceGeometry, assetToEngineTransform);
-
         // TODO: add filtering to export only requested object
         GroupBuildModelList buildList;
-        PrepareGroupBuildList(*sourceGeometry, meshGeometryManifest->emitUVs, meshGeometryManifest->emitColors, meshGeometryManifest->emitNormals, meshGeometryManifest->forceTriangles, buildList);
+        PrepareGroupBuildList(*sourceGeometry, 
+            meshGeometryManifest->emitUVs, meshGeometryManifest->emitColors, meshGeometryManifest->emitNormals, 
+            meshGeometryManifest->objectFilter, meshGeometryManifest->groupFilter,
+            meshGeometryManifest->forceTriangles, buildList);
+
+        // calculate the mesh boundary
+        rendering::MeshInitData exportData;
+        exportData.bounds = CalculateGeometryBounds(*sourceGeometry, buildList, assetToEngineTransform);
 
         // export materials
         // TODO: only used ones

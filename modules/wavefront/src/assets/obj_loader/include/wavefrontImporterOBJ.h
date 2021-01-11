@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: mesh #]
+* [# filter: import #]
 ***/
 
 #pragma once
@@ -40,10 +40,6 @@ namespace wavefront
         OBJMeshAttributeMode emitNormals = OBJMeshAttributeMode::IfPresentAnywhere;
         OBJMeshAttributeMode emitUVs = OBJMeshAttributeMode::IfPresentAnywhere;
         OBJMeshAttributeMode emitColors = OBJMeshAttributeMode::IfPresentAnywhere;
-
-        rendering::MaterialAsyncRef m_templateUnlit; // base material to use with illum < 2
-        rendering::MaterialAsyncRef m_templateMasked; // base material to use when mask map is defined
-        rendering::MaterialAsyncRef m_templateEmissive; // base material to use when emissive map is defined
 
         bool forceTriangles = false;
         bool allowThreads = true;

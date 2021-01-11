@@ -124,7 +124,7 @@ namespace base
             ///---
 
             /// "spawn" prefab on the world, shorthand for prefab compilation, instantiation and attachment of the entities to the world
-            EntityPtr createPrefabInstance(const AbsoluteTransform& placement, const Prefab* prefab, int rootNodeIndex = 0);
+            EntityPtr createPrefabInstance(const AbsoluteTransform& placement, const Prefab* prefab, StringID appearance = "default"_id);
 
             ///---
 
@@ -135,10 +135,6 @@ namespace base
 
             void initializeSystems();
             void destroySystems();
-
-            //--
-
-            WorldDefinitionPtr m_data; // immutable
 
             //--
 

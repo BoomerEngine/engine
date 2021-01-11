@@ -55,11 +55,6 @@ namespace rendering
 
         //--
 
-        // base material to use in case of standard opaque materials
-        MaterialAsyncRef m_templateDefault;
-
-        //--
-
         virtual void computeConfigurationKey(CRC64& crc) const override;
     };
 

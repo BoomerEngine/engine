@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "reflectionPropertyBuilder.h"
-#include "propertyDecorators.h"
 
 #include "base/object/include/rttiMetadata.h"
 #include "base/object/include/rttiProperty.h"
@@ -57,14 +56,10 @@ namespace base
             if (m_noReset)
                 setup.m_flags |= rtti::PropertyFlagBit::NoResetToDefault;
             
-
-            auto prop = new rtti::Property(targetClass, setup);
+            auto prop = new rtti::Property(targetClass, setup, m_editorData);
 
             for (auto metaData  : m_metadata)
                 prop->attachMetadata(metaData);
-
-            if (m_editable && m_comment)
-                static_cast<PropertyCommentMetadata&>(prop->addMetadata(PropertyCommentMetadata::GetStaticClass())).text = m_comment;
 
             targetClass->addProperty(prop);
         }

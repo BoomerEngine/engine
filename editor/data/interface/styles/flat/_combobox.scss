@@ -14,14 +14,17 @@ ComboBox {
 
     > Button {
 		padding: 4em 0em 4em 0em;
-		vertical-align: middle;
+		margin: 0em 0em 0em 0em;
+		vertical-align: expand;
 		horizontal-align: expand;
 		//proportion: 100%;
 		
 		> *#ComboBoxCaption {
 			padding: 0em 0em 8em 0em;
 			horizontal-align: expand;
+			vertical-align: middle;
 			//proportion: 100%;
+			//background: #F00;
 		}
 		
 		> *#ComboBoxIcon {

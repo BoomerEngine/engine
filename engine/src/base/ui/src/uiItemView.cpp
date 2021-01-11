@@ -737,11 +737,17 @@ namespace ui
     {
         if (evt.leftDoubleClicked())
         {
-            auto index = indexAtPoint(evt.absolutePosition().toVector());
-            if (index)
+            if (auto index = indexAtPoint(evt.absolutePosition().toVector()))
             {
                 call(EVENT_ITEM_ACTIVATED, index);
                 return InputActionPtr();
+            }
+        }
+        else if (evt.leftClicked())
+        {
+            if (const auto* item = itemAtPoint(evt.absolutePosition().toVector()))
+            {
+                // TODO
             }
         }
 
@@ -780,7 +786,7 @@ namespace ui
         return TBaseClass::handleOverlayMouseClick(area, evt);
     }
 
-    bool ItemView::handleContextMenu(const ui::ElementArea &area, const ui::Position &absolutePosition)
+    bool ItemView::handleContextMenu(const ui::ElementArea &area, const ui::Position &absolutePosition, base::input::KeyMask controlKeys)
     {
         if (auto index = indexAtPoint(absolutePosition))
         {
@@ -798,7 +804,7 @@ namespace ui
             }
         }
 
-        return TBaseClass::handleContextMenu(area, absolutePosition);
+        return TBaseClass::handleContextMenu(area, absolutePosition, controlKeys);
     }
 
     ElementPtr ItemView::queryTooltipElement(const Position& absolutePosition, ui::ElementArea& outArea) const

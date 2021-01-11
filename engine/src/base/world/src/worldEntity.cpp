@@ -19,6 +19,17 @@ namespace base
     {
         //--
 
+        RTTI_BEGIN_TYPE_ENUM(EntityStreamingModel);
+        RTTI_ENUM_OPTION(Auto);
+        RTTI_ENUM_OPTION(StreamWithParent);
+        RTTI_ENUM_OPTION(HierarchicalGrid);
+        RTTI_ENUM_OPTION(AlwaysLoaded);
+        RTTI_ENUM_OPTION(SeparateSector);
+        RTTI_ENUM_OPTION(Discard);
+        RTTI_END_TYPE();
+
+        //--
+
         RTTI_BEGIN_TYPE_CLASS(EntityInputEvent);
             RTTI_PROPERTY(m_name);
             RTTI_PROPERTY(m_deltaValue);
@@ -270,6 +281,29 @@ namespace base
             ASSERT(!m_flags.test(EntityFlagBit::Detaching));
             m_flags -= EntityFlagBit::Detaching;
             m_world = nullptr;
+        }
+
+        //--
+
+        SpecificClassType<Entity> Entity::determineEntityTemplateClass(const ITemplatePropertyValueContainer& templateProperties)
+        {
+            return templateProperties.compileClass().cast<Entity>();
+        }
+
+        void Entity::queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const
+        {
+            TBaseClass::queryTemplateProperties(outTemplateProperties);
+
+            outTemplateProperties.prop("Streaming"_id, "streamingModel"_id, EntityStreamingModel::Auto, rtti::PropertyEditorData().comment("How this entity should be streamed"));
+            outTemplateProperties.prop("Streaming"_id, "streamingDistanceOverride"_id, 0.0f, rtti::PropertyEditorData().comment("Override distance for the streaming range"));
+        }
+
+        bool Entity::initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties)
+        {
+            if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
+                return false;
+
+            return true;
         }
 
         //--

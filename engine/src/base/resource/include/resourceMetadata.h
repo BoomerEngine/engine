@@ -8,9 +8,10 @@
 
 #pragma once
 
+#include "objectDirectTemplate.h"
+
 #include "base/resource/include/resource.h"
 #include "base/reflection/include/variantTable.h"
-#include "base/object/include/objectTemplate.h"
 #include "base/io/include/timestamp.h"
 
 namespace base
@@ -22,9 +23,9 @@ namespace base
         ///---
 
         /// persistent resource "configuration" - carried over from one reimport to other reimport (all other data is lost)
-        class BASE_RESOURCE_API ResourceConfiguration : public IObjectTemplate
+        class BASE_RESOURCE_API ResourceConfiguration : public IObjectDirectTemplate
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceConfiguration, IObjectTemplate);
+            RTTI_DECLARE_VIRTUAL_CLASS(ResourceConfiguration, IObjectDirectTemplate);
 
         public:
             virtual ~ResourceConfiguration();

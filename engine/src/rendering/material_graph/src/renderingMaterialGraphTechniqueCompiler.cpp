@@ -139,8 +139,8 @@ namespace rendering
         }
         else
         {
-            TRACE_ERROR("Missing root block in material graph from '{}', no code can be generated", contextName);
-            return nullptr;
+            TRACE_WARNING("Missing root block in material graph from '{}', no code can be generated", contextName);
+            compiler.m_ps.appendf("gl_Target0 = vec4(1,0,1,1);\n");
         }
 
         // generate final code

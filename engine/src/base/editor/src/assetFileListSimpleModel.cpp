@@ -349,30 +349,7 @@ namespace ed
             localItem->locked = locked;
 
             StringBuilder displayText;
-            for (const auto& tag : file->fileFormat().tags())
-            {
-                displayText.appendf("[tag:{}]", tag.color);
-
-                if (tag.baked)
-                    displayText.appendf("[img:cog] ");
-                else
-                    displayText.appendf("[img:file_empty_edit] ");
-
-                if (tag.color.luminanceSRGB() > 0.5f)
-                {
-                    displayText << "[color:#000]";
-                    displayText << tag.name;
-                    displayText << "[/color]";
-                }
-                else
-                {
-                    displayText << tag.name;
-                }
-
-                displayText << "[/tag]";
-                displayText << "[br]";
-            }
-
+            file->fileFormat().printTags(displayText, " ");
             localItem->tags = displayText.toString();
 
             m_items.pushBack(localItem);

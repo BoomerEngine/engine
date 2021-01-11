@@ -21,16 +21,16 @@ namespace wavefront
     //--
 
     static base::res::StaticResource<rendering::IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
-    static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialBase("/engine/materials/std_pbr.v4mg");
+    static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
+    static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialBase("/engine/materials/std_pbr_masked.v4mg");
     static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialBase("/engine/materials/std_pbr_emissive.v4mg");
+    static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialRS("/engine/materials/std_pbr_rs.v4mg");
+    static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialRS("/engine/materials/std_pbr_masked_rs.v4mg");
+    static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialRS("/engine/materials/std_pbr_emissive_rs.v4mg");
 
     RTTI_BEGIN_TYPE_CLASS(MTLMaterialImportConfig);
         RTTI_CATEGORY("Material");
         RTTI_PROPERTY(m_materialName).editable("Name of the material to import").overriddable();
-        RTTI_CATEGORY("Base material");
-        RTTI_PROPERTY(m_templateUnlit).editable("Base material to use with illumMode < 2").overriddable();
-        RTTI_PROPERTY(m_templateMasked).editable("Base material to use with mask (map_d) is defined").overriddable();
-        RTTI_PROPERTY(m_templateEmissive).editable("Base material to use with emissive map (map_e) is defined").overriddable();
         RTTI_CATEGORY("Parameter binding");
         RTTI_PROPERTY(m_bindingColor).editable().overriddable();
         RTTI_PROPERTY(m_bindingMapColor).editable().overriddable();
@@ -47,10 +47,6 @@ namespace wavefront
 
     MTLMaterialImportConfig::MTLMaterialImportConfig()
     {
-        m_templateUnlit = resUnlitMaterialBase.asyncRef();
-        m_templateMasked = resMaskedMaterialBase.asyncRef();
-        m_templateEmissive = resEmissiveMaterialBase.asyncRef();
-
         m_bindingColor = "Color";
 
         m_bindingMapColor = "ColorMap;BaseColorMap;AlbedoMap";
@@ -69,9 +65,6 @@ namespace wavefront
     {
         TBaseClass::computeConfigurationKey(crc);
 
-        crc << m_templateUnlit.key().path().view();
-        crc << m_templateMasked.key().path().view();
-        crc << m_templateEmissive.key().path().view();
         crc << m_materialName.view();
         crc << m_bindingColor.view();
         crc << m_bindingMapColor.view();
@@ -104,14 +97,14 @@ namespace wavefront
         rendering::MaterialRef ret;
 
         if (sourceMaterial->m_illumMode < 2)
-            ret = cfg.m_templateUnlit.load();
+            ret = resUnlitMaterialBase.loadAndGetAsRef();
         else if (!sourceMaterial->m_mapEmissive.m_path.empty())
-            ret = cfg.m_templateEmissive.load();
+            ret = resEmissiveMaterialBase.loadAndGetAsRef();
         else if (!sourceMaterial->m_mapDissolve.m_path.empty())
-            ret = cfg.m_templateMasked.load();
+            ret = resMaskedMaterialBase.loadAndGetAsRef();
         
         if (!ret)
-            ret = cfg.m_templateDefault.load();
+            ret = resMaskedMaterialBase.loadAndGetAsRef();
 
         return ret;
     }

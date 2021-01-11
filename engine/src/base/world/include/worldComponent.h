@@ -256,6 +256,17 @@ namespace base
 
             //---
 
+            // determine final component class
+            virtual SpecificClassType<Component> determineComponentTemplateClass(const ITemplatePropertyValueContainer& templateProperties);
+
+            // list template properties for the entity
+            virtual void queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const override;
+
+            // initialize entity from template properties
+            virtual bool initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties) override;
+
+            //---
+
             /// get a world system, returns NULL if component has no entity or is not attached
             template< typename T >
             INLINE T* system()

@@ -16,6 +16,14 @@
 #include "base/ui/include/uiTreeView.h"
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiColumnHeaderBar.h"
+#include "base/object/include/object.h"
+#include "base/world/include/worldPrefab.h"
+#include "base/editor/include/assetBrowser.h"
+#include "base/editor/include/managedFile.h"
+#include "base/editor/include/managedFileFormat.h"
+#include "base/ui/include/uiTextLabel.h"
+#include "base/ui/include/uiSearchBar.h"
+#include "base/ui/include/uiComboBox.h"
 
 namespace ed
 {
@@ -210,18 +218,113 @@ namespace ed
         return nullptr;
     }
 
-    ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& item)
+    //--
+
+    /// drag&drop data with scene node
+    class SceneNodeDragDropData : public ui::IDragDropData
     {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneNodeDragDropData, ui::IDragDropData);
+
+    public:
+        SceneNodeDragDropData(const SceneContentNode* node)
+            : m_node(AddRef(node))
+        {}
+
+        INLINE const SceneContentNodePtr& data() const { return m_node; }
+
+    private:
+        virtual ui::ElementPtr createPreview() const
+        {
+            StringBuilder caption;
+            caption << SceneContentNode::IconTextForType(m_node->type());
+            caption << " ";
+            caption << m_node->buildHierarchicalName();
+
+            return RefNew<ui::TextLabel>(caption.view());
+        }
+
+        SceneContentNodePtr m_node;
+    };
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneNodeDragDropData);
+    RTTI_END_TYPE();
+
+    //--
+
+    ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& id)
+    {
+        if (id.model() == this)
+            if (auto* node = id.unsafe<SceneContentNode>())
+                if (node->type() == SceneContentNodeType::Component || node->type() == SceneContentNodeType::Entity)
+                    return RefNew<SceneNodeDragDropData>(node);
+
         return nullptr;
     }
 
-    ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos)
+    ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data, const ui::Position& pos)
     {
+        if (id.model() == this)
+        {
+            if (auto* node = id.unsafe<SceneContentNode>())
+            {
+                if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+                {
+                    if (auto file = fileData->file())
+                        if (node->canAttach(SceneContentNodeType::Entity) || node->canAttach(SceneContentNodeType::Component))
+                            return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
+                }
+                else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
+                {
+                    if (node->canAttach(nodeData->data()->type()))
+                        return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
+                }
+            }
+        }
+
         return nullptr;
     }
 
-    bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data)
+    bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data)
     {
+        if (id.model() == this)
+        {
+            if (auto* node = id.unsafe<SceneContentNode>())
+            {
+                if (m_preview)
+                {
+                    if (auto mode = m_preview->mode())
+                    {
+                        if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+                        {
+                            if (auto file = fileData->file())
+                                return mode->handleTreeResourceDrop(AddRef(node), file);
+                        }
+                        else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
+                        {
+                            return mode->handleTreeNodeDrop(AddRef(node), nodeData->data());
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool SceneContentTreeModel::handleIconClick(const ui::ModelIndex& id, int columnIndex) const
+    {
+        if (columnIndex == 1)
+        {
+            if (id.model() == this)
+            {
+                if (auto* node = id.unsafe<SceneContentNode>())
+                {
+                    node->visibility(!node->localVisibilityFlag());
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -297,6 +400,55 @@ namespace ed
 
         //--
 
+        if (scene->root()->type() == SceneContentNodeType::WorldRoot)
+        {
+            auto toolbar = createChild<ui::IElement>();
+            toolbar->layoutHorizontal();
+            toolbar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            toolbar->customMargins(4, 4, 4, 4);
+
+            {
+                auto btn = toolbar->createChild<ui::Button>("[img:save] Save");
+                btn->styleType("BackgroundButton"_id);
+                btn->tooltip("Save current preset");
+                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+                btn->customMargins(ui::Offsets(0, 0, 2, 0));
+                btn->bind(ui::EVENT_CLICKED) = [this]() { presetSave(); };
+            }
+
+            {
+                m_presets = toolbar->createChild<ui::ComboBox>();
+                m_presets->addOption("(default)");
+                m_presets->selectOption(0);
+                m_presets->expand();
+            }
+
+            {
+                auto btn = toolbar->createChild<ui::Button>("[img:table_add]");
+                btn->styleType("BackgroundButton"_id);
+                btn->tooltip("Add new preset using current state of scene");
+                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+                btn->customMargins(ui::Offsets(2, 0, 2, 0));
+                btn->bind(ui::EVENT_CLICKED) = [this]() { presetAddNew(); };
+            }
+
+            {
+                auto btn = toolbar->createChild<ui::Button>("[img:table_delete]");
+                btn->styleType("BackgroundButton"_id);
+                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+                btn->tooltip("Remove current preset");
+                btn->customMargins(ui::Offsets(0, 0, 0, 0));
+                btn->bind(ui::EVENT_CLICKED) = [this]() { presetRemove(); };
+            }
+        }
+
+        //--
+
+        m_searchBar = createChild<ui::SearchBar>();
+        m_searchBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
+        //--
+
         auto columns = createChild<ui::ColumnHeaderBar>();
         columns->addColumn("Name", 450, false, false, true);
         columns->addColumn("[img:eye]", 30, true, false, false);
@@ -323,6 +475,19 @@ namespace ed
     SceneStructurePanel::~SceneStructurePanel()
     {}
 
+    void SceneStructurePanel::configSave(const ui::ConfigBlock& block) const
+    {
+        TBaseClass::configSave(block);
+    }
+
+    void SceneStructurePanel::configLoad(const ui::ConfigBlock& block)
+    {
+        TBaseClass::configLoad(block);
+
+        //Array<StringBuf> selectedNodes;
+        //StringBuf activeNode;
+    }
+
     void SceneStructurePanel::syncExternalSelection(const Array<SceneContentNodePtr>& nodes)
     {
         if (m_treeModel)
@@ -344,6 +509,26 @@ namespace ed
 
             m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
         }
+    }
+
+    void SceneStructurePanel::presetAddNew()
+    {
+
+    }
+
+    void SceneStructurePanel::presetRemove()
+    {
+
+    }
+
+    void SceneStructurePanel::presetSave()
+    {
+
+    }
+
+    void SceneStructurePanel::presetSelect()
+    {
+
     }
 
     void SceneStructurePanel::treeSelectionChanged()

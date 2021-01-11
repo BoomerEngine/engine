@@ -213,7 +213,7 @@ namespace ed
             {
                 curDir->deleted(false);
 
-                base::io::CreatePath(TempString("{}name/", absolutePath()));
+                base::io::CreatePath(TempString("{}{}/", absolutePath(), name));
 
                 curDir->populate(); // just in case it was not really deleted
             }
@@ -236,7 +236,7 @@ namespace ed
         }
 
         // create the physical path in file system
-        if (!base::io::CreatePath(TempString("{}name/", absolutePath(), name)))
+        if (!base::io::CreatePath(TempString("{}{}/", absolutePath(), name)))
         {
             TRACE_ERROR("Failed to create directory '{}' in '{}': failed to create physical directory on disk", name, depotPath());
             return nullptr;

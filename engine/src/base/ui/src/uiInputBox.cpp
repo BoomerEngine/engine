@@ -12,6 +12,7 @@
 #include "uiTextLabel.h"
 #include "uiEditBox.h"
 #include "uiWindow.h"
+#include "uiTextValidation.h"
 
 #include "base/containers/include/stringBuilder.h"
 
@@ -22,6 +23,12 @@ namespace ui
     InputBoxSetup::InputBoxSetup()
         : m_title("Input text")
     {}
+
+    InputBoxSetup& InputBoxSetup::fileNameValidation(bool withExt)
+    {
+        m_validation = MakeFilenameValidationFunction(withExt);
+        return *this;
+    }
 
     //---
 
@@ -40,6 +47,8 @@ namespace ui
         EditBoxFeatureFlags editBoxFlags;
         if (setup.m_multiline)
             editBoxFlags |= EditBoxFeatureBit::Multiline;
+        else
+            editBoxFlags |= EditBoxFeatureBit::AcceptsEnter;
 
         auto editText = window->createChild<EditBox>(editBoxFlags).get();
         if (setup.m_multiline)
@@ -67,6 +76,14 @@ namespace ui
             {
                 button->enable(valid);
             };
+
+            editText->bind(EVENT_TEXT_ACCEPTED) = [editText, button, &inOutText, windowRef]()
+            {
+                if (editText->validationResult()) {
+                    inOutText = editText->text();
+                    windowRef->requestClose(1);
+                }
+            };
         }
 
         {
@@ -79,7 +96,7 @@ namespace ui
         if (setup.m_validation)
             editText->validation(setup.m_validation);
 
-        return window->runModal(owner);
+        return window->runModal(owner, editText);
     }
 
     //---

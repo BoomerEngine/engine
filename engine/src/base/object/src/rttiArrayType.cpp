@@ -157,18 +157,22 @@ namespace base
             clearArrayElements(data);
             resizeArrayElements(data, size);
 
-            // get element pointers
-            auto* writePtr = (uint8_t*)arrayElementData(data, 0);
-            auto writeStride = m_innerType->size();
-
-            // read elements
-            auto capacity = maxArrayCapacity(data);
-            for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
+            // load elements
+            if (size > 0)
             {
-                if (i >= capacity)
-                    break;
+                // get element pointers
+                auto* writePtr = (uint8_t*)arrayElementData(data, 0);
+                auto writeStride = m_innerType->size();
 
-                m_innerType->readXML(typeContext, childNodes[i], writePtr);
+                // read elements
+                auto capacity = maxArrayCapacity(data);
+                for (uint32_t i = 0; i < size; ++i, writePtr += writeStride)
+                {
+                    if (i >= capacity)
+                        break;
+
+                    m_innerType->readXML(typeContext, childNodes[i], writePtr);
+                }
             }
         }
 

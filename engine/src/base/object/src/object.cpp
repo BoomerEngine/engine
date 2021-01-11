@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "object.h"
-#include "objectTemplate.h"
 #include "objectGlobalRegistry.h"
 
 #include "rttiTypeSystem.h"
@@ -81,6 +80,16 @@ namespace base
     {
         GDeserializeFunction = func;
     }
+
+    //--
+
+    ITemplatePropertyBuilder::~ITemplatePropertyBuilder()
+    {}
+
+    //--
+
+    ITemplatePropertyValueContainer::~ITemplatePropertyValueContainer()
+    {}
 
     //--
 
@@ -297,6 +306,25 @@ namespace base
         return RefNew<DataViewNative>(const_cast<IObject*>(this), forceReadOnly);
     }
 
+    bool IObject::initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties)
+    {
+        for (const auto& prop : cls()->allTemplateProperties())
+        {
+            if (prop.nativeProperty)
+            {
+                auto* localData = prop.nativeProperty->offsetPtr(this);
+                templateProperties.compileValue(prop.name, prop.nativeProperty->type(), localData);
+            }
+        }
+
+        return true;
+    }
+
+    void IObject::queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const
+    {
+        // nothing special here, all default overridable properties are filled by class type
+    }
+
     //--
 
     bool IObject::onPropertyChanging(StringView path, const void* newData, Type newDataType) const
@@ -361,7 +389,6 @@ namespace base
         void RegisterObjectTypes(rtti::TypeSystem &typeSystem)
         {
             IObject::RegisterType(typeSystem);
-            IObjectTemplate::RegisterType(typeSystem);
             rtti::IMetadata::RegisterType(typeSystem);
             rtti::ShortTypeNameMetadata::RegisterType(typeSystem);
         }
@@ -413,6 +440,22 @@ namespace base
         }
 
         return nullptr;
+    }
+
+    bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty)
+    {
+        const auto srcType = srcProperty->type();
+        const auto targetType = targetProperty->type();
+
+        const auto* srcData = srcProperty->offsetPtr(srcObject);
+        auto* targetData = targetProperty->offsetPtr(targetObject);
+
+        // TODO: support for inlined objects! and more complex types
+
+        if (!rtti::ConvertData(srcData, srcType, targetData, targetType))
+            return false;
+
+        return true;
     }
 
     //--

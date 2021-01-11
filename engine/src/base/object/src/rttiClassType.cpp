@@ -26,6 +26,28 @@ namespace base
     {
         //--
 
+        TemplateProperty::TemplateProperty(Type type_)
+            : type(type_)
+        {
+            defaultValue = mem::GlobalPool<POOL_DEFAULT_OBJECTS>().Alloc(type->size(), type->alignment());
+            memzero(defaultValue, type->size());
+
+            type->construct(defaultValue);
+        }
+
+        TemplateProperty::~TemplateProperty()
+        {
+            if (defaultValue)
+            {
+                //type->destruct(defaultValue);
+
+                mem::GlobalPool<POOL_DEFAULT_OBJECTS>().Free(defaultValue);
+                defaultValue = nullptr;
+            }
+        }
+
+        //--
+
         IClassType::IClassType(StringID name, uint32_t size, uint32_t alignment, PoolTag pool)
             : IType(name)
             , m_baseClass(nullptr)
@@ -511,8 +533,11 @@ namespace base
 
                     if (viewPath.empty())
                     {
-                        if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyMetadata))
-                            prop->collectMetadataList(outInfo.metadata);
+                        if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyMetadataEx))
+                            prop->collectMetadataList(outInfo.typeMetadata);
+
+                        if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyEditorData))
+                            outInfo.editorData = prop->editorData();
 
                         if (prop->inlined())
                             outInfo.flags |= DataViewInfoFlagBit::Inlined;
@@ -525,8 +550,11 @@ namespace base
                         auto tempViewPath = viewPath;
                         if (ParseArrayIndex(tempViewPath, arrayIndex) && tempViewPath.empty())
                         {
-                            if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyMetadata))
-                                prop->collectMetadataList(outInfo.metadata);
+                            if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyMetadataEx))
+                                prop->collectMetadataList(outInfo.typeMetadata);
+
+                            if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyEditorData))
+                                outInfo.editorData = prop->editorData();
 
                             if (prop->inlined())
                                 outInfo.flags |= DataViewInfoFlagBit::Inlined;
@@ -686,6 +714,91 @@ namespace base
             }
 
             return m_allFunctions;
+        }
+
+        class LocalClassTemplatePropertyCollector : public ITemplatePropertyBuilder
+        {
+        public:
+            LocalClassTemplatePropertyCollector()
+            {
+            }
+
+            virtual void prop(StringID category, StringID name, Type type, const void* defaultValue, const PropertyEditorData& editorData)
+            {
+                if (!category)
+                    category = "Template Properties"_id;
+
+                DEBUG_CHECK_RETURN_EX(name, "Invalid name");
+                DEBUG_CHECK_RETURN_EX(type, "Invalid type");
+
+                for (auto index : m_properties.indexRange())
+                {
+                    if (m_properties[index].name == name)
+                    {
+                        m_properties.erase(index);
+                    }
+                }
+
+                auto& entry = m_properties.emplaceBack(type);
+                entry.category = category;
+                entry.name = name;
+                entry.editorData = editorData;
+                entry.nativeProperty = nullptr;
+
+                if (defaultValue)
+                    entry.type->copy(entry.defaultValue, defaultValue);
+            }
+
+            //--
+
+            Array<TemplateProperty> m_properties;
+        };
+
+        const IClassType::TConstTemplateProperties& IClassType::allTemplateProperties() const
+        {
+            if (!m_allTemplatePropertiesCached)
+            {
+                m_allTablesLock.acquire();
+
+                if (!m_allTemplatePropertiesCached)
+                {
+                    if (is<IObject>() && !isAbstract())
+                    {
+                        auto* def = (IObject*)defaultObject();
+
+                        LocalClassTemplatePropertyCollector localCollector;
+
+                        // collect the native properties that are overridable
+                        {
+                            for (const auto* prop : allProperties())
+                            {
+                                if (prop->overridable()) // TODO: different tag ?
+                                {
+                                    const void* defaultData = prop->offsetPtr(def);
+
+                                    auto& entry = localCollector.m_properties.emplaceBack(prop->type());
+                                    prop->type()->copy(entry.defaultValue, defaultData);
+                                    entry.nativeProperty = prop;
+                                    entry.category = prop->category();
+                                    entry.name = prop->name();
+                                    entry.editorData = prop->editorData();
+                                }
+                            }
+                        }
+
+                        // get additional properties
+                        def->queryTemplateProperties(localCollector);
+
+                        m_allTemplateProperties = std::move(localCollector.m_properties);
+                    }
+
+                    m_allTemplatePropertiesCached = true;
+                }
+
+                m_allTablesLock.release();
+            }
+
+            return m_allTemplateProperties;
         }
 
         const IMetadata* IClassType::metadata(ClassType metadataType) const

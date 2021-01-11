@@ -14,15 +14,24 @@
 #include "sceneContentNodes.h"
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
+#include "scenePreviewPanel.h"
 
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
 #include "base/ui/include/uiRenderer.h"
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
-#include "base/world/include/worldEntityTemplate.h"
-#include "base/world/include/worldComponentTemplate.h"
-
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/worldComponent.h"
+#include "base/resource/include/objectIndirectTemplate.h"
+#include "base/world/include/worldNodeTemplate.h"
+#include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedDirectory.h"
+#include "base/world/include/worldPrefab.h"
+#include "base/editor/include/editorService.h"
+#include "base/editor/include/editorWindow.h"
+#include "base/editor/src/assetBrowserDialogs.h"
+#include "base/ui/include/uiInputBox.h"
 
 namespace ed
 {
@@ -226,14 +235,170 @@ namespace ed
         }
     }
 
-    void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data)
+    struct ActionPastedNode
     {
+        SceneContentNodePtr parent;
+        SceneContentNodePtr child;
+    };
 
+    struct ActionPasteNodes : public IAction
+    {
+    public:
+        ActionPasteNodes(Array<ActionPastedNode>&& nodes, SceneEditMode_Default* mode)
+            : m_nodes(std::move(nodes))
+            , m_oldSelection(mode->selection().keys())
+            , m_mode(mode)
+        {
+            auto newSelection = mode->selection();
+            for (const auto& node : m_nodes)
+                newSelection.remove(node.child);
+        }
+
+        virtual StringID id() const override
+        {
+            return "PasteNodes"_id;
+        }
+
+        StringBuf description() const override
+        {
+            if (m_nodes.size() == 1)
+                return TempString("Paste node");
+            else
+                return TempString("Paste {} nodes", m_nodes.size());
+        }
+
+        virtual bool execute() override
+        {
+            Array< SceneContentNodePtr> newSelection;
+
+            for (const auto& info : m_nodes)
+            {
+                info.parent->attachChildNode(info.child);
+                newSelection.pushBack(info.child);
+            }
+
+            m_mode->changeSelection(newSelection);
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+                info.parent->detachChildNode(info.child);
+
+            m_mode->changeSelection(m_oldSelection);
+            return true;
+        }
+
+    private:
+        Array<ActionPastedNode> m_nodes;
+        Array<SceneContentNodePtr> m_oldSelection;
+        Array<SceneContentNodePtr> m_newSelection;
+        SceneEditMode_Default* m_mode = nullptr;
+    };
+
+    void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data, SceneContentNodePasteMode mode, const AbsoluteTransform* worldPlacement)
+    {
+        DEBUG_CHECK_RETURN_EX(context, "No context");
+        DEBUG_CHECK_RETURN_EX(data, "No data to paset");
+
+        if (!context->canAttach(data->type))
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to paste data at given target");
+            return;
+        }
+
+        if (data->data.empty())
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Nothing to paste");
+            return;
+        }
+
+        Array<ActionPastedNode> pastedNodes;
+        if (data->type == SceneContentNodeType::Entity)
+        {
+            const auto& baseWorldPlacement = data->data[0]->worldPlacement;
+
+            AbsoluteTransform contextWorldPlacement; // we may be pasting into a layer, etc that has no transform
+            if (auto contextPlacedNode = rtti_cast<SceneContentDataNode>(context))
+                contextWorldPlacement = contextPlacedNode->cachedLocalToWorldTransform();
+
+            auto loadedData = CloneObject(data);
+
+            HashSet<StringBuf> additionalNames;
+            for (const auto& entry : loadedData->data)
+            {
+                if (entry->name && entry->packedEntityData)
+                {
+                    const auto safeName = context->buildUniqueName(entry->name, false, &additionalNames);
+                    auto node = RefNew<SceneContentEntityNode>(safeName, entry->packedEntityData);
+
+                    if (mode == SceneContentNodePasteMode::Absolute)
+                    {
+                        if (worldPlacement)
+                        {
+                            auto relativeToBase = entry->worldPlacement / baseWorldPlacement;
+                            auto newWorldPlacement = *worldPlacement * relativeToBase;
+                            auto placement = (newWorldPlacement / contextWorldPlacement).toEulerTransform();
+                            node->changeLocalPlacement(placement);
+                        }
+                        else
+                        {
+                            auto placement = (entry->worldPlacement / contextWorldPlacement).toEulerTransform();
+                            node->changeLocalPlacement(placement);
+                        }                            
+                    }
+
+                    auto& pasteEntry = pastedNodes.emplaceBack();
+                    pasteEntry.child = node;
+                    pasteEntry.parent = context;
+                }
+            }
+        }
+
+        if (pastedNodes.empty())
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Nothing to paste");
+            return;
+        }
+
+        auto action = RefNew<ActionPasteNodes>(std::move(pastedNodes), this);
+        actionHistory()->execute(action);
     }
 
     void SceneEditMode_Default::processObjectDuplicate(const Array<SceneContentNodePtr>& selection)
     {
+        Array<ActionPastedNode> pastedNodes;
+        HashMap<const SceneContentNode*, HashSet<StringBuf>> additionalUsedNames;
+        pastedNodes.reserve(selection.size());
+        additionalUsedNames.reserve(selection.size());
 
+        for (const auto& node : selection)
+        {
+            auto parentNode = node->parent();
+            if (!parentNode)
+                continue;
+
+            if (const auto entityNode = rtti_cast<SceneContentEntityNode>(node))
+            {
+                if (const auto data = entityNode->compiledForCopy())
+                {
+                    auto& parentUsedNames = additionalUsedNames[parentNode];
+                    auto safeName = parentNode->buildUniqueName(node->name(), false, &parentUsedNames);
+                    parentUsedNames.insert(safeName);
+
+                    auto& entry = pastedNodes.emplaceBack();
+                    entry.parent = AddRef(parentNode);
+                    entry.child = RefNew<SceneContentEntityNode>(safeName, data);
+                }
+            }
+        }
+
+        if (!pastedNodes.empty())
+        {
+            auto action = RefNew<ActionPasteNodes>(std::move(pastedNodes), this);
+            actionHistory()->execute(action);
+        }
     }
 
     //---
@@ -385,7 +550,7 @@ namespace ed
 
     void SceneEditMode_Default::processObjectToggleVis(const Array<SceneContentNodePtr>& selection)
     {
-        Array< ShowHideNodeData> data;
+        Array<ShowHideNodeData> data;
         data.reserve(selection.size());
 
         for (const auto& node : selection)
@@ -401,6 +566,170 @@ namespace ed
             auto action = RefNew<ActionShowHideNodes>(std::move(data), this);
             actionHistory()->execute(action);
         }
+    }
+
+    void SceneEditMode_Default::processSaveAsPrefab(const Array<SceneContentNodePtr>& selection)
+    {
+        InplaceArray<SceneContentDataNodePtr, 10> roots;
+        ExtractSelectionRoots(selection, roots);
+
+        struct NodeToSave
+        {
+            world::NodeTemplatePtr data;
+            AbsoluteTransform localToWorld;
+        };
+
+        HashSet<StringBuf> uniqueNames;
+        InplaceArray<NodeToSave, 10> nodesToSave;
+        nodesToSave.reserve(roots.size());
+        for (const auto& rootNode : roots)
+        {
+            if (auto entity = rtti_cast<SceneContentEntityNode>(rootNode))
+            {
+                if (auto data = entity->compiledForCopy())
+                {
+                    auto& entry = nodesToSave.emplaceBack();
+                    entry.data = data;
+                    entry.localToWorld = entity->cachedLocalToWorldTransform();
+
+                    const auto unqiueName = SceneContentNode::BuildUniqueName(rootNode->name(), true, uniqueNames);
+                    uniqueNames.insert(unqiueName);
+
+                    data->m_name = StringID(unqiueName.view());
+                    data->m_entityTemplate->placement(EulerTransform::IDENTITY());                    
+                }
+            }
+        }
+
+        if (nodesToSave.empty())
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "Save"_id, "Nothing to save in selected nodes");
+            return;
+        }
+
+        base::StringBuf depotPath;
+        if (ShowSaveAsFileDialog(m_panel, nullptr, world::Prefab::GetStaticClass(), "Enter name of the prefab file:", "prefab", depotPath))
+        {
+            auto prefab = RefNew<world::Prefab>();
+
+            if (nodesToSave.size() == 1)
+            {
+                // save the only node we have directly as root
+                auto singleNode = nodesToSave[0].data;
+                singleNode->m_name = "default"_id;
+                prefab->setup(singleNode);
+            }
+            else
+            {
+                // we have more than one entity to save, create a root node
+                auto newRootNode = RefNew<world::NodeTemplate>();
+                newRootNode->m_name = "default"_id;
+
+                // whatever we save the root node has it's transform reset
+                const auto referenceTransform = nodesToSave[0].localToWorld;
+
+                // add all nodes
+                for (auto i : nodesToSave.indexRange())
+                {
+                    const auto& node = nodesToSave[i];
+
+                    // convert transform to local space
+                    if (i != 0)
+                    {
+                        const auto placement = (node.localToWorld / referenceTransform).toEulerTransform();
+                        node.data->m_entityTemplate->placement(placement);
+                    }
+
+                    node.data->parent(newRootNode);
+                    newRootNode->m_children.pushBack(node.data);
+                }
+
+                prefab->setup(newRootNode);
+            }
+
+            const char* fileName = nullptr;
+            if (auto* dir = GetService<Editor>()->managedDepot().findPath(depotPath, &fileName))
+            {
+                if (dir->createFile(fileName, prefab))
+                {
+                    ui::PostWindowMessage(m_panel, ui::MessageType::Info, "Save"_id, TempString("Prefab '{}' saved with {} node(s)", depotPath, nodesToSave.size()));
+                }
+                else
+                {
+                    ui::PostWindowMessage(m_panel, ui::MessageType::Error, "Save"_id, "Failed to save prefab");
+                }
+            }            
+        }
+    }
+
+    //--
+
+    struct ActionModifyPrefabsNodeData
+    {
+        SceneContentEntityNodePtr node;
+        SceneContentEntityInstancedContent oldInstancedContentet;
+        SceneContentEntityInstancedContent newInstancedContentet;
+    };
+
+    struct ASSETS_SCENE_EDITOR_API ActionModifyPrefabs : public IAction
+    {
+    public:
+        ActionModifyPrefabs(Array<ActionModifyPrefabsNodeData>&& nodes, Array<SceneContentNodePtr>&& oldSelection, SceneEditMode_Default* mode)
+            : m_nodes(std::move(nodes))
+            , m_oldSelection(std::move(oldSelection))
+            , m_mode(mode)
+        {
+            m_newSelection.reserve(m_nodes.size());
+            for (const auto& info : m_nodes)
+                m_newSelection.pushBack(info.node);
+        }
+
+        virtual StringID id() const override
+        {
+            return "ChangeNodesPrefabs"_id;
+        }
+
+        StringBuf description() const override
+        {
+            return TempString("Change prefab(s)");
+        }
+
+        virtual bool execute() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->applyInstancedContent(info.newInstancedContentet);
+
+            m_mode->changeSelection(m_newSelection);
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+                info.node->applyInstancedContent(info.oldInstancedContentet);
+
+            m_mode->changeSelection(m_oldSelection);
+            return true;
+        }
+
+    private:
+        Array<SceneContentNodePtr> m_oldSelection;
+        Array<SceneContentNodePtr> m_newSelection;
+        Array<ActionModifyPrefabsNodeData> m_nodes;
+        SceneEditMode_Default* m_mode = nullptr;
+    };
+
+    void SceneEditMode_Default::processUnwrapPrefab(const Array<SceneContentNodePtr>& selection, bool explode)
+    {
+        processGenericPrefabAction(selection, [explode](world::NodeTemplate* node)->world::NodeTemplatePtr
+            {
+                return UnpackTopLevelPrefabs(node);
+            });
+    }
+
+    void SceneEditMode_Default::processReplaceWithClipboard(const Array<SceneContentNodePtr>& selection)
+    {
+
     }
 
     //--
@@ -433,10 +762,10 @@ namespace ed
 
     //--
 
-    void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass)
+    void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement)
     {
         if (!entityClass)
-            entityClass = base::world::EntityTemplate::GetStaticClass();
+            entityClass = base::world::Entity::GetStaticClass();
 
         DEBUG_CHECK_RETURN(entityClass);
         DEBUG_CHECK_RETURN(!entityClass->isAbstract());
@@ -451,17 +780,25 @@ namespace ed
             if (node->canAttach(SceneContentNodeType::Entity))
             {
                 const auto safeName = node->buildUniqueName(coreName);
-                const auto entityData = entityClass->create<base::world::EntityTemplate>();
 
-                Array<RefPtr<SceneContentEntityNodePrefabSource>> prefabs;
+                auto sourceNode = RefNew<world::NodeTemplate>();
+                sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+                sourceNode->m_entityTemplate->parent(sourceNode);
+                sourceNode->m_entityTemplate->templateClass(entityClass);
 
-                const AbsoluteTransform* placement = &AbsoluteTransform::ROOT();
-                if (auto parentData = rtti_cast<SceneContentDataNode>(node))
-                    placement = &parentData->localToWorldTransform();
+                if (initialPlacement)
+                {
+                    AbsoluteTransform parentTransform;
+                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
+
+                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                    sourceNode->m_entityTemplate->placement(placement);
+                }
 
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = RefNew<SceneContentEntityNode>(safeName, std::move(prefabs), *placement, entityData, nullptr);
+                info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
             }
         }
 
@@ -469,7 +806,56 @@ namespace ed
         actionHistory()->execute(action);
     }
 
-    void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass)
+    void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, const ManagedFile* prefabFile, const AbsoluteTransform* initialPlacement)
+    {
+        DEBUG_CHECK_RETURN_EX(prefabFile, "Invalid prefab file");
+        DEBUG_CHECK_RETURN_EX(prefabFile->fileFormat().nativeResourceClass().is<world::Prefab>(), "Not a prefab resource");
+
+        auto prefab = LoadResource<world::Prefab>(prefabFile->depotPath());
+        if (!prefab)
+        {
+            ui::PostWindowMessage(container(), ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", prefabFile->depotPath()));
+            return;
+        }
+        
+        auto coreName = prefabFile->name().view().fileStem();
+
+        Array<AddedNodeData> createdNodes;
+        for (const auto& node : selection)
+        {
+            if (node->canAttach(SceneContentNodeType::Entity))
+            {
+                const auto safeName = node->buildUniqueName(coreName);
+
+                auto sourceNode = RefNew<world::NodeTemplate>();
+                sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+                sourceNode->m_entityTemplate->parent(sourceNode);
+
+                if (initialPlacement)
+                {
+                    AbsoluteTransform parentTransform;
+                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
+
+                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                    sourceNode->m_entityTemplate->placement(placement);
+                }
+
+                auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
+                prefabInfo.enabled = true;
+                prefabInfo.prefab = prefab;
+
+                auto& info = createdNodes.emplaceBack();
+                info.parent = node;
+                info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
+            }
+        }
+
+        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+        actionHistory()->execute(action);
+    }
+
+    void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement)
     {
         DEBUG_CHECK_RETURN(componentClass);
         DEBUG_CHECK_RETURN(!componentClass->isAbstract());
@@ -484,15 +870,23 @@ namespace ed
             if (node->canAttach(SceneContentNodeType::Component))
             {
                 const auto safeName = node->buildUniqueName(coreName);
-                const auto entityData = componentClass->create<base::world::ComponentTemplate>();
 
-                const AbsoluteTransform* placement = &AbsoluteTransform::ROOT();
-                if (auto parentData = rtti_cast<SceneContentDataNode>(node))
-                    placement = &parentData->localToWorldTransform();
+                auto componentData = RefNew<ObjectIndirectTemplate>();
+                componentData->templateClass(componentClass);
+
+                if (initialPlacement)
+                {
+                    AbsoluteTransform parentTransform;
+                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
+
+                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                    componentData->placement(placement);
+                }
 
                 auto& info = createdNodes.emplaceBack();
                 info.parent = node;
-                info.child = RefNew<SceneContentComponentNode>(safeName, *placement, entityData, nullptr);
+                info.child = RefNew<SceneContentComponentNode>(safeName, componentData);
             }
         }
 
@@ -502,128 +896,11 @@ namespace ed
 
     void SceneEditMode_Default::handleTreeContextMenu(ui::MenuButtonContainer* menu, const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection)
     {
-        // set active
-        if (selection.size() == 1)
-        {
-            const auto singleNode = selection[0];
-            const auto alreadyActive = (m_activeNode == selection[0]);
-            menu->createCallback("Make active", alreadyActive ? "[img:star_gray]" : "[img:star]", "", !alreadyActive) = [this, singleNode]()
-            {
-                activeNode(singleNode);
-            };
-            menu->createSeparator();
-        }
-
-        // "add" 
-        {
-            bool canAddEntity = false;
-            bool canAddEmptyEntity = false;
-            bool canAddComponent = false;
-            for (const auto& node : selection)
-            {
-                if (node->canAttach(SceneContentNodeType::Entity))
-                {
-                    canAddEntity = true;
-
-                    if (node->type() == SceneContentNodeType::Entity)
-                        canAddEmptyEntity = true;
-                }
-                
-                if (node->canAttach(SceneContentNodeType::Component))
-                    canAddComponent = true;
-            }
-
-            if (canAddEmptyEntity)
-            {
-                menu->createCallback("Add child", "[img:add]") = [this, selection]()
-                {
-                    createEntityAtNodes(selection, nullptr);
-                };
-            }
-
-            if (canAddEntity)
-            {
-                menu->createSubMenu(m_entityClassSelector, "Add entity", "[img:add]");
-            }
-
-            if (canAddComponent)
-            {
-                menu->createSubMenu(m_componentClassSelector, "Add component", "[img:add]");
-            }
-
-            menu->createSeparator();
-        }
-
-        //--
-        {
-            bool canShow = false;
-            bool canHide = false;
-
-            for (const auto& node : selection)
-            {
-                if (node->localVisibilityFlag())
-                    canHide = true;
-                else
-                    canShow = true;
-            }
-
-            menu->createCallback("Show", "[img:eye]", "", canShow) = [this, selection]()
-            {
-                processObjectShow(selection);
-            };
-
-            menu->createCallback("Hide", "[img:eye_cross]", "", canHide) = [this, selection]()
-            {
-                processObjectHide(selection);
-            };
-
-            menu->createSeparator();
-        }
-
-        //--
-        {
-            bool canDelete = !selection.empty();
-            bool canCopy = !selection.empty();
-            for (const auto& node : selection)
-            {
-                canDelete &= node->canDelete();
-                canCopy &= node->canCopy();
-            }
-
-            // copy
-            menu->createCallback("Copy", "[img:copy]", "Ctrl+C", canCopy) = [this, selection]()
-            {
-                processObjectCopy(selection);
-            };
-
-            // cut
-            menu->createCallback("Cut", "[img:cut]", "Ctrl+X", canCopy && canDelete) = [this, selection]()
-            {
-                processObjectCut(selection);
-            };
-
-            // delete
-            menu->createCallback("Delete", "[img:delete]", "Del", canDelete) = [this, selection]()
-            {
-                processObjectDeletion(selection);
-            };
-
-            // data to paste ?
-            if (m_panel->renderer() && context)
-            {
-                SceneContentClipboardDataPtr data;
-                if (m_panel->renderer()->loadObjectFromClipboard(data))
-                {
-                    if (!data->data.empty() && context->canAttach(data->type))
-                    {
-                        menu->createCallback(TempString("Paste ({} {}(s))", data->data.size(), NodeTypeName(data->type)), "[img:paste]", "Ctrl+V") = [this, context, data]()
-                        {
-                            processObjectPaste(context, data);
-                        };
-                    }
-                }
-            }
-        }
+        ContextMenuSetup setup;
+        setup.contextTreeItem = context;
+        setup.selection = selection;
+        
+        buildContextMenu(menu, setup);
     }
 
     void SceneEditMode_Default::handleTreeDeleteNodes(const Array<SceneContentNodePtr>& selection)
@@ -651,10 +928,98 @@ namespace ed
         if (!data || data->data.empty())
             return;
 
-        if (!target->canAttach(data->type))
-            return;
+        processObjectPaste(target, data, SceneContentNodePasteMode::Relative);
+    }
 
-        processObjectPaste(target, data);
+    bool SceneEditMode_Default::handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file)
+    {
+        return false;
+    }
+
+    struct ActionMoveNodeData
+    {
+        SceneContentNodePtr oldParent;
+        SceneContentNodePtr newParent;
+        SceneContentNodePtr child;
+    };
+
+    struct ASSETS_SCENE_EDITOR_API ActionMoveNodes : public IAction
+    {
+    public:
+        ActionMoveNodes(Array<ActionMoveNodeData>&& nodes, Array<SceneContentNodePtr>&& oldSelection, SceneEditMode_Default* mode)
+            : m_nodes(std::move(nodes))
+            , m_oldSelection(std::move(oldSelection))
+            , m_mode(mode)
+        {
+            m_newSelection.reserve(m_nodes.size());
+            for (const auto& info : m_nodes)
+                m_newSelection.pushBack(info.child);
+        }
+
+        virtual StringID id() const override
+        {
+            return "MoveNodes"_id;
+        }
+
+        StringBuf description() const override
+        {
+            return TempString("Move nodes(s)");
+        }
+
+        virtual bool execute() override
+        {
+            for (const auto& info : m_nodes)
+            {
+                info.oldParent->detachChildNode(info.child);
+                info.newParent->attachChildNode(info.child);
+            }
+
+            m_mode->changeSelection(m_newSelection);
+            return true;
+        }
+
+        virtual bool undo() override
+        {
+            for (const auto& info : m_nodes)
+            {
+                info.newParent->detachChildNode(info.child);
+                info.oldParent->attachChildNode(info.child);
+            }
+
+            m_mode->changeSelection(m_oldSelection);
+            return true;
+        }
+
+    private:
+        Array<SceneContentNodePtr> m_oldSelection;
+        Array<SceneContentNodePtr> m_newSelection;
+        Array<ActionMoveNodeData> m_nodes;
+        SceneEditMode_Default* m_mode = nullptr;
+    };
+
+    bool SceneEditMode_Default::handleTreeNodeDrop(const SceneContentNodePtr& target, const SceneContentNodePtr& source)
+    {
+        Array<ActionMoveNodeData> nodes;
+
+        if (target && source && !source->contains(target))
+        {
+            if (source->canDelete())
+            {
+                auto& entry = nodes.emplaceBack();
+                entry.child = source;
+                entry.oldParent = AddRef(source->parent());
+                entry.newParent = target;
+            }
+        }
+
+        if (nodes.empty())
+            return false;
+
+        auto oldSelection = m_selection.keys();
+        auto action = RefNew<ActionMoveNodes>(std::move(nodes), std::move(oldSelection), this);
+        actionHistory()->execute(action);
+
+        return true;
     }
 
     //--
@@ -708,6 +1073,11 @@ namespace ed
 
     //--
 
+    void SceneEditMode_Default::handleGeneralDuplicate()
+    {
+        processObjectDuplicate(selection().keys());
+    }
+
     void SceneEditMode_Default::handleGeneralCopy()
     {
         processObjectCopy(selection().keys());
@@ -729,7 +1099,7 @@ namespace ed
         if (!data || data->data.empty() || !context->canAttach(data->type))
             return;
 
-        processObjectPaste(context, data);
+        processObjectPaste(context, data, SceneContentNodePasteMode::Absolute);
     }
 
     void SceneEditMode_Default::handleGeneralDelete()
@@ -738,6 +1108,11 @@ namespace ed
     }
 
     bool SceneEditMode_Default::checkGeneralCopy() const
+    {
+        return m_canCopySelection;
+    }
+
+    bool SceneEditMode_Default::checkGeneralDuplicate() const
     {
         return m_canCopySelection;
     }
@@ -790,7 +1165,7 @@ namespace ed
         virtual bool execute() override
         {
             for (const auto& info : m_nodes)
-                info.node->changePlacement(info.newTransform);
+                info.node->changeLocalPlacement(info.newTransform);
 
             if (m_fullContentRefresh)
                 refreshEntityContent();
@@ -802,7 +1177,7 @@ namespace ed
         virtual bool undo() override
         {
             for (const auto& info : m_nodes)
-                info.node->changePlacement(info.oldTransform);
+                info.node->changeLocalPlacement(info.oldTransform);
 
             if (m_fullContentRefresh)
                 refreshEntityContent();
@@ -894,6 +1269,199 @@ namespace ed
         }
 
         return false;
+    }
+
+    //--
+
+    void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentNodePtr>& inputNodes, const std::function<world::NodeTemplatePtr(world::NodeTemplate* currentData)>& func)
+    {
+        auto oldSelection = inputNodes;
+
+        Array<SceneContentDataNodePtr> inputRootNodes;
+        ExtractSelectionRoots(inputNodes, inputRootNodes);
+
+        Array<ActionModifyPrefabsNodeData> nodes;
+        nodes.reserve(inputRootNodes.size());
+        for (const auto& inputNode : inputRootNodes)
+        {
+            if (auto entity = rtti_cast<SceneContentEntityNode>(inputNode))
+            {
+                auto& entry = nodes.emplaceBack();
+
+                entry.node = entity;
+
+                auto content = entity->compileDifferentialData();
+
+                entity->extractCurrentInstancedContent(entry.oldInstancedContentet);
+
+                content = func(content);
+
+                entity->createInstancedContent(content, entry.newInstancedContentet);
+            }
+        }
+
+        if (!nodes.empty())
+        {
+            auto action = RefNew< ActionModifyPrefabs>(std::move(nodes), std::move(oldSelection), this);
+            actionHistory()->execute(action);
+        }
+    }
+
+    void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+    {
+        const auto path = res::ResourcePath(file->depotPath());
+
+        const auto prefabRef = LoadResource<world::Prefab>(file->depotPath());
+        if (!prefabRef)
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", path));
+            return;
+        }
+
+        processGenericPrefabAction(inputNodes, [file, &path, prefabRef](world::NodeTemplate* node) -> world::NodeTemplatePtr
+            {
+                bool contains = false;
+                for (const auto& prefab : node->m_prefabAssets)
+                {
+                    if (prefab.prefab.key().path() == path)
+                    {
+                        contains = true;
+                    }
+                }
+
+                if (!contains)
+                {
+                    auto& entry = node->m_prefabAssets.emplaceBack();
+                    entry.enabled = true;
+                    entry.prefab = prefabRef;
+                }
+
+                return AddRef(node);
+            });
+    }
+
+    void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+    {
+        InplaceArray<res::ResourcePath, 10> paths;
+
+        for (const auto* file : files)
+            if (const auto path = res::ResourcePath(file->depotPath()))
+                paths.pushBack(path);
+
+        processGenericPrefabAction(inputNodes, [&paths](world::NodeTemplate* node) -> world::NodeTemplatePtr
+            {
+                for (auto i : node->m_prefabAssets.indexRange().reversed())
+                {
+                    const auto& path = node->m_prefabAssets[i].prefab.key().path();
+                    if (paths.contains(path))
+                        node->m_prefabAssets.erase(i);
+                }
+
+                return AddRef(node);
+            });
+    }
+
+    void SceneEditMode_Default::cmdMovePrefabFileUp(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+    {
+
+    }
+
+    void SceneEditMode_Default::cmdMovePrefabFileDown(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+    {
+
+    }
+
+    void SceneEditMode_Default::cmdEnablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+    {
+
+    }
+
+    void SceneEditMode_Default::cmdDisablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+    {
+
+    }
+
+    //--
+
+    void SceneEditMode_Default::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
+    {
+        ContextMenuSetup setup;
+        setup.viewportBased = true;
+        setup.selection = selection().keys();
+        setup.contextClickedItem = container()->resolveSelectable(objectUnderCursor);
+
+        if (positionUnderCursor)
+        {
+            auto pos = *positionUnderCursor;
+
+            if (container()->gridSettings().positionGridEnabled)
+            {
+                double x, y, z;
+                pos.expand(x, y, z);
+
+                auto snappedX = Snap(x, container()->gridSettings().positionGridSize);
+                auto snappedY = Snap(y, container()->gridSettings().positionGridSize);
+                auto snappedZ = Snap(z, container()->gridSettings().positionGridSize);
+                pos = base::AbsolutePosition(snappedX, snappedY, snappedZ);
+            }
+
+            setup.contextWorldPositionValid = true;
+            setup.contextWorldPosition = pos;
+        }
+
+        auto menu = RefNew<ui::MenuButtonContainer>();
+        buildContextMenu(menu, setup);
+
+        if (auto popup = menu->convertToPopup())
+            popup->show(panel, ui::PopupWindowSetup().relativeToCursor().bottomLeft().interactive().autoClose());
+    }
+
+    //--
+
+    void SceneEditMode_Default::processCreateLayer(const Array<SceneContentNodePtr>& selection)
+    {
+        static StringBuf name = "layer";
+        if (ui::ShowInputBox(m_panel, ui::InputBoxSetup().title("New layer").message("Enter name of new layer:").fileNameValidation(), name))
+        {
+            Array<AddedNodeData> createdNodes;
+            for (const auto& node : selection)
+            {
+                if (node->canAttach(SceneContentNodeType::LayerFile))
+                {
+                    const auto safeName = node->buildUniqueName(name, true);
+
+                    auto& info = createdNodes.emplaceBack();
+                    info.parent = node;
+                    info.child = RefNew<SceneContentWorldLayer>(safeName);
+                }
+            }
+
+            auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+            actionHistory()->execute(action);
+        }
+    }
+
+    void SceneEditMode_Default::processCreateDirectory(const Array<SceneContentNodePtr>& selection)
+    {
+        static StringBuf name = "dir";
+        if (ui::ShowInputBox(m_panel, ui::InputBoxSetup().title("New directory").message("Enter name of new layer directory:").fileNameValidation(), name))
+        {
+            Array<AddedNodeData> createdNodes;
+            for (const auto& node : selection)
+            {
+                if (node->canAttach(SceneContentNodeType::LayerDir))
+                {
+                    const auto safeName = node->buildUniqueName(name, true);
+
+                    auto& info = createdNodes.emplaceBack();
+                    info.parent = node;
+                    info.child = RefNew<SceneContentWorldDir>(safeName, false);
+                }
+            }
+
+            auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+            actionHistory()->execute(action);
+        }
     }
 
     //--

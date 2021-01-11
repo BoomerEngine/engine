@@ -1362,7 +1362,7 @@ namespace ui
                 auto currentPos = m_lastMouseMovementPosition;
                 if (currentPos.distance(m_potentialContextMenuElementClickPos.toVector()) < 5.0f)
                 {
-                    target->handleContextMenu(target->cachedDrawArea(), currentPos);
+                    target->handleContextMenu(target->cachedDrawArea(), currentPos, evt.keyMask().mask());
                 }
             }
         }

@@ -191,6 +191,36 @@ namespace rendering
             outCorners[3] = screenToWorld().transformVector4(base::Vector4(-1.0f, -1.0f, zPlane, 1.0f)).projected();
         }
 
+        // screenZ = (worldZ * m22 + m23) / worldZ;
+        // screenZ = m22 + m23 / worldZ;
+        // screenZ - m22 = m23 / worldZ;
+        // (screenZ - m22) / m23 = 1 / worldZ;
+        // worldZ = m23 / (screenZ - m22);
+
+        float Camera::linearZToProjectedZ(float linearZ) const
+        {
+            if (linearZ <= m_setup.nearPlane)
+                return 0.0f;
+            else if (linearZ >= m_setup.farPlane)
+                return 1.0f;
+
+            float m22 = viewToScreen().m[2][2];
+            float m23 = viewToScreen().m[2][3];
+            return (linearZ * m22 + m23) / linearZ;
+        }
+
+        float Camera::projectedZToLinearZ(float projectedZ) const
+        {
+            if (projectedZ <= 0.0f)
+                return m_setup.nearPlane;
+            else if (projectedZ >= 1.0f)
+                return m_setup.farPlane;
+
+            float m22 = viewToScreen().m[2][2];
+            float m23 = viewToScreen().m[2][3];
+            return m23 / (projectedZ - m22);
+        }
+
         //---
 
         namespace helper

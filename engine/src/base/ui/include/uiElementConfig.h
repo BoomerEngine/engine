@@ -68,9 +68,6 @@ namespace ui
         // get a child block for given tag
         ConfigBlock tag(base::StringView tag) const;
 
-        // get a child block for given resource path
-        ConfigBlock path(base::StringView path) const;
-
         //--
 
     private:
@@ -102,7 +99,47 @@ namespace ui
         //--
 
     private:
-        base::config::Storage* m_storage = nullptr;
+        struct Value
+        {
+            RTTI_DECLARE_POOL(POOL_CONFIG);
+
+        public:
+            base::StringBuf key;
+            base::Variant value;
+
+            Value();
+            ~Value();
+
+            bool read(base::Type type, void* data) const;
+            bool write(base::Type type, const void* data);
+
+            void save(base::xml::IDocument& doc, base::xml::NodeID nodeId) const;
+            bool load(const base::xml::IDocument& doc, base::xml::NodeID nodeId);
+        };
+
+        struct Group
+        {
+            RTTI_DECLARE_POOL(POOL_CONFIG);
+
+        public:
+            base::StringBuf name;
+            base::Array<Group*> children;
+            base::Array<Value*> values;
+
+            Group();
+            ~Group();
+
+            Value* findOrCreate(base::StringView key);
+            const Value* findExisting(base::StringView key) const;
+
+            void save(base::xml::IDocument& doc, base::xml::NodeID nodeId) const;
+            bool load(const base::xml::IDocument& doc, base::xml::NodeID nodeId);
+        };
+
+        Group* findOrCreateEntry(base::StringView path);
+        const Group* findExistingEntry(base::StringView path) const;
+
+        Group* m_root = nullptr;
     };
 
     //------

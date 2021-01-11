@@ -47,6 +47,12 @@ namespace ed
     class SceneContentClipboardData;
     typedef RefPtr<SceneContentClipboardData> SceneContentClipboardDataPtr;
 
+    class SceneContentWorldLayer;
+    typedef RefPtr<SceneContentWorldLayer> SceneContentWorldLayerPtr;
+
+    class SceneContentWorldDir;
+    typedef RefPtr<SceneContentWorldDir> SceneContentWorldDirPtr;
+
     //--
 
     // events emitted by structure
@@ -100,8 +106,17 @@ namespace ed
 
     enum class SceneContentNodePasteMode : uint8_t
     {
-        Absolute,
-        Relative
+        Relative, // leave all placements are they are (in parent space)
+        Absolute, // place nodes at their original absolute world positions
+    };
+
+    //--
+
+    enum class SceneContentNodeCreationMode : uint8_t
+    {
+        Component, // create naked component (requires entity to be a context - not a layer)
+        WrappedComponent, // create a single component wrapped in an entity
+        Entity, // create specific full entity (no components)
     };
 
     //--

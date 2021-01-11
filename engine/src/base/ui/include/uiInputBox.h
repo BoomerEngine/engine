@@ -28,6 +28,8 @@ namespace ui
         INLINE InputBoxSetup& message(base::StringView txt) { m_message = base::StringBuf(txt); return *this; }
         INLINE InputBoxSetup& hint(base::StringView txt) { m_hint = base::StringBuf(txt); return *this; }
         INLINE InputBoxSetup& multiline(bool flag = true) { m_multiline = flag; return *this; }
+
+        InputBoxSetup& fileNameValidation(bool withExt = false);
     };
 
     ///----

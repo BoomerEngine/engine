@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "base/world/include/worldNodeTemplate.h"
+
 namespace ed
 {
 
@@ -119,6 +121,47 @@ namespace ed
         // report dirty content of some sorts that will require sync with visual 
         void markDirty(SceneContentNodeDirtyFlags flags);
 
+        // find child node by name
+        SceneContentNode* findChild(StringView name) const;
+
+        //--
+
+        // generate unique node name within avoiding the ones in the "takenNames"
+        static StringBuf BuildUniqueName(StringView coreName, bool userGiven, const HashSet<StringBuf>& takenNames);
+
+        // generate unique CHILD node name, can additionally avoid names from the taken list
+        StringBuf buildUniqueName(StringView coreName, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
+
+        // change node name
+        void name(const StringBuf& name);
+
+        // get the UI icon for given node type
+        static StringView IconTextForType(SceneContentNodeType type);
+
+        //--
+
+        // collect parent nodes (roots first)
+        void collectHierarchyNodes(Array<const SceneContentNode*>& outNodes) const;
+
+        // check if this node contains given node down the hierarchy (returns true if both are the same as well)
+        bool contains(const SceneContentNode* node) const;
+
+        // build a string representing node full path
+        StringBuf buildHierarchicalName() const; // /world/layers/crap/entity
+
+        //--
+
+        // enumerate classes of components that can be initialized from a given primary resource (ie. MeshComponent from Mesh, etc)
+        static void EnumComponentClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Component>>& outComponentClasses);
+
+        // enumerate classes of entities that can be initialized from a given primary resource
+        static void EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Entity>>& outEntityClasses);
+
+        //--
+
+        // HACK: selection filtering flag, REMOVE
+        bool tempFlag = false;
+
         //--
 
         virtual void handleChildAdded(SceneContentNode* child);
@@ -132,14 +175,6 @@ namespace ed
 
         virtual void displayText(IFormatStream& f) const;
         virtual void markModified() override;
-
-        StringBuf buildUniqueName(StringView coreName, bool userGiven = false, const HashSet<StringBuf>* additionalTakenName=nullptr) const;
-
-        void name(const StringBuf& name);
-
-        //--
-
-        bool tempFlag = false;
 
         //--
 
@@ -212,11 +247,14 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentWorldDir, SceneContentNode);
 
     public:
-        SceneContentWorldDir(const StringBuf& name);
+        SceneContentWorldDir(const StringBuf& name, bool system);
 
         virtual bool canAttach(SceneContentNodeType type) const override final;
         virtual bool canDelete() const override final;
         virtual bool canCopy() const override final;
+
+    private:
+        bool m_systemDirectory = false;
     };
 
     //--
@@ -242,43 +280,49 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentDataNode, SceneContentNode);
 
     public:
-        SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const AbsoluteTransform& localToWorld, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData=nullptr); // NOTE: objects ownership is changed
+        SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const ObjectIndirectTemplate* editableData);
 
         // do we have override content defined at this node (coming from prefab)
-        INLINE bool hasBaseContent() const { return !!m_baseData; }
+        INLINE bool hasBaseContent() const { return !m_baseData.empty(); }
 
-        // editable data of this node, always valid
-        INLINE const ObjectTemplatePtr& editableData() const { return m_editableData; }
+        // base data of this node, always valid if we come from prefab - NOTE: we might have more than one base node (if so, data is stacked)
+        INLINE const Array<ObjectIndirectTemplatePtr>& baseData() const { return m_baseData; }
 
-        // base data of this node, always valid
-        INLINE const ObjectTemplatePtr& baseData() const { return m_baseData; }
+        // editable data of this node, always valid, stacked on top of any base nodes
+        INLINE const ObjectIndirectTemplatePtr& editableData() const { return m_editableData; }
+
+        // get current local to parent transform (it's always the placement from editable data)
+        INLINE const EulerTransform& localToParent() const { return m_localToWorld; }
 
         // get the cached "local to world" for this node
-        INLINE const AbsoluteTransform& localToWorldTransform() const { return m_localToWorldPlacement; }
+        INLINE const AbsoluteTransform& cachedLocalToWorldTransform() const { return m_cachedLocalToWorldPlacement; }
 
         // get the cached "local to world" for this node
         INLINE const Matrix& cachedLocalToWorldMatrix() const { return m_cachedLocalToWorldMatrix; }
 
         //--
 
-        // compute node local transform with respect to parent node
-        // NOTE: expensive and not cached
-        Transform calcLocalToParent() const;
-
         // get parent transform
-        const AbsoluteTransform& parentToWorldTransform() const;
+        const AbsoluteTransform& cachedParentToWorldTransform() const;
 
-        // change placement of the node in world space 
+        // change local to parent placement
         // NOTE: placement of child nodes is NOT changed
-        void changePlacement(const AbsoluteTransform& newLocalToWorld, bool force = false);
+        void changeLocalPlacement(const EulerTransform& localToParent, bool force = false);
 
-        // change data object hold at node
-        void changeData(const ObjectTemplatePtr& data);
+        // change class of data
+        void changeClass(ClassType templateClass);
+
+        // determine data class
+        ClassType dataClass() const;
+
+        // flatten template data
+        ObjectIndirectTemplatePtr compileFlatData() const;
 
         //--
 
     protected:
         void cacheTransformData();
+        void updateBaseTemplates(const Array<const ObjectIndirectTemplate*>& baseTemplates);
 
         virtual void handleTransformUpdated();
         virtual void handleDebugRender(rendering::scene::FrameParams& frame) const override;
@@ -287,37 +331,25 @@ namespace ed
         virtual void displayText(IFormatStream& txt) const override;
 
     private:
-        AbsoluteTransform m_localToWorldPlacement; // local to world placement for the node
+        AbsoluteTransform m_cachedLocalToWorldPlacement; // local to world placement for the node
         Matrix m_cachedLocalToWorldMatrix; // changed whenever parent changes as well
 
-        ObjectTemplatePtr m_editableData; // always valid
-        ObjectTemplatePtr m_baseData; // valid only if we are instanced from a prefab
+        ObjectIndirectTemplatePtr m_editableData; // always valid
+        InplaceArray<ObjectIndirectTemplatePtr, 2> m_baseData; // valid only if we are instanced from a prefab
+        EulerTransform m_baseLocalToTransform;
+
+        EulerTransform m_localToWorld; // editable + base
 
         GlobalEventTable m_dataEvents;
     };
 
     //--
 
-    class ASSETS_SCENE_EDITOR_API SceneContentEntityNodePrefabSource : public IObject
+    struct SceneContentEntityInstancedContent
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNodePrefabSource, IObject);
-
-    public:
-        SceneContentEntityNodePrefabSource(const base::world::PrefabRef& prefab, bool enabled, bool inherited);
-
-        INLINE const base::world::PrefabRef& prefab() const { return m_prefab; }
-
-        INLINE bool enabled() const { return m_enabled; }
-
-        INLINE bool inherited() const { return m_inherited; }
-
-    private:
-        base::world::PrefabRef m_prefab;
-        bool m_enabled = true;
-        bool m_inherited = false;
+        Array<world::NodeTemplatePrefabSetup> localPrefabs;
+        Array<SceneContentNodePtr> childNodes;
     };
-
-    //--
 
     /// general entity node (always in a file, can be parented to other entity)
     class ASSETS_SCENE_EDITOR_API SceneContentEntityNode : public SceneContentDataNode
@@ -325,17 +357,23 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentDataNode);
 
     public:
-        SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const AbsoluteTransform& localToWorld, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData = nullptr);
+        SceneContentEntityNode(const StringBuf& name, const world::NodeTemplatePtr& node, const Array<world::NodeTemplatePtr>& inheritedTemplated = Array<world::NodeTemplatePtr>());
 
-        INLINE const Array<RefPtr<SceneContentEntityNodePrefabSource>>& prefabs() const { return m_prefabAssets; }
+        INLINE const Array<world::NodeTemplatePrefabSetup>& localPrefabs() const { return m_localPrefabs; }
 
-        base::world::EntityTemplatePtr compileData() const;
+        world::NodeTemplatePtr compileDifferentialData() const;
 
-        base::world::NodeTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
+        world::NodeTemplatePtr compileSnapshot() const;
 
-        base::world::NodeTemplatePtr compileSnapshot() const;
+        world::NodeTemplatePtr compiledForCopy() const;
 
         void invalidateData();
+
+        //--
+
+        void extractCurrentInstancedContent(SceneContentEntityInstancedContent& outInstancedContent); // NOTE: destructive !
+        void createInstancedContent(const world::NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outInstancedContent) const;
+        void applyInstancedContent(const SceneContentEntityInstancedContent& content);
 
         //--
 
@@ -343,8 +381,11 @@ namespace ed
         virtual bool canDelete() const override final;
         virtual bool canCopy() const override final;
 
+        bool canExplodePrefab() const;
+
     private:
-        Array<RefPtr<SceneContentEntityNodePrefabSource>> m_prefabAssets;
+        Array<world::NodeTemplatePtr> m_inheritedTemplates;
+        Array<world::NodeTemplatePrefabSetup> m_localPrefabs;
 
         bool m_dirtyVisualData = false;
         bool m_dirtyVisualTransform = false;
@@ -353,6 +394,9 @@ namespace ed
         virtual void handleChildAdded(SceneContentNode* child) override;
         virtual void handleChildRemoved(SceneContentNode* child) override;
         virtual void handleVisibilityChanged() override;
+
+        void updateBaseTemplates();
+        void collectBaseNodes(const Array<world::NodeTemplatePrefabSetup>& localPrefabs, Array<const world::NodeTemplate*>& outBaseNodes) const;
     };
 
     //--
@@ -363,11 +407,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentComponentNode, SceneContentDataNode);
 
     public:
-        SceneContentComponentNode(const StringBuf& name, const AbsoluteTransform& localToWorld, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData = nullptr);
-
-        base::world::ComponentTemplatePtr compileData() const;
-
-        base::world::ComponentTemplatePtr compileDifferentialData(bool& outAnyMeaningfulData) const;
+        SceneContentComponentNode(const StringBuf& name, const ObjectIndirectTemplate* editableData, const Array<const ObjectIndirectTemplate*>& baseData = Array<const ObjectIndirectTemplate*>());
 
         virtual bool canAttach(SceneContentNodeType type) const override final;
         virtual bool canDelete() const override final;
@@ -378,12 +418,6 @@ namespace ed
         virtual void handleTransformUpdated() override;
         virtual void handleLocalVisibilityChanged() override;
     };
-
-    //--
-
-    // unpack a node hierarchy into editable node structure
-    // NOTE: this can be called only on non-instanced node data, usually the root node, otherwise it's meaningless
-    extern ASSETS_SCENE_EDITOR_API SceneContentEntityNodePtr UnpackNode(const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities = nullptr);
 
     //--
 

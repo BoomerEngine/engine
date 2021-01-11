@@ -284,12 +284,11 @@ namespace base
 
         //--
 
-        EntityPtr World::createPrefabInstance(const AbsoluteTransform& placement, const Prefab* prefab, int rootNodeIndex)
+        EntityPtr World::createPrefabInstance(const AbsoluteTransform& placement, const Prefab* prefab, StringID appearance)
         {
             DEBUG_CHECK_RETURN_V(prefab, nullptr);
-            DEBUG_CHECK_RETURN_V(rootNodeIndex >= 0 && rootNodeIndex <= prefab->nodes().lastValidIndex(), nullptr);
 
-            const auto& rootNode = prefab->nodes()[rootNodeIndex];
+            const auto& rootNode = prefab->root();
             DEBUG_CHECK_RETURN_V(rootNode, nullptr);
 
             InplaceArray<EntityPtr, 10> allEntities;

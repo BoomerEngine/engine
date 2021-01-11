@@ -88,6 +88,9 @@ namespace ed
         // handle viewport selection result
         virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables);
 
+        // handle viewport context menu
+        virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor);
+
         // update state
         virtual void handleUpdate(float dt);
 
@@ -109,6 +112,12 @@ namespace ed
         // handle request to paste nodes at given tree node
         virtual void handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode);
 
+        // handle a resource drop on a scene node
+        virtual bool handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file);
+
+        // handle a drag&drop of another node
+        virtual bool handleTreeNodeDrop(const SceneContentNodePtr& target, const SceneContentNodePtr& source);
+
         //--
 
         // general clipboard operations
@@ -116,12 +125,14 @@ namespace ed
         virtual void handleGeneralCut();
         virtual void handleGeneralPaste();
         virtual void handleGeneralDelete();
+        virtual void handleGeneralDuplicate();
 
         // general clipboard operation filter
         virtual bool checkGeneralCopy() const;
         virtual bool checkGeneralCut() const;
         virtual bool checkGeneralPaste() const;
         virtual bool checkGeneralDelete() const;
+        virtual bool checkGeneralDuplicate() const;
 
     private:
         ScenePreviewContainer* m_container = nullptr;
@@ -138,6 +149,9 @@ namespace ed
 
     // create default set of tools for gizmos
     extern ASSETS_SCENE_EDITOR_API void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar);
+
+    // create default set of tools for object creation
+    extern ASSETS_SCENE_EDITOR_API void CreateDefaultCreationButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar);
 
     //--
 

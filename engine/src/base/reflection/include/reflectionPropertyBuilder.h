@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/containers/include/stringBuf.h"
+#include "base/object/include/rttiProperty.h"
 
 namespace base
 {
@@ -47,7 +48,7 @@ namespace base
             INLINE PropertyBuilder& editable(const char* hint = "")
             {
                 m_editable = true;
-                m_comment = hint;
+                m_editorData.m_comment = hint;
                 return *this;
             }
 
@@ -102,13 +103,68 @@ namespace base
                 return *this;
             }
 
+            INLINE PropertyBuilder& editor(StringID id)
+            {
+                m_editorData.m_customEditor = id;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& comment(StringView txt)
+            {
+                m_editorData.m_comment = StringBuf(txt);
+                return *this;
+            }
+
+            INLINE PropertyBuilder& units(StringView txt)
+            {
+                m_editorData.m_units = StringBuf(txt);
+                return *this;
+            }
+
+            INLINE PropertyBuilder& range(double min, double max)
+            {
+                m_editorData.m_rangeMin = min;
+                m_editorData.m_rangeMax = max;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& digits(uint8_t numDigits)
+            {
+                m_editorData.m_digits = numDigits;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& hasAlpha()
+            {
+                m_editorData.m_colorWithAlpha = true;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& noDefaultValue()
+            {
+                m_editorData.m_noDefaultValue = true;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& widgetDrag(bool wrap=false)
+            {
+                m_editorData.m_widgetDrag = true;
+                m_editorData.m_widgetDragWrap = wrap;
+                return *this;
+            }
+
+            INLINE PropertyBuilder& widgetSlider()
+            {
+                m_editorData.m_widgetSlider = true;
+                return *this;
+            }
+
         private:
             Type m_type;
             StringID m_name;
             StringID m_category;
             uint32_t m_offset = 0;
 
-            StringBuf m_comment;
             bool m_editable = false;
             bool m_inlined = false;
             bool m_readonly = false;
@@ -117,6 +173,8 @@ namespace base
             bool m_transient = false;
             bool m_overriddable = false;
             bool m_noReset = false;
+
+            rtti::PropertyEditorData m_editorData;
 
             Array<rtti::IMetadata*> m_metadata;
         };

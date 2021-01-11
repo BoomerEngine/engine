@@ -13,6 +13,7 @@
 
 #include "base/resource/include/resourceFactory.h"
 #include "base/resource/include/resourceTags.h"
+#include "base/resource/include/objectIndirectTemplate.h"
 
 namespace base
 {
@@ -33,7 +34,12 @@ namespace base
         public:
             virtual res::ResourceHandle createResource() const override final
             {
-                return RefNew<Prefab>();
+                const auto seed = rand(); // TODO!
+
+                auto prefab = RefNew<Prefab>(seed);
+                prefab->setup(nullptr);
+
+                return prefab;
             }
         };
 
@@ -43,33 +49,56 @@ namespace base
 
         ///----
 
-	    RTTI_BEGIN_TYPE_CLASS(Prefab);
-            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4prefab");
-            RTTI_PROPERTY(m_nodes);
+        RTTI_BEGIN_TYPE_CLASS(PrefabAppearance);
+            RTTI_PROPERTY(name);
+            RTTI_PROPERTY(randomWeight);
         RTTI_END_TYPE();
 
-        Prefab::Prefab()
+        PrefabAppearance::PrefabAppearance()
+        {}
+
+        ///----
+
+	    RTTI_BEGIN_TYPE_CLASS(Prefab);
+            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4prefab");
+            RTTI_METADATA(res::ResourceDescriptionMetadata).description("Prefab");
+            RTTI_METADATA(res::ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
+            RTTI_PROPERTY(m_root);
+            RTTI_PROPERTY(m_appearances);
+            RTTI_PROPERTY(m_internalSeed);
+        RTTI_END_TYPE();
+
+        Prefab::Prefab(uint64_t seed)
+            : m_internalSeed(seed)
         {
         }
 
-        void Prefab::setup(const Array<NodeTemplatePtr>& nodes)
+        void Prefab::setup(NodeTemplate* root)
         {
-            for (const auto& node : m_nodes)
-                node->parent(nullptr);
-
-            m_nodes.reset();
-
-            for (const auto& node : nodes)
+            if (root)
             {
-                if (node)
-                {
-                    DEBUG_CHECK(node->parent() == nullptr);
-                    node->parent(this);
-                    m_nodes.pushBack(node);
-                }
+                m_root = AddRef(root);
+                m_root->parent(this);
+            }
+            else
+            {
+                m_root = RefNew<NodeTemplate>();
+                m_root->m_name = "default"_id;
+                m_root->parent(this);
+
+                m_root->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+                m_root->m_entityTemplate->parent(m_root);
             }
 
             markModified();
+        }
+
+        void Prefab::onPostLoad()
+        {
+            TBaseClass::onPostLoad();
+
+            if (!m_root)
+                setup(nullptr);
         }
 
         //--

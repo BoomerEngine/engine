@@ -22,14 +22,17 @@ namespace ed
 
     public:
         SceneContentNodeType type; // type of content
-        StringBuf name; // name of the node
+        StringBuf name;
 
-        AbsoluteTransform worldPlacement; // placement in the world space
-        Transform localPlacement; // placement with respect to parent
-        ObjectTemplatePtr fullData; // full merged payload (base + editable)
-        ObjectTemplatePtr overrideData; // just the override data
+        EulerTransform localPlacement; // original placement with respect to parent
+        AbsoluteTransform worldPlacement; // original placement in the world space
 
-        Array<SceneContentClipboardNodePtr> children;
+        //--
+
+        world::NodeTemplatePtr packedEntityData;
+        ObjectIndirectTemplatePtr packedComponentData;
+
+        //--
 
         SceneContentClipboardNode();
     };

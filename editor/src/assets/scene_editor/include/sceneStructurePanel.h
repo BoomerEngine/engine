@@ -13,7 +13,15 @@ namespace ed
 {
     //--
 
-    // model for a mesh structure tree
+    struct ScenePreset
+    {
+        Array<StringBuf> expandedNodes;
+        Array<StringBuf> hiddenNodes;
+    };
+
+    //--
+
+    // view model for a scene structure tree
     class ASSETS_SCENE_EDITOR_API SceneContentTreeModel : public ui::IAbstractItemModel
     {
     public:
@@ -34,6 +42,7 @@ namespace ed
         virtual ui::DragDropDataPtr queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& item) override final;
         virtual ui::DragDropHandlerPtr handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos) override final;
         virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
+        virtual bool handleIconClick(const ui::ModelIndex& item, int columnIndex) const override final;
 
         virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
 
@@ -58,7 +67,7 @@ namespace ed
 
     //--
 
-    // a preview panel for an image
+    // scene structure panel (tree)
     class ASSETS_SCENE_EDITOR_API SceneStructurePanel : public ui::IElement
     {
         RTTI_DECLARE_VIRTUAL_CLASS(SceneStructurePanel, ui::IElement);
@@ -68,13 +77,25 @@ namespace ed
         virtual ~SceneStructurePanel();
 
         void syncExternalSelection(const Array<SceneContentNodePtr>& nodes);
+        
+        virtual void configSave(const ui::ConfigBlock& block) const;
+        virtual void configLoad(const ui::ConfigBlock& block);
 
     private:
         RefPtr<SceneContentStructure> m_scene;
         RefPtr<ScenePreviewContainer> m_preview;
 
+        ui::ComboBoxPtr m_presets;
+
+        ui::SearchBarPtr m_searchBar;
+
         ui::TreeViewPtr m_tree;
         base::RefPtr<SceneContentTreeModel> m_treeModel;
+
+        void presetAddNew();
+        void presetRemove();
+        void presetSave();
+        void presetSelect();
 
         void treeSelectionChanged();
 

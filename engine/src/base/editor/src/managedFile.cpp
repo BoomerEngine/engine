@@ -199,7 +199,7 @@ namespace ed
         editor->createAspects();
 
         // load the general editor config
-        const auto configBlock = GetService<Editor>()->config().path(depotPath());
+        const auto configBlock = GetService<Editor>()->config().tag(depotPath());
         editor->configLoad(configBlock);
 
         // attach editor to main window and select it

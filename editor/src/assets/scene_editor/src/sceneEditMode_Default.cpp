@@ -21,8 +21,8 @@
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
 #include "base/object/include/actionHistory.h"
-#include "base/world/include/worldEntityTemplate.h"
-#include "base/world/include/worldComponentTemplate.h"
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/worldComponent.h"
 
 namespace ed
 {
@@ -37,17 +37,19 @@ namespace ed
     {
         m_panel = RefNew<SceneDefaultPropertyInspectorPanel>(this);
 
-        m_entityClassSelector = RefNew<ui::ClassPickerBox>(base::world::EntityTemplate::GetStaticClass(), nullptr, false, false, "", false);
-        m_componentClassSelector = RefNew<ui::ClassPickerBox>(base::world::ComponentTemplate::GetStaticClass(), nullptr, false, false, "", false);
+        m_entityClassSelector = RefNew<ui::ClassPickerBox>(base::world::Entity::GetStaticClass(), nullptr, false, false, "", false);
+        m_componentClassSelector = RefNew<ui::ClassPickerBox>(base::world::Component::GetStaticClass(), nullptr, false, false, "", false);
 
         m_entityClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType type)
         {
-            createEntityAtNodes(m_selection.keys(), type);
+            const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
+            createEntityAtNodes(m_contextMenuContextNodes, type, placement);
         };
 
         m_componentClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType type)
         {
-            createComponentAtNodes(m_selection.keys(), type);
+            const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
+            createComponentAtNodes(m_contextMenuContextNodes, type, placement);
         };
     }
 
@@ -120,7 +122,7 @@ namespace ed
                         hasComponent = true;
 
                     const auto* dataNode = static_cast<const SceneContentDataNode*>(data.get());
-                    if (dataNode->baseData())
+                    if (!dataNode->baseData().empty())
                     {
                         m_canCutSelection = false;
                         m_canDeleteSelection = false;
@@ -160,6 +162,16 @@ namespace ed
 
         m_selection = std::move(newSelectionSet);
 
+        m_selectionRoots.reset();
+        ExtractSelectionRoots(m_selection.keys(), m_selectionRoots);
+
+        m_selectionRootEntities.reset();
+        m_selectionRootEntities.reserve(m_selectionRoots.size());
+
+        for (const auto& ptr : m_selectionRoots)
+            if (auto entity = rtti_cast<SceneContentEntityNode>(ptr))
+                m_selectionRootEntities.pushBack(entity);
+
         updateSelectionFlags();
         handleSelectionChanged();
     }
@@ -184,11 +196,12 @@ namespace ed
         return m_selection.keys();
     }
 
-    void SceneEditMode_Default::configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel* panel, ui::ToolBar* toolbar)
+    void SceneEditMode_Default::configurePanelToolbar(ScenePreviewContainer* container, const ScenePreviewPanel*, ui::ToolBar* toolbar)
     {
         CreateDefaultGridButtons(container, toolbar);
         CreateDefaultSelectionButtons(container, toolbar);
         CreateDefaultGizmoButtons(container, toolbar);
+        CreateDefaultCreationButtons(container, toolbar);
     }
 
     void SceneEditMode_Default::changeGizmo(SceneGizmoMode mode)
@@ -251,6 +264,13 @@ namespace ed
         };
 
         menu->createSeparator();
+
+        menu->createCallback("Duplicate", "[img:page_arrange]", "Ctrl+D") = [this]()
+        {
+            processObjectDuplicate(m_selection.keys());
+        };
+
+        menu->createSeparator();
     }
 
     void SceneEditMode_Default::configureViewMenu(ui::MenuButtonContainer* menu)
@@ -306,8 +326,8 @@ namespace ed
             if (auto root = rtti_cast<SceneContentDataNode>(m_selection.keys().front()))
             {
                 const auto& settings = container()->gizmoSettings();
-                const auto& transform = root->localToWorldTransform();
 
+                const auto& transform = root->cachedLocalToWorldTransform();
                 if (settings.space == GizmoSpace::Local)
                 {
                     return GizmoReferenceSpace(settings.space, transform);
@@ -315,9 +335,9 @@ namespace ed
                 else if (settings.space == GizmoSpace::Parent)
                 {
                     if (auto rootParent = rtti_cast<SceneContentDataNode>(root->parent()))
-                        return GizmoReferenceSpace(settings.space, rootParent->localToWorldTransform());
+                        return GizmoReferenceSpace(settings.space, rootParent->cachedLocalToWorldTransform());
                 }
-
+                
                 const auto rootPosition = transform.position();
                 return GizmoReferenceSpace(GizmoSpace::World, rootPosition);
             }
@@ -470,19 +490,19 @@ namespace ed
 
     void SceneEditMode_Default::buildTransformNodeListFromSelection(Array<SceneContentDataNodePtr>& outTransformList) const
     {
-        const auto target = container()->gizmoSettings().target;
+        ExtractSelectionRoots(m_selection.keys(), outTransformList);
+
+        /*const auto target = container()->gizmoSettings().target;
         if (target == SceneGizmoTarget::WholeHierarchy)
         {
-            Array<SceneContentDataNodePtr> roots;
-            ExtractSelectionRoots(m_selection.keys(), roots);
-
+            ExtractSelectionRoots(m_selection.keys(), outTransformList);
             for (const auto& root : roots)
-                ExtractSelectionHierarchy(root, outTransformList);
+                ExtractSelectionHierarchy(root, outTransformList);8/
         }
         else if (target == SceneGizmoTarget::SelectionOnly)
         {
             EnsureParentsFirst(m_selection.keys(), outTransformList);
-        }
+        }*/
     }
 
     //--

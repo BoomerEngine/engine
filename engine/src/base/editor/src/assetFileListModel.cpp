@@ -95,6 +95,7 @@ namespace ed
                 auto savedEntry = m_items[i];
                 m_items.erase(i);
                 notifyItemRemoved(ui::ModelIndex(), savedEntry->index);
+                break;
             }
         }
     }

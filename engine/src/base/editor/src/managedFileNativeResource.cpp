@@ -50,7 +50,7 @@ namespace ed
         return loadingService->acquireLoadedResource(key, loadedResource);
     }
 
-    res::ResourcePtr ManagedFileNativeResource::loadContent()
+    res::ResourcePtr ManagedFileNativeResource::loadContent() const
     {
         // cannot load content of deleted file
         DEBUG_CHECK_RETURN_EX_V(!isDeleted(), base::TempString("Cannot load content of deleted file '{}'", depotPath()), nullptr);

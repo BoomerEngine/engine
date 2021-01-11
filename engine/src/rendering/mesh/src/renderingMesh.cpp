@@ -11,7 +11,6 @@
 #include "renderingMeshService.h"
 #include "rendering/material/include/renderingMaterial.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
-#include "base/reflection/include/propertyDecorators.h"
 #include "base/resource/include/resourceTags.h"
 
 namespace rendering
@@ -63,7 +62,7 @@ namespace rendering
         RTTI_PROPERTY(m_chunks);
         RTTI_CATEGORY("Visibility");
         //RTTI_PROPERTY(m_visibilityGroup).editable("Predefined visibility group this mesh belongs to");
-        RTTI_PROPERTY(m_visibilityDistanceMultiplier).editable("Visibility distance multiplier for this mesh").metadata<base::PropertyNumberRangeMetadata>(0.1f, 3.0f);
+        RTTI_PROPERTY(m_visibilityDistanceMultiplier).editable("Visibility distance multiplier for this mesh").range(0.1f, 3.0f);
         RTTI_PROPERTY(m_visibilityDistanceOverride).editable("Manual visibility distance override (DO NOT USE)");
     RTTI_END_TYPE();
 

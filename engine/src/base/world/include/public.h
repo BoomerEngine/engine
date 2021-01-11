@@ -76,12 +76,6 @@ namespace base
         class NodeTemplate;
         typedef RefPtr<NodeTemplate> NodeTemplatePtr;
 
-        class EntityTemplate;
-        typedef RefPtr<EntityTemplate> EntityTemplatePtr;
-
-        class ComponentTemplate;
-        typedef RefPtr<ComponentTemplate> ComponentTemplatePtr;
-
         class NodePath;
 
         //--
@@ -94,15 +88,13 @@ namespace base
 
         //--
 
-        class WorldDefinition;
-        typedef RefPtr<WorldDefinition> WorldDefinitionPtr;
-        typedef res::Ref<WorldDefinition> WorldDefinitionRef;
+        class RawLayer;
+        typedef RefPtr<RawLayer> RawLayerPtr;
 
-        class WorldLayer;
-        typedef RefPtr<WorldLayer> WorldLayerPtr;
+        class RawScene;
+        typedef RefPtr<RawScene> RawScenePtr;
 
-        class IWorldParameters;
-        typedef RefPtr<IWorldParameters> WorldParametersPtr;
+        //--
 
         class WorldSectorData;
         typedef RefPtr<WorldSectorData> WorldSectorDataPtr;

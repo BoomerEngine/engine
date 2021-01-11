@@ -20,43 +20,147 @@
 #include "base/ui/include/uiToolBar.h"
 #include "base/world/include/world.h"
 #include "sceneContentNodes.h"
+#include "base/ui/include/uiElementConfig.h"
+#include "base/ui/include/uiSplitter.h"
+#include "base/ui/include/uiFourWaySplitter.h"
+#include "base/ui/include/uiMenuBar.h"
 
 namespace ed
 {
     //--
+
+    RTTI_BEGIN_TYPE_CLASS(SceneGridSettings);
+        RTTI_PROPERTY(positionGridEnabled);
+        RTTI_PROPERTY(rotationGridEnabled);
+        RTTI_PROPERTY(positionGridSize);
+        RTTI_PROPERTY(rotationGridSize);
+        RTTI_PROPERTY(featureSnappingEnabled);
+        RTTI_PROPERTY(rotationSnappingEnabled);
+        RTTI_PROPERTY(snappingDistance);
+    RTTI_END_TYPE();
 
     SceneGridSettings::SceneGridSettings()
     {}
 
     //--
 
+    RTTI_BEGIN_TYPE_CLASS(SceneGizmoSettings);
+        RTTI_PROPERTY(mode);
+        RTTI_PROPERTY(space);
+        RTTI_PROPERTY(target);
+        RTTI_PROPERTY(enableX);
+        RTTI_PROPERTY(enableY);
+        RTTI_PROPERTY(enableZ);
+    RTTI_END_TYPE();
+
     SceneGizmoSettings::SceneGizmoSettings()
     {}
 
     //--
+
+    RTTI_BEGIN_TYPE_CLASS(SceneSelectionSettings);
+    RTTI_PROPERTY(explorePrefabs);
+    RTTI_PROPERTY(exploreComponents);
+    RTTI_PROPERTY(allowTransparent);
+    RTTI_END_TYPE();
 
     SceneSelectionSettings::SceneSelectionSettings()
     {}
 
     //--
 
+    RTTI_BEGIN_TYPE_CLASS(SceneCreationSettings);
+        RTTI_PROPERTY(mode);
+    RTTI_END_TYPE();
+
+    SceneCreationSettings::SceneCreationSettings()
+    {}
+
+    //--
+
     RTTI_BEGIN_TYPE_ENUM(SceneGizmoMode);
-    RTTI_ENUM_OPTION(Translation);
-    RTTI_ENUM_OPTION(Rotation);
-    RTTI_ENUM_OPTION(Scale);
+        RTTI_ENUM_OPTION(Translation);
+        RTTI_ENUM_OPTION(Rotation);
+        RTTI_ENUM_OPTION(Scale);
     RTTI_END_TYPE();
 
     RTTI_BEGIN_TYPE_ENUM(GizmoSpace);
-    RTTI_ENUM_OPTION(World);
-    RTTI_ENUM_OPTION(Local);
-    RTTI_ENUM_OPTION(Parent);
-    RTTI_ENUM_OPTION(View);
+        RTTI_ENUM_OPTION(World);
+        RTTI_ENUM_OPTION(Local);
+        RTTI_ENUM_OPTION(Parent);
+        RTTI_ENUM_OPTION(View);
     RTTI_END_TYPE();
 
     RTTI_BEGIN_TYPE_ENUM(SceneGizmoTarget);
-    RTTI_ENUM_OPTION(WholeHierarchy);
-    RTTI_ENUM_OPTION(SelectionOnly);
+        RTTI_ENUM_OPTION(WholeHierarchy);
+        RTTI_ENUM_OPTION(SelectionOnly);
     RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_ENUM(SceneContentNodeCreationMode);
+        RTTI_ENUM_OPTION(Component);
+        RTTI_ENUM_OPTION(WrappedComponent);
+        RTTI_ENUM_OPTION(Entity);
+    RTTI_END_TYPE();
+
+    //--
+
+    RTTI_BEGIN_TYPE_CLASS(SceneLayoutViewportSettings);
+        RTTI_PROPERTY(camera);
+        RTTI_PROPERTY(panel);
+    RTTI_END_TYPE();
+
+    SceneLayoutViewportSettings::SceneLayoutViewportSettings()
+    {}
+
+    //--
+
+    RTTI_BEGIN_TYPE_ENUM(SceneViewportLayout);
+    RTTI_ENUM_OPTION(Single)
+        RTTI_ENUM_OPTION(ClassVertical)
+        RTTI_ENUM_OPTION(ClassHorizontal)
+        RTTI_ENUM_OPTION(ClassFourWay)
+        RTTI_ENUM_OPTION(TwoSmallOneBigLeft);
+        RTTI_ENUM_OPTION(TwoSmallOneBigTop);
+        RTTI_ENUM_OPTION(TwoSmallOneBigRight);
+        RTTI_ENUM_OPTION(TwoSmallOneBigBottom);
+        RTTI_ENUM_OPTION(ThreeSmallOneBigLeft);
+        RTTI_ENUM_OPTION(ThreeSmallOneBigTop);
+        RTTI_ENUM_OPTION(ThreeSmallOneBigRight);
+        RTTI_ENUM_OPTION(ThreeSmallOneBigBottom);
+    RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_CLASS(SceneLayoutSettings);
+        RTTI_PROPERTY(layout);
+        RTTI_PROPERTY(splitterState);
+        RTTI_PROPERTY(viewportState);
+    RTTI_END_TYPE();
+    
+    SceneLayoutSettings::SceneLayoutSettings()
+    {
+        splitterState[Splitter_MainVertical] = 0.5f;
+        splitterState[Splitter_MainHorizontal] = 0.5f;
+        splitterState[Splitter_AdditionalPrimaryLeft] = 0.33f;
+        splitterState[Splitter_AdditionalPrimaryTop] = 0.33f;
+        splitterState[Splitter_AdditionalPrimaryRight] = 0.66f;
+        splitterState[Splitter_AdditionalPrimaryBottom] = 0.66f;
+        splitterState[Splitter_AdditionalSecondaryVertical1] = 0.33f;
+        splitterState[Splitter_AdditionalSecondaryVertical2] = 0.66f;
+        splitterState[Splitter_AdditionalSecondaryHorizontal1] = 0.33f;
+        splitterState[Splitter_AdditionalSecondaryHorizontal2] = 0.66f;
+
+        viewportState[Viewport_Main].camera.mode = ui::CameraMode::FreePerspective;
+        viewportState[Viewport_Extra1].camera.mode = ui::CameraMode::Top;
+        viewportState[Viewport_Extra2].camera.mode = ui::CameraMode::Front;
+        viewportState[Viewport_Extra3].camera.mode = ui::CameraMode::Right;
+
+        viewportState[Viewport_Main].camera.rotation = Angles(20.0f, 40.0f, 0.0f);
+        viewportState[Viewport_Main].camera.position = -viewportState[Viewport_Main].camera.rotation.forward() * 3.0f;
+
+        viewportState[Viewport_Main].panel.renderMode = rendering::scene::FrameRenderMode::Default;
+        viewportState[Viewport_Extra1].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
+        viewportState[Viewport_Extra2].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
+        viewportState[Viewport_Extra3].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
+    }
 
     //--
      
@@ -67,7 +171,9 @@ namespace ed
         : m_content(content)
     {
         createWorld();
-        createPanels();
+
+        m_bottomBar = RefNew<ui::ToolBar>();
+        m_bottomBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
 
         m_editMode = AddRef(initialEditMode);
         activateEditMode();
@@ -104,10 +210,13 @@ namespace ed
 
     static bool IsDevivedNode(const SceneContentNode* node)
     {
+        if (!node)
+            return false;
+
         if (node && node->type() == SceneContentNodeType::Entity)
         {
             const auto* entityNode = static_cast<const SceneContentEntityNode*>(node);
-            if (entityNode->baseData())
+            if (!entityNode->baseData().empty())
                 return true;
         }
 
@@ -124,8 +233,10 @@ namespace ed
                 node = AddRef(node->parent());
 
             if (!m_selectionSettings.explorePrefabs)
-                while (IsDevivedNode(node))
-                    node = AddRef(node->parent());
+            {
+                while (IsDevivedNode(node->parent()))
+                    node = AddRef(node->parent());                    
+            }
         }
 
         return node;
@@ -137,18 +248,27 @@ namespace ed
         recreatePanelBottomToolbars();
     }
 
+    void ScenePreviewContainer::creationSettings(const SceneCreationSettings& settings)
+    {
+        m_creationSettings = settings;
+        recreatePanelBottomToolbars();
+    }
+
     void ScenePreviewContainer::deactivateEditMode()
     {
         if (m_editMode)
         {
             m_editMode->deactivate(this);
 
-            for (const auto& panel : m_panels)
+            for (const auto& panel : m_viewports)
             {
-                panel->bindEditMode(nullptr);
+                if (panel)
+                {
+                    panel->bindEditMode(nullptr);
 
-                if (const auto& toolbar = panel->bottomToolbar())
-                    toolbar->removeAllChildren();
+                    if (const auto& toolbar = panel->bottomToolbar())
+                        toolbar->removeAllChildren();
+                }
             }
         }
     }
@@ -159,8 +279,9 @@ namespace ed
         {
             m_editMode->acivate(this);
 
-            for (const auto& panel : m_panels)
-                panel->bindEditMode(m_editMode);
+            for (const auto& panel : m_viewports)
+                if (panel)
+                    panel->bindEditMode(m_editMode);
         }
 
         recreatePanelBottomToolbars();
@@ -182,12 +303,39 @@ namespace ed
         }
     }
 
+    void ScenePreviewContainer::changeViewportLayout(SceneViewportLayout layout)
+    {
+        if (m_layoutSettings.layout != layout)
+        {
+            destroyPanels();
+            m_layoutSettings.layout = layout;
+            createPanels();
+        }
+    }
+
     void ScenePreviewContainer::configSave(const ui::ConfigBlock& block) const
     {
+        TBaseClass::configSave(block);
+
+        auto layout = m_layoutSettings;
+        captureLayoutSettings(layout);
+
+        block.write("gridSettings", m_gridSettings);
+        block.write("gizmoSettings", m_gizmoSettings);
+        block.write("selectionSettings", m_selectionSettings);
+        block.write("creationSettings", m_creationSettings);
+        block.write("layoutSettings", layout);
     }
 
     void ScenePreviewContainer::configLoad(const ui::ConfigBlock& block)
     {
+        block.read("gridSettings", m_gridSettings);
+        block.read("gizmoSettings", m_gizmoSettings);
+        block.read("selectionSettings", m_selectionSettings);
+        block.read("creationSettings", m_creationSettings);
+        block.read("layoutSettings", m_layoutSettings);
+
+        createPanels();
     }
     
     //--
@@ -203,20 +351,24 @@ namespace ed
         PC_SCOPE_LVL0(SyncNodeState);
 
         {
-            Array<SceneContentNodePtr> addedNodes, removedNodes;
-            m_content->syncNodeChanges(addedNodes, removedNodes);
+            PC_SCOPE_LVL0(SyncProxies);
 
-            {
-                PC_SCOPE_LVL0(CreateProxies);
-                for (const auto& node : addedNodes)
-                    m_visualization->createProxy(node);
-            }
+            Array<SceneContentSyncOp> syncNodes;
+            m_content->syncNodeChanges(syncNodes);
 
+            for (const auto& sync : syncNodes)
             {
-                PC_SCOPE_LVL0(DestroyProxies);
-                for (const auto& node : removedNodes)
-                    m_visualization->removeProxy(node);
-            }
+                switch (sync.type)
+                {
+                    case SceneContentSyncOpType::Added:
+                        m_visualization->createProxy(sync.node);
+                        break;
+
+                    case SceneContentSyncOpType::Removed:
+                        m_visualization->removeProxy(sync.node);
+                        break;
+                }
+            }                    
         }
 
         {
@@ -251,55 +403,191 @@ namespace ed
 
     void ScenePreviewContainer::destroyPanels()
     {
-        for (auto& panel : m_panels)
+        captureLayoutSettings(m_layoutSettings);
+
+        for (auto& panel : m_viewports)
         {
-            panel->bindEditMode(nullptr);
-            detachChild(panel);
+            if (panel)
+                panel->bindEditMode(nullptr);
+            panel.reset();
         }
 
-        m_panels.clear();
+        for (auto& splitter : m_splitters)
+        {
+            if (splitter)
+                splitter->removeAllChildren();
+            splitter.reset();
+        }
+
+        removeAllChildren();
+    }
+
+    void ScenePreviewContainer::captureLayoutSettings(SceneLayoutSettings& outSettings) const
+    {
+        for (uint32_t i = 0; i < ARRAY_COUNT(m_splitters); ++i)
+        {
+            if (auto standardSplitter = rtti_cast<ui::Splitter>(m_splitters[i]))
+            {
+                outSettings.splitterState[i] = standardSplitter->splitFraction();
+            }
+            else if (auto fourWaySplitter = rtti_cast<ui::FourWaySplitter>(m_splitters[i]))
+            {
+                outSettings.splitterState[i] = fourWaySplitter->splitFraction().x;
+                outSettings.splitterState[i+1] = fourWaySplitter->splitFraction().y;
+            }
+        }
+
+        for (uint32_t i = 0; i < ARRAY_COUNT(m_viewports); ++i)
+        {
+            if (auto viewport = m_viewports[i])
+            {
+                outSettings.viewportState[i].camera = viewport->cameraSettings();
+                outSettings.viewportState[i].panel = viewport->panelSettings();
+            }
+        }
     }
 
     void ScenePreviewContainer::createPanels()
     {
         destroyPanels();
 
-        // TODO: different panel modes
-
+        //--
+        
+        switch (m_layoutSettings.layout)
         {
-            auto panel = RefNew<ScenePreviewPanel>(this);
-            panel->expand();
-            attachChild(panel);
-            m_panels.pushBack(panel);
-        }
-
-        for (auto& panel : m_panels)
-        {
-            if (m_editMode)
-                panel->bindEditMode(m_editMode);
-
-            if (const auto& toolbar = panel->bottomToolbar())
+            case SceneViewportLayout::Single:
             {
-                toolbar->removeAllChildren();
+                m_viewports[SceneLayoutSettings::Viewport_Main] = createChild<ScenePreviewPanel>(this);
+                break;
+            }
 
-                if (m_editMode)
-                    m_editMode->configurePanelToolbar(this, panel, toolbar);
+            case SceneViewportLayout::ClassVertical:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = createChild<ui::Splitter>(ui::Direction::Vertical, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                break;
+            }
+
+            case SceneViewportLayout::ClassHorizontal:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = createChild<ui::Splitter>(ui::Direction::Horizontal, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                break;
+            }
+
+            case SceneViewportLayout::ClassFourWay:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = createChild<ui::FourWaySplitter>(m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical], m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainHorizontal]);
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra2] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra3] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                break;
+            }
+
+            case SceneViewportLayout::ThreeSmallOneBigLeft:
+            case SceneViewportLayout::TwoSmallOneBigLeft:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = createChild<ui::Splitter>(ui::Direction::Vertical, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+
+                m_splitters[SceneLayoutSettings::Splitter_MainHorizontal] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ui::Splitter>(ui::Direction::Horizontal, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainHorizontal]);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra2] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+                break;
+            }
+
+            case SceneViewportLayout::ThreeSmallOneBigRight:
+            case SceneViewportLayout::TwoSmallOneBigRight:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = createChild<ui::Splitter>(ui::Direction::Vertical, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+
+                m_splitters[SceneLayoutSettings::Splitter_MainHorizontal] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ui::Splitter>(ui::Direction::Horizontal, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainHorizontal]);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra2] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+
+                break;
+            }
+
+            case SceneViewportLayout::ThreeSmallOneBigTop:
+            case SceneViewportLayout::TwoSmallOneBigTop:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainHorizontal] = createChild<ui::Splitter>(ui::Direction::Horizontal, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainHorizontal]);
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ui::Splitter>(ui::Direction::Vertical, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra2] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                break;
+            }
+
+            case SceneViewportLayout::ThreeSmallOneBigBottom:
+            case SceneViewportLayout::TwoSmallOneBigBottom:
+            {
+                m_splitters[SceneLayoutSettings::Splitter_MainHorizontal] = createChild<ui::Splitter>(ui::Direction::Horizontal, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainHorizontal]);
+
+                m_splitters[SceneLayoutSettings::Splitter_MainVertical] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ui::Splitter>(ui::Direction::Vertical, m_layoutSettings.splitterState[SceneLayoutSettings::Splitter_MainVertical]);
+                m_viewports[SceneLayoutSettings::Viewport_Extra1] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+                m_viewports[SceneLayoutSettings::Viewport_Extra2] = m_splitters[SceneLayoutSettings::Splitter_MainVertical]->createChild<ScenePreviewPanel>(this);
+
+                m_viewports[SceneLayoutSettings::Viewport_Main] = m_splitters[SceneLayoutSettings::Splitter_MainHorizontal]->createChild<ScenePreviewPanel>(this);
+                break;
             }
         }
+
+        //--
+
+        for (uint32_t i=0; i<ARRAY_COUNT(m_viewports); ++i)
+        {
+            if (auto panel = m_viewports[i])
+            {
+                panel->expand();
+
+                panel->cameraSettings(m_layoutSettings.viewportState[i].camera);
+                panel->panelSettings(m_layoutSettings.viewportState[i].panel);
+
+                if (m_editMode)
+                    panel->bindEditMode(m_editMode);
+
+                /*if (const auto& toolbar = panel->bottomToolbar())
+                {
+                    toolbar->removeAllChildren();
+
+                    if (m_editMode)
+                        m_editMode->configurePanelToolbar(this, panel, toolbar);
+                }*/
+            }
+        }
+
+        //--
+
+        attachChild(m_bottomBar);
     }
 
     void ScenePreviewContainer::recreatePanelBottomToolbars()
     {
-        for (auto& panel : m_panels)
+        /*for (auto& panel : m_viewports)
         {
-            if (const auto& toolbar = panel->bottomToolbar())
+            if (panel)
             {
-                toolbar->removeAllChildren();
+                if (const auto& toolbar = panel->bottomToolbar())
+                {
+                    toolbar->removeAllChildren();
 
-                if (m_editMode)
-                    m_editMode->configurePanelToolbar(this, panel, toolbar);
+                    if (m_editMode)
+                        m_editMode->configurePanelToolbar(this, panel, toolbar);
+                }
             }
-        }
+        }*/
+
+        m_bottomBar->removeAllChildren();
+
+        if (m_editMode)
+            m_editMode->configurePanelToolbar(this, nullptr, m_bottomBar);
     }
 
     void ScenePreviewContainer::requestRecreatePanelGizmos()
@@ -309,35 +597,113 @@ namespace ed
 
     void ScenePreviewContainer::recreatePanelGizmos()
     {
-        for (auto& panel : m_panels)
-            panel->requestRecreateGizmo();
+        for (auto& panel : m_viewports)
+            if (panel)
+                panel->requestRecreateGizmo();
+    }
+
+    static const SceneViewportLayout USER_SELECTABLE_VIEWPORT_LAYOUTS[] = {
+        SceneViewportLayout::Single,
+        SceneViewportLayout::ClassVertical,
+        SceneViewportLayout::ClassHorizontal,
+        SceneViewportLayout::ClassFourWay,
+        SceneViewportLayout::TwoSmallOneBigLeft,
+        SceneViewportLayout::TwoSmallOneBigTop,
+        SceneViewportLayout::TwoSmallOneBigRight,
+        SceneViewportLayout::TwoSmallOneBigBottom,
+        SceneViewportLayout::ThreeSmallOneBigLeft,
+        SceneViewportLayout::ThreeSmallOneBigTop,
+        SceneViewportLayout::ThreeSmallOneBigRight,
+        SceneViewportLayout::ThreeSmallOneBigBottom,
+    };
+
+    static StringView ViewportLayoutText(SceneViewportLayout layout)
+    {
+        switch (layout)
+        {
+            case SceneViewportLayout::Single: return "Single";
+            case SceneViewportLayout::ClassVertical: return "2 Vertical";
+            case SceneViewportLayout::ClassHorizontal: return "1 Horizontal";
+            case SceneViewportLayout::ClassFourWay: return "2x2 Four Way";
+            case SceneViewportLayout::TwoSmallOneBigLeft: return "Left 1x2";
+            case SceneViewportLayout::TwoSmallOneBigTop: return "Top 1x2";
+            case SceneViewportLayout::TwoSmallOneBigRight: return "Right 1x2";
+            case SceneViewportLayout::TwoSmallOneBigBottom: return "Bottom 1x2";
+            case SceneViewportLayout::ThreeSmallOneBigLeft: return "Left 1x3";
+            case SceneViewportLayout::ThreeSmallOneBigTop: return "Top 1x3";
+            case SceneViewportLayout::ThreeSmallOneBigRight: return "Right 1x3";
+            case SceneViewportLayout::ThreeSmallOneBigBottom: return "Bottom 1x3";
+        }
+
+        return "";
     }
 
     void ScenePreviewContainer::fillViewConfigMenu(ui::MenuButtonContainer* menu)
-    {}
-
-    void ScenePreviewContainer::focusNodes(const Array<SceneContentNodePtr>& nodes)
     {
-        Box bounds;
+        menu->createSeparator();
+
+        for (const auto mode : USER_SELECTABLE_VIEWPORT_LAYOUTS)
+        {
+            if (mode == SceneViewportLayout::ClassVertical || mode == SceneViewportLayout::TwoSmallOneBigLeft || mode == SceneViewportLayout::ThreeSmallOneBigLeft)
+                menu->createSeparator();
+
+            if (auto title = ViewportLayoutText(mode))
+                menu->createCallback(title, "[img:table]") = [this, mode]() {
+                changeViewportLayout(mode);
+            };
+        }
+
+        menu->createSeparator();
+    }
+
+    bool ScenePreviewContainer::calcNodesVisualBounds(const SceneContentNode* node, Box& outBounds) const
+    {
+        bool valid = false;
+
+        Box nodeBounds;
+        if (m_visualization->retrieveBoundsForProxy(node, nodeBounds))
+        {
+            outBounds.merge(nodeBounds);
+            valid = true;
+        }
+
+        for (const auto& child : node->children())
+            valid |= calcNodesVisualBounds(child, outBounds);
+
+        return valid;
+    }
+
+    bool ScenePreviewContainer::calcNodesVisualBounds(const Array<SceneContentNodePtr>& nodes, Box& outBounds) const
+    {
+        bool validBounds = false;
 
         for (const auto& node : nodes)
         {
             Box nodeBounds;
-            if (m_visualization->retrieveBoundsForProxy(node, nodeBounds))
+            if (calcNodesVisualBounds(node, nodeBounds))
             {
-                bounds.merge(nodeBounds);
+                outBounds.merge(nodeBounds);
+                validBounds = true;
             }
         }
 
-        focusBounds(bounds);
+        return validBounds;
+    }
+
+    void ScenePreviewContainer::focusNodes(const Array<SceneContentNodePtr>& nodes)
+    {
+        Box bounds;
+        if (calcNodesVisualBounds(nodes, bounds))
+            focusBounds(bounds);
     }
 
     void ScenePreviewContainer::focusBounds(const Box& box)
     {
         if (!box.empty())
         {
-            for (auto& panel : m_panels)
-                panel->setupCameraAroundBounds(box);
+            for (auto& panel : m_viewports)
+                if (panel)
+                    panel->focusOnBounds(box, 1.0f, nullptr);
         }
     }
 

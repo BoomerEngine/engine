@@ -419,6 +419,26 @@ namespace base
 
         //--
 
+        SpecificClassType<Component> Component::determineComponentTemplateClass(const ITemplatePropertyValueContainer& templateProperties)
+        {
+            return templateProperties.compileClass().cast<Component>();
+        }
+
+        void Component::queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const
+        {
+            TBaseClass::queryTemplateProperties(outTemplateProperties);
+        }
+
+        bool Component::initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties)
+        {
+            if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
+                return false;
+
+            return true;
+        }
+
+        //--
+
         bool Component::LinkComponents(const ComponentWeakPtr& source, const ComponentWeakPtr& target, IComponentLink* link)
         {
             bool linked = false;

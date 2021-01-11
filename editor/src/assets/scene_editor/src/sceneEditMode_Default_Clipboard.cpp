@@ -14,7 +14,7 @@
 #include "sceneEditMode_Default_Clipboard.h"
 #include "sceneEditMode_Default.h"
 
-#include "base/object/include/objectTemplate.h"
+#include "base/resource/include/objectIndirectTemplate.h"
 
 namespace ed
 {
@@ -26,9 +26,8 @@ namespace ed
         RTTI_PROPERTY(name);
         RTTI_PROPERTY(worldPlacement);
         RTTI_PROPERTY(localPlacement);
-        RTTI_PROPERTY(fullData);
-        RTTI_PROPERTY(overrideData);
-        RTTI_PROPERTY(children);
+        RTTI_PROPERTY(packedEntityData);
+        RTTI_PROPERTY(packedComponentData);
     RTTI_END_TYPE();
 
     SceneContentClipboardNode::SceneContentClipboardNode()
@@ -48,36 +47,23 @@ namespace ed
 
     static SceneContentClipboardNodePtr BuildClipboardNode(const SceneContentNode* node)
     {
-        SceneContentClipboardNodePtr ret;
-
-        if (const auto* dataNode = rtti_cast<SceneContentDataNode>(node))
+        if (const auto* entityNode = rtti_cast<SceneContentEntityNode>(node))
         {
-            ret = RefNew<SceneContentClipboardNode>();
-            ret->worldPlacement = dataNode->localToWorldTransform();
-            ret->localPlacement = dataNode->calcLocalToParent();
-            ret->overrideData = CloneObject(dataNode->editableData(), ret);
+            auto ret = RefNew<SceneContentClipboardNode>();
+            ret->type = SceneContentNodeType::Entity;
+            ret->name = entityNode->name();
+            ret->worldPlacement = entityNode->cachedLocalToWorldTransform();
+            ret->localPlacement = entityNode->localToParent();
 
-            ret->fullData = CloneObject(dataNode->editableData(), ret);
-            ret->fullData->rebase(dataNode->baseData());
-            ret->fullData->detach();
+            ret->packedEntityData = entityNode->compiledForCopy();
+            if (!ret->packedEntityData)
+                return nullptr;
+
+            ret->packedEntityData->parent(ret);
+            return ret;
         }
 
-        if (ret)
-        {
-            ret->type = node->type();
-            ret->name = node->name();
-
-            for (const auto& child : node->children())
-            {
-                if (auto childData = BuildClipboardNode(child))
-                {
-                    childData->parent(ret);
-                    ret->children.pushBack(childData);
-                }
-            }
-        }
-
-        return ret;
+        return nullptr;
     }
 
     SceneContentClipboardDataPtr BuildClipboardDataFromNodes(const Array<SceneContentNodePtr>& nodes)

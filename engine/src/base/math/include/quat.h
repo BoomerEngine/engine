@@ -71,6 +71,12 @@ namespace base
 
         //--
 
+        //! compute distance (in radians) between quaternions
+        //! NOTE: slow and uses acos!
+        float calcAngle(const Quat & other) const;
+
+        //--
+
         //! convert to matrix, assumes unit quaternion, fastest
         Matrix toMatrix() const;
 

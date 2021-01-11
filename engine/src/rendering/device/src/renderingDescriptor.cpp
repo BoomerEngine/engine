@@ -37,7 +37,9 @@ namespace rendering
 		DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL sampler to descriptor");
 
 		this->id = ptr->id();
-		this->objectPtr = ptr;
+#ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
+        this->objectPtr = ptr;
+#endif
 		this->type = DeviceObjectViewType::Sampler;
 	}
 

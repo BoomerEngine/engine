@@ -158,10 +158,6 @@ namespace rendering
 
         //--
 
-        MaterialAsyncRef m_templateDefault;
-
-        //--
-
         // calculate the space conversion matrix for given content type
         // NOTE: includes custom transformation specified in the manifest itself
         Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;

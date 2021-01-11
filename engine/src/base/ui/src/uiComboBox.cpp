@@ -114,7 +114,7 @@ namespace ui
             m_text->text(m_options[m_selectedOption]);
     }
 
-    void ComboBox::selectOption(const base::StringBuf& text)
+    void ComboBox::selectOption(base::StringView text)
     {
         auto index = m_options.find(text);
         if (index != INDEX_NONE)

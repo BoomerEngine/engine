@@ -691,7 +691,7 @@ namespace ui
         virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const;
 
         // handle context menu at given position
-        virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition);
+        virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys);
 
         // handle entering hover state
         virtual void handleHoverEnter(const Position& absolutePosition);

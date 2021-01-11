@@ -8,62 +8,29 @@
 
 #pragma once
 
-#include "base/editor/include/resourceEditorNativeFile.h"
-#include "base/world/include/worldPrefab.h"
+#include "sceneCommonEditor.h"
 
 namespace ed
 {
 
-    class ScenePreviewContainer;
-    class SceneStructurePanel;
-    class SceneEditMode_Default;
+    //--
 
     /// editor for prefabs
-    class ASSETS_SCENE_EDITOR_API ScenePrefabEditor : public ResourceEditorNativeFile
+    class ASSETS_SCENE_EDITOR_API ScenePrefabEditor : public SceneCommonEditor
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabEditor, ResourceEditorNativeFile);
+        RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabEditor, SceneCommonEditor);
 
     public:
         ScenePrefabEditor(ManagedFileNativeResource* file);
         virtual ~ScenePrefabEditor();
 
-        //--
-
-        virtual bool initialize() override;
-        virtual void fillEditMenu(ui::MenuButtonContainer* menu) override;
-        virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
+    protected:
         virtual bool checkGeneralSave() const override;
-        virtual void update() override;
         virtual bool save() override;
 
-    private:
-        base::RefPtr<ScenePreviewContainer> m_previewContainer;
-        base::RefPtr<SceneStructurePanel> m_structurePanel;
-        ui::ScrollAreaPtr m_inspectorPanel;
-
-        base::RefPtr<SceneEditMode_Default> m_defaultEditMode;
-        
-        base::RefPtr<SceneContentStructure> m_content;
-        base::world::WorldPtr m_previewWorld;
-
-        void createInterface();
-        void createContentStructure();
-
-        void refreshEditMode();
-
-        void recreateContent();
-
-        //--
-
-        virtual void handleGeneralCopy() override;
-        virtual void handleGeneralCut() override;
-        virtual void handleGeneralPaste() override;
-        virtual void handleGeneralDelete() override;
-
-        virtual bool checkGeneralCopy() const override;
-        virtual bool checkGeneralCut() const override;
-        virtual bool checkGeneralPaste() const override;
-        virtual bool checkGeneralDelete() const override;
+        virtual void recreateContent() override;
     };
+
+    //--
 
 } // ed

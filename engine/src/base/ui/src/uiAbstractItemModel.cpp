@@ -11,6 +11,7 @@
 #include "uiWindow.h"
 #include "uiButton.h"
 #include "uiDragDrop.h"
+#include "uiInputAction.h"
 
 namespace ui
 {
@@ -77,6 +78,11 @@ namespace ui
         return false;
     }
 
+    bool IAbstractItemModel::handleIconClick(const ModelIndex& item, int columnIndex) const
+    {
+        return false;
+    }
+
     DragDropDataPtr IAbstractItemModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ModelIndex& item)
     {
         return nullptr;
@@ -96,6 +102,51 @@ namespace ui
     {
         return nullptr;
     }
+
+    class AbstractItemModelTextLabel : public TextLabel
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(AbstractItemModelTextLabel, TextLabel);
+
+    public:
+        AbstractItemModelTextLabel(base::StringView text, const ModelIndex& item, const IAbstractItemModel* model, int columnIndex)
+            : TextLabel(text)
+            , m_model(model)
+            , m_columnIndex(columnIndex)
+            , m_item(item)
+        {
+            hitTest(text.beginsWith("["));
+        }
+
+        base::StringBuf text() const
+        {
+            return TBaseClass::text();
+        }
+
+        void text(base::StringView txt)
+        {
+            TBaseClass::text(txt);
+            hitTest(txt.beginsWith("["));
+        }
+
+        virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override
+        {
+            if (evt.leftClicked() && text().beginsWith("["))
+            {
+                m_model->handleIconClick(m_item, m_columnIndex);
+                return IInputAction::CONSUME();
+            }
+
+            return TBaseClass::handleMouseClick(area, evt);
+        }
+
+    private:
+        const IAbstractItemModel* m_model = nullptr;
+        ModelIndex m_item;
+        char m_columnIndex = 0;
+    };
+
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(AbstractItemModelTextLabel);
+    RTTI_END_TYPE();
 
     void IAbstractItemModel::visualize(const ModelIndex& item, int columnCount, ElementPtr& content) const
     {
@@ -119,14 +170,15 @@ namespace ui
             int columnIndex = 0;
             for (auto it = content->childrenList(); it; ++it)
             {
-                if (auto txt = base::rtti_cast<TextLabel>(*it))
+                if (auto txt = base::rtti_cast<AbstractItemModelTextLabel>(*it))
                     txt->text(displayContent(item, columnIndex));
+
                 columnIndex += 1;
             }
 
             while (columnIndex < columnCount)
             {
-                auto txt = base::RefNew<TextLabel>(displayContent(item, columnIndex));
+                auto txt = base::RefNew<AbstractItemModelTextLabel>(displayContent(item, columnIndex), item, this, columnIndex);
                 content->attachChild(txt);
                 columnIndex += 1;
             }

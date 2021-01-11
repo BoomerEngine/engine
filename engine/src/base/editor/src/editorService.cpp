@@ -97,7 +97,7 @@ namespace ed
         ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
         // load config data (does not apply the config)
-        m_configPath = TempString("{}editor.ini", base::io::SystemPath(io::PathCategory::UserConfigDir));
+        m_configPath = TempString("{}editor.config.xml", base::io::SystemPath(io::PathCategory::UserConfigDir));
         m_configStorage->loadFromFile(m_configPath);
         
         // load open/save settings

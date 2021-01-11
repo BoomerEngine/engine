@@ -468,7 +468,7 @@ namespace ui
         actions().bindShortcut("TextEdit.Redo"_id, "Ctrl+Y");
     }
 
-    bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
+    bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys)
     {
         auto ret = base::RefNew<MenuButtonContainer>();
         ret->createAction("TextEdit.Undo"_id, "Undo", "[img:undo]");

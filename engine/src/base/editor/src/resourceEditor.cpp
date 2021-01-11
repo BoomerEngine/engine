@@ -174,14 +174,17 @@ namespace ed
             actions().bindCommand("Editor.Cut"_id) = [this]() { handleGeneralCut(); };
             actions().bindCommand("Editor.Paste"_id) = [this]() { handleGeneralPaste(); };
             actions().bindCommand("Editor.Delete"_id) = [this]() { handleGeneralDelete(); };
+            actions().bindCommand("Editor.Duplicate"_id) = [this]() { handleGeneralDuplicate(); };
             actions().bindFilter("Editor.Copy"_id) = [this]() { return checkGeneralCopy(); };
             actions().bindFilter("Editor.Cut"_id) = [this]() { return checkGeneralCut(); };
             actions().bindFilter("Editor.Paste"_id) = [this]() { return checkGeneralPaste(); };
             actions().bindFilter("Editor.Delete"_id) = [this]() { return checkGeneralDelete(); };
+            actions().bindFilter("Editor.Duplicate"_id) = [this]() { return checkGeneralDuplicate(); };
             actions().bindShortcut("Editor.Copy"_id, "Ctrl+C");
             actions().bindShortcut("Editor.Cut"_id, "Ctrl+X");
             actions().bindShortcut("Editor.Paste"_id, "Ctrl+V");
             actions().bindShortcut("Editor.Delete"_id, "Del");
+            actions().bindShortcut("Editor.Duplicate"_id, "Ctrl+D");
         }
     }
 
@@ -381,6 +384,11 @@ namespace ed
 
     }
 
+    void ResourceEditor::handleGeneralDuplicate()
+    {
+
+    }
+
     void ResourceEditor::handleGeneralReimport()
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file()))
@@ -423,6 +431,11 @@ namespace ed
     }
 
     bool ResourceEditor::checkGeneralDelete() const
+    {
+        return false;
+    }
+
+    bool ResourceEditor::checkGeneralDuplicate() const
     {
         return false;
     }

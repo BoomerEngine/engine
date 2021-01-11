@@ -24,9 +24,10 @@ namespace base
             MemberList = FLAG(0), // return list of members for structures
             OptionsList = FLAG(1), // return list of options for enumerators
             ObjectInfo = FLAG(2), // information about pointed object
-            PropertyMetadata = FLAG(3), // return metadata assigned to the property (only works for views that are properties)
+            PropertyEditorData = FLAG(3), // return editor data assigned to the property
             TypeMetadata = FLAG(4), // return metadata assigned to the view type
             CheckIfResetable = FLAG(5), // check if the current value of the property is resettable to some base value (done via DataView in the end)
+            PropertyMetadataEx = FLAG(6), // return metadata assigned to the view type
         };
 
         enum class DataViewInfoFlagBit : uint16_t
@@ -84,7 +85,8 @@ namespace base
 
             Array<DataViewMemberInfo> members;
             Array<DataViewOptionInfo> options;
-            Array<const IMetadata*> metadata;
+            Array<const IMetadata*> typeMetadata;
+            PropertyEditorData editorData;
         };
 
         //--

@@ -26,7 +26,6 @@ namespace ed
     MeshPreviewPanel::MeshPreviewPanel()
     {
         m_previewSettings.showBounds = true;
-        m_panelSettings.cameraForceOrbit = false;// true;
     }
 
     MeshPreviewPanel::~MeshPreviewPanel()
@@ -58,7 +57,7 @@ namespace ed
                     auto idealRotation = base::Angles(40, 30, 0);
 
                     m_lastBounds = m_mesh->bounds();
-                    setupCameraAroundBounds(m_lastBounds, 1.0f, resetRotation ? &idealRotation : nullptr);
+                    focusOnBounds(m_lastBounds, 1.0f, resetRotation ? &idealRotation : nullptr);
                 }
             }
         }
@@ -137,7 +136,7 @@ namespace ed
     void MeshPreviewPanel::destroyPreviewElements()
     {
         for (const auto& proxy : m_proxies)
-            renderingScene()->dettachProxy(proxy);
+            scene()->dettachProxy(proxy);
         m_proxies.clear();
     }
 
@@ -189,7 +188,7 @@ namespace ed
         }
 
         for (auto& proxy : m_proxies)
-            renderingScene()->attachProxy(proxy);
+            scene()->attachProxy(proxy);
     }
 
     //--

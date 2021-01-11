@@ -362,6 +362,16 @@ namespace ui
     MenuButton::MenuButton(base::StringID action /*= base::StringID()*/, base::StringView text /*= ""*/, base::StringView icon /*= ""*/, base::StringView shortcut /*= ""*/)
         : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
     {
+        if (icon.empty() && text.beginsWith("[img:"))
+        {
+            auto pos = text.findFirstChar(']');
+            if (pos != INDEX_NONE)
+            {
+                icon = text.leftPart(pos+1);
+                text = text.subString(pos+1).trim();
+            }
+        }
+
         createInternalNamedChild<TextLabel>("MenuIcon"_id, icon);
         createInternalNamedChild<TextLabel>("MenuCaption"_id, text ? text : action.view());
         createInternalNamedChild<TextLabel>("MenuShortcut"_id, shortcut);

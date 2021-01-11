@@ -139,7 +139,7 @@ namespace ed
             proxy->index = index;
             proxy->contentNodeObjectId = node->id();
             proxy->generation = m_proxyGenerationCounter++;
-            proxy->placement = dataNode->localToWorldTransform();
+            proxy->placement = dataNode->cachedLocalToWorldTransform();
             proxy->version = 0;
             
             DEBUG_CHECK(!proxy->entity);
@@ -382,7 +382,6 @@ namespace ed
 
         if (changed)
             ApplySelectionFlagToEntity(proxy->entity, useSelectionEffect, proxy->selectedComponents);
-
     }
     
     void SceneNodeVisualizationHandler::updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* entityNode)
@@ -448,7 +447,7 @@ namespace ed
 
             if (flags.test(SceneContentNodeDirtyBit::Transform))
             {
-                proxy->placement = dataNode->localToWorldTransform();
+                proxy->placement = dataNode->cachedLocalToWorldTransform();
 
                 if (proxy->entity)
                     proxy->entity->requestTransform(proxy->placement);

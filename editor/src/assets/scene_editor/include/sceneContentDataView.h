@@ -17,41 +17,10 @@ namespace ed
     {
         StringBuf name;
         SceneContentEntityNodePtr owningNode;
-        base::ObjectTemplatePtr baseData;
-        base::ObjectTemplatePtr editableData; // must be valid
-        DataViewPtr view;
-    };
+        ObjectIndirectTemplatePtr editableData;
+        Array<ObjectIndirectTemplatePtr> baseData;
 
-    //--
-
-    class ASSETS_SCENE_EDITOR_API SceneContentNodeDataView : public IDataView, public IDataViewObserver
-    {
-    public:
-        SceneContentNodeDataView(Array<SceneContentEditableObject>&& objects);
-
-        virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
-        virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
-        virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const override;
-
-        virtual void attachObserver(StringView path, IDataViewObserver* observer) override;
-        virtual void detachObserver(StringView path, IDataViewObserver* observer) override;
-
-        virtual DataViewActionResult actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const override;
-        virtual DataViewActionResult actionValueReset(StringView viewPath) const override;
-        virtual DataViewActionResult actionArrayClear(StringView viewPath) const override;
-        virtual DataViewActionResult actionArrayInsertElement(StringView viewPath, uint32_t index) const override;
-        virtual DataViewActionResult actionArrayRemoveElement(StringView viewPath, uint32_t index) const override;
-        virtual DataViewActionResult actionArrayNewElement(StringView viewPath) const override;
-        virtual DataViewActionResult actionObjectClear(StringView viewPath) const override;
-        virtual DataViewActionResult actionObjectNew(StringView viewPath, ClassType objectClass) const override;
-
-    private:
-        Array<SceneContentEditableObject> m_objects;
-
-        DataViewPtr m_tempView;
-
-        virtual void handleFullObjectChange() override final;
-        virtual void handlePropertyChanged(StringView fullPath, bool parentNotification) override final;
+        DataViewPtr createDataView() const;
     };
 
     //--

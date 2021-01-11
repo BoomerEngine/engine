@@ -50,6 +50,13 @@ namespace base
         return ret;
     }
 
+    float Quat::calcAngle(const Quat& other) const
+    {
+        double dot = (x * other.x) + (y * other.y) + (z * other.z) + (w * other.w);
+        dot = std::clamp<double>(dot, -1.0, 1.0);
+        return (float)std::acos(2.0 * dot * dot - 1.0);
+    }
+
     void Quat::transformVector(const Vector3& v, Vector3& ret) const
     {
         toMatrix().transformVector(v, ret);

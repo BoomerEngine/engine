@@ -152,6 +152,12 @@ namespace ui
 
         //--
 
+        /// handle icon click (icon is any visualization item that begins with "[img:")
+        /// NOTE: this is a HACK but it allows for MUCH simpler implementation of tree view buttons
+        virtual bool handleIconClick(const ModelIndex& item, int columnIndex) const;
+
+        //--
+
         /// create/update visualization for the item, called when visualization is missing or if model requested update
         /// columnCount indicates visualization mode == 1 - vertical list, >1 = vertical list with columns, 0 = icons
         /// NOTE: by default it creates a single text label with content sucked from displayContent

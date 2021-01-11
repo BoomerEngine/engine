@@ -435,7 +435,7 @@ namespace ui
                 const auto childPath = MakeArrayElementPath(path(), i);
 
                 base::rtti::DataViewInfo childInfo;
-                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyMetadata;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyEditorData;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::TypeMetadata;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::CheckIfResetable;
@@ -462,7 +462,7 @@ namespace ui
                 const auto childPath = MakeStructureElementPath(path(), childName.view());
 
                 base::rtti::DataViewInfo childInfo;
-                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyMetadata;
+                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyEditorData;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::TypeMetadata;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::CheckIfResetable;

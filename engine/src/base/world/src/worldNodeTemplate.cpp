@@ -11,11 +11,10 @@
 #include "worldEntity.h"
 #include "worldComponent.h"
 #include "worldPrefab.h"
-#include "worldEntityTemplate.h"
-#include "worldComponentTemplate.h"
-
-#include "base/object/include/object.h"
 #include "worldNodePath.h"
+
+#include "base/resource/include/objectIndirectTemplate.h"
+#include "base/resource/include/objectIndirectTemplateCompiler.h"
 
 namespace base
 {
@@ -27,6 +26,7 @@ namespace base
         RTTI_BEGIN_TYPE_STRUCT(NodeTemplatePrefabSetup);
         RTTI_PROPERTY(enabled);
         RTTI_PROPERTY(prefab);
+        RTTI_PROPERTY(appearance);
         RTTI_END_TYPE();
 
         NodeTemplatePrefabSetup::NodeTemplatePrefabSetup()
@@ -56,6 +56,7 @@ namespace base
 
         RTTI_BEGIN_TYPE_CLASS(NodeTemplate);
             RTTI_PROPERTY(m_name);
+            //RTTI_PROPERTY(m_localToParent);
             RTTI_PROPERTY(m_children);
             RTTI_PROPERTY(m_prefabAssets);
             RTTI_PROPERTY(m_entityTemplate);
@@ -65,7 +66,19 @@ namespace base
         NodeTemplate::NodeTemplate()
         {}
 
-        const ComponentTemplate* NodeTemplate::findComponent(StringID name) const
+        void NodeTemplate::onPostLoad()
+        {
+            TBaseClass::onPostLoad();
+
+            if (!m_entityTemplate)
+                m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+
+            for (auto index : m_componentTemplates.indexRange().reversed())
+                if (!m_componentTemplates[index].data)
+                    m_componentTemplates.eraseUnordered(index);
+        }
+
+        const ObjectIndirectTemplate* NodeTemplate::findComponent(StringID name) const
         {
             for (const auto& data : m_componentTemplates)
                 if (data.name == name)
@@ -82,6 +95,11 @@ namespace base
 
             return nullptr;
         }
+
+        //--
+
+        NodeTemplateCompiledData::NodeTemplateCompiledData()
+        {}
 
         //--
 
@@ -141,56 +159,62 @@ namespace base
 
         //--
 
-        template< typename T >
-        static Transform MergeTransform(const Array<const T*>& templates)
-        {
-            Transform ret;
-            bool first = true;
-
-            for (auto i : templates.indexRange().reversed())
-            {
-                const auto* data = templates[i];
-                DEBUG_CHECK(data != nullptr);
-                if (!data->placement().isIdentity())
-                {
-                    if (first)
-                        ret = data->placement();
-                    else
-                        ret = data->placement().applyTo(ret);
-                }
-            }
-
-            return ret;
-        }
-
-        template< typename T >
-        static RefPtr<T> MergeTemplates(const Array<const T*>& templates)
-        {
-            if (templates.size() == 0)
-                return nullptr;
-
-            if (templates.size() == 1)
-                return AddRef(templates[0]);
-
-            RefPtr<T> ret = nullptr;
-            for (auto i : templates.indexRange().reversed())
-            {
-                auto copy = CloneObject(templates[i]);
-                copy->rebase(ret);
-                ret = copy;
-            }
-
-            return ret;
-        }
-
-        typedef HashMap<StringID, Array<const ComponentTemplate*>>ComponentTemplateList;
+        typedef HashMap<StringID, ObjectIndirectTemplateCompiler*> ComponentTemplateList;
 
         static void CollectComponentTemplates(const Array<const NodeTemplate*>& templates, ComponentTemplateList& outTemplates)
         {
             for (const auto* dataTemplate : templates)
+            {
                 for (const auto& compTemplate : dataTemplate->m_componentTemplates)
+                {
                     if (compTemplate.name && compTemplate.data && compTemplate.data->enabled())
-                        outTemplates[compTemplate.name].pushBack(compTemplate.data);
+                    {
+                        auto*& compilerPtr = outTemplates[compTemplate.name];
+                        if (!compilerPtr)
+                            compilerPtr = new ObjectIndirectTemplateCompiler();
+                        compilerPtr->addTemplate(compTemplate.data);
+                    }
+                }
+            }
+        }
+
+        EntityPtr CreateEntityObject(const ObjectIndirectTemplateCompiler& compiler)
+        {
+            auto entityClass = compiler.compileClass().cast<Entity>();
+            if (entityClass)
+            {
+                auto defaultEntity = (Entity*)entityClass->defaultObject();
+                entityClass = defaultEntity->determineEntityTemplateClass(compiler);
+                if (!entityClass)
+                    return nullptr;
+            }
+
+            if (!entityClass)
+                entityClass = Entity::GetStaticClass();
+
+            auto entity = entityClass->create<Entity>();
+            if (!entity->initializeFromTemplateProperties(compiler))
+                return nullptr;
+
+            return entity;
+        }
+
+        ComponentPtr CreateComponentObject(const ObjectIndirectTemplateCompiler& compiler)
+        {
+            auto componentClass = compiler.compileClass().cast<Component>();
+            if (!componentClass)
+                return nullptr;
+
+            auto defaultComponent = (Component*)componentClass->defaultObject();
+            componentClass = defaultComponent->determineComponentTemplateClass(compiler);
+            if (!componentClass)
+                return nullptr;
+
+            auto component = componentClass->create<Component>();
+            if (!component->initializeFromTemplateProperties(compiler))
+                return nullptr;
+
+            return component;
         }
 
         EntityPtr CompileEntity(const Array<const NodeTemplate*>& templates, Transform* outEntityLocalTransform /*= nullptr*/)
@@ -198,26 +222,21 @@ namespace base
             PC_SCOPE_LVL1(CreateEntity);
 
             // collect valid entity templates to build an entity from
-            InplaceArray<const EntityTemplate*, 8> entityTemplates;
+            ObjectIndirectTemplateCompiler entityTemplateCompiler;
             for (const auto& dataTemplate : templates)
             {
                 const auto& entityData = dataTemplate->m_entityTemplate;
                 if (entityData && entityData->enabled())
-                    entityTemplates.pushBack(entityData);
+                    entityTemplateCompiler.addTemplate(entityData);
             }
-
-            // merge the entity template
-            const auto mergedEntityTemplate = MergeTemplates(entityTemplates);
-            if (!mergedEntityTemplate)
-                return nullptr;
 
             // compute the merged transform
             if (outEntityLocalTransform)
-                *outEntityLocalTransform = MergeTransform(entityTemplates);
+                *outEntityLocalTransform = entityTemplateCompiler.compileTransform().toTransform();
 
             // figure out the entity class, use the default entity class if nothing was specified
             // TODO: use "static entity" in that case so we can PURGE more stuff in level cooking
-            auto entity = mergedEntityTemplate->createEntity();
+            auto entity = CreateEntityObject(entityTemplateCompiler);
 
             // always create a default entity if the template fails here
             if (!entity)
@@ -230,17 +249,15 @@ namespace base
             // create all named components and attach them to entity
             for (auto pair : namedComponentTemplates.pairs())
             {
-                if (const auto componentTemplate = MergeTemplates(pair.value))
+                if (auto component = CreateComponentObject(*pair.value))
                 {
-                    if (auto component = componentTemplate->createComponent())
-                    {
-                        const auto componentTransform = MergeTransform(pair.value);
-                        component->bindName(pair.key);
-                        component->relativeTransform(componentTransform);
-                        entity->attachComponent(component);
-                    }
+                    component->bindName(pair.key);
+                    component->relativeTransform(pair.value->compileTransform().toTransform());
+                    entity->attachComponent(component);
                 }
             }
+
+            namedComponentTemplates.clearPtr();
 
             // TODO: create the initial links between components
 
@@ -256,7 +273,7 @@ namespace base
 
         EntityPtr ProcessSingleEntity(int depth, const NodeCompilationStack& it, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
         {
-            InplaceArray<PrefabRef, 10> prefabsToInstance;
+            /*InplaceArray<PrefabRef, 10> prefabsToInstance;
             it.collectPrefabs(prefabsToInstance);
 
             // "instance" prefabs
@@ -304,7 +321,8 @@ namespace base
             else
             {
                 return nullptr;
-            }
+            }*/
+            return nullptr;
         }
 
         EntityPtr CompileEntityHierarchy(const NodeTemplate* rootTemplateNode, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
@@ -317,5 +335,166 @@ namespace base
 
         //--
 
+        struct NodeMergeStack
+        {
+            StringID name;
+            InplaceArray<const NodeTemplate*, 10> templatesToMerge;
+            const NodeTemplate* originalRootNode = nullptr;
+        };
+
+        static void SuckInPrefab(const world::NodeTemplatePrefabSetup& prefabEntry, HashSet<const world::Prefab*>& allVisitedPrefabs, Array<const world::NodeTemplate*>& outPrefabRoots)
+        {
+            if (!prefabEntry.enabled)
+                return;
+
+            auto loadedPrefab = prefabEntry.prefab.acquire();
+            if (!loadedPrefab)
+                return;
+
+            if (!allVisitedPrefabs.insert(loadedPrefab))
+                return;
+
+            auto prefabRootNode = loadedPrefab->root();
+            if (!prefabRootNode)
+                return;
+
+            for (const auto& rootPrefab : prefabRootNode->m_prefabAssets)
+                SuckInPrefab(rootPrefab, allVisitedPrefabs, outPrefabRoots);
+
+            outPrefabRoots.pushBack(prefabRootNode);
+        }
+
+        static bool HasLocalData(const ObjectIndirectTemplate* data)
+        {
+            if (!data)
+                return false;
+
+            if (!data->templateClass().empty())
+                return true;
+
+            if (!data->properties().empty())
+                return true;
+
+            if (!data->placement().isIdentity())
+                return true;
+
+            return false;
+        }
+
+        static NodeTemplatePtr CompileMergedNode(const NodeMergeStack& stack)
+        {
+            auto ret = RefNew<NodeTemplate>();
+            ret->m_name = stack.name;
+
+            // compile entity data
+            {
+                ObjectIndirectTemplateCompiler compiler;
+                for (const auto* ptr : stack.templatesToMerge)
+                    if (ptr->m_entityTemplate)
+                        compiler.addTemplate(ptr->m_entityTemplate);
+                ret->m_entityTemplate = compiler.flatten();
+                ret->m_entityTemplate->parent(ret);
+            }
+
+            // merge template list
+            for (const auto* ptr : stack.templatesToMerge)
+                if (ptr != stack.originalRootNode) // NOTE: skip original root node as the prefabs expanded for it
+                    for (const auto& prefabInfo : ptr->m_prefabAssets)
+                        ret->m_prefabAssets.pushBack(prefabInfo);
+
+            // collect and create children
+            {
+                HashMap<StringID, Array<const NodeTemplate*>> childrenNodes;                
+                for (const auto* ptr : stack.templatesToMerge)
+                    for (const auto& child : ptr->m_children)
+                        if (child->m_name)
+                            childrenNodes[child->m_name].pushBack(child);
+
+                for (auto pair : childrenNodes.pairs())
+                {
+                    NodeMergeStack childMergeStack;
+                    childMergeStack.name = pair.key;
+                    childMergeStack.templatesToMerge = std::move(pair.value);
+
+                    if (auto mergedChild = CompileMergedNode(childMergeStack)) // NOTE: we may still get an empty node (ie. no overrides)
+                    {
+                        mergedChild->parent(ret);
+                        ret->m_children.pushBack(mergedChild);
+                    }
+                }
+            }
+
+            // collect and create components
+            {
+                HashMap<StringID, Array<const ObjectIndirectTemplate*>> componentData;
+                for (const auto* ptr : stack.templatesToMerge)
+                    for (const auto& compInfo : ptr->m_componentTemplates)
+                        if (compInfo.name && compInfo.data)
+                            componentData[compInfo.name].pushBack(compInfo.data);
+
+                for (auto pair : componentData.pairs())
+                {
+                    ObjectIndirectTemplateCompiler compiler;
+                    for (const auto* ptr : pair.value)
+                        compiler.addTemplate(ptr);
+
+                    if (auto componentData = compiler.flatten())
+                    {
+                        if (HasLocalData(componentData))
+                        {
+                            componentData->parent(ret);
+
+                            auto& compEntry = ret->m_componentTemplates.emplaceBack();
+                            compEntry.name = pair.key;
+                            compEntry.data = componentData;
+                        }
+                    }
+                }
+            }
+
+            // if we don't have children and local components and carry no data than we don't have to be stored
+            if (ret->m_children.empty() && ret->m_componentTemplates.empty() && !HasLocalData(ret->m_entityTemplate) && ret->m_prefabAssets.empty())
+                return nullptr;
+
+            // valid node
+            return ret;
+        }
+
+        NodeTemplatePtr CompileWithInjectedBaseNodes(const NodeTemplate* rootNode, const Array<const NodeTemplate*>& additionalBaseNodes)
+        {
+            // always merge the original editable node - if there are no prefabs we will get a copy of data
+            NodeMergeStack mergeStack;
+
+            // merge the original content with base content
+            for (const auto* baseNode : additionalBaseNodes)
+                if (baseNode)
+                    mergeStack.templatesToMerge.pushBack(baseNode);
+
+            mergeStack.templatesToMerge.pushBack(rootNode);
+
+            // merge content
+            return CompileMergedNode(mergeStack);
+        }
+
+        NodeTemplatePtr UnpackTopLevelPrefabs(const NodeTemplate* rootNode)
+        {
+            // always merge the original editable node - if there are no prefabs we will get a copy of data
+            NodeMergeStack mergeStack;
+            mergeStack.originalRootNode = rootNode;
+
+            // collect base nodes from prefabs used in the node we want to flatten
+            HashSet<const world::Prefab*> visitedPrefabs;
+            for (const auto& prefab : rootNode->m_prefabAssets) // NOTE: prefab assets are NOT copied to flattened data
+                SuckInPrefab(prefab, visitedPrefabs, mergeStack.templatesToMerge);
+
+            // merge the original content with base content
+            mergeStack.templatesToMerge.pushBack(rootNode);
+
+            // merge content
+            return CompileMergedNode(mergeStack);
+        }
+
+        //--
+
     } // world
-} // game
+} // base

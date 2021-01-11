@@ -84,6 +84,9 @@ namespace ed
         /// get the default thumbnail image for this file type
         const image::ImageRef& thumbnail() const;
 
+        /// print the file type tags
+        void printTags(IFormatStream& f, StringView separator="") const;
+
     private:
         StringBuf m_extension;
         StringBuf m_description;

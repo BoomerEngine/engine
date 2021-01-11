@@ -30,6 +30,11 @@ namespace ed
 
     ///---
 
+    /// internal editor saveable content
+     
+
+    ///---
+
     /// generate resource editor window
     class BASE_EDITOR_API ResourceEditor : public ui::DockPanel
     {
@@ -94,6 +99,7 @@ namespace ed
         virtual void handleGeneralCut();
         virtual void handleGeneralPaste();
         virtual void handleGeneralDelete();
+        virtual void handleGeneralDuplicate();
         virtual void handleGeneralReimport();
 
         virtual bool checkGeneralUndo() const;
@@ -103,6 +109,7 @@ namespace ed
         virtual bool checkGeneralCut() const;
         virtual bool checkGeneralPaste() const;
         virtual bool checkGeneralDelete() const;
+        virtual bool checkGeneralDuplicate() const;
 
         void updateAspects();
 

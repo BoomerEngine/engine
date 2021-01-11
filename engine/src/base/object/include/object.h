@@ -7,12 +7,14 @@
 ***/
 
 #pragma once
+
 #include "globalEventKey.h"
+#include "rttiDataHolder.h"
+#include "rttiClassRef.h"
+#include "rttiProperty.h"
 
 #include "base/containers/include/stringID.h"
 
-#include "rttiDataHolder.h"
-#include "rttiClassRef.h"
 
 // Helper macros for old stuff
 #define NO_DEFAULT_CONSTRUCTOR( _class )    \
@@ -23,6 +25,51 @@
 
 namespace base
 {
+    //---
+
+    /// helper interface to list object's template properties
+    class BASE_OBJECT_API ITemplatePropertyBuilder : public NoCopy
+    {
+    public:
+        virtual ~ITemplatePropertyBuilder();
+
+        virtual void prop(StringID category, StringID name, Type type, const void* defaultValue, const rtti::PropertyEditorData& editorData) = 0;
+
+        template< typename T >
+        inline void prop(StringID category, StringID name, const T& defaultValue = T(), const rtti::PropertyEditorData& editorData = PropertyEditorData())
+        {
+            prop(category, name, reflection::GetTypeObject<T>(), &defaultValue, editorData);
+        }
+    };
+
+    /// helper interface to provide values for object template properties
+    class BASE_OBJECT_API ITemplatePropertyValueContainer : public NoCopy
+    {
+    public:
+        virtual ~ITemplatePropertyValueContainer();
+
+        virtual ClassType compileClass() const = 0;
+
+        virtual bool compileValue(StringID name, Type expectedType, void* ptr) const = 0;
+
+        template< typename T >
+        inline bool compileValue(StringID name, T& ptr) const
+        {
+            return compileValue(name, reflection::GetTypeObject<T>(), &ptr);
+        }
+
+        template< typename T >
+        inline T compileValueOrDefault(StringID name, T defaultValue = T()) const
+        {
+            T ret;
+            if (compileValue(name, reflection::GetTypeObject<T>(), &ptr))
+                return ret;
+            return defaultValue;
+        }
+    };
+
+    //---
+
     // object ID Type
     typedef uint32_t ObjectID;
 
@@ -228,6 +275,15 @@ namespace base
 
         // create data view for editing this object, especially in data inspector + data view is usually needed for undo/redo
         virtual DataViewPtr createDataView(bool forceReadOnly=false) const;
+
+        //--
+
+        // list all template properties for this object
+        // NOTE: slow function, results should be cached
+        virtual void queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const;
+
+        // initialize from template properties
+        virtual bool initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties);
 
         //--
 

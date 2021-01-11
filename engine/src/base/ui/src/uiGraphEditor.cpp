@@ -439,7 +439,7 @@ namespace ui
         return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
     }
 
-    bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
+    bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys)
     {
         auto buttons = base::RefNew<MenuButtonContainer>();
 

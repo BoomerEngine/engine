@@ -3,7 +3,7 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: components\mesh #]
+* [# filter: components #]
 *
 ***/
 
@@ -44,6 +44,9 @@ namespace rendering
         virtual void handleDetach(base::world::World* scene) override;
         virtual void handleTransformUpdate(const Component* source, const base::AbsoluteTransform& parentTransform, const base::Matrix& parentToWorld) override;
         virtual void handleSelectionHighlightChanged() override;
+
+        virtual void queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const override;
+        virtual bool initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties) override;
 
         void recreateRenderingProxy();
 

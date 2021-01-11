@@ -23,6 +23,8 @@
 #include "base/ui/include/uiButton.h"
 #include "base/ui/include/uiColumnHeaderBar.h"
 #include "base/io/include/ioSystem.h"
+#include "base/ui/include/uiEditBox.h"
+#include "base/ui/include/uiTextValidation.h"
 
 namespace ed
 {
@@ -400,6 +402,114 @@ namespace ed
         }
 
         window->runModal(owner, searchBar);
+    }
+
+    //--
+
+    bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirectory, ClassType resourceClass, StringView message, StringView initialFileName, StringBuf& outDepotPath)
+    {
+        auto window = base::RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save as...");
+        window->layoutVertical();
+
+        auto windowRef = window.get();
+        window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
+        window->actions().bindShortcut("Cancel"_id, "Escape");
+
+        if (!message.empty())
+        {
+            auto label = window->createChild<ui::TextLabel>(message);
+            label->customMargins(5, 5, 5, 0);
+        }
+
+        auto dirBar = window->createChild<ui::IElement>();
+        dirBar->layoutHorizontal();
+        dirBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        dirBar->customMargins(5, 5, 5, 0);
+
+        if (!specificDirectory)
+            specificDirectory = GetService<Editor>()->mainWindow().selectedDirectory();
+        if (!specificDirectory)
+            specificDirectory = GetService<Editor>()->managedDepot().root();
+
+        auto editBoxFlags = ui::EditBoxFeatureBit::AcceptsEnter;
+
+        auto dirName = dirBar->createChild<ui::EditBox>(editBoxFlags).get();
+        dirName->text(specificDirectory->depotPath());
+        dirName->validation(ui::MakeDirectoryValidationFunction(false));
+        dirName->expand();
+
+        auto dirPick = dirBar->createChild<ui::Button>("[img:page_zoom] Pick");
+        dirPick->styleType("BackgroundButton"_id);
+        dirPick->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        dirPick->customMargins(ui::Offsets(5, 0, 5, 0));
+
+        auto editText = window->createChild<ui::EditBox>(editBoxFlags).get();
+        editText->customInitialSize(500, 20);
+        editText->customMargins(5, 5, 5, 5);
+        editText->text(initialFileName);
+        editText->validation(ui::MakeFilenameValidationFunction(false));
+        editText->expand();
+
+        auto buttons = window->createChild();
+        buttons->layoutHorizontal();
+        buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:save] Save").get();
+
+            auto checkFunc = [editText, resourceClass, dirName, button]()
+            {
+                bool valid = false;
+
+                if (editText->validationResult() && dirName->validationResult())
+                {
+                    auto extension = res::IResource::GetResourceExtensionForClass(resourceClass);
+                    auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
+                    if (ValidateDepotPath(depotPath))
+                    {
+                        const auto* existingFile = GetService<Editor>()->managedDepot().findManagedFile(depotPath);
+                        if (existingFile == nullptr)
+                            valid = true;
+                    }
+                }
+
+                button->enable(valid);
+            };
+
+            auto acceptFunc = [windowRef, editText, resourceClass, dirName, button, &outDepotPath]() {
+                if (button->isEnabled() && editText->validationResult() && dirName->validationResult()) {
+                    auto extension = res::IResource::GetResourceExtensionForClass(resourceClass);
+                    auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
+                    if (ValidateDepotPath(depotPath))
+                    {
+                        outDepotPath = depotPath;
+                        windowRef->requestClose(1);
+                    }
+                }
+            };
+
+            editText->bind(ui::EVENT_TEXT_MODIFIED) = checkFunc;
+            dirName->bind(ui::EVENT_TEXT_MODIFIED) = checkFunc;
+
+            dirName->bind(ui::EVENT_TEXT_ACCEPTED) = [editText]() {
+                editText->focus();
+            };
+
+            editText->bind(ui::EVENT_TEXT_ACCEPTED) = acceptFunc;
+
+            button->bind(ui::EVENT_CLICKED) = acceptFunc;
+
+            checkFunc();
+        }
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
+            button->bind(ui::EVENT_CLICKED) = [windowRef]() {
+                windowRef->requestClose(0);
+            };
+        }
+
+        return window->runModal(owner, editText);
     }
 
     //--

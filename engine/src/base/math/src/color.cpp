@@ -15,10 +15,10 @@ namespace base
 
     RTTI_BEGIN_TYPE_STRUCT(Color);
         RTTI_BIND_NATIVE_COMPARE(Color);
-        RTTI_PROPERTY(r).editable().metadata<PropertyNumberRangeMetadata>(0, 255).metadata<PropertyHasTrackbarMetadata>();
-        RTTI_PROPERTY(g).editable().metadata<PropertyNumberRangeMetadata>(0, 255).metadata<PropertyHasTrackbarMetadata>();
-        RTTI_PROPERTY(b).editable().metadata<PropertyNumberRangeMetadata>(0, 255).metadata<PropertyHasTrackbarMetadata>();
-        RTTI_PROPERTY(a).editable().metadata<PropertyNumberRangeMetadata>(0, 255).metadata<PropertyHasTrackbarMetadata>();
+        RTTI_PROPERTY(r).editable().range(0, 255).widgetSlider();
+        RTTI_PROPERTY(g).editable().range(0, 255).widgetSlider();
+        RTTI_PROPERTY(b).editable().range(0, 255).widgetSlider();
+        RTTI_PROPERTY(a).editable().range(0, 255).widgetSlider();
     RTTI_END_TYPE();
 
     //---

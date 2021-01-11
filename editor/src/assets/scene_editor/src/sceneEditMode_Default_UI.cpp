@@ -23,16 +23,27 @@
 #include "base/ui/include/uiDragger.h"
 #include "base/ui/include/uiGroup.h"
 #include "base/ui/include/uiClassPickerBox.h"
+#include "base/ui/include/uiNotebook.h"
+#include "base/ui/include/uiElement.h"
 
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
 
+#include "base/resource/include/objectIndirectTemplate.h"
+#include "base/resource/include/objectIndirectTemplateCompiler.h"
+
 #include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/worldEntityTemplate.h"
-#include "base/world/include/worldComponentTemplate.h"
+#include "base/world/include/worldComponent.h"
 #include "base/world/include/worldEntity.h"
-#include "base/ui/include/uiNotebook.h"
-#include "base/ui/include/uiElement.h"
+#include "base/world/include/worldPrefab.h"
+
+#include "base/containers/include/stringBuilder.h"
+
+#include "base/editor/include/editorService.h"
+#include "base/editor/include/editorWindow.h"
+#include "base/editor/include/assetBrowser.h"
+#include "base/editor/include/managedFile.h"
+#include "base/editor/include/managedFileFormat.h"
 
 namespace ed
 {
@@ -60,6 +71,101 @@ namespace ed
         }
 
         return true;
+    }
+
+    //--
+
+    class SceneEditPrefabList : public ui::ListView
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(SceneEditPrefabList, ui::ListView);
+
+    public:
+        SceneEditPrefabList();
+
+    protected:
+        virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
+        virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(SceneEditPrefabList);
+    RTTI_END_TYPE();
+    
+    //--
+
+    struct PrefabInfoEntry
+    {
+        uint32_t count = 0;
+        StringView fileName;
+        res::ResourcePath path;
+        bool enabled = false;
+        bool disabled = false;
+        bool inherited = false;
+        bool local = false;
+    };
+
+    class SceneEditPrefabListModel : public ui::SimpleTypedListModel<PrefabInfoEntry>
+    {
+    public:
+        virtual bool compare(const PrefabInfoEntry& a, const PrefabInfoEntry& b, int colIndex) const override
+        {
+            return a.path < b.path;
+        }
+
+        virtual bool filter(const PrefabInfoEntry& data, const ui::SearchPattern& filter, int colIndex) const override
+        {
+            return filter.testString(data.fileName);
+        }
+
+        virtual StringBuf content(const PrefabInfoEntry& data, int colIndex = 0) const override
+        {
+            StringBuilder txt;
+
+            if (data.enabled && data.disabled)
+                txt << "[img:question_red] ";
+            else if (data.enabled)
+                txt << "[img:tick] ";
+            else if (data.disabled)
+                txt << "[img:cross] ";
+
+            txt << "[img:brick] ";
+            txt << data.fileName;
+
+            if (data.inherited)
+                txt << " [tag:#888]Inherited[/tag]";
+            if (data.local)
+                txt << " [tag:#888]Local[/tag]";
+
+            return txt.toString();
+        }
+    };
+
+    //--
+
+    SceneEditPrefabList::SceneEditPrefabList()
+    {}
+
+    ui::DragDropHandlerPtr SceneEditPrefabList::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+    {
+        if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+            if (auto file = fileData->file())
+                if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
+                    return base::RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+
+        return TBaseClass::handleDragDrop(data, entryPosition);
+    }
+
+    void SceneEditPrefabList::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+    {
+        if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+        {
+            if (auto file = fileData->file())
+            {
+                if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
+                {
+                    call(EVENT_PREFABLIST_ADD_FILE, ManagedFilePtr(AddRef(file)));
+                }
+            }
+        }
     }
 
     //--
@@ -97,10 +203,15 @@ namespace ed
             auto group = createChild<ui::Group>("Prefabs", false);
             m_entityElements.pushBack(group);
 
-            m_prefabList = group->createChild<ui::ListView>();
+            m_prefabList = group->createChild<SceneEditPrefabList>();
             m_prefabList->expand();
             m_prefabList->customMinSize(0, 200);
             m_prefabList->customMaxSize(0, 200);
+
+            m_prefabList->bind(EVENT_PREFABLIST_ADD_FILE) = [this](ManagedFilePtr file)
+            {
+                m_host->cmdAddPrefabFile(m_nodes, file);
+            };
 
             auto panel = group->createChild<ui::IElement>();
             panel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
@@ -111,7 +222,9 @@ namespace ed
                 button->customProportion(1.0f);
                 button->expand();
                 button->bind(ui::EVENT_CLICKED) = [this]() {
-                    //cmdAddPrefab();
+                    if (auto file = GetService<Editor>()->mainWindow().selectedFile())
+                        if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
+                            m_host->cmdAddPrefabFile(m_nodes, file);
                 };
             }
 
@@ -120,7 +233,13 @@ namespace ed
                 button->customProportion(1.0f);
                 button->expand();
                 button->bind(ui::EVENT_CLICKED) = [this]() {
-                    //cmdRemovePrafab();
+                    InplaceArray<const ManagedFile*, 10> files;
+                    for (auto item : m_prefabList->selection())
+                        if (const auto* data = m_prefabListModel->dataPtr(item))
+                            if (const auto* file = base::GetService<Editor>()->managedDepot().findManagedFile(data->path.view()))
+                                files.pushBack(file);
+
+                    m_host->cmdRemovePrefabFile(m_nodes, files);
                 };
             }
         }
@@ -208,6 +327,7 @@ namespace ed
             m_classPicker->requestClose();
         m_classPicker.reset();
 
+        m_prefabListModel.reset();
         m_prefabList->model(nullptr);
         m_prefabList->enable(false);
 
@@ -228,6 +348,24 @@ namespace ed
         unbind();
 
         m_nodes = nodes;
+        m_nodesData.reset();
+        m_nodesData.reserve(m_nodes.size());
+
+        for (auto node : m_nodes)
+            if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+                m_nodesData.pushBack(dataNode);
+
+        m_nodeRoots.reset();
+        SceneEditMode_Default::ExtractSelectionRoots(m_nodes, m_nodeRoots);
+
+        m_nodeEntityRoots.reset();
+        m_nodeEntityRoots.reserve(m_nodeRoots.size());
+
+        for (const auto& ptr : m_nodeRoots)
+            if (auto entity = rtti_cast<SceneContentEntityNode>(ptr))
+                m_nodeEntityRoots.pushBack(entity);
+
+        //--
 
         if (!m_nodes.empty())
         {
@@ -261,6 +399,7 @@ namespace ed
         refreshName();
         refreshProperties();
         refreshTransforms();
+        refreshPrefabList();
     }
 
     void SceneDefaultPropertyInspectorPanel::refreshName()
@@ -297,9 +436,9 @@ namespace ed
                     info.name = dataNode->name();
                     info.owningNode = dataNode;
                     
-                    if (editableData->is<base::world::EntityTemplate>())
+                    if (dataNode->is<SceneContentEntityNode>())
                         hasEntityData = true;
-                    else if (editableData->is<base::world::ComponentTemplate>())
+                    else if (dataNode->is<SceneContentComponentNode>())
                         hasComponentData = true;
                 }
             }
@@ -322,7 +461,7 @@ namespace ed
             bool commonClassInconsistent = false;
             for (const auto& data : editableObjects)
             {
-                const auto dataClass = data.editableData->cls();
+                const auto dataClass = data.editableData->templateClass();
                 if (!commonClass)
                 {
                     if (!commonClassInconsistent)
@@ -335,18 +474,30 @@ namespace ed
                 }
             }
 
-            auto view = RefNew<SceneContentNodeDataView>(std::move(editableObjects));
-            m_properties->bindData(view, false);
+            for (const auto& obj : editableObjects)
+            {
+                if (auto view = obj.createDataView())
+                {
+                    m_properties->bindData(view, false);
+                    break;
+                }
+            }
 
             if (commonClassInconsistent)
             {
                 m_partClass->text("<inconsistent class>");
                 m_buttonChangeClass->enable(false);
             }
-            else
+            else if (commonClass)
             {
                 m_commonClassType = commonClass;
                 m_partClass->text(commonClass->name().view());
+                m_buttonChangeClass->enable(true);
+            }
+            else
+            {
+                m_commonClassType = commonClass;
+                m_partClass->text("<no class>");
                 m_buttonChangeClass->enable(true);
             }
         }
@@ -464,8 +615,8 @@ namespace ed
     struct ChangeClassActionInfo
     {
         SceneContentDataNodePtr node;
-        ObjectTemplatePtr oldData;
-        ObjectTemplatePtr newData;
+        ClassType oldClass;
+        ClassType newClass;
     };
 
     struct ActionChangeDataClass : public IAction
@@ -493,7 +644,7 @@ namespace ed
         virtual bool execute() override
         {
             for (const auto& info : m_nodes)
-                info.node->changeData(info.newData);
+                info.node->changeClass(info.newClass);
             m_host->refreshProperties();
             return true;
         }
@@ -501,7 +652,7 @@ namespace ed
         virtual bool undo() override
         {
             for (const auto& info : m_nodes)
-                info.node->changeData(info.oldData);
+                info.node->changeClass(info.oldClass);
             m_host->refreshProperties();
             return true;
         }
@@ -513,55 +664,14 @@ namespace ed
 
     static bool IsClassCompatible(const SceneContentDataNodePtr& dataNode, ClassType newDataClass)
     {
-        if (dataNode->editableData()->is<world::EntityTemplate>())
-        {
-            if (dataNode->baseData())
-                return newDataClass->is(dataNode->baseData()->cls());
-            else
-                return newDataClass->is<world::EntityTemplate>();
-        }
-        else if (dataNode->editableData()->is<world::ComponentTemplate>())
-        {
-            if (dataNode->baseData())
-                return newDataClass->is(dataNode->baseData()->cls());
-            else
-                return newDataClass->is<world::ComponentTemplate>();
-        }
-    
+        if (dataNode->is<SceneContentEntityNode>())
+            return newDataClass->is<world::Entity>();
+
+        else if (dataNode->is<SceneContentComponentNode>())
+            return newDataClass->is<world::Component>();
+
         return false;
     }
-
-    //--
-
-    struct DupaEntityTemplate : public base::world::EntityTemplate
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DupaEntityTemplate, base::world::EntityTemplate);
-
-    public:
-        virtual world::EntityPtr createEntity() const override { return RefNew<world::Entity>(); }
-
-        int m_value = 0;
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(DupaEntityTemplate);
-        RTTI_PROPERTY(m_value).editable().overriddable();
-    RTTI_END_TYPE();
-
-    //--
-
-    struct DupaComponentTemplate : public base::world::ComponentTemplate
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DupaComponentTemplate, base::world::ComponentTemplate);
-
-        virtual world::ComponentPtr createComponent() const override { return nullptr; }
-
-    public:
-        int m_value = 0;
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(DupaComponentTemplate);
-        RTTI_PROPERTY(m_value).editable().overriddable();
-    RTTI_END_TYPE();
 
     //--
 
@@ -577,8 +687,8 @@ namespace ed
                 {
                     auto& info = nodes.emplaceBack();
                     info.node = dataNode;
-                    info.oldData = dataNode->editableData();
-                    info.newData = CloneObject(info.oldData, nullptr, nullptr, newDataClass.cast<IObject>());
+                    info.oldClass = dataNode->dataClass();
+                    info.newClass = newDataClass;
                 }
             }
         }
@@ -592,20 +702,39 @@ namespace ed
 
     static ClassType SelectRootClass(ClassType currentClass)
     {
-        if (currentClass->is<base::world::EntityTemplate>())
-            return base::world::EntityTemplate::GetStaticClass();
+        if (currentClass->is<world::Entity>())
+            return world::Entity::GetStaticClass();
 
-        if (currentClass->is<base::world::ComponentTemplate>())
-            return base::world::ComponentTemplate::GetStaticClass();
+        else if (currentClass->is<world::Component>())
+            return world::Component::GetStaticClass();
 
         return nullptr;
     }
 
     void SceneDefaultPropertyInspectorPanel::cmdChangeClass()
     {
-        if (!m_classPicker && m_commonClassType)
+        if (!m_classPicker)
         {
-            if (const auto rootClass = SelectRootClass(m_commonClassType))
+            auto rootClass = SelectRootClass(m_commonClassType);
+
+            if (!rootClass && !m_nodes.empty())
+            {
+                bool allowEntityClass = true;
+
+                for (const auto& node : m_nodes)
+                {
+                    if (!node->is<SceneContentEntityNode>())
+                    {
+                        allowEntityClass = false;
+                        break;
+                    }
+                }
+
+                if (allowEntityClass)
+                    rootClass = world::Entity::GetStaticClass();
+            }
+
+            if (rootClass)
             {
                 m_classPicker = base::RefNew<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
 
@@ -963,8 +1092,8 @@ namespace ed
         {
             if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
             {
-                localTransform.collect(dataNode->calcLocalToParent().toEulerTransform());
-                worldTransform.collect(dataNode->localToWorldTransform());
+                localTransform.collect(dataNode->localToParent());
+                worldTransform.collect(dataNode->cachedLocalToWorldTransform());
             }
         }
 
@@ -1021,27 +1150,18 @@ namespace ed
 
         const auto step = DefaultDisplacementForFieldType(field);
 
-        // get the list of core nodes to change transform - those are always the nodes that are selected
-        Array<SceneContentDataNodePtr> dragNodes;
-        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
-
         // if we are in the whole hierarchy mode though we will need to update transform for the rest of the nodes as well
         HashSet<SceneContentDataNode*> coreSelectionSet;
         if (SceneGizmoTarget::WholeHierarchy == m_host->container()->gizmoSettings().target)
         {
-            coreSelectionSet.reserve(dragNodes.size());
-            for (const auto& node : dragNodes)
-                coreSelectionSet.insert(node);
-
-            auto roots = std::move(dragNodes);
-            for (const auto& root : roots)
-                SceneEditMode_Default::ExtractSelectionHierarchyWithFilter(root, dragNodes, coreSelectionSet);
-
-            m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, &coreSelectionSet, m_host->container()->gridSettings(), space, field, step);
+            if (space == GizmoSpace::Local)
+                m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, m_nodesData, m_host->container()->gridSettings(), space, field, step);
+            else
+                m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, m_nodeRoots, m_host->container()->gridSettings(), space, field, step);
         }
         else
         {
-            m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, nullptr, m_host->container()->gridSettings(), space, field, step);
+            //m_currentDragTransform = RefNew<SceneEditModeDefaultTransformDragger>(m_host, dragNodes, m_host->container()->gridSettings(), space, field, step);
         }
     }
 
@@ -1074,40 +1194,43 @@ namespace ed
 
     void SceneDefaultPropertyInspectorPanel::transformBox_ValueReset(GizmoSpace space, SceneNodeTransformValueFieldType field)
     {
-        // get the list of core nodes to change transform - those are always the nodes that are selected
-        Array<SceneContentDataNodePtr> dragNodes;
-        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
+        Array<ActionMoveSceneNodeData> undoData;
 
         // change transforms of the nodes in the selections
-        Array<ActionMoveSceneNodeData> undoData;
-        undoData.reserve(dragNodes.size());
         if (space == GizmoSpace::Local)
         {
-            for (const auto& node : dragNodes)
+            undoData.reserve(m_nodes.size());
+            for (const auto& node : m_nodes)
             {
-                auto& data = undoData.emplaceBack();
-                data.node = node;
-                data.oldTransform = node->localToWorldTransform();
+                if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+                {
+                    auto& data = undoData.emplaceBack();
+                    data.node = node;
+                    data.oldTransform = dataNode->localToParent();
 
-                auto localTransform = node->calcLocalToParent().toEulerTransform();
-                ResetLocalTransformField(localTransform, field);
+                    auto localTransform = dataNode->localToParent();
+                    ResetLocalTransformField(localTransform, field);
 
-                data.newTransform = node->parentToWorldTransform() * localTransform.toTransform();
+                    data.newTransform = localTransform;
+                }
             }
         }
         else if (space == GizmoSpace::World)
         {
-            for (const auto& node : dragNodes)
+            undoData.reserve(m_nodeRoots.size());
+            for (const auto& node : m_nodeRoots)
             {
                 auto& data = undoData.emplaceBack();
                 data.node = node;
-                data.oldTransform = node->localToWorldTransform();
-                data.newTransform = data.oldTransform;
-                ResetWorldTransformField(data.newTransform, field);
+                data.oldTransform = node->localToParent();
+
+                auto worldTransform = node->cachedLocalToWorldTransform();
+                ResetWorldTransformField(worldTransform, field);
+                data.newTransform = (worldTransform / node->cachedParentToWorldTransform()).toEulerTransform();
             }
         }
 
-        expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
+        //expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
 
         if (!undoData.empty())
         {
@@ -1116,7 +1239,7 @@ namespace ed
         }
     }
 
-    void SceneDefaultPropertyInspectorPanel::expandTransformValuesWithHierarchyChildren(const Array<SceneContentDataNodePtr>& dragNodes, Array<ActionMoveSceneNodeData>& undoData) const
+    /*void SceneDefaultPropertyInspectorPanel::expandTransformValuesWithHierarchyChildren(const Array<SceneContentDataNodePtr>& dragNodes, Array<ActionMoveSceneNodeData>& undoData) const
     {
         // if moving the whole hierarchy make sure we update also the child nodes
         if (SceneGizmoTarget::WholeHierarchy == m_host->container()->gizmoSettings().target)
@@ -1140,7 +1263,7 @@ namespace ed
                     {
                         auto& data = undoData.emplaceBack();
                         data.node = node;
-                        data.oldTransform = node->localToWorldTransform();
+                        data.oldTransform = node->localToParent();
 
                         const auto& newParentTransform = undoData[parentUndoActionIndex].newTransform;
                         data.newTransform = newParentTransform * node->calcLocalToParent();
@@ -1152,50 +1275,96 @@ namespace ed
                 }
             }
         }
-    }
+    }*/
 
     void SceneDefaultPropertyInspectorPanel::transformBox_ValueChanged(GizmoSpace space, SceneNodeTransformValueFieldType field, double value)
     {
-        // get the list of core nodes to change transform - those are always the nodes that are selected
-        Array<SceneContentDataNodePtr> dragNodes;
-        SceneEditMode_Default::EnsureParentsFirst(m_nodes, dragNodes);
-        
         // change transforms of the nodes in the selections
         Array<ActionMoveSceneNodeData> undoData;
-        undoData.reserve(dragNodes.size());
         if (space == GizmoSpace::Local)
         {
-            for (const auto& node : dragNodes)
+            undoData.reserve(m_nodes.size());
+            for (const auto& node : m_nodes)
             {
-                auto& data = undoData.emplaceBack();
-                data.node = node;
-                data.oldTransform = node->localToWorldTransform();
+                if (auto dataNode = rtti_cast<SceneContentDataNode>(node))
+                {
+                    auto& data = undoData.emplaceBack();
+                    data.node = node;
+                    data.oldTransform = dataNode->localToParent();
 
-                auto localTransform = node->calcLocalToParent().toEulerTransform();
-                ApplyLocalTransformField(localTransform, field, value, false);
+                    auto localTransform = dataNode->localToParent();
+                    ApplyLocalTransformField(localTransform, field, value, false);
 
-                data.newTransform = node->parentToWorldTransform() * localTransform.toTransform();
+                    data.newTransform = localTransform;
+                }
             }
         }
         else if (space == GizmoSpace::World)
         {
-            for (const auto& node : dragNodes)
+            undoData.reserve(m_nodeRoots.size());
+            for (const auto& node : m_nodeRoots)
             {
                 auto& data = undoData.emplaceBack();
                 data.node = node;
-                data.oldTransform = node->localToWorldTransform();
-                data.newTransform = data.oldTransform;
-                ApplyWorldTransformField(data.newTransform, field, value, false);
+                data.oldTransform = node->localToParent();
+
+                auto worldTransform = node->cachedLocalToWorldTransform();
+                ApplyWorldTransformField(worldTransform, field, value, false);
+
+                data.newTransform = (worldTransform / node->cachedParentToWorldTransform()).toEulerTransform();
             }
         }
 
-        expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
+        //expandTransformValuesWithHierarchyChildren(dragNodes, undoData);
 
         if (!undoData.empty())
         {
             auto action = CreateSceneNodeTransformAction(std::move(undoData), m_host, true);
             m_host->actionHistory()->execute(action);
         }
+    }
+
+    void SceneDefaultPropertyInspectorPanel::refreshPrefabList()
+    {
+        // collect used prefabs
+        HashMap<res::ResourcePath, PrefabInfoEntry> prefabEntries;
+        for (const auto& node : m_nodes)
+        {
+            if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
+            {
+                HashSet<res::ResourcePath> localPrefabEntries;
+                for (const auto& info : entityNode->localPrefabs())
+                {
+                    if (const auto& path = info.prefab.key().path())
+                    {
+                        auto& entry = prefabEntries[path];
+
+                        if (!entry.path)
+                        {
+                            entry.path = path;
+                            entry.fileName = path.fileStem();
+                        }
+
+                        if (localPrefabEntries.insert(path))
+                            entry.count += 1;
+
+                        if (info.enabled)
+                            entry.enabled = true;
+                        else
+                            entry.disabled = true;
+                    }
+                }
+            }
+        }
+
+        // display prefab list
+        m_prefabListModel = RefNew<SceneEditPrefabListModel>();
+        for (const auto& pair : prefabEntries.pairs())
+            if (pair.value.count == m_nodes.size()) // exists in all nodes
+                m_prefabListModel->add(pair.value);
+
+        // show list
+        m_prefabList->model(m_prefabListModel);
     }
 
     //--

@@ -16,6 +16,8 @@
 #include "base/ui/include/uiElementConfig.h"
 
 #include "rendering/scene/include/renderingFrameCamera.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 
 namespace ui
 {
@@ -23,7 +25,7 @@ namespace ui
 
     namespace config
     {
-        base::ConfigProperty<float> cvCameraNormalSpeed("Editor.Camera", "DefaultSpeed", 2.0f);
+        base::ConfigProperty<float> cvCameraNormalSpeed("Editor.Camera", "DefaultSpeed", 5.0f);
         base::ConfigProperty<float> cvCameraFastMultiplier("Editor.Camera", "FastCameraSpeedMultiplier", 5.0f);
         base::ConfigProperty<float> cvCameraSlowMultiplier("Editor.Camera", "SlowCameraSpeedMultiplier", 0.1f);
         base::ConfigProperty<float> cvCameraMaxAcceleration("Editor.Camera", "MaxAcceleration", 50.0f);
@@ -32,32 +34,172 @@ namespace ui
 
     //---
 
-    CameraController::CameraController()
-        : m_currentPosition(0,0,0)
-        , m_currentRotation(0,0,0)
-        , m_internalLinearVelocity(0,0,0)
-        , m_internalAngularVelocity(0,0,0)
-        , m_stamp(0)
-    {
-        resetInput();
-    }
+    RTTI_BEGIN_TYPE_ENUM(CameraMode);
+        RTTI_ENUM_OPTION(FreePerspective);
+        RTTI_ENUM_OPTION(OrbitPerspective);
+        RTTI_ENUM_OPTION(FreeOrtho);
+        RTTI_ENUM_OPTION(Front);
+        RTTI_ENUM_OPTION(Back);
+        RTTI_ENUM_OPTION(Left);
+        RTTI_ENUM_OPTION(Right);
+        RTTI_ENUM_OPTION(Top);
+        RTTI_ENUM_OPTION(Bottom);
+    RTTI_END_TYPE();
 
-    void CameraController::invalidateCameraStamp()
-    {
-        m_stamp += 1;
-    }
+    RTTI_BEGIN_TYPE_CLASS(CameraControllerSettings);
+        RTTI_PROPERTY(mode);
+        RTTI_PROPERTY(orthoZoom);
+        RTTI_PROPERTY(origin);
+        RTTI_PROPERTY(position);
+        RTTI_PROPERTY(rotation);
+    RTTI_END_TYPE();
 
-    void CameraController::resetInput()
-    {
-    }
-    
-    void CameraController::animate(float timeDelta)
-    {
-    }
+    CameraControllerSettings::CameraControllerSettings()
+        : position(2, 0, 0)
+        , origin(0, 0, 0)
+        , rotation(0, 0, 0)
+    {}
 
-    bool CameraController::processKeyEvent(const base::input::KeyEvent& evt)
+    bool CameraControllerSettings::perspective() const
     {
+        switch (mode)
+        {
+        case CameraMode::FreePerspective:
+        case CameraMode::OrbitPerspective:
+            return true;
+        }
+
         return false;
+    }
+
+    bool CameraControllerSettings::ortho() const
+    {
+        return !perspective();
+    }
+
+    bool CameraControllerSettings::fixed() const
+    {
+        switch (mode)
+        {
+        case CameraMode::Top:
+        case CameraMode::Bottom:
+        case CameraMode::Left:
+        case CameraMode::Right:
+        case CameraMode::Front:
+        case CameraMode::Back:
+            return true;
+        }
+
+        return false;
+    }
+
+    float CameraControllerSettings::calcRelativeScreenSize(ui::Size viewportSize) const
+    {
+        static auto ScreenSize = base::GetService<rendering::DeviceService>()->device()->maxRenderTargetSize().toVector();
+
+        const auto screenSizePercX = viewportSize.x / ScreenSize.x;
+        const auto screenSizePercY = viewportSize.y / ScreenSize.y;
+        const auto screenSize = std::max<float>(screenSizePercX, screenSizePercY);
+
+        return screenSize;
+    }
+
+    void CameraControllerSettings::computeRenderingCamera(ui::Size viewportSize, rendering::scene::CameraSetup& outCamera) const
+    {
+        outCamera.aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
+
+        if (perspective())
+        {
+            outCamera.position = position.approximate();
+            outCamera.rotation = rotation.toQuat();
+            outCamera.fov = std::clamp<float>(perspectiveFov, 1.0f, 179.0f);
+            outCamera.zoom = 1.0f;
+        }
+        else
+        {
+            outCamera.fov = 0.0f;
+
+            if (fixed())
+            {
+                outCamera.nearPlane = -8000.0f;
+                outCamera.farPlane = 8000.0f;
+
+                switch (mode)
+                {
+                    case CameraMode::Top:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.z = 0.0f;
+                        outCamera.rotation = base::Angles(90.0f, 0.0f, 0.0f).toQuat();
+                        break;
+                    }   
+
+                    case CameraMode::Bottom:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.z = 0.0f;
+                        outCamera.rotation = base::Angles(-90.0f, 0.0f, 0.0f).toQuat();
+                        break;
+                    }
+
+                    case CameraMode::Back:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.x = 0.0f;
+                        outCamera.rotation = base::Angles(0.0f, 0.0f, 0.0f).toQuat();
+                        break;
+                    }
+
+                    case CameraMode::Front:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.x = 0.0f;
+                        outCamera.rotation = base::Angles(0.0f, 180.0f, 0.0f).toQuat();
+                        break;
+                    }
+
+                    case CameraMode::Left:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.y = 0.0f;
+                        outCamera.rotation = base::Angles(0.0f, 90.0f, 0.0f).toQuat();
+                        break;
+                    }
+
+                    case CameraMode::Right:
+                    {
+                        outCamera.position = origin.approximate();
+                        outCamera.position.y = 0.0f;
+                        outCamera.rotation = base::Angles(0.0f, -90.0f, 0.0f).toQuat();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                outCamera.nearPlane = -1.0f;
+                outCamera.farPlane = 8000.0f;
+                outCamera.rotation = rotation.toQuat();
+                outCamera.position = origin.approximate();
+                outCamera.position.z = 0.0f;
+                outCamera.position -= rotation.forward() * outCamera.farPlane * 0.5f;
+                
+            }
+
+           
+            outCamera.zoom = orthoZoom * calcRelativeScreenSize(viewportSize);
+        }
+    }
+
+    //---
+
+    CameraController::CameraController()
+    {
+    }
+
+    void CameraController::configure(const CameraControllerSettings& settings)
+    {
+        m_settings = settings;
     }
 
     namespace helper
@@ -99,11 +241,10 @@ namespace ui
         class MouseCameraControlFreeFly : public IInputAction
         {
         public:
-            MouseCameraControlFreeFly(IElement* ptr, CameraController *owner, uint8_t mode, float speed, float sensitivity)
+            MouseCameraControlFreeFly(IElement* ptr, CameraControllerSettings& settings, uint8_t mode, float sensitivity)
                 : IInputAction(ptr)
-                , m_owner(owner)
+                , m_settings(settings)
                 , m_mode(mode)
-                , m_speed(speed)
                 , m_sensitivity(sensitivity)
                 , m_inputVelocity(0,0,0)
             {
@@ -130,7 +271,6 @@ namespace ui
                 if (evt.keyCode() == base::input::KeyCode::KEY_ESCAPE && evt.pressed())
                     return nullptr;
 
-                m_owner->processKeyEvent(evt);
                 return InputActionResult();
             }
 
@@ -181,16 +321,16 @@ namespace ui
 
                     // compute 3D velocity
                     base::Vector3 cameraDirForward;
-                    m_owner->rotation().someAngleVectors(&cameraDirForward, nullptr, nullptr);
+                    m_settings.rotation.someAngleVectors(&cameraDirForward, nullptr, nullptr);
 
                     deltaPos = cameraDirForward * evt.delta().z * 0.5f;
                 }
                 else if (m_mode == MoveMode_Pan)
                 {
                     base::Vector3 cameraDirRight, cameraDirUp(0, 0, 1);
-                    m_owner->rotation().someAngleVectors(nullptr, &cameraDirRight, nullptr);
+                    m_settings.rotation.someAngleVectors(nullptr, &cameraDirRight, nullptr);
 
-                    float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_speed);
+                    float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(2.0f, m_settings.speedLog);
                     if (m_movementKeys[KEY_FAST]) cameraSpeed *= config::cvCameraFastMultiplier.get();
                     if (m_movementKeys[KEY_SLOW]) cameraSpeed *= config::cvCameraSlowMultiplier.get();
 
@@ -199,8 +339,9 @@ namespace ui
                 }
 
                 // apply movement to camera controller
-                m_owner->moveTo(m_owner->position() + deltaPos, m_owner->rotation() + deltaRot);
-                m_owner->origin(m_owner->origin() + deltaPos);
+                m_settings.position += deltaPos;
+                m_settings.origin += deltaPos;
+                m_settings.rotation += deltaRot;
 
                 // continue
                 return InputActionResult();
@@ -215,7 +356,7 @@ namespace ui
             void computeMovement(float timeDelta)
             {
                 // compute target velocity
-                float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(10.0f, m_speed);
+                float cameraSpeed = config::cvCameraNormalSpeed.get() * pow(2.0f, m_settings.speedLog);
                 base::Vector3 targetVelocity(0, 0, 0);
                 {
                     // aggregate movement
@@ -237,7 +378,7 @@ namespace ui
 
                         // compute 3D velocity
                         base::Vector3 cameraDirForward, cameraDirRight, cameraDirUp;
-                        m_owner->rotation().angleVectors(cameraDirForward, cameraDirRight, cameraDirUp);
+                        m_settings.rotation.angleVectors(cameraDirForward, cameraDirRight, cameraDirUp);
 
                         targetVelocity += cameraDirForward * cameraMoveLocalDir.x;
                         targetVelocity += cameraDirRight * cameraMoveLocalDir.y;
@@ -258,11 +399,11 @@ namespace ui
 
                 // move the camera
                 auto deltaPos = m_inputVelocity * timeDelta;
-                m_owner->moveTo(m_owner->position() + deltaPos, m_owner->rotation());
+                m_settings.position += deltaPos;
             }
 
         private:
-            CameraController *m_owner;
+            CameraControllerSettings& m_settings;
 
             static const uint32_t MoveMode_Slide = 1;
             static const uint32_t MoveMode_Look = 2;
@@ -274,7 +415,6 @@ namespace ui
             bool m_movementKeys[KEY_MAX];
 
             float m_sensitivity = 1.0f;
-            float m_speed = 1.0f;
             uint8_t m_mode = 0;
         };
 
@@ -284,13 +424,14 @@ namespace ui
         class MouseCameraControlOrbitAroundPoint : public IInputAction
         {
         public:
-            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraController *owner, uint8_t mode, float sensitivity)
-                : IInputAction(ptr), m_owner(owner), m_mode(mode)
+            MouseCameraControlOrbitAroundPoint(IElement* ptr, CameraControllerSettings& settings, uint8_t mode, bool updatePosition, float sensitivity)
+                : IInputAction(ptr)
+                , m_settings(settings)
+                , m_mode(mode)
                 , m_sensitivity(sensitivity)
+                , m_updatePosition(updatePosition)
             {
-                const auto orbitCenter = owner->origin();
-                m_distance = owner->position().distance(orbitCenter);
-                m_rotation = owner->rotation();
+                m_distance = m_settings.position.distance(m_settings.origin);
             }
 
             virtual void onUpdateRedrawPolicy(WindowRedrawPolicy& outRedrawPolicy) override final
@@ -300,7 +441,6 @@ namespace ui
 
             virtual InputActionResult onKeyEvent(const base::input::KeyEvent &evt) override final
             {
-                m_owner->processKeyEvent(evt);
                 return InputActionResult();
             }
 
@@ -341,94 +481,159 @@ namespace ui
             virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
             {
                 // rotate local reference frame
-                m_rotation.pitch = std::clamp<float>(m_rotation.pitch + m_sensitivity * evt.delta().y * 0.25f, -89.9f, 89.9f);
-                m_rotation.yaw += m_sensitivity * evt.delta().x * 0.25f;
+                m_settings.rotation.pitch = std::clamp<float>(m_settings.rotation.pitch + m_sensitivity * evt.delta().y * 0.25f, -89.9f, 89.9f);
+                m_settings.rotation.yaw += m_sensitivity * evt.delta().x * 0.25f;
 
                 // calculate position and rotation of the camera
-                auto pos = m_owner->origin() - (m_distance * m_rotation.forward());
-                m_owner->moveTo(pos, m_rotation);
+                if (m_updatePosition)
+                    m_settings.position = m_settings.origin - (m_distance * m_settings.rotation.forward());
 
                 return InputActionResult();
             }
 
         private:
-            CameraController *m_owner;
-            base::Angles m_rotation;
+            CameraControllerSettings& m_settings;
 
             float m_distance = 1.0f;;
             float m_sensitivity = 1.0f;
+            bool m_updatePosition = false;
             uint8_t m_mode = 0;
+        };
+
+        //--
+
+        /// mouse input handling for the orbit camera
+        class MouseCameraControlOriginShift : public IInputAction
+        {
+        public:
+            MouseCameraControlOriginShift(IElement* ptr, CameraControllerSettings& settings, uint8_t mode, base::Vector3 xDir, base::Vector3 yDir, float sensitivity)
+                : IInputAction(ptr)
+                , m_settings(settings)
+                , m_mode(mode)
+                , m_xDir(xDir)
+                , m_yDir(yDir)
+                , m_sensitivity(sensitivity)
+            {
+            }
+
+            virtual void onUpdateRedrawPolicy(WindowRedrawPolicy& outRedrawPolicy) override final
+            {
+                outRedrawPolicy = WindowRedrawPolicy::ActiveOnly;
+            }
+
+            virtual InputActionResult onKeyEvent(const base::input::KeyEvent& evt) override final
+            {
+                return InputActionResult();
+            }
+
+            virtual InputActionResult onMouseEvent(const base::input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override final
+            {
+                // mutate mouse mode
+                if (evt.leftClicked())
+                    m_mode |= 1;
+                else if (evt.rightClicked())
+                    m_mode |= 2;
+                else if (evt.midClicked())
+                    m_mode |= 4;
+                else if (evt.leftReleased())
+                    m_mode &= ~1;
+                else if (evt.rightReleased())
+                    m_mode &= ~2;
+                else if (evt.midReleased())
+                    m_mode &= ~4;
+
+                // exit mouse mode when all mouse buttons are released
+                if (m_mode == 0)
+                    return InputActionResult(nullptr);
+
+                // continue
+                return InputActionResult();
+            }
+
+            virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override final
+            {
+                const auto speed = pow(2.0f, m_settings.speedLog);
+
+                auto delta = evt.delta().x * m_sensitivity * m_xDir * speed;
+                delta += evt.delta().y * m_sensitivity * m_yDir * speed;
+
+                m_settings.position += delta;
+                m_settings.origin += delta;
+
+                return InputActionResult();
+            }
+
+        private:
+            CameraControllerSettings& m_settings;
+            float m_sensitivity = 1.0f;
+            uint8_t m_mode = 0;
+
+            base::Vector3 m_xDir;
+            base::Vector3 m_yDir;
         };
 
         //--
 
     } // helper
 
-    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float speed, float sensitivity)
+    InputActionPtr CameraController::handleGeneralFly(IElement* ptr, uint8_t button, float sensitivity)
     {
-        return base::RefNew<helper::MouseCameraControlFreeFly>(ptr, this, button, speed, sensitivity);
+        return base::RefNew<helper::MouseCameraControlFreeFly>(ptr, m_settings, button, sensitivity);
     }
 
-    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button, float sensitivity)
+    InputActionPtr CameraController::handleOrbitAroundPoint(IElement* ptr, uint8_t button, bool updatePosition, float sensitivity)
     {
-        return base::RefNew<helper::MouseCameraControlOrbitAroundPoint>(ptr, this, button, sensitivity);
+        return base::RefNew<helper::MouseCameraControlOrbitAroundPoint>(ptr, m_settings, button, updatePosition, sensitivity);
     }
 
-    void CameraController::moveTo(const base::AbsolutePosition& position, const base::Angles& rotation)
+    InputActionPtr CameraController::handleOriginShift(IElement* ptr, uint8_t button, const base::Vector3& xDir, const base::Vector3& yDir, float sensitivity)
     {
-        m_currentPosition = position;
-        m_currentRotation = rotation;
-        invalidateCameraStamp();
-    }
-
-    void CameraController::origin(const base::AbsolutePosition& originPosition)
-    {
-        m_origin = originPosition;
+        return base::RefNew<helper::MouseCameraControlOriginShift>(ptr, m_settings, button, xDir, yDir, sensitivity);
     }
 
     void CameraController::processMouseWheel(const base::input::MouseMovementEvent& evt, float delta)
     {
-        auto dir = m_currentRotation.forward();
-        m_currentPosition += dir * delta;
-        invalidateCameraStamp();
-    }
-
-    void CameraController::computeRenderingCamera(rendering::scene::CameraSetup& outCamera) const
-    {
-        // setup position and rotation
-        outCamera.position = m_currentPosition.approximate();
-        outCamera.rotation = m_currentRotation.toQuat();
-
-        // setup clipping planes
-        // TODO: allow clipping planes to be configured by the user
-        /*if (isIsometric())
+        switch (m_settings.mode)
         {
-            outCamera.nearPlane = -1000.0f;
-            outCamera.farPlane = 1000.0f;
-            outCamera.zoom = m_currentZoom;
+            case CameraMode::OrbitPerspective:
+            case CameraMode::FreePerspective:
+            {
+                auto dir = m_settings.rotation.forward();
+
+                if (evt.keyMask().isShiftDown())
+                    delta *= 2.0f;
+                else if (evt.keyMask().isCtrlDown())
+                    delta /= 2.0f;
+
+                m_settings.position += dir * delta;
+                break;
+            }
+
+            case CameraMode::FreeOrtho:
+            case CameraMode::Left:
+            case CameraMode::Top:
+            case CameraMode::Front:
+            case CameraMode::Right:
+            case CameraMode::Bottom:
+            case CameraMode::Back:
+            {
+                float zoom = 0.05f;
+
+                if (evt.keyMask().isShiftDown())
+                    zoom *= 2.0f;
+                else if (evt.keyMask().isCtrlDown())
+                    zoom /= 2.0f;
+                
+                if (delta < 0.0f)
+                    m_settings.orthoZoom *= (1.0f + zoom);
+                else if (delta > 0.0f)
+                    m_settings.orthoZoom /= (1.0f + zoom);
+
+                if (m_settings.orthoZoom < 0.1f)
+                    m_settings.orthoZoom = 0.1f;
+                break;
+            }
         }
-        else*/
-        {
-            outCamera.nearPlane = 0.05f;
-            outCamera.farPlane = 8000.0f;
-            outCamera.zoom = 1.0f;
-        }
-    }
-
-    //---
-
-    void CameraController::configLoad(const ConfigBlock& config)
-    {
-        m_currentPosition = config.readOrDefault("CameraPosition", m_currentPosition.approximate());
-        m_currentRotation = config.readOrDefault("CameraRotation", m_currentRotation);
-        m_origin = config.readOrDefault("CameraOrigin", m_origin.approximate());
-    }
-
-    void CameraController::configSave(const ConfigBlock& config) const
-    {
-        config.write("CameraPosition", m_currentPosition.approximate());
-        config.write("CameraRotation", m_currentRotation);
-        config.write("CameraOrigin", m_origin.approximate());
     }
 
     //---

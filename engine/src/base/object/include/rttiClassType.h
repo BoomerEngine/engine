@@ -9,6 +9,7 @@
 #pragma once
 
 #include "rttiType.h"
+#include "rttiProperty.h"
 #include "rttiFunctionPointer.h"
 #include "base/containers/include/array.h"
 #include "base/containers/include/stringID.h"
@@ -16,6 +17,7 @@
 
 namespace base
 {
+
     namespace reflection
     {
         class ClassBuilder;
@@ -26,6 +28,20 @@ namespace base
         class Property;
         class Function;
         class Interface;
+
+        /// property for templated object
+        struct BASE_OBJECT_API TemplateProperty
+        {
+            Type type;
+            StringID name;
+            StringID category;
+            void* defaultValue = nullptr;
+            PropertyEditorData editorData;
+            const Property* nativeProperty = nullptr;
+
+            TemplateProperty(Type type);
+            ~TemplateProperty();
+        };
 
         /// type describing a class, can be a native or abstract class, depends
         class BASE_OBJECT_API IClassType : public IType
@@ -92,6 +108,10 @@ namespace base
 
             // get ALL functions (from this class and base classes)
             const TConstFunctions& allFunctions() const;
+
+            // get all template properties for this class
+            typedef Array<TemplateProperty> TConstTemplateProperties;
+            const TConstTemplateProperties& allTemplateProperties() const;
 
             // find property with given name (recursive)
             const Property* findProperty(StringID propertyName) const;
@@ -191,11 +211,14 @@ namespace base
             TNonConstFunctions m_localFunctions;
 
             mutable TConstProperties m_allProperties;
-            mutable bool m_allPropertiesCached;
+            mutable bool m_allPropertiesCached = false;
+
+            mutable TConstTemplateProperties m_allTemplateProperties;
+            mutable bool m_allTemplatePropertiesCached = false;
 
             mutable TConstFunctions m_allFunctions;
             mutable TFunctionCache m_allFunctionsMap;
-            mutable bool m_allFunctionsCached;
+            mutable bool m_allFunctionsCached = false;
 
             mutable SpinLock m_allTablesLock;
 

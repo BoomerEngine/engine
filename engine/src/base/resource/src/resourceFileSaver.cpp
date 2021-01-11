@@ -415,4 +415,32 @@ namespace base
         //--
 
     } // res
+
+    //--
+
+    void ExtractUsedResources(const IObject* object, HashMap<res::ResourceKey, uint32_t>& outResourceCounts)
+    {
+        if (object)
+        {
+            res::FileSavingContext context;
+            context.rootObject.pushBack(AddRef(object));
+
+            res::FileSerializedObjectCollection objectCollection;
+            if (CollectObjects(context, objectCollection, nullptr))
+            {
+                res::FileTablesBuilder fileTables;
+                stream::OpcodeMappedReferences mappedReferences;
+                BuildFileTables(objectCollection.orderedObjects(), fileTables, mappedReferences);
+
+                for (const auto& resourceRef : mappedReferences.mappedResources.keys())
+                {
+                    const auto key = res::ResourceKey(res::ResourcePath(resourceRef.resourcePath), resourceRef.resourceType.cast<res::IResource>());
+                    outResourceCounts[key] += 1;
+                }
+            }
+        }
+    }
+
+    //--
+
 } // base

@@ -41,7 +41,7 @@ namespace ed
 
         // load content for this file for edition
         // NOTE: this will return previously loaded content if resource is still opened somewhere
-        res::ResourcePtr loadContent();
+        res::ResourcePtr loadContent() const;
 
         // save resource back to file, resets the modified flag
         bool storeContent(const res::ResourcePtr& content);

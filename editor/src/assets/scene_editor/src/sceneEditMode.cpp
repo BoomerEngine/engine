@@ -100,14 +100,13 @@ namespace ed
     }
 
     void ISceneEditMode::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
-    {
-
-    }
+    {}
 
     void ISceneEditMode::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
-    {
+    {}
 
-    }
+    void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
+    {}
 
     void ISceneEditMode::handleUpdate(float dt)
     {}
@@ -130,6 +129,16 @@ namespace ed
     void ISceneEditMode::handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode)
     {}
 
+    bool ISceneEditMode::handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file)
+    {
+        return false;
+    }
+
+    bool ISceneEditMode::handleTreeNodeDrop(const SceneContentNodePtr& target, const SceneContentNodePtr& source)
+    {
+        return false;
+    }
+
     //--
 
     void ISceneEditMode::handleGeneralCopy()
@@ -142,6 +151,9 @@ namespace ed
     {}
 
     void ISceneEditMode::handleGeneralDelete()
+    {}
+
+    void ISceneEditMode::handleGeneralDuplicate()
     {}
 
     bool ISceneEditMode::checkGeneralCopy() const
@@ -160,6 +172,11 @@ namespace ed
     }
 
     bool ISceneEditMode::checkGeneralDelete() const
+    {
+        return false;
+    }
+
+    bool ISceneEditMode::checkGeneralDuplicate() const
     {
         return false;
     }
@@ -503,6 +520,55 @@ namespace ed
         }
 
         toolbar->createSeparator();
+    }
+
+    //--
+
+    static void PrintCreationMode(IFormatStream& f, SceneContentNodeCreationMode mode)
+    {
+        switch (mode)
+        {
+            case SceneContentNodeCreationMode::Component: f << "[img:component] Naked component"; break;
+            case SceneContentNodeCreationMode::WrappedComponent: f << "[img:entity_wrapped] Wrapped component"; break;
+            case SceneContentNodeCreationMode::Entity: f << "[img:entity] Standalone entity"; break;
+        }
+    }
+
+    void CreateDefaultCreationButtons(ScenePreviewContainer* container, ui::ToolBar* toolbar)
+    {
+        auto data = container->creationSettings();
+
+        // space
+        {
+            StringBuilder txt;
+
+            PrintCreationMode(txt, data.mode);
+
+            toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+            {
+                static const SceneContentNodeCreationMode CreationModes[] = { SceneContentNodeCreationMode::Component, SceneContentNodeCreationMode::WrappedComponent, SceneContentNodeCreationMode::Entity };
+
+                auto menu = base::RefNew<ui::MenuButtonContainer>();
+                auto data = container->creationSettings();
+
+                for (auto mode : CreationModes)
+                {
+                    StringBuilder txt;
+                    PrintCreationMode(txt, mode);
+
+                    auto modeCopy = mode; // compiler crash ;)
+
+                    menu->createCallback(txt.view(), mode == data.mode ? "[img:tick]" : "") = [container, modeCopy]() {
+                        auto data = container->creationSettings();
+                        data.mode = modeCopy;
+                        container->creationSettings(data);
+                    };
+                }
+
+                menu->showAsDropdown(button);
+            };
+        }
+
     }
 
     //--

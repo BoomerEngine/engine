@@ -7,8 +7,11 @@
 ***/
 
 #include "build.h"
+#include "resourceKey.h"
 #include "resourceFileSaver.h"
 #include "resourceFileLoader.h"
+#include "resourceLoadingService.h"
+
 #include "base/object/include/object.h"
 #include "base/io/include/ioFileHandleMemory.h"
 
@@ -53,6 +56,9 @@ namespace base
         saveContext.rootObject.pushBack(AddRef(object));
         saveContext.protectedStream = false;
 
+        if (!loader)
+            loader = GetService<res::LoadingService>()->loader();
+
         auto writer = base::RefNew<io::MemoryWriterFileHandle>();
         if (SaveFile(writer, saveContext))
         {
@@ -77,5 +83,7 @@ namespace base
 
         return nullptr;
     }
+
+    //--
 
 } // base

@@ -36,9 +36,10 @@ namespace ed
             auto& entry = m_nodes.emplaceBack();
             entry.node = node;
             entry.parent = AddRef(rtti_cast<SceneContentDataNode>(node->parent()));
-            entry.initialLocalTransform = node->calcLocalToParent();
-            entry.initialWorldTransform = node->localToWorldTransform();
-            entry.lastTransform = entry.initialWorldTransform;
+            entry.initialLocalTransform = node->localToParent();
+            entry.initialWorldTransform = node->cachedLocalToWorldTransform();
+            entry.initialParentWorldTransform = node->cachedParentToWorldTransform();
+            entry.lastTransform = entry.initialLocalTransform;
         }
     }
 
@@ -58,13 +59,16 @@ namespace ed
     void SceneEditModeDefaultTransformAction::revert()
     {
         for (const auto& entry : m_nodes)
-            entry.node->changePlacement(entry.initialWorldTransform);
+            entry.node->changeLocalPlacement(entry.initialLocalTransform);
     }
 
     void SceneEditModeDefaultTransformAction::applyDeltaTransform(const base::Transform& deltaTransform)
     {
         for (auto& entry : m_nodes)
-            entry.lastTransform = m_referenceSpace.transform(entry.initialWorldTransform, deltaTransform);
+        {
+            const auto newWorldPlacement = m_referenceSpace.transform(entry.initialWorldTransform, deltaTransform);
+            entry.lastTransform = (newWorldPlacement / entry.initialParentWorldTransform).toEulerTransform();
+        }
     }
 
     void SceneEditModeDefaultTransformAction::preview(const base::Transform& deltaTransform)
@@ -73,7 +77,7 @@ namespace ed
 
         for (const auto& entry : m_nodes)
         {
-            entry.node->changePlacement(entry.lastTransform);
+            entry.node->changeLocalPlacement(entry.lastTransform);
 
             if (m_gizmo.target == SceneGizmoTarget::SelectionOnly)
                 if (auto* entity = rtti_cast<SceneContentEntityNode>(entry.node.get()))
@@ -94,7 +98,7 @@ namespace ed
         {
             auto& data = undoData.emplaceBack();
             data.node = entry.node;
-            data.oldTransform = entry.initialWorldTransform;
+            data.oldTransform = entry.initialLocalTransform;
             data.newTransform = entry.lastTransform;
         }
 
@@ -193,7 +197,7 @@ namespace ed
 
     //--
 
-    SceneEditModeDefaultTransformDragger::SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const HashSet<SceneContentDataNode*>* filterSet, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep)
+    SceneEditModeDefaultTransformDragger::SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep)
         : m_mode(mode)
         , m_grid(grid)
         , m_space(space)
@@ -202,37 +206,21 @@ namespace ed
     {
         m_nodes.reserve(nodes.size());
 
-        HashMap<SceneContentNode*, int> parentMap;
-
         for (const auto& node : nodes)
         {
-            int parentIndex = -1;
-
-            const auto partOfDragSet = !filterSet || filterSet->contains(node);
-            if (!partOfDragSet)
-            {
-                parentMap.find(node->parent(), parentIndex);
-                DEBUG_CHECK(parentIndex != -1);
-                if (parentIndex == -1)
-                    continue;
-            }
-
             auto& entry = m_nodes.emplaceBack();
-            entry.initialLocalTransformQuat = node->calcLocalToParent();
-            entry.initialLocalTransform = entry.initialLocalTransformQuat.toEulerTransform();
-            entry.initialWorldTransform = node->localToWorldTransform();
-            entry.calculatedTransform = entry.initialWorldTransform;
+            entry.initialLocalTransform = node->localToParent();
+            entry.initialWorldTransform = node->cachedLocalToWorldTransform();
+            entry.initialParentWorldTransform = node->cachedParentToWorldTransform();
+            entry.calculatedTransform = entry.initialLocalTransform;
             entry.node = node;
-            entry.parentDragNode = parentIndex;
-
-            parentMap[entry.node] = m_nodes.lastValidIndex();
         }
     }
 
     void SceneEditModeDefaultTransformDragger::cancel()
     {
         for (const auto& entry : m_nodes)
-            entry.node->changePlacement(entry.initialWorldTransform);
+            entry.node->changeLocalPlacement(entry.initialLocalTransform);
     }
 
     void SceneEditModeDefaultTransformDragger::step(int stepDelta)
@@ -252,7 +240,7 @@ namespace ed
             computeTransforms();
 
             for (const auto& entry : m_nodes)
-                entry.node->changePlacement(entry.calculatedTransform);
+                entry.node->changeLocalPlacement(entry.calculatedTransform);
         }
     }
 
@@ -500,26 +488,17 @@ namespace ed
     {
         for (auto& entry : m_nodes)
         {
-            if (entry.parentDragNode == -1)
+            if (m_space == GizmoSpace::Local)
             {
-                if (m_space == GizmoSpace::Local)
-                {
-                    auto localTransform = entry.initialLocalTransform;
-                    ApplyLocalTransformField(localTransform, m_field, m_lastDisplacement, true);
-                    entry.calculatedTransform = entry.node->parentToWorldTransform() * localTransform.toTransform();
-                }
-                else if (m_space == GizmoSpace::World)
-                {
-                    auto worldTransform = entry.initialWorldTransform;
-                    ApplyWorldTransformField(worldTransform, m_field, m_lastDisplacement, true);
-                    entry.calculatedTransform = worldTransform;
-                }
+                auto localTransform = entry.initialLocalTransform;
+                ApplyLocalTransformField(localTransform, m_field, m_lastDisplacement, true);
+                entry.calculatedTransform = localTransform;
             }
-            else
+            else if (m_space == GizmoSpace::World)
             {
-                const auto& parentTransform = m_nodes[entry.parentDragNode].calculatedTransform;
-                entry.calculatedTransform = parentTransform * entry.initialLocalTransformQuat;
-                entry.node->changePlacement(entry.calculatedTransform);
+                auto worldTransform = entry.initialWorldTransform;
+                ApplyWorldTransformField(worldTransform, m_field, m_lastDisplacement, true);
+                entry.calculatedTransform = (worldTransform / entry.initialParentWorldTransform).toEulerTransform();
             }
         }
     }
@@ -533,7 +512,7 @@ namespace ed
         {
             auto& data = undoData.emplaceBack();
             data.node = node.node;
-            data.oldTransform = node.initialWorldTransform;
+            data.oldTransform = node.initialLocalTransform;
             data.newTransform = node.calculatedTransform;
         }
 

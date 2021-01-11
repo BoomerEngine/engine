@@ -18,6 +18,7 @@
 #include "rendering/scene/include/renderingSelectable.h"
 #include "rendering/scene/include/renderingFrameRenderingService.h"
 #include "rendering/scene/include/renderingFrameCameraContext.h"
+#include "rendering/scene/include/renderingScene.h"
 
 #include "rendering/ui_host/include/renderingPanel.h"
 
@@ -26,21 +27,76 @@
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/canvas/include/canvas.h"
 #include "base/ui/include/uiToolBar.h"
+#include "base/ui/include/uiMenuBar.h"
 #include "base/system/include/thread.h"
+#include "base/ui/include/uiTrackBar.h"
 
 namespace ui
 {
+    //--
+
+    static base::StringView RenderModeString(rendering::scene::FrameRenderMode mode)
+    {
+        switch (mode)
+        {
+        case rendering::scene::FrameRenderMode::Default: return "[img:viewmode] Default";
+        case rendering::scene::FrameRenderMode::WireframeSolid: return "[img:cube] Solid Wireframe";
+        case rendering::scene::FrameRenderMode::WireframePassThrough: return "[img:wireframe] Wire Wireframe";
+        case rendering::scene::FrameRenderMode::DebugDepth: return "[img:order_front] Debug Depth";
+        case rendering::scene::FrameRenderMode::DebugLuminance: return "[img:lightbulb] Debug Luminance";
+        case rendering::scene::FrameRenderMode::DebugShadowMask: return "[img:shadow_on] Debug Shadowmask";
+        case rendering::scene::FrameRenderMode::DebugAmbientOcclusion: return "[img:shader] Debug Ambient Occlusion";
+        case rendering::scene::FrameRenderMode::DebugReconstructedViewNormals: return "[img:axis] Debug Normals";
+        }
+
+        return "";
+    }
+
+    static base::StringView CameraModeString(CameraMode mode)
+    {
+        switch (mode)
+        {
+            case CameraMode::FreePerspective: return "[img:camera] Perspective";
+            case CameraMode::OrbitPerspective: return "[img:camera_orbit] Orbit";
+            case CameraMode::FreeOrtho: return "[img:camera] Ortho";
+
+            case CameraMode::Front: return "[img:view_front] Front";
+            case CameraMode::Back: return "[img:view_back] Back";
+            case CameraMode::Left: return "[img:view_left] Left";
+            case CameraMode::Right: return "[img:view_right] Right";
+            case CameraMode::Top: return "[img:view_top] Top";
+            case CameraMode::Bottom: return "[img:view_bottom] Bottom";
+        }
+
+        return "";
+    }
 
     //--
 
     RTTI_BEGIN_TYPE_CLASS(RenderingScenePanel);
     RTTI_END_TYPE();
 
+    RTTI_BEGIN_TYPE_ENUM(PointSelectionMode);
+        RTTI_ENUM_OPTION(Exact);
+        RTTI_ENUM_OPTION(LargestArea);
+        RTTI_ENUM_OPTION(SmallestArea);
+        RTTI_ENUM_OPTION(Closest);
+    RTTI_END_TYPE();
+
+    RTTI_BEGIN_TYPE_ENUM(AreaSelectionMode);
+        RTTI_ENUM_OPTION(Everything);
+        RTTI_ENUM_OPTION(ExcludeBorder);
+        RTTI_ENUM_OPTION(LargestArea);
+        RTTI_ENUM_OPTION(SmallestArea);
+        RTTI_ENUM_OPTION(Closest);
+    RTTI_END_TYPE();
+
     //----
 
-    RenderingPanelSelectionQuery::RenderingPanelSelectionQuery(const base::Rect& area, base::Array<rendering::scene::EncodedSelectable> entries)
+    RenderingPanelSelectionQuery::RenderingPanelSelectionQuery(const base::Rect& area, base::Array<rendering::scene::EncodedSelectable> entries, const rendering::scene::Camera& camera)
         : m_area(area)
         , m_entries(std::move(entries))
+        , m_camera(camera)
     {
     }
 
@@ -189,11 +245,26 @@ namespace ui
 
     //----
 
-    void RenderingScenePanelSettings::configSave(const ConfigBlock& block) const
-    {}
+    RTTI_BEGIN_TYPE_CLASS(RenderingScenePanelSettings);
+        RTTI_PROPERTY(renderMode);
+        RTTI_PROPERTY(renderMaterialDebugChannelName);
+        //RTTI_PROPERTY(filters);
+        RTTI_PROPERTY(cameraSpeedFactor);
+        //RTTI_PROPERTY(cameraForceOrbit);
+        RTTI_PROPERTY(paused);
+        RTTI_PROPERTY(timeDeltaScale);
+        RTTI_PROPERTY(areaSelectionMode);
+        RTTI_PROPERTY(pointSelectionMode);
+        RTTI_PROPERTY(drawInternalGrid);
+        RTTI_PROPERTY(drawInternalWorldAxis);
+        RTTI_PROPERTY(drawInternalCameraAxis);
+        RTTI_PROPERTY(drawInternalCameraData);
+    RTTI_END_TYPE();
 
-    void RenderingScenePanelSettings::configLoad(const ConfigBlock& block)
-    {}
+    RenderingScenePanelSettings::RenderingScenePanelSettings()
+    {
+        filters = rendering::scene::FilterFlags::DefaultEditor();
+    }
 
     //---
 
@@ -221,7 +292,7 @@ namespace ui
         m_bottomToolbar->customVerticalAligment(ElementVerticalLayout::Bottom);
         m_bottomToolbar->overlay(true);
 
-        m_filterFlags = rendering::scene::FilterFlags::DefaultEditor();
+        createToolbarItems();
     }
 
     RenderingScenePanel::~RenderingScenePanel()
@@ -234,43 +305,56 @@ namespace ui
 
     void RenderingScenePanel::panelSettings(const RenderingScenePanelSettings& settings)
     {
+        auto oldMode = m_panelSettings.renderMode;
+
         m_panelSettings = settings;
+
+        if (settings.renderMode != oldMode)
+        {
+            toolbar()->updateButtonCaption("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(settings.renderMode)));
+        }
     }
 
-    void RenderingScenePanel::setupCamera(const base::Angles& rotation, const base::Vector3& position, const base::Vector3* oribitCenter)
+    void RenderingScenePanel::cameraSettings(const CameraControllerSettings& settings)
     {
-        m_cameraController.moveTo(position, rotation);
+        auto oldMode = m_cameraController.settings().mode;
 
-        if (oribitCenter)
-            m_cameraController.origin(*oribitCenter);
+        m_cameraController.configure(settings);
+
+        if (settings.mode != oldMode)
+        {
+            toolbar()->updateButtonCaption("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(CameraModeString(settings.mode)));
+        }
     }
 
-    void RenderingScenePanel::setupCameraAroundBounds(const base::Box& bounds, float distanceFactor /*= 1.0f*/, const base::Angles* newRotation/*=nullptr*/)
+    void RenderingScenePanel::focusOnBounds(const base::Box& bounds, float distanceFactor /*= 1.0f*/, const base::Angles* newRotation/*=nullptr*/)
     {
-        // get new rotation or use the existing one
-        auto rotation = newRotation ? *newRotation : m_cameraController.rotation();
+        auto settings = m_cameraController.settings();
+        if (settings.perspective())
+        {
+            // get new rotation or use the existing one
+            if (newRotation)
+                settings.rotation = *newRotation;
 
-        // compute the maximum object size
-        auto distance = bounds.extents().length() * 3.0f * distanceFactor;
-        auto position = bounds.center() - distance * rotation.forward();
-        m_cameraController.moveTo(position, rotation);
-        m_cameraController.origin(bounds.center());
+            // compute the maximum object size
+            auto distance = bounds.extents().length() * 3.0f * distanceFactor;
+            settings.position = bounds.center() - distance * settings.rotation.forward();
+            settings.origin = bounds.center();
+
+            m_cameraController.configure(settings);
+        }
     }
 
     //--
 
     void RenderingScenePanel::handleUpdate(float dt)
     {
-        m_cameraController.animate(dt);
         m_engineTimeCounter += dt;
         m_gameTimeCounter += dt;
     }
 
     bool RenderingScenePanel::handleKeyEvent(const base::input::KeyEvent& evt)
     {
-        if (m_cameraController.processKeyEvent(evt))
-            return true;
-
         return TBaseClass::handleKeyEvent(evt);
     }
 
@@ -283,13 +367,13 @@ namespace ui
         {
         public:
             typedef std::function<void(bool ctrl, bool shift, const base::Point & point)> TSelectionFunction;
+            typedef std::function<InputActionResult()> TContinuationFunction;
 
-            SelectionClickInputHandler(IElement* ptr, CameraController* camera, const base::Point& startPoint, const TSelectionFunction& selectionFunc, float sensitivity)
+            SelectionClickInputHandler(IElement* ptr, const base::Point& startPoint, const TSelectionFunction& selectionFunc, const TContinuationFunction& continuationFunc)
                 : IInputAction(ptr)
                 , m_startPoint(startPoint)
                 , m_selectionFunction(selectionFunc)
-                , m_camera(camera)
-                , m_sensitivity(sensitivity)
+                , m_continuationFunction(continuationFunc)
             {
             }
 
@@ -301,32 +385,31 @@ namespace ui
                     auto ctrlPressed = evt.keyMask().isCtrlDown();
                     auto shiftPressed = evt.keyMask().isShiftDown();
                     m_selectionFunction(ctrlPressed, shiftPressed, relativePos);
-                    return nullptr;
                 }
                 else if (evt.rightClicked())
                 {
-                    return m_camera->handleGeneralFly(element(), 3, 1.0f, m_sensitivity);
+                    if (m_continuationFunction)
+                        return m_continuationFunction();
                 }
-                else
-                {
-                    return nullptr;
-                }
+
+                return nullptr;
             }
 
             virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
             {
                 auto dist = evt.absolutePosition().distanceTo(m_startPoint);
-                if (dist >= 4.0f)
-                    return m_camera->handleGeneralFly(element(), 1);
+                if (dist <= 4.0f)
+                    return InputActionResult();
 
-                return InputActionResult();
+                if (m_continuationFunction)
+                    return m_continuationFunction();
+                return nullptr;
             }
 
         private:
-            CameraController* m_camera;
             TSelectionFunction m_selectionFunction;
-            base::Point m_startPoint;
-            float m_sensitivity = 1.0f;
+            TContinuationFunction m_continuationFunction;
+            base::Point m_startPoint;            
         };
 
         //--
@@ -442,13 +525,168 @@ namespace ui
     void RenderingScenePanel::handleFocusLost()
     {
         TBaseClass::handleFocusLost();
-        m_cameraController.resetInput();
+        //m_cameraController.resetInput();
+    }
+
+    InputActionPtr RenderingScenePanel::createLeftMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt, bool allowSelection)
+    {
+        const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
+
+        if (allowSelection)
+        {
+            if (evt.keyMask().isShiftDown())
+            {
+                auto selectionFunc = [this](bool ctrl, bool shift, const base::Rect& rect) { handleAreaSelection(ctrl, shift, rect); };
+                return base::RefNew<helper::SelectionAreaInputHandler>(this, evt.absolutePosition(), selectionFunc);
+            }
+            else
+            {
+                // create a point selection mode
+                // NOTE: this can mutate into the camera movement
+                auto selectionFunc = [this](bool ctrl, bool shift, const base::Point& point) { handlePointSelection(ctrl, shift, point); };
+                auto copiedEvent = base::RefNew<base::input::MouseClickEvent>(evt.deviceID(), evt.keyCode(), evt.type(), evt.keyMask(), evt.windowPosition(), evt.absolutePosition());
+                auto continuationFunc = [this, area, copiedEvent]() -> InputActionPtr { return createLeftMouseButtonCameraAction(area, *copiedEvent, false); };
+                return base::RefNew<helper::SelectionClickInputHandler>(this, evt.absolutePosition(), selectionFunc, continuationFunc);
+            }
+        }
+
+        switch (m_cameraController.settings().mode)
+        {
+            case CameraMode::FreePerspective:
+                return m_cameraController.handleGeneralFly(this, 1, zoomScale);
+
+            case CameraMode::FreeOrtho:
+                return m_cameraController.handleOrbitAroundPoint(this, 1, false, zoomScale);
+
+            case CameraMode::OrbitPerspective:
+                return m_cameraController.handleOrbitAroundPoint(this, 1, true, zoomScale);
+        }
+
+        return nullptr;
+    }
+
+    InputActionPtr RenderingScenePanel::createRightMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt)
+    {
+        const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
+
+        switch (m_cameraController.settings().mode)
+        {
+            case CameraMode::FreePerspective:
+                return m_cameraController.handleGeneralFly(this, 2, zoomScale);
+
+            case CameraMode::Top:
+            case CameraMode::Bottom:
+            case CameraMode::Front:
+            case CameraMode::Back:
+            case CameraMode::Left:
+            case CameraMode::Right:
+            case CameraMode::FreeOrtho:
+            {
+                base::Vector3 orthoMask(1,1,1);
+                base::Angles orthoRotation;
+
+                switch (m_cameraController.settings().mode)
+                {
+                    case CameraMode::Top:
+                    {
+                        orthoRotation = base::Angles(90.0f, 0.0f, 0.0f);
+                        orthoMask.z = 0.0f;
+                        break;
+                    }
+
+                    case CameraMode::Bottom:
+                    {
+                        orthoRotation = base::Angles(-90.0f, 0.0f, 0.0f);
+                        orthoMask.z = 0.0f;
+                        break;
+                    }
+
+                    case CameraMode::Back:
+                    {
+                        orthoRotation = base::Angles(0.0f, 0.0f, 0.0f);
+                        orthoMask.x = 0.0f;
+                        break;
+                    }
+
+                    case CameraMode::Front:
+                    {
+                        orthoRotation = base::Angles(0.0f, 180.0f, 0.0f);
+                        orthoMask.x = 0.0f;
+                        break;
+                    }
+
+                    case CameraMode::Left:
+                    {
+                        orthoRotation = base::Angles(0.0f, 90.0f, 0.0f);
+                        orthoMask.y = 0.0f;
+                        break;
+                    }
+
+                    case CameraMode::Right:
+                    {
+                        orthoRotation = base::Angles(0.0f, -90.0f, 0.0f);
+                        orthoMask.y = 0.0f;
+                        break;
+                    }
+
+                    default:
+                        orthoRotation = m_cameraController.settings().rotation;
+                        orthoMask.z = 0.0f;
+                        break;
+                }
+
+                base::Vector3 xDir(0, 0, 0), yDir(0, 0, 0), mask(1, 1, 1);
+                orthoRotation.someAngleVectors(nullptr, &xDir, &yDir);
+
+                xDir *= orthoMask;
+                yDir *= orthoMask;
+
+                float relativeScreenSize = m_cameraController.settings().calcRelativeScreenSize(Size(1.0f, 1.0f)) * 2.0f;
+                xDir *= -relativeScreenSize * m_cameraController.settings().orthoZoom;
+                yDir *= relativeScreenSize * m_cameraController.settings().orthoZoom;
+
+                return m_cameraController.handleOriginShift(this, 2, xDir, yDir, zoomScale);
+            }
+
+            case CameraMode::OrbitPerspective:
+                return m_cameraController.handleOrbitAroundPoint(this, 2, zoomScale);
+        }
+
+        return nullptr;
+    }
+
+    InputActionPtr RenderingScenePanel::createMiddleMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt)
+    {
+        const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
+
+        /*// orbit around point
+        if (evt.keyMask().isAltDown())
+        {
+            // orbit around point
+            base::AbsolutePosition worldOrbitPosition;
+            auto viewportPos = (evt.absolutePosition() - cachedDrawArea().absolutePosition());
+            if (queryWorldPositionUnderCursor(viewportPos, worldOrbitPosition))
+            {
+                //m_panelSettings.
+                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4, zoomScale))
+                {
+                    m_renderInputAction = ret;
+                    return ret;
+                }
+            }
+        }*/
+
+        switch (m_cameraController.settings().mode)
+        {
+            case CameraMode::FreePerspective:
+                return m_cameraController.handleGeneralFly(this, 4, zoomScale);
+        }
+
+        return nullptr;
     }
 
     InputActionPtr RenderingScenePanel::handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt)
     {
-        const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
-
         if (evt.keyMask().isCtrlDown() && evt.rightClicked())
         {
             auto rotateFunc = [this](float dp, float dy) { rotateGlobalLight(dp, dy); };
@@ -456,69 +694,27 @@ namespace ui
         }
         else  if (evt.leftClicked() && !evt.keyMask().isAltDown())
         {
-            if (m_panelSettings.cameraForceOrbit)
-            {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 1, zoomScale))
-                {
-                    m_renderInputAction = ret;
-                    return ret;
-                }
-            }
-            else
-            {
-                // create the selection input
-                if (evt.keyMask().isShiftDown())
-                {
-                    // create an area selection mode
-                    auto selectionFunc = [this](bool ctrl, bool shift, const base::Rect& rect) { handleAreaSelection(ctrl, shift, rect); };
-                    return base::RefNew<helper::SelectionAreaInputHandler>(this, evt.absolutePosition(), selectionFunc);
-                }
-                else
-                {
-                    // create a point selection mode
-                    // NOTE: this can mutate into the camera movement
-                    auto selectionFunc = [this](bool ctrl, bool shift, const base::Point& point) { handlePointSelection(ctrl, shift, point); };
-                    return base::RefNew<helper::SelectionClickInputHandler>(this, &m_cameraController, evt.absolutePosition(), selectionFunc, zoomScale);
-                }
-            }
+           if (auto ret = createLeftMouseButtonCameraAction(area, evt, true))
+           {
+               m_renderInputAction = ret;
+               return ret;
+           }
         }
         else if (evt.rightClicked())
         {
-            if (m_panelSettings.cameraForceOrbit)
+            if (auto ret = createRightMouseButtonCameraAction(area, evt))
             {
-                if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 2, zoomScale))
-                {
-                    m_renderInputAction = ret;
-                    return ret;
-                }
-            }
-            else
-            {
-                // go to the camera input directly
-                return m_cameraController.handleGeneralFly(this, 2, 1.0f, zoomScale);
+                m_renderInputAction = ret;
+                return ret;
             }
         }
         else if (evt.midClicked())
         {
-            // orbit around point
-            if (evt.keyMask().isAltDown())
+            if (auto ret = createMiddleMouseButtonCameraAction(area, evt))
             {
-                // orbit around point
-                base::AbsolutePosition worldOrbitPosition;
-                auto viewportPos = (evt.absolutePosition() - cachedDrawArea().absolutePosition());
-                if (queryWorldPositionUnderCursor(viewportPos, worldOrbitPosition))
-                {
-                    //m_panelSettings.
-                    if (auto ret = m_cameraController.handleOrbitAroundPoint(this, 4, zoomScale))
-                    {
-                        m_renderInputAction = ret;
-                        return ret;
-                    }
-                }
+                m_renderInputAction = ret;
+                return ret;
             }
-
-            // go to the camera input directly
-            return m_cameraController.handleGeneralFly(this, 4, 1.0f, zoomScale);
         }
 
         return InputActionPtr();
@@ -546,35 +742,12 @@ namespace ui
         return true;
     }
 
-    const rendering::scene::Camera& RenderingScenePanel::cachedCamera() const
-    {
-        if (m_cameraController.stamp() != m_cachedCameraTimestamp)
-        {
-            auto nonConstSelf = const_cast<RenderingScenePanel*>(this);
-
-            rendering::scene::CameraSetup setup;
-            nonConstSelf->handleCamera(setup);
-
-            m_cachedCamera.setup(setup);
-            m_cachedCameraTimestamp = m_cameraController.stamp();
-        }
-
-        return m_cachedCamera;
-    }
-
     void RenderingScenePanel::handleCamera(rendering::scene::CameraSetup& outCamera)
     {
-        // setup camera
-        m_cameraController.computeRenderingCamera(outCamera);
-
-        // render area not cached
         const auto& renderArea = cachedDrawArea(); // TODO: would be perfect not to use cached shit
-        auto renderAreaWidth = range_cast<uint32_t>(renderArea.size().x);
-        auto renderAreaHeight = range_cast<uint32_t>(renderArea.size().y);
+        m_cameraController.settings().computeRenderingCamera(renderArea.size(), outCamera);
 
-        // setup camera's aspect ratio because the camera controller is not aware of it
-        //outCamera.aspect = (float)renderAreaWidth / (float)renderAreaHeight;
-        outCamera.aspect = (float)renderAreaWidth / (float)renderAreaHeight;
+        m_cachedCamera.setup(outCamera);
     }
 
     void RenderingScenePanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
@@ -583,6 +756,11 @@ namespace ui
     }
 
     void RenderingScenePanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+    {
+        // nothing
+    }
+
+    void RenderingScenePanel::handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
     {
         // nothing
     }
@@ -645,6 +823,67 @@ namespace ui
         handleAreaSelection(ctrl, shift, clientRect, selectables.keys());
     }
 
+    bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys)
+    {
+        // well, something is wrong (probably capture)
+        if (!area.contains(absolutePosition))
+            return false;
+
+        // calculate local click pos
+        base::Point clickPos;
+        clickPos.x = (int)(absolutePosition.x - area.absolutePosition().x);
+        clickPos.y = (int)(absolutePosition.y - area.absolutePosition().y);
+
+        // query the raw selection data from the rendering
+        const auto clickRect = base::Rect(clickPos.x, clickPos.y, clickPos.x + 1, clickPos.y + 1);
+        auto selectionData = querySelection(clickRect);
+
+        // get the clicked selectable
+        rendering::scene::EncodedSelectable selectable;
+        if (!selectionData->entries().empty())
+        {
+            auto index = (clickPos.x - selectionData->area().min.x);
+            index += (clickPos.y - selectionData->area().min.y) * selectionData->area().width();
+            if (index < selectionData->entries().size())
+            {
+                selectable = selectionData->entries()[index];
+            }
+        }
+
+        // determine the click position
+        bool clickPositionValid = false;
+        base::AbsolutePosition clickPosition;
+        if (selectable.object && selectable.depth)
+        {
+            // render area not cached
+            auto renderAreaWidth = (int)cachedDrawArea().size().x;
+            auto renderAreaHeight = (int)cachedDrawArea().size().y;
+
+            // convert to screen coordinates
+            float sx = -1.0f + 2.0f * (clickPos.x / (float)(renderAreaWidth - 1));
+            float sy = -1.0f + 2.0f * (clickPos.y / (float)(renderAreaHeight - 1));
+
+            // convert linear Z from selection to a projected Z
+            float sz = selectionData->camera().linearZToProjectedZ(selectable.depth);
+
+            // convert to world position
+            base::Vector4 screenPos(sx, sy, sz, 1.0f);
+            auto worldPos = selectionData->camera().screenToWorld().transformVector4(screenPos);
+            if (worldPos.w > 0.0f)
+            {
+                clickPosition = base::AbsolutePosition(worldPos.projected().xyz());
+                clickPositionValid = true;
+            }
+        }
+
+        // call general handler but with more data
+        handleContextMenu(controlKeys.test(base::input::KeyMaskBit::ANY_CTRL), controlKeys.test(base::input::KeyMaskBit::ANY_SHIFT),
+            absolutePosition, clickPos,
+            selectable.object, clickPositionValid ? &clickPosition : nullptr);
+
+        return true;
+    }
+
     void RenderingScenePanel::handleRender(rendering::scene::FrameParams& frame)
     {
         // draw grid
@@ -665,6 +904,10 @@ namespace ui
         // draw camera info
         if (m_panelSettings.drawInternalCameraData && (frame.filters & rendering::scene::FilterBit::ViewportCameraInfo))
             drawCameraInfo(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
+
+        // use the selected render mode
+        frame.mode = m_panelSettings.renderMode;
+        frame.debug.materialDebugMode = m_panelSettings.renderMaterialDebugChannelName;
 
         // draw input action
         //if (auto action = m_renderInputAction.lock())
@@ -817,8 +1060,8 @@ namespace ui
         auto bx = width - 20;
         auto by = height - 20;
 
-        auto pos = m_cameraController.position().approximate();
-        auto rot = m_cameraController.rotation();
+        auto pos = m_cameraController.settings().position.approximate();
+        auto rot = m_cameraController.settings().rotation;
 
         auto params = rendering::scene::DebugTextParams().right().bottom().color(base::Color::WHITE);
         rendering::scene::DebugDrawer dd(frame.geometry.screen);
@@ -847,7 +1090,7 @@ namespace ui
         {
             auto maxEntires = range_cast<uint32_t>(dataSize / sizeof(rendering::scene::EncodedSelectable));
 
-            m_selectionRect = base::Rect();
+            m_selectionRect = base::Rect::EMPTY();
             m_selectables.clear();
             m_selectables.reserve(maxEntires);
 
@@ -868,10 +1111,10 @@ namespace ui
             Fibers::GetInstance().signalCounter(m_fence, 1);
         }
 
-        base::RefPtr<RenderingPanelSelectionQuery> waitAndFetch()
+        base::RefPtr<RenderingPanelSelectionQuery> waitAndFetch(const rendering::scene::Camera& camera)
         {
             Fibers::GetInstance().waitForCounterAndRelease(m_fence);
-            return base::RefNew<RenderingPanelSelectionQuery>(m_selectionRect, std::move(m_selectables));
+            return base::RefNew<RenderingPanelSelectionQuery>(m_selectionRect, std::move(m_selectables), camera);
         }
 
     private:
@@ -914,8 +1157,14 @@ namespace ui
         base::GetService<DeviceService>()->sync();
         base::GetService<DeviceService>()->sync();
 
+        // calculate camera
+        rendering::scene::CameraSetup cameraSetup;
+        handleCamera(cameraSetup);
+        rendering::scene::Camera camera;
+        camera.setup(cameraSetup);
+
         // wait for data and return it
-        return captureBuffer->waitAndFetch();        
+        return captureBuffer->waitAndFetch(camera);
     }
 
     bool RenderingScenePanel::queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition)
@@ -988,7 +1237,7 @@ namespace ui
 
         // setup params
         frame.index = m_frameIndex++;
-        frame.filters = m_filterFlags;
+        frame.filters = m_panelSettings.filters;
         frame.cascades.numCascades = 3;
         frame.time.engineRealTime = (float)m_engineTimeCounter;
         frame.time.gameTime = (float)m_gameTimeCounter;
@@ -1013,6 +1262,226 @@ namespace ui
             auto device = base::GetService<rendering::DeviceService>()->device();
             device->submitWork(commandBuffer);
         }
+    }
+
+    //--    
+
+    void RenderingScenePanel::createToolbarItems()
+    {
+        actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this](ui::Button* button)
+        {
+            if (button)
+            {
+                auto menu = base::RefNew<MenuButtonContainer>();
+                buildRenderModePopup(menu);
+                menu->showAsDropdown(button);
+            }
+        };
+
+        actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [this](ui::Button* button)
+        {
+            if (button)
+            {
+                auto menu = base::RefNew<MenuButtonContainer>();
+                buildFilterPopup(menu);
+                menu->showAsDropdown(button);
+            }
+        };
+
+        actions().bindCommand("PreviewPanel.ChangeCameraMode"_id) = [this](ui::Button* button)
+        {
+            if (button)
+            {
+                auto menu = base::RefNew<MenuButtonContainer>();
+                buildCameraPopup(menu);
+                menu->showAsDropdown(button);
+            }
+        };
+
+        toolbar()->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().caption("[img:eye] Filters"));
+        toolbar()->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(m_panelSettings.renderMode)));
+        toolbar()->createButton("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(CameraModeString(m_cameraController.settings().mode)));
+        toolbar()->createSeparator();
+    }
+
+    static const rendering::scene::FrameRenderMode USER_SELECTABLE_RENDER_MODES[] = {
+    rendering::scene::FrameRenderMode::Default,
+    rendering::scene::FrameRenderMode::WireframeSolid,
+    rendering::scene::FrameRenderMode::WireframePassThrough,
+    rendering::scene::FrameRenderMode::DebugDepth,
+    rendering::scene::FrameRenderMode::DebugLuminance,
+    rendering::scene::FrameRenderMode::DebugShadowMask,
+    rendering::scene::FrameRenderMode::DebugReconstructedViewNormals,
+    rendering::scene::FrameRenderMode::DebugAmbientOcclusion,
+    };
+
+    void RenderingScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
+    {
+        for (auto mode : USER_SELECTABLE_RENDER_MODES)
+        {
+            if (mode == rendering::scene::FrameRenderMode::DebugDepth)
+                menu->createSeparator();
+
+            if (auto title = RenderModeString(mode))
+                menu->createCallback(title) = [this, mode, title]() {
+                    m_panelSettings.renderMode = mode;
+                    toolbar()->updateButtonCaption("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(title));
+                };
+        }
+
+        menu->createSeparator();
+    }
+
+    void RenderingScenePanel::createFilterItem(base::StringView prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu)
+    {
+        base::StringBuf name = prefix ? base::StringBuf(base::TempString("{}.{}", prefix, bitInfo->name)) : base::StringBuf(bitInfo->name.view());
+
+        if (bitInfo->bit != rendering::scene::FilterBit::MAX)
+        {
+            const auto toggled = m_panelSettings.filters.test(bitInfo->bit);
+
+            menu->createCallback(name, toggled ? "[img:tick]" : "") = [this, bitInfo]()
+            {
+                m_panelSettings.filters ^= bitInfo->bit;
+            };
+        }
+
+        for (const auto* child : bitInfo->children)
+            createFilterItem(name, child, menu);
+    }
+
+    void RenderingScenePanel::buildFilterPopup(MenuButtonContainer* menu)
+    {
+        if (const auto* group = rendering::scene::GetFilterTree())
+        {
+            for (const auto* child : group->children)
+            {
+                menu->createSeparator();
+                createFilterItem("", child, menu);
+            }
+        }
+    }
+
+    static const CameraMode USER_SELECTABLE_CAMERA_MODES[] = {
+        CameraMode::FreePerspective,
+        CameraMode::OrbitPerspective,
+        CameraMode::FreeOrtho,
+        CameraMode::Front,
+        CameraMode::Back,
+        CameraMode::Left,
+        CameraMode::Right,
+        CameraMode::Top,
+        CameraMode::Bottom,
+    };
+
+    void RenderingScenePanel::buildCameraPopup(MenuButtonContainer* menu)
+    {
+        auto mode = m_cameraController.settings().mode;
+
+        if (mode == CameraMode::FreePerspective || mode == CameraMode::FreeOrtho)
+        {
+            auto label = menu->createChild<ui::TextLabel>("[img:speed] Camera speed [log2 m/s]:");
+            label->customMargins(10, 10, 10, 2);
+
+            auto slider = menu->createChild<ui::TrackBar>();
+            slider->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            slider->range(-2.0f, 5.0f);
+            //slider->units("log2 m/s");
+            slider->value(m_cameraController.settings().speedLog);
+            menu->createSeparator();
+
+            slider->bind(EVENT_TRACK_VALUE_CHANGED) = [this](double val)
+            {
+                auto camera = m_cameraController.settings();
+                camera.speedLog = val;
+                cameraSettings(camera);
+            };
+        }
+
+        if (m_cameraController.settings().perspective())
+        {
+            auto label = menu->createChild<ui::TextLabel>("[img:angle] Camera FOV [deg]:");
+            label->customMargins(5, 5, 5, 2);
+
+            auto slider = menu->createChild<ui::TrackBar>();
+            slider->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            slider->range(10.0f, 170.0f);
+            //slider->units("deg");
+            slider->value(m_cameraController.settings().perspectiveFov);
+            menu->createSeparator();
+
+            slider->bind(EVENT_TRACK_VALUE_CHANGED) = [this](double val)
+            {
+                auto camera = m_cameraController.settings();
+                camera.perspectiveFov = val;
+                cameraSettings(camera);
+            };
+        }
+
+        if (m_cameraController.settings().ortho())
+        {
+            auto label = menu->createChild<ui::TextLabel>("[img:zoom] Camera Zoom [m]:");
+            label->customMargins(5, 5, 5, 2);
+
+            auto slider = menu->createChild<ui::TrackBar>();
+            slider->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            slider->range(0.1f, 100.0f);
+            //slider->units("m");
+            slider->value(m_cameraController.settings().orthoZoom);
+            menu->createSeparator();
+
+            slider->bind(EVENT_TRACK_VALUE_CHANGED) = [this](double val)
+            {
+                auto camera = m_cameraController.settings();
+                camera.orthoZoom = val;
+                cameraSettings(camera);
+            };
+        }
+
+        auto label = menu->createChild<ui::TextLabel>("Camera mode:");
+        label->customMargins(5, 5, 5, 2);
+
+        for (const auto newMode : USER_SELECTABLE_CAMERA_MODES)
+        {
+            if (newMode == CameraMode::Front)
+                menu->createSeparator();
+
+            if (auto title = CameraModeString(newMode))
+                menu->createCallback(title) = [this, title, newMode]() {
+
+                auto camera = m_cameraController.settings();
+                camera.mode = newMode;
+                cameraSettings(camera);
+
+                toolbar()->updateButtonCaption("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(title));
+            };
+        }
+
+        menu->createSeparator();
+    }
+
+    //--
+
+    RTTI_BEGIN_TYPE_CLASS(RenderingSimpleScenePanel);
+    RTTI_END_TYPE();
+
+    //----
+
+    RenderingSimpleScenePanel::RenderingSimpleScenePanel()
+    {
+        const auto sceneType = rendering::scene::SceneType::EditorPreview;
+        m_scene = base::RefNew<rendering::scene::Scene>(sceneType);
+    }
+
+    RenderingSimpleScenePanel::~RenderingSimpleScenePanel()
+    {
+        m_scene.reset();
+    }
+
+    void RenderingSimpleScenePanel::handleRender(rendering::scene::FrameParams& frame)
+    {
+        TBaseClass::handleRender(frame);
+        frame.scenes.mainScenePtr = m_scene;
     }
 
     //--

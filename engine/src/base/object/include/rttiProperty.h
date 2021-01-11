@@ -50,11 +50,35 @@ namespace base
             PropertyFlags m_flags;
         };
 
+        /// property editor data
+        struct BASE_OBJECT_API PropertyEditorData
+        {
+            StringID m_customEditor;
+            StringBuf m_comment;
+            StringBuf m_units;
+            double m_rangeMin = -DBL_MAX;
+            double m_rangeMax = DBL_MAX;
+
+            uint8_t m_digits = 2;
+            bool m_colorWithAlpha = true;
+            bool m_noDefaultValue = false;
+            bool m_widgetDrag = false;
+            bool m_widgetSlider = false;
+            bool m_widgetDragWrap = false;
+            bool m_primaryResource = false;
+
+            PropertyEditorData();
+            PropertyEditorData& comment(StringView comment) { m_comment = StringBuf(comment); return* this; }
+            PropertyEditorData& primaryResource() { m_primaryResource = true; return *this; }
+
+            bool rangeEnabled() const;
+        };
+
         /// a property in the class
         class BASE_OBJECT_API Property : public MetadataContainer
         {
         public:
-            Property(const IType* parent, const PropertySetup& setup);
+            Property(const IType* parent, const PropertySetup& setup, const PropertyEditorData& editorData = PropertyEditorData());
             virtual ~Property();
 
             /// get the name of the property
@@ -101,6 +125,11 @@ namespace base
 
             //--
 
+            /// get editor data
+            INLINE const PropertyEditorData& editorData() const { return m_editorData; }
+
+            //--
+
             /*/// get property data given the pointer to the object
             virtual const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
 
@@ -121,6 +150,8 @@ namespace base
             StringID m_category;
             Type m_type;
             Type m_parent;
+
+            PropertyEditorData m_editorData;
 
             short m_overrideIndex = -1;
 

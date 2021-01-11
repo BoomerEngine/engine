@@ -13,19 +13,25 @@
 export shader MaterialGS
 {
 	out vec3 TriangleBarycentric;
+	out uint ObjectIndex;
+
+	attribute(binding=ObjectIndex) in uint[] ObjectIndexIn;
 	
 	attribute(input=triangles, output=triangle_strip, max_vertices=3)
 	void main()
 	{
 		TriangleBarycentric = vec3(1,0,0);
+        ObjectIndex = ObjectIndexIn[0];
 		gl_Position = gl_PositionIn[0];
 		EmitVertex();
 		
 		TriangleBarycentric = vec3(0,1,0);
+        ObjectIndex = ObjectIndexIn[1];
 		gl_Position = gl_PositionIn[1];
 		EmitVertex();
 		
 		TriangleBarycentric = vec3(0,0,1);
+		ObjectIndex = ObjectIndexIn[2];
 		gl_Position = gl_PositionIn[2];
 		EmitVertex();
 		EndPrimitive();

@@ -57,10 +57,10 @@ namespace base
     class ActionHistory;
     typedef RefPtr<ActionHistory> ActionHistoryPtr;
 
-    /// object template
-    class IObjectTemplate;
-    typedef RefPtr<IObjectTemplate> ObjectTemplatePtr;
-    typedef RefWeakPtr<IObjectTemplate> ObjectTemplateWeakPtr;
+    /// direct object template
+    class IObjectDirectTemplate;
+    typedef RefPtr<IObjectDirectTemplate> ObjectDirectTemplatePtr;
+    typedef RefWeakPtr<IObjectDirectTemplate> ObjectDirectTemplateWeakPtr;
 
     // global events
     class IGlobalEventListener;

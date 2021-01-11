@@ -11,7 +11,7 @@
 #include "base/resource/include/resource.h"
 #include "base/containers/include/hashSet.h"
 #include "base/script/include/scriptObject.h"
-#include "base/object/include/objectTemplate.h"
+#include "base/resource/include/objectDirectTemplate.h"
 
 namespace base
 {
@@ -27,6 +27,7 @@ namespace base
 
             bool enabled = true;
             PrefabRef prefab;
+            StringID appearance;
 
             NodeTemplatePrefabSetup();
             NodeTemplatePrefabSetup(const PrefabRef& prefab, bool enabled = true);
@@ -41,7 +42,7 @@ namespace base
             RTTI_DECLARE_NONVIRTUAL_CLASS(NodeTemplateComponentEntry);
 
             StringID name;
-            ComponentTemplatePtr data;
+            ObjectIndirectTemplatePtr data;
 
             NodeTemplateComponentEntry();
         };
@@ -63,11 +64,14 @@ namespace base
             // name of the node, can't be empty
             StringID m_name; 
 
+            // placement of the node (global)
+            //Transform m_localToParent;
+
             // list of prefabs to instance AT THIS NODE (some may be disabled)
             Array<NodeTemplatePrefabSetup> m_prefabAssets;
 
             // entity data - can be empty if node did not carry any data
-            EntityTemplatePtr m_entityTemplate; 
+            ObjectIndirectTemplatePtr m_entityTemplate;
 
             // component data - can be empty if node does not have any components
             // NOTE: we may have component entries without entity entry
@@ -79,12 +83,15 @@ namespace base
             //--
 
             /// find data for component
-            const ComponentTemplate* findComponent(StringID name) const;
+            const ObjectIndirectTemplate* findComponent(StringID name) const;
 
             /// find child by name
             const NodeTemplate* findChild(StringID name) const;
 
             //--
+
+        protected:
+            virtual void onPostLoad() override;
         };
 
         //--
@@ -155,6 +162,14 @@ namespace base
         };
 
         //--
+
+        // compile flattened node (resolve and embed prefabs referenced in the node, NOTE: only prefabs from root node are embedded, use "Explode" to embed all prefabs)
+        // NOTE: may return NULL if node contains NO DATA and could be discarded for all practical purposes
+        BASE_WORLD_API NodeTemplatePtr UnpackTopLevelPrefabs(const NodeTemplate* rootNode);
+
+        // compile flattened node (resolve and embed prefabs referenced in the node, NOTE: only prefabs from root node are embedded, use "Explode" to embed all prefabs)
+        // NOTE: may return NULL if node contains NO DATA and could be discarded for all practical purposes
+        BASE_WORLD_API NodeTemplatePtr CompileWithInjectedBaseNodes(const NodeTemplate* rootNode, const Array<const NodeTemplate*>& additionalBaseNodes);
 
         // compile an entity from list of templates, may return NULL if no entity data is present in any template
         // NOTE: it's not recursive

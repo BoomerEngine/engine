@@ -13,6 +13,7 @@
 #include "rendering/scene/include/renderingFrameCamera.h"
 #include "rendering/scene/include/renderingSelectable.h"
 #include "rendering/scene/include/renderingFrameFilters.h"
+#include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/ui_host/include/renderingPanel.h"
 
 namespace ui
@@ -58,7 +59,10 @@ namespace ui
     class RENDERING_UI_VIEWPORT_API RenderingPanelSelectionQuery : public base::IReferencable
     {
     public:
-        RenderingPanelSelectionQuery(const base::Rect& area, base::Array<rendering::scene::EncodedSelectable> entries);
+        RenderingPanelSelectionQuery(const base::Rect& area, base::Array<rendering::scene::EncodedSelectable> entries, const rendering::scene::Camera& camera);
+
+        /// get camera data used during rendering
+        INLINE const rendering::scene::Camera& camera() const { return m_camera; }
 
         /// get the selection area
         INLINE const base::Rect& area() const { return m_area; }
@@ -77,6 +81,8 @@ namespace ui
 
         base::Rect m_area; // the selection area to extract
         base::Array<rendering::scene::EncodedSelectable> m_entries;
+
+        rendering::scene::Camera m_camera;
     };
 
     ///---
@@ -109,8 +115,16 @@ namespace ui
     /// base panel settings
     struct RENDERING_UI_VIEWPORT_API RenderingScenePanelSettings
     {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(RenderingScenePanelSettings);
+
+    public:
+        rendering::scene::FrameRenderMode renderMode = rendering::scene::FrameRenderMode::Default;
+        base::StringID renderMaterialDebugChannelName;
+
+        rendering::scene::FilterFlags filters;
+
         float cameraSpeedFactor = 1.0f;
-        bool cameraForceOrbit = false;
+        //bool cameraForceOrbit = false;
 
         bool paused = false;
         float timeDeltaScale = 1.0f;
@@ -125,8 +139,7 @@ namespace ui
 
         //--
 
-        void configSave(const ConfigBlock& block) const;
-        void configLoad(const ConfigBlock& block);
+        RenderingScenePanelSettings();
     };
 
     //--
@@ -142,34 +155,33 @@ namespace ui
 
         //--
 
-        // local filter flags for this viewport
-        INLINE rendering::scene::FilterFlags& filterFlags() { return m_filterFlags; }
-        INLINE const rendering::scene::FilterFlags& filterFlags() const { return m_filterFlags; }
-
         // get the overlay toolbar
         INLINE const ToolBarPtr& toolbar() const { return m_toolbar; }
 
         // get the bottom overlay toolbar
         INLINE const ToolBarPtr& bottomToolbar() const { return m_bottomToolbar; }
 
+        /// get last computed camera
+        INLINE const rendering::scene::Camera& cachedCamera() const { return m_cachedCamera; }
+
         // get the panel settings
         INLINE const RenderingScenePanelSettings& panelSettings() const { return m_panelSettings; }
+
+        // get the camera settings
+        INLINE const CameraControllerSettings& cameraSettings() const { return m_cameraController.settings(); }
 
         // change panel settings
         void panelSettings(const RenderingScenePanelSettings& settings);
 
+        // change camera settings
+        void cameraSettings(const CameraControllerSettings& settings);
+
         //--
 
-        /// setup the camera at specific location
-        void setupCamera(const base::Angles& rotation, const base::Vector3& position, const base::Vector3* oribitCenter = nullptr);
+        // modify camera to show given bounds
+        void focusOnBounds(const base::Box& bounds, float distanceFactor /*= 1.0f*/, const base::Angles* newRotation/*=nullptr*/);
 
-        /// setup the perspective camera so it can view given bounds
-        void setupCameraAroundBounds(const base::Box& bounds, float distanceFactor = 1.0f, const base::Angles* newRotation = nullptr);
-
-        /// get computed camera
-        const rendering::scene::Camera& cachedCamera() const;
-
-        ///--
+        //--
 
         /// compute bounds of the content in the view
         virtual bool computeContentBounds(base::Box& outBox) const;
@@ -186,8 +198,15 @@ namespace ui
         virtual void handleRender(rendering::scene::FrameParams& frame);
         virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition);
         virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect);
+        virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys) override;
+
         virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables);
         virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables);
+        virtual void handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor);
+
+        virtual void buildRenderModePopup(MenuButtonContainer* menu);
+        virtual void buildFilterPopup(MenuButtonContainer* menu);
+        virtual void buildCameraPopup(MenuButtonContainer* menu);
 
 		virtual void renderContent(const ViewportParams& viewport) override;
 
@@ -203,7 +222,8 @@ namespace ui
         bool queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition);
 
         //-
-
+       
+    protected:
         RenderingScenePanelSettings m_panelSettings;
 
     private:
@@ -217,10 +237,7 @@ namespace ui
 
         uint32_t m_frameIndex = 0;
 
-        rendering::scene::FilterFlags m_filterFlags;
-
-        mutable rendering::scene::Camera m_cachedCamera;
-        mutable uint32_t m_cachedCameraTimestamp;
+        rendering::scene::Camera m_cachedCamera;
 
         rendering::scene::CameraContextPtr m_cameraContext;
 
@@ -228,8 +245,40 @@ namespace ui
 
         ToolBarPtr m_toolbar;
         ToolBarPtr m_bottomToolbar;
+
+        //--
+
+        void createFilterItem(base::StringView prefix, const rendering::scene::FilterBitInfo* bitInfo, MenuButtonContainer* menu);
+        void createToolbarItems();
+
+        InputActionPtr createLeftMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt, bool allowSelection);
+        InputActionPtr createRightMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt);
+        InputActionPtr createMiddleMouseButtonCameraAction(const ElementArea& area, const base::input::MouseClickEvent& evt);
     };
 
-    ///---
+    //--
+
+    /// ui widget with a full 3D rendering scene (but not world, just rendering scene)
+    class RENDERING_UI_VIEWPORT_API RenderingSimpleScenePanel : public RenderingScenePanel
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(RenderingSimpleScenePanel, RenderingScenePanel);
+
+    public:
+        RenderingSimpleScenePanel();
+        virtual ~RenderingSimpleScenePanel();
+
+        //--
+
+        INLINE rendering::scene::Scene* scene() const { return m_scene; }
+
+        //--
+
+    protected:
+        virtual void handleRender(rendering::scene::FrameParams& frame) override;
+
+        rendering::scene::ScenePtr m_scene;
+    };
+
+    //---
 
 } // ui

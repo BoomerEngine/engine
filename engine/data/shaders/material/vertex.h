@@ -56,7 +56,7 @@ vec3 UnpackNormalVector(uint data)
 
 vec4 UnpackColorRGBA4(uint data)
 {
-    return vec4(1);//unpackUnorm4x8(data);
+    return unpackUnorm4x8(data);
 }
 
 vec2 UnpackHalf2(uint data)

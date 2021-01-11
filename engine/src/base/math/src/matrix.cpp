@@ -596,7 +596,7 @@ namespace base
 
     Matrix Matrix::BuildPerspectiveFOV(float fovDeg, float aspectWidthToHeight, float zNear, float zFar, float offsetX /*= 0.0f*/, float offsetY /*= 0.0f*/)
     {
-        float xScale = std::tan(DEG2RAD * (fovDeg*0.5f));
+        float xScale = 1.0f / std::tan(DEG2RAD * (fovDeg*0.5f));
         float yScale = xScale * aspectWidthToHeight;
         return BuildPerspective(xScale, yScale, zNear, zFar, offsetX, offsetY);
     }

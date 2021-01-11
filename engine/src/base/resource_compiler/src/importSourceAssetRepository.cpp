@@ -75,16 +75,13 @@ namespace base
 
             // find in cache
             CacheEntry* entry = nullptr;
-            m_cacheEntriesMap.findSafe(keyPath, entry);
-            if (entry)
+            m_cacheEntriesMap.find(keyPath, entry);
+            if (entry && entry->asset)
             {
-                if (entry->asset)
-                {
-                    outTimestamp = entry->timestamp;
-                    outFingerprint = entry->fingerprint;
-                    entry->lruTick = m_lruTick++;
-                    return entry->asset;
-                }
+                outTimestamp = entry->timestamp;
+                outFingerprint = entry->fingerprint;
+                entry->lruTick = m_lruTick++;
+                return entry->asset;
             }
 
             // load content to buffer

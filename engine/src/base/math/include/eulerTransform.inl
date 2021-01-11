@@ -13,21 +13,21 @@ namespace base
     //--
 
     INLINE EulerTransform::EulerTransform()
-        : T(Translation::ZERO())
-        , R(Rotation::ZERO())
-        , S(Scale::ONE())
+        : T(0,0,0)
+        , R(0,0,0)
+        , S(1,1,1)
     {}
 
     INLINE EulerTransform::EulerTransform(const Translation& pos)
         : T(pos)
-        , R(Rotation::ZERO())
-        , S(Scale::ONE())
+        , R(0,0,0)
+        , S(1,1,1)
     {}
 
     INLINE EulerTransform::EulerTransform(const Translation& pos, const Rotation& rot)
         : T(pos)
         , R(rot)
-        , S(Scale::ONE())
+        , S(1,1,1)
     {}
 
     INLINE EulerTransform::EulerTransform(const Translation& pos, const Rotation& rot, const Scale& scale)

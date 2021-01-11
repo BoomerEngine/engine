@@ -127,7 +127,11 @@ namespace ed
 
     struct SceneContentEditableObject;
     class SceneEditModeDefaultTransformDragger;
+    class SceneEditPrefabListModel;
+    class SceneEditPrefabList;
     class SceneEditMode_Default;
+
+    DECLARE_UI_EVENT(EVENT_PREFABLIST_ADD_FILE);
 
     /// UI panel for all stuff related to editing entities
     class ASSETS_SCENE_EDITOR_API SceneDefaultPropertyInspectorPanel : public ui::IElement, public ISceneNodeTransformValuesBoxEventSink
@@ -149,11 +153,10 @@ namespace ed
         void refreshName();
         void refreshProperties();
         void refreshTransforms();
+        void refreshPrefabList();
 
     protected:
         ui::EditBoxPtr m_name;
-        ui::ListViewPtr m_prefabList;
-
         SceneEditMode_Default* m_host = nullptr;
 
         Array<ui::ElementPtr> m_commonElements;
@@ -163,11 +166,19 @@ namespace ed
         //---
 
         Array<SceneContentNodePtr> m_nodes; // active selection
+        Array<SceneContentDataNodePtr> m_nodesData; // active selection
+        Array<SceneContentDataNodePtr> m_nodeRoots;
+        Array<SceneContentEntityNodePtr> m_nodeEntityRoots;
 
         //--
 
         RefPtr<SceneNodeTransformValuesBox> m_transformLocalValues; // values in local space
         RefPtr<SceneNodeTransformValuesBox> m_transformWorldValues; // values in world space
+
+        //--
+
+        RefPtr<SceneEditPrefabListModel> m_prefabListModel;
+        RefPtr<SceneEditPrefabList> m_prefabList;
 
         //--
 
@@ -191,7 +202,7 @@ namespace ed
         //--
 
         void cancelTransformAction();
-        void expandTransformValuesWithHierarchyChildren(const Array<SceneContentDataNodePtr>& nodes, Array<ActionMoveSceneNodeData>& undoData) const;
+        //void expandTransformValuesWithHierarchyChildren(const Array<SceneContentDataNodePtr>& nodes, Array<ActionMoveSceneNodeData>& undoData) const;
 
         virtual void transformBox_ValueDragStart(GizmoSpace space, SceneNodeTransformValueFieldType field) override final;
         virtual void transformBox_ValueDragUpdate(GizmoSpace space, SceneNodeTransformValueFieldType field, int step) override final;

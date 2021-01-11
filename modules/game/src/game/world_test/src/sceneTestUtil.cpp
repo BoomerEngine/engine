@@ -12,11 +12,10 @@
 
 #include "base/world/include/world.h"
 #include "base/world/include/worldEntity.h"
+#include "base/resource/include/objectIndirectTemplate.h"
 
 #include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/world/include/renderingMeshComponent.h"
-#include "rendering/world/include/renderingMeshComponentTemplate.h"
-#include "../../../../../../engine/src/base/world/include/worldEntityTemplate.h"
 
 namespace game
 {
@@ -90,15 +89,15 @@ namespace game
             node->m_name = "node"_id;
 
             {
-                node->m_entityTemplate = base::RefNew<base::world::EntityTemplate>();
+                node->m_entityTemplate = base::RefNew<base::ObjectIndirectTemplate>();
                 node->m_entityTemplate->placement(placement.toTransform());
             }
 
             {
-                auto componentTemplate = base::RefNew<rendering::MeshComponentTemplate>();
-                componentTemplate->mesh(rendering::MeshAsyncRef(mesh->path()));
-                //componentTemplate->placement(placement);
-                componentTemplate->color(color);
+                auto componentTemplate = base::RefNew<base::ObjectIndirectTemplate>();
+                componentTemplate->templateClass(rendering::MeshComponent::GetStaticClass());
+                componentTemplate->writeProperty("mesh"_id, rendering::MeshAsyncRef(mesh->path()));
+                componentTemplate->writeProperty("color"_id, color);
 
                 auto& info = node->m_componentTemplates.emplaceBack();
                 info.name = "Mesh"_id;

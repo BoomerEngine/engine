@@ -29,7 +29,6 @@ namespace ed
     ScenePreviewPanel::ScenePreviewPanel(ScenePreviewContainer* container)
         : m_container(container)
     {
-        m_panelSettings.cameraForceOrbit = false;// true;
     }
 
     ScenePreviewPanel::~ScenePreviewPanel()
@@ -86,6 +85,12 @@ namespace ed
     {
         if (auto editMode = m_editMode.lock())
             editMode->handleAreaSelection(this, ctrl, shift, clientRect, selectables);
+    }
+
+    void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
+    {
+        if (auto editMode = m_editMode.lock())
+            editMode->handleContextMenu(this, ctrl, shift, absolutePosition, clientPosition, objectUnderCursor, positionUnderCursor);
     }
 
     ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt)

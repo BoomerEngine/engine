@@ -15,14 +15,141 @@
 #include "rendering/scene/include/renderingFrameParams.h"
 
 #include "base/editor/include/managedFileNativeResource.h"
-#include "base/object/include/objectTemplate.h"
+#include "base/resource/include/objectIndirectTemplate.h"
 #include "base/ui/include/uiAbstractItemModel.h"
 #include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/worldEntityTemplate.h"
-#include "base/world/include/worldComponentTemplate.h"
 #include "base/world/include/worldPrefab.h"
+#include "base/resource/include/objectIndirectTemplateCompiler.h"
+#include "base/object/include/rttiResourceReferenceType.h"
+#include "base/world/include/worldComponent.h"
+#include "base/world/include/worldEntity.h"
+
 namespace ed
 {
+    
+    //---
+
+    static const int MAX_DEPTH = 10;
+
+    static EulerTransform MergeTransforms(const EulerTransform& base, const EulerTransform& cur)
+    {
+        // handle most common case - no transform
+        if (base.isIdentity())
+            return cur;
+        else if (cur.isIdentity())
+            return base;
+
+        EulerTransform ret;
+        ret.T = base.T + cur.T;
+        ret.R = base.R + cur.R;
+        ret.S = base.S * cur.S;
+        return ret;
+    }
+
+    static EulerTransform MergeTransforms(const Array<const ObjectIndirectTemplate*>& templates)
+    {
+        EulerTransform ret;
+        bool first = true;
+
+        for (const auto& data : templates)
+        {
+            if (data->enabled())
+            {
+                if (!data->placement().isIdentity())
+                {
+                    if (first)
+                        ret = data->placement();
+                    else
+                        ret = MergeTransforms(ret, data->placement());
+
+                    first = false;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    static EulerTransform MergeTransforms(const Array<ObjectIndirectTemplatePtr>& templates)
+    {
+        EulerTransform ret;
+        bool first = true;
+
+        for (const auto& data : templates)
+        {
+            if (data->enabled())
+            {
+                if (!data->placement().isIdentity())
+                {
+                    if (first)
+                        ret = data->placement();
+                    else
+                        ret = MergeTransforms(ret, data->placement());
+
+                    first = false;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    static EulerTransform MergeTransforms(const Array<const world::NodeTemplate*>& templates)
+    {
+        EulerTransform ret;
+        bool first = true;
+
+        for (const auto& data : templates)
+        {
+            if (data->m_entityTemplate && data->m_entityTemplate->enabled())
+            {
+                if (!data->m_entityTemplate->placement().isIdentity())
+                {
+                    if (first)
+                        ret = data->m_entityTemplate->placement();
+                    else
+                        ret = MergeTransforms(ret, data->m_entityTemplate->placement());
+
+                    first = false;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    static EulerTransform MergeTransforms(const Array<world::NodeTemplatePtr>& templates)
+    {
+        EulerTransform ret;
+        bool first = true;
+
+        for (const auto& data : templates)
+        {
+            if (data->m_entityTemplate && data->m_entityTemplate->enabled())
+            {
+                if (!data->m_entityTemplate->placement().isIdentity())
+                {
+                    if (first)
+                        ret = data->m_entityTemplate->placement();
+                    else
+                        ret = MergeTransforms(ret, data->m_entityTemplate->placement());
+
+                    first = false;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    EulerTransform MakeTransformRelative(const EulerTransform& cur, const EulerTransform& base)
+    {
+        EulerTransform ret = cur;
+        ret.T -= base.T;
+        ret.R -= base.R;
+        ret.S /= base.S;
+        return ret;
+    }
     
     //---
 
@@ -46,6 +173,45 @@ namespace ed
         m_uniqueModelIndex = ui::ModelIndex::AllocateUniqueIndex();
     }
 
+    bool SceneContentNode::contains(const SceneContentNode* node) const
+    {
+        while (node)
+        {
+            if (node == this)
+                return true;
+            node = node->parent();
+        }
+
+        return false;
+    }
+
+    void SceneContentNode::collectHierarchyNodes(Array<const SceneContentNode*>& outNodes) const
+    {
+        const auto* cur = this;
+        while (cur)
+        {
+            outNodes.pushBack(cur);
+            cur = cur->parent();
+        }
+
+        std::reverse(outNodes.begin(), outNodes.end());
+    }
+
+    StringBuf SceneContentNode::buildHierarchicalName() const
+    {
+        InplaceArray<const SceneContentNode*, 10> nodes;
+        collectHierarchyNodes(nodes);
+
+        StringBuilder txt;
+        for (const auto* node : nodes)
+        {
+            txt << "/";
+            txt << node->name();
+        }
+
+        return txt.toString();
+    }
+
     void SceneContentNode::name(const StringBuf& name)
     {
         if (m_name != name)
@@ -64,6 +230,26 @@ namespace ed
 
             markModified();
         }
+    }
+
+    StringBuf SceneContentNode::BuildUniqueName(StringView coreName, bool userGiven, const HashSet<StringBuf>& takenNames)
+    {
+        if (coreName.empty())
+            coreName = "node";
+
+        uint32_t counter = 0;
+        coreName = coreName.trimTailNumbers(&counter);
+
+        StringBuilder txt;
+        do
+        {
+            txt.clear();
+            txt << coreName;
+            txt << counter;
+            counter += 1;
+        } while (takenNames.contains(txt.view()));
+
+        return txt.toString();
     }
 
     StringBuf SceneContentNode::buildUniqueName(StringView coreName, bool userGiven, const HashSet<StringBuf>* additionalTakenName) const
@@ -105,21 +291,27 @@ namespace ed
         return txt.toString();
     }
 
+    StringView SceneContentNode::IconTextForType(SceneContentNodeType type)
+    {
+        switch (type)
+        {
+            case SceneContentNodeType::Entity: return "[img:entity]";
+            case SceneContentNodeType::Component: return "[img:component]";
+            case SceneContentNodeType::LayerFile: return "[img:page]";
+            case SceneContentNodeType::LayerDir: return "[img:folder]";
+            case SceneContentNodeType::PrefabRoot: return "[img:brick]";
+            case SceneContentNodeType::WorldRoot: return "[img:world]";
+        }
+
+        return "";
+    }
+
     void SceneContentNode::displayText(IFormatStream& txt) const
     {
         if (m_visualFlags.test(SceneContentNodeVisualBit::ActiveNode))
             txt << "[b][i]";
 
-        switch (m_type)
-        {
-            case SceneContentNodeType::Entity: txt << "[img:entity]"; break;
-            case SceneContentNodeType::Component: txt << "[img:component]"; break;
-            case SceneContentNodeType::LayerFile: txt << "[img:page]"; break;
-            case SceneContentNodeType::LayerDir: txt << "[img:folder]"; break;
-            case SceneContentNodeType::PrefabRoot: txt << "[img:brick]"; break;
-            case SceneContentNodeType::WorldRoot: txt << "[img:world]"; break;
-        }
-
+        txt << IconTextForType(m_type);
         txt << " ";
         txt << m_name;
 
@@ -208,7 +400,7 @@ namespace ed
 
         if (recursive)
             for (const auto& child : m_children)
-                child->resetModifiedStatus(false);
+                child->resetModifiedStatus(recursive);
     }
 
     void SceneContentNode::attachChildNode(SceneContentNode* child)
@@ -279,6 +471,15 @@ namespace ed
         markModified();
     }
 
+    SceneContentNode* SceneContentNode::findChild(StringView name) const
+    {
+        for (const auto& node : m_children)
+            if (node->name() == name)
+                return node;
+
+        return nullptr;
+    }
+
     void SceneContentNode::propagateMergedVisibilityStateFromThis()
     {
         auto parentNode = parent();
@@ -310,6 +511,14 @@ namespace ed
         }
     }
 
+    static void MarkRecrusiveDirty(SceneContentNode* a, SceneContentNodeDirtyBit flag)
+    {
+        a->markDirty(flag);
+
+        for (auto& child : a->children())
+            MarkRecrusiveDirty(child, flag);
+    }
+
     void SceneContentNode::visualFlag(SceneContentNodeVisualBit flag, bool value)
     {
         bool changed = false;
@@ -333,14 +542,19 @@ namespace ed
                 m_structure->postEvent(EVENT_CONTENT_STRUCTURE_NODE_VISUAL_FLAG_CHANGED, selfRef);
 
             postEvent(EVENT_CONTENT_NODE_VISUAL_FLAG_CHANGED, selfRef);
+        }
 
-            if (flag == SceneContentNodeVisualBit::SelectedNode)
+        if (flag == SceneContentNodeVisualBit::SelectedNode)
+        {
+            if (type() == SceneContentNodeType::Entity)
             {
-                if (type() == SceneContentNodeType::Entity)
-                    markDirty(SceneContentNodeDirtyBit::Selection);
-                else if (type() == SceneContentNodeType::Component)
-                    if (auto entity = parent())
-                        entity->markDirty(SceneContentNodeDirtyBit::Selection);
+                //markDirty(SceneContentNodeDirtyBit::Selection);
+                MarkRecrusiveDirty(this, SceneContentNodeDirtyBit::Selection);
+            }
+            else if (type() == SceneContentNodeType::Component)
+            {
+                if (auto entity = parent())
+                    entity->markDirty(SceneContentNodeDirtyBit::Selection);
             }
         }
     }
@@ -446,7 +660,7 @@ namespace ed
 
     bool SceneContentWorldRoot::canAttach(SceneContentNodeType type) const
     {
-        return type == SceneContentNodeType::LayerDir || type == SceneContentNodeType::LayerFile;
+        return type == SceneContentNodeType::LayerDir;
     }
 
     bool SceneContentWorldRoot::canDelete() const
@@ -480,7 +694,7 @@ namespace ed
 
     bool SceneContentWorldLayer::canCopy() const
     {
-        return true;
+        return false;
     }
 
     //---
@@ -488,8 +702,9 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentWorldDir);
     RTTI_END_TYPE();
 
-    SceneContentWorldDir::SceneContentWorldDir(const StringBuf& name)
+    SceneContentWorldDir::SceneContentWorldDir(const StringBuf& name, bool system)
         : SceneContentNode(SceneContentNodeType::LayerDir, name)
+        , m_systemDirectory(system)
     {}
 
     bool SceneContentWorldDir::canAttach(SceneContentNodeType type) const
@@ -499,12 +714,12 @@ namespace ed
 
     bool SceneContentWorldDir::canDelete() const
     {
-        return true;
+        return !m_systemDirectory;
     }
 
     bool SceneContentWorldDir::canCopy() const
     {
-        return true;
+        return false;
     }
 
     //---
@@ -518,7 +733,10 @@ namespace ed
 
     bool SceneContentPrefabRoot::canAttach(SceneContentNodeType type) const
     {
-        return type == SceneContentNodeType::Entity;
+        if (type == SceneContentNodeType::Entity)
+            return children().empty();
+
+        return false;
     }
 
     bool SceneContentPrefabRoot::canDelete() const
@@ -536,29 +754,18 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentDataNode);
     RTTI_END_TYPE();
 
-    SceneContentDataNode::SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const AbsoluteTransform& localToWorld, const ObjectTemplatePtr& editableData, const ObjectTemplatePtr& baseData /*= nullptr*/)
+    SceneContentDataNode::SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const ObjectIndirectTemplate* editableData)
         : SceneContentNode(nodeType, name)
-        , m_localToWorldPlacement(localToWorld)
-        , m_baseData(baseData)
-        , m_editableData(editableData)
+        , m_editableData(AddRef(editableData))
         , m_dataEvents(this)
     {
-        if (m_baseData)
-        {
-            DEBUG_CHECK(m_baseData->parent() == nullptr);
-            m_baseData->parent(this);
-        }
+        ASSERT(m_editableData != nullptr);
+        m_editableData->parent(this);
 
-        if (m_editableData)
+        m_dataEvents.bind(m_editableData->eventKey(), EVENT_OBJECT_PROPERTY_CHANGED) = [this](StringBuf path)
         {
-            DEBUG_CHECK(m_editableData->parent() == nullptr);
-            m_editableData->parent(this);
-
-            m_dataEvents.bind(m_editableData->eventKey(), EVENT_OBJECT_PROPERTY_CHANGED) = [this](StringBuf path)
-            {
-                handleDataPropertyChanged(path);
-            };
-        }
+            handleDataPropertyChanged(path);
+        };
 
         cacheTransformData();
     }
@@ -567,20 +774,44 @@ namespace ed
     {
         TBaseClass::displayText(txt);
 
-        if (m_baseData)
-            txt << " [tag:#888]Overridden[/tag]";
+        if (auto ent = rtti_cast<SceneContentEntityNode>(this))
+            if (!ent->localPrefabs().empty())
+                txt << " [tag:#4AA]Prefab[/tag]";
 
-        if (!m_editableData)
+        if (!m_baseData.empty() && !m_editableData->properties().empty())
+            txt << " [tag:#888]Override[/tag]";
+
+        auto inheritedClass = dataClass();
+
+        if (inheritedClass && m_editableData->templateClass() && inheritedClass != m_editableData->templateClass())
+            txt << " [tag:#D44]Class Change[/tag]";
+
+        if (m_editableData->templateClass())
         {
-            txt << " [tag:#888]No data[/tag]";
-        }
-        else if (m_editableData->cls() != base::world::EntityTemplate::GetStaticClass())
-        {
-            auto className = m_editableData->cls()->name().view();
+            auto className = m_editableData->templateClass().name().view();
             className = className.afterLastOrFull("::");
             className = className.beforeFirstOrFull("Template");
             txt.appendf(" [i]({})[/i]", className);
         }
+        else if (inheritedClass)
+        {
+            auto className = inheritedClass.name().view();
+            className = className.afterLastOrFull("::");
+            className = className.beforeFirstOrFull("Template");
+            txt.appendf(" [i][color:#888]({})[/color][/i]", className);
+        }
+    }
+
+    void SceneContentDataNode::updateBaseTemplates(const Array<const ObjectIndirectTemplate*>& baseData)
+    {
+        m_baseData.reset();
+        m_baseData.reserve(baseData.size());
+        for (const auto* base : baseData)
+            m_baseData.pushBack(AddRef(base));
+
+        m_baseLocalToTransform = MergeTransforms(m_baseData);
+
+        cacheTransformData();
     }
 
     void SceneContentDataNode::handleDebugRender(rendering::scene::FrameParams& frame) const
@@ -600,29 +831,24 @@ namespace ed
         
     }
 
-    void SceneContentDataNode::changeData(const ObjectTemplatePtr& data)
+    ClassType SceneContentDataNode::dataClass() const
     {
-        if (m_editableData != data)
+        if (m_editableData)
+            if (m_editableData->templateClass())
+                return m_editableData->templateClass();
+
+        for (auto index : m_baseData.indexRange().reversed())
+            if (m_baseData[index]->templateClass())
+                return m_baseData[index]->templateClass();
+
+        return nullptr;
+    }
+
+    void SceneContentDataNode::changeClass(ClassType templateClass)
+    {
+        if (m_editableData->templateClass() != templateClass)
         {
-            if (m_editableData)
-            {
-                DEBUG_CHECK(m_editableData->parent() == this);
-                m_editableData->parent(nullptr);
-                m_dataEvents.unbind(m_editableData->eventKey());
-            }
-
-            m_editableData = data;
-
-            if (m_editableData)
-            {
-                DEBUG_CHECK(m_editableData->parent() == nullptr);
-                m_editableData->parent(this);
-
-                m_dataEvents.bind(m_editableData->eventKey(), EVENT_OBJECT_PROPERTY_CHANGED) = [this](StringBuf path)
-                {
-                    handleDataPropertyChanged(path);
-                };
-            }
+            m_editableData->templateClass(templateClass);
 
             markDirty(SceneContentNodeDirtyBit::Content);
 
@@ -637,39 +863,82 @@ namespace ed
         }
     }
 
-    void SceneContentDataNode::changePlacement(const AbsoluteTransform& newLocalToWorld, bool force /*= false*/)
+    ObjectIndirectTemplatePtr SceneContentDataNode::compileFlatData() const
     {
-        if (m_localToWorldPlacement != newLocalToWorld || force)
+        ObjectIndirectTemplateCompiler compiler;
+        for (const auto& ptr : baseData())
+            compiler.addTemplate(ptr);
+        compiler.addTemplate(editableData());
+
+        return compiler.flatten();
+    }
+
+    static const float NodeTransform_MinDT = 0.001f;
+    static const float NodeTransform_MinDR = 0.001f;
+    static const float NodeTransform_MinDS = 0.001f;
+
+    static void SanitizeTransform(EulerTransform& ret)
+    {
+        if (std::fabs(ret.T.x) <= NodeTransform_MinDT)
+            ret.T.x = 0.0f;
+        if (std::fabs(ret.T.y) <= NodeTransform_MinDT)
+            ret.T.y = 0.0f;
+        if (std::fabs(ret.T.z) <= NodeTransform_MinDT)
+            ret.T.z = 0.0f;
+
+        if (std::fabs(ret.R.pitch) <= NodeTransform_MinDR)
+            ret.R.pitch = 0.0f;
+        if (std::fabs(ret.R.yaw) <= NodeTransform_MinDR)
+            ret.R.yaw = 0.0f;
+        if (std::fabs(ret.R.roll) <= NodeTransform_MinDR)
+            ret.R.roll = 0.0f;
+
+        if (std::fabs(ret.S.x - 1.0f) <= NodeTransform_MinDS)
+            ret.S.x = 1.0f;
+        if (std::fabs(ret.S.y - 1.0f) <= NodeTransform_MinDS)
+            ret.S.y = 1.0f;
+        if (std::fabs(ret.S.z - 1.0f) <= NodeTransform_MinDS)
+            ret.S.z = 1.0f;
+    }
+
+    void SceneContentDataNode::changeLocalPlacement(const EulerTransform& newLocalToParent, bool force /*= false*/)
+    {
+        auto rebasedLocalToWorld = MakeTransformRelative(newLocalToParent, m_baseLocalToTransform);
+
+        SanitizeTransform(rebasedLocalToWorld);
+
+        if (m_editableData->placement() != rebasedLocalToWorld || force)
         {
-            m_localToWorldPlacement = newLocalToWorld;
+            m_editableData->placement(rebasedLocalToWorld);
             cacheTransformData();
-            handleTransformUpdated();
+            markModified();
         }
     }
 
-    const AbsoluteTransform& SceneContentDataNode::parentToWorldTransform() const
+    const AbsoluteTransform& SceneContentDataNode::cachedParentToWorldTransform() const
     {
         if (auto parent = rtti_cast<SceneContentDataNode>(this->parent()))
-            return parent->localToWorldTransform();
+            return parent->cachedLocalToWorldTransform();
 
         return AbsoluteTransform::ROOT();
     }
 
-    Transform SceneContentDataNode::calcLocalToParent() const
-    {
-        if (auto parentEntity = rtti_cast<SceneContentDataNode>(parent()))
-            return m_localToWorldPlacement / parentEntity->localToWorldTransform();
-
-        Transform ret;
-        ret.T = m_localToWorldPlacement.position().approximate();
-        ret.R = m_localToWorldPlacement.rotation();
-        ret.S = m_localToWorldPlacement.scale();
-        return ret;
-    }
-
     void SceneContentDataNode::cacheTransformData()
     {
-        m_cachedLocalToWorldMatrix = m_localToWorldPlacement.approximate();
+        m_localToWorld = MergeTransforms(m_baseLocalToTransform, m_editableData->placement());
+
+        auto newPlacement = cachedParentToWorldTransform() * m_localToWorld.toTransform();
+        if (newPlacement != m_cachedLocalToWorldPlacement)
+        {
+            m_cachedLocalToWorldPlacement = newPlacement;
+            m_cachedLocalToWorldMatrix = m_cachedLocalToWorldPlacement.approximate();
+
+            handleTransformUpdated();
+
+            for (const auto& child : children())
+                if (auto dataNode = rtti_cast<SceneContentDataNode>(child.get()))
+                    dataNode->cacheTransformData();
+        }
     }
 
     void SceneContentDataNode::handleTransformUpdated()
@@ -679,24 +948,248 @@ namespace ed
 
     //---
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentEntityNodePrefabSource);
-    RTTI_END_TYPE();
-
-    SceneContentEntityNodePrefabSource::SceneContentEntityNodePrefabSource(const base::world::PrefabRef& prefab, bool enabled, bool inherited)
-        : m_prefab(prefab)
-        , m_enabled(enabled)
-        , m_inherited(inherited)
-    {}
-
-    //---
-
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentEntityNode);
     RTTI_END_TYPE();
 
-    SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, Array<RefPtr<SceneContentEntityNodePrefabSource>>&& rootPrefabs, const AbsoluteTransform& localToWorld, const base::world::EntityTemplatePtr& editableData, const base::world::EntityTemplatePtr& baseData)
-        : SceneContentDataNode(SceneContentNodeType::Entity, name, localToWorld, editableData, baseData)
-        , m_prefabAssets(std::move(rootPrefabs))
+    static Array<const ObjectIndirectTemplate*> ExtractEntityData(const Array<world::NodeTemplatePtr>& sourceNodeData)
     {
+        Array<const ObjectIndirectTemplate*> ret;
+        ret.reserve(sourceNodeData.size());
+
+        for (const auto& ptr : sourceNodeData)
+            if (ptr && ptr->m_entityTemplate)
+                ret.pushBack(ptr->m_entityTemplate);
+        
+        return ret;
+    }
+
+    TYPE_TLS uint32_t GPrefabInstancingDepth = 0;
+
+    SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, const world::NodeTemplatePtr& node, const Array<world::NodeTemplatePtr>& inheritedTemplates)
+        : SceneContentDataNode(SceneContentNodeType::Entity, name, node ? node->m_entityTemplate : RefNew<ObjectIndirectTemplate>())
+        , m_inheritedTemplates(inheritedTemplates)
+    {
+        GPrefabInstancingDepth += 1;
+
+        if (GPrefabInstancingDepth < 10)
+        {
+            // apply initial instanced content - initial set of components and children
+            SceneContentEntityInstancedContent instancedContent;
+            createInstancedContent(node, instancedContent);
+            applyInstancedContent(instancedContent);
+        }
+
+        GPrefabInstancingDepth -= 1;
+    }
+
+    void SceneContentEntityNode::extractCurrentInstancedContent(SceneContentEntityInstancedContent& outInstancedContent)
+    {
+        outInstancedContent.childNodes = children();
+        outInstancedContent.localPrefabs = std::move(m_localPrefabs);
+
+        m_localPrefabs.reset();
+
+        detachAllChildren();
+    }
+
+    static void SuckInPrefab(uint64_t nodeSeed, const world::NodeTemplatePrefabSetup& prefabEntry, HashSet<const world::Prefab*>& allVisitedPrefabs, Array<const world::NodeTemplate*>& outPrefabRoots)
+    {
+        if (!prefabEntry.enabled)
+            return;
+
+        auto loadedPrefab = prefabEntry.prefab.acquire();
+        if (!loadedPrefab)
+            return;
+
+        if (!allVisitedPrefabs.insert(loadedPrefab))
+            return;
+
+        auto prefabRootNode = loadedPrefab->root();
+        if (!prefabRootNode)
+            return;
+
+        for (const auto& rootPrefab : prefabRootNode->m_prefabAssets)
+            SuckInPrefab(nodeSeed, rootPrefab, allVisitedPrefabs, outPrefabRoots);
+
+        outPrefabRoots.pushBack(prefabRootNode);
+    }
+
+    void SceneContentEntityNode::collectBaseNodes(const Array<world::NodeTemplatePrefabSetup>& localPrefabs, Array<const world::NodeTemplate*>& outBaseNodes) const
+    {
+        const auto thisNodeSeed = 0;
+
+        outBaseNodes.reset();
+
+        // collect prefabs from inherited nodes
+        InplaceArray<const world::NodeTemplate*, 20> baseNodes;
+        HashSet<const world::Prefab*> visitedPrefabs;
+        for (const auto& temp : m_inheritedTemplates)
+        {
+            for (const auto& prefabAsset : temp->m_prefabAssets)
+                SuckInPrefab(thisNodeSeed, prefabAsset, visitedPrefabs, outBaseNodes);
+
+            if (!outBaseNodes.contains(temp))
+                outBaseNodes.pushBack(temp);
+        }
+
+        // collect local prefabs
+        for (const auto& localPrefab : localPrefabs)
+            SuckInPrefab(thisNodeSeed, localPrefab, visitedPrefabs, outBaseNodes);
+    }
+
+    void SceneContentEntityNode::updateBaseTemplates()
+    {
+        InplaceArray<const world::NodeTemplate*, 10> baseNodes;
+        collectBaseNodes(m_localPrefabs, baseNodes);
+
+        InplaceArray<const ObjectIndirectTemplate*, 10> localBaseTemplates;
+        for (const auto* node : baseNodes)
+            if (node->m_entityTemplate && node->m_entityTemplate->enabled())
+                localBaseTemplates.pushBack(node->m_entityTemplate);
+
+        TBaseClass::updateBaseTemplates(localBaseTemplates);
+    }
+
+    void SceneContentEntityNode::applyInstancedContent(const SceneContentEntityInstancedContent& content)
+    {
+        detachAllChildren();
+
+        m_localPrefabs = content.localPrefabs;
+
+        updateBaseTemplates();
+
+        for (const auto& child : content.childNodes)
+            attachChildNode(child);
+    }
+
+    void SceneContentEntityNode::createInstancedContent(const world::NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outContent) const
+    {
+        const auto thisNodeSeed = 0;
+
+        // reset
+        outContent.childNodes.reset();
+        outContent.localPrefabs.reset();
+         
+        if (dataTemplate)
+            outContent.localPrefabs = dataTemplate->m_prefabAssets;
+        
+        // collect the entity template bases - first from the inherited nodes, second from local prefabs
+        InplaceArray<const world::NodeTemplate*, 10> baseContentNodes;
+        collectBaseNodes(outContent.localPrefabs, baseContentNodes);
+
+        // create components
+        // NOTE: we have cheaper short-circuit path for most common case of nodes without base
+        if (baseContentNodes.empty())
+        {
+            if (dataTemplate)
+            {
+                for (const auto& info : dataTemplate->m_componentTemplates)
+                {
+                    if (info.data && info.name)
+                    {
+                        auto componentNode = RefNew<SceneContentComponentNode>(StringBuf(info.name.view()), info.data);
+                        outContent.childNodes.pushBack(componentNode);
+                    }
+                }
+            }
+        }
+        else
+        {
+            HashMap<StringID, Array<const ObjectIndirectTemplate*>> componentMap;
+            HashMap<StringID, ObjectIndirectTemplatePtr> localComponentMap;
+
+            // collect data from base templates to know the super set of all possible components we have
+            for (const auto* temp : baseContentNodes)
+                for (const auto& comp : temp->m_componentTemplates)
+                    if (comp.data && comp.name)
+                        componentMap[comp.name].pushBack(comp.data);
+
+            // add local components
+            if (dataTemplate)
+            {
+                localComponentMap.reserve(dataTemplate->m_componentTemplates.size());
+                for (const auto& comp : dataTemplate->m_componentTemplates)
+                {
+                    if (comp.data && comp.name)
+                    {
+                        localComponentMap[comp.name] = comp.data;
+                        componentMap[comp.name].reserve(1);
+                    }
+                }
+            }
+
+            // look at all components that we want to have in this entity and create the necessary scene nodes
+            // NOTE: some components may NOT be locally defined and have no local data, for them create the empty data objects (they will be discarded on save)
+            for (const auto& pair : componentMap.pairs())
+            {
+                // if we don't have local data to edit create some
+                auto editableComponentData = localComponentMap[pair.key];
+                if (!editableComponentData)
+                    editableComponentData = RefNew<ObjectIndirectTemplate>();
+
+                // create the component node
+                auto componentNode = RefNew<SceneContentComponentNode>(StringBuf(pair.key.view()), editableComponentData, pair.value);
+                outContent.childNodes.pushBack(componentNode);
+            }
+        }
+
+        // TODO: run dynamic scripts
+        // NOTE: this may create dynamic components and dynamic child entities
+
+        // create children
+        // NOTE: we have cheaper short-circuit path for most common case of nodes without base
+        if (baseContentNodes.empty())
+        {
+            // look at local children list
+            if (dataTemplate)
+            {
+                for (const auto& child : dataTemplate->m_children)
+                {
+                    if (child && child->m_name)
+                    {
+                        auto componentNode = RefNew<SceneContentEntityNode>(StringBuf(child->m_name.view()), child);
+                        outContent.childNodes.pushBack(componentNode);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // collect names and data of child nodes
+            HashMap<StringID, Array<world::NodeTemplatePtr>> childMap;
+            HashMap<StringID, world::NodeTemplatePtr> localChildrenMap;
+
+            // collect data from base templates to know the super set of all possible children we have
+            for (const auto* temp : baseContentNodes)
+                for (const auto& comp : temp->m_children)
+                    if (comp && comp->m_name)
+                        childMap[comp->m_name].pushBack(comp);
+
+            // add local components
+            if (dataTemplate)
+            {
+                localChildrenMap.reserve(dataTemplate->m_children.size());
+                for (const auto& comp : dataTemplate->m_children)
+                {
+                    if (comp && comp->m_name)
+                    {
+                        localChildrenMap[comp->m_name] = comp;
+                        childMap[comp->m_name].reserve(1);
+                    }
+                }
+            }
+
+            // look at all children that we want to have in this entity and create the necessary scene nodes
+            // NOTE: some children may NOT be locally defined and have no local data, for them create the empty data objects (they will be discarded on save)
+            for (const auto& pair : childMap.pairs())
+            {
+                auto editableChildrenData = localChildrenMap[pair.key];
+
+                // create the component node
+                auto childNode = RefNew<SceneContentEntityNode>(StringBuf(pair.key.view()), editableChildrenData, pair.value);
+                outContent.childNodes.pushBack(childNode);
+            }
+        }
     }
 
     bool SceneContentEntityNode::canAttach(SceneContentNodeType type) const
@@ -706,12 +1199,21 @@ namespace ed
 
     bool SceneContentEntityNode::canDelete() const
     {
-        return baseData() == nullptr;
+        auto p = parent();
+        if (p && p->type() == SceneContentNodeType::PrefabRoot)
+            return false;
+
+        return m_inheritedTemplates.empty(); // we can't delete nodes that are created by instanced prefabs
     }
 
     bool SceneContentEntityNode::canCopy() const
     {
         return true;
+    }
+
+    bool SceneContentEntityNode::canExplodePrefab() const
+    {
+        return m_inheritedTemplates.empty() && !m_localPrefabs.empty();
     }
 
     void SceneContentEntityNode::handleChildAdded(SceneContentNode* child)
@@ -729,48 +1231,6 @@ namespace ed
         if (child->type() == SceneContentNodeType::Component)
             markDirty(SceneContentNodeDirtyBit::Content);
     }
-
-    base::world::EntityTemplatePtr SceneContentEntityNode::compileData() const
-    {
-        if (auto cur = rtti_cast<base::world::EntityTemplate>(editableData()))
-        {
-            auto ret = CloneObject(cur);
-            ret->rebase(baseData());
-            ret->detach();
-            ret->placement(calcLocalToParent());
-            return ret;
-        }
-
-        return nullptr;
-    }
-
-    EulerTransform MakeTransformRelative(const EulerTransform& cur, const EulerTransform& base)
-    {
-        EulerTransform ret = cur;
-        ret.T -= base.T;
-        ret.R -= base.R;
-        ret.S /= base.S;
-        return ret;
-    }
-
-    Transform MakeTransformRelative(const Transform& cur, const Transform& base)
-    {
-        Transform ret = cur;
-        ret.T -= base.T;
-        ret.R = cur.R * base.R.inverted();
-        ret.S /= base.S;
-        return ret;
-    }
-
-    template< typename T >
-    static bool IsDataNeeded(const T& data)
-    {
-        if (!data.placement().isIdentity())
-            return true;
-
-        return data.hasAnyOverrides();
-    }
-
     void SceneContentEntityNode::invalidateData()
     {
         markDirty(SceneContentNodeDirtyBit::Content);
@@ -787,34 +1247,24 @@ namespace ed
         markDirty(SceneContentNodeDirtyBit::Visibility);
     }
 
-    base::world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
+    world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
     {
         auto ret = RefNew<world::NodeTemplate>();
         ret->m_name = StringID(name());
-
-        // clone entity template data
-        if (auto entityData = compileData())
-        {
-            entityData->placement(Transform::IDENTITY());
-            entityData->parent(ret);
-            ret->m_entityTemplate = entityData;
-        }
-
-        // capture component templates
+        
+        ret->m_entityTemplate = compileFlatData();
+        ret->m_entityTemplate->parent(ret);
+        
         for (const auto& componentNode : components())
         {
             if (componentNode->localVisibilityFlag())
             {
                 if (!componentNode->name().empty())
                 {
-                    bool componentHasData = false;
-                    if (const auto componentData = componentNode->compileData())
-                    {
-                        auto& entry = ret->m_componentTemplates.emplaceBack();
-                        entry.name = StringID(componentNode->name());
-                        entry.data = componentData;
-                        componentData->parent(ret);
-                    }
+                    auto& entry = ret->m_componentTemplates.emplaceBack();
+                    entry.name = StringID(componentNode->name());
+                    entry.data = componentNode->compileFlatData();
+                    entry.data->parent(ret);
                 }
             }
         }
@@ -822,72 +1272,100 @@ namespace ed
         return ret;
     }
 
-    world::NodeTemplatePtr SceneContentEntityNode::compileDifferentialData(bool& outAnyMeaningfulData) const
+    static bool HasLocalData(const SceneContentDataNode* node)
+    {
+        DEBUG_CHECK(node->editableData());
+
+        if (node->baseData().empty())
+            return true;
+
+        if (!node->editableData()->templateClass().empty())
+            return true;
+
+        if (!node->editableData()->properties().empty())
+            return true;
+
+        if (!node->editableData()->placement().isIdentity())
+            return true;
+
+        return false;
+    }
+
+    world::NodeTemplatePtr SceneContentEntityNode::compileDifferentialData() const
     {
         auto ret = RefNew<world::NodeTemplate>();
         ret->m_name = StringID(name());
 
-        // clone entity template data
-        if (auto entityData = rtti_cast<base::world::EntityTemplate>(editableData()))
-        {
-            auto clonedEntityData = CloneObject(entityData);
-
-            if (auto base = rtti_cast<base::world::EntityTemplate>(baseData()))
-            {
-                clonedEntityData->placement(MakeTransformRelative(calcLocalToParent(), base->placement()));
-                outAnyMeaningfulData |= IsDataNeeded(*clonedEntityData);
-            }
-            else
-            {
-                clonedEntityData->placement(calcLocalToParent());
-                outAnyMeaningfulData = true;
-            }
-
-            clonedEntityData->parent(ret);
-            ret->m_entityTemplate = clonedEntityData;
-        }
-
-        // capture component templates
-        for (const auto& componentNode : components())
-        {
-            if (!componentNode->name().empty())
-            {
-                bool componentHasData = false;
-                if (const auto componentData = componentNode->compileDifferentialData(componentHasData))
-                {
-                    outAnyMeaningfulData |= componentHasData;
-
-                    auto& entry = ret->m_componentTemplates.emplaceBack();
-                    entry.name = StringID(componentNode->name());
-                    entry.data = componentData;
-
-                    componentData->parent(ret);
-                }
-            }
-        }
-
-        // capture children
+        // extract child entities
         for (const auto& childEntity : entities())
         {
-            bool entityHasData = false;
-            if (const auto childEntityData = childEntity->compileDifferentialData(entityHasData))
+            if (const auto childEntityData = childEntity->compileDifferentialData())
             {
-                outAnyMeaningfulData |= entityHasData;
                 ret->m_children.pushBack(childEntityData);
+                childEntityData->parent(ret);
             }
         }
-        
+
+        // extract component data 
+        for (const auto& componentNode : components())
+        {
+            if (componentNode->name().empty())
+                continue;
+
+            if (!HasLocalData(componentNode))
+                continue;
+
+            auto& entry = ret->m_componentTemplates.emplaceBack();
+            entry.name = StringID(componentNode->name());
+            entry.data = CloneObject(componentNode->editableData(), ret);
+        }
+
+        // extract prefab list
+        for (const auto& prefabInfo : m_localPrefabs)
+        {
+            auto& info = ret->m_prefabAssets.emplaceBack();
+            info.appearance = prefabInfo.appearance;
+            info.enabled = prefabInfo.enabled;
+            info.prefab = prefabInfo.prefab;
+        }
+
+        // if we don't have children and local components and carry no data than we don't have to be stored
+        if (ret->m_children.empty() && ret->m_componentTemplates.empty() && !HasLocalData(this) && ret->m_prefabAssets.empty())
+            return nullptr;
+
+        // extract entity data
+        ret->m_entityTemplate = CloneObject(editableData(), ret);;
         return ret;
     }    
+
+    world::NodeTemplatePtr SceneContentEntityNode::compiledForCopy() const
+    {
+        auto delta = compileDifferentialData();
+
+        if (!m_inheritedTemplates.empty())
+        {
+            InplaceArray<const world::NodeTemplate*, 10> baseTemplates;
+            for (const auto& tmp : m_inheritedTemplates)
+                baseTemplates.pushBack(tmp);
+
+            if (!delta)
+                delta = RefNew<world::NodeTemplate>();
+
+            delta = CompileWithInjectedBaseNodes(delta, baseTemplates);
+        }
+
+        return delta;
+    }
 
     //---
 
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentComponentNode);
     RTTI_END_TYPE();
 
-    SceneContentComponentNode::SceneContentComponentNode(const StringBuf& name, const AbsoluteTransform& localToWorld, const base::world::ComponentTemplatePtr& editableData, const base::world::ComponentTemplatePtr& baseData)
-        : SceneContentDataNode(SceneContentNodeType::Component, name, localToWorld, editableData, baseData)
+    SceneContentComponentNode::SceneContentComponentNode(const StringBuf& name, const ObjectIndirectTemplate* editableData, const Array<const ObjectIndirectTemplate*>& baseData)
+        : SceneContentDataNode(SceneContentNodeType::Component, name, editableData)
     {
+        updateBaseTemplates(baseData);
     }
 
     bool SceneContentComponentNode::canAttach(SceneContentNodeType type) const
@@ -897,17 +1375,17 @@ namespace ed
 
     bool SceneContentComponentNode::canDelete() const
     {
-        return baseData() == nullptr;
+        return baseData().empty();
     }
 
     bool SceneContentComponentNode::canCopy() const
     {
-        return true;
+        return baseData().empty();
     }
 
-    base::world::ComponentTemplatePtr SceneContentComponentNode::compileData() const
+    /*world::ComponentTemplatePtr SceneContentComponentNode::compileData() const
     {
-        if (auto cur = rtti_cast<base::world::ComponentTemplate>(editableData()))
+        if (auto cur = rtti_cast<world::ComponentTemplate>(editableData()))
         {
             auto ret = CloneObject(cur);
             ret->rebase(baseData());
@@ -919,14 +1397,14 @@ namespace ed
         return nullptr;
     }
 
-    base::world::ComponentTemplatePtr SceneContentComponentNode::compileDifferentialData(bool& outAnyMeaningfulData) const
+    world::ComponentTemplatePtr SceneContentComponentNode::compileDifferentialData(bool& outAnyMeaningfulData) const
     {
-        auto componentData = rtti_cast<base::world::ComponentTemplate>(editableData());
+        auto componentData = rtti_cast<world::ComponentTemplate>(editableData());
         DEBUG_CHECK_RETURN_V(componentData, nullptr);
 
         auto ret = CloneObject(componentData);
 
-        if (auto base = rtti_cast<base::world::ComponentTemplate>(baseData()))
+        if (auto base = rtti_cast<world::ComponentTemplate>(baseData()))
         {
             ret->placement(MakeTransformRelative(calcLocalToParent(), base->placement()));
             outAnyMeaningfulData |= IsDataNeeded(*ret);
@@ -938,7 +1416,7 @@ namespace ed
         }
 
         return ret;
-    }
+    }*/
 
     void SceneContentComponentNode::handleDataPropertyChanged(const StringBuf& data)
     {
@@ -964,254 +1442,50 @@ namespace ed
 
     //---
 
-    static const int MAX_DEPTH = 10;
-
-
-    template< typename T >
-    static Transform MergeTransform(const Array<const T*>& templates)
+    void SceneContentNode::EnumComponentClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Component>>& outComponentClasses)
     {
-        Transform ret;
-        bool first = true;
+        InplaceArray<SpecificClassType<world::Component>, 100> allComponentClasses;
+        RTTI::GetInstance().enumClasses(allComponentClasses);
 
-        for (auto i : templates.indexRange().reversed())
+        for (const auto compClass : allComponentClasses)
         {
-            const auto* data = templates[i];
-            if (!data->placement().isIdentity())
+            for (const auto& templateProp : compClass->allTemplateProperties())
             {
-                if (first)
-                    ret = data->placement().toTransform();
-                else
-                    ret = data->placement().toTransform().applyTo(ret);
-            }
-        }
-
-        return ret;
-    }
-
-    template< typename T >
-    static RefPtr<T> MergeTemplates(const Array<const T*>& templates)
-    {
-        if (templates.size() == 0)
-            return nullptr;
-
-        if (templates.size() == 1)
-            return AddRef(templates[0]);
-
-        RefPtr<T> ret = nullptr;
-        for (auto i : templates.indexRange().reversed())
-        {
-            auto copy = CloneObject(templates[i]);
-            copy->rebase(ret);
-            ret = copy;
-        }
-
-        return ret;
-    }
-
-    typedef HashMap<StringID, Array<const base::world::ComponentTemplate*>>ComponentTemplateList;
-
-    static void CollectComponentTemplates(const Array<const ::world::NodeTemplate*>& templates, ComponentTemplateList& outTemplates)
-    {
-        for (const auto* dataTemplate : templates)
-            for (const auto& compTemplate : dataTemplate->m_componentTemplates)
-                if (compTemplate.name && compTemplate.data && compTemplate.data->enabled())
-                    outTemplates[compTemplate.name].pushBack(compTemplate.data);
-    }
-
-    static bool TransformHasTranslationOnly(const base::EulerTransform& cur)
-    {
-        return cur.R == base::EulerTransform::Rotation::ZERO() &&
-            cur.S == base::EulerTransform::Scale::ONE();
-    }
-
-    static base::EulerTransform MergeTransforms(const base::EulerTransform& base, const base::EulerTransform& cur)
-    {
-        // handle most common case - no transform
-        if (base.isIdentity())
-            return cur;
-        else if (cur.isIdentity())
-            return base;
-
-        base::EulerTransform ret;
-        ret.T = base.T + cur.T;
-        ret.R = base.R + cur.R;
-        ret.S = base.S * cur.S;
-        return ret;
-    }
-
-    static base::Transform MergeTransforms(const base::Transform& base, const base::Transform& cur)
-    {
-        // handle most common case - no transform
-        if (base.isIdentity())
-            return cur;
-        else if (cur.isIdentity())
-            return base;
-
-        base::Transform ret;
-        ret.T = base.T + cur.T;
-        ret.R = base.R * cur.R;
-        ret.S = base.S * cur.S;
-        return ret;
-    }
-
-    template< typename T >
-    static bool SplitAndMergeTemplates(const base::Array<const T*>& sourceTemplates, const base::world::NodeTemplate* rootNode, RefPtr<T>& outBaseData, RefPtr<T>& outEditableData)
-    {
-        RefPtr<T> baseData;
-
-        for (const auto* data : sourceTemplates)
-        {
-            auto dataCopy = CloneObject<T>(data);
-
-            const auto isEditableData = data->hasParent(rootNode); // is this data from source hierarchy
-            if (isEditableData)
-            {
-                DEBUG_CHECK(!outEditableData); // duplicated editable data ?
-                outEditableData = dataCopy;
-            }
-            else
-            {
-                if (baseData)
+                if (templateProp.type->metaType() == rtti::MetaType::AsyncResourceRef && templateProp.editorData.m_primaryResource)
                 {
-                    const auto mergedTransform = MergeTransforms(baseData->placement(), dataCopy->placement());
-                    dataCopy->rebase(baseData);
-                    dataCopy->placement(mergedTransform);
-                }
-
-                baseData = dataCopy;
-            }
-        }
-
-        // no data
-        if (!outEditableData && !outBaseData)
-            return false;
-
-        // create a default object of matching class
-        if (!outEditableData)
-        {
-            outEditableData = outBaseData->cls()->create<T>();
-            outEditableData->rebase(outBaseData);
-            outEditableData->placement(outBaseData->placement());
-        }
-        else if (outBaseData)
-        {
-            const auto mergedTransform = MergeTransforms(outBaseData->placement(), outEditableData->placement());
-            outEditableData->rebase(outBaseData);
-            outEditableData->placement(mergedTransform);
-        }
-
-        return true;
-    }
-
-    static SceneContentEntityNodePtr CompileEntityContent(const base::world::NodeTemplate* rootNode, const AbsoluteTransform* rootPlacement, const StringBuf& name, const Array<const base::world::NodeTemplate*>& templates)
-    {
-        PC_SCOPE_LVL1(CreateEntity);
-
-        // collect valid entity templates to build an entity from
-        InplaceArray<const base::world::EntityTemplate*, 8> entityTemplates;
-        for (const auto& dataTemplate : templates)
-        {
-            const auto& entityData = dataTemplate->m_entityTemplate;
-            if (entityData && entityData->enabled())
-                entityTemplates.pushBack(entityData);
-        }
-
-        // generate base and editable entity data
-        base::world::EntityTemplatePtr baseEntityData, editableEntityData;
-        if (!SplitAndMergeTemplates(entityTemplates, rootNode, baseEntityData, editableEntityData))
-            return false;
-        DEBUG_CHECK(editableEntityData);
-
-        // prefabs
-        Array<RefPtr<SceneContentEntityNodePrefabSource>> prefabs;
-
-        // calculate placement of the entity
-        AbsoluteTransform entityLocalToWorld = AbsoluteTransform::ROOT();
-        if (rootPlacement)
-            entityLocalToWorld = *rootPlacement * editableEntityData->placement();
-
-        // create the content node
-        auto entityNode = base::RefNew<SceneContentEntityNode>(name, std::move(prefabs), entityLocalToWorld, editableEntityData, baseEntityData);
-
-        // gather list of all components to create
-        ComponentTemplateList namedComponentTemplates;
-        CollectComponentTemplates(templates, namedComponentTemplates);
-
-        // create all named components and attach them to entity
-        for (auto pair : namedComponentTemplates.pairs())
-        {
-            // extract data
-            base::world::ComponentTemplatePtr baseComponentData, editableComponentData;
-            if (SplitAndMergeTemplates(pair.value, rootNode, baseComponentData, editableComponentData))
-            {
-                // calculate component placement
-                auto componentLocalToWorld = entityNode->localToWorldTransform() * editableComponentData->placement();
-
-                // create editable node
-                auto componentNode = base::RefNew<SceneContentComponentNode>(StringBuf(pair.key.view()), componentLocalToWorld, editableComponentData, baseComponentData);
-                entityNode->attachChildNode(componentNode);
-            }
-        }
-
-        return entityNode;
-    }
-
-    SceneContentEntityNodePtr ProcessSingleEntity(int depth, const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, const StringBuf& name, const base::world::NodeCompilationStack& it, Array<SceneContentEntityNodePtr>* outAllEntities)
-    {
-        InplaceArray<base::world::PrefabRef, 10> prefabsToInstance;
-        it.collectPrefabs(prefabsToInstance);
-
-        // "instance" prefabs
-        base::world::NodeCompilationStack localIt(it);
-        for (auto& prefab : prefabsToInstance)
-        {
-            if (auto data = prefab.acquire())
-            {
-                const auto rootIndex = 0;
-                if (rootIndex >= 0 && rootIndex <= data->nodes().lastValidIndex())
-                {
-                    if (const auto rootNode = data->nodes()[rootIndex])
-                        localIt.pushBack(rootNode);
+                    const auto* asyncRefType = static_cast<const rtti::IResourceReferenceType*>(templateProp.type.ptr());
+                    if (asyncRefType->referenceResourceClass().is(resourceClass))
+                    {
+                        outComponentClasses.pushBack(compClass);
+                        break;
+                    }
                 }
             }
         }
+    }
 
-        // compile single entity out of the current stack
-        if (auto compiledNode = CompileEntityContent(rootNode, rootPlacement, name, localIt.templates()))
+    void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Entity>>& outEntityClasses)
+    {
+        InplaceArray<SpecificClassType<world::Entity>, 100> allComponentClasses;
+        RTTI::GetInstance().enumClasses(allComponentClasses);
+
+        for (const auto compClass : allComponentClasses)
         {
-            if (outAllEntities)
-                outAllEntities->pushBack(compiledNode);
-
-            // create child entities
-            if (depth < MAX_DEPTH)
+            for (const auto& templateProp : compClass->allTemplateProperties())
             {
-                HashSet<StringID> childrenNames;
-                localIt.collectChildNodeNames(childrenNames);
-                for (const auto name : childrenNames)
+                if (templateProp.type->metaType() == rtti::MetaType::AsyncResourceRef && templateProp.editorData.m_primaryResource)
                 {
-                    base::world::NodeCompilationStack childIt;
-                    localIt.enterChild(name, childIt);
-
-                    ProcessSingleEntity(depth + 1, &compiledNode->localToWorldTransform(), rootNode, StringBuf(name.view()), childIt, outAllEntities);
+                    const auto* asyncRefType = static_cast<const rtti::IResourceReferenceType*>(templateProp.type.ptr());
+                    if (asyncRefType->referenceResourceClass().is(resourceClass))
+                    {
+                        outEntityClasses.pushBack(compClass);
+                        break;
+                    }
                 }
             }
-
-            return compiledNode;
-        }
-        else
-        {
-            return nullptr;
         }
     }
 
-    SceneContentEntityNodePtr UnpackNode(const AbsoluteTransform* rootPlacement, const base::world::NodeTemplate* rootNode, Array<SceneContentEntityNodePtr>* outAllEntities /*= nullptr*/)
-    {
-        base::world::NodeCompilationStack stack;
-        stack.pushBack(rootNode);
-
-        return ProcessSingleEntity(0, rootPlacement, rootNode, StringBuf(rootNode->m_name.view()), stack, outAllEntities);
-    }
-
-    //---
+    //--
 
 } // ed

@@ -703,7 +703,7 @@ namespace ui
         return true;
     }
 
-    bool IElement::handleContextMenu(const ElementArea& area, const Position& absolutePosition)
+    bool IElement::handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys)
     {
         // try local event
         if (call(EVENT_CONTEXT_MENU, absolutePosition))
@@ -711,7 +711,7 @@ namespace ui
 
         // propagate to parent
         if (auto parent = parentElement())
-            return parent->handleContextMenu(area, absolutePosition);
+            return parent->handleContextMenu(area, absolutePosition, controlKeys);
 
         // nothing
         return false;

@@ -10,6 +10,19 @@
 
 namespace ed
 {
+    //--
+
+    enum class SceneContentSyncOpType : uint8_t
+    {
+        Added,
+        Removed,
+    };
+
+    struct SceneContentSyncOp
+    {
+        SceneContentSyncOpType type;
+        SceneContentNodePtr node;
+    };
 
     //--
 
@@ -19,7 +32,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneContentStructure, IObject);
 
     public:
-        SceneContentStructure(bool prefab); // usually the root is either WorldRoot or PrefabRoot
+        SceneContentStructure(SceneContentNodeType rootNodeType); // usually the root is either WorldRoot or PrefabRoot
         virtual ~SceneContentStructure();
 
         // the root node
@@ -50,7 +63,7 @@ namespace ed
         //--
 
         // get list of nodes added/removed since last sync
-        void syncNodeChanges(Array<SceneContentNodePtr>& outAddedNodes, Array<SceneContentNodePtr>& outRemovedNodes);
+        void syncNodeChanges(Array<SceneContentSyncOp>& outOps);
 
         // visit all nodes marked as dirty, used to sync the preview state with content state
         // synced state should be cleared from the dirtyFlags bitfield
@@ -62,8 +75,7 @@ namespace ed
         Array<SceneContentEntityNodePtr> m_entities;
         Array<SceneContentNodePtr> m_nodes;
 
-        HashSet<SceneContentNodePtr> m_addedNodes;
-        HashSet<SceneContentNodePtr> m_removedNodes;
+        Array<SceneContentSyncOp> m_nodeChanges;
         HashSet<SceneContentNodeWeakPtr> m_dirtyNodes;
     };
 

@@ -180,7 +180,7 @@ namespace ui
                                 auto childPath = base::StringBuf(name.c_str());
 
                                 base::rtti::DataViewInfo childInfo;
-                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyMetadata;
+                                childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::PropertyEditorData;
                                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::TypeMetadata;
                                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::MemberList;
                                 childInfo.requestFlags |= base::rtti::DataViewRequestFlagBit::CheckIfResetable;

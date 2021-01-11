@@ -38,8 +38,6 @@ namespace rendering
         RTTI_CATEGORY("Asset search");
         RTTI_PROPERTY(m_depotSearchDepth).editable().overriddable();
         RTTI_PROPERTY(m_sourceAssetsSearchDepth).editable().overriddable();
-        RTTI_CATEGORY("Base material");
-        RTTI_PROPERTY(m_templateDefault).editable().overriddable();
     RTTI_END_TYPE();
 
     MaterialImportConfig::MaterialImportConfig()
@@ -50,8 +48,6 @@ namespace rendering
 
         m_depotSearchDepth = 6;
         m_sourceAssetsSearchDepth = 6;
-
-        m_templateDefault = resDefaultMaterialBase.asyncRef();
     }
 
     void MaterialImportConfig::computeConfigurationKey(CRC64& crc) const
@@ -62,7 +58,6 @@ namespace rendering
         crc << m_textureSearchPath.view();
         crc << m_depotSearchDepth;
         crc << m_sourceAssetsSearchDepth;
-        crc << m_templateDefault.key().path().view();
     }
 
     //--

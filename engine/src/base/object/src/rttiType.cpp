@@ -57,7 +57,7 @@ namespace base
                 outInfo.dataType = this; // that's all we know :D
 
                 if (outInfo.requestFlags.test(DataViewRequestFlagBit::TypeMetadata))
-                    collectMetadataList(outInfo.metadata);
+                    collectMetadataList(outInfo.typeMetadata);
 
                 outInfo.flags |= DataViewInfoFlagBit::LikeValue;
                 return DataViewResultCode::OK;

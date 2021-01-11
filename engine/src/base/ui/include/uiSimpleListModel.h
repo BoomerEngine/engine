@@ -109,10 +109,10 @@ namespace ui
         T* dataPtr(const ModelIndex& id)
         {
             if (id.model() == this)
-                if (const auto* data = id.unsafe<ElemHolder>())
+                if (auto* data = id.unsafe<ElemHolder>())
                     return &data->data;
 
-            return defaultData;
+            return nullptr;
         }
         
         INLINE uint32_t size() const

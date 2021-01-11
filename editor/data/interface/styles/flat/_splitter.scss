@@ -26,3 +26,19 @@ Splitter {
         }
     }
 }
+
+FourWaySplitterSash {
+  background: $scroll-button-color;
+
+  &.vertical {
+    width: 6em;
+  }
+
+  &.horizontal {
+    height: 6em;
+  }
+
+  &:hover, &:dragged {
+    background: color.scale($scroll-thumb-color, 110%);
+  }
+}

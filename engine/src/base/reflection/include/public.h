@@ -106,5 +106,4 @@ namespace base
 #define TYPE_OF(x) base::reflection::GetTypeObject<decltype(x)>()
 #define TYPE_NAME_OF(x) base::reflection::GetTypeName<decltype(x)>()
 
-#include "propertyDecorators.h"
 #include "variant.h"

@@ -153,6 +153,12 @@ namespace rendering
             /// calculate corners of the frustum
             void calcFrustumCorners(float zPlane, base::Vector3* outCorners) const;
 
+            /// calculate 0-1 depth from a linear Z
+            float linearZToProjectedZ(float linearZ) const;
+
+            /// calculate linear Z from 0-1 projected depth
+            float projectedZToLinearZ(float projectedZ) const;
+
         private:
             CameraSetup m_setup;
 

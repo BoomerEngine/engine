@@ -56,8 +56,8 @@ export shader MaterialPS
 	{
 		uint selectableId = ObjectData[objectId].SelectionObjectID;
 		uint subId = ObjectData[objectId].SelectionSubObjectID;
-		float dist = length(CameraPosition - worldPosition);
-		SelectionGatherPS.EmitSelection(selectableId, subId, dist);
+		float linearZ = dot((worldPosition - CameraPosition), CameraForward);
+		SelectionGatherPS.EmitSelection(selectableId, subId, linearZ);
 	}
 
 	//--

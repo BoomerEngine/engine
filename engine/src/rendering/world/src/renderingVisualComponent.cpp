@@ -112,6 +112,19 @@ namespace rendering
         }
     }
 
+    bool IVisualComponent::initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties)
+    {
+        if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
+            return false;
+
+        return true;
+    }
+
+    void IVisualComponent::queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const
+    {
+        TBaseClass::queryTemplateProperties(outTemplateProperties);
+    }
+
     //--
         
 } // rendering

@@ -35,7 +35,7 @@ namespace ui
         void addOption(const base::StringBuf& txt);
 
         void selectOption(int option);
-        void selectOption(const base::StringBuf& text);
+        void selectOption(base::StringView text);
 
         int selectedOption() const;
         base::StringBuf selectedOptionText() const;

@@ -89,11 +89,7 @@ namespace rendering
         RTTI_PROPERTY(m_tangentsAngularThreshold).editable("Angle threshold for welding tangent space vectors together").overriddable();
         RTTI_PROPERTY(m_flipTangent).editable("Flip tangent vector, regardless if calculated or not").overriddable();
         RTTI_PROPERTY(m_flipBitangent).editable("Flip bitangent vector, regardless if calculated or not").overriddable();
-        RTTI_CATEGORY("Base material");
-        RTTI_PROPERTY(m_templateDefault).editable().overriddable();
     RTTI_END_TYPE();
-
-    static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
 
     MeshImportConfig::MeshImportConfig()
     {
@@ -105,8 +101,6 @@ namespace rendering
 
         m_textureImportMode = MaterialTextureImportMode::ImportMissing;
         m_materialImportMode = MeshMaterialImportMode::EmbedMissing;
-
-        m_templateDefault = resDefaultMaterialBase.asyncRef();
     }
 
     float GetScaleFactorForUnits(MeshImportUnits units)
@@ -210,8 +204,6 @@ namespace rendering
         crc << m_tangentsAngularThreshold;
         crc << m_flipTangent;
         crc << m_flipBitangent;
-
-        crc << m_templateDefault.key().path().view();
     }
 
     //--

@@ -15,9 +15,9 @@ namespace base
     RTTI_BEGIN_TYPE_STRUCT(Angles);
         RTTI_BIND_NATIVE_COMPARE(Angles);
         RTTI_TYPE_TRAIT().zeroInitializationValid().noConstructor().noDestructor().fastCopyCompare();
-        RTTI_PROPERTY(pitch).editable("Pitch around Y axis").metadata<PropertyNumberRangeMetadata>(-360.0f, 360.0f).metadata<PropertyHasDragMetadata>(true);
-        RTTI_PROPERTY(yaw).editable("Yaw around Z axis").metadata<PropertyNumberRangeMetadata>(-360.0f, 360.0f).metadata<PropertyHasDragMetadata>(true);
-        RTTI_PROPERTY(roll).editable("Roll around X axis").metadata<PropertyNumberRangeMetadata>(-360.0f, 360.0f).metadata<PropertyHasDragMetadata>(true);
+        RTTI_PROPERTY(pitch).editable("Pitch around Y axis").range(-360.0f, 360.0f).widgetDrag(true);
+        RTTI_PROPERTY(yaw).editable("Yaw around Z axis").range(-360.0f, 360.0f).widgetDrag(true);
+        RTTI_PROPERTY(roll).editable("Roll around X axis").range(-360.0f, 360.0f).widgetDrag(true);
         RTTI_FUNCTION("ForwardVector", forward);
         RTTI_FUNCTION("SideVector", side);
         RTTI_FUNCTION("UpVector", up);

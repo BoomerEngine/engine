@@ -118,7 +118,7 @@ namespace ui
         virtual bool handleCharEvent(const base::input::CharEvent& evt) override;
         virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
-        virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition) override;
+        virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, base::input::KeyMask controlKeys) override;
         virtual void handleFocusGained() override;
 
         void moveCursor(const CursorNavigation& pos, bool extendSelection);
