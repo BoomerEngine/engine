@@ -32,6 +32,7 @@
 #include "base/editor/include/editorWindow.h"
 #include "base/editor/src/assetBrowserDialogs.h"
 #include "base/ui/include/uiInputBox.h"
+#include "base/object/include/rttiResourceReferenceType.h"
 
 namespace ed
 {
@@ -406,8 +407,8 @@ namespace ed
     struct ShowHideNodeData
     {
         SceneContentNodePtr node;
-        bool oldVisState = false;
-        bool newVisState = true;
+        SceneContentNodeLocalVisibilityState oldVisState = SceneContentNodeLocalVisibilityState::Default;
+        SceneContentNodeLocalVisibilityState newVisState = SceneContentNodeLocalVisibilityState::Default;
     };
 
     struct ActionShowHideNodes : public IAction
@@ -455,7 +456,7 @@ namespace ed
 
     static void CollectHiddenNodes(const SceneContentNode* node, Array<SceneContentNodePtr>& outNodes)
     {
-        if (!node->localVisibilityFlag())
+        if (!node->visibilityFlagBool())
         {
             if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Component)
             {
@@ -469,7 +470,7 @@ namespace ed
 
     static bool HasHiddenNodes(const SceneContentNode* node)
     {
-        if (!node->localVisibilityFlag())
+        if (!node->visibilityFlagBool())
             return true;
 
         for (const auto& child : node->children())
@@ -481,7 +482,7 @@ namespace ed
 
     static bool HasShownNodes(const SceneContentNode* node)
     {
-        if (node->localVisibilityFlag())
+        if (node->visibilityFlagBool())
             return true;
 
         for (const auto& child : node->children())
@@ -509,12 +510,12 @@ namespace ed
 
         for (const auto& node : selection)
         {
-            if (node->localVisibilityFlag())
+            if (node->visibilityFlagBool())
             {
                 auto& entry = data.emplaceBack();
                 entry.node = node;
-                entry.oldVisState = true;
-                entry.newVisState = false;
+                entry.oldVisState = node->visibilityFlagRaw();
+                entry.newVisState = SceneContentNodeLocalVisibilityState::Hidden;
             }
         }
 
@@ -532,12 +533,12 @@ namespace ed
 
         for (const auto& node : selection)
         {
-            if (!node->localVisibilityFlag())
+            if (!node->visibilityFlagBool())
             {
                 auto& entry = data.emplaceBack();
                 entry.node = node;
-                entry.oldVisState = false;
-                entry.newVisState = true;
+                entry.oldVisState = node->visibilityFlagRaw();
+                entry.newVisState = SceneContentNodeLocalVisibilityState::Visible;
             }
         }
 
@@ -557,8 +558,11 @@ namespace ed
         {
             auto& entry = data.emplaceBack();
             entry.node = node;
-            entry.oldVisState = node->localVisibilityFlag();
-            entry.newVisState = !entry.oldVisState;
+            entry.oldVisState = node->visibilityFlagRaw();
+            if (entry.node->visibilityFlagBool())
+                entry.newVisState = SceneContentNodeLocalVisibilityState::Hidden;
+            else
+                entry.newVisState = SceneContentNodeLocalVisibilityState::Visible;
         }
 
         if (!data.empty())
@@ -762,7 +766,43 @@ namespace ed
 
     //--
 
-    void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement)
+    void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile* file)
+    {
+        if (ptr->templateClass() && file)
+        {
+            for (const auto& temp : ptr->templateClass()->allTemplateProperties())
+            {
+                if (temp.editorData.m_primaryResource && temp.type.metaType() == rtti::MetaType::AsyncResourceRef)
+                {
+                    const auto* asyncRefType = static_cast<const rtti::IResourceReferenceType*>(temp.type.ptr());
+                    const auto asyncRefResourceClass = asyncRefType->referenceResourceClass().cast<res::IResource>();
+
+                    if (file->fileFormat().loadableAsType(asyncRefResourceClass))
+                    {
+                        const auto key = res::ResourceKey(res::ResourcePath(file->depotPath()), asyncRefResourceClass);
+
+                        rtti::DataHolder value(asyncRefType);
+                        *((res::BaseAsyncReference*)value.data()) = key;
+
+                        ptr->writeProperty(temp.name, value.data(), value.type());
+                    }
+                }
+            }
+        }
+    }
+
+    static StringView ExtractCoreName(ClassType nodeClass, const ManagedFile* resourceFile)
+    {
+        if (resourceFile)
+            return resourceFile->name().view().beforeFirst(".");
+
+        if (nodeClass)
+            return nodeClass->shortName().view();
+
+        return "node";
+    }
+
+    void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
     {
         if (!entityClass)
             entityClass = base::world::Entity::GetStaticClass();
@@ -770,9 +810,7 @@ namespace ed
         DEBUG_CHECK_RETURN(entityClass);
         DEBUG_CHECK_RETURN(!entityClass->isAbstract());
 
-        auto coreName = entityClass->name().view();
-        coreName = coreName.beforeFirstNoCaseOrFull("Template");
-        coreName = coreName.afterLastOrFull("::");
+        const auto coreName = ExtractCoreName(entityClass, resourceFile);
         
         Array<AddedNodeData> createdNodes;
         for (const auto& node : selection)
@@ -785,6 +823,8 @@ namespace ed
                 sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
                 sourceNode->m_entityTemplate->parent(sourceNode);
                 sourceNode->m_entityTemplate->templateClass(entityClass);
+
+                BindResourceToObjectTemplate(sourceNode->m_entityTemplate, resourceFile);
 
                 if (initialPlacement)
                 {
@@ -855,14 +895,63 @@ namespace ed
         actionHistory()->execute(action);
     }
 
-    void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement)
+    void SceneEditMode_Default::createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement /*= nullptr*/, const ManagedFile* resourceFile /*= nullptr*/)
     {
         DEBUG_CHECK_RETURN(componentClass);
         DEBUG_CHECK_RETURN(!componentClass->isAbstract());
 
-        auto coreName = componentClass->name().view();
-        coreName = coreName.beforeFirstNoCaseOrFull("Template");
-        coreName = coreName.afterLastOrFull("::");
+        const auto coreName = ExtractCoreName(componentClass, resourceFile);
+
+        Array<AddedNodeData> createdNodes;
+        for (const auto& node : selection)
+        {
+            if (node->canAttach(SceneContentNodeType::Entity))
+            {
+                const auto safeName = node->buildUniqueName(coreName);
+
+                //--
+
+                auto sourceNode = RefNew<world::NodeTemplate>();
+                sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+                sourceNode->m_entityTemplate->parent(sourceNode);
+
+                if (initialPlacement)
+                {
+                    AbsoluteTransform parentTransform;
+                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
+
+                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                    sourceNode->m_entityTemplate->placement(placement);
+                }
+
+                const auto lowerCaseClassName = StringBuf(componentClass->shortName().view().beforeFirstOrFull("Component")).toLower();
+
+                auto& sourceComp = sourceNode->m_componentTemplates.emplaceBack();
+                sourceComp.name = StringID(lowerCaseClassName);
+                sourceComp.data = RefNew<ObjectIndirectTemplate>();
+                sourceComp.data->templateClass(componentClass);
+
+                BindResourceToObjectTemplate(sourceComp.data, resourceFile);
+
+                //---
+
+                auto& info = createdNodes.emplaceBack();
+                info.parent = node;
+                info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
+            }
+        }
+
+        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+        actionHistory()->execute(action);
+    }
+
+    void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
+    {
+        DEBUG_CHECK_RETURN(componentClass);
+        DEBUG_CHECK_RETURN(!componentClass->isAbstract());
+
+        const auto coreName = ExtractCoreName(componentClass, resourceFile);
 
         Array<AddedNodeData> createdNodes;
         for (const auto& node : selection)
@@ -873,6 +962,7 @@ namespace ed
 
                 auto componentData = RefNew<ObjectIndirectTemplate>();
                 componentData->templateClass(componentClass);
+                BindResourceToObjectTemplate(componentData, resourceFile);
 
                 if (initialPlacement)
                 {

@@ -48,6 +48,7 @@ namespace ed
         virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
         virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, base::input::CursorType& outCursorType) const override;
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+        virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
 
         virtual ui::IElement* gizmoHost_element() const override final;
         virtual bool gizmoHost_hasSelection() const override final;

@@ -91,6 +91,11 @@ namespace ed
         // handle viewport context menu
         virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor);
 
+        // handle viewport drag&drop
+        virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition);
+
+        //--
+
         // update state
         virtual void handleUpdate(float dt);
 
@@ -120,6 +125,8 @@ namespace ed
 
         //--
 
+        //--
+
         // general clipboard operations
         virtual void handleGeneralCopy();
         virtual void handleGeneralCut();
@@ -133,6 +140,11 @@ namespace ed
         virtual bool checkGeneralPaste() const;
         virtual bool checkGeneralDelete() const;
         virtual bool checkGeneralDuplicate() const;
+
+        //--
+
+        virtual void configSave(ScenePreviewContainer* container, const ui::ConfigBlock& block) const;
+        virtual void configLoad(ScenePreviewContainer* container, const ui::ConfigBlock& block);
 
     private:
         ScenePreviewContainer* m_container = nullptr;

@@ -12,6 +12,15 @@
 
 namespace ed
 {
+    //--
+
+    /// local node visibility state
+    enum class SceneContentNodeLocalVisibilityState : uint8_t
+    {
+        Default,
+        Visible,
+        Hidden,
+    };
 
     //--
 
@@ -51,11 +60,11 @@ namespace ed
         // are we attached to scene structure ?
         INLINE bool attached() const { return m_structure != nullptr; }
 
-        // is the node visible ?
+        // is the node visible ? (true only if all parent nodes are visible as well)
         INLINE bool visible() const { return m_visible; }
 
-        // local visiblity flag
-        INLINE bool localVisibilityFlag() const { return m_localVisibilityFlag; }
+        // local visiblity flag - false if user hidden this node specifically
+        INLINE SceneContentNodeLocalVisibilityState visibilityFlagRaw() const { return m_localVisibilityFlag; }
 
         // child nodes
         INLINE const Array<SceneContentNodePtr>& children() const { return m_children; }
@@ -100,8 +109,8 @@ namespace ed
         // detach all children nodes
         void detachAllChildren();
 
-        // change node local visibility (may propagate to other nodes if we are part of active structure)
-        void visibility(bool flag);
+        // recalculate merged visibility state for this node an all child nodes
+        void recalculateVisibility();
 
         // change visual flags (just used for tree visualization)
         void visualFlag(SceneContentNodeVisualBit flag, bool value);
@@ -123,6 +132,20 @@ namespace ed
 
         // find child node by name
         SceneContentNode* findChild(StringView name) const;
+
+        // find node by given path - can contain '..' to go to parent
+        SceneContentNode* findNodeByPath(StringView path) const;
+
+        //--
+
+        // change node local visibility (may propagate to other nodes if we are part of active structure)
+        void visibility(SceneContentNodeLocalVisibilityState flag, bool propagateState = true);
+
+        // visibility flag for the node - uses default visibility state unless overridden
+        bool visibilityFlagBool() const;
+
+        // get node's default visibility state
+        virtual bool defaultVisibilityFlag() const;
 
         //--
 
@@ -183,7 +206,7 @@ namespace ed
 
         bool m_modified = false;
         bool m_visible = true;
-        bool m_localVisibilityFlag = true;
+        SceneContentNodeLocalVisibilityState m_localVisibilityFlag = SceneContentNodeLocalVisibilityState::Default;
         SceneContentNodeType m_type = SceneContentNodeType::None;
 
         Array<SceneContentNodePtr> m_children; // objects just in this file
@@ -252,6 +275,8 @@ namespace ed
         virtual bool canAttach(SceneContentNodeType type) const override final;
         virtual bool canDelete() const override final;
         virtual bool canCopy() const override final;
+
+        virtual bool defaultVisibilityFlag() const override;
 
     private:
         bool m_systemDirectory = false;

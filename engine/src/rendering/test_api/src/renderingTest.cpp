@@ -374,16 +374,16 @@ namespace rendering
 				, m_numMips(numMips)
 			{}
 
-			virtual void writeSourceData(const base::Array<WriteAtom>& atoms) const override final
+            virtual CAN_YIELD void fetchSourceData(base::Array<SourceAtom>& outAtoms) const override final
 			{
-				for (const auto& atom : atoms)
+				/*for (const auto& atom : atoms)
 				{
 					const auto& data = m_data[atom.slice].m_mipmaps[atom.mip];
 
                     base::image::ImageView targetView(base::image::NATIVE_LAYOUT, data->format(), data->channels(), atom.targetDataPtr, data->width(), data->height(), data->depth());
                     base::image::Copy(data->view(), targetView);
 					//memcpy(atom.targetDataPtr, data->data(), atom.targetDataSize);
-				}
+				}*/
 			}
 
 		private:

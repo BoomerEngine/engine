@@ -41,6 +41,7 @@ namespace rendering
 			virtual void render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) override final;
 			virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) override final;
 			virtual void render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) override final;
+			virtual void render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) override final;
 
 			//--
 
@@ -130,9 +131,9 @@ namespace rendering
 
 			//--
 
-			void collectMainViewChunks(const FrameViewMain& view, VisibleMainViewCollector& outCollector) const;
-			void collectWireframeViewChunks(const FrameViewWireframe& view, VisibleWireframeViewCollector& outCollector) const;
-			void collectSelectionChunks(const FrameViewCaptureSelection& view, VisibleCaptureCollector& outCollector) const;
+			void collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector) const;
+			void collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const;
+			void collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const;
 			void renderChunkListStandalone(command::CommandWriter& cmd, const base::Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const;
 
 			void sortChunksByBatch(base::Array<VisibleStandaloneChunk>& chunks) const;

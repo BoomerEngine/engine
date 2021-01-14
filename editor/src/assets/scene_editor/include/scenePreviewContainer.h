@@ -149,6 +149,7 @@ namespace ed
     //--
 
     class SceneNodeVisualizationHandler;
+    class SceneObjectPalettePanel;
 
     DECLARE_UI_EVENT(EVENT_EDIT_MODE_CHANGED);
     DECLARE_UI_EVENT(EVENT_EDIT_MODE_SELECTION_CHANGED);

@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "renderingFrameRenderer.h"
+#include "renderingFrameView.h"
 #include "renderingFrameView_Cascades.h"
 
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -38,7 +39,7 @@ namespace rendering
 		//--
 
 		/// helper recorder class
-		class RENDERING_SCENE_API FrameViewWireframe : public base::NoCopy
+		class RENDERING_SCENE_API FrameViewWireframe : public FrameViewSingleCamera
 		{
 		public:
 			struct Setup
@@ -53,29 +54,15 @@ namespace rendering
 			//--
 
 			FrameViewWireframe(const FrameRenderer& frame, const Setup& setup);
-			~FrameViewWireframe();
 
 			void render(command::CommandWriter& cmd);
 
 			//--
 
-			INLINE const Camera& visibilityCamera() const { return m_camera; }
-
-			//--
-
 		private:
-			const FrameRenderer& m_frame;
 			const Setup& m_setup;
 
-			base::Rect m_viewport;
-
-			Camera m_camera;
-
-			//--
-
 			void initializeCommandStreams(command::CommandWriter& cmd, FrameViewWireframeRecorder& rec);
-
-			void bindCamera(command::CommandWriter& cmd);
 		};
         
         //--

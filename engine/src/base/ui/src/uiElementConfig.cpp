@@ -65,6 +65,14 @@ namespace ui
     {
         base::StringBuilder txt;
 
+        bool addSeparator = false;
+        
+        if (m_path)
+        {
+            txt << m_path;
+            addSeparator = true;
+        }
+
         for (auto ch : tag)
         {
             if (ch == '\\')
@@ -74,7 +82,15 @@ namespace ui
                 continue;
 
             if (IsValidChar(ch))
+            {
+                if (addSeparator)
+                {
+                    addSeparator = false;
+                    txt << "/";
+                }
+
                 txt.appendch(ch);
+            }
         }
 
         return ConfigBlock(m_data, txt.view());

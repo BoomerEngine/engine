@@ -60,9 +60,9 @@ namespace ui
     {
         ViewItem* item = nullptr;
         if (findViewElement(index, item))
-            return item->m_expanded;
+            return item->m_expanded;// && item->m_expandable;
 
-        return true;
+        return false;
     }
 
     void TreeView::collectExpandedItems(base::Array<ModelIndex>& outIndices) const

@@ -108,6 +108,11 @@ namespace ed
     void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
     {}
 
+    ui::DragDropHandlerPtr ISceneEditMode::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition)
+    {
+        return nullptr;
+    }
+
     void ISceneEditMode::handleUpdate(float dt)
     {}
 
@@ -179,6 +184,16 @@ namespace ed
     bool ISceneEditMode::checkGeneralDuplicate() const
     {
         return false;
+    }
+
+    //--
+
+    void ISceneEditMode::configSave(ScenePreviewContainer* container, const ui::ConfigBlock& block) const
+    {
+    }
+
+    void ISceneEditMode::configLoad(ScenePreviewContainer* container, const ui::ConfigBlock& block)
+    {
     }
 
     //--

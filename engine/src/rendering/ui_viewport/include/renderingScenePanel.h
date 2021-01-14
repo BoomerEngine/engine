@@ -91,7 +91,7 @@ namespace ui
     class RENDERING_UI_VIEWPORT_API RenderingPanelDepthBufferQuery : public base::IReferencable
     {
     public:
-        RenderingPanelDepthBufferQuery(uint32_t width, uint32_t height, const rendering::scene::Camera& camera, const base::image::ImagePtr& depthImage);
+        RenderingPanelDepthBufferQuery(uint32_t width, uint32_t height, const rendering::scene::Camera& camera, const base::Rect& validDepthValues, base::Array<float>&& depthValues, bool flipped);
 
         /// get captured resolution
         INLINE uint32_t width() const { return m_width; }
@@ -100,14 +100,26 @@ namespace ui
         /// get the camera used to capture the depth buffer
         INLINE const rendering::scene::Camera& camera() const { return m_camera; }
 
+        /// get the range of client space pixels for which we have depth values
+        INLINE const base::Rect& depthValuesRect() const { return m_depthValuesRect; }
+
+        /// get projected depth value at pixel, returns 1.0f for values outside captured area
+        float projectedDepthValueAtPixel(int x, int y, bool* withinRect = nullptr) const;
+
+        /// get linear depth value at pixel, returns camera's far plane for values outside captured area
+        float linearDepthValueAtPixel(int x, int y, bool* withinRect = nullptr) const;
+
         /// calculate world position for given pixel
         bool calcWorldPosition(int x, int y, base::AbsolutePosition& outPos) const;
 
     private:
         uint32_t m_width;
         uint32_t m_height;
+        bool m_flipped = false;
+
         rendering::scene::Camera m_camera;
-        base::image::ImagePtr m_depthImage;
+        base::Rect m_depthValuesRect;
+        base::Array<float> m_depthValues;
     };
 
     //--
@@ -186,6 +198,18 @@ namespace ui
         /// compute bounds of the content in the view
         virtual bool computeContentBounds(base::Box& outBox) const;
 
+        //---
+
+        // query selectable objects from given area
+        // TODO: object filters (debug, transparent, etc)
+        base::RefPtr<RenderingPanelSelectionQuery> querySelection(const base::Rect* captureArea = nullptr);
+
+        // query depth buffer from given area
+        // TODO: object filters (debug, transparent, etc)
+        base::RefPtr<RenderingPanelDepthBufferQuery> queryDepth(const base::Rect* captureArea = nullptr);
+
+        //--
+
     protected:
         virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
         virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
@@ -208,16 +232,13 @@ namespace ui
         virtual void buildFilterPopup(MenuButtonContainer* menu);
         virtual void buildCameraPopup(MenuButtonContainer* menu);
 
-		virtual void renderContent(const ViewportParams& viewport) override;
+		virtual void renderContent(const ViewportParams& viewport, rendering::scene::Camera* outCameraUsedToRender = nullptr) override;
 
         void drawViewAxes(uint32_t width, uint32_t height, rendering::scene::FrameParams& frame);
         void drawCameraInfo(uint32_t width, uint32_t height, rendering::scene::FrameParams& frame);
         void drawGrid(rendering::scene::FrameParams& frame);
 
         void rotateGlobalLight(float deltaPitch, float deltaYaw);
-
-        base::RefPtr<RenderingPanelSelectionQuery> querySelection(const base::Rect& area);
-        base::RefPtr<RenderingPanelDepthBufferQuery> queryDepth();
 
         bool queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition);
 

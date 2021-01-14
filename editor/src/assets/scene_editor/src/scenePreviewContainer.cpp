@@ -388,6 +388,10 @@ namespace ed
         m_lastWorldTick.resetToNow();
 
         auto dt = std::clamp<float>(realWorldTime * m_worldTickRatio, 0.0001f, 0.1f);
+
+        if (m_editMode)
+            m_editMode->handleUpdate(dt);
+
         m_world->update(dt);
     }
 

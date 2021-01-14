@@ -121,6 +121,33 @@ namespace ui
             selectOption(index);
     }
 
+    bool ComboBox::removeOption(int option)
+    {
+        if (option >= 0 && option <= m_options.lastValidIndex())
+        {
+            m_options.erase(option);
+
+            if (m_selectedOption == option)
+            {
+                m_text->text(base::StringBuf::EMPTY());
+                m_selectedOption = -1;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool ComboBox::removeOption(base::StringView text)
+    {
+        auto index = m_options.find(text);
+        if (index != INDEX_NONE)
+            return removeOption(index);
+
+        return false;
+    }
+
     int ComboBox::selectedOption() const
     {
         return m_selectedOption;

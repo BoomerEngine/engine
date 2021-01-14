@@ -205,6 +205,9 @@ namespace ed
         StringBuilder txt;
         for (const auto* node : nodes)
         {
+            if (node->parent() == nullptr)
+                continue;
+
             txt << "/";
             txt << node->name();
         }
@@ -471,6 +474,33 @@ namespace ed
         markModified();
     }
 
+    SceneContentNode* SceneContentNode::findNodeByPath(StringView path) const
+    {
+        DEBUG_CHECK_RETURN_EX_V(!path.empty(), "Node path should not be empty", nullptr);
+        DEBUG_CHECK_RETURN_EX_V(path.beginsWith("/"), "Node path should being with '/'", nullptr);
+
+        InplaceArray<StringView, 20> names;
+        path.slice("/", false, names);
+
+        auto* cur = this;
+        for (const auto name : names)
+        {
+            if (!cur)
+                break;
+
+            if (name == ".")
+                continue;
+
+            if (name == "..")
+                cur = cur->parent();
+            else
+                cur = cur->findChild(name);
+        }
+
+        return const_cast<SceneContentNode*>(cur);
+    }
+
+
     SceneContentNode* SceneContentNode::findChild(StringView name) const
     {
         for (const auto& node : m_children)
@@ -487,13 +517,17 @@ namespace ed
         propagateMergedVisibilityState(parentVisibilityState);
     }
 
+    void SceneContentNode::recalculateVisibility()
+    {
+        propagateMergedVisibilityStateFromThis();
+    }
+
     void SceneContentNode::propagateMergedVisibilityState(bool parentVisibilityState)
     {
-        const auto newState = m_localVisibilityFlag && parentVisibilityState;
+        const auto newState = parentVisibilityState && visibilityFlagBool();
         if (newState != m_visible)
         {
             m_visible = newState;
-
             handleVisibilityChanged();
 
             for (const auto& child : m_children)
@@ -501,13 +535,28 @@ namespace ed
         }
     }
 
-    void SceneContentNode::visibility(bool flag)
+    bool SceneContentNode::visibilityFlagBool() const
+    {
+        if (m_localVisibilityFlag == SceneContentNodeLocalVisibilityState::Default) // default is most common
+            return defaultVisibilityFlag();
+        else
+            return m_localVisibilityFlag != SceneContentNodeLocalVisibilityState::Hidden;
+    }
+
+    bool SceneContentNode::defaultVisibilityFlag() const
+    {
+        return true;
+    }
+
+    void SceneContentNode::visibility(SceneContentNodeLocalVisibilityState flag, bool propagateState/* = true*/)
     {
         if (flag != m_localVisibilityFlag)
         {
             m_localVisibilityFlag = flag;
-            propagateMergedVisibilityStateFromThis();
             handleLocalVisibilityChanged();
+
+            if (propagateState)
+                propagateMergedVisibilityStateFromThis();
         }
     }
 
@@ -706,6 +755,15 @@ namespace ed
         : SceneContentNode(SceneContentNodeType::LayerDir, name)
         , m_systemDirectory(system)
     {}
+
+    bool SceneContentWorldDir::defaultVisibilityFlag() const
+    {
+        if (const auto parentLayerDir = rtti_cast<SceneContentWorldDir>(parent()))
+            if (parentLayerDir->m_systemDirectory)
+                return false;
+
+        return true;
+    }
 
     bool SceneContentWorldDir::canAttach(SceneContentNodeType type) const
     {
@@ -1257,7 +1315,7 @@ namespace ed
         
         for (const auto& componentNode : components())
         {
-            if (componentNode->localVisibilityFlag())
+            if (componentNode->visibilityFlagBool())
             {
                 if (!componentNode->name().empty())
                 {

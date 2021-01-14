@@ -16,6 +16,10 @@ namespace ed
     //--
 
     class SceneDefaultPropertyInspectorPanel;
+    class SceneObjectPalettePanel;
+    class SceneObjectDragDropCreationHandler;
+
+    //--
 
     /// default scene editor edit mode - entity operations
     class ASSETS_SCENE_EDITOR_API SceneEditMode_Default : public ISceneEditMode
@@ -46,8 +50,9 @@ namespace ed
         virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor) override;
         virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
         virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
-        virtual void handleUpdate(float dt) override;
-
+        virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition) override;
+        virtual void handleUpdate(float dt);
+        
         virtual void handleTreeContextMenu(ui::MenuButtonContainer* menu, const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection) override;
         virtual void handleTreeSelectionChange(const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection) override;
         virtual void handleTreeDeleteNodes(const Array<SceneContentNodePtr>& selection) override;
@@ -73,11 +78,18 @@ namespace ed
 
         //--
 
+        virtual void configSave(ScenePreviewContainer* container, const ui::ConfigBlock& block) const;
+        virtual void configLoad(ScenePreviewContainer* container, const ui::ConfigBlock& block);
+
+        //--
+
         INLINE const HashSet<SceneContentNodePtr>& selection() const { return m_selection; }
 
         INLINE const Array<SceneContentDataNodePtr>& selectionRoots() const { return m_selectionRoots; }
 
         INLINE const Array<SceneContentEntityNodePtr>& selectionRootEntities() const { return m_selectionRootEntities; }
+
+        INLINE void bindObjectPalette(SceneObjectPalettePanel* panel) { m_objectPalette = panel; }
 
         void actionChangeSelection(const Array<SceneContentNodePtr>& selection);
 
@@ -87,9 +99,9 @@ namespace ed
 
         void handleTransformsChanged();
 
-        void activeNode(SceneContentNode* node);
+        void activeNode(const SceneContentNode* node);
 
-        void focusNode(SceneContentNode* node);
+        void focusNode(const SceneContentNode* node);
 
         void focusNodes(const Array<SceneContentNodePtr>& nodes);
 
@@ -159,10 +171,11 @@ namespace ed
 
         void processVisualSelection(bool ctrl, bool shift, const base::Array<rendering::scene::Selectable>& selectables);
 
-        void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement = nullptr);
-        void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr);
+        void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
+        void createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
+        void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
         void createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, const ManagedFile* prefab, const AbsoluteTransform* initialPlacement = nullptr);
-
+        
         void changeGizmo(SceneGizmoMode mode);
         void changeGizmoNext();
         void changePositionGridSize(int delta);
@@ -196,6 +209,17 @@ namespace ed
         Array<SceneContentNodePtr> m_contextMenuContextNodes;
         AbsoluteTransform m_contextMenuPlacementTransform; // hack - this should be passed via capture but there's no nice way to wire it
         bool m_contextMenuPlacementTransformValid = false;
+
+        SceneObjectPalettePanel* m_objectPalette = nullptr;
+
+        //--
+
+        RefWeakPtr<SceneObjectDragDropCreationHandler> m_dragDropHandler;
+
+        void renderDragDrop(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame);
+        void updateDragDrop();
+
+        //--
     };
     
     //--
@@ -209,6 +233,17 @@ namespace ed
 
     // create transform action
     extern ASSETS_SCENE_EDITOR_API ActionPtr CreateSceneNodeTransformAction(Array<ActionMoveSceneNodeData>&& nodes, SceneEditMode_Default* mode, bool fullRefresh);
+
+    //--
+
+    class ISceneObjectPreview : public IReferencable
+    {
+    public:
+        ISceneObjectPreview();
+
+        virtual void attachToWorld(world::World* world) = 0;
+        virtual void detachFromWorld(world::World* world) = 0;
+    };
 
     //--
 

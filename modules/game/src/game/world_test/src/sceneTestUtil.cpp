@@ -68,7 +68,7 @@ namespace game
 
             if (parentNode < 0)
             {
-                m_roots.pushBack(node);
+                m_root = node;
             }
             else
             {
@@ -90,7 +90,7 @@ namespace game
 
             {
                 node->m_entityTemplate = base::RefNew<base::ObjectIndirectTemplate>();
-                node->m_entityTemplate->placement(placement.toTransform());
+                node->m_entityTemplate->placement(placement);
             }
 
             {
@@ -120,7 +120,7 @@ namespace game
         base::world::PrefabPtr PrefabBuilder::extractPrefab()
         {
             auto ret = base::RefNew<base::world::Prefab>();
-            ret->setup(m_roots);
+            ret->setup(m_root);
             return ret;
         }
 

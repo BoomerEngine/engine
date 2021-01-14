@@ -10,6 +10,9 @@
 #include "renderingSceneManager_Mesh.h"
 #include "renderingFrameView_Main.h"
 #include "renderingFrameView_Cascades.h"
+#include "renderingFrameView_Wireframe.h"
+#include "renderingFrameView_CaptureSelection.h"
+#include "renderingFrameView_CaptureDepth.h"
 #include "renderingSceneObjects.h"
 
 #include "rendering/mesh/include/renderingMeshChunkProxy.h"
@@ -17,8 +20,6 @@
 #include "rendering/material/include/renderingMaterialRuntimeProxy.h"
 #include "rendering/material/include/renderingMaterialRuntimeTemplate.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
-#include "renderingFrameView_Wireframe.h"
-#include "renderingFrameView_CaptureSelection.h"
 
 namespace rendering
 {
@@ -112,13 +113,26 @@ namespace rendering
 
             auto& collector = m_cacheCaptureView;
 
-            collectSelectionChunks(view, collector);
+			collectCaptureChunks(view, collector);
 
 			sortChunksByBatch(collector.mainList.standaloneChunks);
 
             renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
             renderChunkListStandalone(cmd.mainFragments, collector.mainList.standaloneChunks, MaterialPass::SelectionFragments);
         }
+
+		void ObjectManagerMesh::render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
+		{
+            PC_SCOPE_LVL1(RenderCaptureSelection);
+
+            auto& collector = m_cacheCaptureView;
+
+			collectCaptureChunks(view, collector);
+
+            sortChunksByBatch(collector.mainList.standaloneChunks);
+
+			renderChunkListStandalone(cmd.depth, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
+		}
 
 		//--
 
@@ -163,7 +177,7 @@ namespace rendering
 
 		//--
 
-		void ObjectManagerMesh::collectMainViewChunks(const FrameViewMain& view, VisibleMainViewCollector& outCollector) const
+		void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector) const
 		{
 			PC_SCOPE_LVL1(CollectMainView);
 
@@ -235,7 +249,7 @@ namespace rendering
 			}
 		}
 
-		void ObjectManagerMesh::collectSelectionChunks(const FrameViewCaptureSelection& view, VisibleCaptureCollector& outCollector) const
+		void ObjectManagerMesh::collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const
 		{
 			PC_SCOPE_LVL1(CollectMainView);
 
@@ -288,7 +302,7 @@ namespace rendering
 			}
 		}
 
-		void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewWireframe& view, VisibleWireframeViewCollector& outCollector) const
+		void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const
 		{
 			PC_SCOPE_LVL1(CollectMainView);
 

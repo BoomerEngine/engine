@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "renderingFrameRenderer.h"
+#include "renderingFrameView.h"
 #include "renderingFrameView_Cascades.h"
 
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -40,7 +41,7 @@ namespace rendering
 		//--
 
 		/// frame view command buffers
-		class RENDERING_SCENE_API FrameViewMain : public base::NoCopy
+		class RENDERING_SCENE_API FrameViewMain : public FrameViewSingleCamera
 		{
 		public:
 			struct Setup
@@ -62,18 +63,12 @@ namespace rendering
 
 			//--
 
-			INLINE const Camera& visibilityCamera() const { return m_camera; }
 			INLINE const CascadeData& cascades() const { return m_cascades; }
 
 			//--
 
 		private:
-			const FrameRenderer& m_frame;
 			const Setup& m_setup;
-
-			base::Rect m_viewport;
-
-			Camera m_camera;
 
 			CascadeData m_cascades;
 
@@ -81,7 +76,6 @@ namespace rendering
 
 			void initializeCommandStreams(command::CommandWriter& cmd, FrameViewMainRecorder& rec);
 
-			void bindCamera(command::CommandWriter& cmd);
 			void bindLighting(command::CommandWriter& cmd);
 		};
         

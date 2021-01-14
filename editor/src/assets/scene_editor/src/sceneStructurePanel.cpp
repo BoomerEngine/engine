@@ -13,10 +13,6 @@
 #include "scenePreviewContainer.h"
 #include "sceneEditMode.h"
 
-#include "base/ui/include/uiTreeView.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiColumnHeaderBar.h"
-#include "base/object/include/object.h"
 #include "base/world/include/worldPrefab.h"
 #include "base/editor/include/assetBrowser.h"
 #include "base/editor/include/managedFile.h"
@@ -24,6 +20,13 @@
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiSearchBar.h"
 #include "base/ui/include/uiComboBox.h"
+#include "base/ui/include/uiElementConfig.h"
+#include "base/ui/include/uiMessageBox.h"
+#include "base/ui/include/uiInputBox.h"
+#include "base/ui/include/uiTreeView.h"
+#include "base/ui/include/uiMenuBar.h"
+#include "base/ui/include/uiColumnHeaderBar.h"
+#include "base/object/include/object.h"
 
 namespace ed
 {
@@ -159,9 +162,18 @@ namespace ed
                     case 1:
                     {
                         if (node->visible())
-                            return node->localVisibilityFlag() ? "[img:eye]" : "[img:eye_cross]";
+                        {
+                            if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Default)
+                                return node->defaultVisibilityFlag() ? "[color:#aaa][img:eye][/color]" : "[color:#aaa][img:eye_cross][/color]";
+                            else if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Visible)
+                                return "[img:eye]";
+                            else
+                                return "[img:eye_cross]";
+                        }
                         else
-                            return node->localVisibilityFlag() ? "[color:#888][img:eye][/color]" : "[color:#888][img:eye_cross][/color]";
+                        {
+                            return node->visibilityFlagBool() ? "[color:#555][img:eye][/color]" : "[color:#555][img:eye_cross][/color]";
+                        }
                     }
 
                     case 2:
@@ -319,7 +331,11 @@ namespace ed
             {
                 if (auto* node = id.unsafe<SceneContentNode>())
                 {
-                    node->visibility(!node->localVisibilityFlag());
+                    if (node->visibilityFlagBool())
+                        node->visibility(SceneContentNodeLocalVisibilityState::Hidden);
+                    else
+                        node->visibility(SceneContentNodeLocalVisibilityState::Visible);
+
                     return true;
                 }
             }
@@ -417,10 +433,9 @@ namespace ed
             }
 
             {
-                m_presets = toolbar->createChild<ui::ComboBox>();
-                m_presets->addOption("(default)");
-                m_presets->selectOption(0);
-                m_presets->expand();
+                m_presetList = toolbar->createChild<ui::ComboBox>();
+                m_presetList->expand();
+                m_presetList->bind(ui::EVENT_COMBO_SELECTED) = [this]() { presetSelect(); };
             }
 
             {
@@ -475,18 +490,317 @@ namespace ed
     SceneStructurePanel::~SceneStructurePanel()
     {}
 
+    void SceneStructurePanel::presetSave(const ui::ConfigBlock& block) const
+    {
+        if (m_presetList)
+        {
+            // save list of presets and selected one
+            Array<StringBuf> presetNames;
+            for (const auto* preset : m_presets)
+                presetNames.pushBack(preset->name);
+            block.write("PresetNames", presetNames);
+            block.write("ActivePreset", m_presetActive ? m_presetActive->name : StringBuf::EMPTY());
+
+            // write the preset states
+            for (auto* preset : m_presets)
+            {
+                auto localBlock = block.tag(preset->name);
+                localBlock.write("ShownNodes", preset->shownNodes);
+                localBlock.write("HiddenNodes", preset->hiddenNodes);
+            }
+        }
+    }
+
+    void SceneStructurePanel::presetLoad(const ui::ConfigBlock& block)
+    {
+        if (m_presetList)
+        {
+            // load presets
+            ScenePreset* defaultPreset = nullptr;
+            Array<StringBuf> presetNames;
+            if (block.read("PresetNames", presetNames))
+            {
+                for (const auto& name : presetNames)
+                {
+                    if (name.empty())
+                        continue;
+
+                    ScenePreset* presetToLoad = nullptr;
+                    for (auto* preset : m_presets)
+                    {
+                        if (preset->name == name)
+                        {
+                            presetToLoad = preset;
+                            break;
+                        }
+                    }
+
+                    if (!presetToLoad)
+                    {
+                        presetToLoad = new ScenePreset();
+                        presetToLoad->name = name;
+                        m_presets.pushBack(presetToLoad);
+                    }
+
+                    if (presetToLoad->name == "(default)")
+                        defaultPreset = presetToLoad;
+
+                    {
+                        auto localBlock = block.tag(name);
+                        presetToLoad->dirty = false;
+                        localBlock.read("ShownNodes", presetToLoad->shownNodes);
+                        localBlock.read("HiddenNodes", presetToLoad->hiddenNodes);
+                    }
+                }
+            }
+
+            // make sure we always have the "default" preset
+            if (!defaultPreset)
+            {
+                defaultPreset = new ScenePreset();
+                defaultPreset->name = "(default)";
+                defaultPreset->dirty = true;
+                m_presets.insert(0, defaultPreset);
+            }
+
+            // select preset
+            StringBuf activePresetName;
+            block.read("ActivePreset", activePresetName);
+            updatePresetList(activePresetName);
+
+            // apply selected preset
+            applySelectedPreset();
+        }
+    }
+
+    static void CollectExpandedNodes(ui::TreeView* tree, SceneContentTreeModel* model, const ui::ModelIndex& index, Array<StringBuf>& expandedNodesPaths)
+    {
+        if (tree->isExpanded(index))
+        {
+            InplaceArray<ui::ModelIndex, 100> children;
+            model->children(index, children);
+
+            if (!children.empty())
+                if (auto node = model->nodeForIndex(index))
+                    if (auto path = node->buildHierarchicalName())
+                        expandedNodesPaths.pushBack(path);
+
+            for (const auto& childIndex : children)
+                CollectExpandedNodes(tree, model, childIndex, expandedNodesPaths);
+        }
+    }
+
+
     void SceneStructurePanel::configSave(const ui::ConfigBlock& block) const
     {
         TBaseClass::configSave(block);
+        presetSave(block.tag("Presets"));
+
+        Array<StringBuf> expandedNodes;
+        if (auto rootIndex = m_treeModel->indexForNode(m_scene->root()))
+            CollectExpandedNodes(m_tree, m_treeModel, rootIndex, expandedNodes);
+        block.write("ExpandedNodes", expandedNodes);
+    }
+
+    void SceneStructurePanel::applySelectedPreset()
+    {
+        // TODO: collect differential state (what to hide what to show)
+        // TODO: loading progress bar if lots of stuff to load
+
+        if (m_presetActive)
+            applyPresetState(*m_presetActive);
+    }
+
+    void SceneStructurePanel::updatePresetList(StringView presetToSelect)
+    {
+        DEBUG_CHECK_RETURN(m_presetList);
+
+        if (!m_presets.contains(m_presetActive))
+            m_presetActive = nullptr;
+
+        std::sort(m_presets.begin(), m_presets.end(), [](const ScenePreset* a, const ScenePreset* b)
+            {
+                return a->name < b->name;
+            });
+
+        m_presetList->clearOptions();
+        for (const auto* preset : m_presets)
+            m_presetList->addOption(preset->name);
+
+        if (!presetToSelect.empty())
+        {
+            for (auto* preset : m_presets)
+            {
+                if (preset->name == presetToSelect)
+                {
+                    m_presetActive = preset;
+                    break;
+                }
+            }
+        }
+
+        if (!m_presetActive)
+        {
+            for (auto* preset : m_presets)
+            {
+                if (preset->name == "(default)")
+                {
+                    m_presetActive = preset;
+                    break;
+                }
+            }
+        }
+
+        {
+            auto index = m_presets.find(m_presetActive);
+            m_presetList->selectOption(index);
+        }
     }
 
     void SceneStructurePanel::configLoad(const ui::ConfigBlock& block)
     {
         TBaseClass::configLoad(block);
+        presetLoad(block.tag("Presets"));
 
-        //Array<StringBuf> selectedNodes;
-        //StringBuf activeNode;
+        {
+            Array<StringBuf> expandedNodes;
+            if (block.read("ExpandedNodes", expandedNodes))
+            {
+                for (const auto& path : expandedNodes)
+                    if (const auto* node = m_scene->findNodeByPath(path))
+                        if (auto index = m_treeModel->indexForNode(node))
+                            m_tree->expandItem(index);
+            }
+            else
+            {
+                for (const auto& rootChild : m_scene->root()->children())
+                    if (rootChild->type() == SceneContentNodeType::LayerDir || rootChild->type() == SceneContentNodeType::Entity)
+                        if (auto index = m_treeModel->indexForNode(rootChild))
+                            m_tree->expandItem(index);
+            }
+        }
     }
+
+    //--
+
+    static void CollectHiddenNodes(const SceneContentNode* node, Array<StringBuf>& outHiddenNodes, Array<StringBuf>& outShownNodes)
+    {
+        const auto flag = node->visibilityFlagBool();
+        if (flag != node->defaultVisibilityFlag())
+        {
+            if (flag)
+                outShownNodes.pushBack(node->buildHierarchicalName());
+            else
+                outHiddenNodes.pushBack(node->buildHierarchicalName());
+        }
+
+        for (const auto& child : node->children())
+            CollectHiddenNodes(child, outHiddenNodes, outShownNodes);
+    }
+
+    void SceneStructurePanel::collectPresetState(ScenePreset& outState) const
+    {
+        outState.dirty = true;
+        outState.shownNodes.reset();
+        outState.hiddenNodes.reset();
+        CollectHiddenNodes(m_scene->root(), outState.hiddenNodes, outState.shownNodes);
+    }
+
+    static void ApplyVisibilityState(SceneContentNode* node, const HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState>& visibilityState)
+    {
+        auto nodeVisState = SceneContentNodeLocalVisibilityState::Default;
+        visibilityState.find(node, nodeVisState);
+
+        node->visibility(nodeVisState);
+
+        for (const auto& child : node->children())
+            ApplyVisibilityState(child, visibilityState);        
+    }
+
+    void SceneStructurePanel::applyPresetState(const ScenePreset& state)
+    {
+        HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState> visibilityState;
+        visibilityState.reserve(state.hiddenNodes.size() + state.shownNodes.size());
+
+        for (const auto& path : state.hiddenNodes)
+            if (const auto* node = m_scene->findNodeByPath(path))
+                visibilityState[node] = SceneContentNodeLocalVisibilityState::Hidden;
+
+        for (const auto& path : state.shownNodes)
+            if (const auto* node = m_scene->findNodeByPath(path))
+                visibilityState[node] = SceneContentNodeLocalVisibilityState::Visible;
+
+        ApplyVisibilityState(m_scene->root(), visibilityState);
+
+        m_scene->root()->recalculateVisibility();
+    }
+
+    void SceneStructurePanel::presetAddNew()
+    {
+        StringBuf presetName = "preset";
+        if (m_presetActive && m_presetActive->name != "(default)")
+            presetName = m_presetActive->name;
+
+        if (ui::ShowInputBox(m_presetList, ui::InputBoxSetup().title("New preset").message("Enter name of new preset:"), presetName))
+        {
+            if (!presetName.empty())
+            {
+                ScenePreset* presetToSave = nullptr;
+                for (auto* preset : m_presets)
+                {
+                    if (preset->name == presetName)
+                    {
+                        presetToSave = preset;
+                        break;
+                    }
+                }
+
+                if (!presetToSave)
+                {
+                    presetToSave = new ScenePreset();
+                    presetToSave->name = presetName;
+                }
+
+                collectPresetState(*presetToSave);
+                updatePresetList(presetToSave->name);
+            }
+        }
+    }
+
+    void SceneStructurePanel::presetRemove()
+    {
+        if (!m_presetActive || m_presetActive->name == "(default)")
+        {
+            ui::ShowMessageBox(m_presetList, ui::MessageBoxSetup().warn().title("Remove preset").message("Current preset can't be removed"));
+            return;
+        }
+
+        m_presetList->removeOption(m_presetActive->name);
+        m_presetActive = nullptr;
+    }
+
+    void SceneStructurePanel::presetSave()
+    {
+        if (m_presetActive)
+            collectPresetState(*m_presetActive);
+        else
+            presetAddNew();
+    }
+
+    void SceneStructurePanel::presetSelect()
+    {
+        auto name = m_presetList->selectedOptionText();
+        for (auto* preset : m_presets)
+        {
+            if (preset->name == name)
+            {
+                m_presetActive = preset;
+                applySelectedPreset();
+            }
+        }
+    }
+
+    //--
 
     void SceneStructurePanel::syncExternalSelection(const Array<SceneContentNodePtr>& nodes)
     {
@@ -509,26 +823,6 @@ namespace ed
 
             m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
         }
-    }
-
-    void SceneStructurePanel::presetAddNew()
-    {
-
-    }
-
-    void SceneStructurePanel::presetRemove()
-    {
-
-    }
-
-    void SceneStructurePanel::presetSave()
-    {
-
-    }
-
-    void SceneStructurePanel::presetSelect()
-    {
-
     }
 
     void SceneStructurePanel::treeSelectionChanged()

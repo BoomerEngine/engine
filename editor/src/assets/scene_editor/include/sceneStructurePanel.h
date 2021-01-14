@@ -13,14 +13,6 @@ namespace ed
 {
     //--
 
-    struct ScenePreset
-    {
-        Array<StringBuf> expandedNodes;
-        Array<StringBuf> hiddenNodes;
-    };
-
-    //--
-
     // view model for a scene structure tree
     class ASSETS_SCENE_EDITOR_API SceneContentTreeModel : public ui::IAbstractItemModel
     {
@@ -85,17 +77,44 @@ namespace ed
         RefPtr<SceneContentStructure> m_scene;
         RefPtr<ScenePreviewContainer> m_preview;
 
-        ui::ComboBoxPtr m_presets;
-
-        ui::SearchBarPtr m_searchBar;
-
-        ui::TreeViewPtr m_tree;
-        base::RefPtr<SceneContentTreeModel> m_treeModel;
+        //--
 
         void presetAddNew();
         void presetRemove();
         void presetSave();
         void presetSelect();
+
+        struct ScenePreset
+        {
+            RTTI_DECLARE_POOL(POOL_UI_OBJECTS);
+
+        public:
+            StringBuf name;
+            bool dirty = false;
+            Array<StringBuf> hiddenNodes;
+            Array<StringBuf> shownNodes;
+        };
+
+        ui::ComboBoxPtr m_presetList;
+
+        Array<ScenePreset*> m_presets;
+        ScenePreset* m_presetActive = nullptr;
+
+        void collectPresetState(ScenePreset& outState) const;
+        void applyPresetState(const ScenePreset& state);
+
+        void updatePresetList(StringView presetToSelect);
+        void applySelectedPreset();
+
+        void presetSave(const ui::ConfigBlock& block) const;
+        void presetLoad(const ui::ConfigBlock& block);
+
+        //--
+
+        ui::SearchBarPtr m_searchBar;
+
+        ui::TreeViewPtr m_tree;
+        base::RefPtr<SceneContentTreeModel> m_treeModel;
 
         void treeSelectionChanged();
 
@@ -103,6 +122,8 @@ namespace ed
         void handleTreeObjectCopy();
         void handleTreeObjectCut();
         void handleTreeObjectPaste(bool relative);
+
+        //--
     };
 
     //--

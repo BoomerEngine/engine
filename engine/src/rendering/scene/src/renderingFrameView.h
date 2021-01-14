@@ -162,6 +162,36 @@ namespace rendering
 
         //--
 
+        /// single camera view
+        class RENDERING_SCENE_API FrameViewSingleCamera : public base::NoCopy
+        {
+        public:
+            FrameViewSingleCamera(const FrameRenderer& frame, const Camera& camera, const base::Rect& viewport);
+            virtual ~FrameViewSingleCamera();
+
+            //--
+
+            INLINE const FrameRenderer& frame() const { return m_frame; }
+
+            INLINE const base::Rect& viewport() const { return m_viewport; }
+
+            INLINE const Camera& visibilityCamera() const { return m_camera; }
+
+            //--
+
+            void bindCamera(command::CommandWriter& cmd);
+
+            //--
+
+        protected:
+            const FrameRenderer& m_frame;
+
+            base::Rect m_viewport;
+            Camera m_camera;
+        };
+
+        //--
+
     } // scene
 } // rendering
 

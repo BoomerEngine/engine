@@ -34,6 +34,9 @@ namespace ui
         void clearOptions();
         void addOption(const base::StringBuf& txt);
 
+        bool removeOption(int option);
+        bool removeOption(base::StringView txt);
+
         void selectOption(int option);
         void selectOption(base::StringView text);
 

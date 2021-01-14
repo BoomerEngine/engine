@@ -48,7 +48,7 @@ namespace game
             base::world::PrefabPtr extractPrefab();
 
         private:
-            base::Array<base::world::NodeTemplatePtr> m_roots;
+            base::world::NodeTemplatePtr m_root;
             base::Array<base::world::NodeTemplatePtr> m_nodes;
         };
 

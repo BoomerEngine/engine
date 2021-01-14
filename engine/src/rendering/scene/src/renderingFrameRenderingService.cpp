@@ -16,6 +16,7 @@
 #include "renderingFrameView_Main.h"
 #include "renderingFrameView_Wireframe.h"
 #include "renderingFrameView_CaptureSelection.h"
+#include "renderingFrameView_CaptureDepth.h"
 
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
@@ -97,6 +98,17 @@ namespace rendering
                     setup.captureSink = frame.capture.sink;
 
                     FrameViewCaptureSelection view(renderer, setup);
+                    view.render(cmd);
+                }
+                else if (frame.capture.mode == FrameCaptureMode::DepthRect)
+                {
+                    FrameViewCaptureDepth::Setup setup;
+                    setup.camera = frame.camera.camera;
+                    setup.viewport = targetView.targetRect;
+                    setup.captureRegion = frame.capture.region;
+                    setup.captureSink = frame.capture.sink;
+
+                    FrameViewCaptureDepth view(renderer, setup);
                     view.render(cmd);
                 }
                 else if (frame.mode == FrameRenderMode::WireframePassThrough || frame.mode == FrameRenderMode::WireframeSolid)

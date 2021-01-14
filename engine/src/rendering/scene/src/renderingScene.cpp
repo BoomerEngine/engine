@@ -157,6 +157,13 @@ namespace rendering
                     manager->render(cmd, view, frame);
 		}
 
+		void Scene::renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
+		{
+            for (auto* manager : m_managers)
+                if (manager)
+                    manager->render(cmd, view, frame);
+		}
+
 		void Scene::prepare(command::CommandWriter& cmd, const FrameRenderer& frame)
 		{
 			for (auto* manager : m_managers)

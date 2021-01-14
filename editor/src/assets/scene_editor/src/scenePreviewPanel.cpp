@@ -75,6 +75,17 @@ namespace ed
             m_gizmos->render(frame);
     }
 
+    ui::DragDropHandlerPtr ScenePreviewPanel::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+    {
+        if (auto editMode = m_editMode.lock())
+        {
+            const auto clientPoint = entryPosition - cachedDrawArea().absolutePosition();
+            return editMode->handleDragDrop(this, data, entryPosition, clientPoint);
+        }
+
+        return nullptr;
+    }
+
     void ScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
     {
         if (auto editMode = m_editMode.lock())

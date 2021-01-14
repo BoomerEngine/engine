@@ -197,39 +197,59 @@ namespace ui
 
     //---
 
-    RenderingPanelDepthBufferQuery::RenderingPanelDepthBufferQuery(uint32_t width, uint32_t height, const rendering::scene::Camera& camera, const base::image::ImagePtr& depthImage)
+    RenderingPanelDepthBufferQuery::RenderingPanelDepthBufferQuery(uint32_t width, uint32_t height, const rendering::scene::Camera& camera, const base::Rect& validDepthValues, base::Array<float>&& depthValues, bool flipped)
         : m_width(width)
         , m_height(height)
         , m_camera(camera)
-        , m_depthImage(depthImage)
+        , m_depthValues(std::move(depthValues))
+        , m_depthValuesRect(validDepthValues)
+        , m_flipped(flipped)
     {}
+
+    float RenderingPanelDepthBufferQuery::projectedDepthValueAtPixel(int x, int y, bool* withinRect /*= nullptr*/) const
+    {
+        if (m_depthValuesRect.contains(x, y))
+        {
+            x -= m_depthValuesRect.min.x;
+
+            if (m_flipped)
+                y = (m_depthValuesRect.max.y-1) - y;
+            else
+                y -= m_depthValuesRect.min.y;
+
+            const auto offset = x + y * m_depthValuesRect.width();
+            if (withinRect)
+                *withinRect = true;
+
+            return m_depthValues[offset];
+        }
+
+        if (withinRect)
+            *withinRect = false;
+
+        return 1.0f; // far plane
+    }
+
+    float RenderingPanelDepthBufferQuery::linearDepthValueAtPixel(int x, int y, bool* withinRect /*= nullptr*/) const
+    {
+        float projectedZ = projectedDepthValueAtPixel(x, y, withinRect);
+        return m_camera.projectedZToLinearZ(projectedZ);
+    }
 
     bool RenderingPanelDepthBufferQuery::calcWorldPosition(int x, int y, base::AbsolutePosition& outPos) const
     {
-        if (x < 0 || y < 0 || x >= (int)m_width || y >= (int)m_height)
-            return false;
-
-        // get adjusted pixel
-        auto adjY = (m_depthImage->height() - 1) - y;
-        auto width = (m_depthImage->width());
-
-        // get depth at pixel
-        const auto* depthValues = (const float*)m_depthImage->data();
-        auto depth = depthValues[x + adjY * width];
-        TRACE_INFO("Depth under cursor: {}", depth);
-        if (depth == 1.0f) // far plane, nothing rendered here
-            return false;
+        // query (projected) depth under the cursor
+        auto projectedZ = projectedDepthValueAtPixel(x, y);
+        if (projectedZ <= 0.0f || projectedZ >= 1.0f)
+            return false; // we trust values that are not near or far plane only
 
         // convert to screen coordinates
         float sx = -1.0f + 2.0f * (x / (float)(m_width - 1));
         float sy = -1.0f + 2.0f * (y / (float)(m_height - 1));
-
-        // convert to linear Z
-        //const auto& viewToScreen = m_camera.viewToScreen();
-        //auto linearDepth = viewToScreen.m[2][3] / (depth - viewToScreen.m[2][2]);
+        TRACE_INFO("SX: {}, SY: {}, PZ:{}", sx, sy, projectedZ);
 
         // convert to world position
-        base::Vector4 screenPos(sx, sy, depth, 1.0f);
+        base::Vector4 screenPos(sx, sy, projectedZ, 1.0f);
         auto worldPos = m_camera.screenToWorld().transformVector4(screenPos);
         if (worldPos.w == 0.0f)
             return false;
@@ -774,14 +794,14 @@ namespace ui
         base::Rect selectionArea(clientPosition.x - radius, clientPosition.y - radius, clientPosition.x + radius, clientPosition.y + radius);
 
         // query the raw selection data from the rendering
-        auto selectionData = querySelection(selectionArea);
+        auto selectionData = querySelection(&selectionArea);
 
         // HACK: query again on first use
         if (GFirstSelectionClickThatMayHaveNoShaders)
         {
             base::Sleep(300);
             GFirstSelectionClickThatMayHaveNoShaders = false;
-            selectionData = querySelection(selectionArea);
+            selectionData = querySelection(&selectionArea);
         }
 
         // build selectables
@@ -802,14 +822,14 @@ namespace ui
     void RenderingScenePanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect)
     {
         // query the raw selection data from the rendering
-        auto selectionData = querySelection(clientRect);
+        auto selectionData = querySelection(&clientRect);
 
         // HACK: query again on first use
         if (GFirstSelectionClickThatMayHaveNoShaders)
         {
             base::Sleep(300);
             GFirstSelectionClickThatMayHaveNoShaders = false;
-            selectionData = querySelection(clientRect);
+            selectionData = querySelection(&clientRect);
         }
 
         // build selectables
@@ -836,7 +856,7 @@ namespace ui
 
         // query the raw selection data from the rendering
         const auto clickRect = base::Rect(clickPos.x, clickPos.y, clickPos.x + 1, clickPos.y + 1);
-        auto selectionData = querySelection(clickRect);
+        auto selectionData = querySelection(&clickRect);
 
         // get the clicked selectable
         rendering::scene::EncodedSelectable selectable;
@@ -918,6 +938,8 @@ namespace ui
     {
         static base::Array<base::Vector3> points;
 
+        const float z = -0.01f - std::log10f(std::max<float>(0.0f, frame.camera.camera.position().length())) * 0.05f;
+
         if (points.empty())
         {
             points.reserve(2048);
@@ -933,10 +955,10 @@ namespace ui
                     if (i != 0)
                     {
                         auto pos = (float)i * gridStep;
-                        points.emplaceBack(-gridSize, pos, 0.0f);
-                        points.emplaceBack(gridSize, pos, 0.0f);
-                        points.emplaceBack(pos, -gridSize, 0.0f);
-                        points.emplaceBack(pos, gridSize, 0.0f);
+                        points.emplaceBack(-gridSize, pos, z);
+                        points.emplaceBack(gridSize, pos, z);
+                        points.emplaceBack(pos, -gridSize, z);
+                        points.emplaceBack(pos, gridSize, z);
                     }
                 }
             }
@@ -952,10 +974,10 @@ namespace ui
                     if (i != 0)
                     {
                         auto pos = (float)i * gridStep;
-                        points.emplaceBack(-gridSize, pos, 0.0f);
-                        points.emplaceBack(gridSize, pos, 0.0f);
-                        points.emplaceBack(pos, -gridSize, 0.0f);
-                        points.emplaceBack(pos, gridSize, 0.0f);
+                        points.emplaceBack(-gridSize, pos, z);
+                        points.emplaceBack(gridSize, pos, z);
+                        points.emplaceBack(pos, -gridSize, z);
+                        points.emplaceBack(pos, gridSize, z);
                     }
                 }
             }
@@ -971,10 +993,10 @@ namespace ui
                     if (i != 0)
                     {
                         auto pos = (float)i * gridStep;
-                        points.emplaceBack(-gridSize, pos, 0.0f);
-                        points.emplaceBack(gridSize, pos, 0.0f);
-                        points.emplaceBack(pos, -gridSize, 0.0f);
-                        points.emplaceBack(pos, gridSize, 0.0f);
+                        points.emplaceBack(-gridSize, pos, z);
+                        points.emplaceBack(gridSize, pos, z);
+                        points.emplaceBack(pos, -gridSize, z);
+                        points.emplaceBack(pos, gridSize, z);
                     }
                 }
             }
@@ -990,10 +1012,10 @@ namespace ui
                     if (i != 0)
                     {
                         auto pos = (float)i * gridStep;
-                        points.emplaceBack(-gridSize, pos, 0.0f);
-                        points.emplaceBack(gridSize, pos, 0.0f);
-                        points.emplaceBack(pos, -gridSize, 0.0f);
-                        points.emplaceBack(pos, gridSize, 0.0f);
+                        points.emplaceBack(-gridSize, pos, z);
+                        points.emplaceBack(gridSize, pos, z);
+                        points.emplaceBack(pos, -gridSize, z);
+                        points.emplaceBack(pos, gridSize, z);
                     }
                 }
             }
@@ -1005,10 +1027,10 @@ namespace ui
             dd.lines(points.typedData(), points.size());
 
             base::Vector3 centerLines[4];
-            centerLines[0] = base::Vector3(-1000.0f, 0.0f, 0.0f);
-            centerLines[1] = base::Vector3(1000.0f, 0.0f, 0.0f);
-            centerLines[2] = base::Vector3(0.0f, -1000.0f, 0.0f);
-            centerLines[3] = base::Vector3(0.0f, 1000.0f, 0.0f);
+            centerLines[0] = base::Vector3(-1000.0f, 0.0f, z);
+            centerLines[1] = base::Vector3(1000.0f, 0.0f, z);
+            centerLines[2] = base::Vector3(0.0f, -1000.0f, z);
+            centerLines[3] = base::Vector3(0.0f, 1000.0f, z);
             dd.color(base::Color(130, 150, 150));
             dd.lines(centerLines, 4);
         }
@@ -1083,7 +1105,7 @@ namespace ui
     public:
         EncodedSelectionDataSink()
         {
-            m_fence = Fibers::GetInstance().createCounter("WaitForSelectionData", 1);
+            //m_fence = Fibers::GetInstance().createCounter("WaitForSelectionData", 1);
         }
 
         virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final
@@ -1108,12 +1130,12 @@ namespace ui
                 }
             }
 
-            Fibers::GetInstance().signalCounter(m_fence, 1);
+            //Fibers::GetInstance().signalCounter(m_fence, 1);
         }
 
         base::RefPtr<RenderingPanelSelectionQuery> waitAndFetch(const rendering::scene::Camera& camera)
         {
-            Fibers::GetInstance().waitForCounterAndRelease(m_fence);
+            //Fibers::GetInstance().waitForCounterAndRelease(m_fence);
             return base::RefNew<RenderingPanelSelectionQuery>(m_selectionRect, std::move(m_selectables), camera);
         }
 
@@ -1121,57 +1143,61 @@ namespace ui
         base::Array<rendering::scene::EncodedSelectable> m_selectables;
         base::Rect m_selectionRect;
 
-        base::fibers::WaitCounter m_fence;
+        //base::fibers::WaitCounter m_fence;
     };
 
     //--
 
-    base::RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const base::Rect& area)
+    base::RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const base::Rect* captureArea)
     {
         // render area not cached
         auto renderAreaWidth = (int)cachedDrawArea().size().x;
         auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
         // clamp the area
-        auto captureAreaMinX = std::clamp<int>(area.min.x, 0, renderAreaWidth);
-        auto captureAreaMinY = std::clamp<int>(area.min.y, 0, renderAreaHeight);
-        auto captureAreaMaxX = std::clamp<int>(area.max.x, captureAreaMinX, renderAreaWidth);
-        auto captureAreaMaxY = std::clamp<int>(area.max.y, captureAreaMinY, renderAreaHeight);
-        if (captureAreaMinX >= captureAreaMaxX || captureAreaMinY >= captureAreaMaxY)
-            return nullptr;
+        rendering::scene::FrameParams_Capture capture;
+        if (captureArea)
+        {
+            auto captureAreaMinX = std::clamp<int>(captureArea->min.x, 0, renderAreaWidth);
+            auto captureAreaMinY = std::clamp<int>(captureArea->min.y, 0, renderAreaHeight);
+            auto captureAreaMaxX = std::clamp<int>(captureArea->max.x, captureAreaMinX, renderAreaWidth);
+            auto captureAreaMaxY = std::clamp<int>(captureArea->max.y, captureAreaMinY, renderAreaHeight);
+            if (captureAreaMinX >= captureAreaMaxX || captureAreaMinY >= captureAreaMaxY)
+                return nullptr;
+
+            capture.region = base::Rect(captureAreaMinX, captureAreaMinY, captureAreaMaxX, captureAreaMaxY);
+        }
+        else
+        {
+            capture.region = base::Rect(0, 0, renderAreaWidth, renderAreaHeight);
+        }
 
         // prepare capture context for frame rendering
         auto captureBuffer = base::RefNew<EncodedSelectionDataSink>();
 
         // prepare capture settings
-        rendering::scene::FrameParams_Capture capture;
-        capture.region = base::Rect(captureAreaMinX, captureAreaMinY, captureAreaMaxX, captureAreaMaxY);
         capture.sink = captureBuffer;
         capture.mode = rendering::scene::FrameCaptureMode::SelectionRect;
 
-        // render the frame
-        renderCaptureScene(&capture);
+        // render the capture frame
+        rendering::scene::Camera captureCamera;
+        renderCaptureScene(&capture, &captureCamera);
 
-        // flush gpu
+        // flush GPU
+        // TODO: proper sync with GPU
         base::GetService<DeviceService>()->sync();
         base::GetService<DeviceService>()->sync();
         base::GetService<DeviceService>()->sync();
-
-        // calculate camera
-        rendering::scene::CameraSetup cameraSetup;
-        handleCamera(cameraSetup);
-        rendering::scene::Camera camera;
-        camera.setup(cameraSetup);
 
         // wait for data and return it
-        return captureBuffer->waitAndFetch(camera);
+        return captureBuffer->waitAndFetch(captureCamera);
     }
 
     bool RenderingScenePanel::queryWorldPositionUnderCursor(const base::Point& localPoint, base::AbsolutePosition& outPosition)
     {
         // query the depth
-        // TODO: only the point!
-        auto depth = queryDepth();
+        const base::Rect captureArea(localPoint.x, localPoint.y, localPoint.x + 1, localPoint.y + 1);
+        auto depth = queryDepth(&captureArea);
         if (!depth)
             return false;
 
@@ -1179,48 +1205,93 @@ namespace ui
         return depth->calcWorldPosition(localPoint.x, localPoint.y, outPosition);
     }
 
-    base::RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth()
+    //--
+
+    class DepthBufferDataSink : public rendering::IDownloadDataSink
+    {
+    public:
+        DepthBufferDataSink(const base::Rect& screenRect)
+            : m_screenRect(screenRect)
+        {
+            //m_fence = Fibers::GetInstance().createCounter("WaitForDepthData", 1);
+
+            const auto numPixels = m_screenRect.width() * m_screenRect.height();
+            m_depth.resizeWith(numPixels, 1.0f); // far plane
+        }
+        
+        virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final
+        {
+            const auto numPixels = range_cast<uint32_t>(dataSize / sizeof(float));
+            DEBUG_CHECK_EX(numPixels == m_depth.size(), "Unexpected pixel count in retrieved data"); // NOTE: we can't use this data as it's probably of different pitch any way
+
+            if (numPixels == m_depth.size())
+                memcpy(m_depth.data(), dataPtr, dataSize);
+
+            //Fibers::GetInstance().signalCounter(m_fence, 1);
+        }
+
+        base::RefPtr<RenderingPanelDepthBufferQuery> waitAndFetch(const rendering::scene::Camera& camera, uint32_t width, uint32_t height, bool flipped)
+        {
+            //Fibers::GetInstance().waitForCounterAndRelease(m_fence);
+            return base::RefNew<RenderingPanelDepthBufferQuery>(width, height, camera, m_screenRect, std::move(m_depth), flipped);
+        }
+
+    private:
+        base::Array<float> m_depth;
+        base::Rect m_screenRect;
+
+        base::fibers::WaitCounter m_fence;
+    };
+
+
+    base::RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth(const base::Rect* captureArea)
     {
         // render area not cached
         auto renderAreaWidth = (int)cachedDrawArea().size().x;
         auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
+        // clamp the area
+        rendering::scene::FrameParams_Capture capture;
+        if (captureArea)
+        {
+            auto captureAreaMinX = std::clamp<int>(captureArea->min.x, 0, renderAreaWidth);
+            auto captureAreaMinY = std::clamp<int>(captureArea->min.y, 0, renderAreaHeight);
+            auto captureAreaMaxX = std::clamp<int>(captureArea->max.x, captureAreaMinX, renderAreaWidth);
+            auto captureAreaMaxY = std::clamp<int>(captureArea->max.y, captureAreaMinY, renderAreaHeight);
+            if (captureAreaMinX >= captureAreaMaxX || captureAreaMinY >= captureAreaMaxY)
+                return nullptr;
+
+            capture.region = base::Rect(captureAreaMinX, captureAreaMinY, captureAreaMaxX, captureAreaMaxY);
+        }
+        else
+        {
+            capture.region = base::Rect(0, 0, renderAreaWidth, renderAreaHeight);
+        }
+
         // prepare capture context for frame rendering
-        //auto captureImage = base::RefNew<rendering::DownloadDataSinkBuffer>();
+        auto captureImage = base::RefNew<DepthBufferDataSink>(capture.region);
 
         // prepare capture settings
-        rendering::scene::FrameParams_Capture capture;
-        capture.region = base::Rect(0, 0, renderAreaWidth, renderAreaHeight);
-        //capture.sink = captureImage;
+        capture.sink = captureImage;
         capture.mode = rendering::scene::FrameCaptureMode::DepthRect;
 
-        // render the frame
-        //renderInternalScene(cachedDrawArea().size(), captureContext);
+        // render the capture frame
+        rendering::scene::Camera captureCamera;
+        renderCaptureScene(&capture, &captureCamera);
 
-		uint32_t retrievedSize = 0;
-		//const auto* retrievedData = captureImage->retrieve(retrievedSize, retrievedArea);
-		/*if (!retrievedData)
-		{
-			TRACE_WARNING("No data extracted into depth buffer");
-			return nullptr;
-		}*/
+        // flush GPU
+        // TODO: proper sync with GPU
+        base::GetService<DeviceService>()->sync();
+        base::GetService<DeviceService>()->sync();
+        base::GetService<DeviceService>()->sync();
 
-		// create depth image
-		base::image::ImagePtr depthImage;
-
-        // calculate camera
-        rendering::scene::CameraSetup cameraSetup;
-        handleCamera(cameraSetup);
-        rendering::scene::Camera camera;
-        camera.setup(cameraSetup);
-
-        // create wrapper
-        return base::RefNew<RenderingPanelDepthBufferQuery>(renderAreaWidth, renderAreaHeight, camera, depthImage);
+        // wait for data and return it
+        return captureImage->waitAndFetch(captureCamera, renderAreaWidth, renderAreaHeight, false);
     }
 
     //--
 
-	void RenderingScenePanel::renderContent(const ViewportParams& viewport)
+	void RenderingScenePanel::renderContent(const ViewportParams& viewport, rendering::scene::Camera* outCameraUsedToRender)
     {
         // compute camera
         rendering::scene::CameraSetup cameraSetup;
@@ -1229,6 +1300,10 @@ namespace ui
         // create camera
         rendering::scene::Camera camera;
         camera.setup(cameraSetup);
+
+        // report computed camera
+        if (outCameraUsedToRender)
+            *outCameraUsedToRender = camera;
 
         // create frame and render scene content into it
         rendering::scene::FrameParams frame(viewport.width, viewport.height, camera);

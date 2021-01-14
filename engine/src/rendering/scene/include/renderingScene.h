@@ -126,6 +126,7 @@ namespace rendering
 			void renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame);
 			void renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame);
 			void renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame);
+			void renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame);
 
 			void prepare(command::CommandWriter& cmd, const FrameRenderer& frame);
 
@@ -135,6 +136,7 @@ namespace rendering
 			friend class FrameViewWireframe;
 			friend class FrameViewSelection;
 			friend class FrameViewCaptureSelection;
+			friend class FrameViewCaptureDepth;
 			friend class FrameRenderer;
 
 			//--

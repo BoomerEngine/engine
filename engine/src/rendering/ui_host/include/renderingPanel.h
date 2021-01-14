@@ -15,6 +15,7 @@ namespace rendering
 	namespace scene
 	{
 		struct FrameParams_Capture;
+        class Camera;
 	}
 }
 
@@ -63,7 +64,7 @@ namespace ui
 		};
 
 		// render the panel, when done submit work to the device
-		virtual void renderContent(const ViewportParams& params);
+		virtual void renderContent(const ViewportParams& params, rendering::scene::Camera* outCameraUsedToRender = nullptr);
 
     protected:
         virtual void handleHoverEnter(const Position& pos) override;
@@ -76,7 +77,7 @@ namespace ui
         base::Point m_renderTargetOffset = base::Point(0, 0);
         int m_renderTargetZoom = 0;
 
-        void renderCaptureScene(const rendering::scene::FrameParams_Capture* capture);
+        void renderCaptureScene(const rendering::scene::FrameParams_Capture* capture, rendering::scene::Camera* outCameraUsedToRender = nullptr);
 
     private:
         base::NativeTimePoint m_lastRenderTime;

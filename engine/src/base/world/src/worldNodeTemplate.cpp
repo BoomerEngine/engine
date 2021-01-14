@@ -269,72 +269,6 @@ namespace base
 
         //--
 
-        static const int MAX_DEPTH = 10;
-
-        EntityPtr ProcessSingleEntity(int depth, const NodeCompilationStack& it, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
-        {
-            /*InplaceArray<PrefabRef, 10> prefabsToInstance;
-            it.collectPrefabs(prefabsToInstance);
-
-            // "instance" prefabs
-            NodeCompilationStack localIt(it);
-            for (auto& prefab : prefabsToInstance)
-            {
-                if (auto data = prefab.acquire())
-                {
-                    const auto rootIndex = 0;
-                    if (rootIndex >= 0 && rootIndex <= data->nodes().lastValidIndex())
-                    {
-                        if (const auto rootNode = data->nodes()[rootIndex])
-                            localIt.pushBack(rootNode);
-                    }
-                }
-            }
-
-            // compile single entity out of the current stack
-            Transform relativePlacementTransform;
-            if (auto compiledNode = CompileEntity(localIt.templates(), &relativePlacementTransform))
-            {
-                outAllEntities.pushBack(compiledNode);
-
-                // apply entity transform, NOTE: the root entity is not moved
-                const auto entityPlacement = depth ? (placement * relativePlacementTransform) : placement;
-                compiledNode->requestTransform(entityPlacement);
-
-                // create child entities
-                if (depth < MAX_DEPTH)
-                {
-                    HashSet<StringID> childrenNames;
-                    localIt.collectChildNodeNames(childrenNames);
-                    for (const auto name : childrenNames)
-                    {
-                        NodeCompilationStack childIt;
-                        localIt.enterChild(name, childIt);
-
-                        const auto childPath = path[name];
-                        ProcessSingleEntity(depth + 1, childIt, entityPlacement, childPath, outAllEntities);
-                    }
-                }
-
-                return compiledNode;
-            }
-            else
-            {
-                return nullptr;
-            }*/
-            return nullptr;
-        }
-
-        EntityPtr CompileEntityHierarchy(const NodeTemplate* rootTemplateNode, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
-        {
-            NodeCompilationStack stack;
-            stack.pushBack(rootTemplateNode);
-
-            return ProcessSingleEntity(0, stack, placement, path, outAllEntities);
-        }
-
-        //--
-
         struct NodeMergeStack
         {
             StringID name;
@@ -492,6 +426,97 @@ namespace base
 
             // merge content
             return CompileMergedNode(mergeStack);
+        }
+
+        //--
+
+        static const int MAX_DEPTH = 10;
+
+        EntityPtr ProcessSingleEntity(int depth, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, const NodePath& path, Array<EntityPtr>& outAllEntities)
+        {
+            EntityPtr ret;
+
+            InplaceArray<const NodeTemplate*, 20> templates;
+            {
+                HashSet<const world::Prefab*> visitedPrefabs;
+                for (const auto* temp : inputTemplates)
+                {
+                    for (const auto& prefab : temp->m_prefabAssets) // NOTE: prefab assets are NOT copied to flattened data
+                        SuckInPrefab(prefab, visitedPrefabs, templates);
+
+                    templates.pushBack(temp);
+                }
+            }
+
+            // compile entity data
+            {
+                ObjectIndirectTemplateCompiler compiler;
+                for (const auto* ptr : templates)
+                    if (ptr->m_entityTemplate)
+                        compiler.addTemplate(ptr->m_entityTemplate);
+                ret = CreateEntityObject(compiler);
+
+                // place the entity
+                if (applyLocalPlacement)
+                    ret->requestTransform(placement*compiler.compileTransform().toTransform());
+                else
+                    ret->requestTransform(placement);
+
+                outAllEntities.pushBack(ret);
+            }
+
+            //--
+
+            // collect and create components
+            {
+                HashMap<StringID, Array<const ObjectIndirectTemplate*>> componentData;
+                for (const auto* ptr : templates)
+                    for (const auto& compInfo : ptr->m_componentTemplates)
+                        if (compInfo.name && compInfo.data)
+                            componentData[compInfo.name].pushBack(compInfo.data);
+
+                for (auto pair : componentData.pairs())
+                {
+                    ObjectIndirectTemplateCompiler compiler;
+                    for (const auto* ptr : pair.value)
+                        compiler.addTemplate(ptr);
+
+                    if (auto comp = CreateComponentObject(compiler))
+                    {
+                        const auto relativePlacement = compiler.compileTransform();
+                        comp->relativeTransform(relativePlacement.toTransform());
+                        ret->attachComponent(comp);
+                    }                   
+
+                }
+            }
+
+            // collect and create child entities
+            if (depth < MAX_DEPTH)
+            {
+                HashMap<StringID, Array<const NodeTemplate*>> childrenNodes;
+                for (const auto* ptr : templates)
+                    for (const auto& child : ptr->m_children)
+                        if (child->m_name)
+                            childrenNodes[child->m_name].pushBack(child);
+
+                for (auto pair : childrenNodes.pairs())
+                {
+                    const auto childPath = path[pair.key];
+                    ProcessSingleEntity(depth + 1, pair.value, ret->absoluteTransform(), true, childPath, outAllEntities);
+                }
+            }
+
+            return ret;
+        }
+
+        EntityPtr CompileEntityHierarchy(const NodeTemplate* rootTemplateNode, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
+        {
+            InplaceArray<const NodeTemplate*, 10> nodeTemplates;
+            if (rootTemplateNode)
+                nodeTemplates.pushBack(rootTemplateNode);
+
+            return ProcessSingleEntity(0, nodeTemplates, placement, false, path, outAllEntities);
         }
 
         //--

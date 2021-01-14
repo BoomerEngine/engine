@@ -36,6 +36,14 @@ namespace ed
             ent->handleDebugRender(frame);
     }
 
+    const SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const
+    {
+        if (path.empty())
+            return nullptr;
+
+        return m_root->findNodeByPath(path);
+    }
+
     void SceneContentStructure::nodeAdded(SceneContentNode* node)
     {
         ASSERT(node);

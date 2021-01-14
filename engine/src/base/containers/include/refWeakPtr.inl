@@ -11,14 +11,14 @@ namespace base
     INLINE RefWeakPtr<T>::RefWeakPtr()
         : m_holder(nullptr)
     {
-        static_assert(std::is_base_of< IReferencable, T >::value, "WeakRef can only be used with IReferencable based types");
+        //static_assert(std::is_base_of< IReferencable, T >::value, "WeakRef can only be used with IReferencable based types");
     }
 
     template< typename T >
     INLINE RefWeakPtr<T>::RefWeakPtr(std::nullptr_t)
         : m_holder(nullptr)
     {
-        static_assert(std::is_base_of< IReferencable, T >::value, "WeakRef can only be used with IReferencable based types");
+        //static_assert(std::is_base_of< IReferencable, T >::value, "WeakRef can only be used with IReferencable based types");
     }
 
     template< typename T >

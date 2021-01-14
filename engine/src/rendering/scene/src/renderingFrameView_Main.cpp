@@ -45,7 +45,7 @@ namespace rendering
 		//---
 
 		FrameViewMain::FrameViewMain(const FrameRenderer& frame, const Setup& setup)
-			: m_frame(frame)
+			: FrameViewSingleCamera(frame, setup.camera, setup.viewport)
 			, m_setup(setup)
 		{
             // cache
@@ -294,16 +294,6 @@ namespace rendering
                 // end screen pass
                 cmd.opEndPass();
             }
-        }
-
-        void FrameViewMain::bindCamera(command::CommandWriter& cmd)
-        {
-            GPUCameraInfo cameraParams;
-            PackSingleCameraParams(cameraParams, m_frame.frame().camera.camera);
-
-            DescriptorEntry desc[1];
-            desc[0].constants(cameraParams);
-            cmd.opBindDescriptor("CameraParams"_id, desc);
         }
 
         void FrameViewMain::bindLighting(command::CommandWriter& cmd)

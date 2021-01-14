@@ -31,6 +31,7 @@
 #include "base/editor/include/editorService.h"
 #include "base/editor/include/editorWindow.h"
 #include "base/editor/src/assetBrowserDialogs.h"
+#include "sceneObjectPalettePanel.h"
 
 namespace ed
 {
@@ -127,7 +128,7 @@ namespace ed
         bool canHide = false;
         for (const auto& node : setup.selection)
         {
-            if (node->localVisibilityFlag())
+            if (node->visibilityFlagBool())
                 canHide = true;
             else
                 canShow = true;
@@ -155,6 +156,7 @@ namespace ed
     {
         // active file
         const auto* activeFile = GetService<Editor>()->mainWindow().selectedFile();
+        const auto activeFileResourceClass = activeFile ? activeFile->fileFormat().nativeResourceClass() : nullptr;
 
         // "add" 
         bool canAddDir = false;
@@ -192,12 +194,37 @@ namespace ed
 
         if (canAddEntity)
         {
-            if (activeFile && activeFile->fileFormat().nativeResourceClass().is<world::Prefab>())
+            if (activeFile)
             {
-                menu->createCallback(TempString("Add prefab '{}'", activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile]()
+                if (activeFileResourceClass.is<world::Prefab>())
                 {
-                    createPrefabAtNodes(m_contextMenuContextNodes, activeFile);
-                };
+                    menu->createCallback(TempString("Add prefab '{}'", activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile]()
+                    {
+                        createPrefabAtNodes(m_contextMenuContextNodes, activeFile);
+                    };
+                }
+                else if (container()->creationSettings().mode == SceneContentNodeCreationMode::Entity)
+                {
+                    if (auto entityClass = m_objectPalette->selectedEntityClass(activeFileResourceClass))
+                    {
+                        menu->createCallback(TempString("Add {} using '{}'", entityClass, activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile, entityClass]()
+                        {
+                            const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
+                            createEntityAtNodes(m_contextMenuContextNodes, entityClass, placement, activeFile);
+                        };
+                    }
+                }
+                else if (container()->creationSettings().mode == SceneContentNodeCreationMode::WrappedComponent)
+                {
+                    if (auto componentClass = m_objectPalette->selectedComponentClass(activeFileResourceClass))
+                    {
+                        menu->createCallback(TempString("Add {} using '{}'", componentClass, activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile, componentClass]()
+                        {
+                            const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
+                            createEntityWithComponentAtNodes(m_contextMenuContextNodes, componentClass, placement, activeFile);
+                        };                        
+                    }
+                }
             }
 
             menu->createSubMenu(m_entityClassSelector, "Add entity", "[img:add]");
@@ -206,6 +233,18 @@ namespace ed
         if (canAddComponent)
         {
             menu->createSubMenu(m_componentClassSelector, "Add component", "[img:add]");
+
+            if (container()->creationSettings().mode == SceneContentNodeCreationMode::Component)
+            {
+                if (auto componentClass = m_objectPalette->selectedComponentClass(activeFileResourceClass))
+                {
+                    menu->createCallback(TempString("Add {} using '{}'", componentClass, activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile, componentClass]()
+                    {
+                        const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
+                        createComponentAtNodes(m_contextMenuContextNodes, componentClass, placement, activeFile);
+                    };
+                }
+            }
         }
 
         if (canAddLayer)
@@ -358,7 +397,7 @@ namespace ed
                 const auto* node = setup.contextClickedItem.get();
                 while (node)
                 {
-                    if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Component)
+                    if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Component && node->type() != SceneContentNodeType::LayerFile)
                         break;
                     possibleActiveRoots.pushBack(AddRef(node));
                     node = node->parent();

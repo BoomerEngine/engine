@@ -118,6 +118,8 @@ namespace ed
             m_palettePanel->expand();
             m_palettePanel->layoutVertical();
 
+            m_defaultEditMode->bindObjectPalette(m_palettePanel);
+
             dockLayout().right(0.2f).attachPanel(tab, false);
         }
     }
@@ -182,6 +184,7 @@ namespace ed
 
         m_structurePanel->configLoad(block.tag("Structure"));
         m_previewContainer->configLoad(block.tag("Viewports"));
+        m_defaultEditMode->configLoad(m_previewContainer, block.tag("DefaultEditMode"));
     }
 
     void SceneCommonEditor::configSave(const ui::ConfigBlock& block) const
@@ -190,6 +193,7 @@ namespace ed
 
         m_structurePanel->configSave(block.tag("Structure"));
         m_previewContainer->configSave(block.tag("Viewports"));
+        m_defaultEditMode->configSave(m_previewContainer, block.tag("DefaultEditMode"));
     }
 
     //---

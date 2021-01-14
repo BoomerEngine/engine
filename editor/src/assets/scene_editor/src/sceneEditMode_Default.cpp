@@ -23,6 +23,7 @@
 #include "base/object/include/actionHistory.h"
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/worldComponent.h"
+#include "base/ui/include/uiElementConfig.h"
 
 namespace ed
 {
@@ -56,7 +57,54 @@ namespace ed
     SceneEditMode_Default::~SceneEditMode_Default()
     {}
 
-    void SceneEditMode_Default::activeNode(SceneContentNode* node)
+    void SceneEditMode_Default::configSave(ScenePreviewContainer* container, const ui::ConfigBlock& block) const
+    {
+        TBaseClass::configSave(container, block);
+
+        {
+            Array<StringBuf> selectedNodes;
+            selectedNodes.reserve(m_selection.size());
+            for (const auto node : m_selection)
+                if (auto path = node->buildHierarchicalName())
+                    selectedNodes.pushBack(path);
+
+            block.write("SelectedNodes", selectedNodes);
+        }
+
+        {
+            if (auto active = m_activeNode.lock())
+                if (auto path = active->buildHierarchicalName())
+                    block.write("ActiveNode", path);
+        }
+    }
+
+    void SceneEditMode_Default::configLoad(ScenePreviewContainer* container, const ui::ConfigBlock& block)
+    {
+        TBaseClass::configLoad(container, block);
+
+        {
+            Array<StringBuf> selectedNodePaths;
+            if (block.read("SelectedNodes", selectedNodePaths))
+            {
+                Array<SceneContentNodePtr> selectedNodes;
+                selectedNodes.reserve(selectedNodePaths.size());
+                for (const auto& path : selectedNodePaths)
+                    if (const auto* node = container->content()->findNodeByPath(path))
+                        selectedNodes.emplaceBack(AddRef(node));
+
+                changeSelection(selectedNodes);
+            }
+        }
+
+        {
+            StringBuf activeNodePath;
+            if (block.read("ActiveNode", activeNodePath))
+                if (const auto* node = container->content()->findNodeByPath(activeNodePath))
+                    activeNode(node);
+        }
+    }
+
+    void SceneEditMode_Default::activeNode(const SceneContentNode* node)
     {
         if (m_activeNode != node)
         {
@@ -65,12 +113,12 @@ namespace ed
 
             m_activeNode = node;
 
-            if (node)
-                node->visualFlag(SceneContentNodeVisualBit::ActiveNode, true);
+            if (auto next = m_activeNode.lock())
+                next->visualFlag(SceneContentNodeVisualBit::ActiveNode, true);
         }
     }
 
-    void SceneEditMode_Default::focusNode(SceneContentNode* node)
+    void SceneEditMode_Default::focusNode(const SceneContentNode* node)
     {
         if (node)
         {
@@ -518,6 +566,7 @@ namespace ed
     void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
     {
         TBaseClass::handleRender(panel, frame);
+        renderDragDrop(panel, frame);
     }
 
     ui::InputActionPtr SceneEditMode_Default::handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt)
@@ -578,7 +627,7 @@ namespace ed
 
     void SceneEditMode_Default::handleUpdate(float dt)
     {
-
+        updateDragDrop();
     }
 
     void SceneEditMode_Default::handleTreeSelectionChange(const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection)

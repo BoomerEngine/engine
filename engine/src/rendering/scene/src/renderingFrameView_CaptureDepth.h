@@ -7,8 +7,8 @@
 ***/
 
 #include "build.h"
-#include "renderingFrameRenderer.h"
 #include "renderingFrameView.h"
+#include "renderingFrameRenderer.h"
 
 #include "rendering/device/include/renderingCommandWriter.h"
 
@@ -19,22 +19,21 @@ namespace rendering
 
         //--
 
-        /// command buffers to write to when recording selection fragments
-        struct FrameViewCaptureSelectionRecorder : public FrameViewRecorder
+        /// command buffers to write to when recording depth buffer for capture
+        struct FrameViewCaptureDepthRecorder : public FrameViewRecorder
         {
             command::CommandWriter viewBegin; // run at the start of the view rendering
             command::CommandWriter viewEnd; // run at the end of the view rendering
 
-            command::CommandWriter depthPrePass; // depth pre pass, used to filter foreground fragments
-            command::CommandWriter mainFragments; // selection emitting fragments
+            command::CommandWriter depth; // depth pre pass, used to filter foreground fragments
 
-            FrameViewCaptureSelectionRecorder();
+            FrameViewCaptureDepthRecorder();
         };
 
         //--
 
         /// helper recorder class
-        class RENDERING_SCENE_API FrameViewCaptureSelection : public FrameViewSingleCamera
+        class RENDERING_SCENE_API FrameViewCaptureDepth : public FrameViewSingleCamera
         {
         public:
             struct Setup
@@ -48,7 +47,7 @@ namespace rendering
 
             //--
 
-            FrameViewCaptureSelection(const FrameRenderer& frame, const Setup& setup);
+            FrameViewCaptureDepth(const FrameRenderer& frame, const Setup& setup);
 
             void render(command::CommandWriter& cmd);
 
@@ -57,7 +56,7 @@ namespace rendering
         private:
             const Setup& m_setup;
 
-            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCaptureSelectionRecorder& rec);
+            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCaptureDepthRecorder& rec);
         };
 
         //--

@@ -69,6 +69,13 @@ namespace ed
         // synced state should be cleared from the dirtyFlags bitfield
         void visitDirtyNodes(const std::function<void(const SceneContentNode*, SceneContentNodeDirtyFlags&)>& func);
 
+        //--
+
+        // find node by hierarchical path (/world/layers/env/street/lamp_01)
+        const SceneContentNode* findNodeByPath(StringView path) const;
+
+        //--
+
     private:
         SceneContentNodePtr m_root;
 

@@ -113,7 +113,7 @@ namespace ui
         m_renderRate = std::clamp<float>(rate, 0.0f, 1000.0f);
     }
 
-    void RenderingPanel::renderContent(const ViewportParams& viewport)
+    void RenderingPanel::renderContent(const ViewportParams& viewport, rendering::scene::Camera* outCameraUsedToRender)
     {
         rendering::command::CommandWriter cmd(base::TempString("PreviewPanel"));
 
@@ -173,7 +173,7 @@ namespace ui
 		viewport.depthBuffer = m_depthSurfaceRTV;
 	}
 
-    void RenderingPanel::renderCaptureScene(const rendering::scene::FrameParams_Capture* capture)
+    void RenderingPanel::renderCaptureScene(const rendering::scene::FrameParams_Capture* capture, rendering::scene::Camera* outCameraUsedToRender)
     {
         const auto renderWidth = (int)std::ceil(cachedDrawArea().size().x);
         const auto renderHeight = (int)std::ceil(cachedDrawArea().size().y);
@@ -185,7 +185,7 @@ namespace ui
             params.capture = capture;
 
             parepareRenderTargets(params);
-            renderContent(params);
+            renderContent(params, outCameraUsedToRender);
         }
     }
 

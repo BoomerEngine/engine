@@ -56,7 +56,7 @@ namespace ed
         return ret;
     }
 
-    static void ExtractLayerStructure(uint32_t depth, const ManagedDirectory* dir, SceneContentNode* dirNode, Array<StringBuf>& outErrors)
+    static void ExtractLayerStructure(const ManagedDirectory* dir, SceneContentNode* dirNode, Array<StringBuf>& outErrors)
     {
         for (const auto* file : dir->files())
         {
@@ -86,11 +86,7 @@ namespace ed
         for (const auto* childDir : dir->directories())
         {
             auto childDirNode = RefNew<SceneContentWorldDir>(childDir->name(), false);
-            ExtractLayerStructure(depth+1, childDir, childDirNode, outErrors);
-
-            if (depth == 0)
-                childDirNode->visibility(false); // by default top most layer groups are not visible (otherwise we would load the whole level)
-
+            ExtractLayerStructure(childDir, childDirNode, outErrors);
             dirNode->attachChildNode(childDirNode);
         }
     }
@@ -101,7 +97,7 @@ namespace ed
         if (auto* layersDirectory = nativeFile()->parentDirectory()->createDirectory("layers"))
         {
             Array<StringBuf> reportedErrors;
-            ExtractLayerStructure(0, layersDirectory, m_rootLayersGroup, reportedErrors);
+            ExtractLayerStructure(layersDirectory, m_rootLayersGroup, reportedErrors);
 
             if (!reportedErrors.empty())
             {

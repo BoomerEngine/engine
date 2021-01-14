@@ -14,6 +14,8 @@
 #include "renderingFrameRenderingService.h"
 
 #include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingDescriptor.h"
+#include "rendering/device/include/renderingCommandWriter.h"
 
 namespace rendering
 {
@@ -452,6 +454,27 @@ namespace rendering
         }
 
         //---
+
+        FrameViewSingleCamera::FrameViewSingleCamera(const FrameRenderer& frame, const Camera& camera, const base::Rect& viewport)
+            : m_frame(frame)
+            , m_camera(camera)
+            , m_viewport(viewport)
+        {}
+
+        FrameViewSingleCamera::~FrameViewSingleCamera()
+        {}
+
+        void FrameViewSingleCamera::bindCamera(command::CommandWriter& cmd)
+        {
+            GPUCameraInfo cameraParams;
+            PackSingleCameraParams(cameraParams, m_frame.frame().camera.camera);
+
+            DescriptorEntry desc[1];
+            desc[0].constants(cameraParams);
+            cmd.opBindDescriptor("CameraParams"_id, desc);
+        }
+
+        //--
 
     } // scene
 } // rendering

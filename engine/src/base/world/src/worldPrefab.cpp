@@ -10,6 +10,7 @@
 #include "build.h"
 #include "worldPrefab.h"
 #include "worldNodeTemplate.h"
+#include "worldNodePath.h"
 
 #include "base/resource/include/resourceFactory.h"
 #include "base/resource/include/resourceTags.h"
@@ -91,6 +92,15 @@ namespace base
             }
 
             markModified();
+        }
+
+        EntityPtr Prefab::compile(StringID appearance, const base::AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const
+        {
+            if (!m_root)
+                return nullptr;
+
+            const auto path = NodePath();
+            return CompileEntityHierarchy(m_root, placement, path, outAllEntities);
         }
 
         void Prefab::onPostLoad()

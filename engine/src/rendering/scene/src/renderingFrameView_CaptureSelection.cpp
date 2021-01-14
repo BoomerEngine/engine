@@ -36,15 +36,10 @@ namespace rendering
         //---
 
         FrameViewCaptureSelection::FrameViewCaptureSelection(const FrameRenderer& frame, const Setup& setup)
-            : m_frame(frame)
+            : FrameViewSingleCamera(frame, setup.camera, setup.viewport)
             , m_setup(setup)
         {
-            m_camera = setup.camera;
-            m_viewport = base::Rect(0, 0, frame.frame().resolution.width, frame.frame().resolution.height);
         }
-
-        FrameViewCaptureSelection::~FrameViewCaptureSelection()
-        {}
 
         void FrameViewCaptureSelection::render(command::CommandWriter& cmd)
         {
@@ -162,16 +157,6 @@ namespace rendering
 
             // view end
             rec.viewEnd.attachBuffer(cmd.opCreateChildCommandBuffer());
-        }
-
-        void FrameViewCaptureSelection::bindCamera(command::CommandWriter& cmd)
-        {
-            GPUCameraInfo cameraParams;
-            PackSingleCameraParams(cameraParams, m_frame.frame().camera.camera);
-
-            DescriptorEntry desc[1];
-            desc[0].constants(cameraParams);
-            cmd.opBindDescriptor("CameraParams"_id, desc);
         }
 
         //--

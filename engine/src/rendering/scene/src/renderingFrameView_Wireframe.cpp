@@ -42,17 +42,10 @@ namespace rendering
 		//---
 
 		FrameViewWireframe::FrameViewWireframe(const FrameRenderer& frame, const Setup& setup)
-			: m_frame(frame)
+			: FrameViewSingleCamera(frame, setup.camera, setup.viewport)
 			, m_setup(setup)
 		{
-            m_camera = setup.camera;
-            m_viewport = base::Rect(0, 0, frame.frame().resolution.width, frame.frame().resolution.height);
         }
-
-		FrameViewWireframe::~FrameViewWireframe()
-		{
-
-		}
 
 		void FrameViewWireframe::render(command::CommandWriter& cmd)
 		{
@@ -240,16 +233,6 @@ namespace rendering
                 // end screen pass
                 cmd.opEndPass();
             }
-        }
-
-        void FrameViewWireframe::bindCamera(command::CommandWriter& cmd)
-        {
-            GPUCameraInfo cameraParams;
-            PackSingleCameraParams(cameraParams, m_frame.frame().camera.camera);
-
-            DescriptorEntry desc[1];
-            desc[0].constants(cameraParams);
-            cmd.opBindDescriptor("CameraParams"_id, desc);
         }
 
 #if 0

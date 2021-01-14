@@ -70,6 +70,8 @@ namespace base
 
             void setup(NodeTemplate* root);
 
+            EntityPtr compile(StringID appearance, const base::AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const;
+
         private:
             NodeTemplatePtr m_root;
             Array<PrefabAppearance> m_appearances;
