@@ -7,6 +7,7 @@
 ***/
 
 #include "build.h"
+#include "managedDepot.h"
 #include "managedFileNativeResource.h"
 #include "managedFileFormat.h"
 #include "resourceEditorNativeFile.h"
@@ -36,18 +37,6 @@ namespace ed
 
     ManagedFileNativeResource::~ManagedFileNativeResource()
     {
-    }
-
-    bool ManagedFileNativeResource::inUse() const
-    {
-        auto loadingService = GetService<base::res::LoadingService>();
-        if (!loadingService)
-            return false;
-
-        base::res::ResourcePtr loadedResource;
-
-        const auto key = res::ResourceKey(res::ResourcePath(depotPath()), m_resourceNativeClass);
-        return loadingService->acquireLoadedResource(key, loadedResource);
     }
 
     res::ResourcePtr ManagedFileNativeResource::loadContent() const

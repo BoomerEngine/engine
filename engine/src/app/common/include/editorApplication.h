@@ -7,6 +7,7 @@
 #pragma once
 
 #include "base/app/include/application.h"
+#include "base/editor/include/editorService.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/ui_host/include/renderingWindowRenderer.h"
 
@@ -25,6 +26,7 @@ namespace application
         base::RefPtr<ui::DataStash> m_dataStash;
         base::UniquePtr<rendering::NativeWindowRenderer> m_nativeRenderer;
         base::NativeTimePoint m_lastUpdateTime;
+        base::UniquePtr<ed::Editor> m_editor;
     };
 
 } // application

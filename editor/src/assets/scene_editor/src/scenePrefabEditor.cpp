@@ -25,7 +25,7 @@ namespace ed
     RTTI_END_TYPE();
 
     ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
-        : SceneCommonEditor(file, SceneContentNodeType::PrefabRoot)
+        : SceneCommonEditor(file, SceneContentNodeType::PrefabRoot, "Prefabs")
     {
     }
 

@@ -37,6 +37,7 @@ namespace ui
         bool maximized = false;
         bool minimized = false;
         bool popup = false; // a proper popup window
+        bool visible = true;
         bool showOnTaskBar = false;
         base::Point position;
         base::Point size;
@@ -120,6 +121,9 @@ namespace ui
         /// is this window movable ? popup windows are not movable also minimized/maximized are not movable
         virtual bool windowGetMovable(NativeWindowID id) = 0;
 
+        /// is this window visible ?
+        virtual bool windowGetVisible(NativeWindowID id) = 0;
+
         /// set window title bar
         virtual void windowSetTitle(NativeWindowID id, base::StringView txt) = 0;
 
@@ -138,6 +142,9 @@ namespace ui
         /// query current rendering area for the window, we are committed to draw window into that area, returns false if window should not be rendered for some reason
         virtual bool windowGetRenderableArea(NativeWindowID id, ElementArea& outWindowDrawArea) = 0;
 
+        /// query window's default placement (when not maximized or minimized), NOTE: this may be different than the current placement
+        virtual bool windowGetDefaultPlacement(NativeWindowID id, base::Rect& outDefaultPlacement) = 0;
+            
         /// check if window has system close request (Alt-F4, pressing the "X" on a window with sytem border, etc)
         virtual bool windowHasCloseRequest(NativeWindowID id) = 0;
 
@@ -213,13 +220,16 @@ namespace ui
         //---
 
         /// check current window resizable state
-        bool queryWindowResizableState(Window* window) const;
+        bool queryWindowResizableState(const Window* window) const;
 
         /// check current window movable state
-        bool queryWindowMovableState(Window* window) const;
+        bool queryWindowMovableState(const Window* window) const;
+
+        /// query current window placement
+        bool queryWindowPlacement(const Window* window, WindowSavedPlacementSetup& outPlacement) const;
 
         /// get the native window handle of this window, HWND, etc
-        uint64_t queryWindowNativeHandle(Window* window) const;
+        uint64_t queryWindowNativeHandle(const Window* window) const;
 
         //---
 

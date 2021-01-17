@@ -10,64 +10,62 @@
 #include "editorService.h"
 #include "backgroundCommand.h"
 
-#include "base/net/include/messageConnection.h"
-#include "base/net/include/messagePool.h"
-#include "base/system/include/guid.h"
-
 namespace ed
 {
+
     //--
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBackgroundCommand);
+    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBackgroundJob);
     RTTI_END_TYPE();
-
-    static const char* KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    static const uint32_t KEY_LENGTH = 20;
-
-    IBackgroundCommand::IBackgroundCommand(StringView name)
-        : m_name(name)
-    {
-        m_connectionKey = TempString("{}", base::GUID::Create());
-    }
-
-    IBackgroundCommand::~IBackgroundCommand()
-    {}
-
-    void IBackgroundCommand::update()
-    {
-        if (m_connection)
-        {
-            // remote connection was closed
-            if (!m_connection->isConnected())
-            {
-                TRACE_WARNING("BackgroundCommand: Remote host for command '{}' ({}) disconnected", name(), connectionKey());
-                m_connection->close();
-                m_connection.reset();
-            }
-
-            // pull messages and dispatch received messages (mostly UI updates)
-            while (auto message = m_connection->pullNextMessage())
-                message->dispatch(this, m_connection);
-        }
-    }
-
-    void IBackgroundCommand::confirmed(const net::MessageConnectionPtr& connection)
-    {
-        DEBUG_CHECK_EX(!m_connection, "Background command was already confirmed");
-        TRACE_INFO("BackgroundCommand: Remote command '{}' ({}) confirmed starting", name(), connectionKey());
-        m_connection = connection;
-    }
-
-    //--
 
     IBackgroundJob::IBackgroundJob(StringView name)
         : m_description(name)
     {
         m_startTime.resetToNow();
+
+        m_lastProgress.text = StringBuf("Processing...");
     }
 
     IBackgroundJob::~IBackgroundJob()
     {}
+
+    void IBackgroundJob::requestCancel()
+    {
+        if (0 == m_cancelRequested.exchange(true))
+        {
+            TRACE_INFO("Requested cancelation of job '{}'", m_description);
+        }
+    }
+
+    ui::ElementPtr IBackgroundJob::fetchDetailsDialog()
+    {
+        return nullptr;
+    }
+
+    ui::ElementPtr IBackgroundJob::fetchStatusDialog()
+    {
+        return nullptr;
+    }
+
+    void IBackgroundJob::queryProgressInfo(BackgroundJobProgress& outInfo) const
+    {
+        auto lock = CreateLock(m_lastProgressLock);
+        outInfo = m_lastProgress;
+    }
+
+    bool IBackgroundJob::checkCancelation() const
+    {
+        return m_cancelRequested.load();
+    }
+
+    void IBackgroundJob::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
+    {
+        auto lock = CreateLock(m_lastProgressLock);
+        m_lastProgress.text = StringBuf(text);
+        m_lastProgress.currentCount = currentCount;
+        m_lastProgress.totalCount = totalCount;
+        m_lastProgress.timestamp += 1;
+    }
 
     //--
 

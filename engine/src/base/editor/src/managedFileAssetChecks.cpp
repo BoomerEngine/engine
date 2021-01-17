@@ -16,6 +16,7 @@
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource_compiler/include/importer.h"
 #include "base/resource_compiler/include/importSourceAssetRepository.h"
+#include "base/ui/include/uiElement.h"
 
 namespace ed
 {

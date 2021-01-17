@@ -179,7 +179,7 @@ namespace ed
             }
             else if (auto file = m_filesModel->file(index))
             {
-                if (!file->open())
+                if (!GetEditor()->openFileEditor(file))
                     ui::PostWindowMessage(this, ui::MessageType::Error, "EditAsset"_id, TempString("Failed to open '{}'", file->depotPath()));
             }
         };
@@ -666,7 +666,7 @@ namespace ed
             }
 
             // ask for files
-            auto nativeHandle = GetService<Editor>()->windowNativeHandle(owner);
+            auto nativeHandle = GetEditor()->windowNativeHandle(owner);
             Array<StringBuf> importPaths;
             if (!base::io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
                 return false;
@@ -701,7 +701,7 @@ namespace ed
             return false;
 
         // add to import window
-        GetService<Editor>()->mainWindow().addNewImportFiles(parentDir, nativeClass, assetPaths);
+        GetEditor()->importFiles(parentDir, nativeClass, assetPaths);
         return true;
     }
 

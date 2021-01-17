@@ -20,6 +20,7 @@
 #include "uiWindowTitlebar.h"
 
 #include "base/canvas/include/canvas.h"
+#include "uiElementConfig.h"
 
 namespace ui
 {
@@ -69,7 +70,7 @@ namespace ui
 
     bool Window::requestedClose() const
     {
-        return m_requests && m_requests->requestClose;
+        return m_closeRequested;
     }
 
     void Window::requestClose(int exitCode)
@@ -82,6 +83,7 @@ namespace ui
             call(EVENT_WINDOW_CLOSED);
 
             m_exitCode = exitCode;
+            m_closeRequested = true;
 
             // hacky hack...
             if (auto owner = m_modalOwner.lock())
@@ -323,8 +325,12 @@ namespace ui
         return false;
     }
 
-    void Window::queryCurrentPlacementForSaving(WindowSavedPlacementSetup& outPlacement) const
+    bool Window::queryCurrentPlacementForSaving(WindowSavedPlacementSetup& outPlacement) const
     {
+        if (auto* render = renderer())
+            return render->queryWindowPlacement(this, outPlacement);
+
+        return false;
     }
 
     void Window::queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const
@@ -337,12 +343,16 @@ namespace ui
         outSetup.flagTopMost = m_flags.test(WindowFeatureFlagBit::TopMost);
         outSetup.owner = base::rtti_cast<Window>(m_modalOwner.lock());
         outSetup.externalParentWindowHandle = m_parentModalWindowHandle;
+
+        if (m_savedPlacementValid)
+            outSetup.savedPlacement = &m_savedPlacement;
+
     }
 
     bool Window::queryMovableState() const
     {
         if (auto* render = renderer())
-            return render->queryWindowMovableState(const_cast<Window*>(this));
+            return render->queryWindowMovableState(this);
 
         return false;
     }
@@ -350,9 +360,62 @@ namespace ui
     bool Window::queryResizableState() const
     {
         if (auto* render = renderer())
-            return render->queryWindowResizableState(const_cast<Window*>(this));
+            return render->queryWindowResizableState(this);
 
         return false;
+    }
+
+    //--
+
+    RTTI_BEGIN_TYPE_STRUCT(WindowSavedPlacementSetup);
+        RTTI_PROPERTY(rect);
+        RTTI_PROPERTY(visible);
+        RTTI_PROPERTY(maximized);
+        RTTI_PROPERTY(minimized);
+    RTTI_END_TYPE();
+
+    void Window::configLoad(const ConfigBlock& block)
+    {
+        TBaseClass::configLoad(block);
+
+        WindowSavedPlacementSetup placement;
+        if (block.read("placement", placement))
+            applySavedPlacement(placement);
+    }
+
+    void Window::configSave(const ConfigBlock& block) const
+    {
+        TBaseClass::configSave(block);
+
+        WindowSavedPlacementSetup placement;
+        if (queryCurrentPlacementForSaving(placement))
+            block.write("placement", placement);
+    }
+
+    void Window::applySavedPlacement(const WindowSavedPlacementSetup& placement)
+    {
+        if (auto render = renderer())
+        {
+            if (placement.maximized)
+                requestMaximize();
+            else if (placement.minimized)
+                requestMinimize();
+            else
+            {
+                requestMove(placement.rect.topLeft().toVector());
+                requestSize(placement.rect.size().toVector());
+            }
+
+            if (placement.visible)
+                requestShow(false);
+            else
+                requestHide();
+        }
+        else
+        {
+            m_savedPlacement = placement;
+            m_savedPlacementValid = true;
+        }
     }
 
     //--

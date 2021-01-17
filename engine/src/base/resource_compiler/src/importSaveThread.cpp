@@ -63,6 +63,16 @@ namespace base
             }
         }
 
+        bool ImportSaverThread::hasUnsavedContent() const
+        {
+            auto saveLock = CreateLock(m_saveQueueLock);
+            if (!m_saveJobQueue.empty())
+                return false;
+            if (m_saveCurrentResource)
+                return false;
+            return true;
+        }
+
         void ImportSaverThread::waitUntilDone()
         {
             ScopeTimer timer;

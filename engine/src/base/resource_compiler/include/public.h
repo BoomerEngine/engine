@@ -70,8 +70,6 @@ namespace base
         class ImportList;
         typedef RefPtr<ImportList> ImportListPtr;
 
-        struct ImportQueueFileStatusChangeMessage;
-
         //--
 
         /// import status of file

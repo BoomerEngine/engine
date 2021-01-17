@@ -39,6 +39,11 @@ namespace ui
         return m_layoutNode.unsafe();
     }
 
+    ui::DockPanel* DockNotebook::activeTab() const
+    {
+        return base::rtti_cast<ui::DockPanel>(Notebook::activeTab());
+    }
+
     void DockNotebook::updateHeaderButtons()
     {
         TBaseClass::updateHeaderButtons();

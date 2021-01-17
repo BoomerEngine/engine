@@ -84,7 +84,8 @@ namespace base
 
         //--
 
-        CommandHost::CommandHost()
+        CommandHost::CommandHost(IProgressTracker* progress)
+            : m_externalProgressTracker(progress)
         {}
 
         CommandHost::~CommandHost()
@@ -94,36 +95,31 @@ namespace base
                 ScopeTimer timer;
 
                 TRACE_WARNING("Command: Command '{}' is still running, we will have to wait for it to finish", *m_command);
-                m_command->requestCancel();
+                //m_command->requestCancel();
 
                 Fibers::GetInstance().waitForCounterAndRelease(m_finishedSignal);
 
+                m_command.reset();
+
                 TRACE_INFO("Command: Finished waiting for command in {}", timer);
             }
+        }     
+
+        bool CommandHost::checkCancelation() const
+        {
+            return m_cancelation || (m_externalProgressTracker && m_externalProgressTracker->checkCancelation());
         }
 
-        class CommandHelloMessageHandler : public IObject
+        void CommandHost::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(CommandHelloMessageHandler, IObject);
+            if (m_externalProgressTracker)
+                m_externalProgressTracker->reportProgress(currentCount, totalCount, text);
+        }
 
-        public:
-            bool m_receivedPing = false;
-
-            CommandHelloMessageHandler()
-            {}
-
-            void handleHelloResponseMessage(const CommandHelloResponseMessage& msg, const net::MessageConnectionPtr& connection)
-            {
-                auto diff = NativeTimePoint(msg.timestampSentBack).timeTillNow().toSeconds();
-                TRACE_INFO("Command: Ping to message server: {}", TimeInterval(diff));
-
-                m_receivedPing = true;
-            }
-        };
-
-        RTTI_BEGIN_TYPE_CLASS(CommandHelloMessageHandler);
-        RTTI_FUNCTION_SIMPLE(handleHelloResponseMessage);
-        RTTI_END_TYPE();
+        void CommandHost::cancel()
+        {
+            m_cancelation.exchange(true);
+        }
 
         bool CommandHost::start(const CommandLine& commandline)
         {
@@ -136,38 +132,6 @@ namespace base
             // create the command
             auto command = commandClass.create();
 
-            // if we were told to connect to host do it now
-            if (commandline.hasParam("messageServer"))
-            {
-                const auto remoteAddressStr = commandline.singleValue("messageServer");
-
-                // parse the target address
-                base::socket::Address remoteAddress;
-                if (!base::socket::Address::Parse(remoteAddressStr, remoteAddress))
-                {
-                    TRACE_ERROR("Command: Address '{}' is not a valid network address", remoteAddressStr);
-                    return false;
-                }
-
-                // connect to target
-                m_connection = base::RefNew<base::net::TcpMessageClient>();
-                if (!m_connection->connect(remoteAddress))
-                {
-                    TRACE_ERROR("Command: Failed to connect to message server at '{}' ", remoteAddressStr);
-                    return false;
-                }
-
-                // before we event start running send the "hello message" to the let it know that the remote endpoint has been established
-                {
-                    CommandHelloMessage msg;
-                    msg.localTimestamp = NativeTimePoint::Now().rawValue();
-                    msg.connectionKey = commandline.singleValue("messageConnectionKey");
-                    commandline.singleValue("messageStartupTimestamp").view().match(msg.startupTimestamp);
-
-                    m_connection->send(msg);
-                }
-            }
-
             // create the signal to run
             m_finishedFlag = false;
             m_finishedSignal = Fibers::GetInstance().createCounter("CommandFinished");
@@ -178,7 +142,7 @@ namespace base
             // start the command fiber
             RunFiber("Command") << [commandline, command, this](FIBER_FUNC)
             {
-                command->run(m_connection, commandline);
+                command->run(this, commandline);
                 m_finishedFlag = true;
                 Fibers::GetInstance().signalCounter(m_finishedSignal);
             };
@@ -187,30 +151,8 @@ namespace base
             return true;
         }
 
-        void CommandHost::cancel()
-        {
-            if (m_command)
-                m_command->requestCancel();
-        }
-
         bool CommandHost::update()
         {
-            // monitor connection
-            if (m_connection)
-            {
-                // dispatch all messages to the command
-                while (auto message = m_connection->pullNextMessage())
-                    m_command->processMessage(message, m_connection);
-
-                // if we have lost connection request command to finish
-                if (!m_connection->isConnected())
-                {
-                    TRACE_WARNING("Connection to host lost, we will attempt to cancel the command");
-                    m_command->requestCancel();
-                    m_connection.reset(); // just close it on the local end as well
-                }
-            }                
-
             // yay. we are done
             if (m_finishedFlag)
             {

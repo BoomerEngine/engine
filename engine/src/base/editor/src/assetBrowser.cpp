@@ -30,10 +30,12 @@ namespace ed
     ///--
 
     AssetBrowser::AssetBrowser(ManagedDepot* depot)
-        : ui::DockPanel("[img:database] Asset Browser", "AssetBrowser")
+        : ui::Window(ui::WindowFeatureFlagBit::DEFAULT_FRAME, "Boomer Engine - Asset Browser")
         , m_depot(depot)
         , m_depotEvents(this)
     {
+        customMinSize(1200, 900);
+
         m_dockContainer = createChild<ui::DockContainer>();
         m_dockContainer->expand();
 
@@ -71,8 +73,16 @@ namespace ed
     {
     }
 
+    void AssetBrowser::handleExternalCloseRequest()
+    {
+        requestHide();
+    }
+
     void AssetBrowser::configLoad(const ui::ConfigBlock& block)
     {
+        // load window state
+        TBaseClass::configLoad(block);
+
         // restore tabs
         uint32_t count = block.readOrDefault<uint32_t>("NumTabs", 0);
         for (uint32_t i = 0; i < count; ++i)
@@ -178,6 +188,9 @@ namespace ed
 
         // docking layout
         m_dockContainer->configSave(block);
+
+        // save window state
+        TBaseClass::configSave(block);
     }
 
     ManagedFile* AssetBrowser::selectedFile() const

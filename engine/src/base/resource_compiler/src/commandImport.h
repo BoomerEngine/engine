@@ -28,17 +28,7 @@ namespace base
             CommandImport();
             virtual ~CommandImport();
 
-            virtual bool run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline) override final;
-
-            //--
-
-            SpinLock m_canceledFilesLock;
-            HashSet<StringBuf> m_canceledFiles;
-
-            bool checkFileCanceled(const StringBuf& depotPath) const;
-            void handleImportQueueFileCancel(const base::res::ImportQueueFileCancel& message); // NOTE: called from different thread
-
-            //--
+            virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
         };
 
         //--

@@ -20,7 +20,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeFile, ResourceEditor);
         
     public:
-        ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags);
+        ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
         virtual ~ResourceEditorNativeFile();
 
         INLINE ManagedFileNativeResource* nativeFile() const { return m_nativeFile; }

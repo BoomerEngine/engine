@@ -8,11 +8,7 @@
 
 #include "build.h"
 
-#include "editorService.h"
-
-#include "backgroundCommand.h"
-#include "assetFileImportBackgroundCommand.h"
-#include "assetFileImportProcessTab.h"
+#include "assetFileImportDetailsDialog.h"
 
 #include "base/ui/include/uiImage.h"
 #include "base/ui/include/uiTextLabel.h"
@@ -36,6 +32,7 @@
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource_compiler/include/importFileList.h"
 #include "base/ui/include/uiSearchBar.h"
+#include "editorService.h"
 
 namespace ed
 {
@@ -267,24 +264,14 @@ namespace ed
 
     ///--
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportMainTab);
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportDetailsDialog);
     RTTI_END_TYPE();
 
-    AssetImportMainTab::AssetImportMainTab()
-        : ui::DockPanel("[img:cog] Asset Processing", "AssetImportMainTab")
-        , m_updateTimer(this, "UpdateTimer"_id)
+    AssetImportDetailsDialog::AssetImportDetailsDialog(AssetProcessingListModel* listModel)
+        : m_updateTimer(this, "UpdateTimer"_id)
+        , m_filesListModel(AddRef(listModel))
     {
         layoutVertical();
-
-        //--
-
-        actions().bindCommand("Import.Cancel"_id) = [this]() { cmdCancel(); };
-        actions().bindFilter("Import.Cancel"_id) = [this]() { return hasImportInProgress() && !m_importCancelRequested; };
-
-        //--
-
-        m_toolbar = createChild<ui::ToolBar>();
-        m_toolbar->createButton("Import.Cancel"_id, ui::ToolbarButtonSetup().icon("delete").caption("Cancel import").tooltip("Cancel import process"));
 
         //--
 
@@ -307,8 +294,8 @@ namespace ed
             m_fileList = leftPanel->createChild<ui::ListView>();
             m_fileList->expand();
             m_fileList->columnCount(5);
+            m_fileList->customInitialSize(800, 600);
 
-            m_filesListModel = RefNew<AssetProcessingListModel>();
             m_fileList->model(m_filesListModel);
             filter->bindItemView(m_fileList);
 
@@ -336,93 +323,30 @@ namespace ed
         //--
     }
 
-    AssetImportMainTab::~AssetImportMainTab()
+    AssetImportDetailsDialog::~AssetImportDetailsDialog()
     {}
 
-    void AssetImportMainTab::cmdCancel()
+    void AssetImportDetailsDialog::updateState()
     {
-        cancelAssetImport();
+
     }
 
-    bool AssetImportMainTab::hasImportInProgress() const
-    {
-        return m_backgroundJob && m_backgroundJob->running();
-    }
-
-    bool AssetImportMainTab::startAssetImport(res::ImportListPtr files)
-    {
-        if (hasImportInProgress())
-        {
-            ui::PostNotificationMessage(this, ui::MessageType::Warning, "ImportProcess"_id, "Import process already in progress");
-            return false;
-        }
-
-        if (!files || files->files().empty())
-        {
-            ui::PostNotificationMessage(this, ui::MessageType::Warning, "ImportProcess"_id, "Nothing to import");
-            return false;
-        }
-        
-        m_importCancelRequested = false;
-        m_importKillRequested = false;
-
-        m_filesListModel->clear();
-
-        auto command = RefNew<AssetImportCommand>(files, m_filesListModel);
-        auto job = GetService<Editor>()->runBackgroundCommand(command);
-        if (!job)
-        {
-            ui::PostNotificationMessage(this, ui::MessageType::Warning, "ImportProcess"_id, "Failed to start import job");
-            return false;
-        }
-
-        m_backgroundJob = job;
-        m_backgroundCommand = command;
-        return true;
-    }
-
-    void AssetImportMainTab::cancelAssetImport()
-    {
-        if (!m_importCancelRequested)
-        {
-            ui::PostNotificationMessage(this, ui::MessageType::Info, "ImportProcess"_id, "Requested cancel of import process");
-
-            if (m_backgroundJob)
-                m_backgroundJob->requestCancel();
-
-            m_importCancelRequested = true;
-        }
-    }
-
-    void AssetImportMainTab::updateState()
-    {
-        if (m_backgroundJob)
-        {
-            if (!m_backgroundJob->running())
-            {
-                ui::PostNotificationMessage(this, ui::MessageType::Info, "ImportProcess"_id, "Import job finished");
-                m_backgroundJob.reset();
-                m_backgroundCommand.reset();
-            }
-        }
-    }
-
-    void AssetImportMainTab::showSelectedFilesInBrowser()
+    void AssetImportDetailsDialog::showSelectedFilesInBrowser()
     {
         for (const auto& index : m_fileList->selection())
         {
             if (auto depotPath = m_filesListModel->fileDepotPath(index))
             {
-                if (auto* managedFile = GetService<Editor>()->managedDepot().findManagedFile(depotPath))
+                if (auto* managedFile = GetEditor()->managedDepot().findManagedFile(depotPath))
                 {
-                    GetService<Editor>()->mainWindow().selectFile(managedFile);
+                    GetEditor()->showFile(managedFile);
                     break;
                 }
             }
         }
     }
 
-    void AssetImportMainTab::showFilesContextMenu()
+    void AssetImportDetailsDialog::showFilesContextMenu()
     {
         Array<StringBuf> depotPaths;
         depotPaths.reserve(m_fileList->selection().size());
@@ -434,29 +358,29 @@ namespace ed
 
         if (depotPaths.size() == 1)
         {
-            if (auto* managedFile = GetService<Editor>()->managedDepot().findManagedFile(depotPaths[0]))
+            if (auto* managedFile = GetEditor()->managedDepot().findManagedFile(depotPaths[0]))
             {
                 menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() {
-                    GetService<ed::Editor>()->mainWindow().selectFile(managedFile);
+                    ed::GetEditor()->showFile(managedFile);
                 };
             }
 
             menu->createSeparator();
         }
 
-        if (m_backgroundCommand)
+        /*if (m_backgroundCommand)
         {
             auto command = m_backgroundCommand;
             menu->createCallback("Cancel import", "[img:cancel]") = [command, depotPaths]() {
                 for (const auto& path : depotPaths)
                     command->cancelSingleFile(path);
             };
-        }
+        }*/
 
         menu->show(this);
     }
 
-    void AssetImportMainTab::updateSelection()
+    void AssetImportDetailsDialog::updateSelection()
     {
 
     }

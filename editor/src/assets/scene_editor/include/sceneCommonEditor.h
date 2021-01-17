@@ -26,7 +26,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(SceneCommonEditor, ResourceEditorNativeFile);
 
     public:
-        SceneCommonEditor(ManagedFileNativeResource* file, SceneContentNodeType rootContentType);
+        SceneCommonEditor(ManagedFileNativeResource* file, SceneContentNodeType rootContentType, StringView defaultEditorTag);
         virtual ~SceneCommonEditor();
 
         //--

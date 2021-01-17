@@ -8,11 +8,11 @@
 
 #include "build.h"
 
-#include "commandImport.h"
 #include "importQueue.h"
 #include "importer.h"
 #include "importSaveThread.h"
 #include "importSourceAssetRepository.h"
+#include "importCommandHelper.h"
 #include "importFileService.h"
 #include "importFileList.h"
 #include "importInterface.h"
@@ -34,43 +34,6 @@ namespace base
 {
     namespace res
     {
-        //--
-
-
-        RTTI_BEGIN_TYPE_CLASS(CommandImport);
-            RTTI_METADATA(app::CommandNameMetadata).name("import");
-        RTTI_END_TYPE();
-
-        //--
-
-        class ImportQueueProgressReporter : public IImportQueueCallbacks
-        {
-        public:
-            ImportQueueProgressReporter()
-            {}
-
-            ~ImportQueueProgressReporter()
-            {}
-
-            //--
-
-        protected:
-            virtual void queueJobAdded(const ImportJobInfo& info) override
-            {
-            }
-
-            virtual void queueJobStarted(StringView depotPath) override
-            {
-            }
-
-            virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) override
-            {
-            }
-
-            virtual void queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override
-            {
-            }
-        };
 
         //--
 
@@ -125,66 +88,27 @@ namespace base
 
         //--
 
-        static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& outQueue)
+        static bool AddWorkToQueue(const ImportList* assetList, ImportQueue& outQueue)
         {
             bool hasWork = false;
 
-            const auto depotPath = commandline.singleValue("depotPath");
-            const auto assetPath = commandline.singleValue("assetPath");
-            if (depotPath && assetPath)
+            if (assetList)
             {
-                ImportJobInfo info;
-                info.assetFilePath = assetPath;
-                info.depotFilePath = depotPath;
-                outQueue.scheduleJob(info);
-                hasWork = true;
-            }
-
-            const auto importListPath = commandline.singleValue("assetListPath");
-            if (!importListPath.empty())
-            {
-                if (const auto assetListDoc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), importListPath))
+                for (const auto& file : assetList->files())
                 {
-                    if (const auto assetList = LoadObjectFromXML<ImportList>(assetListDoc))
-                    {
-                        TRACE_INFO("Found {} files at import list '{}'", assetList->files().size(), importListPath);
-                        for (const auto& file : assetList->files())
-                        {
-                            ImportJobInfo info;
-                            info.assetFilePath = file.assetPath;
-                            info.depotFilePath = file.depotPath;
-                            info.userConfig = CloneObject(file.userConfiguration);
-                            outQueue.scheduleJob(info);
-                            hasWork = true;
-                        }
-                    }
-                    else
-                    {
-                        TRACE_ERROR("Failed to parse import list from XML '{}'", importListPath);
-                    }
-                }
-                else
-                {
-                    TRACE_ERROR("Failed to load import list from XML '{}'", importListPath);
+                    ImportJobInfo info;
+                    info.assetFilePath = file.assetPath;
+                    info.depotFilePath = file.depotPath;
+                    info.userConfig = CloneObject(file.userConfiguration);
+                    outQueue.scheduleJob(info);
+                    hasWork = true;
                 }
             }
 
             return hasWork;
         }
 
-        //--
-
-        CommandImport::CommandImport()
-        {
-        }
-
-        CommandImport::~CommandImport()
-        {
-        }
-
-        //--
-
-        bool CommandImport::run(IProgressTracker* progress, const app::CommandLine& commandline)
+        bool ProcessImport(const ImportList* files, IProgressTracker* mainProgress, IImportQueueCallbacks* callbacks)
         {
             // find the source asset service - we need it to have access to source assets
             auto assetSource = GetService<ImportFileService>();
@@ -223,14 +147,13 @@ namespace base
                 SourceAssetRepository repository(assetSource);
 
                 // create the import queue
-                ImportQueueProgressReporter reporter;
-                ImportQueue queue(&repository, &loader, &saver, &reporter);
+                ImportQueue queue(&repository, &loader, &saver, callbacks);
 
                 // add work to queue
-                if (AddWorkToQueue(commandline, queue))
+                if (AddWorkToQueue(files, queue))
                 {
                     // process all the jobs
-                    while (queue.processNextJob(progress))
+                    while (queue.processNextJob(mainProgress))
                     {
                         // placeholder for optional work we may want to do BETWEEN JOBS
                     }

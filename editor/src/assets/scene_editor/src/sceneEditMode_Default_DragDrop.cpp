@@ -32,7 +32,6 @@
 #include "base/editor/include/managedDirectory.h"
 #include "base/world/include/worldPrefab.h"
 #include "base/editor/include/editorService.h"
-#include "base/editor/include/editorWindow.h"
 #include "base/editor/src/assetBrowserDialogs.h"
 #include "base/editor/include/assetBrowser.h"
 #include "base/ui/include/uiDragDrop.h"

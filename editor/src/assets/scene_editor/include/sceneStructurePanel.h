@@ -7,7 +7,9 @@
 ***/
 
 #pragma once
+
 #include "base/ui/include/uiSimpleTreeModel.h"
+#include "base/ui/include/uiElement.h"
 
 namespace ed
 {

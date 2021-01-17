@@ -21,7 +21,9 @@
 #include "base/editor/include/managedFileNativeResource.h"
 #include "base/editor/include/managedItem.h"
 #include "base/editor/include/managedDirectory.h"
+#include "base/editor/include/editorService.h"
 #include "base/io/include/ioSystem.h"
+#include "base/ui/include/uiToolBar.h"
 
 #undef DeleteFile
 
@@ -33,15 +35,25 @@ namespace ed
     RTTI_END_TYPE();
 
     SceneWorldEditor::SceneWorldEditor(ManagedFileNativeResource* file)
-        : SceneCommonEditor(file, SceneContentNodeType::WorldRoot)
+        : SceneCommonEditor(file, SceneContentNodeType::WorldRoot, "Main")
     {
         m_rootLayersGroup = RefNew<SceneContentWorldDir>("layers", true);
         m_content->root()->attachChildNode(m_rootLayersGroup);
         m_content->root()->resetModifiedStatus(true);
+
+        toolbar()->createCallback(ui::ToolbarButtonSetup().caption("Assets").icon("database").tooltip("Show asset browser window")) = [this]()
+        {
+            cmdShowAssetBrowser();
+        };
     }
 
     SceneWorldEditor::~SceneWorldEditor()
     {}
+
+    void SceneWorldEditor::cmdShowAssetBrowser()
+    {
+        GetEditor()->showAssetBrowser();
+    }
 
     static RefPtr<SceneContentWorldLayer> UnpackLayer(StringView name, const world::RawLayer* layer, Array<StringBuf>& outErrors)
     {

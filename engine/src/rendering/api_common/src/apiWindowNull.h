@@ -54,6 +54,7 @@ namespace rendering
 			virtual base::Point windowGetClientSize() const override;
 			virtual base::Point windowGetWindowPlacement() const override;
 			virtual base::Point windowGetWindowSize() const override;
+            virtual bool windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const override;
 			virtual bool windowHasCloseRequest() const override;
 			virtual bool windowIsActive() const override;
 			virtual bool windowIsVisible() const override;

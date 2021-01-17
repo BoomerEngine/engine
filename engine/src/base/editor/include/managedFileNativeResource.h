@@ -51,9 +51,6 @@ namespace ed
 
         //--
 
-        // is the file in use
-        virtual bool inUse() const override;
-
     protected:
         SpecificClassType<res::IResource> m_resourceNativeClass;
 

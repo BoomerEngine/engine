@@ -63,6 +63,9 @@ namespace rendering
         /// get the window area size (with border/title)
         virtual base::Point windowGetWindowSize() const = 0;
 
+        /// get the normal (not maximized/not minimized) placement of the window (non maximized/minimized)
+        virtual bool windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const = 0;
+
         /// has the physical window close been requested ?
         /// NOTE: window cannot be closed without us agreeing to it
         virtual bool windowHasCloseRequest() const = 0;

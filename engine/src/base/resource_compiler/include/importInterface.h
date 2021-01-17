@@ -15,26 +15,6 @@ namespace base
 
         //--
 
-        struct ImportQueueFileStatusChangeMessage
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ImportQueueFileStatusChangeMessage);
-
-            StringBuf depotPath;
-            ImportStatus status;
-            float time = 0.0f;
-        };
-
-        //--
-
-        struct ImportQueueFileCancel
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ImportQueueFileCancel);
-
-            StringBuf depotPath;
-        };
-
-        //--
-
         /// asset import interface
         class BASE_RESOURCE_COMPILER_API IResourceImporterInterface : public IProgressTracker
         {

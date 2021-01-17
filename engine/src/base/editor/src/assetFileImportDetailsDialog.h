@@ -14,14 +14,6 @@
 
 namespace ed
 {
-    //--
-
-    DECLARE_UI_EVENT(EVENT_ASSET_IMPORT_FINISHED);
-
-    //--
-
-    class AssetImportCommand;
-    class AssetProcessingListModel;
 
     //--
 
@@ -80,41 +72,24 @@ namespace ed
 
     //--
 
-    // the "for import" tab in the import window
-    class BASE_EDITOR_API AssetImportMainTab : public ui::DockPanel
+    // dialog for the import job
+    class BASE_EDITOR_API AssetImportDetailsDialog : public ui::IElement
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportMainTab, ui::DockPanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportDetailsDialog, ui::IElement);
 
     public:
-        AssetImportMainTab();
-        virtual ~AssetImportMainTab();
+        AssetImportDetailsDialog(AssetProcessingListModel* listModel);
+        virtual ~AssetImportDetailsDialog();
 
         //--
 
-        // are we currently importing anything ?
-        bool hasImportInProgress() const;
-
-        // start importing given list of assets
-        bool startAssetImport(res::ImportListPtr files);
-
-        // stop/cancel any asset import in progress
-        void cancelAssetImport();
-
     public:
-        void cmdCancel();
-
-        ui::ToolBarPtr m_toolbar;
         ui::ListViewPtr m_fileList;
-
-        bool m_importCancelRequested = false;
-        bool m_importKillRequested = false;
+        RefPtr<AssetProcessingListModel> m_filesListModel;
 
         void updateSelection();
 
         //--
-
-        BackgroundJobPtr m_backgroundJob;
-        RefPtr<AssetImportCommand> m_backgroundCommand;
 
         ui::Timer m_updateTimer;
 
@@ -123,8 +98,6 @@ namespace ed
         void showSelectedFilesInBrowser();
 
         //--
-
-        RefPtr<AssetProcessingListModel> m_filesListModel;
     };
 
     //--

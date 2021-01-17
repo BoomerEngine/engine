@@ -105,6 +105,9 @@ namespace base
             HashMap<StringBuf, LocalJobInfo*> m_jobsMap;
             Queue<LocalJobInfo*> m_jobQueue;
 
+            volatile uint32_t m_numTotalJobsDone = 0;
+            volatile uint32_t m_numTotalJobsScheduled = 0;
+
             const LocalJobInfo* popNextJob();
 
             //--

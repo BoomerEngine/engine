@@ -42,6 +42,9 @@ namespace base
             /// wait for jobs to finish
             void waitUntilDone();
 
+            /// do we have anything to save ?
+            bool hasUnsavedContent() const;
+
             /// schedule new content for saving
             virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) override final;
 

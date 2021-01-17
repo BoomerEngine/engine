@@ -38,7 +38,7 @@ namespace base
 
         //--
 
-        bool CommandCook::run(base::net::MessageConnectionPtr connection, const app::CommandLine& commandline)
+        bool CommandCook::run(IProgressTracker* progress, const app::CommandLine& commandline)
         {
             m_outputDir = commandline.singleValue("outDir");
             if (m_outputDir.empty())

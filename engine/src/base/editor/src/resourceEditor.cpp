@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "editorService.h"
-#include "editorWindow.h"
 #include "resourceEditor.h"
 
 #include "managedFileNativeResource.h"
@@ -41,9 +40,10 @@ namespace ed
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ResourceEditor);
     RTTI_END_TYPE();
 
-    ResourceEditor::ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags)
+    ResourceEditor::ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag)
         : DockPanel("Editor")
         , m_features(flags)
+        , m_containerTag(defaultEditorTag)
         , m_file(file)
     {
         layoutVertical();
@@ -239,11 +239,11 @@ namespace ed
         menu->createSeparator();
 
         // main window tools
-        if (auto* mainWindow = findMainWindow())
+        /*if (auto* mainWindow = findMainWindow())
         {
             mainWindow->layout().fillViewMenu(menu);
             menu->createSeparator();
-        }
+        }*/
     }
 
     bool ResourceEditor::initialize()
@@ -297,18 +297,6 @@ namespace ed
         m_aspects.clear();
     }
 
-    MainWindow* ResourceEditor::findMainWindow() const
-    {
-        if (auto window = findParent<MainWindow>())
-            return window;
-
-/*        if (auto node = findParent<ui::DockNotebook>())
-            if (auto container = node->container())
-                return container->findParent<MainWindow>();*/
-
-        return nullptr;
-    }
-
     bool ResourceEditor::showTabContextMenu(const ui::Position& pos)
     {
         InplaceArray<ManagedItem*, 1> depotItems;
@@ -317,7 +305,7 @@ namespace ed
         auto menu = RefNew<ui::MenuButtonContainer>();
         {
             // editor crap
-            menu->createCallback("Close", "[img:cross]") = [this]() { m_file->close(); };
+            menu->createCallback("Close", "[img:cross]") = [this]() { GetEditor()->closeFileEditor(m_file); };
             menu->createSeparator();
 
             // tab locking (prevents accidental close)
@@ -341,7 +329,7 @@ namespace ed
 
     void ResourceEditor::close()
     {
-        m_file->close();
+        GetEditor()->closeFileEditor(m_file); // NOTE: this may trigger save dialog popup
     }
 
     //---
@@ -396,7 +384,7 @@ namespace ed
             InplaceArray<ManagedFileNativeResource*, 1> files;
             files.emplaceBack(nativeFile);
 
-            base::GetService<Editor>()->mainWindow().addReimportFiles(files);
+            GetEditor()->reimportFiles(files);
         }
     }
 

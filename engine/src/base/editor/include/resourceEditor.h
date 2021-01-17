@@ -41,12 +41,14 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditor, ui::DockPanel);
 
     public:
-        ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags);
+        ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
         virtual ~ResourceEditor();
 
         INLINE ResourceEditorFeatureFlags features() const { return m_features; }
 
         INLINE ManagedFile* file() const { return m_file; }
+
+        INLINE const StringBuf& containerTag() const { return m_containerTag; }
 
         INLINE const Array<ResourceEditorAspectPtr>& aspects() const { return m_aspects; }
 
@@ -126,6 +128,8 @@ namespace ed
 
         Array<ResourceEditorAspectPtr> m_aspects; // created and initialized editor aspects (plugins)
 
+        StringBuf m_containerTag;
+
         //--
 
         void createActions();
@@ -133,12 +137,11 @@ namespace ed
         void destroyAspects();
         bool showTabContextMenu(const ui::Position& pos);
 
-        MainWindow* findMainWindow() const;
         virtual void close() override final;
 
         //--
 
-        friend class ManagedFile;
+        friend class Editor;
     };
 
     ///---

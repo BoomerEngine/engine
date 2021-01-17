@@ -11,10 +11,12 @@
 #include "gizmoReferenceSpace.h"
 #include "gizmoGroup.h"
 
-#include "base/ui/include/uiInputAction.h"
 #include "rendering/ui_viewport/include/cameraViewportSetup.h"
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
+#include "base/input/include/inputStructures.h"
+#include "base/ui/include/uiInputAction.h"
+#include "base/ui/include/uiElement.h"
 
 namespace ed
 {

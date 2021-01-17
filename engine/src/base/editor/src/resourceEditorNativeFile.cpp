@@ -21,8 +21,8 @@ namespace ed
     RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ResourceEditorNativeFile);
     RTTI_END_TYPE();
 
-    ResourceEditorNativeFile::ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags)
-        : ResourceEditor(file, flags)
+    ResourceEditorNativeFile::ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag)
+        : ResourceEditor(file, flags, defaultEditorTag)
         , m_nativeFile(file)
     {
     }

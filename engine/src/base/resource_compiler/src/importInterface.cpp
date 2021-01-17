@@ -18,20 +18,6 @@ namespace base
 
         //--
 
-        RTTI_BEGIN_TYPE_CLASS(ImportQueueFileStatusChangeMessage);
-            RTTI_PROPERTY(depotPath).metadata<replication::SetupMetadata>("maxLength:250");
-            RTTI_PROPERTY(status).metadata<replication::SetupMetadata>("");
-            RTTI_PROPERTY(time).metadata<replication::SetupMetadata>("");
-        RTTI_END_TYPE();
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ImportQueueFileCancel);
-            RTTI_PROPERTY(depotPath).metadata<replication::SetupMetadata>("maxLength:250");
-        RTTI_END_TYPE();
-
-        //--
-
         IResourceImporterInterface::~IResourceImporterInterface()
         {}
 

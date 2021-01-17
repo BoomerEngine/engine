@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "uiElement.h"
+
 namespace ui
 {
 

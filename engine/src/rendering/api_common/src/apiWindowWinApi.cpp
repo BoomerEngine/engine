@@ -737,7 +737,7 @@ namespace rendering
 			{
 				if (m_initialShowDone)
 				{
-					::ShowWindow(m_hWnd, SW_SHOWNOACTIVATE);// SW_SHOW);
+					::ShowWindow(m_hWnd, SW_SHOWNA);// SW_SHOW);
 				}
 				else
 				{
@@ -748,7 +748,7 @@ namespace rendering
 					else if (m_initialShowActivate)
 						ShowWindow(m_hWnd, SW_SHOW);
 					else
-						ShowWindow(m_hWnd, SW_SHOWNOACTIVATE);
+						ShowWindow(m_hWnd, SW_SHOWNA);
 
 					m_initialShowDone = true;
 				}
@@ -822,6 +822,24 @@ namespace rendering
 			{
 				return base::Point(0, 0);
 			}
+		}
+
+		bool WindowWinApi::windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const
+		{
+			WINDOWPLACEMENT plc;
+			memzero(&plc, sizeof(plc));
+			plc.length = sizeof(WINDOWPLACEMENT);
+
+			if (GetWindowPlacement(m_hWnd, &plc))
+			{
+				outWindowNormalRect.min.x = plc.rcNormalPosition.left;
+				outWindowNormalRect.min.y = plc.rcNormalPosition.top;
+				outWindowNormalRect.max.x = plc.rcNormalPosition.right;
+				outWindowNormalRect.max.y = plc.rcNormalPosition.bottom;
+				return true;
+			}
+
+			return false;
 		}
 
 		base::Point WindowWinApi::windowGetWindowSize() const

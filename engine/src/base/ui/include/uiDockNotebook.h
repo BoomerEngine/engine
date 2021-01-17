@@ -18,6 +18,7 @@ namespace ui
     //---
 
     class DockLayoutNode;
+    class DockPanel;
 
     // notebook used in the docking system
     class BASE_UI_API DockNotebook : public Notebook
@@ -29,7 +30,7 @@ namespace ui
 
         DockLayoutNode* layoutNode() const;
 
-        INLINE ui::DockPanel* activeTab() const { return base::rtti_cast<ui::DockPanel>(Notebook::activeTab()); }
+        ui::DockPanel* activeTab() const;
 
         void updateHeaderButtons();
         void closeTab(DockPanel* tab);

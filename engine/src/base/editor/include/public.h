@@ -125,11 +125,16 @@ namespace ed
 
     //--
 
+    class Editor;
+
+    class IBaseResourceContainerWindow;
     class MainWindow;
 
     class AssetBrowser;
     class AssetImportPrepareTab;
     class AssetImportMainTab;
+
+    typedef SpecificClassType<res::IResource> TImportClass;
 
     enum class AssetBrowserContext : uint8_t
     {
@@ -142,7 +147,3 @@ namespace ed
 } // ed
 
 using input::KeyCode;
-
-#include "managedDepot.h"
-#include "managedFile.h"
-#include "editorWindow.h"

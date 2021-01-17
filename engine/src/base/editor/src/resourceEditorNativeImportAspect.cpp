@@ -261,7 +261,7 @@ namespace ed
         auto assetSource = GetService<res::ImportFileService>();
         DEBUG_CHECK_RETURN_EX_V(assetSource, "Missing source depot service", false);
 
-        auto editorService = GetService<Editor>();
+        auto editorService = GetEditor();
         DEBUG_CHECK_RETURN_EX_V(editorService, "Missing editor service", false);
 
         auto nativeEditor = rtti_cast<ResourceEditorNativeFile>(editor());

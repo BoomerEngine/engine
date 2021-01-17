@@ -40,10 +40,10 @@
 #include "base/containers/include/stringBuilder.h"
 
 #include "base/editor/include/editorService.h"
-#include "base/editor/include/editorWindow.h"
 #include "base/editor/include/assetBrowser.h"
 #include "base/editor/include/managedFile.h"
 #include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedDepot.h"
 
 namespace ed
 {
@@ -222,7 +222,7 @@ namespace ed
                 button->customProportion(1.0f);
                 button->expand();
                 button->bind(ui::EVENT_CLICKED) = [this]() {
-                    if (auto file = GetService<Editor>()->mainWindow().selectedFile())
+                    if (auto file = GetEditor()->selectedFile())
                         if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
                             m_host->cmdAddPrefabFile(m_nodes, file);
                 };
@@ -236,7 +236,7 @@ namespace ed
                     InplaceArray<const ManagedFile*, 10> files;
                     for (auto item : m_prefabList->selection())
                         if (const auto* data = m_prefabListModel->dataPtr(item))
-                            if (const auto* file = base::GetService<Editor>()->managedDepot().findManagedFile(data->path.view()))
+                            if (const auto* file = GetEditor()->managedDepot().findManagedFile(data->path.view()))
                                 files.pushBack(file);
 
                     m_host->cmdRemovePrefabFile(m_nodes, files);

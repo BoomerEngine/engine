@@ -8,11 +8,12 @@
 
 #include "build.h"
 #include "editorService.h"
-#include "editorWindow.h"
+#include "editorMainWindow.h"
+#include "editorResourceContainerWindow.h"
 
 #include "backgroundCommand.h"
-#include "backgroundCommandLocalRunner.h"
 
+#include "assetBrowser.h"
 #include "managedDepot.h"
 #include "managedFile.h"
 #include "managedFileFormat.h"
@@ -33,6 +34,9 @@
 #include "base/net/include/messageConnection.h"
 #include "base/net/include/messagePool.h"
 #include "base/ui/include/uiDockLayout.h"
+#include "base/ui/include/uiButton.h"
+#include "assetFileImportPrepareDialog.h"
+#include "base/ui/include/uiMessageBox.h"
 
 namespace ed
 {
@@ -44,39 +48,57 @@ namespace ed
 
     //---
 
-    RTTI_BEGIN_TYPE_CLASS(Editor);
-        RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<res::LoadingService>();
-    RTTI_END_TYPE();
-
     Editor::Editor()
-        : m_mainDockId(0)
     {}
 
     Editor::~Editor()
     {
+        saveConfig();
+
+        if (m_assetBrowser)
+        {
+            m_assetBrowser->requestClose();
+            m_assetBrowser.reset();
+        }
+
+        if (m_mainWindow)
+        {
+            m_mainWindow->requestClose();
+            m_mainWindow.reset();
+        }
+
+        m_renderer = nullptr;
+        m_configStorage->saveToFile(m_configPath);
+
+        m_openSavePersistentData.clearPtr();
+
+        m_messageServer.reset();
+        m_managedDepot.reset();
+        m_versionControl.reset();
+        m_configRootBlock.reset();
+        m_configStorage.reset();
     }
 
-    app::ServiceInitializationResult Editor::onInitializeService(const app::CommandLine& cmdLine)
+    static Editor* GEditor = nullptr;
+
+    Editor* Editor::GetInstance()
     {
-        // only use in editor
-        if (!cmdLine.hasParam("editor"))
-            return app::ServiceInitializationResult::Silenced;
+        return GEditor;
+    }
+
+    bool Editor::initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine)
+    {
+        DEBUG_CHECK_RETURN_EX_V(!GEditor, "Editor already created", false);
+        DEBUG_CHECK_RETURN_EX_V(renderer, "UI renderer is required for editor", false);
+        m_renderer = renderer;
 
         // we can initialize the managed depot only if we are running from uncooked data
         auto loaderService = GetService<res::LoadingService>();
-        if (!loaderService || !loaderService->loader())
-        {
-            TRACE_ERROR("No resource loading service spawned, no editor can be created");
-            return app::ServiceInitializationResult::FatalError;
-        }
+        DEBUG_CHECK_RETURN_EX_V(loaderService && loaderService->loader(), "No resource loading service spawned, no editor can be created", false);
 
         // prepare depot for the editor
         auto depot = loaderService->loader()->queryUncookedDepot();
-        if (!depot)
-        {
-            TRACE_ERROR("Unable to convert engine depot into writable state, no editor will start");
-            return app::ServiceInitializationResult::FatalError;
-        }
+        DEBUG_CHECK_RETURN_EX_V(depot, "Unable to convert engine depot into writable state, no editor will start", false);
 
         // enable live tracking of files
         depot->enableDepotObservers();
@@ -88,9 +110,8 @@ namespace ed
         // start the message service 
         m_messageServer = RefNew<net::TcpMessageServer>();
         if (!m_messageServer->startListening(0))
-        {
+        {            
             TRACE_ERROR("Unable to start TCP server for communication with background processes");
-            return app::ServiceInitializationResult::FatalError;
         }
 
         // cache format information
@@ -107,70 +128,50 @@ namespace ed
         m_managedDepot = CreateUniquePtr<ManagedDepot>(*depot);
         m_managedDepot->populate();
         m_managedDepot->configLoad(m_configRootBlock->tag("Depot"));
+        GEditor = this;
 
         // create version control
         // TODO: add actual integration
         m_versionControl = vsc::CreateLocalStub();
 
-        // we are initialized
-        return app::ServiceInitializationResult::Finished;
-    }
+        // create main window
+        m_mainWindow = RefNew<MainWindow>();
+        m_mainWindow->configLoad(m_configRootBlock->tag("MainWindow"));
+        m_resourceContainers.pushBack(m_mainWindow);
+        renderer->attachWindow(m_mainWindow);
 
-    void Editor::onShutdownService()
-    {
-        m_messageServer.reset();
-        m_managedDepot.reset();
-        m_versionControl.reset();
-        m_configRootBlock.reset();
-        m_configStorage.reset();
-    }
+        // create asset browser
+        m_assetBrowser = RefNew<AssetBrowser>(m_managedDepot.get());
+        m_assetBrowser->configLoad(m_configRootBlock->tag("AssetBrowser"));
+        renderer->attachWindow(m_assetBrowser);
 
-    bool Editor::start(ui::Renderer* renderer)
-    {
-        DEBUG_CHECK(renderer);
-        m_renderer = renderer;
+        // restore opened files
+        loadOpenedFiles();
 
-        if (!m_mainWindow)
-        {
-            m_mainWindow = RefNew<MainWindow>();
-            m_mainWindow->configLoad(m_configRootBlock->tag("Editor"));
-            renderer->attachWindow(m_mainWindow);
-        }
+        // go back to main window
+        m_mainWindow->requestActivate();
 
+        // bind active instance
         return true;
-    }
-
-    void Editor::stop()
-    {
-        saveConfig();
-
-        if (m_mainWindow)
-        {
-            m_mainWindow->requestClose();
-            m_mainWindow.reset();
-        }
-
-        m_renderer = nullptr;
-        m_configStorage->saveToFile(m_configPath);
-
-        m_openSavePersistentData.clearPtr();
     }
 
     void Editor::saveConfig()
     {
+        ScopeTimer timer;
+
         TRACE_INFO("Saving config...");
 
-        if (m_managedDepot)
-            m_managedDepot->configSave(m_configRootBlock->tag("Depot"));
-
-        if (m_mainWindow)
-            m_mainWindow->configSave(m_configRootBlock->tag("Editor"));
-
+        saveOpenedFiles();
         saveOpenSaveSettings(m_configRootBlock->tag("OpenSaveDialogs"));
 
-        // save
+        m_managedDepot->configSave(m_configRootBlock->tag("Depot"));
+        m_mainWindow->configSave(m_configRootBlock->tag("MainWindow"));
+        m_assetBrowser->configSave(m_configRootBlock->tag("AssetBrowser"));
+
         m_configStorage->saveToFile(m_configPath); 
         m_nextConfigSave = NativeTimePoint::Now() + cvConfigAutoSaveTime.get();
+
+        TRACE_INFO("Config saved in {}", timer);
     }
 
     void Editor::saveAssetsSafeCopy()
@@ -179,7 +180,7 @@ namespace ed
         //m_nextConfigSave = NativeTimePoint::Now() + cvDataAutoSaveTime.get();
     }
 
-    void Editor::onSyncUpdate()
+    void Editor::update()
     {
         if (m_nextConfigSave.reached())
             saveConfig();
@@ -199,185 +200,413 @@ namespace ed
 
     //---
 
-    static BackgroundJobPtr CreateCommandRunner(const app::CommandLine& cmdline, IBackgroundCommand* command)
+    void Editor::showAssetBrowser(bool focus /*= true*/)
     {
-        return BackgroundCommandRunnerLocal::Run(cmdline, command);
+        m_assetBrowser->requestShow(focus);
     }
 
-    void Editor::attachBackgroundJob(IBackgroundJob* job)
+    ManagedFile* Editor::selectedFile() const
+    {
+        return m_assetBrowser->selectedFile();
+    }
+
+    ManagedDirectory* Editor::selectedDirectory() const
+    {
+        return m_assetBrowser->selectedDirectory();
+    }
+
+    bool Editor::showFile(ManagedFile* filePtr)
+    {
+        if (m_assetBrowser->showFile(filePtr))
+        {
+            m_assetBrowser->requestShow(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Editor::showDirectory(ManagedDirectory* dir, bool exploreContent)
+    {
+        if (m_assetBrowser->showDirectory(dir, exploreContent))
+        {
+            m_assetBrowser->requestShow(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    //--
+
+    ResourceEditorPtr Editor::findFileEditor(ManagedFile* file) const
+    {
+        ResourceEditorPtr ret;
+
+        for (const auto& window : m_resourceContainers)
+        {
+            if (window->iterateEditors([file, &ret](ResourceEditor* editor)
+                {
+                    if (editor->file() == file)
+                    {
+                        ret = AddRef(editor);
+                        return true;
+                    }
+
+                    return false;
+                }))
+            {
+                return ret;
+            }            
+        }
+
+        return nullptr;
+    }
+
+    bool Editor::showFileEditor(ManagedFile* file) const
+    {
+        for (const auto& window : m_resourceContainers)
+        {
+            if (window->iterateEditors([file, window](ResourceEditor* editor)
+                {
+                    if (editor->file() == file)
+                    {
+                        window->requestShow(true);
+                        return window->selectEditor(editor);
+                    }
+
+                    return false;
+                }))
+                return true;
+        }
+
+        return false;
+    }
+
+    //--
+
+
+    namespace prv
+    {
+        class ManagedFileOpenerHelper : public base::ISingleton
+        {
+            DECLARE_SINGLETON(ManagedFileOpenerHelper);
+
+        public:
+            ManagedFileOpenerHelper()
+            {
+                Array<SpecificClassType<IResourceEditorOpener>> openers;
+                RTTI::GetInstance().enumClasses(openers);
+
+                for (auto openerClass : openers)
+                    if (auto opener = openerClass->createPointer<IResourceEditorOpener>())
+                        m_openers.pushBack(opener);
+            }
+
+            bool canOpenFile(const ManagedFile* file) const
+            {
+                for (auto* opener : m_openers)
+                    if (opener->canOpen(file->fileFormat()))
+                        return true;
+
+                return false;
+            }
+
+            ResourceEditorPtr createEditor(ManagedFile* file) const
+            {
+                for (auto* opener : m_openers)
+                    if (opener->canOpen(file->fileFormat()))
+                        return opener->createEditor(file);
+
+                return nullptr;
+            }
+
+        private:
+            Array<IResourceEditorOpener*> m_openers;
+
+            virtual void deinit() override
+            {
+                m_openers.clearPtr();
+            }
+        };
+
+    } // prv
+
+    //--
+
+    bool Editor::canOpenFile(ManagedFile* file) const
+    {
+        return prv::ManagedFileOpenerHelper::GetInstance().canOpenFile(file);
+    }
+
+    IBaseResourceContainerWindow* Editor::findResourceContainer(StringView text) const
+    {
+        for (const auto& window : m_resourceContainers)
+            if (window->tag() == text)
+                return window;
+
+        return nullptr;
+    }
+
+    IBaseResourceContainerWindow* Editor::findOrCreateResourceContainer(StringView text)
+    {
+        DEBUG_CHECK_RETURN_EX_V(!text.empty(), "Invalid container tag", nullptr);
+
+        // use existing container
+        for (const auto& window : m_resourceContainers)
+            if (window->tag() == text)
+                return window;
+
+        DEBUG_CHECK_RETURN_EX_V(text != "Main", "Invalid container tag", nullptr);
+
+        // create container window
+        auto window = RefNew<FloatingResourceContainerWindow>(text);
+        m_resourceContainers.pushBack(window);
+
+        // load the window placement
+        window->configLoad(m_configRootBlock->tag("ResourceContainers").tag(window->tag()));
+        m_renderer->attachWindow(window);
+
+        return window;
+    }
+
+    bool Editor::openFileEditor(ManagedFile* file, bool activate /*= true*/)
+    {
+        // show current editor
+        if (showFileEditor(file))
+            return true;
+
+        // create best editor for this file
+        auto editor = prv::ManagedFileOpenerHelper::GetInstance().createEditor(file);
+        if (!editor)
+            return false;
+
+        // check for singular editor
+        if (auto existingContainer = findResourceContainer(editor->containerTag()))
+            if (existingContainer->singularEditorOnly())
+                if (!existingContainer->closeContainedFiles())
+                    return false;
+
+        // initialize the editor, this will load the editor
+        // TODO: it's possible to move it to thread if needed
+        if (!editor->initialize())
+            return false;
+        
+        // initialize the additional generic aspects once the normal editor was initialized
+        editor->createAspects();
+
+        // load the general editor config
+        const auto configBlock = GetEditor()->config().tag("Resources").tag(file->depotPath());
+        editor->configLoad(configBlock);
+
+        // load the name of the resource container tag 
+        auto containerTag = editor->containerTag();
+        configBlock.read("ContainerTag", containerTag);
+
+        // TODO: "center" container
+
+        // create/get the container and attach resource editor to the container
+        auto container = findOrCreateResourceContainer(containerTag);
+        container->attachEditor(editor, activate);
+
+        if (activate)
+            container->requestShow(activate);
+
+        return true;
+    }
+
+    bool Editor::closeFileEditor(ManagedFile* file, bool force)
+    {
+        if (auto editor = findFileEditor(file))
+        {
+            if (editor->modified() && !force)
+            {
+                base::StringBuilder txt;
+                txt.appendf("File '{}' is [b][color:#F00]modified[/color][/b].\n \nDo you want to save it or discard the changes?", file->depotPath());
+
+                ui::MessageBoxSetup setup;
+                setup.title("Confirm closing editor");
+                setup.message(txt.toString());
+                setup.yes().no().cancel().defaultYes().warn();
+                setup.caption(ui::MessageButton::Yes, "[img:save] Save");
+                setup.caption(ui::MessageButton::No, "[img:delete_black] Discard");
+                setup.m_constructiveButton = ui::MessageButton::Yes;
+                setup.m_destructiveButton = ui::MessageButton::No;
+
+                const auto ret = ui::ShowMessageBox(editor, setup);
+                if (ret == ui::MessageButton::Yes)
+                {
+                    if (!editor->save())
+                    {
+                        ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", file->depotPath()));
+                        return false;
+                    }
+                }
+                else if (ret == ui::MessageButton::Cancel)
+                {
+                    return false;
+                }
+            }
+
+            {
+                const auto configBlock = GetEditor()->config().tag("Resources").tag(file->depotPath());
+                editor->configSave(configBlock);
+            }
+
+            if (auto* container = editor->findParent<IBaseResourceContainerWindow>())
+                container->detachEditor(editor);
+
+            editor->cleanup();
+        }
+
+        return true;
+    }
+
+    bool Editor::saveFileEditor(ManagedFile* file, bool force /*= false*/)
+    {
+        if (auto editor = findFileEditor(file))
+        {
+            if (editor->modified() || force)
+            {
+                if (!editor->save())
+                {
+                    ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", file->depotPath()));
+                    return false;
+                }
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    //--
+
+    void Editor::importFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths)
+    {
+        auto dlg = RefNew<AssetImportPrepareDialog>();
+        dlg->addNewImportFiles(currentDirectory, resourceClass, selectedAssetPaths);
+        dlg->runModal(m_mainWindow);
+    }
+
+    void Editor::reimportFiles(const Array<ManagedFileNativeResource*>& files)
+    {
+        auto dlg = RefNew<AssetImportPrepareDialog>();
+        dlg->addReimportFiles(files);
+        dlg->runModal(m_mainWindow);
+    }
+
+    //---
+
+    void Editor::scheduleBackgroundJob(IBackgroundJob* job, bool openUI)
     {
         if (job)
         {
-            TRACE_INFO("Editor: Started background job '{}'", job->description());
+            TRACE_INFO("Editor: Scheduled background job '{}'", job->description());
 
             // add command runner to list so we can observe if it's not dead
             {
                 auto lock = CreateLock(m_backgroundJobsLock);
-                m_backgroundJobs.pushBack(AddRef(job));
+                m_pendingBackgroundJobs.pushBack(AddRef(job));
             }
 
-            ui::PostWindowMessage(m_mainWindow, ui::MessageType::Info, "BackgroundJob"_id, TempString("Background job {} started", job->description()));
+            if (openUI)
+                showBackgroundJobDialog(job);
         }
     }
 
-    BackgroundJobPtr Editor::runBackgroundCommand(IBackgroundCommand* command)
+    void Editor::showBackgroundJobDialog(IBackgroundJob* job)
     {
-        // no command
-        if (!command)
-            return nullptr;
-
-        // gather the required commandline parameters
-        app::CommandLine commandline;
-        if (!command->configure(commandline))
-        {
-            TRACE_WARNING("Editor: Command '{}' failed to configure", command->name());
-            return nullptr;
-        }
-
-        // insert the command name
-        commandline.addCommand(command->name());
-
-        // add the information about message server to the commandline so the running commands will be able to communicate with the editor
-        if (true)
-        {
-            const auto localServerAddress = socket::Address::Local4(m_messageServer->listeningAddress().port());
-            commandline.param("messageServer", TempString("{}", localServerAddress));
-            commandline.param("messageConnectionKey", command->connectionKey());
-            commandline.param("messageStartupTimestamp", TempString("{}", NativeTimePoint::Now().rawValue()));
-        }
-
-        // create command runner
-        auto runner = CreateCommandRunner(commandline, command);
-        if (!runner)
-        {
-            TRACE_WARNING("Editor: Command '{}' failed to start", command->name());
-            return nullptr;
-        }
-
-        // remember background command that require network connections
-        m_backgroundCommandsWithMissingConnections.pushBack(command);
-
-        // keep the command runner around for the duration of the command execution
-        attachBackgroundJob(runner);
-        return runner;
+        DEBUG_CHECK_RETURN_EX(job, "No job specified");
+        m_pendingBackgroundJobUIRequest = AddRef(job);
     }
-
-    class BackgroundJobUnclaimedConnection : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(BackgroundJobUnclaimedConnection, IObject);
-
-    public:
-        net::MessageConnectionPtr m_connection;
-        NativeTimePoint m_expirationTime;
-        StringBuf m_receivedConnectionKey;
-
-        BackgroundJobUnclaimedConnection(const net::MessageConnectionPtr& connection)
-            : m_connection(connection)
-        {
-            m_expirationTime = NativeTimePoint::Now() + 60.0;
-        }
-
-        bool update()
-        {
-            while (auto message = m_connection->pullNextMessage())
-            {
-                message->dispatch(this, m_connection);
-
-                if (!m_receivedConnectionKey.empty())
-                    return false;
-            }
-
-            if (m_expirationTime.reached())
-                return false;
-
-            return true; // keep going
-        }
-
-        void handleHelloMessage(const app::CommandHelloMessage& msg)
-        {
-            const auto diff = NativeTimePoint(msg.startupTimestamp).timeTillNow().toSeconds();
-            TRACE_INFO("Editor: Got remote connection key '{}' from '{}', took {} to start", msg.connectionKey, m_connection->remoteAddress(), TimeInterval(diff));
-
-            m_receivedConnectionKey = msg.connectionKey;
-
-            app::CommandHelloResponseMessage response;
-            response.timestampSentBack = msg.localTimestamp;
-            m_connection->send(response);
-        }
-    };
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(BackgroundJobUnclaimedConnection);
-        RTTI_FUNCTION_SIMPLE(handleHelloMessage);
-    RTTI_END_TYPE();
 
     void Editor::updateBackgroundJobs()
     {
-        auto lock = CreateLock(m_backgroundJobsLock);
-
-        // TODO: handle dead server case
-
-        // check for new connections
-        while (auto newConnection = m_messageServer->pullNextAcceptedConnection())
+        // start new background job
+        if (!m_activeBackgroundJob)
         {
-            TRACE_INFO("Editor: Got new connection to message server from '{}'", newConnection->remoteAddress());
-
-            auto unclaimedWrapper = base::RefNew<BackgroundJobUnclaimedConnection>(newConnection);
-            m_backgroundJobsUnclaimedConnections.pushBack(unclaimedWrapper);
-        }
-
-        // update the unclaimed connections - wait for the "hello" message
-        for (auto index : m_backgroundJobsUnclaimedConnections.indexRange().reversed())
-        {
-            const auto& runner = m_backgroundJobsUnclaimedConnections[index];
-
-            if (!runner->update())
+            auto lock = CreateLock(m_backgroundJobsLock);
+            while (!m_pendingBackgroundJobs.empty())
             {
-                if (runner->m_receivedConnectionKey)
-                {
-                    bool commandFound = false;
-                    for (auto& ptr : m_backgroundCommandsWithMissingConnections)
-                    {
-                        if (auto command = ptr.lock())
-                        {
-                            if (command->connectionKey() == runner->m_receivedConnectionKey)
-                            {
-                                command->confirmed(runner->m_connection);
-                                m_backgroundCommandsWithMissingConnections.remove(ptr);
-                                commandFound = true;
-                            }
-                        }
-                    }
+                auto job = m_pendingBackgroundJobs[0];
+                m_pendingBackgroundJobs.erase(0);
 
-                    if (!commandFound)
-                    {
-                        TRACE_WARNING("Editor: No active background command with connection key '{}'", runner->m_receivedConnectionKey);
-                        runner->m_connection->close();
-                    }
-                }
-                else
+                if (job->start())
                 {
-                    TRACE_WARNING("Editor: Message connect '{}' did not follow up with HelloMessage, closing", runner->m_connection->remoteAddress());
-                    runner->m_connection->close();
+                    m_activeBackgroundJob = job;
+                    break;
                 }
-
-                // no more update needed
-                m_backgroundJobsUnclaimedConnections.eraseUnordered(index);
             }
         }
 
-        // update the jobs itself
-        for (auto index : m_backgroundJobs.indexRange().reversed())
+        // update background job
+        if (m_activeBackgroundJob)
         {
-            const auto& runner = m_backgroundJobs[index];
-            if (!runner->update())
+            auto status = m_activeBackgroundJob->update();
+            if (status != BackgroundJobStatus::Running)
             {
-                const auto exitCode = runner->exitCode();
-                if (exitCode == 0)
-                    ui::PostWindowMessage(m_mainWindow, ui::MessageType::Info, "BackgroundJob"_id, TempString("Background job {} finished", runner->description()));
-                else
-                    ui::PostWindowMessage(m_mainWindow, ui::MessageType::Warning, "BackgroundJob"_id, TempString("Background job {} failed with exit code {}", runner->description(), exitCode));
+                m_mainWindow->statusBar()->pushBackgroundJobToHistory(m_activeBackgroundJob, status);
+                m_mainWindow->statusBar()->resetBackgroundJobStatus();
+                m_activeBackgroundJob.reset();
+            }
+            else
+            {
+                BackgroundJobProgress progress;
+                m_activeBackgroundJob->queryProgressInfo(progress);
 
-                m_backgroundJobs.eraseUnordered(index);
+                m_mainWindow->statusBar()->updateBackgroundJobStatus(m_activeBackgroundJob, progress.currentCount, progress.totalCount, progress.text, false);
+            }
+        }
+
+        // manage the job details
+        if (m_pendingBackgroundJobUIRequest)
+        {
+            auto job = std::move(m_pendingBackgroundJobUIRequest);
+            m_pendingBackgroundJobUIRequest.reset();
+
+            if (!m_pendingBackgroundJobUIOpenedDialogRequest)
+            {
+                if (auto dialog = job->fetchDetailsDialog())
+                {
+                    m_pendingBackgroundJobUIOpenedDialogRequest = job;
+
+                    auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG_RESIZABLE, TempString("Details of {}", job->description()));
+                    auto windowRef = window.get();
+
+                    window->attachChild(dialog);
+                    dialog->expand();
+
+                    auto buttons = window->createChild<ui::IElement>();
+                    buttons->layoutHorizontal();
+                    buttons->customPadding(5);
+                    buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+
+                    {
+                        auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:cancel] Cancel").get();
+                        button->enable(!job->canceled());
+                        button->addStyleClass("red"_id);
+                        button->bind(ui::EVENT_CLICKED) = [dialog, job, windowRef, button]()
+                        {
+                            job->requestCancel();
+                            button->enable(false);
+                        };
+                    }
+
+                    {
+                        auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Close");
+                        button->bind(ui::EVENT_CLICKED) = [windowRef]() {
+                            windowRef->requestClose();
+                        };
+                    }
+
+                    window->runModal(m_mainWindow);
+
+                    m_pendingBackgroundJobUIOpenedDialogRequest.reset();
+                }
             }
         }
     }
@@ -551,16 +780,95 @@ namespace ed
 
     void Editor::updateResourceEditors()
     {
-        if (m_mainWindow)
-        {
-            m_mainWindow->layout().iteratePanels([this](ui::DockPanel* panel) -> bool
-                {
-                    if (auto* resourceEditor = rtti_cast<ResourceEditor>(panel))
-                        resourceEditor->update();
+        for (const auto& container : m_resourceContainers)
+            container->iterateAllEditors([this](ResourceEditor* editor) { editor->update(); });
 
-                    return false;
-                }, ui::DockPanelIterationMode::All);
+        for (auto i : m_resourceContainers.indexRange().reversed())
+        {
+            auto window = m_resourceContainers[i];
+            if (!window->hasEditors() && !window->singularEditorOnly())
+                window->requestClose();
+
+            if (window->requestedClose())
+            {
+                const auto configGroup = m_configRootBlock->tag("ResourceContainers").tag(window->tag());
+                window->configSave(configGroup);
+
+                m_resourceContainers.erase(i);
+            }
         }
+    }
+
+    void Editor::loadOpenedFiles()
+    {
+        // open previously opened resources
+        auto openedFilePaths = config().tag("Editor").readOrDefault<Array<StringBuf>>("OpenedFiles");
+        for (const auto& path : openedFilePaths)
+        {
+            if (auto file = managedDepot().findManagedFile(path))
+            {
+                openFileEditor(file, false);
+            }
+        }
+
+        // focus on resources
+    }
+
+    void Editor::collectResourceEditors(Array<ResourceEditorPtr>& outResourceEditors) const
+    {
+        for (const auto& window : m_resourceContainers)
+            window->iterateAllEditors([&outResourceEditors](ResourceEditor* editor) { outResourceEditors.pushBack(AddRef(editor)); });
+    }
+
+    void Editor::collectOpenedFiles(Array<ManagedFile*>& outOpenedFiles) const
+    {
+        for (const auto& window : m_resourceContainers)
+            window->iterateAllEditors([&outOpenedFiles](ResourceEditor* editor) {
+                outOpenedFiles.pushBack(editor->file());
+                });
+    }
+
+    void Editor::saveOpenedFiles() const
+    {
+        InplaceArray<ResourceEditorPtr, 100> editors;
+        collectResourceEditors(editors);
+
+        // store list of opened files
+        {
+            Array<StringBuf> openedFiles;
+            openedFiles.reserve(editors.size());
+
+            for (const auto& editor : editors)
+                openedFiles.pushBack(editor->file()->depotPath());
+
+            m_configRootBlock->tag("Editor").write("OpenedFiles", openedFiles);
+        }
+
+        // store config for each editor
+        for (const auto& editor : editors)
+        {
+            const auto configBlock = m_configRootBlock->tag("Resources").tag(editor->file()->depotPath());
+
+            // store where the resource is aligned to
+            if (auto* container = editor->findParent<IBaseResourceContainerWindow>())
+                configBlock.write("ContainerTag", container->tag());
+
+            editor->configSave(configBlock);
+        }
+
+        // store each container window
+        for (const auto& window : m_resourceContainers)
+        {
+            const auto configGroup = m_configRootBlock->tag("ResourceContainers").tag(window->tag());
+            window->configSave(configGroup);
+        }
+    }
+
+    //--
+
+    Editor* GetEditor()
+    {
+        return Editor::GetInstance();
     }
 
     //--

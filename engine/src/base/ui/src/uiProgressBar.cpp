@@ -36,16 +36,19 @@ namespace ui
         RTTI_METADATA(ElementClassNameMetadata).name("ProgressBar");
     RTTI_END_TYPE();
 
-    ProgressBar::ProgressBar()
+    ProgressBar::ProgressBar(bool displayCaption /*= true*/)
         : m_pos(0.5f)
     {
         layoutMode(LayoutMode::Vertical);
 
         m_bar = createChild<ProgressBarArea>();
         m_bar->ignoredInAutomaticLayout(true);
+
+        if (displayCaption)
+            m_text = createNamedChild<TextLabel>("ProgressCaption"_id, base::TempString("{}%", m_pos * 100.0f));
     }
 
-    void ProgressBar::position(float pos)
+    void ProgressBar::position(float pos, base::StringView customText)
     {
         auto clampedPos = std::clamp<float>(pos, 0.0f, 1.0f);
         if (m_pos != clampedPos)
@@ -53,35 +56,15 @@ namespace ui
             m_pos = clampedPos;
 
             if (m_text)
-                m_text->text(base::TempString("{}%", pos * 100.0f));
+            {
+                if (customText.empty())
+                    m_text->text(base::TempString("{}%", Prec(pos * 100.0f, 1)));
+                else
+                    m_text->text(base::TempString("{}%: {}", Prec(pos * 100.0f, 1), customText));
+            }
 
             invalidateLayout();
         }
-    }
-
-    bool ProgressBar::handleTemplateProperty(base::StringView name, base::StringView value)
-    {
-        if (name == "showPercents" || name == "text" || name == "showPercent")
-        {
-            bool flag = false;
-            if (base::MatchResult::OK != value.match(flag))
-                return false;
-
-            if (flag && !m_text)
-                m_text = createNamedChild<TextLabel>("ProgressCaption"_id, base::TempString("{}%", m_pos * 100.0f));
-
-            return true;
-        }
-        else if (name == "value")
-        {
-            float pos = 0.0f;
-            if (base::MatchResult::OK != value.match(pos))
-                return false;
-            position(pos);
-            return true;
-        }
-
-        return TBaseClass::handleTemplateProperty(name, value);
     }
 
     void ProgressBar::arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const

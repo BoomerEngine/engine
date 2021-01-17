@@ -37,21 +37,14 @@ namespace application
 
         m_lastUpdateTime.resetToNow();
 
-        auto* service = base::GetService<ed::Editor>();
-        if (!service)
-            return false;
+        m_editor.create();
 
-        if (!service->start(m_renderer.get()))
-            return false;
-
-        return true;
+        return m_editor->initialize(m_renderer.get(), commandline);
     }
 
     void EditorApp::cleanup()
     {
-        if (auto* service = base::GetService<ed::Editor>())
-            service->stop();
-
+        m_editor.reset();
         m_renderer.reset();
         m_nativeRenderer.reset();
         m_dataStash.reset();
@@ -59,6 +52,8 @@ namespace application
 
     void EditorApp::update()
     {
+        m_editor->update();
+
         auto dt = std::clamp<float>(m_lastUpdateTime.timeTillNow().toSeconds(), 0.0001f, 0.1f);
         m_lastUpdateTime.resetToNow();
         m_renderer->updateAndRender(dt);

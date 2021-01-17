@@ -15,23 +15,23 @@
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
+#include "sceneObjectPalettePanel.h"
 
+#include "base/world/include/worldEntity.h"
+#include "base/world/include/worldComponent.h"
+#include "base/world/include/worldNodeTemplate.h"
+#include "base/world/include/worldPrefab.h"
+#include "base/editor/include/managedFileFormat.h"
+#include "base/editor/include/managedDirectory.h"
+#include "base/editor/include/editorService.h"
+#include "base/editor/src/assetBrowserDialogs.h"
+#include "base/editor/include/managedDepot.h"
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
 #include "base/ui/include/uiRenderer.h"
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
-#include "base/world/include/worldEntity.h"
-#include "base/world/include/worldComponent.h"
 #include "base/resource/include/objectIndirectTemplate.h"
-#include "base/world/include/worldNodeTemplate.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedDirectory.h"
-#include "base/world/include/worldPrefab.h"
-#include "base/editor/include/editorService.h"
-#include "base/editor/include/editorWindow.h"
-#include "base/editor/src/assetBrowserDialogs.h"
-#include "sceneObjectPalettePanel.h"
 
 namespace ed
 {
@@ -155,7 +155,7 @@ namespace ed
     void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup)
     {
         // active file
-        const auto* activeFile = GetService<Editor>()->mainWindow().selectedFile();
+        const auto* activeFile = GetEditor()->selectedFile();
         const auto activeFileResourceClass = activeFile ? activeFile->fileFormat().nativeResourceClass() : nullptr;
 
         // "add" 
@@ -478,7 +478,7 @@ namespace ed
 
             for (const auto& pair : tempPairs)
             {
-                if (auto* file = GetService<Editor>()->managedDepot().findManagedFile(pair.key.path().view()))
+                if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.key.path().view()))
                 {
                     StringBuilder txt;
                     file->fileFormat().printTags(txt, " ");
@@ -486,7 +486,7 @@ namespace ed
 
                     subMenu->createCallback(txt.toString(), "[img:page_up]", "") = [this, file]()
                     {
-                        GetService<Editor>()->mainWindow().selectFile(file);
+                        GetEditor()->showFile(file);
                     };
                 }
             }

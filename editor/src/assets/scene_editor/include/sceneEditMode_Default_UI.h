@@ -9,7 +9,9 @@
 #pragma once
 
 #include "sceneEditMode.h"
+
 #include "base/ui/include/uiSimpleListModel.h"
+#include "base/ui/include/uiElement.h"
 
 namespace ed
 {

@@ -17,7 +17,7 @@
 
 #include "editorService.h"
 
-#include "assetFileImportPrepareTab.h"
+#include "assetFileImportPrepareDialog.h"
 #include "assetBrowserTabFiles.h"
 
 #include "base/ui/include/uiImage.h"
@@ -43,6 +43,7 @@
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource_compiler/include/importFileList.h"
 #include "base/ui/include/uiSearchBar.h"
+#include "assetFileImportJob.h"
 
 
 namespace ed
@@ -145,14 +146,14 @@ namespace ed
     ManagedFileNativeResource* AssetImportListModel::fileManagedFile(const FileData* file) const
     {
         if (const auto depotPath = fileDepotPath(file))
-            return rtti_cast<ManagedFileNativeResource>(GetService<Editor>()->managedDepot().findManagedFile(depotPath));
+            return rtti_cast<ManagedFileNativeResource>(GetEditor()->managedDepot().findManagedFile(depotPath));
         return nullptr;
     }
 
     ManagedFileNativeResource* AssetImportListModel::fileManagedFile(const ui::ModelIndex& file) const
     {
         if (const auto depotPath = fileDepotPath(file))
-            return rtti_cast<ManagedFileNativeResource>(GetService<Editor>()->managedDepot().findManagedFile(depotPath));
+            return rtti_cast<ManagedFileNativeResource>(GetEditor()->managedDepot().findManagedFile(depotPath));
         return nullptr;
     }
 
@@ -542,7 +543,7 @@ namespace ed
             if (auto* managedFile = fileManagedFile(rootFile))
             {
                 menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() { 
-                    GetService<ed::Editor>()->mainWindow().selectFile(managedFile);
+                    ed::GetEditor()->showFile(managedFile);
                 };
             }
 
@@ -602,13 +603,15 @@ namespace ed
 
     ///--
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportPrepareTab);
+    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportPrepareDialog);
     RTTI_END_TYPE();
 
-    AssetImportPrepareTab::AssetImportPrepareTab()
-        : ui::DockPanel("[img:import] Asset Import", "AssetImportPrepareTab")
+    AssetImportPrepareDialog::AssetImportPrepareDialog()
+        : ui::Window(ui::WindowFeatureFlagBit::DEFAULT_DIALOG_RESIZABLE, "Import assets into engine")
     {
         layoutVertical();
+
+        customMaxSize(1200, 900);
 
         actions().bindCommand("Prepare.ClearList"_id) = [this]() { cmdClearList(); };
         actions().bindFilter("Prepare.ClearList"_id) = [this]() { return m_filesListModel->hasFiles(); };
@@ -656,6 +659,7 @@ namespace ed
             m_fileList = leftPanel->createChild<ui::ListView>();
             m_fileList->expand();
             m_fileList->columnCount(5);
+            m_fileList->customInitialSize(800, 600);
 
             m_filesListModel = RefNew<AssetImportListModel>();
             m_fileList->model(m_filesListModel);
@@ -683,7 +687,7 @@ namespace ed
         }
     }
 
-    AssetImportPrepareTab::~AssetImportPrepareTab()
+    AssetImportPrepareDialog::~AssetImportPrepareDialog()
     {}
     
     static const TImportClassRegistry& ExtractResourceForExtension(StringView ext, TImportClassRegistryMap& registry)
@@ -696,7 +700,7 @@ namespace ed
         return classList;
     }
 
-    void AssetImportPrepareTab::addNewImportFiles(const ManagedDirectory* currentDirectory, SpecificClassType<res::IResource> resourceClass, const Array<StringBuf>& selectedAssetPaths)
+    void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* currentDirectory, SpecificClassType<res::IResource> resourceClass, const Array<StringBuf>& selectedAssetPaths)
     {
         static TImportClassRegistryMap ClassRegistry;
 
@@ -727,7 +731,7 @@ namespace ed
         updateSelection();
     }
 
-    void AssetImportPrepareTab::addReimportFiles(const Array<ManagedFileNativeResource*>& files)
+    void AssetImportPrepareDialog::addReimportFiles(const Array<ManagedFileNativeResource*>& files)
     {
         InplaceArray<ui::ModelIndex, 20> createdIndices;
         for (auto* file : files)
@@ -745,7 +749,7 @@ namespace ed
         updateSelection();
     }
 
-    void AssetImportPrepareTab::addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration)
+    void AssetImportPrepareDialog::addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& reimportConfiguration)
     {
         InplaceArray<ui::ModelIndex, 20> createdIndices;
         if (file)
@@ -762,12 +766,12 @@ namespace ed
         updateSelection();
     }
 
-    res::ImportListPtr AssetImportPrepareTab::compileResourceList() const
+    res::ImportListPtr AssetImportPrepareDialog::compileResourceList() const
     {
         return m_filesListModel->compileResourceList(true);
     }
 
-    void AssetImportPrepareTab::updateSelection()
+    void AssetImportPrepareDialog::updateSelection()
     {
         auto selection = m_fileList->selection().keys();
 
@@ -794,23 +798,23 @@ namespace ed
         }
     }
 
-    void AssetImportPrepareTab::cmdClearList()
+    void AssetImportPrepareDialog::cmdClearList()
     {
         m_filesListModel->clearFiles();
     }
 
-    ManagedDirectory* AssetImportPrepareTab::contextDirectory()
+    ManagedDirectory* AssetImportPrepareDialog::contextDirectory()
     {
-        return GetService<Editor>()->mainWindow().selectedDirectory();
+        return GetEditor()->selectedDirectory();
     }
 
-    void AssetImportPrepareTab::cmdAddFiles()
+    void AssetImportPrepareDialog::cmdAddFiles()
     {
         if (auto* dir = contextDirectory())
             ImportNewFiles(this, nullptr, dir);
     }
 
-    void AssetImportPrepareTab::cmdRemoveFiles()
+    void AssetImportPrepareDialog::cmdRemoveFiles()
     {
         auto selection = m_fileList->selection().keys();
         m_filesListModel->removeFiles(selection);
@@ -818,37 +822,37 @@ namespace ed
         updateSelection();
     }
 
-    void AssetImportPrepareTab::cmdSaveList()
+    void AssetImportPrepareDialog::cmdSaveList()
     {
-        GetService<Editor>()->saveToXML(this, "AssetImportList", [this]() {
+        GetEditor()->saveToXML(this, "AssetImportList", [this]() {
             return m_filesListModel->compileResourceList();
             });
     }
 
-    void AssetImportPrepareTab::cmdLoadList()
+    void AssetImportPrepareDialog::cmdLoadList()
     {
-        if (const auto fileList = GetService<Editor>()->loadFromXML<res::ImportList>(this, "AssetImportList"))
+        if (const auto fileList = GetEditor()->loadFromXML<res::ImportList>(this, "AssetImportList"))
         {
             m_filesListModel->clearFiles();
             addFilesFromList(*fileList);
         }
     }
 
-    void AssetImportPrepareTab::cmdAppendList()
+    void AssetImportPrepareDialog::cmdAppendList()
     {
-        if (const auto fileList = GetService<Editor>()->loadFromXML<res::ImportList>(this, "AssetImportList"))
+        if (const auto fileList = GetEditor()->loadFromXML<res::ImportList>(this, "AssetImportList"))
         {
             addFilesFromList(*fileList);
         }
     }
 
-    void AssetImportPrepareTab::addFilesFromList(const res::ImportList& list)
+    void AssetImportPrepareDialog::addFilesFromList(const res::ImportList& list)
     {
         InplaceArray<ui::ModelIndex, 20> indices;
 
         for (const auto& entry : list.files())
         {
-            if (auto* file = GetService<Editor>()->managedDepot().findManagedFile(entry.depotPath))
+            if (auto* file = GetEditor()->managedDepot().findManagedFile(entry.depotPath))
             {
                 if (auto* nativeFile = rtti_cast<ManagedFileNativeResource>(file))
                     if (auto index = m_filesListModel->addReimportFile(nativeFile))
@@ -856,7 +860,7 @@ namespace ed
             }
             else
             {
-                if (auto* directory = GetService<Editor>()->managedDepot().findPath(entry.depotPath))
+                if (auto* directory = GetEditor()->managedDepot().findPath(entry.depotPath))
                 {
                     const auto fileName = entry.depotPath.view().afterLastOrFull("/").beforeFirstOrFull(".");
                     const auto fileExt = entry.depotPath.view().afterLast(".");
@@ -885,9 +889,15 @@ namespace ed
         updateSelection();
     }
 
-    void AssetImportPrepareTab::cmdStartImport()
+    void AssetImportPrepareDialog::cmdStartImport()
     {
-        call(EVENT_START_ASSET_IMPORT);
+        if (auto files = compileResourceList())
+        {
+            requestClose(0);
+
+            auto job = RefNew<AssetImportJob>(files);
+            GetEditor()->scheduleBackgroundJob(job);
+        }
     }
 
     ///--

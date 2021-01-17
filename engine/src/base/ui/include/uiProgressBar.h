@@ -21,7 +21,7 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(ProgressBar, IElement);
 
     public:
-        ProgressBar();
+        ProgressBar(bool displayCaption=true);
 
         // get the current position (as a 0-1 fraction)
         INLINE float position() const { return m_pos; }
@@ -29,7 +29,7 @@ namespace ui
         //--
 
         // set the position fraction
-        void position(float pos);
+        void position(float pos, base::StringView customText);
 
         //--
 
@@ -41,7 +41,6 @@ namespace ui
 
         //--
 
-        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
         virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
     };
 

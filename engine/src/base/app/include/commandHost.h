@@ -18,10 +18,10 @@ namespace base
         //--
 
         /// wrapper that hosts a command that is executing in the background (it's own fiber)
-        class BASE_APP_API CommandHost : public IReferencable
+        class BASE_APP_API CommandHost : public IReferencable, public IProgressTracker
         {
         public:
-            CommandHost();
+            CommandHost(IProgressTracker* progress = nullptr);
             virtual ~CommandHost(); // will wait for the command to finish, there's no other way
 
             //--
@@ -44,9 +44,6 @@ namespace base
             //--
 
         private:
-            // connection to message server (used in remote commands)
-            base::net::TcpMessageClientPtr m_connection;
-
             // command itself
             base::app::CommandPtr m_command;
 
@@ -54,7 +51,16 @@ namespace base
             base::fibers::WaitCounter m_finishedSignal;
             std::atomic_bool m_finishedFlag = false;
 
+            // local cancellation flag
+            std::atomic_bool m_cancelation = false;
+
+            // external progress interface
+            IProgressTracker* m_externalProgressTracker = nullptr;
+
             //--
+
+            virtual bool checkCancelation() const override;
+            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override;
         };
 
         //--

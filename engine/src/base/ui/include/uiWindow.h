@@ -48,8 +48,11 @@ namespace ui
     /// saved window placement, can be stored in config
     struct WindowSavedPlacementSetup
     {
-        Position position;
-        Size size;
+        RTTI_DECLARE_NONVIRTUAL_CLASS(WindowSavedPlacementSetup);
+
+    public:
+        base::Rect rect;
+        bool visible = true;
         bool maximized = false;
         bool minimized = false;
     };
@@ -78,6 +81,7 @@ namespace ui
         DEFAULT_POPUP = Popup,
         DEFAULT_TOOLTIP = Popup | ShowInactive,
         DEFAULT_DIALOG = HasTitleBar | ToolWindow | CanClose,
+        DEFAULT_DIALOG_RESIZABLE = DEFAULT_DIALOG | Resizable,
         DEFAULT_POPUP_DIALOG = DEFAULT_DIALOG | DEFAULT_POPUP,
         MAIN_WINDOW = DEFAULT_FRAME | Maximized,
     };
@@ -122,7 +126,7 @@ namespace ui
         Position size; // specific size, non zero size on given axis is assumed to be the forced size, the rest is computed from content size, NOTE: if both sizes are zero than window if fitted to it's content size
         WindowInitialPlacementMode mode = WindowInitialPlacementMode::ScreenCenter; // how to place window
         ElementWeakPtr referenceElement;
-        WindowSavedPlacementSetup* savedPlacement = nullptr; // saved placement, try to position window exactly there
+        const WindowSavedPlacementSetup* savedPlacement = nullptr; // saved placement, try to position window exactly there
     };
 
     ///--
@@ -192,7 +196,7 @@ namespace ui
         virtual void queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const;
 
         /// query current "saved placement" for this window
-        virtual void queryCurrentPlacementForSaving(WindowSavedPlacementSetup& outPlacement) const;
+        virtual bool queryCurrentPlacementForSaving(WindowSavedPlacementSetup& outPlacement) const;
 
         /// check if we can resize the window
         virtual bool queryResizableState() const;
@@ -213,6 +217,14 @@ namespace ui
 
         //--
 
+        /// load configuration - may move window
+        virtual void configLoad(const ConfigBlock& block);
+
+        /// save configuration, stores window placement
+        virtual void configSave(const ConfigBlock& block) const;
+
+        //--
+
     private:
         WindowRequests* m_requests = nullptr; // pending requests
 
@@ -226,8 +238,13 @@ namespace ui
         uint64_t m_parentModalWindowHandle = 0;
         int m_exitCode = 0;
 
+        bool m_closeRequested = false;
+
         base::StringBuf m_title;
         WindowFeatureFlags m_flags;
+
+        WindowSavedPlacementSetup m_savedPlacement;
+        bool m_savedPlacementValid = false;
 
         ElementWeakPtr m_modalOwner;
 
@@ -242,6 +259,8 @@ namespace ui
 
         bool handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, base::input::AreaType& outAreaType) const;
         static int QuerySizeCode(const ElementArea& area, const Position& absolutePosition);
+
+        void applySavedPlacement(const WindowSavedPlacementSetup& placement);
 
         friend class Renderer;
         friend class PopupWindow;

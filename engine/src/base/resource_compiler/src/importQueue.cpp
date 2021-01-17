@@ -91,6 +91,7 @@ namespace base
                     m_jobsList.pushBack(jobInfo);
                     m_jobQueue.push(jobInfo);
                     m_jobsMap[key] = jobInfo;
+                    m_numTotalJobsScheduled += 1;
 
                     m_callbacks->queueJobAdded(job);
                 }
@@ -141,6 +142,10 @@ namespace base
             const auto* job = popNextJob();
             if (!job)
                 return false;
+
+            // update status
+            progressTracker->reportProgress(m_numTotalJobsDone, m_numTotalJobsScheduled, TempString("{}", job->info.depotFilePath));
+            m_numTotalJobsDone += 1;
 
             // notify callbacks
             ScopeTimer timer;

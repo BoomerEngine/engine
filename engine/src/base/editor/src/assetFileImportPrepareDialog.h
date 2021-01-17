@@ -11,18 +11,14 @@
 #include "managedDepot.h"
 #include "base/ui/include/uiSimpleTreeModel.h"
 #include "base/ui/include/uiElement.h"
+#include "base/ui/include/uiWindow.h"
 
 namespace ed
 {
     //--
 
-    DECLARE_UI_EVENT(EVENT_START_ASSET_IMPORT);
-
-    //--
-
     class AssetImportListModel;
 
-    typedef SpecificClassType<res::IResource> TImportClass;
     typedef Array<TImportClass> TImportClassRegistry;
     typedef HashMap<StringBuf, TImportClassRegistry> TImportClassRegistryMap;
 
@@ -143,13 +139,13 @@ namespace ed
     //--
 
     // tab with the list of files for import operation
-    class BASE_EDITOR_API AssetImportPrepareTab : public ui::DockPanel
+    class BASE_EDITOR_API AssetImportPrepareDialog : public ui::Window
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportPrepareTab, ui::DockPanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportPrepareDialog, ui::Window);
 
     public:
-        AssetImportPrepareTab();
-        virtual ~AssetImportPrepareTab();
+        AssetImportPrepareDialog();
+        virtual ~AssetImportPrepareDialog();
 
         //--
 
@@ -161,11 +157,6 @@ namespace ed
 
         // add request to reimport single file with new configuration
         void addReimportFile(ManagedFileNativeResource* files, const res::ResourceConfigurationPtr& reimportConfiguration);
-
-        //--
-
-        // compile files list for importing
-        res::ImportListPtr compileResourceList() const;
 
         //--
 
@@ -188,6 +179,8 @@ namespace ed
         void addFilesFromList(const res::ImportList& list);
 
         ManagedDirectory* contextDirectory();
+
+        res::ImportListPtr compileResourceList() const;
 
         RefPtr<AssetImportListModel> m_filesListModel;
     };

@@ -19,20 +19,20 @@
 #include "base/ui/include/uiMenuBar.h"
 #include "base/ui/include/uiClassPickerBox.h"
 #include "base/ui/include/uiRenderer.h"
+#include "base/ui/include/uiInputBox.h"
+#include "base/object/include/rttiResourceReferenceType.h"
 #include "base/object/include/actionHistory.h"
 #include "base/object/include/action.h"
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/worldComponent.h"
-#include "base/resource/include/objectIndirectTemplate.h"
 #include "base/world/include/worldNodeTemplate.h"
+#include "base/world/include/worldPrefab.h"
+#include "base/resource/include/objectIndirectTemplate.h"
 #include "base/editor/include/managedFileFormat.h"
 #include "base/editor/include/managedDirectory.h"
-#include "base/world/include/worldPrefab.h"
 #include "base/editor/include/editorService.h"
-#include "base/editor/include/editorWindow.h"
 #include "base/editor/src/assetBrowserDialogs.h"
-#include "base/ui/include/uiInputBox.h"
-#include "base/object/include/rttiResourceReferenceType.h"
+#include "base/editor/include/managedDepot.h"
 
 namespace ed
 {
@@ -652,7 +652,7 @@ namespace ed
             }
 
             const char* fileName = nullptr;
-            if (auto* dir = GetService<Editor>()->managedDepot().findPath(depotPath, &fileName))
+            if (auto* dir = GetEditor()->managedDepot().findPath(depotPath, &fileName))
             {
                 if (dir->createFile(fileName, prefab))
                 {

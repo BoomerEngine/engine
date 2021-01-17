@@ -12,58 +12,35 @@
 
 namespace ed
 {
-    ///---
-
-    /// a external process running engine command (like import/export etc)
-    /// NOTE: since those are commands we can also run them locally inside the same executable (for debugging)
-    class BASE_EDITOR_API IBackgroundCommand : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IBackgroundCommand, IObject);
-
-    public:
-        IBackgroundCommand(StringView name);
-        virtual ~IBackgroundCommand();
-
-        //---
-
-        /// get name of the command
-        INLINE const StringBuf& name() const { return m_name; }
-
-        /// get connection to running command, valid only after we get confirmed
-        /// NOTE: this will be null initially until the connection is established (e.g. startup time of the remote executable, etc)
-        INLINE const net::MessageConnectionPtr& connection() const { return m_connection; }
-
-        /// get unique connection key that identifies the remote running command
-        INLINE const StringBuf& connectionKey() const { return m_connectionKey; }
-
-        //---
-
-        // configure command by collecting the commandline arguments
-        virtual bool configure(app::CommandLine& outCommandline) = 0;
-
-        // called when it's safe to update stuff
-        virtual void update();
-
-        // remote site just connected to us
-        virtual void confirmed(const net::MessageConnectionPtr& connection);
-
-        //---
-
-    private:
-        StringBuf m_name;
-        StringBuf m_connectionKey;
-
-        SpinLock m_connectionLock;
-        net::MessageConnectionPtr m_connection;
-    };
     
     ///---
 
-    /// editor side host that runs the command
-    class BASE_EDITOR_API IBackgroundJob : public IReferencable
+    enum class BackgroundJobStatus : uint8_t
     {
+        Finished,
+        Failed,
+        Running,
+    };
+
+    ///--
+
+    struct BackgroundJobProgress
+    {
+        base::StringBuf text;
+        uint64_t timestamp = 0;
+        uint64_t currentCount = 0;
+        uint64_t totalCount = 0;
+    };
+
+    ///--
+
+    /// editor side host that runs the command
+    class BASE_EDITOR_API IBackgroundJob : public IReferencable, public base::IProgressTracker
+    {
+        RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IBackgroundJob);
+
     public:
-        IBackgroundJob(StringView name);
+        IBackgroundJob(StringView name); // NOTE: we should NOT start any processing in the constructor, only in the start() method
         virtual ~IBackgroundJob();
 
         //---
@@ -71,30 +48,48 @@ namespace ed
         /// descriptive name of command we are running
         ALWAYS_INLINE const StringBuf& description() const { return m_description; }
 
-        /// when did we start ?
-        ALWAYS_INLINE const NativeTimePoint& startTime() const { return m_startTime; }
+        /// was cancellation requested ?
+        ALWAYS_INLINE bool canceled() const { return m_cancelRequested.load(); }
 
         //---
-
-        /// are we running ?
-        virtual bool running() const = 0;
-
-        /// if we are not running get the exit code
-        virtual int exitCode() const = 0;
 
         /// request nice, well behaved cancel of the whole thing
-        virtual void requestCancel() const = 0;
+        /// NOTE: job may not respect it and still run till the end :(
+        void requestCancel();
+
+        /// query progress info from job, returns last progress update
+        void queryProgressInfo(BackgroundJobProgress& outInfo) const;
 
         //---
 
-        /// update internal state, should return false when runner has finished
-        virtual bool update() = 0;
+        /// start the job
+        virtual bool start() = 0;
 
-        //---
+        /// update internal state
+        /// NOTE: this function is called every frame but should not do any heavy lifting (all actual work should be done on fibers/threads)
+        virtual BackgroundJobStatus update() = 0;
+
+        //--
+
+        /// create/retrieve job details dialog
+        virtual ui::ElementPtr fetchDetailsDialog();
+
+        /// create/retrieve job small status dialog
+        virtual ui::ElementPtr fetchStatusDialog();
+
+    protected:
+        // IProgressTracker
+        virtual bool checkCancelation() const override final;
+        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
     private:
         NativeTimePoint m_startTime;
         StringBuf m_description;
+
+        BackgroundJobProgress m_lastProgress;
+        SpinLock m_lastProgressLock;
+
+        std::atomic<bool> m_cancelRequested;
     };
 
     ///---

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/ui/include/uiDragDrop.h"
+#include "base/ui/include/uiWindow.h"
 
 namespace ed
 {
@@ -58,9 +59,9 @@ namespace ed
     ///--
 
     /// assert browser tab
-    class BASE_EDITOR_API AssetBrowser : public ui::DockPanel
+    class BASE_EDITOR_API AssetBrowser : public ui::Window
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowser, ui::DockPanel);
+        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowser, ui::Window);
 
     public:
         AssetBrowser(ManagedDepot* depot);
@@ -97,16 +98,12 @@ namespace ed
         ui::TreeViewPtr m_depotTree; // tree view for the depot
         ui::DockContainerPtr m_dockContainer;
 
-        //RefWeakPtr<AssetBrowserResourceListDialog> m_resourceListDialog;
-
         void navigateToDirectory(ManagedDirectory* dir);
         void navigateToDirectory(ManagedDirectory* dir, RefPtr<AssetBrowserTabFiles>& outTab);
 
-        //--
-
         void closeDirectoryTab(ManagedDirectory* dir);
 
-        //--
+        virtual void handleExternalCloseRequest() override final;
     };
 
     ///--

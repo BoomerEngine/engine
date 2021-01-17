@@ -9,6 +9,8 @@
 #include "build.h"
 #include "editorService.h"
 #include "assetBrowser.h"
+
+#include "managedDepot.h"
 #include "managedFile.h"
 #include "managedFileFormat.h"
 #include "managedItem.h"
@@ -113,7 +115,7 @@ namespace ui
                         auto dirPath = m_currentFile->parentDirectory()->depotPath();
                         auto extension = m_currentFile->fileFormat().extension();
 
-                        if (auto* newFile = GetService<ed::Editor>()->managedDepot().findManagedFile(TempString("{}{}.{}", dirPath, fileName, extension)))
+                        if (auto* newFile = ed::GetEditor()->managedDepot().findManagedFile(TempString("{}{}.{}", dirPath, fileName, extension)))
                             changeFile(newFile);
                     }
                 }
@@ -165,7 +167,7 @@ namespace ui
 
             if (ret.code == DataViewResultCode::OK)
             {
-                auto managedFile = GetService<ed::Editor>()->managedDepot().findManagedFile(key.path().view());
+                auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(key.path().view());
                 if (managedFile != m_currentFile)
                 {
                     image::ImageRef imageRef;
@@ -322,7 +324,7 @@ namespace ui
 
         void cmdSelectCurrentAsset()
         {
-            auto file = GetService<ed::Editor>()->mainWindow().selectedFile();
+            auto file = ed::GetEditor()->selectedFile();
             changeFile(file);
         }
 
@@ -334,7 +336,7 @@ namespace ui
         void cmdShowInAssetBrowser()
         {
             if (m_currentFile)
-                GetService<ed::Editor>()->mainWindow().selectFile(m_currentFile);
+                ed::GetEditor()->showFile(m_currentFile);
         }
 
         //--

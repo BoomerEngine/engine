@@ -461,6 +461,12 @@ namespace ui
         return position;
     }
 
+    static bool IsValidSavedPlacement(const base::Rect& placement)
+    {
+        const auto size = placement.size();
+        return size.x >= 100 && size.y >= 100;
+    }
+
     void Renderer::updateWindowRepresentation(WindowInfo& window)
     {
         // check for external close requests
@@ -495,12 +501,8 @@ namespace ui
             window.window->queryInitialPlacementSetup(placement);
 
             auto pixelScale = 1.0f; // TODO: better guess
-            auto size = calcWindowContentSize(window.window.get(), pixelScale);
-            auto pos = calcWindowPlacement(size, placement, pixelScale);
 
             NativeWindowSetup setup;
-            setup.position = pos;
-            setup.size = size;
             setup.maximized = (placement.mode == WindowInitialPlacementMode::Maximize);
             setup.minimized = false;
             setup.title = placement.title;
@@ -509,6 +511,22 @@ namespace ui
             setup.showOnTaskBar = placement.flagShowOnTaskBar;
             setup.activate = placement.flagForceActive;
             setup.callback = this;
+            setup.visible = true;
+
+            if (placement.savedPlacement && IsValidSavedPlacement(placement.savedPlacement->rect))
+            {
+                setup.position = placement.savedPlacement->rect.min;
+                setup.size = placement.savedPlacement->rect.size();
+
+                /*if (!placement.savedPlacement->visible)
+                    setup.visible = false;*/
+            }
+            else
+            {
+                auto size = calcWindowContentSize(window.window.get(), pixelScale);
+                setup.position = calcWindowPlacement(size, placement, pixelScale);
+                setup.size = size;
+            }
 
             if (placement.externalParentWindowHandle)
             {
@@ -743,7 +761,7 @@ namespace ui
         return (NativeWindowID)0;
     }
 
-    bool Renderer::queryWindowResizableState(Window* window) const
+    bool Renderer::queryWindowResizableState(const Window* window) const
     {
         for (auto& info : m_windows)
             if (info.window == window)
@@ -752,7 +770,7 @@ namespace ui
         return false;
     }
 
-    bool Renderer::queryWindowMovableState(Window* window) const
+    bool Renderer::queryWindowMovableState(const Window* window) const
     {
         for (auto& info : m_windows)
             if (info.window == window)
@@ -761,7 +779,26 @@ namespace ui
         return false;
     }
 
-    uint64_t Renderer::queryWindowNativeHandle(Window* window) const
+    bool Renderer::queryWindowPlacement(const Window* window, WindowSavedPlacementSetup& outPlacement) const
+    {
+        for (auto& info : m_windows)
+        {
+            if (info.window == window)
+            {
+                if (m_native->windowGetDefaultPlacement(info.nativeId, outPlacement.rect))
+                {
+                    outPlacement.visible = m_native->windowGetVisible(info.nativeId);
+                    outPlacement.minimized = m_native->windowGetMinimized(info.nativeId);
+                    outPlacement.maximized = m_native->windowGetMaximized(info.nativeId);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    uint64_t Renderer::queryWindowNativeHandle(const Window* window) const
     {
         for (auto& info : m_windows)
             if (info.window == window)
@@ -1500,12 +1537,15 @@ namespace ui
                     }
                 }
 
-                if (const auto element = window.hitCache->traceElement(absolutePosition))
+                if (window.hitCache)
                 {
-                    for (ElementChildToParentIterator it(element.get()); it; ++it)
+                    if (const auto element = window.hitCache->traceElement(absolutePosition))
                     {
-                        if (element->handleCursorQuery(element->cachedDrawArea(), absolutePosition, outCursorType))
-                            return true;
+                        for (ElementChildToParentIterator it(element.get()); it; ++it)
+                        {
+                            if (element->handleCursorQuery(element->cachedDrawArea(), absolutePosition, outCursorType))
+                                return true;
+                        }
                     }
                 }
 

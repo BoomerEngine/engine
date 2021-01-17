@@ -30,6 +30,8 @@ namespace ed
 
         virtual void recreateContent() override;
 
+        void cmdShowAssetBrowser();
+
         SceneContentWorldDirPtr m_rootLayersGroup;
     };
 

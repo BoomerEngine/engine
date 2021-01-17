@@ -9,6 +9,7 @@
 #include "build.h"
 #include "editorService.h"
 
+#include "managedDepot.h"
 #include "managedFile.h"
 #include "managedDirectory.h"
 #include "managedItemCollection.h"
@@ -95,7 +96,7 @@ namespace ed
                     {
                         if (file->isModified())
                         {
-                            if (auto editor = file->editor())
+                            if (auto editor = GetEditor()->findFileEditor(file))
                             {
                                 if (!editor->save())
                                 {
@@ -203,7 +204,7 @@ namespace ed
         auto fileList = RefNew<AssetItemsSimpleListModel>();
         for (auto* file : filesToDelete)
         {
-            auto canDelete = !file->inUse() && !file->editor();
+            auto canDelete = !GetEditor()->findFileEditor(file); // we can only delete files that are not in use
             fileList->addItem(file, canDelete);
         }
 
@@ -261,11 +262,7 @@ namespace ed
                     {
                         if (auto file = rtti_cast<ManagedFile>(item))
                         {
-                            if (file->inUse())
-                            {
-                                fileList->comment(item, "  [img:error] File is still in use");
-                            }
-                            else if (file->editor())
+                            if (GetEditor()->findFileEditor(file))
                             {
                                 fileList->comment(item, "  [img:error] File is opened in editor");
                             }
@@ -326,12 +323,15 @@ namespace ed
         window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(); };
         window->actions().bindShortcut("Cancel"_id, "Escape");
 
-        auto& depot = GetService<Editor>()->managedDepot();
+        auto& depot = GetEditor()->managedDepot();
 
         auto fileList = RefNew<AssetPlainFilesSimpleListModel>();
-        for (const auto& editor : depot.openedEditorList())
-            if (auto* file = editor->file())
-                fileList->addFile(file, editor->tabLocked());
+
+        InplaceArray<ResourceEditorPtr, 100> openedEditors;
+        GetEditor()->collectResourceEditors(openedEditors);
+
+        for (const auto& editor : openedEditors)
+            fileList->addFile(editor->file(), editor->tabLocked());
 
         {
             auto bar = window->createChild<ui::ColumnHeaderBar>();
@@ -358,7 +358,7 @@ namespace ed
         listView->bind(ui::EVENT_ITEM_ACTIVATED) = [windowRef, listView, fileList]() {
             if (auto item = listView->current())
                 if (auto file = fileList->file(item))
-                    if (file->open())
+                    if (GetEditor()->showFileEditor(file))
                         windowRef->requestClose();
         };
         
@@ -427,9 +427,9 @@ namespace ed
         dirBar->customMargins(5, 5, 5, 0);
 
         if (!specificDirectory)
-            specificDirectory = GetService<Editor>()->mainWindow().selectedDirectory();
+            specificDirectory = GetEditor()->selectedDirectory();
         if (!specificDirectory)
-            specificDirectory = GetService<Editor>()->managedDepot().root();
+            specificDirectory = GetEditor()->managedDepot().root();
 
         auto editBoxFlags = ui::EditBoxFeatureBit::AcceptsEnter;
 
@@ -467,7 +467,7 @@ namespace ed
                     auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
                     if (ValidateDepotPath(depotPath))
                     {
-                        const auto* existingFile = GetService<Editor>()->managedDepot().findManagedFile(depotPath);
+                        const auto* existingFile = GetEditor()->managedDepot().findManagedFile(depotPath);
                         if (existingFile == nullptr)
                             valid = true;
                     }

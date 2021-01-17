@@ -40,8 +40,8 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneCommonEditor);
     RTTI_END_TYPE();
 
-    SceneCommonEditor::SceneCommonEditor(ManagedFileNativeResource* file, SceneContentNodeType rootContentType)
-        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste })
+    SceneCommonEditor::SceneCommonEditor(ManagedFileNativeResource* file, SceneContentNodeType rootContentType, StringView defaultEditorTag)
+        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste }, defaultEditorTag)
         , m_rootContentType(rootContentType)
     {
         m_content = RefNew<SceneContentStructure>(rootContentType);

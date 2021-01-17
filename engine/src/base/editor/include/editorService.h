@@ -15,15 +15,20 @@
 namespace ed
 {
 
+    //---
+
     /// global editor app
     /// NOTE: we may have multiple games, etc but the editor is a singleton
-    class BASE_EDITOR_API Editor : public app::ILocalService
+    class BASE_EDITOR_API Editor : public NoCopy
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(Editor, app::ILocalService);
-
     public:
         Editor();
         ~Editor();
+
+        //--
+
+        /// get editor instance 
+        static Editor* GetInstance();
 
         //--
 
@@ -35,6 +40,8 @@ namespace ed
 
         INLINE MainWindow& mainWindow() const { return *m_mainWindow; }
 
+        INLINE AssetBrowser& assetBrowser() const { return *m_assetBrowser; }
+
         INLINE ui::Renderer& renderer() const { return *m_renderer; }
 
         INLINE net::TcpMessageServer& messageServer() const { return *m_messageServer; }
@@ -42,10 +49,10 @@ namespace ed
         ///---
         
         // start editor application, creates the main window
-        bool start(ui::Renderer* renderer);
+        bool initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine);
 
-        // stop, close all windows
-        void stop();
+        // update (tick)
+        void update();
 
         ///---
 
@@ -58,6 +65,9 @@ namespace ed
         io::OpenSavePersistentData& openSavePersistentData(StringView category);
 
         ///---
+
+        /// force save editor configuration
+        void saveConfig();
 
         /// helper function to save object to XML on user's disk, the makeXMLFunc is only called if user actually wants the data to be saved
         bool saveToXML(ui::IElement* owner, StringView category, const std::function<ObjectPtr()>& makeXMLFunc, StringBuf* currentFileName = nullptr);
@@ -75,10 +85,61 @@ namespace ed
         ///---
 
         /// add a generic background runner to the list of runners
-        void attachBackgroundJob(IBackgroundJob* runner);
+        void scheduleBackgroundJob(IBackgroundJob* runner, bool openUI = false);
 
-        /// run a background command, usually this will spawn a child process and run the command there
-        BackgroundJobPtr runBackgroundCommand(IBackgroundCommand* command);
+        /// show job status dialog
+        void showBackgroundJobDialog(IBackgroundJob* job);
+
+        ///---
+
+        // show asset browser window
+        void showAssetBrowser(bool focus=true);
+
+        // get selected file
+        ManagedFile* selectedFile() const;
+
+        // get the active directory
+        ManagedDirectory* selectedDirectory() const;
+
+        // show file in the asset browser
+        bool showFile(ManagedFile* filePtr);
+
+        // show directory in the depot tree and possible also as a file list
+        bool showDirectory(ManagedDirectory* dir, bool exploreContent);
+
+        //--
+
+        // check if given file can be opened
+        bool canOpenFile(ManagedFile* file) const;
+
+        // check if file is edited
+        ResourceEditorPtr findFileEditor(ManagedFile* file) const;
+
+        // show editor for given file, returns false if file is not edited
+        bool showFileEditor(ManagedFile* file) const;
+
+        // open file for edit
+        bool openFileEditor(ManagedFile* file, bool activate=true);
+
+        // close file editor
+        bool closeFileEditor(ManagedFile* file, bool force=false);
+
+        // save file in a file editor
+        bool saveFileEditor(ManagedFile* file, bool force = false);
+
+        // collect all opened files
+        void collectOpenedFiles(Array<ManagedFile*>& outOpenedFiles) const;
+
+        // collect all resource editors
+        void collectResourceEditors(Array<ResourceEditorPtr>& outResourceEditors) const;
+
+        //--
+
+        // import files into asset depot
+        void importFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
+
+        // reimport already imported files into the depot
+        void reimportFiles(const Array<ManagedFileNativeResource*>& files);
 
         ///---
 
@@ -101,16 +162,12 @@ namespace ed
         //--
 
         Mutex m_backgroundJobsLock;
-        Array<BackgroundJobPtr> m_backgroundJobs;
-
-        Array<BackgroundCommandWeakPtr> m_backgroundCommandsWithMissingConnections;
-        Array<BackgroundJobUnclaimedConnectionPtr> m_backgroundJobsUnclaimedConnections;
+        BackgroundJobPtr m_activeBackgroundJob;
+        Array<BackgroundJobPtr> m_pendingBackgroundJobs;
+        BackgroundJobPtr m_pendingBackgroundJobUIRequest;
+        BackgroundJobPtr m_pendingBackgroundJobUIOpenedDialogRequest;
 
         void updateBackgroundJobs();
-
-        //--
-            
-        ImGuiID m_mainDockId;
 
         //--
 
@@ -119,24 +176,34 @@ namespace ed
         //--
             
         RefPtr<MainWindow> m_mainWindow;
-        
+        RefPtr<AssetBrowser> m_assetBrowser;
+
+        Array<RefPtr<IBaseResourceContainerWindow>> m_resourceContainers; // NOTE: contains main window as well
+
         //--
 
         HashMap<StringBuf, io::OpenSavePersistentData*> m_openSavePersistentData;
 
         //--
 
-        virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
-        virtual void onShutdownService() override final;
-        virtual void onSyncUpdate() override final;
-
-        void saveConfig();
         void saveAssetsSafeCopy();
+
+        void updateResourceEditors();
 
         void loadOpenSaveSettings(const ui::ConfigBlock& config);
         void saveOpenSaveSettings(const ui::ConfigBlock& config) const;
 
-        void updateResourceEditors();
+        void loadOpenedFiles();
+        void saveOpenedFiles() const;
+
+        IBaseResourceContainerWindow* findOrCreateResourceContainer(StringView text);
+        IBaseResourceContainerWindow* findResourceContainer(StringView text) const;
     };
+
+    //---
+
+    extern BASE_EDITOR_API Editor* GetEditor();
+
+    //---
 
 } // editor

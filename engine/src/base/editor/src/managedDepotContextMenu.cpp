@@ -48,26 +48,20 @@ namespace ed
 
     void OpenDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
     {
-        Array<ManagedFile*> failedFiles;
         for (auto* file : files)
-            if (!file->open())
-                failedFiles.pushBack(file);
+            GetEditor()->openFileEditor(file);
     }
 
     void SaveDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
     {
-        Array<ManagedFile*> failedFiles;
         for (auto* file : files)
-            if (!file->save())
-                failedFiles.pushBack(file);
+            GetEditor()->saveFileEditor(file);
     }
 
     void CloseDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
     {
-        Array<ManagedFile*> failedFiles;
         for (auto* file : files)
-            if (!file->close())
-                failedFiles.pushBack(file);
+            GetEditor()->closeFileEditor(file);
     }
 
     void ReimportDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
@@ -84,7 +78,7 @@ namespace ed
             }
         }
 
-        base::GetService<Editor>()->mainWindow().addReimportFiles(filesToReimport);
+        GetEditor()->reimportFiles(filesToReimport);
     }
 
     void CopyDepotItems(ui::IElement* owner, const Array<ManagedItem*>& item)
@@ -111,11 +105,9 @@ namespace ed
 
             for (auto* file : files)
             {
-                if (file->canOpen() && !file->opened())
+                if (GetEditor()->canOpenFile(file) && !GetEditor()->findFileEditor(file))
                     openableFiles.pushBack(file);
-                //if (file->opened())
-                  //  closableFiles.pushBack(file);
-                if (file->opened() && file->isModified())
+                if (file->isModified() && GetEditor()->findFileEditor(file))
                     saveableFiles.pushBack(file);
             }
 
@@ -167,7 +159,7 @@ namespace ed
                 bool canDelete = false;
                 for (auto* file : files)
                 {
-                    if (!file->inUse() && !file->editor())
+                    if (!GetEditor()->findFileEditor(file))
                     {
                         canDelete = true;
                         break;
@@ -236,7 +228,7 @@ namespace ed
                 }
                 else
                 {
-                    menu.createCallback("Show in depot", "[img:zoom]") = [file]() { base::GetService<Editor>()->mainWindow().selectFile(file); };
+                    menu.createCallback("Show in depot", "[img:zoom]") = [file]() { GetEditor()->showFile(file); };
                     menu.createSeparator();
                 }
             }

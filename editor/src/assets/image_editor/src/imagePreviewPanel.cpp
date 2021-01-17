@@ -23,6 +23,7 @@
 #include "base/ui/include/uiRuler.h"
 #include "base/ui/include/uiComboBox.h"
 #include "base/ui/include/uiTrackBar.h"
+#include "base/ui/include/uiWindow.h"
 
 namespace ed
 {

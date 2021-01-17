@@ -48,6 +48,7 @@ namespace rendering
         virtual bool windowGetFocus(ui::NativeWindowID id) override;
         virtual bool windowGetMinimized(ui::NativeWindowID id) override;
         virtual bool windowGetMaximized(ui::NativeWindowID id) override;
+        virtual bool windowGetVisible(ui::NativeWindowID id) override;
         virtual void windowSetTitle(ui::NativeWindowID id, base::StringView txt) override;
         virtual void windowSetOpacity(ui::NativeWindowID id, float opacity) override;
         virtual void windowUpdate(ui::NativeWindowID id) override;
@@ -57,6 +58,7 @@ namespace rendering
         virtual bool windowHasCloseRequest(ui::NativeWindowID id) override;
         virtual bool windowGetResizable(ui::NativeWindowID id) override;
         virtual bool windowGetMovable(ui::NativeWindowID id) override;
+        virtual bool windowGetDefaultPlacement(ui::NativeWindowID id, base::Rect& outDefaultPlacement) override;
         virtual void windowMinimize(ui::NativeWindowID id) override;
         virtual void windowMaximize(ui::NativeWindowID id) override;
 
@@ -80,6 +82,7 @@ namespace rendering
             ui::NativeWindowID ownerId;
             OutputObjectPtr output; // window+swapchain
             bool firstFramePending = false;
+            bool showOnFirstFrame = false;
             base::Point lastPaintSize;
             base::StringBuf lastTitle;
             ui::INativeWindowCallback* callback = nullptr;

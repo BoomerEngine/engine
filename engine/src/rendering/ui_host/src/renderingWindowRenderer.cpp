@@ -115,6 +115,7 @@ namespace rendering
             wrapper->output = output;
             wrapper->lastTitle = setup.title;
             wrapper->firstFramePending = true;
+            wrapper->showOnFirstFrame = setup.visible;
             wrapper->callback = setup.callback;
             m_nativeWindowMap[wrapper->id] = wrapper;
             return wrapper->id;
@@ -274,10 +275,26 @@ namespace rendering
         return false;
     }
 
+    bool NativeWindowRenderer::windowGetDefaultPlacement(ui::NativeWindowID id, base::Rect& outPlacement)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            return window->output->window()->windowGetWindowDefaultPlacement(outPlacement);
+
+        return false;
+    }
+
     bool NativeWindowRenderer::windowGetMaximized(ui::NativeWindowID id)
     {
         if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
             return window->output->window()->windowIsMaximized();
+
+        return false;
+    }
+
+    bool NativeWindowRenderer::windowGetVisible(ui::NativeWindowID id)
+    {
+        if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
+            return window->output->window()->windowIsVisible();
 
         return false;
     }
@@ -390,7 +407,9 @@ namespace rendering
             // show the window
             if (window->firstFramePending)
             {
-                window->output->window()->windowShow();
+                if (window->showOnFirstFrame)
+                    window->output->window()->windowShow();
+
                 window->firstFramePending = false;
             }
 

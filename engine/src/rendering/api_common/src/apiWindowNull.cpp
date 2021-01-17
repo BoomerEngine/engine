@@ -223,6 +223,13 @@ namespace rendering
 			return base::Point(m_width, m_height);
 		}
 
+		bool WindowNull::windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const
+		{
+			DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+			outWindowNormalRect = base::Rect(0, 0, m_width, m_height);
+			return false;
+		}
+
 		bool WindowNull::windowHasCloseRequest() const
 		{
 			DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");

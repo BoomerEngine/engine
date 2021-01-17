@@ -42,14 +42,6 @@ namespace ed
 
         //--
 
-        /// get the opened editor for this file (valid only if file has been opened)
-        INLINE const ResourceEditorPtr& editor() const { return m_editor; }
-
-        /// is the file open? (editor must exist)
-        INLINE bool opened() const { return !m_editor.empty(); }
-
-        //--
-
         /// request version control status update
         void refreshVersionControlStateRefresh(bool sync = false);
 
@@ -69,31 +61,12 @@ namespace ed
 
         //---
 
-        /// can this file be opened ?
-        virtual bool canOpen() const;
-
-        /// is file in use (loaded?)
-        virtual bool inUse() const;
-
-        /// open this file edition, optionally the window can be activate
-        virtual bool open(bool activate=true);
-
-        /// save edited file (valid only if editor opened)
-        virtual bool save();
-
-        /// close this editor, if force closed we won't ask for saving
-        virtual bool close(bool force=false);
-
-        //---
-
     protected:
         const ManagedFileFormat* m_fileFormat; // file format description
 
         GlobalEventKey m_eventKey;
         vsc::FileState m_state;
         bool m_isModified;
-
-        ResourceEditorPtr m_editor;
 
         ///---
 
