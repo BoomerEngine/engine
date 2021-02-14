@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "backgroundCommand.h"
+#include "editorBackgroundTask.h"
 
 #include "base/resource_compiler/include/importQueue.h"
 
@@ -22,9 +22,9 @@ namespace ed
     //--
 
     // asset importer process
-    class BASE_EDITOR_API AssetImportJob : public IBackgroundJob, public res::IImportQueueCallbacks
+    class BASE_EDITOR_API AssetImportJob : public IBackgroundTask, public res::IImportQueueCallbacks
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportJob, IBackgroundJob)
+        RTTI_DECLARE_VIRTUAL_CLASS(AssetImportJob, IBackgroundTask)
 
     public:
         AssetImportJob(const res::ImportListPtr& fileList);
@@ -47,7 +47,7 @@ namespace ed
 
         //--
 
-        std::atomic<BackgroundJobStatus> m_status = BackgroundJobStatus::Running;
+        std::atomic<BackgroundTaskStatus> m_status = BackgroundTaskStatus::Running;
 
         void runImportTask();
 
@@ -55,7 +55,7 @@ namespace ed
 
         // IBackgroundJob
         virtual bool start() override final;
-        virtual BackgroundJobStatus update() override final;
+        virtual BackgroundTaskStatus update() override final;
         virtual ui::ElementPtr fetchDetailsDialog() override final;
         virtual ui::ElementPtr fetchStatusDialog() override final;
 

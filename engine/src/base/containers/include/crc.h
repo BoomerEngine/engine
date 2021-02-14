@@ -71,6 +71,10 @@ namespace base
             : m_crc(initValue)
         {};
 
+        INLINE CRC64(const CRC64& crc)
+            : m_crc(crc.m_crc)
+        {}
+
         /// get current CRC value
         INLINE uint64_t crc() const { return m_crc; }
         INLINE operator uint64_t() const { return m_crc; }

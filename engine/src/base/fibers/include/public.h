@@ -21,4 +21,7 @@ namespace base
         class CommandQueue;
 
     } // fibers
+
+    class IBackgroundJob;
+
 } // base

@@ -18,6 +18,7 @@
 #include "base/object/include/objectGlobalRegistry.h"
 #include "base/io/include/ioSystem.h"
 #include "base/resource/include/resourceFileLoader.h"
+#include "base/io/include/ioFileHandle.h"
 
 
 namespace base
@@ -195,6 +196,17 @@ namespace base
             TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->path(), timer, affectedObjects.size(), numObjectsVisited);
         }
 
+        ResourceKey ResourceLoaderCooker::translateResourceKey(const ResourceKey& key) const
+        {
+            const auto path = key.path().view();
+
+            res::ResourcePath loadPath;
+            if (m_depot->queryFileLoadPath(path, loadPath))
+                return ResourceKey(loadPath, key.cls());
+
+            return ResourceKey::EMPTY();
+        }
+
         ResourceHandle ResourceLoaderCooker::loadResourceOnce(const ResourceKey& key)
         {
             SpecificClassType<IResource> cookedResourceClass;
@@ -220,7 +232,7 @@ namespace base
                                 InplaceArray<SourceDependency, 1> dependencies;
 
                                 auto& dep = dependencies.emplaceBack();
-                                dep.sourcePath = key.path().str();
+                                dep.sourcePath = StringBuf(key.path().view()); // we depend on the real content
                                 dep.timestamp = fileTimeStamp.value();
 
                                 m_depTracker->notifyDependenciesChanged(key, dependencies);

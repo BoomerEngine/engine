@@ -25,7 +25,12 @@
 #include "base/ui/include/uiColumnHeaderBar.h"
 #include "base/io/include/ioSystem.h"
 #include "base/ui/include/uiEditBox.h"
+#include "base/ui/include/uiCheckBox.h"
+#include "base/ui/include/uiProgressBar.h"
 #include "base/ui/include/uiTextValidation.h"
+#include "base/resource_compiler/include/depotStructureRename.h"
+#include "base/ui/include/uiMessageBox.h"
+#include "base/system/include/thread.h"
 
 namespace ed
 {
@@ -179,7 +184,7 @@ namespace ed
         Array<ManagedFile*> filesToDelete;
         Array<ManagedDirectory*> dirsToDelete;
         CollectFilesAndDirs(items, filesToDelete, dirsToDelete);
-        
+
         {
             auto elem = window->createChild<ui::TextLabel>();
             elem->customMargins(4, 4, 4, 4);
@@ -361,7 +366,7 @@ namespace ed
                     if (GetEditor()->showFileEditor(file))
                         windowRef->requestClose();
         };
-        
+
         if (focusFile)
         {
             if (auto item = fileList->index(focusFile))
@@ -510,6 +515,413 @@ namespace ed
         }
 
         return window->runModal(owner, editText);
+    }
+
+    //--
+
+    bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings)
+    {
+        auto* file = rtti_cast<ManagedFile>(item);
+        auto* dir = rtti_cast<ManagedDirectory>(item);
+
+        auto window = base::RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, file ? "Rename file" : "Rename directory");
+        window->layoutVertical();
+        window->customPadding(5, 5, 5, 5);
+
+        auto windowRef = window.get();
+        window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
+        window->actions().bindShortcut("Cancel"_id, "Escape");
+
+        auto label = window->createChild<ui::TextLabel>(file ? "Please enter new name of the file:" : "Please enter new name of the directory:");
+        label->customMargins(0, 0, 0, 5);
+
+        auto dirBar = window->createChild<ui::IElement>();
+        dirBar->layoutHorizontal();
+        dirBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        label->customMargins(0, 0, 0, 5);
+
+        auto* specificDirectory = item->parentDirectory();
+        auto editBoxFlags = ui::EditBoxFeatureBit::AcceptsEnter;
+
+        auto dirName = dirBar->createChild<ui::EditBox>(editBoxFlags).get();
+        dirName->text(specificDirectory->depotPath());
+        dirName->validation(ui::MakeDirectoryValidationFunction(false));
+        dirName->expand();
+
+        auto dirPick = dirBar->createChild<ui::Button>("[img:page_zoom] Pick");
+        dirPick->styleType("BackgroundButton"_id);
+        dirPick->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+
+        auto editText = window->createChild<ui::EditBox>(editBoxFlags).get();
+        editText->customInitialSize(500, 20);
+        editText->customMargins(0, 0, 5, 0);
+
+        StringView fileExtension;
+        if (file)
+        {
+            fileExtension = file->name().view().afterFirst(".");
+            editText->text(file->name().view().beforeFirst("."));
+        }
+        else if (dir)
+        {
+            editText->text(dir->name().view());
+        }
+        editText->validation(ui::MakeFilenameValidationFunction(false));
+        editText->expand();
+
+        if (dir != nullptr)
+        {
+            auto line = window->createChild<ui::IElement>();
+            line->layoutHorizontal();
+            line->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            line->customMargins(0, 0, 0, 5);
+
+            auto check = line->createChild<ui::CheckBox>(outSettings.fixupInternalReferences);
+            check->bind(ui::EVENT_CLICKED) = [windowRef, &outSettings](ui::CheckBox* box) { outSettings.fixupInternalReferences = box->stateBool(); };
+
+            auto label = line->createChild<ui::TextLabel>("Fix internal references");
+            label->tooltip("Change paths inside moved/copied files to point to new file locations");
+        }
+
+        {
+            auto line = window->createChild<ui::IElement>();
+            line->layoutHorizontal();
+            line->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+            line->customMargins(0, 0, 0, 5);
+
+            auto check = line->createChild<ui::CheckBox>(outSettings.applyLinks);
+            check->bind(ui::EVENT_CLICKED) = [windowRef, &outSettings](ui::CheckBox* box) { outSettings.applyLinks = box->stateBool(); };
+
+            auto label = line->createChild<ui::TextLabel>("Apply existing links");
+            label->tooltip("When applying new paths to a files make sure all existing links (thumbstones) are applied as well.");
+        }
+
+        if (outSettings.moveFilesNotCopy)
+        {
+            {
+                auto line = window->createChild<ui::IElement>();
+                line->layoutHorizontal();
+                line->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                line->customMargins(0, 0, 0, 5);
+
+                auto check = line->createChild<ui::CheckBox>(outSettings.createThumbstones);
+                check->bind(ui::EVENT_CLICKED) = [windowRef, &outSettings](ui::CheckBox* box) { outSettings.createThumbstones = box->stateBool(); };
+
+                auto label = line->createChild<ui::TextLabel>("Create thumbstones");
+                label->tooltip("Create thumbstones (links files) that will point to the new location of the files.[br]This will prevent moved directoreis from being deleted.");
+            }
+
+            {
+                auto line = window->createChild<ui::IElement>();
+                line->layoutHorizontal();
+                line->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                line->customMargins(0, 0, 0, 5);
+
+                auto check = line->createChild<ui::CheckBox>(outSettings.removeEmptyDirectories);
+                check->bind(ui::EVENT_CLICKED) = [windowRef, &outSettings](ui::CheckBox* box) { outSettings.removeEmptyDirectories = box->stateBool(); };
+
+                auto label = line->createChild<ui::TextLabel>("Remove empty directories");
+                label->tooltip("After moving is done cleanup directories that are empty");
+            }
+        }
+
+        auto buttons = window->createChild();
+        buttons->layoutHorizontal();
+        buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+        buttons->customMargins(0, 0, 0, 5);
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:file_go] Rename").get();
+
+            auto checkFunc = [editText, fileExtension, dirName, button, &outSettings]()
+            {
+                bool valid = false;
+
+                if (editText->validationResult() && dirName->validationResult())
+                {
+                    if (fileExtension.empty())
+                    {
+                        auto depotPath = StringBuf(TempString("{}{}/", dirName->text(), editText->text()));
+                        if (ValidateDepotPath(depotPath, DepotPathClass::AbsoluteDirectoryPath))
+                        {
+                            const auto* existingDir = GetEditor()->managedDepot().findPath(depotPath);
+                            if (existingDir == nullptr)
+                                valid = true; // we can't rename onto existing file
+                        }
+                    }
+                    else
+                    {
+                        auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), fileExtension));
+                        if (ValidateDepotPath(depotPath, DepotPathClass::AbsoluteFilePath))
+                        {
+                            const auto* existingFile = GetEditor()->managedDepot().findManagedFile(depotPath);
+                            if (existingFile == nullptr)
+                                valid = true; // we can't rename onto existing file
+                        }
+                    }
+                }
+
+                button->enable(valid);
+            };
+
+            auto acceptFunc = [windowRef, editText, fileExtension, dirName, item, button, &outSettings]() {
+                if (button->isEnabled() && editText->validationResult() && dirName->validationResult()) {
+
+                    outSettings.elements.reset();
+
+                    if (fileExtension.empty())
+                    {
+                        auto depotPath = StringBuf(TempString("{}{}/", dirName->text(), editText->text()));
+                        if (ValidateDepotPath(depotPath, DepotPathClass::AbsoluteDirectoryPath))
+                        {
+                            const auto* existingDir = GetEditor()->managedDepot().findPath(depotPath);
+                            if (existingDir == nullptr)
+                            {
+                                auto& entry = outSettings.elements.emplaceBack();
+                                entry.file = false;
+                                entry.sourceDepotPath = item->depotPath();
+                                entry.renamedDepotPath = depotPath;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), fileExtension));
+                        if (ValidateDepotPath(depotPath, DepotPathClass::AbsoluteFilePath))
+                        {
+                            const auto* existingFile = GetEditor()->managedDepot().findManagedFile(depotPath);
+                            if (existingFile == nullptr)
+                            {
+                                auto& entry = outSettings.elements.emplaceBack();
+                                entry.file = true;
+                                entry.sourceDepotPath = item->depotPath();
+                                entry.renamedDepotPath = depotPath;
+                            }
+                        }
+                    }
+
+
+                    if (!outSettings.elements.empty())
+                        windowRef->requestClose(1);
+                }
+            };
+
+            editText->bind(ui::EVENT_TEXT_MODIFIED) = checkFunc;
+            dirName->bind(ui::EVENT_TEXT_MODIFIED) = checkFunc;
+
+            dirName->bind(ui::EVENT_TEXT_ACCEPTED) = [editText]() {
+                editText->focus();
+            };
+
+            editText->bind(ui::EVENT_TEXT_ACCEPTED) = acceptFunc;
+
+            button->bind(ui::EVENT_CLICKED) = acceptFunc;
+
+            checkFunc();
+        }
+
+        {
+            auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
+            button->bind(ui::EVENT_CLICKED) = [windowRef]() {
+                windowRef->requestClose(0);
+            };
+        }
+
+        return window->runModal(owner, editText);
+    }
+
+    //--
+
+    struct RenameFileListModelEntry
+    {
+        StringBuf sourceDepotPath;
+        const depot::FileRenameJob* job = nullptr;
+
+        bool finishedOK = false;
+        bool finishedFailed = false;
+    };
+
+    class RenameFileListModel : public ui::SimpleTypedListModel<RenameFileListModelEntry>
+    {
+    public:
+        virtual bool compare(const RenameFileListModelEntry& a, const RenameFileListModelEntry& b, int colIndex) const override
+        {
+            return a.sourceDepotPath < b.sourceDepotPath;
+        }
+
+        virtual bool filter(const RenameFileListModelEntry& data, const ui::SearchPattern& filter, int colIndex) const override
+        {
+            return filter.testString(data.sourceDepotPath);
+        }
+
+        virtual base::StringBuf content(const RenameFileListModelEntry& data, int colIndex) const override
+        {
+            StringBuilder txt;
+
+            txt << "[img:file] ";
+
+            if (!data.job)
+                txt << "[tag:#A88]Invalid[/tag]";
+            else if (data.job->deleteOriginalFile)
+                txt << "[tag:#AA8]Move[/tag]";
+            else
+                txt << "[tag:#8A8]Copy[/tag]";
+
+            if (data.job && !data.job->pathChanges.empty())
+                txt << "[tag:#888]Update Paths[/tag]";
+
+            txt << " ";
+            txt << data.sourceDepotPath;
+
+            return txt.toString();
+        }
+    };
+
+    class InspectRenameDialog : public ui::Window
+    {
+    public:        
+        InspectRenameDialog()
+            : ui::Window(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Inspect rename/move")
+        {
+            customPadding(5, 5, 5, 5);
+
+            createChild<ui::TextLabel>("Inspect files to rename:");
+
+            m_actionListModel = RefNew<RenameFileListModel>();
+            m_actionList = createChild<ui::ListView>();
+            m_actionList->columnCount(1);
+            m_actionList->model(m_actionListModel);
+            m_actionList->expand();
+            m_actionList->customInitialSize(1200, 900);
+            m_actionList->customMinSize(1200, 900);            
+
+            m_actionList->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
+            {
+                //auto selection = 
+            };
+
+            auto buttons = createChild();
+            buttons->customMargins(0, 5, 0, 5);
+            buttons->layoutHorizontal();
+            buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+
+            {
+                auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:rename] Rename");
+                button->addStyleClass("red"_id);
+                button->bind(ui::EVENT_CLICKED) = [this]() {
+                    requestClose(1);
+                };
+            }
+
+            {
+                auto button = buttons->createChildWithType<ui::Button>("PushButton"_id, "Cancel");
+                button->bind(ui::EVENT_CLICKED) = [this]() {
+                    requestClose(0);
+                };
+            }
+        }
+
+        void addData(const Array<depot::FileRenameJob*>& jobs, const Array<StringBuf>& failedFiles)
+        {
+            for (const auto& path : failedFiles)
+            {
+                RenameFileListModelEntry entry;
+                entry.sourceDepotPath = path;
+                m_actionListModel->add(entry);
+            }
+
+            for (const auto* job : jobs)
+            {
+                RenameFileListModelEntry entry;
+                entry.job = job;
+                entry.sourceDepotPath = job->sourceDepotPath;
+                m_actionListModel->add(entry);
+            }
+        }
+
+        void showDetails(const RenameFileListModelEntry& entry)
+        {
+        }
+
+    protected:
+        ui::ListViewPtr m_actionList;
+        RefPtr<RenameFileListModel> m_actionListModel;
+
+        ui::ProgressBarPtr m_progressBar;
+        ui::TextLabelPtr m_progressText;
+
+        ui::ButtonPtr m_closeButton;
+
+        std::atomic<bool> m_canceFlag = false;
+    };
+
+    //--
+
+    ManagedItem* RenameItem(ui::IElement* owner, ManagedItem* file)
+    {
+        auto& depot = GetEditor()->managedDepot().depot();
+
+        base::depot::RenameConfiguration settings;
+        settings.moveFilesNotCopy = true;
+
+        GetEditor()->runLongAction(owner, nullptr, [](IProgressTracker& progress) {
+                const auto size = 20;
+                for (uint32_t i = 0; i < size; ++i) {
+                    if (progress.checkCancelation())
+                        break;
+                    progress.reportProgress(i, size, TempString("Waiting {}/{}", i, size));
+                    base::Sleep(500);
+                }
+            }, "Waiting for rename...", false);
+
+        // user input
+        if (!ShowGenericRenameDialog(owner, file, settings))
+            return nullptr;
+
+        // scan files to rename
+        Array<depot::FileRenameJob*> jobs;
+        Array<StringBuf> failedFiles;
+        GetEditor()->runLongAction(owner, nullptr, [&jobs, &failedFiles, &settings, &depot](IProgressTracker& progress) {
+            CollectRenameJobs(depot, settings, progress, jobs, failedFiles);
+            }, "Collecting files to rename", true);
+
+        // nothing scanned
+        if (jobs.empty())
+        {
+            ui::ShowMessageBox(owner, ui::MessageBoxSetup().title("Rename").message("There's nothing to rename"));
+            return nullptr;
+        }
+
+        // confirm
+        {
+            auto dlg = RefNew<InspectRenameDialog>();
+            dlg->addData(jobs, failedFiles);
+            if (!dlg->runModal(owner))
+                return nullptr;
+        }
+
+
+        // select the renamed element (only if we renamed as single one)
+        if (!settings.elements.empty())
+        {
+            const auto& elem = settings.elements.back();
+            if (elem.file)
+                return GetEditor()->managedDepot().findManagedFile(elem.renamedDepotPath);
+            else
+                return GetEditor()->managedDepot().findPath(elem.renamedDepotPath);
+        }
+
+        return nullptr;
+    }
+
+    bool MoveItems(ui::IElement* owner, const Array<ManagedItem*>& items, ManagedDirectory* target)
+    {
+        return false;
+    }
+
+    bool CopyItems(ui::IElement* owner, const Array<ManagedItem*>& items, ManagedDirectory* target)
+    {
+        return false;
     }
 
     //--

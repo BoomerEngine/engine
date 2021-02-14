@@ -175,8 +175,27 @@ namespace base
         // NOTE: it's not recursive
         BASE_WORLD_API CAN_YIELD EntityPtr CompileEntity(const Array<const NodeTemplate*>& templates, Transform* outEntityLocalTransform = nullptr);
 
+        //--
+
+        struct BASE_WORLD_API HierarchyEntity : public IReferencable
+        {
+            NodeGlobalID id;
+            EntityPtr entity;
+            
+            bool streamingGroupChildren = true;
+            bool streamingBreakFromGroup = false;
+            float streamingDistanceOverride = 0.0f;
+
+            Array<RefPtr<HierarchyEntity>> children;
+
+            //--
+
+            uint32_t countTotalEntities() const;
+            void collectEntities(Array<EntityPtr>& outEntites) const; // TEMPSHIT
+        };
+
         // compile entity (prefab-style), returns the root entity directly and other all entities via array
-        BASE_WORLD_API CAN_YIELD EntityPtr CompileEntityHierarchy(const NodeTemplate* rootTemplateNode, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities);
+        BASE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::IResourceLoader* loader);
 
         //--
 

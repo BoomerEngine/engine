@@ -81,6 +81,9 @@ namespace ed
         // depot file loader
         depot::DepotStructure& m_depot;
 
+        // file dependencies
+        depot::DependencyCache* m_depotDependencyCache = nullptr;
+
         //--
 
         // managed depot event key

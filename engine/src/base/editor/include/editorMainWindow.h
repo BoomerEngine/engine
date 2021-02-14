@@ -9,7 +9,6 @@
 #pragma once
 
 #include "editorResourceContainerWindow.h"
-#include "backgroundCommand.h"
 
 namespace ed
 {
@@ -24,12 +23,12 @@ namespace ed
     public:
         MainWindowStatusBar();
 
-        void pushBackgroundJobToHistory(IBackgroundJob* job, BackgroundJobStatus status);
-        void updateBackgroundJobStatus(IBackgroundJob* job, uint64_t count, uint64_t total, StringView text, bool hasErrors);
+        void pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status);
+        void updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors);
         void resetBackgroundJobStatus();
 
     private:
-        BackgroundJobPtr m_activeBackgroundJob;
+        BackgroundTaskPtr m_activeBackgroundJob;
         ui::ProgressBarPtr m_backgroundJobProgress;
         ui::TextLabelPtr m_backgroundJobStatus;
 

@@ -432,9 +432,10 @@ namespace base
 
         static const int MAX_DEPTH = 10;
 
-        EntityPtr ProcessSingleEntity(int depth, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, const NodePath& path, Array<EntityPtr>& outAllEntities)
+        RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, res::IResourceLoader* loader)
         {
-            EntityPtr ret;
+            auto ret = RefNew<HierarchyEntity>();
+            ret->id = path.toID();
 
             InplaceArray<const NodeTemplate*, 20> templates;
             {
@@ -450,19 +451,22 @@ namespace base
 
             // compile entity data
             {
-                ObjectIndirectTemplateCompiler compiler;
+                ObjectIndirectTemplateCompiler compiler(loader);
                 for (const auto* ptr : templates)
                     if (ptr->m_entityTemplate)
                         compiler.addTemplate(ptr->m_entityTemplate);
-                ret = CreateEntityObject(compiler);
+                ret->entity = CreateEntityObject(compiler);
 
                 // place the entity
                 if (applyLocalPlacement)
-                    ret->requestTransform(placement*compiler.compileTransform().toTransform());
+                    ret->entity->requestTransform(placement * compiler.compileTransform().toTransform());
                 else
-                    ret->requestTransform(placement);
+                    ret->entity->requestTransform(placement);
 
-                outAllEntities.pushBack(ret);
+                // extract streaming information
+                ret->streamingGroupChildren = compiler.compileValueOrDefault<bool>("streamingGroupChildren"_id, true);
+                ret->streamingBreakFromGroup = compiler.compileValueOrDefault<bool>("streamingBreakFromGroup"_id, false);
+                ret->streamingDistanceOverride = compiler.compileValueOrDefault<float>("streamingDistanceOverride"_id, 0.0f);
             }
 
             //--
@@ -477,7 +481,7 @@ namespace base
 
                 for (auto pair : componentData.pairs())
                 {
-                    ObjectIndirectTemplateCompiler compiler;
+                    ObjectIndirectTemplateCompiler compiler(loader);
                     for (const auto* ptr : pair.value)
                         compiler.addTemplate(ptr);
 
@@ -485,7 +489,7 @@ namespace base
                     {
                         const auto relativePlacement = compiler.compileTransform();
                         comp->relativeTransform(relativePlacement.toTransform());
-                        ret->attachComponent(comp);
+                        ret->entity->attachComponent(comp);
                     }                   
 
                 }
@@ -502,21 +506,47 @@ namespace base
 
                 for (auto pair : childrenNodes.pairs())
                 {
-                    const auto childPath = path[pair.key];
-                    ProcessSingleEntity(depth + 1, pair.value, ret->absoluteTransform(), true, childPath, outAllEntities);
+                    path.pushSingle(pair.key);
+
+                    if (auto child = ProcessSingleEntity(depth + 1, path, pair.value, ret->entity->absoluteTransform(), true, loader))
+                        ret->children.pushBack(child);
+
+                    path.pop();
                 }
             }
 
             return ret;
         }
 
-        EntityPtr CompileEntityHierarchy(const NodeTemplate* rootTemplateNode, const AbsoluteTransform& placement, const NodePath& path, Array<EntityPtr>& outAllEntities)
+        void HierarchyEntity::collectEntities(Array<EntityPtr>& outEntites) const
+        {
+            outEntites.pushBack(entity);
+
+            for (const auto& child : children)
+                child->collectEntities(outEntites);
+        }
+
+        uint32_t HierarchyEntity::countTotalEntities() const
+        {
+            uint32_t ret = 1;
+
+            for (const auto& child : children)
+                ret += child->countTotalEntities();
+
+            return ret;
+        }
+
+        RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::IResourceLoader* loader)
         {
             InplaceArray<const NodeTemplate*, 10> nodeTemplates;
             if (rootTemplateNode)
                 nodeTemplates.pushBack(rootTemplateNode);
 
-            return ProcessSingleEntity(0, nodeTemplates, placement, false, path, outAllEntities);
+            NodePathBuilder localPath(path);
+            if (forceInitialPlacement)
+                return ProcessSingleEntity(0, localPath, nodeTemplates, *forceInitialPlacement, false, loader);
+            else
+                return ProcessSingleEntity(0, localPath, nodeTemplates, AbsoluteTransform::ROOT(), true, loader);
         }
 
         //--

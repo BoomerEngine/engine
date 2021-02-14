@@ -16,36 +16,6 @@ namespace base
     namespace world
     {
 
-        //--
-
-        /// Streaming model for the node
-        enum class EntityStreamingModel : uint8_t
-        {
-            // Auto mode
-            Auto,
-
-            // Stream with parent node, this allows nodes to be grouped together
-            // If there's no streamable parent the node is streamed on it's own using the streaming distane
-            // The streaming distance of the parent node is calculated based on the maximum streaming distance of the child nodes
-            StreamWithParent,
-
-            // Node will be streamed separately based on it's own position and streaming distance
-            // NOTE: this node will not be accessible as target of bindings (since we cannot guarantee it's loaded)
-            HierarchicalGrid,
-
-            // Node will be always loaded when the world is loaded
-            // NOTE: this node will always be accessible for bindings
-            AlwaysLoaded,
-
-            // Node will be placed in a separate sector when baking
-            // Good only for heavy data like navmesh
-            SeparateSector,
-
-            // Node will be discarded during world baking
-            // Good for temporary data
-            Discard,
-        };
-
         //---
 
         enum class EntityFlagBit : uint64_t

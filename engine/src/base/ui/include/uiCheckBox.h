@@ -47,6 +47,8 @@ namespace ui
 
         static CheckBoxState NextState(CheckBoxState state);
 
+        void updateCheckStyles();
+
         virtual void clicked();
     };
 

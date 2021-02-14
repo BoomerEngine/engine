@@ -16,7 +16,8 @@ namespace base
     class BASE_RESOURCE_API ObjectIndirectTemplateCompiler : public ITemplatePropertyValueContainer
     {
     public:
-        ObjectIndirectTemplateCompiler();
+        ObjectIndirectTemplateCompiler(); // use default loader
+        ObjectIndirectTemplateCompiler(res::IResourceLoader* loader); // use specific loader
         virtual ~ObjectIndirectTemplateCompiler();
 
         //--
@@ -54,8 +55,11 @@ namespace base
         InplaceArray<const ObjectIndirectTemplate*, 8> m_enabledTemplates; // reversed order so we can break on first match
 
         ClassType m_objectClass;
+        res::IResourceLoader* m_loader = nullptr;
 
         void updateObjectClass();
+
+        bool compileValueRaw(StringID name, Type expectedType, void* ptr) const;
     };
 
     //--

@@ -16,7 +16,6 @@
 
 #include "base/input/include/inputStructures.h"
 #include "base/image/include/image.h"
-#include "base/containers/include/clipboard.h"
 #include "base/canvas/include/canvasGeometryBuilder.h"
 
 namespace ui
@@ -367,13 +366,7 @@ namespace ui
     {
         if (m_textBuffer->hasSelection())
         {
-            auto* windowRenderer = this->renderer();
-            if (windowRenderer)
-            {
-                auto data = selectedText().view().toBuffer();
-                auto format = "Text"_id;
-                //windowRenderer->storeClipboardData(&format, &data, 1);
-            }
+            renderer()->storeTextToClipboard(selectedText());
         }
     }
 
@@ -383,13 +376,7 @@ namespace ui
         {
             if (m_textBuffer->hasSelection())
             {
-                auto *windowRenderer = this->renderer();
-                if (windowRenderer)
-                {
-                    auto data = selectedText().view().toBuffer();
-                    auto format = "Text"_id;
-                    //windowRenderer->storeClipboardData(&format, &data, 1);
-                }
+                renderer()->storeTextToClipboard(selectedText());
 
                 m_textBuffer->deleteSelection();
                 textModified();
@@ -403,25 +390,19 @@ namespace ui
     {
         if (canModify())
         {
-            auto *windowRenderer = this->renderer();
-            if (windowRenderer)
+            base::StringBuf text;
+            if (renderer()->loadStringFromClipboard(text))
             {
-                base::Buffer data;
-                /*if (windowRenderer->loadClipboardData("Text"_id, data))
-                {
-                    auto text = base::StringBuf(data);
+                // replace existing text
+                if (m_textBuffer->hasSelection())
+                    m_textBuffer->deleteSelection();
 
-                    // replace existing text
-                    if (m_textBuffer->hasSelection())
-                        m_textBuffer->deleteSelection();
+                // paste new content
+                auto insertPos = m_textBuffer->cursorPos().m_char;
+                m_textBuffer->insertCharacters(insertPos, text);
+                textModified();
 
-                    // paste new content
-                    auto insertPos = m_textBuffer->cursorPos().m_char;
-                    m_textBuffer->insertCharacters(insertPos, text);
-                    textModified();
-
-                    moveCursor(m_textBuffer->cursorPos(), false);
-                }*/
+                moveCursor(m_textBuffer->cursorPos(), false);
             }
         }
     }

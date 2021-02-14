@@ -33,8 +33,6 @@ namespace ed
 
         // save new content of the file (clears the modified flag as well)
         bool storeContent(const Buffer& content);
-
-        //--
     };
 
     //---

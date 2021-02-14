@@ -638,7 +638,9 @@ namespace rendering
 				case WM_DPICHANGED:
 				{
 					auto newDpi = HIWORD(wParam);
+					auto oldScale = m_currentPixelScale;
 					m_currentPixelScale = newDpi / 96.0f;
+					TRACE_INFO("DPI Change: {} -> {}", oldScale, m_currentPixelScale);
 
 					auto& srcRect = *(RECT*)lParam;
 
@@ -995,7 +997,7 @@ namespace rendering
 
 			// setup the DPI awareness
 	#if (WINVER >= 0x0605)
-			SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 	#endif
 
 			// create a dummy class
@@ -1092,11 +1094,7 @@ namespace rendering
 					windowHandles.pushBack(window->handle());
 				}
 			}
-
-			// setup the DPI awareness
-	#if (WINVER >= 0x0605)
-			SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-	#endif
+			
 			// process messages on all active windows
 			m_duringUpdate = true;
 			for (HWND hWnd : windowHandles)

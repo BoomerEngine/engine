@@ -294,6 +294,12 @@ namespace base
             return Box(center, 0.1f);
         }
 
+        Box Component::calcStreamingBounds() const
+        {
+            const auto defaultComponentStreamingRange = 75.0f;
+            return calcBounds().extruded(defaultComponentStreamingRange);
+        }
+
         //--
 
         void Component::recalculateTransform(const AbsoluteTransform& parentTransform, const Matrix& parentToWorld)

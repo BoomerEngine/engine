@@ -19,17 +19,6 @@ namespace base
     {
         //--
 
-        RTTI_BEGIN_TYPE_ENUM(EntityStreamingModel);
-        RTTI_ENUM_OPTION(Auto);
-        RTTI_ENUM_OPTION(StreamWithParent);
-        RTTI_ENUM_OPTION(HierarchicalGrid);
-        RTTI_ENUM_OPTION(AlwaysLoaded);
-        RTTI_ENUM_OPTION(SeparateSector);
-        RTTI_ENUM_OPTION(Discard);
-        RTTI_END_TYPE();
-
-        //--
-
         RTTI_BEGIN_TYPE_CLASS(EntityInputEvent);
             RTTI_PROPERTY(m_name);
             RTTI_PROPERTY(m_deltaValue);
@@ -42,7 +31,11 @@ namespace base
         //--
 
         RTTI_BEGIN_TYPE_CLASS(Entity);
+            RTTI_PROPERTY(m_absoluteTransform);
+            RTTI_PROPERTY(m_components);
         RTTI_END_TYPE();
+
+        //--
 
         Entity::Entity()
         {}
@@ -77,6 +70,7 @@ namespace base
 
             ASSERT(!comp->m_entity);
             m_components.pushBack(AddRef(comp));
+            comp->parent(this);
             comp->m_entity = this;
 
             // TODO: filter this more
@@ -105,6 +99,7 @@ namespace base
 
             ASSERT(this == comp->m_entity);
             comp->m_entity = nullptr;
+            comp->parent(nullptr);
             m_components.remove(comp); // this may delete component !
         }
 
@@ -294,7 +289,8 @@ namespace base
         {
             TBaseClass::queryTemplateProperties(outTemplateProperties);
 
-            outTemplateProperties.prop("Streaming"_id, "streamingModel"_id, EntityStreamingModel::Auto, rtti::PropertyEditorData().comment("How this entity should be streamed"));
+            outTemplateProperties.prop("Streaming"_id, "streamingGroupChildren"_id, true, rtti::PropertyEditorData().comment("Stream all child entities together as a group (better for logic and visuals, bad for heavy prefabs)"));
+            outTemplateProperties.prop("Streaming"_id, "streamingBreakFromGroup"_id, false, rtti::PropertyEditorData().comment("Force this entity to stream individually from it's parent (parent still has to be streamed first, there's no override for this)"));
             outTemplateProperties.prop("Streaming"_id, "streamingDistanceOverride"_id, 0.0f, rtti::PropertyEditorData().comment("Override distance for the streaming range"));
         }
 

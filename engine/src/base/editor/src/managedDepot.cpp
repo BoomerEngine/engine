@@ -15,6 +15,7 @@
 
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/localService.h"
+#include "base/resource_compiler/include/depotDependencyCache.h"
 #include "base/system/include/thread.h"
 #include "base/ui/include/uiElementConfig.h"
 
@@ -27,6 +28,9 @@ namespace ed
     {
         // event key for listening our events
         m_eventKey = MakeUniqueEventKey("ManagedDepot");
+
+        // create dependency cache
+        m_depotDependencyCache = new depot::DependencyCache(depot);
 
         // create thumbnail service
         //m_thumbnailHelper = CreateUniquePtr<ManagedThumbnailHelper>(loader);
@@ -66,6 +70,9 @@ namespace ed
     {
         m_depotEvents.clear();
         m_root.reset();
+
+        delete m_depotDependencyCache;
+        m_depotDependencyCache = nullptr;
     }
 
     void ManagedDepot::populate()

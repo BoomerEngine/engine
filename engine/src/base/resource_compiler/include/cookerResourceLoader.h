@@ -84,6 +84,8 @@ namespace base
 
             bool popNextReload(PendingReload& outReload);
             void applyReload(ResourcePtr currentResource, ResourcePtr newResource);
+
+            virtual ResourceKey translateResourceKey(const ResourceKey& key) const override;
         };
 
         //--

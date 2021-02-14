@@ -9,9 +9,17 @@
 #pragma once
 
 #include "managedItem.h"
+#include "base/resource/include/resourceFileLoader.h"
 
 namespace ed
 {
+    //---
+
+    // file dependencies
+    struct ManagedFileDependencies
+    {
+        Array<base::res::FileLoadingDependency> dependencies;
+    };
 
     //---
 

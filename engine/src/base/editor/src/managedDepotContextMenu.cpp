@@ -21,6 +21,8 @@
 #include "assetBrowserTabFiles.h"
 
 #include "base/ui/include/uiMenuBar.h"
+#include "base/ui/include/uiElement.h"
+#include "base/ui/include/uiRenderer.h"
 #include "base/io/include/ioSystem.h"
 
 namespace ed
@@ -210,6 +212,37 @@ namespace ed
             }
         }
 
+        // rename
+        if (files.size() == 1 && dirs.empty())
+        {
+            auto file = files[0];
+            auto tab = context.tab;
+
+            menu.createCallback("Rename...", "[img:rename]") = [file, owner, tab]() { 
+                if (auto* renamedFile = RenameItem(owner, file))
+                {
+                    if (tab && renamedFile->parentDirectory())
+                        tab->directory(renamedFile->parentDirectory(), renamedFile);
+                }
+            };
+            menu.createSeparator();
+        }
+        else if (dirs.size() == 1 && files.empty())
+        {
+            auto dir = dirs[0];
+            auto tab = context.tab;
+
+            menu.createCallback("Rename...", "[img:rename]") = [dir, owner, tab]() {
+                if (auto* renamedDir = RenameItem(owner, dir))
+                {
+                    if (tab && renamedDir->parentDirectory())
+                        tab->directory(renamedDir->parentDirectory(), renamedDir);
+                }
+            };
+
+            menu.createSeparator();
+        }
+
         // file specific items
         if (!files.empty())
         {
@@ -233,27 +266,39 @@ namespace ed
                 }
             }
 
-            menu.createCallback("Copy depot path") = [files]()
+            menu.createCallback("Copy depot path") = [files, owner]()
             {
                 StringBuilder txt;
 
                 for (auto* file : files)
+                {
                     if (auto path = file->depotPath())
-                        txt.appendf("{}\n", path);
+                    {
+                        if (txt.empty())
+                            txt << "\n";
+                        txt << path;
+                    }
+                }
 
-                // TODO: copy to clipboard
+                owner->renderer()->storeTextToClipboard(txt.view());
             };
 
             if (context.contextDirectory)
             {
-                menu.createCallback("Copy absolute path(s)") = [files]() {
+                menu.createCallback("Copy absolute path(s)") = [files, owner]() {
                     StringBuilder txt;
 
                     for (auto* file : files)
+                    {
                         if (auto path = file->absolutePath())
-                            txt.appendf("{}\n", path);
+                        {
+                            if (txt.empty())
+                                txt << "\n";
+                            txt << path;
+                        }
+                    }
 
-                    // TODO: copy to clipboard
+                    owner->renderer()->storeTextToClipboard(txt.view());
                 };
             }
         }

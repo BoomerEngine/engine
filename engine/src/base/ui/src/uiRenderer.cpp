@@ -1596,7 +1596,12 @@ namespace ui
 
                     info.hitCache->reset(windowArea);
 
-                    TRACE_INFO("ForcedRedrawSize: [{}x{}]", windowArea.size().x, windowArea.size().y);
+                    {
+                        const auto pixelScale = m_native->windowPixelScale(info.nativeId);
+                        info.window->prepare(*m_stash, pixelScale, false, false);
+                    }
+
+                    //TRACE_INFO("ForcedRedrawSize: [{}x{}]", windowArea.size().x, windowArea.size().y);
                     //base::Sleep(200);
 
 					base::canvas::Canvas::Setup setup;

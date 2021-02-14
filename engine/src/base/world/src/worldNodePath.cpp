@@ -9,103 +9,129 @@
 
 #include "build.h"
 #include "worldNodePath.h"
+#include "worldRawLayer.h"
 #include "base/containers/include/stringBuilder.h"
 
 namespace base
 {
     namespace world
     {
+        //--
 
-        NodePath NodePath::operator[](const StringView name) const
+        NodePathBuilder::NodePathBuilder(StringView layerDepotPath)
         {
-            return operator[](StringID(name));
+            auto filePath = layerDepotPath.afterFirst("/layers/");
+            DEBUG_CHECK_RETURN_EX(filePath, "Layer path not inside layers folder");
+
+            static const auto layerExtension = res::IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
+            filePath = filePath.beforeLast(TempString(".{}", layerExtension));
+            DEBUG_CHECK_RETURN_EX(filePath, "Layer file does not have layer extension");
+
+            pushPath(layerDepotPath);
         }
 
-        NodePath NodePath::operator[](const NodePathPart& childName) const
+        NodePathBuilder::~NodePathBuilder()
+        {}
+
+        NodePathBuilder NodePathBuilder::parent() const
         {
-            ASSERT(!childName.empty());
+            DEBUG_CHECK_EX(!m_parts.empty(), "Path has no parents");
 
-            CRC64 pathCRC(m_hash);
-            pathCRC << "/";
-            pathCRC << childName;
-
-            auto parentNode = new RootPathElement(m_parent, m_name, m_hash);
-            return NodePath(parentNode, childName, pathCRC.crc());
+            NodePathBuilder ret(*this);
+            ret.pop();
+            return ret;
         }
 
-        uint32_t NodePath::CalcHash(const NodePath& path)
+        void NodePathBuilder::pop()
         {
-            return (uint32_t)path.m_hash;
+            DEBUG_CHECK_RETURN_EX(!m_parts.empty(), "Path has no parents");
+            m_parts.popBack();
         }
 
-        void NodePath::RootPathElement::print(IFormatStream& str) const
+        void NodePathBuilder::pushSingle(StringID id)
         {
-            if (m_parent)
+            DEBUG_CHECK_RETURN_EX(!id.empty(), "Can't push empty ID");
+            DEBUG_CHECK_RETURN_EX(id != "..", "Can't push special ID like that");
+            DEBUG_CHECK_RETURN_EX(id != ".", "Can't push special ID like that");
+
+            m_parts.pushBack(id);
+        }
+
+        void NodePathBuilder::pushPath(StringView path)
+        {
+            // perfectly legal to have nothing
+            if (path.empty())
+                return;
+
+            // if path starts with "/" it's a global path, reset current stack
+            if (path.beginsWith("/"))
             {
-                m_parent->print(str);
-                str << "/";
+                m_parts.reset();
+                path = path.subString(1);
             }
 
-            str << m_name;
-        }
+            // split into parts
+            InplaceArray<StringView, 16> parts;
+            path.slice("/", false, parts);
 
-        void NodePath::print(IFormatStream& str) const
-        {
-            if (m_parent)
+            // add parts
+            for (auto part : parts)
             {
-                m_parent->print(str);
-                str << "/";
-            }
+                // special "this" part, do nothing
+                if (part == ".")
+                    continue;
 
-            str << m_name;
-        }
-
-        bool NodePath::Parse(const StringBuf& str, NodePath& outPath)
-        {
-            if (str.empty())
-            {
-                outPath = NodePath();
-                return true;
-            }
-
-            // eat the first char
-            auto start  = str.c_str();
-            auto path  = start;
-            if (*start == '/')
-            {
-                start += 1;
-                path += 1;
-            }
-
-            // split into directories, create as we go into the path
-            auto curPath = NodePath();
-            while (*path)
-            {
-                ASSERT(*path != '\\');
-
-                // split after each path breaker
-                if (*path == '/')
+                // go to parent directory
+                if (part == "..")
                 {
-                    // extract directory name
-                    if (path > start)
-                        curPath = curPath[StringView(start, path)];
-
-                    // advance
-                    start = path + 1;
+                    if (!m_parts.empty()) // TODO: hard to decide what to do now
+                        m_parts.popBack();
+                    continue;
                 }
 
-                ++path;
+                // just add
+                m_parts.pushBack(StringID(part));
+            }
+        }
+
+        void NodePathBuilder::print(IFormatStream& f) const
+        {
+            if (m_parts.empty())
+            {
+                f << "/";
+            }
+            else
+            {
+                for (const auto part : m_parts)
+                {
+                    f << "/";
+                    f << part;
+                }
+            }
+        }
+
+        StringBuf NodePathBuilder::toString() const
+        {
+            StringBuilder txt;
+            print(txt);           
+            return txt.toString();
+        }
+
+        NodeGlobalID NodePathBuilder::toID() const
+        {
+            CRC64 crc;
+
+            if (!m_parts.empty())
+            {
+                crc << "NODE"; // so we don't have empty shit
+                for (const auto part : m_parts)
+                    crc << part.view();
             }
 
-            // last part
-            if (path > start)
-                curPath = curPath[StringView(start, path)];
-
-            // return final path element
-            TRACE_INFO("'{}' '{}'", curPath, str);
-            outPath = curPath;
-            return true;
+            return crc;
         }
+
+        //--
 
     } // world
 } // base

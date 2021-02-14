@@ -9,12 +9,25 @@
 #include "build.h"
 #include "objectIndirectTemplate.h"
 #include "objectIndirectTemplateCompiler.h"
+#include "resourceAsyncReferenceType.h"
+#include "resourceAsyncReference.h"
+#include "resourceReference.h"
+#include "resourceLoader.h"
+#include "resourceLoadingService.h"
+
+#include "base/object/include/rttiResourceReferenceType.h"
 
 namespace base
 {
     //---
 
     ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler()
+    {
+        m_loader = GetService<res::LoadingService>()->loader();
+    }
+
+    ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler(res::IResourceLoader* loader)
+        : m_loader(loader)
     {
     }
 
@@ -111,6 +124,46 @@ namespace base
     }
 
     bool ObjectIndirectTemplateCompiler::compileValue(StringID name, Type expectedType, void* ptr) const
+    {
+        // direct get
+        if (compileValueRaw(name, expectedType, ptr))
+            return true;
+
+        // if we failed check if we wanted resource ref instead of actual ref
+        if (expectedType->metaType() == rtti::MetaType::ResourceRef)
+        {
+            const auto* refType = static_cast<const rtti::IResourceReferenceType*>(expectedType.ptr());
+            const auto resourceClass = refType->referenceResourceClass().cast<res::IResource>();
+            if (resourceClass)
+            {
+                const auto* asyncRefType = res::CreateAsyncRefType(resourceClass);
+
+                res::BaseAsyncReference asyncRef;
+                if (compileValue(name, asyncRefType, &asyncRef))
+                {
+                    auto* outRef = (res::BaseReference*)ptr;
+
+                    if (asyncRef.empty())
+                    {
+                        *outRef = res::BaseReference();
+                    }
+                    else
+                    {
+                        if (m_loader)
+                            *outRef = m_loader->loadResource(asyncRef.key());
+                        else
+                            *outRef = res::BaseReference(asyncRef.key());
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool ObjectIndirectTemplateCompiler::compileValueRaw(StringID name, Type expectedType, void* ptr) const
     {
         // look for value in any enabled template
         // TODO: case for arrays 

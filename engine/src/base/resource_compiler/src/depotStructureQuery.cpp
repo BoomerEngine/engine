@@ -336,5 +336,93 @@ namespace base
             return false;
         }
 
+        //--
+
+        bool ReadLinkFile(const DepotStructure& depot, StringView linkDepotPath, StringBuf& outResolvedPath)
+        {
+            if (auto file = depot.createFileReader(linkDepotPath))
+            {
+                const auto size = file->size();
+                if (size < 2048 && size > 4)
+                {
+                    Array<char> data;
+                    data.resize(size + 1);
+                    if (size == file->readSync(data.data(), size))
+                    {
+                        data[size] = 0;
+
+                        auto view = StringView(data.typedData(), size);
+                        if (view.beginsWith("LINK:"))
+                        {
+                            auto path = view.subString(5);
+                            if (ValidateDepotPath(path, DepotPathClass::AbsoluteFilePath))
+                            {
+                                outResolvedPath = StringBuf(path);
+                                TRACE_INFO("Link file '{}' resolved to '{}'", linkDepotPath, outResolvedPath);
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            TRACE_WARNING("Link file '{}' is not valid format", linkDepotPath);
+                        }
+                    }
+                    else
+                    {
+                        TRACE_WARNING("Link file '{}' cannot be read", linkDepotPath);
+                    }
+                }
+                else
+                {
+                    TRACE_WARNING("Link file '{}' has susspicious size {}", linkDepotPath, size);
+                }
+            }
+
+            TRACE_WARNING("No link file '{}' exists, file is gone", linkDepotPath);
+            return false;
+        }
+
+        static bool ResolveFileLink(const DepotStructure& depot, StringView depotPath, res::ResourcePath& outResolvedPath, Array<StringView>& lookupStack)
+        {
+            // file exists, yay
+            io::TimeStamp timestamp;
+            if (depot.queryFileTimestamp(depotPath, timestamp))
+            {
+                TRACE_INFO("File '{}' exists and will be used", depotPath);
+                outResolvedPath = res::ResourcePath(depotPath);
+                return true;
+            }
+
+            // prevent recursion that is to deep
+            if (lookupStack.size() == lookupStack.capacity())
+            {
+                TRACE_ERROR("Unable to resolve depot link for file '{}', probably a recursive link, current lookup stack:", depotPath);
+                for (auto i : lookupStack.indexRange())
+                    TRACE_ERROR("  [{}]: '{}'", i, lookupStack[i]);
+
+                return false;
+            }
+
+            // try the link file
+            StringBuf resolvedDepotPath;
+            if (ReadLinkFile(depot, base::TempString("{}.renamed", depotPath), resolvedDepotPath))
+            {
+                lookupStack.pushBack(resolvedDepotPath);
+                if (ResolveFileLink(depot, resolvedDepotPath, outResolvedPath, lookupStack))
+                    return true;
+            }
+
+            // not resolved
+            return false;
+        }
+
+        bool DepotStructure::queryFileLoadPath(StringView depotPath, res::ResourcePath& outLoadPath) const
+        {
+            InplaceArray<StringView, 10> pathLookupStack;
+            return ResolveFileLink(*this, depotPath, outLoadPath, pathLookupStack);
+        }
+
+        //--
+
     } // depot
 } // base

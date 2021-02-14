@@ -162,6 +162,9 @@ namespace base
             // find file in depot
             bool findFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
 
+            // query load path (resolved links) for given depot path
+            bool queryFileLoadPath(StringView depotPath, res::ResourcePath& outLoadPath) const;
+
             //--
 
             // notify depot that a file in a given files system has changed content
@@ -178,6 +181,8 @@ namespace base
 
             // notify depot that a directory was removed from the given file system
             void notifyDirRemoved(IFileSystem* fs, StringView rawFilePath);
+
+            //--
 
         private:
             // global event notifications

@@ -85,10 +85,10 @@ namespace ed
         ///---
 
         /// add a generic background runner to the list of runners
-        void scheduleBackgroundJob(IBackgroundJob* runner, bool openUI = false);
+        void scheduleBackgroundJob(IBackgroundTask* runner, bool openUI = false);
 
         /// show job status dialog
-        void showBackgroundJobDialog(IBackgroundJob* job);
+        void showBackgroundJobDialog(IBackgroundTask* job);
 
         ///---
 
@@ -143,6 +143,9 @@ namespace ed
 
         ///---
 
+        /// run action under a modal progress dialog, if dialog does not auto close it's left opened, if no progress dialog is specified a default one is used
+        void runLongAction(ui::IElement* owner, ProgressDialog* dlg, const TLongJobFunc& func, StringView title = "", bool canCancel=false);
+
     private:
         UniquePtr<ManagedDepot> m_managedDepot;
         UniquePtr<vsc::IVersionControl> m_versionControl;
@@ -162,10 +165,10 @@ namespace ed
         //--
 
         Mutex m_backgroundJobsLock;
-        BackgroundJobPtr m_activeBackgroundJob;
-        Array<BackgroundJobPtr> m_pendingBackgroundJobs;
-        BackgroundJobPtr m_pendingBackgroundJobUIRequest;
-        BackgroundJobPtr m_pendingBackgroundJobUIOpenedDialogRequest;
+        BackgroundTaskPtr m_activeBackgroundJob;
+        Array<BackgroundTaskPtr> m_pendingBackgroundJobs;
+        BackgroundTaskPtr m_pendingBackgroundJobUIRequest;
+        BackgroundTaskPtr m_pendingBackgroundJobUIOpenedDialogRequest;
 
         void updateBackgroundJobs();
 

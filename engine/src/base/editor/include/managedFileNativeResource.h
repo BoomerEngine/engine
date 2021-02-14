@@ -49,8 +49,6 @@ namespace ed
         // discard loaded content, usually done when deleting file
         void discardContent();
 
-        //--
-
     protected:
         SpecificClassType<res::IResource> m_resourceNativeClass;
 

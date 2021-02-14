@@ -18,6 +18,8 @@
 
 namespace base
 {
+    class Event;
+
     namespace fibers
     {
         namespace prv
@@ -179,6 +181,7 @@ namespace base
                     PendingJob* jobs = nullptr;
                     WaitList* listNext = nullptr;
                     WaitList* listPrev = nullptr;
+                    Event* waitEvent = nullptr;
                 };
 
                 struct SyncList : public base::NoCopy
@@ -240,6 +243,9 @@ namespace base
 
                     // validate data structures
                     void validate();
+
+                    // wait (Event) for a counter to finish
+                    void waitForCounterThreadEvent(const WaitCounter& counter);
 
                 private:
                     Mutex m_lock;

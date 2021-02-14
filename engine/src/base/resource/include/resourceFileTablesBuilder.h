@@ -28,7 +28,7 @@ namespace base
             //--
 
             // write to physical file
-            bool write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos) const;
+            bool write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader = nullptr) const;
 
             //--
 
@@ -71,6 +71,9 @@ namespace base
 
             uint16_t mapImport(StringID classType, StringView importPath, bool async);
             uint16_t mapImport(const FileTables::Import& importInfo);
+
+            typedef std::function<void(StringBuf&)> TImportRemapFunc;
+            void initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper);
         };
 
         //--

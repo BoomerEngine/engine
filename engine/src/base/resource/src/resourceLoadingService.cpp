@@ -199,6 +199,14 @@ namespace base
 
     //--
 
+    res::IResourceLoader* GlobalLoader()
+    {
+        if (res::GGlobalResourceLoadingService)
+            return res::GGlobalResourceLoadingService->loader();
+
+        return nullptr;
+    }
+
     res::BaseReference LoadResource(const res::ResourceKey& key)
     {
         if (res::GGlobalResourceLoadingService)

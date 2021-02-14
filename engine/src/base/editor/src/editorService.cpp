@@ -10,8 +10,8 @@
 #include "editorService.h"
 #include "editorMainWindow.h"
 #include "editorResourceContainerWindow.h"
-
-#include "backgroundCommand.h"
+#include "editorProgressDialog.h"
+#include "editorBackgroundTask.h"
 
 #include "assetBrowser.h"
 #include "managedDepot.h"
@@ -37,6 +37,7 @@
 #include "base/ui/include/uiButton.h"
 #include "assetFileImportPrepareDialog.h"
 #include "base/ui/include/uiMessageBox.h"
+#include "base/fibers/include/backgroundJob.h"
 
 namespace ed
 {
@@ -501,7 +502,7 @@ namespace ed
 
     //---
 
-    void Editor::scheduleBackgroundJob(IBackgroundJob* job, bool openUI)
+    void Editor::scheduleBackgroundJob(IBackgroundTask* job, bool openUI)
     {
         if (job)
         {
@@ -518,7 +519,7 @@ namespace ed
         }
     }
 
-    void Editor::showBackgroundJobDialog(IBackgroundJob* job)
+    void Editor::showBackgroundJobDialog(IBackgroundTask* job)
     {
         DEBUG_CHECK_RETURN_EX(job, "No job specified");
         m_pendingBackgroundJobUIRequest = AddRef(job);
@@ -547,7 +548,7 @@ namespace ed
         if (m_activeBackgroundJob)
         {
             auto status = m_activeBackgroundJob->update();
-            if (status != BackgroundJobStatus::Running)
+            if (status != BackgroundTaskStatus::Running)
             {
                 m_mainWindow->statusBar()->pushBackgroundJobToHistory(m_activeBackgroundJob, status);
                 m_mainWindow->statusBar()->resetBackgroundJobStatus();
@@ -555,7 +556,7 @@ namespace ed
             }
             else
             {
-                BackgroundJobProgress progress;
+                BackgroundTaskProgress progress;
                 m_activeBackgroundJob->queryProgressInfo(progress);
 
                 m_mainWindow->statusBar()->updateBackgroundJobStatus(m_activeBackgroundJob, progress.currentCount, progress.totalCount, progress.text, false);
@@ -862,6 +863,54 @@ namespace ed
             const auto configGroup = m_configRootBlock->tag("ResourceContainers").tag(window->tag());
             window->configSave(configGroup);
         }
+    }
+
+    //--
+
+    class ProgressJobAdaptor : public base::IBackgroundJob
+    {
+    public:
+        ProgressJobAdaptor(RefPtr<ProgressDialog> dlg, const TLongJobFunc& func)
+            : m_dlg(dlg)
+            , m_func(func)
+        {}
+
+        virtual void cancel() override
+        {
+            m_dlg->signalCanceled();
+        }
+
+        virtual void run() override
+        {
+            m_func(*m_dlg);
+            m_dlg->signalFinished();
+        }
+
+    public:
+        TLongJobFunc m_func;
+        RefPtr<ProgressDialog> m_dlg;
+    };
+
+    void Editor::runLongAction(ui::IElement* owner, ProgressDialog* dlg, const TLongJobFunc& func, StringView title, bool canCancel)
+    {
+        RefPtr<ProgressDialog> dlgPtr(AddRef(dlg));
+
+        if (!owner)
+        {
+            owner = m_mainWindow;
+            m_mainWindow->requestShow(true);
+        }
+
+        if (!dlgPtr)
+            dlgPtr = RefNew<ProgressDialog>(title ? title : "Operation in progress, please wait", canCancel, false);
+
+        auto job = RefNew<ProgressJobAdaptor>(dlgPtr, func);
+
+        RunBackground(job, "BackgroundJob"_id);
+
+        // TODO: wait a small amount of time - 0.1, 0.2s before showing a dialog
+
+        dlgPtr->runModal(owner);
     }
 
     //--

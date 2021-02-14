@@ -9,6 +9,7 @@
 #include "build.h"
 #include "editorService.h"
 #include "editorMainWindow.h"
+#include "editorBackgroundTask.h"
 
 #include "assetBrowser.h"
 #include "assetBrowserTabFiles.h"
@@ -100,12 +101,12 @@ namespace ed
         m_backgroundJobProgress->visibility(false);
     }
 
-    void MainWindowStatusBar::pushBackgroundJobToHistory(IBackgroundJob* job, BackgroundJobStatus status)
+    void MainWindowStatusBar::pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status)
     {
 
     }
 
-    void MainWindowStatusBar::updateBackgroundJobStatus(IBackgroundJob* job, uint64_t count, uint64_t total, StringView text, bool hasErrors)
+    void MainWindowStatusBar::updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors)
     {
         if (job)
         {

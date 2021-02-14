@@ -28,6 +28,8 @@ namespace ui
 
         if (!base::IsDefaultObjectCreation())
             createInternalChild<ui::TextLabel>();
+
+        updateCheckStyles();
     }
 
     void CheckBox::state(bool flag)
@@ -35,35 +37,39 @@ namespace ui
         state(flag ? CheckBoxState::Checked : CheckBoxState::Unchecked);
     }
 
+    void CheckBox::updateCheckStyles()
+    {
+        switch (m_state)
+        {
+            case CheckBoxState::Checked:
+            {
+                removeStyleClass("undefined"_id);
+                addStyleClass("checked"_id);
+                break;
+            }
+
+            case CheckBoxState::Unchecked:
+            {
+                removeStyleClass("undefined"_id);
+                removeStyleClass("checked"_id);
+                break;
+            }
+
+            case CheckBoxState::Undecided:
+            {
+                addStyleClass("undefined"_id);
+                removeStyleClass("checked"_id);
+                break;
+            }
+        }
+    }
+
     void CheckBox::state(CheckBoxState state)
     {
         if (m_state != state)
         {
             m_state = state;
-
-            switch (m_state)
-            {
-                case CheckBoxState::Checked:
-                {
-                    removeStyleClass("undefined"_id);
-                    addStyleClass("checked"_id);
-                    break;
-                }
-
-                case CheckBoxState::Unchecked:
-                {
-                    removeStyleClass("undefined"_id);
-                    removeStyleClass("checked"_id);
-                    break;
-                }
-
-                case CheckBoxState::Undecided:
-                {
-                    addStyleClass("undefined"_id);
-                    removeStyleClass("checked"_id);
-                    break;
-                }
-            }
+            updateCheckStyles();           
         }   
     }
 

@@ -234,5 +234,34 @@ namespace base
             return CRC32().append(&tempHeader, sizeof(tempHeader)).crc();
         }
 
+        //--
+
+        StringBuf FileTables::resolvePath(uint32_t pathIndex) const
+        {
+            StringBuilder txt;
+            resolvePath(pathIndex, txt);
+            return txt.toString();
+        }
+
+        void FileTables::resolvePath(uint32_t pathIndex, StringBuilder& txt) const
+        {
+            InplaceArray<uint32_t, 32> pathIndices;
+            while (pathIndex)
+            {
+                const auto& entry = pathTable()[pathIndex];
+                pathIndices.pushBack(entry.stringIndex);
+                pathIndex = entry.parentIndex;
+            }
+
+            for (auto i : pathIndices.indexRange().reversed())
+            {
+                const auto* str = stringTable() + pathIndices[i];
+                txt << "/";
+                txt << str;
+            }
+        }
+
+        //--
+
     } // res
 } // base

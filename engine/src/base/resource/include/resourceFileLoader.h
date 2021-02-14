@@ -70,6 +70,9 @@ namespace base
         // helper function to load objects from memory
         CAN_YIELD extern BASE_RESOURCE_API bool LoadFileDependencies(io::IAsyncFileHandle* file, const FileLoadingContext& context, Array<FileLoadingDependency>& outDependencies);
 
+        // load just the file tables
+        CAN_YIELD extern BASE_RESOURCE_API bool LoadFileTables(io::IAsyncFileHandle* file, Buffer& tablesData);
+
         // load file's metadata
         CAN_YIELD extern BASE_RESOURCE_API MetadataPtr LoadFileMetadata(io::IAsyncFileHandle* file, const FileLoadingContext& context);
 

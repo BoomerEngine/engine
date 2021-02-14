@@ -31,7 +31,7 @@ namespace ed
     RTTI_END_TYPE();
 
     AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList)
-        : IBackgroundJob("Import assets")
+        : IBackgroundTask("Import assets")
         , m_fileList(fileList)
     {
         m_listModel = RefNew<AssetProcessingListModel>();
@@ -49,9 +49,9 @@ namespace ed
     void AssetImportJob::runImportTask()
     {
         if (res::ProcessImport(m_fileList, this, this))
-            m_status.exchange(BackgroundJobStatus::Finished);
+            m_status.exchange(BackgroundTaskStatus::Finished);
         else
-            m_status.exchange(BackgroundJobStatus::Failed);
+            m_status.exchange(BackgroundTaskStatus::Failed);
     }
 
     void AssetImportJob::cancelSingleFile(const StringBuf& depotPath)
@@ -74,7 +74,7 @@ namespace ed
         return true;
     }
 
-    BackgroundJobStatus AssetImportJob::update()
+    BackgroundTaskStatus AssetImportJob::update()
     {
         return m_status.load();
     }

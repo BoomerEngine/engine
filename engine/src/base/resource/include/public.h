@@ -82,6 +82,9 @@ namespace base
 
     } // res
 
+    // get global loader
+    extern BASE_RESOURCE_API res::IResourceLoader* GlobalLoader();
+
     /// load resource from the default depot directory using the application loading service
     /// NOTE: this will yield the current job until the resource is loaded
     extern BASE_RESOURCE_API CAN_YIELD res::BaseReference LoadResource(const res::ResourceKey& key);

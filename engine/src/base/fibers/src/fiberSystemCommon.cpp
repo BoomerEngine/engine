@@ -330,8 +330,13 @@ namespace base
                     return;
 
                 // get the thread we are operating from
-                auto currentThread  = currentThreadState();
-                ASSERT(currentThread != nullptr);
+                auto currentThread = currentThreadState();
+                if (currentThread == nullptr)
+                {
+                    // not a fiber thread, do a standard wait
+                    m_waitConterPool.waitForCounterThreadEvent(counter);
+                    return;
+                }
 
                 // get the fiber running on this thread
                 auto currentFiber  = currentThread->attachedFiber.load();

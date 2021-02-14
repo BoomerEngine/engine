@@ -11,6 +11,7 @@
 #include "base/system/include/semaphoreCounter.h"
 #include "base/system/include/thread.h"
 #include "fiberSystemCommon.h"
+#include "base/system/include/event.h"
 
 #ifdef PLATFORM_GCC
     #pragma GCC push_options
@@ -125,6 +126,13 @@ namespace base
                 ASSERT_EX(entry.jobs == nullptr, "Trying to free wait counter that has jobs waiting for it");
                 ASSERT_EX(entry.currentCount.load() == 0, "Trying to free wait counter that has jobs waiting for it");
 
+                // signal event
+                if (entry.waitEvent)
+                {
+                    entry.waitEvent->trigger();
+                    entry.waitEvent = nullptr;
+                }
+
                 // cleanup
                 entry.seqId = 0;
                 entry.userName = nullptr;
@@ -211,6 +219,35 @@ namespace base
 
                 // we have entered waiting state, schedule back to the idle fiber
                 return true;
+            }
+
+            void BaseScheduler::WaitCounterPool::waitForCounterThreadEvent(const WaitCounter& counter)
+            {
+                // we cannot wait on the zero counter
+                if (counter.empty())
+                    return;
+
+                auto lock = base::CreateLock(m_lock);
+
+                // check if the counter is valid
+                auto counterId = counter.id();
+                ASSERT(counter.sequenceId() != 0);
+                ASSERT(counterId < m_maxCounterId);
+                auto& entry = m_waitLists[counterId];
+                if (entry.seqId != counter.sequenceId())
+                    return; // counter already released
+
+                // check if counter has event
+                ASSERT(entry.waitEvent == nullptr); // we can only have one real thread waiting for a counter
+                auto eventToWaitFor = new Event(true);
+                entry.waitEvent = eventToWaitFor;
+
+                // release lock
+                lock.release();
+
+                // wait for the event
+                eventToWaitFor->waitInfinite();
+                delete eventToWaitFor; // TODO: pooling!
             }
 
             void BaseScheduler::WaitCounterPool::printCounterInfo(const WaitList& entry)

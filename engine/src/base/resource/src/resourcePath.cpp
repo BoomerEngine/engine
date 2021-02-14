@@ -52,7 +52,7 @@ namespace base
 
         void ResourcePath::print(IFormatStream& f) const
         {
-            if (m_string.empty())
+            if (!m_string.empty())
                 f << m_string;
             else
                 f << "empty";
@@ -191,6 +191,8 @@ namespace base
 
         if (!ValidateFileName(mainPart))
             return false;
+
+        rest = rest.beforeFirstOrFull(".renamed");
 
         if (!ValidateFileName(rest))
             return false;

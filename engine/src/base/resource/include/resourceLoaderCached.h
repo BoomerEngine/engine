@@ -48,6 +48,9 @@ namespace base
             /// Internal interface - notify that new version of resource was loaded
             virtual void notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource);
 
+            /// Internal interface - translate one resource key to other key, can be used to alias resources
+            virtual ResourceKey translateResourceKey(const ResourceKey& key) const;
+
             //--
         
             struct LoadingJob : public IReferencable

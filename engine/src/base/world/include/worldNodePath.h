@@ -13,20 +13,16 @@ namespace base
     namespace world
     {
 
-        /// name in scene path
-        typedef StringID NodePathPart;
+        //--
 
-        /// hierarchical path to the scene node
-        /// NOTE: paths objects are just paths, they do not belong to any world
-        class BASE_WORLD_API NodePath
+        /// builder of hierarchical path to the scene node
+        class BASE_WORLD_API NodePathBuilder
         {
         public:
-            INLINE NodePath(); // empty path
-            INLINE NodePath(const NodePath& other);
-            INLINE NodePath(NodePath&& other);
-            INLINE NodePath& operator=(const NodePath& other);
-            INLINE NodePath& operator=(NodePath&& other);
-            INLINE ~NodePath();
+            NodePathBuilder(StringView layerDepotPath = ""); // we must start with layer path
+            NodePathBuilder(const NodePathBuilder& other) = default;
+            NodePathBuilder& operator=(const NodePathBuilder& other) = default;
+            ~NodePathBuilder();
 
             /// is this an empty path ?
             INLINE bool empty() const;
@@ -34,69 +30,56 @@ namespace base
             /// reset path to empty state
             INLINE void reset();
 
-            /// get parent path
-            INLINE NodePath parent() const;
-
             /// get the top name on the path (last name in the path)
-            INLINE const NodePathPart& lastName() const;
+            INLINE StringID lastName() const;
 
             //---
 
-            /// get sub path
-            NodePath operator[](const NodePathPart& childName) const;
+            /// pop last ID
+            void pop();
 
-            /// get sub path
-            NodePath operator[](const StringView childName) const;
+            /// push name, pushing ".." pops
+            void pushSingle(StringID id);
+
+            /// push path, separated by "/", if path starts with "/" it's considered absolute, "$" also is an absolute ID
+            void pushPath(StringView path);
+
+            /// get parent path
+            NodePathBuilder parent() const;
 
             /// get a full text representation for the whole path
             void print(IFormatStream& f) const;
 
             //---
 
-            /// comparison
-            INLINE bool operator==(const NodePath& other) const;
-            INLINE bool operator!=(const NodePath& other) const;
+            /// get a string path
+            StringBuf toString() const;
 
-            /// sorting
-            INLINE bool operator<(const NodePath& other) const;
-
-            //---
-
-            /// parse path from string
-            static bool Parse(const StringBuf& str, NodePath& outPath);
-
-            /// get the hash of the path
-            static uint32_t CalcHash(const NodePath& path);
+            /// calculate node ID from current path
+            NodeGlobalID toID() const;
 
             //---
 
         private:
-            struct RootPathElement : public base::NoCopy
-            {
-                RTTI_DECLARE_POOL(POOL_WORLD_PATH)
-
-            public:
-                NodePathPart m_name;
-                std::atomic<uint32_t> m_refCount;
-                uint64_t m_hash;
-                RootPathElement* m_parent;
-
-                INLINE RootPathElement(RootPathElement* parent, const NodePathPart& part, uint64_t hash);
-                INLINE ~RootPathElement();
-                INLINE void addRef();
-                INLINE void releaseRef();
-
-                void print(IFormatStream& str) const;
-            };
-
-            RootPathElement* m_parent; // parent element
-            NodePathPart m_name; // name of the last node
-            uint64_t m_hash; // hash of the tags
-
-            INLINE NodePath(RootPathElement* parent, const NodePathPart& part, uint64_t hash);
+            InplaceArray<StringID, 16> m_parts;
         };
+
+        //--
+
+        INLINE bool NodePathBuilder::empty() const
+        {
+            return m_parts.empty();
+        }
+
+        INLINE void NodePathBuilder::reset()
+        {
+            m_parts.reset();
+        }
+
+        INLINE StringID NodePathBuilder::lastName() const
+        {
+            return !m_parts.empty() ? m_parts.back() : StringID::EMPTY();
+        }
 
     } // world
 } // base
-
-#include "worldNodePath.inl"

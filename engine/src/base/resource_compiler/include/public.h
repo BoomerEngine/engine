@@ -25,6 +25,7 @@ namespace base
         //--
 
         class DepotStructure;
+        class DependencyCache;
 
         class IFileSystem;
         class IFileSystemProvider;
@@ -36,6 +37,8 @@ namespace base
             Plugin,
             Project,
         };
+
+        struct RenameConfiguration;
 
         //--
 

@@ -231,6 +231,9 @@ namespace base
 
             // resolve path to string
             StringBuf resolvePath(uint32_t pathIndex) const;
+
+            // resolve path to string builder
+            void resolvePath(uint32_t pathIndex, StringBuilder& txt) const;
         };
 
         //--

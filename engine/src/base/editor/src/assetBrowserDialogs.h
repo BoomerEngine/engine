@@ -32,5 +32,21 @@ namespace ed
 
     //--
 
+    /// show a generic rename dialog, does not do any renaming
+    extern BASE_EDITOR_API bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings);
+
+    //--
+
+    /// rename a single file
+    extern BASE_EDITOR_API ManagedItem* RenameItem(ui::IElement* owner, ManagedItem* file);
+
+    /// move items(s) to new location
+    extern BASE_EDITOR_API bool MoveItems(ui::IElement* owner, const Array<ManagedItem*>& items, ManagedDirectory* target);
+
+    /// copy items(s) to new location
+    extern BASE_EDITOR_API bool CopyItems(ui::IElement* owner, const Array<ManagedItem*>& items, ManagedDirectory* target);
+
+    //--
+
 } // ed
 

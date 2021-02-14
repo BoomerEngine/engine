@@ -10,6 +10,7 @@
 #include "fiberSystem.h"
 #include "fiberSystemImpl.h"
 #include "fiberSystemThreadBased.h"
+#include "backgroundJobImpl.h"
 
 #if defined(PLATFORM_WINDOWS)
     #include "fiberSystemWinApi.h"
@@ -35,6 +36,13 @@ namespace base
         {
             ASSERT_EX(m_scheduler == nullptr, "Fiber scheduler already initialized");
 
+            // initialize the background job system
+            if (!BackgroundScheduler::GetInstance().initialize(commandline))
+            {
+                TRACE_ERROR("Low-level background job syste failed to initialize");
+                return false;
+            }
+
             // use the thread based one if needed
             auto fiberMode = commandline.singleValueAnsiStr("fiberMode");
 
@@ -55,12 +63,16 @@ namespace base
 
             // TODO: integrate with PC
 
-            // low-level initialiation was ok
+            // low-level initialization was ok
             return true;
         }
 
         void Scheduler::deinit()
         {
+            // stop all background jobs
+            BackgroundScheduler::GetInstance().flush();
+
+            // stop all fibers
             if (m_scheduler)
             {
                 delete m_scheduler;

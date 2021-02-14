@@ -63,7 +63,7 @@ namespace ed
 
         return nullptr;
     }
-
+    
     res::MetadataPtr ManagedFileNativeResource::loadMetadata() const
     {
         // cannot load content of deleted file

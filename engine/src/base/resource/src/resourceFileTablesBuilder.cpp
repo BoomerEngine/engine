@@ -286,6 +286,90 @@ namespace base
 
         //--
 
+        void FileTablesBuilder::initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper)
+        {
+            stringTable.reset();
+            nameTable.reset();
+            typeTable.reset();
+            pathTable.reset();
+            importTable.reset();
+            exportTable.reset();
+            propertyTable.reset();
+
+            stringTable.pushBack(0);
+            nameTable.emplaceBack();
+            typeTable.emplaceBack();
+            pathTable.emplaceBack();
+
+            {
+                const auto numNames = tables.chunkCount(FileTables::ChunkType::Names);
+                for (uint32_t i = 1; i < numNames; ++i)
+                {
+                    const auto* str = tables.stringTable() + tables.nameTable()[i].stringIndex;
+
+                    auto& entry = nameTable.emplaceBack();
+                    entry.stringIndex = mapString(str);
+
+                    nameRawMap[StringID(str)] = i;
+                }
+            }
+
+            {
+                const auto numTypes = tables.chunkCount(FileTables::ChunkType::Types);
+                for (uint32_t i = 1; i < numTypes; ++i)
+                {
+                    auto& entry = typeTable.emplaceBack();
+                    entry.nameIndex = tables.typeTable()[i].nameIndex;
+
+                    const auto* str = tables.stringTable() + tables.nameTable()[entry.nameIndex].stringIndex;
+                    typeRawMap[StringID(str)] = i;
+                }
+            }
+
+            {
+                const auto numProperties = tables.chunkCount(FileTables::ChunkType::Properties);
+                for (uint32_t i = 0; i < numProperties; ++i)
+                {
+                    auto& entry = propertyTable.emplaceBack();
+                    entry.classTypeIndex = tables.propertyTable()[i].classTypeIndex;
+                    entry.nameIndex = tables.propertyTable()[i].nameIndex;
+                    propertyMap[entry] = i;
+                }
+            }
+
+            {
+                const auto numExports = tables.chunkCount(FileTables::ChunkType::Exports);
+                for (uint32_t i = 0; i < numExports; ++i)
+                {
+                    const auto& src = tables.exportTable()[i];
+                    auto& entry = exportTable.emplaceBack();
+                    entry.classTypeIndex = src.classTypeIndex;
+                    entry.crc = src.crc;
+                    entry.parentIndex = src.parentIndex;
+                    entry.dataOffset = src.dataOffset;
+                    entry.dataSize = src.dataSize;
+                }
+            }
+
+            {
+                const auto numImports = tables.chunkCount(FileTables::ChunkType::Imports);
+                for (uint32_t i = 0; i < numImports; ++i)
+                {
+                    const auto& src = tables.importTable()[i];
+                    auto& entry = importTable.emplaceBack();
+                    entry.classTypeIndex = src.classTypeIndex;
+                    entry.flags = src.flags;
+
+                    auto path = tables.resolvePath(src.pathIndex);
+                    if (importPathRemapper)
+                        importPathRemapper(path);
+                    entry.pathIndex = mapPath(path);
+                }
+            }
+        }
+
+        //--
+
         template< typename T >
         bool WriteChunk(io::IWriteFileHandle* file, uint64_t baseOffset, const Array<T>& entries, FileTables::Chunk& outChunk)
         {
@@ -297,7 +381,7 @@ namespace base
             return file->writeSync(entries.data(), entries.dataSize()) == entries.dataSize();
         }
 
-        bool FileTablesBuilder::write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos) const
+        bool FileTablesBuilder::write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader) const
         {
             const uint64_t baseOffset = file->pos();
 
@@ -324,12 +408,24 @@ namespace base
                 return false;
 
             // update header
-            writeHeader.version = FileTables::FILE_VERSION_MAX;
             writeHeader.magic = FileTables::FILE_MAGIC;
             writeHeader.headersEnd = file->pos() - baseOffset;
             writeHeader.buffersEnd = bufferEndPos;
             writeHeader.objectsEnd = objectEndPos;
-            writeHeader.flags = headerFlags;
+
+            // setup version and flags - if we had previous header use values from it
+            if (prevHeader)
+            {
+                const auto& prevHeaderData = *(const FileTables::Header*)prevHeader;
+                writeHeader.version = prevHeaderData.version;
+                writeHeader.flags = prevHeaderData.flags;
+            }
+            else
+            {
+                writeHeader.version = FileTables::FILE_VERSION_MAX;
+                writeHeader.flags = headerFlags;
+            }
+
             writeHeader.crc = FileTables::CalcHeaderCRC(writeHeader);
 
             // write patched up header again

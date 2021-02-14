@@ -40,9 +40,10 @@ namespace base
             m_loadedResources.clear();
         }
 
-        ResourceHandle IResourceLoaderCached::loadResource(const ResourceKey& key)
+        ResourceHandle IResourceLoaderCached::loadResource(const ResourceKey& orignialKey)
         {
-            // invalid resource path always produces invalid resource
+            // translate resource key
+            const auto key = translateResourceKey(orignialKey);
             if (key.empty())
                 return nullptr;
 
@@ -126,42 +127,48 @@ namespace base
             return loadingJob->m_loadedResource;
         }
 
-        bool IResourceLoaderCached::acquireLoadedResource(const ResourceKey& key, ResourceHandle& outLoadedPtr)
+        bool IResourceLoaderCached::acquireLoadedResource(const ResourceKey& orignialKey, ResourceHandle& outLoadedPtr)
         {
-            // class and path are required for lookup
-            if (!key.empty())
+            // translate resource key
+            const auto key = translateResourceKey(orignialKey);
+            if (key.empty())
+                return nullptr;
+
+            auto lock = base::CreateLock(m_lock);
+
+            // get the loaded resource, that's the most common case so do it first
+            base::RefWeakPtr<IResource> loadedResourceWeakRef;
+            if (m_loadedResources.find(key, loadedResourceWeakRef))
             {
-                auto lock = base::CreateLock(m_lock);
-
-                // get the loaded resource, that's the most common case so do it first
-                base::RefWeakPtr<IResource> loadedResourceWeakRef;
-                if (m_loadedResources.find(key, loadedResourceWeakRef))
+                if (auto loadedResource = loadedResourceWeakRef.lock())
                 {
-                    if (auto loadedResource = loadedResourceWeakRef.lock())
-                    {
-                        outLoadedPtr = loadedResource;
-                        return true;
-                    }
-                }
-
-                // are we loading it ?
-                base::RefWeakPtr<LoadingJob> weakJobRef;
-                if (m_loadingJobs.find(key, weakJobRef))
-                {
-                    // get the lock to the loading job
-                    if (auto loadingJob = weakJobRef.lock())
-                    {
-                        outLoadedPtr = loadingJob->m_loadedResource;
-                        return true;
-                    }
+                    outLoadedPtr = loadedResource;
+                    return true;
                 }
             }
 
-            // not found or loading
+            // are we loading it ?
+            base::RefWeakPtr<LoadingJob> weakJobRef;
+            if (m_loadingJobs.find(key, weakJobRef))
+            {
+                // get the lock to the loading job
+                if (auto loadingJob = weakJobRef.lock())
+                {
+                    outLoadedPtr = loadingJob->m_loadedResource;
+                    return true;
+                }
+            }
+
+            // file not found as loaded
             return false;
         }
 
         //---
+
+        ResourceKey IResourceLoaderCached::translateResourceKey(const ResourceKey& key) const
+        {
+            return key;
+        }
 
         void IResourceLoaderCached::notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource)
         {

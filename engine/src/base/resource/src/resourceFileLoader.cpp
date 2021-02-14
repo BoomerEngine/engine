@@ -93,24 +93,6 @@ namespace base
             }
         }
 
-        void ResolvePath(const FileTables& tables, uint32_t pathIndex, StringBuilder& str)
-        {
-            if (pathIndex != 0)
-            {
-                const auto& pathEntry = tables.pathTable()[pathIndex];
-
-                if (pathEntry.parentIndex != 0)
-                {
-                    ResolvePath(tables, pathEntry.parentIndex, str);
-                    str.append("/");
-                }
-
-                const auto* pathString = tables.stringTable() + pathEntry.stringIndex;
-                //DEBUG_CHECK(ValidateFileNameWithExtension(pathString));
-                str.append(pathString);
-            }
-        }
-
         void ResolveImports(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
         {
             const auto numImports = tables.chunkCount(FileTables::ChunkType::Imports);
@@ -125,8 +107,7 @@ namespace base
                 auto classType = resolvedReferences.types[ptr->classTypeIndex].toClass();
 
                 StringBuilder depotPath;
-                depotPath.append("/"); // TODO: "is relative" flag ?
-                ResolvePath(tables, ptr->pathIndex, depotPath);
+                tables.resolvePath(ptr->pathIndex, depotPath);
 
                 DEBUG_CHECK(ValidateDepotPath(depotPath.view(), DepotPathClass::AbsoluteFilePath));
 

@@ -29,6 +29,8 @@ namespace rendering
         RTTI_CATEGORY("Effects");
         RTTI_PROPERTY(m_color).overriddable().editable("General effect color");
         RTTI_PROPERTY(m_colorEx).overriddable().editable("Secondary effect color");
+
+        RTTI_PROPERTY(m_mesh);
     RTTI_END_TYPE();
 
     MeshComponent::MeshComponent()
@@ -162,10 +164,7 @@ namespace rendering
         if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
             return false;
 
-        MeshAsyncRef meshRef;
-        templateProperties.compileValue("mesh"_id, meshRef);
-
-        m_mesh = meshRef.load();
+        m_mesh = templateProperties.compileValueOrDefault<MeshRef>("mesh"_id);
         if (!m_mesh)
             m_mesh = resDefaultMesh.loadAndGetAsRef();
 

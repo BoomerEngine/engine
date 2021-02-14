@@ -67,15 +67,23 @@ namespace ed
 
     } // vsc
 
-    class IBackgroundCommand;
-    typedef RefPtr<IBackgroundCommand> BackgroundCommandPtr;
-    typedef RefWeakPtr<IBackgroundCommand> BackgroundCommandWeakPtr;
+    ///---
 
-    class IBackgroundJob;
-    typedef RefPtr<IBackgroundJob> BackgroundJobPtr;
+    enum class BackgroundTaskStatus : uint8_t
+    {
+        Finished,
+        Failed,
+        Running,
+    };
 
-    class BackgroundJobUnclaimedConnection;
-    typedef RefPtr<BackgroundJobUnclaimedConnection> BackgroundJobUnclaimedConnectionPtr;
+    class IBackgroundTask;
+    typedef RefPtr<IBackgroundTask> BackgroundTaskPtr;
+
+    typedef std::function<void(IProgressTracker& progress)> TLongJobFunc;
+
+    class ProgressDialog;
+
+    //--
 
     class ManagedDepot;
     class ManagedFileCollection;

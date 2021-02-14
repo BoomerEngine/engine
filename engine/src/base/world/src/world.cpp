@@ -291,12 +291,19 @@ namespace base
             const auto& rootNode = prefab->root();
             DEBUG_CHECK_RETURN_V(rootNode, nullptr);
 
-            InplaceArray<EntityPtr, 10> allEntities;
-            if (const auto root = CompileEntityHierarchy(rootNode, placement, NodePath(), allEntities))
+            NodePathBuilder path;
+            if (const auto root = CompileEntityHierarchy(path, rootNode, &placement, GlobalLoader()))
             {
-                for (const auto& entity : allEntities)
-                    attachEntity(entity);
-                return root;
+                InplaceArray<EntityPtr, 10> allEntities;
+                root->collectEntities(allEntities);
+
+                if (!allEntities.empty())
+                {
+                    for (const auto& entity : allEntities)
+                        attachEntity(entity);
+
+                    return allEntities[0];
+                }
             }
 
             TRACE_WARNING("Failed to create entity from prefab '{}'", prefab->path());

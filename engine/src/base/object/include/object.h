@@ -62,7 +62,7 @@ namespace base
         inline T compileValueOrDefault(StringID name, T defaultValue = T()) const
         {
             T ret;
-            if (compileValue(name, reflection::GetTypeObject<T>(), &ptr))
+            if (compileValue(name, reflection::GetTypeObject<T>(), &ret))
                 return ret;
             return defaultValue;
         }

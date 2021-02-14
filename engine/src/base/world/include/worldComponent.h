@@ -254,6 +254,9 @@ namespace base
             /// calculate component bounds, usually using the visuals
             virtual Box calcBounds() const;
 
+            /// calculate streaming bounds for the component
+            virtual Box calcStreamingBounds() const;
+
             //---
 
             // determine final component class

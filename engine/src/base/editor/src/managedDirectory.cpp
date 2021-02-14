@@ -12,7 +12,6 @@
 #include "managedFile.h"
 #include "managedDepot.h"
 
-#include "base/containers/include/clipboard.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/io/include/ioSystem.h"
 #include "base/system/include/thread.h"

@@ -254,4 +254,26 @@ namespace ui
 
     //--
 
+    // list model with only strings
+    class SimpleStringListModel : public ui::SimpleTypedListModel<base::StringBuf>
+    {
+    public:
+        virtual bool compare(const base::StringBuf& a, const base::StringBuf& b, int colIndex) const override
+        {
+            return a < b;
+        }
+
+        virtual bool filter(const base::StringBuf& data, const ui::SearchPattern& filter, int colIndex) const override
+        {
+            return filter.testString(data);
+        }
+
+        virtual base::StringBuf content(const base::StringBuf& data, int colIndex) const override
+        {
+            return data;
+        }
+    };
+
+    //--
+
 } // ui

@@ -99,8 +99,14 @@ namespace base
             if (!m_root)
                 return nullptr;
 
-            const auto path = NodePath();
-            return CompileEntityHierarchy(m_root, placement, path, outAllEntities);
+            NodePathBuilder path;
+            if (auto data = CompileEntityHierarchy(path, m_root, &placement, GlobalLoader()))
+            {
+                data->collectEntities(outAllEntities);
+                return outAllEntities[0];
+            }
+
+            return nullptr;
         }
 
         void Prefab::onPostLoad()

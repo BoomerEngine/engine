@@ -29,7 +29,7 @@ namespace ui
         //--
 
         // set the position fraction
-        void position(float pos, base::StringView customText);
+        void position(float pos, base::StringView customText = "");
 
         //--
 

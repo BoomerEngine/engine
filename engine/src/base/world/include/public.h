@@ -21,6 +21,7 @@ namespace base
 {
     namespace world
     {
+
         //---
 
         class WorldPath;
@@ -76,7 +77,9 @@ namespace base
         class NodeTemplate;
         typedef RefPtr<NodeTemplate> NodeTemplatePtr;
 
-        class NodePath;
+        typedef uint64_t NodeGlobalID;
+
+        class NodePathBuilder;
 
         //--
 
@@ -96,19 +99,26 @@ namespace base
 
         //--
 
-        class WorldSectorData;
-        typedef RefPtr<WorldSectorData> WorldSectorDataPtr;
+        class StreamingIslandInstance;
+        typedef RefPtr<StreamingIslandInstance> StreamingIslandInstancePtr;
 
-        class WorldSectorGridLevel;
-        typedef RefPtr<WorldSectorGridLevel> WorldSectorGridLevelPtr;
+        class StreamingIsland;
+        typedef RefPtr<StreamingIsland> StreamingIslandPtr;
 
-        class WorldSectors;
-        typedef RefPtr<WorldSectors> WorldSectorsPtr;
-        typedef res::Ref<WorldSectors> WorldSectorsRef;
-        typedef res::AsyncRef<WorldSectors> WorldSectorsAsyncRef;
+        class StreamingSector;
+        typedef RefPtr<StreamingSector> StreamingSectorPtr;
+        typedef res::Ref<StreamingSector> StreamingSectorRef;
+        typedef res::AsyncRef<StreamingSector> StreamingSectorAsyncRef;
 
-        class WorldSectorUnpackedData;
-        typedef RefPtr<WorldSectorUnpackedData> WorldSectorUnpackedDataPtr;
+        class StreamingGridSetup;
+        typedef RefPtr<StreamingGridSetup> StreamingGridSetupPtr;
+
+        //---
+
+        class CompiledScene;
+        typedef RefPtr<CompiledScene> CompiledScenePtr;
+        typedef res::Ref<CompiledScene> CompiledSceneRef;
+        typedef res::AsyncRef<CompiledScene> CompiledSceneAsyncRef;
 
         //---
 
