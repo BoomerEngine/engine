@@ -13,10 +13,10 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/resource/include/resourceLoader.h"
+#include "base/resource/include/depotService.h"
 #include "base/io/include/ioSystem.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/timestamp.h"
-#include "base/resource_compiler/include/depotStructure.h"
 
 namespace base
 {
@@ -25,13 +25,14 @@ namespace base
 
         //--
 
-        CookerInterface::CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker)
+        CookerInterface::CookerInterface(IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker)
             : m_referencePath(referenceFilePath)
             , m_externalProgressTracker(externalProgressTracker)
             , m_finalCooker(finalCooker)
-            , m_depot(depot)
             , m_loader(dependencyLoader)
         {
+            m_depot = GetService<DepotService>();
+
             queryContextName(queryResourcePath(), m_referenceContextName);
 
             if (m_referenceContextName.empty())
@@ -89,7 +90,7 @@ namespace base
 
                 // look at files in this directory
                 InplaceArray<StringBuf, 200> files;
-                m_depot.enumFilesAtPath(dirPath, [&files](const depot::DepotStructure::FileInfo& info)
+                m_depot->enumFilesAtPath(dirPath, [&files](const DepotService::FileInfo& info)
                     {
                         files.emplaceBack(info.name);
                         return false;
@@ -126,7 +127,7 @@ namespace base
                     // get the timestamp of the file
                     io::TimeStamp fileTimestamp;
                     auto fullPath = StringBuf(TempString("{}{}", dirPath, file));
-                    if (m_depot.queryFileTimestamp(fullPath, fileTimestamp))
+                    if (m_depot->queryFileTimestamp(fullPath, fileTimestamp))
                     {
                         outFileSystemPaths.pushBack(fullPath);
                         filePathsCRC << file;
@@ -141,7 +142,7 @@ namespace base
                 if (recurse)
                 {
                     InplaceArray<StringBuf, 20> dirs;
-                    m_depot.enumDirectoriesAtPath(dirPath, [&dirs](const depot::DepotStructure::DirectoryInfo& info)
+                    m_depot->enumDirectoriesAtPath(dirPath, [&dirs](const DepotService::DirectoryInfo& info)
                         {
                             dirs.emplaceBack(info.name);
                             return false;
@@ -216,13 +217,13 @@ namespace base
 
         bool CookerInterface::queryContextName(StringView fileSystemPath, StringBuf& contextName)
         {
-            return m_depot.queryContextName(fileSystemPath, contextName);
+            return m_depot->queryFileAbsolutePath(fileSystemPath, contextName);
         }
 
         bool CookerInterface::queryFileExists(StringView fileSystemPath) const
         {
             io::TimeStamp unused;
-            return m_depot.queryFileTimestamp(fileSystemPath, unused);
+            return m_depot->queryFileTimestamp(fileSystemPath, unused);
         }
 
         bool CookerInterface::touchFile(StringView fileSystemPath)
@@ -232,7 +233,7 @@ namespace base
                     return dep.timestamp != 0;
 
             io::TimeStamp fileTimestamp;
-            auto ret = m_depot.queryFileTimestamp(fileSystemPath, fileTimestamp);
+            auto ret = m_depot->queryFileTimestamp(fileSystemPath, fileTimestamp);
 
             auto& entry = m_dependencies.emplaceBack();
             entry.timestamp = fileTimestamp.value();
@@ -260,7 +261,7 @@ namespace base
         io::ReadFileHandlePtr CookerInterface::createReader(StringView fileSystemPath)
         {
             touchFile(fileSystemPath);
-            return m_depot.createFileReader(fileSystemPath);
+            return m_depot->createFileReader(fileSystemPath);
         }
 
         Buffer CookerInterface::loadToBuffer(StringView fileSystemPath)

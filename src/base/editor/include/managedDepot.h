@@ -12,7 +12,7 @@
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
 #include "base/resource/include/resourceLoader.h"
-#include "base/resource_compiler/include/depotStructure.h"
+#include "base/resource/include/depotService.h"
 
 namespace ed
 {
@@ -22,11 +22,11 @@ namespace ed
     class BASE_EDITOR_API ManagedDepot : public NoCopy
     {
     public:
-        ManagedDepot(depot::DepotStructure& loader);
+        ManagedDepot();
         ~ManagedDepot();
 
-        /// get the low-level depot structure
-        INLINE depot::DepotStructure& depot() const { return m_depot; }
+        /// depot service
+        INLINE DepotService& depot() const { return *m_depot; }
 
         /// get the event key for event listening
         INLINE const GlobalEventKey& eventKey() const { return m_eventKey; }
@@ -69,6 +69,9 @@ namespace ed
         ///----
 
     private:
+        // depot service
+        DepotService* m_depot;
+
         // root structure
         ManagedDirectoryPtr m_root;
 
@@ -77,12 +80,6 @@ namespace ed
 
         // list of modified filed
         HashSet<ManagedFile*> m_modifiedFiles;
-
-        // depot file loader
-        depot::DepotStructure& m_depot;
-
-        // file dependencies
-        depot::DependencyCache* m_depotDependencyCache = nullptr;
 
         //--
 

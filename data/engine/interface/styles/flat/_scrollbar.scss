@@ -1,0 +1,79 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+
+ScrollBar {
+    background: $scroll-background;
+
+    &.vertical {
+        width: $scroll-size;
+    }
+
+    &.horizontal {
+        height: $scroll-size;
+    }
+
+    > ScrollBarThumb {
+        background: $scroll-thumb-color;
+        margin: 2em 2em 2em 2em;
+        vertical-align: expand;
+        horizontal-align: expand;
+
+        &:hover {
+            background: color.scale($scroll-thumb-color, 110%);
+        }
+
+        &:dragged {
+            background: $active-color;
+        }
+    }
+
+    &.vertical > Button {
+        width: $scroll-size;
+        height: $icon-font-size;
+    }
+
+    &.horizontal > Button {
+        width: $icon-font-size;
+        height: $scroll-size;
+    }
+
+    > Button {
+        background: $scroll-button-color;
+        border-width: 0em;
+
+        TextLabel {
+            font-family: $icon-font;
+            font-size: $icon-font-size;
+            color: #555558;
+            horizontal-align: center;
+            vertical-align: middle;
+        }
+
+        &:hover, &:pressed {
+            background: #3E3E42;
+
+            > TextLabel {
+                color: #1C97EA;
+            }
+        }
+
+        &#left > TextLabel {
+            content: "&#f0d9;";
+        }
+
+        &#right > TextLabel {
+            content: "&#f0da;";
+        }
+
+        &#down > TextLabel {
+            content: "&#f0d7;";
+        }
+
+        &#up > TextLabel {
+            content: "&#f0d8;";
+        }
+    }
+}

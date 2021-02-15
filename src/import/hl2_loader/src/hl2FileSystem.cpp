@@ -16,6 +16,8 @@
 namespace hl2
 {
 
+#if 0
+
     PackedFileSystem::PackedFileSystem(const base::StringBuf& rootPath, base::UniquePtr<FileSystemIndex>&& indexData)
         : m_indexData(std::move(indexData))
         , m_rootPath(rootPath)
@@ -183,5 +185,7 @@ namespace hl2
     {
         // not used
     }
+
+#endif
 
 } // hl2

@@ -19,7 +19,7 @@ namespace base
         class CookerInterface : public IResourceCookerInterface
         {
         public:
-            CookerInterface(const depot::DepotStructure& depot, IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
+            CookerInterface(IResourceLoader* dependencyLoader, StringView referenceFilePath, bool finalCooker, IProgressTracker* externalProgressTracker = nullptr);
             virtual ~CookerInterface();
 
             virtual bool checkCancelation() const override final;
@@ -52,7 +52,7 @@ namespace base
             StringBuf m_referencePath;
             StringBuf m_referenceContextName;
 
-            const depot::DepotStructure& m_depot;
+            DepotService* m_depot = nullptr;
             IResourceLoader* m_loader;
 
             bool m_finalCooker = false;

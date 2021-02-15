@@ -7,19 +7,8 @@
 
 #pragma once
 
-#include "base/resource_compiler/include/depotFileSystem.h"
-
 namespace hl2
 {
 
-    // provider of the HL2 file system mounting from installed VPKs
-    struct FileSystemProviderVPK : public base::depot::IFileSystemProvider
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(FileSystemProviderVPK, base::depot::IFileSystemProvider);
-
-    public:
-        FileSystemProviderVPK();
-        virtual base::UniquePtr<base::depot::IFileSystem> createFileSystem(base::depot::DepotStructure* owner) const override;
-    };
 
 } // hl2

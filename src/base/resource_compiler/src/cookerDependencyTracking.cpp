@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "cookerDependencyTracking.h"
+#include "base/resource/include/depotService.h"
 
 namespace base
 {
@@ -16,16 +17,17 @@ namespace base
         
         ///--
 
-        DependencyTracker::DependencyTracker(depot::DepotStructure& depot)
-            : m_depot(depot)
+        DependencyTracker::DependencyTracker()
         {
+            m_depot = GetService<DepotService>();
+
             // create the root directory
             m_sourceAssetRootDir = new TrackedDepotDir;
             m_sourceAssetRootDir->depotPath = "/";
             m_sourceAssetDirs.pushBack(m_sourceAssetRootDir);
 
             // register to depot events
-            m_events.bind(depot.eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path)
+            m_events.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path)
             {
                 notifyFileChanged(path);
             };
@@ -96,7 +98,7 @@ namespace base
             for (auto& dep : entry.dependencies)
             {
                 io::TimeStamp currentFileTimestamp;
-                if (!m_depot.queryFileTimestamp(dep.file->depotPath, currentFileTimestamp))
+                if (!m_depot->queryFileTimestamp(dep.file->depotPath, currentFileTimestamp))
                 {
                     TRACE_WARNING("Missing source file '{}'", dep.file->depotPath);
                     return false;

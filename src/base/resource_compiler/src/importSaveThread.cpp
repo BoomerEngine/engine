@@ -9,9 +9,9 @@
 #include "build.h"
 #include "importSaveThread.h"
 #include "base/system/include/thread.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceFileSaver.h"
 #include "base/io/include/ioFileHandle.h"
+#include "base/resource/include/depotService.h"
 
 namespace base
 {
@@ -25,10 +25,9 @@ namespace base
 
         //--
 
-        ImportSaverThread::ImportSaverThread(depot::DepotStructure& depot)
+        ImportSaverThread::ImportSaverThread()
             : m_saveThreadSemaphore(0, INT_MAX)
             , m_saveThreadRequestExit(0)
-            , m_depot(depot)
         {
             // start the saving thread
             ThreadSetup setup;
@@ -127,7 +126,7 @@ namespace base
         bool ImportSaverThread::saveSingleFile(const ResourcePtr& data, const StringBuf& path)
         {
             // create staged writer for the file
-            if (auto file = m_depot.createFileWriter(path))
+            if (auto file = GetService<DepotService>()->createFileWriter(path))
             {
                 FileSavingContext context;
                 context.rootObject.pushBack(data);

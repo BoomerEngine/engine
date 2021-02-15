@@ -44,11 +44,6 @@ namespace base
             ResourceLoaderCooker();
             virtual ~ResourceLoaderCooker();
 
-            //--
-
-            // source depot structure we cook from
-            INLINE depot::DepotStructure& depot() const { return *m_depot; }
-
         protected:
 
             // IResourceLoader
@@ -56,16 +51,10 @@ namespace base
             virtual bool initialize(const app::CommandLine& cmdLine) override final;
             virtual ResourceHandle loadResourceOnce(const ResourceKey& key) override final CAN_YIELD;
             virtual bool validateExistingResource(const ResourceHandle& res, const ResourceKey& key) const override final;
-            virtual depot::DepotStructure* queryUncookedDepot() const override final;
             virtual void notifyResourceReloaded(const ResourceHandle& currentResource, const ResourceHandle& newResource) override final;
 
         private:
-            UniquePtr<depot::DepotStructure> m_depot;
             UniquePtr<Cooker> m_cooker; // actual workhorse
-
-            //--
-
-            UniquePtr<DependencyTracker> m_depTracker;
 
             //--
 

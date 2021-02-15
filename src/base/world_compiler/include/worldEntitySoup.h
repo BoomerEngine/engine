@@ -29,7 +29,7 @@ namespace base
         //---
 
         // extract source entities from a scene
-        extern BASE_WORLD_COMPILER_API void ExtractSourceEntities(const depot::DepotStructure& depot, const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
+        extern BASE_WORLD_COMPILER_API void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
 
         //---
 

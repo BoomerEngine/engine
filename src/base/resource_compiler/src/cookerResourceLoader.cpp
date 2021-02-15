@@ -11,7 +11,6 @@
 #include "cookerResourceLoader.h"
 #include "cookerDependencyTracking.h"
 
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource/include/resourceKey.h"
 #include "base/resource/include/resourceStaticResource.h"
@@ -19,7 +18,7 @@
 #include "base/io/include/ioSystem.h"
 #include "base/resource/include/resourceFileLoader.h"
 #include "base/io/include/ioFileHandle.h"
-#include "../include/depotFileSystemNative.h"
+#include "base/resource/include/depotService.h"
 
 
 namespace base
@@ -35,16 +34,12 @@ namespace base
 
         ResourceLoaderCooker::ResourceLoaderCooker()
         {
-            m_depot.create();
-            m_depTracker.create(*m_depot);
-            m_cooker.create(*m_depot, this);
+            m_cooker.create(this);
         }
 
         ResourceLoaderCooker::~ResourceLoaderCooker()
         {
             m_cooker.reset();
-            m_depTracker.reset();
-            m_depot.reset();
         }
 
         bool ResourceLoaderCooker::initialize(const app::CommandLine& cmdLine)
@@ -59,25 +54,8 @@ namespace base
 
             TRACE_INFO("Engine directory: '{}'", engineDir);
 
-            // create the engine file system
-            {
-                auto fileSystem = CreateUniquePtr<depot::FileSystemNative>(TempString("{}data/engine/", engineDir), true, m_depot.get());
-                m_depot->attachFileSystem("/engine/", std::move(fileSystem), depot::DepotFileSystemType::Engine);
-            }
-
-            // create the editor file system
-            {
-                auto fileSystem = CreateUniquePtr<depot::FileSystemNative>(TempString("{}data/editor/", engineDir), true, m_depot.get());
-                m_depot->attachFileSystem("/editor/", std::move(fileSystem), depot::DepotFileSystemType::Engine);
-            }
-
             // done
             return true;
-        }
-
-        depot::DepotStructure* ResourceLoaderCooker::queryUncookedDepot() const
-        {
-            return m_depot.get();
         }
 
         bool ResourceLoaderCooker::popNextReload(PendingReload& outReload)
@@ -110,7 +88,7 @@ namespace base
         void ResourceLoaderCooker::checkChangedFiles()
         {
             Array<ResourceKey> changedFiles;
-            m_depTracker->queryFilesForReloading(changedFiles);
+            //m_depTracker->queryFilesForReloading(changedFiles);
 
             if (!changedFiles.empty())
             {
@@ -197,21 +175,22 @@ namespace base
 
             IStaticResource::ApplyReload(currentResource, newResource);
 
-            if (const auto depotPath = currentResource->path().str())
-                DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);
+            /*if (const auto depotPath = currentResource->path().str())
+                DispatchGlobalEvent(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED, depotPath);*/
 
             TRACE_INFO("Reload to '{}' applied in {}, {} of {} objects pached", currentResource->path(), timer, affectedObjects.size(), numObjectsVisited);
         }
 
         ResourceKey ResourceLoaderCooker::translateResourceKey(const ResourceKey& key) const
         {
-            const auto path = key.path().view();
+            return key;
+            /*const auto path = key.path().view();
 
             res::ResourcePath loadPath;
             if (m_depot->queryFileLoadPath(path, loadPath))
                 return ResourceKey(loadPath, key.cls());
 
-            return ResourceKey::EMPTY();
+            return ResourceKey::EMPTY();*/
         }
 
         ResourceHandle ResourceLoaderCooker::loadResourceOnce(const ResourceKey& key)
@@ -223,7 +202,7 @@ namespace base
             if (fileLoadClass && fileLoadClass->is(key.cls()))
             {
                 // load file content from serialized file
-                if (auto file = m_depot->createFileAsyncReader(key.path().view()))
+                if (auto file = GetService<DepotService>()->createFileAsyncReader(key.path().view()))
                 {
                     FileLoadingContext context;
                     context.resourceLoadPath = key.path();
@@ -234,7 +213,7 @@ namespace base
                         if (const auto ret = context.root<IResource>())
                         {
                             io::TimeStamp fileTimeStamp;
-                            if (m_depot->queryFileTimestamp(key.path().view(), fileTimeStamp))
+                            if (GetService<DepotService>()->queryFileTimestamp(key.path().view(), fileTimeStamp))
                             {
                                 InplaceArray<SourceDependency, 1> dependencies;
 
@@ -242,7 +221,7 @@ namespace base
                                 dep.sourcePath = StringBuf(key.path().view()); // we depend on the real content
                                 dep.timestamp = fileTimeStamp.value();
 
-                                m_depTracker->notifyDependenciesChanged(key, dependencies);
+                                //m_depTracker->notifyDependenciesChanged(key, dependencies);
                             }
 
                             return ret;
@@ -258,8 +237,8 @@ namespace base
                 {
                     cookedFile->bindToLoader(this, key.path());
 
-                    if (cookedFile->metadata())
-                        m_depTracker->notifyDependenciesChanged(key, cookedFile->metadata()->sourceDependencies);
+                    /*if (cookedFile->metadata())
+                        m_depTracker->notifyDependenciesChanged(key, cookedFile->metadata()->sourceDependencies);*/
 
                     return cookedFile;
                 }
@@ -287,7 +266,7 @@ namespace base
                 for (const auto& dep : res->metadata()->sourceDependencies)
                 {
                     io::TimeStamp fileTimeStamp;
-                    m_depot->queryFileTimestamp(dep.sourcePath, fileTimeStamp);
+                    GetService<DepotService>()->queryFileTimestamp(dep.sourcePath, fileTimeStamp);
 
                     if (fileTimeStamp.value() != dep.timestamp)
                     {
@@ -298,8 +277,8 @@ namespace base
             }
 
             // check additional dependencies
-            if (!m_depTracker->checkUpToDate(key))
-                return false;
+            /*if (!m_depTracker->checkUpToDate(key))
+                return false;*/
 
             // still valid
             return true;

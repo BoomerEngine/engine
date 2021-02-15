@@ -1,9 +1,0 @@
-<?xml version="1.0" standalone="yes"?>
-<document>
-    <face side="-x" file="pisa-PX.exr"/>
-    <face side="+x" file="pisa-NX.exr"/>
-    <face side="+y" file="pisa-PY.exr"/>
-    <face side="-y" file="pisa-NY.exr"/>
-    <face side="+z" file="pisa-PZ.exr"/>
-    <face side="-z" file="pisa-NZ.exr"/>
-</document>

@@ -17,11 +17,20 @@ DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_FAILED, base::res::ResourceKey)
 DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_MODIFIED)
 DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_RELOADED)
 
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_CHANGED, base::StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_ADDED, base::StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_REMOVED, base::StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_RELOADED, base::StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_ADDED, base::StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_REMOVED, base::StringBuf)
+
 namespace base
 {
     class ObjectIndirectTemplate;
     typedef RefPtr<ObjectIndirectTemplate> ObjectIndirectTemplatePtr;
     typedef RefWeakPtr<ObjectIndirectTemplate> ObjectIndirectTemplateWeakPtr;
+
+    class DepotService;
 
     namespace res
     {

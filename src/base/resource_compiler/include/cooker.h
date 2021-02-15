@@ -22,13 +22,8 @@ namespace base
         class BASE_RESOURCE_COMPILER_API Cooker : public NoCopy
         {
         public:
-            Cooker(depot::DepotStructure& depot, IResourceLoader* dependencyLoader, IProgressTracker* externalProgressTracker = nullptr, bool finalCooker = false);
+            Cooker(IResourceLoader* dependencyLoader, IProgressTracker* externalProgressTracker = nullptr, bool finalCooker = false);
             ~Cooker();
-
-            //--
-
-            /// underlying depot
-            INLINE depot::DepotStructure& depot() const { return m_depot; }
 
             //--
 
@@ -43,7 +38,6 @@ namespace base
         private:
             //--
 
-            depot::DepotStructure& m_depot;
             IResourceLoader* m_loader;
 
             struct CookableClass

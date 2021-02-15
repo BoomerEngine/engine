@@ -1,9 +1,0 @@
-Icons sources from:
-
-1) FAM FAM FAM Icons (http://www.famfamfam.com/lab/icons/silk/)
-
-Creative Commons Attribution 3.0 License
-
-2) Visual Studio 2012/2013/2015 Icon sets
-
-3) wxFormBuilder (ui_*) icons

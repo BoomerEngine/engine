@@ -23,7 +23,7 @@ namespace ed
     class BASE_EDITOR_API ManagedThumbnailHelper : public base::NoCopy
     {
     public:
-        ManagedThumbnailHelper(depot::DepotStructure& depot);
+        ManagedThumbnailHelper();
         ~ManagedThumbnailHelper();
 
         ///---
@@ -39,8 +39,6 @@ namespace ed
         void refreshThumbnail(ManagedFile* file);
 
     private:
-        depot::DepotStructure& m_depot;
-
         //---
 
         // pending loading request

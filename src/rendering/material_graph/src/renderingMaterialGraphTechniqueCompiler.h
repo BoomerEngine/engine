@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/resource_compiler/include/depotStructure.h"
-
 namespace rendering
 {
 

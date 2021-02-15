@@ -17,7 +17,6 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceTags.h"
-#include "base/resource_compiler/include/depotStructure.h"
 
 #include "cooker.h"
 #include "cookerSaveThread.h"
@@ -25,6 +24,7 @@
 
 #include "commandCook.h"
 #include "base/resource/include/resourceFileLoader.h"
+#include "base/resource/include/depotService.h"
 
 namespace base
 {
@@ -61,14 +61,8 @@ namespace base
                 return false;
             }
 
-            if (!loadingService->loader()->queryUncookedDepot())
-            {
-                TRACE_ERROR("Resource loading service does not have uncooked depot attached. Cooking is only possible from uncooked (editor) data.");
-                return false;
-            }
-
             m_loader = loadingService->loader();
-            m_cooker.create(*m_loader->queryUncookedDepot(), m_loader, nullptr, true /* final cooker */);
+            m_cooker.create(m_loader, nullptr, true /* final cooker */);
             m_saveThread.create();
 
             //--
@@ -93,7 +87,9 @@ namespace base
 
             outNumDirectoriesVisited += 1;
 
-            m_cooker->depot().enumFilesAtPath(depotPath, [&depotPath, &outList](const depot::DepotStructure::FileInfo& info)
+            auto depot = GetService<DepotService>();
+
+            depot->enumFilesAtPath(depotPath, [&depotPath, &outList](const DepotService::FileInfo& info)
                 {
                     if (info.name.endsWith(seedFileExtension))
                     {
@@ -104,7 +100,7 @@ namespace base
                     return false;
                 });
 
-            m_cooker->depot().enumDirectoriesAtPath(depotPath, [this, &depotPath, &outList, &outNumDirectoriesVisited](const depot::DepotStructure::DirectoryInfo& info)
+            depot->enumDirectoriesAtPath(depotPath, [this, &depotPath, &outList, &outNumDirectoriesVisited](const DepotService::DirectoryInfo& info)
                 {
                     const StringBuf path = TempString("{}{}/", depotPath, info.name);
                     scanDepotDirectoryForSeedFiles(path, outList, outNumDirectoriesVisited);
@@ -301,7 +297,7 @@ namespace base
             for (const auto& dep : deps.sourceDependencies)
             {
                 io::TimeStamp timestamp;
-                m_cooker->depot().queryFileTimestamp(dep.sourcePath, timestamp);
+                GetService<DepotService>()->queryFileTimestamp(dep.sourcePath, timestamp);
 
                 if (dep.timestamp == timestamp.value())
                     continue;

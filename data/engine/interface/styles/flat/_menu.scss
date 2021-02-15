@@ -1,0 +1,135 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+MenuBar
+{
+    height: 22em;
+
+    horizontal-align: left;
+
+    > MenuBarItem
+    {
+        vertical-align: top;
+        horizontal-align: left;
+        padding: 8em 2em 8em 2em;
+        background: #0000;
+        border-width: 0em;
+
+        > TextLabel
+        {
+            color: #FFFFFF;
+            font-size: 18em;
+        }
+
+        &:hover, &:pressed
+        {
+            background: linear(90, #3E3E40FF, #3E3E40FF);
+
+            > *
+            {
+                relative-x: 0em;
+                relative-y: 0em;
+            }
+        }
+
+        &.opened
+        {
+            background: linear(90, #1B1B1C00, #1B1B1CFF);
+            border-color: #333337;
+            border-width: 1em;
+
+            > *
+            {
+                relative-x: 0em;
+                relative-y: 0em;
+            }
+        }
+    }
+}
+
+MenuButtonContainer {
+    MenuSeparator {
+        min-height: 1em;
+        height: 1em;
+        background: #333337;
+        padding: 35em 0em 0em 0em;
+        margin-top: 1em;
+        margin-bottom: 1em;
+    }
+
+    MenuGroup {
+        margin-top: 1em;
+        min-height: 14em;
+    }
+}
+
+MenuButton {
+    min-width: 150em;
+    min-height: add($text-font-size, 4);
+    padding: 2em 0em 2em 0em;
+    horizontal-align: expand;
+    vertical-align: expand;
+    background: #0000;
+
+    TextLabel {
+        color: $text-color;
+        font-size: $text-font-size;
+    }
+
+    &:hover, &:pressed {
+        background: linear(0, $scroll-button-color, color.transparent($scroll-button-color, 0%));
+    }
+
+    &.toggled {
+        background: linear(0, color.transparent($active-color, 50%), color.transparent($active-color, 0%));
+    }
+
+    &.toggled:hover, &.toggled:pressed {
+        background: linear(0, color.transparent($active-color, 85%), color.transparent($active-color, 0%));
+    }
+
+    TextLabel#MenuIcon {
+        min-width: 26em;
+        horizontal-align: left;
+        vertical-align: middle;
+    }
+
+    TextLabel#MenuCaption {
+        vertical-align: middle;
+        horizontal-align: expand;
+        padding: 4em 0em 4em 0em;
+    }
+
+    TextLabel#MenuShortcut {
+        vertical-align: middle;
+        horizontal-align: right;
+        margin-left: 15em;
+        color: #999999;
+        font-size: 16em;
+    }
+
+    TextLabel#MenuSubMenuIcon {
+        vertical-align: middle;
+        horizontal-align: right;
+        font-family: $icon-font;
+        margin-left: 15em;
+        color: #FFFFFF;
+        font-size: 18em;
+        content: "&#f0da;";
+    }
+
+    &:disabled TextLabel#MenuCaption
+    {
+        font-style: italic;
+        color: color.scale($text-color, 40%);
+    }
+
+    &:disabled TextLabel#MenuIcon
+    {
+        opacity: 0.5;
+    }
+}
+
+

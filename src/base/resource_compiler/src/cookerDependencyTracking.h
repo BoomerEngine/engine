@@ -11,7 +11,6 @@
 #include "base/system/include/spinLock.h"
 #include "base/system/include/mutex.h"
 #include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/containers/include/hashSet.h"
 
 namespace base
@@ -27,7 +26,7 @@ namespace base
         class DependencyTracker : public NoCopy
         {
         public:
-            DependencyTracker(depot::DepotStructure& depot);
+            DependencyTracker();
             ~DependencyTracker();
 
             //--
@@ -50,7 +49,7 @@ namespace base
         private:
             //--
 
-            depot::DepotStructure& m_depot;
+            DepotService* m_depot = nullptr;
 
             GlobalEventTable m_events;
 

@@ -18,10 +18,10 @@
 #include "base/resource/include/resourceLoader.h"
 #include "base/world/include/worldRawScene.h"
 #include "base/world/include/worldCompiledScene.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceFileSaver.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/world/include/worldStreamingSector.h"
+#include "base/resource/include/depotService.h"
 
 namespace base
 {
@@ -50,11 +50,11 @@ namespace base
                 InsertIslandIntoGrid(island, outGrid);
         }
 
-        static bool SaveFileToDepot(depot::DepotStructure* depot, StringView path, IObject* data)
+        static bool SaveFileToDepot(StringView path, IObject* data)
         {
             ScopeTimer timer;
 
-            auto file = depot->createFileWriter(path);
+            auto file = GetService<DepotService>()->createFileWriter(path);
             if (!file)
             {
                 TRACE_ERROR("Unable to open '{}' for saving", path);
@@ -100,13 +100,6 @@ namespace base
                 return false;
             }
 
-            auto* depot = loadingService->loader()->queryUncookedDepot();
-            if (!depot)
-            {
-                TRACE_ERROR("Resource loading service does not have uncooked depot attached. Cooking is only possible from uncooked (editor) data.");
-                return false;
-            }
-
             const auto depotPath = commandline.singleValue("sceneDepotPath");
             if (depotPath.empty())
             {
@@ -145,7 +138,7 @@ namespace base
 
             // extract entity source
             SourceEntitySoup soup;
-            ExtractSourceEntities(*depot, res::ResourcePath(depotPath), soup);
+            ExtractSourceEntities(res::ResourcePath(depotPath), soup);
 
             // build entity islands
             SourceIslands islands;
@@ -175,7 +168,7 @@ namespace base
                     const auto savePath = BuildCellSavePath(outputDirectoryPath, *cell);
                     TRACE_INFO("Saving cell to '{}'...", savePath);
 
-                    if (!SaveFileToDepot(depot, savePath, cellData))
+                    if (!SaveFileToDepot(savePath, cellData))
                     {
                         TRACE_ERROR("Failed to save compiled scene file");
                         return false;
@@ -192,7 +185,7 @@ namespace base
                 const auto savePath = BuildCompiledSceneSavePath(outputDirectoryPath);
 
                 auto compiledScene = RefNew<CompiledScene>(setup);
-                if (!SaveFileToDepot(depot, savePath, compiledScene))
+                if (!SaveFileToDepot(savePath, compiledScene))
                 {
                     TRACE_ERROR("Failed to save compiled scene file");
                     return false;

@@ -1,0 +1,206 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+VirtualArea {
+
+	background: image("images/graph_grid.png", wrap, color.scale($window-background, 120%));
+	//background: image("images/file.png", wrap, color.scale($window-background, 120%));
+	vertical-align: expand;
+	horizontal-align: expand;
+
+	selection: color.transparent($active-color, 30%);
+}
+
+VirtualAreaElement {
+	background: #505050;
+	border-width: 1em;
+	border-color: #FFFF;
+	border-radius: 8em;
+	min-width: 80em;
+	min-height: 50em;
+
+	> TextLabel {
+		horizontal-align: center;
+		vertical-align: middle;
+		font-size: 20em;
+	}
+
+	&.selected {
+		border: 2em;
+		border-color: #FF0F;
+		background: #707050;
+	}
+}
+
+GraphEditor
+{
+}
+
+GraphEditorNodePayload {
+	background: #555;
+	margin: 5em 5em 5em 5em;
+	padding: 4em 4em 4em 4em;
+	border-radius: 4em;
+	border-color: #FFF;
+	border-width: 1em;
+	width: 50em;
+	height: 50em;
+}
+
+/*VirtualAreaElement.selected > GraphEditorNodePayload {
+	background: #FFF;
+}*/
+
+GraphEditorBlockNode {
+	//margin: 16em 16em 16em 16em;
+	background: #8C8C8C;
+	background: linear(30, #8C8C8C, color.scale(#8C8C8C, 70%));
+	color: #000;
+	border-width: 0em;
+	border-color: #4F504F;
+	border-radius: 12em;
+	font-size: 16em;
+
+	socket-padding-left: 4em;
+	socket-padding-top: 4em;
+	socket-padding-bottom: 4em;
+	socket-padding-right: 4em;
+
+	&.title {
+		padding-left: 8em;
+		padding-right: 8em;
+		padding-bottom: 4em;
+		padding-top: 0em;
+		min-height: 30em;
+		min-width: 50em;
+	}
+
+	&.notitle {
+		padding-left: 4em;
+		padding-right: 4em;
+		padding-bottom: 4em;
+		padding-top: 4em;
+		border-width: 1em;
+		min-height: 10em;
+		min-width: 20em;
+	}
+
+	&.circle {
+		padding: 0em 0em 0em 0em;
+		width: 50em;
+		height: 50em;
+		background: #555;
+		border-width: 2em;
+	}
+
+	&.preview {
+		opacity: 50%;
+	}
+
+	&.selected {
+		border-width: 2em;
+		border-color: #FFFF4F;
+		//border-color: $active-color;
+		//background: linear(30, color.mix(#8C8C8C,  $active-color, 20%), color.mix(color.scale(#8C8C8C, 70%),  $active-color, 20%));
+		//border-radius: 10em;
+	}
+}
+
+GraphEditorBlockNode.circle > GraphEditorNodePayload {
+	margin: 0em 0em 0em 0em;
+	padding: 0em 0em 0em 0em;
+	background: #000;
+}
+
+GraphEditorNodeTitle {
+	horizontal-align: center;
+	vertical-align: middle;
+	//font-weight: bold;
+	font-style: italic;
+	font-size: 18em;
+	margin: 15em 2em 15em 2em;
+}
+
+GraphEditorBlockNode.circle > GraphEditorNodeTitle {
+	margin: 0em 0em 0em 0em;
+}
+
+GraphNodePreviewContainer {
+	min-height: 80em;
+	min-width: 200em;
+	margin: 5em 10em 5em 10em;
+	shadow: box(100%, 100%, 4em, 5em, #50505000, #50505080);
+	border-color: #808080;
+	border-width: 1em;
+	border-radius: 4em;
+	//background: #30303080;*
+	background: image("images/grid_rect_small.png", wrap, #FFFA);
+	padding: 4em 4em 4em 4em;
+}
+
+GraphInnerWidget {
+	border-color: $client-border;
+	border-width: 1em;
+	border-radius: 6em;
+	padding: 4em 2em 4em 2em;
+	margin: 7em 7em 7em 7em;
+	background: $window-background;
+
+	horizontal-align: center;
+	vertical-align: middle;
+}
+
+GraphEditorBlockNode.notitle {
+	GraphInnerWidget {
+		margin: 6em 2em 6em 2em;
+	}
+}
+
+MaterialMath {
+	title-color: #9163B6;
+}
+
+MaterialVector {
+	//title-color: #E279A3;
+	title-color: #9163B6;
+}
+
+MaterialConst {
+	title-color: #9163B6;
+}
+
+MaterialStream {
+	title-color: #E2975D;
+}
+
+MaterialAttribute {
+	title-color: #E2975D;
+}
+
+MaterialGlobal {
+	title-color: #74C493;
+}
+
+MaterialOutput {
+	title-color: #E9D78E;
+	GraphEditorNodeTitle {
+		color: #000;
+	}
+}
+
+MaterialSampler {
+	title-color: #E16552;
+}
+
+MaterialParameter {
+	title-color: #C94A53;
+	GraphEditorNodeTitle {
+		//color: #000;
+		//font-weight: bold;
+	}
+}
+
+//--
+

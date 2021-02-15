@@ -1,0 +1,123 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+//-----------
+
+$window-background: #2D2D2D;
+$window-border: #333337;
+
+$popup-background: #1B1B1C;
+$popup-border: #333337;
+$popup-shadow: box(100%, 100%, 10em, 20em, #00000060, #00000000);
+
+$client-background: #1E1E1E;
+$client-border: #333337;
+
+$button-background: #525759;
+$button-toggle: #FFC080;
+$button-border: #5D5F5F;
+$button-text: #BBB9A6;
+
+$scroll-background: #3E3E42;
+$scroll-size: 16em;
+$scroll-thumb-min-size: 20em;
+$scroll-thumb-color: #686868;
+$scroll-button-color: #3E3E42;
+
+$toolbar-background: #4F4F4F;
+
+$text-color: #FFFFFF;
+$text-font-size: 18em;
+$text-font: url("fonts/roboto_regular.ttf", "fonts/roboto_bold.ttf", "fonts/roboto_italic.ttf");
+
+$icon-font: url("fonts/font_awesome.otf");
+$icon-font-size: 14em;
+
+$code-font: url("fonts/DejaVuSansMono.ttf", "fonts/DejaVuSansMono-Bold.ttf", "fonts/DejaVuSansMono-Oblique.ttf", "fonts/DejaVuSansMono-BoldOblique.ttf");
+$code-font-size: 14em;
+$code-background: #1E1E1E;
+
+//$active-color: #007acc;
+$active-color: #1C97EA;
+$active-border-size: 3em;
+
+$hover-color: $active-color;
+$hover-scale: 30%;
+$hover-overlay-alpha: 10%;
+$modal-fadeout: 0.3;
+$disable-scale: 70%;
+
+$action-green-color: #62c462;
+$action-red-color: #da6a60;
+$action-blue-color: #4f92d8;
+
+//-----------
+
+* {
+    font-family: $text-font;
+    font-size: $text-font-size;
+    color: $text-color;
+}
+
+//-----------
+
+
+TestCrap {
+    margin: 10em 10em 10em 10em;
+    padding: 7em 7em 7em 7em;
+    min-width: 32em;
+    min-height: 32em;
+    border-width: 1em;
+    border-color: #DDD;
+    border-radius: 10em;
+    background: image("images/grid_rect_small.png", wrap, #808080);
+    image: url("images/file.png");
+
+    &.test1 {
+        image: url("icons/error48.png");
+    }
+
+    &:hover {
+        background: image("images/grid_rect_small.png", wrap, $active-color);
+    }
+}
+
+
+
+//-----------
+
+// import base UI styles
+@import "flat/_button.scss";
+@import "flat/_window.scss";
+@import "flat/_checkbox.scss";
+@import "flat/_scrollbar.scss";
+@import "flat/_editbox.scss";
+@import "flat/_trackbar.scss";
+@import "flat/_combobox.scss";
+@import "flat/_notebook.scss";
+@import "flat/_toolbar.scss";
+@import "flat/_menu.scss";
+@import "flat/_tooltip.scss";
+@import "flat/_splitter.scss";
+@import "flat/_docking.scss";
+@import "flat/_notification.scss";
+
+@import "flat/_listview.scss";
+@import "flat/_treeview.scss"; 
+@import "flat/_breadcrumbs.scss"; 
+@import "flat/_columns.scss";
+@import "flat/_progressbar.scss";
+@import "flat/_scintilla.scss";
+@import "flat/_group.scss";
+
+// import UI styles for more compilicated stuff
+@import "flat/_datagrid.scss";
+@import "flat/_databox.scss";
+@import "flat/_viewport.scss";
+@import "flat/_graph.scss";
+@import "flat/_special.scss";
+
+// import the ui related styles
+@import "_ui.scss";

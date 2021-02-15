@@ -13,12 +13,6 @@
 
 namespace hl2
 {
-    RTTI_BEGIN_TYPE_CLASS(FileSystemProviderVPK);
-    RTTI_END_TYPE();
-
-    FileSystemProviderVPK::FileSystemProviderVPK()
-    {}
-
     static base::StringBuf FindSteamGameDirectory()
     {
         char steamDirectoryTxt[512];
@@ -77,7 +71,7 @@ namespace hl2
         return base::StringBuf();
     }
 
-    base::UniquePtr<base::depot::IFileSystem> FileSystemProviderVPK::createFileSystem(base::depot::DepotStructure* owner) const
+    /*base::UniquePtr<base::depot::IFileSystem> FileSystemProviderVPK::createFileSystem(base::depot::DepotStructure* owner) const
     {
         // find game installation
         auto installPath = FindHL2InstallDirectory();
@@ -102,6 +96,6 @@ namespace hl2
         // create wrapper
         //return base::CreateUniquePtr<PackedFileSystem>(packagePath, std::move(index));
         return nullptr;
-    }
+    }*/
 
 } // hl2

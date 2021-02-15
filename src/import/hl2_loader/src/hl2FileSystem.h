@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "base/resource_compiler/include/depotFileSystem.h"
 #include "base/io/include/ioFileHandle.h"
 
 namespace hl2
@@ -15,7 +14,7 @@ namespace hl2
 
     class FileSystemIndex;
 
-    /// file system wrapper for HL2
+    /*/// file system wrapper for HL2
     class IMPORT_HL2_LOADER_API PackedFileSystem : public base::depot::IFileSystem
     {
     public:
@@ -50,6 +49,6 @@ namespace hl2
         base::Array<OpenPackage> m_openedPackages;
 
         void setupPackages();
-    };
+    };*/
 
 } // hl2

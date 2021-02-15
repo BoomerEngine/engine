@@ -66,12 +66,6 @@ namespace base
 
             //----
 
-            /// gain the uncooked depot access, valid only in dev builds that are not using cooked data (ie. editor builds)
-            /// NOTE: this is one of the few places when dev-only class is visible in non-dev setting
-            virtual depot::DepotStructure* queryUncookedDepot() const;
-
-            ///----
-
         protected:
             IResourceLoader();
 

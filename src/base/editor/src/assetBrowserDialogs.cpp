@@ -28,7 +28,7 @@
 #include "base/ui/include/uiCheckBox.h"
 #include "base/ui/include/uiProgressBar.h"
 #include "base/ui/include/uiTextValidation.h"
-#include "base/resource_compiler/include/depotStructureRename.h"
+//#include "base/resource_compiler/include/depotStructureRename.h"
 #include "base/ui/include/uiMessageBox.h"
 #include "base/system/include/thread.h"
 
@@ -519,7 +519,7 @@ namespace ed
 
     //--
 
-    bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings)
+    /*bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings)
     {
         auto* file = rtti_cast<ManagedFile>(item);
         auto* dir = rtti_cast<ManagedDirectory>(item);
@@ -728,11 +728,11 @@ namespace ed
         }
 
         return window->runModal(owner, editText);
-    }
+    }*/
 
     //--
 
-    struct RenameFileListModelEntry
+    /*struct RenameFileListModelEntry
     {
         StringBuf sourceDepotPath;
         const depot::FileRenameJob* job = nullptr;
@@ -775,9 +775,9 @@ namespace ed
 
             return txt.toString();
         }
-    };
+    };*/
 
-    class InspectRenameDialog : public ui::Window
+    /*class InspectRenameDialog : public ui::Window
     {
     public:        
         InspectRenameDialog()
@@ -853,16 +853,13 @@ namespace ed
         ui::ButtonPtr m_closeButton;
 
         std::atomic<bool> m_canceFlag = false;
-    };
+    };*/
 
     //--
 
     ManagedItem* RenameItem(ui::IElement* owner, ManagedItem* file)
     {
         auto& depot = GetEditor()->managedDepot().depot();
-
-        base::depot::RenameConfiguration settings;
-        settings.moveFilesNotCopy = true;
 
         GetEditor()->runLongAction(owner, nullptr, [](IProgressTracker& progress) {
                 const auto size = 20;
@@ -873,6 +870,9 @@ namespace ed
                     base::Sleep(500);
                 }
             }, "Waiting for rename...", false);
+
+/*        base::depot::RenameConfiguration settings;
+        settings.moveFilesNotCopy = true;
 
         // user input
         if (!ShowGenericRenameDialog(owner, file, settings))
@@ -909,7 +909,7 @@ namespace ed
                 return GetEditor()->managedDepot().findManagedFile(elem.renamedDepotPath);
             else
                 return GetEditor()->managedDepot().findPath(elem.renamedDepotPath);
-        }
+        }*/
 
         return nullptr;
     }

@@ -167,10 +167,9 @@ namespace ed
     class AssetImportSingleDepotFileLoader : public res::IImportDepotLoader
     {
     public:
-        AssetImportSingleDepotFileLoader(depot::DepotStructure& depot, const StringBuf& depotPath, const res::ResourcePtr& existingResource)
+        AssetImportSingleDepotFileLoader(const StringBuf& depotPath, const res::ResourcePtr& existingResource)
             : m_depotPath(depotPath)
             , m_existingResource(existingResource)
-            , m_depot(depot)
         {}
 
         virtual res::MetadataPtr loadExistingMetadata(StringView depotPath) const override final
@@ -192,17 +191,15 @@ namespace ed
         virtual bool depotFileExists(StringView depotPath) const override final
         {
             io::TimeStamp timestamp;
-            return m_depot.queryFileTimestamp(depotPath, timestamp);
+            return GetService<DepotService>()->queryFileTimestamp(depotPath, timestamp);
         }
 
         virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
         {
-            return m_depot.findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+            return GetService<DepotService>()->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
         }
 
     private:
-        depot::DepotStructure& m_depot;
-
         StringBuf m_depotPath;
         res::ResourcePtr m_existingResource;
     };
@@ -277,7 +274,7 @@ namespace ed
         AssetImportSingleOutput saver(depotPath);
 
         // create loader
-        AssetImportSingleDepotFileLoader loader(editorService->managedDepot().depot(), depotPath, loadedResource);
+        AssetImportSingleDepotFileLoader loader(depotPath, loadedResource);
 
         // create asset source cache
         res::SourceAssetRepository repository(assetSource);

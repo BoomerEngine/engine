@@ -17,10 +17,9 @@
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 #include "rendering/material/include/renderingMaterialRuntimeTechnique.h"
 #include "rendering/compiler/include/renderingShaderCompiler.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/parser/include/textToken.h"
-#include "../../device/include/renderingShaderService.h"
+#include "rendering/device/include/renderingShaderService.h"
 
 namespace rendering
 {

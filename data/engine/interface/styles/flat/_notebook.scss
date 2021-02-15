@@ -1,0 +1,117 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+$notebook-button-color: color.mix($button-background, $window-background, 50%);
+$notebook-button-active-color: color.mix($notebook-button-color, $active-color, 70%);
+$notebook-separator-color: $window-border;
+
+Notebook
+{
+    background: #0000;
+    margin: 0em 5em 0em 0em;
+
+    > NotebookHeaderArea {
+
+        > NotebookHeader {
+            background: #0000;
+
+            > NotebookHeaderBar {
+                vertical-align: bottom;
+                border-color: $notebook-separator-color;
+                border-bottom: 1em;
+                //border-width: 1em;
+                height: add($text-font-size, 6);
+
+                > NotebookHeaderTabButton {
+                    height: add($text-font-size, 10);
+                    background: linear(90, $notebook-button-color, $notebook-separator-color);
+                    border-radius: 4em;
+                    padding: 10em 0em 10em 0em;
+                    margin: 2em 0em 2em 0em;
+
+                    &:hover {
+                        background: color.scale($notebook-button-active-color, 80%);
+                    }
+
+                    &.active {
+                        background: $notebook-button-active-color;
+                    }
+
+                    > * {
+                        margin-top: 3em;
+                        vertical-align: top;
+                    }
+
+                    //--
+
+                    > NotebookHeaderTabCloseButton {
+                        vertical-align: top;
+                        background: #00000000;
+                        border-width: 0em;
+                        padding: 2em 0em 2em 0em;
+                        margin: 5em 6em 0em 0em;
+
+                        > TextLabel {
+                            padding: 1em 0em 0em 0em;
+                            font-family: $icon-font;
+                            font-size: $icon-font-size;
+                            color: color.scale($text-color, 40%);
+                            content: "&#f00d;";
+                        }
+
+                        &:hover, &:pressed {
+                            background: $action-red-color;
+
+                            > TextLabel {
+                                color: $text-color;
+                            }
+                        }
+                    }
+
+                    //--
+                }
+            }
+        }
+    }
+
+    > NotebookContainer {
+        background: $window-background;
+        //background: #F0F;
+    }
+}
+
+FileNotebook {
+    //background: #F0F;
+
+    > NotebookHeaderArea {
+        > NotebookHeader {
+            > NotebookHeaderBar {
+
+                height: add($text-font-size, 10);
+
+                > NotebookHeaderTabButton {
+                    height: add($text-font-size, 10);
+                    background: #444;
+                    border-color: $notebook-separator-color;
+                    border-width: 1em;
+                    border-radius: 0em;
+
+                    &:hover {
+                        background: #505050;
+                    }
+
+                    &.active {
+                        background: $notebook-button-active-color;
+                    }
+
+                    > * {
+                        margin-top: 0em;
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -36,7 +36,7 @@ namespace base
         class BASE_RESOURCE_COMPILER_API ImportSaverThread : public IImportOutput
         {
         public:
-            ImportSaverThread(depot::DepotStructure& depot);
+            ImportSaverThread();
             ~ImportSaverThread(); // note: will kill all jobs
 
             /// wait for jobs to finish
@@ -66,10 +66,6 @@ namespace base
             Thread m_saveThread;
 
             std::atomic<uint32_t> m_saveThreadRequestExit;
-
-            ///--
-
-            depot::DepotStructure& m_depot;
 
             ///--
 

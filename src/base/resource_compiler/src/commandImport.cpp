@@ -23,11 +23,11 @@
 #include "base/resource/include/resourceLoader.h"
 #include "base/resource/include/resourceFileLoader.h"
 #include "base/resource/include/resourceFileSaver.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/object/include/object.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/xml/include/xmlUtils.h"
 #include "base/net/include/messageConnection.h"
+#include "base/resource/include/depotService.h"
 
 
 namespace base
@@ -78,13 +78,14 @@ namespace base
         class LocalDepotBasedLoader : public IImportDepotLoader
         {
         public:
-            LocalDepotBasedLoader(depot::DepotStructure& depot)
-                : m_depot(depot)
-            {}
+            LocalDepotBasedLoader()
+            {
+                m_depot = GetService<DepotService>();
+            }
 
             virtual MetadataPtr loadExistingMetadata(StringView depotPath) const override final
             {
-                if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
+                if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
                 {
                     FileLoadingContext context;
                     return base::res::LoadFileMetadata(fileReader, context);
@@ -95,7 +96,7 @@ namespace base
 
             virtual ResourcePtr loadExistingResource(StringView depotPath) const override final
             {
-                if (const auto fileReader = m_depot.createFileAsyncReader(depotPath))
+                if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
                 {
                     FileLoadingContext context;
                     if (base::res::LoadFile(fileReader, context))
@@ -111,16 +112,16 @@ namespace base
             virtual bool depotFileExists(StringView depotPath) const override final
             {
                 io::TimeStamp timestamp;
-                return m_depot.queryFileTimestamp(depotPath, timestamp);
+                return m_depot->queryFileTimestamp(depotPath, timestamp);
             }
 
             virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
             {
-                return m_depot.findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+                return m_depot->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
             }
 
         private:
-            depot::DepotStructure& m_depot;
+            DepotService* m_depot = nullptr;
         };
 
         //--
@@ -202,22 +203,14 @@ namespace base
                 return false;
             }
 
-            // get the depot
-            auto* depot = loadingService->loader()->queryUncookedDepot();
-            if (!depot)
-            {
-                TRACE_ERROR("Resource loading service does not have uncooked depot attached. Cooking is only possible from uncooked (editor) data.");
-                return false;
-            }
-
             // protected region
             // TODO: add "__try" "__expect" ?
             {
                 // create the saving thread
-                ImportSaverThread saver(*depot);
+                ImportSaverThread saver;
 
                 // create loader
-                LocalDepotBasedLoader loader(*depot);
+                LocalDepotBasedLoader loader;
 
                 // create asset source cache
                 SourceAssetRepository repository(assetSource);

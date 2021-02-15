@@ -17,7 +17,7 @@
 
 #include "base/resource/include/objectIndirectTemplateCompiler.h"
 #include "base/resource/include/objectIndirectTemplate.h"
-#include "base/resource_compiler/include/depotStructure.h"
+#include "base/resource/include/depotService.h"
 
 namespace base
 {
@@ -33,10 +33,10 @@ namespace base
             bool valid = false;
         };
 
-        void ExtractSourceLayersAtDirectory(const depot::DepotStructure& depot, StringView directoryPath, Array<SourceLayer*>& outLayers)
+        void ExtractSourceLayersAtDirectory(StringView directoryPath, Array<SourceLayer*>& outLayers)
         {
             // scan the layers (they must come first so they can be loaded first)
-            depot.enumFilesAtPath(directoryPath, [&depot, &outLayers, directoryPath](const depot::DepotStructure::FileInfo& file)
+            GetService<DepotService>()->enumFilesAtPath(directoryPath, [&outLayers, directoryPath](const DepotService::FileInfo& file)
                 {
                     static const auto rawLayerExtensions = res::IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
                     if (file.name.endsWith(rawLayerExtensions))
@@ -49,9 +49,9 @@ namespace base
                 });
 
             // scan the depot directories at path
-            depot.enumDirectoriesAtPath(directoryPath, [&depot, &outLayers, directoryPath](const depot::DepotStructure::DirectoryInfo& dir)
+            GetService<DepotService>()->enumDirectoriesAtPath(directoryPath, [&outLayers, directoryPath](const DepotService::DirectoryInfo& dir)
                 {
-                    ExtractSourceLayersAtDirectory(depot, TempString("{}{}/", directoryPath, dir.name), outLayers);
+                    ExtractSourceLayersAtDirectory(TempString("{}{}/", directoryPath, dir.name), outLayers);
                     return false;
                 });
         }
@@ -89,13 +89,13 @@ namespace base
             return true;
         }
 
-        void ExtractSourceEntities(const depot::DepotStructure& depot, const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup)
+        void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup)
         {
             InplaceArray<SourceLayer*, 128> collectedLayers;
 
             // scan layers in the world
             const auto worldDir = worldFilePath.basePath();
-            ExtractSourceLayersAtDirectory(depot, TempString("{}layers/", worldDir), collectedLayers);
+            ExtractSourceLayersAtDirectory(TempString("{}layers/", worldDir), collectedLayers);
             TRACE_INFO("Found {} layers in scene {}", collectedLayers.size(), worldFilePath);
 
             // generate per-layer soup

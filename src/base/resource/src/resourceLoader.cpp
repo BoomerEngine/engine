@@ -32,11 +32,6 @@ namespace base
         {
         }
 
-        depot::DepotStructure* IResourceLoader::queryUncookedDepot() const
-        {
-            return nullptr;
-        }
-
         void IResourceLoader::notifyResourceLoading(const ResourceKey& path)
         {
             DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_LOADING, path);

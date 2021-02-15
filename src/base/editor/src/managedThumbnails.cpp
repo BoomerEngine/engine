@@ -13,7 +13,6 @@
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/containers/include/stringParser.h"
 #include "base/process/include/process.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceThumbnail.h"
 
 #include "editorService.h"
@@ -28,8 +27,7 @@ namespace ed
 
     ///---
 
-    ManagedThumbnailHelper::ManagedThumbnailHelper(depot::DepotStructure& depot)
-        : m_depot(depot)
+    ManagedThumbnailHelper::ManagedThumbnailHelper()
     {
     }
 

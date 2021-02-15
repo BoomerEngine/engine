@@ -10,11 +10,11 @@
 #include "cooker.h"
 #include "cookerInterface.h"
  
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resource.h"
 #include "base/io/include/ioSystem.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceTags.h"
+#include "base/resource/include/resourceLoader.h"
 
 namespace base
 {
@@ -23,9 +23,8 @@ namespace base
 
         //--
 
-        Cooker::Cooker(depot::DepotStructure& fileLoader, IResourceLoader* dependencyLoader, IProgressTracker* externalProgressTracker, bool finalCooker)
-            : m_depot(fileLoader)
-            , m_loader(dependencyLoader)
+        Cooker::Cooker(IResourceLoader* dependencyLoader, IProgressTracker* externalProgressTracker, bool finalCooker)
+            : m_loader(dependencyLoader)
             , m_finalCooker(finalCooker)
             , m_externalProgressTracker(externalProgressTracker)
         {
@@ -232,7 +231,7 @@ namespace base
             ASSERT(recipe.cookerClass != nullptr);
             ASSERT(recipe.targetResourceClass != nullptr);
 
-            CookerInterface helperInterface(m_depot, m_loader, key.path().str(), m_finalCooker, m_externalProgressTracker);
+            CookerInterface helperInterface(m_loader, key.path().str(), m_finalCooker, m_externalProgressTracker);
 
             // cook the resource
             auto cooker = recipe.cookerClass->create<IResourceCooker>();

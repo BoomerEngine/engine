@@ -15,7 +15,6 @@
 
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/localService.h"
-#include "base/resource_compiler/include/depotDependencyCache.h"
 #include "base/system/include/thread.h"
 #include "base/ui/include/uiElementConfig.h"
 
@@ -23,14 +22,13 @@ namespace ed
 {
     //--
 
-    ManagedDepot::ManagedDepot(depot::DepotStructure& depot)
-        : m_depot(depot)
+    ManagedDepot::ManagedDepot()
     {
+        // get depot
+        m_depot = base::GetService<base::DepotService>();
+
         // event key for listening our events
         m_eventKey = MakeUniqueEventKey("ManagedDepot");
-
-        // create dependency cache
-        m_depotDependencyCache = new depot::DependencyCache(depot);
 
         // create thumbnail service
         //m_thumbnailHelper = CreateUniquePtr<ManagedThumbnailHelper>(loader);
@@ -39,24 +37,24 @@ namespace ed
         m_root = RefNew<ManagedDirectory>(this, nullptr, "root", "/");
 
         // bind events
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path) {
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_ADDED) = [this](StringBuf path) {
             handleDepotFileNotificataion(path);
         };
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_CHANGED) = [this](StringBuf path) {
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_CHANGED) = [this](StringBuf path) {
             handleDepotFileNotificataion(path);
         };
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_REMOVED) = [this](StringBuf path) {
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_REMOVED) = [this](StringBuf path) {
             handleDepotFileNotificataion(path);
         };
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_DIRECTORY_ADDED) = [this](StringBuf path) {
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_DIRECTORY_ADDED) = [this](StringBuf path) {
             handleDepotFileNotificataion(path);
         };
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_DIRECTORY_REMOVED) = [this](StringBuf path) {
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_DIRECTORY_REMOVED) = [this](StringBuf path) {
             handleDepotFileNotificataion(path);
         };
 
         // reload event
-        m_depotEvents.bind(depot.eventKey(), EVENT_DEPOT_FILE_RELOADED) = [this](StringBuf path)
+        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_RELOADED) = [this](StringBuf path)
         {
             if (auto file = ManagedFilePtr(AddRef(findManagedFile(path))))
             {
@@ -70,9 +68,6 @@ namespace ed
     {
         m_depotEvents.clear();
         m_root.reset();
-
-        delete m_depotDependencyCache;
-        m_depotDependencyCache = nullptr;
     }
 
     void ManagedDepot::populate()

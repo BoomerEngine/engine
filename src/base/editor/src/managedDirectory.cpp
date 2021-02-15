@@ -119,7 +119,7 @@ namespace ed
         // create files
         {
             HashSet<ManagedFile*> visitedFiles;
-            depot()->depot().enumFilesAtPath(depotPath(), [this, &visitedFiles](const depot::DepotStructure::FileInfo& info)
+            depot()->depot().enumFilesAtPath(depotPath(), [this, &visitedFiles](const DepotService::FileInfo& info)
                 {
                     if (auto existingFile = file(info.name, true))
                     {
@@ -149,7 +149,7 @@ namespace ed
         Array<ManagedDirectory*> newDirectories;
         {
             HashSet<ManagedDirectory*> visitedDirs;
-            depot()->depot().enumDirectoriesAtPath(depotPath(), [this, &visitedDirs, &newDirectories](const depot::DepotStructure::DirectoryInfo& info)
+            depot()->depot().enumDirectoriesAtPath(depotPath(), [this, &visitedDirs, &newDirectories](const DepotService::DirectoryInfo& info)
                 {
                     if (auto existingDir = directory(info.name, true))
                     {

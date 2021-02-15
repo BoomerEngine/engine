@@ -1,0 +1,38 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+TextLabel#AssetBrowserIcon
+{
+    vertical-align: middle;
+    horizontal-align: center;
+}
+
+TextLabel#AssetBrowserCaption
+{
+    vertical-align: middle;
+    horizontal-align: center;
+    font-size: 34em;
+    padding: 5em 0em 5em 5em;
+}
+
+AssetFileSmallImportIndicator
+{
+	padding: 6em 6em 6em 6em;
+	background: #8888;
+	opacity: 50%;
+	border-radius: 4em;
+	border-color: #000;
+	border-width: 1em;
+}
+
+AssetFileImportWidget
+{
+	margin: 8em 8em 8em 8em;
+	padding: 7em 10em 7em 10em;
+	background: #8882;
+	border-radius: 6em;
+	border-color: #000;
+	border-width: 1em;
+}

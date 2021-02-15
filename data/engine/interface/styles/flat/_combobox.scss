@@ -1,0 +1,51 @@
+/***
+* Boomer Engine v4 2015-2017
+* Written by Tomasz "Rex Dex" Jonarski
+***/
+
+ComboBox {
+    height: add($text-font-size, 4em);
+	horizontal-align: expand;
+	//proportion: 1em;
+
+	background: $client-background;
+	border-color: $client-border;
+    border-width: 1em;
+
+    > Button {
+		padding: 4em 0em 4em 0em;
+		margin: 0em 0em 0em 0em;
+		vertical-align: expand;
+		horizontal-align: expand;
+		//proportion: 100%;
+		
+		> *#ComboBoxCaption {
+			padding: 0em 0em 8em 0em;
+			horizontal-align: expand;
+			vertical-align: middle;
+			//proportion: 100%;
+			//background: #F00;
+		}
+		
+		> *#ComboBoxIcon {
+			width: mul($icon-font-size, 0.8);
+			font-family: $icon-font;
+			font-size: $icon-font-size;
+			content: "&#f0d7;";
+		}
+	}
+	 
+}
+
+ComboBoxOptions {
+	horizontal-align: expand;
+
+	> *#ComboBoxListItem {
+		&:hover {
+			background: color.scale($active-color, 60%);
+		}
+		&.selected {
+			background: $active-color;
+		}
+	}
+}

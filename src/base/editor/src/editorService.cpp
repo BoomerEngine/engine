@@ -22,7 +22,6 @@
 
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/commandline.h"
-#include "base/resource_compiler/include/depotStructure.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/ui/include/uiRenderer.h"
 #include "base/ui/include/uiElementConfig.h"
@@ -97,13 +96,6 @@ namespace ed
         auto loaderService = GetService<res::LoadingService>();
         DEBUG_CHECK_RETURN_EX_V(loaderService && loaderService->loader(), "No resource loading service spawned, no editor can be created", false);
 
-        // prepare depot for the editor
-        auto depot = loaderService->loader()->queryUncookedDepot();
-        DEBUG_CHECK_RETURN_EX_V(depot, "Unable to convert engine depot into writable state, no editor will start", false);
-
-        // enable live tracking of files
-        depot->enableDepotObservers();
-
         // create configuration
         m_configStorage.create();
         m_configRootBlock.create(m_configStorage.get(), "");
@@ -126,7 +118,7 @@ namespace ed
         loadOpenSaveSettings(m_configRootBlock->tag("OpenSaveDialog"));
 
         // initialize the managed depot
-        m_managedDepot = CreateUniquePtr<ManagedDepot>(*depot);
+        m_managedDepot = CreateUniquePtr<ManagedDepot>();
         m_managedDepot->populate();
         m_managedDepot->configLoad(m_configRootBlock->tag("Depot"));
         GEditor = this;
