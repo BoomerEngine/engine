@@ -20,7 +20,6 @@ public class ModuleRegistry {
 
   public List<Module> modules = new ArrayList<>();
   public List<Path> sourceRootPaths = new ArrayList<>();
-  public List<Path> dataRootPaths = new ArrayList<>();
   public Set<ModuleManifest.ThirtPartyPackage> thirdPartyPackages = new HashSet<>();
 
   public void createModuleFromPath(Path moduleAbsoluteDirectoryPath, int dependencyLevel) {
@@ -48,10 +47,6 @@ public class ModuleRegistry {
     // add source dir
     if (module.sourceDirectory != null)
       sourceRootPaths.add(module.sourceDirectory);
-
-    // add data dir
-    if (module.dataDirectory != null)
-      dataRootPaths.add(module.dataDirectory);
 
     // extract all third party sources
     for (ModuleManifest.ThirtPartyPackage link : manifest.thirdPartyPackages)

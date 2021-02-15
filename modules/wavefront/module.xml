@@ -1,9 +1,0 @@
-<module>
-
-  <!-- Module informations, used mostly for display in the project building tools -->
-  <name>BoomerEngine Wavefront Support</name>
-  <description>Support for importing .obj meshes into BoomerEngine</description>
-  <author>Tomasz "Rex Dex" Jonarski</author>
-  <license>LGPL v3</license>
-
-</module>

@@ -1,9 +1,0 @@
-<module>
-
-  <!-- Module informations, used mostly for display in the project building tools -->
-  <name>BoomerEngine Game Framework</name>
-  <description>Game framework for Boomer Engine</description>
-  <author>Tomasz "Rex Dex" Jonarski</author>
-  <license>MIT</license>
-
-</module>

@@ -27,8 +27,6 @@ public class ProjectManifest {
 
     public String defaultSolutionType = "full";
 
-    public List<Path> moduleAbsolutePaths = new ArrayList<>();
-
     public static ProjectManifest parseFromXml(Path xmlFilePath) {
         ProjectManifest ret = null;
         Document doc = utils.Utils.loadXML(xmlFilePath);
@@ -61,18 +59,6 @@ public class ProjectManifest {
                         ret.engineProject = true;
                     } else if (p.getNodeName().equals("tempDir")) {
                         defaultTempDirectory = p.getTextContent();
-                    } else if (p.getNodeName().equals("module")) {
-                        try {
-                            Path modulePath = moduleDirectory.resolve(p.getTextContent()).normalize();
-                            Path moduleManifestPath = modulePath.resolve("module.xml");
-                            if (Files.exists(moduleManifestPath)) {
-                                ret.moduleAbsolutePaths.add(modulePath);
-                            } else {
-                                System.err.printf("Module path '%s' specified in project manifest at '%s' does not contain a valid module (missing module.xml)\n", modulePath, xmlFilePath);
-                            }
-                        } catch (Exception e) {
-                            System.err.printf("Invalid module path '%s' specified in project manifest at '%s': %s\n", p.getTextContent(), xmlFilePath, e.toString());
-                        }
                     } else {
                         System.err.printf("Unexpected key '%s' in project manifest at '%s'\n", p.getNodeName(), xmlFilePath);
                     }

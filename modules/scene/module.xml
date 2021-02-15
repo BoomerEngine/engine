@@ -1,9 +1,0 @@
-<module>
-
-  <!-- Module informations, used mostly for display in the project building tools -->
-  <name>BoomerEngine Scene Graph</name>
-  <description>Entity/Component bullshit</description>
-  <author>Tomasz "Rex Dex" Jonarski</author>
-  <license>LGPL v3</license>
-
-</module>

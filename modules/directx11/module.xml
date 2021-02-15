@@ -1,9 +1,0 @@
-<module>
-
-  <!-- Module informations, used mostly for display in the project building tools -->
-  <name>BoomerEngine DirectX 11 support</name>
-  <description>Support for DirectX11 rendering API</description>
-  <author>Tomasz "Rex Dex" Jonarski</author>
-  <license>MIT</license>
-
-</module>

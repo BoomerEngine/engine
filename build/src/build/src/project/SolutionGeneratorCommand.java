@@ -32,8 +32,8 @@ public class SolutionGeneratorCommand {
   public static void GenerateSolution(ProjectManifest project, KeyValueTable options, SolutionType solutionType) {
     // load modules referenced by the project
     ModuleRegistry modules = new ModuleRegistry();
-    for (Path p : project.moduleAbsolutePaths)
-      modules.createModuleFromPath(p, 0);
+    if (project.engineProject)
+      modules.createModuleFromPath(project.projectDirectoryPath, 0);
 
     // add/download libraries to library respost
     Path libraryDownloadPath = project.tempDirectoryPath.resolve("libs/download/");
