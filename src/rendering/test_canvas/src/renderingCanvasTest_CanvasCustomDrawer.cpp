@@ -11,7 +11,7 @@
 
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
-#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingDescriptor.h"
 
 #include "base/canvas/include/canvasGeometryBuilder.h"
@@ -27,8 +27,6 @@ namespace rendering
     {
 
         //--
-
-        base::res::StaticResource<ShaderFile> resCanvasSimpleOutlineShader("/engine/shaders/canvas/canvas_sprite_outline.fx");
 
         /// custom rendering handler
         class SceneTest_SimpleSpriteOutline : public rendering::canvas::ICanvasSimpleBatchRenderer
@@ -48,9 +46,9 @@ namespace rendering
 				{}
 			};
 
-			virtual ShaderFilePtr loadMainShaderFile() override final
+			virtual ShaderObjectPtr loadMainShaderFile() override final
 			{
-				return resCanvasSimpleOutlineShader.loadAndGet();
+				return LoadStaticShaderDeviceObject("canvas/canvas_sprite_outline.fx");
 			}
 
 			virtual void render(command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override

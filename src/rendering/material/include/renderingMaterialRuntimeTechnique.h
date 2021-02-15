@@ -35,8 +35,9 @@ namespace rendering
         RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE)
 
     public:
-		ShaderDataPtr shader;
-        
+        uint32_t setupKey = 0;
+        uint64_t shaderKey = 0;
+		ShaderDataPtr shader;        
         
         //--
 

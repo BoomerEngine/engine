@@ -74,7 +74,7 @@ namespace rendering
 			virtual ~ICanvasSimpleBatchRenderer();
 
 			// load the default draw shader
-			virtual ShaderFilePtr loadMainShaderFile() = 0;
+			virtual ShaderObjectPtr loadMainShaderFile() = 0;
 
 		protected:
 			virtual bool initialize(const CanvasRenderStates& renderStates, IDevice* drv) override final;

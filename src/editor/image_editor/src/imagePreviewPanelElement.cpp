@@ -16,7 +16,7 @@
 #include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingDeviceGlobalObjects.h"
-#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingShader.h"
 
 #include "base/canvas/include/canvasGeometryBuilder.h"
 #include "base/image/include/imageView.h"
@@ -76,8 +76,6 @@ namespace ed
 
     //--
 
-    base::res::StaticResource<rendering::ShaderFile> resCanvasCustomHandlerPreview("/editor/shaders/canvas_image_preview.csl");
-
     /// custom rendering handler
     class CanvasImagePreviewHandler : public rendering::canvas::ICanvasSimpleBatchRenderer
     {
@@ -99,9 +97,9 @@ namespace ed
             int toneMapMode = 0;
         };
 
-        virtual rendering::ShaderFilePtr loadMainShaderFile() override final
+        virtual rendering::ShaderObjectPtr loadMainShaderFile() override final
         {
-            return resCanvasCustomHandlerPreview.loadAndGet();
+            return rendering::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx");
         }
 
         virtual void render(rendering::command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override

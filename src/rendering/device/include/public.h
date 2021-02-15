@@ -84,10 +84,6 @@ namespace rendering
 	class ShaderMetadata;
 	typedef base::RefPtr<ShaderMetadata> ShaderMetadataPtr;
 
-	class ShaderFile;
-	typedef base::RefPtr<ShaderFile> ShaderFilePtr;
-	typedef base::res::Ref<ShaderFile> ShaderFileRef;
-
 	struct ShaderVertexElementMetadata;
 	struct ShaderVertexStreamMetadata;
 	struct ShaderDescriptorEntryMetadata;
@@ -460,6 +456,21 @@ namespace rendering
 	}; 
 #pragma pack(pop)
 
+	//--
+
+	// load static shader
+	extern RENDERING_DEVICE_API ShaderDataPtr LoadStaticShader(base::StringView path);
+
+    // load static shader
+    extern RENDERING_DEVICE_API ShaderDataPtr LoadStaticShader(base::StringView path, const ShaderSelector& selectors);
+
+    // load static shader - returns device object (always valid)
+    extern RENDERING_DEVICE_API ShaderObjectPtr LoadStaticShaderDeviceObject(base::StringView path);
+
+    // load static shader - returns device object (always valid)
+    extern RENDERING_DEVICE_API ShaderObjectPtr LoadStaticShaderDeviceObject(base::StringView path, const ShaderSelector& selectors);
+
+	//--
 
 } // rendering
 

@@ -19,7 +19,7 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingImage.h"
 #include "rendering/device/include/renderingDescriptor.h"
-#include "rendering/device/include/renderingShaderStaticPermutation.h"
+#include "rendering/device/include/renderingShader.h"
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceStaticResource.h"
@@ -28,16 +28,13 @@ namespace rendering
 {
     namespace scene
     {
-		//---
-
-		static StaticShaderPermutation resBlitShader("/engine/shaders/screen/final_copy.fx");
-
         //---
 
 		FrameHelperCompose::FrameHelperCompose(IDevice* api)
 			: m_device(api)
 		{
-			m_blitShadersPSO = resBlitShader.loadGraphicsPSO();
+			const auto shader = LoadStaticShaderDeviceObject("screen/final_copy.fx");
+			m_blitShadersPSO = shader->createGraphicsPipeline();
 		}
 
 		FrameHelperCompose::~FrameHelperCompose()

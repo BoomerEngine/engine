@@ -17,13 +17,10 @@
 #include "rendering/device/include/renderingOutput.h"
 #include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
 #include "rendering/device/include/renderingDescriptor.h"
-#include "rendering/device/include/renderingShaderFile.h"
 
 namespace ui
 {
     //--
-
-    base::res::StaticResource<rendering::ShaderFile> resCanvasCustomRenderingIntegrationHandler("/editor/shaders/canvas_rendering_panel_integration.csl");
 
     /// custom rendering handler
     class CanvasRenderingPanelIntegrationHandler : public rendering::canvas::ICanvasSimpleBatchRenderer
@@ -31,9 +28,9 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(CanvasRenderingPanelIntegrationHandler, rendering::canvas::ICanvasSimpleBatchRenderer);
 
     public:
-		virtual rendering::ShaderFilePtr loadMainShaderFile() override
+		virtual rendering::ShaderObjectPtr loadMainShaderFile() override
 		{
-			return resCanvasCustomRenderingIntegrationHandler.loadAndGet();
+            return rendering::LoadStaticShaderDeviceObject("editor/canvas_rendering_panel_integration.fx");
 		}
 
 		virtual void render(rendering::command::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override

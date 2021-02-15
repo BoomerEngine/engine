@@ -64,17 +64,7 @@ namespace rendering
 			return 0;
 
 		base::CRC64 crc;
-
-		const auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			DEBUG_CHECK_EX(ptr->value != 0, "Zeros are implicit and should not be stored");
-			crc << ptr->key.view(); // based on NAME, not runtime index so the keys don't change run to run...
-			crc << ptr->value;
-			++ptr;
-		}
-
+		hash(crc);
 		return crc;
 	}
 
@@ -234,6 +224,18 @@ namespace rendering
 
 	//--
 
+	void ShaderSelector::hash(base::CRC64& crc) const
+	{
+        const auto* ptr = entries;
+        const auto* ptrEnd = entries + MAX_SELECTORS;
+        while (ptr < ptrEnd && ptr->key)
+        {
+            crc << ptr->key.index();
+            crc << ptr->value;
+            ++ptr;
+        }
+	}
+
 	void ShaderSelector::print(base::IFormatStream& f) const
 	{
 		bool hasValues = false;
@@ -246,6 +248,17 @@ namespace rendering
 			hasValues = true;
 
 			f.appendf("{}={}", ptr->key, ptr->value);
+			++ptr;
+		}
+	}
+
+	void ShaderSelector::defines(base::HashMap<base::StringID, base::StringBuf>& outDefines) const
+	{
+        const auto* ptr = entries;
+        const auto* ptrEnd = entries + MAX_SELECTORS;
+		while (ptr < ptrEnd && ptr->key)
+		{
+			outDefines[ptr->key] = base::TempString("{}", ptr->value);
 			++ptr;
 		}
 	}
@@ -290,7 +303,7 @@ namespace rendering
 
 		const auto* ptr = selectors.entries;
 		const auto* ptrEnd = selectors.entries + MAX_SELECTORS;
-		while (ptr < ptrEnd)
+        while (ptr < ptrEnd && ptr->key)
 		{
 			crc << ptr->key.index();
 			crc << ptr->value;

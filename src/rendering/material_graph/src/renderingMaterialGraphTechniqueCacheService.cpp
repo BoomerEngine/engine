@@ -21,8 +21,6 @@ namespace rendering
     //---
 
     RTTI_BEGIN_TYPE_CLASS(MaterialTechniqueCacheService);
-        RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<rendering::DeviceService>();
-        RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<base::res::LoadingService>();
     RTTI_END_TYPE();
 
     MaterialTechniqueCacheService::MaterialTechniqueCacheService()
@@ -33,33 +31,6 @@ namespace rendering
 
     base::app::ServiceInitializationResult MaterialTechniqueCacheService::onInitializeService(const base::app::CommandLine& cmdLine)
     {
-        // find the loading service and the depot - we will need it to compile shaders ad hoc
-        auto loadingService = base::GetService<base::res::LoadingService>();
-        if (!loadingService)
-        {
-            TRACE_ERROR("Loading service not initialized");
-            return base::app::ServiceInitializationResult::FatalError;
-        }
-
-        // we should have the depot
-        m_depot = loadingService->loader()->queryUncookedDepot();
-        if (!m_depot)
-        {
-            TRACE_ERROR("Shader cooking via shader cache requires uncooked depot access");
-            return base::app::ServiceInitializationResult::FatalError;
-        }
-
-        // observer changes in the depot
-        m_depotEvents.bind(m_depot->eventKey(), EVENT_DEPOT_FILE_CHANGED) = [this](base::StringBuf path)
-        {
-            notifyFileChanged(path);
-        };
-
-        // TODO: load global and local shader cache
-        // TODO: when active device changes change the shader cache
-        //m_globalCache = base::RefNew<ShaderCache>();
-        //m_localCache = base::RefNew<ShaderCache>();
-
         return base::app::ServiceInitializationResult::Finished;
     }
 
@@ -70,8 +41,6 @@ namespace rendering
 
     void MaterialTechniqueCacheService::onShutdownService()
     {
-        m_depotEvents.clear();
-
         for (;;)
         {
             {
@@ -86,36 +55,12 @@ namespace rendering
             base::Sleep(500);
         }
 
-        m_sourceFileMap.clearPtr();
         m_allTechniques.clearPtr();
     }
 
     void MaterialTechniqueCacheService::onSyncUpdate()
     {
-        // get list of files that changed
-        m_changedFilesLock.acquire();
-        auto changedFiles = std::move(m_changedFiles);
-        m_changedFilesLock.release();
-
-        // invalidate all proxies that used changed files to compile
-        if (!changedFiles.empty())
-        {
-            TRACE_INFO("Found {} changed shader files", changedFiles.size());
-
-            uint32_t numInvalidatedTechniques = 0;
-            for (auto* file : changedFiles.keys())
-            {
-                auto lock = base::CreateLock(file->usersLock);
-
-                numInvalidatedTechniques += file->users.size();
-                for (auto* techniqueInfo : file->users)
-                    requestTechniqueCompilation(techniqueInfo);
-            }
-
-            TRACE_INFO("Invalidated '{}' material techniques", numInvalidatedTechniques);
-        }
     }
-
 
     //---
 
@@ -139,7 +84,7 @@ namespace rendering
         if (auto technique = info->technique.lock())
         {
             // create compiler
-            auto compiler = new MaterialTechniqueCompiler(*m_depot, info->contextName, info->graph, technique->setup(), technique);
+            auto compiler = new MaterialTechniqueCompiler(info->contextName, info->graph, technique->setup(), technique);
 
             // keep track of compilers for the duration of compilation
             {
@@ -165,18 +110,7 @@ namespace rendering
 
     void MaterialTechniqueCacheService::processTechniqueCompilation(TechniqueInfo* owner, MaterialTechniqueCompiler& compiler)
     {
-        if (compiler.compile())
-        {
-            // track dependencies so when source file changes we will recompile the technique
-            for (const auto& dep : compiler.usedFiles())
-            {
-                if (auto* fileInfo = getFileInfo(dep.depotPath))
-                {
-                    auto lock = CreateLock(fileInfo->usersLock);
-                    fileInfo->users.insert(owner);
-                }
-            }
-        }
+        compiler.compile();
     }
 
     //---
@@ -191,44 +125,5 @@ namespace rendering
     }
 
     //--
-
-    MaterialTechniqueCacheService::FileInfo* MaterialTechniqueCacheService::getFileInfo(const base::StringView depotPath)
-    {
-        auto lock = base::CreateLock(m_sourceFileMapLock);
-
-        FileInfo* ret = nullptr;
-        if (m_sourceFileMap.find(depotPath, ret))
-            return ret;
-
-        base::io::TimeStamp timestamp;
-        if (!m_depot->queryFileTimestamp(depotPath, timestamp))
-        {
-            TRACE_WARNING("File '{}' not recognized in depot", depotPath);
-        }
-
-        ret = new FileInfo;
-        ret->depotPath = base::StringBuf(depotPath);
-        ret->timestamp = timestamp.value();
-        m_sourceFileMap[ret->depotPath] = ret;
-
-        return ret;
-    }
-
-    void MaterialTechniqueCacheService::notifyFileChanged(const base::StringBuf& path)
-    {
-        auto lock = base::CreateLock(m_sourceFileMapLock);
-
-        FileInfo* ret = nullptr;
-        if (m_sourceFileMap.find(path, ret))
-        {
-            TRACE_INFO("Tracked source shader file '{}' reported as modified", path);
-
-            auto lock2 = base::CreateLock(m_changedFilesLock);
-            m_changedFiles.insert(ret);
-        }
-    }
-
-    //--
-
 
 } // rendering

@@ -160,7 +160,7 @@ namespace rendering
             }
 
             // in final cook compile all shader permutations
-            if (cooker.finalCooker())
+            /*if (cooker.finalCooker())
             {
                 base::InplaceArray<MaterialCompilationSetup, 20> setupCollection;
                 GatherMaterialPermutations(setupCollection);
@@ -198,7 +198,7 @@ namespace rendering
 
                 return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, std::move(precompiledTechniques), contextPath);
             }
-            else
+            else*/
             {
                 // copy the graph
                 auto graphCopy = base::rtti_cast<MaterialGraphContainer>(sourceGraph->graph()->clone());

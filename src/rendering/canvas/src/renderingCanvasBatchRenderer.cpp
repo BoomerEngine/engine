@@ -11,7 +11,6 @@
 
 #include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingPipeline.h"
-#include "rendering/device/include/renderingShaderFile.h"
 #include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingCommandWriter.h"
@@ -34,8 +33,6 @@ namespace rendering
 		
         //---
 
-		base::res::StaticResource<ShaderFile> resCanvasShaderMask("/engine/shaders/canvas/canvas_mask.fx");
-
 		RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ICanvasSimpleBatchRenderer);
 		RTTI_END_TYPE();
 
@@ -47,44 +44,26 @@ namespace rendering
 		ICanvasSimpleBatchRenderer::~ICanvasSimpleBatchRenderer()
 		{}
 
-		static bool LoadShader(const ShaderFilePtr& file, ShaderObjectPtr& outShader)
+		static bool LoadShader(const ShaderDataPtr& file, ShaderObjectPtr& outShader)
 		{
-			if (file)
-			{
-				if (auto data = file->rootShader())
-				{
-					if (auto dev = data->deviceShader())
-					{
-						outShader = dev;
-						return true;
-					}
-				}
-			}
-
-			return false;
+			return file ? file->deviceShader() : nullptr;
 		}
 
 		void ICanvasSimpleBatchRenderer::loadShaders()
 		{
-			// load mask shader
 			{
-				ShaderObjectPtr ptr;
-				if (LoadShader(resCanvasShaderMask.loadAndGet(), ptr))
-				{
-					m_mask = ptr->createGraphicsPipeline(m_renderStates->m_mask);
-				}
+				auto shader = LoadStaticShaderDeviceObject("canvas/canvas_mask.fx");
+				m_mask = shader->createGraphicsPipeline(m_renderStates->m_mask);
 			}
 
             // load main shader
 			{
-				ShaderObjectPtr ptr;
-				if (LoadShader(loadMainShaderFile(), ptr))
+				auto shader = loadMainShaderFile();
+
+				for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
 				{
-					for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
-					{
-						m_standardFill[i] = ptr->createGraphicsPipeline(m_renderStates->m_standardFill[i]);
-						m_maskedFill[i] = ptr->createGraphicsPipeline(m_renderStates->m_maskedFill[i]);
-					}
+					m_standardFill[i] = shader->createGraphicsPipeline(m_renderStates->m_standardFill[i]);
+					m_maskedFill[i] = shader->createGraphicsPipeline(m_renderStates->m_maskedFill[i]);
 				}
 			}
 		}

@@ -41,11 +41,6 @@ namespace rendering
 
         //---
 
-        base::depot::DepotStructure* m_depot;
-        base::GlobalEventTable m_depotEvents;
-
-        //---
-
         struct TechniqueInfo : public base::NoCopy
         {
             RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE)
@@ -66,28 +61,6 @@ namespace rendering
 
         void requestTechniqueCompilation(TechniqueInfo* info);
         void processTechniqueCompilation(TechniqueInfo* owner, MaterialTechniqueCompiler& compiler);
-
-        //--
-
-        struct FileInfo : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_RENDERING_SHADER_CACHE)
-
-        public:
-            uint64_t timestamp = 0;
-            base::StringBuf depotPath;
-
-            base::SpinLock usersLock;
-            base::HashSet<TechniqueInfo*> users;
-        };
-
-        base::Mutex m_sourceFileMapLock;
-        base::HashMap<base::StringBuf, FileInfo*> m_sourceFileMap;
-
-        base::HashSet<FileInfo*> m_changedFiles;
-        base::Mutex m_changedFilesLock;
-
-        FileInfo* getFileInfo(base::StringView depotPath);
 
         //--
 

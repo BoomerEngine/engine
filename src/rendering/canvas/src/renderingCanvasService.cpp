@@ -13,11 +13,11 @@
 #include "rendering/device/include/renderingResources.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
-#include "rendering/device/include/renderingShaderFile.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingDescriptor.h"
 #include "rendering/device/include/renderingDeviceGlobalObjects.h"
+#include "rendering/device/include/renderingShaderService.h"
 
 #include "base/image/include/imageView.h"
 #include "base/canvas/include/canvasService.h"
@@ -40,19 +40,15 @@ namespace rendering
 
 		//---
 
-		base::res::StaticResource<ShaderFile> resCanvasShaderFill("/engine/shaders/canvas/canvas_fill.fx");
-
-		//---
-
 		/// rendering handler for custom canvas batches
 		class CanvasDefaultBatchRenderer : public ICanvasSimpleBatchRenderer
 		{
 			RTTI_DECLARE_VIRTUAL_CLASS(CanvasDefaultBatchRenderer, ICanvasSimpleBatchRenderer);
 
 		public:
-			virtual ShaderFilePtr loadMainShaderFile() override final
+			virtual ShaderObjectPtr loadMainShaderFile() override final
 			{
-				return resCanvasShaderFill.loadAndGet();
+				return LoadStaticShaderDeviceObject("canvas/canvas_fill.fx");
 			}
 		};
 
@@ -133,6 +129,7 @@ namespace rendering
 			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<rendering::DeviceService>();
 			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<base::canvas::CanvasService>();
 			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<base::res::LoadingService>();
+			RTTI_METADATA(base::app::DependsOnServiceMetadata).dependsOn<rendering::ShaderService>();
 		RTTI_END_TYPE();
 
 		//--

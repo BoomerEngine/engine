@@ -68,10 +68,16 @@ namespace rendering
 
 		//--
 
+		// compute CRC
+		void hash(base::CRC64& crc) const;
+
 		// print, only non zero values are printed
 		// NOTE: the string is generated in a typical "define list" format:
 		// e.g. "MSAA=1;NUM_SAMPLES=4"
 		void print(base::IFormatStream& f) const;
+
+		// export to table of defines
+		void defines(base::HashMap<base::StringID, base::StringBuf>& outDefines) const;
 
 		// parse from string
 		static bool Parse(base::StringView text, ShaderSelector& outSelectors);

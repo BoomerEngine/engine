@@ -10,7 +10,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
 #include "rendering/device/include/renderingFramebuffer.h"
 #include "rendering/device/include/renderingDescriptor.h"

@@ -23,7 +23,7 @@
 #include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingDescriptor.h"
-#include "rendering/device/include/renderingShaderFile.h"
+#include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingPipeline.h"
 #include "rendering/device/include/renderingOutput.h"
 #include "../../device/include/renderingDeviceGlobalObjects.h"
@@ -96,23 +96,19 @@ namespace rendering
 
         GraphicsPipelineObjectPtr IRenderingTest::loadGraphicsShader(base::StringView partialPath, const GraphicsRenderStatesSetup* states /*= nullptr*/, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
         {
+            auto selectors = extraSelectors;
+            //selectors.set("YFLIP"_id, 1);
+
 			// load shader
-			auto res = base::LoadResource<ShaderFile>(base::TempString("/engine/tests/shaders/{}", partialPath)).acquire();
+			auto res = LoadStaticShader(base::TempString("test/{}", partialPath), selectors);
 			if (!res)
 			{
 				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
 				return nullptr;
 			}
-			else
-			{
-				m_allLoadedResources.pushBack(res);
-			}
 
 			// assemble final selectors
-			auto selectors = extraSelectors;
-			selectors.set("YFLIP"_id, 1);			
-			const auto shader = res->findShader(selectors);
-			if (!shader || !shader->deviceShader())
+			if (!res->deviceShader())
 			{
 				reportError(base::TempString("Failed to find permutation '{}' in shader '{}'", selectors, partialPath));
 				return nullptr;
@@ -124,26 +120,21 @@ namespace rendering
 				renderStates = createRenderStates(*states);
 
 			// create the PSO
-            return shader->deviceShader()->createGraphicsPipeline(renderStates);
+            return res->deviceShader()->createGraphicsPipeline(renderStates);
         }
 
 		ComputePipelineObjectPtr IRenderingTest::loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
 		{
 			// load shader
-			auto res = base::LoadResource<ShaderFile>(base::TempString("/engine/tests/shaders/{}", partialPath)).acquire();
+            auto res = LoadStaticShader(base::TempString("test/{}", partialPath), extraSelectors);
 			if (!res)
 			{
 				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
 				return nullptr;
 			}
-			else
-			{
-				m_allLoadedResources.pushBack(res);
-			}
 
 			// assemble final selectors
-			const auto shader = res->findShader(extraSelectors);
-			if (!shader || !shader->deviceShader())
+			if (!res->deviceShader())
 			{
 				reportError(base::TempString("Failed to find permutation '{}' in shader '{}'", extraSelectors, partialPath));
 				return nullptr;
@@ -151,7 +142,7 @@ namespace rendering
 
 
 			// create the compute PSO
-			return shader->deviceShader()->createComputePipeline();
+			return res->deviceShader()->createComputePipeline();
 		}
 
 		GraphicsRenderStatesObjectPtr IRenderingTest::createRenderStates(const GraphicsRenderStatesSetup& setup)

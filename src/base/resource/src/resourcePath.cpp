@@ -310,12 +310,17 @@ namespace base
 
     bool ApplyRelativePath(StringView contextPath, StringView relativePath, StringBuf& outPath)
     {
-        DEBUG_CHECK_RETURN_V(ValidateDepotPath(relativePath, DepotPathClass::Any), false);
-        DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
+        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(relativePath, DepotPathClass::Any), false);
+        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
+
+        // starts with absolute marker ?
+        const auto contextAbsolute = contextPath.beginsWith("/");
+        if (contextAbsolute)
+            contextPath = contextPath.subString(1);
 
         // split path into parts
         InplaceArray<StringView, 20> referencePathParts;
-        contextPath.slice("/", false, referencePathParts);
+        contextPath.slice("/\\", false, referencePathParts);
 
         // remove the last path that's usually the file name
         if (!referencePathParts.empty() && !contextPath.endsWith("/"))
@@ -327,7 +332,7 @@ namespace base
 
         // split control path
         InplaceArray<StringView, 20> pathParts;
-        relativePath.slice("/", false, pathParts);
+        relativePath.slice("/\\", false, pathParts);
 
         // append
         for (auto& part : pathParts)
@@ -351,7 +356,8 @@ namespace base
 
         // reassemble into a full path
         StringBuilder reassemblePathBuilder;
-        reassemblePathBuilder << "/";
+        if (contextAbsolute)
+            reassemblePathBuilder << "/";
 
         const auto relativePathIsDir = relativePath.endsWith("/");
         for (auto i : referencePathParts.indexRange())
@@ -366,7 +372,7 @@ namespace base
 
         // export created path
         outPath = reassemblePathBuilder.toString();
-        DEBUG_CHECK_RETURN_V(ValidateDepotPath(outPath, relativePathIsDir ? DepotPathClass::AbsoluteDirectoryPath : DepotPathClass::AbsoluteFilePath), false);
+        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(outPath, relativePathIsDir ? DepotPathClass::AbsoluteDirectoryPath : DepotPathClass::AbsoluteFilePath), false);
 
         return true;
     }

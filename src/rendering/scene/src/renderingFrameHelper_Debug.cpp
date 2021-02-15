@@ -18,7 +18,6 @@
 #include "rendering/device/include/renderingCommandWriter.h"
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/device/include/renderingShaderFile.h"
 #include "rendering/device/include/renderingDeviceService.h"
 #include "rendering/device/include/renderingShaderData.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
@@ -35,11 +34,6 @@ namespace rendering
 
         //---
 
-        static base::res::StaticResource<ShaderFile> resDebugGeometryShaderSolid("/engine/shaders/debugSolid.fx");
-        static base::res::StaticResource<ShaderFile> resDebugGeometryShaderLines("/engine/shaders/debugLines.fx");
-
-        //---
-
         struct DebugFragmentData
         {
             base::Matrix LocalToWorld;
@@ -50,8 +44,8 @@ namespace rendering
 		FrameHelperDebug::FrameHelperDebug(IDevice* api)
             : m_device(api)
 		{
-            m_drawShaderLines = resDebugGeometryShaderLines.loadAndGet()->rootShader()->deviceShader();
-            m_drawShaderSolid = resDebugGeometryShaderSolid.loadAndGet()->rootShader()->deviceShader();
+            m_drawShaderLines = LoadStaticShaderDeviceObject("debugLines.fx");
+            m_drawShaderSolid = LoadStaticShaderDeviceObject("debugSolid.fx");
 
             {
                 GraphicsRenderStatesSetup setup;

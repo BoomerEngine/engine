@@ -20,6 +20,7 @@
 #include "base/resource_compiler/include/depotStructure.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/parser/include/textToken.h"
+#include "../../device/include/renderingShaderService.h"
 
 namespace rendering
 {
@@ -118,9 +119,26 @@ namespace rendering
 
 	//--
 
-    MaterialCompiledTechnique* CompileTechnique(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, base::parser::IErrorReporter& err, base::parser::IIncludeHandler& includes)
+    MaterialCompiledTechnique* CompileTechnique(const base::StringBuf& materialGraphPath, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup)
     {
         base::ScopeTimer timer;
+
+        // determine the unique shader cache key
+        base::CRC64 key;
+        key << "MATERIAL_";
+        key << materialGraphPath;
+        key << setup.key();
+
+        // check if we can use cached technique and load it
+        const auto shaderService = base::GetService<ShaderService>();
+        if (const auto existingShader = shaderService->loadCustomShader(key))
+        {
+            auto compiledTechnique = new MaterialCompiledTechnique;
+            compiledTechnique->shader = existingShader;
+            compiledTechnique->shaderKey = key;
+            compiledTechnique->setupKey = setup.key();
+            return compiledTechnique;
+        }
 
         // Determine the data layout of the material parameters - this is something that must match between template and and an instance
         // In here we need this layout to print the material descriptor and/or generate material attribute fetch code
@@ -128,7 +146,7 @@ namespace rendering
 
         // create the compiler regardless of the result - if anything we will generate an "error" material
         MaterialTechniqueRenderStates renderStates;
-        MaterialMeshGeometryCompiler compiler(dataLayout, contextName, setup);
+        MaterialMeshGeometryCompiler compiler(dataLayout, materialGraphPath, setup);
 
         // load the graph
         // find root output block
@@ -139,7 +157,7 @@ namespace rendering
         }
         else
         {
-            TRACE_WARNING("Missing root block in material graph from '{}', no code can be generated", contextName);
+            TRACE_WARNING("Missing root block in material graph from '{}', no code can be generated", materialGraphPath);
             compiler.m_ps.appendf("gl_Target0 = vec4(1,0,1,1);\n");
         }
 
@@ -153,188 +171,41 @@ namespace rendering
 		GatherDefinesForCompilationSetup(setup, defines);
 
         // create the local cooker - so we can load includes
-        const auto shader = compiler::CompileShader(finalText.view(), contextName, base::TempString("{}", setup), &includes, err, &defines);
+        const auto shader = shaderService->compileCustomShader(key, finalText.view(), &defines);
         if (!shader)
         {
-            TRACE_ERROR("Failed to compile shader codef from material graph '{}'", contextName);
+            TRACE_ERROR("Failed to compile shader codef from material graph '{}'", materialGraphPath);
             return nullptr;
         }
 
         // create a final data in a compiled technique and push it to the target technique we were requested to compile
         auto compiledTechnique = new MaterialCompiledTechnique;
         compiledTechnique->shader = shader;
-        //compiledTechnique->dataLayout = dataLayout;
+        compiledTechnique->shaderKey = key;
+        compiledTechnique->setupKey = setup.key();
 
-        TRACE_INFO("Compiled '{} for '{}' in {} ({} code generation)", setup, contextName, timer, TimeInterval(generationTime));
+        TRACE_INFO("Compiled '{} for '{}' in {} ({} code generation)", setup, materialGraphPath, timer, TimeInterval(generationTime));
         return compiledTechnique;
     }
 
     //--
 
-    MaterialTechniqueCompiler::MaterialTechniqueCompiler(base::depot::DepotStructure& depot, const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique)
+    MaterialTechniqueCompiler::MaterialTechniqueCompiler(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique)
         : m_setup(setup)
         , m_graph(graph)
         , m_technique(outputTechnique)
         , m_contextName(contextName)
-        , m_depot(depot)
-    {} 
-
-    MaterialTechniqueCompiler::~MaterialTechniqueCompiler()
     {}
 
     bool MaterialTechniqueCompiler::compile()
     {
         // compile technique
-        auto* compiledTechnique = CompileTechnique(m_contextName, m_graph, m_setup, *this, *this);
+        auto* compiledTechnique = CompileTechnique(m_contextName, m_graph, m_setup);
         DEBUG_CHECK_RETURN_EX_V(compiledTechnique && compiledTechnique->shader, "Failed to compile material technique", false);
 
         // push new state to target technique, from now one this will be used for rendering
         m_technique->pushData(compiledTechnique->shader);
         delete compiledTechnique;
-        return true;
-    }
-
-    //--
-
-    base::Buffer MaterialTechniqueCompiler::loadFileContent(base::StringView depotPath)
-    {
-        DEBUG_CHECK_EX(!depotPath.empty(), "No shader file to load");
-
-        // check maybe we already loaded that file
-        for (const auto& data : m_usedFiles)
-            if (data.depotPath == depotPath)
-                return data.content;
-
-        // load file data
-        auto reader = m_depot.createFileReader(depotPath);
-        if (!reader)
-        {
-            TRACE_ERROR("Unable to open file '{}'", depotPath);
-            return nullptr;
-        }
-
-        // get size of the file
-        const auto size = reader->size();
-
-        // allocate memory
-        base::Buffer ret;
-        ret.init(POOL_TEMP, size);
-        if (size != reader->readSync(ret.data(), size))
-        {
-            TRACE_ERROR("Unable to load content of '{}'", depotPath);
-            return nullptr;
-        }
-
-        // get some basic file info
-        base::io::TimeStamp fileTimeStamp;
-        if (!m_depot.queryFileTimestamp(depotPath, fileTimeStamp))
-        {
-            TRACE_WARNING("Unable to determine information about file '{}'", depotPath);
-        }
-
-        // store
-        auto& entry = m_usedFiles.emplaceBack();
-        entry.content = ret;
-        entry.timestamp = fileTimeStamp.value();
-        entry.depotPath = base::StringBuf(depotPath);
-
-        // return loaded content
-        return entry.content;
-    }
-
-    void MaterialTechniqueCompiler::reportError(const base::parser::Location& loc, base::StringView message)
-    {
-        auto& errorMessage = m_errors.emplaceBack();
-        errorMessage.filePath = loc.contextName();
-        errorMessage.linePos = loc.line();
-        errorMessage.charPos = loc.charPos();
-        errorMessage.text = base::StringBuf(message);
-
-        if (cvPrintShaderCompilationErrors.get())
-        {
-            base::StringBuf absolutePath;
-            if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
-            {
-                base::logging::Log::Print(base::logging::OutputLevel::Error, absolutePath.c_str(), loc.line(), "", "", message.data());
-
-                if (!m_firstErrorPrinted)
-                    TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
-            }
-            else
-            {
-                base::logging::Log::Print(base::logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", "", message.data());
-
-                if (!m_firstErrorPrinted)
-                    TRACE_ERROR("When compiling '{}' with '{}'", m_contextName, m_setup);
-            }
-
-            m_firstErrorPrinted = true;
-        }
-    }
-
-    void MaterialTechniqueCompiler::reportWarning(const base::parser::Location& loc, base::StringView message)
-    {
-        if (cvPrintShaderCompilationWarnings.get())
-        {
-            if (!loc.contextName().empty())
-            {
-                base::StringBuf absolutePath;
-                if (m_depot.queryFileAbsolutePath(loc.contextName(), absolutePath))
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, absolutePath.c_str(), loc.line(), "", "", message.data());
-                else
-                    base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", "", message.data());
-            }
-            else
-            {
-                TRACE_WARNING("{}", message);
-            }
-        }
-    }
-
-    bool MaterialTechniqueCompiler::checkFileExists(base::StringView path) const
-    {
-        base::io::TimeStamp unused;
-        return m_depot.queryFileTimestamp(path, unused);
-    }
-
-    bool MaterialTechniqueCompiler::queryResolvedPath(base::StringView relativePath, base::StringView contextFileSystemPath, bool global, base::StringBuf& outResourcePath) const
-    {
-        if (global)
-        {
-            base::StringBuf ret;
-            if (base::ApplyRelativePath("/engine/shaders/", relativePath, ret))
-            {
-                outResourcePath = ret;
-                return true;
-            }
-        }
-        else
-        {
-            base::StringBuf ret;
-            auto contextPathToUse = contextFileSystemPath.empty() ? m_contextName.view() : contextFileSystemPath;
-            if (base::ApplyRelativePath(contextPathToUse, relativePath, ret))
-            {
-                outResourcePath = ret;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool MaterialTechniqueCompiler::loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath)
-    {
-        // resolve the full depot path to the include
-        base::StringBuf fullFilePath;
-        if (!queryResolvedPath(path, referencePath, global, fullFilePath) || !checkFileExists(fullFilePath))
-            return false;
-
-        auto content = loadFileContent(fullFilePath);
-        if (!content)
-            return false;
-
-        outContent = content;
-        outPath = fullFilePath;
         return true;
     }
 
