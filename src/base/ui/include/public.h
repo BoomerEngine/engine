@@ -73,9 +73,9 @@ namespace ui
 
     namespace style
     {
+        class ContentLoader;
         class SelectorMatch;
         class Library;
-        class IStyleLibraryContentLoader;
 
         struct ParamTable : public base::IReferencable
         {

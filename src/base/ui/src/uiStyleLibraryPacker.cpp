@@ -18,13 +18,49 @@ namespace ui
 {
     namespace style
     {
+        //---
+
+        ContentLoader::ContentLoader(base::StringView directoryPath)
+            : m_baseDirectory(directoryPath)
+        {
+        }
+
+        base::image::ImagePtr ContentLoader::loadImage(base::StringView imageFileName)
+        {
+            auto dir = m_baseDirectory;
+            for (uint32_t i = 0; i < 2; ++i)
+            {
+                if (auto image = base::LoadImageFromDepotPath(base::TempString("{}{}", dir, imageFileName)))
+                    return image;
+
+                dir = dir.parentDirectory();
+            }
+
+            return nullptr;
+        }
+
+        base::FontPtr ContentLoader::loadFont(base::StringView fontFileName)
+        {
+            auto dir = m_baseDirectory;
+            for (uint32_t i = 0; i < 2; ++i)
+            {
+                if (auto image = base::LoadFontFromDepotPath(base::TempString("{}{}", dir, fontFileName)))
+                    return image;
+
+                dir = dir.parentDirectory();
+            }
+
+            return nullptr;
+        }
+
+        //--
+
         namespace prv
         {
-
             //---
 
-            RawValueTable::RawValueTable(IStyleLibraryContentLoader& loader)
-                : m_resourceResolver(loader)
+            RawValueTable::RawValueTable(ContentLoader& resourceResolver)
+                : m_resourceResolver(resourceResolver)
             {}
 
             static uint64_t CalcParamHash(base::StringID paramId, const RawValue& value)

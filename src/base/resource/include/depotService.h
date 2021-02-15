@@ -93,6 +93,14 @@ namespace base
 
         //--
 
+        // load file content to buffer
+        bool loadFileToBuffer(StringView depotPath, Buffer& outContent, io::TimeStamp* timestamp = nullptr) const;
+
+        // load file content to string
+        bool loadFileToString(StringView depotPath, StringBuf& outContent, io::TimeStamp* timestamp = nullptr) const;
+
+        //--
+
     private:
         StringBuf m_engineDepotPath;
         StringBuf m_projectDepotPath;

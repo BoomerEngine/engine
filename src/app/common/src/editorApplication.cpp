@@ -20,18 +20,13 @@ namespace application
 
     bool EditorApp::initialize(const base::app::CommandLine& commandline)
     {
-        auto styles = base::LoadResource<ui::style::Library>("/engine/interface/styles/flat.scss");
-        if (!styles)
-            return false;
-
 		auto dev = base::GetService<DeviceService>();
 		if (!dev)
 			return false;
 
         m_nativeRenderer.create();
 
-        m_dataStash = base::RefNew<ui::DataStash>(styles);
-        m_dataStash->addIconSearchPath("/engine/interface/icons/");
+        m_dataStash = base::RefNew<ui::DataStash>();
 
         m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
 

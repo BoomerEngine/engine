@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "depotService.h"
+#include "base/io/include/ioFileHandle.h"
 
 namespace base
 {
@@ -281,7 +282,7 @@ namespace base
     app::ServiceInitializationResult DepotService::onInitializeService(const app::CommandLine& cmdLine)
     {
         const auto engineDir = io::SystemPath(io::PathCategory::EngineDir);
-        m_engineDepotPath = TempString("{}data/engine/", engineDir);
+        m_engineDepotPath = TempString("{}data/depot/", engineDir);
         TRACE_INFO("Engine depot directory: '{}'", m_engineDepotPath);
 
         m_engineObserver = io::CreateDirectoryWatcher(m_engineDepotPath);
@@ -339,6 +340,43 @@ namespace base
                 break;
             }
         }
+    }
+
+    //--
+
+    bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, io::TimeStamp* timestamp) const
+    {
+        if (auto file = createFileReader(depotPath))
+        {
+            auto size = file->size();
+            if (auto data = Buffer::Create(POOL_TEMP, size, 16))
+            {
+                if (size == file->readSync(data.data(), size))
+                {
+                    outContent = data;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent, io::TimeStamp* timestamp) const
+    {
+        if (auto file = createFileReader(depotPath))
+        {
+            auto size = file->size();
+
+            auto str = StringBuf(size);
+            if (size == file->readSync((void*)str.c_str(), size))
+            {
+                outContent = str;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //--

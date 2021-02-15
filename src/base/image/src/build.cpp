@@ -5,6 +5,7 @@
 *
 * [# dependency: base_system, base_memory, base_containers #]
 * [# dependency: base_reflection, base_math, base_resource #]
+* [# privatelib: freeimage #]
 * [# warn3 #]
 ***/
 

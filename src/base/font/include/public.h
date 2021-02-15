@@ -36,4 +36,20 @@ namespace base
     typedef RefPtr<font::Font> FontPtr;
     typedef res::Ref<font::Font> FontRef;
 
+    //--
+
+    // load font from file memory
+    extern BASE_FONT_API FontPtr LoadFontFromMemory(Buffer ptr);
+
+    // load font from file
+    extern BASE_FONT_API FontPtr LoadFontFromFile(io::IReadFileHandle* file);
+
+    // load font from absolute file
+    extern BASE_FONT_API FontPtr LoadFontFromAbsolutePath(StringView absolutePath);
+
+    // load font from absolute file
+    extern BASE_FONT_API FontPtr LoadFontFromDepotPath(StringView depotPath);
+
+    //--
+
 } // base

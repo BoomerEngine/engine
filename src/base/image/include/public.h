@@ -71,4 +71,24 @@ namespace base
         //--
 
     } // image
+
+    //--
+
+    // load image from file memory
+    extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size);
+
+    // load image from file memory
+    extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(Buffer ptr);
+
+    // load image from file
+    extern BASE_IMAGE_API image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file);
+
+    // load image from absolute file
+    extern BASE_IMAGE_API image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);
+
+    // load image from absolute file
+    extern BASE_IMAGE_API image::ImagePtr LoadImageFromDepotPath(StringView depotPath);
+
+    //--
+
 } // base

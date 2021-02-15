@@ -353,7 +353,7 @@ namespace rendering
 
                     if (i == 1)
                     {
-                        auto data = base::LoadResource<base::image::Image>("/engine/interface/images/honkler.png").acquire();
+                        auto data = base::LoadImageFromDepotPath(("/engine/interface/images/honkler.png"));
 						auto entry = m_honklerAtlas->registerImage(data);
                         auto image = elem->createChild<ui::Image>(entry);
                     }

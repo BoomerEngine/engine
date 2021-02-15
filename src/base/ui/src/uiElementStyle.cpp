@@ -18,8 +18,7 @@ namespace ui
     StyleStack::StyleStack(DataStash& stash)
         : m_stash(stash)
     {
-        if (const style::Library* styles = stash.styles().acquire())
-            m_styleLibraries.pushBack(styles);
+        m_styleLibraries.pushBack(stash.styles());
     }
 
     static void CalcParamCRC(base::Type type, const void* data, base::CRC64& crc)

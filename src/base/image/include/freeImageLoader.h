@@ -3,13 +3,10 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# filter: image #]
+* [# filter: loader #]
 ***/
 
 #pragma once
-
-#include "base/resource/include/resource.h"
-#include "base/memory/include/buffer.h"
 
 namespace base 
 {
@@ -19,7 +16,7 @@ namespace base
         ///---
 
         /// image data loaded using the free image library
-        struct IMPORT_IMAGE_LOADER_API FreeImageLoadedData : public IReferencable
+        struct BASE_IMAGE_API FreeImageLoadedData : public IReferencable
         {
             uint32_t width = 0;
             uint32_t height = 0;
@@ -45,7 +42,7 @@ namespace base
         };
 
         /// load a image using the free image library
-        extern IMPORT_IMAGE_LOADER_API RefPtr<FreeImageLoadedData> LoadImageWithFreeImage(const void* data, uint64_t dataSize);
+        extern BASE_IMAGE_API RefPtr<FreeImageLoadedData> LoadImageWithFreeImage(const void* data, uint64_t dataSize);
 
         ///---
 

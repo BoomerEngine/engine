@@ -18,6 +18,24 @@ namespace ui
 {
     namespace style
     {
+
+        ///--
+
+        /// content loader for stuff used by the style library (images and fonts)
+        class ContentLoader : public base::NoCopy
+        {
+        public:
+            ContentLoader(base::StringView directoryPath);
+
+            base::image::ImagePtr loadImage(base::StringView imageFileName);
+            base::FontPtr loadFont(base::StringView fontFileName);
+
+        private:
+            base::StringView m_baseDirectory;
+        };
+
+        //--
+
         namespace prv
         {
             class RawSelector;
@@ -30,7 +48,7 @@ namespace ui
             class RawValueTable : public base::NoCopy
             {
             public:
-                RawValueTable(IStyleLibraryContentLoader& resourceResolver);
+                RawValueTable(ContentLoader& resourceResolver);
 
                 /// get all packed values
                 typedef base::Array<base::Variant> TResolvedValues;
@@ -49,7 +67,7 @@ namespace ui
                 TResolvedValues m_resolvedValues;
 
                 // resolver for referenced resources
-                IStyleLibraryContentLoader& m_resourceResolver;
+                ContentLoader& m_resourceResolver;
             };
 
             ///--

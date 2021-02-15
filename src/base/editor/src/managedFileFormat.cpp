@@ -45,8 +45,6 @@ namespace ed
 
     ///---
 
-    static res::StaticResource<image::Image> resFileIcon("/engine/thumbnails/file.png", true);
-
     ManagedFileFormat::ManagedFileFormat(StringView extension)
         : m_extension(extension)
         , m_description("Unknown Format")
@@ -182,7 +180,7 @@ namespace ed
         {
             m_thumbnailLoadAttempted = true;
 
-            auto classThumbnailImage = LoadResource<image::Image>(TempString("/engine/thumbnails/{}.png", m_extension)); // TODO: move to editor
+            auto classThumbnailImage = base::LoadImageFromDepotPath(TempString("/engine/interface/thumbnails/{}.png", m_extension));
             if (classThumbnailImage)
             {
                 m_thumbnail = classThumbnailImage;
@@ -190,7 +188,8 @@ namespace ed
             }
             else
             {
-                m_thumbnail = resFileIcon.loadAndGet();
+                static const auto defaultThumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/file.png");
+                m_thumbnail = defaultThumbnail;
             }
         }
 

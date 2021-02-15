@@ -8,7 +8,6 @@
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_scene #]
 * [# dependency: rendering_api_gl4 #]
-* [# dependency: import_image_loader #]
 * [# devonly #]
 * [# app #]
 * [# generate_main #]

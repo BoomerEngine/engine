@@ -198,7 +198,7 @@ namespace ImGui
             base::image::ImagePtr loadedImage;
             for (const auto& path : m_searchPaths)
             {
-                loadedImage = base::LoadResource<base::image::Image>(base::TempString("{}/{}.png", path, name)).acquire();
+                loadedImage = base::LoadImageFromDepotPath(base::TempString("{}/{}.png", path, name));
                 if (loadedImage)
                 {
                     TRACE_INFO("ImGui: Loaded '{}' from '{}'", name, path);

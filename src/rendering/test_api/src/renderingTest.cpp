@@ -100,7 +100,7 @@ namespace rendering
             //selectors.set("YFLIP"_id, 1);
 
 			// load shader
-			auto res = LoadStaticShader(base::TempString("test/{}", partialPath), selectors);
+			auto res = LoadStaticShader(base::TempString("tests/{}", partialPath), selectors);
 			if (!res)
 			{
 				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
@@ -126,7 +126,7 @@ namespace rendering
 		ComputePipelineObjectPtr IRenderingTest::loadComputeShader(base::StringView partialPath, const ShaderSelector& extraSelectors /*= ShaderSelector()*/)
 		{
 			// load shader
-            auto res = LoadStaticShader(base::TempString("test/{}", partialPath), extraSelectors);
+            auto res = LoadStaticShader(base::TempString("tests/{}", partialPath), extraSelectors);
 			if (!res)
 			{
 				reportError(base::TempString("Failed to load shaders from '{}'", partialPath));
@@ -423,7 +423,7 @@ namespace rendering
 
         ImageObjectPtr IRenderingTest::loadImage2D(base::StringView assetFile, bool createMipmaps /*= false*/, bool forceAlpha)
         {
-            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
+            auto imagePtr = base::LoadImageFromDepotPath(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
@@ -565,7 +565,7 @@ namespace rendering
 
         bool IRenderingTest::loadCubemapSide(base::Array<TextureSlice>& outSlices, base::StringView assetFile, bool createMipmaps /*= false*/)
         {
-            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile)).acquire();
+            auto imagePtr = base::LoadImageFromDepotPath(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));

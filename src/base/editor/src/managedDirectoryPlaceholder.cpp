@@ -19,10 +19,6 @@ namespace ed
 
     //--
 
-    static res::StaticResource<image::Image> resDirectoryTexture("/engine/thumbnails/directory.png");
-
-    //--
-
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectoryPlaceholder);
     RTTI_END_TYPE();
 
@@ -30,7 +26,9 @@ namespace ed
         : ManagedItem(depot, parentDir, initialName)
     {
         m_eventKey = MakeUniqueEventKey();
-        m_directoryIcon = resDirectoryTexture.loadAndGetAsRef();
+
+        static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
+        m_directoryIcon = thumbnail;
     }
 
     ManagedDirectoryPlaceholder::~ManagedDirectoryPlaceholder()

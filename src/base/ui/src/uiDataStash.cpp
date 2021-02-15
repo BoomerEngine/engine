@@ -28,9 +28,18 @@ namespace ui
 
     //---
 
-    DataStash::DataStash(const StyleLibraryRef& mainStyles)
-        : m_styles(mainStyles)
+    DataStash::DataStash(base::StringView stylesDepotPath)
     {
+		m_imageSearchPaths.pushBack("/engine/interface/icons/");
+		m_imageSearchPaths.pushBack("/engine/interface/images/");
+
+		if (!stylesDepotPath)
+			stylesDepotPath = "/engine/interface/styles/flat.scss";
+
+		m_styles = style::LoadStyleLibrary(stylesDepotPath);
+		if (!m_styles)
+			m_styles = base::RefNew<style::Library>();
+
 		m_mainIconAtlas = base::RefNew<base::canvas::DynamicAtlas>(1024, 1);
     }
 
@@ -95,7 +104,7 @@ namespace ui
 		{
 			for (const auto& searchPath : m_imageSearchPaths)
 			{	
-				if (auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("{}{}.png", searchPath, key)).acquire())
+				if (auto imagePtr = base::LoadImageFromDepotPath(base::TempString("{}{}.png", searchPath, key)))
 				{
 					auto entry = cacheImage(imagePtr);
 					m_imageMap[key] = entry;

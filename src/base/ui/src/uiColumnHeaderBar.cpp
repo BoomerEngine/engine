@@ -133,7 +133,7 @@ namespace ui
             auto& entry = m_columns.emplaceBack();
             /*if (icon)
             {
-                auto iconFile = base::LoadResource<base::image::Image>(base::res::ResourcePath(icon));
+                auto iconFile = 
                 entry.m_header = base::RefNew<ColumnHeader>("[icon]");// iconFile);
                 entry.m_currentWidth = 0.0f;
                 entry.m_canSort = false;

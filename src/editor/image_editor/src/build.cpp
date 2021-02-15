@@ -11,7 +11,6 @@
 * [# dependency: rendering_device #]
 * [# dependency: rendering_api_* #]
 * [# dependency: import_texture_loader #]
-* [# dependency: import_image_loader #]
 * [# devonly #]
 ***/
 

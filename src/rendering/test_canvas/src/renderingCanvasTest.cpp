@@ -47,7 +47,7 @@ namespace rendering
 
         base::image::ImagePtr ICanvasTest::loadImage(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadResource<base::image::Image>(base::TempString("/engine/tests/textures/{}", assetFile));
+            auto imagePtr = base::LoadFontFromDepotPath(base::TempString("/engine/test/textures/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
@@ -59,7 +59,7 @@ namespace rendering
 
         base::FontPtr ICanvasTest::loadFont(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadResource<base::font::Font>(base::TempString("/engine/tests/fonts/{}", assetFile));
+            auto imagePtr = base::LoadResource<base::font::Font>(base::TempString("/engine/interface/fonts/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load font '{}'", assetFile));

@@ -7,7 +7,6 @@
 * [# dependency: base_object, base_reflection, base_app, base_ui #]
 * [# dependency: rendering_device #]
 * [# dependency: rendering_canvas #]
-* [# dependency: import_image_loader #]
 ***/
 
 #include "build.h"

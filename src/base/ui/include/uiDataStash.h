@@ -18,13 +18,13 @@ namespace ui
         RTTI_DECLARE_VIRTUAL_CLASS(DataStash, base::IObject);
 
     public:
-        DataStash(const StyleLibraryRef& mainStyles);
+        DataStash(base::StringView stylesDepotPath = "");
         virtual ~DataStash();
 
         //----
 
         // get the main styling sheet
-        INLINE const StyleLibraryRef& styles() const { return m_styles; }
+        INLINE style::Library* styles() const { return m_styles; }
 
 		// get main atlas
 		INLINE base::canvas::DynamicAtlas* mainAtlas() const { return m_mainIconAtlas; };
@@ -56,7 +56,7 @@ namespace ui
 		//--
 
     protected:
-        StyleLibraryRef m_styles;
+        StyleLibraryPtr m_styles;
         uint32_t m_stylesVersion = 1;
 
 		base::RefPtr<base::canvas::DynamicAtlas> m_mainIconAtlas;

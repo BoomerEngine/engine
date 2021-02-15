@@ -18,9 +18,8 @@
 #include "base/resource/include/resourceCookingInterface.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/image/include/imageView.h"
+#include "base/image/include/freeImageLoader.h"
 #include "base/resource/include/resourceTags.h"
-
-#include "import/image_loader/include/freeImageLoader.h"
 
 namespace rendering
 {

@@ -202,7 +202,7 @@ namespace ui
         };
 
         // compile the final style value from a raw value
-        extern BASE_UI_API bool CompileStyleValue(const base::parser::Location& loc, StyleVarType type, const RawValue& value, IStyleLibraryContentLoader& loader, base::Variant& outValue, base::parser::IErrorReporter& err);
+        extern BASE_UI_API bool CompileStyleValue(const base::parser::Location& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, base::Variant& outValue, base::parser::IErrorReporter& err);
 
         // get style var type for name
         extern BASE_UI_API StyleVarType StyleVarTypeForParamName(base::StringID name);

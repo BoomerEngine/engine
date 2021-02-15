@@ -27,10 +27,6 @@ namespace ed
 {
     //--
 
-    static res::StaticResource<image::Image> resDirectoryTexture("/engine/thumbnails/directory.png", true);
-
-    //--
-
     RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectory);
     RTTI_END_TYPE();
 
@@ -39,7 +35,8 @@ namespace ed
         , m_depotPath(depotPath)
         , m_fileCount(0)
     {
-        m_directoryIcon = resDirectoryTexture.loadAndGetAsRef();
+        static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
+        m_directoryIcon = thumbnail;
     }
 
     ManagedDirectory::~ManagedDirectory()

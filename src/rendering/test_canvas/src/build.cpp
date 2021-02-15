@@ -7,7 +7,6 @@
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_api_gl4 #]
-* [# dependency: import_image_loader #]
 * [# devonly #]
 * [# app #]
 * [# generate_main #]

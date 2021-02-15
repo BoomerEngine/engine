@@ -8,6 +8,7 @@
 
 #include "build.h"
 #include "uiStyleValue.h"
+#include "uiStyleLibraryPacker.h"
 #include "uiElementLayout.h"
 #include "uiDataStash.h"
 
@@ -384,7 +385,7 @@ namespace ui
 
         //--
 
-        bool CompileStyleValue(const base::parser::Location& loc, StyleVarType type, const RawValue& value, IStyleLibraryContentLoader& loader, base::Variant& outValue, base::parser::IErrorReporter& err)
+        bool CompileStyleValue(const base::parser::Location& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, base::Variant& outValue, base::parser::IErrorReporter& err)
         {
             switch (type)
             {
@@ -476,7 +477,7 @@ namespace ui
                                 return false;
 
                             auto fontPath = value.arguments()[i]->string();
-                            auto font = loader.loadFont(loc.contextName().view(), fontPath);
+                            auto font = loader.loadFont(fontPath);
                             if (!font)
                             {
                                 err.reportError(loc, base::TempString("Font '{}' has not been found", fontPath));
@@ -615,7 +616,7 @@ namespace ui
                         auto url = value.arguments()[0]->string();
 
                         ImageReference style;
-                        style.image = loader.loadImage(loc.contextName(), url);
+                        style.image = loader.loadImage(url);
                         if (!style.image)
                         {
                             err.reportError(loc, base::TempString("Image '{}' has not been found", url));
@@ -716,7 +717,7 @@ namespace ui
                         auto url = value.arguments()[0]->string();
 
                         style.type = 3;
-                        style.image = loader.loadImage(loc.contextName(), url);
+                        style.image = loader.loadImage(url);
                         if (!style.image)
                         {
                             err.reportError(loc, base::TempString("Image '{}' has not been found", url));
@@ -853,7 +854,7 @@ namespace ui
                             }
                         }
 
-                        style.image = loader.loadImage(loc.contextName(), url);
+                        style.image = loader.loadImage(url);
                         if (!style.image)
                         {
                             err.reportError(loc, base::TempString("Image '{}' has not been found", url));

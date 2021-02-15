@@ -15,6 +15,7 @@
 #include "base/containers/include/stringParser.h"
 #include "base/parser/include/textParser.h"
 #include "base/memory/include/linearAllocator.h"
+#include "base/resource/include/depotService.h"
 
 namespace ui
 {
@@ -968,24 +969,77 @@ namespace ui
 
         //--
 
-        IStyleLibraryContentLoader::~IStyleLibraryContentLoader()
-        {}
+        // parsing error reporter for cooker based shader compilation
+        class LocalErrorReporter : public base::parser::IErrorReporter
+        {
+        public:
+            virtual void reportError(const base::parser::Location& loc, base::StringView message) override
+            {
+                base::logging::Log::Print(base::logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", "", base::TempString("{}", message));
+            }
 
-        StyleLibraryPtr ParseStyleLibrary(base::StringView context, base::StringView data, IStyleLibraryContentLoader& loader, base::parser::IIncludeHandler& inc, base::parser::IErrorReporter& err)
+            virtual void reportWarning(const base::parser::Location& loc, base::StringView message) override
+            {
+                base::logging::Log::Print(base::logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", "", base::TempString("{}", message));
+            }
+        };
+
+        //---
+
+        // include handler that loads appropriate dependencies
+        class LocalIncludeHandler : public base::parser::IIncludeHandler
+        {
+        public:
+            LocalIncludeHandler(base::StringView baseDirectory)
+                : m_baseDirectory(baseDirectory)
+            {}
+
+            bool loadContent(base::StringView depotPath, base::Buffer& outContent, base::StringBuf& outPath) const
+            {
+                if (!base::GetService<base::DepotService>()->loadFileToBuffer(depotPath, outContent))
+                    return false;
+
+                base::GetService<base::DepotService>()->queryFileAbsolutePath(depotPath, outPath);
+                return true;
+            }
+
+            virtual bool loadInclude(bool global, base::StringView path, base::StringView referencePath, base::Buffer& outContent, base::StringBuf& outPath) override
+            {
+                return loadContent(base::TempString("{}{}", m_baseDirectory, path), outContent, outPath);
+            }
+
+        private:
+            base::StringView m_baseDirectory;
+        };
+
+        //--
+
+        StyleLibraryPtr LoadStyleLibrary(base::StringView depotFilePath)
         {
             base::ScopeTimer timer;
+
+            LocalErrorReporter err;
+            LocalIncludeHandler inc(depotFilePath.baseDirectory());
 
             base::mem::LinearAllocator mem(POOL_UI_STYLES);
             prv::RawLibraryData rawData(mem);
             prv::ParsingContext pc(err, inc, rawData);
 
-            if (!prv::ParserFile(context, data, pc))
-                return nullptr;
+            {
+                base::Buffer mainContent;
+                base::StringBuf mainPath;
+                if (!inc.loadContent(depotFilePath, mainContent, mainPath))
+                    return nullptr;
+
+                if (!prv::ParserFile(mainPath, mainContent, pc))
+                    return nullptr;
+            }
 
             // print parsed rules
             //TRACE_INFO("Parsed rules: '{}'", rawData);
 
             // create the selector tree
+            ContentLoader loader(depotFilePath.baseDirectory());
             prv::RawValueTable values(loader);
             prv::RawSelectorTree tree(values);
 
@@ -1010,7 +1064,6 @@ namespace ui
 
             // set the output content
             return base::RefNew<ui::style::Library>(std::move(selectorNodes), std::move(values.values()));
-
         }
 
         //--

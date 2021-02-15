@@ -5,7 +5,6 @@
 *
 * [# dependency: base_resource_compiler #]
 * [# dependency: rendering_texture #]
-* [# dependency: import_image_loader #]
 * [# devonly #]
 ***/
 
