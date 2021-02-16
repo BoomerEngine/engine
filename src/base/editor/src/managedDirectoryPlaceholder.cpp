@@ -43,7 +43,7 @@ namespace ed
         }
     }
 
-    const image::ImageRef& ManagedDirectoryPlaceholder::typeThumbnail() const
+    const image::Image* ManagedDirectoryPlaceholder::typeThumbnail() const
     {
         return m_directoryIcon;
     }

@@ -105,7 +105,7 @@ namespace base
     namespace res
     {
         class IResource;
-        class IResourceLoader;
+        class ResourceLoader;
     } // res
 
     //--

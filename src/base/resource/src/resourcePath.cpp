@@ -58,6 +58,17 @@ namespace base
                 f << "empty";
         }
 
+        bool ResourcePath::Parse(StringView path, ResourcePath& outPath)
+        {
+            if (ValidateDepotPath(path, DepotPathClass::AbsoluteFilePath))
+            {
+                outPath = ResourcePath(path);
+                return true;
+            }
+
+            return false;
+        }
+
         //--
 
         StringView ResourcePath::fileName() const

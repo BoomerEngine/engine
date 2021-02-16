@@ -59,7 +59,7 @@ namespace base
         bool ExtractLayerSoup(SourceLayer& layer)
         {
             // load the layer
-            auto data = LoadResource<RawLayer>(layer.path).acquire();
+            auto data = LoadResource<RawLayer>(layer.path);
             if (!data)
             {
                 TRACE_ERROR("Failed to load layer '{}', no soup will be extracted", layer.path);

@@ -16,7 +16,7 @@ namespace base
 {
     namespace res
     {
-        class IResourceLoader;
+        class ResourceLoader;
     }
 
     namespace rtti

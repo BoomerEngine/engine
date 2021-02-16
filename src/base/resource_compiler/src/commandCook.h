@@ -26,34 +26,34 @@ namespace base
 
             //--
 
-            HashSet<ResourceKey> m_seedFiles;
+            HashSet<ResourcePath> m_seedFiles;
             bool collectSeedFiles();
-            void scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const;
+            void scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourcePath>& outList, uint32_t& outNumDirectoriesVisited) const;
 
             //--
 
             struct PendingCookingEntry
             {
-                ResourceKey key;
+                ResourcePath key;
                 ResourcePtr alreadyLoadedResource;
             };
 
             bool processSeedFiles();
-            void processSingleSeedFile(const ResourceKey& key);
+            void processSingleSeedFile(const ResourcePath& key);
 
-            bool assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
+            bool assembleCookedOutputPath(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
 
             MetadataPtr loadFileMetadata(StringView cookedOutputPath) const;
 
             bool checkDependenciesUpToDate(const Metadata& deps) const;
 
-            bool cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
+            bool cookFile(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
             void queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue);
             void queueDependencies(StringView cookedFile, Array<PendingCookingEntry>& outCookingQueue);
 
-            HashSet<ResourceKey> m_allCollectedFiles;
-            HashSet<ResourceKey> m_allCookedFiles;
-            HashSet<ResourceKey> m_allSeenFile;
+            HashSet<ResourcePath> m_allCollectedFiles;
+            HashSet<ResourcePath> m_allCookedFiles;
+            HashSet<ResourcePath> m_allSeenFile;
 
             uint32_t m_cookFileIndex = 0;
             uint32_t m_numTotalVisited = 0;
@@ -65,9 +65,8 @@ namespace base
             bool m_captureLogs = true;
             bool m_discardCookedLogs = true;
 
-            UniquePtr<Cooker> m_cooker;
             UniquePtr<CookerSaveThread> m_saveThread;
-            IResourceLoader* m_loader = nullptr;
+            ResourceLoader* m_loader = nullptr;
 
             //--
         };

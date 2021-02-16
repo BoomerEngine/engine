@@ -149,38 +149,36 @@ namespace ui
             StringView filePath = "";
             bool fileFound = false;
 
-            res::ResourceKey key;
+            res::ResourcePath key;
             DataViewResult ret;
 
             if (m_async)
             {
                 res::AsyncRef<res::IResource> data;
                 ret = readValue(data);
-                key = data.key();
+                key = data.path();
             }
             else
             {
                 res::Ref<res::IResource> data;
                 ret = readValue(data);
-                key = data.key();
+                key = data.path();
             }
 
             if (ret.code == DataViewResultCode::OK)
             {
-                auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(key.path().view());
+                auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(key.view());
                 if (managedFile != m_currentFile)
                 {
-                    image::ImageRef imageRef;
                     if (managedFile)
-                        imageRef = managedFile->typeThumbnail();
-                    //m_thumbnail->image(imageRef);
+                        m_thumbnail->image(managedFile->typeThumbnail());
                     m_currentFile = managedFile;
                 }
 
                 // set file name
                 if (key)
                 {
-                    fileName = key.path().fileStem();
+                    fileName = key.fileStem();
                     fileFound = (managedFile != nullptr);
                 }
                 else
@@ -284,7 +282,7 @@ namespace ui
                     auto resPath = newFile->depotPath();
                     if (!resPath.empty())
                     {
-                        const auto key = res::ResourceKey(res::ResourcePath(resPath), m_resourceClass);
+                        const auto key = res::ResourcePath(resPath);
 
                         // load the file
                         if (m_async)

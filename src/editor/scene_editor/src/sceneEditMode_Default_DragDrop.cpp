@@ -90,7 +90,7 @@ namespace ed
 
         void buildPrefabPreview(const ManagedFile* file)
         {
-            if (const auto prefab = LoadResource<world::Prefab>(file->depotPath()).acquire())
+            if (const auto prefab = LoadResource<world::Prefab>(file->depotPath()))
             {
                 const auto& rootPlacement = AbsoluteTransform::ROOT();
 

@@ -44,7 +44,7 @@ namespace ed
         virtual StringBuf absolutePath() const;
 
         /// get the per-type thumbnail, does not depend on the content of the item
-        virtual const image::ImageRef& typeThumbnail() const = 0;
+        virtual const image::Image* typeThumbnail() const = 0;
 
         //--
 

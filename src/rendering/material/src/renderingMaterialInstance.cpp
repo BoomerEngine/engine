@@ -122,7 +122,7 @@ namespace rendering
             return m_dataProxy;
 
         // use proxy from base material
-        if (auto base = m_baseMaterial.acquire())
+        if (auto base = m_baseMaterial.load())
             return base->dataProxy();
 
         // use fallback proxy
@@ -133,7 +133,7 @@ namespace rendering
 
 	MaterialTemplateProxyPtr MaterialInstance::templateProxy() const
 	{
-		if (auto base = m_baseMaterial.acquire())
+		if (auto base = m_baseMaterial.load())
 			if (auto proxy = base->templateProxy())
 				return proxy;
 
@@ -144,7 +144,7 @@ namespace rendering
 
     const MaterialTemplate* MaterialInstance::resolveTemplate() const
     {
-        if (auto base = m_baseMaterial.acquire())
+        if (auto base = m_baseMaterial.load())
             if (auto baseTemplate = base->resolveTemplate())
                 return baseTemplate;
 
@@ -264,9 +264,10 @@ namespace rendering
         // we don't know about this parameter, add it only if it's in the base material
         if (auto materialTemplate = resolveTemplate())
         {
-            if (const auto* paramInfo = materialTemplate->findParameterInfo(name))
+            MaterialTemplateParamInfo info;
+            if (materialTemplate->queryParameterInfo(name, info))
             {
-                auto value = paramInfo->defaultValue;
+                auto value = info.defaultValue;
                 if (base::rtti::ConvertData(data, type, value.data(), value.type()))
                 {
                     writeParameterInternal(name, std::move(value));
@@ -286,7 +287,7 @@ namespace rendering
             return param->value.data();
         }
 
-        if (auto base = m_baseMaterial.acquire())
+        if (auto base = m_baseMaterial.load())
             return base->findParameterDataInternal(name, outType);
 
         return nullptr;
@@ -334,7 +335,10 @@ namespace rendering
             // ie. in previous base DiffuseScale was "float" but in current base is "Color"
             if (auto materialTemplate = resolveTemplate())
             {
-                for (const auto& templateParamInfo : materialTemplate->parameters())
+                base::InplaceArray<MaterialTemplateParamInfo, 16> allTemplateParams;
+                materialTemplate->queryAllParameterInfos(allTemplateParams);
+
+                for (const auto& templateParamInfo : allTemplateParams)
                 {
                     if (auto* paramInfo = findParameterInternal(templateParamInfo.name))
                     {
@@ -359,7 +363,7 @@ namespace rendering
             if (m_parameters[i].value.type() == nullptr)
                 m_parameters.eraseUnordered(i);
 
-        changeTrackedMaterial(m_baseMaterial.acquire());
+        changeTrackedMaterial(m_baseMaterial.load());
         createMaterialProxy();
     }
 
@@ -369,7 +373,7 @@ namespace rendering
         {
             if (a == base)
                 return true;
-            a = base::rtti_cast<MaterialInstance>(a->baseMaterial().acquire());
+            a = base::rtti_cast<MaterialInstance>(a->baseMaterial().load());
         }
 
         return false;
@@ -408,7 +412,7 @@ namespace rendering
 
         if (path == BASE_MATERIAL_NAME.view())
         {
-            const auto baseMaterial = m_baseMaterial.acquire();
+            const auto baseMaterial = m_baseMaterial.load();
             changeTrackedMaterial(baseMaterial);
             notifyBaseMaterialChanged();
         }
@@ -419,7 +423,8 @@ namespace rendering
             {
                 if (const auto* baseTemplate = resolveTemplate())
                 {
-                    if (baseTemplate->findParameterInfo(base::StringID(propertyName)))
+                    MaterialTemplateParamInfo info;
+                    if (baseTemplate->queryParameterInfo(propertyName, info))
                     {
                         notifyDataChanged();
                     }
@@ -456,7 +461,7 @@ namespace rendering
         if (currentResource->is<MaterialInstance>())
         {
             TRACE_INFO("SeenReloading at {}, cur base {} (reload {}->{}: {})", 
-                this, m_baseMaterial.acquire().get(), currentResource, newResource, newResource->path());
+                this, m_baseMaterial.load().get(), currentResource, newResource, newResource->path());
         }
 
         bool ret = TBaseClass::onResourceReloading(currentResource, newResource);
@@ -542,10 +547,12 @@ namespace rendering
             if (const auto* materialTemplate = resolveTemplate())
             {
                 const auto paramName = base::StringID::Find(propertyName);
-                if (const auto* paramInfo = materialTemplate->findParameterInfo(paramName))
+
+                MaterialTemplateParamInfo info;
+                if (materialTemplate->queryParameterInfo(paramName, info))
                 {
                     // ALWAYS write to compatible type to avoid confusion
-                    auto value = paramInfo->defaultValue;
+                    auto value = info.defaultValue;
                     if (const auto ret = HasError(value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType)))
                         return ret; // writing data to type container failed - something is wrong with the data
 
@@ -613,7 +620,7 @@ namespace rendering
         }
 
         // check the base as normal
-        if (auto base = m_baseMaterial.acquire())
+        if (auto base = m_baseMaterial.load())
             return base->findParameterDataInternal(name, outType); // NOTE: we ask base for it's value, not it's base value
 
         return nullptr;

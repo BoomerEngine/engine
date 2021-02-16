@@ -7,7 +7,6 @@
 ***/
 
 #include "build.h"
-#include "resourceKey.h"
 #include "resourceFileSaver.h"
 #include "resourceFileLoader.h"
 #include "resourceLoadingService.h"
@@ -35,7 +34,7 @@ namespace base
         return Buffer();
     }
 
-    ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::IResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+    ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
     {
         ASSERT_EX(mutatedClass == nullptr, "Not used");
 
@@ -50,7 +49,7 @@ namespace base
         return nullptr;
     }
 
-    ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*= nullptr*/, res::IResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+    ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*= nullptr*/, res::ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
     {
         res::FileSavingContext saveContext;
         saveContext.rootObject.pushBack(AddRef(object));

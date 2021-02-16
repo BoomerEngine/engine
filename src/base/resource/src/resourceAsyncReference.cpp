@@ -25,16 +25,16 @@ namespace base
         }
 
         BaseAsyncReference::BaseAsyncReference(const BaseAsyncReference& other)
-            : m_key(other.m_key)
+            : m_path(other.m_path)
         {
         }
 
-        BaseAsyncReference::BaseAsyncReference(const ResourceKey& path)
-            : m_key(path)
+        BaseAsyncReference::BaseAsyncReference(const ResourcePath& path)
+            : m_path(path)
         {}
 
         BaseAsyncReference::BaseAsyncReference(BaseAsyncReference&& other)
-            : m_key(std::move(other.m_key))
+            : m_path(std::move(other.m_path))
         {}
 
         BaseAsyncReference::~BaseAsyncReference()
@@ -45,7 +45,7 @@ namespace base
         {
             if (this != &other)
             {
-                m_key = other.m_key;
+                m_path = other.m_path;
             }
 
             return *this;
@@ -55,7 +55,7 @@ namespace base
         {
             if (this != &other)
             {
-                m_key = std::move(other.m_key);
+                m_path = std::move(other.m_path);
             }
 
             return *this;
@@ -63,60 +63,27 @@ namespace base
 
         void BaseAsyncReference::reset()
         {
-            m_key = ResourceKey();
+            m_path = ResourcePath();
         }
 
-        void BaseAsyncReference::set(StringView path, SpecificClassType<IResource> cls)
+        void BaseAsyncReference::set(const ResourcePath& path)
         {
-            set(ResourceKey(path, cls));
-        }
-        
-        void BaseAsyncReference::set(const ResourceKey& key)
-        {
-            m_key = key;
+            m_path = path;
         }
 
-        BaseReference BaseAsyncReference::load(IResourceLoader* customLoader /*= nullptr*/) const
+        ResourcePtr BaseAsyncReference::load() const
         {
-            if (m_key)
+            if (m_path)
+                return LoadResource(m_path);
+            return nullptr;
+        }
+
+        void BaseAsyncReference::loadAsync(const std::function<void(const BaseReference&)>& onLoadedFunc) const
+        {
+            if (m_path)
             {
-                auto loadedResource = customLoader ? customLoader->loadResource(m_key) : base::LoadResource(m_key);
-                return BaseReference(loadedResource);
-            }
-
-            return BaseReference();
-        }
-
-        void BaseAsyncReference::loadAsync(const std::function<void(const BaseReference&)>& onLoadedFunc, IResourceLoader* customLoader /*= nullptr*/) const
-        {
-            if (m_key)
-            {
-                // the custom loaded case requires more care
-                if (customLoader)
-                {
-                    // the resource may be already loaded, if that's the case we can save from creating a fiber
-                    {
-                        ResourcePtr alreadyLoaded;
-                        if (customLoader->acquireLoadedResource(m_key, alreadyLoaded))
-                        {
-                            if (alreadyLoaded)
-                                onLoadedFunc(BaseReference(alreadyLoaded));
-                        }
-                    }
-
-                    // follow the normal loading on a job path
-                    auto key  = m_key;
-                    RunFiber("LoadResourceRef") << [key, onLoadedFunc, customLoader](FIBER_FUNC)
-                    {
-                        auto loadedObject = customLoader->loadResource(key);
-                        onLoadedFunc(BaseReference(loadedObject));
-                    };
-                }
-                else
-                {
-                    // use general "global" loading function
-                    LoadResourceAsync(m_key, onLoadedFunc);
-                }
+                // use general "global" loading function
+                LoadResourceAsync(m_path, onLoadedFunc);
             }
             else
             {
@@ -133,7 +100,7 @@ namespace base
 
         bool BaseAsyncReference::operator==(const BaseAsyncReference& other) const
         {
-            return m_key == other.m_key;
+            return m_path == other.m_path;
         }
 
         bool BaseAsyncReference::operator!=(const BaseAsyncReference& other) const
@@ -143,23 +110,10 @@ namespace base
 
         void BaseAsyncReference::print(IFormatStream& f) const
         {
-            if (m_key)
-                f << m_key;
+            if (m_path)
+                f << m_path;
             else
                 f << "null";
-        }
-
-        bool BaseAsyncReference::Parse(StringView txt, BaseAsyncReference& outReference, ClassType constrainedClass /*= nullptr*/)
-        {
-            ResourceKey key;
-            if (!ResourceKey::Parse(txt, key))
-                return false;
-
-            if (!key.cls() || !key.cls()->is(constrainedClass))
-                return false;
-
-            outReference.set(key);
-            return true;
         }
 
         //--

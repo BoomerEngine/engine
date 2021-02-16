@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/graph/include/graphContainer.h"
+#include "../../material/include/renderingMaterialTemplate.h"
 
 namespace rendering
 {
@@ -57,9 +58,9 @@ namespace rendering
     ///---
 
     /// a graph based material template
-    class RENDERING_MATERIAL_GRAPH_API MaterialGraph : public base::res::IResource /// TODO: graph resource ?
+    class RENDERING_MATERIAL_GRAPH_API MaterialGraph : public MaterialTemplate
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraph, base::res::IResource);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraph, MaterialTemplate);
 
     public:
         MaterialGraph();
@@ -77,6 +78,16 @@ namespace rendering
 
     private:
         MaterialGraphContainerPtr m_graph;
+
+        // MaterialTemplate
+        virtual void listParameters(base::rtti::DataViewInfo& outInfo) const override final;
+        virtual bool queryParameterInfo(base::StringID name, MaterialTemplateParamInfo& outInfo) const override final;
+        virtual void queryMatadata(MaterialTemplateMetadata& outMetadata) const override final;
+        virtual void queryAllParameterInfos(base::Array<MaterialTemplateParamInfo>& outParams) const override final;
+
+        virtual const void* findParameterDataInternal(base::StringID name, base::Type& outType) const override final; // NOTE: returns pointer to the value inside the material block that defines the value
+
+        virtual base::RefPtr<IMaterialTemplateDynamicCompiler> queryDynamicCompiler() const override final;
 
         // IObject - extension of object property model to allow direct writing to graph parameters via the graph object itself
         //virtual bool readDataView(const base::IDataView* rootView, base::StringView rootViewPath, base::StringView viewPath, void* targetData, base::Type targetType) const override;

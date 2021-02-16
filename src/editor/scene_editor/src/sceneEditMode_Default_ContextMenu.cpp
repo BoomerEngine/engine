@@ -410,7 +410,7 @@ namespace ed
         }
     }
 
-    static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<res::ResourceKey, uint32_t>& outResources)
+    static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<res::ResourcePath, uint32_t>& outResources)
     {
         if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Behavior)
             return;
@@ -425,7 +425,7 @@ namespace ed
 
     void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup)
     {
-        HashMap<res::ResourceKey, uint32_t> usedResources;
+        HashMap<res::ResourcePath, uint32_t> usedResources;
 
         if (setup.contextClickedItem)
             ExtractResourcesFromNode(setup.contextClickedItem, usedResources);
@@ -436,7 +436,7 @@ namespace ed
         {
             struct Entry
             {
-                res::ResourceKey key;
+                res::ResourcePath key;
                 uint32_t count = 0;
             };
 
@@ -455,7 +455,7 @@ namespace ed
 
             for (const auto& pair : tempPairs)
             {
-                if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.key.path().view()))
+                if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.key.view()))
                 {
                     StringBuilder txt;
                     file->fileFormat().printTags(txt, " ");

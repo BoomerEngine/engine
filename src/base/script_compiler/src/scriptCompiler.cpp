@@ -13,7 +13,6 @@
 #include "scriptFunctionCodeParser.h"
 #include "scriptFunctionCode.h"
 
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/script/include/scriptCompiledProject.h"
@@ -22,7 +21,6 @@
 #include "base/app/include/localServiceContainer.h"
 #include "base/memory/include/linearAllocator.h"
 #include "base/resource/include/resourceTags.h"
-#include "base/resource/include/resourceCooker.h"
 
 namespace base
 {
@@ -64,11 +62,10 @@ namespace base
 
         //---
 
+#if 0
         /// trans cooker that cooks the simple template file into a full material template
-        class ScriptProjectCooker : public base::res::IResourceCooker
+        class ScriptProjectCooker : public base::NoCopy
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(ScriptProjectCooker, base::res::IResourceCooker);
-
         public:
             base::res::ResourceHandle exitWithMessage(StringView moduleName, LogErrorHandler& errHandler, bool valid = true) const
             {
@@ -316,10 +313,7 @@ namespace base
             }
         };
 
-        RTTI_BEGIN_TYPE_CLASS(ScriptProjectCooker);
-            RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<CompiledProject>();
-            RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("scripts");
-        RTTI_END_TYPE();
+#endif
 
         //---
 

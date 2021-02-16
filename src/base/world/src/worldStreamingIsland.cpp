@@ -100,7 +100,7 @@ namespace base
             }
         }
 
-        StreamingIslandInstancePtr StreamingIsland::load(res::IResourceLoader* loader) const
+        StreamingIslandInstancePtr StreamingIsland::load(res::ResourceLoader* loader) const
         {
             PC_SCOPE_LVL1(LoadStreamingIsland);
 

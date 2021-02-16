@@ -10,7 +10,7 @@
 
 #include "base/app/include/command.h"
 #include "base/app/include/commandline.h"
-#include "base/resource/include/resourceKey.h"
+#include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/io/include/ioSystem.h"
@@ -18,9 +18,7 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceTags.h"
 
-#include "cooker.h"
 #include "cookerSaveThread.h"
-#include "cookerSeedFile.h"
 
 #include "commandCook.h"
 #include "base/resource/include/resourceFileLoader.h"
@@ -62,7 +60,6 @@ namespace base
             }
 
             m_loader = loadingService->loader();
-            m_cooker.create(m_loader, nullptr, true /* final cooker */);
             m_saveThread.create();
 
             //--
@@ -81,9 +78,9 @@ namespace base
 
         //--
 
-        void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourceKey>& outList, uint32_t& outNumDirectoriesVisited) const
+        void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourcePath>& outList, uint32_t& outNumDirectoriesVisited) const
         {
-            static const auto seedFileExtension = IResource::GetResourceExtensionForClass(SeedFile::GetStaticClass());
+            //static const auto seedFileExtension = IResource::GetResourceExtensionForClass(SeedFile::GetStaticClass());
 
             outNumDirectoriesVisited += 1;
 
@@ -91,11 +88,11 @@ namespace base
 
             depot->enumFilesAtPath(depotPath, [&depotPath, &outList](const DepotService::FileInfo& info)
                 {
-                    if (info.name.endsWith(seedFileExtension))
+                    /*if (info.name.endsWith(seedFileExtension))
                     {
                         const auto path = ResourcePath(TempString("{}{}", depotPath, info.name));
                         outList.emplaceBack(path, SeedFile::GetStaticClass());
-                    }
+                    }*/
 
                     return false;
                 });
@@ -124,10 +121,9 @@ namespace base
                     const auto cls = info->resourceClass().cast<IResource>();
                     if (cls && info->path())
                     {
-                        auto key = ResourceKey(info->path(), cls);
-                        TRACE_INFO("Collected static resource '{}'", key);
-                        m_seedFiles.insert(key);
-                        m_allCollectedFiles.insert(key);
+                        TRACE_INFO("Collected static resource '{}'", info->path());
+                        m_seedFiles.insert(info->path());
+                        m_allCollectedFiles.insert(info->path());
                     }
                 }
             }
@@ -136,14 +132,14 @@ namespace base
             {
                 // collect
                 uint32_t numDirectoriesVisited = 0;
-                InplaceArray<ResourceKey, 100> seedFilesLists;
+                InplaceArray<ResourcePath, 100> seedFilesLists;
                 scanDepotDirectoryForSeedFiles("", seedFilesLists, numDirectoriesVisited);
                 TRACE_INFO("Found {} seed lists in {} depot directories", seedFilesLists.size(), numDirectoriesVisited);
 
                 // load
                 for (const auto& key : seedFilesLists)
                 {
-                    if (const auto seedFile = base::rtti_cast<SeedFile>(LoadResource(key).acquire()))
+                    /*if (const auto seedFile = base::rtti_cast<SeedFile>(LoadResource(key).acquire()))
                     {
                         uint32_t numAdded = 0;
                         for (const auto& file : seedFile->files())
@@ -156,7 +152,7 @@ namespace base
                         }
 
                         TRACE_INFO("Loaded {} files from seed file '{}' ({} added to cook list)", seedFile->files().size(), key.path(), numAdded);
-                    }
+                    }*/
                 }
             }
 
@@ -172,7 +168,7 @@ namespace base
             for (uint32_t i = 0; i<m_seedFiles.size(); ++i)
             {
                 const auto& seedFilePath = m_seedFiles.keys()[i];
-                TRACE_INFO("Processing seed file {}/{}: {}", i + 1, m_seedFiles.size(), seedFilePath.path());
+                TRACE_INFO("Processing seed file {}/{}: {}", i + 1, m_seedFiles.size(), seedFilePath);
 
                 processSingleSeedFile(seedFilePath);
 
@@ -192,7 +188,7 @@ namespace base
             return m_numTotalFailed == 0;
         }
 
-        void CommandCook::processSingleSeedFile(const ResourceKey& seedFileKey)
+        void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
         {
             bool valid = true;
 
@@ -217,11 +213,11 @@ namespace base
 
                 /// check if can cook this file at all
                 SpecificClassType<IResource> cookedClass;
-                if (!m_cooker->canCook(topEntry.key, cookedClass))
+                /*if (!m_cooker->canCook(topEntry.key, cookedClass))
                 {
                     TRACE_WARNING("Resource '{}' is not cookable and will be skipped. Why is it referenced though?");
                     continue;
-                }
+                }*/
 
                 // assemble cooked output path - cooked file will be stored there
                 StringBuf cookedFilePath;
@@ -320,7 +316,7 @@ namespace base
             return nullptr;
         }
 
-        bool CommandCook::assembleCookedOutputPath(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
+        bool CommandCook::assembleCookedOutputPath(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
         {
             const auto loadExtension = IResource::GetResourceExtensionForClass(cookedClass);
             if (!loadExtension)
@@ -332,8 +328,8 @@ namespace base
             StringBuilder localPath;
             localPath << m_outputDir;
             localPath << "cooked/";
-            localPath << key.path().basePath();
-            localPath << key.path().fileName();
+            localPath << key.basePath();
+            localPath << key.fileName();
             localPath << "." << loadExtension;
 
             outPath = localPath.toString();
@@ -344,7 +340,7 @@ namespace base
 
         void CommandCook::queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue)
         {
-            HashSet<ResourceKey> referencedResources;
+            HashSet<ResourcePath> referencedResources;
 
             ScopeTimer timer;
             {
@@ -382,68 +378,16 @@ namespace base
                     for (const auto& entry : dependencies)
                     {
                         auto& outEntry = outCookingQueue.emplaceBack();
-                        outEntry.key = entry.key;
+                        outEntry.key = entry.path;
                     }
                 }
             }
         }
 
-        class CookingLogCapture : public logging::LocalLogSink
-        {
-        public:
-            CookingLogCapture(StringView outPath, bool captureFully)
-                : m_fullyCaptured(captureFully)
-            {
-                m_logFilePath = TempString("{}.log", outPath);
-                m_logOutput = base::io::OpenForWriting(m_logFilePath);
-            }
-
-            void discardLog()
-            {
-                if (m_logOutput)
-                    m_logOutput.reset();
-
-                base::io::DeleteFile(m_logFilePath);
-            }
-
-            virtual bool print(logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override
-            {
-                if (m_logOutput)
-                {
-                    StringBuilder str;
-
-                    switch (level)
-                    {
-                    case logging::OutputLevel::Error:; str.appendf("!!!! ERROR: "); break;
-                    case logging::OutputLevel::Warning:; str.appendf("! WARNING: "); break;
-                    }
-
-                    str.append(text);
-                    str.append("\n");
-
-                    if (m_logOutput->writeSync(str.c_str(), str.length()) != str.length())
-                        m_logOutput.reset();
-                }
-
-                return m_fullyCaptured; // consume
-            }
-
-            virtual ~CookingLogCapture()
-            {
-                m_logOutput.reset();
-            }
-
-        private:
-            io::WriteFileHandlePtr m_logOutput;
-            StringBuf m_logFilePath;
-            bool m_fullyCaptured;
-        };
-
-        bool CommandCook::cookFile(const ResourceKey& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue)
+        bool CommandCook::cookFile(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue)
         {
             // do not cook files more than once, also promote the resource key to it's true class, ie ITexture:lena.png -> StaticTexture:lena.png
-            const auto cookKey = ResourceKey(key.path(), cookedClass);
-            if (!m_allCookedFiles.insert(cookKey))
+            if (!m_allCookedFiles.insert(key))
                 return true;
 
             // print header
@@ -454,17 +398,17 @@ namespace base
             // capture all log output, we are only interested in success/failure
             ResourcePtr cookedFile;
             {
-                CookingLogCapture logCapture(outPath, m_captureLogs);
-                cookedFile = m_cooker->cook(cookKey);
+                //CookingLogCapture logCapture(outPath, m_captureLogs);
+                //cookedFile = m_cooker->cook(cookKey);
 
-                if (m_discardCookedLogs && cookedFile)
-                    logCapture.discardLog();
+                //if (m_discardCookedLogs && cookedFile)
+                  //  logCapture.discardLog();
             }
 
             // oh well
             if (!cookedFile)
             {
-                TRACE_ERROR("Failed to cook file '{}'", cookKey.path());
+                TRACE_ERROR("Failed to cook file '{}'", key);
                 return false;
             }
 

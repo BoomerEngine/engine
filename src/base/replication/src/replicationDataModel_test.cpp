@@ -948,7 +948,7 @@ TEST(DataModel, EncodeWritesPathWhenSet)
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ResRef s;
-    //s.m_path.set(res::ResourceKey("dupa.txt", res::ITextResource::GetStaticClass()));
+    //s.m_path.set("dupa.txt");
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -968,7 +968,7 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
     ASSERT_TRUE(model);
 
     test::TestReplicatedStruct_ResRef s;
-    //s.m_path.set(res::ResourceKey("dupa.txt", res::ITextResource::GetStaticClass()));
+    //s.m_path.set("dupa.txt");
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -1598,7 +1598,7 @@ TEST(DataModelTransmit, ResourceRef)
     test::TransferTest transfer(knowledge);
 
     test::TestReplicatedStruct_ResRef s, out;
-    //s.m_path.set(res::ResourceKey("dupa.txt", base::res::IResource::GetStaticClass()));
+    //s.m_path.set("dupa.txt");
 
     transfer.transfer(s, out);
 

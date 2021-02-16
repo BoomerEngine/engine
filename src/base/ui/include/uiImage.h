@@ -24,12 +24,13 @@ namespace ui
     public:
         Image();
         Image(base::canvas::ImageEntry customImage);
-        Image(const base::image::ImageRef& customImage);
+        Image(const base::image::Image* customImage);
         Image(base::StringID iconName);
 
         //--
 
-        // set image to display, sets the "image" style
+        // set image to display, sets the "image" sty
+        void image(const base::image::Image* customImage);
         void image(base::canvas::ImageEntry ptr);
         void image(base::StringID iconName);
 

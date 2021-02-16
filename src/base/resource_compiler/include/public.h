@@ -10,36 +10,10 @@
 
 namespace base
 {
-
-    namespace depot
-    {
-
-        //--
-
-        class DepotStructure;
-        class DependencyCache;
-
-        class IFileSystem;
-        class IFileSystemProvider;
-        class IFileSystemNotifier;
-
-        enum class DepotFileSystemType
-        {
-            Engine,
-            Plugin,
-            Project,
-        };
-
-        struct RenameConfiguration;
-
-        //--
-
-    } // depot
-
     namespace res
     {
 
-        class Cooker;
+        struct RenameConfiguration;
 
         class IBakingJob;
         typedef RefPtr<IBakingJob> BakingJobPtr;

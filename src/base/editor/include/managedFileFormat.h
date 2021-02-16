@@ -16,12 +16,6 @@ namespace ed
 
     ///----
 
-    // output cooked format
-    struct BASE_EDITOR_API ManagedFileCookableOutput : public NoCopy
-    {
-        SpecificClassType<res::IResource> resoureClass; // output resource class
-    };
-
     // resource tag for a managed file
     struct BASE_EDITOR_API ManagedFileTag
     {
@@ -64,10 +58,6 @@ namespace ed
         /// get list of extensions this format can be imported from
         INLINE const Array<StringBuf>& importExtensions() const { return m_importExtensions; }
 
-        /// what kind of classes can we cook from this file format, lists all cookers
-        /// NOTE: even for native files we may be able to cook something out of them that is of difference class
-        INLINE const Array<ManagedFileCookableOutput>& cookableOutputs() const { return m_cookableOutputs; }
-
         /// get file format tags
         INLINE const Array<ManagedFileTag>& tags() const { return m_tags; }
 
@@ -82,7 +72,7 @@ namespace ed
         bool loadableAsType(ClassType resourceClass) const;
 
         /// get the default thumbnail image for this file type
-        const image::ImageRef& thumbnail() const;
+        const image::Image* thumbnail() const;
 
         /// print the file type tags
         void printTags(IFormatStream& f, StringView separator="") const;
@@ -90,10 +80,9 @@ namespace ed
     private:
         StringBuf m_extension;
         StringBuf m_description;
-        mutable image::ImageRef m_thumbnail;
+        mutable image::ImagePtr m_thumbnail;
 
         SpecificClassType<res::IResource> m_nativeResourceClass;
-        Array<ManagedFileCookableOutput> m_cookableOutputs;
 
         Array<ManagedFileTag> m_tags;
 

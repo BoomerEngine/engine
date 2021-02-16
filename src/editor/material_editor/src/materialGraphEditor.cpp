@@ -166,10 +166,7 @@ namespace ed
             return false;
 
         // load just saved material graph as a material template to force a reload
-        //const auto templateKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), rendering::MaterialTemplate::GetStaticClass());
-        const auto templateKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), rendering::IMaterial::GetStaticClass());
-        LoadResource(templateKey);
-
+        LoadResource(res::ResourcePath(nativeFile()->depotPath()));
         return true;
     }
 

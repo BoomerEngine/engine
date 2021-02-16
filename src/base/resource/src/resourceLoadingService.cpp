@@ -22,53 +22,23 @@ namespace base
         //--
 
         ConfigProperty<uint32_t> cvFileRetentionTime("Loader", "FileRetentionTime", 30);
-        ConfigProperty<StringBuf> cvDefaultResourceLoaderClass("Loader", "DefaultLoaderClass", "base::res::ResourceLoaderCooker");
-        ConfigProperty<StringBuf> cvFinalResourceLoaderClass("Loader", "FinalLoaderClass", "base::res::ResourceLoaderFinal");
         LoadingService* GGlobalResourceLoadingService = nullptr;
 
         //--
 
         RTTI_BEGIN_TYPE_CLASS(LoadingService);
-            RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<config::ConfigService>();
         RTTI_END_TYPE();
 
         LoadingService::LoadingService()
         {}
 
-        static StringBuf GetLoaderClass()
-        {
-#ifdef BUILD_FINAL
-            return cvFinalResourceLoaderClass.get();
-#else
-            return cvDefaultResourceLoaderClass.get();
-#endif
-        }
-
         app::ServiceInitializationResult LoadingService::onInitializeService(const app::CommandLine& cmdLine)
         {
-            // find loader class
-            const auto loaderClassName = GetLoaderClass();
-            const auto loaderClass = RTTI::GetInstance().findClass(StringID(loaderClassName.view())).cast<IResourceLoader>();
-            if (!loaderClass)
-            {
-                TRACE_ERROR("Resource loader class '{}' not found", loaderClassName);
-                return app::ServiceInitializationResult::FatalError;
-            }
-
             // create and initialize the loader
-            auto loader = loaderClass->create<IResourceLoader>();
-            if (!loader->initialize(cmdLine))
-            {
-                TRACE_ERROR("Failed to initialize resource loader '{}'", loaderClass->name());
-                return app::ServiceInitializationResult::FatalError;
-            }
-            else
-            {
-                m_resourceLoader = loader;
-            }
+            m_resourceLoader = RefNew<ResourceLoader>();
 
             // bind the depot service as the loader for static resources
-            base::res::IStaticResource::BindGlobalLoader(m_resourceLoader.get());
+            IStaticResource::BindGlobalLoader(m_resourceLoader.get());
 
             // initialized
             GGlobalResourceLoadingService = this;
@@ -81,7 +51,7 @@ namespace base
             GGlobalResourceLoadingService = nullptr;
 
             // unbind the depot service as the loader for static resources
-            base::res::IStaticResource::BindGlobalLoader(nullptr);
+            IStaticResource::BindGlobalLoader(nullptr);
 
             // detach loader
             m_resourceLoader.reset();
@@ -90,8 +60,7 @@ namespace base
         void LoadingService::onSyncUpdate()
         {
             releaseRetainedFiles();
-
-            m_resourceLoader->update();
+            m_resourceLoader->processReloadEvents();
         }
 
         void LoadingService::addRetainedFile(const ResourceHandle& file)
@@ -121,16 +90,16 @@ namespace base
 
         //--
 
-        res::BaseReference LoadingService::loadResource(const ResourceKey& key)
+        ResourcePtr LoadingService::loadResource(const ResourcePath& path)
         {
-            auto ret = m_resourceLoader->loadResource(key);
+            auto ret = m_resourceLoader->loadResource(path);
             addRetainedFile(ret);
             return ret;
         }
 
         //--
 
-        void LoadingService::loadResourceAsync(const ResourceKey& key, const std::function<void(const res::BaseReference&)>& funcLoaded)
+        void LoadingService::loadResourceAsync(const ResourcePath& key, const std::function<void(const ResourcePtr&)>& funcLoaded)
         {
             // ask the resource loader if it already has the resource
             {
@@ -175,7 +144,7 @@ namespace base
             m_asyncLoadingJobsMap[key] = newAsyncLoadingJob;
 
             // notify resource was queued
-            //m_depotFileStatusMonitor->notifyFileStatusChanged(res::ResourceKey(path, resClass), FileState::Queued);
+            //m_depotFileStatusMonitor->notifyFileStatusChanged(ResourceKey(path, resClass), FileState::Queued);
 
             // start loading, NOTE: in the background
             RunFiber("LoadResourceAsync") << [this, key, newAsyncLoadingJob, funcLoaded](FIBER_FUNC)
@@ -190,7 +159,7 @@ namespace base
 
         //--
 
-        bool LoadingService::acquireLoadedResource(const ResourceKey& key, ResourcePtr& outLoadedPtr)
+        bool LoadingService::acquireLoadedResource(const ResourcePath& key, ResourcePtr& outLoadedPtr)
         {
             return m_resourceLoader->acquireLoadedResource(key, outLoadedPtr);
         }
@@ -199,7 +168,7 @@ namespace base
 
     //--
 
-    res::IResourceLoader* GlobalLoader()
+    res::ResourceLoader* GlobalLoader()
     {
         if (res::GGlobalResourceLoadingService)
             return res::GGlobalResourceLoadingService->loader();
@@ -207,24 +176,24 @@ namespace base
         return nullptr;
     }
 
-    res::BaseReference LoadResource(const res::ResourceKey& key)
+    res::ResourcePtr LoadResource(const res::ResourcePath& path)
     {
         if (res::GGlobalResourceLoadingService)
-            return res::GGlobalResourceLoadingService->loadResource(key);
+            return res::GGlobalResourceLoadingService->loadResource(path);
 
-        TRACE_ERROR("No global resource loader specified, loading of resoruce '{}' will fail", key);
+        TRACE_ERROR("No global resource loader specified, loading of resoruce '{}' will fail", path);
         return nullptr;
     }
 
-    void LoadResourceAsync(const res::ResourceKey& key, const std::function<void(const res::BaseReference&)>& funcLoaded)
+    void LoadResourceAsync(const res::ResourcePath& path, const std::function<void(const res::ResourcePtr&)>& funcLoaded)
     {
         if (res::GGlobalResourceLoadingService)
         {
-            res::GGlobalResourceLoadingService->loadResourceAsync(key, funcLoaded);
+            res::GGlobalResourceLoadingService->loadResourceAsync(path, funcLoaded);
         }
         else
         {
-            TRACE_ERROR("No global resource loader specified, loading of resoruce '{}' will fail", key);
+            TRACE_ERROR("No global resource loader specified, loading of resoruce '{}' will fail", path);
             funcLoaded(nullptr);
         }
     }

@@ -42,7 +42,7 @@ namespace ed
     {
     }
 
-    const image::ImageRef& ManagedFilePlaceholder::typeThumbnail() const
+    const image::Image* ManagedFilePlaceholder::typeThumbnail() const
     {
         return m_fileFormat->thumbnail();
     }

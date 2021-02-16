@@ -33,7 +33,7 @@ namespace ed
     //--
 
     /// show a generic rename dialog, does not do any renaming
-    extern BASE_EDITOR_API bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings);
+    extern BASE_EDITOR_API bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::res::RenameConfiguration& outSettings);
 
     //--
 

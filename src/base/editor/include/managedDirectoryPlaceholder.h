@@ -26,7 +26,7 @@ namespace ed
         //--
 
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
-        virtual const image::ImageRef& typeThumbnail() const override;
+        virtual const image::Image* typeThumbnail() const override;
 
         //---
 
@@ -34,7 +34,7 @@ namespace ed
         void rename(StringView name);
 
     private:
-        image::ImageRef m_directoryIcon;
+        image::ImagePtr m_directoryIcon;
     };
 
     //---

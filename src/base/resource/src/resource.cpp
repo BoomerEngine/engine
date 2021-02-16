@@ -10,9 +10,8 @@
 #include "resource.h"
 #include "resourceLoader.h"
 #include "resourceClassLookup.h"
-#include "resourceCookingInterface.h"
 #include "resourceMetadata.h"
-#include "resourceKey.h"
+#include "resourcePath.h"
 #include "resourceTags.h"
 
 namespace base
@@ -42,9 +41,7 @@ namespace base
             if (auto loader = m_loader.lock())
             {
                 TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
-
-                const auto key = ResourceKey(path(), cls().cast<IResource>());
-                loader->notifyResourceUnloaded(key);
+                loader->notifyResourceUnloaded(path());
             }
         }
 
@@ -138,7 +135,7 @@ namespace base
             return false;
         }
 
-        void IResource::bindToLoader(IResourceLoader* loader, const ResourcePath& path)
+        void IResource::bindToLoader(ResourceLoader* loader, const ResourcePath& path)
         {
             DEBUG_CHECK_RETURN_EX(m_loader == nullptr, "Resource already has a loader");
             DEBUG_CHECK_RETURN_EX(!m_path, "Resource already has a loading path");

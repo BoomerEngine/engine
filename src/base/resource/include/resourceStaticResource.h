@@ -51,7 +51,7 @@ namespace base
             //---
 
             // mount the global resource loader for all of the static resources
-            static void BindGlobalLoader(IResourceLoader* loader);
+            static void BindGlobalLoader(ResourceLoader* loader);
 
             // collect all static resources that are defined in C++ code
             static void CollectAllResources(Array<IStaticResource*>& outResources);
@@ -98,7 +98,7 @@ namespace base
             /// get as async ref
             INLINE AsyncRef<T> asyncRef() const
             {
-                AsyncRef<T> ret(ResourceKey(path(), T::GetStaticClass()));
+                AsyncRef<T> ret(path());
                 return ret;
             }
 

@@ -191,6 +191,15 @@ namespace rendering
 
     MaterialTemplatePtr MaterialGraph::createPreviewTemplate(base::StringView label) const
     {
+        auto clone = base::CloneObject<MaterialGraph>(this);
+        if (clone)
+        {
+            clone->m_contextPath = base::StringBuf(label);
+            return clone;
+        }
+
+        return nullptr;
+/*
         // find output node and read settings
         MaterialTemplateMetadata metadata;
         if (const auto* outputBlock = m_graph->findOutputBlock())
@@ -221,7 +230,92 @@ namespace rendering
 
         // create a version of material template that supports runtime compilation from the source graph
         auto compiler = base::RefNew<PreviewGraphTechniqueCompiler>(graphCopy);
-        return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, compiler, base::StringBuf(label));
+        return base::RefNew<MaterialTemplate>(std::move(parameters), metadata, compiler, base::StringBuf(label));*/
+    }
+
+    //--
+
+    const void* MaterialGraph::findParameterDataInternal(base::StringID name, base::Type& outType) const
+    {
+        for (const auto& block : m_graph->parameters())
+        {
+            if (block->name() == name && block->dataType())
+            {
+                outType = block->dataType();
+                return block->dataValue();
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool MaterialGraph::queryParameterInfo(base::StringID name, MaterialTemplateParamInfo& outInfo) const
+    {
+        for (const auto& block : m_graph->parameters())
+        {
+            if (block->name() == name && block->dataType())
+            {
+                outInfo.name = block->name();
+                outInfo.category = block->category() ? block->category() : "Material parameters"_id;
+                outInfo.type = block->dataType();
+                outInfo.parameterType = block->parameterType();
+                outInfo.defaultValue = base::Variant(block->dataType(), block->dataValue());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void MaterialGraph::queryMatadata(MaterialTemplateMetadata& outMetadata) const
+    {
+        if (const auto* outputBlock = m_graph->findOutputBlock())
+            outputBlock->resolveMetadata(outMetadata);
+    }
+
+    void MaterialGraph::queryAllParameterInfos(base::Array<MaterialTemplateParamInfo>& outParams) const
+    {
+        base::Array<MaterialTemplateParamInfo> parameters;
+        outParams.reserve(m_graph->parameters().size());
+
+        for (const auto& block : m_graph->parameters())
+        {
+            if (block->name() && block->dataType())
+            {
+                auto& outInfo = outParams.emplaceBack();
+                outInfo.name = block->name();
+                outInfo.category = block->category() ? block->category() : "Material parameters"_id;
+                outInfo.type = block->dataType();
+                outInfo.parameterType = block->parameterType();
+                outInfo.defaultValue = base::Variant(block->dataType(), block->dataValue());
+            }
+        }
+    }
+
+    void MaterialGraph::listParameters(base::rtti::DataViewInfo& outInfo) const
+    {
+        for (const auto& block : m_graph->parameters())
+        {
+            if (block->name() && block->dataType())
+            {
+                auto& memberInfo = outInfo.members.emplaceBack();
+                memberInfo.name = block->name();
+                memberInfo.category = block->category() ? block->category() : "Material parameters"_id;
+                memberInfo.type = block->dataType();
+            }
+        }
+    }
+
+    base::RefPtr<IMaterialTemplateDynamicCompiler> MaterialGraph::queryDynamicCompiler() const
+    {
+        // copy the graph
+        /*auto graphCopy = base::rtti_cast<MaterialGraphContainer>(m_graph->clone());
+        DEBUG_CHECK_EX(graphCopy, "Failed to make a copy of source graph");
+        if (!graphCopy)
+            return nullptr;*/
+
+        // create a version of material template that supports runtime compilation from the source graph
+        return base::RefNew<PreviewGraphTechniqueCompiler>(m_graph);
     }
 
     //---

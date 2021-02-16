@@ -30,7 +30,7 @@ namespace game
             , m_planeSize(10.0f)
         {
             if (m_planeMesh)
-                m_planeSize = planeMesh.acquire()->bounds().size().x;
+                m_planeSize = planeMesh.load()->bounds().size().x;
         }
 
         void PlaneGround::ensureGroundUnder(float x, float y)
@@ -90,7 +90,7 @@ namespace game
                 node->m_entityTemplate = base::RefNew<base::ObjectIndirectTemplate>();
                 node->m_entityTemplate->placement(placement);
                 node->m_entityTemplate->templateClass(game::MeshEntity::GetStaticClass());
-                node->m_entityTemplate->writeProperty("mesh"_id, rendering::MeshAsyncRef(mesh.key()));
+                node->m_entityTemplate->writeProperty("mesh"_id, rendering::MeshAsyncRef(mesh.path()));
                 node->m_entityTemplate->writeProperty("color"_id, color);
             }
 

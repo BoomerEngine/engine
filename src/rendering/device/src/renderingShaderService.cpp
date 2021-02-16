@@ -131,8 +131,8 @@ namespace rendering
         auto ret = m_runtimeCompiler->compileCode(code, defines, dependencies);
         if (ret)
         {
-            auto lock = CreateLock(m_loadedShadersLock);
-            m_loadedShaders[hash] = ret;
+            //auto lock = CreateLock(m_loadedShadersLock);
+            //m_loadedShaders[hash] = ret;
         }
         
         return ret;

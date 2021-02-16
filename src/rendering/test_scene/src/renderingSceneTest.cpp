@@ -46,7 +46,7 @@ namespace rendering
 
         base::image::ImagePtr ISceneTest::loadImage(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadImageFromDepotPath("/engine/tests/textures/{}", assetFile));
+            auto imagePtr = base::LoadImageFromDepotPath(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
@@ -58,7 +58,7 @@ namespace rendering
 
         base::FontPtr ISceneTest::loadFont(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadFontFromDepotPath((base::TempString("/engine/interface/fonts/{}", assetFile));
+            auto imagePtr = base::LoadFontFromDepotPath(base::TempString("/engine/interface/fonts/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load font '{}'", assetFile));

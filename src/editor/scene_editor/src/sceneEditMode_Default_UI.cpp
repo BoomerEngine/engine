@@ -1335,7 +1335,7 @@ namespace ed
                 HashSet<res::ResourcePath> localPrefabEntries;
                 for (const auto& info : entityNode->localPrefabs())
                 {
-                    if (const auto& path = info.prefab.key().path())
+                    if (const auto& path = info.prefab.path())
                     {
                         auto& entry = prefabEntries[path];
 

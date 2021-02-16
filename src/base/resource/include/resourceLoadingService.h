@@ -29,40 +29,40 @@ namespace base
             //--
 
             /// created resource loader
-            INLINE const RefPtr<IResourceLoader>& loader() const { return m_resourceLoader; }
+            INLINE ResourceLoader* loader() const { return m_resourceLoader; }
 
             //--
 
             /// load resource from specified path and of specified class (can be subclass)
             /// NOTE: this will yield the current job until the resource is loaded
-            CAN_YIELD BaseReference loadResource(const ResourceKey& key);
+            CAN_YIELD ResourcePtr loadResource(const ResourcePath& key);
 
             /// nice helper for async loading of resources if the resource exists it's returned right away without any extra fibers created (it's the major performance win)
             /// if resource does not exist it's queued for loading and internal fiber is created to service it
             /// NOTE: if the resource exists at the moment of the call the callback function is called right away
-            void loadResourceAsync(const ResourceKey& key, const std::function<void(const BaseReference&)>& funcLoaded);
+            void loadResourceAsync(const ResourcePath& path, const std::function<void(const ResourcePtr&)>& funcLoaded);
 
             //--
 
             /// check if resource is in use
-            bool acquireLoadedResource(const ResourceKey& key, ResourcePtr& outLoadedPtr);
+            bool acquireLoadedResource(const ResourcePath& path, ResourcePtr& outLoadedPtr);
 
         protected:
             virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
             virtual void onShutdownService() override final;
             virtual void onSyncUpdate() override final;
 
-            RefPtr<IResourceLoader> m_resourceLoader;
+            RefPtr<ResourceLoader> m_resourceLoader;
 
             //---
 
             struct AsyncLoadingJob : public IReferencable
             {
-                BaseReference m_loadedResource;
+                ResourcePtr m_loadedResource;
                 fibers::WaitCounter m_signal;
             };
 
-            HashMap<ResourceKey, RefWeakPtr<AsyncLoadingJob>> m_asyncLoadingJobsMap;
+            HashMap<ResourcePath, RefWeakPtr<AsyncLoadingJob>> m_asyncLoadingJobsMap;
             SpinLock m_asyncLoadingJobsMapLock;
 
             //---
@@ -70,19 +70,19 @@ namespace base
             struct RetainedFile
             {
                 NativeTimePoint m_expiration;
-                ResourceHandle m_ptr;
+                ResourcePtr m_ptr;
             };
 
             Queue<RetainedFile> m_retainedFiles;
             SpinLock m_retainedFilesLock;
 
-            void addRetainedFile(const ResourceHandle& file);
+            void addRetainedFile(const ResourcePtr& file);
             void releaseRetainedFiles();
 
             //--
         };
 
-        //---
+        //--
 
     } // res
 } // base

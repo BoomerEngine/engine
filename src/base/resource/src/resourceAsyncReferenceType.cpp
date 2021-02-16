@@ -108,19 +108,19 @@ namespace base
         void ResourceAsyncRefType::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
         {
             auto& ptr = *(res::BaseAsyncReference*) data;
-            file.writeResourceReference(ptr.key().path().view(), ptr.key().cls(), true);
+            file.writeResourceReference(ptr.path().view(), m_resourceClass, true);
         }
 
         void ResourceAsyncRefType::readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
         {
-            res::ResourceKey loadedKey;
+            res::ResourcePath loadedKey;
 
             const auto* resData = file.readResource();
             if (resData && resData->path)
             {
                 const auto resourceClass = resData->type.cast<res::IResource>();
                 if (resourceClass && resourceClass->is(m_resourceClass))
-                    loadedKey = res::ResourceKey(res::ResourcePath(resData->path), resourceClass);
+                    loadedKey = res::ResourcePath(resData->path);
             }
 
             *(res::BaseAsyncReference*)data = loadedKey;
@@ -130,16 +130,7 @@ namespace base
         {
             auto& ptr = *(const res::BaseAsyncReference*) data;
             if (!ptr.empty())
-            {
-                const auto fileExt = ptr.key().path().extension();
-                const auto classByExtension = IResource::FindResourceClassByExtension(fileExt);
-
-                node.writeAttribute("path", ptr.key().path().view());
-
-                // save extension only if we can't figure it out from data
-                if (m_resourceClass != classByExtension || ptr.key().cls() != classByExtension)
-                    node.writeAttribute("class", ptr.key().cls()->name().view());
-            }
+                node.writeAttribute("path", ptr.path().view());
         }
 
         void ResourceAsyncRefType::readXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
@@ -148,38 +139,9 @@ namespace base
 
             const auto path = node.attribute("path");
             if (path.empty())
-            {
                 ptr = res::BaseAsyncReference();
-            }
             else
-            {
-                auto resourceClass = m_resourceClass;
-
-                const auto className = node.attribute("class");
-                if (className)
-                {
-                    resourceClass = RTTI::GetInstance().findClass(StringID::Find(className)).cast<IResource>();
-                    if (!resourceClass)
-                    {
-                        TRACE_WARNING("Unknown class '{}' used in async resource reference to '{}' at {}", className, path, typeContext);
-                    }
-                }
-
-                if (!resourceClass)
-                {
-                    const auto fileExt = path.afterLastOrFull("/").afterFirst(".");
-                    resourceClass = IResource::FindResourceClassByExtension(fileExt);
-                }
-
-                if (resourceClass)
-                {
-                    ptr = res::BaseAsyncReference(res::ResourceKey(path, resourceClass));
-                }
-                else
-                {
-                    TRACE_WARNING("Unable to determine resource class in async resource reference to '{}' at {}", path, typeContext);
-                }
-            }
+                ptr = res::BaseAsyncReference(path);
         }
 
         Type ResourceAsyncRefType::ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem)

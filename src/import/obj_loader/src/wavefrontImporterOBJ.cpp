@@ -15,7 +15,6 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/io/include/ioSystem.h"
 #include "base/app/include/localServiceContainer.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceLoader.h"
 #include "base/containers/include/inplaceArray.h"
@@ -893,10 +892,7 @@ namespace wavefront
                 TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
 
                 auto ret = base::RefNew<rendering::MaterialInstance>();
-
-                base::res::BaseReference baseMaterialRef(base::res::ResourceKey(base::res::ResourcePath(materialDepotPath), rendering::MaterialInstance::GetStaticClass()));
-                ret->baseMaterial(baseMaterialRef.cast<rendering::MaterialInstance>());
-
+                ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(materialDepotPath)));
                 return ret;
             }
         }
@@ -914,9 +910,7 @@ namespace wavefront
 
                     auto ret = base::RefNew<rendering::MaterialInstance>();
 
-                    base::res::BaseReference baseMaterialRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), rendering::MaterialInstance::GetStaticClass()));
-                    ret->baseMaterial(baseMaterialRef.cast<rendering::MaterialInstance>());
-
+                    ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(depotPath)));
                     return ret;
                 }
             }
@@ -956,9 +950,7 @@ namespace wavefront
 
                     // build a unloaded material reference (so it can be saved)
                     auto ret = base::RefNew<rendering::MaterialInstance>();
-
-                    base::res::BaseReference materialRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), rendering::MaterialInstance::GetStaticClass()));
-                    ret->baseMaterial(materialRef.cast<rendering::MaterialInstance>());
+                    ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(depotPath)));
                     return ret;
                 }
                 

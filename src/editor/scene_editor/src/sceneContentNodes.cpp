@@ -1052,7 +1052,7 @@ namespace ed
         if (!prefabEntry.enabled)
             return;
 
-        auto loadedPrefab = prefabEntry.prefab.acquire();
+        auto loadedPrefab = prefabEntry.prefab.load();
         if (!loadedPrefab)
             return;
 

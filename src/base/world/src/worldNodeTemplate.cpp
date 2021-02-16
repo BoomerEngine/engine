@@ -206,7 +206,7 @@ namespace base
             if (!prefabEntry.enabled)
                 return;
 
-            auto loadedPrefab = prefabEntry.prefab.acquire();
+            auto loadedPrefab = prefabEntry.prefab.load();
             if (!loadedPrefab)
                 return;
 
@@ -357,7 +357,7 @@ namespace base
 
         static const int MAX_DEPTH = 10;
 
-        RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, res::IResourceLoader* loader)
+        RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, res::ResourceLoader* loader)
         {
             auto ret = RefNew<HierarchyEntity>();
             ret->id = path.toID();
@@ -461,7 +461,7 @@ namespace base
             return ret;
         }
 
-        RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::IResourceLoader* loader)
+        RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::ResourceLoader* loader)
         {
             InplaceArray<const NodeTemplate*, 10> nodeTemplates;
             if (rootTemplateNode)

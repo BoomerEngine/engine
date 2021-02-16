@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resource.h"
 #include "base/resource_compiler/include/importSourceAsset.h"
 #include "base/math/include/vector3.h"

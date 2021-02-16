@@ -519,9 +519,9 @@ namespace ed
 
     //--
 
-    /*bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::depot::RenameConfiguration& outSettings)
+    bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::res::RenameConfiguration& outSettings)
     {
-        auto* file = rtti_cast<ManagedFile>(item);
+        /*auto* file = rtti_cast<ManagedFile>(item);
         auto* dir = rtti_cast<ManagedDirectory>(item);
 
         auto window = base::RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, file ? "Rename file" : "Rename directory");
@@ -727,8 +727,9 @@ namespace ed
             };
         }
 
-        return window->runModal(owner, editText);
-    }*/
+        return window->runModal(owner, editText);*/
+        return false;
+    }
 
     //--
 

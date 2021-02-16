@@ -54,7 +54,7 @@ namespace base
             void invalidateRuntimeVersion();
 
             // Bind source loader data for this resource
-            void bindToLoader(IResourceLoader* loader, const ResourcePath& loadPath);
+            void bindToLoader(ResourceLoader* loader, const ResourcePath& loadPath);
 
             //---
 
@@ -95,7 +95,7 @@ namespace base
 
         private:
             ResourcePath m_path; // path we loaded this resource from
-            RefWeakPtr<IResourceLoader> m_loader; // loader used to load this resource, NOTE: not set if never loaded
+            RefWeakPtr<ResourceLoader> m_loader; // loader used to load this resource, NOTE: not set if never loaded
 
             ResourceUniqueID m_runtimeUniqueId; // resource runtime unique ID, can be used to index maps instead of pointer
             ResourceRuntimeVersion m_runtimeVersion; // internal runtime version of the resource, can be observed and a callback can be attached

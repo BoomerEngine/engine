@@ -28,25 +28,28 @@ namespace base
 
         BaseReference::BaseReference(const BaseReference& other)
             : m_handle(other.m_handle)
-            , m_key(other.m_key)
+            , m_path(other.m_path)
         {
         }
 
-        BaseReference::BaseReference(const ResourceKey& key)
-            : m_key(key)
+        BaseReference::BaseReference(const ResourcePath& path)
+            : m_path(path)
         {}
 
         BaseReference::BaseReference(const ResourcePtr& ptr)
         {
-            m_handle = ptr;
+            if (ptr)
+            {
+                DEBUG_CHECK_RETURN_EX(ptr->path(), "Unable to setup resource reference with non file based resource");
 
-            if (ptr && ptr->path())
-                m_key = ResourceKey(ptr->path(), ptr->cls().cast<IResource>());
+                m_handle = ptr;
+                m_path = ptr->path();
+            }
         }
 
         BaseReference::BaseReference(BaseReference&& other)
             : m_handle(std::move(other.m_handle))
-            , m_key(std::move(other.m_key))
+            , m_path(std::move(other.m_path))
         {
             other.reset();
         }
@@ -60,7 +63,7 @@ namespace base
             if (this != &other)
             {
                 m_handle = other.m_handle;
-                m_key = other.m_key;
+                m_path = other.m_path;
             }
 
             return *this;
@@ -71,7 +74,7 @@ namespace base
             if (this != &other)
             {
                 m_handle = std::move(other.m_handle);
-                m_key = std::move(other.m_key);
+                m_path = std::move(other.m_path);
                 other.reset();
             }
 
@@ -81,17 +84,40 @@ namespace base
         void BaseReference::reset()
         {
             m_handle.reset();
-            m_key = ResourceKey();
+            m_path = ResourcePath();
         }
 
         void BaseReference::set(const ResourceHandle& ptr)
         {
-            m_handle = ptr;
-
-            if (ptr && ptr->path()) 
-                m_key = ResourceKey(ptr->path(), ptr->cls().cast<IResource>());
+            if (ptr)
+            {
+                DEBUG_CHECK_RETURN_EX(ptr->path(), "Unable to setup resource reference with non file based resource");
+                m_handle = ptr;
+                m_path = ptr->path();
+            }
             else
-                m_key = ResourceKey();
+            {
+                m_handle.reset();
+                m_path = ResourcePath();
+            }
+        }
+
+        ResourceHandle BaseReference::load() const
+        {
+            if (m_handle)
+            {
+                DEBUG_CHECK_EX(m_handle->path() == m_path, "Mismatched resource path");
+                return m_handle;
+            }
+
+            if (!m_path)
+                return nullptr;
+
+            auto loaded = LoadResource(m_path);
+            if (loaded)
+                const_cast<BaseReference*>(this)->m_handle = loaded;
+
+            return loaded;
         }
 
         const ResourceHandle& BaseReference::EMPTY_HANDLE()
@@ -102,10 +128,7 @@ namespace base
 
         bool BaseReference::operator==(const BaseReference& other) const
         {
-            if (key() != other.key())
-                return false;
-
-            return m_handle == other.m_handle;
+            return m_path == other.m_path;
         }
 
         bool BaseReference::operator!=(const BaseReference& other) const
@@ -115,11 +138,7 @@ namespace base
 
         void BaseReference::print(IFormatStream& f) const
         {
-            const auto k = key();
-            if (k)
-                f << k;
-            else
-                f << "null";
+            f << m_path;
         }
 
         //--

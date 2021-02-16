@@ -26,7 +26,7 @@
 #include "base/ui/include/uiDragDrop.h"
 #include "base/ui/include/uiCheckBox.h"
 
-#include "base/resource/include/resourceKey.h"
+#include "base/resource/include/resourcePath.h"
 #include "base/resource/include/resourceLoadingService.h"
 #include "base/object/include/dataViewNative.h"
 #include "base/object/include/rttiDataView.h"
@@ -64,7 +64,11 @@ namespace ed
 
                 bool hasTextureOverrides = false;
                 bool hasParamOverrides = false;
-                for (const auto& param : materialTemplate->parameters())
+
+                base::InplaceArray<rendering::MaterialTemplateParamInfo, 30> params;
+                materialTemplate->queryAllParameterInfos(params);
+
+                for (const auto& param : params)
                 {
                     if (m_data->checkParameterOverride(param.name))
                     {

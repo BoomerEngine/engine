@@ -26,7 +26,7 @@ namespace base
         m_loader = GetService<res::LoadingService>()->loader();
     }
 
-    ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler(res::IResourceLoader* loader)
+    ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler(res::ResourceLoader* loader)
         : m_loader(loader)
     {
     }
@@ -150,9 +150,9 @@ namespace base
                     else
                     {
                         if (m_loader)
-                            *outRef = m_loader->loadResource(asyncRef.key());
+                            *outRef = m_loader->loadResource(asyncRef.path());
                         else
-                            *outRef = res::BaseReference(asyncRef.key());
+                            *outRef = res::BaseReference(asyncRef.path());
                     }
 
                     return true;

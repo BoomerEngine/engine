@@ -47,26 +47,26 @@ namespace rendering
 
         base::image::ImagePtr ICanvasTest::loadImage(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadFontFromDepotPath(base::TempString("/engine/test/textures/{}", assetFile));
+            auto imagePtr = base::LoadImageFromDepotPath(base::TempString("/engine/tests/textures/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load image '{}'", assetFile));
                 return m_defaultImage;
             }
 
-            return imagePtr.acquire();
+            return imagePtr;
         }
 
         base::FontPtr ICanvasTest::loadFont(base::StringView assetFile)
         {
-            auto imagePtr = base::LoadResource<base::font::Font>(base::TempString("/engine/interface/fonts/{}", assetFile));
+            auto imagePtr = base::LoadFontFromDepotPath(base::TempString("/engine/interface/fonts/{}", assetFile));
             if (!imagePtr)
             {
                 reportError(base::TempString("Failed to load font '{}'", assetFile));
                 return base::RefNew<base::font::Font>();
             }
 
-            return imagePtr.acquire();
+            return imagePtr;
         }
 
         

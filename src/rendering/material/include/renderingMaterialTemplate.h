@@ -90,17 +90,7 @@ namespace rendering
 
     public:
         MaterialTemplate();
-        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::StringBuf& contextPath);
-        MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques, const base::StringBuf& contextPath); // soon
         virtual ~MaterialTemplate();
-
-        ///--
-
-        /// get the material template metadata
-        INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
-
-        /// get list of template parameters
-        INLINE const base::Array<MaterialTemplateParamInfo>& parameters() const { return m_parameters; }
 
         //----
 
@@ -115,7 +105,6 @@ namespace rendering
         virtual bool readParameter(base::StringID name, void* data, base::Type type) const override final;
         virtual bool readBaseParameter(base::StringID name, void* data, base::Type type) const override final;
 
-        virtual const void* findParameterDataInternal(base::StringID name, base::Type& outType) const override final; // NOTE: returns pointer to the value inside the material block that defines the value
         virtual const void* findBaseParameterDataInternal(base::StringID name, base::Type& outType) const override final;
 
         // IObject - extension of object property model that allows to see the template parameters
@@ -124,11 +113,19 @@ namespace rendering
 
         ///---
 
-        // find info about material parameters
-        const MaterialTemplateParamInfo* findParameterInfo(base::StringID name) const;
-
         // list material parameters (for data view)
-        void listParameters(base::rtti::DataViewInfo & outInfo) const;
+        virtual void listParameters(base::rtti::DataViewInfo& outInfo) const = 0;
+
+        // find info about material parameters
+        virtual bool queryParameterInfo(base::StringID name, MaterialTemplateParamInfo& outInfo) const = 0;
+
+        /// get the material template metadata
+        virtual void queryMatadata(MaterialTemplateMetadata& outMetadata) const = 0;
+
+        /// get list of template parameters
+        virtual void queryAllParameterInfos(base::Array<MaterialTemplateParamInfo>& outParams) const = 0;
+
+        //--
 
         // describe parameter data
         base::DataViewResult describeParameterView(base::StringView paramName, base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const;
@@ -148,20 +145,9 @@ namespace rendering
 
         //--
 
-        MaterialTemplateMetadata m_metadata;
-        base::Array<MaterialTemplateParamInfo> m_parameters;
-
-        //--
-
-        base::Array<MaterialPrecompiledStaticTechnique> m_precompiledTechniques;
-		base::RefPtr<IMaterialTemplateDynamicCompiler> m_compiler;
+        virtual base::RefPtr<IMaterialTemplateDynamicCompiler> queryDynamicCompiler() const = 0;
 
         base::StringBuf m_contextPath;
-
-        //--
-
-        void rebuildParameterMap();
-        base::HashMap<base::StringID, uint16_t> m_parametersMap; // NOTE: indices in m_parameters
 
         //--
     };

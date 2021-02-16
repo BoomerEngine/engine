@@ -12,7 +12,6 @@
 #include "renderingMeshCookerChunks.h"
 #include "renderingMeshImportConfig.h"
 
-#include "base/resource/include/resourceCookingInterface.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "rendering/material/include/renderingMaterialTemplate.h"
 #include "rendering/texture/include/renderingTexture.h"

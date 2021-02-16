@@ -17,7 +17,7 @@ namespace base
     
     namespace res
     {
-        class IResourceLoader;
+        class ResourceLoader;
     } // res
 
     namespace rtti
@@ -66,7 +66,7 @@ namespace base
             IObject* parentObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
             IObject* directObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
 
-            res::IResourceLoader* resourceLoader = nullptr; // loader for resources
+            res::ResourceLoader* resourceLoader = nullptr; // loader for resources
             base::StringBuf resourceBasePath; // mount point
 
             void print(IFormatStream& f) const; // print context name

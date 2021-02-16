@@ -26,7 +26,7 @@ namespace base
             ClassType loadSpecificClass;
 
             // resource loader to use to load any other dependencies, if not specified the resources will not be loaded (although the keys will remain valid)
-            IResourceLoader* resourceLoader = nullptr;
+            ResourceLoader* resourceLoader = nullptr;
 
             // load path of this resource
             ResourcePath resourceLoadPath;
@@ -56,7 +56,8 @@ namespace base
         // file loading dependency
         struct BASE_RESOURCE_API FileLoadingDependency
         {
-            ResourceKey key;
+            ResourcePath path;
+            SpecificClassType<IResource> cls;
             bool loaded = true;
 
             FileLoadingDependency();

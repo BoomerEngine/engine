@@ -570,7 +570,7 @@ namespace base
                             return decodingError(field, "ResourceRef path resolving error");
 
                         // TODO:
-                        //value.set(res::ResourceKey(path, resourceClass));
+                        //value.set(path);
                     }
                     else
                     {

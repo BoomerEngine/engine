@@ -33,7 +33,7 @@ namespace ed
         //--
 
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
-        virtual const image::ImageRef& typeThumbnail() const override;
+        virtual const image::Image* typeThumbnail() const override;
 
         //---
 

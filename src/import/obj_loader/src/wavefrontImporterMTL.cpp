@@ -140,9 +140,11 @@ namespace wavefront
                     for (const auto paramNameStr : possibleParamNames)
                     {
                         const auto paramName = base::StringID::Find(paramNameStr);
-                        if (const auto* materialParam = knownTemplate->findParameterInfo(paramName))
+
+                        rendering::MaterialTemplateParamInfo materialParam;
+                        if (knownTemplate->queryParameterInfo(paramName, materialParam))
                         {
-                            if (materialParam->type == TYPE_OF(textureRef))
+                            if (materialParam.type == TYPE_OF(textureRef))
                             {
                                 return WriteTexture(textureRef, paramName, outParams);
                             }
@@ -200,7 +202,7 @@ namespace wavefront
         }
 
         // we must have a valid template
-        const auto baseTemplate = baseMaterial.acquire() ? baseMaterial.acquire()->resolveTemplate() : nullptr;
+        const auto baseTemplate = baseMaterial.load() ? baseMaterial.load()->resolveTemplate() : nullptr;
         if (!baseTemplate)
         {
             TRACE_ERROR("Could not resolve base template for material '{}'", sourceMaterial->m_name);

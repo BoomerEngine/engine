@@ -96,7 +96,7 @@ namespace game
 
     rendering::scene::ObjectProxyPtr MeshEntity::handleCreateProxy(rendering::scene::Scene* scene) const
     {
-        if (const auto meshData = m_mesh.acquire())
+        if (const auto meshData = m_mesh.load())
         {
 			rendering::scene::ObjectProxyMesh::Setup setup;
 			setup.forcedLodLevel = m_forceDetailLevel;
@@ -125,7 +125,7 @@ namespace game
 
     base::Box MeshEntity::calcBounds() const
     {
-        if (auto mesh = m_mesh.acquire())
+        if (auto mesh = m_mesh.load())
         {
             if (!mesh->bounds().empty())
             {

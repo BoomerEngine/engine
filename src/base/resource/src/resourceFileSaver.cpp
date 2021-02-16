@@ -418,7 +418,7 @@ namespace base
 
     //--
 
-    void ExtractUsedResources(const IObject* object, HashMap<res::ResourceKey, uint32_t>& outResourceCounts)
+    void ExtractUsedResources(const IObject* object, HashMap<res::ResourcePath, uint32_t>& outResourceCounts)
     {
         if (object)
         {
@@ -434,7 +434,7 @@ namespace base
 
                 for (const auto& resourceRef : mappedReferences.mappedResources.keys())
                 {
-                    const auto key = res::ResourceKey(res::ResourcePath(resourceRef.resourcePath), resourceRef.resourceType.cast<res::IResource>());
+                    const auto key = res::ResourcePath(resourceRef.resourcePath);
                     outResourceCounts[key] += 1;
                 }
             }

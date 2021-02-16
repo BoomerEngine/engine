@@ -50,19 +50,19 @@ namespace base
 
             if (auto key = loadingService->loader()->eventKey())
             {
-                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](res::ResourceKey data)
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](res::ResourcePath data)
                 {
                     auto lock = base::CreateLock(m_fileMapLock);
                     updateStatusNoLock(data, FileStatusMode::Loading);
                 };
 
-                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](res::ResourceKey data)
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](res::ResourcePath data)
                 {
                     auto lock = base::CreateLock(m_fileMapLock);
                     updateStatusNoLock(data, FileStatusMode::Failed);
                 };
 
-                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourceKey data)
+                m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourcePath data)
                 {
                     auto lock = base::CreateLock(m_fileMapLock);
                     updateStatusNoLock(data, FileStatusMode::Unloaded);
@@ -148,9 +148,9 @@ namespace base
                         }
 
                         ImGui::SameLine(100);
-                        ImGui::Text(TempString("{}", info->key.path().view()));
-                        ImGui::SameLine();
-                        ImGui::TextColored(ImColor(base::Color::DARKGRAY), base::TempString("({})", info->key.cls()->name()));
+                        ImGui::Text(TempString("{}", info->key.view()));
+                        //ImGui::SameLine();
+                        //ImGui::TextColored(ImColor(base::Color::DARKGRAY), base::TempString("({})", info->key.cls()->name()));
                     }
 
                     ImGui::ListBoxFooter();
@@ -174,7 +174,7 @@ namespace base
             Unloaded,
         };
 
-        void updateStatusNoLock(const res::ResourceKey& key, FileStatusMode status)
+        void updateStatusNoLock(const res::ResourcePath& key, FileStatusMode status)
         {
             auto entry  = m_fileMap[key];
             if (!entry)
@@ -196,12 +196,12 @@ namespace base
             RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
 
         public:
-            base::res::ResourceKey key;
+            base::res::ResourcePath key;
             FileStatusMode lastStatus;
             base::NativeTimePoint lastStatusTimestamp;
         };
 
-        base::HashMap<base::res::ResourceKey, FileInfo*> m_fileMap;
+        base::HashMap<base::res::ResourcePath, FileInfo*> m_fileMap;
         base::Array<const FileInfo*> m_fileListSorted;
         bool m_fileListSortedInvalid;
         base::Mutex m_fileMapLock;

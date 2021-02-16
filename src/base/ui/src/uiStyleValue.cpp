@@ -369,7 +369,8 @@ namespace ui
         {
             base::CRC32 crc;
             crc << name;
-            crc << base::res::ResourceKey::CalcHash(image.key());
+            if (image)
+                crc << image->path().view();
             return crc;
         }
 

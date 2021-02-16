@@ -752,7 +752,7 @@ namespace wavefront
                 }
 
                 // add follow-up
-                importer.followupImport(importer.queryImportPath(), mesh->exportPath.key().path().view(), meshImportConfig);
+                importer.followupImport(importer.queryImportPath(), mesh->exportPath.path().view(), meshImportConfig);
             }
         }
 

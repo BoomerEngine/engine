@@ -50,8 +50,7 @@ namespace game
     {
         TRACE_INFO("Started loading compiled scene '{}'", m_path);
 
-        auto content = LoadResource<base::world::CompiledScene>(m_path.view()).acquire();
-        if (content)
+        if (auto content = LoadResource<base::world::CompiledScene>(m_path.view()))
         {
             if (auto system = m_world->system<base::world::StreamingSystem>())
             {

@@ -94,7 +94,7 @@ namespace rendering
 				rendering::TextureRef textureRef;
 				source.readParameterTyped(entry.name, textureRef);
 
-				auto texture = textureRef.acquire();
+				auto texture = textureRef.load();
 				auto textureView = texture ? texture->view() : nullptr;
 
 				if (!textureView)

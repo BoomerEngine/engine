@@ -162,7 +162,7 @@ namespace ed
                 case MaterialPreviewShape::Sphere: mesh = resBoxSphere.loadAndGet(); break;
                 case MaterialPreviewShape::Cylinder: mesh = resBoxCylinder.loadAndGet(); break;
                 case MaterialPreviewShape::Plane: mesh = resBoxQuad.loadAndGet(); break;
-                case MaterialPreviewShape::Custom: mesh = m_previewSettings.customMesh.acquire(); break;
+                case MaterialPreviewShape::Custom: mesh = m_previewSettings.customMesh.load(); break;
                 }
 
                 if (mesh)

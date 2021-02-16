@@ -54,7 +54,7 @@ namespace ed
     {
     }
 
-    const image::ImageRef& ManagedFile::typeThumbnail() const
+    const image::Image* ManagedFile::typeThumbnail() const
     {
         return m_fileFormat->thumbnail();
     }

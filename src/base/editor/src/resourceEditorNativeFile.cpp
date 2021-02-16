@@ -94,7 +94,7 @@ namespace ed
             return false;
 
         auto loadingService = base::GetService<base::res::LoadingService>();
-        auto resoureKey = res::ResourceKey(res::ResourcePath(nativeFile()->depotPath()), nativeFile()->resourceClass());
+        auto resoureKey = res::ResourcePath(nativeFile()->depotPath());
         if (!loadingService->loadResource(resoureKey))
         {
             TRACE_WARNING("Reloading of '{}' impossible after save", nativeFile()->depotPath());

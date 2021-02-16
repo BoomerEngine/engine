@@ -70,7 +70,7 @@ namespace base
                         cur->reload(currentResource, newResource);
                 }
 
-                INLINE void loader(IResourceLoader* loader)
+                INLINE void loader(ResourceLoader* loader)
                 {
                     if (m_loader != loader)
                     {
@@ -84,7 +84,7 @@ namespace base
                     }
                 }
 
-                INLINE ResourceHandle load(ClassType resourceClass, StringView path)
+                INLINE ResourceHandle load(StringView path)
                 {
                     ASSERT(!path.empty());
 
@@ -94,14 +94,13 @@ namespace base
                         return nullptr;
                     }
 
-                    ResourceKey key(path, resourceClass.cast<IResource>());
-                    return m_loader->loadResource(key);
+                    return m_loader->loadResource(path);
                 }
 
             private:
                 SpinLock m_lock;
                 IStaticResource* m_listHead;
-                IResourceLoader* m_loader;
+                ResourceLoader* m_loader;
 
                 virtual void deinit() override
                 {
@@ -156,7 +155,7 @@ namespace base
                     return m_handle;
             }
 
-            auto handle = prv::StaticResourceRegistry::GetInstance().load(resourceClass(), m_path);
+            auto handle = prv::StaticResourceRegistry::GetInstance().load(m_path);
 
             if (handle && m_cached)
             {
@@ -167,7 +166,7 @@ namespace base
             return handle;
         }
 
-        void IStaticResource::BindGlobalLoader(IResourceLoader* loader)
+        void IStaticResource::BindGlobalLoader(ResourceLoader* loader)
         {
             prv::StaticResourceRegistry::GetInstance().loader(loader);
         }

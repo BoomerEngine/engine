@@ -14,8 +14,6 @@
 #include "base/xml/include/xmlDocument.h"
 #include "base/xml/include/xmlUtils.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
-#include "base/resource/include/resourceCooker.h"
 #include "base/resource/include/resourceTags.h"
 
 namespace base
@@ -49,12 +47,11 @@ namespace base
             base::StringBuf m_path;
         };
 
-        // a simple raw cooker for the XML files
-        class XMLRawCooker : public base::res::IResourceCooker
+        /*// a simple raw cooker for the XML files
+        class XMLRawCooker : public base::res::
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(XMLRawCooker, base::res::IResourceCooker);
+            RTTI_DECLARE_VIRTUAL_CLASS(XMLRawCooker, base::res::);
 
-            virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
             {
                 // load the xml content
                 const auto& xmlFilePath  = cooker.queryResourcePath();
@@ -79,11 +76,7 @@ namespace base
                 return base::RefNew<XMLData>(document);
             }
         };
-
-        RTTI_BEGIN_TYPE_CLASS(XMLRawCooker);
-            RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<XMLData>();
-            RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("xml");
-        RTTI_END_TYPE();
+        */
 
         ///--
 

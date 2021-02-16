@@ -138,7 +138,7 @@ namespace base
                         
                         RunFiber("LoadSector") << [loading](FIBER_FUNC)
                         {
-                            loading->loadedData = loading->data.load<StreamingSector>().acquire();
+                            loading->loadedData = loading->data.load<StreamingSector>();
                             loading->finished = true;
                         };
                     }

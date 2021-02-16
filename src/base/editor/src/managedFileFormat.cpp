@@ -17,7 +17,6 @@
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceFactory.h"
 #include "base/resource/include/resourceTags.h"
-#include "base/resource/include/resourceCooker.h"
 #include "base/resource_compiler/include/importInterface.h"
 
 namespace ed
@@ -53,21 +52,15 @@ namespace ed
         , m_hasTypeThumbnail(false)
     {
         // enum classes
-        static InplaceArray<SpecificClassType<res::IResourceCooker>, 64> cookerClasses;
         static InplaceArray<SpecificClassType<res::IFactory>, 64> factoryClasses;
-        if (cookerClasses.empty() && factoryClasses.empty())
-        {
-            RTTI::GetInstance().enumClasses(cookerClasses);
+        if (factoryClasses.empty())
             RTTI::GetInstance().enumClasses(factoryClasses);
-        }
 
         // if the engine can read this format directly we will have a native class for it
         m_nativeResourceClass = res::IResource::FindResourceClassByExtension(extension);
         if (m_nativeResourceClass)
         {
             // create the "native" output for the file
-            auto& info = m_cookableOutputs.emplaceBack();
-            info.resoureClass = m_nativeResourceClass;
             m_description = res::IResource::GetResourceDescriptionForClass(m_nativeResourceClass);
 
             // find resource factory
@@ -96,40 +89,6 @@ namespace ed
         // TODO: move somewhere else
         if (const auto& configGroup = base::config::FindGroup(TempString("Format.{}", extension)))
             m_description = configGroup->entryValue("Description", m_description);
-
-        // look at cookers if we support this format
-        for (auto cookerClass : cookerClasses)
-        {
-            if (auto sourceFormatData  = cookerClass->findMetadata<res::ResourceSourceFormatMetadata>())
-            {
-                bool hasExtension = false;
-                for (auto& sourceExt : sourceFormatData->extensions())
-                {
-                    if (0 == extension.caseCmp(sourceExt))
-                    {
-                        hasExtension = true;
-                        break;
-                    }
-                }
-
-                if (hasExtension)
-                {
-                    if (auto sourceCookedClass  = cookerClass->findMetadata<res::ResourceCookedClassMetadata>())
-                    {
-                        for (auto outCookedClass : sourceCookedClass->classList())
-                        {
-                            auto& info = m_cookableOutputs.emplaceBack();
-                            info.resoureClass = outCookedClass;
-                            TRACE_SPAM("Format '{}' is cookable into '{}' via direct cooker '{}'", m_extension, outCookedClass->name(), cookerClass->name());
-                        }
-                    }
-                }
-            }
-        }
-
-        // cooked format tags
-        for (const auto& cookedFormat : m_cookableOutputs)
-            ExtractTagFromClass(cookedFormat.resoureClass, m_tags);
 
         // debug log
         TRACE_SPAM("Registered format '{}' for extension '{}'", m_description, m_extension);
@@ -173,7 +132,7 @@ namespace ed
         }
     }
 
-    const image::ImageRef& ManagedFileFormat::thumbnail() const
+    const image::Image* ManagedFileFormat::thumbnail() const
     {
         // load thumbnail for this type file
         if (!m_thumbnailLoadAttempted)
@@ -200,10 +159,6 @@ namespace ed
     {
         if (m_nativeResourceClass && m_nativeResourceClass == resourceClass)
             return true;
-
-        for (const auto& output : m_cookableOutputs)
-            if (output.resoureClass.is(resourceClass))
-                return true;
 
         return false;
     }

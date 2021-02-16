@@ -42,7 +42,7 @@ namespace ed
     ManagedDirectory::~ManagedDirectory()
     {}
 
-    const image::ImageRef& ManagedDirectory::typeThumbnail() const
+    const image::Image* ManagedDirectory::typeThumbnail() const
     {
         return m_directoryIcon;
     }

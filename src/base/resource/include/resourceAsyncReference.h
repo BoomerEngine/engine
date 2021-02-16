@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "resourceKey.h"
+#include "resourcePath.h"
 #include "resourceReference.h"
 
 namespace base
@@ -26,7 +26,7 @@ namespace base
             BaseAsyncReference();
             BaseAsyncReference(const BaseAsyncReference& other);
             BaseAsyncReference(BaseAsyncReference&& other);
-            BaseAsyncReference(const ResourceKey& key);
+            BaseAsyncReference(const ResourcePath& key);
             ~BaseAsyncReference();
 
             BaseAsyncReference& operator=(const BaseAsyncReference& other);
@@ -34,15 +34,15 @@ namespace base
 
             ///--
 
-            // get resource "key" -> load class + resource path
+            // get resource path bound to this reference
             // NOTE: this is not set for path-less embedded resources
-            INLINE const ResourceKey& key() const { return m_key; }
+            INLINE const ResourcePath& path() const { return m_path; }
 
             // is this a valid reference ? we need either a key or an object
-            INLINE bool valid() const { return m_key; }
+            INLINE bool valid() const { return !m_path.empty(); }
 
             // is this an empty reference ? empty reference is one without key and without object
-            INLINE bool empty() const { return !valid(); }
+            INLINE bool empty() const { return m_path.empty(); }
 
             //---
 
@@ -50,22 +50,19 @@ namespace base
             void reset();
 
             // setup reference to a given resource key
-            void set(StringView path, SpecificClassType<IResource> cls);
-
-            // setup reference to a given resource key
-            void set(const ResourceKey& key);
+            void set(const ResourcePath& key);
 
             //---
 
             // load the resource into a "loaded" reference, a custom loader can be provided 
-            BaseReference load(IResourceLoader* customLoader = nullptr) const CAN_YIELD;
+            ResourcePtr load() const CAN_YIELD;
 
             //---
 
             // load asynchronously, call the callback when loaded
             // basically a nice wrapper for a fiber job with a fast short circuit if the resource is already loaded
             // NOTE: THIS DOES NOT CHANGE THE STATE OF THE OBJECT, just calls the callback, use the ensureLoaded() to do that
-            void loadAsync(const std::function<void(const BaseReference&)>& onLoadedFunc, IResourceLoader* customLoader = nullptr) const; // <--- look here, a "const"
+            void loadAsync(const std::function<void(const BaseReference&)>& onLoadedFunc) const; // <--- look here, a "const"
 
             //--
 
@@ -76,17 +73,12 @@ namespace base
             //--
 
             // print to text
-            // for a key reference it prints: "Texture$engine/textures/lena.png"
-            // for inlined objects this just prints: "Texture"
             void print(IFormatStream& f) const;
-
-            // parse from text representation, will fail if the referenced class name does not match constrained class
-            static bool Parse(StringView txt, BaseAsyncReference& outReference, ClassType constrainedClass = nullptr);
 
             //--
 
         protected:
-            ResourceKey m_key;
+            ResourcePath m_path;
 
             static const BaseAsyncReference& EMPTY_HANDLE();
         };
@@ -104,28 +96,18 @@ namespace base
             INLINE AsyncRef& operator=(const AsyncRef<T>& other) = default;
             INLINE AsyncRef& operator=(AsyncRef<T> && other) = default;
 
-            INLINE AsyncRef(const ResourceKey& key)
-            {
-                if (key.cls() && key.cls()->is<T>())
-                    set(key);
-            }
-
             INLINE AsyncRef(const ResourcePath& path)
-                : BaseAsyncReference(ResourceKey(path, T::GetStaticClass()))
+                : BaseAsyncReference(path)
             {}
 
             INLINE bool operator==(const AsyncRef<T>& other) const { return BaseAsyncReference::operator==(other); }
             INLINE bool operator!=(const AsyncRef<T>& other) const { return BaseAsyncReference::operator!=(other); }
 
             template< typename U = T >
-            INLINE Ref<U> load(IResourceLoader* customLoader = nullptr) const CAN_YIELD
+            INLINE RefPtr<U> load() const CAN_YIELD
             {
                 static_assert(std::is_base_of<T, U>::value || std::is_base_of<U, T>::value, "Types are unrelated");
-
-                if (auto loaded = BaseAsyncReference::load(customLoader).acquire())
-                    return base::rtti_cast<U>(loaded);
-
-                return nullptr;
+                return base::rtti_cast<U>(BaseAsyncReference::load());
             }
         };
 

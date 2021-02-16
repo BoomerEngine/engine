@@ -261,7 +261,7 @@ namespace base
         //--
 
         // clone this object
-        ObjectPtr clone(const IObject* newParent = nullptr, res::IResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedObjectClass = nullptr) const;
+        ObjectPtr clone(const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedObjectClass = nullptr) const;
 
         // save this object tree to a buffer
         Buffer toBuffer() const;
@@ -269,7 +269,7 @@ namespace base
         //--
 
         // load object from buffer in memory
-        static ObjectPtr FromBuffer(const void* data, uint32_t size, res::IResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+        static ObjectPtr FromBuffer(const void* data, uint32_t size, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
         //--
 
@@ -288,9 +288,9 @@ namespace base
         //--
 
         // register clone function
-        static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, res::IResourceLoader * loader, SpecificClassType<IObject>)>& func);
+        static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, res::ResourceLoader * loader, SpecificClassType<IObject>)>& func);
         static void RegisterSerializeFunction(const std::function<Buffer(const IObject*)>& func);
-        static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, res::IResourceLoader* loader, SpecificClassType<IObject> mutatedClass)>& func);
+        static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, res::ResourceLoader* loader, SpecificClassType<IObject> mutatedClass)>& func);
 
     protected:
         INLINE IObject(const IObject&) {};

@@ -16,7 +16,6 @@
 #include "base/image/include/imageView.h"
 #include "base/image/include/imageUtils.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/font/include/font.h"

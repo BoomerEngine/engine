@@ -190,19 +190,17 @@ namespace rendering
         };
 
         /// a test mesh - group of triangles
-        class SimpleMesh : public base::res::IResource
+        class SimpleMesh : public base::IReferencable
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(SimpleMesh, base::res::IResource);
-
         public:
             base::Array<Mesh3DVertex> m_allVertices;
             base::Array<uint16_t> m_allIndices;
             base::Array<SimpleChunk> m_chunks;
 
             SimpleMesh();
-            ~SimpleMesh();
         };
 
+        extern RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path);
 
         // render mesh 
         struct SimpleRenderMesh : public base::IReferencable

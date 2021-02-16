@@ -10,7 +10,7 @@
 #include "resourceFileTables.h"
 #include "resourceFileLoader.h"
 #include "resourceLoader.h"
-#include "resourceKey.h"
+#include "resourcePath.h"
 #include "resource.h"
 
 #include "base/io/include/ioAsyncFileHandle.h"
@@ -131,10 +131,10 @@ namespace base
 
                     RunChildFiber("LoadImport") << [&entry, &context, &allLoadedSignal](FIBER_FUNC)
                     {
-                        const auto key = ResourceKey(ResourcePath(entry.path), entry.type.cast<IResource>());
-                        entry.loaded = context.resourceLoader->loadResource(key);
+                        const auto path = ResourcePath(entry.path);
+                        entry.loaded = context.resourceLoader->loadResource(path);
                         if (!entry.loaded)
-                            TRACE_WARNING("Loader: Missing reference to file '{}'", key);
+                            TRACE_WARNING("Loader: Missing reference to file '{}'", path);
 
                         Fibers::GetInstance().signalCounter(allLoadedSignal);
                     };
@@ -456,7 +456,8 @@ namespace base
                 if (const auto resourceClass = info.type.cast<IResource>())
                 {
                     auto& outEntry = outDependencies.emplaceBack();
-                    outEntry.key = ResourceKey(ResourcePath(info.path), resourceClass);
+                    outEntry.path = ResourcePath(info.path);
+                    outEntry.cls = info.type.cast<IResource>();
                     outEntry.loaded = info.loaded;
                 }
             }

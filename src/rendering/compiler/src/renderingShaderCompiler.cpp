@@ -21,7 +21,6 @@
 
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/parser/include/textFilePreprocessor.h"
 #include "base/io/include/ioSystem.h"
 

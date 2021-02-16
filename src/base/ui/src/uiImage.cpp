@@ -36,12 +36,17 @@ namespace ui
         image(iconName);
     }
 
-    Image::Image(const base::image::ImageRef& customImage)
+    Image::Image(const base::image::Image* customImage)
+    {
+        image(customImage);
+    }
+
+    void Image::image(const base::image::Image* customImage)
     {
         if (customImage)
         {
             style::ImageReference imageStyle;
-            imageStyle.image = customImage;
+            imageStyle.image = AddRef(customImage);
             customStyle("image"_id, imageStyle);
         }
         else
@@ -102,7 +107,7 @@ namespace ui
 		{
 			if (!imageStylePtr->canvasImage)
 			{
-				if (auto loadedImage = imageStylePtr->image.acquire())
+				if (auto loadedImage = imageStylePtr->image)
 				{
 					if (renderer())
 					{

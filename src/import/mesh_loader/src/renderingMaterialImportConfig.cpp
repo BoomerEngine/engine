@@ -157,8 +157,7 @@ namespace rendering
             {
                 TRACE_INFO("Found '{}' at '{}'", assetPathToTexture, depotPath);
 
-                base::res::BaseReference textureRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), StaticTexture::GetStaticClass()));
-                return textureRef.cast<StaticTexture>();
+                return rendering::TextureRef(base::res::ResourcePath(depotPath));
             }
         }
 
@@ -178,8 +177,7 @@ namespace rendering
                 importer.followupImport(foundTexturePath, depotPath);
 
                 // build a unloaded texture reference (so it can be saved)
-                base::res::BaseReference textureRef(base::res::ResourceKey(base::res::ResourcePath(depotPath), StaticTexture::GetStaticClass()));
-                return textureRef.cast<StaticTexture>();
+                return rendering::TextureRef(base::res::ResourcePath(depotPath));
             }
         }
 

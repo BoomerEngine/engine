@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "base/containers/include/hashMap.h"
-
 namespace base
 {
     namespace res
@@ -60,7 +58,7 @@ namespace base
             //--
 
             // parse from a string, usually does a split near ":" to extract class name vs path
-            static bool Parse(StringView path, ResourceKey& outKey);
+            static bool Parse(StringView path, ResourcePath& outPath);
 
             //--
 

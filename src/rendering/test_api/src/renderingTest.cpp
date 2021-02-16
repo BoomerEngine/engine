@@ -14,8 +14,6 @@
 #include "base/image/include/imageView.h"
 #include "base/io/include/ioSystem.h"
 
-#include "base/resource/include/resourceCooker.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/resource/include/resourceTags.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingBuffer.h"
@@ -26,7 +24,8 @@
 #include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingPipeline.h"
 #include "rendering/device/include/renderingOutput.h"
-#include "../../device/include/renderingDeviceGlobalObjects.h"
+#include "rendering/device/include/renderingDeviceGlobalObjects.h"
+#include "base/resource/include/depotService.h"
 
 namespace rendering
 {
@@ -649,18 +648,8 @@ namespace rendering
 
         //--
 
-        RTTI_BEGIN_TYPE_CLASS(SimpleMesh);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4simpleMesh");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Simple Mesh");
-            RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0x70, 0xb0, 0x50);
-        RTTI_END_TYPE();
-
         SimpleMesh::SimpleMesh()
         {}
-
-        SimpleMesh::~SimpleMesh()
-        {
-        }
 
         static uint64_t CalcVertexHash(const Mesh3DVertex& v)
         {
@@ -671,198 +660,187 @@ namespace rendering
 
         //--
 
-        class SimpleMeshLoader : public base::res::IResourceCooker
+        RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path)
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(SimpleMeshLoader, base::res::IResourceCooker);
-                
-        public:
-            virtual base::res::ResourceHandle cook(base::res::IResourceCookerInterface& cooker) const override
+            base::Buffer text;
+            if (!base::GetService<base::DepotService>()->loadFileToBuffer(path, text))
+                return nullptr;
+
+            auto ret = base::RefNew<SimpleMesh>();
+
+            base::Array<base::Vector2> uvVertices;
+            base::Array<base::Vector3> posVertices;
+            base::Array<base::Vector3> nVertices;
+
+            base::HashMap<uint64_t, uint16_t> mappedVertices;
+            uint32_t chunkBaseVertex = 0;
+
+            SimpleChunk info;
+            info.material = "default"_id;
+            info.firstIndex = 0;
+            info.firstVertex = 0;
+            info.numIndices = 0;
+            info.numVerties = 0;
+            ret->m_chunks.pushBack(info);
+
+            base::StringParser str(text);
+            while (str.parseWhitespaces())
             {
-                auto text = cooker.loadToBuffer(cooker.queryResourcePath());
-                if (!text)
-                    return nullptr;
-
-                auto ret = base::RefNew<SimpleMesh>();
-
-                base::Array<base::Vector2> uvVertices;
-                base::Array<base::Vector3> posVertices;
-                base::Array<base::Vector3> nVertices;
-
-                base::HashMap<uint64_t, uint16_t> mappedVertices;
-                uint32_t chunkBaseVertex = 0;
-
-                SimpleChunk info;
-                info.material = "default"_id;
-                info.firstIndex = 0;
-                info.firstVertex = 0;
-                info.numIndices = 0;
-                info.numVerties = 0;
-                ret->m_chunks.pushBack(info);
-
-                base::StringParser str(text);
-                while (str.parseWhitespaces())
+                if (str.parseKeyword("vn"))
                 {
-                    if (str.parseKeyword("vn"))
-                    {
-                        base::Vector3 data;
-                        str.parseFloat(data.x);
-                        str.parseFloat(data.y);
-                        str.parseFloat(data.z);
-                        /*if (setup.m_swapYZ)
-                            std::swap(data.y, data.z);*/
-                        nVertices.pushBack(data);
-                    }
-                    else if (str.parseKeyword("vt"))
-                    {
-                        base::Vector2 data;
-                        str.parseFloat(data.x);
-                        str.parseFloat(data.y);
-                        uvVertices.pushBack(data);
-                    }
-                    else if (str.parseKeyword("v"))
-                    {
-                        base::Vector3 data;
-                        str.parseFloat(data.x);
-                        str.parseFloat(data.y);
-                        str.parseFloat(data.z);
-                        /*if (setup.m_swapYZ)
-                            std::swap(data.y, data.z);*/
-                        posVertices.pushBack(data);
-                    }
-                    else if (str.parseKeyword("g"))
-                    {
-                        base::StringView name;
-                        str.parseString(name);
+                    base::Vector3 data;
+                    str.parseFloat(data.x);
+                    str.parseFloat(data.y);
+                    str.parseFloat(data.z);
+                    /*if (setup.m_swapYZ)
+                        std::swap(data.y, data.z);*/
+                    nVertices.pushBack(data);
+                }
+                else if (str.parseKeyword("vt"))
+                {
+                    base::Vector2 data;
+                    str.parseFloat(data.x);
+                    str.parseFloat(data.y);
+                    uvVertices.pushBack(data);
+                }
+                else if (str.parseKeyword("v"))
+                {
+                    base::Vector3 data;
+                    str.parseFloat(data.x);
+                    str.parseFloat(data.y);
+                    str.parseFloat(data.z);
+                    /*if (setup.m_swapYZ)
+                        std::swap(data.y, data.z);*/
+                    posVertices.pushBack(data);
+                }
+                else if (str.parseKeyword("g"))
+                {
+                    base::StringView name;
+                    str.parseString(name);
 
-                        auto curNumVertices = ret->m_allVertices.size();
-                        auto curNumIndices = ret->m_allIndices.size();
-                        if (!ret->m_chunks.empty())
+                    auto curNumVertices = ret->m_allVertices.size();
+                    auto curNumIndices = ret->m_allIndices.size();
+                    if (!ret->m_chunks.empty())
+                    {
+                        auto& curChunk = ret->m_chunks.back();
+                        if (curNumVertices > curChunk.firstVertex && curNumIndices > curChunk.firstIndex)
                         {
-                            auto& curChunk = ret->m_chunks.back();
-                            if (curNumVertices > curChunk.firstVertex && curNumIndices > curChunk.firstIndex)
-                            {
-                                curChunk.numIndices = curNumIndices - curChunk.firstIndex;
-                                curChunk.numVerties = curNumVertices - curChunk.firstVertex;
-                            }
-                            else
-                            {
-                                ret->m_chunks.popBack(); // empty chunk
-                            }
+                            curChunk.numIndices = curNumIndices - curChunk.firstIndex;
+                            curChunk.numVerties = curNumVertices - curChunk.firstVertex;
                         }
-
-                        SimpleChunk info;
-                        info.material = base::StringID(name);
-                        info.firstIndex = curNumIndices;
-                        info.firstVertex = curNumVertices;
-                        info.numIndices = 0;
-                        info.numVerties = 0;
-                        ret->m_chunks.pushBack(info);
-
-                        chunkBaseVertex = curNumVertices;
-                        mappedVertices.clear();
-                    }
-                    else if (str.parseKeyword("f"))
-                    {
-                        // gather vertices
-                        bool hasNormals = false;
-                        base::InplaceArray<Mesh3DVertex, 10> vertices;
-                        for (uint32_t i = 0; i < 10; ++i)
+                        else
                         {
-                            uint32_t posIndex = 0;
-                            if (!str.parseUint32(posIndex))
-                                break;
+                            ret->m_chunks.popBack(); // empty chunk
+                        }
+                    }
 
-                            auto& v = vertices.emplaceBack();
+                    SimpleChunk info;
+                    info.material = base::StringID(name);
+                    info.firstIndex = curNumIndices;
+                    info.firstVertex = curNumVertices;
+                    info.numIndices = 0;
+                    info.numVerties = 0;
+                    ret->m_chunks.pushBack(info);
 
-                            if (posIndex > 0 && posIndex <= posVertices.size())
-                                v.VertexPosition = posVertices[posIndex - 1];
+                    chunkBaseVertex = curNumVertices;
+                    mappedVertices.clear();
+                }
+                else if (str.parseKeyword("f"))
+                {
+                    // gather vertices
+                    bool hasNormals = false;
+                    base::InplaceArray<Mesh3DVertex, 10> vertices;
+                    for (uint32_t i = 0; i < 10; ++i)
+                    {
+                        uint32_t posIndex = 0;
+                        if (!str.parseUint32(posIndex))
+                            break;
+
+                        auto& v = vertices.emplaceBack();
+
+                        if (posIndex > 0 && posIndex <= posVertices.size())
+                            v.VertexPosition = posVertices[posIndex - 1];
+
+                        if (str.parseKeyword("/"))
+                        {
+                            uint32_t uvIndex = 0;
+                            if (str.parseUint32(uvIndex))
+                                if (uvIndex > 0 && uvIndex <= uvVertices.size())
+                                    v.VertexUV = uvVertices[uvIndex - 1];
 
                             if (str.parseKeyword("/"))
                             {
-                                uint32_t uvIndex = 0;
-                                if (str.parseUint32(uvIndex))
-                                    if (uvIndex > 0 && uvIndex <= uvVertices.size())
-                                        v.VertexUV = uvVertices[uvIndex - 1];
-
-                                if (str.parseKeyword("/"))
-                                {
-                                    uint32_t nIndex = 0;
-                                    if (str.parseUint32(nIndex))
-                                        if (nIndex > 0 && nIndex <= nVertices.size())
-                                        {
-                                            v.VertexNormal = nVertices[nIndex - 1];
-                                            hasNormals |= !v.VertexNormal.isNearZero();
-                                        }
-                                }
+                                uint32_t nIndex = 0;
+                                if (str.parseUint32(nIndex))
+                                    if (nIndex > 0 && nIndex <= nVertices.size())
+                                    {
+                                        v.VertexNormal = nVertices[nIndex - 1];
+                                        hasNormals |= !v.VertexNormal.isNearZero();
+                                    }
                             }
                         }
+                    }
+
+                    // map vertices
+                    base::InplaceArray<uint16_t, 10> mappedIndices;
+                    if (vertices.size() >= 3)
+                    {
+                        // compute normal
+                        Vector3 normal;
+                        if (!hasNormals)
+                            base::SafeTriangleNormal(vertices[0].VertexPosition, vertices[1].VertexPosition, vertices[2].VertexPosition, normal);
 
                         // map vertices
-                        base::InplaceArray<uint16_t, 10> mappedIndices;
-                        if (vertices.size() >= 3)
+                        for (auto& v : vertices)
                         {
-                            // compute normal
-                            Vector3 normal;
                             if (!hasNormals)
-                                base::SafeTriangleNormal(vertices[0].VertexPosition, vertices[1].VertexPosition, vertices[2].VertexPosition, normal);
+                                v.VertexNormal = normal;
 
-                            // map vertices
-                            for (auto& v : vertices)
+                            auto hash = CalcVertexHash(v);
+                            uint16_t mappedIndex = 0;
+                            if (!mappedVertices.find(hash, mappedIndex))
                             {
-                                if (!hasNormals)
-                                    v.VertexNormal = normal;
-
-                                auto hash = CalcVertexHash(v);
-                                uint16_t mappedIndex = 0;
-                                if (!mappedVertices.find(hash, mappedIndex))
-                                {
-                                    mappedIndex = range_cast<uint16_t>(ret->m_allVertices.size() - chunkBaseVertex);
-                                    ret->m_allVertices.pushBack(v);
-                                    mappedVertices.set(hash, mappedIndex);
-                                }
-
-                                mappedIndices.pushBack(mappedIndex);
+                                mappedIndex = range_cast<uint16_t>(ret->m_allVertices.size() - chunkBaseVertex);
+                                ret->m_allVertices.pushBack(v);
+                                mappedVertices.set(hash, mappedIndex);
                             }
-                        }
 
-                        for (uint32_t i = 2; i < mappedIndices.size(); ++i)
-                        {
-                            ret->m_allIndices.pushBack(mappedIndices[0]);
-                            ret->m_allIndices.pushBack(mappedIndices[i - 1]);
-                            ret->m_allIndices.pushBack(mappedIndices[i]);
+                            mappedIndices.pushBack(mappedIndex);
                         }
                     }
-                    else
+
+                    for (uint32_t i = 2; i < mappedIndices.size(); ++i)
                     {
-                        str.parseTillTheEndOfTheLine();
+                        ret->m_allIndices.pushBack(mappedIndices[0]);
+                        ret->m_allIndices.pushBack(mappedIndices[i - 1]);
+                        ret->m_allIndices.pushBack(mappedIndices[i]);
                     }
                 }
-
-                // finish chunk
-                auto curNumVertices = ret->m_allVertices.size();
-                auto curNumIndices = ret->m_allIndices.size();
-                if (!ret->m_chunks.empty())
+                else
                 {
-                    auto& curChunk = ret->m_chunks.back();
-                    if (curNumVertices > curChunk.firstVertex && curNumIndices > curChunk.firstIndex)
-                    {
-                        curChunk.numIndices = curNumIndices - curChunk.firstIndex;
-                        curChunk.numVerties = curNumVertices - curChunk.firstVertex;
-                    }
-                    else
-                    {
-                        ret->m_chunks.popBack(); // empty chunk
-                    }
+                    str.parseTillTheEndOfTheLine();
                 }
-
-                return ret;
             }
-        };
 
-        RTTI_BEGIN_TYPE_CLASS(SimpleMeshLoader);
-            RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<SimpleMesh>();
-            RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("obj");
-        RTTI_END_TYPE();
+            // finish chunk
+            auto curNumVertices = ret->m_allVertices.size();
+            auto curNumIndices = ret->m_allIndices.size();
+            if (!ret->m_chunks.empty())
+            {
+                auto& curChunk = ret->m_chunks.back();
+                if (curNumVertices > curChunk.firstVertex && curNumIndices > curChunk.firstIndex)
+                {
+                    curChunk.numIndices = curNumIndices - curChunk.firstIndex;
+                    curChunk.numVerties = curNumVertices - curChunk.firstVertex;
+                }
+                else
+                {
+                    ret->m_chunks.popBack(); // empty chunk
+                }
+            }
+
+            return ret;
+        }
 
         //--
 
@@ -883,7 +861,7 @@ namespace rendering
 
         SimpleRenderMeshPtr IRenderingTest::loadMesh(base::StringView assetFile, const MeshSetup& setup)
         {
-            auto loadedAsset = base::LoadResource<SimpleMesh>(base::TempString("/engine/tests/meshes/{}", assetFile)).acquire();
+            auto loadedAsset = LoadSimpleMeshFromDepotPath(base::TempString("/engine/tests/meshes/{}", assetFile));
             if (!loadedAsset)
             {
                 reportError(TempString("Failed to load mesh '{}'", assetFile));

@@ -779,7 +779,7 @@ namespace ed
 
                     if (file->fileFormat().loadableAsType(asyncRefResourceClass))
                     {
-                        const auto key = res::ResourceKey(res::ResourcePath(file->depotPath()), asyncRefResourceClass);
+                        const auto key = res::ResourcePath(file->depotPath());
 
                         rtti::DataHolder value(asyncRefType);
                         *((res::BaseAsyncReference*)value.data()) = key;
@@ -1413,7 +1413,7 @@ namespace ed
                 bool contains = false;
                 for (const auto& prefab : node->m_prefabAssets)
                 {
-                    if (prefab.prefab.key().path() == path)
+                    if (prefab.prefab.path() == path)
                     {
                         contains = true;
                     }
@@ -1442,7 +1442,7 @@ namespace ed
             {
                 for (auto i : node->m_prefabAssets.indexRange().reversed())
                 {
-                    const auto& path = node->m_prefabAssets[i].prefab.key().path();
+                    const auto& path = node->m_prefabAssets[i].prefab.path();
                     if (paths.contains(path))
                         node->m_prefabAssets.erase(i);
                 }

@@ -146,7 +146,7 @@ namespace base
         };
 
         // compile entity (prefab-style), returns the root entity directly and other all entities via array
-        BASE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::IResourceLoader* loader);
+        BASE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::ResourceLoader* loader);
 
         //--
 

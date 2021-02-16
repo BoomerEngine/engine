@@ -8,14 +8,12 @@
 
 #pragma once
 
-#include "resourceKey.h"
+#include "resourcePath.h"
 
 namespace base
 {
     namespace res
     {
-        class IResourceLoader;
-
         ///--------
 
         /// base concept of serializable resource reference
@@ -24,7 +22,7 @@ namespace base
         public:
             BaseReference();
             BaseReference(const BaseReference& other);
-            explicit BaseReference(const ResourceKey& key);
+            explicit BaseReference(const ResourcePath& key);
             BaseReference(const ResourcePtr& ptr);
             BaseReference(BaseReference&& other);
             BaseReference(std::nullptr_t);
@@ -37,19 +35,16 @@ namespace base
 
             // get resource "key" -> load class + resource path
             // NOTE: this is not set for path-less embedded resources
-            INLINE const ResourceKey& key() const { return m_key; }
+            INLINE const ResourcePath& path() const { return m_path; }
 
-            // acquire the resource
-            INLINE const ResourceHandle& acquire() const { return m_handle; }
+            // peak current handle, do not load when missing
+            INLINE const ResourceHandle& resource() const { return m_handle; }
 
             // is this an empty reference ? empty reference is one without key and without object
-            INLINE bool empty() const { return !m_handle && !m_key; }
-
-            // is this an inlined object ?
-            INLINE bool inlined() const { return m_handle && !m_key; } // bound but not loaded from anywhere
+            INLINE bool empty() const { return m_path.empty(); }
 
             // validate
-            INLINE operator bool() const { return !empty(); }
+            INLINE operator bool() const { return !m_path.empty(); }
 
             //---
 
@@ -59,6 +54,15 @@ namespace base
             // setup a reference to a specific resource object
             // NOTE: if the resource is "path less" it will be embedded into the containing object when saved (that is if it's parented properly and is part of the object hierarchy being saved)
             void set(const ResourceHandle& object);
+
+            // setup a reference to a specific resource path
+            // NOTE: resource may be loaded if needed
+            void set(const ResourcePath& path);
+
+            //---
+
+            // acquire the resource, may load the resource if missing
+            ResourceHandle load() const;
 
             //--
 
@@ -85,8 +89,8 @@ namespace base
             //--
 
         protected:
-            ResourcePtr m_handle;
-            ResourceKey m_key;
+            ResourcePath m_path; // never empty if reference is valid
+            ResourcePtr m_handle; // may be empty if resource is missing or we setup a unloaded ref
 
             static const ResourceHandle& EMPTY_HANDLE();
         };
@@ -104,6 +108,7 @@ namespace base
             INLINE Ref& operator=(const Ref<T>& other) = default;
             INLINE Ref& operator=(Ref<T> && other) = default;
             INLINE Ref(const Ref<T>& other) = default;
+            INLINE explicit Ref(const ResourcePath& key) : BaseReference(key) {};
 
             template< typename U >
             INLINE Ref(const Ref<U>& other)
@@ -135,7 +140,7 @@ namespace base
             ///---
 
             // acquire the resource
-            INLINE RefPtr<T> acquire() const { return rtti_cast<T>(BaseReference::acquire()); }
+            INLINE RefPtr<T> load() const { return rtti_cast<T>(BaseReference::load()); }
         };
 
         //----------

@@ -199,7 +199,7 @@ namespace ed
         ///---
 
         /// Get type (resource type) thumbnail, can be used when file thumbnail is not loaded
-        virtual const image::ImageRef& typeThumbnail() const;
+        virtual const image::Image* typeThumbnail() const;
 
         ///---
 
@@ -209,7 +209,7 @@ namespace ed
         ManagedDirectoryItemList<ManagedFile> m_files;
         ManagedDirectoryItemList<ManagedDirectory> m_directories;
 
-        image::ImageRef m_directoryIcon;
+        image::ImagePtr m_directoryIcon;
 
         bool m_bookmarked = false;
 

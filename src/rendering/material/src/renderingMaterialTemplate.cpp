@@ -57,78 +57,23 @@ namespace rendering
 
     ///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialTemplate);
-        RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4mt");
-        RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Material Template");
-        RTTI_PROPERTY(m_parameters);
-        RTTI_PROPERTY(m_metadata);
-        RTTI_PROPERTY(m_compiler);
+    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialTemplate);
         RTTI_PROPERTY(m_contextPath);
-        RTTI_PROPERTY(m_precompiledTechniques);
     RTTI_END_TYPE();
 
     MaterialTemplate::MaterialTemplate()
     {
     }
 
-    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::StringBuf& contextPath)
-        : m_parameters(std::move(params))
-        , m_metadata(metadata)
-        , m_compiler(compiler)
-        , m_contextPath(contextPath)
-    {
-        if (m_compiler)
-            m_compiler->parent(this);
-
-        rebuildParameterMap();
-		createTemplateProxy();
-		createDataProxy();
-    }
-
-    MaterialTemplate::MaterialTemplate(base::Array<MaterialTemplateParamInfo>&& params, const MaterialTemplateMetadata& metadata, base::Array<MaterialPrecompiledStaticTechnique>&& precompiledTechniques, const base::StringBuf& contextPath)
-        : m_parameters(std::move(params))
-        , m_metadata(metadata)
-        , m_precompiledTechniques(std::move(precompiledTechniques))
-        , m_contextPath(contextPath)
-    {
-        for (auto& tech : m_precompiledTechniques)
-            if (tech.shader)
-                tech.shader->parent(this);
-
-        rebuildParameterMap();
-		createTemplateProxy();
-        createDataProxy();
-    }
-
     MaterialTemplate::~MaterialTemplate()
     {
-        m_compiler.reset();
-    }
-
-    const MaterialTemplateParamInfo* MaterialTemplate::findParameterInfo(base::StringID name) const
-    {
-        uint16_t index = 0;
-        if (m_parametersMap.find(name, index))
-            return &m_parameters[index];
-
-        return nullptr;
     }
 
     void MaterialTemplate::onPostLoad()
     {
         TBaseClass::onPostLoad();
-
-        rebuildParameterMap();
+        createTemplateProxy();
         createDataProxy();
-		createTemplateProxy();
-    }
-
-    void MaterialTemplate::rebuildParameterMap()
-    {
-        m_parametersMap.reserve(m_parameters.size());
-
-        for (uint32_t i = 0; i < m_parameters.size(); ++i)
-            m_parametersMap[m_parameters[i].name] = i;
     }
 
 	///---
@@ -217,8 +162,9 @@ namespace rendering
 
     bool MaterialTemplate::readParameter(base::StringID name, void* data, base::Type type) const
     {
-        if (const auto* info = findParameterInfo(name))
-            return info->defaultValue.get(data, type);
+        MaterialTemplateParamInfo info;
+        if (queryParameterInfo(name, info))
+            return info.defaultValue.get(data, type);
 
         return false;
     }
@@ -228,16 +174,17 @@ namespace rendering
         return readParameter(name, data, type);
     }
 
-    const void* MaterialTemplate::findParameterDataInternal(base::StringID name, base::Type& outType) const
+    /*const void* MaterialTemplate::findParameterDataInternal(base::StringID name, base::Type& outType) const
     {
-        if (const auto* info = findParameterInfo(name))
+        MaterialTemplateParamInfo info;
+        if (queryParameterInfo(name, info))
         {
-            outType = info->defaultValue.type();
-            return info->defaultValue.data();
+            outType = info.defaultValue.type();
+            return info.defaultValue.data();
         }
 
         return nullptr;
-    }
+    }*/
 
     const void* MaterialTemplate::findBaseParameterDataInternal(base::StringID name, base::Type& outType) const
     {
@@ -246,25 +193,19 @@ namespace rendering
 
     ///---
 
-    void MaterialTemplate::listParameters(base::rtti::DataViewInfo& outInfo) const
-    {
-        for (const auto& parameterBlock : m_parameters)
-        {
-            auto& memberInfo = outInfo.members.emplaceBack();
-            memberInfo.name = parameterBlock.name;
-            memberInfo.category = parameterBlock.category;
-            memberInfo.type = parameterBlock.type;
-        }
-    }
-
     base::DataViewResult MaterialTemplate::readDataView(base::StringView viewPath, void* targetData, base::Type targetType) const
     {
         const auto originalPath = viewPath;
 
         base::StringView propertyName;
         if (base::rtti::ParsePropertyName(viewPath, propertyName))
-            if (const auto* paramBlock = findParameterInfo(propertyName))
-                return paramBlock->type->readDataView(viewPath, paramBlock->defaultValue.data(), targetData, targetType);
+        {
+            MaterialTemplateParamInfo info;
+            if (queryParameterInfo(propertyName, info))
+            {
+                return info.type->readDataView(viewPath, info.defaultValue.data(), targetData, targetType);
+            }
+        }
 
         return TBaseClass::readDataView(originalPath, targetData, targetType);
     }
@@ -282,8 +223,13 @@ namespace rendering
         {
             base::StringView propertyName;
             if (base::rtti::ParsePropertyName(viewPath, propertyName))
-                if (auto* paramBlock = findParameterInfo(propertyName))
-                    return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);
+            {
+                MaterialTemplateParamInfo info;
+                if (queryParameterInfo(propertyName, info))
+                {
+                    return info.type->describeDataView(viewPath, info.defaultValue.data(), outInfo);
+                }
+            }
         }
 
         return TBaseClass::describeDataView(orgViewPath, outInfo);
@@ -291,8 +237,11 @@ namespace rendering
 
     base::DataViewResult MaterialTemplate::describeParameterView(base::StringView paramName, base::StringView viewPath, base::rtti::DataViewInfo& outInfo) const
     {
-        if (auto* paramBlock = findParameterInfo(paramName))
-            return paramBlock->type->describeDataView(viewPath, paramBlock->defaultValue.data(), outInfo);
+        MaterialTemplateParamInfo info;
+        if (queryParameterInfo(paramName, info))
+        {
+            return info.type->describeDataView(viewPath, info.defaultValue.data(), outInfo);
+        }
 
         return base::DataViewResultCode::ErrorUnknownProperty;
     }
@@ -304,14 +253,24 @@ namespace rendering
         DEBUG_CHECK_EX(!m_dataProxy, "Data proxy for material template should be immutable");
 		DEBUG_CHECK_EX(m_templateProxy, "Missing template proxy");
         m_dataProxy = base::RefNew<MaterialDataProxy>(m_templateProxy);
+        m_dataProxy->update(*this);
     }
 
 	void MaterialTemplate::createTemplateProxy()
 	{
 		DEBUG_CHECK_EX(!m_templateProxy, "Template proxy for material template should be immutable");
 
+        base::Array<MaterialTemplateParamInfo> parameters;
+        queryAllParameterInfos(parameters);
+
+        MaterialTemplateMetadata metadata;
+        queryMatadata(metadata);
+
+        base::Array<MaterialPrecompiledStaticTechnique> precompiledTechniques;
+       
+
         const auto& contextPath = path() ? path().str() : m_contextPath;
-		m_templateProxy = base::RefNew<MaterialTemplateProxy>(contextPath, m_parameters, m_metadata, m_compiler, m_precompiledTechniques);
+		m_templateProxy = base::RefNew<MaterialTemplateProxy>(contextPath, parameters, metadata, queryDynamicCompiler(), precompiledTechniques);
 	}
 
     ///---
