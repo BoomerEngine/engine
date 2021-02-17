@@ -34,8 +34,8 @@ namespace wavefront
     public:
         OBJMeshImportConfig();
 
-        StringBuf objectFilter;
-        StringBuf groupFilter;
+        base::StringBuf objectFilter;
+        base::StringBuf groupFilter;
 
         OBJMeshAttributeMode emitNormals = OBJMeshAttributeMode::IfPresentAnywhere;
         OBJMeshAttributeMode emitUVs = OBJMeshAttributeMode::IfPresentAnywhere;
@@ -46,7 +46,7 @@ namespace wavefront
 
         bool flipUV = true;
 
-        virtual void computeConfigurationKey(CRC64& crc) const override;
+        virtual void computeConfigurationKey(base::CRC64& crc) const override;
     };
 
     //--

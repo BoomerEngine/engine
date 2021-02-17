@@ -61,7 +61,7 @@ namespace wavefront
         m_bindingMapAmbientOcclusion = "AmbientOcclusionMap;AOMap";
     }
 
-    void MTLMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
+    void MTLMaterialImportConfig::computeConfigurationKey(base::CRC64& crc) const
     {
         TBaseClass::computeConfigurationKey(crc);
 
@@ -248,7 +248,7 @@ namespace wavefront
         auto config = importer.queryConfigration<MTLMaterialImportConfig>();
 
         // load existing material
-        const auto* existingMaterial = rtti_cast<rendering::MaterialInstance>(importer.existingData());
+        const auto* existingMaterial = base::rtti_cast<rendering::MaterialInstance>(importer.existingData());
 
         // import the material
         return ImportMaterial(importer, existingMaterial, *config);

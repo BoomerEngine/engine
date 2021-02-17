@@ -38,6 +38,8 @@ namespace base
             StreamingIslandInstance(Array<StreamingIslandPackedEntity>&& ents);
             virtual ~StreamingIslandInstance();
 
+            INLINE const uint32_t size() const { return m_entites.size(); }
+
             // TODO: named lookup ?
             // TODO: flag to hide island when children are loaded (mesh proxy)
 
@@ -73,11 +75,15 @@ namespace base
             struct Setup
             {
                 Box streamingBox;
+                bool alwaysLoaded = false;
                 Array<StreamingIslandPackedEntity> entities;
             };
 
             StreamingIsland();
             StreamingIsland(const Setup& setup);
+
+            // is this always loaded island ?
+            INLINE bool alwaysLoaded() const { return m_alwaysLoaded; }
 
             // streaming region
             INLINE const Box& streamingBounds() const { return m_streamingBox; }
@@ -103,8 +109,12 @@ namespace base
 
             //--
 
+            // TODO: embedded resources 
+
         private:
             Box m_streamingBox; // computed from actual content locations + streaming distances
+
+            bool m_alwaysLoaded = false; // this island should always be loaded (NOTE: still requires parent to be loaded)
 
             uint32_t m_entityCount = 0; // stats only
             uint32_t m_entityUnpackedDataSize = 0; // decompressed data size

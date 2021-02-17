@@ -162,7 +162,7 @@ namespace base
             //--
 
             /// handle game input event
-            virtual bool handleInput(const EntityInputEvent& gameInput);
+            virtual bool handleInput(const input::BaseEvent& evt);
 
             /// calculate viewport
             virtual bool handleCamera(EntityCameraPlacement& outCamera);

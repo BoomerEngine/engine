@@ -24,6 +24,8 @@ namespace game
     class World;
     typedef base::RefPtr<World> WorldPtr;
 
+    class GameWorldTransition;
+
     //--
 
     struct InputAction;
@@ -40,6 +42,10 @@ namespace game
     class InputDefinitions;
     typedef base::RefPtr<InputDefinitions> InputDefinitionsPtr;
     typedef base::res::Ref<InputDefinitions> InputDefinitionsRef;
+
+    //--
+
+    class FreeCameraHelper;
 
     //--
 

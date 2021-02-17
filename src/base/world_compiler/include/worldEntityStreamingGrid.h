@@ -66,8 +66,11 @@ namespace base
         // collect non empty cells
         extern BASE_WORLD_COMPILER_API void CollectFinalCells(const SourceStreamingGrid& grid, Array<const SourceStreamingGridCell*>& outCells);
 
+        // build island from data
+        extern BASE_WORLD_COMPILER_API RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island);
+
         // build cell data
-        extern BASE_WORLD_COMPILER_API RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell);
+        //extern BASE_WORLD_COMPILER_API RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell);
 
         //---
 

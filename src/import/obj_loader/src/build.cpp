@@ -3,7 +3,8 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# dependency: base_* #]
+* [# dependency: base_resource_compiler #]
+* [# dependency: base_world #]
 * [# dependency: import_mesh_loader #]
 * [# dependency: rendering_material #]
 * [# devonly #]

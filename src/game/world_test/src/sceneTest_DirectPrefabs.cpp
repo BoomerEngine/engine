@@ -122,7 +122,7 @@ namespace game
 
                 for (uint32_t i=0; i<m_numPrefabs; ++i)
                 {
-                    AbsoluteTransform placement;
+                    base::AbsoluteTransform placement;
                     placement.position(UlamSpiral(i).toVector().xyz() * m_placementDistance + base::Vector3(0,0,0.5f));
                     ground.ensureGroundUnder(placement.position().approximate().x, placement.position().approximate().y);
 

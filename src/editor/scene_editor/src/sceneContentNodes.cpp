@@ -14,7 +14,7 @@
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameParams.h"
 
-#include "base/editor/include/managedFileNativeResource.h"
+#include "editor/common/include/managedFileNativeResource.h"
 #include "base/resource/include/objectIndirectTemplate.h"
 #include "base/ui/include/uiAbstractItemModel.h"
 #include "base/world/include/worldNodeTemplate.h"

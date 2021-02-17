@@ -43,12 +43,12 @@ namespace wavefront
 
     OBJPrefabImportConfig::OBJPrefabImportConfig()
     {
-        m_meshImportPath = StringBuf("../meshes/");
+        m_meshImportPath = base::StringBuf("../meshes/");
         m_materialImportMode = rendering::MeshMaterialImportMode::ImportAll;
         m_textureImportMode = rendering::MaterialTextureImportMode::ImportAll;
     }
 
-    void OBJPrefabImportConfig::computeConfigurationKey(CRC64& crc) const
+    void OBJPrefabImportConfig::computeConfigurationKey(base::CRC64& crc) const
     {
         TBaseClass::computeConfigurationKey(crc);
 
@@ -155,12 +155,12 @@ namespace wavefront
         }
     };
 
-    static void CalcMeshCharacteristic(const Array<SourceMeshTriangle>& triangles, const Array<base::Vector3>& vertices, SourceMeshCharacteristic& outInfo)
+    static void CalcMeshCharacteristic(const base::Array<SourceMeshTriangle>& triangles, const base::Array<base::Vector3>& vertices, SourceMeshCharacteristic& outInfo)
     {
         outInfo.numVertices = vertices.size();
         outInfo.numFaces = triangles.size();
 
-        Box box;
+        base::Box box;
         double cx = 0, cy = 0, cz = 0;
         for (const auto& localPos : vertices)
         {
@@ -352,7 +352,7 @@ namespace wavefront
             CalcMeshCharacteristic(triangles, vertices, key);
         }
 
-        float distanceTo(const SourcePrefabMesh& other, const Matrix& otherToLocal, float distanceCutOff) const
+        float distanceTo(const SourcePrefabMesh& other, const base::Matrix& otherToLocal, float distanceCutOff) const
         {
             const auto numTris = other.triangles.size();
 
@@ -535,7 +535,7 @@ namespace wavefront
 
         ASSERT(ValidateFileName(fileName));
 
-        return TempString("{}.{}", fileName, ext);
+        return base::TempString("{}.{}", fileName, ext);
     }
 
     extern void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f);
@@ -761,7 +761,7 @@ namespace wavefront
         static const auto meshEntityClass = RTTI::GetInstance().findClass("rendering::StaticMeshEntity"_id);
 
         // build prefab nodes
-        auto root = RefNew<base::world::NodeTemplate>();
+        auto root = base::RefNew<base::world::NodeTemplate>();
         root->m_name = "default"_id;
         for (const auto& obj : prefabSourceObjects)
         {

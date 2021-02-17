@@ -161,8 +161,8 @@ namespace rendering
 				static float a = 0.0;
 				a += 0.01f;
 
-				XForm2D pos = XForm2D::BuildRotationAround(a, w * 0.5f, h * 0.5f);
-				c.place(pos + Vector2(500, 100), g);
+				auto pos = base::XForm2D::BuildRotationAround(a, w * 0.5f, h * 0.5f);
+				c.place(pos + base::Vector2(500, 100), g);
 
 				{
 					base::canvas::GeometryBuilder b(g);
@@ -171,7 +171,7 @@ namespace rendering
 					b.print(m_font, 70.0f, "Outline #%$&");
 				}
 
-				c.place(Vector2(100, 400), g);
+				c.place(base::Vector2(100, 400), g);
 
 				{
 					base::canvas::GeometryBuilder b(g);
@@ -180,7 +180,7 @@ namespace rendering
 					b.print(m_font, 230.0f, "Outline #%$&");
 				}
 
-				c.place(Vector2(100, 600), g);
+				c.place(base::Vector2(100, 600), g);
             }
         };
 

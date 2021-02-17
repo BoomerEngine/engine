@@ -10,7 +10,6 @@
 
 #include "base/resource/include/resource.h"
 #include "base/containers/include/hashSet.h"
-#include "base/script/include/scriptObject.h"
 #include "base/resource/include/objectDirectTemplate.h"
 
 namespace base

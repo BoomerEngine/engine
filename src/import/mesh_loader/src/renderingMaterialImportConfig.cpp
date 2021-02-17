@@ -43,14 +43,14 @@ namespace rendering
     MaterialImportConfig::MaterialImportConfig()
     {
         m_textureImportMode = MaterialTextureImportMode::ImportAll;
-        m_textureImportPath = StringBuf("../textures/");
-        m_textureSearchPath = StringBuf("../textures/");
+        m_textureImportPath = base::StringBuf("../textures/");
+        m_textureSearchPath = base::StringBuf("../textures/");
 
         m_depotSearchDepth = 6;
         m_sourceAssetsSearchDepth = 6;
     }
 
-    void MaterialImportConfig::computeConfigurationKey(CRC64& crc) const
+    void MaterialImportConfig::computeConfigurationKey(base::CRC64& crc) const
     {
         TBaseClass::computeConfigurationKey(crc);
         crc << (int)m_textureImportMode;
@@ -129,7 +129,7 @@ namespace rendering
         GlueDepotPath(referenceDepotPath, true, pathParts);
         GlueDepotPath(textureImportPath, false, pathParts);
 
-        StringBuilder txt;
+        base::StringBuilder txt;
         EmitDepotPath(pathParts, txt);
 
         txt << ConvertPathToTextureSearchPath(assetFileName);

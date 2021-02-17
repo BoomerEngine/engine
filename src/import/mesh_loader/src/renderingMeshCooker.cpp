@@ -28,7 +28,7 @@ namespace rendering
 
     //--
 
-    static void ExtractImportChunks(const Array<MeshRawChunk>& sourceMesh, ImportChunkRegistry& outImportChunks)
+    static void ExtractImportChunks(const base::Array<MeshRawChunk>& sourceMesh, ImportChunkRegistry& outImportChunks)
     {
         outImportChunks.bounds = base::Box();
 
@@ -330,7 +330,7 @@ namespace rendering
 
     //--
 
-    bool BuildChunks(const Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks)
+    bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks)
     {
         PC_SCOPE_LVL0(BuildChunks);
 

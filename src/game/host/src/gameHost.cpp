@@ -17,6 +17,9 @@
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingFrameRenderingService.h"
 #include "rendering/scene/include/renderingFrameCameraContext.h"
+#include "rendering/device/include/renderingImage.h"
+#include "rendering/device/include/renderingDeviceService.h"
+#include "rendering/device/include/renderingDeviceApi.h"
 
 #include "base/app/include/launcherPlatform.h"
 #include "base/canvas/include/canvas.h"
@@ -47,9 +50,11 @@ namespace game
         m_imgui = new ImGui::ImGUICanvasHelper();
         m_gameAccumulatedTime = 0.0;
 
+        m_loadingScreenVisibility = 1.0f; // start under black screen
+
         m_startTime.resetToNow();
 
-        m_cameraContext = RefNew<rendering::scene::CameraContext>();
+        m_cameraContext = base::RefNew<rendering::scene::CameraContext>();
     }
 
     Host::~Host()
@@ -62,58 +67,101 @@ namespace game
     { 
         PC_SCOPE_LVL0(GameHostUpdate);
 
+        m_loadingScreenRequired = m_game->requiresLoadingScreen();
+
+        const float loadingScreenRate = 5.0f;
+        if (m_loadingScreenRequired)
+            m_loadingScreenVisibility = std::min<float>(1.0f, m_loadingScreenVisibility + (dt * loadingScreenRate));
+        else
+            m_loadingScreenVisibility = std::max<float>(0.0f, m_loadingScreenVisibility - (dt * loadingScreenRate));
+
         m_gameAccumulatedTime += dt;
         m_frameIndex += 1;
 
-        return m_game->processUpdate(dt);
+        auto loadingScreenState = GameLoadingScreenState::Hidden;
+        if (m_loadingScreenVisibility >= 1.0f)
+            loadingScreenState = GameLoadingScreenState::Visible;
+        else if (m_loadingScreenVisibility > 0.0f)
+            loadingScreenState = GameLoadingScreenState::Transition;
+
+        return m_game->processUpdate(dt, loadingScreenState);
     }
 
     void Host::render(rendering::command::CommandWriter& cmd, const HostViewport& hostViewport)
     {
         // render game stack
-        base::Array<GameViewport> viewports;
-        m_game->processRender(base::Rect(0, 0, hostViewport.width, hostViewport.height), viewports);
-
-        // render viewports
-        for (const auto& viewport : viewports)
+        GameViewport viewport;
+        if (m_game->processRender(viewport))
         {
-            if (!viewport.viewportRect.empty())
+            const float defaultAspect = hostViewport.width / (float)hostViewport.height;
+            const float defaultFOV = 75.0f;
+            const float defaultNearPlane = 0.01f;
+            const float defaultFarPlane = 4000.0f;
+
+            rendering::scene::CameraSetup cameraSetup;
+            cameraSetup.position = viewport.cameraPlacement.position.approximate();
+            cameraSetup.rotation = viewport.cameraPlacement.rotation;
+            cameraSetup.aspect = viewport.cameraPlacement.customAspect ? viewport.cameraPlacement.customAspect : defaultAspect;
+            cameraSetup.fov = viewport.cameraPlacement.customFov ? viewport.cameraPlacement.customFov : defaultFOV;
+            cameraSetup.nearPlane = viewport.cameraPlacement.customNearPlane ? viewport.cameraPlacement.customNearPlane : defaultNearPlane;
+            cameraSetup.farPlane = viewport.cameraPlacement.customFarPlane ? viewport.cameraPlacement.customFarPlane : defaultFarPlane;
+
+            rendering::scene::Camera camera;
+            camera.setup(cameraSetup);
+
+            rendering::scene::FrameParams params(hostViewport.width, hostViewport.height, camera);
+            params.index = m_frameIndex;
+            params.camera.cameraContext = m_cameraContext;
+            params.time.gameTime = m_gameAccumulatedTime;
+            params.time.engineRealTime = m_startTime.timeTillNow().toSeconds();
+            params.time.timeOfDay = 12.0f;
+            params.time.dayNightFrac = 1.0f;
+
+            if (viewport.world)
+                viewport.world->render(params);
+
+            rendering::scene::FrameCompositionTarget targets;
+            targets.targetColorRTV = hostViewport.backBufferColor;
+            targets.targetDepthRTV = hostViewport.backBufferDepth;
+            targets.targetRect = base::Rect(0, 0, hostViewport.width, hostViewport.height);
+
+            if (targets.targetColorRTV->flipped())
             {
-                const auto width = viewport.viewportRect.width();
-                const auto height = viewport.viewportRect.height();
+                if (m_flippedColorTarget && (m_flippedColorTarget->width() != targets.targetColorRTV->width() || m_flippedColorTarget->height() != targets.targetColorRTV->height()))
+                {
+                    m_flippedColorTarget.reset();
+                    m_flippedDepthTarget.reset();
+                }
 
-                const float defaultAspect = width / (float)height;
-                const float defaultFOV = 75.0f;
-                const float defaultNearPlane = 0.01f;
-                const float defaultFarPlane = 4000.0f;
+                if (!m_flippedColorTarget)
+                {
+                    rendering::ImageCreationInfo info;
+                    info.allowRenderTarget = true;
+                    info.width = targets.targetColorRTV->width();
+                    info.height = targets.targetColorRTV->height();
+                    info.format = targets.targetColorRTV->format();
+                    info.label = "FlippedColorOutput";
+                    m_flippedColorTarget = base::GetService<rendering::DeviceService>()->device()->createImage(info);
+                    m_flippedColorTargetRTV = m_flippedColorTarget->createRenderTargetView();
 
-                rendering::scene::CameraSetup cameraSetup;
-                cameraSetup.aspect = viewport.cameraPlacement.customAspect ? viewport.cameraPlacement.customAspect : defaultAspect;
-                cameraSetup.fov = viewport.cameraPlacement.customFov ? viewport.cameraPlacement.customFov : defaultFOV;
-                cameraSetup.nearPlane = viewport.cameraPlacement.customNearPlane ? viewport.cameraPlacement.customNearPlane : defaultNearPlane;
-                cameraSetup.farPlane = viewport.cameraPlacement.customFarPlane ? viewport.cameraPlacement.customFarPlane : defaultFarPlane;
+                    info.format = targets.targetDepthRTV->format();
+                    m_flippedDepthTarget = base::GetService<rendering::DeviceService>()->device()->createImage(info);
+                    m_flippedDepthTargetRTV = m_flippedDepthTarget->createRenderTargetView();
+                }
 
-                rendering::scene::Camera camera;
-                camera.setup(cameraSetup);
+                rendering::scene::FrameCompositionTarget flippedTarget;
+                flippedTarget.targetColorRTV = m_flippedColorTargetRTV;
+                flippedTarget.targetDepthRTV = m_flippedDepthTargetRTV;
+                flippedTarget.targetRect = targets.targetRect;
 
-                rendering::scene::FrameParams params(width, height, camera);
-                params.index = m_frameIndex;
-                params.camera.cameraContext = m_cameraContext;
-                params.time.gameTime = m_gameAccumulatedTime;
-                params.time.engineRealTime = m_startTime.timeTillNow().toSeconds();
-                params.time.timeOfDay = 12.0f;
-                params.time.dayNightFrac = 1.0f;
+                if (auto sceneCmd = base::GetService<rendering::scene::FrameRenderingService>()->renderFrame(params, flippedTarget))
+                    cmd.opAttachChildCommandBuffer(sceneCmd);
 
-                if (viewport.world)
-                    viewport.world->render(params);
-
-                rendering::scene::FrameCompositionTarget targets;
-                targets.targetColorRTV = hostViewport.backBufferColor;
-                targets.targetDepthRTV = hostViewport.backBufferDepth;
-                targets.targetRect = viewport.viewportRect;
-
-                // render frame
-                if (auto sceneCmd = GetService<rendering::scene::FrameRenderingService>()->renderFrame(params, targets))
+                cmd.opCopyRenderTarget(m_flippedColorTargetRTV, targets.targetColorRTV, 0, 0, true);
+            }
+            else
+            {
+                if (auto sceneCmd = base::GetService<rendering::scene::FrameRenderingService>()->renderFrame(params, targets))
                     cmd.opAttachChildCommandBuffer(sceneCmd);
             }
         }
@@ -140,29 +188,32 @@ namespace game
 
     void Host::renderOverlay(rendering::command::CommandWriter& cmd, const HostViewport& viewport)
     {
-        // render canvas overlay
+        rendering::FrameBuffer fb;
+        fb.color[0].view(viewport.backBufferColor); // no clear
+        fb.depth.view(viewport.backBufferDepth).clearDepth().clearStencil();
+        cmd.opBeingPass(fb);
+
         {
-            rendering::FrameBuffer fb;
-            fb.color[0].view(viewport.backBufferColor); // no clear
-            fb.depth.view(viewport.backBufferDepth).clearDepth().clearStencil();
-            cmd.opBeingPass(fb);
+            base::canvas::Canvas canvas(viewport.width, viewport.height);
+
+            renderCanvas(canvas);
 
             if (base::DebugPagesVisible())
             {
-                base::canvas::Canvas canvas(viewport.width, viewport.height);
-
-                {
-                    m_imgui->beginFrame(canvas, 0.01f);
-                    base::DebugPagesRender();
-                    //m_game->handleDebug();
-                    m_imgui->endFrame(canvas);
-                }
-
-                base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
+                m_imgui->beginFrame(canvas, 0.01f);
+                base::DebugPagesRender();
+                m_imgui->endFrame(canvas);
             }
 
-            cmd.opEndPass();
+            base::GetService<rendering::canvas::CanvasRenderService>()->render(cmd, canvas);
         }
+
+        cmd.opEndPass();
+    }
+
+    void Host::renderCanvas(base::canvas::Canvas& canvas)
+    {
+        m_game->processRenderCanvas(canvas);
     }
 
     bool Host::processDebugInput(const base::input::BaseEvent& evt)
@@ -176,19 +227,19 @@ namespace game
                 switch (keyEvent->keyCode())
                 {
                     // Exit application when "ESC" is pressed
-                case base::input::KeyCode::KEY_F10:
-                    base::platform::GetLaunchPlatform().requestExit("Instant exit key pressed");
-                    return true;
+                    case base::input::KeyCode::KEY_F10:
+                        base::platform::GetLaunchPlatform().requestExit("Instant exit key pressed");
+                        return true;
 
                     // Toggle game pause
-                case base::input::KeyCode::KEY_PAUSE:
-                    m_paused = !m_paused;
-                    return true;
+                    case base::input::KeyCode::KEY_PAUSE:
+                        m_paused = !m_paused;
+                        return true;
 
                     // Toggle debug panels
-                case base::input::KeyCode::KEY_F1:
-                    base::DebugPagesVisibility(!base::DebugPagesVisible());
-                    return true;
+                    case base::input::KeyCode::KEY_F1:
+                        base::DebugPagesVisibility(!base::DebugPagesVisible());
+                        return true;
                 }
             }
         }
@@ -196,8 +247,8 @@ namespace game
         // pass to game or debug panels
         if (base::DebugPagesVisible())
         {
-            //ImGui::ProcessInputEvent(m_imgui, evt);
-            return true;
+            if (m_imgui->processInput(evt))
+                return true;
         }
 
         // allow input to pass to game

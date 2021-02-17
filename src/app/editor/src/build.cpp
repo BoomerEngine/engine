@@ -3,7 +3,9 @@
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
 *
-* [# dependency: app_common #]
+* [# dependency: base_* #]
+* [# dependency: rendering_* #]
+* [# dependency: game_* #]
 * [# dependency: import_* #]
 * [# dependency: editor_* #]
 * [# app #]
@@ -16,7 +18,7 @@
 #include "build.h"
 #include "reflection.inl"
 
-#include "app/common/include/editorApplication.h"
+#include "editorApplication.h"
 #include "base/app/include/application.h"
 
 DECLARE_MODULE(PROJECT_NAME)

@@ -150,16 +150,16 @@ namespace wavefront
             }
         }
 
-        static void SafeMatch(float& ret, StringView txt)
+        static void SafeMatch(float& ret, base::StringView txt)
         {
-            if (txt.match(ret) != MatchResult::OK)
+            if (txt.match(ret) != base::MatchResult::OK)
             {
-                ret = atof(TempString("{}", txt).c_str());
+                ret = atof(base::TempString("{}", txt).c_str());
                 //TRACE_WARNING("Unable to parse numerical value from '{}', falled back to CRT, got {}", txt, ret);
             }
         }
 
-        void ParseWorkGroup(StringView contextName, WorkGroup& group)
+        void ParseWorkGroup(base::StringView contextName, WorkGroup& group)
         {
             const auto dataSize = group.endPtr - group.startPtr;
 
@@ -335,7 +335,7 @@ namespace wavefront
                 group.parsedFaces.size(), group.parsedFaceIndices.size());
         }
 
-        void ProcessParsingJob(StringView contextName, WorkGroupQueue& queue, const base::fibers::WaitCounter& counter)
+        void ProcessParsingJob(base::StringView contextName, WorkGroupQueue& queue, const base::fibers::WaitCounter& counter)
         {
             if (auto work = queue.popJob())
             {

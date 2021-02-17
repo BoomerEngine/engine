@@ -11,6 +11,10 @@ namespace game
 {
     //--
 
+    class FreeCameraHelper;
+
+    //--
+
     // setup for rendering of the game screen
     struct HostViewport
     {
@@ -76,15 +80,26 @@ namespace game
         ImGui::ImGUICanvasHelper* m_imgui = nullptr;
         bool m_paused = false;
 
+        float m_loadingScreenVisibility = 0.0f;
+        bool m_loadingScreenRequired = false;
+
         double m_gameAccumulatedTime = 0.0;
         base::NativeTimePoint m_startTime;
+
+        rendering::ImageObjectPtr m_flippedColorTarget;
+        rendering::RenderTargetViewPtr m_flippedColorTargetRTV;
+
+        rendering::ImageObjectPtr m_flippedDepthTarget;
+        rendering::RenderTargetViewPtr m_flippedDepthTargetRTV;
 
         rendering::scene::CameraContextPtr m_cameraContext;
 
         uint32_t m_frameIndex = 0;
 
         bool processDebugInput(const base::input::BaseEvent& evt);
+
         void renderOverlay(rendering::command::CommandWriter& cmd, const HostViewport& viewport);
+        void renderCanvas(base::canvas::Canvas& canvas);
     };
 
     //--

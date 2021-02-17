@@ -12,20 +12,48 @@
 
 namespace game
 {
+    //--
+
+    enum class GameWorldStackOperation : uint8_t
+    {
+        Nop, // do nothing, allows to load new content without switching to it
+        Activate, // push world at the top of the stack and make it active, keep other worlds as it is
+        Replace, // remove current world and replace it with new one (also activates it)
+        ReplaceAll, // replace all worlds with new one
+    };
+
+    /// initialization params for the game stack
+    struct GAME_HOST_API GameStartInfo
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(GameStartInfo);
+
+        bool showLoadingScreen = true;
+
+        GameWorldStackOperation op = GameWorldStackOperation::Activate;
+
+        base::StringBuf scenePath;
+
+        base::Vector3 spawnPosition;
+        base::Angles spawnRotation;
+        bool spawnOverrideEnabled = false;
+
+        GameStartInfo();
+    };
 
     //--
 
-    /// initialization params for the game stack
-    struct GAME_HOST_API GameInitData
+    /// setup for transitioning to another world
+    struct GAME_HOST_API GameTransitionInfo
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(GameInitData);
+        RTTI_DECLARE_NONVIRTUAL_CLASS(GameTransitionInfo);
 
-        base::Vector3 spawnPositionOverride;
-        base::Angles spawnRotationOverride;
-        bool spawnPositionOverrideEnabled = false;
-        bool spawnRotationOverrideEnabled = false;
+        bool showLoadingScreen = false;
 
-        base::StringBuf startupSceneOverride;
+        GameWorldStackOperation op = GameWorldStackOperation::Activate;
+
+        WorldPtr world;
+
+        GameTransitionInfo();
     };
 
     //--
@@ -36,8 +64,17 @@ namespace game
         RTTI_DECLARE_NONVIRTUAL_CLASS(GameViewport);
 
         WorldPtr world;
-        base::Rect viewportRect;
         base::world::EntityCameraPlacement cameraPlacement;
+    };
+
+    //--
+
+    /// loading screen state
+    enum class GameLoadingScreenState : uint8_t
+    {
+        Hidden,
+        Transition,
+        Visible,
     };
 
     //--
@@ -53,9 +90,8 @@ namespace game
 
         //--
 
-        // get global scene, can be used to spawn game-global entities/controller
-        // NOTE: this scene is never deleted nor are the entities
-        INLINE const WorldPtr& globalWorld() const { return m_globalWorld; }
+        // get current world
+        INLINE const WorldPtr& world() const { return m_currentWorld; }
 
         // get all attached (ticked) scenes
         INLINE const base::Array<WorldPtr>& worlds() const { return m_worlds; }
@@ -63,10 +99,13 @@ namespace game
         //--
 
         // update with given engine time delta
-        bool processUpdate(double dt);
+        bool processUpdate(double dt, GameLoadingScreenState loadingScreenState);
 
         // render all required content, all command should be recorded via provided command buffer writer
-        void processRender(const base::Rect& mainViewportRect, Array<GameViewport>& outViewports);
+        bool processRender(GameViewport& outRendering);
+
+        // render to on screen canvas
+        void processRenderCanvas(base::canvas::Canvas& canvas);
 
         // service input message
         bool processInput(const base::input::BaseEvent& evt);
@@ -78,38 +117,49 @@ namespace game
 
         //--
 
-        // attach additional scene, will be ticked
-        void attachWorld(World* world);
+        /// does current game state require loading screen
+        bool requiresLoadingScreen() const;
 
-        /// detach already attached scene
-        void detachWorld(World* world);
+        /// cancel any pending world loading (also one in progress)
+        void cancelPendingWorldTransitions();
 
-        //--
+        /// switch to already attached world
+        /// NOTE: current content may be unloaded, new content may be loaded
+        void scheduleWorldTransition(const GameTransitionInfo& info);
 
-        /// push entity to input stack
-        void pushInputEntity(base::world::Entity* ent);
-
-        /// pop entity from input stack
-        void popInputEntity(base::world::Entity* ent);
-
-        //--
-
-        /// push entity to camera stack
-        void pushViewEntity(base::world::Entity* ent);
-
-        /// pop entity from camera stack
-        void popViewEntity(base::world::Entity* ent);
+        /// switch to new world
+        void scheduleNewWorldTransition(const GameStartInfo& info);
 
         //--
 
     protected:
         //--
 
-        WorldPtr m_globalWorld;
+        WorldPtr m_currentWorld;
         base::Array<WorldPtr> m_worlds;
 
-        base::Array<base::world::EntityPtr> m_inputStack;
-        base::Array<base::world::EntityPtr> m_viewStack;
+        //--
+
+        base::NativeTimePoint m_currentWorldTransitionStart;
+        base::RefPtr<GameWorldTransition> m_currentWorldTransition;
+        base::RefPtr<GameWorldTransition> m_pendingWorldTransition;
+
+        void processWorldTransition(GameLoadingScreenState loadingScreenState);
+        void applyWorldTransition(const GameWorldTransition& setup);
+
+        //--
+
+        struct LocalStreamingTask : public IReferencable
+        {
+            base::RefPtr<base::world::StreamingTask> task;
+            base::RefWeakPtr<World> world;
+
+            std::atomic<bool> flagFinished = false;
+        };
+
+        base::RefPtr<LocalStreamingTask> m_currentWorldStreaming;
+
+        void processWorldStreaming(GameLoadingScreenState loadingScreenState);
 
         //--
 

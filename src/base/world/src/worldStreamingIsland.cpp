@@ -31,16 +31,36 @@ namespace base
 
         void StreamingIslandInstance::attach(World* world)
         {
-            for (const auto& ent : m_entites)
-                if (ent.data)
-                    world->attachEntity(ent.data);
+            {
+                PC_SCOPE_LVL1(AttachStreamedIn);
+                for (const auto& ent : m_entites)
+                    if (ent.data)
+                        world->attachEntity(ent.data);
+            }
+
+            {
+                PC_SCOPE_LVL1(OnStreamIn);
+                for (const auto& ent : m_entites)
+                    if (ent.data)
+                        ent.data->handleStreamIn(this);
+            }
         }
 
         void StreamingIslandInstance::detach(World* world)
         {
-            for (const auto& ent : m_entites)
-                if (ent.data)
-                    world->detachEntity(ent.data);
+            {
+                PC_SCOPE_LVL1(OnStreamOut);
+                for (const auto& ent : m_entites)
+                    if (ent.data)
+                        ent.data->handleStreamOut(this);
+            }
+
+            {
+                PC_SCOPE_LVL1(DetachStreamedOut);
+                for (const auto& ent : m_entites)
+                    if (ent.data)
+                        world->detachEntity(ent.data);
+            }
         }
 
         //---
@@ -57,6 +77,7 @@ namespace base
         ///---
 
         RTTI_BEGIN_TYPE_CLASS(StreamingIsland);
+            RTTI_PROPERTY(m_alwaysLoaded);
             RTTI_PROPERTY(m_streamingBox);
             RTTI_PROPERTY(m_entityCount);
             RTTI_PROPERTY(m_entityUnpackedDataSize);
@@ -70,15 +91,20 @@ namespace base
         StreamingIsland::StreamingIsland(const Setup& setup)
         {
             m_streamingBox = setup.streamingBox;
+            m_alwaysLoaded = setup.alwaysLoaded;
             m_entityCount = setup.entities.size();
 
             auto container = RefNew<StreamingIslandPackedEntities>();
             container->m_entities.reserve(setup.entities.size());
 
+            HashSet<EntityPtr> uniqueEntities;
             for (const auto& ent : setup.entities)
             {
                 if (ent.data)
                 {
+                    DEBUG_CHECK(!uniqueEntities.contains(ent.data));
+                    uniqueEntities.insert(ent.data);
+
                     auto& info = container->m_entities.emplaceBack();
                     info.id = ent.id;
                     info.data = ent.data;

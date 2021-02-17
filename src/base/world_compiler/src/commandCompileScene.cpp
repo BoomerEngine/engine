@@ -20,7 +20,6 @@
 #include "base/world/include/worldCompiledScene.h"
 #include "base/resource/include/resourceFileSaver.h"
 #include "base/io/include/ioFileHandle.h"
-#include "base/world/include/worldStreamingSector.h"
 #include "base/resource/include/depotService.h"
 
 namespace base
@@ -74,20 +73,14 @@ namespace base
             return true;
         }
 
-        static StringBuf BuildCellSavePath(StringView outputDirectoryPath, const SourceStreamingGridCell& cell)
+        /*static StringBuf BuildCellSavePath(StringView outputDirectoryPath, const SourceStreamingGridCell& cell)
         {
             const auto extension = res::IResource::GetResourceExtensionForClass(StreamingSector::GetStaticClass());
             return StringBuf(TempString("{}sectors/sector_{}_({}x{}).{}",
                 outputDirectoryPath,
                 cell.level, cell.cellX, cell.cellY,
                 extension));
-        }
-
-        static StringBuf BuildCompiledSceneSavePath(StringView outputDirectoryPath)
-        {
-            const auto extension = res::IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
-            return StringBuf(TempString("{}scene.{}", outputDirectoryPath, extension));
-        }
+        }*/
 
         bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine& commandline)
         {
@@ -107,20 +100,20 @@ namespace base
                 return false;
             }
 
-            StringBuf outputDirectoryPath = commandline.singleValue("outputDirectory");
-            if (outputDirectoryPath.empty())
+            StringBuf outputDepotPath = commandline.singleValue("outputDepotPath");
+            if (outputDepotPath.empty())
             {
+                const auto extension = res::IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
                 const auto loadPath = res::ResourcePath(depotPath);
-                outputDirectoryPath = TempString("{}compiled/", loadPath.basePath());
-                TRACE_INFO("No location for cooked scene specified, using the default '{}'", outputDirectoryPath);
+                outputDepotPath = TempString("{}.compiled/{}.{}", loadPath.basePath(), loadPath.fileStem(), extension);
+                TRACE_INFO("No location for cooked scene specified, using the default '{}'", outputDepotPath);
             }
             else
             {
-                TRACE_INFO("Using specified cooked scene location: {}", outputDirectoryPath);
-
-                if (!ValidateDepotPath(outputDirectoryPath, DepotPathClass::AbsoluteDirectoryPath))
+                TRACE_INFO("Using specified cooked scene location: {}", outputDepotPath);
+                if (!ValidateDepotPath(outputDepotPath, DepotPathClass::AbsoluteFilePath))
                 {
-                    TRACE_ERROR("Invalid output path: '{}'", outputDirectoryPath);
+                    TRACE_ERROR("Invalid output path: '{}'", outputDepotPath);
                     return false;
                 }
             }
@@ -144,6 +137,7 @@ namespace base
             SourceIslands islands;
             ExtractSourceIslands(soup, islands);
 
+            /*
             // build streaming grid
             SourceStreamingGrid grid;
             InitializeGrid(islands.totalStreamingArea, 16.0f, islands.largestStreamingDistance, grid);
@@ -178,19 +172,28 @@ namespace base
                     cellInfo.streamingBox = cellData->streamingBounds();
                     cellInfo.data = StreamingSectorAsyncRef(res::ResourcePath(savePath));
                 }
+            }*/
+
+            // build final islands
+            Array<StreamingIslandPtr> finalIslands;
+            finalIslands.reserve(islands.rootIslands.size());
+            for (const auto& sourceRootIsland : islands.rootIslands)
+            {
+                if (auto finalIsland = BuildIsland(sourceRootIsland))
+                    finalIslands.pushBack(finalIsland);
             }
 
             // prepare compiled scene object
             {
-                const auto savePath = BuildCompiledSceneSavePath(outputDirectoryPath);
-
-                auto compiledScene = RefNew<CompiledScene>(setup);
-                if (!SaveFileToDepot(savePath, compiledScene))
+                auto compiledScene = RefNew<CompiledScene>(std::move(finalIslands));
+                if (!SaveFileToDepot(outputDepotPath, compiledScene))
                 {
                     TRACE_ERROR("Failed to save compiled scene file");
                     return false;
                 }
             }
+
+            // TODO: update embedded resource grid
 
             // done
             return true;

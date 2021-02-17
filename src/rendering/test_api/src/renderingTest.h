@@ -200,7 +200,7 @@ namespace rendering
             SimpleMesh();
         };
 
-        extern RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path);
+        extern base::RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path);
 
         // render mesh 
         struct SimpleRenderMesh : public base::IReferencable
@@ -318,11 +318,11 @@ namespace rendering
 
             // create vertex buffer from array
             template< typename T >
-            INLINE BufferObjectPtr createVertexBuffer(const Array<T>& data) { return createVertexBuffer(data.dataSize(), data.data()); }
+            INLINE BufferObjectPtr createVertexBuffer(const base::Array<T>& data) { return createVertexBuffer(data.dataSize(), data.data()); }
 
             // create index buffer from array
             template< typename T >
-            INLINE BufferObjectPtr createIndexBuffer(const Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
+            INLINE BufferObjectPtr createIndexBuffer(const base::Array<T> & data) { return createIndexBuffer(data.dataSize(), data.data()); }
 
 			// create indirect buffer, accessible from compute via UAV
 			BufferObjectPtr createIndirectBuffer(uint32_t size, uint32_t stride);

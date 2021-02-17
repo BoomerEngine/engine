@@ -660,7 +660,7 @@ namespace rendering
 
         //--
 
-        RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path)
+        base::RefPtr<SimpleMesh> LoadSimpleMeshFromDepotPath(base::StringView path)
         {
             base::Buffer text;
             if (!base::GetService<base::DepotService>()->loadFileToBuffer(path, text))
@@ -786,7 +786,7 @@ namespace rendering
                     if (vertices.size() >= 3)
                     {
                         // compute normal
-                        Vector3 normal;
+                        base::Vector3 normal;
                         if (!hasNormals)
                             base::SafeTriangleNormal(vertices[0].VertexPosition, vertices[1].VertexPosition, vertices[2].VertexPosition, normal);
 
@@ -864,7 +864,7 @@ namespace rendering
             auto loadedAsset = LoadSimpleMeshFromDepotPath(base::TempString("/engine/tests/meshes/{}", assetFile));
             if (!loadedAsset)
             {
-                reportError(TempString("Failed to load mesh '{}'", assetFile));
+                reportError(base::TempString("Failed to load mesh '{}'", assetFile));
                 return nullptr;
             }
 
@@ -891,7 +891,7 @@ namespace rendering
                 }
             }
 
-            Box bounds;
+            base::Box bounds;
             for (const auto& v : vertices)
                 bounds.merge(v.VertexPosition);
 
@@ -908,7 +908,7 @@ namespace rendering
                 }
             }
 
-            auto ret = RefNew<SimpleRenderMesh>();
+            auto ret = base::RefNew<SimpleRenderMesh>();
             ret->m_bounds = bounds;
             ret->m_chunks = loadedAsset->m_chunks;
 

@@ -9,7 +9,7 @@
 
 #include "build.h"
 #include "worldCompiledScene.h"
-#include "worldStreamingSector.h"
+#include "worldStreamingIsland.h"
 #include "base/resource/include/resourceTags.h"
 
 namespace base
@@ -17,33 +17,25 @@ namespace base
     namespace world
     {
 
-        ///---
-
-        RTTI_BEGIN_TYPE_CLASS(CompiledSceneStreamingCell);
-            RTTI_PROPERTY(streamingBox);
-            RTTI_PROPERTY(data);
-        RTTI_END_TYPE();
-
-        CompiledSceneStreamingCell::CompiledSceneStreamingCell()
-        {
-        }
-
         ///----
 
         RTTI_BEGIN_TYPE_CLASS(CompiledScene);
-            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4cscene");
+            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4sectors");
             RTTI_METADATA(res::ResourceDescriptionMetadata).description("Compiled Scene");
             RTTI_METADATA(res::ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
-            RTTI_PROPERTY(m_streamingCells);
+            RTTI_PROPERTY(m_rootIslands);
         RTTI_END_TYPE();
 
         CompiledScene::CompiledScene()
         {
         }
 
-        CompiledScene::CompiledScene(const Setup& setup)
+        CompiledScene::CompiledScene(Array<StreamingIslandPtr>&& rootIslands)
         {
-            m_streamingCells = std::move(setup.cells);
+            m_rootIslands = std::move(rootIslands);
+
+            for (const auto& island : m_rootIslands)
+                island->parent(this);
         }
 
         ///----

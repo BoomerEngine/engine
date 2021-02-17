@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/editor/include/resourceEditorNativeFile.h"
+#include "editor/common/include/resourceEditorNativeFile.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
 namespace ed

@@ -226,7 +226,7 @@ namespace rendering
         bounds = sourceChunk.bounds;
     }
 
-    Buffer ImportChunk::buildTriangleListIndexBuffer() const
+    base::Buffer ImportChunk::buildTriangleListIndexBuffer() const
     {
         if (faceQuads)
             return GenerateQuadTriListIndexBuffer<uint32_t>(numVertices);

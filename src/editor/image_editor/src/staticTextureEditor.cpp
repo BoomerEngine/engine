@@ -12,8 +12,8 @@
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
 
-#include "base/editor/include/managedFile.h"
-#include "base/editor/include/managedFileFormat.h"
+#include "editor/common/include/managedFile.h"
+#include "editor/common/include/managedFileFormat.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDockPanel.h"
 #include "base/ui/include/uiDataInspector.h"
@@ -29,7 +29,7 @@
 #include "rendering/texture/include/renderingStaticTexture.h"
 #include "rendering/texture/include/renderingTexture.h"
 #include "rendering/device/include/renderingImage.h"
-#include "base/editor/include/managedFileNativeResource.h"
+#include "editor/common/include/managedFileNativeResource.h"
 
 namespace ed
 {

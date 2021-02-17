@@ -12,6 +12,8 @@
 #include "canvasService.h"
 #include "canvasGeometry.h"
 #include "canvasGeometryBuilder.h"
+#include "base/font/include/fontGlyphBuffer.h"
+#include "base/font/include/fontInputText.h"
 
 namespace base
 {
@@ -119,6 +121,36 @@ namespace base
                 updateScissorRect();
             }
         }
+
+		//--
+
+		void Canvas::debugPrint(float x, float y, StringView text, base::Color color /*= base::Color::WHITE*/, int size /*= 16*/, base::font::FontAlignmentHorizontal align /*= base::font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
+		{
+            static const auto normalFont = base::LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
+			static const auto boldFont = base::LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
+			
+			auto font = bold ? boldFont : normalFont;
+
+			if (font)
+			{
+				base::font::FontStyleParams params;
+				params.size = size;
+
+				base::font::GlyphBuffer glyphs;
+				base::font::FontAssemblyParams assemblyParams;
+				assemblyParams.horizontalAlignment = align;
+				font->renderText(params, assemblyParams, base::font::FontInputText(text.data(), text.length()), glyphs);
+
+				base::canvas::Geometry g;
+				{
+					base::canvas::GeometryBuilder b(g);
+					b.fillColor(color);
+					b.print(glyphs);
+				}
+
+				place(x, y, g);
+			}
+		}
 
         //--
 

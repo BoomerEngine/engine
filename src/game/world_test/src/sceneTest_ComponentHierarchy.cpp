@@ -109,7 +109,7 @@ namespace game
                         entity->mesh(meshes[meshIndex]);
                         entity->requestTransform(entityTransform);
 
-                        entityTransform.position(entityTransform.position() + Vector3(0, 0, 1));
+                        entityTransform.position(entityTransform.position() + base::Vector3(0, 0, 1));
 
                         prevEntity = entity;
                         m_world->attachEntity(entity);

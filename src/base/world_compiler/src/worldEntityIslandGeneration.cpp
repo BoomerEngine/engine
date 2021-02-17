@@ -76,6 +76,7 @@ namespace base
 
         void ExtractSourceIsland(HierarchyEntity* ent, SourceIsland* island)
         {
+            DEBUG_CHECK(!island->flatEntities.contains(ent));
             island->flatEntities.pushBack(AddRef(ent));
 
             for (const auto& child : ent->children)

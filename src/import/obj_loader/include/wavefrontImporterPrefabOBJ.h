@@ -24,7 +24,7 @@ namespace wavefront
     public:
         OBJPrefabImportConfig();
 
-        StringBuf m_meshImportPath;
+        base::StringBuf m_meshImportPath;
 
         bool forceTriangles = false;
         bool flipUV = true;
@@ -36,7 +36,7 @@ namespace wavefront
         char positionAlignY = 0; // center Y
         char positionAlignZ = -1; // bottom
 
-        virtual void computeConfigurationKey(CRC64& crc) const override;
+        virtual void computeConfigurationKey(base::CRC64& crc) const override;
     };
 
     //--

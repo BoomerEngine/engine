@@ -9,6 +9,7 @@
 #pragma once
 
 #include "worldSystem.h"
+#include "base/containers/include/bitSet.h"
 
 namespace base
 {
@@ -16,23 +17,60 @@ namespace base
     {
         //--
 
-        /// basic streaming observer
-        class BASE_WORLD_API StreamingObserver : public IObject
+        class StreamingSystem;
+
+        //--
+
+        // mounted streaming island
+        class BASE_WORLD_API StreamingIslandInfo
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(StreamingObserver, IObject);
-
         public:
-            StreamingObserver();
+            uint32_t parentIndex = 0;
+            uint32_t index = 0;
+            bool alwaysLoaded = false;
 
-            /// get current position
-            INLINE const Vector3& position() const { return m_position; }
+            Box streamingBox;
+            StreamingIslandPtr data;
 
-            /// set new position
-            void move(const Vector3& position);
+            StreamingIslandInfo* parent = nullptr;
+            Array<StreamingIslandInfo*> children;
 
+            //--
+
+            StreamingIslandInfo();
+        };
+
+        //--
+
+        // world streaming update tasks
+        class BASE_WORLD_API StreamingTask : public IReferencable
+        {
         public:
-            Vector3 m_position;
-        };        
+            StreamingTask(const Array<StreamingObserverInfo>& observers, const Array<StreamingIslandInfo>& islands, const Array<uint32_t>& attachedIslands, const BitSet<>& attachedIslandsMask);
+
+            /// request streaming task to be canceled
+            void requestCancel();
+
+            /// process the task, can be called directly (blocking) 
+            /// but it should be called on job
+            CAN_YIELD void process();
+
+            //--
+
+        private:
+            Array<StreamingObserverInfo> m_observers;
+
+            Array<uint32_t> m_attachedIslands; // modified
+            BitSet<> m_attachedIslandsMask; // modified
+
+            const Array<StreamingIslandInfo>& m_islands;
+
+            Array<uint32_t> m_unloadedIslands;
+            Array<uint32_t> m_loadedIslands;
+            Array<StreamingIslandInstancePtr> m_loadedIslandsData;
+
+            friend class StreamingSystem;
+        };
 
         //--
 
@@ -51,73 +89,29 @@ namespace base
             void unbindEntities();
 
             /// attach compiled scene content
-            void bindScene(CompiledScene* scene);
+            void bindScene(const CompiledScene* scene);
 
             //--
 
-            /// attach streaming observer
-            void attachObserver(StreamingObserver* observer);
+            /// create streaming update tasks using current observers and other settings
+            /// NOTE: may return NULL if there's nothing to stream in/out
+            RefPtr<StreamingTask> createStreamingTask(const Array<StreamingObserverInfo>& observers) const;
 
-            /// remove streaming observer
-            void dettachObserver(StreamingObserver* observer);
-
-            //--
+            /// apply finished streaming update task
+            /// first outgoing entities are detached then new entities are attached
+            /// TODO: partial "budgeted" attach to minimize hitching
+            void applyStreamingTask(const StreamingTask* task);
 
         protected:
-            virtual void handlePreTick(double dt) override;
             virtual void handleShutdown() override;
 
             //--
 
-            Array<RefPtr<StreamingObserver>> m_observers;
+            Array<StreamingIslandInfo> m_islands;
+            Array<StreamingIslandInstancePtr> m_islandInstances;
 
-            RefPtr<CompiledScene> m_compiledScene;
-
-            //--
-
-            struct IslandLoading : public IReferencable
-            {
-                RefPtr<StreamingIsland> data;
-                std::atomic<bool> finished = false;
-                RefPtr<StreamingIslandInstance> loadedData;
-            };
-
-            struct IslandState : public IReferencable
-            {
-                Box streamingBox;
-                RefPtr<StreamingIsland> data;
-                RefPtr<IslandLoading> loading;
-                RefPtr<StreamingIslandInstance> attached;
-            };
-
-            Array<RefPtr<IslandState>> m_islands;
-
-            void updateIslandStates();
-
-            //--
-
-            struct SectorLoading : public IReferencable
-            {
-                StreamingSectorAsyncRef data;
-
-                std::atomic<bool> finished = false;
-                RefPtr<StreamingSector> loadedData;
-            };
-
-            struct SectorState : public IReferencable
-            {
-                Box streamingBox;
-                StreamingSectorAsyncRef data;
-
-                RefPtr<SectorLoading> loading;
-
-                Array<RefPtr<IslandState>> loadedIslands;
-            };
-
-            Array<RefPtr<SectorState>> m_sectors;
-
-            void updateSectorStates();
-            void extractSectorIslands(SectorState* sector, StreamingIsland* island, IslandState* parentIsland);
+            Array<uint32_t> m_attachedIslands;
+            BitSet<> m_attachedIslandsMask;
 
             //--
         };

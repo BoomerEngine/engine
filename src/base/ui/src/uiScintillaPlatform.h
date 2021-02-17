@@ -116,7 +116,7 @@ namespace Scintilla
     public:
         base::font::FontStyleParams m_style;
         base::font::FontAssemblyParams m_assembly;
-        base::RefPtr<base::font::Font> m_font;
+        base::FontPtr m_font;
     };
 
     class FontCache : public base::ISingleton

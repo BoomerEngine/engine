@@ -100,10 +100,10 @@ namespace base
 
             /// update scene and all the runtime systems
             /// NOTE: this function will wait for the internal tasks to finish
-            CAN_YIELD void update(double dt);
+            CAN_YIELD virtual void update(double dt);
 
             /// render the world
-            CAN_YIELD void render(rendering::scene::FrameParams& info);
+            CAN_YIELD virtual void render(rendering::scene::FrameParams& info);
 
             /// render special debug gui with ImGui
             void renderDebugGui();

@@ -9,6 +9,7 @@
 #include "build.h"
 #include "depotService.h"
 #include "base/io/include/ioFileHandle.h"
+#include "base/app/include/commandline.h"
 
 namespace base
 {
@@ -34,7 +35,7 @@ namespace base
 
         if (m_projectDepotPath && depotPath.beginsWith("/project/"))
         {
-            outAbsolutePath = TempString("{}{}", m_engineDepotPath, depotPath.subString(9));
+            outAbsolutePath = TempString("{}{}", m_projectDepotPath, depotPath.subString(9));
             return true;
         }
 
@@ -284,6 +285,16 @@ namespace base
         const auto engineDir = io::SystemPath(io::PathCategory::EngineDir);
         m_engineDepotPath = TempString("{}data/depot/", engineDir);
         TRACE_INFO("Engine depot directory: '{}'", m_engineDepotPath);
+
+        const auto& projectDir = cmdLine.singleValue("projectDir");
+        if (!projectDir.empty())
+        {
+            if (io::FileExists(TempString("{}project.xml", projectDir)))
+            {
+                m_projectDepotPath = TempString("{}data/depot/", projectDir);
+                TRACE_INFO("Project depot directory: '{}'", m_projectDepotPath);
+            }
+        }
 
         m_engineObserver = io::CreateDirectoryWatcher(m_engineDepotPath);
         m_engineObserver->attachListener(this);

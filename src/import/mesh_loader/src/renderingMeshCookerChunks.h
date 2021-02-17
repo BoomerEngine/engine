@@ -22,7 +22,7 @@ namespace rendering
         uint32_t detailMask = 0;
         uint32_t materialIndex = 0;
 
-        Array<MeshRawChunkData> vertexDataStreams;
+        base::Array<MeshRawChunkData> vertexDataStreams;
         MeshStreamMask vertexDataStreamMask;
         uint32_t numVertices = 0;
 
@@ -35,7 +35,7 @@ namespace rendering
 
         //--
 
-        Buffer buildTriangleListIndexBuffer() const;
+        base::Buffer buildTriangleListIndexBuffer() const;
 
         //--
 
@@ -83,9 +83,9 @@ namespace rendering
             RTTI_DECLARE_POOL(POOL_MESH_BUILDER)
         public:
 
-            Array<MeshRawChunkData> vertexDataStreams;
+            base::Array<MeshRawChunkData> vertexDataStreams;
             MeshStreamMask vertexDataStreamMask;
-            Buffer indexData;
+            base::Buffer indexData;
 
             uint32_t numVertices = 0;
             uint32_t numIndices = 0;

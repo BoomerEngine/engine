@@ -218,7 +218,7 @@ namespace game
                     if (enumType->findValue(option, value))
                     {
                         const bool selected = (mode == (T)value);
-                        if (ImGui::Selectable(TempString("{}", option), selected))
+                        if (ImGui::Selectable(base::TempString("{}", option), selected))
                             mode = (T)value;
                         if (selected)
                             ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
@@ -250,7 +250,7 @@ namespace game
         {
             if (cvDebugFilterPanel.get() && ImGui::Begin("Filters", &cvDebugFilterPanel.get()))
             {
-                if (ImGui::BeginCombo("Mode", TempString("{}", st_FrameMode)))
+                if (ImGui::BeginCombo("Mode", base::TempString("{}", st_FrameMode)))
                 {
                     DrawEnumOptions(st_FrameMode);
                     ImGui::EndCombo();
@@ -331,7 +331,7 @@ namespace game
             {
                 ImGui::Checkbox("Enable", &st_GlobalTonemappingAdjustEnabled);
                 ImGui::SetNextItemWidth(300.0f);
-                if (ImGui::BeginCombo("Mode", TempString("{}", st_GlobalTonemappingAdjust.type)))
+                if (ImGui::BeginCombo("Mode", base::TempString("{}", st_GlobalTonemappingAdjust.type)))
                 {
                     DrawEnumOptions(st_GlobalTonemappingAdjust.type);
                     ImGui::EndCombo();

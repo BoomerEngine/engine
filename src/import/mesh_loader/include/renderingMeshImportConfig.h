@@ -43,10 +43,10 @@ namespace rendering
     extern IMPORT_MESH_LOADER_API float ScaleFactorForUnits(MeshImportUnits units);
 
     // get the "content to engine" space conversion matrix - NOTE, no space unit conversion
-    extern IMPORT_MESH_LOADER_API Matrix CalcContentToEngineMatrix(MeshImportSpace space);
+    extern IMPORT_MESH_LOADER_API base::Matrix CalcContentToEngineMatrix(MeshImportSpace space);
 
     // calculate "content to engine" space conversion matrix that includes the units 
-    extern IMPORT_MESH_LOADER_API Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units);
+    extern IMPORT_MESH_LOADER_API base::Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units);
 
     //---
           
@@ -85,9 +85,9 @@ namespace rendering
 
     /// common manifest for assets importable into mesh formats
     /// contains coordinate system conversion and other setup for geometry importing from outside sources
-    class IMPORT_MESH_LOADER_API MeshImportConfig : public res::ResourceConfiguration
+    class IMPORT_MESH_LOADER_API MeshImportConfig : public base::res::ResourceConfiguration
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, res::ResourceConfiguration);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, base::res::ResourceConfiguration);
 
     public:
         MeshImportConfig();
@@ -104,11 +104,11 @@ namespace rendering
 
         // global translation to apply to mesh when importing
         // NOTE: applied AFTER the normal space transform
-        Vector3 globalTranslation = Vector3(0,0,0);
+        base::Vector3 globalTranslation = base::Vector3(0,0,0);
 
         // global rotation to apply to mesh when importing
         // NOTE: applied AFTER the normal space transform
-        Angles globalRotation = Angles(0,0,0);
+        base::Angles globalRotation = base::Angles(0,0,0);
 
         // global scale to apply to mesh when importing
         // NOTE: applied AFTER the normal space transform
@@ -160,7 +160,7 @@ namespace rendering
 
         // calculate the space conversion matrix for given content type
         // NOTE: includes custom transformation specified in the manifest itself
-        Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
+        base::Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
 
         //--
 
@@ -176,7 +176,7 @@ namespace rendering
 
         //--
 
-        virtual void computeConfigurationKey(CRC64& crc) const override;
+        virtual void computeConfigurationKey(base::CRC64& crc) const override;
     };
 
     //---

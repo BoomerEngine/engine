@@ -185,6 +185,9 @@ namespace base
         if (!IsValidName(txt))
             return false;
 
+        if (txt.beginsWith("."))
+            txt = txt.subString(1);
+
         for (utf8::CharIterator it(txt); it; ++it)
             if (!IsValidPathChar(*it))
                 return false;
@@ -202,6 +205,9 @@ namespace base
 
         if (!ValidateFileName(mainPart))
             return false;
+
+        if (rest.beginsWith("."))
+            rest = rest.subString(1);
 
         rest = rest.beforeFirstOrFull(".renamed");
 

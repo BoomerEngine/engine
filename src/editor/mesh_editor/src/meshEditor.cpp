@@ -12,9 +12,9 @@
 #include "meshStructurePanel.h"
 #include "meshMaterialsPanel.h"
 
-#include "base/editor/include/managedFile.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedFileNativeResource.h"
+#include "editor/common/include/managedFile.h"
+#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/managedFileNativeResource.h"
 #include "base/ui/include/uiDockPanel.h"
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDataInspector.h"

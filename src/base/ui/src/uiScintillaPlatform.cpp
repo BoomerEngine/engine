@@ -81,21 +81,21 @@ namespace Scintilla
         return crc.crc();
     }
 
-    base::res::StaticResource<base::font::Font> resFontNormal("/engine/fonts/DejaVuSansMono.ttf");
-    base::res::StaticResource<base::font::Font> resFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf");
-    base::res::StaticResource<base::font::Font> resFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf");
-    base::res::StaticResource<base::font::Font> resFontBoldItalic("/engine/fonts/DejaVuSansMono-BoldOblique.ttf");
-
     static base::RefPtr<base::font::Font> SelectFont(bool bold, bool italic)
     {
+        static const auto resFontNormal = base::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono.ttf");
+        static const auto resFontBold = base::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono-Bold.ttf");
+        static const auto resFontItalic = base::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono-Oblique.ttf");
+        static const auto resFontBoldItalic = base::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono-BoldOblique.ttf");
+
         if (bold && italic)
-            return resFontBoldItalic.loadAndGet();
+            return resFontBoldItalic;
         else if (bold)
-            return resFontBold.loadAndGet();
+            return resFontBold;
         else if (italic)
-            return resFontItalic.loadAndGet();
+            return resFontItalic;
         else
-            return resFontNormal.loadAndGet();
+            return resFontNormal;
     }
 
     FontInfo* FontCache::createFont(const FontParameters& fp)

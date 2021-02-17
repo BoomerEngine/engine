@@ -39,11 +39,11 @@
 
 #include "base/containers/include/stringBuilder.h"
 
-#include "base/editor/include/editorService.h"
-#include "base/editor/include/assetBrowser.h"
-#include "base/editor/include/managedFile.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedDepot.h"
+#include "editor/common/include/editorService.h"
+#include "editor/common/include/assetBrowser.h"
+#include "editor/common/include/managedFile.h"
+#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/managedDepot.h"
 
 namespace ed
 {

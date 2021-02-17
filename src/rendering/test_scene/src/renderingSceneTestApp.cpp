@@ -333,33 +333,6 @@ namespace rendering
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
-        static base::res::StaticResource<base::font::Font> resDefaultFont("/engine/fonts/aileron_regular.otf", true);
-
-        static void Print(base::canvas::Canvas& c, float x, float y, const base::StringBuf& text, base::Color color = base::Color::WHITE, int size=16,
-            base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold=false)
-        {
-            if (auto font = resDefaultFont.loadAndGet())
-            {
-                base::font::FontStyleParams params;
-                params.bold = bold;
-                params.size = size;
-
-                base::font::GlyphBuffer glyphs;
-                base::font::FontAssemblyParams assemblyParams;
-                assemblyParams.horizontalAlignment = align;
-                font->renderText(params, assemblyParams, base::font::FontInputText(text.c_str()), glyphs);
-
-				base::canvas::Geometry g;
-				{
-					base::canvas::GeometryBuilder b(g);
-					b.fillColor(color);
-					b.print(glyphs);
-				}
-
-                c.place(base::Vector2(x,y), g);
-            }
-        }
-
         void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target)
         {
 			base::canvas::Canvas canvas(target.targetRect.width(), target.targetRect.height());
@@ -382,29 +355,29 @@ namespace rendering
         {
             // Local stuff
             {
-                Print(canvas, canvas.width() - 20, canvas.height() - 60,
+                canvas.debugPrint(canvas.width() - 20, canvas.height() - 60,
                     base::TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(m_camera.position().x, 2), Prec(m_camera.position().y, 2), Prec(m_camera.position().z, 2)),
                     base::Color::WHITE, 16, base::font::FontAlignmentHorizontal::Right);
 
-                Print(canvas, canvas.width() - 20, canvas.height() - 40,
+                canvas.debugPrint(canvas.width() - 20, canvas.height() - 40,
                     base::TempString("Camera Rotation: [P={}, Y={}]", Prec(m_camera.rotation().pitch, 1), Prec(m_camera.rotation().yaw, 1)),
                     base::Color::WHITE, 16, base::font::FontAlignmentHorizontal::Right);
 
                 if (!m_timeAdvance)
                 {
-                    Print(canvas, canvas.width() - 20, 20,
+                    canvas.debugPrint(canvas.width() - 20, 20,
                         base::TempString("PAUSED"),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier > 0)
                 {
-                    Print(canvas, canvas.width() - 20, 20,
+                    canvas.debugPrint(canvas.width() - 20, 20,
                         base::TempString("Time x{} faster", 1ULL << m_timeMultiplier),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }
                 else if (m_timeMultiplier < 0)
                 {
-                    Print(canvas, canvas.width() - 20, 20,
+                    canvas.debugPrint(canvas.width() - 20, 20,
                         base::TempString("Time x{} slower", 1ULL << (-m_timeMultiplier)),
                         base::Color::ORANGERED, 20, base::font::FontAlignmentHorizontal::Right);
                 }

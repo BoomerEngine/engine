@@ -11,7 +11,6 @@
 #include "worldEntityIslandGeneration.h"
 #include "worldEntityStreamingGrid.h"
 #include "base/world/include/worldStreamingIsland.h"
-#include "base/world/include/worldStreamingSector.h"
 
 namespace base
 {
@@ -200,26 +199,18 @@ namespace base
 
         //---
 
-        static void ExtractEntities(const HierarchyEntity* ent, Array<StreamingIslandPackedEntity>& outEntites)
-        {
-            if (ent->entity)
-            {
-                auto& entry = outEntites.emplaceBack();
-                entry.id = ent->id;
-                entry.data = ent->entity;
-            }
-
-            for (const auto& child : ent->children)
-                ExtractEntities(child, outEntites);
-        }
-
         RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island)
         {
             StreamingIsland::Setup setup;
             setup.streamingBox = island->localStreamingBox;
+            //setup.alwaysLoaded = island->alwaysLoaded;
 
             for (const auto& entity : island->flatEntities)
-                ExtractEntities(entity, setup.entities);
+            {
+                auto& entry = setup.entities.emplaceBack();
+                entry.id = entity->id;
+                entry.data = entity->entity;
+            }
 
             auto ret = RefNew<StreamingIsland>(setup);
 
@@ -230,7 +221,7 @@ namespace base
             return ret;
         }
 
-        RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell)
+        /*RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell)
         {
             StreamingSector::Setup setup;
 
@@ -239,7 +230,7 @@ namespace base
                     setup.islands.pushBack(data);
 
             return RefNew<StreamingSector>(setup);
-        }
+        }*/
 
         //---
 

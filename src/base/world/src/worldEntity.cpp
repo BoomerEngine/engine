@@ -174,7 +174,7 @@ namespace base
 
         }
 
-        bool Entity::handleInput(const EntityInputEvent& gameInput)
+        bool Entity::handleInput(const input::BaseEvent& evt)
         {
             return false;
         }

@@ -4,7 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_image #]
-* [# dependency: base_editor #]
+* [# dependency: base_resource_compiler #]
 * [# dependency: rendering_mesh #]
 * [# dependency: rendering_material #]
 * [# devonly #]

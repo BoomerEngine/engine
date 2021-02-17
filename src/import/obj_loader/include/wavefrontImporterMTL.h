@@ -24,22 +24,22 @@ namespace wavefront
     public:
         MTLMaterialImportConfig();
 
-        StringBuf m_materialName; // name of the material to import from MTL file
+        base::StringBuf m_materialName; // name of the material to import from MTL file
 
-        StringBuf m_bindingColor;
+        base::StringBuf m_bindingColor;
 
-        StringBuf m_bindingMapColor;
-        StringBuf m_bindingMapBump;
-        StringBuf m_bindingMapNormal;
-        StringBuf m_bindingMapDissolve;
-        StringBuf m_bindingMapSpecular;
-        StringBuf m_bindingMapEmissive;
-        StringBuf m_bindingMapRoughness;
-        StringBuf m_bindingMapRoughnessSpecularity;
-        StringBuf m_bindingMapMetallic;
-        StringBuf m_bindingMapAmbientOcclusion;
+        base::StringBuf m_bindingMapColor;
+        base::StringBuf m_bindingMapBump;
+        base::StringBuf m_bindingMapNormal;
+        base::StringBuf m_bindingMapDissolve;
+        base::StringBuf m_bindingMapSpecular;
+        base::StringBuf m_bindingMapEmissive;
+        base::StringBuf m_bindingMapRoughness;
+        base::StringBuf m_bindingMapRoughnessSpecularity;
+        base::StringBuf m_bindingMapMetallic;
+        base::StringBuf m_bindingMapAmbientOcclusion;
 
-        virtual void computeConfigurationKey(CRC64& crc) const override;
+        virtual void computeConfigurationKey(base::CRC64& crc) const override;
     };
 
     //--

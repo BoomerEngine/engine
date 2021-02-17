@@ -14,9 +14,9 @@
 #include "sceneEditMode.h"
 
 #include "base/world/include/worldPrefab.h"
-#include "base/editor/include/assetBrowser.h"
-#include "base/editor/include/managedFile.h"
-#include "base/editor/include/managedFileFormat.h"
+#include "editor/common/include/assetBrowser.h"
+#include "editor/common/include/managedFile.h"
+#include "editor/common/include/managedFileFormat.h"
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiSearchBar.h"
 #include "base/ui/include/uiComboBox.h"

@@ -16,20 +16,6 @@ namespace base
     {
         //---
 
-        /// streaming cell
-        struct BASE_WORLD_API CompiledSceneStreamingCell
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(CompiledSceneStreamingCell);
-
-        public:
-            CompiledSceneStreamingCell();
-
-            Box streamingBox;
-            StreamingSectorAsyncRef data; // sector data (packed entity islands + inplace resources)
-        };
-
-        //---
-
         /// Cooked scene
         class BASE_WORLD_API CompiledScene : public res::IResource
         {
@@ -37,19 +23,14 @@ namespace base
             RTTI_DECLARE_VIRTUAL_CLASS(CompiledScene, res::IResource);
 
         public:
-            struct Setup
-            {
-                Array<CompiledSceneStreamingCell> cells;
-            };
-
             CompiledScene();
-            CompiledScene(const Setup& setup);
+            CompiledScene(Array<StreamingIslandPtr>&& rootIslands);
 
-            // get streaming cells
-            INLINE const Array<CompiledSceneStreamingCell>& streamingCells() const { return m_streamingCells; }
+            // get root streaming islands
+            INLINE const Array<StreamingIslandPtr>& rootIslands() const { return m_rootIslands; }
 
         private:
-            Array<CompiledSceneStreamingCell> m_streamingCells;
+            Array<StreamingIslandPtr> m_rootIslands;
         };
 
         //---

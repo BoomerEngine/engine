@@ -14,9 +14,9 @@
 
 #include "base/ui/include/uiDockLayout.h"
 #include "base/ui/include/uiDataInspector.h"
-#include "base/editor/include/assetBrowser.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedFileNativeResource.h"
+#include "editor/common/include/assetBrowser.h"
+#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/managedFileNativeResource.h"
 
 namespace ed
 {

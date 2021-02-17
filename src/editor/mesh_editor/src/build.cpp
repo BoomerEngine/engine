@@ -4,8 +4,7 @@
 * Source code licensed under LGPL 3.0 license
 *
 * [# dependency: base_image #]
-* [# dependency: base_editor #]
-* [# dependency: base_editor #]
+* [# dependency: editor_common #]
 * [# dependency: rendering_compiler #]
 * [# dependency: rendering_canvas #]
 * [# dependency: rendering_ui_viewport #]

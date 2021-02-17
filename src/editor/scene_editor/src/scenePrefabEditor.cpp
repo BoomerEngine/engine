@@ -14,8 +14,8 @@
 #include "sceneEditMode_Default.h"
 
 #include "base/world/include/worldPrefab.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedFileNativeResource.h"
+#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/managedFileNativeResource.h"
 
 namespace ed
 {

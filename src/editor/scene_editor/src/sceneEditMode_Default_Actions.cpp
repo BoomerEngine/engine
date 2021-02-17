@@ -28,11 +28,11 @@
 #include "base/world/include/worldNodeTemplate.h"
 #include "base/world/include/worldPrefab.h"
 #include "base/resource/include/objectIndirectTemplate.h"
-#include "base/editor/include/managedFileFormat.h"
-#include "base/editor/include/managedDirectory.h"
-#include "base/editor/include/editorService.h"
-#include "base/editor/src/assetBrowserDialogs.h"
-#include "base/editor/include/managedDepot.h"
+#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/managedDirectory.h"
+#include "editor/common/include/editorService.h"
+#include "editor/common/src/assetBrowserDialogs.h"
+#include "editor/common/include/managedDepot.h"
 
 namespace ed
 {

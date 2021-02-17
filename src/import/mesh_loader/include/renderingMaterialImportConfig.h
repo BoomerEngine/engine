@@ -27,9 +27,9 @@ namespace rendering
     //---
 
     /// common manifest for importable materials 
-    class IMPORT_MESH_LOADER_API MaterialImportConfig : public res::ResourceConfiguration
+    class IMPORT_MESH_LOADER_API MaterialImportConfig : public base::res::ResourceConfiguration
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, res::ResourceConfiguration);
+        RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, base::res::ResourceConfiguration);
 
     public:
         MaterialImportConfig();
@@ -40,10 +40,10 @@ namespace rendering
         MaterialTextureImportMode m_textureImportMode;
 
         // texture search path, relative to asset, typically ./textures
-        StringBuf m_textureSearchPath;
+        base::StringBuf m_textureSearchPath;
 
         // if not found texture is imported here using only it's file name
-        StringBuf m_textureImportPath;
+        base::StringBuf m_textureImportPath;
 
         //--
 
@@ -55,7 +55,7 @@ namespace rendering
 
         //--
 
-        virtual void computeConfigurationKey(CRC64& crc) const override;
+        virtual void computeConfigurationKey(base::CRC64& crc) const override;
     };
 
     //---

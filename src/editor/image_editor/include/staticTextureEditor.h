@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "base/editor/include/resourceEditor.h"
-#include "base/editor/include/resourceEditorNativeFile.h"
+#include "editor/common/include/resourceEditor.h"
+#include "editor/common/include/resourceEditorNativeFile.h"
 
 namespace ed
 {

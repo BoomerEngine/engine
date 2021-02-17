@@ -13,6 +13,7 @@
 #include "base/containers/include/inplaceArray.h"
 #include "base/containers/include/pagedBuffer.h"
 #include "base/memory/include/linearAllocator.h"
+#include "base/font/include/font.h"
 
 namespace rendering
 {
@@ -211,6 +212,11 @@ namespace base
 			void pixelPlacement(float pixelOffsetX, float pixelOffsetY, float pixelScale = 1.0f);
 
 			//---
+
+			/// quick text print
+			void debugPrint(float x, float y, StringView text, base::Color color = base::Color::WHITE, int size = 16, base::font::FontAlignmentHorizontal align = base::font::FontAlignmentHorizontal::Left, bool bold = false);
+
+			//--
 
 		private:
 			static const uint32_t MAX_LOCAL_VERTICES = 65536;

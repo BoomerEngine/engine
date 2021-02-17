@@ -56,7 +56,7 @@ namespace wavefront
     {
     }
 
-    void OBJMeshImportConfig::computeConfigurationKey(CRC64& crc) const
+    void OBJMeshImportConfig::computeConfigurationKey(base::CRC64& crc) const
     {
         TBaseClass::computeConfigurationKey(crc);
 
@@ -189,7 +189,7 @@ namespace wavefront
         return key;
     }
     
-    static GroupBuildModelType DetermineModelType(StringView name, uint8_t& outLodIndex)
+    static GroupBuildModelType DetermineModelType(base::StringView name, uint8_t& outLodIndex)
     {
         if (name.endsWithNoCase("_LOD0"))
         {
@@ -818,7 +818,7 @@ namespace wavefront
 
         ASSERT(ValidateFileName(fileName));
 
-        return TempString("{}.{}", fileName, ext);
+        return base::TempString("{}.{}", fileName, ext);
     }
 
     void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
@@ -870,7 +870,7 @@ namespace wavefront
         GlueDepotPath(referenceDepotPath, true, pathParts);
         GlueDepotPath(materialImportPath, false, pathParts);
 
-        StringBuilder txt;
+        base::StringBuilder txt;
         EmitDepotPath(pathParts, txt);
 
         txt << materialFileName;
@@ -1020,7 +1020,7 @@ namespace wavefront
                         exportMaterial.name = base::StringID(sourceMaterial.name.view());
 
                         rendering::MaterialInstance* existingMaterial = nullptr;
-                        if (const auto* existingMesh = rtti_cast<rendering::Mesh>(importer.existingData()))
+                        if (const auto* existingMesh = base::rtti_cast<rendering::Mesh>(importer.existingData()))
                         {
                             for (const auto& ptr : existingMesh->materials())
                             {

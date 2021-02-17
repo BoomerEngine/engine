@@ -93,11 +93,11 @@ namespace rendering
 
     MeshImportConfig::MeshImportConfig()
     {
-        m_materialImportPath = StringBuf("../materials/");
-        m_materialSearchPath = StringBuf("../materials/");
+        m_materialImportPath = base::StringBuf("../materials/");
+        m_materialSearchPath = base::StringBuf("../materials/");
 
-        m_textureImportPath = StringBuf("../textures/");
-        m_textureSearchPath = StringBuf("../textures/");
+        m_textureImportPath = base::StringBuf("../textures/");
+        m_textureSearchPath = base::StringBuf("../textures/");
 
         m_textureImportMode = MaterialTextureImportMode::ImportMissing;
         m_materialImportMode = MeshMaterialImportMode::EmbedMissing;
@@ -117,35 +117,35 @@ namespace rendering
         return 1.0f;
     }
 
-    Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
+    base::Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
     {
         switch (space)
         {
             case MeshImportSpace::RightHandZUp:
-                return Matrix::IDENTITY();
+                return base::Matrix::IDENTITY();
 
             case MeshImportSpace::RightHandYUp:
-                return Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
+                return base::Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
 
             case MeshImportSpace::LeftHandZUp:
-                return Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
+                return base::Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
 
             case MeshImportSpace::LeftHandYUp:
-                return Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
+                return base::Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
         }
 
         // default space
-        return Matrix::IDENTITY();
+        return base::Matrix::IDENTITY();
     }
 
-    Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
+    base::Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
     {
         auto orientationMatrix = GetOrientationMatrixForSpace(space);
         orientationMatrix.scaleInner(GetScaleFactorForUnits(units));
         return orientationMatrix;
     }
 
-    Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
+    base::Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
     {
         // select setup
         auto importUnits = resolveUnits(defaultAssetUnits);
@@ -155,13 +155,13 @@ namespace rendering
         auto orientationMatrix = CalcContentToEngineMatrix(importSpace, importUnits);
 
         // calculate the additional setup matrix
-        auto additionalTransformMatrix = Matrix::BuildTRS(globalTranslation, globalRotation, globalScale);
+        auto additionalTransformMatrix = base::Matrix::BuildTRS(globalTranslation, globalRotation, globalScale);
         return orientationMatrix * additionalTransformMatrix;
     }
 
     //--
 
-    void MeshImportConfig::computeConfigurationKey(CRC64& crc) const
+    void MeshImportConfig::computeConfigurationKey(base::CRC64& crc) const
     {
         TBaseClass::computeConfigurationKey(crc);
 

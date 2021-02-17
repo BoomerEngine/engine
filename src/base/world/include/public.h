@@ -88,19 +88,13 @@ namespace base
 
         //--
 
+        class StreamingTask;
+
         class StreamingIslandInstance;
         typedef RefPtr<StreamingIslandInstance> StreamingIslandInstancePtr;
 
         class StreamingIsland;
         typedef RefPtr<StreamingIsland> StreamingIslandPtr;
-
-        class StreamingSector;
-        typedef RefPtr<StreamingSector> StreamingSectorPtr;
-        typedef res::Ref<StreamingSector> StreamingSectorRef;
-        typedef res::AsyncRef<StreamingSector> StreamingSectorAsyncRef;
-
-        class StreamingGridSetup;
-        typedef RefPtr<StreamingGridSetup> StreamingGridSetupPtr;
 
         //---
 
@@ -110,6 +104,19 @@ namespace base
         typedef res::AsyncRef<CompiledScene> CompiledSceneAsyncRef;
 
         //---
+
+        // information about streaming observer
+        struct BASE_WORLD_API StreamingObserverInfo
+        {
+            RTTI_DECLARE_NONVIRTUAL_CLASS(StreamingObserverInfo);
+
+            base::Vector3 position;
+            base::Vector3 velocity;
+
+            StreamingObserverInfo();
+        };
+
+        //--
 
     }  // world
 } // base
