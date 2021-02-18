@@ -9,12 +9,10 @@
 #include "build.h"
 #include "fbxFileLoaderService.h"
 
-#include "base/io/include/utils.h"
 #include "base/io/include/ioFileHandle.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
 
 namespace fbx
 {
@@ -207,16 +205,20 @@ namespace fbx
         EFbxRotationOrder order;
         node->GetRotationOrder(FbxNode::eSourcePivot, order);
 
-        if (order == eSphericXYZ)
-            order = eEulerXYZ;
+        /*if (order == eSphericXYZ)
+            order = eEulerXYZ;*/
 
         node->SetRotationOrder(FbxNode::eDestinationPivot, order);
         node->SetPivotState(FbxNode::eDestinationPivot, FbxNode::ePivotActive);
         node->SetPivotState(FbxNode::eSourcePivot, FbxNode::ePivotActive);
 
+        node->ResetPivotSet(FbxNode::eDestinationPivot);
+
         const auto count = node->GetChildCount();
         for (uint32_t i = 0; i < count; ++i)
             ResetPivot(node->GetChild(i));
+
+        node->ResetPivotSetAndConvertAnimation(1.0f, false, false);
     }
 
     fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const
@@ -270,25 +272,23 @@ namespace fbx
 
             // fixup scale
             float sceneScaleFactor = (float)lScene->GetGlobalSettings().GetSystemUnit().GetScaleFactor();
-            if (sceneScaleFactor != 1.0)
-            {
-                TRACE_INFO("FBX file scale: {}", sceneScaleFactor);
-                FbxSystemUnit::cm.ConvertScene(lScene);
-                FbxSystemUnit::ConversionOptions options;
-                options.mConvertRrsNodes = false;
-                FbxSystemUnit(sceneScaleFactor).ConvertScene(lScene, options);
-            }
+            TRACE_INFO("FBX file scale: {}", sceneScaleFactor);
+
+            // Convert axis system to engine 
+            //FbxAxisSystem sceneAxisSystem = lScene->GetGlobalSettings().GetAxisSystem();
+            EngineAxisSystem.ConvertScene(lScene);
+
+            // convert to meters
+            FbxSystemUnit::m.ConvertScene(lScene);
+            FbxSystemUnit::ConversionOptions options;
+            options.mConvertRrsNodes = false;
+            FbxSystemUnit(sceneScaleFactor).ConvertScene(lScene, options);
 
             // destroy importer
             lImporter->Destroy();
         }
 
-        // Convert axis system to engine 
-        //FbxAxisSystem sceneAxisSystem = lScene->GetGlobalSettings().GetAxisSystem();
-        //if (sceneAxisSystem != EngineAxisSystem)
-            //EngineAxisSystem.ConvertScene(lScene);
-
-        // Convert axes to engine
+        /*// Convert axes to engine
         auto conversionMatrix = base::Matrix::IDENTITY();
         {
             // get conversion matrix between our current space and the intended space
@@ -312,12 +312,12 @@ namespace fbx
         }
 
         // remember conversion matrix
-        outAssetToEngineConversionMatrix = conversionMatrix;
+        outAssetToEngineConversionMatrix = conversionMatrix;*/
 
         // reset pivot
-        lScene->GetRootNode()->ResetPivotSet(FbxNode::eDestinationPivot);
+        //lScene->GetRootNode()->ResetPivotSet(FbxNode::eDestinationPivot);
         ResetPivot(lScene->GetRootNode());
-        lScene->GetRootNode()->ConvertPivotAnimationRecursive(NULL, FbxNode::eDestinationPivot, 1.0f, false);
+        //lScene->GetRootNode()->ConvertPivotAnimationRecursive(NULL, FbxNode::eDestinationPivot, 1.0f, false);
 
         // scene is ready
         return lScene;

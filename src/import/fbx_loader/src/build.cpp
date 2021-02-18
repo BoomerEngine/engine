@@ -8,7 +8,7 @@
 * [# dependency: rendering_material #]
 * [# dependency: rendering_mesh #]
 & [# dependency: base_resource_compiler #]
-* [# dependency: importx_mesh_loader #]
+* [# dependency: import_mesh_loader #]
 * [# devonly #]
 ***/
 

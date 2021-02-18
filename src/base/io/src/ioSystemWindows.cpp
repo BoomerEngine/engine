@@ -1091,7 +1091,7 @@ namespace base
                             StringBuilder txt;
                             txt << parts[0];
                             txt << "\\";
-                            txt << parts[1];
+                            txt << parts[i];
                             outPaths.emplaceBack(txt.toString());
                         }
                     }

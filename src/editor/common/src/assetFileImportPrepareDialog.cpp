@@ -619,8 +619,10 @@ namespace ed
         actions().bindCommand("Prepare.RemoveFiles"_id) = [this]() { cmdRemoveFiles(); };
         actions().bindFilter("Prepare.RemoveFiles"_id) = [this]() { return !m_fileList->selection().empty(); };
 
-        actions().bindCommand("Prepare.StartImport"_id) = [this]() { cmdStartImport(); };
+        actions().bindCommand("Prepare.StartImport"_id) = [this]() { cmdStartImport(false); };
         actions().bindFilter("Prepare.StartImport"_id) = [this]() { return m_filesListModel->hasImportableFiles(); };
+        actions().bindCommand("Prepare.StartImportForced"_id) = [this]() { cmdStartImport(true); };
+        actions().bindFilter("Prepare.StartImportForced"_id) = [this]() { return m_filesListModel->hasImportableFiles(); };
 
         m_toolbar = createChild<ui::ToolBar>();
         m_toolbar->createCallback(ui::ToolbarButtonSetup().icon("open").caption("Load list").tooltip("Load current import list from XML")) = [this]() { cmdLoadList(); };
@@ -632,6 +634,7 @@ namespace ed
         m_toolbar->createButton("Prepare.RemoveFiles"_id, ui::ToolbarButtonSetup().icon("file_delete").caption("Remove files").tooltip("Remove files from import list"));
         m_toolbar->createSeparator();
         m_toolbar->createButton("Prepare.StartImport"_id, ui::ToolbarButtonSetup().icon("cog").caption("[tag:#8A9]Start[/tag]").tooltip("Start importing files"));
+        m_toolbar->createButton("Prepare.StartImportForced"_id, ui::ToolbarButtonSetup().icon("cog").caption("[tag:#A89]Force[/tag]").tooltip("Force reimport all selected files"));
 
         //--
 
@@ -889,13 +892,13 @@ namespace ed
         updateSelection();
     }
 
-    void AssetImportPrepareDialog::cmdStartImport()
+    void AssetImportPrepareDialog::cmdStartImport(bool force)
     {
         if (auto files = compileResourceList())
         {
             requestClose(0);
 
-            auto job = RefNew<AssetImportJob>(files);
+            auto job = RefNew<AssetImportJob>(files, force);
             GetEditor()->scheduleBackgroundJob(job);
         }
     }

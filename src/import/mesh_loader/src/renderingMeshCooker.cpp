@@ -330,7 +330,7 @@ namespace rendering
 
     //--
 
-    bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks)
+    bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks, base::Box& outBounds)
     {
         PC_SCOPE_LVL0(BuildChunks);
 
@@ -354,9 +354,14 @@ namespace rendering
         if (!PackData(buildChunks, settings, progressTracker))
             return nullptr;
 
-        /*// build materials
-        base::Array<MeshMaterial> exportMaterials;
-        ExportMaterials(sourceMesh, settings, exportMaterials);*/
+        // compute bounds
+        outBounds.clear();
+        for (const auto& chunk : sourceChunks)
+            outBounds.merge(chunk.bounds);
+
+        // prevent invalid bounds
+        if (outBounds.empty())
+            outBounds = base::Box(base::Vector3(0, 0, 0), 1.0f);
 
         // export final chunks
         ExportChunks(buildChunks, outRenderChunks);

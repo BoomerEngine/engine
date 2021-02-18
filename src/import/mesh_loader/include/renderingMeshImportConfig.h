@@ -11,6 +11,7 @@
 #include "base/resource/include/resource.h"
 #include "base/resource/include/resourceMetadata.h"
 #include "renderingMaterialImportConfig.h"
+#include "base/resource_compiler/include/importInterface.h"
 
 namespace rendering
 {
@@ -71,18 +72,6 @@ namespace rendering
 
     //---
 
-    enum class MeshMaterialImportMode : uint8_t
-    {
-        DontImport, // do nothing, leaves the material uninitialized
-        FindOnly, // only attempt to find materials, do not import anything missing
-        EmbedAll, // import materials and embed them into mesh
-        EmbedMissing, // use materials that are already there but embed everything else
-        ImportAll, // always report material for importing, does not use the search path
-        ImportMissing, // import only the materials that were not found already in depot
-    };
-
-    //---
-
     /// common manifest for assets importable into mesh formats
     /// contains coordinate system conversion and other setup for geometry importing from outside sources
     class IMPORT_MESH_LOADER_API MeshImportConfig : public base::res::ResourceConfiguration
@@ -123,12 +112,12 @@ namespace rendering
         //--
 
         // material import
-        MeshMaterialImportMode m_materialImportMode;
+        bool m_importMaterials = true; // import materials
         base::StringBuf m_materialSearchPath;
         base::StringBuf m_materialImportPath;
 
         // texture import
-        MaterialTextureImportMode m_textureImportMode;
+        bool m_importTextures = true; // import textures
         base::StringBuf m_textureSearchPath;
         base::StringBuf m_textureImportPath;
 
@@ -181,4 +170,28 @@ namespace rendering
 
     //---
 
-} // base
+    /// general mesh importer, contains common functions
+    class IMPORT_MESH_LOADER_API IGeneralMeshImporter : public base::res::IResourceImporter
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMeshImporter, base::res::IResourceImporter);
+
+    public:
+        virtual ~IGeneralMeshImporter();
+
+    protected:
+        static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f);
+        static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts);
+
+        static base::StringBuf BuildMaterialFileName(base::StringView name, uint32_t materialIndex);
+        static base::StringBuf BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName);
+
+        virtual base::RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, base::StringView name) const = 0;
+
+        virtual MaterialRef buildSingleMaterialRef(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex) const;
+
+        virtual MaterialInstancePtr buildSingleMaterial(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const;
+    };
+
+    //---
+
+} // rendering

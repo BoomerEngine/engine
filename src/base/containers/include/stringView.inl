@@ -657,7 +657,7 @@ namespace base
     INLINE BaseStringView<T> BaseStringView<T>::extensions() const
     {
         const T dot[2] = { '.', 0 };
-        return fileName().beforeFirst(dot);
+        return fileName().afterFirst(dot);
     }
 
     template< typename T >

@@ -27,7 +27,7 @@ namespace ed
         RTTI_DECLARE_VIRTUAL_CLASS(AssetImportJob, IBackgroundTask)
 
     public:
-        AssetImportJob(const res::ImportListPtr& fileList);
+        AssetImportJob(const res::ImportListPtr& fileList, bool force);
         virtual ~AssetImportJob();
 
         //--
@@ -41,6 +41,8 @@ namespace ed
         const res::ImportListPtr m_fileList;
 
         //--
+
+        bool m_force = false;
 
         RefPtr<AssetImportDetailsDialog> m_detailsDialog;
         RefPtr<AssetProcessingListModel> m_listModel;

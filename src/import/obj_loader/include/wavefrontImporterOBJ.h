@@ -51,15 +51,22 @@ namespace wavefront
 
     //--
 
+    struct GroupBuildModelList;
+
     /// mesh cooker for OBJ files
-    class IMPORT_OBJ_LOADER_API OBJMeshImporter : public base::res::IResourceImporter
+    class IMPORT_OBJ_LOADER_API OBJMeshImporter : public rendering::IGeneralMeshImporter
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(OBJMeshImporter, base::res::IResourceImporter);
+        RTTI_DECLARE_VIRTUAL_CLASS(OBJMeshImporter, rendering::IGeneralMeshImporter);
 
     public:
         OBJMeshImporter();
 
         virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
+
+    private:        
+        virtual base::RefPtr<rendering::MaterialImportConfig> createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const override final;
+
+        void buildMaterials(const FormatOBJ& data, const rendering::Mesh* existingMesh, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int>& outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials) const;
     };
 
     //--

@@ -325,10 +325,74 @@ namespace base
 
     //---
 
+    bool BuildRelativePath(StringView basePath, StringView targetPath, StringBuf& outRelativePath)
+    {
+        DEBUG_CHECK_RETURN_V(ValidateDepotPath(basePath, DepotPathClass::AbsoluteDirectoryPath), false);
+        DEBUG_CHECK_RETURN_V(ValidateDepotPath(targetPath, DepotPathClass::AnyAbsolutePath), false);
+
+        InplaceArray<StringView, 20> basePathParts;
+        basePath.slice("/\\", false, basePathParts);
+
+        InplaceArray<StringView, 20> targetPathParts;
+        targetPath.slice("/\\", false, targetPathParts);
+
+        StringView finalFileName;
+        if (targetPath.endsWith("/") || targetPath.endsWith("\\"))
+        {
+            finalFileName = targetPathParts.back();
+            targetPathParts.popBack();
+        }
+
+        // check how many parts are the same
+        uint32_t numSame = 0;
+        {
+            uint32_t maxTest = std::min<uint32_t>(basePathParts.size(), targetPathParts.size());
+            for (uint32_t i = 0; i < maxTest; ++i)
+            {
+                auto basePart = basePathParts[i];
+                auto targetPart = targetPathParts[i];
+                if (basePart.caseCmp(targetPart) == 0)
+                    numSame += 1;
+                else
+                    break;
+            }
+        }
+
+        // for all remaining base path parts we will have to exit the directories via ..
+        InplaceArray<StringView, 20> finalParts;
+        for (uint32_t i=numSame; i<basePathParts.size(); ++i)
+            finalParts.pushBack("..");
+
+        // in similar fashion all different parts of the target path has to be added as well
+        for (uint32_t i = numSame; i < targetPathParts.size(); ++i)
+            finalParts.pushBack(targetPathParts[i]);
+
+        // build the relative path
+        StringBuilder ret;
+        if (finalParts.empty())
+        {
+            ret << "./";
+        }
+        else
+        {
+            for (const auto& part : finalParts)
+            {
+                ret << part;
+                ret << "/";
+            }
+        }
+
+        if (finalFileName)
+            ret << finalFileName;
+
+        outRelativePath = ret.toString();
+        return true;
+    }
+
     bool ApplyRelativePath(StringView contextPath, StringView relativePath, StringBuf& outPath)
     {
         //DEBUG_CHECK_RETURN_V(ValidateDepotPath(relativePath, DepotPathClass::Any), false);
-        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::AnyAbsolutePath), false);
+        //DEBUG_CHECK_RETURN_V(ValidateDepotPath(contextPath, DepotPathClass::Any), false);
 
         // starts with absolute marker ?
         const auto contextAbsolute = contextPath.beginsWith("/");

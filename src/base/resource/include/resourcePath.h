@@ -97,6 +97,9 @@ namespace base
     //  etc, up to the maxScanDepth
     extern BASE_RESOURCE_API bool ScanRelativePaths(StringView contextPath, StringView pathParts, uint32_t scanDepth, StringBuf& outPath, const std::function<bool(StringView)>& testFunc);
 
+    // given a base path and a second path (both absolute) build a relative path that takes you from base to second
+    extern BASE_RESOURCE_API bool BuildRelativePath(StringView basePath, StringView targetPath, StringBuf& outRelativePath);
+
     //--
 
     enum class DepotPathClass : uint8_t

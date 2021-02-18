@@ -167,7 +167,7 @@ namespace ed
         void cmdSaveList();
         void cmdLoadList();
         void cmdAppendList();
-        void cmdStartImport();
+        void cmdStartImport(bool force);
 
         ui::ToolBarPtr m_toolbar;
         ui::ListViewPtr m_fileList;

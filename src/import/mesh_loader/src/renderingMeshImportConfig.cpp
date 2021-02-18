@@ -8,7 +8,9 @@
 
 #include "build.h"
 #include "renderingMeshImportConfig.h"
+#include "rendering/mesh/include/renderingMesh.h"
 #include "rendering/material/include/renderingMaterial.h"
+#include "rendering/material/include/renderingMaterialInstance.h"
 
 namespace rendering
 {
@@ -35,25 +37,16 @@ namespace rendering
     //--
 
     RTTI_BEGIN_TYPE_ENUM(MeshDataRecalculationMode);
-    RTTI_ENUM_OPTION(Never);
-    RTTI_ENUM_OPTION(WhenMissing);
-    RTTI_ENUM_OPTION(Always);
-    RTTI_ENUM_OPTION(Remove);
+        RTTI_ENUM_OPTION(Never);
+        RTTI_ENUM_OPTION(WhenMissing);
+        RTTI_ENUM_OPTION(Always);
+        RTTI_ENUM_OPTION(Remove);
     RTTI_END_TYPE();
 
     RTTI_BEGIN_TYPE_ENUM(MeshNormalComputationMode);
-    RTTI_ENUM_OPTION(Flat);
-    RTTI_ENUM_OPTION(FaceUniform);
-    RTTI_ENUM_OPTION(FaceArea);
-    RTTI_END_TYPE();
-
-    RTTI_BEGIN_TYPE_ENUM(MeshMaterialImportMode);
-        RTTI_ENUM_OPTION_WITH_HINT(DontImport, "Do not import any material data, material entries are still created");
-        RTTI_ENUM_OPTION_WITH_HINT(FindOnly, "Only attempt to find materials, do not import anything missing");
-        RTTI_ENUM_OPTION_WITH_HINT(EmbedAll, "Import materials and embed them into mesh");
-        RTTI_ENUM_OPTION_WITH_HINT(EmbedMissing, "Use materials that are already there but embed everything else");
-        RTTI_ENUM_OPTION_WITH_HINT(ImportAll, "Always report material for importing, does not use the search path");
-        RTTI_ENUM_OPTION_WITH_HINT(ImportMissing, "Import only the materials that were not found already in depot");
+        RTTI_ENUM_OPTION(Flat);
+        RTTI_ENUM_OPTION(FaceUniform);
+        RTTI_ENUM_OPTION(FaceArea);
     RTTI_END_TYPE();
 
     //--
@@ -71,11 +64,11 @@ namespace rendering
         RTTI_PROPERTY(m_depotSearchDepth).editable().overriddable();
         RTTI_PROPERTY(m_sourceAssetsSearchDepth).editable().overriddable();
         RTTI_CATEGORY("Material import");
-        RTTI_PROPERTY(m_materialImportMode).editable("Automatically import materials used by this mesh").overriddable();
+        RTTI_PROPERTY(m_importMaterials).editable("Automatically import materials used by this mesh").overriddable();
         RTTI_PROPERTY(m_materialSearchPath).editable("ADDITONAL paths to explore when looking for materials (before we import one)").overriddable();
         RTTI_PROPERTY(m_materialImportPath).editable("Where are the new materials imported").overriddable();
         RTTI_CATEGORY("Texture import");
-        RTTI_PROPERTY(m_textureImportMode).editable("Automatically import textures used by this mesh").overriddable();
+        RTTI_PROPERTY(m_importTextures).editable("Automatically import textures used by this mesh").overriddable();
         RTTI_PROPERTY(m_textureSearchPath).editable("ADDITONAL paths to explore when looking for textures (before we import one)").overriddable();
         RTTI_PROPERTY(m_textureImportPath).editable("Where to place imported textures").overriddable();
         RTTI_CATEGORY("Vertex normals");
@@ -98,9 +91,6 @@ namespace rendering
 
         m_textureImportPath = base::StringBuf("../textures/");
         m_textureSearchPath = base::StringBuf("../textures/");
-
-        m_textureImportMode = MaterialTextureImportMode::ImportMissing;
-        m_materialImportMode = MeshMaterialImportMode::EmbedMissing;
     }
 
     float GetScaleFactorForUnits(MeshImportUnits units)
@@ -178,12 +168,12 @@ namespace rendering
 
         //--
 
-        crc << (char)m_materialImportMode;
+        crc << m_importMaterials;
         crc << m_materialSearchPath.view();
         crc << m_materialImportPath.view();
 
         // texture import
-        crc << (char)m_textureImportMode;
+        crc << m_importTextures;
         crc << m_textureSearchPath.view();
         crc << m_textureImportPath.view();
 
@@ -204,6 +194,223 @@ namespace rendering
         crc << m_tangentsAngularThreshold;
         crc << m_flipTangent;
         crc << m_flipBitangent;
+    }
+
+    //--
+
+    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IGeneralMeshImporter);
+    RTTI_END_TYPE();
+
+    IGeneralMeshImporter::~IGeneralMeshImporter()
+    {}
+
+
+    base::StringBuf IGeneralMeshImporter::BuildMaterialFileName(base::StringView name, uint32_t materialIndex)
+    {
+        static const auto ext = base::res::IResource::GetResourceExtensionForClass(rendering::MaterialInstance::GetStaticClass());
+
+        base::StringBuf fileName;
+        if (!base::MakeSafeFileName(name, fileName))
+            fileName = base::TempString("Material{}", materialIndex);
+
+        ASSERT(ValidateFileName(fileName));
+
+        return base::TempString("{}.{}", fileName, ext);
+    }
+
+    void IGeneralMeshImporter::EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
+    {
+        f << "/";
+
+        for (const auto part : pathParts)
+        {
+            f << part;
+            f << "/";
+        }
+    }
+
+    void IGeneralMeshImporter::GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
+    {
+        base::InplaceArray<base::StringView, 10> pathParts;
+        path.slice("/\\", false, pathParts);
+
+        // skip the file name itself
+        const auto dirPath = path.endsWith("/") || path.endsWith("\\");
+        if (isFileName && (!dirPath || !pathParts.empty()))
+            pathParts.popBack();
+
+        // if we are absolute path than clear existing stuff
+        const auto absolutePath = path.beginsWith("/") || path.beginsWith("\\");
+        if (absolutePath)
+            outPathParts.clear();
+
+        // append path parts, respecting the ".." and "."
+        for (const auto part : pathParts)
+        {
+            if (part == ".")
+                continue;
+
+            if (part == "..")
+            {
+                if (!outPathParts.empty())
+                    outPathParts.popBack();
+                continue;
+            }
+
+            outPathParts.pushBack(part);
+        }
+    }
+
+    base::StringBuf IGeneralMeshImporter::BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
+    {
+        base::InplaceArray<base::StringView, 20> pathParts;
+        GlueDepotPath(referenceDepotPath, true, pathParts);
+        GlueDepotPath(materialImportPath, false, pathParts);
+
+        base::StringBuilder txt;
+        EmitDepotPath(pathParts, txt);
+
+        txt << materialFileName;
+
+        return txt.toString();
+    }
+
+    //--
+
+    static base::StringBuf TransformRelativePath(base::res::IResourceImporterInterface& importer, base::StringView secondaryImportPath, base::StringView searchPath)
+    {
+        if (!searchPath)
+            return base::StringBuf::EMPTY();
+
+        if (!secondaryImportPath)
+            secondaryImportPath = importer.queryImportPath();
+
+        secondaryImportPath = secondaryImportPath.baseDirectory();
+
+        base::StringBuf mergedAbsolutePath;
+        if (!base::ApplyRelativePath(importer.queryResourcePath(), searchPath, mergedAbsolutePath))
+            return base::StringBuf(searchPath); // try our luck with search path directly
+
+        base::StringBuf relativePath;
+        if (!base::BuildRelativePath(secondaryImportPath, mergedAbsolutePath, relativePath))
+            return base::StringBuf(searchPath); // try our luck with search path directly
+
+        TRACE_INFO("Search path '{}' relative to '{}' translated to '{}' relative to '{}'", searchPath, importer.queryImportPath(), relativePath, secondaryImportPath);
+        return relativePath;        
+    }
+
+    MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex) const
+    {
+        // don't import
+        if (!cfg.m_importMaterials)
+            return MaterialRef();
+
+        // find the material file
+        const auto materialFileName = BuildMaterialFileName(name, materialIndex);
+        if (cfg.m_materialSearchPath)
+        {
+            TRACE_INFO("Looking for material file '{}'...", materialFileName);
+
+            base::StringBuf materialDepotPath;
+            if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, cfg.m_depotSearchDepth))
+            {
+                TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
+                return MaterialRef(base::res::ResourcePath(materialDepotPath));
+            }
+        }
+
+        // import
+        if (cfg.m_materialImportPath)
+        {
+            // check if the imported material already exists
+            const auto depotPath = BuildAssetDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
+
+            const auto materialImportConfig = createMaterialImportConfig(cfg, name);// base::RefNew<MTLMaterialImportConfig>();
+//                materialImportConfig->m_materialName = base::StringBuf(name);
+            materialImportConfig->m_importTextures = cfg.m_importTextures;
+            materialImportConfig->m_depotSearchDepth = cfg.m_depotSearchDepth;
+            materialImportConfig->m_sourceAssetsSearchDepth = cfg.m_sourceAssetsSearchDepth;
+
+            // make sure properties are propagated
+            materialImportConfig->markPropertyOverride("textureImportMode"_id);
+            materialImportConfig->markPropertyOverride("depotSearchDepth"_id);
+            materialImportConfig->markPropertyOverride("sourceAssetsSearchDepth"_id);
+            materialImportConfig->markPropertyOverride("templateDefault"_id);
+            materialImportConfig->markPropertyOverride("templateEmissive"_id);
+            materialImportConfig->markPropertyOverride("templateMasked"_id);
+            materialImportConfig->markPropertyOverride("templateUnlit"_id);
+
+            if (materialLibraryName)
+            {
+                base::StringBuf resolvedMaterialLibraryPath;
+                if (importer.findSourceFile(importer.queryImportPath(), materialLibraryName, resolvedMaterialLibraryPath))
+                {
+                    // build depot path for the imported texture
+                    TRACE_INFO("Material '{}' found in library '{}' will be improted as '{}'", name, resolvedMaterialLibraryPath, depotPath);
+
+                    // translate paths
+                    if (cfg.m_textureImportPath)
+                    {
+                        materialImportConfig->m_textureImportPath = TransformRelativePath(importer, resolvedMaterialLibraryPath, cfg.m_textureImportPath);
+                        materialImportConfig->markPropertyOverride("textureImportPath"_id);
+                    }
+                    if (cfg.m_textureSearchPath)
+                    {
+                        materialImportConfig->m_textureSearchPath = TransformRelativePath(importer, resolvedMaterialLibraryPath, cfg.m_textureSearchPath);
+                        materialImportConfig->markPropertyOverride("textureSearchPath"_id);
+                    }
+
+                    // emit the follow-up import, no extra config at the moment
+                    importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
+
+                    // build a unloaded material reference (so it can be saved)
+                    return rendering::MaterialRef(base::res::ResourcePath(depotPath));
+                }
+            }
+            else
+            {
+                // copy search paths
+                if (cfg.m_textureImportPath)
+                {
+                    materialImportConfig->m_textureImportPath = cfg.m_textureImportPath;
+                    materialImportConfig->markPropertyOverride("textureImportPath"_id);
+                }
+                if (cfg.m_textureSearchPath)
+                {
+                    materialImportConfig->m_textureSearchPath = cfg.m_textureSearchPath;
+                    materialImportConfig->markPropertyOverride("textureSearchPath"_id);
+                }
+
+                // emit the follow-up import, no extra config at the moment
+                importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig);
+
+                // build a unloaded material reference (so it can be saved)
+                return rendering::MaterialRef(base::res::ResourcePath(depotPath));
+            }
+        }
+
+        // no material imported
+        return rendering::MaterialRef();
+    }
+
+    MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const
+    {
+        base::Array<MaterialInstanceParam> existingParameters;
+
+        if (existingMesh)
+        {
+            for (const auto& ptr : existingMesh->materials())
+            {
+                if (ptr.name == name)
+                {
+                    existingParameters = ptr.material->parameters();
+                    break;
+                }
+            }
+        }
+
+        const auto baseMaterial = buildSingleMaterialRef(importer, cfg, name, materialLibraryName, materialIndex);
+        return base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(existingParameters));
     }
 
     //--

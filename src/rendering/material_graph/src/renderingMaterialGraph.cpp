@@ -239,7 +239,7 @@ namespace rendering
     {
         for (const auto& block : m_graph->parameters())
         {
-            if (block->name() == name && block->dataType())
+            if (block && block->name() == name && block->dataType())
             {
                 outType = block->dataType();
                 return block->dataValue();
@@ -253,7 +253,7 @@ namespace rendering
     {
         for (const auto& block : m_graph->parameters())
         {
-            if (block->name() == name && block->dataType())
+            if (block && block->name() == name && block->dataType())
             {
                 outInfo.name = block->name();
                 outInfo.category = block->category() ? block->category() : "Material parameters"_id;
@@ -280,7 +280,7 @@ namespace rendering
 
         for (const auto& block : m_graph->parameters())
         {
-            if (block->name() && block->dataType())
+            if (block && block->name() && block->dataType())
             {
                 auto& outInfo = outParams.emplaceBack();
                 outInfo.name = block->name();
@@ -296,7 +296,7 @@ namespace rendering
     {
         for (const auto& block : m_graph->parameters())
         {
-            if (block->name() && block->dataType())
+            if (block && block->name() && block->dataType())
             {
                 auto& memberInfo = outInfo.members.emplaceBack();
                 memberInfo.name = block->name();

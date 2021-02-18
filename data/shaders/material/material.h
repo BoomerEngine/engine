@@ -36,10 +36,11 @@ export shader MaterialPS
 	
 	//--
 	
-	void PackPBR(out PBRPixel pbr, vec3 worldPosition, vec3 worldNormal, vec3 baseColor, float metallic, float specular, float roughness)
+	void PackPBR(out PBRPixel pbr, vec3 worldPosition, vec3 worldNormal, vec3 shadingNormal, vec3 baseColor, float metallic, float specular, float roughness)
 	{
 		pbr.shading_position = worldPosition;
-		pbr.shading_normal = worldNormal;
+		pbr.shading_normal = shadingNormal;
+		pbr.face_normal = worldNormal;
 		pbr.shading_view = normalize(CameraPosition - worldPosition);
 		pbr.shading_NoV = max(MIN_N_DOT_V, dot(pbr.shading_normal, pbr.shading_view));
 		pbr.shading_reflected = reflect(-pbr.shading_view, pbr.shading_normal);

@@ -10,7 +10,7 @@
 
 #include "base/resource/include/resource.h"
 #include "base/resource_compiler/include/importInterface.h"
-#include "assets/mesh_loader/include/renderingMeshImportConfig.h"
+#include "import/mesh_loader/include/renderingMeshImportConfig.h"
 
 namespace fbx
 {
@@ -30,7 +30,7 @@ namespace fbx
         FBXMeshImportConfig();
 
         // geometry stuff
-        bool m_alignToPivot = false;
+        bool m_applyNodeTransform = false;
         bool m_flipUV = true;
         bool m_forceNodeSkin = false;
         bool m_createNodeMaterials = false;
@@ -42,14 +42,17 @@ namespace fbx
     //--
 
     /// importer of FBX meshes
-    class IMPORT_FBX_LOADER_API MeshImporter : public base::res::IResourceImporter
+    class IMPORT_FBX_LOADER_API MeshImporter : public rendering::IGeneralMeshImporter
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshImporter, base::res::IResourceImporter);
+        RTTI_DECLARE_VIRTUAL_CLASS(MeshImporter, rendering::IGeneralMeshImporter);
 
     public:
         MeshImporter();
 
         virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
+
+    protected:
+        virtual base::RefPtr<rendering::MaterialImportConfig> createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const override final;
     };
 
     //--

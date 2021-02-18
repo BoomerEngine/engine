@@ -143,6 +143,11 @@ namespace base
             return m_depotChecker->depotFileExists(depotPath);
         }
 
+        bool LocalImporterInterface::checkSourceFile(StringView assetImportPath) const
+        {
+            return m_assetRepository->fileExists(assetImportPath);
+        }
+
         //--
 
         MetadataPtr LocalImporterInterface::buildMetadata() const

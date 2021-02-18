@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
 #include "base/app/include/localService.h"
 
 namespace fbx

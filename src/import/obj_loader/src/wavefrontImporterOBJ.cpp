@@ -808,182 +808,7 @@ namespace wavefront
 
     //--
 
-    static base::StringBuf BuildMaterialFileName(base::StringView name, uint32_t materialIndex)
-    {
-        static const auto ext = base::res::IResource::GetResourceExtensionForClass(rendering::MaterialInstance::GetStaticClass());
-
-        base::StringBuf fileName;
-        if (!base::MakeSafeFileName(name, fileName))
-            fileName = base::TempString("Material{}", materialIndex);
-
-        ASSERT(ValidateFileName(fileName));
-
-        return base::TempString("{}.{}", fileName, ext);
-    }
-
-    void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
-    {
-        f << "/";
-
-        for (const auto part : pathParts)
-        {
-            f << part;
-            f << "/";
-        }
-    }
-
-    void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
-    {
-        base::InplaceArray<base::StringView, 10> pathParts;
-        path.slice("/\\", false, pathParts);
-
-        // skip the file name itself
-        const auto dirPath = path.endsWith("/") || path.endsWith("\\");
-        if (isFileName && (!dirPath || !pathParts.empty()))
-            pathParts.popBack();
-
-        // if we are absolute path than clear existing stuff
-        const auto absolutePath = path.beginsWith("/") || path.beginsWith("\\");
-        if (absolutePath)
-            outPathParts.clear();
-
-        // append path parts, respecting the ".." and "."
-        for (const auto part : pathParts)
-        {
-            if (part == ".")
-                continue;
-
-            if (part == "..")
-            {
-                if (!outPathParts.empty())
-                    outPathParts.popBack();
-                continue;
-            }
-
-            outPathParts.pushBack(part);
-        }
-    }
-
-    base::StringBuf BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
-    {
-        base::InplaceArray<base::StringView, 20> pathParts;
-        GlueDepotPath(referenceDepotPath, true, pathParts);
-        GlueDepotPath(materialImportPath, false, pathParts);
-
-        base::StringBuilder txt;
-        EmitDepotPath(pathParts, txt);
-
-        txt << materialFileName;
-
-        return txt.toString();
-    }
-
-    rendering::MaterialInstancePtr BuildSingleMaterial(base::res::IResourceImporterInterface& importer, const OBJMeshImportConfig& cfg, base::StringView name, const rendering::MaterialInstance* existingMaterial, base::StringView materialLibraryName, uint32_t materialIndex)
-    {
-        // find the material file
-        const auto materialFileName = BuildMaterialFileName(name, materialIndex);
-        if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::EmbedMissing || cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportMissing || cfg.m_materialImportMode == rendering::MeshMaterialImportMode::FindOnly)
-        {
-            TRACE_INFO("Looking for material file '{}'...", materialFileName);
-
-            base::StringBuf materialDepotPath;
-            if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, cfg.m_depotSearchDepth))
-            {
-                TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
-
-                auto ret = base::RefNew<rendering::MaterialInstance>();
-                ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(materialDepotPath)));
-                return ret;
-            }
-        }
-
-        // resolve the path to the material library
-        if (cfg.m_materialImportMode != rendering::MeshMaterialImportMode::DontImport)
-        {
-            // check if the imported material already exists
-            const auto depotPath = BuildAssetDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
-            if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportAll)
-            {
-                if (importer.checkDepotFile(depotPath))
-                {
-                    TRACE_INFO("Existing material file found at '{}'", depotPath);
-
-                    auto ret = base::RefNew<rendering::MaterialInstance>();
-
-                    ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(depotPath)));
-                    return ret;
-                }
-            }
-
-            const auto materialImportConfig = base::RefNew<MTLMaterialImportConfig>();
-            materialImportConfig->m_materialName = base::StringBuf(name);
-            materialImportConfig->m_textureImportMode = cfg.m_textureImportMode;
-            materialImportConfig->m_depotSearchDepth = cfg.m_depotSearchDepth;
-            materialImportConfig->m_sourceAssetsSearchDepth = cfg.m_sourceAssetsSearchDepth;
-
-            // make the search paths ABSOLUTE with respect to current path
-            bool pathValid = base::ApplyRelativePath(importer.queryResourcePath(), cfg.m_textureImportPath, materialImportConfig->m_textureImportPath);
-            pathValid &= base::ApplyRelativePath(importer.queryResourcePath(), cfg.m_textureSearchPath, materialImportConfig->m_textureSearchPath);
-
-            // make sure properties are propagated
-            materialImportConfig->markPropertyOverride("materialName"_id);
-            materialImportConfig->markPropertyOverride("textureImportMode"_id);
-            materialImportConfig->markPropertyOverride("textureSearchPath"_id);
-            materialImportConfig->markPropertyOverride("textureImportPath"_id);
-            materialImportConfig->markPropertyOverride("depotSearchDepth"_id);
-            materialImportConfig->markPropertyOverride("sourceAssetsSearchDepth"_id);
-            materialImportConfig->markPropertyOverride("templateDefault"_id);
-            materialImportConfig->markPropertyOverride("templateEmissive"_id);
-            materialImportConfig->markPropertyOverride("templateMasked"_id);
-            materialImportConfig->markPropertyOverride("templateUnlit"_id);
-
-            base::StringBuf resolvedMaterialLibraryPath;
-            if (pathValid && importer.findSourceFile(importer.queryImportPath(), materialLibraryName, resolvedMaterialLibraryPath))
-            {
-                if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportAll || cfg.m_materialImportMode == rendering::MeshMaterialImportMode::ImportMissing)
-                {
-                    // build depot path for the imported texture
-                    TRACE_INFO("Material '{}' found in library '{}' will be improted as '{}'", name, resolvedMaterialLibraryPath, depotPath);
-
-                    // emit the follow-up import, no extra config at the moment
-                    importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
-
-                    // build a unloaded material reference (so it can be saved)
-                    auto ret = base::RefNew<rendering::MaterialInstance>();
-                    ret->baseMaterial(rendering::MaterialRef(base::res::ResourcePath(depotPath)));
-                    return ret;
-                }
-                
-                else if (cfg.m_materialImportMode == rendering::MeshMaterialImportMode::EmbedAll || cfg.m_materialImportMode == rendering::MeshMaterialImportMode::EmbedMissing)
-                {
-                    if (auto sourceMaterials = base::rtti_cast<wavefront::FormatMTL>(importer.loadSourceAsset(resolvedMaterialLibraryPath)))
-                    {
-                        if (auto sourceMaterial = sourceMaterials->findMaterial(name))
-                        {
-                            return ImportMaterial(importer, existingMaterial, *materialImportConfig, sourceMaterial);
-                        }
-                        else
-                        {
-                            TRACE_WARNING("Material '{}' not found in material library '{}'", name, resolvedMaterialLibraryPath);
-                        }
-                    }
-                    else
-                    {
-                        TRACE_WARNING("Unable to load material library '{}'", resolvedMaterialLibraryPath);
-                    }
-                }
-            }
-            else
-            {
-                TRACE_WARNING("Unable to find material library '{}' in source assets", materialLibraryName);
-            }
-        }
-
-        // return empty material
-        return base::RefNew<rendering::MaterialInstance>();
-    }
-
-    void BuildMaterials(const FormatOBJ& data, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int> &outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials)
+    void OBJMeshImporter::buildMaterials(const FormatOBJ& data, const rendering::Mesh* existingMesh, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int> &outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials) const
     {
         auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
 
@@ -1018,21 +843,7 @@ namespace wavefront
 
                         auto& exportMaterial = outExportMaterials.emplaceBack();
                         exportMaterial.name = base::StringID(sourceMaterial.name.view());
-
-                        rendering::MaterialInstance* existingMaterial = nullptr;
-                        if (const auto* existingMesh = base::rtti_cast<rendering::Mesh>(importer.existingData()))
-                        {
-                            for (const auto& ptr : existingMesh->materials())
-                            {
-                                if (ptr.name == exportMaterial.name)
-                                {
-                                    existingMaterial = ptr.material;
-                                    break;
-                                }
-                            }
-                        }
-
-                        exportMaterial.material = BuildSingleMaterial(importer, *meshGeometryManifest, sourceMaterial.name, existingMaterial, data.materialLibraryFileName(), chunk->material);
+                        exportMaterial.material = buildSingleMaterial(importer, *meshGeometryManifest, sourceMaterial.name, data.materialLibraryFileName(), chunk->material, existingMesh);
                     }
                 }
             }
@@ -1082,7 +893,7 @@ namespace wavefront
         }
     }
 
-    static void BuildRenderChunks(const FormatOBJ& sourceData, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<rendering::MeshChunk>& outChunks)
+    static void BuildRenderChunks(const FormatOBJ& sourceData, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<rendering::MeshChunk>& outChunks, base::Box& outBounds)
     {
         base::ScopeTimer packingTime;
 
@@ -1106,7 +917,7 @@ namespace wavefront
             });
 
         // pack mesh streams into render chunks
-        rendering::BuildChunks(rawChunks, config, importer, outChunks);
+        rendering::BuildChunks(rawChunks, config, importer, outChunks, outBounds);
     }
 
     static void BuildDistanceLevels(const GroupBuildModelList& exportGeometry, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::Array<rendering::MeshDetailLevel>& outDetailLevels)
@@ -1126,6 +937,14 @@ namespace wavefront
         }
     }
 
+    base::RefPtr<rendering::MaterialImportConfig> OBJMeshImporter::createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const
+    {
+        auto ret = base::RefNew<MTLMaterialImportConfig>();
+        ret->m_materialName = base::StringBuf(name);
+        ret->markPropertyOverride("materialName"_id);
+        return ret;
+    }
+
     base::res::ResourcePtr OBJMeshImporter::importResource(base::res::IResourceImporterInterface& importer) const
     {
         // load source data from OBJ format
@@ -1136,6 +955,7 @@ namespace wavefront
 
         // get the configuration for mesh import
         auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
+        auto existingData = base::rtti_cast<rendering::Mesh>(importer.existingData());
 
         // calculate the transform to apply to source data
         // TODO: move to config file!
@@ -1169,10 +989,10 @@ namespace wavefront
         // export materials
         // TODO: only used ones
         base::Array<int> sourceToExportMaterialMapping;
-        BuildMaterials(*sourceGeometry, importer, buildList, sourceToExportMaterialMapping, exportData.materials);
+        buildMaterials(*sourceGeometry, existingData, importer, buildList, sourceToExportMaterialMapping, exportData.materials);
 
         // export render chunks
-        BuildRenderChunks(*sourceGeometry, assetToEngineTransform, *meshGeometryManifest, importer, buildList, sourceToExportMaterialMapping, exportData.chunks);
+        BuildRenderChunks(*sourceGeometry, assetToEngineTransform, *meshGeometryManifest, importer, buildList, sourceToExportMaterialMapping, exportData.chunks, exportData.bounds);
 
         // export LOD settings
         BuildDistanceLevels(buildList, assetToEngineTransform, *meshGeometryManifest, exportData.detailLevels);

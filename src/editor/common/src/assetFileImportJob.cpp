@@ -30,9 +30,10 @@ namespace ed
     RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportJob);
     RTTI_END_TYPE();
 
-    AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList)
+    AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList, bool force)
         : IBackgroundTask("Import assets")
         , m_fileList(fileList)
+        , m_force(force)
     {
         m_listModel = RefNew<AssetProcessingListModel>();
 
@@ -48,7 +49,7 @@ namespace ed
 
     void AssetImportJob::runImportTask()
     {
-        if (res::ProcessImport(m_fileList, this, this))
+        if (res::ProcessImport(m_fileList, this, this, m_force))
             m_status.exchange(BackgroundTaskStatus::Finished);
         else
             m_status.exchange(BackgroundTaskStatus::Failed);

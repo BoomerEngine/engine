@@ -372,7 +372,7 @@ namespace rendering
                 return ImageContentType::Albedo;
             if (txt == "a" || txt == "ao")
                 return ImageContentType::AmbientOcclusion;
-            if (txt == "n" || txt == "norm" || txt == "normal" || txt == "ddna")
+            if (txt == "n" || txt == "norm" || txt == "normal" || txt == "ddna" || txt == "ns")
                 return ImageContentType::TangentNormalMap;
             if (txt == "b" || txt == "bump")
                 return ImageContentType::Bumpmap;

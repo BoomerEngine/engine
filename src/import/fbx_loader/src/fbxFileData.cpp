@@ -14,14 +14,14 @@
 #include "base/app/include/localServiceContainer.h"
 #include "base/containers/include/inplaceArray.h"
 #include "base/resource/include/resource.h"
-#include "base/resource/include/resourceCookingInterface.h"
+#include "rendering/mesh/include/renderingMeshStreamData.h"
+#include "rendering/mesh/include/renderingMeshStreamBuilder.h"
+#include "rendering/mesh/include/renderingMeshStreamIterator.h"
+#include "base/resource/include/resourceTags.h"
 
 namespace fbx
 {
     //---
-
-    MaterialEntry::MaterialEntry()
-    {}
 
     MaterialMapper::MaterialMapper()
     {
@@ -29,7 +29,7 @@ namespace fbx
         materialsMapping.reserve(256);
     }
 
-    uint32_t MaterialMapper::addMaterial(const char* materialName, const fbxsdk::FbxSurfaceMaterial* material)
+    uint32_t MaterialMapper::addMaterial(const char* materialName)
     {
         if (!materialName || !*materialName)
             materialName = "DefaultMaterial";
@@ -38,11 +38,10 @@ namespace fbx
         if (materialsMapping.find(base::StringView(materialName), ret))
             return ret;
 
-        auto& entry = materials.emplaceBack();
-        entry.name = base::StringBuf(materialName);
-        entry.sourceData = material; // may be NULL
+        const auto materialNameString = base::StringBuf(materialName);
+        materials.emplaceBack(materialNameString);        
+        materialsMapping[materialNameString] = materials.lastValidIndex();
 
-        materialsMapping[entry.name] = materials.lastValidIndex();
         return materials.lastValidIndex();
     }
 
@@ -313,7 +312,7 @@ namespace fbx
 
         const MeshVertexInfluence* skinInfluences = nullptr;
 
-        base::mesh::MeshStreamMask streamMask = 0;
+        rendering::MeshStreamMask streamMask = 0;
 
         bool flipUV = true;
         bool flipFaces = false;
@@ -343,28 +342,28 @@ namespace fbx
             uv1 = hasUV1 ? mesh->GetElementUV(1) : NULL;
 
             // determine stream mask for all chunks in this model
-            streamMask = base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Position_3F);
+            streamMask = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
             if (normals)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Normal_3F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F);
             if (bitangents)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Binormal_3F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Binormal_3F);
             if (tangents)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Tangent_3F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Tangent_3F);
             if (color0)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Color0_4U8);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8);
             if (color1)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::Color1_4U8);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color1_4U8);
             if (uv0)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::TexCoord0_2F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F);
             if (uv1)
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::TexCoord1_2F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord1_2F);
 
             // skinning data
             if (!skinningData.empty())
             {
                 skinInfluences = skinningData.typedData();
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::SkinningIndices_4U8);
-                streamMask |= base::mesh::MeshStreamMaskFromType(base::mesh::MeshStreamType::SkinningWeights_4F);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::SkinningIndices_4U8);
+                streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::SkinningWeights_4F);
 
                 // TODO: 8 bone skinning
             }
@@ -384,26 +383,26 @@ namespace fbx
         SkinIndices* writeSkinIndices = nullptr;
         SkinWeights* writeSkinWeights = nullptr;
 
-        base::mesh::MeshStreamBuilder builder;
+        rendering::MeshRawStreamBuilder builder;
 
-        MeshWriteStreams(base::mesh::MeshTopologyType topology, uint32_t numFaces, base::mesh::MeshStreamMask streams)
+        MeshWriteStreams(rendering::MeshTopologyType topology, uint32_t numFaces, rendering::MeshStreamMask streams)
             : builder(topology)
         {
-            if (topology == base::mesh::MeshTopologyType::Triangles)
+            if (topology == rendering::MeshTopologyType::Triangles)
                 builder.reserveVertices(numFaces * 3, streams);
-            else if (topology == base::mesh::MeshTopologyType::Quads)
+            else if (topology == rendering::MeshTopologyType::Quads)
                 builder.reserveVertices(numFaces * 4, streams);
 
-            writePosition = (Position*)builder.vertexData<base::mesh::MeshStreamType::Position_3F>();
-            writeNormal = (NormalVector*)builder.vertexData<base::mesh::MeshStreamType::Normal_3F>();
-            writeBitangent = (NormalVector*)builder.vertexData<base::mesh::MeshStreamType::Binormal_3F>();
-            writeTangent = (NormalVector*)builder.vertexData<base::mesh::MeshStreamType::Tangent_3F>();
-            writeColor0 = builder.vertexData<base::mesh::MeshStreamType::Color0_4U8>();
-            writeColor1 = builder.vertexData<base::mesh::MeshStreamType::Color1_4U8>();
-            writeUV0 = builder.vertexData<base::mesh::MeshStreamType::TexCoord0_2F>();
-            writeUV1 = builder.vertexData<base::mesh::MeshStreamType::TexCoord1_2F>();
-            writeSkinIndices = (SkinIndices*)builder.vertexData<base::mesh::MeshStreamType::SkinningIndices_4U8>();
-            writeSkinWeights = (SkinWeights*)builder.vertexData<base::mesh::MeshStreamType::SkinningWeights_4F>();
+            writePosition = (Position*)builder.vertexData<rendering::MeshStreamType::Position_3F>();
+            writeNormal = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Normal_3F>();
+            writeBitangent = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Binormal_3F>();
+            writeTangent = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Tangent_3F>();
+            writeColor0 = builder.vertexData<rendering::MeshStreamType::Color0_4U8>();
+            writeColor1 = builder.vertexData<rendering::MeshStreamType::Color1_4U8>();
+            writeUV0 = builder.vertexData<rendering::MeshStreamType::TexCoord0_2F>();
+            writeUV1 = builder.vertexData<rendering::MeshStreamType::TexCoord1_2F>();
+            writeSkinIndices = (SkinIndices*)builder.vertexData<rendering::MeshStreamType::SkinningIndices_4U8>();
+            writeSkinWeights = (SkinWeights*)builder.vertexData<rendering::MeshStreamType::SkinningWeights_4F>();
         }
 
         template< typename T >
@@ -425,9 +424,9 @@ namespace fbx
             AdvancePointer(writeUV1, numVertices);
         }
 
-        void extract(base::mesh::MeshModelChunk& outChunk)
+        void extract(rendering::MeshRawChunk& outChunk)
         {
-            const auto* writePositionStart = (Position*)builder.vertexData<base::mesh::MeshStreamType::Position_3F>();
+            const auto* writePositionStart = (Position*)builder.vertexData<rendering::MeshStreamType::Position_3F>();
             const auto numVeritces = writePosition - writePositionStart;
 
             builder.numVeritces = numVeritces;
@@ -642,7 +641,7 @@ namespace fbx
         // gather information about polygons in each chunk
         base::InplaceArray<int, 64> localMaterialMapping;
         base::InplaceArray<ChunkInfo, 64> materialChunksInfo;
-        const auto numMaterials = m_mesh->GetNode()->GetMaterialCount() + 1;
+        const auto numMaterials = std::max<uint32_t>(1, m_mesh->GetNode()->GetMaterialCount());
         {
             materialChunksInfo.resize(numMaterials);
             localMaterialMapping.resizeWith(numMaterials, -1);
@@ -667,17 +666,18 @@ namespace fbx
                 {
                     const FbxGeometryElementMaterial* pMaterialElement = m_mesh->GetElementMaterial(0);
                     polygonMaterialID = pMaterialElement->GetIndexArray().GetAt(i);
-                    if (polygonMaterialID < 0 || polygonMaterialID >= materialChunksInfo.lastValidIndex())
+                    if (polygonMaterialID < 0 || polygonMaterialID > materialChunksInfo.lastValidIndex())
                         polygonMaterialID = 0;
                 }
 
                 // map polygon material
+                DEBUG_CHECK(polygonMaterialID < numMaterials);
                 auto realPolygonMaterialId = localMaterialMapping[polygonMaterialID];
                 if (realPolygonMaterialId == -1)
                 {
                     auto lMaterial = m_mesh->GetNode()->GetMaterial(polygonMaterialID);
                     auto materialName = lMaterial ? lMaterial->GetName() : m_name.c_str();
-                    realPolygonMaterialId = outMaterials.addMaterial(materialName, lMaterial);
+                    realPolygonMaterialId = outMaterials.addMaterial(materialName);
                     localMaterialMapping[polygonMaterialID] = realPolygonMaterialId;
                 }
 
@@ -730,7 +730,7 @@ namespace fbx
 
         const auto numFaces = buildChunk.polygonIndices.size();
 
-        if (buildChunk.topology() == base::mesh::MeshTopologyType::Triangles)
+        if (buildChunk.topology() == rendering::MeshTopologyType::Triangles)
         {
             for (uint32_t i = 0; i < numFaces; ++i)
             {
@@ -750,18 +750,37 @@ namespace fbx
         }
     }
 
-    bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const
+    bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
     {
         // no mesh data
         if (!m_mesh)
             return false;
 
+        // print pivot
+        FbxAMatrix pivotMatrix;
+        const auto& pivot = m_mesh->GetPivot(pivotMatrix);
+        TRACE_INFO("Pivot for '{}': [{},{},{}] [{},{},{},{}] [{},{},{}]", m_node->GetName(),
+            pivotMatrix.GetT()[0], pivotMatrix.GetT()[1], pivotMatrix.GetT()[2],
+            pivotMatrix.GetR()[0], pivotMatrix.GetR()[1], pivotMatrix.GetR()[2], pivotMatrix.GetR()[3],
+            pivotMatrix.GetS()[0], pivotMatrix.GetS()[1], pivotMatrix.GetS()[2]);
+
+        //// remove pivot bullshit
+        ((FbxMesh*)m_mesh)->ApplyPivot();
+
+        // convert matrix
+        //FbxAMatrix pivotMatrixInv = pivotMatrix.Inverse();
+        //base::Matrix vertexToPivot = ToMatrix(pivotMatrix);
+
         // flip faces ?
-        auto meshToEngine = m_meshToWorld * worldToEngine;
+        base::Matrix meshToEngine;
+        if (config.applyNodeTransform)
+            meshToEngine = m_meshToLocal * m_localToWorld * config.assetToEngine;
+        else
+            meshToEngine = m_meshToLocal * config.assetToEngine;
 
         // prepare skin tables
         base::Array<MeshVertexInfluence> skinInfluences;
-        extractSkinInfluences(owner, skinInfluences, outSkeleton, forceSkinToNode);
+        extractSkinInfluences(owner, skinInfluences, outSkeleton, config.forceSkinToNode);
 
         // extract build chunk
         base::Array<ChunkInfo> buildChunks;
@@ -769,8 +788,8 @@ namespace fbx
 
         // source stream data
         FBXMeshStreams sourceStreams(m_mesh, skinInfluences);
-        sourceStreams.flipUV = flipUV;
-        sourceStreams.flipFaces = (meshToEngine.det3() < 0.0f) ^ flipFace;
+        sourceStreams.flipUV = config.flipUV;
+        sourceStreams.flipFaces = (meshToEngine.det3() < 0.0f) ^ config.flipFace;
 
         // process chunk data
         // TODO: run on fibers
@@ -820,6 +839,13 @@ namespace fbx
 				m_fbxScene->Destroy();
             m_fbxScene = nullptr;
         }
+    }
+
+    const FbxSurfaceMaterial* LoadedFile::findMaterial(base::StringView name) const
+    {
+        const FbxSurfaceMaterial* ret = nullptr;
+        m_materialMap.find(name, ret);
+        return ret;
     }
 
     const DataNode* LoadedFile::findDataNode(const fbxsdk::FbxNode* fbxNode) const
@@ -879,10 +905,24 @@ namespace fbx
             fbxMeshToLocal.SetR(lR);
             fbxMeshToLocal.SetS(lS);
         }
+        /*if (node->GetNodeAttribute())
+        {
+            const auto lT = node->GetGeometricTranslation(FbxNode::eDestinationPivot);
+            const auto lR = node->GetGeometricRotation(FbxNode::eDestinationPivot);
+            const auto lS = node->GetGeometricScaling(FbxNode::eDestinationPivot);
+            TRACE_INFO("PostMeshTranslation for '{}': [{},{},{}]", node->GetName(), lT[0], lT[1], lT[2]);
+            TRACE_INFO("PostMeshRotation for '{}': [{},{},{}]", node->GetName(), lR[0], lR[1], lR[2]);
+            TRACE_INFO("PostMeshScale for '{}': [{},{},{}]", node->GetName(), lS[0], lS[1], lS[2]);
+            fbxMeshToLocal.SetT(lT);
+            fbxMeshToLocal.SetR(lR);
+            fbxMeshToLocal.SetS(lS);
+        }*/
 
         // get our final matrices
-        const auto localToWorld = ToMatrix(fbxLocalToWorld) * spaceConversionMatrix;
-        const auto meshToWorld = ToMatrix(fbxLocalToWorld * fbxMeshToLocal) * spaceConversionMatrix;
+        //const auto localToWorld = ToMatrix(fbxLocalToWorld);
+        const auto meshToLocal = ToMatrix(fbxMeshToLocal.Inverse());
+
+        const auto localToWorld = ToMatrix(const_cast<FbxNode*>(node)->EvaluateGlobalTransform());
 
         // get the local to parent matrix from FBX node
         // NOTE: this code is still shit...
@@ -892,9 +932,10 @@ namespace fbx
             localToWorld.m[2][0], localToWorld.m[2][1], localToWorld.m[2][2], localToWorld.m[2][3]);
 
         // create the local node
-        auto localNode  = MemNew(DataNode);
+        auto localNode = new DataNode;
+        //localNode->m_worldToAsset = spaceConversionMatrix;
         localNode->m_localToWorld = localToWorld;
-        localNode->m_meshToWorld = meshToWorld;
+        localNode->m_meshToLocal = meshToLocal;
         //localNode->m_localToParent = localNode->m_localToWorld * worldToParent;
         localNode->m_name = base::StringView(node->GetName());
         localNode->m_parent = parentDataNode;
@@ -913,16 +954,6 @@ namespace fbx
             {
                 const FbxMesh *mesh = (const FbxMesh *) node->GetNodeAttribute();
                 localNode->m_mesh = mesh;
-
-                FbxAMatrix pivotMatrix;
-                const auto& pivot = mesh->GetPivot(pivotMatrix);
-                TRACE_INFO("Pivot for '{}': [{},{},{}] [{},{},{},{}] [{},{},{}]", node->GetName(),
-                    pivotMatrix.GetT()[0], pivotMatrix.GetT()[1], pivotMatrix.GetT()[2],
-                    pivotMatrix.GetR()[0], pivotMatrix.GetR()[1], pivotMatrix.GetR()[2], pivotMatrix.GetR()[3],
-                    pivotMatrix.GetS()[0], pivotMatrix.GetS()[1], pivotMatrix.GetS()[2]);
-
-                // remove pivot bullshit
-                //((FbxMesh *) mesh)->ApplyPivot();
 
                 // skip
                 if (localNode->m_name.view().endsWithNoCase("_tri"))
@@ -961,6 +992,23 @@ namespace fbx
 
                     TRACE_INFO("Found visual mesh (LOD{}) on node '{}'", localNode->m_lodIndex, localNode->m_name);
                 }
+
+                // extract materials
+                {
+                    const auto numMaterials = mesh->GetNode()->GetMaterialCount() + 1;
+                    for (uint32_t i = 0; i < numMaterials; ++i)
+                    {
+                        auto lMaterial = mesh->GetNode()->GetMaterial(i);
+                        auto materialName = lMaterial ? lMaterial->GetName() : localNode->m_name.c_str();
+
+                        if (!m_materialMap.contains(materialName))
+                        {
+                            TRACE_INFO("Discovered FBX material '{}'", materialName);
+                            m_materialMap[base::StringBuf(materialName)] = lMaterial;
+                            m_materials.pushBack(lMaterial);
+                        }
+                    }
+                }
             }
         }
 
@@ -977,35 +1025,47 @@ namespace fbx
         }
     }    
 
-    //---
-
     uint64_t LoadedFile::calcMemoryUsage() const
     {
         return m_fbxDataSize;
     }
 
-    bool LoadedFile::loadFromMemory(Buffer data)
-    {
-        if (!data)
-            return false;
-
-        base::Matrix spaceConversionMatrix;
-        auto scene = GetService<FileLoadingService>()->loadScene(data, spaceConversionMatrix);
-        if (!scene)
-            return false;
-
-        m_fbxDataSize = data.size();
-        m_fbxScene = scene;
-
-        FbxAMatrix rootMatrix;
-        rootMatrix.SetIdentity();
-
-        auto rootNode = m_fbxScene->GetRootNode();
-        walkStructure(rootMatrix, spaceConversionMatrix, rootNode, nullptr);
-
-        return true;
-    }
-
     //---
+
+    /// source asset loader for OBJ data
+    class FBXAssetLoader : public base::res::ISourceAssetLoader
+    {
+        RTTI_DECLARE_VIRTUAL_CLASS(FBXAssetLoader, base::res::ISourceAssetLoader);
+
+    public:
+        virtual base::res::SourceAssetPtr loadFromMemory(base::StringView importPath, base::StringView contextPath, base::Buffer data) const override
+        {
+            if (!data)
+                return nullptr;
+
+            base::Matrix spaceConversionMatrix;
+            auto scene = base::GetService<FileLoadingService>()->loadScene(data, spaceConversionMatrix);
+            if (!scene)
+                return nullptr;
+
+            auto ret = base::RefNew<LoadedFile>();
+            ret->m_fbxDataSize = data.size();
+            ret->m_fbxScene = scene;
+
+            FbxAMatrix rootMatrix;
+            rootMatrix.SetIdentity();
+
+            auto rootNode = ret->m_fbxScene->GetRootNode();
+            ret->walkStructure(rootMatrix, spaceConversionMatrix, rootNode, nullptr);
+
+            return ret;
+        }
+    };
+
+    RTTI_BEGIN_TYPE_CLASS(FBXAssetLoader);
+        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtensions("fbx").addSourceExtensions("FBX");
+    RTTI_END_TYPE();
+
+    //--
 
 } // fbx

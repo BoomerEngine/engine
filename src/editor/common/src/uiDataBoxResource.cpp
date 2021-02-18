@@ -293,7 +293,8 @@ namespace ui
                         }
                         else if (auto loadedResource = LoadResource(key))
                         {
-                            if (const auto ret = HasError(writeValue(&loadedResource, m_dataType)))
+                            res::BaseReference loadedResourceRef(loadedResource);
+                            if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
                                 ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                         }
                         else

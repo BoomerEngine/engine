@@ -80,7 +80,7 @@ namespace rendering
 
         {
             compiler.appendf("PBRPixel pbr;\n");
-            compiler.appendf("PackPBR(pbr, {}, {}, {}, {}, {}, {});\n", worldPosition, shadeNormal, color, metallic, specular, rougness);
+            compiler.appendf("PackPBR(pbr, {}, {}, {}, {}, {}, {}, {});\n", worldPosition, worldNormal, shadeNormal, color, metallic, specular, rougness);
         }
 
         auto result = compiler.var(base::Vector3(0, 0, 0));

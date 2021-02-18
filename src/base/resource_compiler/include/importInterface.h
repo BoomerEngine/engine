@@ -88,6 +88,9 @@ namespace base
             // check if depot file exists
             virtual bool checkDepotFile(StringView depotPath) const = 0;
 
+            // check if source file exists
+            virtual bool checkSourceFile(StringView assetImportPath) const = 0;
+
             //--
 
             /// report a follow up import (other asset that we should import automatically)

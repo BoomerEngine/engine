@@ -7,7 +7,10 @@
 ***/
 
 #pragma once
+
 #include "base/resource_compiler/include/importSourceAsset.h"
+#include "rendering/mesh/include/renderingMeshStreamBuilder.h"
+#include "rendering/mesh/include/renderingMeshStreamData.h"
 
 namespace fbx
 {
@@ -49,30 +52,31 @@ namespace fbx
 
     struct MeshVertexInfluence;
 
-    // mateiral info
-    struct IMPORT_FBX_LOADER_API MaterialEntry
-    {
-        base::StringBuf name;
-        const fbxsdk::FbxSurfaceMaterial* sourceData = nullptr;
-
-        MaterialEntry();
-    };
-
     // material mapper
     struct IMPORT_FBX_LOADER_API MaterialMapper
     {
-        base::Array<MaterialEntry> materials;
+        base::Array<base::StringBuf> materials;
         base::HashMap<base::StringBuf, uint32_t> materialsMapping;
 
         MaterialMapper();
 
-        uint32_t addMaterial(const char* materialName, const fbxsdk::FbxSurfaceMaterial* material);
+        uint32_t addMaterial(const char* materialName);
     };
 
     // exported mode
     struct IMPORT_FBX_LOADER_API DataNodeMesh
     {
-        //base::Array<base::mesh::MeshModelChunk> chunks;
+        base::Array<rendering::MeshRawChunk> chunks;
+    };
+
+    // mesh export settings
+    struct IMPORT_FBX_LOADER_API DataMeshExportSetup
+    {
+        base::Matrix assetToEngine;
+        bool applyNodeTransform = false; // export in "world space" of the model, rare
+        bool forceSkinToNode = false;
+        bool flipUV = false;
+        bool flipFace = false;
     };
 
     //  extractable node
@@ -82,10 +86,9 @@ namespace fbx
         base::StringID m_name;
         uint8_t m_lodIndex = 0; // for Visual Mesh
 
+        //base::Matrix m_worldToAsset; // space conversion matrix for the FBX file
         base::Matrix m_localToWorld; // placement of the node in world space
-        base::Matrix m_meshToWorld; // used for mesh vertices import, may contain additional
-
-        base::Matrix m_localToParent; // cached m_localToWorld * m_parent->m_localToWorld.inverted()
+        base::Matrix m_meshToLocal;
 
         DataNode* m_parent = nullptr;
         base::Array<DataNode*> m_children;
@@ -94,7 +97,6 @@ namespace fbx
         const fbxsdk::FbxNode* m_node = nullptr;
 
         //--
-
 
         struct ChunkInfo
         {
@@ -122,8 +124,10 @@ namespace fbx
 
         void extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const;
 
-        bool exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const base::Matrix& worldToEngine, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials, bool forceSkinToNode, bool flipUV, bool flipFace) const;
+        bool exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const;
     };
+
+    class FBXAssetLoader;
 
     //  data blob (loaded asset scene)
     class IMPORT_FBX_LOADER_API LoadedFile : public base::res::ISourceAsset
@@ -145,10 +149,16 @@ namespace fbx
         // get all nodes, parents are always before children
         INLINE const base::Array<const DataNode*>& nodes() const { return (const base::Array<const DataNode*>&)m_nodes; }
 
+        // get all materials
+        INLINE const base::Array<const FbxSurfaceMaterial*>& materials() const { return m_materials; }
+
         ///--
 
         // find data node for given  node
         const DataNode* findDataNode(const fbxsdk::FbxNode* fbxNode) const;
+
+        // find material by name
+        const FbxSurfaceMaterial* findMaterial(base::StringView name) const;
 
         //--
 
@@ -159,6 +169,9 @@ namespace fbx
         base::Array<DataNode*> m_nodes;
         base::HashMap<const fbxsdk::FbxNode*, const DataNode*> m_nodeMap;
 
+        base::Array<const FbxSurfaceMaterial*> m_materials;
+        base::HashMap<base::StringBuf, const FbxSurfaceMaterial*> m_materialMap;
+
         void walkStructure(const fbxsdk::FbxAMatrix& fbxWorldToParent, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
 
         //--
@@ -168,9 +181,11 @@ namespace fbx
         //virtual bool loadFromMemory(Buffer data) override;
 
         //--
+
+        friend class FBXAssetLoader;
     };
 
-    //---
-
+    //--
+    
 } // fbx
 

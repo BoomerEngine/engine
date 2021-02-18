@@ -89,7 +89,7 @@ namespace base
 
         //--
 
-        static bool AddWorkToQueue(const ImportList* assetList, ImportQueue& outQueue)
+        static bool AddWorkToQueue(const ImportList* assetList, ImportQueue& outQueue, bool force)
         {
             bool hasWork = false;
 
@@ -100,6 +100,7 @@ namespace base
                     ImportJobInfo info;
                     info.assetFilePath = file.assetPath;
                     info.depotFilePath = file.depotPath;
+                    info.forceImport = force;
                     info.userConfig = CloneObject(file.userConfiguration);
                     outQueue.scheduleJob(info);
                     hasWork = true;
@@ -109,7 +110,7 @@ namespace base
             return hasWork;
         }
 
-        bool ProcessImport(const ImportList* files, IProgressTracker* mainProgress, IImportQueueCallbacks* callbacks)
+        bool ProcessImport(const ImportList* files, IProgressTracker* mainProgress, IImportQueueCallbacks* callbacks, bool force)
         {
             // find the source asset service - we need it to have access to source assets
             auto assetSource = GetService<ImportFileService>();
@@ -143,7 +144,7 @@ namespace base
                 ImportQueue queue(&repository, &loader, &saver, callbacks);
 
                 // add work to queue
-                if (AddWorkToQueue(files, queue))
+                if (AddWorkToQueue(files, queue, force))
                 {
                     // process all the jobs
                     while (queue.processNextJob(mainProgress))

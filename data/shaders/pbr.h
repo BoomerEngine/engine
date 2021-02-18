@@ -28,6 +28,7 @@ struct PBRPixel
     vec3 shading_view; // normalized vector from the fragment to the eye
     vec3 shading_normal; // normalized normal, in world space
     vec3 shading_reflected; // reflection of view about normal
+    vec3 face_normal; // geometry normal
     float shading_NoV; // dot(normal, view), always strictly >= MIN_N_DOT_V
 
     vec3 diffuseColor = vec3(1,1,1);

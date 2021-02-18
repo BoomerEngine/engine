@@ -18,7 +18,7 @@ namespace rendering
 
     // pack rendering data from source data
     // NOTE: this is the rendering-only cooking, no additional mesh data is cooked (SDF, physics, sound occlusion, etc)
-    extern IMPORT_MESH_LOADER_API bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks);
+    extern IMPORT_MESH_LOADER_API bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks, base::Box& outBounds);
 
     //---
 
