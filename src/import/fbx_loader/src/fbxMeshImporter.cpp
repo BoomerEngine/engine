@@ -108,7 +108,7 @@ namespace fbx
         //---
 
         // build the scaling matrix
-        auto assetToEngine = importConfig->calcAssetToEngineConversionMatrix(rendering::MeshImportUnits::Centimeters, rendering::MeshImportSpace::RightHandZUp);
+        auto assetToEngine = importConfig->calcAssetToEngineConversionMatrix(rendering::MeshImportUnits::Centimeters, rendering::MeshImportSpace::LeftHandYUp);
 
         // setup config
         DataMeshExportSetup meshExportConfig;

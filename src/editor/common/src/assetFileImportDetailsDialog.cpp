@@ -246,7 +246,7 @@ namespace ed
             const auto* firstFile = first.unsafe<FileData>();
             const auto* secondFile = second.unsafe<FileData>();
             if (firstFile && secondFile)
-                return firstFile->depotPath < secondFile->depotPath;
+                return firstFile->depotPath.view() < secondFile->depotPath.view();
         }
 
         return first < second;

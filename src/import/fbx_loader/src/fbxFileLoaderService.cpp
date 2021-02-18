@@ -205,8 +205,8 @@ namespace fbx
         EFbxRotationOrder order;
         node->GetRotationOrder(FbxNode::eSourcePivot, order);
 
-        /*if (order == eSphericXYZ)
-            order = eEulerXYZ;*/
+        if (order == eSphericXYZ)
+            order = eEulerXYZ;
 
         node->SetRotationOrder(FbxNode::eDestinationPivot, order);
         node->SetPivotState(FbxNode::eDestinationPivot, FbxNode::ePivotActive);
@@ -276,7 +276,7 @@ namespace fbx
 
             // Convert axis system to engine 
             //FbxAxisSystem sceneAxisSystem = lScene->GetGlobalSettings().GetAxisSystem();
-            EngineAxisSystem.ConvertScene(lScene);
+            //EngineAxisSystem.ConvertScene(lScene);
 
             // convert to meters
             FbxSystemUnit::m.ConvertScene(lScene);

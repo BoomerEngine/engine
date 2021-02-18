@@ -157,6 +157,14 @@ namespace ui
         outSortedItems.reserve(rawItems.size());
         outSortedItems = rawItems;
 
+        for (uint32_t i = 0; i < outSortedItems.size(); ++i)
+        {
+            const auto* item = outSortedItems[i];
+            DEBUG_CHECK(item);
+            DEBUG_CHECK(item->m_index);
+            DEBUG_CHECK(item->m_index.model() == model());
+        }
+
         if (m_sortingAsc || m_sortingColumnIndex == INDEX_NONE)
         {
             std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)

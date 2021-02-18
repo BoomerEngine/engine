@@ -223,6 +223,14 @@ namespace rendering
         if (!cfg.m_importTextures)
             return rendering::TextureRef();
 
+        // crap
+        base::StringBuf tempAssetPathToTexture;
+        if (assetPathToTexture.endsWithNoCase(".tif") || assetPathToTexture.endsWithNoCase(".tiff"))
+        {
+            tempAssetPathToTexture = base::TempString("{}{}.tga", assetPathToTexture.baseDirectory(), assetPathToTexture.fileStem());
+            assetPathToTexture = tempAssetPathToTexture;
+        }
+
         // try to find texture in depot if the search path was specified
         if (cfg.m_textureSearchPath)
         {        

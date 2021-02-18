@@ -368,9 +368,9 @@ namespace rendering
         {
             base::StringBuf txt = base::StringBuf(suffix).toLower();
 
-            if (txt == "d" || txt == "diff" || txt == "diffuse" || txt == "albedo" || txt == "color" || txt == "base_color" || txt == "basecolor")
+            if (txt == "a" || txt == "d" || txt == "diff" || txt == "diffuse" || txt == "albedo" || txt == "color" || txt == "base_color" || txt == "basecolor")
                 return ImageContentType::Albedo;
-            if (txt == "a" || txt == "ao")
+            if (txt == "ao")
                 return ImageContentType::AmbientOcclusion;
             if (txt == "n" || txt == "norm" || txt == "normal" || txt == "ddna" || txt == "ns")
                 return ImageContentType::TangentNormalMap;
@@ -387,7 +387,7 @@ namespace rendering
             if (txt == "m" || txt == "metallic" || txt == "metalness")
                 return ImageContentType::Metalness;
             if (txt == "mask")
-                return ImageContentType::Mask;
+                return ImageContentType::Generic;
             if (txt == "e" || txt == "emissive")
                 return ImageContentType::Emissive;
 
