@@ -1,0 +1,14 @@
+{
+  "FileVersion": 2,
+  "Id": "07f80e9f-268d-4dfd-9b26-b62bcead1a78",
+  "Items": [
+    {
+      "Id": "39188646-5802-43cd-8ff2-fc7fa797486c",
+      "Command": "-tool=reflection"
+    },
+    {
+      "Id": "7916a755-7d2f-45bf-90e2-bfd44499d835",
+      "Command": "-engineDir=\"Z:\\projects\\BoomerEngine\""
+    }
+  ]
+}

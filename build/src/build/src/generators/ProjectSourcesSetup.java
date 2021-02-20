@@ -342,7 +342,7 @@ public abstract class ProjectSourcesSetup extends ProjectSetup {
     f.writeln( "  #ifdef " + exportsMacroName);
     f.writelnf( "    #define %s __declspec( dllexport )", apiName);
     f.writeln( "  #else");
-    f.writelnf( "    #define %s __declspec( dllimport )", apiName);
+    f.writelnf( "    #define %s __declspec( dllimport )", apiName);struct
     f.writeln( "  #endif");
     f.writeln( "#endif");
 

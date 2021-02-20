@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<library>
+
+  <setup platform="*" config="*">
+	<include>include</include>
+  </setup>
+  
+  <setup platform="x64;Windows" config="*">
+	<lib>lib\win\glew32.lib</lib>
+
+	<deploy>lib\win\glew32.dll</deploy>
+	<deploy>lib\win\glewinfo.exe</deploy>
+	<deploy>lib\win\visualinfo.exe</deploy>
+  </setup>
+
+  <setup platform="Linux" config="*">	
+	<lib>lib/linux/libGLEW.a</lib>	
+  </setup>
+
+</library>
+

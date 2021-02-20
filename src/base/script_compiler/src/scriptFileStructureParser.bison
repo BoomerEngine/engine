@@ -4,7 +4,7 @@
 #include "base/script_compiler/src/scriptFileParserHelper.h"
 
 #ifdef PLATFORM_MSVC
-	#pragma warning ( disable: 4702 ) //: unreachable code
+    #pragma warning ( disable: 4702 ) //: unreachable code
 #endif
 
 using FileParsingNode = base::script::FileParsingNode;
@@ -140,9 +140,9 @@ global_declaration_list
     ;
 
 global_declaration
-	: decl_global_flags struct_definition
-	| decl_global_flags class_declaration
-	| decl_global_flags enum_declaration
+    : decl_global_flags struct_definition
+    | decl_global_flags class_declaration
+    | decl_global_flags enum_declaration
     | decl_global_flags function_declaration
     | typename_declaration
     | const_declaration

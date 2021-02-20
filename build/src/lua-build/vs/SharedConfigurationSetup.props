@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BoomerEngine MS-Build configuration script -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Define the common project confugrations - Debug, Checked, Release and Final -->
+  <ItemGroup Label="ProjectConfigurations">
+    
+	  <ProjectConfiguration Include="Debug|x64">
+	    <Configuration>Debug</Configuration>
+	    <Platform>x64</Platform>
+	  </ProjectConfiguration>
+    
+	  <ProjectConfiguration Include="Checked|x64">
+	    <Configuration>Checked</Configuration>
+	    <Platform>x64</Platform>
+	  </ProjectConfiguration>
+    
+	  <ProjectConfiguration Include="Release|x64">
+	    <Configuration>Release</Configuration>
+	    <Platform>x64</Platform>
+	  </ProjectConfiguration>
+
+    <ProjectConfiguration Include="Final|x64">
+      <Configuration>Final</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+	  
+  </ItemGroup>
+  
+</Project>

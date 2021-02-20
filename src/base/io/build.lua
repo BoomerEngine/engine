@@ -1,0 +1,32 @@
+-- Boomer Engine v4 Build script
+-- Written by Tomasz Jonarski (RexDex)
+
+ProjectType("library")
+
+Dependency("base_system")
+Dependency("base_memory")
+Dependency("base_containers")
+Dependency("base_fibers")
+Dependency("base_test")
+
+FileFilter("src/ioAsyncDispatcherPOSIX.cpp", "posix")
+FileFilter("src/ioAsyncDispatcherPOSIX.h", "posix")
+FileFilter("src/ioDirectoryWatcherPOSIX.cpp", "posix")
+FileFilter("src/ioDirectoryWatcherPOSIX.h", "posix")
+FileFilter("src/ioFileHandlePOSIX.cpp", "posix")
+FileFilter("src/ioFileHandlePOSIX.h", "posix")
+FileFilter("src/ioFileIteratorPOSIX.cpp", "posix")
+FileFilter("src/ioFileIteratorPOSIX.h", "posix")
+FileFilter("src/ioSystemPOSIX.cpp", "posix")
+FileFilter("src/ioSystemPOSIX.h", "posix")
+
+FileFilter("src/ioAsyncDispatcherWindows.cpp", "winapi")
+FileFilter("src/ioAsyncDispatcherWindows.h", "winapi")
+FileFilter("src/ioDirectoryWatcherWindows.cpp", "winapi")
+FileFilter("src/ioDirectoryWatcherWindows.h", "winapi")
+FileFilter("src/ioFileHandleWindows.cpp", "winapi")
+FileFilter("src/ioFileHandleWindows.h", "winapi")
+FileFilter("src/ioFileIteratorWindows.cpp", "winapi")
+FileFilter("src/ioFileIteratorWindows.h", "winapi")
+FileFilter("src/ioSystemWindows.cpp", "winapi")
+FileFilter("src/ioSystemWindows.h", "winapi")
