@@ -1144,6 +1144,7 @@ bool CopyNewerFile(const filesystem::path& source, const filesystem::path& targe
         }
 
         cout << "Copying " << target << "\n";
+        filesystem::remove(target);
         filesystem::copy(source, target);
 
         return true;

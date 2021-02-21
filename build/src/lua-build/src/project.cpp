@@ -518,14 +518,17 @@ void ProjectStructure::ProjectInfo::scanFilesAtDir(const filesystem::path& direc
 {
     try
     {
-        for (const auto& entry : filesystem::directory_iterator(directoryPath))
+        if (filesystem::is_directory(directoryPath))
         {
-            const auto name = entry.path().filename().u8string();
+            for (const auto& entry : filesystem::directory_iterator(directoryPath))
+            {
+                const auto name = entry.path().filename().u8string();
 
-            if (entry.is_directory())
-                scanFilesAtDir(entry.path(), headersOnly);
-            else if (entry.is_regular_file())
-                internalTryAddFileFromPath(entry.path(), headersOnly);
+                if (entry.is_directory())
+                    scanFilesAtDir(entry.path(), headersOnly);
+                else if (entry.is_regular_file())
+                    internalTryAddFileFromPath(entry.path(), headersOnly);
+            }
         }
     }
     catch (filesystem::filesystem_error& e)
@@ -544,6 +547,8 @@ bool ProjectStructure::ProjectInfo::scanContent()
     if (filesystem::is_directory(sourcesPath))
     {
         scanFilesAtDir(rootPath / "include", true);
+        scanFilesAtDir(rootPath / "res", false);
+        scanFilesAtDir(rootPath / "natvis", false);
         scanFilesAtDir(rootPath / "src", false);
     }
 
@@ -731,6 +736,8 @@ int ProjectStructure::ProjectInfo::ExportLibraryLink(lua_State* L)
     string_view path = luaL_checkstring(L, 1);
 
     auto fullPath = self->rootPath / path;
+    fullPath = fullPath.make_preferred();
+
     std::error_code ec;
     if (!filesystem::exists(fullPath, ec))
     {
@@ -850,6 +857,26 @@ const ProjectStructure::ToolInfo* ProjectStructure::ProjectInfo::findToolByName(
                 return &tool;
 
     return nullptr;
+}
+
+bool ProjectStructure::FileInfo::checkFilter(PlatformType platform) const
+{
+    if (flagExcluded)
+        return false;
+
+    switch (filter)
+    {
+    case ProjectFilePlatformFilter::WinApi:
+        return (platform == PlatformType::Windows) || (platform == PlatformType::UWP);
+    case ProjectFilePlatformFilter::POSIX:
+        return (platform == PlatformType::Linux);
+    case ProjectFilePlatformFilter::Windows:
+        return (platform == PlatformType::Windows);
+    case ProjectFilePlatformFilter::Linux:
+        return (platform == PlatformType::Linux);
+    }
+
+    return true;
 }
 
 bool ProjectStructure::FileInfo::toggleFlag(string_view name, bool value)
@@ -1006,11 +1033,11 @@ bool ProjectStructure::resolveProjectDependency(string_view name, vector<Project
 
         return true;
     }
-    else if (EndsWith(name, "*"))
+    else if (EndsWith(name, "_*"))
     {
         const auto pattern = name.substr(0, name.length() - 1);
         for (auto* proj : projects)
-            if (EndsWith(proj->mergedName, pattern) && proj->type == ProjectType::LocalLibrary)
+            if (BeginsWith(proj->mergedName, pattern) && proj->type == ProjectType::LocalLibrary)
                 addProjectDependency(proj, outProjects);
 
         return true;
@@ -1022,7 +1049,7 @@ bool ProjectStructure::resolveProjectDependency(string_view name, vector<Project
         {
             if (proj->type == ProjectType::LocalApplication)
             {
-                cout << "Project '" << proj->mergedName << "' is an aplication and can't be a dependency\n";
+                cout << "Project '" << proj->mergedName << "' is an application and can't be a dependency\n";
                 return true;
             }
 

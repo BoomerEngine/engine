@@ -60,6 +60,8 @@ struct ProjectStructure
         filesystem::path absolutePath; // full path to file on disk "Z:\\BoomerEngine\\src\\base\\math\\src\\vector3.cpp"
 
         bool toggleFlag(string_view name, bool value);
+
+        bool checkFilter(PlatformType platform) const;
     };
 
     struct ProjectInfo;

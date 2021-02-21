@@ -89,28 +89,6 @@ CodeGenerator::GeneratedGroup* CodeGenerator::createGroup(string_view name)
     return cur;
 }
 
-bool CodeGenerator::shouldUseFile(const ProjectStructure::FileInfo* file) const
-{
-    if (file->flagExcluded)
-        return false;
-
-    switch (file->filter)
-    {
-    case ProjectFilePlatformFilter::Any:
-        return true;
-    case ProjectFilePlatformFilter::WinApi:
-        return (config.platform == PlatformType::Windows) || (config.platform == PlatformType::UWP);
-    case ProjectFilePlatformFilter::POSIX:
-        return (config.platform == PlatformType::Linux);
-    case ProjectFilePlatformFilter::Windows:
-        return (config.platform == PlatformType::Windows);
-    case ProjectFilePlatformFilter::Linux:
-        return (config.platform == PlatformType::Linux);
-    }
-
-    return false;
-}
-
 bool CodeGenerator::extractProjects(const ProjectStructure& structure)
 {
     // create projects
@@ -147,7 +125,7 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
                 info->name = file->name;
                 info->originalFile = file;
                 info->type = file->type;
-                info->useInCurrentBuild = shouldUseFile(file);
+                info->useInCurrentBuild = file->checkFilter(config.platform);
                 generatorProject->files.push_back(info);
             }
 
@@ -311,15 +289,40 @@ bool CodeGenerator::generateAutomaticCodeForProject(GeneratedProject* project)
 
     if (project->originalProject->type == ProjectType::LocalApplication || project->originalProject->type == ProjectType::LocalLibrary)
     {
-        auto* info = new GeneratedProjectFile;
-        info->absolutePath = project->generatedPath / "reflection.inl";
-        info->type = ProjectFileType::CppHeader;
-        info->filterPath = "_generated";
-        info->name = "main.cpp";
-        info->generatedFile = createFile(info->absolutePath);
-        project->files.push_back(info);
+        auto reflectionFilePath = project->generatedPath / "reflection.inl";
 
-        valid &= generateProjectDefaultReflection(project, info->generatedFile->content);
+        try
+        {
+            //filesystem::remove(reflectionFilePath);
+        }
+        catch (...)
+        {
+        }
+
+        bool needsReflection = false;
+
+        for (const auto* dep : project->allDependencies)
+        {
+            if (dep->mergedName == "base_reflection")
+            {
+                needsReflection = true;
+                break;
+            }
+        }
+
+        if (needsReflection)
+        {
+            auto* info = new GeneratedProjectFile;
+            info->type = ProjectFileType::CppHeader;
+            info->absolutePath = reflectionFilePath;
+            info->filterPath = "_generated";
+            info->name = "reflection.inl";
+            project->files.push_back(info);
+
+            // DO NOT WRITE
+            info->generatedFile = createFile(info->absolutePath);
+            valid &= generateProjectDefaultReflection(project, info->generatedFile->content);
+        }
     }        
 
     return valid;
@@ -615,43 +618,43 @@ bool CodeGenerator::processBisonFile(GeneratedProject* project, const GeneratedP
     filesystem::path symbolsFile = project->generatedPath / symbolsFileName;
     filesystem::path reportPath = project->generatedPath / reportFileName;
 
-    if (!IsFileSourceNewer(file->absolutePath, parserFile))
-        return true;
-
     parserFile = parserFile.make_preferred();
     symbolsFile = symbolsFile.make_preferred();
     reportPath = reportPath.make_preferred();
 
-    std::error_code ec;
-    if (!filesystem::is_directory(project->generatedPath))
+    if (IsFileSourceNewer(file->absolutePath, parserFile))
     {
-        if (!filesystem::create_directories(project->generatedPath, ec))
+        std::error_code ec;
+        if (!filesystem::is_directory(project->generatedPath))
         {
-            cout << "BISON tool failed because output directory can't be created\n";
+            if (!filesystem::create_directories(project->generatedPath, ec))
+            {
+                cout << "BISON tool failed because output directory can't be created\n";
+                return false;
+            }
+        }
+
+        stringstream params;
+        params << tool->executablePath.u8string() << " ";
+        params << "\"" << file->absolutePath.u8string() << "\" ";
+        params << "-o\"" << parserFile.u8string() << "\" ";
+        params << "--defines=\"" << symbolsFile.u8string() << "\" ";
+        params << "--report-file=\"" << reportPath.u8string() << "\" ";
+        params << "--verbose";
+
+        const auto activeDir = filesystem::current_path();
+        const auto bisonDir = tool->executablePath.parent_path();
+        filesystem::current_path(bisonDir);
+
+        auto code = std::system(params.str().c_str());
+
+        filesystem::current_path(activeDir);
+
+        if (code != 0)
+        {
+            cout << "BISON tool failed with exit code " << code << "\n";
             return false;
         }
-    }
-
-    stringstream params;
-    params << tool->executablePath.u8string() << " ";
-    params << "\"" << file->absolutePath.u8string() << "\" ";
-    params << "-o\"" << parserFile.u8string() << "\" ";
-    params << "--defines=\"" << symbolsFile.u8string() << "\" ";
-    params << "--report-file=\"" << reportPath.u8string() << "\" ";
-    params << "--verbose";
-
-    const auto activeDir = filesystem::current_path();
-    const auto bisonDir = tool->executablePath.parent_path();
-    filesystem::current_path(bisonDir);
-
-    auto code = std::system(params.str().c_str());
-
-    filesystem::current_path(activeDir);
-
-    if (code != 0)
-    {
-        cout << "BISON tool failed with exit code " << code << "\n";
-        return false;
     }
 
     {
