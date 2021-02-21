@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "base/script/include/scriptObject.h"
+#include "base/object/include/object.h"
 
 namespace physics
 {
@@ -14,9 +14,9 @@ namespace physics
     {
 
         /// simulation scene for the physics
-        class PHYSICS_RUNTIME_API PhysicsScene : public base::script::ScriptedObject
+        class PHYSICS_RUNTIME_API PhysicsScene : public base::IObject
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(PhysicsScene, base::script::ScriptedObject);
+            RTTI_DECLARE_VIRTUAL_CLASS(PhysicsScene, base::IObject);
 
         public:
             PhysicsScene(physx::PxScene* scene);

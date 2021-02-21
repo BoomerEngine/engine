@@ -22,7 +22,6 @@
 #include "base/input/include/inputContext.h"
 #include "base/input/include/inputStructures.h"
 #include "base/system/include/thread.h"
-#include "base/script/include/scriptCompiledProject.h"
 
 namespace rendering
 {

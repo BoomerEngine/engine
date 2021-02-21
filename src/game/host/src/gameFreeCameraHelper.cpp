@@ -12,8 +12,6 @@
 #include "base/input/include/inputStructures.h"
 #include "base/app/include/localServiceContainer.h"
 #include "base/app/include/configProperty.h"
-#include "base/ui/include/uiInputAction.h"
-#include "base/ui/include/uiElement.h"
 
 #include "rendering/scene/include/renderingFrameCamera.h"
 

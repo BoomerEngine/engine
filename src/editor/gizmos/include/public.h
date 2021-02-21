@@ -10,6 +10,7 @@
 
 namespace ed
 {
+    using namespace base;
 
     ///---
 

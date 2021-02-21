@@ -12,7 +12,7 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "renderingSelectable.h"
-#
+
 namespace rendering
 {
     namespace scene

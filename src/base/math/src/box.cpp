@@ -9,6 +9,8 @@
 #include "build.h"
 #include "mathShapes.h"
 
+#include <Windows.h>
+
 namespace base
 {
     //--
@@ -96,6 +98,138 @@ namespace base
             *outEntryPoint = origin + (tmin * direction); // TODO: project on box
 
         return true;
+    }
+
+    //--
+
+    class IReflectionInitProxy
+    {
+    public:
+        IReflectionInitProxy();
+        virtual ~IReflectionInitProxy();
+
+        virtual const char* typeName() const = 0;
+        virtual void createType(rtti::IType*& outType) const = 0;
+        virtual void initType(rtti::IType* type) const = 0;
+
+        static void PopList(Array<IReflectionInitProxy*>& outNew);
+
+    private:
+        static IReflectionInitProxy* RunListOp(const std::function<IReflectionInitProxy*(IReflectionInitProxy*&)>& op);
+
+        IReflectionInitProxy* next = nullptr;
+    };
+
+    IReflectionInitProxy::IReflectionInitProxy()
+    {
+        RunListOp([this](IReflectionInitProxy*& list)
+            {
+                next = list;
+                list = this;
+                return list;
+            });        
+    }
+
+    IReflectionInitProxy::~IReflectionInitProxy()
+    {
+
+    }
+
+    void IReflectionInitProxy::PopList(Array<IReflectionInitProxy*>& outNew)
+    {
+        RunListOp([&outNew](IReflectionInitProxy*& list)
+            {
+                auto val = list;
+                list = nullptr;
+
+                while (val)
+                {
+                    outNew.pushBack(val);
+                    auto next = val->next;
+                    val->next = nullptr;
+                    val = val->next;
+                }
+
+                return nullptr;
+            });
+    }
+
+    IReflectionInitProxy* IReflectionInitProxy::RunListOp(const std::function<IReflectionInitProxy* (IReflectionInitProxy*&)>& op)
+    {
+        static SpinLock ListLock;
+        static IReflectionInitProxy* List = nullptr;
+
+        auto lock = CreateLock(ListLock);
+        return op(List);
+    }
+
+    //--
+
+    template<typename D>
+    struct ReflectionAutomaticRegister {
+    private:
+        struct Exec {
+            Exec() { 
+                D::do_it();
+            }
+        };
+
+        // will force instantiation of definition of static member
+        template<Exec&> struct ref_it { };
+
+        static Exec register_object;
+        static ref_it<register_object> referrer;
+    };
+
+    template<typename D> typename ReflectionAutomaticRegister<D>::Exec ReflectionAutomaticRegister<D>::register_object;
+
+    //--
+
+    class TestRegister : public IReflectionInitProxy
+    {
+    public:
+        TestRegister()
+        {
+            TRACE_INFO("Dupa registered!");
+        }
+        virtual const char* typeName() const { return "Dupa"; }
+        virtual void createType(rtti::IType*& outType) const { outType = new rtti::EnumType("crap"_id, 1, 1, false); }
+        virtual void initType(rtti::IType* type) const { }
+    };
+
+    ReflectionAutomaticRegister<TestRegister> GTestRegister;
+
+    class CrapRegister : public ReflectionAutomaticRegister<CrapRegister>
+    {
+    public:
+        static void do_it()
+        {
+            TRACE_INFO("Dupa registered!");
+        }
+    };
+
+    CrapRegister GCrapRegister;
+
+    void __cdecl TestMe()
+    {
+        TRACE_INFO("TestMe!");
+    }
+
+    struct ForceFunctionToBeLinked
+    {
+        ForceFunctionToBeLinked(const void* p) { SetLastError(PtrToInt(p)); }
+    };
+
+    ForceFunctionToBeLinked forceTestMe(TestMe);
+
+    //--
+
+    void TestNewRegistering()
+    {
+        InplaceArray<IReflectionInitProxy*, 10> newRegistrants;
+        IReflectionInitProxy::PopList(newRegistrants);
+
+        TRACE_INFO("Size: {}", newRegistrants.size());
     }
 
     //--
